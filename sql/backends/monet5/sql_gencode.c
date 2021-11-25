@@ -138,11 +138,11 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	backend bebackup;
 
 	if (strlen(mod) >= IDLENGTH) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "Module name '%s' too large for the backend", mod);
+		(void) sql_error(m, 10, SQLSTATE(42000) "Module name '%s' too large for the backend", mod);
 		return -1;
 	}
 	if (strlen(name) >= IDLENGTH) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "Function name '%s' too large for the backend", name);
+		(void) sql_error(m, 10, SQLSTATE(42000) "Function name '%s' too large for the backend", name);
 		return -1;
 	}
 	symbackup = c->curprg;
@@ -151,7 +151,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 	if(c->curprg  == NULL) {
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;
 	}
@@ -161,7 +161,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 
 	curInstr = relational_func_create_result(m, curBlk, curInstr, r);
 	if( curInstr == NULL) {
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;
 	}
@@ -186,12 +186,12 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 				buf = sa_strdup(m->sa, nme);
 			}
 			if (!buf) {
-				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				res = -1;
 				goto cleanup;
 			}
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
-				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				res = -1;
 				goto cleanup;
 			}
@@ -217,12 +217,12 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 					stpcpy(stpcpy(buf, "A"), nme);
 			}
 			if (!buf) {
-				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				res = -1;
 				goto cleanup;
 			}
 			if ((varid = newVariable(curBlk, (char *)buf, strlen(buf), type)) < 0) {
-				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				res = -1;
 				goto cleanup;
 			}
@@ -231,7 +231,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		}
 	}
 	if (curBlk->errors) {
-		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", curBlk->errors);
+		sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", curBlk->errors);
 		res = -1;
 		goto cleanup;
 	}
@@ -263,7 +263,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			c->curprg->def->errors = msg;
 	}
 	if (c->curprg->def->errors) {
-		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
+		sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
 		res = -1;
 	}
 
@@ -330,17 +330,17 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		return -1;
 	}
 	if (strlen(mod) >= IDLENGTH) {
-		sql_error(m, 003, SQLSTATE(42000) "Module name '%s' too large for the backend", mod);
+		sql_error(m, 10, SQLSTATE(42000) "Module name '%s' too large for the backend", mod);
 		return -1;
 	}
 	if (strlen(name) >= IDLENGTH) {
-		sql_error(m, 003, SQLSTATE(42000) "Function name '%s' too large for the backend", name);
+		sql_error(m, 10, SQLSTATE(42000) "Function name '%s' too large for the backend", name);
 		return -1;
 	}
 
 	lname = GDKstrdup(name);
 	if (lname == NULL) {
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
@@ -351,13 +351,13 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	lret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
 	if (lret == NULL) {
 		GDKfree(lname);
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 	rret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
 	if (rret == NULL) {
 		GDKfree(lname);
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
@@ -366,7 +366,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 	if( c->curprg == NULL) {
 		GDKfree(lname);
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 	lname[0] = 'l';
@@ -376,7 +376,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	curInstr = relational_func_create_result(m, curBlk, curInstr, rel);
 	if( curInstr == NULL) {
 		GDKfree(lname);
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
@@ -393,7 +393,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			sprintf(nbuf, "A%d", i++);
 			if ((varid = newVariable(curBlk, nbuf, strlen(nbuf), type)) < 0) {
 				GDKfree(lname);
-				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				return -1;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -444,7 +444,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	if (!(buf = rel2str(m, rel))) {
 		GDKfree(lname);
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 	o = newFcnCall(curBlk, remoteRef, putRef);
@@ -455,7 +455,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	if (!(buf = GDKmalloc(len))) {
 		GDKfree(lname);
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
@@ -479,7 +479,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 				if (tmp == NULL) {
 					GDKfree(lname);
 					GDKfree(buf);
-					sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					return -1;
 				}
 				buf = tmp;
@@ -505,7 +505,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 				GDKfree(lname);
 				GDKfree(buf);
 				sa_reset(m->ta);
-				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return -1;
 			}
 
@@ -517,7 +517,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 					GDKfree(lname);
 					GDKfree(buf);
 					sa_reset(m->ta);
-					sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					return -1;
 				}
 				buf = tmp;
@@ -542,7 +542,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		if (lsupervisor_session == NULL || rsupervisor_session == NULL) {
 			GDKfree(lsupervisor_session);
 			GDKfree(rsupervisor_session);
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 
@@ -550,7 +550,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		if (rworker_plan_uuid == NULL) {
 			GDKfree(rsupervisor_session);
 			GDKfree(lsupervisor_session);
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 		str lworker_plan_uuid = GDKstrdup(rworker_plan_uuid);
@@ -558,7 +558,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			free(rworker_plan_uuid);
 			GDKfree(lsupervisor_session);
 			GDKfree(rsupervisor_session);
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 
@@ -707,7 +707,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	if (!c->curprg->def->errors)
 		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
 	if (c->curprg->def->errors) {
-		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
+		sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
 		res = -1;
 	}
 
@@ -774,22 +774,22 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 
 		querylog = q = newStmt(mb, querylogRef, defineRef);
 		if (q == NULL) {
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
 		if (!(escaped_q = sql_escape_str(m->ta, (char*) query))) {
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 		q = pushStr(mb, q, escaped_q);
 		if (q == NULL) {
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 		if (q == NULL) {
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 	}
@@ -797,7 +797,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	/* announce the transaction mode */
 	q = newStmt(mb, sqlRef, mvcRef);
 	if (q == NULL) {
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 	be->mvc_var = getDestVar(q);
@@ -813,7 +813,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	if (top && !be->depth && (m->type == Q_SCHEMA || m->type == Q_TRANS) && !GDKembedded()) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL) {
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 	}
@@ -821,7 +821,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	if (getArgType(mb, getInstrPtr(mb, 0), 0) != TYPE_void && getInstrPtr(mb, mb->stop - 1)->barrier != RETURNsymbol) {
 		q = newAssignment(mb);
 		if (q == NULL) {
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 		getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
@@ -858,7 +858,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	assert(cq && strlen(cq->name) < IDLENGTH);
 	c->curprg = newFunctionArgs(sql_private_module, putName(cq->name), FUNCTIONsymbol, argc);
 	if (c->curprg == NULL) {
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;
 	}
@@ -877,25 +877,25 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			int type, varid = 0;
 
 			if (!tpe || tpe->eclass == EC_ANY) {
-				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument number %d", argc+1);
+				sql_error(m, 10, SQLSTATE(42000) "Could not determine type for argument number %d", argc+1);
 				res = -1;
 				goto cleanup;
 			}
 			type = tpe->localtype;
 			snprintf(arg, IDLENGTH, "A%d", argc);
 			if ((varid = newVariable(mb, arg,strlen(arg), type)) < 0) {
-				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				res = -1;
 				goto cleanup;
 			}
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (c->curprg == NULL) {
-				sql_error(m, 003, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				res = -1;
 				goto cleanup;
 			}
 			if (mb->errors) {
-				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", mb->errors);
+				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", mb->errors);
 				res = -1;
 				goto cleanup;
 			}
@@ -912,7 +912,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (m->emode == m_prepare && !c->curprg->def->errors)
 		c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	if (c->curprg->def->errors) {
-		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
+		sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
 		res = -1;
 		goto cleanup;
 	}
@@ -1031,12 +1031,12 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	dlist *l, *ext_name;
 
 	if (!(b = (buffer*)malloc(sizeof(buffer)))) {
-		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		(void) sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 	if (!(n = malloc(len + 2))) {
 		free(b);
-		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		(void) sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 	snprintf(n, len + 2, "%s\n", f->query);
@@ -1044,12 +1044,12 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	buffer_init(b, n, len);
 	if (!(buf = buffer_rastream(b, "sqlstatement"))) {
 		buffer_destroy(b);
-		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		(void) sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 	if (!(bs = bstream_create(buf, b->len))) {
 		buffer_destroy(b);
-		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		(void) sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 	mvc o = *m;
@@ -1066,7 +1066,7 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	(void) sqlparse(m);
 	if (m->session->status || m->errstr[0] || !m->sym || m->sym->token != SQL_CREATE_FUNC) {
 		if (m->errstr[0] == '\0')
-			(void) sql_error(m, 02, SQLSTATE(42000) "Could not parse CREATE SQL MAL function statement");
+			(void) sql_error(m, 10, SQLSTATE(42000) "Could not parse CREATE SQL MAL function statement");
 	} else {
 		l = m->sym->data.lval;
 		ext_name = l->h->next->next->next->data.lval;
@@ -1074,9 +1074,9 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 
 		assert(!f->imp);
 		if (strlen(imp) >= IDLENGTH)
-			(void) sql_error(m, 02, SQLSTATE(42000) "MAL function name '%s' too large for the backend", imp);
+			(void) sql_error(m, 10, SQLSTATE(42000) "MAL function name '%s' too large for the backend", imp);
 		else if (!(f->imp = _STRDUP(imp))) /* found the implementation, set it */
-			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			(void) sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	buffer_destroy(b);
@@ -1116,7 +1116,7 @@ backend_create_mal_func(mvc *m, sql_func *f)
 		FUNC_TYPE_STR(f->type, F, fn)
 		(void) F;
 		if (strlen(f->mod) >= IDLENGTH) {
-			(void) sql_error(m, 01, SQLSTATE(42000) "MAL module name '%s' too large for the backend", f->mod);
+			(void) sql_error(m, 10, SQLSTATE(42000) "MAL module name '%s' too large for the backend", f->mod);
 			MT_lock_unset(&f->function_lock);
 			return -1;
 		}
@@ -1125,13 +1125,13 @@ backend_create_mal_func(mvc *m, sql_func *f)
 			return -1;
 		}
 		if (!backend_resolve_function(&clientid, f)) {
-			(void) sql_error(m, 02, SQLSTATE(3F000) "MAL external name %s.%s not bound (%s.%s)", f->mod, f->imp, f->s->base.name, f->base.name);
+			(void) sql_error(m, 10, SQLSTATE(3F000) "MAL external name %s.%s not bound (%s.%s)", f->mod, f->imp, f->s->base.name, f->base.name);
 			_DELETE(f->imp);
 			MT_lock_unset(&f->function_lock);
 			return -1;
 		}
 		if (side_effect != f->side_effect) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "Side-effect value from the SQL %s %s.%s doesn't match the MAL definition %s.%s\n"
+			(void) sql_error(m, 10, SQLSTATE(42000) "Side-effect value from the SQL %s %s.%s doesn't match the MAL definition %s.%s\n"
 							 "Either re-create the %s, or fix the MAL definition and restart the database", fn, f->s->base.name, f->base.name, f->mod, f->imp, fn);
 			_DELETE(f->imp);
 			MT_lock_unset(&f->function_lock);
@@ -1178,7 +1178,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 #ifndef NDEBUG
 		/* for debug builds we keep the SQL function name in the MAL function name to make it easy to debug */
 		if (strlen(f->base.name) + 21 >= IDLENGTH) { /* 20 bits for u64 number + '%' */
-			(void) sql_error(m, 01, SQLSTATE(42000) "MAL function name '%s' too large for the backend", f->base.name);
+			(void) sql_error(m, 10, SQLSTATE(42000) "MAL function name '%s' too large for the backend", f->base.name);
 			MT_lock_unset(&f->function_lock);
 			return -1;
 		}
@@ -1193,13 +1193,13 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
 		c->curprg = newFunctionArgs(sql_shared_module, putName(befname), FUNCTIONsymbol, nargs);
 		if (c->curprg == NULL) {
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			res = -1;
 			goto cleanup;
 		}
 		assert(!f->imp);
 		if (!(f->imp = _STRDUP(befname))) {
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			res = -1;
 			goto cleanup;
 		}
@@ -1212,7 +1212,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			if (f->type == F_UNION) {
 				curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
 				if( curInstr == NULL) {
-					sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					res = -1;
 					goto cleanup;
 				}
@@ -1234,7 +1234,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 				(void) snprintf(buf, IDLENGTH, "A%d", argc);
 				if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
-					sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+					sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 					res = -1;
 					goto cleanup;
 				}
@@ -1260,12 +1260,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 						(void) snprintf(buf, IDLENGTH, "A%d", argc);
 				}
 				if (!buf) {
-					sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					res = -1;
 					goto cleanup;
 				}
 				if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
-					sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+					sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 					res = -1;
 					goto cleanup;
 				}
@@ -1316,7 +1316,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 				c->curprg->def->errors = msg;
 		}
 		if (c->curprg->def->errors) {
-			sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
+			sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
 			res = -1;
 			goto cleanup;
 		}
@@ -1356,7 +1356,7 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_SQL:
 		return backend_create_sql_func(be, f, restypes, ops);
 	default:
-		sql_error(be->mvc, 003, SQLSTATE(42000) "Function language without a MAL backend");
+		sql_error(be->mvc, 10, SQLSTATE(42000) "Function language without a MAL backend");
 		return -1;
 	}
 }

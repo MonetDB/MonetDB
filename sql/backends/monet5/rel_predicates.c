@@ -70,7 +70,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 							VALclear(&e2->data);
 							_DELETE(e2);
 						}
-						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						return sql_error(v->sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 
 					if (sql_trans_add_predicate(v->sql->session->tr, c, e->flag, e1, e2, is_anti(e), is_semantics(e)) != LOG_OK) {
@@ -82,7 +82,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 							VALclear(&e2->data);
 							_DELETE(e2);
 						}
-						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						return sql_error(v->sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					v->changes++;
 				}
@@ -105,7 +105,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 					if (isNew(c))
 						continue;
 					if (sql_trans_add_predicate(v->sql->session->tr, c, 0, NULL, NULL, false, false) != LOG_OK)
-						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						return sql_error(v->sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					v->changes++;
 				}
 			}

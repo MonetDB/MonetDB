@@ -1641,7 +1641,7 @@ check_types(backend *be, sql_subtype *t, stmt *s, check_type tpe)
 		}
 	}
 	if (err) {
-		stmt *res = sql_error(sql, 03, SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
+		stmt *res = sql_error(sql, 10, SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
 			fromtype->type->base.name,
 			fromtype->digits,
 			fromtype->scale,
@@ -3924,7 +3924,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 
 				/* foreach column add predicate */
 				if (add_column_predicate(be, c->c) != LOG_OK)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				if ((k->type == ukey) && stmt_has_null(col)) {
@@ -3947,7 +3947,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 
 				/* foreach column add predicate */
 				if (add_column_predicate(be, c->c) != LOG_OK)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				list_append(lje, col);
@@ -4011,7 +4011,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 
 		/* add predicate for this column */
 		if (add_column_predicate(be, c->c) != LOG_OK)
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		s = stmt_col(be, c->c, dels, dels->partition);
 		if ((k->type == ukey) && stmt_has_null(s)) {
@@ -4083,7 +4083,7 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 
 		/* foreach column add predicate */
 		if (add_column_predicate(be, c->c) != LOG_OK)
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	if (pin && list_length(pin->op4.lval))
@@ -4201,7 +4201,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 
 			/* foreach column add predicate */
 			if (add_column_predicate(be, c) != LOG_OK)
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
@@ -4279,7 +4279,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 /* before */
 	if (!sql_insert_triggers(be, t, updates, 0))
-		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
 	insert = inserts->op4.lval->h->data;
 	if (insert->nrcols == 0) {
@@ -4343,12 +4343,12 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 
 	if (!sql_insert_triggers(be, t, updates, 1))
-		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	/* update predicate list */
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (ddl) {
 		ret = ddl;
@@ -5191,12 +5191,12 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
 	if (!idx_updates) {
 		assert(0);
-		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: failed to update indexes for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(42000) "UPDATE: failed to update indexes for table '%s'", t->base.name);
 	}
 
 /* before */
 	if (!sql_update_triggers(be, t, rows, updates, 0))
-		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* apply updates */
 	for (i = 0, n = ol_first_node(t->columns); i < nr_cols && n; i++, n = n->next) {
@@ -5206,11 +5206,11 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	       		append(l, stmt_update_col(be, c, rows, updates[i]));
 	}
 	if (cascade_updates(be, t, rows, updates))
-		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
 	if (!sql_update_triggers(be, t, rows, updates, 1))
-		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* cascade ?? */
 	return l;
@@ -5300,7 +5300,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	if (!sql_update_triggers(be, t, tids, updates, 0)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
-		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 	}
 
 /* apply the update */
@@ -5315,14 +5315,14 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	if (cascade_updates(be, t, tids, updates)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
-		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 	}
 
 /* after */
 	if (!sql_update_triggers(be, t, tids, updates, 1)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
-		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 	}
 
 	if (ddl) {
@@ -5341,7 +5341,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return cnt;
 }
 
@@ -5531,10 +5531,10 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 
 /* before */
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 0, 1, 3))
-		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 
 	if (!sql_delete_keys(be, t, v, l, "DELETE", 0))
-		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: failed to delete indexes for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(42000) "DELETE: failed to delete indexes for table '%s'", t->base.name);
 
 	if (rows) {
 		s = stmt_delete(be, t, rows);
@@ -5546,7 +5546,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 
 /* after */
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 1, 1, 3))
-		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 	return s;
 }
 
@@ -5584,7 +5584,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	return stdelete;
 }
@@ -5649,7 +5649,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 							if (!found) {
 								if ((new_node = SA_NEW(sql->ta, struct tablelist)) == NULL) {
 									list_destroy(keys);
-									sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+									sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									*error = 1;
 									return;
 								}
@@ -5683,7 +5683,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	stmt **deleted_cols = NULL;
 
 	if (!new_list) {
-		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		error = 1;
 		goto finalize;
 	}
@@ -5715,7 +5715,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 					if ((seq = find_sql_sequence(tr, s, seq_name))) {
 						switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
 							case -1:
-								sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+								sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 								error = 1;
 								goto finalize;
 							case -2:
@@ -5753,13 +5753,13 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 		/* before */
 		if (!sql_delete_triggers(be, next, v, deleted_cols, 0, 3, 4)) {
-			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			sql_error(sql, 10, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
 		}
 
 		if (!sql_delete_keys(be, next, v, l, "TRUNCATE", cascade)) {
-			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
+			sql_error(sql, 10, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
 		}
@@ -5771,7 +5771,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 		/* after */
 		if (!sql_delete_triggers(be, next, v, deleted_cols, 1, 3, 4)) {
-			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			sql_error(sql, 10, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
 		}
@@ -5812,7 +5812,7 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	cascade = E_ATOM_INT(n->next->data);
 
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	truncate = sql_truncate(be, t, restart_sequences, cascade);
 	if (sql->cascade_action)
