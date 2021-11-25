@@ -4677,20 +4677,40 @@ CREATE VIEW sys.describe_partition_tables AS
         subq LEFT OUTER JOIN tp
         ON subq.m_tid = tp.table_id) AS tmp_pi;
 CREATE VIEW sys.describe_sequences AS
-    SELECT
-        s.name as sch,
-        seq.name as seq,
-        seq."start" s,
-        sys.peak_next_value_for(s.name, seq.name) AS rs,
-        seq."minvalue" mi,
-        seq."maxvalue" ma,
-        seq."increment" inc,
-        seq."cacheinc" cache,
-        seq."cycle" cycle
-    FROM sys.sequences seq, sys.schemas s
-    WHERE s.id = seq.schema_id
-    AND s.name <> 'tmp'
-    ORDER BY s.name, seq.name;
+	SELECT
+		s.name sch,
+		seq.name seq,
+		seq."start" s,
+		peak_next_value_for(s.name, seq.name) rs,
+		CASE WHEN seq."minvalue" = -9223372036854775807 AND seq."increment" > 0 AND seq."start" =  1 THEN TRUE ELSE FALSE END nomin,
+		CASE WHEN seq."maxvalue" =  9223372036854775807 AND seq."increment" < 0 AND seq."start" = -1 THEN TRUE ELSE FALSE END nomax,
+		CASE
+			WHEN seq."minvalue" = 0 AND seq."increment" > 0 THEN NULL
+			WHEN seq."minvalue" <> -9223372036854775807 THEN seq."minvalue"
+			ELSE
+				CASE
+					WHEN seq."increment" < 0  THEN NULL
+					ELSE CASE WHEN seq."start" = 1 THEN NULL ELSE seq."maxvalue" END
+				END
+		END rmi,
+		CASE
+			WHEN seq."maxvalue" = 0 AND seq."increment" < 0 THEN NULL
+			WHEN seq."maxvalue" <> 9223372036854775807 THEN seq."maxvalue"
+			ELSE
+				CASE
+					WHEN seq."increment" > 0  THEN NULL
+					ELSE CASE WHEN seq."start" = -1 THEN NULL ELSE seq."maxvalue" END
+				END
+		END rma,
+		seq."minvalue" mi,
+		seq."maxvalue" ma,
+		seq."increment" inc,
+		seq."cacheinc" cache,
+		seq."cycle" cycle
+	FROM sys.sequences seq, sys.schemas s
+	WHERE s.id = seq.schema_id
+	AND s.name <> 'tmp'
+	ORDER BY s.name, seq.name;
 CREATE VIEW sys.describe_functions AS
     SELECT
         f.id o,
@@ -4834,8 +4854,16 @@ CREATE VIEW sys.dump_sequences AS
         'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||
         CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
         CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
-        CASE WHEN "mi" <> 0 THEN ' MINVALUE ' || "mi" ELSE '' END ||
-        CASE WHEN "ma" <> 0 THEN ' MAXVALUE ' || "ma" ELSE '' END ||
+        CASE
+            WHEN nomin THEN ' NO MINVALUE'
+            WHEN rmi IS NOT NULL THEN ' MINVALUE ' || rmi
+            ELSE ''
+        END ||
+        CASE
+            WHEN nomax THEN ' NO MAXVALUE'
+            WHEN rma IS NOT NULL THEN ' MAXVALUE ' || rma
+            ELSE ''
+        END ||
         CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
         CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';' stmt
     FROM sys.describe_sequences;
@@ -5214,6 +5242,7 @@ drop view sys.describe_partition_tables;
 drop view sys.describe_privileges;
 drop view sys.describe_comments;
 drop view sys.describe_tables;
+drop view sys.describe_sequences;
 drop function sys.schema_guard(string, string, string);
 drop function sys.get_remote_table_expressions(string, string);
 drop function sys.get_merge_table_partition_expressions(int);
@@ -5450,6 +5479,54 @@ CREATE VIEW sys.describe_functions AS
 		JOIN sys.function_types ft ON f.type = ft.function_type_id
 		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
 	WHERE s.name <> 'tmp' AND NOT f.system;
+CREATE VIEW sys.describe_sequences AS
+	SELECT
+		s.name sch,
+		seq.name seq,
+		seq."start" s,
+		peak_next_value_for(s.name, seq.name) rs,
+		CASE WHEN seq."minvalue" = -9223372036854775807 AND seq."increment" > 0 AND seq."start" =  1 THEN TRUE ELSE FALSE END nomin,
+		CASE WHEN seq."maxvalue" =  9223372036854775807 AND seq."increment" < 0 AND seq."start" = -1 THEN TRUE ELSE FALSE END nomax,
+		CASE
+			WHEN seq."minvalue" = 0 AND seq."increment" > 0 THEN NULL
+			WHEN seq."minvalue" <> -9223372036854775807 THEN seq."minvalue"
+			ELSE
+				CASE
+					WHEN seq."increment" < 0  THEN NULL
+					ELSE CASE WHEN seq."start" = 1 THEN NULL ELSE seq."maxvalue" END
+				END
+		END rmi,
+		CASE
+			WHEN seq."maxvalue" = 0 AND seq."increment" < 0 THEN NULL
+			WHEN seq."maxvalue" <> 9223372036854775807 THEN seq."maxvalue"
+			ELSE
+				CASE
+					WHEN seq."increment" > 0  THEN NULL
+					ELSE CASE WHEN seq."start" = -1 THEN NULL ELSE seq."maxvalue" END
+				END
+		END rma,
+		seq."minvalue" mi,
+		seq."maxvalue" ma,
+		seq."increment" inc,
+		seq."cacheinc" cache,
+		seq."cycle" cycle
+	FROM sys.sequences seq, sys.schemas s
+	WHERE s.id = seq.schema_id
+	AND s.name <> 'tmp'
+	ORDER BY s.name, seq.name;
+GRANT SELECT ON sys.describe_constraints TO PUBLIC;
+GRANT SELECT ON sys.describe_indices TO PUBLIC;
+GRANT SELECT ON sys.describe_column_defaults TO PUBLIC;
+GRANT SELECT ON sys.describe_foreign_keys TO PUBLIC;
+GRANT SELECT ON sys.describe_tables TO PUBLIC;
+GRANT SELECT ON sys.describe_triggers TO PUBLIC;
+GRANT SELECT ON sys.describe_comments TO PUBLIC;
+GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;
+GRANT SELECT ON sys.describe_privileges TO PUBLIC;
+GRANT SELECT ON sys.describe_user_defined_types TO PUBLIC;
+GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;
+GRANT SELECT ON sys.describe_sequences TO PUBLIC;
+GRANT SELECT ON sys.describe_functions TO PUBLIC;
 update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = 1;
 update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_functions') AND schema_id = 2000;
 CREATE VIEW sys.dump_create_roles AS
@@ -5617,12 +5694,21 @@ CREATE VIEW sys.dump_partition_tables AS
 CREATE VIEW sys.dump_sequences AS
   SELECT
     'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||
-      CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
-      CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
-      CASE WHEN "mi" <> 0 THEN ' MINVALUE ' || "mi" ELSE '' END ||
-      CASE WHEN "ma" <> 0 THEN ' MAXVALUE ' || "ma" ELSE '' END ||
-      CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
-      CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';' stmt,
+    CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
+    CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
+    CASE
+      WHEN nomin THEN ' NO MINVALUE'
+      WHEN rmi IS NOT NULL THEN ' MINVALUE ' || rmi
+      ELSE ''
+    END ||
+    CASE
+      WHEN nomax THEN ' NO MAXVALUE'
+      WHEN rma IS NOT NULL THEN ' MAXVALUE ' || rma
+      ELSE ''
+    END ||
+    CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
+    CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END ||
+    ';' stmt,
     sch schema_name,
     seq seqname
     FROM sys.describe_sequences;
