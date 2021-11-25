@@ -752,7 +752,7 @@ plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
 project (
 |  [ boolean(1) "true" ]
-) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(8) NULL, tinyint(4) "9") ]
+) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(8) NULL, tinyint(8) "9") ]
 
 query I rowsort
 select 'db' between 'abc' and 'db' as tru
