@@ -4382,7 +4382,7 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 	d->cs.uibid = 0;
 	d->cs.uvbid = 0;
 	d->cs.ucnt = 0;
-	d->cs.cleared = 0;
+	d->cs.cleared = true;
 	d->cs.ts = tr->tid;
 	d->cs.refcnt = 1;
 	return LOG_OK;
