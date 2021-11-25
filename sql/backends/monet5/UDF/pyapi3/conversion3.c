@@ -612,6 +612,8 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			if (PyType_IsNumpyArray(data)) {
 				if (PyArray_NDIM((PyArrayObject *)data) != 1) {
 					IsSingleArray = FALSE;
+				} else if (PyArray_SIZE((PyArrayObject *)data) == 0) {
+					IsSingleArray = TRUE;
 				} else {
 					pColO = PyArray_GETITEM(
 						(PyArrayObject *)data,
@@ -619,8 +621,12 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 					IsSingleArray = PyType_IsPyScalar(pColO);
 				}
 			} else if (PyList_Check(data)) {
-				pColO = PyList_GetItem(data, 0);
-				IsSingleArray = PyType_IsPyScalar(pColO);
+				if (PyList_Size(data) == 0) {
+					IsSingleArray = TRUE;
+				} else {
+					pColO = PyList_GetItem(data, 0);
+					IsSingleArray = PyType_IsPyScalar(pColO);
+				}
 			} else if (!PyType_IsNumpyMaskedArray(data)) {
 				// it is neither a python array, numpy array or numpy masked
 				// array, thus the result is unsupported! Throw an exception!
