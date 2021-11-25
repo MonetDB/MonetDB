@@ -32,3 +32,4 @@ remote-table-large.Bug-7178
 grouping-sets-aliases.Bug-7185
 concurrent-add-column.Bug-7196
 serializable-snapshot.Bug-7200
+HAVE_LIBPY3?python-empty-arrays.Bug-7206
