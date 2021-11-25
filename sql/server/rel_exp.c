@@ -3049,7 +3049,6 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 
 	if ((na = atom_cast(sql->sa, a, t))) {
 		exp->l = na;
-		exp->tpe = *t;
 		return exp;
 	}
 	return NULL;
