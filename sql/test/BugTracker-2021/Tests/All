@@ -33,3 +33,7 @@ remote-table-large.Bug-7178
 groupby-subquery.Bug-7180
 grouping-sets-aliases.Bug-7185
 copyinto-copyfrom.Bug-7186
+concurrent-add-column.Bug-7196
+serializable-snapshot.Bug-7200
+unique-idx.Bug-7201
+distinct-with-orderby.Bug-7202

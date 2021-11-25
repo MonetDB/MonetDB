@@ -2774,7 +2774,27 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"        s.name as sch,\n"
 					"        seq.name as seq,\n"
 					"        seq.\"start\" s,\n"
-					"        get_value_for(s.name, seq.name) AS rs,\n"
+					"        sys.get_value_for(s.name, seq.name) AS rs,\n"
+					"        CASE WHEN seq.\"minvalue\" = -9223372036854775807 AND seq.\"increment\" > 0 AND seq.\"start\" =  1 THEN TRUE ELSE FALSE END nomin,\n"
+					"        CASE WHEN seq.\"maxvalue\" =  9223372036854775807 AND seq.\"increment\" < 0 AND seq.\"start\" = -1 THEN TRUE ELSE FALSE END nomax,\n"
+					"        CASE\n"
+					"	         WHEN seq.\"minvalue\" = 0 AND seq.\"increment\" > 0 THEN NULL\n"
+					"            WHEN seq.\"minvalue\" <> -9223372036854775807 THEN seq.\"minvalue\"\n"
+					"            ELSE\n"
+					"                CASE\n"
+					"                    WHEN seq.\"increment\" < 0  THEN NULL\n"
+					"                    ELSE CASE WHEN seq.\"start\" = 1 THEN NULL ELSE seq.\"minvalue\" END\n"
+					"                END\n"
+					"        END rmi,\n"
+					"        CASE \n"
+					"            WHEN seq.\"maxvalue\" = 0 AND seq.\"increment\" < 0 THEN NULL\n"
+					"            WHEN seq.\"maxvalue\" <> 9223372036854775807 THEN seq.\"maxvalue\"\n"
+					"            ELSE\n"
+					"                CASE\n"
+					"                    WHEN seq.\"increment\" > 0  THEN NULL\n"
+					"                    ELSE CASE WHEN seq.\"start\" = -1 THEN NULL ELSE seq.\"maxvalue\" END\n"
+					"                END\n"
+					"        END rma,\n"
 					"        seq.\"minvalue\" mi,\n"
 					"        seq.\"maxvalue\" ma,\n"
 					"        seq.\"increment\" inc,\n"
@@ -3315,7 +3335,7 @@ sql_update_jul2021_5(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	sql_subtype tp;
 	size_t bufsize = 65536, pos = 0;
@@ -3323,7 +3343,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
 
-	(void) systabfixed;
 	sql_find_subtype(&tp, "bigint", 0, 0);
 	if (!sql_bind_func(sql, s->base.name, "epoch", &tp, NULL, F_FUNC)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
@@ -3334,6 +3353,10 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
 
 	pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
 
@@ -3506,6 +3529,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"drop view sys.describe_privileges;\n"
 					"drop view sys.describe_comments;\n"
 					"drop view sys.describe_tables;\n"
+					"drop view sys.describe_sequences;\n"
 					"drop function sys.schema_guard(string, string, string);\n"
 					"drop function sys.get_remote_table_expressions(string, string);\n"
 					"drop function sys.get_merge_table_partition_expressions(int);\n"
@@ -3742,7 +3766,55 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"		JOIN sys.schemas s ON f.schema_id = s.id\n"
 					"		JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
 					"		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id\n"
-					"	WHERE s.name <> 'tmp' AND NOT f.system;\n");
+					"	WHERE s.name <> 'tmp' AND NOT f.system;\n"
+					"CREATE VIEW sys.describe_sequences AS\n"
+					"	SELECT\n"
+					"		s.name sch,\n"
+					"		seq.name seq,\n"
+					"		seq.\"start\" s,\n"
+					"		peak_next_value_for(s.name, seq.name) rs,\n"
+					"		CASE WHEN seq.\"minvalue\" = -9223372036854775807 AND seq.\"increment\" > 0 AND seq.\"start\" =  1 THEN TRUE ELSE FALSE END nomin,\n"
+					"		CASE WHEN seq.\"maxvalue\" =  9223372036854775807 AND seq.\"increment\" < 0 AND seq.\"start\" = -1 THEN TRUE ELSE FALSE END nomax,\n"
+					"		CASE\n"
+					"			WHEN seq.\"minvalue\" = 0 AND seq.\"increment\" > 0 THEN NULL\n"
+					"			WHEN seq.\"minvalue\" <> -9223372036854775807 THEN seq.\"minvalue\"\n"
+					"			ELSE\n"
+					"				CASE\n"
+					"					WHEN seq.\"increment\" < 0  THEN NULL\n"
+					"					ELSE CASE WHEN seq.\"start\" = 1 THEN NULL ELSE seq.\"maxvalue\" END\n"
+					"				END\n"
+					"		END rmi,\n"
+					"		CASE\n"
+					"			WHEN seq.\"maxvalue\" = 0 AND seq.\"increment\" < 0 THEN NULL\n"
+					"			WHEN seq.\"maxvalue\" <> 9223372036854775807 THEN seq.\"maxvalue\"\n"
+					"			ELSE\n"
+					"				CASE\n"
+					"					WHEN seq.\"increment\" > 0  THEN NULL\n"
+					"					ELSE CASE WHEN seq.\"start\" = -1 THEN NULL ELSE seq.\"maxvalue\" END\n"
+					"				END\n"
+					"		END rma,\n"
+					"		seq.\"minvalue\" mi,\n"
+					"		seq.\"maxvalue\" ma,\n"
+					"		seq.\"increment\" inc,\n"
+					"		seq.\"cacheinc\" cache,\n"
+					"		seq.\"cycle\" cycle\n"
+					"	FROM sys.sequences seq, sys.schemas s\n"
+					"	WHERE s.id = seq.schema_id\n"
+					"	AND s.name <> 'tmp'\n"
+					"	ORDER BY s.name, seq.name;\n"
+					"GRANT SELECT ON sys.describe_constraints TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_indices TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_column_defaults TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_foreign_keys TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_tables TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_triggers TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_comments TO PUBLIC;\n"
+					"GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_privileges TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_user_defined_types TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_sequences TO PUBLIC;\n"
+					"GRANT SELECT ON sys.describe_functions TO PUBLIC;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = %d;\n", F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -3915,12 +3987,21 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"CREATE VIEW sys.dump_sequences AS\n"
 					"  SELECT\n"
 					"    'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||\n"
-					"      CASE WHEN \"s\" <> 0 THEN 'START WITH ' || \"rs\" ELSE '' END ||\n"
-					"      CASE WHEN \"inc\" <> 1 THEN ' INCREMENT BY ' || \"inc\" ELSE '' END ||\n"
-					"      CASE WHEN \"mi\" <> 0 THEN ' MINVALUE ' || \"mi\" ELSE '' END ||\n"
-					"      CASE WHEN \"ma\" <> 0 THEN ' MAXVALUE ' || \"ma\" ELSE '' END ||\n"
-					"      CASE WHEN \"cache\" <> 1 THEN ' CACHE ' || \"cache\" ELSE '' END ||\n"
-					"      CASE WHEN \"cycle\" THEN ' CYCLE' ELSE '' END || ';' stmt,\n"
+					"    CASE WHEN  \"s \" <> 0 THEN 'START WITH ' ||  \"rs \" ELSE '' END ||\n"
+					"    CASE WHEN  \"inc \" <> 1 THEN ' INCREMENT BY ' ||  \"inc \" ELSE '' END ||\n"
+					"    CASE\n"
+					"      WHEN nomin THEN ' NO MINVALUE'\n"
+					"      WHEN rmi IS NOT NULL THEN ' MINVALUE ' || rmi\n"
+					"      ELSE ''\n"
+					"    END ||\n"
+					"    CASE\n"
+					"      WHEN nomax THEN ' NO MAXVALUE'\n"
+					"      WHEN rma IS NOT NULL THEN ' MAXVALUE ' || rma\n"
+					"      ELSE ''\n"
+					"    END ||\n"
+					"    CASE WHEN  \"cache \" <> 1 THEN ' CACHE ' ||  \"cache \" ELSE '' END ||\n"
+					"    CASE WHEN  \"cycle \" THEN ' CYCLE' ELSE '' END ||\n"
+					"    ';' stmt,\n"
 					"    sch schema_name,\n"
 					"    seq seqname\n"
 					"    FROM sys.describe_sequences;\n"
@@ -4111,6 +4192,17 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					);
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where name in ('fkey_actions', 'fkeys') AND schema_id = 2000;\n");
+
+	/* 90_strimps.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"CREATE FILTER FUNCTION sys.strimp_filter(strs STRING, q STRING) EXTERNAL NAME strimps.strimpfilter;\n"
+					"GRANT EXECUTE ON FILTER FUNCTION sys.strimp_filter TO PUBLIC;\n"
+					"CREATE PROCEDURE sys.strimp_create(sch string, tab string, col string)\n"
+					" EXTERNAL NAME sql.createstrimps;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set system = true where system <> true and name = 'strimp_filter' and schema_id = 2000 and type = %d;\n"
+					"update sys.functions set system = true where system <> true and name = 'strimp_create' and schema_id = 2000 and type = %d;\n",
+					F_FILT, F_PROC);
 
 	/* recreate SQL functions that just need to be recompiled since the
 	 * MAL functions's "unsafe" property was changed */
@@ -4635,7 +4727,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+	if ((err = sql_update_jan2022(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

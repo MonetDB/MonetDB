@@ -4380,7 +4380,7 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 /* find selection expressions matching the order by column expression */
 /* complex columns only */
 static sql_exp *
-rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
+rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int needs_distinct, int f)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = *R, *p = NULL;
@@ -4390,7 +4390,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 	if (!r)
 		return e;
 
-	if (r && is_simple_project(r->op) && is_processed(r)) {
+	if (is_simple_project(r->op) && is_processed(r)) {
 		p = r;
 		r = r->l;
 	}
@@ -4405,6 +4405,8 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 		if (is_project(p->op) && (found = exps_any_match(p->exps, e))) { /* if one of the projections matches, return a reference to it */
 			e = exp_ref(sql, found);
 		} else {
+			if (needs_distinct)
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
 			e = rel_project_add_exp(sql, p, e);
 			for (node *n = p->exps->h ; n ; n = n->next) {
 				sql_exp *ee = n->data;
@@ -4422,6 +4424,8 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 		sql_exp *found = exps_find_exp(r->exps, e);
 
 		if (!found) {
+			if (needs_distinct)
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
 			append(r->exps, e);
 		} else {
 			e = found;
@@ -4446,7 +4450,7 @@ simple_selection(symbol *sq)
 }
 
 static list *
-rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
+rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct, int f)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel = *R, *or = rel; /* the order by relation */
@@ -4504,6 +4508,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 					sql_exp *found = exps_find_exp(rel->exps, e);
 
 					if (!found) {
+						if (needs_distinct)
+							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
 						append(rel->exps, e);
 					} else {
 						e = found;
@@ -4517,8 +4523,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 
-				if (!e)
-					e = rel_order_by_column_exp(query, &rel, col, sql_sel | sql_orderby | (f & sql_group_totals));
+				e = rel_order_by_column_exp(query, &rel, col, needs_distinct, sql_sel | sql_orderby | (f & sql_group_totals));
 			}
 			if (!e)
 				return NULL;
@@ -4794,7 +4799,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	/* Order By */
 	if (order_by_clause) {
-		obe = rel_order_by(query, &p, order_by_clause, nf | sql_window);
+		obe = rel_order_by(query, &p, order_by_clause, 0, nf | sql_window);
 		if (!obe)
 			return NULL;
 	}
@@ -5484,7 +5489,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		}
 		rel = rel_orderby(sql, rel);
 		set_processed(rel);
-		obe = rel_order_by(query, &rel, sn->orderby, sql_orderby | group_totals);
+		obe = rel_order_by(query, &rel, sn->orderby, sn->distinct, sql_orderby | group_totals);
 		if (!obe)
 			return NULL;
 		rel->r = obe;

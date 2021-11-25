@@ -570,6 +570,7 @@ typedef struct {
 
 typedef struct Hash Hash;
 typedef struct Imprints Imprints;
+typedef struct Strimps Strimps;
 
 /*
  * @+ Binary Association Tables
@@ -736,6 +737,7 @@ typedef struct {
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
+	Strimps *strimps;	/* string imprint index  */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -806,6 +808,7 @@ typedef struct BAT {
 #define thash		T.hash
 #define timprints	T.imprints
 #define tprops		T.props
+#define tstrimps	T.strimps
 
 
 /* some access functions for the bitmask type */
@@ -2384,6 +2387,11 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 			CALLBACK;		\
 	} while (0)
 
+/*
+ * String Imprints Development/Testing. TODO: remove the following.
+ */
+
+#include "gdk_strimps.h"
 typedef struct gdk_callback {
 	char *name;
 	int argc;

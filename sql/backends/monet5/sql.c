@@ -226,43 +226,6 @@ SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
-SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg;
-	(void) stk;
-	(void) pci;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	if (sql->session->auto_commit != 0)
-		throw(SQL, "sql.trans", SQLSTATE(2DM30) "COMMIT not allowed in auto commit mode");
-	return mvc_commit(sql, 0, 0, false);
-}
-
-str
-SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg;
-	(void) stk;
-	(void) pci;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	if (sql->session->tr->active) {
-		msg = mvc_rollback(sql, 0, NULL, false);
-	}
-	return msg;
-}
-
 static str
 SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -951,23 +914,11 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(r = COLnew(0, TYPE_lng, card, TRANSIENT)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	lng start, inc, minv, maxv, end, *restrict rb = Tloc(r, 0);
+	lng *restrict rb = Tloc(r, 0);
 
-	if (seqbulk_next_value(be->mvc->session->tr->store, seq, card, &start, &inc, &minv, &maxv, &end)) {
-		be->last_id = end;
+	if (seqbulk_next_value(be->mvc->session->tr->store, seq, card, rb)) {
+		be->last_id = rb[card-1];
 		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->last_id);
-		lng c = start;
-		for(BUN i = 0; i<card; ) {
-			if (maxv && c > maxv) {
-				if (!seq->cycle)
-					break;
-				c = minv;
-			}
-			rb[i++] = c;
-			if (i < card)
-				c += inc;
-		}
-		assert(c == end);
 		BATsetcount(r, card);
 		r->tnonil = true;
 		r->tnil = false;
@@ -1005,6 +956,127 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 
 	throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot get sequence value %s.%s", sname, seqname);
+}
+
+/* str mvc_peak_next_value(lng *res, str *sname, str *seqname); */
+str
+mvc_peak_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg;
+	sql_schema *s;
+	sql_sequence *seq;
+	lng *res = getArgReference_lng(stk, pci, 0);
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *seqname = *getArgReference_str(stk, pci, 2);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.peak_next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!(seq = find_sql_sequence(m->session->tr, s, seqname)))
+		throw(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
+
+	if (seq_peak_next_value(m->session->tr->store, seq, res))
+		return MAL_SUCCEED;
+
+	throw(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot peak at next sequence value %s.%s", sname, seqname);
+}
+
+/* needed for msqldump and describe_sequences view */
+static str
+mvc_peak_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	sql_schema *s;
+	sql_sequence *seq;
+	BATiter schi, seqi;
+	BAT *bn = NULL, *scheb = NULL, *sches = NULL, *seqb = NULL, *seqs = NULL;
+	BUN q = 0;
+	lng *restrict vals;
+	str msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid off1, off2;
+	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1), *r = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL, *sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if (!(scheb = BATdescriptor(*l)) || !(seqb = BATdescriptor(*r))) {
+		msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if ((sid1 && !is_bat_nil(*sid1) && !(sches = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(seqs = BATdescriptor(*sid2)))) {
+		msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, scheb, sches);
+	if (canditer_init(&ci2, seqb, seqs) != q || ci1.hseq != ci2.hseq) {
+		msg = createException(SQL, "sql.peak_next_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	if (!(bn = COLnew(ci1.hseq, TYPE_lng, q, TRANSIENT))) {
+		msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = scheb->hseqbase;
+	off2 = seqb->hseqbase;
+	schi = bat_iterator(scheb);
+	seqi = bat_iterator(seqb);
+	vals = Tloc(bn, 0);
+	for (BUN i = 0; i < q; i++) {
+		oid p1 = canditer_next(&ci1) - off1, p2 = canditer_next(&ci2) - off2;
+		const char *sname = (str) BUNtvar(schi, p1);
+		const char *seqname = (str) BUNtvar(seqi, p2);
+
+		if (strNil(sname) || strNil(seqname)) {
+			vals[i] = lng_nil;
+			nils = true;
+		} else {
+			if (!(s = mvc_bind_schema(m, sname))) {
+				msg = createException(SQL, "sql.peak_next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+				goto bailout1;
+			}
+			if (!(seq = find_sql_sequence(m->session->tr, s, seqname))) {
+				msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
+				goto bailout1;
+			}
+			if (!seq_peak_next_value(m->session->tr->store, seq, &(vals[i]))) {
+				msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot peak at next sequence value %s.%s", sname, seqname);
+				goto bailout1;
+			}
+		}
+	}
+
+bailout1:
+	bat_iterator_end(&schi);
+	bat_iterator_end(&seqi);
+bailout:
+	if (scheb)
+		BBPunfix(scheb->batCacheid);
+	if (sches)
+		BBPunfix(sches->batCacheid);
+	if (seqb)
+		BBPunfix(seqb->batCacheid);
+	if (seqs)
+		BBPunfix(seqs->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
 }
 
 str
@@ -1049,9 +1121,9 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 	if (is_lng_nil(start))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL", sname, seqname);
-	if (seq->minvalue && start < seq->minvalue)
+	if (start < seq->minvalue)
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value lesser than the minimum ("LLFMT" < "LLFMT")", sname, seqname, start, seq->minvalue);
-	if (seq->maxvalue && start > seq->maxvalue)
+	if (start > seq->maxvalue)
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value higher than the maximum ("LLFMT" > "LLFMT")", sname, seqname, start, seq->maxvalue);
 	switch (sql_trans_sequence_restart(m->session->tr, seq, start)) {
 		case -1:
@@ -4599,35 +4671,18 @@ finalize:
 }
 
 static str
-do_str_column_vacuum(sql_trans *tr, sql_column *c, int access, char *sname, char *tname, char *cname) {
+do_str_column_vacuum(sql_trans *tr, sql_column *c, char *sname, char *tname, char *cname)
+{
 	int res;
-	BAT* b = NULL;
-	BAT* bn = NULL;
 	sqlstore *store = tr->store;
 
-	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
-		throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s", sname, tname, cname);
-	// vacuum only string bats
-	if (ATOMstorage(b->ttype) == TYPE_str) {
-		// TODO check for num of updates on the BAT against some threshold
-		// and decide whether to proceed
-		if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "COLcopy failed for %s.%s.%s", sname, tname, cname);
-		}
-		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
-			BBPreclaim(bn);
-			BBPunfix(b->batCacheid);
-			if (res == LOG_CONFLICT)
-				throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-			if (res == LOG_ERR)
-				throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-		}
+	if ((res = store->storage_api.swap_bats(tr, c)) != LOG_OK) {
+		if (res == LOG_CONFLICT)
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+		if (res == LOG_ERR)
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+		throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
 	}
-	BBPunfix(b->batCacheid);
-	if (bn)
-		BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -4636,7 +4691,6 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = NULL;
-	int access = 0;
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *cname = *getArgReference_str(stk, pci, 3);
@@ -4667,7 +4721,7 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
-	return do_str_column_vacuum(tr, c, access, sname, tname, cname);
+	return do_str_column_vacuum(tr, c, sname, tname, cname);
 }
 
 
@@ -4682,7 +4736,6 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
-	int access = 0;
 	char *msg;
 	gdk_return res = GDK_SUCCEED;
 
@@ -4725,7 +4778,7 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 			break;
 		}
 
-		if((msg=do_str_column_vacuum(session->tr, c, access, sname, tname, cname)) != MAL_SUCCEED) {
+		if((msg=do_str_column_vacuum(session->tr, c, sname, tname, cname)) != MAL_SUCCEED) {
 			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
 			res = GDK_FAIL;
 		}
@@ -4850,6 +4903,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "sql_assert.h"
 #include "sql_execute.h"
 #include "sql_orderidx.h"
+#include "sql_strimps.h"
 #include "sql_subquery.h"
 #include "sql_statistics.h"
 #include "sql_transaction.h"
@@ -4865,9 +4919,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,2, arg("",str),arg("delay",int))),
  pattern("sql", "set_protocol", SQLset_protocol, true, "Configures the result set protocol", args(1,2, arg("",int), arg("protocol",int))),
  pattern("sql", "mvc", SQLmvc, false, "Get the multiversion catalog context. \nNeeded for correct statement dependencies\n(ie sql.update, should be after sql.bind in concurrent execution)", args(1,1, arg("",int))),
- pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
- pattern("sql", "commit", SQLcommit, true, "Trigger the commit operation for a MAL block", noargs),
- pattern("sql", "abort", SQLabort, true, "Trigger the abort operation for a MAL block", noargs),
  pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement", args(1,2, arg("",void),arg("cmd",str))),
  pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement (and optionaly set the output to columnar format)", args(1,3, arg("",void),arg("cmd",str),arg("columnar",bit))),
  pattern("sql", "include", SQLinclude, true, "Compile and execute a sql statements on the file", args(1,2, arg("",void),arg("fname",str))),
@@ -4888,6 +4939,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "next_value", mvc_next_value, true, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("batsql", "next_value", mvc_next_value_bulk, true, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
  pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
+ pattern("sql", "peak_next_value", mvc_peak_next_value, false, "Peaks at the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
+ pattern("batsql", "peak_next_value", mvc_peak_next_value_bulk, false, "Peaks at the next value of the sequence", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
+ pattern("batsql", "peak_next_value", mvc_peak_next_value_bulk, false, "Peaks at the next value of the sequence", args(1,5, batarg("",lng),batarg("sname",str),batarg("sequence",str),batarg("s1",oid),batarg("s2",oid))),
  pattern("sql", "restart", mvc_restart_seq, true, "restart the sequence with value start", args(1,4, arg("",lng),arg("sname",str),arg("sequence",str),arg("start",lng))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes from the table's columns, plus the current transaction level", args(7,9, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str))),
@@ -4960,6 +5014,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "storage", sql_storage, false, "return a table with storage information for a particular column", args(17,20, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng),arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "createorderindex", sql_createorderindex, true, "Instantiate the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
  pattern("sql", "droporderindex", sql_droporderindex, true, "Drop the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
+ pattern("sql", "createstrimps", sql_createstrimps, true, "Instantiate the strimps index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
  command("calc", "identity", SQLidentity, false, "Returns a unique row identitfier.", args(1,2, arg("",oid),argany("",0))),
  pattern("batcalc", "identity", BATSQLidentity, false, "Returns the unique row identitfiers with a candidate list input.", args(1,3, batarg("",oid),batargany("b",0), batarg("s",oid))),
  pattern("batcalc", "identity", PBATSQLidentity, false, "Returns the unique row identitfiers with a candidate list input.", args(2,5, batarg("resb",oid),arg("ntseq",oid),batargany("b",0),arg("tseq",oid),batarg("s",oid))),
@@ -5732,7 +5787,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "transaction_commit", SQLtransaction_commit, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
  pattern("sql", "transaction_rollback", SQLtransaction_rollback, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
  pattern("sql", "transaction_begin", SQLtransaction_begin, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
 #ifdef HAVE_HGE
  /* sql_hge */
  command("calc", "dec_round", hge_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",hge),arg("v",hge),arg("r",hge))),

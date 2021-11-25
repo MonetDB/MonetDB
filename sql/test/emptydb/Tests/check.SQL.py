@@ -387,7 +387,7 @@ with process.client('sql', format='csv', echo=False,
 
     clt.stdin.write("select E'\\\\dSv ' || s.name || '.' || t.name from sys._tables t, sys.schemas s where t.schema_id = s.id and t.query is not null order by s.name, t.name;\n")
 
-    clt.stdin.write("select distinct E'\\\\dSf ' || s.name || '.\"' || f.name || '\"' from sys.functions f, sys.schemas s where f.language between 1 and 2 and f.schema_id = s.id and s.name = 'sys' order by s.name, f.name;\n")
+    clt.stdin.write("select proj from (select distinct E'\\\\dSf ' || s.name || '.\"' || f.name || '\"' as proj from sys.functions f, sys.schemas s where f.language between 1 and 2 and f.schema_id = s.id and s.name = 'sys') as proj(proj) order by proj;\n")
 
     out, err = clt.communicate()
     out = re.sub('^"(.*)"$', r'\1', out, flags=re.MULTILINE).replace('"\n', '\n').replace('\n"', '\n').replace('""', '"').replace(r'\\', '\\')

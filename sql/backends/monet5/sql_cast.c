@@ -200,7 +200,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define SQLstr_cast_str(v, digits) \
 	if (digits > 0 && UTF8_strlen(v) > digits) { \
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits); \
-		goto bailout; \
+		goto bailout1; \
 	}
 
 /* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits); */

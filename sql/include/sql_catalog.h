@@ -19,12 +19,12 @@
 #define sql_shared_module_name "sql"
 #define sql_private_module_name "user"
 
-#define tr_none		0
-#define tr_readonly	1
-#define tr_writable	2
-#define tr_snapshot 4
-#define tr_serializable 8
-#define tr_append 	16
+#define tr_none		1
+#define tr_readonly	2
+#define tr_writable	4
+#define tr_append 	8
+#define tr_snapshot 16
+#define tr_serializable 32
 
 #define ACT_NO_ACTION 0
 #define ACT_CASCADE 1
@@ -74,11 +74,6 @@ typedef enum sql_dependency {
 #define ROLE_PUBLIC   1
 #define ROLE_SYSADMIN 2
 #define USER_MONETDB  3
-
-#define ISO_READ_UNCOMMITED 1
-#define ISO_READ_COMMITED   2
-#define ISO_READ_REPEAT	    3
-#define ISO_SERIALIZABLE    4
 
 #define SCALE_NONE	0
 #define SCALE_FIX	1	/* many numerical functions require equal
@@ -516,6 +511,7 @@ typedef struct sql_func {
 	 		*/
 	sql_schema *s;
 	sql_allocator *sa;
+	MT_Lock function_lock; /* protecting concurrent function instantiations. Only used in MAL and SQL functions */
 } sql_func;
 
 typedef struct sql_subfunc {

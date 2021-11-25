@@ -488,10 +488,30 @@ CREATE VIEW sys.describe_partition_tables AS
 
 CREATE VIEW sys.describe_sequences AS
 	SELECT
-		s.name as sch,
-		seq.name as seq,
+		s.name sch,
+		seq.name seq,
 		seq."start" s,
-		get_value_for(s.name, seq.name) AS rs,
+		peak_next_value_for(s.name, seq.name) rs,
+		CASE WHEN seq."minvalue" = -9223372036854775807 AND seq."increment" > 0 AND seq."start" =  1 THEN TRUE ELSE FALSE END nomin,
+		CASE WHEN seq."maxvalue" =  9223372036854775807 AND seq."increment" < 0 AND seq."start" = -1 THEN TRUE ELSE FALSE END nomax,
+		CASE
+			WHEN seq."minvalue" = 0 AND seq."increment" > 0 THEN NULL
+			WHEN seq."minvalue" <> -9223372036854775807 THEN seq."minvalue"
+			ELSE
+				CASE
+					WHEN seq."increment" < 0  THEN NULL
+					ELSE CASE WHEN seq."start" = 1 THEN NULL ELSE seq."maxvalue" END
+				END
+		END rmi,
+		CASE
+			WHEN seq."maxvalue" = 0 AND seq."increment" < 0 THEN NULL
+			WHEN seq."maxvalue" <> 9223372036854775807 THEN seq."maxvalue"
+			ELSE
+				CASE
+					WHEN seq."increment" > 0  THEN NULL
+					ELSE CASE WHEN seq."start" = -1 THEN NULL ELSE seq."maxvalue" END
+				END
+		END rma,
 		seq."minvalue" mi,
 		seq."maxvalue" ma,
 		seq."increment" inc,
@@ -576,3 +596,17 @@ BEGIN
 		LEFT OUTER JOIN sys.comments c ON f.id = c.id
 		WHERE f.name=functionName AND s.name = schemaName;
 END;
+
+GRANT SELECT ON sys.describe_constraints TO PUBLIC;
+GRANT SELECT ON sys.describe_indices TO PUBLIC;
+GRANT SELECT ON sys.describe_column_defaults TO PUBLIC;
+GRANT SELECT ON sys.describe_foreign_keys TO PUBLIC;
+GRANT SELECT ON sys.describe_tables TO PUBLIC;
+GRANT SELECT ON sys.describe_triggers TO PUBLIC;
+GRANT SELECT ON sys.describe_comments TO PUBLIC;
+GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;
+GRANT SELECT ON sys.describe_privileges TO PUBLIC;
+GRANT SELECT ON sys.describe_user_defined_types TO PUBLIC;
+GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;
+GRANT SELECT ON sys.describe_sequences TO PUBLIC;
+GRANT SELECT ON sys.describe_functions TO PUBLIC;

@@ -1,0 +1,120 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create procedure "sys"."dict_compress"(sname string, tname string, cname string) external name "dict"."compress"
+
+statement ok
+create procedure "sys"."dict_compress"(sname string, tname string, cname string, ordered_values bool) external name "dict"."compress"
+
+statement ok
+create procedure "sys"."for_compress"(sname string, tname string, cname string) external name "for"."compress"
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "mct20" ("c0" INTERVAL DAY,"c1" BIGINT,CONSTRAINT "mct20_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+INSERT INTO "mct20" VALUES (INTERVAL '0' SECOND, 0), (INTERVAL '777600' SECOND, 1), (INTERVAL '604800' SECOND, 2)
+
+statement ok
+CREATE TABLE "mct21" ("c0" INTERVAL DAY,"c1" BIGINT,CONSTRAINT "mct21_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+INSERT INTO "mct21" VALUES (INTERVAL '-2' SECOND, -6), (INTERVAL '86400' SECOND, 7), (INTERVAL '-2' SECOND, 8)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."for_compress"('sys','mct20','c1')
+
+statement error GDK reported error: BATsubcross: more than one match
+UPDATE mct20 SET c1 = mct20.c1 FROM mct21
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE "mct20"
+
+statement ok
+DROP TABLE "mct21"
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" UUID,"c1" SMALLINT NOT NULL)
+
+statement ok rowcount 9
+COPY 9 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+c036a4cf-ecec-57d1-9aca-6dce4eb8d12b	5
+df1bcbac-01e3-81bc-a7c2-c2769fc9751a	0
+NULL	7
+NULL	9
+NULL	1
+NULL	3
+bb4fb0da-aff1-1919-f4eb-abaaf9e6b1f7	6
+648be74d-ccff-ea44-fd64-dfcb3a8c5b6c	8
+fb7c955a-defd-1b91-0aca-aecfc8a0c5aa	2
+
+statement ok
+CREATE TABLE "t0" ("c0" BIGINT NOT NULL)
+
+statement ok rowcount 11
+COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1
+5
+3
+8
+-1
+9
+4
+2
+6
+0
+7
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c0',false)
+
+statement ok rowcount 11
+INSERT INTO t1(c0, c1)(SELECT UUID '7A4A6b8b-e7f9-FA09-5650-6d1c83B1fc69', t0.c0 FROM t0)
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE "t0"
+
+statement ok
+DROP TABLE "t1"
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP ALL PROCEDURE "sys"."dict_compress"
+
+statement ok
+DROP ALL PROCEDURE "sys"."for_compress"
+
+statement ok
+COMMIT
