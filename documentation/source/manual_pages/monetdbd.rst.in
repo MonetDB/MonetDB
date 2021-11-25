@@ -235,6 +235,8 @@ using the **set** command. The following properties can be set:
 REMOTE DATABASES
 ================
 
+**Deprecation notice:** This feature is deprecated and may be removed in the future.
+
 The neighbor discovery capabilities of *monetdbd* allow a user to
 contact a remote database transparently, as if it were a local database.
 By default, all local databases are announced in the network, such that
@@ -304,6 +306,8 @@ instance the following three databases with their tag:
 
 MULTIPLEX-FUNNELS
 =================
+
+**Deprecation notice:** This feature is deprecated and may be removed in the future.
 
 *Monetdbd* implements multiplex-funnel capabilities. As the name
 suggests two techniques are combined, the multiplexer and the funnel.
