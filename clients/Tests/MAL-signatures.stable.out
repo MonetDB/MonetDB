@@ -6386,6 +6386,8 @@
 [ "batsql",	"ntile",	"pattern batsql.ntile(X_0:bat[:any], X_1:any_1, X_2:any_2, X_3:any_3):bat[:any_1] ",	"SQLntile;",	"return the groups divided as equally as possible"	]
 [ "batsql",	"ntile",	"pattern batsql.ntile(X_0:bat[:any], X_1:bat[:any_1], X_2:any_2, X_3:any_3):bat[:any_1] ",	"SQLntile;",	"return the groups divided as equally as possible"	]
 [ "batsql",	"password",	"pattern batsql.password(X_0:bat[:str]):bat[:str] ",	"db_password_wrap;",	"Return password hash of user"	]
+[ "batsql",	"peak_next_value",	"pattern batsql.peak_next_value(X_0:bat[:str], X_1:bat[:str]):bat[:lng] ",	"mvc_peak_next_value_bulk;",	"Peaks at the next value of the sequence"	]
+[ "batsql",	"peak_next_value",	"pattern batsql.peak_next_value(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] ",	"mvc_peak_next_value_bulk;",	"Peaks at the next value of the sequence"	]
 [ "batsql",	"percent_rank",	"pattern batsql.percent_rank(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:dbl] ",	"SQLpercent_rank;",	"return the percentage into the total number of groups for each row"	]
 [ "batsql",	"prod",	"pattern batsql.prod(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng] ",	"SQLprod;",	"return the product of groups"	]
 [ "batsql",	"prod",	"pattern batsql.prod(X_0:bat[:dbl], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl] ",	"SQLprod;",	"return the product of groups"	]
