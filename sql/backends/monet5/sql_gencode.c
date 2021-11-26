@@ -969,6 +969,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 	}
 
 	c = MCgetClient(clientID);
+	MT_lock_set(&mal_contextLock);
 	for (m = findModule(c->usermodule, mname); m; m = m->link) {
 		for (Symbol s = findSymbolInModule(m, fname); s; s = s->peer) {
 			InstrPtr sig = getSignature(s);
@@ -976,6 +977,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 
 			if ((sig->varargs & VARARGS) == VARARGS || f->vararg || f->varres) {
 				f->side_effect = (bit) s->def->unsafeProp;
+				MT_lock_unset(&mal_contextLock);
 				return 1;
 			} else if (nfargs == argc && (nfres == sig->retc || (sig->retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
 				/* I removed this code because, it was triggering many errors on te SQL <-> MAL translation */
@@ -1012,10 +1014,12 @@ monet5_resolve_function(ptr M, sql_func *f)
 				}
 				if (all_match)*/
 				f->side_effect = (bit) s->def->unsafeProp;
+				MT_lock_unset(&mal_contextLock);
 				return 1;
 			}
 		}
 	}
+	MT_lock_unset(&mal_contextLock);
 	return 0;
 }
 
