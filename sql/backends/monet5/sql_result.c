@@ -12,6 +12,7 @@
 
 #include "monetdb_config.h"
 #include "sql_result.h"
+#include "sql_copyinto.h"
 #include "str.h"
 #include "tablet.h"
 #include "gdk_time.h"
@@ -472,7 +473,7 @@ static ssize_t
 _ASCIIadt_toStr(void *extra, char **buf, size_t *len, int type, const void *a)
 {
 	if (type == TYPE_str) {
-		Column *c = extra;
+		OutputColumn *c = extra;
 		char *dst;
 		const char *src = a;
 		size_t l = escapedStrlen(src, c->sep, c->rsep, c->quote), l2 = 0;
@@ -1495,8 +1496,8 @@ mvc_export_table_columnar(stream *s, res_table *t)
 static int
 mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
-	Tablet as;
-	Column *fmt;
+	OutputTable as;
+	OutputColumn *fmt;
 	int i, ok = 0;
 	struct time_res *tres;
 	int csv = (output_format == OFMT_CSV);
@@ -1509,7 +1510,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = nr;
 	as.offset = offset;
-	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
+	fmt = as.format = (OutputColumn *) GDKzalloc(sizeof(OutputColumn) * (as.nr_attrs + 1));
 	tres = GDKzalloc(sizeof(struct time_res) * (as.nr_attrs));
 	if (fmt == NULL || tres == NULL) {
 		GDKfree(fmt);
@@ -1521,7 +1522,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 	fmt[0].sep = (csv) ? btag : "";
 	fmt[0].rsep = rsep;
 	fmt[0].seplen = _strlen(fmt[0].sep);
-	fmt[0].ws = 0;
+	// fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
 
 	for (i = 1; i <= t->nr_cols; i++) {
@@ -1573,19 +1574,13 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 				fmt[i].rsep = NULL;
 			}
 		}
-		fmt[i].type = ATOMname(fmt[i].c->ttype);
 		fmt[i].adt = fmt[i].c->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
-		fmt[i].frstr = &_ASCIIadt_frStr;
 		fmt[i].extra = fmt + i;
-		fmt[i].data = NULL;
-		fmt[i].len = 0;
-		fmt[i].ws = 0;
 		fmt[i].quote = ssep ? ssep[0] : 0;
 		fmt[i].nullstr = ns;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
-			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) c->type.scale;
 		} else if (c->type.type->eclass == EC_TIMESTAMP || c->type.type->eclass == EC_TIMESTAMP_TZ) {
 			struct time_res *ts_res = tres + (i - 1);
@@ -1594,7 +1589,6 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 			ts_res->timezone = m->timezone;
 
 			fmt[i].tostr = &sql_timestamp_tostr;
-			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
 		} else if (c->type.type->eclass == EC_TIME || c->type.type->eclass == EC_TIME_TZ) {
 			struct time_res *ts_res = tres + (i - 1);
@@ -1603,11 +1597,9 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 			ts_res->timezone = m->timezone;
 
 			fmt[i].tostr = &sql_time_tostr;
-			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
 		} else if (c->type.type->eclass == EC_SEC) {
 			fmt[i].tostr = &dec_tostr;
-			fmt[i].frstr = &sec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) 3;
 		} else {
 			fmt[i].extra = fmt + i;
@@ -1618,12 +1610,11 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 	for (i = 0; i <= t->nr_cols; i++) {
 		fmt[i].sep = NULL;
 		fmt[i].rsep = NULL;
-		fmt[i].type = NULL;
 		fmt[i].nullstr = NULL;
 	}
 	for (i = 1; i <= t->nr_cols; i++)
 		bat_iterator_end(&fmt[i].ci);
-	TABLETdestroy_format(&as);
+	TABLETdestroy_outputformat(&as);
 	GDKfree(tres);
 	if (mnstr_errnr(s))
 		return -4;
