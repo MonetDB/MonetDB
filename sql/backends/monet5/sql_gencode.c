@@ -1299,7 +1299,10 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		if (sideeffects)
 			curBlk->unsafeProp = 1;
 		/* optimize the code, but beforehand add it to the cache, so recursive functions will be found */
+		/* 'sql' module is shared, so adquire mal context lock to avoid race conditions while adding new function symbols */
+		MT_lock_set(&mal_contextLock);
 		insertSymbol(mod, c->curprg);
+		MT_lock_unset(&mal_contextLock);
 		added_to_cache = 1;
 		if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 			msg = SQLoptimizeFunction(c, c->curprg->def);
@@ -1323,10 +1326,13 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 cleanup:
 		if (res < 0) {
-			if (!added_to_cache)
+			if (!added_to_cache) {
 				freeSymbol(c->curprg);
-			else
+			} else {
+				MT_lock_set(&mal_contextLock);
 				deleteSymbol(mod, c->curprg);
+				MT_lock_unset(&mal_contextLock);
+			}
 			_DELETE(f->imp);
 		} else {
 			f->instantiated = TRUE; /* make sure 'instantiated' gets set after 'imp' */
