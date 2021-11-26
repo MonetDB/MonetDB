@@ -36,12 +36,78 @@
  */
 
 #include "monetdb_config.h"
+#include "sql.h"
+
 #include "sql_copyinto.h"
 #include "str.h"
 #include "mapi_prompt.h"
 
 #include <string.h>
 #include <ctype.h>
+
+
+typedef struct Column_t {
+	const char *name;			/* column title */
+	const char *sep;
+	const char *rsep;
+	int seplen;
+	char *type;
+	int adt;					/* type index */
+	BAT *c;						/* set to NULL when scalar is meant */
+	BATiter ci;
+	BUN p;
+	unsigned int tabs;			/* field size in tab positions */
+	const char *nullstr;		/* null representation */
+	size_t null_length;			/* its length */
+	unsigned int width;			/* actual column width */
+	unsigned int maxwidth;		/* permissible width */
+	int fieldstart;				/* Fixed character field load positions */
+	int fieldwidth;
+	int scale, precision;
+	void *(*frstr)(struct Column_t *fmt, int type, void **dst, size_t *dst_len, const char *s);
+	void *extra;
+	void *data;
+	int skip;					/* only skip to the next field */
+	size_t len;
+	bit ws;						/* if set we need to skip white space */
+	char quote;					/* if set use this character for string quotes */
+	const void *nildata;
+	size_t nil_len;
+	int size;
+	void *appendcol;			/* temporary, can probably use Columnt_t.extra in the future */
+} Column;
+
+/*
+ * All table printing is based on building a report structure first.
+ * This table structure is private to a client, which made us to
+ * keep it in an ADT.
+ */
+
+typedef struct Table_t {
+	BUN offset;
+	BUN nr;						/* allocated space for table loads */
+	BUN nr_attrs;				/* attributes found sofar */
+	Column *format;				/* remove later */
+	str error;					/* last error */
+	int tryall;					/* skip erroneous lines */
+	str filename;				/* source */
+	BAT *complaints;			/* lines that did not match the required input */
+} Tablet;
+
+// Callback interface to append the data directly instead of storing it in intermediate BATs.
+// SQLload_file doesn't know how to manipulate the sql transaction bookkeeping, caller does.
+typedef str (*loadfile_claim_fptr)(void *state, size_t nrows, size_t ncols, Column *cols[]);
+typedef str (*loadfile_append_one_fptr)(void *state, size_t idx, const void *data, void *col);
+typedef str (*loadfile_append_batch_fptr)(void *state, const void *data, BUN count, int width, void *col);
+typedef BAT *(*loadfile_get_offsets_bat_fptr)(void *state);
+typedef struct LoadOps {
+	void *state;
+	loadfile_claim_fptr claim;
+	loadfile_append_one_fptr append_one;
+	loadfile_append_batch_fptr append_batch;
+	loadfile_get_offsets_bat_fptr get_offsets;
+} LoadOps;
+
 
 #define MAXWORKERS	64
 #define MAXBUFFERS 2
@@ -74,7 +140,7 @@ void_bat_create(int adt, BUN nr)
 	return b;
 }
 
-void
+static void
 TABLETdestroy_format(Tablet *as)
 {
 	BUN p;
@@ -89,7 +155,7 @@ TABLETdestroy_format(Tablet *as)
 	GDKfree(fmt);
 }
 
-str
+static str
 TABLETcreate_bats(Tablet *as, BUN est)
 {
 	Column *fmt = as->format;
@@ -114,7 +180,7 @@ TABLETcreate_bats(Tablet *as, BUN est)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 TABLETcollect(BAT **bats, Tablet *as)
 {
 	Column *fmt = as->format;
@@ -144,54 +210,8 @@ TABLETcollect(BAT **bats, Tablet *as)
 	return MAL_SUCCEED;
 }
 
-str
-TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
-{
-	Column *fmt = as->format;
-	BUN i, j;
-	BUN cnt = 0;
-
-	for (i = 0; i < as->nr_attrs && !cnt; i++)
-		if (!fmt[i].skip)
-			cnt = BATcount(fmt[i].c);
-	for (i = 0, j = 0; i < as->nr_attrs; i++) {
-		BAT *b, *bv = NULL;
-		if (fmt[i].skip)
-			continue;
-		b = fmt[i].c;
-		b->tsorted = b->trevsorted = false;
-		b->tkey = false;
-		BATsettrivprop(b);
-		if ((b = BATsetaccess(b, BAT_READ)) == NULL) {
-			fmt[i].c = NULL;
-			throw(SQL, "copy", "Failed to set access at tablet part " BUNFMT "\n", cnt);
-		}
-		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
-		bats[j] = bv;
-
-		b->tkey = (offset > 0) ? FALSE : bv->tkey;
-		b->tnonil &= bv->tnonil;
-		if (b->tsorted != bv->tsorted)
-			b->tsorted = false;
-		if (b->trevsorted != bv->trevsorted)
-			b->trevsorted = false;
-		if (BATtdense(b))
-			b->tkey = true;
-		b->batDirtydesc = true;
-
-		if (offset > 0) {
-			BBPunfix(bv->batCacheid);
-			bats[j] = BATslice(b, offset, BATcount(b));
-		}
-		if (cnt != BATcount(b))
-			throw(SQL, "copy", "Count " BUNFMT " differs from " BUNFMT "\n", BATcount(b), cnt);
-		j++;
-	}
-	return MAL_SUCCEED;
-}
 
 // the starting quote character has already been skipped
-
 static char *
 tablet_skip_string(char *s, char quote, bool escape)
 {
@@ -211,143 +231,6 @@ tablet_skip_string(char *s, char quote, bool escape)
 		return NULL;
 	s[j] = 0;
 	return s + i;
-}
-
-static int
-TABLET_error(stream *s)
-{
-	char *err = mnstr_error(s);
-	/* use free as stream allocates outside GDK */
-	if (err)
-		free(err);
-	return -1;
-}
-
-/* The output line is first built before being sent. It solves a problem
-   with UDP, where you may loose most of the information using short writes
-*/
-static inline int
-output_line(char **buf, size_t *len, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, oid id)
-{
-	BUN i;
-	ssize_t fill = 0;
-
-	for (i = 0; i < nr_attrs; i++) {
-		if (fmt[i].c == NULL)
-			continue;
-		if (id < fmt[i].c->hseqbase || id >= fmt[i].c->hseqbase + BATcount(fmt[i].c))
-			break;
-		fmt[i].p = id - fmt[i].c->hseqbase;
-	}
-	if (i == nr_attrs) {
-		for (i = 0; i < nr_attrs; i++) {
-			Column *f = fmt + i;
-			const char *p;
-			ssize_t l;
-
-			if (f->c) {
-				p = BUNtail(f->ci, f->p);
-
-				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
-					p = f->nullstr;
-					l = (ssize_t) strlen(f->nullstr);
-				} else {
-					l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
-					if (l < 0)
-						return -1;
-					p = *localbuf;
-				}
-				if (fill + l + f->seplen >= (ssize_t) *len) {
-					/* extend the buffer */
-					char *nbuf;
-					nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
-					if( nbuf == NULL)
-						return -1; /* *buf freed by caller */
-					*buf = nbuf;
-					*len = fill + l + f->seplen + BUFSIZ;
-				}
-				strncpy(*buf + fill, p, l);
-				fill += l;
-			}
-			strncpy(*buf + fill, f->sep, f->seplen);
-			fill += f->seplen;
-		}
-	}
-	if (fd && mnstr_write(fd, *buf, 1, fill) != fill)
-		return TABLET_error(fd);
-	return 0;
-}
-
-static inline int
-output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs)
-{
-	BUN i;
-	ssize_t fill = 0;
-
-	for (i = 0; i < nr_attrs; i++) {
-		Column *f = fmt + i;
-		const char *p;
-		ssize_t l;
-
-		if (f->c) {
-			p = BUNtail(f->ci, f->p);
-
-			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
-				p = f->nullstr;
-				l = (ssize_t) strlen(p);
-			} else {
-				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
-				if (l < 0)
-					return -1;
-				p = *localbuf;
-			}
-			if (fill + l + f->seplen >= (ssize_t) *len) {
-				/* extend the buffer */
-				char *nbuf;
-				nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
-				if( nbuf == NULL)
-					return -1;	/* *buf freed by caller */
-				*buf = nbuf;
-				*len = fill + l + f->seplen + BUFSIZ;
-			}
-			strncpy(*buf + fill, p, l);
-			fill += l;
-			f->p++;
-		}
-		strncpy(*buf + fill, f->sep, f->seplen);
-		fill += f->seplen;
-	}
-	if (fd && mnstr_write(fd, *buf, 1, fill) != fill)
-		return TABLET_error(fd);
-	return 0;
-}
-
-static inline int
-output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd, BUN nr_attrs, oid id)
-{
-	BUN i;
-
-	for (i = 0; i < nr_attrs; i++) {
-		Column *f = fmt + i;
-
-		if (f->c) {
-			const void *p = BUNtail(f->ci, id - f->c->hseqbase);
-
-			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
-				size_t l = strlen(f->nullstr);
-				if (mnstr_write(fd, f->nullstr, 1, l) != (ssize_t) l)
-					return TABLET_error(fd);
-			} else {
-				ssize_t l = f->tostr(f->extra, buf, len, f->adt, p);
-
-				if (l < 0 || mnstr_write(fd, *buf, 1, l) != l)
-					return TABLET_error(fd);
-			}
-		}
-		if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
-			return TABLET_error(fd);
-	}
-	return 0;
 }
 
 /* returns TRUE if there is/might be more */
@@ -1618,7 +1501,7 @@ create_rejects_table(Client cntxt)
 	MT_lock_unset(&mal_contextLock);
 }
 
-BUN
+static BUN
 SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam, bool escape, LoadOps *loadops)
 {
 	(void)loadops;
@@ -2114,4 +1997,629 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	return MAL_SUCCEED;
+}
+
+
+#define DEC_FRSTR(X)													\
+	do {																\
+		sql_column *col = c->extra;										\
+		sql_subtype *t = &col->type;									\
+		unsigned int scale = t->scale;									\
+		unsigned int i;													\
+		bool neg = false;												\
+		X *r;															\
+		X res = 0;														\
+		while(isspace((unsigned char) *s))								\
+			s++;														\
+		if (*s == '-'){													\
+			neg = true;													\
+			s++;														\
+		} else if (*s == '+'){											\
+			s++;														\
+		}																\
+		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
+			if (!isdigit((unsigned char) *s))							\
+				break;													\
+			res *= 10;													\
+			res += (*s-'0');											\
+			if (res)													\
+				i++;													\
+		}																\
+		if (*s == '.') {												\
+			s++;														\
+			while (*s && isdigit((unsigned char) *s) && scale > 0) {	\
+				res *= 10;												\
+				res += *s++ - '0';										\
+				scale--;												\
+			}															\
+		}																\
+		while(*s && isspace((unsigned char) *s))						\
+			s++;														\
+		while (scale > 0) {												\
+			res *= 10;													\
+			scale--;													\
+		}																\
+		if (*s)															\
+			return NULL;												\
+		assert(*dst_len >= sizeof(X));(void)dst_len;					\
+		r = *dst;														\
+		if (neg)														\
+			*r = -res;													\
+		else															\
+			*r = res;													\
+		return (void *) r;												\
+	} while (0)
+
+static void *
+dec_frstr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
+{
+	/* support dec map to bte, sht, int and lng */
+	if( strcmp(s,"nil")== 0)
+		return NULL;
+	if (type == TYPE_bte) {
+		DEC_FRSTR(bte);
+	} else if (type == TYPE_sht) {
+		DEC_FRSTR(sht);
+	} else if (type == TYPE_int) {
+		DEC_FRSTR(int);
+	} else if (type == TYPE_lng) {
+		DEC_FRSTR(lng);
+#ifdef HAVE_HGE
+	} else if (type == TYPE_hge) {
+		DEC_FRSTR(hge);
+#endif
+	}
+	return NULL;
+}
+
+static void *
+sec_frstr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
+{
+	/* read a sec_interval value
+	 * this knows that the stored scale is always 3 */
+	unsigned int i, neg = 0;
+	lng *r;
+	lng res = 0;
+
+	assert(*dst_len >= sizeof(lng));(void)dst_len;
+
+	(void) c;
+	(void) type;
+	assert(type == TYPE_lng);
+
+	if (*s == '-') {
+		neg = 1;
+		s++;
+	} else if (*s == '+') {
+		neg = 0;
+		s++;
+	}
+	for (i = 0; i < (19 - 3) && *s && *s != '.'; i++, s++) {
+		if (!isdigit((unsigned char) *s))
+			return NULL;
+		res *= 10;
+		res += (*s - '0');
+	}
+	i = 0;
+	if (*s) {
+		if (*s != '.')
+			return NULL;
+		s++;
+		for (; *s && i < 3; i++, s++) {
+			if (!isdigit((unsigned char) *s))
+				return NULL;
+			res *= 10;
+			res += (*s - '0');
+		}
+	}
+	if (*s)
+		return NULL;
+	for (; i < 3; i++) {
+		res *= 10;
+	}
+	r = *dst;
+	if (neg)
+		*r = -res;
+	else
+		*r = res;
+	return (void *) r;
+}
+
+static int
+has_whitespace(const char *s)
+{
+	if (*s == ' ' || *s == '\t')
+		return 1;
+	while (*s)
+		s++;
+	s--;
+	if (*s == ' ' || *s == '\t')
+		return 1;
+	return 0;
+}
+
+/* Literal parsing for SQL all pass through this routine */
+static void *
+_ASCIIadt_frStr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
+{
+	ssize_t len;
+
+	len = (*BATatoms[type].atomFromStr) (s, dst_len, dst, false);
+	if (len < 0)
+		return NULL;
+	switch (type) {
+	case TYPE_bte:
+	case TYPE_int:
+	case TYPE_lng:
+	case TYPE_sht:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+		if (len == 0 || s[len]) {
+			/* decimals can be converted to integers when *.000 */
+			if (s[len++] == '.') {
+				while (s[len] == '0')
+					len++;
+				if (s[len] == 0)
+					return *dst;
+			}
+			return NULL;
+		}
+		break;
+	case TYPE_str: {
+		sql_column *col = (sql_column *) c->extra;
+		int slen;
+
+		s = *dst;
+		slen = strNil(s) ? int_nil : UTF8_strlen(s);
+		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
+			len = strPrintWidth(*dst);
+			if (len > (ssize_t) col->type.digits)
+				return NULL;
+		}
+		break;
+	}
+	default:
+		break;
+	}
+	return *dst;
+}
+
+
+
+
+// Callback functions and state struct to be passed to SQLload_file as LoadOps.
+// This is the code that claims row space and writes to it.
+// SQLload_file can call it if available but doesn't know how it works.
+struct directappend {
+	mvc *mvc;
+	sql_table *t;
+	BAT *all_offsets; // all offsets ever generated
+	BAT *new_offsets; // as most recently returned by mvc_claim_slots.
+	BUN offset;	      // as most recently returned by mvc_claim_slots.
+};
+
+static void
+directappend_destroy(struct directappend *state)
+{
+	if (state == NULL)
+		return;
+	struct directappend *st = state;
+	if (st->all_offsets)
+		BBPreclaim(st->all_offsets);
+	if (st->new_offsets)
+		BBPreclaim(st->new_offsets);
+}
+
+static str
+directappend_init(struct directappend *state, Client cntxt, sql_table *t)
+{
+	str msg = MAL_SUCCEED;
+	*state = (struct directappend) { 0 };
+	backend *be;
+	mvc *mvc;
+
+	msg = checkSQLContext(cntxt);
+	if (msg != MAL_SUCCEED)
+		goto bailout;
+	be = cntxt->sqlcontext;
+	mvc = be->mvc;
+	state->mvc = mvc;
+	state->t = t;
+
+	state->all_offsets = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if (state->all_offsets == NULL) {
+		msg = createException(SQL, "sql.append_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	assert(msg == MAL_SUCCEED);
+	return msg;
+
+bailout:
+	assert(msg != MAL_SUCCEED);
+	directappend_destroy(state);
+	return msg;
+}
+
+static str
+directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
+{
+	str msg = MAL_SUCCEED;
+
+	// these parameters aren't used right now, useful if we ever also move the
+	// old bunfastapp-on-temporary-bats scheme to the callback interface
+	// too, making SQLload_file fully mechanism agnostic.
+	// Then again, maybe just drop them instead.
+	(void)ncols;
+	(void)cols;
+
+	assert(state_ != NULL);
+	struct directappend *state = state_;
+
+	if (state->new_offsets != NULL) {
+		// Leftover from previous round, the logic below counts on it not being present.
+		// We can change that but have to do so carefully. for now just drop it.
+		BBPreclaim(state->new_offsets);
+		state->new_offsets = NULL;
+	}
+
+	// Allocate room for this batch
+	BUN dummy_offset = 424242424242;
+	state->offset = dummy_offset;
+	sql_trans *tr = state->mvc->session->tr;
+	sqlstore *store = tr->store;
+	int ret = store->storage_api.claim_tab(tr, state->t, nrows, &state->offset, &state->new_offsets);
+	// int ret = mvc_claim_slots(state->mvc->session->tr, state->t, nrows, &state->offset, &state->new_offsets);
+	if (ret != LOG_OK) {
+		msg = createException(SQL, "sql.append_from", SQLSTATE(3F000) "Could not claim slots");
+		goto bailout;
+	}
+
+	// Append the batch to all_offsets.
+	if (state->new_offsets != NULL) {
+		if (BATappend(state->all_offsets, state->new_offsets, NULL, false) != GDK_SUCCEED) {
+			msg = createException(SQL, "sql.append_from", SQLSTATE(3F000) "BATappend failed");
+			goto bailout;
+		}
+	} else {
+		// Help, there must be a BATfunction for this.
+		// Also, maybe we should try to make state->all_offsets a void BAT and only
+		// switch to materialized oid's if necessary.
+		BUN oldcount = BATcount(state->all_offsets);
+		BUN newcount = oldcount + nrows;
+		if (BATcapacity(state->all_offsets) < newcount) {
+			if (BATextend(state->all_offsets, newcount) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.append_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+		}
+		oid * oo = Tloc(state->all_offsets, oldcount);
+		for (BUN i = 0; i < nrows; i++)
+			*oo++ = state->offset + i;
+		BATsetcount(state->all_offsets, newcount);
+	}
+
+	// The protocol for mvc_claim is that it returns either a consecutive block,
+	// by setting *offset, or a BAT of positions by setting *offsets. However,
+	// it is possible and even likely that only the first few items of the BAT
+	// are actually scattered positions, while the rest is still a consecutive
+	// block at the end. Appending at the end is much cheaper so we peel the
+	// consecutive elements off the back of the BAT and treat them separately.
+	//
+	// In the remainder of the function, 'state->newoffsets' holds 'front_count'
+	// positions if it exists, while another 'back_count' positions start at
+	// 'back_offset'.
+	//
+	// TODO this code has become a little convoluted as it evolved.
+	// Needs straightening out.
+	size_t front_count;
+	size_t back_count;
+	BUN back_offset;
+	if (state->new_offsets != NULL) {
+		if (state->new_offsets->tsorted) {
+			assert(BATcount(state->new_offsets) >= 1);
+			BUN start = BATcount(state->new_offsets) - 1;
+			oid at_start = *(oid*)Tloc(state->new_offsets, start);
+			while (start > 0) {
+				oid below_start = *(oid*)Tloc(state->new_offsets, start - 1);
+				if (at_start != below_start + 1)
+					break;
+				start = start - 1;
+				at_start = below_start;
+			}
+			front_count = start;
+			back_count = nrows - start;
+			back_offset = at_start;
+			BATsetcount(state->new_offsets, start);
+		} else {
+			front_count = nrows;
+			back_count = 0;
+			back_offset = dummy_offset;
+		}
+	} else {
+		front_count = 0;
+		back_count = nrows;
+		back_offset = state->offset;
+	}
+	state->offset = back_offset;
+
+	// debugging
+	(void)front_count;
+	(void)back_count;
+	// if (front_count > 0) {
+	// 	for (size_t j = 0; j < front_count; j++) {
+	// 		BUN pos = (BUN)*(oid*)Tloc(state->new_offsets, j);
+	// 		fprintf(stderr, "scattered offset[%zu] = " BUNFMT "\n", j, pos);
+	// 	}
+	// }
+	// if (back_count > 0) {
+	// 	BUN start = back_offset;
+	// 	BUN end = start + (BUN)back_count - 1;
+	// 	fprintf(stderr, "consecutive offsets: " BUNFMT " .. " BUNFMT"\n", start, end);
+	// }
+
+
+	assert(msg == MAL_SUCCEED);
+	return msg;
+
+bailout:
+	assert(msg != MAL_SUCCEED);
+	return msg;
+}
+
+static BAT*
+directappend_get_offsets_bat(void *state_)
+{
+	assert(state_);
+	struct directappend *state = state_;
+	return state->all_offsets;
+}
+
+static str
+directappend_append_one(void *state_, size_t idx, const void *const_data, void *col)
+{
+	struct directappend *state = state_;
+	BAT *scattered_offsets = state->new_offsets;
+	BUN scattered_count = scattered_offsets ? BATcount(scattered_offsets) : 0;
+	BUN off;
+	if (idx < scattered_count) {
+		off = *(oid*)Tloc(scattered_offsets, idx);
+		// fprintf(stderr, "Took offset " BUNFMT " from position %zu of the offsets BAT\n", off, idx);
+	} else {
+		off = state->offset + (idx - scattered_count);
+		// fprintf(stderr, "Took offset " BUNFMT " as %zu plus base " BUNFMT "\n", off, idx, state->offset);
+	}
+
+	sql_column *c = col;
+	int tpe = c->type.type->localtype;
+	sqlstore *store = state->mvc->session->tr->store;
+
+	// unfortunately, append_col_fptr doesn't take const void*.
+	void *data = ATOMextern(tpe) ? &const_data : (void*)const_data;
+	int	ret = store->storage_api.append_col(state->mvc->session->tr, c, off, NULL, data, 1, tpe);
+	if (ret != LOG_OK) {
+		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", ret == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
+
+	return MAL_SUCCEED;
+}
+
+static str
+directappend_append_batch(void *state_, const void *const_data, BUN count, int width, void *col)
+{
+	struct directappend *state = state_;
+	sqlstore *store = state->mvc->session->tr->store;
+	sql_column *c = col;
+	int tpe = c->type.type->localtype;
+
+	(void)width;
+	assert(width== ATOMsize(tpe));
+
+	BUN scattered_count = state->new_offsets ? BATcount(state->new_offsets) : 0;
+
+	int ret = LOG_OK;
+
+	if (scattered_count > 0) {
+		BUN dummy_offset = GDK_oid_max;
+		ret = store->storage_api.append_col(
+					state->mvc->session->tr, c,
+					dummy_offset, state->new_offsets,
+					(void*)const_data, scattered_count, tpe
+		);
+	}
+
+	if (ret == LOG_OK && count > scattered_count) {
+		char *remaining_data = (char*)const_data + scattered_count * width;
+		BUN remaining_count = count - scattered_count;
+		ret = store->storage_api.append_col(
+					state->mvc->session->tr, c,
+					state->offset, NULL,
+					remaining_data, remaining_count, tpe
+		);
+	}
+	if (ret != LOG_OK) {
+		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", ret == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
+
+	return MAL_SUCCEED;
+}
+
+
+
+str
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape, bool append_directly)
+{
+	int i = 0, j;
+	node *n;
+	Tablet as;
+	Column *fmt;
+	str msg = MAL_SUCCEED;
+
+
+	struct directappend directappend_state = { 0 };
+	LoadOps our_loadops = {
+		.state = NULL,
+		.claim = directappend_claim,
+		.append_one = directappend_append_one,
+		.append_batch = directappend_append_batch,
+		.get_offsets = directappend_get_offsets_bat,
+	};
+	LoadOps *loadops = NULL;
+	if (append_directly) {
+		msg = directappend_init(&directappend_state, cntxt, t);
+		if (msg != MAL_SUCCEED)
+			return msg;
+		our_loadops.state = &directappend_state;
+		loadops = &our_loadops;
+
+	}
+
+	*bats =0;	// initialize the receiver
+
+	if (!bs)
+		throw(IO, "sql.copy_from", SQLSTATE(42000) "No stream (pointer) provided");
+	if (mnstr_errnr(bs->s)) {
+		mnstr_error_kind errnr = mnstr_errnr(bs->s);
+		char *stream_msg = mnstr_error(bs->s);
+		msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Stream not open %s: %s", mnstr_error_kind_name(errnr), stream_msg ? stream_msg : "unknown error");
+		free(stream_msg);
+		directappend_destroy(our_loadops.state);
+		return msg;
+	}
+	if (offset < 0 || offset > (lng) BUN_MAX) {
+		directappend_destroy(our_loadops.state);
+		throw(IO, "sql.copy_from", SQLSTATE(42000) "Offset out of range");
+	}
+
+	if (offset > 0)
+		offset--;
+	if (ol_first_node(t->columns)) {
+		stream *out = m->scanner.ws;
+
+		as = (Tablet) {
+			.nr_attrs = ol_length(t->columns),
+			.nr = (sz < 1) ? BUN_NONE : (BUN) sz,
+			.offset = (BUN) offset,
+			.error = NULL,
+			.tryall = 0,
+			.complaints = NULL,
+			.filename = m->scanner.rs == bs ? NULL : "",
+		};
+		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
+		if (fmt == NULL) {
+			directappend_destroy(our_loadops.state);
+			throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		as.format = fmt;
+		if (!isa_block_stream(bs->s))
+			out = NULL;
+
+		// temporary
+		node *n2;
+		n2 = append_directly ? ol_first_node(directappend_state.t->columns) : NULL;
+		for (n = ol_first_node(t->columns), i = 0; n; n = n->next, i++) {
+			sql_column *col = n->data;
+			// temporary
+			if (n2 != NULL) {
+				sql_column *col2 = n2->data;
+				assert(strcmp(col->base.name, col2->base.name) == 0);
+				assert(strcmp(col->type.type->base.name, col2->type.type->base.name) == 0);
+				assert( (n->next == NULL) == (n2->next == NULL)  );
+				fmt[i].appendcol = col2;
+				n2 = n2->next;
+			}
+
+			fmt[i].name = col->base.name;
+			fmt[i].sep = (n->next) ? sep : rsep;
+			fmt[i].rsep = rsep;
+			fmt[i].seplen = _strlen(fmt[i].sep);
+			fmt[i].type = sql_subtype_string(m->ta, &col->type);
+			fmt[i].adt = ATOMindex(col->type.type->impl);
+			fmt[i].frstr = &_ASCIIadt_frStr;
+			fmt[i].extra = col;
+			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+			fmt[i].data = GDKzalloc(fmt[i].len);
+			if(fmt[i].data == NULL || fmt[i].type == NULL) {
+				for (j = 0; j < i; j++) {
+					GDKfree(fmt[j].data);
+					BBPunfix(fmt[j].c->batCacheid);
+				}
+				GDKfree(fmt[i].data);
+				directappend_destroy(our_loadops.state);
+				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			fmt[i].c = NULL;
+			fmt[i].ws = !has_whitespace(fmt[i].sep);
+			fmt[i].quote = ssep ? ssep[0] : 0;
+			fmt[i].nullstr = ns;
+			fmt[i].null_length = strlen(ns);
+			fmt[i].nildata = ATOMnilptr(fmt[i].adt);
+			fmt[i].nil_len = ATOMlen(fmt[i].adt, fmt[i].nildata);
+			fmt[i].skip = (col->base.name[0] == '%');
+			if (col->type.type->eclass == EC_DEC) {
+				fmt[i].frstr = &dec_frstr;
+			} else if (col->type.type->eclass == EC_SEC) {
+				fmt[i].frstr = &sec_frstr;
+			}
+			fmt[i].size = ATOMsize(fmt[i].adt);
+			fmt[i].maxwidth = col->type.digits;
+		}
+
+		// do .. while (false) allows us to use 'break' to drop out at any point
+		do {
+			if (!loadops) {
+				msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz));
+				if (msg != MAL_SUCCEED)
+					break;
+			}
+
+			if (sz != 0) {
+				BUN count = SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape, loadops);
+				if (count == BUN_NONE)
+					break;
+				if (as.error && !best)
+					break;
+			}
+
+			size_t nreturns = loadops ? 1 : as.nr_attrs;
+			*bats = (BAT**) GDKzalloc(sizeof(BAT *) * nreturns);
+			if ( *bats == NULL) {
+				TABLETdestroy_format(&as);
+				directappend_destroy(our_loadops.state);
+				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			if (loadops) {
+				// Return a single result, the all_offsets BAT.
+				BAT *oids_bat = directappend_state.all_offsets;
+				oids_bat->tnil = false;
+				oids_bat->tnonil = true;
+				oids_bat->tsorted = true;
+				oids_bat->trevsorted = false;
+				oids_bat->tkey = true;
+				oids_bat->tseqbase = oid_nil;
+				directappend_state.all_offsets = NULL; // otherwise we'll try to reclaim it later
+				BBPfix(oids_bat->batCacheid);
+				(*bats)[0] = oids_bat;
+			} else {
+				msg = TABLETcollect(*bats,&as);
+			}
+
+		} while (false);
+
+		if (as.error) {
+			if( !best) msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, getExceptionMessage(as.error));
+			freeException(as.error);
+			as.error = NULL;
+		}
+		for (n = ol_first_node(t->columns), i = 0; n; n = n->next, i++) {
+			fmt[i].sep = NULL;
+			fmt[i].rsep = NULL;
+			fmt[i].nullstr = NULL;
+		}
+		TABLETdestroy_format(&as);
+	}
+
+	directappend_destroy(our_loadops.state);
+	return msg;
 }
