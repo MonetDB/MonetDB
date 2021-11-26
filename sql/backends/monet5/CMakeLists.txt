@@ -147,6 +147,7 @@ target_sources(sql
   sql_orderidx.c sql_orderidx.h
   sql_strimps.c sql_strimps.h
   sql_time.c
+  sql_copyinto.c sql_copyinto.h
   sql_bincopyfrom.c
   wlr.c wlr.h
   sql_datetrunc.c

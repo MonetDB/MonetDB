@@ -36,7 +36,6 @@
 #include "mal_stack.h"
 #include "mal_interpreter.h"
 
-#include "tablet.h"
 #include "gdk_time.h"
 #include "blob.h"
 #include "str.h"

@@ -19,6 +19,7 @@
 #include "sql_result.h"
 #include "sql_gencode.h"
 #include "sql_storage.h"
+#include "sql_copyinto.h"
 #include "sql_scenario.h"
 #include "store_sequence.h"
 #include "sql_optimizer.h"
