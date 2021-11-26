@@ -823,10 +823,9 @@ make_it_nil(Column *fmt, void **dst, size_t *dst_len)
 	}
 }
 
-
+// -1 means error, 0 means fully done, 1 means please parse *unescaped
 static inline int
-SQLconvert_val(READERtask *task, int col, int idx, void **dst, size_t *dst_len) {
-	Column *fmt = &task->as->format[col];
+prepare_conversion(READERtask *task, Column *fmt, int col, int idx, void **dst, size_t *dst_len, char **unescaped) {
 	char *s = task->fields[col][idx];
 
 	if (s == NULL) {
@@ -835,9 +834,8 @@ SQLconvert_val(READERtask *task, int col, int idx, void **dst, size_t *dst_len) 
 	}
 	size_t slen = strlen(s);
 
-	char *unescaped;
 	if (!task->escape) {
-		unescaped = s;
+		*unescaped = s;
 	} else {
 		// reallocate scratch space if necessary
 		size_t needed = slen + 1;
@@ -852,13 +850,25 @@ SQLconvert_val(READERtask *task, int col, int idx, void **dst, size_t *dst_len) 
 			make_it_nil(fmt, dst, dst_len);
 			return ret;
 		}
-		unescaped = task->scratch.data;
+		*unescaped = task->scratch.data;
 	}
 
-	// Now parse the value
+	return 1;
+}
+
+static inline int
+SQLconvert_val(READERtask *task, Column *fmt, int col, int idx, void **dst, size_t *dst_len) {
+	char *unescaped;
+	int ret = prepare_conversion(task, fmt, col, idx, dst, dst_len, &unescaped);
+	if (ret <= 0) {
+		// < 0 means error, 0 means fully handled
+		return ret;
+	}
+
+	// convert using the frstr callback.
 	void *p = fmt->frstr(fmt, fmt->adt, dst, dst_len, unescaped);
 	if (p == NULL) {
-		int ret = report_conversion_failed(task, fmt, idx, col + 1, s);
+		int ret = report_conversion_failed(task, fmt, idx, col + 1, unescaped);
 		make_it_nil(fmt, dst, dst_len);
 		return ret;
 	}
@@ -951,7 +961,7 @@ SQLworker_onebyone_column(READERtask *task, int col)
 	int count = task->top[task->cur];
 
 	for (int i = 0; i < count; i++) {
-		if (SQLconvert_val(task, col, i, &fmt->data, &fmt->len) < 0)
+		if (SQLconvert_val(task, fmt, col, i, &fmt->data, &fmt->len) < 0)
 			return -1;
 		const void *value = fmt->data ? fmt->data : fmt->nildata;
 		str msg = directappend_append_one(task->directappend, i, value, fmt->appendcol);
@@ -984,7 +994,7 @@ SQLworker_fixedwidth_column(READERtask *task, int col)
 		// We have to be careful here, 'cursor' is not pointing at the beginning
 		// of a malloc'ed area, but into the middle. If SQLconvert_val tries to
 		// reallocate it we're screwed.
-		if (SQLconvert_val(task, col, i, &cursor, &w) < 0) {
+		if (SQLconvert_val(task, c, col, i, &cursor, &w) < 0) {
 			return -1;
 		}
 		assert(w == width); // should not have attempted to reallocate!
@@ -1022,11 +1032,11 @@ SQLworker_str_column(READERtask *task, int col)
 	}
 
 	if (adjust_scratch_buffer(&task->primary, primary_size, 0) == NULL) {
-		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
+		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", NULL);
 		return -1;
 	}
 	if (adjust_scratch_buffer(&task->secondary, secondary_size, 0) == NULL) {
-		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
+		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", NULL);
 		return -1;
 	}
 
@@ -1107,7 +1117,7 @@ SQLworker_bat_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock);
 
 	for (int i = 0; i < task->top[task->cur]; i++) {
-		if (SQLconvert_val(task, col, i, &c->data, &c->len) < 0) {
+		if (SQLconvert_val(task, c, col, i, &c->data, &c->len) < 0) {
 			ret = -1;
 			break;
 		}
