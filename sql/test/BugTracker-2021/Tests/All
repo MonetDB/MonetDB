@@ -37,3 +37,4 @@ concurrent-add-column.Bug-7196
 serializable-snapshot.Bug-7200
 unique-idx.Bug-7201
 distinct-with-orderby.Bug-7202
+HAVE_LIBPY3?python-empty-arrays.Bug-7206

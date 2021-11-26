@@ -4357,42 +4357,28 @@ temp_del_tab(sql_trans *tr, sql_table *t)
 }
 
 static int
-swap_bats(sql_trans *tr, sql_column *col)
+swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 {
-	BAT *b = NULL, *bn = NULL;
 	bool update_conflict = false;
-	int in_transaction = 0;
-	sql_delta *d = NULL, *odelta;
+	int in_transaction = segments_in_transaction(tr, col->t);
 
-	if (!ATOMvarsized(col->type.type->localtype)) /* only varsized types */
-		return LOG_OK;
-
-	if ((in_transaction = segments_in_transaction(tr, col->t)))
+	if (in_transaction)
 		return LOG_CONFLICT;
+
+	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
 
 	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	assert(d && d->cs.ts == tr->tid);
-	odelta = ATOMIC_PTR_GET(&col->data);
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
 		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, &log_update_col);
-
-	if (!(b = temp_descriptor(d->cs.bid)))
-		return LOG_ERR;
-	// TODO check for num of updates on the BAT against some threshold
-	// and decide whether to proceed
-	if (!(bn = COLcopy(b, b->ttype, true, b->batRole))) {
-		bat_destroy(b);
-		return LOG_ERR;
-	}
-	bat_destroy(b);
-	temp_destroy(d->cs.bid);
-	d->cs.bid = temp_create(bn);
-	bat_destroy(bn);
+	if (d->cs.bid)
+		temp_destroy(d->cs.bid);
 	if (d->cs.uibid)
 		temp_destroy(d->cs.uibid);
 	if (d->cs.uvbid)
 		temp_destroy(d->cs.uvbid);
+	d->cs.bid = temp_create(bn);
 	d->cs.uibid = 0;
 	d->cs.uvbid = 0;
 	d->cs.ucnt = 0;

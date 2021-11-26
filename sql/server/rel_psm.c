@@ -619,7 +619,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 
 	assert(!restype || !restypelist);
 
- 	if (THRhighwater())
+ 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (blk->h)
@@ -1018,7 +1018,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 					break;
 			}
 			/* instantiate MAL functions while being created. This also sets the side-effects flag */
-			if (!backend_resolve_function(&clientid, f))
+			if (!backend_resolve_function(&clientid, f, fnme, &(f->side_effect)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 			f->instantiated = TRUE;
 		} else if (!sf) {
