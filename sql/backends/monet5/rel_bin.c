@@ -5203,7 +5203,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		sql_column *c = n->data;
 
 		if (updates[i])
-	       		append(l, stmt_update_col(be, c, rows, updates[i]));
+			append(l, stmt_update_col(be, c, rows, updates[i]));
 	}
 	if (cascade_updates(be, t, rows, updates))
 		return sql_error(sql, 10, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
@@ -5541,7 +5541,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 		if (!be->silent)
 			s = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	} else { /* delete all */
-		s = stmt_table_clear(be, t); /* first column */
+		s = stmt_table_clear(be, t, 0); /* first column */
 	}
 
 /* after */
@@ -5594,34 +5594,26 @@ struct tablelist {
 	struct tablelist* next;
 };
 
-static void /* inspect the other tables recursively for foreign key dependencies */
-check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct tablelist* next_append, sql_table *t, int cascade, int *error)
+static sql_table * /* inspect the other tables recursively for foreign key dependencies */
+check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct tablelist* next_append, sql_table *t, int cascade)
 {
-	node *n;
-	int found;
-	struct tablelist* new_node, *node_check;
+	struct tablelist* new_node;
 	sql_trans *tr = sql->session->tr;
-
-	if (THRhighwater()) {
-		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-		*error = 1;
-		return;
-	}
-
-	if (*error)
-		return;
-
 	sqlstore *store = sql->session->tr->store;
+
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if (t->keys) { /* Check for foreign key references */
-		for (n = ol_first_node(t->keys); n; n = n->next) {
+		for (node *n = ol_first_node(t->keys); n; n = n->next) {
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {
 				list *keys = sql_trans_get_dependencies(tr, k->base.id, FKEY_DEPENDENCY, NULL);
 
 				if (keys) {
-					for (node *n = keys->h; n; n = n->next->next) {
-						sqlid fkey_id = *(sqlid*)n->data;
+					for (node *nn = keys->h; nn; nn = nn->next->next) {
+						sqlid fkey_id = *(sqlid*)nn->data;
 						sql_base *b = os_find_id(tr->cat->objects, tr, fkey_id);
 						sql_key *fk = (sql_key*)b;
 						sql_fkey *rk = (sql_fkey*)b;
@@ -5631,32 +5623,31 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 						k = fk;
 						/* make sure it is not a self referencing key */
 						if (k->t != t && !cascade && isTable(t)) {
-							node *n = ol_first_node(t->columns);
-							sql_column *c = n->data;
+							node *nnn = ol_first_node(t->columns);
+							sql_column *c = nnn->data;
 							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 10);
 							if (n_rows > 0) {
 								list_destroy(keys);
-								sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
-								*error = 1;
-								return;
+								return sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
 							}
 						} else if (k->t != t) {
-							found = 0;
-							for (node_check = tlist; node_check; node_check = node_check->next) {
+							int found = 0;
+							for (struct tablelist *node_check = tlist; node_check; node_check = node_check->next) {
 								if (node_check->table == k->t)
 									found = 1;
 							}
 							if (!found) {
 								if ((new_node = SA_NEW(sql->ta, struct tablelist)) == NULL) {
 									list_destroy(keys);
-									sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-									*error = 1;
-									return;
+									return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 								}
 								new_node->table = k->t;
 								new_node->next = NULL;
 								next_append->next = new_node;
-								check_for_foreign_key_references(sql, tlist, new_node, k->t, cascade, error);
+								if (!check_for_foreign_key_references(sql, tlist, new_node, k->t, cascade)) {
+									list_destroy(keys);
+									return NULL;
+								}
 							}
 						}
 					}
@@ -5665,6 +5656,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 			}
 		}
 	}
+	return t;
 }
 
 static stmt *
@@ -5672,72 +5664,22 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 {
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
-	stmt *v, *ret = NULL, *other = NULL;
-	const char *next_value_for = "next value for ";
-	sql_column *col = NULL;
-	sql_schema *sche = NULL;
-	sql_table *next = NULL;
-	sql_trans *tr = sql->session->tr;
-	int error = 0;
-	struct tablelist* new_list = SA_NEW(sql->ta, struct tablelist), *list_node;
+	stmt *ret = NULL, *other = NULL;
+	struct tablelist *new_list = SA_NEW(sql->ta, struct tablelist);
 	stmt **deleted_cols = NULL;
 
-	if (!new_list) {
-		sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		error = 1;
-		goto finalize;
-	}
-
+	if (!new_list)
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	new_list->table = t;
 	new_list->next = NULL;
-	check_for_foreign_key_references(sql, new_list, new_list, t, cascade, &error);
-	if (error)
+	if (!check_for_foreign_key_references(sql, new_list, new_list, t, cascade))
 		goto finalize;
 
-	for (list_node = new_list; list_node; list_node = list_node->next) {
-		next = list_node->table;
-		sche = next->s;
+	for (struct tablelist *list_node = new_list; list_node; list_node = list_node->next) {
+		sql_table *next = list_node->table;
+		stmt *v = stmt_tid(be, next, 0);
 
-		if (restart_sequences) { /* restart the sequences if it's the case */
-			for (node *n = ol_first_node(next->columns); n; n = n->next) {
-				col = n->data;
-
-				if (col->def && !strncmp(col->def, next_value_for, strlen(next_value_for))) {
-					sql_schema *s = NULL;
-					sql_sequence *seq = NULL;
-					char *schema = NULL, *seq_name = NULL;
-
-					extract_schema_and_sequence_name(sql->ta, col->def + strlen(next_value_for), &schema, &seq_name);
-					if (!schema || !seq_name || !(s = find_sql_schema(tr, schema)))
-						continue;
-
-					assert(s->base.id == sche->base.id);
-					if ((seq = find_sql_sequence(tr, s, seq_name))) {
-						switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
-							case -1:
-								sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-								error = 1;
-								goto finalize;
-							case -2:
-							case -3:
-								sql_error(sql, 02, SQLSTATE(HY005) "RESTART SEQUENCE: transaction conflict detected");
-								error = 1;
-								goto finalize;
-							case -4:
-								sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
-								error = 1;
-								goto finalize;
-							default:
-								break;
-						}
-					}
-				}
-			}
-		}
-
-		v = stmt_tid(be, next, 0);
-
-		/*  project all columns */
+		/* project all columns */
 		if (ol_length(t->triggers) || partition_find_part(sql->session->tr, t, NULL)) {
 			int nr = 0;
 			deleted_cols = table_update_stmts(sql, t, &nr);
@@ -5753,26 +5695,26 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 		/* before */
 		if (!sql_delete_triggers(be, next, v, deleted_cols, 0, 3, 4)) {
-			sql_error(sql, 10, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
-			error = 1;
+			(void) sql_error(sql, 10, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			ret = NULL;
 			goto finalize;
 		}
 
 		if (!sql_delete_keys(be, next, v, l, "TRUNCATE", cascade)) {
-			sql_error(sql, 10, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
-			error = 1;
+			(void) sql_error(sql, 10, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
+			ret = NULL;
 			goto finalize;
 		}
 
-		other = stmt_table_clear(be, next);
+		other = stmt_table_clear(be, next, restart_sequences);
 		list_append(l, other);
-		if (next == t)
+		if (next && t && next->base.id == t->base.id)
 			ret = other;
 
 		/* after */
 		if (!sql_delete_triggers(be, next, v, deleted_cols, 1, 3, 4)) {
-			sql_error(sql, 10, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
-			error = 1;
+			(void) sql_error(sql, 10, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			ret = NULL;
 			goto finalize;
 		}
 
@@ -5784,8 +5726,6 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 finalize:
 	sa_reset(sql->ta);
-	if (error)
-		return NULL;
 	return ret;
 }
 

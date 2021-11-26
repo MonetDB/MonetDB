@@ -3018,7 +3018,7 @@ stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 }
 
 stmt *
-stmt_table_clear(backend *be, sql_table *t)
+stmt_table_clear(backend *be, sql_table *t, int restart_sequences)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3030,10 +3030,12 @@ stmt_table_clear(backend *be, sql_table *t)
 			q = newStmt(mb, batRef, deleteRef);
 			q = pushArgument(mb, q, l[i]);
 		}
+		/* declared tables don't have sequences */
 	} else {
 		q = newStmt(mb, sqlRef, clear_tableRef);
 		q = pushSchema(mb, q, t);
 		q = pushStr(mb, q, t->base.name);
+		q = pushInt(mb, q, restart_sequences);
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_table_clear);
