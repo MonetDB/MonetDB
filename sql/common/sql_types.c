@@ -661,7 +661,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 
 	/* grouping aggregate doesn't have a backend */
 	if (strlen(imp) != 0 && strlen(mod) != 0)
-		backend_resolve_function(&(int){0}, t); /* backend_resolve_function sets 'side_effect' flag */
+		backend_resolve_function(&(int){0}, t, t->imp, &(t->side_effect)); /* backend_resolve_function sets 'side_effect' flag */
 	return t;
 }
 

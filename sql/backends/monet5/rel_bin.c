@@ -1249,7 +1249,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (f->func->lang == FUNC_LANG_MAL && backend_create_mal_func(be->mvc, f->func) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);
-		fimp = sql_func_imp(f->func);
+		fimp = backend_function_imp(be, f->func);
 
 		if (f->func->side_effect && left && left->nrcols > 0 && f->func->type != F_LOADER && exps_card(exps) < CARD_MULTI) {
 			rows = bin_find_smallest_column(be, left);
@@ -2130,7 +2130,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					if (backend_create_subfunc(be, f, ops) < 0)
 		 				return NULL;
 					str mod = sql_func_mod(f->func);
-					str fcn = sql_func_imp(f->func);
+					str fcn = backend_function_imp(be, f->func);
 					q = pushStr(be->mb, q, mod);
 					q = pushStr(be->mb, q, fcn);
 					psub = stmt_direct_func(be, q);

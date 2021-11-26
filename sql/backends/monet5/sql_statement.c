@@ -1321,7 +1321,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 
 	if (backend_create_subfunc(be, f, NULL) < 0)
 		return NULL;
-	op = sql_func_imp(f->func);
+	op = backend_function_imp(be, f->func);
 	mod = sql_func_mod(f->func);
 
 	if (rops->nrcols >= 1) {
@@ -2359,7 +2359,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
 	mod = sql_func_mod(op->func);
-	fimp = sql_func_imp(op->func);
+	fimp = backend_function_imp(be, op->func);
 	fimp = sa_strconcat(be->mvc->sa, fimp, "join");
 
 	/* filter qualifying tuples, return oids of h and tail */
@@ -3304,7 +3304,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
+	const char *mod = sql_func_mod(f->func), *fimp = backend_function_imp(be, f->func);
 	sql_subtype *tpe = NULL;
 	int push_cands = 0, default_nargs;
 	stmt *o = NULL, *card = NULL;
@@ -3352,7 +3352,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);
-		fimp = convertMultiplexFcn(sql_func_imp(f->func));
+		fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
 		push_cands = can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
@@ -3572,7 +3572,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
 	mod = sql_func_mod(op->func);
-	aggrfunc = sql_func_imp(op->func);
+	aggrfunc = backend_function_imp(be, op->func);
 
 	if (strcmp(aggrfunc, "avg") == 0)
 		avg = 1;
