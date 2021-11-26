@@ -1110,7 +1110,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
 
- 	if (THRhighwater())
+ 	if (mvc_highwater(sql))
 		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e) {
@@ -1868,7 +1868,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 {
 	mvc *sql = be->mvc;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e || !args)
@@ -1948,7 +1948,7 @@ exps2bin_args(backend *be, list *exps, list *args)
 static list *
 rel2bin_args(backend *be, sql_rel *rel, list *args)
 {
-	if (THRhighwater())
+	if (mvc_highwater(be->mvc))
 		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel || !args)
@@ -5601,7 +5601,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 	sql_trans *tr = sql->session->tr;
 	sqlstore *store = sql->session->tr->store;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (t->keys) { /* Check for foreign key references */
@@ -6292,7 +6292,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
