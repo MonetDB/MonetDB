@@ -4918,15 +4918,34 @@ static str
 do_str_column_vacuum(sql_trans *tr, sql_column *c, char *sname, char *tname, char *cname)
 {
 	int res;
+	int access = 0;
+	BAT* b = NULL;
+	BAT* bn = NULL;
 	sqlstore *store = tr->store;
 
-	if ((res = store->storage_api.swap_bats(tr, c)) != LOG_OK) {
-		if (res == LOG_CONFLICT)
-			throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-		if (res == LOG_ERR)
-			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-		throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
+		throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s", sname, tname, cname);
+	// vacuum varsized bats
+	if (ATOMvarsized(c->type.type->localtype)) {
+		// TODO check for num of updates on the BAT against some threshold
+		// and decide whether to proceed
+		if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "COLcopy failed for %s.%s.%s", sname, tname, cname);
+		}
+		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
+			BBPreclaim(bn);
+			BBPunfix(b->batCacheid);
+			if (res == LOG_CONFLICT)
+				throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+			if (res == LOG_ERR)
+				throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+		}
 	}
+	BBPunfix(b->batCacheid);
+	if (bn)
+		BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
