@@ -619,7 +619,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 
 	assert(!restype || !restypelist);
 
- 	if (THRhighwater())
+ 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (blk->h)

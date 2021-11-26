@@ -2729,7 +2729,7 @@ exps_copy(mvc *sql, list *exps)
 {
 	list *nl;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!exps)
@@ -2751,7 +2751,7 @@ exp_copy(mvc *sql, sql_exp * e)
 {
 	sql_exp *l, *r, *r2, *ne = NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e)
@@ -3180,7 +3180,7 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super)
 static int
 exp_set_list_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relname, const char** expname)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
@@ -3219,7 +3219,7 @@ exp_set_list_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 static int
 exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relname, const char** expname)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
@@ -3311,7 +3311,7 @@ exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 int
 rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **relname, const char **expname)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}

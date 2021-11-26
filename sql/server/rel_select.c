@@ -33,7 +33,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 {
 	list *exps;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
@@ -2207,7 +2207,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	if (!sc)
 		return NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch (sc->token) {
@@ -2480,7 +2480,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	if (!sc)
 		return NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch (sc->token) {
@@ -4252,7 +4252,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 	mvc *sql = query->sql;
 	list *exps = new_exp_list(sql->sa);
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	for (dnode *o = groupby->data.lval->h; o; o = o->next) {
@@ -4671,7 +4671,7 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	char *window_ident;
 	int pos;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if ((window_specification = frame_get_window_def(sql, ident, &pos)) == NULL)
@@ -5067,7 +5067,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (!se)
 		return NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (rel && *rel && (*rel)->card == CARD_AGGR) { /* group by expression case, handle it before */
@@ -5229,7 +5229,7 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 	if (se->token == SQL_SELECT)
 		sn = (SelectNode*)se;
-	if (THRhighwater())
+	if (mvc_highwater(query->sql))
 		return sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	e = rel_value_exp2(query, rel, se, f, ek);
