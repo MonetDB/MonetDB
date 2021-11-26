@@ -65,7 +65,7 @@ typedef struct Column_t {
 	int fieldwidth;
 	int scale, precision;
 	void *(*frstr)(struct Column_t *fmt, int type, void **dst, size_t *dst_len, const char *s);
-	void *extra;
+	sql_column *column;
 	void *data;
 	int skip;					/* only skip to the next field */
 	size_t len;
@@ -74,7 +74,7 @@ typedef struct Column_t {
 	const void *nildata;
 	size_t nil_len;
 	int size;
-	void *appendcol;			/* temporary, can probably use Columnt_t.extra in the future */
+	void *appendcol;			/* temporary, can probably use Columnt_t.column in the future */
 } Column;
 
 /*
@@ -2238,8 +2238,7 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define DEC_FRSTR(X)													\
 	do {																\
-		sql_column *col = c->extra;										\
-		sql_subtype *t = &col->type;									\
+		sql_subtype *t = &c->column->type;									\
 		unsigned int scale = t->scale;									\
 		unsigned int i;													\
 		bool neg = false;												\
@@ -2403,14 +2402,14 @@ _ASCIIadt_frStr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
 		}
 		break;
 	case TYPE_str: {
-		sql_column *col = (sql_column *) c->extra;
+		sql_subtype *type = &c->column->type;
 		int slen;
 
 		s = *dst;
 		slen = strNil(s) ? int_nil : UTF8_strlen(s);
-		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
+		if (type->digits > 0 && len > 0 && slen > (int) type->digits) {
 			len = strPrintWidth(*dst);
-			if (len > (ssize_t) col->type.digits)
+			if (len > (ssize_t) type->digits)
 				return NULL;
 		}
 		break;
@@ -2502,7 +2501,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].type = sql_subtype_string(m->ta, &col->type);
 			fmt[i].adt = ATOMindex(col->type.type->impl);
 			fmt[i].frstr = &_ASCIIadt_frStr;
-			fmt[i].extra = col;
+			fmt[i].column = col;
 			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKzalloc(fmt[i].len);
 			if(fmt[i].data == NULL || fmt[i].type == NULL) {
