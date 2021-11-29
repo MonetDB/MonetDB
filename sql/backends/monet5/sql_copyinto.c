@@ -495,6 +495,8 @@ tablet_read_more(bstream *in, stream *out, size_t n)
 	return true;
 }
 
+
+
 /*
  * Fast Load
  * To speedup the CPU intensive loading of files we have to break
@@ -858,7 +860,7 @@ prepare_conversion(READERtask *task, Column *fmt, int col, int idx, void **dst, 
 
 static inline int
 SQLconvert_val(READERtask *task, Column *fmt, int col, int idx, void **dst, size_t *dst_len) {
-	char *unescaped;
+	char *unescaped = NULL;
 	int ret = prepare_conversion(task, fmt, col, idx, dst, dst_len, &unescaped);
 	if (ret <= 0) {
 		// < 0 means error, 0 means fully handled
@@ -973,10 +975,61 @@ SQLworker_onebyone_column(READERtask *task, int col)
 	return 0;
 }
 
+#define TMPL_TYPE bte
+#define TMPL_FUNC_NAME dec_bte_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_bte_dec
+#include "sql_copyinto_dec_tmpl.h"
+#define TMPL_TYPE sht
+#define TMPL_FUNC_NAME dec_sht_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_sht_dec
+#include "sql_copyinto_dec_tmpl.h"
+#define TMPL_TYPE int
+#define TMPL_FUNC_NAME dec_int_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_int_dec
+#include "sql_copyinto_dec_tmpl.h"
+#define TMPL_TYPE lng
+#define TMPL_FUNC_NAME dec_lng_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_lng_dec
+#include "sql_copyinto_dec_tmpl.h"
+#ifdef HAVE_HGE
+#define TMPL_TYPE hge
+#define TMPL_FUNC_NAME dec_hge_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_hge_dec
+#include "sql_copyinto_dec_tmpl.h"
+#endif
+
+
+
+
+static int
+bulk_convert_frstr(READERtask *task, Column *c, int col, int count, size_t width)
+{
+	void *cursor = task->primary.data;
+	size_t w = width;
+	for (int i = 0; i < count; i++) {
+		char *unescaped = NULL;
+		int ret = prepare_conversion(task, c, col, i, &cursor, &w, &unescaped);
+		if (ret > 0) {
+			void *p = c->frstr(c, c->adt, &cursor, &w, unescaped);
+			if (p == NULL) {
+				ret = report_conversion_failed(task, c, i, col + 1, unescaped);
+				make_it_nil(c, &cursor, &w);
+			}
+		}
+		if (ret < 0) {
+			return -1;
+		}
+		assert(w == width); // should not have attempted to reallocate!
+		cursor = (char*)cursor + width;
+	}
+	return 0;
+}
+
 static int
 SQLworker_fixedwidth_column(READERtask *task, int col)
 {
 	Column *c = &task->as->format[col];
+	sql_subtype *t = &c->column->type;
 	int count = task->top[task->cur];
 
 	int type = c->adt;
@@ -988,18 +1041,33 @@ SQLworker_fixedwidth_column(READERtask *task, int col)
 		return -1;
 	}
 
-	void *cursor = task->primary.data;
-	size_t w = width;
-	for (int i = 0; i < count; i++) {
-		// We have to be careful here, 'cursor' is not pointing at the beginning
-		// of a malloc'ed area, but into the middle. If SQLconvert_val tries to
-		// reallocate it we're screwed.
-		if (SQLconvert_val(task, c, col, i, &cursor, &w) < 0) {
-			return -1;
+	int ret;
+	if (c->column->type.type->eclass == EC_DEC) {
+		switch (c->adt) {
+			case TYPE_bte:
+				ret = bulk_convert_bte_dec(task, c, col, count, width, t->digits, t->scale);
+				break;
+			case TYPE_sht:
+				ret = bulk_convert_sht_dec(task, c, col, count, width, t->digits, t->scale);
+				break;
+			case TYPE_int:
+				ret = bulk_convert_int_dec(task, c, col, count, width, t->digits, t->scale);
+				break;
+			case TYPE_lng:
+				ret = bulk_convert_lng_dec(task, c, col, count, width, t->digits, t->scale);
+				break;
+			case TYPE_hge:
+				ret = bulk_convert_hge_dec(task, c, col, count, width, t->digits, t->scale);
+				break;
+			default:
+				assert(0 && "unexpected column type for decimal");
+				return -1;
 		}
-		assert(w == width); // should not have attempted to reallocate!
-		cursor = (char*)cursor + width;
+	} else {
+		ret = bulk_convert_frstr(task, c, col, count, width);
 	}
+	if (ret < 0)
+		return ret;
 
 	// Now insert it.
 	str msg = directappend_append_batch(task->directappend, task->primary.data, count, width, c->appendcol);
@@ -2246,72 +2314,24 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-#define DEC_FRSTR(X)													\
-	do {																\
-		sql_subtype *t = &c->column->type;									\
-		unsigned int scale = t->scale;									\
-		unsigned int i;													\
-		bool neg = false;												\
-		X *r;															\
-		X res = 0;														\
-		while(isspace((unsigned char) *s))								\
-			s++;														\
-		if (*s == '-'){													\
-			neg = true;													\
-			s++;														\
-		} else if (*s == '+'){											\
-			s++;														\
-		}																\
-		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
-			if (!isdigit((unsigned char) *s))							\
-				break;													\
-			res *= 10;													\
-			res += (*s-'0');											\
-			if (res)													\
-				i++;													\
-		}																\
-		if (*s == '.') {												\
-			s++;														\
-			while (*s && isdigit((unsigned char) *s) && scale > 0) {	\
-				res *= 10;												\
-				res += *s++ - '0';										\
-				scale--;												\
-			}															\
-		}																\
-		while(*s && isspace((unsigned char) *s))						\
-			s++;														\
-		while (scale > 0) {												\
-			res *= 10;													\
-			scale--;													\
-		}																\
-		if (*s)															\
-			return NULL;												\
-		assert(*dst_len >= sizeof(X));(void)dst_len;					\
-		r = *dst;														\
-		if (neg)														\
-			*r = -res;													\
-		else															\
-			*r = res;													\
-		return (void *) r;												\
-	} while (0)
-
 static void *
-dec_frstr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
+generic_dec_frstr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
 {
+	sql_subtype *t = &c->column->type;
 	/* support dec map to bte, sht, int and lng */
 	if( strcmp(s,"nil")== 0)
 		return NULL;
 	if (type == TYPE_bte) {
-		DEC_FRSTR(bte);
+		return dec_bte_frstr(*dst, *dst_len, s, t->digits, t->scale);
 	} else if (type == TYPE_sht) {
-		DEC_FRSTR(sht);
+		return dec_sht_frstr(*dst, *dst_len, s, t->digits, t->scale);
 	} else if (type == TYPE_int) {
-		DEC_FRSTR(int);
+		return dec_int_frstr(*dst, *dst_len, s, t->digits, t->scale);
 	} else if (type == TYPE_lng) {
-		DEC_FRSTR(lng);
+		return dec_lng_frstr(*dst, *dst_len, s, t->digits, t->scale);
 #ifdef HAVE_HGE
 	} else if (type == TYPE_hge) {
-		DEC_FRSTR(hge);
+		return dec_hge_frstr(*dst, *dst_len, s, t->digits, t->scale);
 #endif
 	}
 	return NULL;
@@ -2532,7 +2552,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].nil_len = ATOMlen(fmt[i].adt, fmt[i].nildata);
 			fmt[i].skip = (col->base.name[0] == '%');
 			if (col->type.type->eclass == EC_DEC) {
-				fmt[i].frstr = &dec_frstr;
+				fmt[i].frstr = &generic_dec_frstr;
 			} else if (col->type.type->eclass == EC_SEC) {
 				fmt[i].frstr = &sec_frstr;
 			}
