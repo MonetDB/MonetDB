@@ -541,12 +541,28 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	return s;
 }
 
+static sql_column *
+find_real_column(backend *be, sql_column *c)
+{
+	if (c && c->t && c->t->s && c->t->persistence == SQL_DECLARED_TABLE) {
+		sql_table *nt = find_sql_table_id(be->mvc->session->tr, c->t->s, c->t->base.id);
+		if (nt) {
+			node *n = ol_find_id(nt->columns, c->base.id);
+			if (n)
+				return n->data;
+		}
+	}
+	return c;
+}
+
 stmt *
 stmt_bat(backend *be, sql_column *c, int access, int partition)
 {
 	int tt = c->type.type->localtype;
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
+
+	c = find_real_column(be, c);
 
 	if (access == RD_EXT)
 		partition = 0;
