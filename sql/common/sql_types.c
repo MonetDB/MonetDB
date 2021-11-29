@@ -625,6 +625,27 @@ sql_create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout)
 	return create_arg(sa, name, t, inout);
 }
 
+static char* mangle_name(sql_allocator *sa, const char *name, sql_ftype type, list *ops) {
+
+	if (type != F_FUNC && type != F_AGGR)
+		return NULL;
+
+	char buf[1000] = {0};
+
+	char* c = buf; // cursor
+
+	assert(type == F_FUNC || type == F_AGGR);
+
+	c += sprintf(buf, "function%%sys%%%s", name);
+
+	for (node* n = ops->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		c += sprintf(c, "%%%s", a->type.type->base.name);
+	}
+
+	return sa_strdup(sa, buf);
+}
+
 static sql_func *
 sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_ftype type, bit semantics,
 				 int fix_scale, unsigned int res_scale, sql_type *res, int nargs, va_list valist)
@@ -641,6 +662,9 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 		fres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
 	base_init(sa, &t->base, local_id++, false, name);
 
+	t->mangled = mangle_name(sa, name, type, ops);
+	if (t->mangled)
+		printf("%s\n", t->mangled);
 	t->imp = sa_strdup(sa, imp);
 	t->mod = sa_strdup(sa, mod);
 	t->ops = ops;
