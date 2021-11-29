@@ -108,6 +108,29 @@ statement ok
 COMMIT
 
 statement ok
+CREATE TABLE t2(c0 INTERVAL DAY)
+
+statement ok
+CALL "sys"."dict_compress"('sys','t2','c0')
+
+statement ok rowcount 3
+INSERT INTO t2(c0) VALUES(INTERVAL '1586894108' DAY), (INTERVAL '-1000818987' DAY), (INTERVAL '1839469049' DAY)
+
+statement ok rowcount 3
+DELETE FROM t2
+
+statement ok rowcount 1
+INSERT INTO t2(c0) VALUES(INTERVAL '744537356' DAY)
+
+query T
+SELECT c0 FROM t2
+----
+744537356
+
+statement ok
+DROP TABLE "t2"
+
+statement ok
 START TRANSACTION
 
 statement ok
