@@ -131,6 +131,24 @@ statement ok
 DROP TABLE "t2"
 
 statement ok
+CREATE TABLE t2(c0 JSON, c1 BIGINT, c2 CHAR(71))
+
+statement ok
+CALL "sys"."dict_compress"('sys','t2','c1')
+
+statement ok rowcount 2
+INSERT INTO t2(c2, c0) VALUES('', JSON '["aa","tyu"]'), ('a', JSON '0.4')
+
+statement ok rowcount 2
+INSERT INTO t2(c0) VALUES(JSON '[false,false]'), (JSON 'null')
+
+statement ok rowcount 4
+UPDATE t2 SET c1 = 1
+
+statement ok
+DROP TABLE "t2"
+
+statement ok
 START TRANSACTION
 
 statement ok

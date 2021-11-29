@@ -1200,11 +1200,11 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 
 	if (cs->st == ST_DICT) {
 		/* possibly a new array is returned */
-		updates = dict_append_bat(cs, updates);
+		BAT *noupdates = dict_append_bat(cs, updates);
 		if (oupdates != updates)
 			bat_destroy(oupdates);
-		oupdates = updates;
-		if (!updates) {
+		oupdates = noupdates;
+		if (!oupdates) {
 			if (otids != tids)
 				bat_destroy(otids);
 			return LOG_ERR;
@@ -1841,14 +1841,14 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 
 	lock_column(tr->store, id);
 	if (bat->cs.st == ST_DICT) {
-		BAT *ni = dict_append_bat(&bat->cs, i);
-		if (oi != i) /* oi and i will be replaced, so destroy possible unmask reference */
+		BAT *ni = dict_append_bat(&bat->cs, oi);
+		if (oi != i) /* oi will be replaced, so destroy possible unmask reference */
 			bat_destroy(oi);
-		if (!ni) {
+		oi = ni;
+		if (!oi) {
 			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
-		oi = i = ni;
 	}
 
 	b = temp_descriptor(bat->cs.bid);
