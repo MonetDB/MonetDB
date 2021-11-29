@@ -1663,6 +1663,7 @@ dup_cs(sql_trans *tr, column_storage *ocs, column_storage *cs, int type, int tem
 	cs->uvbid = e_bat(type);
 	if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
 		return LOG_ERR;
+	cs->st = ocs->st;
 	return LOG_OK;
 }
 
