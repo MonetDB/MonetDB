@@ -84,7 +84,7 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 		if (nc->null != mc->null)
 			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errtable, errtable);
 		if (isRangePartitionTable(nt) || isListPartitionTable(nt)) {
-			if ((!nc->def && mc->def) || (nc->def && !mc->def) || (nc->def && mc->def && strcmp(nc->def, mc->def) != 0))
+			if ((nc->def || mc->def) && (!nc->def || !mc->def || strcmp(nc->def, mc->def) != 0))
 				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column DEFAULT value doesn't match %s definition", errtable, errtable);
 		}
 	}
@@ -1129,7 +1129,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	}
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
-
 		/* null or default value changes */
 		sql_column *c = n->data;
 
@@ -1180,7 +1179,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 			}
 		}
-		if (c->def != nc->def) {
+		if ((c->def || nc->def) && (!c->def || !nc->def || strcmp(c->def, nc->def) != 0)) {
 			switch (mvc_default(sql, nc, c->def)) {
 				case -1:
 					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1192,7 +1191,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			}
 		}
 
-		if (c->storage_type != nc->storage_type) {
+		if ((c->storage_type || nc->storage_type) && (!c->storage_type || !nc->storage_type || strcmp(c->storage_type, nc->storage_type) != 0)) {
 			if (c->t->access == TABLE_WRITABLE)
 				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
 			switch (mvc_storage(sql, nc, c->storage_type)) {
