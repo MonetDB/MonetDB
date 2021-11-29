@@ -95,6 +95,65 @@ CALL "sys"."dict_compress"('sys','t0','c0',false)
 statement ok rowcount 11
 INSERT INTO t1(c0, c1)(SELECT UUID '7A4A6b8b-e7f9-FA09-5650-6d1c83B1fc69', t0.c0 FROM t0)
 
+query I rowsort
+SELECT c0 FROM t0
+----
+-1
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+query TI rowsort
+SELECT c0,c1 FROM t1
+----
+648be74d-ccff-ea44-fd64-dfcb3a8c5b6c
+8
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+-1
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+0
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+1
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+2
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+3
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+4
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+5
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+6
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+7
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+8
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+9
+NULL
+1
+NULL
+3
+NULL
+7
+NULL
+9
+bb4fb0da-aff1-1919-f4eb-abaaf9e6b1f7
+6
+c036a4cf-ecec-57d1-9aca-6dce4eb8d12b
+5
+df1bcbac-01e3-81bc-a7c2-c2769fc9751a
+0
+fb7c955a-defd-1b91-0aca-aecfc8a0c5aa
+2
+
 statement ok
 START TRANSACTION
 
@@ -122,7 +181,7 @@ DELETE FROM t2
 statement ok rowcount 1
 INSERT INTO t2(c0) VALUES(INTERVAL '744537356' DAY)
 
-query T
+query T nosort
 SELECT c0 FROM t2
 ----
 744537356
@@ -145,8 +204,45 @@ INSERT INTO t2(c0) VALUES(JSON '[false,false]'), (JSON 'null')
 statement ok rowcount 4
 UPDATE t2 SET c1 = 1
 
+query TIT rowsort
+SELECT c0, c1, c2 FROM t2
+----
+0.4
+1
+a
+["aa","tyu"]
+1
+(empty)
+[false,false]
+1
+NULL
+null
+1
+NULL
+
 statement ok
 DROP TABLE "t2"
+
+statement ok
+CREATE TABLE t1(c0 VARCHAR(263))
+
+statement ok
+CALL "sys"."dict_compress"('sys','t1','c0',true)
+
+statement ok rowcount 2
+INSERT INTO t1(c0) VALUES('2104954476'), ('-1781832249')
+
+statement ok
+ALTER TABLE t1 ADD CONSTRAINT con2 UNIQUE(c0)
+
+query T rowsort
+SELECT c0 FROM t1
+----
+-1781832249
+2104954476
+
+statement ok
+DROP TABLE "t1"
 
 statement ok
 START TRANSACTION
