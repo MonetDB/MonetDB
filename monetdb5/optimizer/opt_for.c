@@ -91,7 +91,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if (p->argc == 2 && p->retc == 1 && getFunctionId(p) == NULL) {
+				} else if (p->argc == 2 && p->retc == 1 && p->barrier == ASSIGNsymbol) {
 					/* a = b */
 					int l = getArg(p, 0);
 					varisfor[l] = varisfor[k];

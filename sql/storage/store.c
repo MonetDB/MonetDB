@@ -6103,10 +6103,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 	int res = LOG_OK;
 	sqlstore *store = tr->store;
 
-	if (!col->def && !val)
-		return res;	/* no change */
-
-	if (!col->def || !val || strcmp(col->def, val) != 0) {
+	if ((col->def || val) && (!col->def || !val || strcmp(col->def, val) != 0)) {
 		void *p = val ? val : (void *) ATOMnilptr(TYPE_str);
 		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp");
 		sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
@@ -6140,10 +6137,7 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 	int res = LOG_OK;
 	sqlstore *store = tr->store;
 
-	if (!col->storage_type && !storage)
-		return res;	/* no change */
-
-	if (!col->storage_type || !storage || strcmp(col->storage_type, storage) != 0) {
+	if ((col->storage_type || storage) && (!col->storage_type || !storage || strcmp(col->storage_type, storage) != 0)) {
 		void *p = storage ? storage : (void *) ATOMnilptr(TYPE_str);
 		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp");
 		sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
