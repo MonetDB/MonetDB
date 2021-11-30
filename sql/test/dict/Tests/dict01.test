@@ -329,6 +329,28 @@ statement ok
 DROP TABLE t0
 
 statement ok
+CREATE TABLE t1(c0 STRING, c1 boolean)
+
+statement ok
+CALL "sys"."dict_compress"('sys','t1','c1')
+
+statement ok rowcount 8
+INSERT INTO "sys"."t1" VALUES ('488630434', true),('7', NULL),('-', NULL),('1663155929', NULL),('0.513881723571404', NULL),('_', false),('8277e0910d750195b448797616e091ad', NULL),('16:57:59', NULL)
+
+query T nosort
+SELECT t1.c0 FROM t1 WHERE NOT (t1.c1)
+----
+_
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT (t1.c1) AS INT) as count FROM t1) as res
+----
+1
+
+statement ok
+DROP TABLE t1
+
+statement ok
 START TRANSACTION
 
 statement ok
