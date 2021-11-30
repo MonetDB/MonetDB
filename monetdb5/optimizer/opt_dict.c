@@ -112,9 +112,9 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
-					/* id = mirror(col) with col = dict.decompress(o,u)
-					 * id = mirror(o) */
+				} else if ((getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) || (getModuleId(p) == batcalcRef && getFunctionId(p) == identityRef)) {
+					/* id = mirror/identity(col) with col = dict.decompress(o,u)
+					 * id = mirror/identity(o) */
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb,r);

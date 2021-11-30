@@ -283,6 +283,7 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 BAT *
 DICTdecompress_(BAT *o, BAT *u, role_t role)
 {
+	bool nils = false;
 	BAT *b = COLnew(o->hseqbase, u->ttype, BATcount(o), role);
 
 	if (!b)
@@ -298,19 +299,27 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			int *bp = Tloc(b, 0);
 
 			BATloop(o, p, q) {
-				bp[p] = up[op[p]];
+				int v = up[op[p]];
+				nils |= is_int_nil(v);
+				bp[p] = v;
 			}
 			BATsetcount(b, BATcount(o));
 			BATnegateprops(b);
+			b->tnil = nils;
+			b->tnonil = !nils;
 		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
 			lng *up = Tloc(u, 0);
 			lng *bp = Tloc(b, 0);
 
 			BATloop(o, p, q) {
-				bp[p] = up[op[p]];
+				lng v = up[op[p]];
+				nils |= is_lng_nil(v);
+				bp[p] = v;
 			}
 			BATsetcount(b, BATcount(o));
 			BATnegateprops(b);
+			b->tnil = nils;
+			b->tnonil = !nils;
 		} else {
 			BATloop(o, p, q) {
 				BUN up = op[p];
@@ -330,19 +339,27 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			int *bp = Tloc(b, 0);
 
 			BATloop(o, p, q) {
-				bp[p] = up[op[p]];
+				int v = up[op[p]];
+				nils |= is_int_nil(v);
+				bp[p] = v;
 			}
 			BATsetcount(b, BATcount(o));
 			BATnegateprops(b);
+			b->tnil = nils;
+			b->tnonil = !nils;
 		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
 			lng *up = Tloc(u, 0);
 			lng *bp = Tloc(b, 0);
 
 			BATloop(o, p, q) {
-				bp[p] = up[op[p]];
+				lng v = up[op[p]];
+				nils |= is_lng_nil(v);
+				bp[p] = v;
 			}
 			BATsetcount(b, BATcount(o));
 			BATnegateprops(b);
+			b->tnil = nils;
+			b->tnonil = !nils;
 		} else {
 			BATloop(o, p, q) {
 				BUN up = op[p];

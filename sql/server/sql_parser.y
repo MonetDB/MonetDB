@@ -3058,6 +3058,7 @@ insert_atom:
 value:
     search_condition
  |  select_no_parens
+ |  with_query
  ;
 
 opt_distinct:
@@ -3608,7 +3609,7 @@ comparison_predicate:
 		  append_symbol(l, $5);
 		  append_int(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- |  pred_exp '=' any_all_some  '(' value ')'
+ |  pred_exp '=' any_all_some '(' value ')'
 		{ dlist *l = L();
 
 		  append_symbol(l, $1);
