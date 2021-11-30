@@ -281,9 +281,9 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* improve decompress of hge types */
 BAT *
-DICTdecompress_(BAT *o, BAT *u)
+DICTdecompress_(BAT *o, BAT *u, role_t role)
 {
-	BAT *b = COLnew(o->hseqbase, u->ttype, BATcount(o), TRANSIENT);
+	BAT *b = COLnew(o->hseqbase, u->ttype, BATcount(o), role);
 
 	if (!b)
 		return NULL;
@@ -374,7 +374,7 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_destroy(u);
 		throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BAT *b = DICTdecompress_(o, u);
+	BAT *b = DICTdecompress_(o, u, TRANSIENT);
 	bat_destroy(o);
 	bat_destroy(u);
 	if (!b)
@@ -824,9 +824,9 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 BAT *
-DICTenlarge(BAT *offsets, BUN cnt, BUN sz)
+DICTenlarge(BAT *offsets, BUN cnt, BUN sz, role_t role)
 {
-	BAT *n = COLnew(offsets->hseqbase, TYPE_sht, sz, TRANSIENT);
+	BAT *n = COLnew(offsets->hseqbase, TYPE_sht, sz, role);
 
 	if (!n)
 		return NULL;
@@ -940,7 +940,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 			}
 			if (!f) {
 				if (BATcount(dict) >= 255) {
-					BAT *nn = DICTenlarge(n, i, sz);
+					BAT *nn = DICTenlarge(n, i, sz, TRANSIENT);
 					bat_destroy(n);
 					if (!nn) {
 						bat_iterator_end(&bi);
