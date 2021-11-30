@@ -301,9 +301,6 @@ COMMIT
 statement ok
 CALL "sys"."dict_compress"('sys','t0','c1',true)
 
-statement ok
-START TRANSACTION
-
 statement ok rowcount 2
 INSERT INTO t0(c1) VALUES(1419068893), (least(json."integer"(JSON 'null'), sqrt((SELECT DISTINCT 421689172 WHERE TRUE))))
 
@@ -327,9 +324,6 @@ INSERT INTO t0(c1, c0) VALUES(-1226601715, 0.545), (313, 0.68),(1613852187, 0.23
 
 statement ok
 UPDATE t0 SET c1 = DEFAULT FROM (SELECT 1) x(x)
-
-statement ok
-ROLLBACK
 
 statement ok
 DROP TABLE t0
