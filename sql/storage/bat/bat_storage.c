@@ -1114,7 +1114,7 @@ dict_append_bat(column_storage *cs, BAT *i)
 					bat_destroy(ui);
 					bat_destroy(uv);
 				}
-				n = DICTdecompress_(b, u);
+				n = DICTdecompress_(b, u, PERSISTENT);
 				bat_destroy(b);
 				assert(newoffsets == NULL);
 				if (!n) {
@@ -1142,7 +1142,7 @@ dict_append_bat(column_storage *cs, BAT *i)
 					bat_destroy(u);
 					return NULL;
 				}
-				n = DICTenlarge(b, BATcount(b), BATcount(b) + BATcount(i));
+				n = DICTenlarge(b, BATcount(b), BATcount(b) + BATcount(i), PERSISTENT);
 				bat_destroy(b);
 				if (!n) {
 					bat_destroy(newoffsets);
@@ -1512,7 +1512,7 @@ dict_append_val(column_storage *cs, void *i, BUN cnt)
 					bat_destroy(u);
 					return NULL;
 				}
-				n = DICTdecompress_(b, u);
+				n = DICTdecompress_(b, u, PERSISTENT);
 				/* TODO also decrompress updates if any */
 				bat_destroy(b);
 				assert(newoffsets == NULL);
@@ -1536,7 +1536,7 @@ dict_append_val(column_storage *cs, void *i, BUN cnt)
 					bat_destroy(u);
 					return NULL;
 				}
-				n = DICTenlarge(b, BATcount(b), BATcount(b) + cnt);
+				n = DICTenlarge(b, BATcount(b), BATcount(b) + cnt, PERSISTENT);
 				bat_destroy(b);
 				if (!n) {
 					GDKfree(newoffsets);
