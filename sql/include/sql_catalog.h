@@ -15,6 +15,7 @@
 #include "mapi_querytype.h"
 #include "stream.h"
 #include "matomic.h"
+#include "matomic-private.h"
 
 #define sql_shared_module_name "sql"
 #define sql_private_module_name "user"

@@ -175,6 +175,7 @@ install(EXPORT mstringTargets
 
 install(FILES
   matomic.h
+  matomic-private.h
   mstring.h
   copybinary.h
   DESTINATION
