@@ -637,3 +637,19 @@ query T nosort
 SELECT ((SELECT 5) INTERSECT (SELECT 9)) = ALL(SELECT 4) >= TRUE
 ----
 NULL
+
+query T nosort
+SELECT 1 = ANY(WITH x(x) AS (SELECT 1) SELECT x FROM x)
+----
+True
+
+query T nosort
+SELECT 1 IN (WITH x(x) AS (SELECT 1) SELECT x FROM x)
+----
+True
+
+query T nosort
+SELECT EXISTS (WITH x(x) AS (SELECT 1) SELECT x FROM x)
+----
+True
+
