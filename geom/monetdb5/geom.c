@@ -909,8 +909,15 @@ wkbCoversGeographic(bit *out, wkb **a, wkb **b)
 /**
  * FILTER FUNCTIONS
  **/
+
+static inline bit
+geosDistanceWithin (GEOSGeom geom1, GEOSGeom geom2, dbl distance_within) {
+	dbl distance = geoDistanceInternal(geom1, geom2);
+	return distance <= distance_within;
+}
+
 static str
-filter_select(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, dbl distance_within, bit anti)
+filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, dbl double_flag, bit anti, bit (*func) (GEOSGeom, GEOSGeom, dbl), const char *name)
 {
 	BAT *out = NULL, *b = NULL, *s = NULL;
 	BATiter b_iter;
@@ -920,18 +927,18 @@ filter_select(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, dbl d
 	//Check if the geometry is null and convert to GEOS
 	if ((const_geom = wkb2geos(wkb_const)) == NULL) {
 		if ((out = BATdense(0, 0, 0)) == NULL)
-			throw(MAL, "geom.wkbDWithinGeographicSelect", GDK_EXCEPTION);
+			throw(MAL, name, GDK_EXCEPTION);
 		*outid = out->batCacheid;
 		BBPkeepref(*outid);
 		return MAL_SUCCEED;
 	}
 	//get the BATs
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "geom.wkbDWithinGeographicSelect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	//get the candidate lists
 	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "geom.wkbDWithinGeographicSelect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	canditer_init(&ci, b, s);
 	//create a new BAT for the output
@@ -939,17 +946,28 @@ filter_select(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, dbl d
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
-		throw(MAL, "geom.wkbDWithinGeographicSelect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	b_iter = bat_iterator(b);
 	//Loop through column and compare with constant
 	for (BUN i = 0; i < ci.ncand; i++) {
 		oid c_oid = canditer_next(&ci);
 		const wkb *col_wkb = BUNtvar(b_iter, c_oid - b->hseqbase);
-		if (is_wkb_nil(col_wkb) || (col_geom = wkb2geos(col_wkb)) == NULL)
+		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			continue;
-		double distance = geoDistanceInternal(col_geom, const_geom);
-		if ((distance <= distance_within && !anti) || (distance > distance_within && anti) ) {
+		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
+			GEOSGeom_destroy(col_geom);
+			GEOSGeom_destroy(const_geom);
+			bat_iterator_end(&b_iter);
+			BBPunfix(b->batCacheid);
+			if (s)
+				BBPunfix(s->batCacheid);
+			BBPreclaim(out);
+			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
+		}
+		//Apply the (Geom, Geom, double) -> bit function
+		bit cond = (*func)(col_geom, const_geom, double_flag);
+		if (cond != anti) {
 			if (BUNappend(out, &c_oid, false) != GDK_SUCCEED) {
 				if (col_geom)
 					GEOSGeom_destroy(col_geom);
@@ -960,7 +978,7 @@ filter_select(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, dbl d
 				if (s)
 					BBPunfix(s->batCacheid);
 				BBPreclaim(out);
-				throw(MAL, "geom.wkbDWithinGeographicSelect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		GEOSGeom_destroy(col_geom);
@@ -970,34 +988,31 @@ filter_select(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, dbl d
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	*outid = out->batCacheid;
-	BBPkeepref(*outid);
+	BBPkeepref(*outid = out->batCacheid);
 	return MAL_SUCCEED;
 }
 
 static str
-filter_join(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double distance_within, const bat *ls_id, const bat *rs_id, bit nil_matches, lng *estimate, bit anti)
+filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng *estimate, bit anti, bit (*func) (GEOSGeom, GEOSGeom, dbl), const char *name)
 {
-	//TODO Use nil_matches?
-	(void) nil_matches;
 	BAT *lres = NULL, *rres = NULL, *l = NULL, *r = NULL, *ls = NULL, *rs = NULL;
 	BATiter l_iter, r_iter;
 	str msg = MAL_SUCCEED;
 	struct canditer l_ci, r_ci;
 	GEOSGeom l_geom, r_geom;
+	GEOSGeom *l_geoms = NULL, *r_geoms = NULL;
 
 	//get the input BATs
 	if ((l = BATdescriptor(*l_id)) == NULL || (r = BATdescriptor(*r_id)) == NULL) {
-		msg = createException(MAL, "geom.wkbDWithinGeographicJoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto free;
+		if (l)
+			BBPunfix(l->batCacheid);
+		if (r)
+			BBPunfix(r->batCacheid);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//get the candidate lists
-	if (ls_id && !is_bat_nil(*ls_id) && !(ls = BATdescriptor(*ls_id))) {
-		msg = createException(MAL, "geom.wkbDWithinGeographicJoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto free;
-	}
-	if (rs_id && !is_bat_nil(*rs_id) && !(rs = BATdescriptor(*rs_id))) {
-		msg = createException(MAL, "geom.wkbDWithinGeographicJoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (ls_id && !is_bat_nil(*ls_id) && !(ls = BATdescriptor(*ls_id)) && rs_id && !is_bat_nil(*rs_id) && !(rs = BATdescriptor(*rs_id))) {
+		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
 	canditer_init(&l_ci, l, ls);
@@ -1006,43 +1021,85 @@ filter_join(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double
 	if (is_lng_nil(*estimate) || *estimate == 0)
 		*estimate = l_ci.ncand;
 	if ((lres = COLnew(0, ATOMindex("oid"), *estimate, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "geom.wkbDWithinGeographicJoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
 	if ((rres = COLnew(0, ATOMindex("oid"), *estimate, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "geom.wkbDWithinGeographicJoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+
+	//Allocate arrays for reutilizing GEOS type conversion
+	if ((l_geoms = GDKmalloc(l_ci.ncand * sizeof(GEOSGeometry *))) == NULL || (r_geoms = GDKmalloc(r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
 
 	l_iter = bat_iterator(l);
 	r_iter = bat_iterator(r);
+	
+	//Convert wkb to GEOS only once
 	for (BUN i = 0; i < l_ci.ncand; i++) {
 		oid l_oid = canditer_next(&l_ci);
-		const wkb *l_wkb = BUNtvar(l_iter, l_oid - l->hseqbase);
-		if (is_wkb_nil(l_wkb) || (l_geom = wkb2geos(l_wkb)) == NULL)
+		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(l_iter, l_oid - l->hseqbase));
+	}
+	for (BUN j = 0; j < r_ci.ncand; j++) {
+		oid r_oid = canditer_next(&r_ci);
+		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(r_iter, r_oid - r->hseqbase));
+	}
+
+	canditer_reset(&l_ci);
+	for (BUN i = 0; i < l_ci.ncand; i++) {
+		oid l_oid = canditer_next(&l_ci);
+		l_geom = l_geoms[i];
+		if (!nil_matches && l_geom == NULL)
 			continue;
 		canditer_reset(&r_ci);
 		for (BUN j = 0; j < r_ci.ncand; j++) {
 			oid r_oid = canditer_next(&r_ci);
-			const wkb *r_wkb = BUNtvar(r_iter, r_oid - r->hseqbase);
-			if (is_wkb_nil(r_wkb) || (r_geom = wkb2geos(r_wkb)) == NULL) 
-				continue;
+			r_geom = r_geoms[j];
+			//Null handling
+			if (r_geom == NULL) {
+				if (nil_matches && l_geom == NULL) {
+					if (BUNappend(lres, &l_oid, false) != GDK_SUCCEED || BUNappend(rres, &r_oid, false) != GDK_SUCCEED) {
+						msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						bat_iterator_end(&l_iter);
+						bat_iterator_end(&r_iter);
+						goto free;
+					}
+				}
+				else
+					continue;
+			}
 			if (GEOSGetSRID(l_geom) != GEOSGetSRID(r_geom)) {
-				msg = createException(MAL, "geom.wkbDWithinGeographicJoin", SQLSTATE(38000) "Geometries of different SRID");
-				GEOSGeom_destroy(r_geom);
-				GEOSGeom_destroy(l_geom);
+				msg = createException(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
+				bat_iterator_end(&l_iter);
+				bat_iterator_end(&r_iter);
 				goto free;
 			}
-			double distance = geoDistanceInternal(l_geom, r_geom);
-			if ((distance <= distance_within && !anti) || (distance > distance_within && anti) ) {
+			//Apply the (Geom, Geom) -> bit function
+			bit cond = (*func)(l_geom, r_geom, double_flag);
+			if (cond != anti) {
 				if (BUNappend(lres, &l_oid, false) != GDK_SUCCEED || BUNappend(rres, &r_oid, false) != GDK_SUCCEED) {
-					msg = createException(MAL, "geom.wkbDWithinGeographicJoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					bat_iterator_end(&l_iter);
+					bat_iterator_end(&r_iter);
 					goto free;
 				}		
 			}
-			GEOSGeom_destroy(r_geom);
 		}
-		GEOSGeom_destroy(l_geom);
+	}
+	if (l_geoms) {
+		for (BUN i = 0; i < l_ci.ncand; i++) {
+			GEOSGeom_destroy(l_geoms[i]);
+		}
+		GDKfree(l_geoms);
+	}
+	if (r_geoms) {
+		for (BUN i = 0; i < r_ci.ncand; i++) {
+			GEOSGeom_destroy(r_geoms[i]);
+		}
+		GDKfree(r_geoms);
 	}
 	bat_iterator_end(&l_iter);
 	bat_iterator_end(&r_iter);
@@ -1052,19 +1109,24 @@ filter_join(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double
 		BBPunfix(ls->batCacheid);
 	if (rs)
 		BBPunfix(rs->batCacheid);
-	*lres_id = lres->batCacheid;
-	*rres_id = rres->batCacheid;
-	BBPkeepref(*lres_id);
-	BBPkeepref(*rres_id);
+	BBPkeepref(*lres_id = lres->batCacheid);
+	BBPkeepref(*rres_id = rres->batCacheid);
 	return MAL_SUCCEED;
 free:
-	//TODO: Test this
-	bat_iterator_end(&l_iter);
-	bat_iterator_end(&r_iter);
-	if (l)
-		BBPunfix(l->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
+	if (l_geoms) {
+		for (BUN i = 0; i < l_ci.ncand; i++) {
+			GEOSGeom_destroy(l_geoms[i]);
+		}
+		GDKfree(l_geoms);
+	}
+	if (r_geoms) {
+		for (BUN i = 0; i < r_ci.ncand; i++) {
+			GEOSGeom_destroy(r_geoms[i]);
+		}
+		GDKfree(r_geoms);
+	}
+	BBPunfix(l->batCacheid);
+	BBPunfix(r->batCacheid);
 	if (ls)
 		BBPunfix(ls->batCacheid);
 	if (rs)
@@ -1076,12 +1138,12 @@ free:
 	return msg;
 }
 
-//select * from brittany_ports as q1 join wpi_ports as q2 on [q1.geom] st_dwithingeographic [q2.geom,5000];
+//select st_distancegeographic(q1.geom,q2.geom) from brittany_ports as q1 join wpi_ports as q2 on [q1.geom] st_dwithingeographic [q2.geom,5000];
 str
 wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
 	double distance_within = 0;
 	BAT *d = NULL;
-	//Get the distance (const) BAT and get the double value
+	//Get the distance BAT and get the double value
 	if ((d = BATdescriptor(*d_id)) == NULL) {
 		if (d)
 			BBPunfix(d->batCacheid);
@@ -1091,27 +1153,26 @@ wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat 
 		distance_within = *((double*) Tloc(d, 0));
 	}
 	BBPunfix(d->batCacheid);
-	return filter_join(lres_id,rres_id,l_id,r_id,distance_within,ls_id,rs_id,*nil_matches,estimate,*anti);
+	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,distance_within,ls_id,rs_id,*nil_matches,estimate,*anti,geosDistanceWithin,"geom.wkbDWithinGeographicJoin");
 }
 
 //select gml_id,st_distancegeographic(st_setsrid(st_makepoint(-4.50,48.32),4326),q1.geom) from brittany_ports as q1 where [q1.geom] st_dwithingeographic [st_setsrid(st_makepoint(-4.50,48.32),4326),5000];
 str
 wkbDWithinGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl *distance_within, bit *anti) {
-	return filter_select(outid,bid,sid,*wkb_const,*distance_within,*anti);
+	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,*distance_within,*anti,geosDistanceWithin,"geom.wkbDWithinGeographicSelect");
 }
 
-//select * from brittany_ports as q1 join brittany_ports as q2 on [q1.geom] ST_IntersectsGeographic [q2.geom];
+//select q1.gml_id,q2.gml_id,st_distancegeographic(q1.geom,q2.geom) from brittany_ports as q1 join brittany_ports as q2 on [q1.geom] ST_IntersectsGeographic [q2.geom];
 str
 wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
-	return filter_join(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,*anti);
+	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicJoin");
 }
 
 //select gml_id,st_distancegeographic(st_setsrid(st_makepoint(-1.7717988686592332,48.602742696725414),4326),q1.geom) from brittany_ports as q1 where [q1.geom] ST_IntersectsGeographic [st_setsrid(st_makepoint(-1.7717988686592332,48.602742696725414),4326)];
 str
 wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
-	return filter_select(outid,bid,sid,*wkb_const,0,*anti);
+	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,0,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicSelect");
 }
-
 
 /**
  * AGGREGATES
