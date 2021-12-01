@@ -354,6 +354,57 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE rmct20(c0 BIGINT)
+
+statement ok
+CREATE TABLE rmct21(c0 BIGINT)
+
+statement ok rowcount 3
+INSERT INTO rmct20(c0) VALUES(40000), (26857000), (127117816000)
+
+statement ok rowcount 9
+INSERT INTO rmct21(c0) VALUES(1510153480000),(1054357633000),(93000),(542168641000),(1963352769000),(855906053000),(1937466219000),(27000),(875025185000)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','rmct21','c0',true)
+
+statement ok rowcount 4
+INSERT INTO rmct21(c0) VALUES(1829991355000),(2073175664000),(1969480299000),(1534889714000)
+
+query T rowsort
+(SELECT greatest(rmct21.c0, rmct21.c0) FROM rmct21) INTERSECT ALL (SELECT DISTINCT sql_max(737555899, rmct21.c0) FROM rmct21)
+----
+1054357633000
+1510153480000
+1534889714000
+1829991355000
+1937466219000
+1963352769000
+1969480299000
+2073175664000
+542168641000
+855906053000
+875025185000
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE rmct20
+
+statement ok
+DROP TABLE rmct21
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
 DROP ALL PROCEDURE "sys"."dict_compress"
 
 statement ok
@@ -361,3 +412,4 @@ DROP ALL PROCEDURE "sys"."for_compress"
 
 statement ok
 COMMIT
+
