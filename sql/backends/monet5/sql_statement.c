@@ -588,7 +588,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = newStmtArgs(mb, sqlRef, bindRef, 9);
 	if (q == NULL)
 		return NULL;
-	if (c->storage_type && access != RD_EXT && access != RD_UPD_ID) {
+	if (c->storage_type && access != RD_EXT) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
 		BAT *b = store->storage_api.bind_col(tr, c, QUICK);
@@ -2328,6 +2328,7 @@ stmt_for(backend *be, stmt *op1, stmt *min_val)
 		}
 
 		s->op1 = op1;
+		s->op2 = min_val;
 		s->flag = cmp_project;
 		s->key = 0;
 		s->nrcols = op1->nrcols;
