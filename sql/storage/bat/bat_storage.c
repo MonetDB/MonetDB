@@ -1060,23 +1060,22 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		return LOG_OK;
 
 	if (tids && (tids->ttype == TYPE_msk || mask_cand(tids))) {
-		otids = BATunmask(tids);
-		if (!otids)
+		tids = BATunmask(tids);
+		if (!tids)
 			return LOG_ERR;
 	}
 	if (updates && (updates->ttype == TYPE_msk || mask_cand(updates))) {
-		oupdates = BATunmask(updates);
-		if (!oupdates) {
+		updates = BATunmask(updates);
+		if (!updates) {
 			if (otids != tids)
-				bat_destroy(otids);
+				bat_destroy(tids);
 			return LOG_ERR;
 		}
-	}
-	if (updates && updates->ttype == TYPE_void) { /* dense later use optimized log structure */
-		oupdates = COLcopy(updates, TYPE_oid, true /* make sure we get a oid col */, TRANSIENT);
-		if (!oupdates) {
+	} else if (updates && updates->ttype == TYPE_void) { /* dense later use optimized log structure */
+		updates = COLcopy(updates, TYPE_oid, true /* make sure we get a oid col */, TRANSIENT);
+		if (!updates) {
 			if (otids != tids)
-				bat_destroy(otids);
+				bat_destroy(tids);
 			return LOG_ERR;
 		}
 	}
@@ -1085,45 +1084,45 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 	lock_table(tr->store, t->base.id);
 	storage *s = ATOMIC_PTR_GET(&t->data);
 	if (!is_new && !cs->cleared) {
-		if (!otids->tsorted || complex_cand(otids) /* make sure we have simple dense or oids */) {
+		if (!tids->tsorted || complex_cand(tids) /* make sure we have simple dense or oids */) {
 			BAT *sorted, *order;
-			if (BATsort(&sorted, &order, NULL, otids, NULL, NULL, false, false, false) != GDK_SUCCEED) {
+			if (BATsort(&sorted, &order, NULL, tids, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 				if (otids != tids)
-					bat_destroy(otids);
+					bat_destroy(tids);
 				if (oupdates != updates)
-					bat_destroy(oupdates);
+					bat_destroy(updates);
 				unlock_table(tr->store, t->base.id);
 				return LOG_ERR;
 			}
 			if (otids != tids)
-				bat_destroy(otids);
-			otids = sorted;
-			BAT *noupdates = BATproject(order, oupdates);
+				bat_destroy(tids);
+			tids = sorted;
+			BAT *nupdates = BATproject(order, updates);
 			bat_destroy(order);
 			if (oupdates != updates)
-				bat_destroy(oupdates);
-			oupdates = noupdates;
-			if (!oupdates) {
-				bat_destroy(otids);
+				bat_destroy(updates);
+			updates = nupdates;
+			if (!updates) {
+				bat_destroy(tids);
 				unlock_table(tr->store, t->base.id);
 				return LOG_ERR;
 			}
 		}
-		assert(otids->tsorted);
+		assert(tids->tsorted);
 		BAT *ui = NULL, *uv = NULL;
 
 		/* handle updates on just inserted bits */
 		/* handle updates on updates (within one transaction) */
-		BATiter upi = bat_iterator(oupdates);
-		BUN cnt = 0, ucnt = BATcount(otids);
+		BATiter upi = bat_iterator(updates);
+		BUN cnt = 0, ucnt = BATcount(tids);
 		BAT *b, *ins = NULL;
 		int *msk = NULL;
 
 		if((b = temp_descriptor(cs->bid)) == NULL)
 			res = LOG_ERR;
 
-		if (res == LOG_OK && BATtdense(otids)) {
-			oid start = otids->tseqbase, offset = start;
+		if (res == LOG_OK && BATtdense(tids)) {
+			oid start = tids->tseqbase, offset = start;
 			oid end = start + ucnt;
 
 			for(segment *seg = s->segs->h; seg && res == LOG_OK ; seg=seg->next) {
@@ -1165,7 +1164,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 			}
 		} else if (res == LOG_OK) {
 			BUN i = 0;
-			oid *rid = Tloc(otids,0);
+			oid *rid = Tloc(tids,0);
 			segment *seg = s->segs->h;
 			while ( seg && res == LOG_OK && i < ucnt) {
 				if (seg->end <= rid[i])
@@ -1210,13 +1209,13 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 				if (cnt) {
 					BAT *nins = BATmaskedcands(0, ucnt, ins, false);
 					if (nins) {
-						ui = BATproject(nins, otids);
-						uv = BATproject(nins, oupdates);
+						ui = BATproject(nins, tids);
+						uv = BATproject(nins, updates);
 						bat_destroy(nins);
 					}
 				} else {
-					ui = temp_descriptor(otids->batCacheid);
-					uv = temp_descriptor(oupdates->batCacheid);
+					ui = temp_descriptor(tids->batCacheid);
+					uv = temp_descriptor(updates->batCacheid);
 				}
 				if (!ui || !uv) {
 					res = LOG_ERR;
@@ -1246,16 +1245,16 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 
 						/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
 						BUN uip = 0, uie = BATcount(ui);
-						BUN nip = 0, nie = BATcount(otids);
+						BUN nip = 0, nie = BATcount(tids);
 						oid uiseqb = ui->tseqbase;
-						oid niseqb = otids->tseqbase;
+						oid niseqb = tids->tseqbase;
 						oid *uipt = NULL, *nipt = NULL;
 						BATiter uii = bat_iterator(ui);
-						BATiter otidsi = bat_iterator(otids);
+						BATiter tidsi = bat_iterator(tids);
 						if (!BATtdense(ui))
 							uipt = uii.base;
-						if (!BATtdense(otids))
-							nipt = otidsi.base;
+						if (!BATtdense(tids))
+							nipt = tidsi.base;
 						while (uip < uie && nip < nie && res == LOG_OK) {
 							oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
 							oid niv = (nipt)?nipt[nip]: niseqb+nip;
@@ -1310,7 +1309,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							nip++;
 						}
 						bat_iterator_end(&uii);
-						bat_iterator_end(&otidsi);
+						bat_iterator_end(&tidsi);
 						bat_iterator_end(&ovi);
 						if (res == LOG_OK) {
 							temp_destroy(cs->uibid);
@@ -1332,9 +1331,9 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		bat_destroy(ui);
 		bat_destroy(uv);
 		if (otids != tids)
-			bat_destroy(otids);
+			bat_destroy(tids);
 		if (oupdates != updates)
-			bat_destroy(oupdates);
+			bat_destroy(updates);
 		return res;
 	} else if (is_new || cs->cleared) {
 		BAT *b = temp_descriptor(cs->bid);
@@ -1344,16 +1343,16 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		} else if (BATcount(b)==0) {
 			if (BATappend(b, updates, NULL, true) != GDK_SUCCEED) /* alter add column */
 				res = LOG_ERR;
-		} else if (BATreplace(b, otids, updates, true) != GDK_SUCCEED)
+		} else if (BATreplace(b, tids, updates, true) != GDK_SUCCEED)
 			res = LOG_ERR;
 		BBPcold(b->batCacheid);
 		bat_destroy(b);
 	}
 	unlock_table(tr->store, t->base.id);
 	if (otids != tids)
-		bat_destroy(otids);
+		bat_destroy(tids);
 	if (oupdates != updates)
-		bat_destroy(oupdates);
+		bat_destroy(updates);
 	return res;
 }
 
