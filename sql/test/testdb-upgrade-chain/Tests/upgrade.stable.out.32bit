@@ -3889,6 +3889,11 @@ CREATE VIEW sys.describe_sequences AS
 		seq.name seq,
 		seq."start" s,
 		peak_next_value_for(s.name, seq.name) rs,
+		seq."minvalue" mi,
+		seq."maxvalue" ma,
+		seq."increment" inc,
+		seq."cacheinc" cache,
+		seq."cycle" cycle,
 		CASE WHEN seq."minvalue" = -9223372036854775807 AND seq."increment" > 0 AND seq."start" =  1 THEN TRUE ELSE FALSE END nomin,
 		CASE WHEN seq."maxvalue" =  9223372036854775807 AND seq."increment" < 0 AND seq."start" = -1 THEN TRUE ELSE FALSE END nomax,
 		CASE
@@ -3908,12 +3913,7 @@ CREATE VIEW sys.describe_sequences AS
 					WHEN seq."increment" > 0  THEN NULL
 					ELSE CASE WHEN seq."start" = -1 THEN NULL ELSE seq."maxvalue" END
 				END
-		END rma,
-		seq."minvalue" mi,
-		seq."maxvalue" ma,
-		seq."increment" inc,
-		seq."cacheinc" cache,
-		seq."cycle" cycle
+		END rma
 	FROM sys.sequences seq, sys.schemas s
 	WHERE s.id = seq.schema_id
 	AND s.name <> 'tmp'
@@ -3932,7 +3932,7 @@ GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;
 GRANT SELECT ON sys.describe_sequences TO PUBLIC;
 GRANT SELECT ON sys.describe_functions TO PUBLIC;
 update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = 1;
-update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_functions') AND schema_id = 2000;
+update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_sequences', 'describe_functions') AND schema_id = 2000;
 CREATE VIEW sys.dump_create_roles AS
   SELECT
     'CREATE ROLE ' || sys.dq(name) || ';' stmt,
@@ -4098,8 +4098,8 @@ CREATE VIEW sys.dump_partition_tables AS
 CREATE VIEW sys.dump_sequences AS
   SELECT
     'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||
-    CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
-    CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
+    CASE WHEN "s" <> 0 THEN 'START WITH ' ||  "rs" ELSE '' END ||
+    CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' ||  "inc" ELSE '' END ||
     CASE
       WHEN nomin THEN ' NO MINVALUE'
       WHEN rmi IS NOT NULL THEN ' MINVALUE ' || rmi
@@ -4110,7 +4110,7 @@ CREATE VIEW sys.dump_sequences AS
       WHEN rma IS NOT NULL THEN ' MAXVALUE ' || rma
       ELSE ''
     END ||
-    CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
+    CASE WHEN "cache" <> 1 THEN ' CACHE ' ||  "cache" ELSE '' END ||
     CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END ||
     ';' stmt,
     sch schema_name,
