@@ -294,7 +294,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 	if (o->ttype == TYPE_bte) {
 		unsigned char *op = Tloc(o, 0);
 
-		if (ATOMstorage(u->ttype) == TYPE_int) {
+		if (ATOMbasetype(u->ttype) == TYPE_int) {
 			int *up = Tloc(u, 0);
 			int *bp = Tloc(b, 0);
 
@@ -307,7 +307,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			BATnegateprops(b);
 			b->tnil = nils;
 			b->tnonil = !nils;
-		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
+		} else if (ATOMbasetype(u->ttype) == TYPE_lng) {
 			lng *up = Tloc(u, 0);
 			lng *bp = Tloc(b, 0);
 
@@ -334,7 +334,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 		assert(o->ttype == TYPE_sht);
 		unsigned short *op = Tloc(o, 0);
 
-		if (ATOMstorage(u->ttype) == TYPE_int) {
+		if (ATOMbasetype(u->ttype) == TYPE_int) {
 			int *up = Tloc(u, 0);
 			int *bp = Tloc(b, 0);
 
@@ -347,7 +347,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			BATnegateprops(b);
 			b->tnil = nils;
 			b->tnonil = !nils;
-		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
+		} else if (ATOMbasetype(u->ttype) == TYPE_lng) {
 			lng *up = Tloc(u, 0);
 			lng *bp = Tloc(b, 0);
 
