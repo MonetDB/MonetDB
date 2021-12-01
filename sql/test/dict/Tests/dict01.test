@@ -441,6 +441,21 @@ statement ok
 COMMIT
 
 statement ok
+CREATE TABLE t0(c0 boolean PRIMARY KEY)
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(TRUE)
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c0')
+
+statement ok rowcount 1
+MERGE INTO t0 USING (SELECT INTERVAL '9' MONTH FROM t0) AS mergejoined(c0) ON t0.c0 WHEN MATCHED THEN UPDATE SET c0 = TRUE WHEN NOT MATCHED THEN INSERT (c0) VALUES (FALSE)
+
+statement ok
+DROP TABLE t0
+
+statement ok
 START TRANSACTION
 
 statement ok
