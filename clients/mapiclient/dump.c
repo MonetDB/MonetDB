@@ -1506,46 +1506,55 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 		goto bailout;
 
 	snprintf(query, maxquerylen,
-		"SELECT s.name, "									/* 0 */
-		       "seq.name, "									/* 1 */
-		       "peak_next_value_for(s.name, seq.name), "	/* 2 */
-		       "seq.\"minvalue\", "							/* 3 */
-		       "seq.\"maxvalue\", "							/* 4 */
-		       "seq.\"increment\", "						/* 5 */
-		       "seq.\"cycle\", "							/* 6 */
-		       "seq.\"cacheinc\", "							/* 7 */
-		       "rem.\"remark\" "							/* 8 */
-		"FROM sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id, "
-		     "sys.schemas s "
-		"WHERE s.id = seq.schema_id "
-		  "AND s.name = '%s' "
-		  "AND seq.name = '%s' "
-		"ORDER BY s.name, seq.name",
+			 "SELECT c.remark, q.* "
+			   "FROM sys.sequences seq LEFT OUTER JOIN sys.comments c ON seq.id = c.id, "
+			        "sys.schemas s, "
+			        "sys.describe_sequences q "
+			  "WHERE s.id = seq.schema_id "
+			    "AND s.name = '%s' "   /* schema name */
+			    "AND seq.name = '%s' " /* sequence name */
+			    "AND q.sch = '%s' "	   /* schema name */
+			    "AND q.seq = '%s' "	   /* sequence name */
+			  "ORDER BY q.sch, q.seq",
+		schema, tname,
 		schema, tname);
 
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
-		const char *schema = mapi_fetch_field(hdl, 0);
-		const char *name = mapi_fetch_field(hdl, 1);
-		const char *start = mapi_fetch_field(hdl, 2);
-		const char *minvalue = mapi_fetch_field(hdl, 3);
-		const char *maxvalue = mapi_fetch_field(hdl, 4);
-		const char *increment = mapi_fetch_field(hdl, 5);
-		const char *cycle = mapi_fetch_field(hdl, 6);
-		const char *cacheinc = mapi_fetch_field(hdl, 7);
-		const char *remark = mapi_fetch_field(hdl, 8);
+		const char *remark = mapi_fetch_field(hdl, 0);
+		const char *schema = mapi_fetch_field(hdl, 1);		/* sch */
+		const char *name = mapi_fetch_field(hdl, 2);		/* seq */
+		const char *restart = mapi_fetch_field(hdl, 4);		/* rs */
+		const char *minvalue;
+		const char *maxvalue;
+		const char *increment = mapi_fetch_field(hdl, 7);	/* inc */
+		const char *cacheinc = mapi_fetch_field(hdl, 8);	/* cache */
+		const char *cycle = mapi_fetch_field(hdl, 9);		/* cycle */
 
+		if (mapi_get_field_count(hdl) > 10) {
+			/* new version (Jan2022) of sys.describe_sequences */
+			minvalue = mapi_fetch_field(hdl, 12);			/* rmi */
+			maxvalue = mapi_fetch_field(hdl, 13);			/* rma */
+		} else {
+			/* old version (pre Jan2022) of sys.describe_sequences */
+			minvalue = mapi_fetch_field(hdl, 5);			/* minvalue */
+			maxvalue = mapi_fetch_field(hdl, 6);			/* maxvalue */
+			if (strcmp(minvalue, "0") == 0)
+				minvalue = NULL;
+			if (strcmp(maxvalue, "0") == 0)
+				maxvalue = NULL;
+		}
 		mnstr_printf(toConsole, "CREATE SEQUENCE ");
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, name, NULL);
-		mnstr_printf(toConsole, " START WITH %s", start);
+		mnstr_printf(toConsole, " START WITH %s", restart);
 		if (strcmp(increment, "1") != 0)
 			mnstr_printf(toConsole, " INCREMENT BY %s", increment);
-		if (strcmp(minvalue, "0") != 0)
+		if (minvalue)
 			mnstr_printf(toConsole, " MINVALUE %s", minvalue);
-		if (strcmp(maxvalue, "0") != 0)
+		if (maxvalue)
 			mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
 		if (strcmp(cacheinc, "1") != 0)
 			mnstr_printf(toConsole, " CACHE %s", cacheinc);
@@ -2389,16 +2398,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name, seq.name";
 	const char *sequences2 =
-		"SELECT "
-		     "sch, "
-		     "seq, "
-		     "rs, "
-		     "rmi, "
-		     "rma, "
-		     "inc, "
-		     "cycle "
-		"FROM sys.describe_sequences "
-		"ORDER BY sch, seq";
+		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
 	/* we must dump tables, views, functions/procedures and triggers in order of creation since they can refer to each other */
 	const char *tables_views_functions_triggers =
 		"with vft (sname, name, id, query, remark, type) AS ("
@@ -2862,18 +2862,30 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
-			const char *schema = mapi_fetch_field(hdl, 0);
-			const char *name = mapi_fetch_field(hdl, 1);
-			const char *restart = mapi_fetch_field(hdl, 2);
-			const char *minvalue = mapi_fetch_field(hdl, 3);
-			const char *maxvalue = mapi_fetch_field(hdl, 4);
-			const char *increment = mapi_fetch_field(hdl, 5);
-			const char *cycle = mapi_fetch_field(hdl, 6);
+			const char *schema = mapi_fetch_field(hdl, 0);		/* sch */
+			const char *name = mapi_fetch_field(hdl, 1);		/* seq */
+			const char *restart = mapi_fetch_field(hdl, 3);		/* rs */
+			const char *minvalue;
+			const char *maxvalue;
+			const char *increment = mapi_fetch_field(hdl, 6);	/* inc */
+			const char *cycle = mapi_fetch_field(hdl, 8);		/* cycle */
+
+			if (mapi_get_field_count(hdl) > 9) {
+				/* new version (Jan2022) of sys.describe_sequences */
+				minvalue = mapi_fetch_field(hdl, 11);			/* rmi */
+				maxvalue = mapi_fetch_field(hdl, 12);			/* rma */
+			} else {
+				/* old version (pre Jan2022) of sys.describe_sequences */
+				minvalue = mapi_fetch_field(hdl, 4);			/* minvalue */
+				maxvalue = mapi_fetch_field(hdl, 5);			/* maxvalue */
+				if (strcmp(minvalue, "0") == 0)
+					minvalue = NULL;
+				if (strcmp(maxvalue, "0") == 0)
+					maxvalue = NULL;
+			}
 
 			if (sname != NULL && strcmp(schema, sname) != 0)
 				continue;
-
-			// sleep(7);
 
 			mnstr_printf(toConsole,
 				     "ALTER SEQUENCE ");

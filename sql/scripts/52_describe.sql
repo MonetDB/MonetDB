@@ -492,6 +492,11 @@ CREATE VIEW sys.describe_sequences AS
 		seq.name seq,
 		seq."start" s,
 		peak_next_value_for(s.name, seq.name) rs,
+		seq."minvalue" mi,
+		seq."maxvalue" ma,
+		seq."increment" inc,
+		seq."cacheinc" cache,
+		seq."cycle" cycle,
 		CASE WHEN seq."minvalue" = -9223372036854775807 AND seq."increment" > 0 AND seq."start" =  1 THEN TRUE ELSE FALSE END nomin,
 		CASE WHEN seq."maxvalue" =  9223372036854775807 AND seq."increment" < 0 AND seq."start" = -1 THEN TRUE ELSE FALSE END nomax,
 		CASE
@@ -511,12 +516,7 @@ CREATE VIEW sys.describe_sequences AS
 					WHEN seq."increment" > 0  THEN NULL
 					ELSE CASE WHEN seq."start" = -1 THEN NULL ELSE seq."maxvalue" END
 				END
-		END rma,
-		seq."minvalue" mi,
-		seq."maxvalue" ma,
-		seq."increment" inc,
-		seq."cacheinc" cache,
-		seq."cycle" cycle
+		END rma
 	FROM sys.sequences seq, sys.schemas s
 	WHERE s.id = seq.schema_id
 	AND s.name <> 'tmp'
