@@ -13,6 +13,5 @@
 #include "sql.h"
 
 extern str sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_drop_statistics(mvc *m, sql_table *t);
 
 #endif /* _SQL_STATISTICS_DEF */

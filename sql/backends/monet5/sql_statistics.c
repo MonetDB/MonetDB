@@ -22,57 +22,6 @@ analysis by optimizers.
 #include "sql_execute.h"
 
 str
-sql_drop_statistics(mvc *m, sql_table *t)
-{
-	node *ncol;
-	sql_trans *tr;
-	sql_schema *sys;
-	sql_table *sysstats;
-	sql_column *statsid;
-	oid rid;
-	int log_res = LOG_OK;
-
-	tr = m->session->tr;
-	sys = mvc_bind_schema(m, "sys");
-	if (sys == NULL)
-		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "Internal error: No schema sys");
-	sysstats = mvc_bind_table(m, sys, "statistics");
-	if (sysstats == NULL)
-		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
-	statsid = mvc_bind_column(m, sysstats, "column_id");
-	if (statsid == NULL)
-		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
-
-	/* Do all the validations before any drop */
-	if (!isTable(t))
-		throw(SQL, "sql_drop_statistics", SQLSTATE(42S02) "DROP STATISTICS: %s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
-	if (!table_privs(m, t, PRIV_SELECT))
-		throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to table '%s.%s'",
-			  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
-	if (isTable(t) && ol_first_node(t->columns)) {
-		for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
-			sql_column *c = (sql_column *) ncol->data;
-
-			if (!column_privs(m, c, PRIV_SELECT))
-				throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to column '%s' on table '%s.%s'",
-					  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
-		}
-	}
-
-	sqlstore *store = tr->store;
-	if (isTable(t) && ol_first_node(t->columns)) {
-		for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
-			sql_column *c = ncol->data;
-
-			rid = store->table_api.column_find_row(tr, statsid, &c->base.id, NULL);
-			if (!is_oid_nil(rid) && (log_res = store->table_api.table_delete(tr, sysstats, rid)) != LOG_OK)
-				throw(SQL, "sql.sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
-		}
-	}
-	return MAL_SUCCEED;
-}
-
-str
 sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;

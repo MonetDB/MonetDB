@@ -4311,27 +4311,6 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 }
 
 static int
-sys_drop_statistics(sql_trans *tr, sql_column *col)
-{
-	sqlstore *store = tr->store;
-	int res = LOG_OK;
-
-	if (isGlobal(col->t)) {
-		sql_schema *syss = find_sql_schema(tr, "sys");
-		sql_table *sysstats = find_sql_table(tr, syss, "statistics");
-
-		oid rid = store->table_api.column_find_row(tr, find_sql_column(sysstats, "column_id"), &col->base.id, NULL);
-
-		if (is_oid_nil(rid)) /* no statistics */
-			return 0;
-
-		if ((res = store->table_api.table_delete(tr, sysstats, rid)))
-			return res;
-	}
-	return res;
-}
-
-static int
 sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 {
 	const char *next_value_for = "next value for ";
@@ -4437,8 +4416,6 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	if ((res = sys_drop_default_object(tr, col, drop_action)))
 		return res;
 
-	if ((res = sys_drop_statistics(tr, col)))
-		return res;
 	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, col->base.id, COLUMN_DEPENDENCY)))
 		return res;
 	if (col->type.type->s && (res = sql_trans_drop_dependency(tr, col->base.id, col->type.type->base.id, TYPE_DEPENDENCY)))
@@ -6193,66 +6170,42 @@ size_t
 sql_trans_dist_count( sql_trans *tr, sql_column *col )
 {
 	sqlstore *store = tr->store;
-	if (col->dcount)
-		return col->dcount;
 
 	if (col && isTable(col->t)) {
-		/* get from statistics */
-		sql_schema *sys = find_sql_schema(tr, "sys");
-		sql_table *stats = find_sql_table(tr, sys, "statistics");
-		if (stats) {
-			sql_column *stats_column_id = find_sql_column(stats, "column_id");
-			oid rid = store->table_api.column_find_row(tr, stats_column_id, &col->base.id, NULL);
-			if (!is_oid_nil(rid)) {
-				col->dcount = (size_t) store->table_api.column_find_lng(tr, find_sql_column(stats, "unique"), rid);
-			} else { /* sample and put in statistics */
-				col->dcount = store->storage_api.dcount_col(tr, col);
-			}
-		}
+		if (!col->dcount)
+			col->dcount = store->storage_api.dcount_col(tr, col);
 		return col->dcount;
 	}
 	return 0;
 }
 
 int
-sql_trans_ranges( sql_trans *tr, sql_column *col, char **min, char **max )
+sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 {
 	sqlstore *store = tr->store;
+
 	*min = NULL;
 	*max = NULL;
 	if (col && isTable(col->t)) {
-		/* get from statistics */
-		sql_schema *sys = find_sql_schema(tr, "sys");
-		sql_table *stats = find_sql_table(tr, sys, "statistics");
-
 		if (col->min && col->max) {
 			*min = col->min;
 			*max = col->max;
-			return 1;
-		}
-		if (stats) {
-			sql_column *stats_column_id = find_sql_column(stats, "column_id");
-			oid rid = store->table_api.column_find_row(tr, stats_column_id, &col->base.id, NULL);
-			if (!is_oid_nil(rid)) {
-				char *v1 = NULL, *v2 = NULL;
-				sql_column *stats_min = find_sql_column(stats, "minval");
-				sql_column *stats_max = find_sql_column(stats, "maxval");
-
-				if (!(v1 = store->table_api.column_find_value(tr, stats_min, rid)) ||
-					!(v2 = store->table_api.column_find_value(tr, stats_max, rid))) {
-					_DELETE(v1);
-					_DELETE(v2);
-					return 0;
-				}
-				*min = col->min = SA_STRDUP(tr->sa, v1);
-				_DELETE(v1);
-				*max = col->max = SA_STRDUP(tr->sa, v2);
-				_DELETE(v2);
-				return 1;
+		} else {
+			void *smin = NULL, *smax = NULL;
+			size_t minlen = 0, maxlen = 0;
+			if (store->storage_api.min_max_col(tr, col, &minlen, &smin, &maxlen, &smax)) {
+				*min = col->min = sa_alloc(tr->sa, minlen);
+				*max = col->max = sa_alloc(tr->sa, maxlen);
+				memcpy(col->min, smin, minlen);
+				memcpy(col->max, smax, maxlen);
+				col->minlen = minlen;
+				col->maxlen = maxlen;
+				_DELETE(smin);
+				_DELETE(smax);
 			}
 		}
 	}
-	return 0;
+	return *min != NULL && *max != NULL;
 }
 
 int

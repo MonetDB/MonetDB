@@ -2314,6 +2314,47 @@ dcount_col(sql_trans *tr, sql_column *c)
 	return cnt;
 }
 
+static int
+min_max_col(sql_trans *tr, sql_column *col, size_t *minlen, void **min, size_t *maxlen, void **max)
+{
+	int ok = 0;
+
+	assert(tr->active);
+	*min = NULL;
+	*max = NULL;
+	if (!isTable(col->t) || !col->t->s)
+		return ok;
+
+	if (col && ATOMIC_PTR_GET(&col->data)) {
+		BAT *b = bind_col(tr, col, QUICK), *fb = NULL;
+		if (b) {
+			MT_lock_set(&b->theaplock);
+			if (b->tminpos != BUN_NONE && b->tmaxpos != BUN_NONE && (fb = bind_col(tr, col, RDONLY))) {
+				BATiter bi = bat_iterator_nolock(fb);
+				void *nmin = BUNtail(bi, b->tminpos), *nmax = BUNtail(bi, b->tmaxpos);
+
+				*minlen = ATOMlen(b->ttype, nmin);
+				*maxlen = ATOMlen(b->ttype, nmax);
+				if (!(*min = GDKmalloc(*minlen)) || !(*max = GDKmalloc(*maxlen))) {
+					GDKfree(*min);
+					GDKfree(*max);
+					*min = NULL;
+					*max = NULL;
+					*minlen = 0;
+					*maxlen = 0;
+				} else {
+					memcpy(*min, nmin, *minlen);
+					memcpy(*max, nmax, *maxlen);
+					ok = 1;
+				}
+				BBPunfix(fb->batCacheid);
+			}
+			MT_lock_unset(&b->theaplock);
+		}
+	}
+	return ok;
+}
+
 static size_t
 count_segs(segment *s)
 {
@@ -4440,6 +4481,7 @@ bat_storage_init( store_functions *sf)
 	sf->count_col = &count_col;
 	sf->count_idx = &count_idx;
 	sf->dcount_col = &dcount_col;
+	sf->min_max_col = &min_max_col;
 	sf->sorted_col = &sorted_col;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
