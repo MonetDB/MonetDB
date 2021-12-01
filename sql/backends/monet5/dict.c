@@ -294,7 +294,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 	if (o->ttype == TYPE_bte) {
 		unsigned char *op = Tloc(o, 0);
 
-		if (ATOMstorage(u->ttype) == TYPE_int) {
+		if (ATOMbasetype(u->ttype) == TYPE_int) {
 			int *up = Tloc(u, 0);
 			int *bp = Tloc(b, 0);
 
@@ -307,7 +307,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			BATnegateprops(b);
 			b->tnil = nils;
 			b->tnonil = !nils;
-		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
+		} else if (ATOMbasetype(u->ttype) == TYPE_lng) {
 			lng *up = Tloc(u, 0);
 			lng *bp = Tloc(b, 0);
 
@@ -334,7 +334,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 		assert(o->ttype == TYPE_sht);
 		unsigned short *op = Tloc(o, 0);
 
-		if (ATOMstorage(u->ttype) == TYPE_int) {
+		if (ATOMbasetype(u->ttype) == TYPE_int) {
 			int *up = Tloc(u, 0);
 			int *bp = Tloc(b, 0);
 
@@ -347,7 +347,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			BATnegateprops(b);
 			b->tnil = nils;
 			b->tnonil = !nils;
-		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
+		} else if (ATOMbasetype(u->ttype) == TYPE_lng) {
 			lng *up = Tloc(u, 0);
 			lng *bp = Tloc(b, 0);
 
@@ -852,9 +852,12 @@ DICTenlarge(BAT *offsets, BUN cnt, BUN sz, role_t role)
 	for(BUN i = 0; i<cnt; i++) {
 		no[i] = o[i];
 	}
-	n->tkey = offsets->tkey;
 	BATnegateprops(n);
+	n->tnil = offsets->tnil;
+	n->tnonil = offsets->tnonil;
+	n->tkey = offsets->tkey;
 	n->tsorted = offsets->tsorted;
+	n->trevsorted = offsets->trevsorted;
 	return n;
 }
 
@@ -901,20 +904,22 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BATsetcount(n, cnt);
 	BATnegateprops(n);
+	n->tnil = false;
+	n->tnonil = true;
 	if (o->ttype == TYPE_bte) {
 		unsigned char *mp = Tloc(m, 0);
 		unsigned char mm = 0;
 		for(BUN i = 0; i<BATcount(m); i++)
 			if (mp[i] > mm)
 				mm = mp[i];
-		BATmaxminpos_bte(o, mm);
+		BATmaxminpos_bte(n, mm);
 	} else {
 		unsigned short *mp = Tloc(m, 0);
 		unsigned short mm = 0;
 		for(BUN i = 0; i<BATcount(m); i++)
 			if (mp[i] > mm)
 				mm = mp[i];
-		BATmaxminpos_sht(o, mm);
+		BATmaxminpos_sht(n, mm);
 	}
 	bat_destroy(o);
 	bat_destroy(m);
@@ -1015,6 +1020,8 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 	bat_iterator_end(&bi);
 	BATsetcount(n, sz);
 	BATnegateprops(n);
+	n->tnil = false;
+	n->tnonil = true;
 	*noffsets = n;
 	return 0;
 }
