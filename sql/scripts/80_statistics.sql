@@ -8,21 +8,6 @@
 -- This script gives the database administrator insight in the actual
 -- value distribution over all tables in the database.
 
-
-CREATE TABLE sys.statistics(
-	"column_id" integer,
-	"type" string,
-	width integer,
-	stamp timestamp,
-	"sample" bigint,
-	"count" bigint,
-	"unique" bigint,
-	"nils" bigint,
-	minval string,
-	maxval string,
-	sorted boolean,
-	revsorted boolean);
-
 create procedure sys.analyze(minmax int, "sample" bigint)
 external name sql.analyze;
 
