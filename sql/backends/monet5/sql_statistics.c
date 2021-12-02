@@ -327,23 +327,21 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 						if (bs->tminpos != BUN_NONE || bs->tmaxpos != BUN_NONE) {
 							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[bs->ttype].atomToStr;
-							MT_lock_set(&bs->theaplock);
-							if (bs->tminpos != BUN_NONE || bs->tmaxpos != BUN_NONE) {
-								size_t minlen = 0, maxlen = 0;
-								char *min = NULL, *max = NULL;
-								gdk_return res = GDK_SUCCEED;
+							size_t minlen = 0, maxlen = 0;
+							char *min = NULL, *max = NULL;
+							gdk_return res = GDK_SUCCEED;
 
-								if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
-									MT_lock_unset(&bs->theaplock);
-									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
-									goto bailout;
-								}
+							if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
+								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+								goto bailout;
+							}
 
-								BATiter bi = bat_iterator_nolock(fb);
-								if (bs->tminpos != BUN_NONE) {
-									if (tostr(&min, &minlen, BUNtail(bi, bs->tminpos), false) < 0) {
+							BATiter bi = bat_iterator(fb);
+							if (fb->tminpos != BUN_NONE || fb->tmaxpos != BUN_NONE) {
+								if (fb->tminpos != BUN_NONE) {
+									if (tostr(&min, &minlen, BUNtail(bi, fb->tminpos), false) < 0) {
+										bat_iterator_end(&bi);
 										BBPunfix(fb->batCacheid);
-										MT_lock_unset(&bs->theaplock);
 										msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 										goto bailout;
 									}
@@ -351,18 +349,18 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									min = (char *) str_nil;
 								}
 								res = BUNappend(minval, min, false);
-								if (bs->tminpos != BUN_NONE)
+								if (fb->tminpos != BUN_NONE)
 									GDKfree(min);
 								if (res != GDK_SUCCEED) {
+									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
-									MT_lock_unset(&bs->theaplock);
 									goto bailout;
 								}
 
-								if (bs->tmaxpos != BUN_NONE) {
-									if (tostr(&max, &maxlen, BUNtail(bi, bs->tmaxpos), false) < 0) {
+								if (fb->tmaxpos != BUN_NONE) {
+									if (tostr(&max, &maxlen, BUNtail(bi, fb->tmaxpos), false) < 0) {
+										bat_iterator_end(&bi);
 										BBPunfix(fb->batCacheid);
-										MT_lock_unset(&bs->theaplock);
 										msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 										goto bailout;
 									}
@@ -370,18 +368,20 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									max = (char *) str_nil;
 								}
 								res = BUNappend(maxval, max, false);
-								if (bs->tmaxpos != BUN_NONE)
+								if (fb->tmaxpos != BUN_NONE)
 									GDKfree(max);
-								BBPunfix(fb->batCacheid);
 								if (res != GDK_SUCCEED) {
-									MT_lock_unset(&bs->theaplock);
+									bat_iterator_end(&bi);
+									BBPunfix(fb->batCacheid);
 									goto bailout;
 								}
 							} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
-								MT_lock_unset(&bs->theaplock);
+								bat_iterator_end(&bi);
+								BBPunfix(fb->batCacheid);
 								goto bailout;
 							}
-							MT_lock_unset(&bs->theaplock);
+							bat_iterator_end(&bi);
+							BBPunfix(fb->batCacheid);
 						} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
 							goto bailout;
 						}
