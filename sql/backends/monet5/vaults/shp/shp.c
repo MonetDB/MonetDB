@@ -32,7 +32,7 @@ GDALWConnection *GDALWConnect(char *source)
 	OGRFeatureDefnH featureDefn;
 	int fieldCount, i;
 	OGRRegisterAll();
-	conn = malloc(sizeof(GDALWConnection));
+	conn = GDKmalloc(sizeof(GDALWConnection));
 	if (conn == NULL)
 	{
 		TRC_ERROR(SHP, "Could not allocate memory\n");
@@ -58,7 +58,7 @@ GDALWConnection *GDALWConnect(char *source)
 	featureDefn = OGR_L_GetLayerDefn(conn->layer);
 	fieldCount = OGR_FD_GetFieldCount(featureDefn);
 	conn->numFieldDefinitions = fieldCount;
-	conn->fieldDefinitions = malloc(fieldCount * sizeof(OGRFieldDefnH));
+	conn->fieldDefinitions = GDKmalloc(fieldCount * sizeof(OGRFieldDefnH));
 	if (conn->fieldDefinitions == NULL)
 	{
 		OGRReleaseDataSource(conn->handler);
@@ -76,8 +76,9 @@ GDALWConnection *GDALWConnect(char *source)
 
 void GDALWClose(GDALWConnection *conn)
 {
-	free(conn->fieldDefinitions);
+	GDKfree(conn->fieldDefinitions);
 	OGRReleaseDataSource(conn->handler);
+	GDKfree(conn);
 }
 
 GDALWSimpleFieldDef *GDALWGetSimpleFieldDefinitions(GDALWConnection conn)
@@ -89,7 +90,7 @@ GDALWSimpleFieldDef *GDALWGetSimpleFieldDefinitions(GDALWConnection conn)
 		printf("Could not extract columns, initialize a connection first.\n");
 		exit(-1);
 	}*/
-	columns = malloc(conn.numFieldDefinitions * sizeof(GDALWSimpleFieldDef));
+	columns = GDKmalloc(conn.numFieldDefinitions * sizeof(GDALWSimpleFieldDef));
 	if (columns == NULL)
 	{
 		TRC_ERROR(SHP, "Could not allocate memory\n");
@@ -174,7 +175,6 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 	if (field_definitions == NULL)
 	{
 		/* Can't find shapefile field definitions */
-		GDALWClose(&shp_conn);
 		return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -262,14 +262,12 @@ str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWCo
 	{
 		/* Previously create output table is missing */
 		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Table '%s.%s' missing", schemaname, tablename);
-		GDALWClose(&shp_conn);
 		return msg;
 	}
 	colsNum += shp_conn.numFieldDefinitions;
 	if (!(cols = (sql_column **)GDKmalloc(sizeof(sql_column *) * colsNum)))
 	{
 		msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		GDALWClose(&shp_conn);
 		return msg;
 	}
 	if (!(colsBAT = (BAT **)GDKzalloc(sizeof(BAT *) * colsNum)))
@@ -420,16 +418,16 @@ str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWCo
 			goto unfree;
 		}
 	}
+	GDKfree(colsBAT);
+	GDKfree(cols);
 	bat_destroy(pos);
 	return msg;
 unfree:
 	for (i = 0; i < colsNum; i++)
-	{
 		if (colsBAT[i])
 			BBPunfix(colsBAT[i]->batCacheid);
-	}
 	free(field_definitions);
-	GDALWClose(&shp_conn);
+	GDKfree(cols);
 	GDKfree(colsBAT);
 	return msg;
 }
@@ -491,14 +489,23 @@ str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = createSHPtable(cntxt, schemaname, tablename, shp_conn, field_definitions)) != MAL_SUCCEED)
 	{
 		/* Create table failed */
-		//TODO Am I freeing everything?
-		free(field_definitions);
+		GDKfree(schemaname);
+		GDKfree(tablename);
+		GDKfree(field_definitions);
 		GDALWClose(shp_conn_ptr);
 		return msg;
 	}
 
 	/* Load shapefile data into table */
-	return loadSHPtable(m, sch, schemaname, tablename, shp_conn, field_definitions, spatial_info);
+	msg = loadSHPtable(m, sch, schemaname, tablename, shp_conn, field_definitions, spatial_info);
+
+	/* Frees */
+	GDKfree(schemaname);
+	GDKfree(tablename);
+	GDKfree(field_definitions);
+	GDALWClose(shp_conn_ptr);
+
+	return msg;
 }
 
 #include "mel.h"
