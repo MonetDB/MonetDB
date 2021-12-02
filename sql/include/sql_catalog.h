@@ -617,12 +617,9 @@ typedef struct sql_column {
 	char unique; 		/* 0 NOT UNIQUE, 1 SUB_UNIQUE, 2 UNIQUE */
 	int drop_action;	/* only used for alter statements */
 	char *storage_type;
-	int sorted;		/* for DECLARED (dupped tables) we keep order info */
 	size_t dcount;
 	void *min;
-	size_t minlen;
 	void *max;
-	size_t maxlen;
 
 	struct sql_table *t;
 	ATOMIC_PTR_TYPE data;
