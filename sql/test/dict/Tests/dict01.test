@@ -456,6 +456,21 @@ statement ok
 DROP TABLE t0
 
 statement ok
+CREATE TABLE t0(c0 BIGINT PRIMARY KEY)
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c0')
+
+statement ok rowcount 2
+INSERT INTO t0(c0) VALUES(15), (-5)
+
+statement ok rowcount 0
+MERGE INTO t0 USING (SELECT 133 WHERE FALSE) AS x(c0) ON (x.c0 < 1) WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT (c0) VALUES (29)
+
+statement ok
+DROP TABLE t0
+
+statement ok
 START TRANSACTION
 
 statement ok
