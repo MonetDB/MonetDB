@@ -1566,6 +1566,7 @@ rel_psm(sql_query *query, symbol *s)
 	case SQL_ANALYZE: {
 		dlist *l = s->data.lval;
 
+		/* Jan2022 update: The 'sample' and 'minmax' parameters are now ignored because they are no longer used in the backend */
 		ret = psm_analyze(query, l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */);
 		sql->type = Q_UPDATE;
 	} 	break;
