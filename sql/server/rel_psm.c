@@ -1411,6 +1411,10 @@ psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 	const char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
 	list *tl = sa_list(sql->sa), *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
+	sql_subtype tpe;
+
+	if (!sql_find_subtype(&tpe, "varchar", 1024, 0))
+		return sql_error(sql, 02, SQLSTATE(HY013) "varchar type missing?");
 
 	if (sname && tname) {
 		sql_table *t = NULL;
@@ -1423,13 +1427,13 @@ psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 	}
 	/* call analyze( [schema, [ table ]] ) */
 	if (sname) {
-		sql_exp *sname_exp = exp_atom_clob(sql->sa, sname);
+		sql_exp *sname_exp = exp_atom_str(sql->sa, sname, &tpe);
 
 		list_append(exps, sname_exp);
 		list_append(tl, exp_subtype(sname_exp));
 	}
 	if (tname) {
-		sql_exp *tname_exp = exp_atom_clob(sql->sa, tname);
+		sql_exp *tname_exp = exp_atom_str(sql->sa, tname, &tpe);
 
 		list_append(exps, tname_exp);
 		list_append(tl, exp_subtype(tname_exp));
@@ -1453,7 +1457,7 @@ psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 		for(dnode *n = columns->h; n; n = n->next) {
 			const char *cname = n->data.sval;
 			list *nexps = list_dup(exps, NULL);
-			sql_exp *cname_exp = exp_atom_clob(sql->sa, cname);
+			sql_exp *cname_exp = exp_atom_str(sql->sa, cname, &tpe);
 
 			list_append(nexps, cname_exp);
 			/* call analyze( opt_minmax, opt_sample_size, sname, tname, cname) */
