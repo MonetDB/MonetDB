@@ -57,11 +57,16 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 					sql_exp *e = n->data, *r = e->r, *r2 = e->f;
 					sql_column *c = NULL;
 
-					if (!is_compare(e->type) || !is_theta_exp(e->flag) || r->type != e_atom || !r->l || (r2 && (r2->type != e_atom || !r2->l)) || is_symmetric(e) || !(c = exp_find_column(rel, e->l))) {
+					if (!is_compare(e->type) || !is_theta_exp(e->flag) || r->type != e_atom || !r->l || (r2 && (r2->type != e_atom || !r2->l)) || is_symmetric(e) || !(c = exp_find_column(rel, e->l)))
 						needall = true;
-					} else if (isNew(c)) {
-						continue;
-					} else {
+				}
+				if (!needall) {
+					for (node *n = parent->exps->h; n; n = n->next) {
+						sql_exp *e = n->data, *r = e->r, *r2 = e->f;
+						sql_column *c = exp_find_column(rel, e->l);
+
+						if (isNew(c))
+							continue;
 						atom *e1 = r && r->l ? atom_copy(NULL, r->l) : NULL, *e2 = r2 && r2->l ? atom_copy(NULL, r2->l) : NULL;
 
 						if ((r && r->l && !e1) || (r2 && r2->l && !e2)) {
