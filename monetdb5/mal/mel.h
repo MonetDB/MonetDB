@@ -60,11 +60,15 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, }
 #define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
+#define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .shared=true, .inout=true }
+
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	//char *name;
 	char type[15];
 	uint8_t isbat:1,
 		vargs:1,
+		inout:1,	/* some arguments may be used as input and output */
+		shared:1,	/* mark arguments as shared among the various pipeline execution workers, shared implies inout */
 		nr:4;
 } mel_arg;
 
@@ -102,6 +106,8 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 #define varargany(n,a) 		{ /*.name=n,*/ .nr=a, .vargs=true, .type=TYPE_any }
 #define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any }
 #define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
+
+#define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any, .shared=true, .inout=true }
 
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	uint16_t type:8,

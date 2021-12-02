@@ -6380,9 +6380,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "vacuum", SQLstr_column_auto_vacuum, true, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
  pattern("sql", "stop_vacuum", SQLstr_column_stop_vacuum, true, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "part_nr", SQLpart_nr, true, "return next atomic part nr [0..maxparts>", args(1,3, arg("", int), arg("handle", ptr), arg("maxparts", int))),
- pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, batargany("", 1), argany("val", 1))),
- pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,2, batargany("", 1), argany("val", 1))),
- pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,2, batargany("", 1), argany("val", 1))),
+ pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+ pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+ pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
  { .imp=NULL }
 };
 #include "mal_import.h"
