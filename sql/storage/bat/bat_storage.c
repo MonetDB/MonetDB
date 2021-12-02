@@ -926,10 +926,16 @@ static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
 {
 	sql_delta *d = col_timestamp_delta(tr, c);
+	int type = c->type.type->localtype;
 
 	if (!d)
 		return NULL;
-	return bind_ubat(tr, d, access, c->type.type->localtype, cnt);
+	if (d->cs.st == ST_DICT) {
+		BAT *b = quick_descriptor(d->cs.bid);
+
+		type = b->ttype;
+	}
+	return bind_ubat(tr, d, access, type, cnt);
 }
 
 static BAT *

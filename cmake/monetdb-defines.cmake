@@ -303,7 +303,7 @@ macro(monetdb_configure_misc)
   endif()
 
   # Used for installing testing python module (don't pass a location, else we need to strip this again)
-  execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,''))"
+  execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': ''})[1:])"
     RESULT_VARIABLE PY3_LIBDIR_CODE
     OUTPUT_VARIABLE PYTHON3_SITEDIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
