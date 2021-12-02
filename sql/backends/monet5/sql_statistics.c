@@ -28,9 +28,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
 	str sch = 0, tbl = 0, col = 0;
-	lng samplesize = *getArgReference_lng(stk, pci, 2);
 	int argc = pci->argc, sfnd = 0, tfnd = 0, cfnd = 0;
-	int minmax = *getArgReference_int(stk, pci, 1);
 	sql_schema *sys;
 	sql_table *sysstats;
 	sql_column *statsid;
@@ -49,23 +47,23 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
 
 	switch (argc) {
-	case 6:
-		col = *getArgReference_str(stk, pci, 5);
+	case 4:
+		col = *getArgReference_str(stk, pci, 3);
 		if (strNil(col))
 			throw(SQL, "sql.analyze", SQLSTATE(42000) "Column name cannot be NULL");
 		/* fall through */
-	case 5:
-		tbl = *getArgReference_str(stk, pci, 4);
+	case 3:
+		tbl = *getArgReference_str(stk, pci, 2);
 		if (strNil(tbl))
 			throw(SQL, "sql.analyze", SQLSTATE(42000) "Table name cannot be NULL");
 		/* fall through */
-	case 4:
-		sch = *getArgReference_str(stk, pci, 3);
+	case 2:
+		sch = *getArgReference_str(stk, pci, 1);
 		if (strNil(sch))
 			throw(SQL, "sql.analyze", SQLSTATE(42000) "Schema name cannot be NULL");
 	}
 
-	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
+	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "));
 
 	/* Do all the validations before doing any analyze */
 	struct os_iter si;
@@ -87,9 +85,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				continue;
 			tfnd = 1;
 			if (tbl && !isTable(t))
-				throw(SQL, "analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+				throw(SQL, "sql.analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 			if (!table_privs(m, t, PRIV_SELECT))
-				throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'",
+				throw(SQL, "sql.analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'",
 					  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
 			if (isTable(t) && ol_first_node(t->columns)) {
 				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
@@ -99,18 +97,18 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						continue;
 					cfnd = 1;
 					if (!column_privs(m, c, PRIV_SELECT))
-						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to column '%s' on table '%s.%s'",
+						throw(SQL, "sql.analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to column '%s' on table '%s.%s'",
 							  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
 				}
 			}
 		}
 	}
 	if (sch && !sfnd)
-		throw(SQL, "analyze", SQLSTATE(3F000) "Schema '%s' does not exist", sch);
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Schema '%s' does not exist", sch);
 	if (tbl && !tfnd)
-		throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' does not exist", tbl);
+		throw(SQL, "sql.analyze", SQLSTATE(42S02) "Table '%s' does not exist", tbl);
 	if (col && !cfnd)
-		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
+		throw(SQL, "sql.analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
 
 	sqlstore *store = tr->store;
 	os_iterator(&si, tr->cat->schemas, tr, NULL);
