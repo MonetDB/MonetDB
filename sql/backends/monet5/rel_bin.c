@@ -3662,7 +3662,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 }
 
 static stmt *
-rel_shard(backend *be, sql_rel *rel)
+rel_pp(backend *be, sql_rel *rel)
 {
 	list *shared = NULL;
 	if (is_groupby(rel->op) && list_empty(rel->r) && !list_empty(rel->exps)) { /* only simple stuff for now */
@@ -3708,15 +3708,15 @@ rel_shard(backend *be, sql_rel *rel)
 	} else {
 		return NULL;
 	}
-	stmt *shard = shard_create(be, GDKnr_threads);
-	shard -> op4.lval = shared;
-	return shard;
+	stmt *pp = pp_create(be, GDKnr_threads);
+	pp -> op4.lval = shared;
+	return pp;
 }
 
 static stmt *
-rel_shard_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *shard)
+rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp)
 {
-	list *sub = shard->op4.lval;
+	list *sub = pp->op4.lval;
 	node *o = sub->h;
 	(void)grp; (void)cnt;
 	list *shared = NULL;
@@ -3730,7 +3730,7 @@ rel_shard_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext
 		}
 		gbstmts = ngbstmts;
 	}
-	(void)shard_jump(be, shard, be->nrparts);
+	(void)pp_jump(be, pp, be->nrparts);
 	/* combine concurrent results */
 	if (rel && list_empty(rel->r)) { /* global case */
 		assert(list_empty(gbstmts));
@@ -3827,7 +3827,7 @@ rel_shard_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext
 	} else {
 		return NULL;
 	}
-	(void)shard_end(be, shard);
+	(void)pp_end(be, pp);
 
 	/* we combined into a bat, ie lets fetch results */
 	if (shared && list_empty(rel->r)) {
@@ -3853,9 +3853,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 
-	stmt *shard = NULL;
+	stmt *pp = NULL;
 	if (SQLrunning)
-		shard = rel_shard(be, rel);
+		pp = rel_pp(be, rel);
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
 		sub = subrel_project(be, sub, refs, rel->l);
@@ -3947,8 +3947,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		list_append(l, aggrstmt);
 	}
 	stmt_set_nrcols(cursub);
-	if (shard)
-		return rel_shard_groupby(be, rel, gbexps, grp, ext, cnt, cursub, shard);
+	if (pp)
+		return rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp);
 	return cursub;
 }
 
@@ -6609,7 +6609,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	be->rowcount = 0;
 	be->silent = !top;
 
-	be->shard = be->nrparts = 0;
+	be->pp = be->nrparts = 0;
 
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);

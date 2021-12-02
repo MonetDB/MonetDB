@@ -265,8 +265,8 @@ extern const char *schema_name(sql_allocator *sa, stmt *st);
 extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
 
-extern stmt *shard_create(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
-extern int shard_jump(backend *ba, stmt *shard, int nrparts);    /* redo: label := part < nrparts; */
-extern int shard_end(backend *ba, stmt *shard);    /* exit: label ; */
+extern stmt *pp_create(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
+extern int pp_jump(backend *ba, stmt *pp, int nrparts);    /* redo: label := part < nrparts; */
+extern int pp_end(backend *ba, stmt *pp);    /* exit: label ; */
 
 #endif /* _SQL_STATEMENT_H_ */

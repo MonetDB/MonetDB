@@ -58,7 +58,7 @@ typedef struct backend {
 		 silent:1; /* on some occasions we don't want to output the result set or the number of affected rows */
 	cq 	*q;		/* pointer to the cached query */
 
-	int shard;
+	int pp;
 	int nrparts;
 
 	int result_id;

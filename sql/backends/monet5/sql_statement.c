@@ -518,8 +518,8 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	q = pushArgument(mb, q, be->mvc_var);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
-	if (be->shard) {
-		q = pushArgument(mb, q, be->shard);
+	if (be->pp) {
+		q = pushArgument(mb, q, be->pp);
 		q = pushInt(mb, q, be->nrparts);
 	}
 	if (q == NULL)
@@ -610,8 +610,8 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = pushArgument(mb, q, getStrConstant(mb,c->t->base.name));
 	q = pushArgument(mb, q, getStrConstant(mb,c->base.name));
 	q = pushArgument(mb, q, getIntConstant(mb,access));
-	if (be->shard) {
-		q = pushArgument(mb, q, be->shard);
+	if (be->pp) {
+		q = pushArgument(mb, q, be->pp);
 		q = pushInt(mb, q, be->nrparts);
 	}
 	if (q == NULL)
@@ -668,8 +668,8 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	q = pushArgument(mb, q, getStrConstant(mb, i->t->base.name));
 	q = pushArgument(mb, q, getStrConstant(mb, i->base.name));
 	q = pushArgument(mb, q, getIntConstant(mb, access));
-	if (be->shard) {
-		q = pushArgument(mb, q, be->shard);
+	if (be->pp) {
+		q = pushArgument(mb, q, be->pp);
 		q = pushInt(mb, q, be->nrparts);
 	}
 	if (q == NULL)
@@ -4331,9 +4331,9 @@ stmt_fetch(backend *be, stmt *val)
 }
 
 stmt *
-shard_create(backend *be, int nrparts)
+pp_create(backend *be, int nrparts)
 {
-	InstrPtr q = newStmtArgs(be->mb, languageRef, "shard", 4);
+	InstrPtr q = newStmtArgs(be->mb, languageRef, "pipelines", 4);
 	if (q == NULL)
 		return NULL;
 	q->barrier = BARRIERsymbol;
@@ -4342,13 +4342,13 @@ shard_create(backend *be, int nrparts)
 	q = pushInt(be->mb, q, nrparts);
 
 	be->nrparts = nrparts;
-	be->shard = getArg(q, 1);
+	be->pp = getArg(q, 1);
 	int label = getArg(q, 0);
 
 	InstrPtr r = newStmtArgs(be->mb, calcRef, ">=", 3);
 	r->barrier = LEAVEsymbol;
 	getArg(r, 0) = label;
-	r = pushArgument(be->mb, r, be->shard);
+	r = pushArgument(be->mb, r, be->pp);
 	r = pushInt(be->mb, r, nrparts);
 
 	if (r && q) {
@@ -4362,7 +4362,7 @@ shard_create(backend *be, int nrparts)
 }
 
 int
-shard_jump(backend *be, stmt *label, int nrparts)
+pp_jump(backend *be, stmt *label, int nrparts)
 {
 	InstrPtr r = newStmtArgs(be->mb, sqlRef, "part_nr", 3);
 	if (r == NULL)
@@ -4384,7 +4384,7 @@ shard_jump(backend *be, stmt *label, int nrparts)
 }
 
 int
-shard_end(backend *be, stmt *label)
+pp_end(backend *be, stmt *label)
 {
 	InstrPtr q = newAssignmentArgs(be->mb, 2);
 	if (q == NULL)
