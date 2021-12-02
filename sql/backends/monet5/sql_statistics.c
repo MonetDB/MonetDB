@@ -11,41 +11,27 @@ Most optimizers need easy access to key information
 for proper plan generation. Amongst others, this
 information consists of the tuple count, size,
 min- and max-value, and the null-density.
-They are kept around as persistent tables, modeled
-directly as a collection of BATs.
 
 We made need an directly accessible structure to speedup
 analysis by optimizers.
 */
 #include "monetdb_config.h"
 #include "sql_statistics.h"
-#include "sql_execute.h"
 
 str
 sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getSQLContext(cntxt, mb, &m, NULL);
-	sql_trans *tr = m->session->tr;
-	str sch = 0, tbl = 0, col = 0;
+	sql_trans *tr = NULL;
+	str sch = NULL, tbl = NULL, col = NULL, msg = MAL_SUCCEED;
 	int argc = pci->argc, sfnd = 0, tfnd = 0, cfnd = 0;
-	sql_schema *sys;
-	sql_table *sysstats;
-	sql_column *statsid;
 
-	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	sys = mvc_bind_schema(m, "sys");
-	if (sys == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No schema sys");
-	sysstats = mvc_bind_table(m, sys, "statistics");
-	if (sysstats == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
-	statsid = mvc_bind_column(m, sysstats, "column_id");
-	if (statsid == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
-
+	tr = m->session->tr;
 	switch (argc) {
 	case 4:
 		col = *getArgReference_str(stk, pci, 3);
@@ -142,17 +128,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					(void) BATordered_rev(b);
 
 					/* Check for nils existence */
-					if (!c->null) {
-						b->tnonil = true;
-						b->tnil = false;
-					} else {
-						(void) BATcount_no_nil(b, NULL);
-					}
+					(void) BATcount_no_nil(b, NULL);
 
 					/* Test it column is unique */
-					if (is_column_unique(c) && b->tnonil) {
-						b->tkey = true;
-					} else if ((unq = BATunique(b, NULL)))
+					if ((unq = BATunique(b, NULL)))
 						BBPunfix(unq->batCacheid);
 
 					/* Guess number of uniques if not entirely unique */
