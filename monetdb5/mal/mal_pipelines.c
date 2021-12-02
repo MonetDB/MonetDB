@@ -83,7 +83,6 @@ static void
 q_enqueue_(Queue *q, Pipeline *d)
 {
 	assert(q);
-	assert(d);
 	if (q->last == q->size) {
 		q->size <<= 1;
 		q->data = (Pipeline**) GDKrealloc(q->data, sizeof(Pipeline*) * q->size);
