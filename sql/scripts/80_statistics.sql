@@ -8,17 +8,21 @@
 -- This script gives the database administrator insight in the actual
 -- value distribution over all tables in the database.
 
-create procedure sys.analyze()
-external name sql.analyze;
+create procedure sys."analyze"()
+external name sql."analyze";
+grant execute on procedure sys."analyze"() to public;
 
-create procedure sys.analyze("schema" varchar(1024))
-external name sql.analyze;
+create procedure sys."analyze"("sname" varchar(1024))
+external name sql."analyze";
+grant execute on procedure sys."analyze"(varchar(1024)) to public;
 
-create procedure sys.analyze("schema" varchar(1024), "tname" varchar(1024))
-external name sql.analyze;
+create procedure sys."analyze"("sname" varchar(1024), "tname" varchar(1024))
+external name sql."analyze";
+grant execute on procedure sys."analyze"(varchar(1024),varchar(1024)) to public;
 
-create procedure sys.analyze("schema" varchar(1024), "tname" varchar(1024), "cname" varchar(1024))
-external name sql.analyze;
+create procedure sys."analyze"("sname" varchar(1024), "tname" varchar(1024), "cname" varchar(1024))
+external name sql."analyze";
+grant execute on procedure sys."analyze"(varchar(1024),varchar(1024),varchar(1024)) to public;
 
 create function sys."statistics"()
 returns table (

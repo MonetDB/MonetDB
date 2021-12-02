@@ -1440,12 +1440,16 @@ psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 	if (!columns) {
 		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
+		if (!execute_priv(sql, f->func))
+			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
 		list_append(analyze_calls, exp_op(sql->sa, exps, f));
 	} else {
 		if (!sname || !tname)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze schema or table name missing");
 		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
+		if (!execute_priv(sql, f->func))
+			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
 		for(dnode *n = columns->h; n; n = n->next) {
 			const char *cname = n->data.sval;
 			list *nexps = list_dup(exps, NULL);
