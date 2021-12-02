@@ -442,11 +442,11 @@ extern sql_column *create_sql_column(struct sqlstore *store, sql_allocator *sa, 
 extern sql_key *create_sql_ukey(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
 extern sql_key *create_sql_kc(struct sqlstore *store, sql_allocator *sa, sql_key *k, sql_column *c);
-extern sql_key * key_create_done(struct sqlstore *store, sql_allocator *sa, sql_key *k);
+extern sql_key * key_create_done(sql_trans *tr, sql_allocator *sa, sql_key *k);
 
 extern sql_idx *create_sql_idx(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
 extern sql_idx *create_sql_ic(struct sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c);
-extern sql_idx *create_sql_idx_done(sql_idx *i);
+extern sql_idx *create_sql_idx_done(sql_trans *tr, sql_idx *i);
 extern sql_func *create_sql_func(struct sqlstore *store, sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
 								 const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect);
 
