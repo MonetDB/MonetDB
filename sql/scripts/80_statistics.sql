@@ -11,11 +11,93 @@
 create procedure sys.analyze()
 external name sql.analyze;
 
-create procedure sys.analyze(sch string)
+create procedure sys.analyze("schema" varchar(1024))
 external name sql.analyze;
 
-create procedure sys.analyze(sch string, tbl string)
+create procedure sys.analyze("schema" varchar(1024), "tname" varchar(1024))
 external name sql.analyze;
 
-create procedure sys.analyze(sch string, tbl string, col string)
+create procedure sys.analyze("schema" varchar(1024), "tname" varchar(1024), "cname" varchar(1024))
 external name sql.analyze;
+
+create function sys."statistics"()
+returns table (
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"width" integer,
+	"count" bigint,
+	"unique" boolean,
+	"nils" boolean,
+	"minval" string,
+	"maxval" string,
+	"sorted" boolean,
+	"revsorted" boolean
+)
+external name sql."statistics";
+grant execute on function sys."statistics"() to public;
+
+create view sys."statistics" as
+select * from sys."statistics"()
+-- exclude system tables
+ where ("schema", "table") in (
+	SELECT sch."name", tbl."name"
+	  FROM sys."tables" AS tbl JOIN sys."schemas" AS sch ON tbl.schema_id = sch.id
+	 WHERE tbl."system" = FALSE)
+order by "schema", "table", "column";
+grant select on sys."statistics" to public;
+
+create function sys."statistics"("sname" varchar(1024))
+returns table (
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"width" integer,
+	"count" bigint,
+	"unique" boolean,
+	"nils" boolean,
+	"minval" string,
+	"maxval" string,
+	"sorted" boolean,
+	"revsorted" boolean
+)
+external name sql."statistics";
+grant execute on function sys."statistics"(varchar(1024)) to public;
+
+create function sys."statistics"("sname" varchar(1024), "tname" varchar(1024))
+returns table (
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"width" integer,
+	"count" bigint,
+	"unique" boolean,
+	"nils" boolean,
+	"minval" string,
+	"maxval" string,
+	"sorted" boolean,
+	"revsorted" boolean
+)
+external name sql."statistics";
+grant execute on function sys."statistics"(varchar(1024),varchar(1024)) to public;
+
+create function sys."statistics"("sname" varchar(1024), "tname" varchar(1024), "cname" varchar(1024))
+returns table (
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"width" integer,
+	"count" bigint,
+	"unique" boolean,
+	"nils" boolean,
+	"minval" string,
+	"maxval" string,
+	"sorted" boolean,
+	"revsorted" boolean
+)
+external name sql."statistics";
+grant execute on function sys."statistics"(varchar(1024),varchar(1024),varchar(1024)) to public;

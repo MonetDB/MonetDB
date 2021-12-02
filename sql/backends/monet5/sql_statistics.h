@@ -13,5 +13,6 @@
 #include "sql.h"
 
 extern str sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_STATISTICS_DEF */

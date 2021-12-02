@@ -170,3 +170,254 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return MAL_SUCCEED;
 }
+
+str
+sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *sch, *tab, *col, *type, *width, *count, *unique, *nils, *minval, *maxval, *sorted, *revsorted, *bs = NULL, *fb = NULL;
+	mvc *m = NULL;
+	sql_trans *tr = NULL;
+	sqlstore *store = NULL;
+	bat *rsch = getArgReference_bat(stk, pci, 0);
+	bat *rtab = getArgReference_bat(stk, pci, 1);
+	bat *rcol = getArgReference_bat(stk, pci, 2);
+	bat *rtype = getArgReference_bat(stk, pci, 3);
+	bat *rwidth = getArgReference_bat(stk, pci, 4);
+	bat *rcount = getArgReference_bat(stk, pci, 5);
+	bat *runique = getArgReference_bat(stk, pci, 6);
+	bat *rnils = getArgReference_bat(stk, pci, 7);
+	bat *rminval = getArgReference_bat(stk, pci, 8);
+	bat *rmaxval = getArgReference_bat(stk, pci, 9);
+	bat *rsorted = getArgReference_bat(stk, pci, 10);
+	bat *rrevsorted = getArgReference_bat(stk, pci, 11);
+	str sname = NULL, tname = NULL, cname = NULL, msg = MAL_SUCCEED;
+	struct os_iter si = {0};
+	int sfnd = 0, tfnd = 0, cfnd = 0;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	if (pci->argc - pci->retc >= 1) {
+		sname = *getArgReference_str(stk, pci, pci->retc);
+		if (strNil(sname))
+			throw(SQL, "sql.statistics", SQLSTATE(42000) "Schema name cannot be NULL");
+	}
+	if (pci->argc - pci->retc >= 2) {
+		tname = *getArgReference_str(stk, pci, pci->retc + 1);
+		if (strNil(tname))
+			throw(SQL, "sql.statistics", SQLSTATE(42000) "Table name cannot be NULL");
+	}
+	if (pci->argc - pci->retc >= 3) {
+		cname = *getArgReference_str(stk, pci, pci->retc + 2);
+		if (strNil(cname))
+			throw(SQL, "sql.statistics", SQLSTATE(42000) "Column name cannot be NULL");
+	}
+
+	tr = m->session->tr;
+	store = tr->store;
+	/* Do all the validations before retrieving any statistics */
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
+		sql_schema *s = (sql_schema *)b;
+		if (s->base.name[0] == '%')
+			continue;
+
+		if (sname && strcmp(s->base.name, sname))
+			continue;
+		sfnd = 1;
+		struct os_iter oi;
+		os_iterator(&oi, s->tables, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *t = (sql_table *)b;
+
+			if (tname && strcmp(t->base.name, tname))
+				continue;
+			tfnd = 1;
+			if (tname && !isTable(t))
+				throw(SQL, "sql.statistics", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+			if (!table_privs(m, t, PRIV_SELECT))
+				throw(SQL, "sql.statistics", SQLSTATE(42000) "STATISTICS: access denied for %s to table '%s.%s'",
+					  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
+			if (isTable(t) && ol_first_node(t->columns)) {
+				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+					sql_column *c = (sql_column *) ncol->data;
+
+					if (cname && strcmp(c->base.name, cname))
+						continue;
+					cfnd = 1;
+					if (!column_privs(m, c, PRIV_SELECT))
+						throw(SQL, "sql.statistics", SQLSTATE(42000) "STATISTICS: access denied for %s to column '%s' on table '%s.%s'",
+							  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
+				}
+			}
+		}
+	}
+	if (sname && !sfnd)
+		throw(SQL, "sql.statistics", SQLSTATE(3F000) "Schema '%s' does not exist", sname);
+	if (tname && !tfnd)
+		throw(SQL, "sql.statistics", SQLSTATE(42S02) "Table '%s' does not exist", tname);
+	if (cname && !cfnd)
+		throw(SQL, "sql.statistics", SQLSTATE(38000) "Column '%s' does not exist", cname);
+
+	sch = COLnew(0, TYPE_str, 0, TRANSIENT);
+	tab = COLnew(0, TYPE_str, 0, TRANSIENT);
+	col = COLnew(0, TYPE_str, 0, TRANSIENT);
+	type = COLnew(0, TYPE_str, 0, TRANSIENT);
+	width = COLnew(0, TYPE_int, 0, TRANSIENT);
+	count = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	unique = COLnew(0, TYPE_bit, 0, TRANSIENT);
+	nils = COLnew(0, TYPE_bit, 0, TRANSIENT);
+	minval = COLnew(0, TYPE_str, 0, TRANSIENT);
+	maxval = COLnew(0, TYPE_str, 0, TRANSIENT);
+	sorted = COLnew(0, TYPE_bit, 0, TRANSIENT);
+	revsorted = COLnew(0, TYPE_bit, 0, TRANSIENT);
+
+	if (!sch || !tab || !col || !type || !width || !count || !unique || !nils || !minval || !maxval || !sorted || !revsorted) {
+		msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	si = (struct os_iter) {0};
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
+		sql_schema *s = (sql_schema *) b;
+		if ((sname && strcmp(b->name, sname)) || b->name[0] == '%')
+			continue;
+		if (s->tables) {
+			struct os_iter oi;
+
+			os_iterator(&oi, s->tables, tr, NULL);
+			for (sql_base *bt = oi_next(&oi); bt; bt = oi_next(&oi)) {
+				sql_table *t = (sql_table *) bt;
+				if (tname && strcmp(bt->name, tname))
+					continue;
+				if (isTable(t) && ol_first_node(t->columns)) {
+					for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+						sql_column *c = (sql_column *) ncol->data;
+						int w;
+						lng cnt;
+						bit un, hnils, issorted, isrevsorted;
+
+						if (cname && strcmp(c->base.name, cname))
+							continue;
+						if (!(bs = store->storage_api.bind_col(tr, c, QUICK))) {
+							msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+							goto bailout;
+						}
+						w = bs->twidth;
+						cnt = BATcount(bs);
+						un = bs->tkey;
+						hnils = !bs->tnonil;
+						issorted = bs->tsorted;
+						isrevsorted = bs->trevsorted;
+
+						if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
+							BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
+							BUNappend(col, c->base.name, false) != GDK_SUCCEED ||
+							BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED ||
+							BUNappend(width, &w, false) != GDK_SUCCEED ||
+							BUNappend(count, &cnt, false) != GDK_SUCCEED ||
+							BUNappend(unique, &un, false) != GDK_SUCCEED ||
+							BUNappend(nils, &hnils, false) != GDK_SUCCEED ||
+							BUNappend(sorted, &issorted, false) != GDK_SUCCEED ||
+							BUNappend(revsorted, &isrevsorted, false) != GDK_SUCCEED)
+							goto bailout;
+
+						if (bs->tminpos != BUN_NONE || bs->tmaxpos != BUN_NONE) {
+							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[bs->ttype].atomToStr;
+							MT_lock_set(&bs->theaplock);
+							if (bs->tminpos != BUN_NONE || bs->tmaxpos != BUN_NONE) {
+								size_t minlen = 0, maxlen = 0;
+								char *min = NULL, *max = NULL;
+								gdk_return res = GDK_SUCCEED;
+
+								if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
+									MT_lock_unset(&bs->theaplock);
+									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+									goto bailout;
+								}
+
+								BATiter bi = bat_iterator_nolock(fb);
+								if (bs->tminpos != BUN_NONE) {
+									if (tostr(&min, &minlen, BUNtail(bi, bs->tminpos), false) < 0) {
+										BBPunfix(fb->batCacheid);
+										MT_lock_unset(&bs->theaplock);
+										msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+										goto bailout;
+									}
+								} else {
+									min = (char *) str_nil;
+								}
+								res = BUNappend(minval, min, false);
+								if (bs->tminpos != BUN_NONE)
+									GDKfree(min);
+								if (res != GDK_SUCCEED) {
+									BBPunfix(fb->batCacheid);
+									MT_lock_unset(&bs->theaplock);
+									goto bailout;
+								}
+
+								if (bs->tmaxpos != BUN_NONE) {
+									if (tostr(&max, &maxlen, BUNtail(bi, bs->tmaxpos), false) < 0) {
+										BBPunfix(fb->batCacheid);
+										MT_lock_unset(&bs->theaplock);
+										msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+										goto bailout;
+									}
+								} else {
+									max = (char *) str_nil;
+								}
+								res = BUNappend(maxval, max, false);
+								if (bs->tmaxpos != BUN_NONE)
+									GDKfree(max);
+								BBPunfix(fb->batCacheid);
+								if (res != GDK_SUCCEED) {
+									MT_lock_unset(&bs->theaplock);
+									goto bailout;
+								}
+							} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
+								MT_lock_unset(&bs->theaplock);
+								goto bailout;
+							}
+							MT_lock_unset(&bs->theaplock);
+						} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
+							goto bailout;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	BBPkeepref(*rsch = sch->batCacheid);
+	BBPkeepref(*rtab = tab->batCacheid);
+	BBPkeepref(*rcol = col->batCacheid);
+	BBPkeepref(*rtype = type->batCacheid);
+	BBPkeepref(*rwidth = width->batCacheid);
+	BBPkeepref(*rcount = count->batCacheid);
+	BBPkeepref(*runique = unique->batCacheid);
+	BBPkeepref(*rnils = nils->batCacheid);
+	BBPkeepref(*rminval = minval->batCacheid);
+	BBPkeepref(*rmaxval = maxval->batCacheid);
+	BBPkeepref(*rsorted = sorted->batCacheid);
+	BBPkeepref(*rrevsorted = revsorted->batCacheid);
+	return MAL_SUCCEED;
+bailout:
+	BBPreclaim(sch);
+	BBPreclaim(tab);
+	BBPreclaim(col);
+	BBPreclaim(type);
+	BBPreclaim(width);
+	BBPreclaim(count);
+	BBPreclaim(unique);
+	BBPreclaim(nils);
+	BBPreclaim(minval);
+	BBPreclaim(maxval);
+	BBPreclaim(sorted);
+	BBPreclaim(revsorted);
+	if (!msg)
+		msg = createException(SQL, "sql.statistics", GDK_EXCEPTION);
+	return msg;
+}
