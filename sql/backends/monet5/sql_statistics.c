@@ -27,23 +27,13 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
-	node *ncol;
-	char *maxval = NULL, *minval = NULL;
-	size_t minlen = 0, maxlen = 0;
 	str sch = 0, tbl = 0, col = 0;
-	bit sorted, revsorted;	/* not bool since address is taken */
-	lng nils = 0;
-	lng uniq = 0;
 	lng samplesize = *getArgReference_lng(stk, pci, 2);
-	int argc = pci->argc;
-	int width = 0;
+	int argc = pci->argc, sfnd = 0, tfnd = 0, cfnd = 0;
 	int minmax = *getArgReference_int(stk, pci, 1);
-	int sfnd = 0, tfnd = 0, cfnd = 0, log_res = LOG_OK;
 	sql_schema *sys;
 	sql_table *sysstats;
 	sql_column *statsid;
-	oid rid;
-	timestamp ts;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -102,7 +92,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'",
 					  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
 			if (isTable(t) && ol_first_node(t->columns)) {
-				for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_column *c = (sql_column *) ncol->data;
 
 					if (col && strcmp(c->base.name, col))
@@ -139,169 +129,46 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (tbl && strcmp(b->name, tbl))
 				continue;
 			if (isTable(t) && ol_first_node(t->columns)) {
-				BAT *cands;
-
-				if ((cands = store->storage_api.bind_cands(tr, t, 1, 0)) == NULL) {
-					GDKfree(maxval);
-					GDKfree(minval);
-					throw(SQL, "analyze", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-				}
-
-				for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
-					sql_base *bc = ncol->data;
+				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_column *c = (sql_column *) ncol->data;
-					BAT *bn, *nbn, *br;
-					BAT *bsample;
-					lng sz;
-					ssize_t (*tostr)(str*,size_t*,const void*,bool);
-					void *val=0;
+					BAT *b, *unq;
+					ptr mn, mx;
 
-					if (col && strcmp(bc->name, col))
+					if (col && strcmp(c->base.name, col))
 						continue;
+					if (!(b = store->storage_api.bind_col(tr, c, RDONLY)))
+						continue; /* At the moment we ignore the error, but maybe we can change this */
 
-					/* remove cached value */
-					if (c->min)
-						c->min = NULL;
-					if (c->max)
-						c->max = NULL;
+					/* Collect new sorted and revsorted properties */
+					(void) BATordered(b);
+					(void) BATordered_rev(b);
 
-					if ((bn = store->storage_api.bind_col(tr, c, RDONLY)) == NULL) {
-						/* XXX throw error instead? */
-						continue;
-					}
-					nbn = BATproject(cands, bn);
-					BBPunfix(bn->batCacheid);
-					if (!nbn) {
-						/* XXX throw error instead? */
-						continue;
-					}
-					bn = nbn;
-					sz = BATcount(bn);
-					tostr = BATatoms[bn->ttype].atomToStr;
-
-					rid = store->table_api.column_find_row(tr, statsid, &c->base.id, NULL);
-					if (samplesize > 0) {
-						bsample = BATsample(bn, (BUN) samplesize);
-					} else
-						bsample = NULL;
-					br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, true, false, false);
-					if (br == NULL) {
-						BBPunfix(bn->batCacheid);
-						if (bsample)
-							BBPunfix(bsample->batCacheid);
-						/* XXX throw error instead? */
-						continue;
-					}
-					nils = BATcount(br);
-					BBPunfix(br->batCacheid);
-					if (bn->tkey)
-						uniq = sz;
-					else if (!minmax) {
-						BAT *en;
-						if (bsample)
-							br = BATproject(bsample, bn);
-						else
-							br = bn;
-						if (br && (en = BATunique(br, NULL)) != NULL) {
-							uniq = canditer_init(&(struct canditer){0}, NULL, en);
-							BBPunfix(en->batCacheid);
-						} else
-							uniq = 0;
-						if (bsample && br)
-							BBPunfix(br->batCacheid);
-					}
-					if (bsample)
-						BBPunfix(bsample->batCacheid);
-					/* use BATordered(_rev)
-					 * and not
-					 * BATt(rev)ordered
-					 * because we want to
-					 * know for sure */
-					sorted = BATordered(bn);
-					revsorted = BATordered_rev(bn);
-
-					// Gather the min/max value for builtin types
-					width = bn->twidth;
-
-					if (maxlen < 4) {
-						GDKfree(maxval);
-						maxval = GDKmalloc(4);
-						if (maxval == NULL) {
-							GDKfree(minval);
-							BBPunfix(bn->batCacheid);
-							BBPunfix(cands->batCacheid);
-							throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						}
-						maxlen = 4;
-					}
-					if (minlen < 4) {
-						GDKfree(minval);
-						minval = GDKmalloc(4);
-						if (minval == NULL){
-							GDKfree(maxval);
-							BBPunfix(bn->batCacheid);
-							BBPunfix(cands->batCacheid);
-							throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						}
-						minlen = 4;
-					}
-					if (tostr) {
-						if ((val = BATmax(bn, NULL)) == NULL)
-							strcpy(maxval, str_nil);
-						else {
-							if (tostr(&maxval, &maxlen, val, false) < 0) {
-								GDKfree(val);
-								GDKfree(minval);
-								GDKfree(maxval);
-								BBPunfix(bn->batCacheid);
-								BBPunfix(cands->batCacheid);
-								throw(SQL, "analyze", GDK_EXCEPTION);
-							}
-							GDKfree(val);
-						}
-						if ((val = BATmin(bn, NULL)) == NULL)
-							strcpy(minval, str_nil);
-						else {
-							if (tostr(&minval, &minlen, val, false) < 0) {
-								GDKfree(val);
-								GDKfree(minval);
-								GDKfree(maxval);
-								BBPunfix(bn->batCacheid);
-								BBPunfix(cands->batCacheid);
-								throw(SQL, "analyze", GDK_EXCEPTION);
-							}
-							GDKfree(val);
-						}
+					/* Check for nils existence */
+					if (!c->null) {
+						b->tnonil = true;
+						b->tnil = false;
 					} else {
-						strcpy(maxval, str_nil);
-						strcpy(minval, str_nil);
+						(void) BATcount_no_nil(b, NULL);
 					}
-					BBPunfix(bn->batCacheid);
-					ts = timestamp_current();
-					if (!is_oid_nil(rid) && (log_res = store->table_api.table_delete(tr, sysstats, rid)) != LOG_OK) {
-						GDKfree(maxval);
-						GDKfree(minval);
-						BBPunfix(cands->batCacheid);
-						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
-					}
-					if ((log_res = store->table_api.table_insert(tr, sysstats, &c->base.id, &c->type.type->base.name, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, &minval, &maxval, &sorted, &revsorted)) != LOG_OK) {
-						GDKfree(maxval);
-						GDKfree(minval);
-						BBPunfix(cands->batCacheid);
-						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
-					}
-					if (!isNew(c) && (log_res = sql_trans_add_dependency(tr, c->base.id, ddl)) != LOG_OK) {
-						GDKfree(maxval);
-						GDKfree(minval);
-						BBPunfix(cands->batCacheid);
-						throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					}
+
+					/* Test it column is unique */
+					if (is_column_unique(c) && b->tnonil) {
+						b->tkey = true;
+					} else if ((unq = BATunique(b, NULL)))
+						BBPunfix(unq->batCacheid);
+
+					/* Guess number of uniques if not entirely unique */
+					(void) BATguess_uniques(b, NULL);
+
+					/* Collect min and max values */
+					mn = BATmin(b, NULL);
+					GDKfree(mn);
+					mx = BATmax(b, NULL);
+					GDKfree(mx);
+					BBPunfix(b->batCacheid);
 				}
-				BBPunfix(cands->batCacheid);
 			}
 		}
 	}
-	GDKfree(maxval);
-	GDKfree(minval);
 	return MAL_SUCCEED;
 }
