@@ -8,14 +8,14 @@
 -- This script gives the database administrator insight in the actual
 -- value distribution over all tables in the database.
 
-create procedure sys.analyze(minmax int, "sample" bigint)
+create procedure sys.analyze()
 external name sql.analyze;
 
-create procedure sys.analyze(minmax int, "sample" bigint, sch string)
+create procedure sys.analyze(sch string)
 external name sql.analyze;
 
-create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string)
+create procedure sys.analyze(sch string, tbl string)
 external name sql.analyze;
 
-create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string, col string)
+create procedure sys.analyze(sch string, tbl string, col string)
 external name sql.analyze;
