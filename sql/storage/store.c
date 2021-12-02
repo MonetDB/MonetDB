@@ -6194,14 +6194,12 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 			void *smin = NULL, *smax = NULL;
 			size_t minlen = 0, maxlen = 0;
 			if (store->storage_api.min_max_col(tr, col, &minlen, &smin, &maxlen, &smax)) {
-				*min = col->min = sa_alloc(tr->sa, minlen);
-				*max = col->max = sa_alloc(tr->sa, maxlen);
-				memcpy(col->min, smin, minlen);
-				memcpy(col->max, smax, maxlen);
+				_DELETE(col->min);
+				_DELETE(col->max);
+				*min = col->min = smin;
+				*max = col->max = smax;
 				col->minlen = minlen;
 				col->maxlen = maxlen;
-				_DELETE(smin);
-				_DELETE(smax);
 			}
 		}
 	}
