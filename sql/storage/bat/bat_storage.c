@@ -2333,14 +2333,13 @@ min_max_col(sql_trans *tr, sql_column *col, size_t *minlen, void **min, size_t *
 
 	if (col && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK), *fb = NULL;
-		if (b) {
-			MT_lock_set(&b->theaplock);
-			if (b->tminpos != BUN_NONE && b->tmaxpos != BUN_NONE && (fb = bind_col(tr, col, RDONLY))) {
-				BATiter bi = bat_iterator_nolock(fb);
-				void *nmin = BUNtail(bi, b->tminpos), *nmax = BUNtail(bi, b->tmaxpos);
+		if (b && b->tminpos != BUN_NONE && b->tmaxpos != BUN_NONE && (fb = bind_col(tr, col, RDONLY))) {
+			BATiter bi = bat_iterator(fb);
+			if (fb->tminpos != BUN_NONE && fb->tmaxpos != BUN_NONE) {
+				void *nmin = BUNtail(bi, fb->tminpos), *nmax = BUNtail(bi, fb->tmaxpos);
 
-				*minlen = ATOMlen(b->ttype, nmin);
-				*maxlen = ATOMlen(b->ttype, nmax);
+				*minlen = ATOMlen(fb->ttype, nmin);
+				*maxlen = ATOMlen(fb->ttype, nmax);
 				if (!(*min = GDKmalloc(*minlen)) || !(*max = GDKmalloc(*maxlen))) {
 					GDKfree(*min);
 					GDKfree(*max);
@@ -2353,9 +2352,9 @@ min_max_col(sql_trans *tr, sql_column *col, size_t *minlen, void **min, size_t *
 					memcpy(*max, nmax, *maxlen);
 					ok = 1;
 				}
-				BBPunfix(fb->batCacheid);
 			}
-			MT_lock_unset(&b->theaplock);
+			bat_iterator_end(&bi);
+			BBPunfix(fb->batCacheid);
 		}
 	}
 	return ok;
