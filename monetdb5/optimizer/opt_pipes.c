@@ -93,7 +93,7 @@ static struct PIPELINES {
 	 "optimizer.coercions();"
 	 "optimizer.aliases();"
 	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
+	 //"optimizer.emptybind();"
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"

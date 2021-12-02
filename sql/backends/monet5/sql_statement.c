@@ -518,6 +518,10 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	q = pushArgument(mb, q, be->mvc_var);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
+	if (be->shard) {
+		q = pushArgument(mb, q, be->shard);
+		q = pushInt(mb, q, be->nrparts);
+	}
 	if (q == NULL)
 		return NULL;
 	if (t && isTable(t) && partition) {
@@ -606,6 +610,10 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = pushArgument(mb, q, getStrConstant(mb,c->t->base.name));
 	q = pushArgument(mb, q, getStrConstant(mb,c->base.name));
 	q = pushArgument(mb, q, getIntConstant(mb,access));
+	if (be->shard) {
+		q = pushArgument(mb, q, be->shard);
+		q = pushInt(mb, q, be->nrparts);
+	}
 	if (q == NULL)
 		return NULL;
 
@@ -660,6 +668,10 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	q = pushArgument(mb, q, getStrConstant(mb, i->t->base.name));
 	q = pushArgument(mb, q, getStrConstant(mb, i->base.name));
 	q = pushArgument(mb, q, getIntConstant(mb, access));
+	if (be->shard) {
+		q = pushArgument(mb, q, be->shard);
+		q = pushInt(mb, q, be->nrparts);
+	}
 	if (q == NULL)
 		return NULL;
 
@@ -3827,6 +3839,8 @@ tail_type(stmt *st)
 		case st_table:
 			return sql_bind_localtype("bat");
 		default:
+			if (st->op4.typeval.type)
+				return &st->op4.typeval;
 			assert(0);
 			return NULL;
 		}
@@ -4035,6 +4049,7 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 			return NULL;
 		q->barrier = BARRIERsymbol;
 		q = pushArgument(mb, q, cond->nr);
+		getArg(q,0) = cond->nr;
 	} else {	/* while */
 		int c;
 
@@ -4064,6 +4079,7 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		s->loop = loop;
 		s->op1 = cond;
 		s->nr = getArg(q, 0);
+		s->q = q;
 		return s;
 	}
 	return NULL;
@@ -4105,6 +4121,7 @@ stmt_control_end(backend *be, stmt *cond)
 	}
 	s->op1 = cond;
 	s->nr = getArg(q, 0);
+	s->q = q;
 	return s;
 }
 
@@ -4311,4 +4328,71 @@ stmt_fetch(backend *be, stmt *val)
 		return s;
 	}
 	return NULL;
+}
+
+stmt *
+shard_create(backend *be, int nrparts)
+{
+	InstrPtr q = newStmtArgs(be->mb, languageRef, "shard", 4);
+	if (q == NULL)
+		return NULL;
+	q->barrier = BARRIERsymbol;
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_int));
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_ptr));
+	q = pushInt(be->mb, q, nrparts);
+
+	be->nrparts = nrparts;
+	be->shard = getArg(q, 1);
+	int label = getArg(q, 0);
+
+	InstrPtr r = newStmtArgs(be->mb, calcRef, ">=", 3);
+	r->barrier = LEAVEsymbol;
+	getArg(r, 0) = label;
+	r = pushArgument(be->mb, r, be->shard);
+	r = pushInt(be->mb, r, nrparts);
+
+	if (r && q) {
+		stmt *s = stmt_create(be->mvc->sa, st_none);
+
+		s->nr = label;
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+int
+shard_jump(backend *be, stmt *label, int nrparts)
+{
+	InstrPtr r = newStmtArgs(be->mb, sqlRef, "part_nr", 3);
+	if (r == NULL)
+		return -1;
+	getArg(r, 0) = getArg(label->q, 1); /* cur part nr */
+	r = pushArgument(be->mb, r, getArg(label->q, 2) /* handle */);
+	r = pushInt(be->mb, r, nrparts);
+
+	r = newStmtArgs(be->mb, calcRef, "<", 3);
+	if (r == NULL)
+		return -1;
+	r->barrier = REDOsymbol;
+	getArg(r, 0) = label->nr;
+	r = pushArgument(be->mb, r, getArg(label->q, 1)); /* cur part nr */
+	r = pushInt(be->mb, r, nrparts);
+	if (r)
+		return 0;
+	return -1;
+}
+
+int
+shard_end(backend *be, stmt *label)
+{
+	InstrPtr q = newAssignmentArgs(be->mb, 2);
+	if (q == NULL)
+		return -1;
+	getArg(q, 0) = label->nr;
+	q->argc = q->retc = 1;
+	q->barrier = EXITsymbol;
+	if (q)
+		return 0;
+	return -1;
 }

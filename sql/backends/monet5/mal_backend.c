@@ -24,6 +24,9 @@ backend_reset(backend *b)
 		.last_id = -1,
 		.subbackend = b->subbackend,
 	};
+	char name[MT_NAME_LEN];
+	snprintf(name, sizeof(name), "backend%d", b->client->idx);
+	MT_lock_init(&b->l, name);
 	return b;
 }
 

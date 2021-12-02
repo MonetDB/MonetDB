@@ -31,6 +31,7 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_dataflow.h"
+#include "mal_pipelines.h"
 
 static str
 CMDraise(str *ret, str *msg)
@@ -253,6 +254,22 @@ CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "mal.call", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
+static str
+MALpipelines( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int pc = getPC(mb, pci);
+	bit *res = getArgReference_bit(stk, pci, 0);
+	int *curpart = getArgReference_int(stk, pci, 1);
+	/* result 3 will hold the pointer to the counter */
+	int maxparts = *getArgReference_int(stk, pci, 3);
+
+	if (pc < 0 || pc > pci->jump)
+		throw(MAL, "language.pipelines", "Illegal statement range");
+	*res = TRUE;
+	*curpart = maxparts;
+	return runMALpipelines(cntxt, mb, pc, pci->jump, maxparts, stk);
+}
+
 #include "mel.h"
 mel_func language_init_funcs[] = {
  pattern("language", "call", CMDcallString, false, "Evaluate a MAL string program.", args(1,2, arg("",void),arg("s",str))),
@@ -275,6 +292,7 @@ mel_func language_init_funcs[] = {
 #ifdef HAVE_HGE
  command("language", "assert", MALassertHge, true, "", args(0,2, arg("v",hge),arg("term",str))),
 #endif
+ pattern("language", "pipelines", MALpipelines, false, "The current guarded block in Parallel Pipelines", args(3,4, arg("",bit), arg("curpart", int), arg("handle", ptr), arg("maxparts", int))),
  { .imp=NULL }
 };
 #include "mal_import.h"

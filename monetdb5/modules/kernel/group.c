@@ -17,6 +17,17 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	BAT *b, *s, *g, *e, *h, *gn, *en, *hn;
 	gdk_return r;
 
+	/* the extend and possibly the histo could be reused and shared?? */
+	en = (next && *next) ? BATdescriptor(*next) : NULL;
+	hn = (nhis && *nhis) ? BATdescriptor(*nhis) : NULL;
+	if ((next && *next && !en) || (nhis && *nhis && !hn) ) {
+		if (en)
+			BBPunfix(en->batCacheid);
+		if (hn)
+			BBPunfix(hn->batCacheid);
+		throw(MAL, gid ? "group.subgroup" : "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
 	b = BATdescriptor(*bid);
 	s = sid ? BATdescriptor(*sid) : NULL;
 	g = gid ? BATdescriptor(*gid) : NULL;

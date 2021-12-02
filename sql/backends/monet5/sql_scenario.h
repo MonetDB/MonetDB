@@ -10,6 +10,7 @@
 #define _SQL_SCENARIO_H_
 #include "sql.h"
 
+extern int SQLrunning;
 extern int SQLdebug;
 extern str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLepilogue(void *ret);

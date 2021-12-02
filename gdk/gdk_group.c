@@ -867,15 +867,36 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			maxgrps *= maxgrp;
 	}
 	if (extents) {
-		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
-		if (en == NULL)
-			goto error1;
+		if (*extents) {
+			en = *extents;
+			if (BATcapacity(en) < maxgrps) {
+				if (BATextend(en, maxgrps) != GDK_SUCCEED) {
+					en = NULL;
+					goto error1;
+				}
+			}
+		} else {
+			en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
+			if (en == NULL)
+				goto error1;
+		}
 		exts = (oid *) Tloc(en, 0);
 	}
 	if (histo) {
-		hn = COLnew(0, TYPE_lng, maxgrps, TRANSIENT);
-		if (hn == NULL)
-			goto error1;
+		if (*histo) {
+			hn = *histo;
+			if (BATcapacity(hn) < maxgrps) {
+				if (BATextend(hn, maxgrps) != GDK_SUCCEED) {
+					en = NULL;
+					hn = NULL;
+					goto error1;
+				}
+			}
+		} else {
+			hn = COLnew(0, TYPE_lng, maxgrps, TRANSIENT);
+			if (hn == NULL)
+				goto error1;
+		}
 		cnts = (lng *) Tloc(hn, 0);
 	}
 	ngrp = 0;
@@ -1275,7 +1296,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		en->trevsorted = ngrp == 1;
 		en->tnonil = true;
 		en->tnil = false;
-		*extents = virtualize(en);
+		if (!*extents)
+			*extents = virtualize(en);
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);

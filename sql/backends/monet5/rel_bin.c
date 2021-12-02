@@ -20,6 +20,7 @@
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
+#include "sql_scenario.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
@@ -3661,6 +3662,189 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 }
 
 static stmt *
+rel_shard(backend *be, sql_rel *rel)
+{
+	list *shared = NULL;
+	if (is_groupby(rel->op) && list_empty(rel->r) && !list_empty(rel->exps)) { /* only simple stuff for now */
+		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+		for( node *n = rel->exps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			sql_subtype *t = exp_subtype(e);
+			int tt = t->type->localtype;
+			InstrPtr q = newStmt(be->mb, batRef, newRef);
+
+			if (q == NULL)
+				return NULL;
+			setVarType(be->mb, getArg(q, 0), newBatType(tt));
+			q = pushType(be->mb, q, tt);
+			append(shared, q->argv);
+		}
+	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
+		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+		list *gbexps = rel->r;
+		for(node *n = gbexps->h; n; n = n->next ) {
+			int tt = TYPE_oid;
+			/* ext */
+			InstrPtr q = newStmt(be->mb, batRef, newRef);
+
+			if (q == NULL)
+				return NULL;
+			setVarType(be->mb, getArg(q, 0), newBatType(tt));
+			q = pushType(be->mb, q, tt);
+			append(shared, q->argv);
+		}
+		for( node *n = rel->exps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			sql_subtype *t = exp_subtype(e);
+			int tt = t->type->localtype;
+			InstrPtr q = newStmt(be->mb, batRef, newRef);
+
+			if (q == NULL)
+				return NULL;
+			setVarType(be->mb, getArg(q, 0), newBatType(tt));
+			q = pushType(be->mb, q, tt);
+			append(shared, q->argv);
+		}
+	} else {
+		return NULL;
+	}
+	stmt *shard = shard_create(be, GDKnr_threads);
+	shard -> op4.lval = shared;
+	return shard;
+}
+
+static stmt *
+rel_shard_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *shard)
+{
+	list *sub = shard->op4.lval;
+	node *o = sub->h;
+	(void)grp; (void)cnt;
+	list *shared = NULL;
+	if (rel && !list_empty(rel->r)) { /* for group by case re-project group by cols */
+		list *ngbstmts = sa_list(be->mvc->sa);
+		for( node *m = gbstmts->h; m; m = m->next) {
+			stmt *gstmt = m->data;
+
+			gstmt = stmt_project(be, ext, gstmt);
+			append(ngbstmts, gstmt);
+		}
+		gbstmts = ngbstmts;
+	}
+	(void)shard_jump(be, shard, be->nrparts);
+	/* combine concurrent results */
+	if (rel && list_empty(rel->r)) { /* global case */
+		assert(list_empty(gbstmts));
+		list *sub = cursub->op4.lval;
+
+		/* phase 2 */
+		shared = sa_list(be->mvc->sa);
+		for (node *n = rel->exps->h, *m = o, *o = sub->h; n && m && o;
+				n = n->next, m = m->next, o = o->next) {
+			/* min -> min, max -> max, sum -> sum, count -> sum */
+			sql_exp *e = n->data;
+			sql_subfunc *sf = e->f;
+			int *v = m->data;
+			stmt *i = o->data;
+
+			assert(e->type == e_aggr);
+			char *name = NULL;
+			if (strcmp(sf->func->base.name, "min") == 0 ||
+			    strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "sum") == 0) {
+				name = sf->func->base.name;
+			} else {
+				assert(strcmp(sf->func->base.name, "count") == 0);
+				name = "sum";
+			}
+			InstrPtr q = newStmt(be->mb, getName("lockedaggr"), getName(name));
+			q = pushArgument(be->mb, q, i->nr);
+			getArg(q, 0) = *v;
+			stmt *s = stmt_none(be);
+			s->op4.typeval = *exp_subtype(e);
+			s->nr = *v;
+			s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+			append(shared, s);
+		}
+	} else if (rel && !list_empty(rel->r)) {
+		list *sub = cursub->op4.lval;
+
+		/* phase 2 of grouping */
+		list *gbexps = rel->r, *ngbstmts = sa_list(be->mvc->sa);
+		stmt *grp = NULL, *ext = NULL, *cnt = NULL;
+		for(node *n = gbexps->h, *m = gbstmts->h; n && m; n = n->next, m = m->next, o = o->next) {
+			sql_exp *e = n->data;
+			stmt *gstmt = m->data;
+
+			stmt *groupby = stmt_group(be, gstmt, grp, ext, cnt, !n->next);
+			/* reuse extend ! */
+			getArg(groupby->q, 1) = *(int*)o->data;
+			grp = stmt_result(be, groupby, 0);
+			ext = stmt_result(be, groupby, 1);
+			cnt = stmt_result(be, groupby, 2);
+			gstmt = stmt_alias(be, gstmt, exp_find_rel_name(e), exp_name(e));
+			list_append(ngbstmts, gstmt);
+		}
+		gbstmts = ngbstmts;
+
+		shared = sa_list(be->mvc->sa);
+		for (node *n = rel->exps->h, *m = o, *o = sub->h; n && m && o;
+				n = n->next, m = m->next, o = o->next) {
+			/* min -> min, max -> max, sum -> sum, count -> sum */
+			sql_exp *e = n->data;
+			sql_subfunc *sf = e->f;
+			int *v = m->data;
+			stmt *i = o->data;
+			InstrPtr q;
+
+			if (e->type == e_aggr) {
+				char *name = NULL;
+				if (strcmp(sf->func->base.name, "min") == 0 ||
+					strcmp(sf->func->base.name, "max") == 0 ||
+					strcmp(sf->func->base.name, "sum") == 0) {
+					name = sf->func->base.name;
+				} else {
+					assert(strcmp(sf->func->base.name, "count") == 0);
+					name = "sum";
+				}
+				q = newStmt(be->mb, getName("aggr"), getName(name));
+				q = pushArgument(be->mb, q, i->nr);
+				q = pushArgument(be->mb, q, grp->nr);
+				q = pushArgument(be->mb, q, ext->nr);
+			} else {
+				//s = list_find_column(be, gbstmts, e->l, e->r);
+				q = newStmt(be->mb, algebraRef, projectionRef);
+				q = pushArgument(be->mb, q, ext->nr);
+				q = pushArgument(be->mb, q, i->nr);
+			}
+			getArg(q, 0) = *v;
+			stmt *s = stmt_none(be);
+			s->op4.typeval = *exp_subtype(e);
+			s->nr = *v;
+			s->key = s->nrcols = 1;
+			s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+			append(shared, s);
+		}
+	} else {
+		return NULL;
+	}
+	(void)shard_end(be, shard);
+
+	/* we combined into a bat, ie lets fetch results */
+	if (shared && list_empty(rel->r)) {
+		list *nshared = sa_list(be->mvc->sa);
+		for(node *n = shared->h; n; n = n->next) {
+			stmt *s = n->data;
+			s = stmt_fetch(be, s);
+			append(nshared, s);
+		}
+		shared = nshared;
+	}
+	cursub = stmt_list(be, shared);
+	stmt_set_nrcols(cursub);
+	return cursub;
+}
+
+static stmt *
 rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
@@ -3669,6 +3853,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 
+	stmt *shard = NULL;
+	if (SQLrunning)
+		shard = rel_shard(be, rel);
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
 		sub = subrel_project(be, sub, refs, rel->l);
@@ -3760,6 +3947,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		list_append(l, aggrstmt);
 	}
 	stmt_set_nrcols(cursub);
+	if (shard)
+		return rel_shard_groupby(be, rel, gbexps, grp, ext, cnt, cursub, shard);
 	return cursub;
 }
 
@@ -6420,8 +6609,11 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	be->rowcount = 0;
 	be->silent = !top;
 
+	be->shard = be->nrparts = 0;
+
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
+
 	if (!s)
 		return NULL;
 	if (sqltype == Q_SCHEMA)

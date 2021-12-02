@@ -58,10 +58,14 @@ typedef struct backend {
 		 silent:1; /* on some occasions we don't want to output the result set or the number of affected rows */
 	cq 	*q;		/* pointer to the cached query */
 
+	int shard;
+	int nrparts;
+
 	int result_id;
 	res_table *results;
 	lng last_id;
 	lng rowcnt;
+	MT_Lock l;
 	subbackend *subbackend;
 	str fimp; /* for recurisve functions keep the to be generated MAL function name here */
 } backend;

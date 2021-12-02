@@ -1058,7 +1058,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			default:
 				ret = createException(MAL,"mal.interpreter", "%s: Unknown barrier type", getVarName(mb, getDestVar(pci)));
 			}
-			stkpc++;
+			if (stkpc != stoppc)
+				stkpc++;
 			break;
 		case LEAVEsymbol:
 		case REDOsymbol:

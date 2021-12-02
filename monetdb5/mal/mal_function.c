@@ -558,7 +558,8 @@ setVariableScope(MalBlkPtr mb)
 			continue;
 
 		if( blockStart(p)){
-			if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")==0){
+			if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 &&
+					(strcmp(getFunctionId(p),"dataflow")==0 || strcmp(getFunctionId(p),"shard")==0)){
 				if( dflow != -1)
 					addMalException(mb,"setLifeSpan nested dataflow blocks not allowed" );
 				dflow= depth;
@@ -773,7 +774,8 @@ chkDeclarations(MalBlkPtr mb){
 				if( top == MAXDEPTH-2)
 					throw(MAL,"chkFlow",  "%s.%s too deeply nested  MAL program",  getModuleId(sig), getFunctionId(sig));
 				blkId++;
-				if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")== 0){
+				if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 &&
+					(strcmp(getFunctionId(p),"dataflow")==0 || strcmp(getFunctionId(p),"shard")==0)){
 					if( dflow != -1)
 						throw(MAL,"chkFlow",  "%s.%s setLifeSpan nested dataflow blocks not allowed", getModuleId(sig), getFunctionId(sig));
 					dflow= blkId;

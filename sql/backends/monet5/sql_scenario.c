@@ -72,6 +72,7 @@ sql_register(const char *name, const unsigned char *code)
 	sql_modules++;
 }
 
+int SQLrunning = 0;
 static sql_store SQLstore = NULL;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
@@ -566,6 +567,7 @@ SQLinit(Client c)
 		return msg;
 	}
 
+	SQLrunning = 1;
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager")) == 0) {
 		mvc_exit(SQLstore);
 		SQLstore = NULL;

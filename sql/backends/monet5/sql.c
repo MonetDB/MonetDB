@@ -5158,6 +5158,138 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	return MAL_SUCCEED;
 }
 
+str
+SQLpart_nr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *res = getArgReference_int(stk, pci, 0);
+	ptr counter = *getArgReference_ptr(stk, pci, 1);
+	int maxparts = *getArgReference_int(stk, pci, 2);
+
+    *res = ATOMIC_INC((int*)counter);
+	(void)cntxt; (void)maxparts; (void)mb;
+	return MAL_SUCCEED;
+}
+
+#define sum(a,b) a+b
+#define min(a,b) a<b?a:b
+#define max(a,b) a>b?a:b
+
+#define aggr(T,f)  \
+	if (type == TYPE_##T) {								\
+		T val = *getArgReference_##T(stk, pci, 1);		\
+		if (val != T##_nil && BATcount(b)) {			\
+			T *t = Tloc(b, 0);							\
+			if (t[0] == T##_nil) {						\
+				t[0] = val;								\
+			} else										\
+				t[0] = f(t[0], val);					\
+			b->tnil = false;							\
+			b->tnonil = true;							\
+		} else if (BATcount(b) == 0) {					\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)\
+				err = createException(SQL, "aggr.sum",	\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}												\
+	}
+
+str
+LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *res = getArgReference_bat(stk, pci, 0);
+	backend *be = cntxt->sqlcontext;
+	int type = getArgType(mb, pci, 1);
+	str err = NULL;
+
+	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte)
+			return createException(SQL, "aggr.sum",	"Wrong input type (%d)", type);
+
+	MT_lock_set(&be->l);
+	if (*res) {
+		BAT *b = BATdescriptor(*res);
+
+		aggr(hge,sum);
+		aggr(lng,sum);
+		aggr(int,sum);
+		aggr(sht,sum);
+		aggr(bte,sum);
+		if (!err)
+			BBPkeepref(b->batCacheid);
+		else
+			BBPunfix(b->batCacheid);
+	} else {
+			err = createException(SQL, "aggr.sum",	"Result is not initialized");
+	}
+	MT_lock_unset(&be->l);
+	if (err)
+		return err;
+	return MAL_SUCCEED;
+}
+
+str
+LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *res = getArgReference_bat(stk, pci, 0);
+	backend *be = cntxt->sqlcontext;
+	int type = getArgType(mb, pci, 1);
+	str err = NULL;
+
+	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte)
+			return createException(SQL, "aggr.min",	"Wrong input type (%d)", type);
+
+	MT_lock_set(&be->l);
+	if (*res) {
+		BAT *b = BATdescriptor(*res);
+
+		aggr(hge,min);
+		aggr(lng,min);
+		aggr(int,min);
+		aggr(sht,min);
+		aggr(bte,min);
+		if (!err)
+			BBPkeepref(b->batCacheid);
+		else
+			BBPunfix(b->batCacheid);
+	} else {
+			err = createException(SQL, "aggr.min",	"Result is not initialized");
+	}
+	MT_lock_unset(&be->l);
+	if (err)
+		return err;
+	return MAL_SUCCEED;
+}
+
+str
+LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *res = getArgReference_bat(stk, pci, 0);
+	backend *be = cntxt->sqlcontext;
+	int type = getArgType(mb, pci, 1);
+	str err = NULL;
+
+	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte)
+			return createException(SQL, "aggr.max",	"Wrong input type (%d)", type);
+
+	MT_lock_set(&be->l);
+	if (*res) {
+		BAT *b = BATdescriptor(*res);
+
+		aggr(hge,max);
+		aggr(lng,max);
+		aggr(int,max);
+		aggr(sht,max);
+		aggr(bte,max);
+		if (!err)
+			BBPkeepref(b->batCacheid);
+		else
+			BBPunfix(b->batCacheid);
+	} else {
+			err = createException(SQL, "aggr.max",	"Result is not initialized");
+	}
+	MT_lock_unset(&be->l);
+	if (err)
+		return err;
+	return MAL_SUCCEED;
+}
 
 #include "wlr.h"
 #include "sql_cat.h"
@@ -6247,6 +6379,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "vacuum", SQLstr_column_vacuum, true, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "vacuum", SQLstr_column_auto_vacuum, true, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
  pattern("sql", "stop_vacuum", SQLstr_column_stop_vacuum, true, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "part_nr", SQLpart_nr, true, "return next atomic part nr [0..maxparts>", args(1,3, arg("", int), arg("handle", ptr), arg("maxparts", int))),
+ pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, batargany("", 1), argany("val", 1))),
+ pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,2, batargany("", 1), argany("val", 1))),
+ pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,2, batargany("", 1), argany("val", 1))),
  { .imp=NULL }
 };
 #include "mal_import.h"

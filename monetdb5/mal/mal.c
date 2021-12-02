@@ -133,6 +133,7 @@ void mal_reset(void)
 	}
 	mal_factory_reset();
 	mal_dataflow_reset();
+	mal_pipelines_reset();
 	mal_client_reset();
   	mal_linker_reset();
 	mal_resource_reset();
