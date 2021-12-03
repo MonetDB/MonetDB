@@ -41,8 +41,8 @@ int
 4
 True
 False
-NULL
-NULL
+8125
+8136
 True
 False
 count
@@ -50,8 +50,8 @@ bigint
 8
 True
 False
-NULL
-NULL
+0
+11
 True
 False
 maxval
@@ -59,8 +59,8 @@ clob
 1
 False
 True
-NULL
-NULL
+0
+true
 False
 False
 minval
@@ -68,8 +68,8 @@ clob
 1
 False
 True
-NULL
-NULL
+0
+int
 False
 False
 nils
@@ -77,8 +77,8 @@ bigint
 8
 False
 False
-NULL
-NULL
+0
+1
 False
 False
 revsorted
@@ -86,8 +86,8 @@ boolean
 1
 False
 False
-NULL
-NULL
+false
+true
 False
 False
 sample
@@ -95,8 +95,8 @@ bigint
 8
 True
 False
-NULL
-NULL
+0
+11
 True
 False
 sorted
@@ -104,8 +104,8 @@ boolean
 1
 False
 False
-NULL
-NULL
+false
+true
 False
 False
 stamp
@@ -113,8 +113,8 @@ timestamp
 8
 True
 False
-NULL
-NULL
+2021-03-09 08:10:25.983772
+2021-03-09 08:10:25.985546
 True
 False
 type
@@ -122,8 +122,8 @@ clob
 1
 False
 False
-NULL
-NULL
+bigint
+timestamp
 False
 False
 unique
@@ -131,8 +131,8 @@ bigint
 8
 False
 False
-NULL
-NULL
+0
+7
 False
 False
 width
@@ -140,8 +140,8 @@ int
 4
 False
 False
-NULL
-NULL
+1
+8
 False
 False
 
@@ -153,8 +153,8 @@ int
 4
 True
 False
-NULL
-NULL
+8125
+8136
 True
 False
 count
@@ -162,8 +162,8 @@ bigint
 8
 True
 False
-NULL
-NULL
+0
+11
 True
 False
 maxval
@@ -171,8 +171,8 @@ clob
 1
 False
 True
-NULL
-NULL
+0
+true
 False
 False
 minval
@@ -180,8 +180,8 @@ clob
 1
 False
 True
-NULL
-NULL
+0
+int
 False
 False
 nils
@@ -189,8 +189,8 @@ bigint
 8
 False
 False
-NULL
-NULL
+0
+1
 False
 False
 revsorted
@@ -198,8 +198,8 @@ boolean
 1
 False
 False
-NULL
-NULL
+false
+true
 False
 False
 sample
@@ -207,8 +207,8 @@ bigint
 8
 True
 False
-NULL
-NULL
+0
+11
 True
 False
 sorted
@@ -216,8 +216,8 @@ boolean
 1
 False
 False
-NULL
-NULL
+false
+true
 False
 False
 stamp
@@ -225,8 +225,8 @@ timestamp
 8
 True
 False
-NULL
-NULL
+2021-03-09 08:10:25.983772
+2021-03-09 08:10:25.985546
 True
 False
 type
@@ -234,8 +234,8 @@ clob
 1
 False
 False
-NULL
-NULL
+bigint
+timestamp
 False
 False
 unique
@@ -243,8 +243,8 @@ bigint
 8
 False
 False
-NULL
-NULL
+0
+7
 False
 False
 width
@@ -252,8 +252,8 @@ int
 4
 False
 False
-NULL
-NULL
+1
+8
 False
 False
 
@@ -265,8 +265,8 @@ int
 4
 True
 False
-NULL
-NULL
+8125
+8136
 True
 False
 count
@@ -274,8 +274,8 @@ bigint
 8
 True
 False
-NULL
-NULL
+0
+11
 True
 False
 maxval
@@ -283,8 +283,8 @@ clob
 1
 False
 True
-NULL
-NULL
+0
+true
 False
 False
 minval
@@ -292,8 +292,8 @@ clob
 1
 False
 True
-NULL
-NULL
+0
+int
 False
 False
 nils
@@ -301,8 +301,8 @@ bigint
 8
 False
 False
-NULL
-NULL
+0
+1
 False
 False
 revsorted
@@ -310,8 +310,8 @@ boolean
 1
 False
 False
-NULL
-NULL
+false
+true
 False
 False
 sample
@@ -319,8 +319,8 @@ bigint
 8
 True
 False
-NULL
-NULL
+0
+11
 True
 False
 sorted
@@ -328,8 +328,8 @@ boolean
 1
 False
 False
-NULL
-NULL
+false
+true
 False
 False
 stamp
@@ -337,8 +337,8 @@ timestamp
 8
 True
 False
-NULL
-NULL
+2021-03-09 08:10:25.983772
+2021-03-09 08:10:25.985546
 True
 False
 type
@@ -346,8 +346,8 @@ clob
 1
 False
 False
-NULL
-NULL
+bigint
+timestamp
 False
 False
 unique
@@ -355,8 +355,8 @@ bigint
 8
 False
 False
-NULL
-NULL
+0
+7
 False
 False
 width
@@ -364,8 +364,8 @@ int
 4
 False
 False
-NULL
-NULL
+1
+8
 False
 False
 
@@ -380,8 +380,8 @@ int
 4
 True
 False
-NULL
-NULL
+8125
+8136
 True
 False
 count
@@ -389,8 +389,8 @@ bigint
 8
 True
 False
-NULL
-NULL
+0
+11
 True
 False
 maxval
@@ -398,8 +398,8 @@ clob
 1
 False
 True
-NULL
-NULL
+0
+true
 False
 False
 minval
@@ -407,8 +407,8 @@ clob
 1
 False
 True
-NULL
-NULL
+0
+int
 False
 False
 nils
@@ -416,8 +416,8 @@ bigint
 8
 False
 False
-NULL
-NULL
+0
+1
 False
 False
 revsorted
@@ -425,8 +425,8 @@ boolean
 1
 False
 False
-NULL
-NULL
+false
+true
 False
 False
 sample
@@ -434,8 +434,8 @@ bigint
 8
 True
 False
-NULL
-NULL
+0
+11
 True
 False
 sorted
@@ -443,8 +443,8 @@ boolean
 1
 False
 False
-NULL
-NULL
+false
+true
 False
 False
 stamp
@@ -452,8 +452,8 @@ timestamp
 8
 True
 False
-NULL
-NULL
+2021-03-09 08:10:25.983772
+2021-03-09 08:10:25.985546
 True
 False
 type
@@ -461,8 +461,8 @@ clob
 1
 False
 False
-NULL
-NULL
+bigint
+timestamp
 False
 False
 unique
@@ -470,8 +470,8 @@ bigint
 8
 False
 False
-NULL
-NULL
+0
+7
 False
 False
 width
@@ -479,8 +479,8 @@ int
 4
 False
 False
-NULL
-NULL
+1
+8
 False
 False
 
