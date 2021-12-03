@@ -47,12 +47,15 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
+        # Since Jan2022 we allow concurrent analyze statements
+        mdb1.execute("create table mytx (i int, j int);").assertSucceeded()
+        mdb1.execute("insert into mytx values (1, 1), (2, 2)").assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
-        mdb1.execute("analyze sys.myt").assertSucceeded()
-        mdb2.execute('drop table myt;').assertSucceeded()
+        mdb1.execute("analyze sys.mytx").assertSucceeded()
+        mdb2.execute('drop table mytx;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
