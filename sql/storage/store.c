@@ -6181,19 +6181,10 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 	*min = NULL;
 	*max = NULL;
 	if (col && isTable(col->t)) {
-		if (col->min && col->max) {
-			*min = col->min;
-			*max = col->max;
-		} else {
-			void *smin = NULL, *smax = NULL;
-			size_t minlen = 0, maxlen = 0;
-			if (store->storage_api.min_max_col(tr, col, &minlen, &smin, &maxlen, &smax)) {
-				_DELETE(col->min);
-				_DELETE(col->max);
-				*min = col->min = smin;
-				*max = col->max = smax;
-			}
-		}
+		if (!col->min || !col->max)
+			(void) store->storage_api.min_max_col(tr, col);
+		*min = col->min;
+		*max = col->max;
 	}
 	return *min != NULL && *max != NULL;
 }

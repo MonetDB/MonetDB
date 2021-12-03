@@ -2321,42 +2321,44 @@ dcount_col(sql_trans *tr, sql_column *c)
 }
 
 static int
-min_max_col(sql_trans *tr, sql_column *col, size_t *minlen, void **min, size_t *maxlen, void **max)
+min_max_col(sql_trans *tr, sql_column *c)
 {
 	int ok = 0;
+	BAT *b = NULL;
+	sql_delta *d = NULL;
 
 	assert(tr->active);
-	*min = NULL;
-	*max = NULL;
-	if (!isTable(col->t) || !col->t->s)
-		return ok;
+	if (!c || !ATOMIC_PTR_GET(&c->data) || !isTable(c->t) || !c->t->s)
+		return 0;
+	if (c->min && c->max)
+		return 1;
 
-	if (col && ATOMIC_PTR_GET(&col->data)) {
-		BAT *b = bind_col(tr, col, QUICK), *fb = NULL;
-		if (b && b->tminpos != BUN_NONE && b->tmaxpos != BUN_NONE && (fb = bind_col(tr, col, RDONLY))) {
-			BATiter bi = bat_iterator(fb);
-			if (fb->tminpos != BUN_NONE && fb->tmaxpos != BUN_NONE) {
-				void *nmin = BUNtail(bi, fb->tminpos), *nmax = BUNtail(bi, fb->tmaxpos);
-
-				*minlen = ATOMlen(fb->ttype, nmin);
-				*maxlen = ATOMlen(fb->ttype, nmax);
-				if (!(*min = GDKmalloc(*minlen)) || !(*max = GDKmalloc(*maxlen))) {
-					GDKfree(*min);
-					GDKfree(*max);
-					*min = NULL;
-					*max = NULL;
-					*minlen = 0;
-					*maxlen = 0;
-				} else {
-					memcpy(*min, nmin, *minlen);
-					memcpy(*max, nmax, *maxlen);
-					ok = 1;
-				}
-			}
-			bat_iterator_end(&bi);
-			BBPunfix(fb->batCacheid);
-		}
+	lock_column(tr->store, c->base.id);
+	if (c->min && c->max) {
+		unlock_column(tr->store, c->base.id);
+		return 1;
 	}
+	_DELETE(c->min);
+	_DELETE(c->max);
+	if ((d = ATOMIC_PTR_GET(&c->data)) && (b = temp_descriptor(d->cs.bid))) {
+		BATiter bi = bat_iterator(b);
+		if (b->tminpos != BUN_NONE && b->tmaxpos != BUN_NONE) {
+			void *nmin = BUNtail(bi, b->tminpos), *nmax = BUNtail(bi, b->tmaxpos);
+			size_t minlen = ATOMlen(b->ttype, nmin), maxlen = ATOMlen(b->ttype, nmax);
+
+			if (!(c->min = GDKmalloc(minlen)) || !(c->max = GDKmalloc(maxlen))) {
+				_DELETE(c->min);
+				_DELETE(c->max);
+			} else {
+				memcpy(c->min, nmin, minlen);
+				memcpy(c->max, nmax, maxlen);
+				ok = 1;
+			}
+		}
+		bat_iterator_end(&bi);
+		bat_destroy(b);
+	}
+	unlock_column(tr->store, c->base.id);
 	return ok;
 }
 
