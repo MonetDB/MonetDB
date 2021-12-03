@@ -98,7 +98,7 @@ COMMENT ON COLUMN "foo"."tab"."j" IS 'jj';
 SEQUENCE foo.counter
 #COMMENT ON SEQUENCE counter IS 'counting';
 SEQUENCE foo.counter 'counting'
-CREATE SEQUENCE "foo"."counter" START WITH 1 MAXVALUE 9223372036854775807 NO CYCLE;
+CREATE SEQUENCE "foo"."counter" START WITH 1 NO CYCLE;
 COMMENT ON SEQUENCE "foo"."counter" IS 'counting';
 #SET SCHEMA sys;
 #COMMENT ON SEQUENCE foo.counter IS 'still counting';
