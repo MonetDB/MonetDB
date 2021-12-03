@@ -1683,9 +1683,9 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		goto bailout;
 	if (mapi_rows_affected(hdl) != 1) {
 		if (mapi_rows_affected(hdl) == 0)
-			fprintf(stderr, "table '%s.%s' does not exist\n", schema, tname);
+			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
 		else
-			fprintf(stderr, "table '%s.%s' is not unique\n", schema, tname);
+			fprintf(stderr, "table %s.%s is not unique\n", schema, tname);
 		goto bailout;
 	}
 	while ((mapi_fetch_row(hdl)) != 0) {
@@ -1894,9 +1894,9 @@ dump_table_alters(Mapi mid, const char *schema, const char *tname, stream *toCon
 		goto bailout;
 	if (mapi_rows_affected(hdl) != 1) {
 		if (mapi_rows_affected(hdl) == 0)
-			fprintf(stderr, "table '%s.%s' does not exist\n", schema, tname);
+			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
 		else
-			fprintf(stderr, "table '%s.%s' is not unique\n", schema, tname);
+			fprintf(stderr, "table %s.%s is not unique\n", schema, tname);
 		goto bailout;
 	}
 	while ((mapi_fetch_row(hdl)) != 0) {
@@ -1907,6 +1907,29 @@ dump_table_alters(Mapi mid, const char *schema, const char *tname, stream *toCon
 			dquoted_print(toConsole, tname, " ");
 			mnstr_printf(toConsole, "SET READ ONLY;\n");
 		}
+	}
+	mapi_close_handle(hdl);
+	snprintf(query, maxquerylen,
+			 "SELECT name, storage FROM sys._columns "
+			 "WHERE storage IS NOT NULL "
+			 "AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
+			 "AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
+			 t, s);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+		goto bailout;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		const char *cname = mapi_fetch_field(hdl, 0);
+		const char *storage = mapi_fetch_field(hdl, 1);
+		char *stg = sescape(storage);
+		if (stg == NULL)
+			goto bailout;
+		mnstr_printf(toConsole, "ALTER TABLE ");
+		dquoted_print(toConsole, schema, ".");
+		dquoted_print(toConsole, tname, " ");
+		mnstr_printf(toConsole, "ALTER COLUMN ");
+		dquoted_print(toConsole, cname, " ");
+		mnstr_printf(toConsole, "SET STORAGE '%s';\n", stg);
+		free(stg);
 	}
 	rc = 0;						/* success */
   bailout:
