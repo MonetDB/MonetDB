@@ -50,3 +50,14 @@ backend_destroy(backend *b)
 		b->subbackend->destroy(b->subbackend);
 	_DELETE(b);
 }
+
+/* for recursive functions, if the implementation is not set yet, take it from the current compilation */
+str
+backend_function_imp(backend *b, sql_func *f)
+{
+	str res = sql_func_imp(f);
+
+	if (b->mvc->forward && strcmp(res, "") == 0 && b->mvc->forward->base.id == f->base.id)
+		res = b->fimp;
+	return res;
+}

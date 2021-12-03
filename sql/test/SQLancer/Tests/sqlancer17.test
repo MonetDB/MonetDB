@@ -72,12 +72,12 @@ project (
 | | | | project (
 | | | | | select (
 | | | | | |  [ boolean(1) "true" ]
-| | | | | ) [ (tinyint(2) "2") ! <= (tinyint(1) "1") ! <= (tinyint(2) "2"), (tinyint(2) "3") <= (tinyint(2) "2") <= (tinyint(3) "5") ]
+| | | | | ) [ (tinyint(2) "2") ! <= (tinyint(2) "1") ! <= (tinyint(2) "2"), (tinyint(3) "3") <= (tinyint(2) "2") <= (tinyint(2) "5") ]
 | | | | ) [ tinyint(2) "2" as "v0"."vc0" ],
 | | | | project (
 | | | | | select (
 | | | | | |  [ boolean(1) "true" ]
-| | | | | ) [ (tinyint(3) "4") ! <= (tinyint(1) "1") ! <= (tinyint(3) "4"), (tinyint(2) "3") <= (tinyint(3) "4") <= (tinyint(3) "5") ]
+| | | | | ) [ (tinyint(3) "4") ! <= (tinyint(2) "1") ! <= (tinyint(3) "4"), (tinyint(3) "3") <= (tinyint(3) "4") <= (tinyint(2) "5") ]
 | | | | ) [ tinyint(3) "4" as "v0"."vc0" ]
 | | | ) [ "v0"."vc0" NOT NULL ]
 | | ) [ "sys"."sql_max"(tinyint(1) "1", tinyint(1) "1") NOT NULL as "v20"."vc0" ]

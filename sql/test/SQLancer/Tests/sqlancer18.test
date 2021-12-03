@@ -601,7 +601,55 @@ select (case when false then v100.vc1 when true then (values (2)) end) in (3) fr
 False
 False
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c0" INT)
+
+statement ok
+create view v1(vc0) as (select 1 where false)
+
+statement ok
+create view v2(vc0) as (select true)
+
+query T nosort
+SELECT (SELECT 'a' FROM v1) <> ALL(SELECT 'b' FROM t2) FROM v2
+----
+True
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((SELECT 'a' FROM v1) <> ALL((SELECT 'b' FROM t2) UNION (SELECT 'c' FROM v1)) AS INT)
+as count FROM v2) as res
+----
+1
+
+# this one is right
+query I nosort
+SELECT 1 FROM v2 WHERE (SELECT 'a' FROM v1) <> ALL((SELECT 'b' FROM t2) UNION (SELECT 'c' FROM v1))
+----
+1
+
+statement ok
+ROLLBACK
+
 query T nosort
 SELECT ((SELECT 5) INTERSECT (SELECT 9)) = ALL(SELECT 4) >= TRUE
 ----
 NULL
+
+query T nosort
+SELECT 1 = ANY(WITH x(x) AS (SELECT 1) SELECT x FROM x)
+----
+True
+
+query T nosort
+SELECT 1 IN (WITH x(x) AS (SELECT 1) SELECT x FROM x)
+----
+True
+
+query T nosort
+SELECT EXISTS (WITH x(x) AS (SELECT 1) SELECT x FROM x)
+----
+True
+

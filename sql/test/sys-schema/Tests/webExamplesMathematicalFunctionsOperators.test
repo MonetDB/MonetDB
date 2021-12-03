@@ -108,7 +108,7 @@ plan select 1 << 4
 ----
 project (
 |  [ boolean(1) "true" ]
-) [ "sys"."left_shift"(tinyint(1) "1", int(32) "4") NOT NULL ]
+) [ "sys"."left_shift"(tinyint(8) "1", int(32) "4") NOT NULL ]
 
 query I rowsort
 select left_shift(1, 4) 
@@ -125,7 +125,7 @@ plan select 8 >> 2
 ----
 project (
 |  [ boolean(1) "true" ]
-) [ "sys"."right_shift"(tinyint(4) "8", int(32) "2") NOT NULL ]
+) [ "sys"."right_shift"(tinyint(8) "8", int(32) "2") NOT NULL ]
 
 query I rowsort
 select right_shift(16, 2) 

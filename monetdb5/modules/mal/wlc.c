@@ -1014,6 +1014,7 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = newStmt(cntxt->wlc, "wlr","clear_table");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+	p = pushInt(cntxt->wlc, p, getVarConstant(mb, getArg(pci,3)).val.ival);
 	if( cntxt->wlc_kind < WLC_UPDATE)
 		cntxt->wlc_kind = WLC_UPDATE;
 
@@ -1086,7 +1087,7 @@ mel_func wlc_init_funcs[] = {
  pattern("wlc", "append", WLCappend, false, "Keep the insertions in the workload-capture-replay list", args(1,5, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
  pattern("wlc", "update", WLCupdate, false, "Keep the update in the workload-capture-replay list", args(1,6, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("tid",0),argany("val",0))),
  pattern("wlc", "delete", WLCdelete, false, "Keep the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),argany("b",0))),
- pattern("wlc", "clear_table", WLCclear_table, false, "Keep the deletions in the workload-capture-replay list", args(1,3, arg("",int),arg("sname",str),arg("tname",str))),
+ pattern("wlc", "clear_table", WLCclear_table, false, "Keep the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
  pattern("wlc", "commit", WLCcommitCmd, false, "Commit the workload-capture-replay record", noargs),
  pattern("wlc", "rollback", WLCcommitCmd, false, "Rollback the workload-capture-replay record", noargs),
  pattern("wlc", "create_seq", WLCgeneric, false, "Catalog operation create_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("action",int))),

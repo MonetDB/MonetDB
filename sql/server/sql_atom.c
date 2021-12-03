@@ -697,8 +697,19 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 	atom *na = NULL;
 	sql_subtype *at = &a->tpe;
 
-	if (subtype_cmp(at, tp) == 0)
+	if (subtype_cmp(at, tp) == 0) {
+		/* it may be a subtype, but still a different one */
+		if (at->type->base.id != tp->type->base.id ||
+			at->digits != tp->digits || at->scale != tp->scale) {
+			na = atom_create(sa);
+			SA_VALcopy(sa, &na->data, &a->data);
+			na->data.vtype = tp->type->localtype;
+			na->tpe = *tp;
+			na->isnull = a->isnull;
+			return na;
+		}
 		return a;
+	}
 	if (!a->isnull) {
 		/* need to do a cast, start simple is atom type a subtype of tp */
 		if ((at->type->eclass == tp->type->eclass ||

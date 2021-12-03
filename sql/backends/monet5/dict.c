@@ -281,9 +281,10 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* improve decompress of hge types */
 BAT *
-DICTdecompress_(BAT *o, BAT *u)
+DICTdecompress_(BAT *o, BAT *u, role_t role)
 {
-	BAT *b = COLnew(o->hseqbase, u->ttype, BATcount(o), TRANSIENT);
+	bool nils = false;
+	BAT *b = COLnew(o->hseqbase, u->ttype, BATcount(o), role);
 
 	if (!b)
 		return NULL;
@@ -293,24 +294,32 @@ DICTdecompress_(BAT *o, BAT *u)
 	if (o->ttype == TYPE_bte) {
 		unsigned char *op = Tloc(o, 0);
 
-		if (ATOMstorage(u->ttype) == TYPE_int) {
+		if (ATOMbasetype(u->ttype) == TYPE_int) {
 			int *up = Tloc(u, 0);
 			int *bp = Tloc(b, 0);
 
 			BATloop(o, p, q) {
-				bp[p] = up[op[p]];
+				int v = up[op[p]];
+				nils |= is_int_nil(v);
+				bp[p] = v;
 			}
 			BATsetcount(b, BATcount(o));
 			BATnegateprops(b);
-		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
+			b->tnil = nils;
+			b->tnonil = !nils;
+		} else if (ATOMbasetype(u->ttype) == TYPE_lng) {
 			lng *up = Tloc(u, 0);
 			lng *bp = Tloc(b, 0);
 
 			BATloop(o, p, q) {
-				bp[p] = up[op[p]];
+				lng v = up[op[p]];
+				nils |= is_lng_nil(v);
+				bp[p] = v;
 			}
 			BATsetcount(b, BATcount(o));
 			BATnegateprops(b);
+			b->tnil = nils;
+			b->tnonil = !nils;
 		} else {
 			BATloop(o, p, q) {
 				BUN up = op[p];
@@ -325,24 +334,32 @@ DICTdecompress_(BAT *o, BAT *u)
 		assert(o->ttype == TYPE_sht);
 		unsigned short *op = Tloc(o, 0);
 
-		if (ATOMstorage(u->ttype) == TYPE_int) {
+		if (ATOMbasetype(u->ttype) == TYPE_int) {
 			int *up = Tloc(u, 0);
 			int *bp = Tloc(b, 0);
 
 			BATloop(o, p, q) {
-				bp[p] = up[op[p]];
+				int v = up[op[p]];
+				nils |= is_int_nil(v);
+				bp[p] = v;
 			}
 			BATsetcount(b, BATcount(o));
 			BATnegateprops(b);
-		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
+			b->tnil = nils;
+			b->tnonil = !nils;
+		} else if (ATOMbasetype(u->ttype) == TYPE_lng) {
 			lng *up = Tloc(u, 0);
 			lng *bp = Tloc(b, 0);
 
 			BATloop(o, p, q) {
-				bp[p] = up[op[p]];
+				lng v = up[op[p]];
+				nils |= is_lng_nil(v);
+				bp[p] = v;
 			}
 			BATsetcount(b, BATcount(o));
 			BATnegateprops(b);
+			b->tnil = nils;
+			b->tnonil = !nils;
 		} else {
 			BATloop(o, p, q) {
 				BUN up = op[p];
@@ -374,7 +391,7 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_destroy(u);
 		throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BAT *b = DICTdecompress_(o, u);
+	BAT *b = DICTdecompress_(o, u, TRANSIENT);
 	bat_destroy(o);
 	bat_destroy(u);
 	if (!b)
@@ -824,9 +841,9 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 BAT *
-DICTenlarge(BAT *offsets, BUN cnt, BUN sz)
+DICTenlarge(BAT *offsets, BUN cnt, BUN sz, role_t role)
 {
-	BAT *n = COLnew(offsets->hseqbase, TYPE_sht, sz, TRANSIENT);
+	BAT *n = COLnew(offsets->hseqbase, TYPE_sht, sz, role);
 
 	if (!n)
 		return NULL;
@@ -835,9 +852,12 @@ DICTenlarge(BAT *offsets, BUN cnt, BUN sz)
 	for(BUN i = 0; i<cnt; i++) {
 		no[i] = o[i];
 	}
-	n->tkey = offsets->tkey;
 	BATnegateprops(n);
+	n->tnil = offsets->tnil;
+	n->tnonil = offsets->tnonil;
+	n->tkey = offsets->tkey;
 	n->tsorted = offsets->tsorted;
+	n->trevsorted = offsets->trevsorted;
 	return n;
 }
 
@@ -884,20 +904,22 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BATsetcount(n, cnt);
 	BATnegateprops(n);
+	n->tnil = false;
+	n->tnonil = true;
 	if (o->ttype == TYPE_bte) {
 		unsigned char *mp = Tloc(m, 0);
 		unsigned char mm = 0;
 		for(BUN i = 0; i<BATcount(m); i++)
 			if (mp[i] > mm)
 				mm = mp[i];
-		BATmaxminpos_bte(o, mm);
+		BATmaxminpos_bte(n, mm);
 	} else {
 		unsigned short *mp = Tloc(m, 0);
 		unsigned short mm = 0;
 		for(BUN i = 0; i<BATcount(m); i++)
 			if (mp[i] > mm)
 				mm = mp[i];
-		BATmaxminpos_sht(o, mm);
+		BATmaxminpos_sht(n, mm);
 	}
 	bat_destroy(o);
 	bat_destroy(m);
@@ -940,7 +962,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 			}
 			if (!f) {
 				if (BATcount(dict) >= 255) {
-					BAT *nn = DICTenlarge(n, i, sz);
+					BAT *nn = DICTenlarge(n, i, sz, TRANSIENT);
 					bat_destroy(n);
 					if (!nn) {
 						bat_iterator_end(&bi);
@@ -998,6 +1020,8 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 	bat_iterator_end(&bi);
 	BATsetcount(n, sz);
 	BATnegateprops(n);
+	n->tnil = false;
+	n->tnonil = true;
 	*noffsets = n;
 	return 0;
 }

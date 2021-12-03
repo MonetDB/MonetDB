@@ -16,7 +16,7 @@
 static sql_column *
 bt_find_column( sql_rel *rel, char *tname, char *name)
 {
-	if (!rel || !rel->exps || !rel->l)
+	if (!rel || list_empty(rel->exps) || !rel->l)
 		return NULL;
 	sql_exp *ne = NULL;
 	sql_table *t = rel->l;
@@ -43,48 +43,57 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 	if (is_basetable(rel->op)) {
 		sql_table *t = rel->l;
 
-		if (!t || !rel->exps || isNew(t) || !isGlobal(t) || isGlobalTemp(t))
+		if (!t || list_empty(rel->exps) || isNew(t) || !isGlobal(t) || isGlobalTemp(t))
 			return rel;
 		sql_rel *parent = v->parent;
 
 		/* select with basetable */
 		if (is_select(parent->op)) {
 			/* add predicates */
-			for (node *n = parent->exps->h; n && !needall; n = n->next) {
-				sql_exp *e = n->data, *r = e->r, *r2 = e->f;
-				sql_column *c = NULL;
+			if (list_empty(parent->exps)) {
+				needall = true;
+			} else {
+				for (node *n = parent->exps->h; n && !needall; n = n->next) {
+					sql_exp *e = n->data, *r = e->r, *r2 = e->f;
+					sql_column *c = NULL;
 
-				if (!is_compare(e->type) || !is_theta_exp(e->flag) || r->type != e_atom || !r->l || (r2 && (r2->type != e_atom || !r2->l)) || is_symmetric(e) || !(c = exp_find_column(rel, e->l))) {
-					needall = true;
-				} else if (isNew(c)) {
-					continue;
-				} else {
-					atom *e1 = r && r->l ? atom_copy(NULL, r->l) : NULL, *e2 = r2 && r2->l ? atom_copy(NULL, r2->l) : NULL;
+					if (!is_compare(e->type) || !is_theta_exp(e->flag) || r->type != e_atom || !r->l || (r2 && (r2->type != e_atom || !r2->l)) || is_symmetric(e) || !(c = exp_find_column(rel, e->l)))
+						needall = true;
+				}
+				if (!needall) {
+					for (node *n = parent->exps->h; n; n = n->next) {
+						sql_exp *e = n->data, *r = e->r, *r2 = e->f;
+						sql_column *c = exp_find_column(rel, e->l);
 
-					if ((r && r->l && !e1) || (r2 && r2->l && !e2)) {
-						if (e1) {
-							VALclear(&e1->data);
-							_DELETE(e1);
+						if (isNew(c))
+							continue;
+						atom *e1 = r && r->l ? atom_copy(NULL, r->l) : NULL, *e2 = r2 && r2->l ? atom_copy(NULL, r2->l) : NULL;
+
+						if ((r && r->l && !e1) || (r2 && r2->l && !e2)) {
+							if (e1) {
+								VALclear(&e1->data);
+								_DELETE(e1);
+							}
+							if (e2) {
+								VALclear(&e2->data);
+								_DELETE(e2);
+							}
+							return sql_error(v->sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
-						if (e2) {
-							VALclear(&e2->data);
-							_DELETE(e2);
+
+						if (sql_trans_add_predicate(v->sql->session->tr, c, e->flag, e1, e2, is_anti(e), is_semantics(e)) != LOG_OK) {
+							if (e1) {
+								VALclear(&e1->data);
+								_DELETE(e1);
+							}
+							if (e2) {
+								VALclear(&e2->data);
+								_DELETE(e2);
+							}
+							return sql_error(v->sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
-						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						v->changes++;
 					}
-
-					if (sql_trans_add_predicate(v->sql->session->tr, c, e->flag, e1, e2, is_anti(e), is_semantics(e)) != LOG_OK) {
-						if (e1) {
-							VALclear(&e1->data);
-							_DELETE(e1);
-						}
-						if (e2) {
-							VALclear(&e2->data);
-							_DELETE(e2);
-						}
-						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					}
-					v->changes++;
 				}
 			}
 		}
@@ -93,7 +102,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 			/* any other case, add all predicates */
 			sql_table *t = rel->l;
 
-			if (!t || !rel->exps || isNew(t) || !isGlobal(t) || isGlobalTemp(t))
+			if (!t || list_empty(rel->exps) || isNew(t) || !isGlobal(t) || isGlobalTemp(t))
 				return rel;
 			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -105,7 +114,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 					if (isNew(c))
 						continue;
 					if (sql_trans_add_predicate(v->sql->session->tr, c, 0, NULL, NULL, false, false) != LOG_OK)
-						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						return sql_error(v->sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					v->changes++;
 				}
 			}

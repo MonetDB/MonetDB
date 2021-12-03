@@ -116,8 +116,6 @@ func_destroy(sqlstore *store, sql_func *f)
 		/* clean backend code */
 		backend_freecode(sql_shared_module_name, 0, f->imp);
 	}
-	if (f->lang == FUNC_LANG_SQL || f->lang == FUNC_LANG_MAL)
-		MT_lock_destroy(&f->function_lock);
 	if (f->res)
 		list_destroy2(f->res, store);
 	list_destroy2(f->ops, store);
@@ -938,8 +936,6 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
 	t->sa = tr->sa;
-	if (!t->instantiated)
-		MT_lock_init(&t->function_lock, "function_lock");
 	if (t->lang != FUNC_LANG_INT) {
 		t->query = t->imp;
 		t->imp = NULL;
@@ -3216,7 +3212,6 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 	f->query = (of->query)?SA_STRDUP(sa, of->query):NULL;
 	f->s = s;
 	f->sa = sa;
-	MT_lock_init(&f->function_lock, "function_lock");
 
 	f->ops = SA_LIST(sa, (fdestroy) &arg_destroy);
 	for (node *n=of->ops->h; n; n = n->next)
@@ -4841,8 +4836,6 @@ create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args
 	t->fix_scale = SCALE_EQ;
 	t->s = NULL;
 	t->system = system;
-	if (!t->instantiated)
-		MT_lock_init(&t->function_lock, "function_lock");
 	return t;
 }
 
@@ -4881,8 +4874,6 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	}
 	t->query = (query)?SA_STRDUP(tr->sa, query):NULL;
 	t->s = s;
-	if (!t->instantiated)
-		MT_lock_init(&t->function_lock, "function_lock");
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
@@ -6115,10 +6106,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 	int res = LOG_OK;
 	sqlstore *store = tr->store;
 
-	if (!col->def && !val)
-		return res;	/* no change */
-
-	if (!col->def || !val || strcmp(col->def, val) != 0) {
+	if ((col->def || val) && (!col->def || !val || strcmp(col->def, val) != 0)) {
 		void *p = val ? val : (void *) ATOMnilptr(TYPE_str);
 		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp");
 		sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
@@ -6152,10 +6140,7 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 	int res = LOG_OK;
 	sqlstore *store = tr->store;
 
-	if (!col->storage_type && !storage)
-		return res;	/* no change */
-
-	if (!col->storage_type || !storage || strcmp(col->storage_type, storage) != 0) {
+	if ((col->storage_type || storage) && (!col->storage_type || !storage || strcmp(col->storage_type, storage) != 0)) {
 		void *p = storage ? storage : (void *) ATOMnilptr(TYPE_str);
 		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp");
 		sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
