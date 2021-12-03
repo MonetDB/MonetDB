@@ -167,7 +167,7 @@ SELECT COUNT(*) AS duplicates, "username", login FROM sys.sessions GROUP BY "use
 ----
 
 query IT rowsort
-SELECT COUNT(*) AS duplicates, "column" FROM sys.statistics GROUP BY "column" HAVING COUNT(*) > 1
+SELECT COUNT(*) AS duplicates, "column_id" FROM sys.statistics GROUP BY "column_id" HAVING COUNT(*) > 1
 ----
 
 query II rowsort

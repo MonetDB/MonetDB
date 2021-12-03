@@ -159,22 +159,23 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *width, *count, *unique, *nils, *minval, *maxval, *sorted, *revsorted, *bs = NULL, *fb = NULL;
+	BAT *cid, *sch, *tab, *col, *type, *width, *count, *unique, *nils, *minval, *maxval, *sorted, *revsorted, *bs = NULL, *fb = NULL;
 	mvc *m = NULL;
 	sql_trans *tr = NULL;
 	sqlstore *store = NULL;
-	bat *rsch = getArgReference_bat(stk, pci, 0);
-	bat *rtab = getArgReference_bat(stk, pci, 1);
-	bat *rcol = getArgReference_bat(stk, pci, 2);
-	bat *rtype = getArgReference_bat(stk, pci, 3);
-	bat *rwidth = getArgReference_bat(stk, pci, 4);
-	bat *rcount = getArgReference_bat(stk, pci, 5);
-	bat *runique = getArgReference_bat(stk, pci, 6);
-	bat *rnils = getArgReference_bat(stk, pci, 7);
-	bat *rminval = getArgReference_bat(stk, pci, 8);
-	bat *rmaxval = getArgReference_bat(stk, pci, 9);
-	bat *rsorted = getArgReference_bat(stk, pci, 10);
-	bat *rrevsorted = getArgReference_bat(stk, pci, 11);
+	bat *rcid = getArgReference_bat(stk, pci, 0);
+	bat *rsch = getArgReference_bat(stk, pci, 1);
+	bat *rtab = getArgReference_bat(stk, pci, 2);
+	bat *rcol = getArgReference_bat(stk, pci, 3);
+	bat *rtype = getArgReference_bat(stk, pci, 4);
+	bat *rwidth = getArgReference_bat(stk, pci, 5);
+	bat *rcount = getArgReference_bat(stk, pci, 6);
+	bat *runique = getArgReference_bat(stk, pci, 7);
+	bat *rnils = getArgReference_bat(stk, pci, 8);
+	bat *rminval = getArgReference_bat(stk, pci, 9);
+	bat *rmaxval = getArgReference_bat(stk, pci, 10);
+	bat *rsorted = getArgReference_bat(stk, pci, 11);
+	bat *rrevsorted = getArgReference_bat(stk, pci, 12);
 	str sname = NULL, tname = NULL, cname = NULL, msg = MAL_SUCCEED;
 	struct os_iter si = {0};
 	int sfnd = 0, tfnd = 0, cfnd = 0;
@@ -246,6 +247,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cname && !cfnd)
 		throw(SQL, "sql.statistics", SQLSTATE(38000) "Column '%s' does not exist", cname);
 
+	cid = COLnew(0, TYPE_int, 0, TRANSIENT);
 	sch = COLnew(0, TYPE_str, 0, TRANSIENT);
 	tab = COLnew(0, TYPE_str, 0, TRANSIENT);
 	col = COLnew(0, TYPE_str, 0, TRANSIENT);
@@ -259,7 +261,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sorted = COLnew(0, TYPE_bit, 0, TRANSIENT);
 	revsorted = COLnew(0, TYPE_bit, 0, TRANSIENT);
 
-	if (!sch || !tab || !col || !type || !width || !count || !unique || !nils || !minval || !maxval || !sorted || !revsorted) {
+	if (!cid || !sch || !tab || !col || !type || !width || !count || !unique || !nils || !minval || !maxval || !sorted || !revsorted) {
 		msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -298,7 +300,8 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						issorted = bs->tsorted;
 						isrevsorted = bs->trevsorted;
 
-						if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
+						if (BUNappend(cid, &c->base.id, false) != GDK_SUCCEED ||
+							BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 							BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
 							BUNappend(col, c->base.name, false) != GDK_SUCCEED ||
 							BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED ||
@@ -376,6 +379,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
+	BBPkeepref(*rcid = cid->batCacheid);
 	BBPkeepref(*rsch = sch->batCacheid);
 	BBPkeepref(*rtab = tab->batCacheid);
 	BBPkeepref(*rcol = col->batCacheid);
@@ -390,6 +394,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rrevsorted = revsorted->batCacheid);
 	return MAL_SUCCEED;
 bailout:
+	BBPreclaim(cid);
 	BBPreclaim(sch);
 	BBPreclaim(tab);
 	BBPreclaim(col);

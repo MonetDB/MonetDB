@@ -26,6 +26,7 @@ grant execute on procedure sys."analyze"(varchar(1024),varchar(1024),varchar(102
 
 create function sys."statistics"()
 returns table (
+	"column_id" integer,
 	"schema" varchar(1024),
 	"table" varchar(1024),
 	"column" varchar(1024),
@@ -54,6 +55,7 @@ grant select on sys."statistics" to public;
 
 create function sys."statistics"("sname" varchar(1024))
 returns table (
+	"column_id" integer,
 	"schema" varchar(1024),
 	"table" varchar(1024),
 	"column" varchar(1024),
@@ -72,6 +74,7 @@ grant execute on function sys."statistics"(varchar(1024)) to public;
 
 create function sys."statistics"("sname" varchar(1024), "tname" varchar(1024))
 returns table (
+	"column_id" integer,
 	"schema" varchar(1024),
 	"table" varchar(1024),
 	"column" varchar(1024),
@@ -90,6 +93,7 @@ grant execute on function sys."statistics"(varchar(1024),varchar(1024)) to publi
 
 create function sys."statistics"("sname" varchar(1024), "tname" varchar(1024), "cname" varchar(1024))
 returns table (
+	"column_id" integer,
 	"schema" varchar(1024),
 	"table" varchar(1024),
 	"column" varchar(1024),
