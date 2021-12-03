@@ -3824,7 +3824,21 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
 		} else {
-			res = BUNtail(bi, pos - b->hseqbase);
+			bi.minpos = pos - b->hseqbase;
+			res = BUNtail(bi, bi.minpos);
+			MT_lock_set(&b->theaplock);
+			if (bi.count == BATcount(b) && bi.h == b->theap)
+				b->tminpos = bi.minpos;
+			MT_lock_unset(&b->theaplock);
+			bat pbid = VIEWtparent(b);
+			if (pbid) {
+				BAT *pb = BBP_cache(pbid);
+				MT_lock_set(&pb->theaplock);
+				if (bi.count == BATcount(pb) &&
+				    bi.h == pb->theap)
+					pb->tminpos = bi.minpos;
+				MT_lock_unset(&pb->theaplock);
+			}
 		}
 	}
 	if (aggr == NULL) {
@@ -3964,7 +3978,21 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
 		} else {
-			res = BUNtail(bi, pos - b->hseqbase);
+			bi.maxpos = pos - b->hseqbase;
+			res = BUNtail(bi, bi.maxpos);
+			MT_lock_set(&b->theaplock);
+			if (bi.count == BATcount(b) && bi.h == b->theap)
+				b->tmaxpos = bi.maxpos;
+			MT_lock_unset(&b->theaplock);
+			bat pbid = VIEWtparent(b);
+			if (pbid) {
+				BAT *pb = BBP_cache(pbid);
+				MT_lock_set(&pb->theaplock);
+				if (bi.count == BATcount(pb) &&
+				    bi.h == pb->theap)
+					pb->tmaxpos = bi.maxpos;
+				MT_lock_unset(&pb->theaplock);
+			}
 		}
 	}
 	if (aggr == NULL) {
