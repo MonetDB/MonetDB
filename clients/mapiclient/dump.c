@@ -1901,11 +1901,11 @@ dump_table_alters(Mapi mid, const char *schema, const char *tname, stream *toCon
 	}
 	while ((mapi_fetch_row(hdl)) != 0) {
 		const char *access = mapi_fetch_field(hdl, 0);
-		if (access && *access == '1') {
+		if (access && (*access == '1' || *access == '2')) {
 			mnstr_printf(toConsole, "ALTER TABLE ");
 			dquoted_print(toConsole, schema, ".");
 			dquoted_print(toConsole, tname, " ");
-			mnstr_printf(toConsole, "SET READ ONLY;\n");
+			mnstr_printf(toConsole, "SET %s ONLY;\n", *access == '1' ? "READ" : "INSERT");
 		}
 	}
 	mapi_close_handle(hdl);
