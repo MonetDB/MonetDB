@@ -122,6 +122,12 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						continue;
 					if (!(b = store->storage_api.bind_col(tr, c, RDONLY)))
 						continue; /* At the moment we ignore the error, but maybe we can change this */
+					if (isVIEW(b)) { /* If it is a view get the parent BAT */
+						BAT *nb = BBP_cache(VIEWtparent(b));
+						BBPunfix(b->batCacheid);
+						if (!(b = BATdescriptor(nb->batCacheid)))
+							continue;
+					}
 
 					/* Collect new sorted and revsorted properties */
 					(void) BATordered(b);
@@ -288,7 +294,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						w = bs->twidth;
 						cnt = BATcount(bs);
 						un = bs->tkey;
-						hnils = !bs->tnonil;
+						hnils = !bs->tnonil || bs->tnil;
 						issorted = bs->tsorted;
 						isrevsorted = bs->trevsorted;
 
@@ -313,6 +319,14 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
 								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 								goto bailout;
+							}
+							if (isVIEW(fb)) { /* If it is a view get the parent BAT, but maybe we can remove this here */
+								BAT *nb = BBP_cache(VIEWtparent(fb));
+								BBPunfix(fb->batCacheid);
+								if (!(fb = BATdescriptor(nb->batCacheid))) {
+									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+									goto bailout;
+								}
 							}
 
 							BATiter bi = bat_iterator(fb);
