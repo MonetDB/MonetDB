@@ -963,15 +963,21 @@ CREATE TABLE "sys"."comments" ("id" INTEGER NOT NULL, "remark" VARCHAR(65000) NO
 CREATE TABLE "sys"."db_user_info" ("name" VARCHAR(1024), "fullname" VARCHAR(2048), "default_schema" INTEGER, "schema_path" CHARACTER LARGE OBJECT);
 CREATE TABLE "sys"."dependencies" ("id" INTEGER, "depend_id" INTEGER, "depend_type" SMALLINT);
 CREATE TABLE "sys"."dependency_types" ("dependency_type_id" SMALLINT NOT NULL, "dependency_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"), CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name"));
+ALTER TABLE "sys"."dependency_types" SET READ ONLY;
 CREATE TABLE "sys"."dump_statements" ("o" INTEGER, "s" CHARACTER LARGE OBJECT);
 CREATE TABLE "sys"."function_languages" ("language_id" SMALLINT NOT NULL, "language_name" VARCHAR(20) NOT NULL, "language_keyword" VARCHAR(20), CONSTRAINT "function_languages_language_id_pkey" PRIMARY KEY ("language_id"), CONSTRAINT "function_languages_language_name_unique" UNIQUE ("language_name"));
+ALTER TABLE "sys"."function_languages" SET READ ONLY;
 CREATE TABLE "sys"."function_types" ("function_type_id" SMALLINT NOT NULL, "function_type_name" VARCHAR(30) NOT NULL, "function_type_keyword" VARCHAR(30) NOT NULL, CONSTRAINT "function_types_function_type_id_pkey" PRIMARY KEY ("function_type_id"), CONSTRAINT "function_types_function_type_name_unique" UNIQUE ("function_type_name"));
+ALTER TABLE "sys"."function_types" SET READ ONLY;
 CREATE TABLE "sys"."functions" ("id" INTEGER, "name" VARCHAR(256), "func" VARCHAR(8196), "mod" VARCHAR(8196), "language" INTEGER, "type" INTEGER, "side_effect" BOOLEAN, "varres" BOOLEAN, "vararg" BOOLEAN, "schema_id" INTEGER, "system" BOOLEAN, "semantics" BOOLEAN);
 CREATE TABLE "sys"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024));
 CREATE TABLE "sys"."index_types" ("index_type_id" SMALLINT NOT NULL, "index_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "index_types_index_type_id_pkey" PRIMARY KEY ("index_type_id"), CONSTRAINT "index_types_index_type_name_unique" UNIQUE ("index_type_name"));
+ALTER TABLE "sys"."index_types" SET READ ONLY;
 CREATE TABLE "sys"."key_types" ("key_type_id" SMALLINT NOT NULL, "key_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "key_types_key_type_id_pkey" PRIMARY KEY ("key_type_id"), CONSTRAINT "key_types_key_type_name_unique" UNIQUE ("key_type_name"));
+ALTER TABLE "sys"."key_types" SET READ ONLY;
 CREATE TABLE "sys"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER);
 CREATE TABLE "sys"."keywords" ("keyword" VARCHAR(40) NOT NULL, CONSTRAINT "keywords_keyword_pkey" PRIMARY KEY ("keyword"));
+ALTER TABLE "sys"."keywords" SET READ ONLY;
 CREATE TABLE "sys"."netcdf_attrs" ("obj_name" VARCHAR(256), "att_name" VARCHAR(256), "att_type" VARCHAR(64), "value" CHARACTER LARGE OBJECT, "file_id" INTEGER, "gr_name" VARCHAR(256));
 CREATE TABLE "sys"."netcdf_dims" ("dim_id" INTEGER, "file_id" INTEGER, "name" VARCHAR(64), "length" INTEGER);
 CREATE TABLE "sys"."netcdf_files" ("file_id" INTEGER, "location" CHAR(256));
@@ -979,6 +985,7 @@ CREATE TABLE "sys"."netcdf_vardim" ("var_id" INTEGER, "dim_id" INTEGER, "file_id
 CREATE TABLE "sys"."netcdf_vars" ("var_id" INTEGER, "file_id" INTEGER, "name" VARCHAR(64), "vartype" VARCHAR(64), "ndim" INTEGER, "coord_dim_id" INTEGER);
 CREATE TABLE "sys"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER, "sub" INTEGER);
 CREATE TABLE "sys"."privilege_codes" ("privilege_code_id" INTEGER NOT NULL, "privilege_code_name" VARCHAR(40) NOT NULL, CONSTRAINT "privilege_codes_privilege_code_id_pkey" PRIMARY KEY ("privilege_code_id"), CONSTRAINT "privilege_codes_privilege_code_name_unique" UNIQUE ("privilege_code_name"));
+ALTER TABLE "sys"."privilege_codes" SET READ ONLY;
 CREATE TABLE "sys"."privileges" ("obj_id" INTEGER, "auth_id" INTEGER, "privileges" INTEGER, "grantor" INTEGER, "grantable" INTEGER);
 CREATE TABLE "sys"."range_partitions" ("table_id" INTEGER, "partition_id" INTEGER, "minimum" VARCHAR(2048), "maximum" VARCHAR(2048), "with_nulls" BOOLEAN);
 CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
@@ -988,6 +995,7 @@ CREATE TABLE "sys"."statistics" ("column_id" INTEGER, "type" CHARACTER LARGE OBJ
 CREATE TABLE "sys"."storagemodelinput" ("schema" VARCHAR(1024) NOT NULL, "table" VARCHAR(1024) NOT NULL, "column" VARCHAR(1024) NOT NULL, "type" VARCHAR(1024) NOT NULL, "typewidth" INTEGER NOT NULL, "count" BIGINT NOT NULL, "distinct" BIGINT NOT NULL, "atomwidth" INTEGER NOT NULL, "reference" BOOLEAN NOT NULL DEFAULT false, "sorted" BOOLEAN, "unique" BOOLEAN, "isacolumn" BOOLEAN NOT NULL DEFAULT true);
 CREATE TABLE "sys"."table_partitions" ("id" INTEGER, "table_id" INTEGER, "column_id" INTEGER, "expression" VARCHAR(2048), "type" TINYINT);
 CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
+ALTER TABLE "sys"."table_types" SET READ ONLY;
 CREATE TABLE "sys"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
 CREATE TABLE "sys"."types" ("id" INTEGER, "systemname" VARCHAR(256), "sqlname" VARCHAR(1024), "digits" INTEGER, "scale" INTEGER, "radix" INTEGER, "eclass" INTEGER, "schema_id" INTEGER);
 CREATE TABLE "sys"."user_role" ("login_id" INTEGER, "role_id" INTEGER);
