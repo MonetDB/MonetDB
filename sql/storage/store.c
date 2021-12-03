@@ -4825,6 +4825,7 @@ create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args
 
 	base_init(sa, &t->base, next_oid(store), true, func);
 	assert(mod);
+	t->mangled = mangle_name(sa, func, type, res, args);
 	t->imp = (impl)?SA_STRDUP(sa, impl):NULL;
 	t->mod = SA_STRDUP(sa, mod);
 	t->type = type;
@@ -4858,6 +4859,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	base_init(tr->sa, &t->base, next_oid(tr->store), true, func);
 	assert(mod);
+	t->mangled = mangle_name(tr->sa, func, type, ffres, args);
 	t->imp = (impl)?SA_STRDUP(tr->sa, impl):NULL;
 	t->mod = SA_STRDUP(tr->sa, mod);
 	t->type = type;
@@ -4884,7 +4886,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
-	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
+	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, &t->mangled, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
 			&t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics)))
 		return res;
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {

@@ -625,21 +625,37 @@ sql_create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout)
 	return create_arg(sa, name, t, inout);
 }
 
-static char* mangle_name(sql_allocator *sa, const char *name, sql_ftype type, sql_arg *res, list *ops) {
-
-	if (type != F_FUNC && type != F_AGGR)
-		return (char*) str_nil;
-
+char*
+mangle_name(sql_allocator *sa, const char *name, sql_ftype type, list *res, list *ops) {
 	char buf[1000] = {0};
 
 	char* c = buf; // cursor
 
-	assert(type == F_FUNC || type == F_AGGR);
+	int retc = res ? res->cnt : 0;
+	int argc = retc + ops->cnt;
 
-	c += sprintf(buf, "function_or_aggregate%%%s", name);
+	switch (type) {
+	case F_FUNC:
+	case F_AGGR:
+	case F_FILT:
+		c += sprintf(buf, "function_or_aggregate%%%s(%u,%u)", name, retc, argc);break;
+	case F_ANALYTIC:
+		c += sprintf(buf, "window%%%s(%u,%u)", name, retc, argc);break;
+	case F_UNION:
+		c += sprintf(buf, "table_returning_function%%%s(%u,%u)", name, retc, argc);break;
+	case F_PROC:
+		c += sprintf(buf, "procedure%%%s(%u,%u)", name, retc, argc);break;
+	case F_LOADER:
+		c += sprintf(buf, "loader%%%s(%u,%u)", name, retc, argc);break;
+	default:
+		assert(0); // Should not happen.
+	}
 
 	if (res) {
-		c += sprintf(c, "%%%s(%u,%u)", res->type.type->base.name, res->type.digits, res->type.scale);
+		for (node* n = res->h; n; n = n->next) {
+			sql_arg *o = n->data;
+			c += sprintf(c, "%%%s(%u,%u)", o->type.type->base.name, o->type.digits, o->type.scale);
+		}
 	}
 
 	for (node* n = ops->h; n; n = n->next) {
@@ -647,7 +663,7 @@ static char* mangle_name(sql_allocator *sa, const char *name, sql_ftype type, sq
 		c += sprintf(c, "%%%s(%u,%u)", a->type.type->base.name, a->type.digits, a->type.scale);
 	}
 
-	return sa_strdup(sa, buf);
+	return SA_STRDUP(sa, buf);
 }
 
 static sql_func *
@@ -662,13 +678,15 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 		sql_type *tpe = va_arg(valist, sql_type*);
 		list_append(ops, create_arg(sa, NULL, sql_create_subtype(sa, tpe, 0, 0), ARG_IN));
 	}
-	if (res)
+	list *lres = NULL;
+	if (res) {
 		fres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+		lres = SA_LIST(sa, (fdestroy) &arg_destroy);
+		list_append(lres, fres);
+	}
 	base_init(sa, &t->base, local_id++, false, name);
 
-	t->mangled = mangle_name(sa, name, type, fres, ops);
-	if (t->mangled)
-		printf("%s\n", t->mangled);
+	t->mangled = mangle_name(sa, name, type, lres, ops);
 	t->imp = sa_strdup(sa, imp);
 	t->mod = sa_strdup(sa, mod);
 	t->ops = ops;
