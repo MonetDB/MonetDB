@@ -3823,8 +3823,18 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
+			b->tminpos = BUN_NONE;
 		} else {
-			res = BUNtail(bi, pos - b->hseqbase);
+			BUN minpos = pos - b->hseqbase;
+			res = BUNtail(bi, minpos);
+			b->tminpos = minpos;
+		}
+		if (VIEWtparent(b)) {
+			BAT *pb = BBP_cache(VIEWtparent(b));
+			MT_lock_set(&pb->theaplock);
+			if (bi.count == BATcount(pb))
+				pb->tminpos = b->tminpos;
+			MT_lock_unset(&pb->theaplock);
 		}
 	}
 	if (aggr == NULL) {
@@ -3963,8 +3973,18 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
+			b->tmaxpos = BUN_NONE;
 		} else {
-			res = BUNtail(bi, pos - b->hseqbase);
+			BUN maxpos = pos - b->hseqbase;
+			res = BUNtail(bi, maxpos);
+			b->tmaxpos = maxpos;
+		}
+		if (VIEWtparent(b)) {
+			BAT *pb = BBP_cache(VIEWtparent(b));
+			MT_lock_set(&pb->theaplock);
+			if (bi.count == BATcount(pb))
+				pb->tmaxpos = b->tmaxpos;
+			MT_lock_unset(&pb->theaplock);
 		}
 	}
 	if (aggr == NULL) {
