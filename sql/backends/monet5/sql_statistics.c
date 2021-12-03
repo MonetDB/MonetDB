@@ -320,14 +320,6 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 								goto bailout;
 							}
-							if (isVIEW(fb)) { /* If it is a view get the parent BAT, but maybe we can remove this here */
-								BAT *nb = BBP_cache(VIEWtparent(fb));
-								BBPunfix(fb->batCacheid);
-								if (!(fb = BATdescriptor(nb->batCacheid))) {
-									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
-									goto bailout;
-								}
-							}
 
 							BATiter bi = bat_iterator(fb);
 							if (fb->tminpos != BUN_NONE || fb->tmaxpos != BUN_NONE) {
