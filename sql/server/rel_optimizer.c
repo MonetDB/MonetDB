@@ -5347,7 +5347,7 @@ find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
 		    (c=find_candidate_join2semi(v, rel->r, swap)) != NULL)
 			return c;
 	}
-	if (is_topn(rel->op) || is_sample(rel->op))
+	if (is_topn(rel->op) || is_sample(rel->op) || is_select(rel->op))
 		return find_candidate_join2semi(v, rel->l, swap);
 	return NULL;
 }
@@ -5357,13 +5357,18 @@ subrel_uses_exp_outside_subrel(sql_rel *rel, list *l, sql_rel *c)
 {
 	if (rel == c)
 		return 0;
-	/* for subrel only expect joins (later possibly selects) */
+	/* for subrel only expect joins and selects */
 	if (is_join(rel->op) || is_semi(rel->op)) {
 		if (exps_uses_any(rel->exps, l))
 			return 1;
 		if (subrel_uses_exp_outside_subrel(rel->l, l, c) ||
 		    subrel_uses_exp_outside_subrel(rel->r, l, c))
 			return 1;
+	}
+	if (is_select(rel->op)) {
+		if (exps_uses_any(rel->exps, l))
+			return 1;
+		return subrel_uses_exp_outside_subrel(rel->l, l, c);
 	}
 	if (is_topn(rel->op) || is_sample(rel->op))
 		return subrel_uses_exp_outside_subrel(rel->l, l, c);

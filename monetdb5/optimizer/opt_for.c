@@ -91,7 +91,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if (p->argc == 2 && p->retc == 1 && getFunctionId(p) == NULL) {
+				} else if (p->argc == 2 && p->retc == 1 && p->barrier == ASSIGNsymbol) {
 					/* a = b */
 					int l = getArg(p, 0);
 					varisfor[l] = varisfor[k];
@@ -108,16 +108,15 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
-					/* id = mirror(col) with col = for.decompress(o,min_val)
-					 * id = mirror(o) */
+				} else if ((getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) || (getModuleId(p) == batcalcRef && getFunctionId(p) == identityRef)) {
+					/* id = mirror/identity(col) with col = for.decompress(o,min_val)
+					 * id = mirror/identity(o) */
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = varisfor[k];
 					pushInstruction(mb,r);
 					freeInstruction(p);
 					done = 1;
 					break;
-				//} else if (isSelect(p)) {
 				} else// if (isSelect(p)) {
 					if (getFunctionId(p) == thetaselectRef) {
 						/* pos = thetaselect(col, cand, l, ...) with col = for.decompress(o, minval)

@@ -94,7 +94,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if (p->argc == 2 && p->retc == 1 && getFunctionId(p) == NULL) {
+				} else if (p->argc == 2 && p->retc == 1 && p->barrier == ASSIGNsymbol) {
 					/* a = b */
 					int l = getArg(p, 0);
 					varisdict[l] = varisdict[k];
@@ -112,9 +112,9 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
-					/* id = mirror(col) with col = dict.decompress(o,u)
-					 * id = mirror(o) */
+				} else if ((getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) || (getModuleId(p) == batcalcRef && getFunctionId(p) == identityRef)) {
+					/* id = mirror/identity(col) with col = dict.decompress(o,u)
+					 * id = mirror/identity(o) */
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb,r);
@@ -153,12 +153,12 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						 * tp2 = batcalc.bte/sht/int(tp)
 						 * pos = intersect(o, tp2, cand, nil) */
 
-						int cand = getArg(p, j+1);
+						int has_cand = getArgType(mb, p, 2) == newBatType(TYPE_oid);
 						InstrPtr r = copyInstruction(p);
 						getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 						getArg(r, j) = vardictvalue[k];
-						if (cand)
-							r = ReplaceWithNil(mb, r, j+1, TYPE_bat); /* no candidate list */
+						if (has_cand)
+							r = ReplaceWithNil(mb, r, 2, TYPE_bat); /* no candidate list */
 						pushInstruction(mb,r);
 
 						int tpe = getVarType(mb, varisdict[k]);
@@ -171,7 +171,10 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						getArg(t, 0) = getArg(p, 0);
 						addArgument(mb, t, varisdict[k]);
 						addArgument(mb, t, getArg(s, 0));
-						addArgument(mb, t, cand);
+						if (has_cand)
+							t = addArgument(mb, t, getArg(p, 2));
+						else
+							t = pushNil(mb, t, TYPE_bat);
 						t = pushNil(mb, t, TYPE_bat);
 						t = pushBit(mb, t, TRUE);    /* nil matches */
 						t = pushBit(mb, t, TRUE);     /* max_one */

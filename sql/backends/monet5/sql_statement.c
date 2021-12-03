@@ -541,12 +541,28 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	return s;
 }
 
+static sql_column *
+find_real_column(backend *be, sql_column *c)
+{
+	if (c && c->t && c->t->s && c->t->persistence == SQL_DECLARED_TABLE) {
+		sql_table *nt = find_sql_table_id(be->mvc->session->tr, c->t->s, c->t->base.id);
+		if (nt) {
+			node *n = ol_find_id(nt->columns, c->base.id);
+			if (n)
+				return n->data;
+		}
+	}
+	return c;
+}
+
 stmt *
 stmt_bat(backend *be, sql_column *c, int access, int partition)
 {
 	int tt = c->type.type->localtype;
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
+
+	c = find_real_column(be, c);
 
 	if (access == RD_EXT)
 		partition = 0;
@@ -572,7 +588,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = newStmtArgs(mb, sqlRef, bindRef, 9);
 	if (q == NULL)
 		return NULL;
-	if (c->storage_type && access != RD_EXT && access != RD_UPD_ID) {
+	if (c->storage_type && access != RD_EXT) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
 		BAT *b = store->storage_api.bind_col(tr, c, QUICK);
@@ -1321,7 +1337,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 
 	if (backend_create_subfunc(be, f, NULL) < 0)
 		return NULL;
-	op = sql_func_imp(f->func);
+	op = backend_function_imp(be, f->func);
 	mod = sql_func_mod(f->func);
 
 	if (rops->nrcols >= 1) {
@@ -2312,6 +2328,7 @@ stmt_for(backend *be, stmt *op1, stmt *min_val)
 		}
 
 		s->op1 = op1;
+		s->op2 = min_val;
 		s->flag = cmp_project;
 		s->key = 0;
 		s->nrcols = op1->nrcols;
@@ -2359,7 +2376,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
 	mod = sql_func_mod(op->func);
-	fimp = sql_func_imp(op->func);
+	fimp = backend_function_imp(be, op->func);
 	fimp = sa_strconcat(be->mvc->sa, fimp, "join");
 
 	/* filter qualifying tuples, return oids of h and tail */
@@ -3018,7 +3035,7 @@ stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 }
 
 stmt *
-stmt_table_clear(backend *be, sql_table *t)
+stmt_table_clear(backend *be, sql_table *t, int restart_sequences)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3030,10 +3047,12 @@ stmt_table_clear(backend *be, sql_table *t)
 			q = newStmt(mb, batRef, deleteRef);
 			q = pushArgument(mb, q, l[i]);
 		}
+		/* declared tables don't have sequences */
 	} else {
 		q = newStmt(mb, sqlRef, clear_tableRef);
 		q = pushSchema(mb, q, t);
 		q = pushStr(mb, q, t->base.name);
+		q = pushInt(mb, q, restart_sequences);
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_table_clear);
@@ -3302,7 +3321,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
+	const char *mod = sql_func_mod(f->func), *fimp = backend_function_imp(be, f->func);
 	sql_subtype *tpe = NULL;
 	int push_cands = 0, default_nargs;
 	stmt *o = NULL, *card = NULL;
@@ -3350,7 +3369,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);
-		fimp = convertMultiplexFcn(sql_func_imp(f->func));
+		fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
 		push_cands = can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
@@ -3570,7 +3589,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
 	mod = sql_func_mod(op->func);
-	aggrfunc = sql_func_imp(op->func);
+	aggrfunc = backend_function_imp(be, op->func);
 
 	if (strcmp(aggrfunc, "avg") == 0)
 		avg = 1;

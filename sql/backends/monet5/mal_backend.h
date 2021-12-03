@@ -63,10 +63,12 @@ typedef struct backend {
 	lng last_id;
 	lng rowcnt;
 	subbackend *subbackend;
+	str fimp; /* for recurisve functions keep the to be generated MAL function name here */
 } backend;
 
 extern backend *backend_reset(backend *b);
 extern backend *backend_create(mvc *m, Client c);
 extern void backend_destroy(backend *b);
+extern str backend_function_imp(backend *b, sql_func *f);
 
 #endif /*MAL_BACKEND_H*/

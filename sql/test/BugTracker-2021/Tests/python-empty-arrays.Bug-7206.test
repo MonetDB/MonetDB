@@ -1,0 +1,59 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE OR REPLACE function f()
+returns table(s STRING, i INT)
+LANGUAGE PYTHON {
+  result = dict()
+  result['s'] = numpy.array(["test"], dtype=object)
+  result['i'] = numpy.array([5], dtype=int)
+  return(result)
+}
+
+statement ok
+CREATE OR REPLACE function f2()
+returns table(s STRING, i INT)
+LANGUAGE PYTHON {
+  result = dict()
+  result['s'] = numpy.array([], dtype=object)
+  result['i'] = numpy.array([], dtype=int)
+  return(result)
+}
+
+statement ok
+CREATE OR REPLACE function f3()
+returns table(s STRING, i INT)
+LANGUAGE PYTHON {
+  return([["test"],[5]])
+}
+
+statement ok
+CREATE OR REPLACE function f4()
+returns table(s STRING, i INT)
+LANGUAGE PYTHON {
+  return([[],[]])
+}
+
+query TI rowsort
+select * from f()
+----
+test
+5
+
+query TI rowsort
+select * from f2()
+----
+
+query TI rowsort
+select * from f3()
+----
+test
+5
+
+query TI rowsort
+select * from f4()
+----
+
+statement ok
+ROLLBACK

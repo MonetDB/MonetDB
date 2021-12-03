@@ -1506,46 +1506,55 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 		goto bailout;
 
 	snprintf(query, maxquerylen,
-		"SELECT s.name, "									/* 0 */
-		       "seq.name, "									/* 1 */
-		       "peak_next_value_for(s.name, seq.name), "	/* 2 */
-		       "seq.\"minvalue\", "							/* 3 */
-		       "seq.\"maxvalue\", "							/* 4 */
-		       "seq.\"increment\", "						/* 5 */
-		       "seq.\"cycle\", "							/* 6 */
-		       "seq.\"cacheinc\", "							/* 7 */
-		       "rem.\"remark\" "							/* 8 */
-		"FROM sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id, "
-		     "sys.schemas s "
-		"WHERE s.id = seq.schema_id "
-		  "AND s.name = '%s' "
-		  "AND seq.name = '%s' "
-		"ORDER BY s.name, seq.name",
+			 "SELECT c.remark, q.* "
+			   "FROM sys.sequences seq LEFT OUTER JOIN sys.comments c ON seq.id = c.id, "
+			        "sys.schemas s, "
+			        "sys.describe_sequences q "
+			  "WHERE s.id = seq.schema_id "
+			    "AND s.name = '%s' "   /* schema name */
+			    "AND seq.name = '%s' " /* sequence name */
+			    "AND q.sch = '%s' "	   /* schema name */
+			    "AND q.seq = '%s' "	   /* sequence name */
+			  "ORDER BY q.sch, q.seq",
+		schema, tname,
 		schema, tname);
 
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
-		const char *schema = mapi_fetch_field(hdl, 0);
-		const char *name = mapi_fetch_field(hdl, 1);
-		const char *start = mapi_fetch_field(hdl, 2);
-		const char *minvalue = mapi_fetch_field(hdl, 3);
-		const char *maxvalue = mapi_fetch_field(hdl, 4);
-		const char *increment = mapi_fetch_field(hdl, 5);
-		const char *cycle = mapi_fetch_field(hdl, 6);
-		const char *cacheinc = mapi_fetch_field(hdl, 7);
-		const char *remark = mapi_fetch_field(hdl, 8);
+		const char *remark = mapi_fetch_field(hdl, 0);
+		const char *schema = mapi_fetch_field(hdl, 1);		/* sch */
+		const char *name = mapi_fetch_field(hdl, 2);		/* seq */
+		const char *restart = mapi_fetch_field(hdl, 4);		/* rs */
+		const char *minvalue;
+		const char *maxvalue;
+		const char *increment = mapi_fetch_field(hdl, 7);	/* inc */
+		const char *cacheinc = mapi_fetch_field(hdl, 8);	/* cache */
+		const char *cycle = mapi_fetch_field(hdl, 9);		/* cycle */
 
+		if (mapi_get_field_count(hdl) > 10) {
+			/* new version (Jan2022) of sys.describe_sequences */
+			minvalue = mapi_fetch_field(hdl, 12);			/* rmi */
+			maxvalue = mapi_fetch_field(hdl, 13);			/* rma */
+		} else {
+			/* old version (pre Jan2022) of sys.describe_sequences */
+			minvalue = mapi_fetch_field(hdl, 5);			/* minvalue */
+			maxvalue = mapi_fetch_field(hdl, 6);			/* maxvalue */
+			if (strcmp(minvalue, "0") == 0)
+				minvalue = NULL;
+			if (strcmp(maxvalue, "0") == 0)
+				maxvalue = NULL;
+		}
 		mnstr_printf(toConsole, "CREATE SEQUENCE ");
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, name, NULL);
-		mnstr_printf(toConsole, " START WITH %s", start);
+		mnstr_printf(toConsole, " START WITH %s", restart);
 		if (strcmp(increment, "1") != 0)
 			mnstr_printf(toConsole, " INCREMENT BY %s", increment);
-		if (strcmp(minvalue, "0") != 0)
+		if (minvalue)
 			mnstr_printf(toConsole, " MINVALUE %s", minvalue);
-		if (strcmp(maxvalue, "0") != 0)
+		if (maxvalue)
 			mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
 		if (strcmp(cacheinc, "1") != 0)
 			mnstr_printf(toConsole, " CACHE %s", cacheinc);
@@ -1683,9 +1692,9 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		goto bailout;
 	if (mapi_rows_affected(hdl) != 1) {
 		if (mapi_rows_affected(hdl) == 0)
-			fprintf(stderr, "table '%s.%s' does not exist\n", schema, tname);
+			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
 		else
-			fprintf(stderr, "table '%s.%s' is not unique\n", schema, tname);
+			fprintf(stderr, "table %s.%s is not unique\n", schema, tname);
 		goto bailout;
 	}
 	while ((mapi_fetch_row(hdl)) != 0) {
@@ -1853,6 +1862,93 @@ bailout:
 	return 1;
 }
 
+static int
+dump_table_alters(Mapi mid, const char *schema, const char *tname, stream *toConsole)
+{
+	char *sname = NULL;
+	char *query = NULL;
+	size_t maxquerylen;
+	MapiHdl hdl = NULL;
+	char *s = NULL;
+	char *t = NULL;
+	int rc = 1;
+
+	if (schema == NULL) {
+		if ((sname = strchr(tname, '.')) != NULL) {
+			size_t len = sname - tname + 1;
+
+			sname = malloc(len);
+			if (sname == NULL)
+				goto bailout;
+			strcpy_len(sname, tname, len);
+			tname += len;
+		} else if ((sname = get_schema(mid)) == NULL) {
+			goto bailout;
+		}
+		schema = sname;
+	}
+
+	maxquerylen = 5120 + 2*strlen(tname) + 2*strlen(schema);
+	query = malloc(maxquerylen);
+	s = sescape(schema);
+	t = sescape(tname);
+	if (query == NULL || s == NULL || t == NULL)
+		goto bailout;
+
+	snprintf(query, maxquerylen,
+			 "SELECT t.access FROM sys._tables t, sys.schemas s "
+			 "WHERE s.name = '%s' AND t.schema_id = s.id AND t.name = '%s'",
+			 s, t);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+		goto bailout;
+	if (mapi_rows_affected(hdl) != 1) {
+		if (mapi_rows_affected(hdl) == 0)
+			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
+		else
+			fprintf(stderr, "table %s.%s is not unique\n", schema, tname);
+		goto bailout;
+	}
+	while ((mapi_fetch_row(hdl)) != 0) {
+		const char *access = mapi_fetch_field(hdl, 0);
+		if (access && (*access == '1' || *access == '2')) {
+			mnstr_printf(toConsole, "ALTER TABLE ");
+			dquoted_print(toConsole, schema, ".");
+			dquoted_print(toConsole, tname, " ");
+			mnstr_printf(toConsole, "SET %s ONLY;\n", *access == '1' ? "READ" : "INSERT");
+		}
+	}
+	mapi_close_handle(hdl);
+	snprintf(query, maxquerylen,
+			 "SELECT name, storage FROM sys._columns "
+			 "WHERE storage IS NOT NULL "
+			 "AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
+			 "AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
+			 t, s);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+		goto bailout;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		const char *cname = mapi_fetch_field(hdl, 0);
+		const char *storage = mapi_fetch_field(hdl, 1);
+		char *stg = sescape(storage);
+		if (stg == NULL)
+			goto bailout;
+		mnstr_printf(toConsole, "ALTER TABLE ");
+		dquoted_print(toConsole, schema, ".");
+		dquoted_print(toConsole, tname, " ");
+		mnstr_printf(toConsole, "ALTER COLUMN ");
+		dquoted_print(toConsole, cname, " ");
+		mnstr_printf(toConsole, "SET STORAGE '%s';\n", stg);
+		free(stg);
+	}
+	rc = 0;						/* success */
+  bailout:
+	free(s);
+	free(t);
+	mapi_close_handle(hdl);		/* may be NULL */
+	free(sname);				/* may be NULL */
+	return rc;
+}
+
 int
 dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 		   bool describe, bool foreign, bool useInserts, bool databaseDump,
@@ -1863,6 +1959,8 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 	rc = describe_table(mid, schema, tname, toConsole, foreign, databaseDump);
 	if (rc == 0 && !describe)
 		rc = dump_table_data(mid, schema, tname, toConsole, useInserts, noescape);
+	if (rc == 0)
+		rc = dump_table_alters(mid, schema, tname, toConsole);
 	return rc;
 }
 
@@ -2389,16 +2487,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name, seq.name";
 	const char *sequences2 =
-		"SELECT "
-		     "sch, "
-		     "seq, "
-		     "rs, "
-		     "rmi, "
-		     "rma, "
-		     "inc, "
-		     "cycle "
-		"FROM sys.describe_sequences "
-		"ORDER BY sch, seq";
+		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
 	/* we must dump tables, views, functions/procedures and triggers in order of creation since they can refer to each other */
 	const char *tables_views_functions_triggers =
 		"with vft (sname, name, id, query, remark, type) AS ("
@@ -2862,18 +2951,30 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
-			const char *schema = mapi_fetch_field(hdl, 0);
-			const char *name = mapi_fetch_field(hdl, 1);
-			const char *restart = mapi_fetch_field(hdl, 2);
-			const char *minvalue = mapi_fetch_field(hdl, 3);
-			const char *maxvalue = mapi_fetch_field(hdl, 4);
-			const char *increment = mapi_fetch_field(hdl, 5);
-			const char *cycle = mapi_fetch_field(hdl, 6);
+			const char *schema = mapi_fetch_field(hdl, 0);		/* sch */
+			const char *name = mapi_fetch_field(hdl, 1);		/* seq */
+			const char *restart = mapi_fetch_field(hdl, 3);		/* rs */
+			const char *minvalue;
+			const char *maxvalue;
+			const char *increment = mapi_fetch_field(hdl, 6);	/* inc */
+			const char *cycle = mapi_fetch_field(hdl, 8);		/* cycle */
+
+			if (mapi_get_field_count(hdl) > 9) {
+				/* new version (Jan2022) of sys.describe_sequences */
+				minvalue = mapi_fetch_field(hdl, 11);			/* rmi */
+				maxvalue = mapi_fetch_field(hdl, 12);			/* rma */
+			} else {
+				/* old version (pre Jan2022) of sys.describe_sequences */
+				minvalue = mapi_fetch_field(hdl, 4);			/* minvalue */
+				maxvalue = mapi_fetch_field(hdl, 5);			/* maxvalue */
+				if (strcmp(minvalue, "0") == 0)
+					minvalue = NULL;
+				if (strcmp(maxvalue, "0") == 0)
+					maxvalue = NULL;
+			}
 
 			if (sname != NULL && strcmp(schema, sname) != 0)
 				continue;
-
-			// sleep(7);
 
 			mnstr_printf(toConsole,
 				     "ALTER SEQUENCE ");

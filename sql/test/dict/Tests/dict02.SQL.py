@@ -20,7 +20,7 @@ with SQLTestCase() as cli:
 
     cli.execute('SELECT mct00.c1 FROM mct00;') \
         .assertSucceeded().assertDataResultMatch([(True,),(False,)])
-    cli.execute('SELECT rmct00.c1 FROM rmct00') \
+    cli.execute('SELECT rmct00.c1 FROM rmct00;') \
         .assertSucceeded().assertDataResultMatch([(True,),(False,)])
 
     cli.execute("""

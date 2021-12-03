@@ -2774,27 +2774,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"        s.name as sch,\n"
 					"        seq.name as seq,\n"
 					"        seq.\"start\" s,\n"
-					"        sys.get_value_for(s.name, seq.name) AS rs,\n"
-					"        CASE WHEN seq.\"minvalue\" = -9223372036854775807 AND seq.\"increment\" > 0 AND seq.\"start\" =  1 THEN TRUE ELSE FALSE END nomin,\n"
-					"        CASE WHEN seq.\"maxvalue\" =  9223372036854775807 AND seq.\"increment\" < 0 AND seq.\"start\" = -1 THEN TRUE ELSE FALSE END nomax,\n"
-					"        CASE\n"
-					"	         WHEN seq.\"minvalue\" = 0 AND seq.\"increment\" > 0 THEN NULL\n"
-					"            WHEN seq.\"minvalue\" <> -9223372036854775807 THEN seq.\"minvalue\"\n"
-					"            ELSE\n"
-					"                CASE\n"
-					"                    WHEN seq.\"increment\" < 0  THEN NULL\n"
-					"                    ELSE CASE WHEN seq.\"start\" = 1 THEN NULL ELSE seq.\"minvalue\" END\n"
-					"                END\n"
-					"        END rmi,\n"
-					"        CASE \n"
-					"            WHEN seq.\"maxvalue\" = 0 AND seq.\"increment\" < 0 THEN NULL\n"
-					"            WHEN seq.\"maxvalue\" <> 9223372036854775807 THEN seq.\"maxvalue\"\n"
-					"            ELSE\n"
-					"                CASE\n"
-					"                    WHEN seq.\"increment\" > 0  THEN NULL\n"
-					"                    ELSE CASE WHEN seq.\"start\" = -1 THEN NULL ELSE seq.\"maxvalue\" END\n"
-					"                END\n"
-					"        END rma,\n"
+					"        get_value_for(s.name, seq.name) AS rs,\n"
 					"        seq.\"minvalue\" mi,\n"
 					"        seq.\"maxvalue\" ma,\n"
 					"        seq.\"increment\" inc,\n"
@@ -2954,16 +2934,8 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"        'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||\n"
 					"        CASE WHEN \"s\" <> 0 THEN 'START WITH ' || \"rs\" ELSE '' END ||\n"
 					"        CASE WHEN \"inc\" <> 1 THEN ' INCREMENT BY ' || \"inc\" ELSE '' END ||\n"
-					"        CASE\n"
-					"            WHEN nomin THEN ' NO MINVALUE'\n"
-					"            WHEN rmi IS NOT NULL THEN ' MINVALUE ' || rmi\n"
-					"            ELSE ''\n"
-					"        END ||\n"
-					"        CASE\n"
-					"            WHEN nomax THEN ' NO MAXVALUE'\n"
-					"            WHEN rma IS NOT NULL THEN ' MAXVALUE ' || rma\n"
-					"            ELSE ''\n"
-					"        END ||\n"
+					"        CASE WHEN \"mi\" <> 0 THEN ' MINVALUE ' || \"mi\" ELSE '' END ||\n"
+					"        CASE WHEN \"ma\" <> 0 THEN ' MAXVALUE ' || \"ma\" ELSE '' END ||\n"
 					"        CASE WHEN \"cache\" <> 1 THEN ' CACHE ' || \"cache\" ELSE '' END ||\n"
 					"        CASE WHEN \"cycle\" THEN ' CYCLE' ELSE '' END || ';' stmt\n"
 					"    FROM sys.describe_sequences;\n"
@@ -3458,53 +3430,55 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	/* 52_describe.sql; but we need to drop most everything from
 	 * 76_dump.sql first */
-	t = mvc_bind_table(sql, s, "dump_privileges");
+	t = mvc_bind_table(sql, s, "describe_comments");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_user_defined_types");
+	t = mvc_bind_table(sql, s, "describe_constraints");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_comments");
+	t = mvc_bind_table(sql, s, "describe_functions");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_triggers");
+	t = mvc_bind_table(sql, s, "describe_partition_tables");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_tables");
+	t = mvc_bind_table(sql, s, "describe_privileges");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_functions");
+	t = mvc_bind_table(sql, s, "describe_sequences");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_start_sequences");
+	t = mvc_bind_table(sql, s, "describe_tables");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_sequences");
-	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_partition_tables");
-	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_foreign_keys");
+	t = mvc_bind_table(sql, s, "dump_add_schemas_to_users");
 	t->system = 0;
 	t = mvc_bind_table(sql, s, "dump_column_defaults");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_indices");
+	t = mvc_bind_table(sql, s, "dump_comments");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_table_constraint_type");
-	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_grant_user_privileges");
-	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_add_schemas_to_users");
+	t = mvc_bind_table(sql, s, "dump_create_roles");
 	t->system = 0;
 	t = mvc_bind_table(sql, s, "dump_create_schemas");
 	t->system = 0;
 	t = mvc_bind_table(sql, s, "dump_create_users");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_create_roles");
+	t = mvc_bind_table(sql, s, "dump_foreign_keys");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "describe_constraints");
+	t = mvc_bind_table(sql, s, "dump_functions");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "describe_tables");
+	t = mvc_bind_table(sql, s, "dump_grant_user_privileges");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "describe_comments");
+	t = mvc_bind_table(sql, s, "dump_indices");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "describe_privileges");
+	t = mvc_bind_table(sql, s, "dump_partition_tables");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "describe_partition_tables");
+	t = mvc_bind_table(sql, s, "dump_privileges");
 	t->system = 0;
-	t = mvc_bind_table(sql, s, "describe_functions");
+	t = mvc_bind_table(sql, s, "dump_sequences");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "dump_start_sequences");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "dump_table_constraint_type");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "dump_tables");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "dump_triggers");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "dump_user_defined_types");
 	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
 					/* drop dependant stuff from 76_dump.sql */
@@ -3537,6 +3511,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"drop view sys.describe_privileges;\n"
 					"drop view sys.describe_comments;\n"
 					"drop view sys.describe_tables;\n"
+					"drop view sys.describe_sequences;\n"
 					"drop function sys.schema_guard(string, string, string);\n"
 					"drop function sys.get_remote_table_expressions(string, string);\n"
 					"drop function sys.get_merge_table_partition_expressions(int);\n"
@@ -3774,6 +3749,41 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"		JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
 					"		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id\n"
 					"	WHERE s.name <> 'tmp' AND NOT f.system;\n"
+					"CREATE VIEW sys.describe_sequences AS\n"
+					"	SELECT\n"
+					"		s.name sch,\n"
+					"		seq.name seq,\n"
+					"		seq.\"start\" s,\n"
+					"		peak_next_value_for(s.name, seq.name) rs,\n"
+					"		seq.\"minvalue\" mi,\n"
+					"		seq.\"maxvalue\" ma,\n"
+					"		seq.\"increment\" inc,\n"
+					"		seq.\"cacheinc\" cache,\n"
+					"		seq.\"cycle\" cycle,\n"
+					"		CASE WHEN seq.\"minvalue\" = -9223372036854775807 AND seq.\"increment\" > 0 AND seq.\"start\" =  1 THEN TRUE ELSE FALSE END nomin,\n"
+					"		CASE WHEN seq.\"maxvalue\" =  9223372036854775807 AND seq.\"increment\" < 0 AND seq.\"start\" = -1 THEN TRUE ELSE FALSE END nomax,\n"
+					"		CASE\n"
+					"			WHEN seq.\"minvalue\" = 0 AND seq.\"increment\" > 0 THEN NULL\n"
+					"			WHEN seq.\"minvalue\" <> -9223372036854775807 THEN seq.\"minvalue\"\n"
+					"			ELSE\n"
+					"				CASE\n"
+					"					WHEN seq.\"increment\" < 0  THEN NULL\n"
+					"					ELSE CASE WHEN seq.\"start\" = 1 THEN NULL ELSE seq.\"maxvalue\" END\n"
+					"				END\n"
+					"		END rmi,\n"
+					"		CASE\n"
+					"			WHEN seq.\"maxvalue\" = 0 AND seq.\"increment\" < 0 THEN NULL\n"
+					"			WHEN seq.\"maxvalue\" <> 9223372036854775807 THEN seq.\"maxvalue\"\n"
+					"			ELSE\n"
+					"				CASE\n"
+					"					WHEN seq.\"increment\" > 0  THEN NULL\n"
+					"					ELSE CASE WHEN seq.\"start\" = -1 THEN NULL ELSE seq.\"maxvalue\" END\n"
+					"				END\n"
+					"		END rma\n"
+					"	FROM sys.sequences seq, sys.schemas s\n"
+					"	WHERE s.id = seq.schema_id\n"
+					"	AND s.name <> 'tmp'\n"
+					"	ORDER BY s.name, seq.name;\n"
 					"GRANT SELECT ON sys.describe_constraints TO PUBLIC;\n"
 					"GRANT SELECT ON sys.describe_indices TO PUBLIC;\n"
 					"GRANT SELECT ON sys.describe_column_defaults TO PUBLIC;\n"
@@ -3790,7 +3800,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = %d;\n", F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
-				"update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_functions') AND schema_id = 2000;\n");
+				"update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_sequences', 'describe_functions') AND schema_id = 2000;\n");
 
 	/* 76_dump.sql (most everything already dropped) */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -3959,12 +3969,21 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"CREATE VIEW sys.dump_sequences AS\n"
 					"  SELECT\n"
 					"    'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||\n"
-					"      CASE WHEN \"s\" <> 0 THEN 'START WITH ' || \"rs\" ELSE '' END ||\n"
-					"      CASE WHEN \"inc\" <> 1 THEN ' INCREMENT BY ' || \"inc\" ELSE '' END ||\n"
-					"      CASE WHEN \"mi\" <> 0 THEN ' MINVALUE ' || \"mi\" ELSE '' END ||\n"
-					"      CASE WHEN \"ma\" <> 0 THEN ' MAXVALUE ' || \"ma\" ELSE '' END ||\n"
-					"      CASE WHEN \"cache\" <> 1 THEN ' CACHE ' || \"cache\" ELSE '' END ||\n"
-					"      CASE WHEN \"cycle\" THEN ' CYCLE' ELSE '' END || ';' stmt,\n"
+					"    CASE WHEN \"s\" <> 0 THEN 'START WITH ' ||  \"rs\" ELSE '' END ||\n"
+					"    CASE WHEN \"inc\" <> 1 THEN ' INCREMENT BY ' ||  \"inc\" ELSE '' END ||\n"
+					"    CASE\n"
+					"      WHEN nomin THEN ' NO MINVALUE'\n"
+					"      WHEN rmi IS NOT NULL THEN ' MINVALUE ' || rmi\n"
+					"      ELSE ''\n"
+					"    END ||\n"
+					"    CASE\n"
+					"      WHEN nomax THEN ' NO MAXVALUE'\n"
+					"      WHEN rma IS NOT NULL THEN ' MAXVALUE ' || rma\n"
+					"      ELSE ''\n"
+					"    END ||\n"
+					"    CASE WHEN \"cache\" <> 1 THEN ' CACHE ' ||  \"cache\" ELSE '' END ||\n"
+					"    CASE WHEN \"cycle\" THEN ' CYCLE' ELSE '' END ||\n"
+					"    ';' stmt,\n"
 					"    sch schema_name,\n"
 					"    seq seqname\n"
 					"    FROM sys.describe_sequences;\n"
