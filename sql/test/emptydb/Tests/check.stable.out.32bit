@@ -975,6 +975,7 @@ CREATE TABLE "sys"."dependency_types" ("dependency_type_id" SMALLINT NOT NULL, "
 ALTER TABLE "sys"."dependency_types" SET READ ONLY;
 CREATE TABLE "sys"."dump_statements" ("o" INTEGER, "s" CHARACTER LARGE OBJECT);
 CREATE TABLE "sys"."fkey_actions" ("action_id" SMALLINT NOT NULL, "action_name" VARCHAR(15) NOT NULL, CONSTRAINT "fkey_actions_action_id_pkey" PRIMARY KEY ("action_id"));
+ALTER TABLE "sys"."fkey_actions" SET READ ONLY;
 CREATE TABLE "sys"."function_languages" ("language_id" SMALLINT NOT NULL, "language_name" VARCHAR(20) NOT NULL, "language_keyword" VARCHAR(20), CONSTRAINT "function_languages_language_id_pkey" PRIMARY KEY ("language_id"), CONSTRAINT "function_languages_language_name_unique" UNIQUE ("language_name"));
 ALTER TABLE "sys"."function_languages" SET READ ONLY;
 CREATE TABLE "sys"."function_types" ("function_type_id" SMALLINT NOT NULL, "function_type_name" VARCHAR(30) NOT NULL, "function_type_keyword" VARCHAR(30) NOT NULL, CONSTRAINT "function_types_function_type_id_pkey" PRIMARY KEY ("function_type_id"), CONSTRAINT "function_types_function_type_name_unique" UNIQUE ("function_type_name"));

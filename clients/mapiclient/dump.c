@@ -1942,6 +1942,7 @@ dump_table_alters(Mapi mid, const char *schema, const char *tname, stream *toCon
 	}
 	rc = 0;						/* success */
   bailout:
+	free(query);
 	free(s);
 	free(t);
 	mapi_close_handle(hdl);		/* may be NULL */
