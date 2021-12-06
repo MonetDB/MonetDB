@@ -148,6 +148,7 @@ typedef struct {
 	bte token;					/* instruction type */
 	bit barrier;				/* flow of control modifier takes:
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
+	bit inout;					/* instruction has inout results, incremental computation */
 	bit typechk;				/* type check status */
 	bte gc;						/* garbage control flags */
 	bte polymorphic;			/* complex type analysis */

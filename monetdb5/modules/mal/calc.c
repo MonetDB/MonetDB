@@ -708,7 +708,7 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  gdk_return (*sumprod)(void *, int, BAT *, BAT *, bool, bool, bool),
+			  gdk_return (*sumprod)(void *, int, BAT *, BAT *, bool, bool, bool, bool),
 			  const char *func)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
@@ -717,6 +717,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *s = NULL;
 	bool nil_if_empty = true;
 	gdk_return r;
+	bool inout = pci->inout;
 
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -737,7 +738,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	}
-	r = (*sumprod)(VALget(ret), ret->vtype, b, s, true, true, nil_if_empty);
+	r = (*sumprod)(VALget(ret), ret->vtype, b, s, true, true, nil_if_empty, inout);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);

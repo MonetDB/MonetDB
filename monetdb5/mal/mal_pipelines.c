@@ -94,7 +94,6 @@ static void
 q_enqueue(Queue *q, Pipeline *d)
 {
 	assert(q);
-	assert(d);
 	MT_lock_set(&q->l);
 	q_enqueue_(q, d);
 	MT_lock_unset(&q->l);
@@ -191,6 +190,12 @@ PIPELINEworker(void *T)
 
 		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = ATOMIC_INC(&s->curpart);
 		str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);
+		/* TODO
+		 *	pipeline object should be on the stack too
+		 *	used for
+		 *		- lock
+		 *		- end condition ?
+		 *		   */
 		if (error) {
 			void *null = NULL;
 			/* only collect one error (from one thread, needed for stable testing) */

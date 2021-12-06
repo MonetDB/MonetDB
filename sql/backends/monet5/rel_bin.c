@@ -3662,11 +3662,12 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 }
 
 static stmt *
-rel_pp(backend *be, sql_rel *rel)
+rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 {
 	list *shared = NULL;
-	if (is_groupby(rel->op) && list_empty(rel->r) && !list_empty(rel->exps)) { /* only simple stuff for now */
+	if (is_groupby(rel->op) && list_empty(rel->r) && !list_empty(rel->exps)) { /* global aggregation */
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+		*aggrresults = sa_list(be->mvc->sa);
 		for( node *n = rel->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
@@ -3678,6 +3679,12 @@ rel_pp(backend *be, sql_rel *rel)
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			append(shared, q->argv);
+
+			q = newAssignment(be->mb);
+			if (q == NULL)
+				return NULL;
+			q = pushNil(be->mb, q, tt);
+			append(*aggrresults, q->argv);
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
@@ -3708,7 +3715,7 @@ rel_pp(backend *be, sql_rel *rel)
 	} else {
 		return NULL;
 	}
-	stmt *pp = pp_create(be, GDKnr_threads);
+	stmt *pp = pp_create(be, 8*GDKnr_threads);
 	pp -> op4.lval = shared;
 	return pp;
 }
@@ -3848,14 +3855,14 @@ static stmt *
 rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	list *l, *aggrs, *gbexps = sa_list(sql->sa);
-	node *n, *en;
+	list *l, *aggrs, *gbexps = sa_list(sql->sa), *aggrresults = NULL;
+	node *n, *en, *m = NULL;
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 
 	stmt *pp = NULL;
 	if (SQLrunning)
-		pp = rel_pp(be, rel);
+		pp = rel_pp(&aggrresults, be, rel);
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
 		sub = subrel_project(be, sub, refs, rel->l);
@@ -3906,6 +3913,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	l = sa_list(sql->sa);
 	aggrs = rel->exps;
 	cursub = stmt_list(be, l);
+	if (aggrresults)
+		m = aggrresults->h;
+	assert(!aggrresults || list_length(aggrresults) == list_length(aggrs));
 	for( n = aggrs->h; n; n = n->next ) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;
@@ -3938,6 +3948,12 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (!aggrstmt) {
 			assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 			return NULL;
+		}
+
+		if (aggrstmt && m) {
+			aggrstmt->nr = getArg(aggrstmt->q, 0) = *(int*)m->data;
+			aggrstmt->q->inout = true;
+			m = m->next;
 		}
 
 		if (!aggrstmt->nrcols && ext && ext->nrcols)

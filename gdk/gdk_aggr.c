@@ -585,7 +585,7 @@ dofsum(const void *restrict values, oid seqb,
 		if (ngrp == 1 && ci->tpe == cand_dense) {		\
 			/* single group, no candidate list */		\
 			TYPE2 sum;					\
-			sum = 0;					\
+			sum = *sums;					\
 			if (nonil) {					\
 				*algo = "sum: no candidates, no groups, no nils, no overflow"; \
 				*seen = ncand > 0;			\
@@ -1032,7 +1032,7 @@ mskCountOnes(BAT *b, struct canditer *ci)
 }
 
 gdk_return
-BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
+BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1043,6 +1043,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	const char *algo = NULL;
 	lng t0 = 0;
 
+	(void)inout;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
@@ -1100,6 +1101,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 			  ci.seq, ci.ncand, GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
+	if (!inout)
 	switch (tp) {
 	case TYPE_bte:
 		* (bte *) res = nil_if_empty ? bte_nil : 0;
@@ -1680,7 +1682,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 }
 
 gdk_return
-BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
+BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1690,6 +1692,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	const char *err;
 	lng t0 = 0;
 
+	(void)inout;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
