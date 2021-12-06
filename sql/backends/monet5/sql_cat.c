@@ -737,10 +737,28 @@ drop_key(mvc *sql, char *sname, char *tname, char *kname, int drop_action)
 }
 
 static str
-drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
+IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void (*func)(BAT *))
+{
+	BAT *b = mvc_bind(sql, sname, tname, iname, RDONLY), *nb = NULL;
+
+	if (!b)
+		throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
+	if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+		BBPunfix(b->batCacheid);
+		if (!(b = BATdescriptor(nb->batCacheid)))
+			throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
+	}
+	func(b);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+drop_index(mvc *sql, char *sname, char *iname)
 {
 	sql_schema *s = NULL;
 	sql_idx *i = NULL;
+	str msg = MAL_SUCCEED;
 
 	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.drop_index", SQLSTATE(3F000) "DROP INDEX: no such schema '%s'", sname);
@@ -750,21 +768,10 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: no such index '%s'", iname);
 	if (i->key)
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: cannot drop index '%s', because the constraint '%s' depends on it", iname, i->key->base.name);
-	if (i->type == ordered_idx) {
+	if (i->type == ordered_idx || i->type == imprints_idx) {
 		sql_kc *ic = i->columns->h->data;
-		BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-		if (b) {
-			OIDXdropImplementation(cntxt, b);
-			BBPunfix(b->batCacheid);
-		}
-	}
-	if (i->type == imprints_idx) {
-		sql_kc *ic = i->columns->h->data;
-		BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-		if (b) {
-			IMPSdestroy(b);
-			BBPunfix(b->batCacheid);
-		}
+		if ((msg = IDXdrop(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, i->type == ordered_idx ? OIDXdestroy : IMPSdestroy)))
+			return msg;
 	}
 	switch (mvc_drop_idx(sql, s, i)) {
 		case -1:
@@ -1243,15 +1250,20 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		/* alter add index */
 		for (n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
+			BAT *b = NULL, *nb = NULL;
 
 			if (!i->base.new || i->base.deleted)
 				continue;
 
 			if (i->type == ordered_idx) {
 				sql_kc *ic = i->columns->h->data;
-				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				if (b == NULL)
+				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+					BBPunfix(b->batCacheid);
+					if (!(b = BATdescriptor(nb->batCacheid)))
+						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				}
 				char *msg = OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
 				if (msg != MAL_SUCCEED) {
@@ -1263,9 +1275,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (i->type == imprints_idx) {
 				gdk_return r;
 				sql_kc *ic = i->columns->h->data;
-				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				if (b == NULL)
+				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+					BBPunfix(b->batCacheid);
+					if (!(b = BATdescriptor(nb->batCacheid)))
+						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				}
 				r = BATimprints(b);
 				BBPunfix(b->batCacheid);
 				if (r != GDK_SUCCEED)
@@ -1797,7 +1813,7 @@ SQLdrop_index(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *iname = *getArgReference_str(stk, pci, 2);
 
 	initcontext();
-	msg = drop_index(cntxt, sql, sname, iname);
+	msg = drop_index(sql, sname, iname);
 	return msg;
 }
 

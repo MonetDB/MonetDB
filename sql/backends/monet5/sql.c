@@ -3770,11 +3770,8 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *tbl = *getArgReference_str(stk, pci, 2);
 	sql_schema *s;
 	sql_table *t;
-	sql_column *c;
 	mvc *m = NULL;
 	str msg;
-	BAT *b;
-	node *o;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3793,11 +3790,17 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	sqlstore *store = m->session->tr->store;
-	for (o = ol_first_node(t->columns); o; o = o->next) {
-		c = o->data;
-		b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
-		if (b == NULL)
+	for (node *n = ol_first_node(t->columns); n; n = n->next) {
+		sql_column *c = n->data;
+		BAT *b = NULL, *nb = NULL;
+
+		if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
 			throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+			BBPunfix(b->batCacheid);
+			if (!(b = BATdescriptor(nb->batCacheid)))
+				throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
 		HASHdestroy(b);
 		BBPunfix(b->batCacheid);
 	}
