@@ -797,7 +797,7 @@ STRMPappendBitstring(BAT *b, const str s)
 		size_t sizes_offset = (char *)strmp->sizes_base - strmp->strimps.base;
 		size_t pairs_offset = (char *)strmp->pairs_base - strmp->strimps.base;
 		size_t bitstrings_offset = (char *)strmp->bitstrings_base - strmp->strimps.base;
-		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) == GDK_FAIL) {
+		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) != GDK_SUCCEED) {
 			MT_lock_unset(&pb->batIdxLock);
 			GDKerror("Cannot extend heap\n");
 			return GDK_FAIL;
