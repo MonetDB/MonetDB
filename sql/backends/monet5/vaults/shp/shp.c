@@ -41,7 +41,7 @@ GDALWConnection *GDALWConnect(char *source)
 	conn->handler = OGROpen(source, 0, &(conn->driver));
 	if (conn->handler == NULL)
 	{
-		free(conn);
+		GDKfree(conn);
 		return NULL;
 	}
 
@@ -49,7 +49,7 @@ GDALWConnection *GDALWConnect(char *source)
 	if (conn->layer == NULL)
 	{
 		OGRReleaseDataSource(conn->handler);
-		free(conn);
+		GDKfree(conn);
 		return NULL;
 	}
 
@@ -62,7 +62,7 @@ GDALWConnection *GDALWConnect(char *source)
 	if (conn->fieldDefinitions == NULL)
 	{
 		OGRReleaseDataSource(conn->handler);
-		free(conn);
+		GDKfree(conn);
 		TRC_ERROR(SHP, "Could not allocate memory\n");
 		return NULL;
 	}
