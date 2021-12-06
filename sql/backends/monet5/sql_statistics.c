@@ -178,6 +178,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rrevsorted = getArgReference_bat(stk, pci, 12);
 	str sname = NULL, tname = NULL, cname = NULL, msg = MAL_SUCCEED;
 	struct os_iter si = {0};
+	BUN nrows = 0;
 	int sfnd = 0, tfnd = 0, cfnd = 0;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -233,6 +234,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (cname && strcmp(c->base.name, cname))
 						continue;
 					cfnd = 1;
+					nrows++;
 					if (!column_privs(m, c, PRIV_SELECT))
 						throw(SQL, "sql.statistics", SQLSTATE(42000) "STATISTICS: access denied for %s to column '%s' on table '%s.%s'",
 							  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
@@ -247,19 +249,19 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cname && !cfnd)
 		throw(SQL, "sql.statistics", SQLSTATE(38000) "Column '%s' does not exist", cname);
 
-	cid = COLnew(0, TYPE_int, 0, TRANSIENT);
-	sch = COLnew(0, TYPE_str, 0, TRANSIENT);
-	tab = COLnew(0, TYPE_str, 0, TRANSIENT);
-	col = COLnew(0, TYPE_str, 0, TRANSIENT);
-	type = COLnew(0, TYPE_str, 0, TRANSIENT);
-	width = COLnew(0, TYPE_int, 0, TRANSIENT);
-	count = COLnew(0, TYPE_lng, 0, TRANSIENT);
-	unique = COLnew(0, TYPE_bit, 0, TRANSIENT);
-	nils = COLnew(0, TYPE_bit, 0, TRANSIENT);
-	minval = COLnew(0, TYPE_str, 0, TRANSIENT);
-	maxval = COLnew(0, TYPE_str, 0, TRANSIENT);
-	sorted = COLnew(0, TYPE_bit, 0, TRANSIENT);
-	revsorted = COLnew(0, TYPE_bit, 0, TRANSIENT);
+	cid = COLnew(0, TYPE_int, nrows, TRANSIENT);
+	sch = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	tab = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	col = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	type = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	width = COLnew(0, TYPE_int, nrows, TRANSIENT);
+	count = COLnew(0, TYPE_lng, nrows, TRANSIENT);
+	unique = COLnew(0, TYPE_bit, nrows, TRANSIENT);
+	nils = COLnew(0, TYPE_bit, nrows, TRANSIENT);
+	minval = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	maxval = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	sorted = COLnew(0, TYPE_bit, nrows, TRANSIENT);
+	revsorted = COLnew(0, TYPE_bit, nrows, TRANSIENT);
 
 	if (!cid || !sch || !tab || !col || !type || !width || !count || !unique || !nils || !minval || !maxval || !sorted || !revsorted) {
 		msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
