@@ -395,7 +395,7 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(o);
 	bat_destroy(u);
 	if (!b)
-		throw(SQL, "dict.decompress", SQLSTATE(HY013) "unknown offset type");
+		throw(SQL, "dict.decompress", GDK_EXCEPTION);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
