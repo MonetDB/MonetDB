@@ -426,7 +426,7 @@ unfree:
 	for (i = 0; i < colsNum; i++)
 		if (colsBAT[i])
 			BBPunfix(colsBAT[i]->batCacheid);
-	free(field_definitions);
+	GDKfree(field_definitions);
 	GDKfree(cols);
 	GDKfree(colsBAT);
 	return msg;
@@ -667,7 +667,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto fin;
 
 fin:
-	free(field_definitions);
+	GDKfree(field_definitions);
 finish:
 	/* if (msg != MAL_SUCCEED){
 	   snprintf(buf, BUFSIZ,"ROLLBACK;");
@@ -939,7 +939,7 @@ unfree4:
 		if (colsBAT[i])
 			BBPunfix(colsBAT[i]->batCacheid);
 	}
-	free(field_definitions);
+	GDKfree(field_definitions);
 	GDKfree(colsBAT);
 unfree2:
 	GDKfree(cols);
@@ -1179,7 +1179,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	GDKfree(colsBAT);
 	OGR_G_DestroyGeometry(geom);
 
-	free(field_definitions);
+	GDKfree(field_definitions);
 	GDALWClose(shp_conn_ptr);
 
 	return msg;
