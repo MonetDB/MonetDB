@@ -198,7 +198,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #define SQLstr_cast_str(v, digits) \
-	if (digits > 0 && UTF8_strlen(v) > digits) { \
+	if (UTF8_strlen(v) > digits) { \
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits); \
 		goto bailout1; \
 	}
@@ -220,7 +220,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN q;
 	oid off;
 	bool nils = false, from_str = EC_VARCHAR(eclass) || tpe == TYPE_str;
-	size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
+	size_t rlen = 0;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -234,17 +234,36 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "batcalc.str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
+
+	assert(digits >= 0);
+	if (from_str && digits == 0) {
+		if (s) {
+			if (!(dst = BATproject(s, b))) {
+				msg = createException(SQL, "batcalc.str", GDK_EXCEPTION);
+				goto bailout;
+			}
+			BBPunfix(s->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPkeepref(*res = dst->batCacheid);
+		} else {
+			BBPkeepref(*res = b->batCacheid);
+		}
+		return MAL_SUCCEED;
+	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
 
-	if (from_str && (!sid || is_bat_nil(*sid))) { /* from string case, just do validation, if right, return */
+	if (from_str && ci.tpe == cand_dense && q == BATcount(b)) { /* from string case, just do validation, if right, return */
 		for (BUN i = 0; i < q; i++) {
-			str v = (str) BUNtvar(bi, i);
+			oid p = (canditer_next_dense(&ci) - off);
+			str v = (str) BUNtvar(bi, p);
 
 			if (!strNil(v))
 				SQLstr_cast_str(v, digits);
 		}
+		if (s)
+			BBPunfix(s->batCacheid);
 		bat_iterator_end(&bi);
 		BBPkeepref(*res = b->batCacheid);
 		return MAL_SUCCEED;
@@ -255,6 +274,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout1;
 	}
 
+	rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
 	assert(rlen > 0);
 	if (!from_str && !(r = GDKmalloc(rlen))) {
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
