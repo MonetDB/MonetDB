@@ -299,10 +299,10 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 						w = bs->twidth;
 						cnt = BATcount(bs);
-						un = bs->tkey;
+						un = BATtkey(bs);
 						hnils = !bs->tnonil || bs->tnil;
-						issorted = bs->tsorted;
-						isrevsorted = bs->trevsorted;
+						issorted = BATtordered(bs);
+						isrevsorted = BATtrevordered(bs);
 
 						if (BUNappend(cid, &c->base.id, false) != GDK_SUCCEED ||
 							BUNappend(sch, b->name, false) != GDK_SUCCEED ||
