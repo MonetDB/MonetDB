@@ -1271,8 +1271,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					freeException(msg);
 					return smsg;
 				}
-			}
-			if (i->type == imprints_idx) {
+			} else if (i->type == imprints_idx) {
 				gdk_return r;
 				sql_kc *ic = i->columns->h->data;
 				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
@@ -1280,7 +1279,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
 					BBPunfix(b->batCacheid);
 					if (!(b = BATdescriptor(nb->batCacheid)))
-						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
 				}
 				r = BATimprints(b);
 				BBPunfix(b->batCacheid);
