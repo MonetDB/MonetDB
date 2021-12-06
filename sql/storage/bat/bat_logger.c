@@ -1827,6 +1827,48 @@ upgrade(old_logger *lg)
 	return rc;
 }
 
+/* replace a column in a system table with a new column
+ * colid is the SQL id for the column, oldcolid is the BAT id of the
+ * to-be-replaced BAT */
+static gdk_return
+replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol)
+{
+	gdk_return rc;
+	newcol = BATsetaccess(newcol, BAT_READ);
+	if (old_lg != NULL) {
+		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
+			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&
+			(rc = BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &colid), &newcol->batCacheid, false)) == GDK_SUCCEED) {
+			BBPretain(newcol->batCacheid);
+			BBPretain(newcol->batCacheid);
+		}
+	} else {
+		if ((rc = BAThash(lg->catalog_id)) == GDK_SUCCEED) {
+			BATiter cii = bat_iterator_nolock(lg->catalog_id);
+			BUN p;
+			MT_rwlock_rdlock(&cii.b->thashlock);
+			HASHloop_int(cii, cii.b->thash, p, &colid) {
+				if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
+					if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED) {
+						MT_rwlock_rdunlock(&cii.b->thashlock);
+						return GDK_FAIL;
+					}
+					break;
+				}
+			}
+			MT_rwlock_rdunlock(&cii.b->thashlock);
+			if ((rc = BUNappend(lg->catalog_id, &colid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_bid, &newcol->batCacheid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(newcol)}, false)) == GDK_SUCCEED) {
+				BBPretain(newcol->batCacheid);
+			}
+			lg->cnt++;
+		}
+	}
+	return GDK_SUCCEED;
+}
+
 static gdk_return
 bl_postversion(void *Store, void *Lg)
 {
@@ -2721,38 +2763,7 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			}
 		}
-		b2 = BATsetaccess(b2, BAT_READ);
-		if (old_lg != NULL) {
-			if ((rc = BUNappend(old_lg->del, &bid, false)) == GDK_SUCCEED &&
-				(rc = BUNappend(old_lg->add, &b2->batCacheid, false)) == GDK_SUCCEED &&
-				(rc = BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2021}), &b2->batCacheid, false)) == GDK_SUCCEED) {
-				BBPretain(b2->batCacheid);
-				BBPretain(b2->batCacheid);
-			}
-		} else {
-			if ((rc = BAThash(lg->catalog_id)) == GDK_SUCCEED) {
-				BATiter cii = bat_iterator_nolock(lg->catalog_id);
-				BUN p;
-				MT_rwlock_rdlock(&cii.b->thashlock);
-				HASHloop_int(cii, cii.b->thash, p, &(int){2021}) {
-					if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
-						if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED) {
-							MT_rwlock_rdunlock(&cii.b->thashlock);
-							return GDK_FAIL;
-						}
-						break;
-					}
-				}
-				MT_rwlock_rdunlock(&cii.b->thashlock);
-				if ((rc = BUNappend(lg->catalog_id, &(int){2021}, false)) == GDK_SUCCEED &&
-					(rc = BUNappend(lg->catalog_bid, &b2->batCacheid, false)) == GDK_SUCCEED &&
-					(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
-					(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(b2)}, false)) == GDK_SUCCEED) {
-					BBPretain(b2->batCacheid);
-				}
-				lg->cnt++;
-			}
-		}
+		rc = replace_bat(old_lg, lg, 2021, bid, b2);
 		bat_destroy(b2);
 		if (rc != GDK_SUCCEED)
 			return rc;
@@ -2911,41 +2922,147 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* replace old column with modified copy */
-		func_se = BATsetaccess(func_se, BAT_READ);
-		if (old_lg != NULL) {
-			if ((rc = BUNappend(old_lg->del, &bid, false)) == GDK_SUCCEED &&
-				(rc = BUNappend(old_lg->add, &func_se->batCacheid, false)) == GDK_SUCCEED &&
-				(rc = BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2023}), &func_se->batCacheid, false)) == GDK_SUCCEED) {
-				BBPretain(func_se->batCacheid);
-				BBPretain(func_se->batCacheid);
-			}
-		} else {
-			if ((rc = BAThash(lg->catalog_id)) == GDK_SUCCEED) {
-				BATiter cii = bat_iterator_nolock(lg->catalog_id);
-				BUN p;
-				MT_rwlock_rdlock(&cii.b->thashlock);
-				HASHloop_int(cii, cii.b->thash, p, &(int){2023}) {
-					if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
-						if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED) {
-							MT_rwlock_rdunlock(&cii.b->thashlock);
-							return GDK_FAIL;
-						}
-						break;
-					}
-				}
-				MT_rwlock_rdunlock(&cii.b->thashlock);
-				if ((rc = BUNappend(lg->catalog_id, &(int){2023}, false)) == GDK_SUCCEED &&
-					(rc = BUNappend(lg->catalog_bid, &func_se->batCacheid, false)) == GDK_SUCCEED &&
-					(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
-					(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(func_se)}, false)) == GDK_SUCCEED) {
-					BBPretain(func_se->batCacheid);
-				}
-				lg->cnt++;
-			}
-		}
+		rc = replace_bat(old_lg, lg, 2023, bid, func_se);
 		bat_destroy(func_se);
 		if (rc != GDK_SUCCEED)
 			return rc;
+	}
+	if (store->catalog_version <= CATALOG_JUL2021) {
+		/* upgrade some columns in sys.sequences:
+		 * if increment is zero, set it to one (see ChangeLog);
+		 * if increment is greater than zero and maxvalue is zero,
+		 * set maxvalue to GDK_lng_max;
+		 * if increment is less than zero and minvalue is zero,
+		 * set minvalue to GDK_lng_min */
+
+		/* sys.sequences i.e. deleted rows */
+		BAT *del_seqs = temp_descriptor(logger_find_bat(lg, 2037));
+		if (del_seqs == NULL)
+			return GDK_FAIL;
+		BAT *seq_tid = BATmaskedcands(0, BATcount(del_seqs), del_seqs, false);
+		bat_destroy(del_seqs);
+		BAT *seq_min = temp_descriptor(logger_find_bat(lg, 2042)); /* sys.sequences.minvalue */
+		BAT *seq_max = temp_descriptor(logger_find_bat(lg, 2043)); /* sys.sequences.maxvalue */
+		BAT *seq_inc = temp_descriptor(logger_find_bat(lg, 2044)); /* sys.sequences.increment */
+		if (seq_tid == NULL || seq_min == NULL || seq_max == NULL || seq_inc == NULL) {
+			bat_destroy(seq_tid);
+			bat_destroy(seq_min);
+			bat_destroy(seq_max);
+			bat_destroy(seq_inc);
+			return GDK_FAIL;
+		}
+		/* select * from sys.sequences where increment = 0 */
+		BAT *inczero = BATselect(seq_inc, seq_tid, &(lng){0}, NULL, false, true, false);
+		if (inczero == NULL) {
+			bat_destroy(seq_tid);
+			bat_destroy(seq_min);
+			bat_destroy(seq_max);
+			bat_destroy(seq_inc);
+			return GDK_FAIL;
+		}
+		if (BATcount(inczero) > 0) {
+			BAT *b = BATconstant(0, TYPE_lng, &(lng) {1}, BATcount(inczero), TRANSIENT);
+			if (b == NULL) {
+				bat_destroy(seq_tid);
+				bat_destroy(seq_min);
+				bat_destroy(seq_max);
+				bat_destroy(seq_inc);
+				bat_destroy(inczero);
+				return GDK_FAIL;
+			}
+			BAT *b2 = COLcopy(seq_inc, seq_inc->ttype, true, PERSISTENT);
+			gdk_return rc = GDK_FAIL;
+			if (b2 == NULL)
+				rc = BATreplace(b2, inczero, b, false);
+			bat_destroy(b);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(b2);
+				bat_destroy(seq_tid);
+				bat_destroy(seq_min);
+				bat_destroy(seq_max);
+				bat_destroy(seq_inc);
+				bat_destroy(inczero);
+				return GDK_FAIL;
+			}
+			rc = replace_bat(old_lg, lg, 2044, seq_inc->batCacheid, b2);
+			bat_destroy(seq_inc);
+			seq_inc = b2;
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(seq_tid);
+				bat_destroy(seq_min);
+				bat_destroy(seq_max);
+				bat_destroy(seq_inc);
+				bat_destroy(inczero);
+				return rc;
+			}
+		}
+		bat_destroy(inczero);
+		/* select * from sys.sequences where increment > 0 */
+		BAT *incpos = BATselect(seq_inc, seq_tid, &(lng){0}, &lng_nil, false, true, false);
+		bat_destroy(seq_inc);
+		if (incpos == NULL) {
+			bat_destroy(seq_tid);
+			bat_destroy(seq_min);
+			bat_destroy(seq_max);
+			return GDK_FAIL;
+		}
+		/* select * from sys.sequences where increment > 0 and maxvalue = 0 */
+		BAT *cands = BATselect(seq_max, incpos, &(lng) {0}, NULL, true, true, false);
+		bat_destroy(incpos);
+		if (cands == NULL) {
+			bat_destroy(seq_tid);
+			bat_destroy(seq_min);
+			bat_destroy(seq_max);
+			return GDK_FAIL;
+		}
+		if (BATcount(cands) > 0) {
+			BAT *b = BATconstant(0, TYPE_lng, &(lng){GDK_lng_max}, BATcount(cands), TRANSIENT);
+			BAT *b2 = COLcopy(seq_max, seq_max->ttype, true, PERSISTENT);
+			gdk_return rc = GDK_FAIL;
+			if (b != NULL && b2 != NULL)
+				rc = BATreplace(b2, cands, b, false);
+			bat_destroy(b);
+			if (rc == GDK_SUCCEED)
+				rc = replace_bat(old_lg, lg, 2043, seq_max->batCacheid, b2);
+			bat_destroy(b2);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(cands);
+				bat_destroy(seq_tid);
+				bat_destroy(seq_min);
+				bat_destroy(seq_max);
+				return rc;
+			}
+		}
+		bat_destroy(seq_max);
+		bat_destroy(cands);
+		/* select * from sys.sequences where increment < 0 */
+		BAT *incneg = BATselect(seq_inc, seq_tid, &lng_nil, &(lng){0}, false, true, false);
+		bat_destroy(seq_tid);
+		/* select * from sys.sequences where increment < 0 and minvalue = 0 */
+		cands = BATselect(seq_min, incneg, &(lng) {0}, NULL, true, true, false);
+		bat_destroy(incneg);
+		if (cands == NULL) {
+			bat_destroy(seq_min);
+			return GDK_FAIL;
+		}
+		if (BATcount(cands) > 0) {
+			BAT *b = BATconstant(0, TYPE_lng, &(lng){GDK_lng_min}, BATcount(cands), TRANSIENT);
+			BAT *b2 = COLcopy(seq_min, seq_min->ttype, true, PERSISTENT);
+			gdk_return rc = GDK_FAIL;
+			if (b != NULL && b2 != NULL)
+				rc = BATreplace(b2, cands, b, false);
+			bat_destroy(b);
+			if (rc == GDK_SUCCEED)
+				rc = replace_bat(old_lg, lg, 2042, seq_min->batCacheid, b2);
+			bat_destroy(b2);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(cands);
+				bat_destroy(seq_min);
+				return rc;
+			}
+		}
+		bat_destroy(seq_min);
+		bat_destroy(cands);
 	}
 #endif
 
