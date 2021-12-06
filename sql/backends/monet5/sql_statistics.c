@@ -327,41 +327,35 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							}
 
 							BATiter bi = bat_iterator(fb);
-							if (fb->tminpos != BUN_NONE || fb->tmaxpos != BUN_NONE) {
-								if (fb->tminpos != BUN_NONE) {
-									if (tostr(&min, &minlen, BUNtail(bi, fb->tminpos), false) < 0) {
-										bat_iterator_end(&bi);
-										BBPunfix(fb->batCacheid);
-										msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-										goto bailout;
-									}
-									nmin = min;
-								} else {
-									nmin = (char *) str_nil;
-								}
-								if (BUNappend(minval, nmin, false) != GDK_SUCCEED) {
+							if (fb->tminpos != BUN_NONE) {
+								if (tostr(&min, &minlen, BUNtail(bi, fb->tminpos), false) < 0) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
+									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									goto bailout;
 								}
+								nmin = min;
+							} else {
+								nmin = (char *) str_nil;
+							}
+							if (BUNappend(minval, nmin, false) != GDK_SUCCEED) {
+								bat_iterator_end(&bi);
+								BBPunfix(fb->batCacheid);
+								goto bailout;
+							}
 
-								if (fb->tmaxpos != BUN_NONE) {
-									if (tostr(&max, &maxlen, BUNtail(bi, fb->tmaxpos), false) < 0) {
-										bat_iterator_end(&bi);
-										BBPunfix(fb->batCacheid);
-										msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-										goto bailout;
-									}
-									nmax = max;
-								} else {
-									nmax = (char *) str_nil;
-								}
-								if (BUNappend(maxval, nmax, false) != GDK_SUCCEED) {
+							if (fb->tmaxpos != BUN_NONE) {
+								if (tostr(&max, &maxlen, BUNtail(bi, fb->tmaxpos), false) < 0) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
+									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									goto bailout;
 								}
-							} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
+								nmax = max;
+							} else {
+								nmax = (char *) str_nil;
+							}
+							if (BUNappend(maxval, nmax, false) != GDK_SUCCEED) {
 								bat_iterator_end(&bi);
 								BBPunfix(fb->batCacheid);
 								goto bailout;
