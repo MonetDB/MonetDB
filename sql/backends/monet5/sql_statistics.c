@@ -180,6 +180,8 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct os_iter si = {0};
 	BUN nrows = 0;
 	int sfnd = 0, tfnd = 0, cfnd = 0;
+	size_t minlen = 0, maxlen = 0;
+	char *min = NULL, *max = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -317,9 +319,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 						if (bs->tminpos != BUN_NONE || bs->tmaxpos != BUN_NONE) {
 							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[bs->ttype].atomToStr;
-							size_t minlen = 0, maxlen = 0;
-							char *min = NULL, *max = NULL;
-							gdk_return res = GDK_SUCCEED;
+							char *nmin, *nmax;
 
 							if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
 								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -335,13 +335,11 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 										goto bailout;
 									}
+									nmin = min;
 								} else {
-									min = (char *) str_nil;
+									nmin = (char *) str_nil;
 								}
-								res = BUNappend(minval, min, false);
-								if (fb->tminpos != BUN_NONE)
-									GDKfree(min);
-								if (res != GDK_SUCCEED) {
+								if (BUNappend(minval, nmin, false) != GDK_SUCCEED) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
 									goto bailout;
@@ -354,13 +352,11 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 										goto bailout;
 									}
+									nmax = max;
 								} else {
-									max = (char *) str_nil;
+									nmax = (char *) str_nil;
 								}
-								res = BUNappend(maxval, max, false);
-								if (fb->tmaxpos != BUN_NONE)
-									GDKfree(max);
-								if (res != GDK_SUCCEED) {
+								if (BUNappend(maxval, nmax, false) != GDK_SUCCEED) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
 									goto bailout;
@@ -381,6 +377,8 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
+	GDKfree(min);
+	GDKfree(max);
 	BBPkeepref(*rcid = cid->batCacheid);
 	BBPkeepref(*rsch = sch->batCacheid);
 	BBPkeepref(*rtab = tab->batCacheid);
@@ -396,6 +394,8 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rrevsorted = revsorted->batCacheid);
 	return MAL_SUCCEED;
 bailout:
+	GDKfree(min);
+	GDKfree(max);
 	BBPreclaim(cid);
 	BBPreclaim(sch);
 	BBPreclaim(tab);
