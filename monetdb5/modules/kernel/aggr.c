@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
+#include "mal_pipelines.h"
 
 /*
  * grouped aggregates
@@ -140,6 +141,19 @@ AGGRsum3_lng(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
+static str
+LAGGRsum3_lng(bat *retval, const ptr *h, const bat *bid, const bat *gid, const bat *eid)
+{
+	Pipeline *p = (Pipeline*)*h;
+	str res;
+
+	MT_lock_set(&p->l);
+	res = AGGRsum3_lng(retval, bid, gid, eid);
+	MT_lock_unset(&p->l);
+	return res;
+}
+
+
 #ifdef HAVE_HGE
 static str
 AGGRsum3_hge(bat *retval, const bat *bid, const bat *gid, const bat *eid)
@@ -147,6 +161,19 @@ AGGRsum3_hge(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, 1, 1, 0, TYPE_hge,
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
+
+static str
+LAGGRsum3_hge(bat *retval, const ptr *h, const bat *bid, const bat *gid, const bat *eid)
+{
+	Pipeline *p = (Pipeline*)*h;
+	str res;
+
+	MT_lock_set(&p->l);
+	res = AGGRsum3_hge(retval, bid, gid, eid);
+	MT_lock_unset(&p->l);
+	return res;
+}
+
 #endif
 
 static str
@@ -1250,6 +1277,7 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subprod", AGGRsubprodcand_lng, false, "Grouped product aggregate with candidates list", args(1,7, batarg("",lng),batarg("b",int),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "sum", AGGRsum3_dbl, false, "Grouped tail sum on lng", args(1,4, batarg("",dbl),batarg("b",lng),batarg("g",oid),batargany("e",1))),
  command("aggr", "sum", AGGRsum3_lng, false, "Grouped tail sum on lng", args(1,4, batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1))),
+ command("lockedaggr", "sum", LAGGRsum3_lng, false, "Grouped tail sum on lng", args(1,5, batarg("",lng),arg("pipeline", ptr), batarg("b",lng),batarg("g",oid),batargany("e",1))),
  command("aggr", "subsum", AGGRsubsum_lng, false, "Grouped sum aggregate", args(1,6, batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "subsum", AGGRsubsumcand_lng, false, "Grouped sum aggregate with candidates list", args(1,7, batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "prod", AGGRprod3_lng, false, "Grouped tail product on lng", args(1,4, batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1))),
@@ -1546,6 +1574,7 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subprod", AGGRsubprod_hge, false, "Grouped product aggregate", args(1,6, batarg("",hge),batarg("b",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "subprod", AGGRsubprodcand_hge, false, "Grouped product aggregate with candidates list", args(1,7, batarg("",hge),batarg("b",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "sum", AGGRsum3_hge, false, "Grouped tail sum on hge", args(1,4, batarg("",hge),batarg("b",hge),batarg("g",oid),batargany("e",1))),
+ command("lockedaggr", "sum", LAGGRsum3_hge, false, "Grouped tail sum on hge", args(1,5, batarg("",hge), arg("pipeline", ptr), batarg("b",hge),batarg("g",oid),batargany("e",1))),
  command("aggr", "subsum", AGGRsubsum_hge, false, "Grouped sum aggregate", args(1,6, batarg("",hge),batarg("b",hge),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "subsum", AGGRsubsumcand_hge, false, "Grouped sum aggregate with candidates list", args(1,7, batarg("",hge),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "prod", AGGRprod3_hge, false, "Grouped tail product on hge", args(1,4, batarg("",hge),batarg("b",hge),batarg("g",oid),batargany("e",1))),

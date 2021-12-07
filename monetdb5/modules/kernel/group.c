@@ -19,9 +19,9 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	gdk_return r;
 
 	/* the extend and possibly the histo could be reused and shared?? */
-	en = (next && *next) ? BATdescriptor(*next) : NULL;
-	hn = (nhis && *nhis) ? BATdescriptor(*nhis) : NULL;
-	if ((next && *next && !en) || (nhis && *nhis && !hn) ) {
+	en = (next && !is_bat_nil(*next)) ? BATdescriptor(*next) : NULL;
+	hn = (nhis && !is_bat_nil(*nhis)) ? BATdescriptor(*nhis) : NULL;
+	if ((next && !is_bat_nil(*next) && !en) || (nhis && !is_bat_nil(*nhis) && !hn) ) {
 		if (en)
 			BBPunfix(en->batCacheid);
 		if (hn)

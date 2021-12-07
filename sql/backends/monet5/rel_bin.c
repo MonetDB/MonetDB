@@ -3689,7 +3689,6 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 		list *gbexps = rel->r;
-		*aggrresults = sa_list(be->mvc->sa);
 		for(node *n = gbexps->h; n; n = n->next ) {
 			int tt = TYPE_oid;
 			/* ext */
@@ -3700,13 +3699,6 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			append(shared, q->argv);
-
-			q = newStmt(be->mb, batRef, newRef);
-			if (q == NULL)
-				return NULL;
-			setVarType(be->mb, getArg(q, 0), newBatType(tt));
-			q = pushType(be->mb, q, tt);
-			append(*aggrresults, q->argv);
 		}
 		for( node *n = rel->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
@@ -3719,13 +3711,6 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			append(shared, q->argv);
-
-			q = newStmt(be->mb, batRef, newRef);
-			if (q == NULL)
-				return NULL;
-			setVarType(be->mb, getArg(q, 0), newBatType(tt));
-			q = pushType(be->mb, q, tt);
-			append(*aggrresults, q->argv);
 		}
 	} else {
 		return NULL;
@@ -3830,17 +3815,18 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 					assert(strcmp(sf->func->base.name, "count") == 0);
 					name = "sum";
 				}
-				q = newStmt(be->mb, getName("aggr"), getName(name));
+				q = newStmt(be->mb, getName("lockedaggr"), getName(name));
+				q = pushArgument(be->mb, q, getArg(pp->q, 2));
 				q = pushArgument(be->mb, q, i->nr);
 				q = pushArgument(be->mb, q, grp->nr);
 				q = pushArgument(be->mb, q, ext->nr);
 			} else {
-				//s = list_find_column(be, gbstmts, e->l, e->r);
 				q = newStmt(be->mb, algebraRef, projectionRef);
 				q = pushArgument(be->mb, q, ext->nr);
 				q = pushArgument(be->mb, q, i->nr);
 			}
 			getArg(q, 0) = *v;
+			q->inout = 0;
 			stmt *s = stmt_none(be);
 			s->op4.typeval = *exp_subtype(e);
 			s->nr = *v;
@@ -3926,9 +3912,10 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			/* make sure we reuse the extend */
 			if (groupby && m) {
 				getArg(groupby->q, 1) = *(int*)m->data;
-				groupby->q->inout = 1;
 				m = m->next;
 			}
+			if (groupby)
+				groupby->q->inout = 1;
 
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
@@ -3980,9 +3967,10 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		if (aggrstmt && m) {
 			aggrstmt->nr = getArg(aggrstmt->q, 0) = *(int*)m->data;
-			aggrstmt->q->inout = 0;
 			m = m->next;
 		}
+		if (aggrstmt)
+			aggrstmt->q->inout = 0;
 
 		if (!aggrstmt->nrcols && ext && ext->nrcols)
 			aggrstmt = stmt_const(be, ext, aggrstmt);
