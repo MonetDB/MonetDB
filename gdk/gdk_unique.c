@@ -63,9 +63,11 @@ BATunique(BAT *b, BAT *s)
 		return bn;
 	}
 
+	BATiter bi = bat_iterator(b);
 	if ((BATordered(b) && BATordered_rev(b)) ||
-	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
+		(b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
+		bat_iterator_end(&bi);
 		bn = BATdense(0, ci.seq, 1);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
@@ -78,7 +80,6 @@ BATunique(BAT *b, BAT *s)
 
 	assert(b->ttype != TYPE_void);
 
-	BATiter bi = bat_iterator(b);
 	BUN initsize = BUN_NONE;
 	if (s == NULL) {
 		MT_rwlock_rdlock(&b->thashlock);
