@@ -3836,8 +3836,11 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	} else {
 		s = ATOMsize(ATOMtype(b->ttype));
 	}
-	if (aggr != NULL)	/* else: malloc error */
-		memcpy(aggr, res, s);
+	if (aggr != NULL) {	/* else: malloc error */
+		if (ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
+		    ATOMcmp(b->ttype, res, aggr) < 0)
+			memcpy(aggr, res, s);
+	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
@@ -3976,8 +3979,11 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 	} else {
 		s = ATOMsize(ATOMtype(b->ttype));
 	}
-	if (aggr != NULL)	/* else: malloc error */
-		memcpy(aggr, res, s);
+	if (aggr != NULL) {	/* else: malloc error */
+		if (ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
+		    ATOMcmp(b->ttype, res, aggr) > 0)
+			memcpy(aggr, res, s);
+	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
