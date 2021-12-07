@@ -1616,7 +1616,7 @@ range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
 		h = s->op3->op1->op4.lval->t->data;
 	}
 
-	if (((ls = (l && strcmp(s->op2->op4.funcval->func->base.name, "sql_sub") == 0 && l->nrcols == 0)) || (hs = (h && strcmp(s->op3->op4.funcval->func->base.name, "sql_add") == 0 && h->nrcols == 0))) && (ls || hs) && bl == bh) {
+	if (((ls = (l && strcmp(s->op2->op4.funcval->func->sql_name, "sql_sub") == 0 && l->nrcols == 0)) || (hs = (h && strcmp(s->op3->op4.funcval->func->sql_name, "sql_add") == 0 && h->nrcols == 0))) && (ls || hs) && bl == bh) {
 		*base = bl;
 		*L = l;
 		*H = h;
@@ -3349,7 +3349,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 
 		nrcols = e1->nrcols>e2->nrcols ? e1->nrcols:e2->nrcols;
 		/* nullif(e1,e2) -> ifthenelse(e1==e2),NULL,e1) */
-		if (strcmp(f->func->base.name, "nullif") == 0) {
+		if (strcmp(f->func->sql_name, "nullif") == 0) {
 			const char *mod = (!nrcols)?calcRef:batcalcRef;
 			sql_subtype *t = tail_type(e1);
 			int tt = t->type->localtype;
@@ -3925,7 +3925,7 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_aggr:
 	{
 		const char *cn = column_name(sa, st->op1);
-		return func_name(sa, st->op4.funcval->func->base.name, cn);
+		return func_name(sa, st->op4.funcval->func->sql_name, cn);
 	}
 	case st_alias:
 		if (st->op3)

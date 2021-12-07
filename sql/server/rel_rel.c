@@ -1689,7 +1689,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		if (e->l && exps_deps(sql, e->l, refs, l) != 0)
 			return -1;
 		cond_append(l, &f->func->base);
-		if (e->l && list_length(e->l) == 2 && strcmp(f->func->base.name, "next_value_for") == 0) {
+		if (e->l && list_length(e->l) == 2 && strcmp(f->func->sql_name, "next_value_for") == 0) {
 			/* add dependency on seq nr */
 			list *nl = e->l;
 			sql_exp *schname = nl->h->data, *seqname = nl->t->data;

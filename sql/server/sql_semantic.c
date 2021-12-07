@@ -279,7 +279,7 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 static sql_subfunc *
 func_cmp(sql_allocator *sa, sql_func *f, const char *name, int nrargs)
 {
-	if (strcmp(f->base.name, name) == 0) {
+	if (strcmp(f->sql_name, name) == 0) {
 		if (f->vararg)
 			return (f->type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, NULL);
 		if (nrargs < 0 || list_length(f->ops) == nrargs)
@@ -429,7 +429,7 @@ sql_bind_member_internal(mvc *sql, list *ff, const char *fname, sql_subtype *tp,
 
 			if (!f->res && !IS_FILT(f))
 				continue;
-			if (strcmp(f->base.name, fname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
+			if (strcmp(f->sql_name, fname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
 				sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
 				if ((f->fix_scale == INOUT && type_cmp(tp->type, ft->type) == 0) || (f->fix_scale != INOUT && is_subtypeof(tp, ft))) {
 					if (!cand) {
@@ -469,7 +469,7 @@ os_bind_member_internal(mvc *sql, struct objectset *ff, const char *fname, sql_s
 
 			if (!f->res && !IS_FILT(f))
 				continue;
-			if (strcmp(f->base.name, fname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
+			if (strcmp(f->sql_name, fname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
 				sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
 				if ((f->fix_scale == INOUT && type_cmp(tp->type, ft->type) == 0) || (f->fix_scale != INOUT && is_subtypeof(tp, ft))) {
 					if (!cand) {
@@ -569,7 +569,7 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 
 			if (f->type != type && f->type != filt)
 				continue;
-			if (strcmp(f->base.name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+			if (strcmp(f->sql_name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 				if (!cand) {
 					cand = f;
 					points = next_cand_points(f->ops, ops);
@@ -604,7 +604,7 @@ os_bind_func__(mvc *sql, struct objectset *ff, const char *fname, list *ops, sql
 
 			if (f->type != type && f->type != filt)
 				continue;
-			if (strcmp(f->base.name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+			if (strcmp(f->sql_name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 				if (!cand) {
 					cand = f;
 					points = next_cand_points(f->ops, ops);
@@ -656,7 +656,7 @@ sql_bind_func_result_internal(mvc *sql, list *ff, const char *fname, sql_ftype t
 			if (!f->res && !IS_FILT(f))
 				continue;
 			firstres = IS_FILT(f)?tp->type:f->res->h->data;
-			if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+			if (strcmp(f->sql_name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 				if (!cand) {
 					cand = f;
 					points = next_cand_points(f->ops, ops);
@@ -689,7 +689,7 @@ os_bind_func_result_internal(mvc *sql, struct objectset *ff, const char *fname, 
 			if (!f->res && !IS_FILT(f))
 				continue;
 			firstres = IS_FILT(f)?tp->type:f->res->h->data;
-			if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+			if (strcmp(f->sql_name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 				if (!cand) {
 					cand = f;
 					points = next_cand_points(f->ops, ops);
@@ -758,7 +758,7 @@ sql_resolve_function_with_undefined_parameters_internal(mvc *sql, list *ff, cons
 
 			if (f->type != type && f->type != filt)
 				continue;
-			if (strcmp(f->base.name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) {
+			if (strcmp(f->sql_name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) {
 				if (!cand) {
 					cand = f;
 					points = next_cand_points(f->ops, ops);
@@ -789,7 +789,7 @@ os_resolve_function_with_undefined_parameters_internal(mvc *sql, struct objectse
 
 			if (f->type != type && f->type != filt)
 				continue;
-			if (strcmp(f->base.name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) {
+			if (strcmp(f->sql_name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) {
 				if (!cand) {
 					cand = f;
 					points = next_cand_points(f->ops, ops);
@@ -925,7 +925,7 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 
 				if (f->type != type)
 					continue;
-				if (strcmp(f->base.name, fname) == 0) {
+				if (strcmp(f->sql_name, fname) == 0) {
 					if (!res)
 						res = sa_list(sql->sa);
 					list_append(res, f);
@@ -938,7 +938,7 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 
 				if (f->type != type)
 					continue;
-				if (strcmp(f->base.name, fname) == 0) {
+				if (strcmp(f->sql_name, fname) == 0) {
 					if (!res)
 						res = sa_list(sql->sa);
 					list_append(res, f);
@@ -963,7 +963,7 @@ os_find_funcs_by_name_internal(mvc *sql, struct objectset *ff, const char *fname
 
 			if (f->type != type)
 				continue;
-			if (strcmp(f->base.name, fname) == 0) {
+			if (strcmp(f->sql_name, fname) == 0) {
 				if (!res)
 					res = sa_list(sql->sa);
 				list_append(res, f);

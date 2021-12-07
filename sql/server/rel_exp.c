@@ -375,7 +375,7 @@ exp_aggr( sql_allocator *sa, list *l, sql_subfunc *a, int distinct, int no_nils,
 		set_distinct(e);
 	if (no_nils)
 		set_no_nil(e);
-	if ((!a->func->semantics && !has_nils) || (!a->func->s && strcmp(a->func->base.name, "count") == 0))
+	if ((!a->func->semantics && !has_nils) || (!a->func->s && strcmp(a->func->sql_name, "count") == 0))
 		set_has_no_nil(e);
 	return e;
 }
@@ -1102,7 +1102,7 @@ exp_func_name( sql_exp *e )
 {
 	if (e->type == e_func && e->f) {
 		sql_subfunc *f = e->f;
-		return f->func->base.name;
+		return f->func->sql_name;
 	}
 	if (e->alias.name)
 		return e->alias.name;
@@ -1360,7 +1360,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		case e_func: {
 			sql_subfunc *e1f = (sql_subfunc*) e1->f;
 			const char *sname = e1f->func->s ? e1f->func->s->base.name : NULL;
-			int (*comp)(list*, list*) = is_commutative(sname, e1f->func->base.name) ? exp_match_list : exps_equal;
+			int (*comp)(list*, list*) = is_commutative(sname, e1f->func->sql_name) ? exp_match_list : exps_equal;
 
 			if (!e1f->func->side_effect &&
 				!subfunc_cmp(e1f, e2->f) && /* equal functions */
@@ -2701,7 +2701,7 @@ is_identity( sql_exp *e, sql_rel *r)
 		return 0;
 	case e_func: {
 		sql_subfunc *f = e->f;
-		return !f->func->s && strcmp(f->func->base.name, "identity") == 0;
+		return !f->func->s && strcmp(f->func->sql_name, "identity") == 0;
 	}
 	default:
 		return 0;
@@ -2945,7 +2945,7 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 int
 exp_aggr_is_count(sql_exp *e)
 {
-	if (e->type == e_aggr && !((sql_subfunc *)e->f)->func->s && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
+	if (e->type == e_aggr && !((sql_subfunc *)e->f)->func->s && strcmp(((sql_subfunc *)e->f)->func->sql_name, "count") == 0)
 		return 1;
 	return 0;
 }

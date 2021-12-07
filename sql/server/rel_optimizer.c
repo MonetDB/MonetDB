@@ -2880,7 +2880,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 		if (!EC_COMPUTE(exp_subtype(le)->type->eclass) && exp_subtype(le)->type->eclass != EC_DEC)
 			return e;
 
-		if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
+		if (!f->func->s && !strcmp(f->func->sql_name, "sql_mul") && list_length(l) == 2) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
 			sql_subtype *et = exp_subtype(e);
@@ -2970,7 +2970,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				list *l = le->l;
 				sql_subfunc *f = le->f;
 
-				if (!f->func->s && !strcmp(f->func->base.name, "power") && list_length(l) == 2) {
+				if (!f->func->s && !strcmp(f->func->sql_name, "power") && list_length(l) == 2) {
 					sql_exp *lle = l->h->data;
 					sql_exp *lre = l->h->next->data;
 					if (exp_equal(re, lle)==0) {
@@ -2987,7 +2987,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						}
 					}
 				}
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
+				if (!f->func->s && !strcmp(f->func->sql_name, "sql_mul") && list_length(l) == 2) {
 					sql_exp *lle = l->h->data;
 					sql_exp *lre = l->h->next->data;
 					if (!exp_is_atom(lle) && exp_is_atom(lre) && exp_is_atom(re)) {
@@ -3014,7 +3014,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				}
 			}
 		}
-		if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(l) == 2) {
+		if (!f->func->s && !strcmp(f->func->sql_name, "sql_add") && list_length(l) == 2) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
 			if (exp_is_atom(le) && exp_is_zero(le)) {
@@ -3054,7 +3054,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			if (is_func(le->type)) {
 				list *ll = le->l;
 				sql_subfunc *f = le->f;
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
+				if (!f->func->s && !strcmp(f->func->sql_name, "sql_add") && list_length(ll) == 2) {
 					sql_exp *lle = ll->h->data;
 					sql_exp *lre = ll->h->next->data;
 
@@ -3084,7 +3084,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			if (is_func(re->type)) {
 				list *ll = re->l;
 				sql_subfunc *f = re->f;
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
+				if (!f->func->s && !strcmp(f->func->sql_name, "sql_add") && list_length(ll) == 2) {
 					if (exp_is_atom(le)) {
 						* c1+(x+y) -> (x+y) + c1 *
 						l->h->data = re;
@@ -3096,7 +3096,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			}
 			*/
 		}
-		if (!f->func->s && !strcmp(f->func->base.name, "sql_sub") && list_length(l) == 2) {
+		if (!f->func->s && !strcmp(f->func->sql_name, "sql_sub") && list_length(l) == 2) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
 
@@ -3140,7 +3140,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			if (is_func(le->type)) {
 				list *ll = le->l;
 				sql_subfunc *f = le->f;
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
+				if (!f->func->s && !strcmp(f->func->sql_name, "sql_add") && list_length(ll) == 2) {
 					sql_exp *lle = ll->h->data;
 					sql_exp *lre = ll->h->next->data;
 					if (exp_equal(re, lre) == 0) {
@@ -3891,7 +3891,7 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_subfunc *f = e->f;
 
 		/* is and function */
-		if (strcmp(f->func->base.name, "and") == 0 && list_length(fexps) == 2) {
+		if (strcmp(f->func->sql_name, "and") == 0 && list_length(fexps) == 2) {
 			sql_exp *l = list_fetch(fexps, 0);
 			sql_exp *r = list_fetch(fexps, 1);
 
@@ -3902,8 +3902,8 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				sql_subfunc *lff = l->f;
 				sql_subfunc *rff = r->f;
 
-				if (((strcmp(lff->func->base.name, ">=") == 0 || strcmp(lff->func->base.name, ">") == 0) && list_length(lfexps) == 2) &&
-				    ((strcmp(rff->func->base.name, "<=") == 0 || strcmp(rff->func->base.name, "<") == 0) && list_length(rfexps) == 2)) {
+				if (((strcmp(lff->func->sql_name, ">=") == 0 || strcmp(lff->func->sql_name, ">") == 0) && list_length(lfexps) == 2) &&
+				    ((strcmp(rff->func->sql_name, "<=") == 0 || strcmp(rff->func->sql_name, "<") == 0) && list_length(rfexps) == 2)) {
 					sql_exp *le = list_fetch(lfexps,0), *lf = list_fetch(rfexps,0);
 					int c_le = is_numeric_upcast(le), c_lf = is_numeric_upcast(lf);
 
@@ -3919,7 +3919,7 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 								v->sql->errstr[0] = 0;
 								return e;
 							}
-						if ((ne = exp_compare2(v->sql->sa, le, re, rf, compare_funcs2range(lff->func->base.name, rff->func->base.name), 0))) {
+						if ((ne = exp_compare2(v->sql->sa, le, re, rf, compare_funcs2range(lff->func->sql_name, rff->func->sql_name), 0))) {
 							if (exp_name(e))
 								exp_prop_alias(v->sql->sa, ne, e);
 							e = ne;
@@ -4106,10 +4106,10 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			if (e->type == e_atom ||
 			    e->type == e_func ||
 			   (e->type == e_aggr &&
-			   ((strcmp(af->func->base.name, "sum") &&
-			     strcmp(af->func->base.name, "count") &&
-			     strcmp(af->func->base.name, "min") &&
-			     strcmp(af->func->base.name, "max")) ||
+			   ((strcmp(af->func->sql_name, "sum") &&
+			     strcmp(af->func->sql_name, "count") &&
+			     strcmp(af->func->sql_name, "min") &&
+			     strcmp(af->func->sql_name, "max")) ||
 			   need_distinct(e))))
 				return rel;
 		}
@@ -4206,7 +4206,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			if (oa->type == e_aggr) {
 				sql_subfunc *f = oa->f;
 				int cnt = exp_aggr_is_count(oa);
-				sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
+				sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->sql_name, exp_subtype(e), NULL, F_AGGR);
 
 				assert(a);
 				/* union of aggr result may have nils
@@ -5860,10 +5860,10 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 		sql_subfunc *af = e->f;
 
 		if (e->type == e_aggr &&
-		   (strcmp(af->func->base.name, "sum") &&
-		     strcmp(af->func->base.name, "count") &&
-		     strcmp(af->func->base.name, "min") &&
-		     strcmp(af->func->base.name, "max")))
+		   (strcmp(af->func->sql_name, "sum") &&
+		     strcmp(af->func->sql_name, "count") &&
+		     strcmp(af->func->sql_name, "min") &&
+		     strcmp(af->func->sql_name, "max")))
 			return rel;
 	}
 
@@ -5897,7 +5897,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			sql_exp *v;
 			sql_subfunc *f = e->f;
 			int cnt = exp_aggr_is_count(e);
-			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
+			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->sql_name, exp_subtype(e), NULL, F_AGGR);
 
 			append(aggrs, e);
 			if (!exp_name(e))
@@ -7463,7 +7463,7 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 			list *l = e->l;
 			list *r = e->r;
 
-			if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) == 3) {
+			if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->sql_name, "like") == 0 && list_length(l) == 1 && list_length(r) == 3) {
 				list *r = e->r;
 				sql_exp *fmt = r->h->data;
 				sql_exp *esc = r->h->next->data;
@@ -7645,13 +7645,13 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b / a<>b */
 						} else if (is_func(inner->type) &&
 							!inf->func->s &&
-							(!strcmp(inf->func->base.name, "=") ||
-							 !strcmp(inf->func->base.name, "<>"))) {
+							(!strcmp(inf->func->sql_name, "=") ||
+							 !strcmp(inf->func->sql_name, "<>"))) {
 							int flag = a->data.val.bval;
 							sql_exp *ne;
 							args = inner->l;
 
-							if (!strcmp(inf->func->base.name, "<>"))
+							if (!strcmp(inf->func->sql_name, "<>"))
 								flag = !flag;
 							if (e->flag == cmp_notequal)
 								flag = !flag;
@@ -8218,7 +8218,7 @@ rel_project_reduce_casts(visitor *v, sql_rel *rel)
 				sql_subfunc *f = e->f;
 				sql_subtype *res = f->res->h->data;
 
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && res->scale > 0) {
+				if (!f->func->s && !strcmp(f->func->sql_name, "sql_mul") && res->scale > 0) {
 					list *args = e->l;
 					sql_exp *h = args->h->data;
 					sql_exp *t = args->t->data;
@@ -8278,7 +8278,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 				if (nre && nre->type == e_func) {
 					sql_subfunc *f = nre->f;
 
-					if (!f->func->s && !strcmp(f->func->base.name, "sql_mul")) {
+					if (!f->func->s && !strcmp(f->func->sql_name, "sql_mul")) {
 						list *args = nre->l;
 						sql_exp *ce = args->t->data;
 						sql_subtype *fst = exp_subtype(args->h->data);
