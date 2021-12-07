@@ -626,8 +626,7 @@ sql_create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout)
 }
 
 char*
-mangle_name(sql_allocator *sa, const char *name, sql_ftype type, list *res, list *ops) {
-	char buf[1000] = {0};
+mangle_name(char *buf, const char *name, sql_ftype type, list *res, list *ops) {
 
 	char* c = buf; // cursor
 
@@ -638,15 +637,15 @@ mangle_name(sql_allocator *sa, const char *name, sql_ftype type, list *res, list
 	case F_FUNC:
 	case F_AGGR:
 	case F_FILT:
-		c += sprintf(buf, "function_or_aggregate%%%s(%u,%u)", name, retc, argc);break;
+		c += sprintf(buf, "faf%%%s(%u,%u)", name, retc, argc);break;
 	case F_ANALYTIC:
-		c += sprintf(buf, "window%%%s(%u,%u)", name, retc, argc);break;
+		c += sprintf(buf, "win%%%s(%u,%u)", name, retc, argc);break;
 	case F_UNION:
-		c += sprintf(buf, "table_returning_function%%%s(%u,%u)", name, retc, argc);break;
+		c += sprintf(buf, "trf%%%s(%u,%u)", name, retc, argc);break;
 	case F_PROC:
-		c += sprintf(buf, "procedure%%%s(%u,%u)", name, retc, argc);break;
+		c += sprintf(buf, "prc%%%s(%u,%u)", name, retc, argc);break;
 	case F_LOADER:
-		c += sprintf(buf, "loader%%%s(%u,%u)", name, retc, argc);break;
+		c += sprintf(buf, "ldr%%%s(%u,%u)", name, retc, argc);break;
 	default:
 		assert(0); // Should not happen.
 	}
@@ -663,7 +662,7 @@ mangle_name(sql_allocator *sa, const char *name, sql_ftype type, list *res, list
 		c += sprintf(c, "%%%s(%u,%u)", a->type.type->base.name, a->type.digits, a->type.scale);
 	}
 
-	return SA_STRDUP(sa, buf);
+	return buf;
 }
 
 static sql_func *
@@ -684,9 +683,13 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 		lres = SA_LIST(sa, (fdestroy) &arg_destroy);
 		list_append(lres, fres);
 	}
-	base_init(sa, &t->base, local_id++, false, name);
 
-	t->mangled = mangle_name(sa, name, type, lres, ops);
+	char buf[1000];
+	const char* mangled = mangle_name(buf, name, type, lres, ops);
+
+	base_init(sa, &t->base, local_id++, false, mangled);
+
+	t->sql_name = sa_strdup(sa, name);
 	t->imp = sa_strdup(sa, imp);
 	t->mod = sa_strdup(sa, mod);
 	t->ops = ops;
@@ -1562,6 +1565,13 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_procedure(sa, "sys_update_tables", "sql", "update_tables", FALSE, 0);
 }
 
+static int
+func_key( sql_base *b )
+{
+	sql_func* f = (sql_func*) b;
+	return hash_key(f->sql_name);
+}
+
 void
 types_init(sql_allocator *sa)
 {
@@ -1571,7 +1581,7 @@ types_init(sql_allocator *sa)
 	localtypes = sa_list(sa);
 	funcs = sa_list(sa);
 	MT_lock_set(&funcs->ht_lock);
-	funcs->ht = hash_new(sa, 1024, (fkeyvalue)&base_key);
+	funcs->ht = hash_new(sa, 1024, (fkeyvalue)&func_key);
 	MT_lock_unset(&funcs->ht_lock);
 	sqltypeinit( sa );
 }

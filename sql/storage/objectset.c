@@ -1090,7 +1090,7 @@ oi_next(struct os_iter *oi)
 
 		while (n && !b) {
 
-			if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
+			if (n->ov->b->name && strcmp(((sql_func*)n->ov->b)->sql_name, oi->name) == 0) {
 				objectversion *ov = n->ov;
 
 				n = oi->n = n->next;
