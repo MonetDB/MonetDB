@@ -717,7 +717,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *s = NULL;
 	bool nil_if_empty = true;
 	gdk_return r;
-	bool inout = pci->inout;
+	bool inout = pci->inout >= 0;
 
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

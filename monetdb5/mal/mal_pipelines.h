@@ -6,12 +6,23 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
-#ifndef _MAL_SHARD_H
-#define _MAL_SHARD_H
+#ifndef _MAL_PIPELINES_H
+#define _MAL_PIPELINES_H
 
 #include "mal.h"
 #include "mal_client.h"
 
+typedef struct Pipeline {
+	Client cntxt;   /* for debugging and client resolution */
+	MalBlkPtr mb;   /* carry the context */
+	MalStkPtr stk;
+	int start, stop;    /* guarded block under consideration*/
+	ATOMIC_PTR_TYPE error;		/* error encountered */
+	MT_Sema s;	/* threads wait on empty queues */
+	MT_Lock l;
+	int maxparts;
+	int counter;
+} Pipeline;
 mal_export str runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, MalStkPtr stk);
 
-#endif /*  _MAL_SHARD_H*/
+#endif /*  _MAL_PIPELINES_H*/

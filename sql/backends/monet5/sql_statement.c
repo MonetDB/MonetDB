@@ -233,6 +233,51 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 }
 
 stmt *
+stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done, stmt *pp)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (s->nr < 0)
+		return NULL;
+	if (grp && (grp->nr < 0 || ext->nr < 0 || cnt->nr < 0))
+		return NULL;
+
+	q = newStmt(mb, putName("lockedgroup"), done ? grp ? subgroupdoneRef : groupdoneRef : grp ? subgroupRef : groupRef);
+	if(!q)
+		return NULL;
+
+	/* output variables extent and hist */
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, getArg(pp->q, 2));
+	q = pushArgument(mb, q, s->nr);
+	if (grp)
+		q = pushArgument(mb, q, grp->nr);
+	if (q) {
+		stmt *ns = stmt_create(be->mvc->sa, st_group);
+		if (ns == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		ns->op1 = s;
+
+		if (grp) {
+			ns->op2 = grp;
+			ns->op3 = ext;
+			ns->op4.stval = cnt;
+		}
+		ns->nrcols = s->nrcols;
+		ns->key = 0;
+		ns->q = q;
+		ns->nr = getDestVar(q);
+		return ns;
+	}
+	return NULL;
+}
+
+stmt *
 stmt_unique(backend *be, stmt *s)
 {
 	MalBlkPtr mb = be->mb;
@@ -4364,19 +4409,18 @@ pp_create(backend *be, int nrparts)
 int
 pp_jump(backend *be, stmt *label, int nrparts)
 {
-	InstrPtr r = newStmtArgs(be->mb, sqlRef, "part_nr", 3);
+	InstrPtr r = newStmtArgs(be->mb, putName("pipeline"), "counter", 2);
 	if (r == NULL)
 		return -1;
-	getArg(r, 0) = getArg(label->q, 1); /* cur part nr */
-	r = pushArgument(be->mb, r, getArg(label->q, 2) /* handle */);
-	r = pushInt(be->mb, r, nrparts);
+	getArg(r, 0) = getArg(label->q, 1); /* counter */
+	r = pushArgument(be->mb, r, getArg(label->q, 2) /* pipeline */);
 
 	r = newStmtArgs(be->mb, calcRef, "<", 3);
 	if (r == NULL)
 		return -1;
 	r->barrier = REDOsymbol;
 	getArg(r, 0) = label->nr;
-	r = pushArgument(be->mb, r, getArg(label->q, 1)); /* cur part nr */
+	r = pushArgument(be->mb, r, getArg(label->q, 1)); /* current nr */
 	r = pushInt(be->mb, r, nrparts);
 	if (r)
 		return 0;

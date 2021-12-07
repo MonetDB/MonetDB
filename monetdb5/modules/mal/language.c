@@ -292,7 +292,7 @@ mel_func language_init_funcs[] = {
 #ifdef HAVE_HGE
  command("language", "assert", MALassertHge, true, "", args(0,2, arg("v",hge),arg("term",str))),
 #endif
- pattern("language", "pipelines", MALpipelines, false, "The current guarded block in Parallel Pipelines", args(3,4, arg("",bit), arg("curpart", int), arg("handle", ptr), arg("maxparts", int))),
+ pattern("language", "pipelines", MALpipelines, false, "The current guarded block in Parallel Pipelines", args(3,4, arg("",bit), arg("counter", int), arg("handle", ptr), arg("maxparts", int))),
  { .imp=NULL }
 };
 #include "mal_import.h"

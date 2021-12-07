@@ -3689,6 +3689,7 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 		list *gbexps = rel->r;
+		*aggrresults = sa_list(be->mvc->sa);
 		for(node *n = gbexps->h; n; n = n->next ) {
 			int tt = TYPE_oid;
 			/* ext */
@@ -3699,6 +3700,13 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			append(shared, q->argv);
+
+			q = newStmt(be->mb, batRef, newRef);
+			if (q == NULL)
+				return NULL;
+			setVarType(be->mb, getArg(q, 0), newBatType(tt));
+			q = pushType(be->mb, q, tt);
+			append(*aggrresults, q->argv);
 		}
 		for( node *n = rel->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
@@ -3711,6 +3719,13 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			append(shared, q->argv);
+
+			q = newStmt(be->mb, batRef, newRef);
+			if (q == NULL)
+				return NULL;
+			setVarType(be->mb, getArg(q, 0), newBatType(tt));
+			q = pushType(be->mb, q, tt);
+			append(*aggrresults, q->argv);
 		}
 	} else {
 		return NULL;
@@ -3764,6 +3779,7 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 				name = "sum";
 			}
 			InstrPtr q = newStmt(be->mb, getName("lockedaggr"), getName(name));
+			q = pushArgument(be->mb, q, getArg(pp->q, 2));
 			q = pushArgument(be->mb, q, i->nr);
 			getArg(q, 0) = *v;
 			stmt *s = stmt_none(be);
@@ -3782,9 +3798,10 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 			sql_exp *e = n->data;
 			stmt *gstmt = m->data;
 
-			stmt *groupby = stmt_group(be, gstmt, grp, ext, cnt, !n->next);
+			stmt *groupby = stmt_group_locked(be, gstmt, grp, ext, cnt, !n->next, pp);
 			/* reuse extend ! */
 			getArg(groupby->q, 1) = *(int*)o->data;
+			groupby->q->inout = 1;
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
 			cnt = stmt_result(be, groupby, 2);
@@ -3887,6 +3904,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 	/* groupby columns */
 
+	if (aggrresults)
+		m = aggrresults->h;
+
 	/* Keep groupby columns, sub that they can be lookup in the aggr list */
 	if (rel->r) {
 		list *exps = rel->r;
@@ -3902,20 +3922,28 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			if (!gbcol->nrcols)
 				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
 			groupby = stmt_group(be, gbcol, grp, ext, cnt, !en->next);
+
+			/* make sure we reuse the extend */
+			if (groupby && m) {
+				getArg(groupby->q, 1) = *(int*)m->data;
+				groupby->q->inout = 1;
+				m = m->next;
+			}
+
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
 			cnt = stmt_result(be, groupby, 2);
 			gbcol = stmt_alias(be, gbcol, exp_find_rel_name(e), exp_name(e));
 			list_append(gbexps, gbcol);
+
 		}
 	}
 	/* now aggregate */
 	l = sa_list(sql->sa);
 	aggrs = rel->exps;
 	cursub = stmt_list(be, l);
-	if (aggrresults)
-		m = aggrresults->h;
-	assert(!aggrresults || list_length(aggrresults) == list_length(aggrs));
+
+	assert(!aggrresults || list_length(aggrresults) == list_length(aggrs) + list_length(rel->r));
 	for( n = aggrs->h; n; n = n->next ) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;
@@ -3952,7 +3980,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		if (aggrstmt && m) {
 			aggrstmt->nr = getArg(aggrstmt->q, 0) = *(int*)m->data;
-			aggrstmt->q->inout = true;
+			aggrstmt->q->inout = 0;
 			m = m->next;
 		}
 

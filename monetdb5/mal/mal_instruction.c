@@ -487,6 +487,7 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int arg
 	setFunctionId(p, fcnnme);
 	p->argc = 1;
 	p->retc = 1;
+	p->inout = -1;
 	p->argv[0] = -1;			/* watch out for direct use in variable table */
 	/* Flow of control instructions are always marked as an assignment
 	 * with modifier */
@@ -524,6 +525,7 @@ copyInstructionArgs(InstrPtr p, int args)
 	if(new == NULL)
 		return new;
 	oldmoveInstruction(new, p);
+	new->inout = p->inout;
 	new->maxarg = args;
 	if (args > p->maxarg)
 		memset(new->argv + p->maxarg, 0, (args - p->maxarg) * sizeof(new->argv[0]));

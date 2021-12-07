@@ -15,17 +15,6 @@
 #include "mal_resource.h"
 #include "mal_function.h"
 
-typedef struct Pipeline {
-	Client cntxt;   /* for debugging and client resolution */
-	MalBlkPtr mb;   /* carry the context */
-	MalStkPtr stk;
-	int start, stop;    /* guarded block under consideration*/
-	ATOMIC_PTR_TYPE error;		/* error encountered */
-	MT_Sema s;	/* threads wait on empty queues */
-	int maxparts;
-	int curpart;
-} Pipeline;
-
 typedef struct queue {
 	int size;	/* size of queue */
 	int last;	/* last element in the queue */
@@ -188,7 +177,7 @@ PIPELINEworker(void *T)
 
 		MalStkPtr stk = stack_copy(s->stk);
 
-		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = ATOMIC_INC(&s->curpart);
+		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = ATOMIC_INC(&s->counter);
 		str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);
 		/* TODO
 		 *	pipeline object should be on the stack too
@@ -268,8 +257,8 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->stop = stoppc;
 	s->stk = stk;
 	s->maxparts = maxparts;
-	s->curpart = -1;
-	stk->stk[mb->stmt[startpc]->argv[2]].val.pval = &s->curpart;
+	s->counter = -1;
+	stk->stk[mb->stmt[startpc]->argv[2]].val.pval = s;
 
 	/* fix endless call of runMALpipelines but use as loop for parts */
 	mb->stmt[startpc]->fcn = NULL;
@@ -279,7 +268,8 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "PIPELINE%d", cntxt->idx);
-	MT_sema_init(&s->s, 0, "");
+	MT_sema_init(&s->s, 0, name);
+	MT_lock_init(&s->l, name);
 	/* somehow get number of workers from statement/barrier */
 	for (int i = 0; i < GDKnr_threads; i++)
 		q_enqueue(workers[i].q, s);
@@ -289,6 +279,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	for (int i = 0; i < GDKnr_threads; i++)
 		MT_sema_down(&s->s);
 	MT_sema_destroy(&s->s);
+	MT_lock_destroy(&s->l);
 	GDKfree(s);
 	return MAL_SUCCEED;
 }

@@ -148,7 +148,6 @@ typedef struct {
 	bte token;					/* instruction type */
 	bit barrier;				/* flow of control modifier takes:
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
-	bit inout;					/* instruction has inout results, incremental computation */
 	bit typechk;				/* type check status */
 	bte gc;						/* garbage control flags */
 	bte polymorphic;			/* complex type analysis */
@@ -166,7 +165,7 @@ typedef struct {
 	/* the core admin */
 	const char *modname;		/* module context, reference into namespace */
 	const char *fcnname;		/* function name, reference into namespace */
-	int argc, retc, maxarg;		/* total and result argument count */
+	int argc, inout, retc, maxarg;		/* total and result argument count */
 	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
 } *InstrPtr, InstrRecord;
 

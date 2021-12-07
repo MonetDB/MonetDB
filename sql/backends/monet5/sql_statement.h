@@ -214,6 +214,7 @@ extern stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
+extern stmt *stmt_group_locked(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done, stmt *pp);
 extern stmt *stmt_unique(backend *be, stmt *op1);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
