@@ -139,7 +139,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* Check for nils existence */
 					(void) BATcount_no_nil(b, NULL);
 
-					/* Test it column is unique */
+					/* Test if column is unique */
 					if ((unq = BATunique(b, NULL)))
 						BBPunfix(unq->batCacheid);
 
