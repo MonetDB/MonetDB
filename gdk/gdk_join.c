@@ -3053,6 +3053,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	int (*cmp)(const void *, const void *);
 	const char *algomsg = "";
 	lng t0 = 0;
+	bool ordered, ordered_rev;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	canditer_init(&ci, b, s);
@@ -3065,16 +3066,18 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		return;
 	}
 
-	if ((BATordered(b) && BATordered_rev(b)) ||
+	bi = bat_iterator(b);
+	ordered = BATordered(b);
+	ordered_rev = BATordered_rev(b);
+	if ((ordered && ordered_rev) ||
 	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
+		bat_iterator_end(&bi);
 		*cnt1 = *cnt2 = 1;
 		return;
 	}
 
 	assert(b->ttype != TYPE_void);
-
-	bi = bat_iterator(b);
 	bvals = bi.base;
 	if (b->tvarsized && b->ttype)
 		bvars = bi.vh->base;
@@ -3084,7 +3087,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 
 	*cnt1 = *cnt2 = 0;
 
-	if (BATordered(b) || BATordered_rev(b)) {
+	if (ordered || ordered_rev) {
 		const void *prev = NULL;
 		algomsg = "sorted";
 		for (i = 0; i < ci.ncand; i++) {
