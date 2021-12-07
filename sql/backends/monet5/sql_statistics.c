@@ -180,8 +180,8 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct os_iter si = {0};
 	BUN nrows = 0;
 	int sfnd = 0, tfnd = 0, cfnd = 0;
-	size_t minlen = 0, maxlen = 0;
-	char *min = NULL, *max = NULL;
+	size_t buflen = 0;
+	char *buf = NULL, *nval = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -319,7 +319,6 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 						if (bs->tminpos != BUN_NONE || bs->tmaxpos != BUN_NONE) {
 							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[bs->ttype].atomToStr;
-							char *nmin, *nmax;
 
 							if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
 								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -328,34 +327,34 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 							BATiter bi = bat_iterator(fb);
 							if (fb->tminpos != BUN_NONE) {
-								if (tostr(&min, &minlen, BUNtail(bi, fb->tminpos), false) < 0) {
+								if (tostr(&buf, &buflen, BUNtail(bi, fb->tminpos), false) < 0) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									goto bailout;
 								}
-								nmin = min;
+								nval = buf;
 							} else {
-								nmin = (char *) str_nil;
+								nval = (char *) str_nil;
 							}
-							if (BUNappend(minval, nmin, false) != GDK_SUCCEED) {
+							if (BUNappend(minval, nval, false) != GDK_SUCCEED) {
 								bat_iterator_end(&bi);
 								BBPunfix(fb->batCacheid);
 								goto bailout;
 							}
 
 							if (fb->tmaxpos != BUN_NONE) {
-								if (tostr(&max, &maxlen, BUNtail(bi, fb->tmaxpos), false) < 0) {
+								if (tostr(&buf, &buflen, BUNtail(bi, fb->tmaxpos), false) < 0) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									goto bailout;
 								}
-								nmax = max;
+								nval = buf;
 							} else {
-								nmax = (char *) str_nil;
+								nval = (char *) str_nil;
 							}
-							if (BUNappend(maxval, nmax, false) != GDK_SUCCEED) {
+							if (BUNappend(maxval, nval, false) != GDK_SUCCEED) {
 								bat_iterator_end(&bi);
 								BBPunfix(fb->batCacheid);
 								goto bailout;
@@ -371,8 +370,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	GDKfree(min);
-	GDKfree(max);
+	GDKfree(buf);
 	BBPkeepref(*rcid = cid->batCacheid);
 	BBPkeepref(*rsch = sch->batCacheid);
 	BBPkeepref(*rtab = tab->batCacheid);
@@ -388,8 +386,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rrevsorted = revsorted->batCacheid);
 	return MAL_SUCCEED;
 bailout:
-	GDKfree(min);
-	GDKfree(max);
+	GDKfree(buf);
 	BBPreclaim(cid);
 	BBPreclaim(sch);
 	BBPreclaim(tab);
