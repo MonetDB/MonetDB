@@ -2413,7 +2413,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 		}
 		char *dst = buf;
 		for(; p < end && sz < bufsz; p++) {
-			char *s = BUNtail(bi, p);
+			char *s = BUNtvar(bi, p);
 			size_t len = strlen(s)+1;
 			if ((sz+len) > bufsz) {
 				if (len > bufsz)
@@ -2641,6 +2641,10 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	if (uval->ttype == TYPE_msk) {
 		if (!mnstr_writeIntArray(lg->output_log, vi.base, (BUNlast(uval) + 31) / 32))
 			ok = GDK_FAIL;
+	} else if (uval->ttype < TYPE_str && !isVIEW(uval)) {
+		const void *t = BUNtail(vi, 0);
+
+		ok = wt(t, lg->output_log, (size_t)nr);
 	} else if (uval->ttype == TYPE_str) {
 		/* efficient string writes */
 		ok = string_writer(lg, uval, 0, nr);
