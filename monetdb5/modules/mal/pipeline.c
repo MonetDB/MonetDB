@@ -160,6 +160,27 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 	return res;
 }
 
+#define unique(Type) \
+		if (tt == TYPE_##Type) { \
+            Type *bp = Tloc(b, 0);        \
+			for(BUN i = 0; i<cnt; i++) { \
+				BUN p;					 \
+				bool fnd = 0;			 \
+                HASHloop_##Type(ui, ui.b->thash, p, bp+i) { \
+					fnd = 1;			 \
+					break;				 \
+				}						 \
+				if (!fnd) {				 \
+					if (BUNappend(u, bp+i, true) != GDK_SUCCEED) { \
+						err = 1;							\
+						break;								\
+					}									    \
+					ui.base = u->T.heap->base;				\
+					gp[r++] = b->hseqbase + i;			    \
+				}											\
+			}												\
+		}
+
 static str
 LALGunique(bat *gid, bat *uid, const ptr *h, bat *bid, bat *sid)
 {
@@ -173,34 +194,24 @@ LALGunique(bat *gid, bat *uid, const ptr *h, bat *bid, bat *sid)
 	if (u) {
 		MT_lock_set(&p->l);
 		BUN cnt = BATcount(b);
-		assert (b->ttype == TYPE_int);
 		BATiter ui = bat_iterator_nolock(u);
 
 		BAT *g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 
 		/* probably need bat resize and create hash */
-		int *bp = Tloc(b, 0), err = 0;
+		int err = 0, tt = b->ttype;
 		oid *gp = Tloc(g, 0);
 		BUN r = 0;
 
         if (BAThash(u) == GDK_SUCCEED) {
-			for(BUN i = 0; i<cnt; i++) {
-				BUN p;
-				bool fnd = 0;
-                HASHloop_int(ui, ui.b->thash, p, bp+i) {
-					fnd = 1;
-					break;
-				}
-				if (!fnd) {
-					if (BUNappend(u, bp+i, true) != GDK_SUCCEED) {
-						err = 1;
-						break;
-					}
-					gp[r++] = b->hseqbase + i;
-				}
-			}
+			unique(bte)
+			unique(sht)
+			unique(int)
+			unique(lng)
+			unique(hge)
+		}
+		if (!err) {
 			BBPunfix(b->batCacheid);
-			assert(err == 0);
 			BATsetcount(g, r);
 			/* props */
 			BBPkeepref(*uid = u->batCacheid);
@@ -208,7 +219,6 @@ LALGunique(bat *gid, bat *uid, const ptr *h, bat *bid, bat *sid)
 		}
 		MT_lock_unset(&p->l);
 	}
-	(void)gid;
 	return MAL_SUCCEED;
 }
 
