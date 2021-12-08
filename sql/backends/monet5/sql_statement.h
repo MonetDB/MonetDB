@@ -215,7 +215,7 @@ extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
 extern stmt *stmt_group_locked(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done, stmt *pp);
-extern stmt *stmt_unique(backend *be, stmt *op1);
+extern stmt *stmt_unique(backend *be, stmt *op1, int shared_output_bat /* shared bat var id (0 no sharing) */);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
 extern stmt *stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode);

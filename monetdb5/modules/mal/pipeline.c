@@ -11,14 +11,15 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_pipelines.h"
+#include "algebra.h"
 
 static str
 PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = getArgReference_int(stk, pci, 0);
-	Pipeline *h = (Pipeline*)*getArgReference_ptr(stk, pci, 1);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 1);
 
-    *res = ATOMIC_INC(&h->counter);
+    *res = ATOMIC_INC(&p->counter);
 	(void)cntxt; (void)mb;
 	return MAL_SUCCEED;
 }
@@ -147,6 +148,70 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
+{
+	Pipeline *p = (Pipeline*)*h;
+	str res;
+
+	MT_lock_set(&p->l);
+	res = ALGprojection(result, lid, rid);
+	MT_lock_unset(&p->l);
+	return res;
+}
+
+static str
+LALGunique(bat *gid, bat *uid, const ptr *h, bat *bid, bat *sid)
+{
+	Pipeline *p = (Pipeline*)*h;
+	assert(*uid && !is_bat_nil(*uid));
+	BAT *u = BATdescriptor(*uid);
+	BAT *b = BATdescriptor(*bid);
+	assert(is_bat_nil(*sid)); /* no cands jet */
+	(void)sid;
+
+	if (u) {
+		MT_lock_set(&p->l);
+		BUN cnt = BATcount(b);
+		assert (b->ttype == TYPE_int);
+		BATiter ui = bat_iterator_nolock(u);
+
+		BAT *g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
+
+		/* probably need bat resize and create hash */
+		int *bp = Tloc(b, 0), err = 0;
+		oid *gp = Tloc(g, 0);
+		BUN r = 0;
+
+        if (BAThash(u) == GDK_SUCCEED) {
+			for(BUN i = 0; i<cnt; i++) {
+				BUN p;
+				bool fnd = 0;
+                HASHloop_int(ui, ui.b->thash, p, bp+i) {
+					fnd = 1;
+					break;
+				}
+				if (!fnd) {
+					if (BUNappend(u, bp+i, true) != GDK_SUCCEED) {
+						err = 1;
+						break;
+					}
+					gp[r++] = b->hseqbase + i;
+				}
+			}
+			BBPunfix(b->batCacheid);
+			assert(err == 0);
+			BATsetcount(g, r);
+			/* props */
+			BBPkeepref(*uid = u->batCacheid);
+			BBPkeepref(*gid = g->batCacheid);
+		}
+		MT_lock_unset(&p->l);
+	}
+	(void)gid;
+	return MAL_SUCCEED;
+}
+
 
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
@@ -154,6 +219,8 @@ static mel_func pipeline_init_funcs[] = {
  pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "sum values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
+ command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",3), arg("pipeline", ptr), batarg("left",oid),batargany("right",3))),
+ command("algebra", "unique", LALGunique, false, "Project left input onto right input.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"

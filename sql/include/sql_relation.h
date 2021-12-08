@@ -64,6 +64,7 @@ typedef struct expression {
 	 used:1,	/* used for quick dead code removal */
 	 symmetric:1; /* compare between symmetric */
 	sql_subtype	tpe;
+	int shared;		/* shared variable */
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 

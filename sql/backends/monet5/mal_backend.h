@@ -60,6 +60,7 @@ typedef struct backend {
 
 	int pp;
 	int nrparts;
+	int pipeline;
 
 	int result_id;
 	res_table *results;

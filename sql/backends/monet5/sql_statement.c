@@ -278,7 +278,7 @@ stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int don
 }
 
 stmt *
-stmt_unique(backend *be, stmt *s)
+stmt_unique(backend *be, stmt *s, int output)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -290,6 +290,12 @@ stmt_unique(backend *be, stmt *s)
 	if(!q)
 		return NULL;
 
+	if (output) {
+		q = pushReturn(mb, q, output);
+		q->inout = 1;
+
+		q = pushArgument(mb, q, be->pipeline);
+	}
 	q = pushArgument(mb, q, s->nr);
 	q = pushNil(mb, q, TYPE_bat); /* candidate list */
 	if (q) {
@@ -4387,7 +4393,8 @@ pp_create(backend *be, int nrparts)
 	q = pushInt(be->mb, q, nrparts);
 
 	be->nrparts = nrparts;
-	be->pp = getArg(q, 1);
+	be->pp = getArg(q, 1); /* counter */
+	be->pipeline = getArg(q, 2); /* pipeline */
 	int label = getArg(q, 0);
 
 	InstrPtr r = newStmtArgs(be->mb, calcRef, ">=", 3);

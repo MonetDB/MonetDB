@@ -1344,7 +1344,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				l = nl;
 			} else if (need_distinct(e)) {
 				stmt *a = l->h->data;
-				stmt *u = stmt_unique(be, a);
+				stmt *u;
+				if (e->shared) {
+					u = stmt_unique(be, a, e->shared);
+				} else {
+					u = stmt_unique(be, a, 0);
+				}
 				l = sa_list(sql->sa);
 				append(l, stmt_project(be, u, a));
 			}
@@ -3685,6 +3690,21 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 				return NULL;
 			q = pushNil(be->mb, q, tt);
 			append(*aggrresults, q->argv);
+
+			if (need_distinct(e)) { /* create shared bat, for hash table */
+				list *el = e->l;
+				sql_exp *a = el->h->data;
+				sql_subtype *t = exp_subtype(a);
+				int tt = t->type->localtype;
+				InstrPtr q = newStmt(be->mb, batRef, newRef);
+
+				if (q == NULL)
+					return NULL;
+				setVarType(be->mb, getArg(q, 0), newBatType(tt));
+				q = pushType(be->mb, q, tt);
+				assert(!e->shared);
+				e->shared = q->argv[0];
+			}
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
@@ -3732,8 +3752,10 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 		for( node *m = gbstmts->h; m; m = m->next) {
 			stmt *gstmt = m->data;
 
-			gstmt = stmt_project(be, ext, gstmt);
-			append(ngbstmts, gstmt);
+			stmt *ngstmt = list_find_column(be, cursub->op4.lval, table_name(be->mvc->sa, gstmt), column_name(be->mvc->sa, gstmt));
+			if (!ngstmt)
+				ngstmt = stmt_project(be, ext, gstmt);
+			append(ngbstmts, ngstmt);
 		}
 		gbstmts = ngbstmts;
 	}
@@ -3821,7 +3843,8 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 				q = pushArgument(be->mb, q, grp->nr);
 				q = pushArgument(be->mb, q, ext->nr);
 			} else {
-				q = newStmt(be->mb, algebraRef, projectionRef);
+				q = newStmt(be->mb, getName("lockedalgebra"), projectionRef);
+				q = pushArgument(be->mb, q, getArg(pp->q, 2));
 				q = pushArgument(be->mb, q, ext->nr);
 				q = pushArgument(be->mb, q, i->nr);
 			}
@@ -3922,7 +3945,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			cnt = stmt_result(be, groupby, 2);
 			gbcol = stmt_alias(be, gbcol, exp_find_rel_name(e), exp_name(e));
 			list_append(gbexps, gbcol);
-
 		}
 	}
 	/* now aggregate */
