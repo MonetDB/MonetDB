@@ -4059,6 +4059,8 @@ exps_uses_any(list *exps, list *l)
 {
 	bool uses_any = false;
 
+	if (list_empty(exps) || list_empty(l))
+		return false;
 	for (node *n = l->h; n && !uses_any; n = n->next) {
 		sql_exp *e = n->data;
 		uses_any |= list_exps_uses_exp(exps, exp_relname(e), exp_name(e)) != NULL;
@@ -5258,164 +5260,141 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-#define NO_PROJECTION_FOUND 0
-#define MAY_HAVE_DUPLICATE_NULLS 1
-#define ALL_VALUES_DISTINCT 2
+#define NO_EXP_FOUND 0
+#define FOUND_WITH_DUPLICATES 1
+#define MAY_HAVE_DUPLICATE_NULLS 2
+#define ALL_VALUES_DISTINCT 3
 
 static int
-find_projection_for_join2semi(sql_rel *rel)
+find_projection_for_join2semi(sql_rel *rel, sql_exp *jc)
 {
-	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op) || is_base(rel->op) || (is_union(rel->op) && need_distinct(rel))) {
-		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
-			return ALL_VALUES_DISTINCT;
-		if (list_length(rel->exps) == 1) {
-			sql_exp *e = rel->exps->h->data;
-			/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
-			if (e->type == e_column) {
-				sql_rel *res = NULL;
-				sql_exp *found = NULL;
-				bool underjoin = false;
+	sql_rel *res = NULL;
+	sql_exp *e = NULL;
+	bool underjoin = false;
 
-				/* if just one groupby column is projected or the relation needs distinct values and one column is projected or is a primary key, it will be distinct */
-				if ((is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)) || (need_distinct(rel) && list_length(rel->exps) == 1))
-					return ALL_VALUES_DISTINCT;
-				if (is_unique(e))
-					return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
-
-				if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op)) &&
-					(found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
-					if (need_distinct(res) && list_length(res->exps) == 1)
-						return ALL_VALUES_DISTINCT;
-					if (is_unique(found))
-						return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
-					if (found->type == e_column && found->card <= CARD_AGGR) {
-						if (!is_groupby(res->op) && list_length(res->exps) != 1)
-							return NO_PROJECTION_FOUND;
-						for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
-							sql_exp *e = n->data;
-							if (e != found && e->type == e_column)
-								return NO_PROJECTION_FOUND;
-						}
-						return ALL_VALUES_DISTINCT;
-					}
-				}
-			}
-		}
+	if ((e = rel_find_exp_and_corresponding_rel(rel, jc, &res, &underjoin))) {
+		if (underjoin || e->type != e_column)
+			return FOUND_WITH_DUPLICATES;
+		/* if just one groupby column is projected or the relation needs distinct values and one column is projected or is a primary key, it will be distinct */
+		if (is_unique(e) ||
+			(is_groupby(res->op) && list_length(res->r) == 1 && exps_find_exp(res->r, e)) ||
+			((is_project(res->op) || is_base(res->op)) && ((need_distinct(res) && list_length(res->exps) == 1) || res->card < CARD_AGGR)))
+			return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
+		return FOUND_WITH_DUPLICATES;
 	}
-	return NO_PROJECTION_FOUND;
+	return NO_EXP_FOUND;
+}
+
+static int
+subrel_uses_exp_outside_subrel(visitor *v, sql_rel *rel, list *l, sql_rel *j)
+{
+	if (rel == j)
+		return 0;
+	if (mvc_highwater(v->sql))
+		return 1;
+	switch(rel->op){
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+		return exps_uses_any(rel->exps, l) ||
+			subrel_uses_exp_outside_subrel(v, rel->l, l, j) || subrel_uses_exp_outside_subrel(v, rel->r, l, j);
+	case op_semi:
+	case op_anti:
+	case op_select:
+		return exps_uses_any(rel->exps, l) ||
+			subrel_uses_exp_outside_subrel(v, rel->l, l, j);
+	case op_project:
+	case op_groupby:
+		return exps_uses_any(rel->exps, l) || exps_uses_any(rel->r, l);
+	case op_basetable:
+	case op_table:
+	case op_union:
+	case op_except:
+	case op_inter:
+		return exps_uses_any(rel->exps, l);
+	case op_topn:
+	case op_sample:
+		return subrel_uses_exp_outside_subrel(v, rel->l, l, j);
+	default:
+		return 1;
+	}
+}
+
+static int
+projrel_uses_exp_outside_subrel(visitor *v, sql_rel *rel, list *l, sql_rel *j)
+{
+	/* test if projecting relation uses any of the join expressions */
+	assert((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l);
+	return exps_uses_any(rel->exps, l) || exps_uses_any(rel->r, l) || subrel_uses_exp_outside_subrel(v, rel->l, l, j);
 }
 
 static sql_rel *
-find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
+rewrite_joins2semi(visitor *v, sql_rel *proj, sql_rel *rel)
 {
 	/* generalize possibility : we need the visitor 'step' here */
-	if (rel_is_ref(rel)) /* if the join has multiple references, it's dangerous to convert it into a semijoin */
-		return NULL;
-	if (rel->op == op_join && !list_empty(rel->exps)) {
+	if (rel_is_ref(rel) || mvc_highwater(v->sql)) /* if the join has multiple references, it's dangerous to convert it into a semijoin */
+		return rel;
+	if (is_innerjoin(rel->op) && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r;
-		int foundr = NO_PROJECTION_FOUND, foundl = NO_PROJECTION_FOUND, found = NO_PROJECTION_FOUND;
-		bool ok = false;
+		bool left_unique = true, right_unique = true;
 
-		foundr = find_projection_for_join2semi(r);
-		if (foundr < ALL_VALUES_DISTINCT)
-			foundl = find_projection_for_join2semi(l);
-		if (foundr && foundr > foundl) {
-			*swap = false;
-			found = foundr;
-		} else if (foundl) {
-			*swap = true;
-			found = foundl;
-		}
+		/* these relations don't project anything, so skip them */
+		while (is_topn(l->op) || is_sample(l->op) || is_select(l->op) || is_semi(l->op))
+			l = l->l;
+		/* joins will expand values, so don't search on those */
+		if (!is_base(l->op) && !is_project(l->op))
+			left_unique = false;
+		while (is_topn(r->op) || is_sample(r->op) || is_select(r->op) || is_semi(r->op))
+			r = r->l;
+		if (!is_base(r->op) && !is_project(r->op))
+			right_unique = false;
+		/* if all columns used in equi-joins from one of the sides are unique, the join can be rewritten into a semijoin */
+		for (node *n=rel->exps->h; n && (left_unique || right_unique); n = n->next) {
+			sql_exp *e = n->data;
 
-		if (found > NO_PROJECTION_FOUND) {
-			/* if all join expressions can be pushed down or have function calls, then it cannot be rewritten into a semijoin */
-			for (node *n=rel->exps->h; n && !ok; n = n->next) {
-				sql_exp *e = n->data;
+			if (!is_compare(e->type) || e->flag != cmp_equal || exp_has_func(e->l) || exp_has_func(e->r)) {
+				left_unique = right_unique = false;
+			} else {
+				int found = 0;
 
-				ok |= e->type == e_cmp && e->flag == cmp_equal && !exp_has_func(e) && !rel_rebind_exp(v->sql, l, e) && !rel_rebind_exp(v->sql, r, e) &&
-					(found == ALL_VALUES_DISTINCT || !is_semantics(e) || !has_nil((sql_exp *)e->l) || !has_nil((sql_exp *)e->r));
+				if (left_unique && (found = find_projection_for_join2semi(l, e->l)) > NO_EXP_FOUND)
+					left_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && !is_semantics(e)));
+				if (left_unique && (found = find_projection_for_join2semi(l, e->r)) > NO_EXP_FOUND)
+					left_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && !is_semantics(e)));
+				if (right_unique && (found = find_projection_for_join2semi(r, e->l)) > NO_EXP_FOUND)
+					right_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && !is_semantics(e)));
+				if (right_unique && (found = find_projection_for_join2semi(r, e->r)) > NO_EXP_FOUND)
+					right_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && !is_semantics(e)));
 			}
 		}
 
-		if (ok)
-			return rel;
+		/* now we need to check relation's expressions are not used */
+		if (left_unique && !projrel_uses_exp_outside_subrel(v, proj, l->exps, rel)) {
+			sql_rel *tmp = rel->r;
+			rel->r = rel->l;
+			rel->l = tmp;
+			rel->op = op_semi;
+			v->changes++;
+		} else if (right_unique && !projrel_uses_exp_outside_subrel(v, proj, r->exps, rel)) {
+			rel->op = op_semi;
+			v->changes++;
+		}
 	}
-	if (is_join(rel->op) || is_semi(rel->op)) {
-		sql_rel *c;
-
-		if ((c=find_candidate_join2semi(v, rel->l, swap)) != NULL ||
-		    (c=find_candidate_join2semi(v, rel->r, swap)) != NULL)
-			return c;
+	if (is_join(rel->op)) {
+		rel->l = rewrite_joins2semi(v, proj, rel->l);
+		rel->r = rewrite_joins2semi(v, proj, rel->r);
+	} else if (is_topn(rel->op) || is_sample(rel->op) || is_select(rel->op) || is_semi(rel->op)) {
+		rel->l = rewrite_joins2semi(v, proj, rel->l);
 	}
-	if (is_topn(rel->op) || is_sample(rel->op) || is_select(rel->op))
-		return find_candidate_join2semi(v, rel->l, swap);
-	return NULL;
-}
-
-static int
-subrel_uses_exp_outside_subrel(sql_rel *rel, list *l, sql_rel *c)
-{
-	if (rel == c)
-		return 0;
-	/* for subrel only expect joins and selects */
-	if (is_join(rel->op) || is_semi(rel->op)) {
-		if (exps_uses_any(rel->exps, l))
-			return 1;
-		if (subrel_uses_exp_outside_subrel(rel->l, l, c) ||
-		    subrel_uses_exp_outside_subrel(rel->r, l, c))
-			return 1;
-	}
-	if (is_select(rel->op)) {
-		if (exps_uses_any(rel->exps, l))
-			return 1;
-		return subrel_uses_exp_outside_subrel(rel->l, l, c);
-	}
-	if (is_topn(rel->op) || is_sample(rel->op))
-		return subrel_uses_exp_outside_subrel(rel->l, l, c);
-	return 0;
-}
-
-static int
-rel_uses_exp_outside_subrel(sql_rel *rel, list *l, sql_rel *c)
-{
-	/* for now we only expect sub relations of type project, selects (rel) or join/semi */
-	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op)) {
-		if (!list_empty(rel->exps) && exps_uses_any(rel->exps, l))
-			return 1;
-		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r) && exps_uses_any(rel->r, l))
-			return 1;
-		if (rel->l)
-			return subrel_uses_exp_outside_subrel(rel->l, l, c);
-	}
-	if (is_topn(rel->op) || is_sample(rel->op))
-		return subrel_uses_exp_outside_subrel(rel->l, l, c);
-	return 1;
+	return rel;
 }
 
 static inline sql_rel *
 rel_join2semijoin(visitor *v, sql_rel *rel)
 {
-	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
-		bool swap = false;
-		sql_rel *l = rel->l;
-		sql_rel *c = find_candidate_join2semi(v, l, &swap);
-
-		if (c) {
-			/* 'p' is a project */
-			sql_rel *p = swap ? c->l : c->r;
-
-			/* now we need to check if ce is only used at the level of c */
-			if (!rel_uses_exp_outside_subrel(rel, p->exps, c)) {
-				c->op = op_semi;
-				if (swap) {
-					sql_rel *tmp = c->r;
-					c->r = c->l;
-					c->l = tmp;
-				}
-				v->changes++;
-			}
-		}
-	}
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l)
+		rel->l = rewrite_joins2semi(v, rel, rel->l);
 	return rel;
 }
 
@@ -9513,7 +9492,6 @@ rel_optimize_joins(visitor *v, sql_rel *rel)
 {
 	rel = rel_push_join_exps_down(v, rel);
 	rel = rel_out2inner(v, rel);
-	rel = rel_join2semijoin(v, rel);
 	rel = rel_push_join_down_outer(v, rel);
 	return rel;
 }
@@ -9543,6 +9521,7 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 
 	rel = rel_simplify_fk_joins(v, rel);
 	rel = rel_push_select_down(v, rel);
+	rel = rel_join2semijoin(v, rel);
 	if (rel && rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
 

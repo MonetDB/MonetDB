@@ -1732,7 +1732,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 			ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
 			if (!ne && is_join(rel->op))
 				ne = rel_find_exp_and_corresponding_rel(rel->r, e, res, under_join);
-			if (ne && under_join)
+			if (ne && under_join && is_join(rel->op))
 				*under_join = true;
 			break;
 		case op_table:
