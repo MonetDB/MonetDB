@@ -33,8 +33,8 @@ static void
 BATmaxminpos_bte(BAT *o, bte m)
 {
 	BUN minpos = BUN_NONE, maxpos = BUN_NONE, p, q;
-	bte minval = m<0?-128:0;
-	bte maxval = m<0?127:m;
+	bte minval = m<0?GDK_bte_min:0; /* Later once nils use a bitmask we can include -128 in the range */
+	bte maxval = m<0?GDK_bte_max:m;
 
 	assert(o->ttype == TYPE_bte);
 	o->tnil = m<0?true:false;
@@ -60,8 +60,8 @@ static void
 BATmaxminpos_sht(BAT *o, sht m)
 {
 	BUN minpos = BUN_NONE, maxpos = BUN_NONE, p, q;
-	sht minval = m<0?-32768:0;
-	sht maxval = m<0?32767:m;
+	sht minval = m<0?GDK_sht_min:0; /* Later once nils use a bitmask we can include -32768 in the range */
+	sht maxval = m<0?GDK_sht_max:m;
 
 	assert(o->ttype == TYPE_sht);
 	o->tnil = m<0?true:false;
@@ -279,7 +279,21 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* improve decompress of hge types */
+#define decompress_loop(TPE) \
+	do { \
+		TPE *up = Tloc(u, 0); \
+		TPE *restrict bp = Tloc(b, 0); \
+		BATloop(o, p, q) { \
+			TPE v = up[op[p]]; \
+			nils |= is_##TPE##_nil(v); \
+			bp[p] = v; \
+		} \
+		BATsetcount(b, BATcount(o)); \
+		BATnegateprops(b); \
+		b->tnil = nils; \
+		b->tnonil = !nils; \
+	} while (0)
+
 BAT *
 DICTdecompress_(BAT *o, BAT *u, role_t role)
 {
@@ -294,33 +308,19 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 	if (o->ttype == TYPE_bte) {
 		unsigned char *op = Tloc(o, 0);
 
-		if (ATOMbasetype(u->ttype) == TYPE_int) {
-			int *up = Tloc(u, 0);
-			int *bp = Tloc(b, 0);
-
-			BATloop(o, p, q) {
-				int v = up[op[p]];
-				nils |= is_int_nil(v);
-				bp[p] = v;
-			}
-			BATsetcount(b, BATcount(o));
-			BATnegateprops(b);
-			b->tnil = nils;
-			b->tnonil = !nils;
-		} else if (ATOMbasetype(u->ttype) == TYPE_lng) {
-			lng *up = Tloc(u, 0);
-			lng *bp = Tloc(b, 0);
-
-			BATloop(o, p, q) {
-				lng v = up[op[p]];
-				nils |= is_lng_nil(v);
-				bp[p] = v;
-			}
-			BATsetcount(b, BATcount(o));
-			BATnegateprops(b);
-			b->tnil = nils;
-			b->tnonil = !nils;
-		} else {
+		switch (ATOMbasetype(u->ttype)) {
+		case TYPE_int:
+			decompress_loop(int);
+			break;
+		case TYPE_lng:
+			decompress_loop(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			decompress_loop(hge);
+			break;
+#endif
+		default:
 			BATloop(o, p, q) {
 				BUN up = op[p];
 				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
@@ -334,33 +334,19 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 		assert(o->ttype == TYPE_sht);
 		unsigned short *op = Tloc(o, 0);
 
-		if (ATOMbasetype(u->ttype) == TYPE_int) {
-			int *up = Tloc(u, 0);
-			int *bp = Tloc(b, 0);
-
-			BATloop(o, p, q) {
-				int v = up[op[p]];
-				nils |= is_int_nil(v);
-				bp[p] = v;
-			}
-			BATsetcount(b, BATcount(o));
-			BATnegateprops(b);
-			b->tnil = nils;
-			b->tnonil = !nils;
-		} else if (ATOMbasetype(u->ttype) == TYPE_lng) {
-			lng *up = Tloc(u, 0);
-			lng *bp = Tloc(b, 0);
-
-			BATloop(o, p, q) {
-				lng v = up[op[p]];
-				nils |= is_lng_nil(v);
-				bp[p] = v;
-			}
-			BATsetcount(b, BATcount(o));
-			BATnegateprops(b);
-			b->tnil = nils;
-			b->tnonil = !nils;
-		} else {
+		switch (ATOMbasetype(u->ttype)) {
+		case TYPE_int:
+			decompress_loop(int);
+			break;
+		case TYPE_lng:
+			decompress_loop(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			decompress_loop(hge);
+			break;
+#endif
+		default:
 			BATloop(o, p, q) {
 				BUN up = op[p];
 				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
@@ -998,7 +984,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 			}
 			if (!f) {
 				if (BATcount(dict) >= (64*1024)-1) {
-						assert(0);
+					assert(0);
 					bat_destroy(n);
 					bat_iterator_end(&bi);
 					return -2;
