@@ -5351,21 +5351,21 @@ rewrite_joins2semi(visitor *v, sql_rel *proj, sql_rel *rel)
 			right_unique = false;
 		/* if all columns used in equi-joins from one of the sides are unique, the join can be rewritten into a semijoin */
 		for (node *n=rel->exps->h; n && (left_unique || right_unique); n = n->next) {
-			sql_exp *e = n->data;
+			sql_exp *e = n->data, *el = e->l, *er = e->r;
 
-			if (!is_compare(e->type) || e->flag != cmp_equal || exp_has_func(e->l) || exp_has_func(e->r)) {
+			if (!is_compare(e->type) || e->flag != cmp_equal || exp_has_func(el) || exp_has_func(er)) {
 				left_unique = right_unique = false;
 			} else {
 				int found = 0;
 
-				if (left_unique && (found = find_projection_for_join2semi(l, e->l)) > NO_EXP_FOUND)
-					left_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && !is_semantics(e)));
-				if (left_unique && (found = find_projection_for_join2semi(l, e->r)) > NO_EXP_FOUND)
-					left_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && !is_semantics(e)));
-				if (right_unique && (found = find_projection_for_join2semi(r, e->l)) > NO_EXP_FOUND)
-					right_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && !is_semantics(e)));
-				if (right_unique && (found = find_projection_for_join2semi(r, e->r)) > NO_EXP_FOUND)
-					right_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && !is_semantics(e)));
+				if (left_unique && (found = find_projection_for_join2semi(l, el)) > NO_EXP_FOUND)
+					left_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && (!is_semantics(e) || !has_nil(er))));
+				if (left_unique && (found = find_projection_for_join2semi(l, er)) > NO_EXP_FOUND)
+					left_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && (!is_semantics(e) || !has_nil(el))));
+				if (right_unique && (found = find_projection_for_join2semi(r, el)) > NO_EXP_FOUND)
+					right_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && (!is_semantics(e) || !has_nil(er))));
+				if (right_unique && (found = find_projection_for_join2semi(r, er)) > NO_EXP_FOUND)
+					right_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && (!is_semantics(e) || !has_nil(el))));
 			}
 		}
 
