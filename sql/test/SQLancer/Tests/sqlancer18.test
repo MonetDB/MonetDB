@@ -653,3 +653,30 @@ SELECT EXISTS (WITH x(x) AS (SELECT 1) SELECT x FROM x)
 ----
 True
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "tx" ("c0" INT)
+
+statement ok
+create or replace view v100(vc0) as (select distinct cast('1' as int) from tx)
+
+statement ok
+create or replace view v104(vc0) as (select tx.c0 from tx)
+
+statement ok
+create or replace view v101(vc0) as (select 1 from v104)
+
+statement ok
+create or replace view v102(vc0) as (select 1 from v101)
+
+statement error SELECT: aggregate functions not allowed in WHERE clause
+SELECT 1 FROM v100 WHERE (SELECT 1 HAVING count(v100.vc0 + (SELECT 1 FROM v104)))
+
+statement error SELECT: aggregate functions not allowed in WHERE clause
+SELECT 1 FROM v100 AS vx WHERE vx.vc0 = ANY(SELECT 1 FROM v100 HAVING count(vx.vc0 = vx.vc0 AND (SELECT TRUE FROM v102)))
+
+statement ok
+ROLLBACK
+
