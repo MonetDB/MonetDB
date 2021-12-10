@@ -1306,9 +1306,11 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(ILLARG, "batcalc.month_interval", SQLSTATE(42000) "Illegal argument in month interval");
 	}
 	}
-	btkey = b->tkey;
-	btsorted = b->tsorted;
-	btrevsorted = b->trevsorted;
+	if (b) {
+		btkey = b->tkey;
+		btsorted = b->tsorted;
+		btrevsorted = b->trevsorted;
+	}
 bailout1:
 	bat_iterator_end(&bi);
 
@@ -1442,9 +1444,11 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(ILLARG, "batcalc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
 	}
-	btkey = b->tkey;
-	btsorted = b->tsorted;
-	btrevsorted = b->trevsorted;
+	if (b) {
+		btkey = b->tkey;
+		btsorted = b->tsorted;
+		btrevsorted = b->trevsorted;
+	}
 bailout1:
 	bat_iterator_end(&bi);
 
