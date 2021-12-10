@@ -33,8 +33,8 @@ static void
 BATmaxminpos_bte(BAT *o, bte m)
 {
 	BUN minpos = BUN_NONE, maxpos = BUN_NONE, p, q;
-	bte minval = m<0?-128:0;
-	bte maxval = m<0?127:m;
+	bte minval = m<0?GDK_bte_min:0; /* Later once nils use a bitmask we can include -128 in the range */
+	bte maxval = m<0?GDK_bte_max:m;
 
 	assert(o->ttype == TYPE_bte);
 	o->tnil = m<0?true:false;
@@ -60,8 +60,8 @@ static void
 BATmaxminpos_sht(BAT *o, sht m)
 {
 	BUN minpos = BUN_NONE, maxpos = BUN_NONE, p, q;
-	sht minval = m<0?-32768:0;
-	sht maxval = m<0?32767:m;
+	sht minval = m<0?GDK_sht_min:0; /* Later once nils use a bitmask we can include -32768 in the range */
+	sht maxval = m<0?GDK_sht_max:m;
 
 	assert(o->ttype == TYPE_sht);
 	o->tnil = m<0?true:false;
@@ -984,7 +984,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 			}
 			if (!f) {
 				if (BATcount(dict) >= (64*1024)-1) {
-						assert(0);
+					assert(0);
 					bat_destroy(n);
 					bat_iterator_end(&bi);
 					return -2;
