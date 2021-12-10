@@ -213,7 +213,7 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	struct canditer ci;
 	BUN q = 0;
 	oid off;
-	bool nils = false;
+	bool nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	BATiter bi;
 
 	if (sid && !is_bat_nil(*sid)) {
@@ -256,22 +256,25 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= is_uuid_nil(v);
 		}
 	}
+	btkey = b->tkey;
+	btsorted = b->tsorted;
+	btrevsorted = b->trevsorted;
 	bat_iterator_end(&bi);
 
 bailout:
-	if (dst) {					/* implies msg==MAL_SUCCEED */
-		BATsetcount(dst, q);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
-		dst->tsorted = b->tsorted;
-		dst->trevsorted = b->trevsorted;
-		BBPkeepref(*res = dst->batCacheid);
-	}
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (dst) {					/* implies msg==MAL_SUCCEED */
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = btkey;
+		dst->tsorted = btsorted;
+		dst->trevsorted = btrevsorted;
+		BBPkeepref(*res = dst->batCacheid);
+	}
 	return msg;
 }
 
@@ -296,7 +299,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	struct canditer ci;
 	BUN q = 0;
 	oid off;
-	bool nils = false;
+	bool nils = false, btkey = false;
 	size_t l = UUID_SIZE;
 	ssize_t (*conv)(const char *, size_t *, void **, bool) = BATatoms[TYPE_uuid].atomFromStr;
 
@@ -344,23 +347,24 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(v);
 		}
 	}
+	btkey = b->tkey;
 	bat_iterator_end(&bi);
 
 bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
 		BATsetcount(dst, q);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
+		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -383,7 +387,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	BUN q = 0;
 	struct canditer ci;
 	oid off;
-	bool nils = false;
+	bool nils = false, btkey = false;
 	char buf[UUID_STRLEN + 2], *pbuf = buf;
 	size_t l = sizeof(buf);
 	ssize_t (*conv)(char **, size_t *, const void *, bool) = BATatoms[TYPE_uuid].atomToStr;
@@ -441,23 +445,24 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(buf);
 		}
 	}
+	btkey = b->tkey;
 	bat_iterator_end(&bi);
 
 bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
 		BATsetcount(dst, q);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
+		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	return msg;
 }
 
