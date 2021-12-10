@@ -45,7 +45,6 @@
 \dSt sys.schemas
 \dSt sys.sequences
 \dSt sys.spatial_ref_sys
-\dSt sys.statistics
 \dSt sys.storagemodelinput
 \dSt sys.table_partitions
 \dSt sys.table_types
@@ -136,6 +135,7 @@
 \dSv sys.roles
 \dSv sys.schemastorage
 \dSv sys.sessions
+\dSv sys.statistics
 \dSv sys.storage
 \dSv sys.storagemodel
 \dSv sys.tables
@@ -360,6 +360,7 @@
 \dSf sys."st_ymax"
 \dSf sys."st_ymin"
 \dSf sys."st_z"
+\dSf sys."statistics"
 \dSf sys."stddev_pop"
 \dSf sys."stddev_samp"
 \dSf sys."stop"
@@ -420,7 +421,6 @@ SYSTEM TABLE  sys.range_partitions
 SYSTEM TABLE  sys.schemas
 SYSTEM TABLE  sys.sequences
 SYSTEM TABLE  sys.spatial_ref_sys
-SYSTEM TABLE  sys.statistics
 SYSTEM TABLE  sys.storagemodelinput
 SYSTEM TABLE  sys.table_partitions
 SYSTEM TABLE  sys.table_types
@@ -504,6 +504,7 @@ SYSTEM VIEW  sys.rejects
 SYSTEM VIEW  sys.roles
 SYSTEM VIEW  sys.schemastorage
 SYSTEM VIEW  sys.sessions
+SYSTEM VIEW  sys.statistics
 SYSTEM VIEW  sys.storage
 SYSTEM VIEW  sys.storagemodel
 SYSTEM VIEW  sys.tables
@@ -910,6 +911,7 @@ SYSTEM FUNCTION         sys.st_ymax
 SYSTEM FUNCTION         sys.st_ymin
 SYSTEM FUNCTION         sys.st_z
 SYSTEM FUNCTION         sys.star
+SYSTEM FUNCTION         sys.statistics
 SYSTEM AGGREGATE        sys.stddev_pop
 SYSTEM WINDOW           sys.stddev_pop
 SYSTEM AGGREGATE        sys.stddev_samp
@@ -1002,7 +1004,6 @@ CREATE TABLE "sys"."range_partitions" ("table_id" INTEGER, "partition_id" INTEGE
 CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
 CREATE TABLE "sys"."sequences" ("id" INTEGER, "schema_id" INTEGER, "name" VARCHAR(256), "start" BIGINT, "minvalue" BIGINT, "maxvalue" BIGINT, "increment" BIGINT, "cacheinc" BIGINT, "cycle" BOOLEAN);
 CREATE TABLE "sys"."spatial_ref_sys" ("srid" INTEGER NOT NULL, "auth_name" VARCHAR(256), "auth_srid" INTEGER, "srtext" VARCHAR(2048), "proj4text" VARCHAR(2048), CONSTRAINT "spatial_ref_sys_srid_pkey" PRIMARY KEY ("srid"));
-CREATE TABLE "sys"."statistics" ("column_id" INTEGER, "type" CHARACTER LARGE OBJECT, "width" INTEGER, "stamp" TIMESTAMP, "sample" BIGINT, "count" BIGINT, "unique" BIGINT, "nils" BIGINT, "minval" CHARACTER LARGE OBJECT, "maxval" CHARACTER LARGE OBJECT, "sorted" BOOLEAN, "revsorted" BOOLEAN);
 CREATE TABLE "sys"."storagemodelinput" ("schema" VARCHAR(1024) NOT NULL, "table" VARCHAR(1024) NOT NULL, "column" VARCHAR(1024) NOT NULL, "type" VARCHAR(1024) NOT NULL, "typewidth" INTEGER NOT NULL, "count" BIGINT NOT NULL, "distinct" BIGINT NOT NULL, "atomwidth" INTEGER NOT NULL, "reference" BOOLEAN NOT NULL DEFAULT false, "sorted" BOOLEAN, "unique" BOOLEAN, "isacolumn" BOOLEAN NOT NULL DEFAULT true);
 CREATE TABLE "sys"."table_partitions" ("id" INTEGER, "table_id" INTEGER, "column_id" INTEGER, "expression" VARCHAR(2048), "type" TINYINT);
 CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
@@ -1094,6 +1095,7 @@ create view sys.rejects as select * from sys.rejects();
 create view sys.roles as select id, name, grantor from sys.auths a where a.name not in (select u.name from sys.db_users() u);
 create view sys."schemastorage" as select "schema", count(*) as "storages", sum(columnsize) as columnsize, sum(heapsize) as heapsize, sum(hashes) as hashsize, sum("imprints") as imprintsize, sum(orderidx) as orderidxsize from sys."storage" group by "schema" order by "schema";
 create view sys.sessions as select * from sys.sessions();
+create view sys."statistics" as select * from sys."statistics"() where ("schema", "table") in (select sch."name", tbl."name" from sys."tables" as tbl join sys."schemas" as sch on tbl.schema_id = sch.id where tbl."system" = false) order by "schema", "table", "column";
 create view sys."storage" as select * from sys."storage"() where ("schema", "table") in (select sch."name", tbl."name" from sys."tables" as tbl join sys."schemas" as sch on tbl.schema_id = sch.id where tbl."system" = false) order by "schema", "table", "column";
 create view sys.storagemodel as select "schema", "table", "column", "type", "count", sys.columnsize("type", "count") as columnsize, sys.heapsize("type", "count", "distinct", "atomwidth") as heapsize, sys.hashsize("reference", "count") as hashsize, case when isacolumn then sys.imprintsize("type", "count") else 0 end as imprintsize, case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end as orderidxsize, sorted, "unique", isacolumn from sys.storagemodelinput order by "schema", "table", "column";
 SELECT "id", "name", "schema_id", "query", CAST(CASE WHEN "system" THEN "type" + 10 ELSE (CASE WHEN "commit_action" = 0 THEN "type" ELSE "type" + 20 END) END AS SMALLINT) AS "type", "system", "commit_action", "access", CASE WHEN (NOT "system" AND "commit_action" > 0) THEN 1 ELSE 0 END AS "temporary" FROM "sys"."_tables" WHERE "type" <> 2 UNION ALL SELECT "id", "name", "schema_id", "query", CAST("type" + 30 AS SMALLINT) AS "type", "system", "commit_action", "access", 1 AS "temporary" FROM "tmp"."_tables";
@@ -1104,10 +1106,10 @@ create view sys.users as select u."name" as "name", ui."fullname", ui."default_s
 create view sys.var_values (var_name, value) as select 'current_role', current_role union all select 'current_schema', current_schema union all select 'current_timezone', current_timezone union all select 'current_user', current_user union all select 'debug', debug union all select 'last_id', last_id union all select 'optimizer', optimizer union all select 'pi', pi() union all select 'rowcnt', rowcnt;
 create function "abbrev" (p inet) returns clob external name inet."abbrev";
 create function alpha(pdec double, pradius double) returns double external name sql.alpha;
-create procedure sys.analyze(minmax int, "sample" bigint) external name sql.analyze;
-create procedure sys.analyze(minmax int, "sample" bigint, sch string) external name sql.analyze;
-create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string) external name sql.analyze;
-create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string, col string) external name sql.analyze;
+create procedure sys."analyze"("sname" varchar(1024)) external name sql."analyze";
+create procedure sys."analyze"("sname" varchar(1024), "tname" varchar(1024)) external name sql."analyze";
+create procedure sys."analyze"("sname" varchar(1024), "tname" varchar(1024), "cname" varchar(1024)) external name sql."analyze";
+create procedure sys."analyze"() external name sql."analyze";
 create function sys.bbp () returns table (id int, name string, ttype string, count bigint, refcnt int, lrefcnt int, location string, heat int, dirty string, status string, kind string) external name bbp.get;
 create function "broadcast" (p inet) returns inet external name inet."broadcast";
 create procedure sys.clearrejects() external name sql.copy_rejects_clear;
@@ -1449,6 +1451,10 @@ create function st_ymax(geom geometry) returns double external name geom."YMaxFr
 create function st_ymin(box mbr) returns double external name geom."YMinFromMBR";
 create function st_ymin(geom geometry) returns double external name geom."YMinFromWKB";
 create function st_z(geom geometry) returns double external name geom."Z";
+create function sys."statistics"("sname" varchar(1024)) returns table ("column_id" integer, "schema" varchar(1024), "table" varchar(1024), "column" varchar(1024), "type" varchar(1024), "width" integer, "count" bigint, "unique" boolean, "nils" boolean, "minval" string, "maxval" string, "sorted" boolean, "revsorted" boolean) external name sql."statistics";
+create function sys."statistics"("sname" varchar(1024), "tname" varchar(1024)) returns table ("column_id" integer, "schema" varchar(1024), "table" varchar(1024), "column" varchar(1024), "type" varchar(1024), "width" integer, "count" bigint, "unique" boolean, "nils" boolean, "minval" string, "maxval" string, "sorted" boolean, "revsorted" boolean) external name sql."statistics";
+create function sys."statistics"("sname" varchar(1024), "tname" varchar(1024), "cname" varchar(1024)) returns table ("column_id" integer, "schema" varchar(1024), "table" varchar(1024), "column" varchar(1024), "type" varchar(1024), "width" integer, "count" bigint, "unique" boolean, "nils" boolean, "minval" string, "maxval" string, "sorted" boolean, "revsorted" boolean) external name sql."statistics";
+create function sys."statistics"() returns table ("column_id" integer, "schema" varchar(1024), "table" varchar(1024), "column" varchar(1024), "type" varchar(1024), "width" integer, "count" bigint, "unique" boolean, "nils" boolean, "minval" string, "maxval" string, "sorted" boolean, "revsorted" boolean) external name sql."statistics";
 create aggregate stddev_pop(val bigint) returns double external name "aggr"."stdevp";
 create aggregate stddev_pop(val double) returns double external name "aggr"."stdevp";
 create aggregate stddev_pop(val integer) returns double external name "aggr"."stdevp";
@@ -1862,10 +1868,11 @@ select 'null in sequences.increment', increment, * from sys.sequences where incr
 select 'null in sequences.cacheinc', cacheinc, * from sys.sequences where cacheinc is null;
 select 'null in sequences.cycle', cycle, * from sys.sequences where cycle is null;
 select 'null in statistics.column_id', column_id, * from sys.statistics where column_id is null;
+select 'null in statistics.schema', "schema", * from sys.statistics where "schema" is null;
+select 'null in statistics.table', "table", * from sys.statistics where "table" is null;
+select 'null in statistics.column', "column", * from sys.statistics where "column" is null;
 select 'null in statistics.type', type, * from sys.statistics where type is null;
 select 'null in statistics.width', width, * from sys.statistics where width is null;
-select 'null in statistics.stamp', stamp, * from sys.statistics where stamp is null;
-select 'null in statistics.sample', "sample", * from sys.statistics where "sample" is null;
 select 'null in statistics.count', count, * from sys.statistics where count is null;
 select 'null in statistics.unique', "unique", * from sys.statistics where "unique" is null;
 select 'null in statistics.nils', nils, * from sys.statistics where nils is null;
@@ -2062,7 +2069,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._tables",	"sys",	"sequences",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"sessions",	"create view sys.sessions as select * from sys.sessions();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"spatial_ref_sys",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys._tables",	"sys",	"statistics",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys._tables",	"sys",	"statistics",	"create view sys.\"statistics\" as select * from sys.\"statistics\"() where (\"schema\", \"table\") in (select sch.\"name\", tbl.\"name\" from sys.\"tables\" as tbl join sys.\"schemas\" as sch on tbl.schema_id = sch.id where tbl.\"system\" = false) order by \"schema\", \"table\", \"column\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"storage",	"create view sys.\"storage\" as select * from sys.\"storage\"() where (\"schema\", \"table\") in (select sch.\"name\", tbl.\"name\" from sys.\"tables\" as tbl join sys.\"schemas\" as sch on tbl.schema_id = sch.id where tbl.\"system\" = false) order by \"schema\", \"table\", \"column\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"storagemodel",	"create view sys.storagemodel as select \"schema\", \"table\", \"column\", \"type\", \"count\", sys.columnsize(\"type\", \"count\") as columnsize, sys.heapsize(\"type\", \"count\", \"distinct\", \"atomwidth\") as heapsize, sys.hashsize(\"reference\", \"count\") as hashsize, case when isacolumn then sys.imprintsize(\"type\", \"count\") else 0 end as imprintsize, case when (isacolumn and not sorted) then cast(8 * \"count\" as bigint) else 0 end as orderidxsize, sorted, \"unique\", isacolumn from sys.storagemodelinput order by \"schema\", \"table\", \"column\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"storagemodelinput",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
@@ -2716,17 +2723,18 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._columns",	"spatial_ref_sys",	"srtext",	"varchar",	2048,	0,	NULL,	true,	3,	NULL	]
 [ "sys._columns",	"spatial_ref_sys",	"proj4text",	"varchar",	2048,	0,	NULL,	true,	4,	NULL	]
 [ "sys._columns",	"statistics",	"column_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "sys._columns",	"statistics",	"type",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
-[ "sys._columns",	"statistics",	"width",	"int",	32,	0,	NULL,	true,	2,	NULL	]
-[ "sys._columns",	"statistics",	"stamp",	"timestamp",	7,	0,	NULL,	true,	3,	NULL	]
-[ "sys._columns",	"statistics",	"sample",	"bigint",	64,	0,	NULL,	true,	4,	NULL	]
-[ "sys._columns",	"statistics",	"count",	"bigint",	64,	0,	NULL,	true,	5,	NULL	]
-[ "sys._columns",	"statistics",	"unique",	"bigint",	64,	0,	NULL,	true,	6,	NULL	]
-[ "sys._columns",	"statistics",	"nils",	"bigint",	64,	0,	NULL,	true,	7,	NULL	]
-[ "sys._columns",	"statistics",	"minval",	"clob",	0,	0,	NULL,	true,	8,	NULL	]
-[ "sys._columns",	"statistics",	"maxval",	"clob",	0,	0,	NULL,	true,	9,	NULL	]
-[ "sys._columns",	"statistics",	"sorted",	"boolean",	1,	0,	NULL,	true,	10,	NULL	]
-[ "sys._columns",	"statistics",	"revsorted",	"boolean",	1,	0,	NULL,	true,	11,	NULL	]
+[ "sys._columns",	"statistics",	"schema",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
+[ "sys._columns",	"statistics",	"table",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
+[ "sys._columns",	"statistics",	"column",	"varchar",	1024,	0,	NULL,	true,	3,	NULL	]
+[ "sys._columns",	"statistics",	"type",	"varchar",	1024,	0,	NULL,	true,	4,	NULL	]
+[ "sys._columns",	"statistics",	"width",	"int",	32,	0,	NULL,	true,	5,	NULL	]
+[ "sys._columns",	"statistics",	"count",	"bigint",	64,	0,	NULL,	true,	6,	NULL	]
+[ "sys._columns",	"statistics",	"unique",	"boolean",	1,	0,	NULL,	true,	7,	NULL	]
+[ "sys._columns",	"statistics",	"nils",	"boolean",	1,	0,	NULL,	true,	8,	NULL	]
+[ "sys._columns",	"statistics",	"minval",	"clob",	0,	0,	NULL,	true,	9,	NULL	]
+[ "sys._columns",	"statistics",	"maxval",	"clob",	0,	0,	NULL,	true,	10,	NULL	]
+[ "sys._columns",	"statistics",	"sorted",	"boolean",	1,	0,	NULL,	true,	11,	NULL	]
+[ "sys._columns",	"statistics",	"revsorted",	"boolean",	1,	0,	NULL,	true,	12,	NULL	]
 [ "sys._columns",	"storage",	"schema",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"storage",	"table",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"storage",	"column",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
@@ -2864,7 +2872,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % .%1,	.s,	.f,	.,	.,	.f,	.fl,	.,	.f,	.f,	.f,	.f,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
 % %1,	name,	name,	system,	query,	mod,	language_name,	func_type,	side_effect,	varres,	vararg,	semantics,	name0,	type0,	type_digits0,	type_scale0,	inout0,	name1,	type1,	type_digits1,	type_scale1,	inout1,	name2,	type2,	type_digits2,	type_scale2,	inout2,	name3,	type3,	type_digits3,	type_scale3,	inout3,	name4,	type4,	type_digits4,	type_scale4,	inout4,	name5,	type5,	type_digits5,	type_scale5,	inout5,	name6,	type6,	type_digits6,	type_scale6,	inout6,	name7,	type7,	type_digits7,	type_scale7,	inout7,	name8,	type8,	type_digits8,	type_scale8,	inout8,	name9,	type9,	type_digits9,	type_scale9,	inout9,	name10,	type10,	type_digits10,	type_scale10,	inout10,	name11,	type11,	type_digits11,	type_scale11,	inout11,	name12,	type12,	type_digits12,	type_scale12,	inout12,	name13,	type13,	type_digits13,	type_scale13,	inout13,	name14,	type14,	type_digits14,	type_scale14,	inout14,	name15,	type15,	type_digits15,	type_scale15,	inout15 # name
 % char,	varchar,	varchar,	char,	clob,	varchar,	varchar,	varchar,	boolean,	boolean,	boolean,	boolean,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char # type
-% 13,	8,	37,	6,	3342,	9,	10,	26,	5,	5,	5,	5,	11,	14,	4,	1,	3,	16,	14,	4,	1,	3,	16,	14,	4,	1,	3,	27,	12,	4,	1,	3,	9,	9,	2,	1,	3,	14,	14,	4,	1,	3,	12,	14,	2,	1,	3,	11,	7,	2,	1,	3,	11,	7,	2,	1,	3,	10,	6,	2,	1,	3,	9,	6,	2,	1,	3,	6,	7,	2,	1,	3,	8,	6,	2,	1,	3,	6,	7,	1,	1,	3,	9,	7,	1,	1,	3,	6,	7,	1,	1,	3 # length
+% 13,	8,	37,	6,	3342,	9,	10,	26,	5,	5,	5,	5,	11,	14,	4,	1,	3,	16,	14,	4,	1,	3,	16,	14,	4,	1,	3,	27,	12,	4,	1,	3,	9,	9,	4,	1,	3,	14,	14,	4,	1,	3,	12,	14,	2,	1,	3,	11,	7,	2,	1,	3,	11,	7,	2,	1,	3,	10,	6,	2,	1,	3,	9,	6,	2,	1,	3,	6,	7,	2,	1,	3,	9,	7,	2,	1,	3,	6,	7,	4,	1,	3,	9,	7,	4,	1,	3,	6,	7,	4,	1,	3 # length
 [ "sys.functions",	"json",	"filter",	"SYSTEM",	"create function json.filter(js json, name bigint) returns json external name json.filter;",	"json",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"json",	0,	0,	"out",	"js",	"json",	0,	0,	"in",	"name",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"json",	"filter",	"SYSTEM",	"create function json.filter(js json, name integer) returns json external name json.filter;",	"json",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"json",	0,	0,	"out",	"js",	"json",	0,	0,	"in",	"name",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"json",	"filter",	"SYSTEM",	"create function json.filter(js json, name tinyint) returns json external name json.filter;",	"json",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"json",	0,	0,	"out",	"js",	"json",	0,	0,	"in",	"name",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2923,10 +2931,10 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.functions",	"sys",	"all",	"SYSTEM",	"all",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	true,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"boolean",	1,	0,	"in",	"arg_2",	"boolean",	1,	0,	"in",	"arg_3",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"allnotequal",	"SYSTEM",	"allnotequal",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	true,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"alpha",	"SYSTEM",	"create function alpha(pdec double, pradius double) returns double external name sql.alpha;",	"sql",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"pdec",	"double",	53,	0,	"in",	"pradius",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"analyze",	"SYSTEM",	"create procedure sys.analyze(minmax int, \"sample\" bigint) external name sql.analyze;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"MinMax",	"int",	32,	0,	"in",	"sample",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"analyze",	"SYSTEM",	"create procedure sys.analyze(minmax int, \"sample\" bigint, sch string) external name sql.analyze;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"MinMax",	"int",	32,	0,	"in",	"sample",	"bigint",	64,	0,	"in",	"sch",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"analyze",	"SYSTEM",	"create procedure sys.analyze(minmax int, \"sample\" bigint, sch string, tbl string) external name sql.analyze;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"MinMax",	"int",	32,	0,	"in",	"sample",	"bigint",	64,	0,	"in",	"sch",	"clob",	0,	0,	"in",	"tbl",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"analyze",	"SYSTEM",	"create procedure sys.analyze(minmax int, \"sample\" bigint, sch string, tbl string, col string) external name sql.analyze;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"MinMax",	"int",	32,	0,	"in",	"sample",	"bigint",	64,	0,	"in",	"sch",	"clob",	0,	0,	"in",	"tbl",	"clob",	0,	0,	"in",	"col",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"analyze",	"SYSTEM",	"create procedure sys.\"analyze\"(\"sname\" varchar(1024)) external name sql.\"analyze\";",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"sname",	"varchar",	1024,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"analyze",	"SYSTEM",	"create procedure sys.\"analyze\"(\"sname\" varchar(1024), \"tname\" varchar(1024)) external name sql.\"analyze\";",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"sname",	"varchar",	1024,	0,	"in",	"tname",	"varchar",	1024,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"analyze",	"SYSTEM",	"create procedure sys.\"analyze\"(\"sname\" varchar(1024), \"tname\" varchar(1024), \"cname\" varchar(1024)) external name sql.\"analyze\";",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"sname",	"varchar",	1024,	0,	"in",	"tname",	"varchar",	1024,	0,	"in",	"cname",	"varchar",	1024,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"analyze",	"SYSTEM",	"create procedure sys.\"analyze\"() external name sql.\"analyze\";",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"and",	"SYSTEM",	"and",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	true,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"boolean",	1,	0,	"in",	"arg_2",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"any",	"SYSTEM",	"any",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	true,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"boolean",	1,	0,	"in",	"arg_2",	"boolean",	1,	0,	"in",	"arg_3",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"anyequal",	"SYSTEM",	"anyequal",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	true,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4066,6 +4074,10 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.functions",	"sys",	"st_ymin",	"SYSTEM",	"create function st_ymin(geom geometry) returns double external name geom.\"YMinFromWKB\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"geom",	"geometry",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"st_z",	"SYSTEM",	"create function st_z(geom geometry) returns double external name geom.\"Z\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"geom",	"geometry",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"star",	"SYSTEM",	"",	"",	"Internal C",	"Scalar function",	false,	false,	false,	true,	"res_0",	"any",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"statistics",	"SYSTEM",	"create function sys.\"statistics\"(\"sname\" varchar(1024)) returns table (\"column_id\" integer, \"schema\" varchar(1024), \"table\" varchar(1024), \"column\" varchar(1024), \"type\" varchar(1024), \"width\" integer, \"count\" bigint, \"unique\" boolean, \"nils\" boolean, \"minval\" string, \"maxval\" string, \"sorted\" boolean, \"revsorted\" boolean) external name sql.\"statistics\";",	"sql",	"MAL",	"Function returning a table",	false,	false,	false,	true,	"column_id",	"int",	32,	0,	"out",	"schema",	"varchar",	1024,	0,	"out",	"table",	"varchar",	1024,	0,	"out",	"column",	"varchar",	1024,	0,	"out",	"type",	"varchar",	1024,	0,	"out",	"width",	"int",	32,	0,	"out",	"count",	"bigint",	64,	0,	"out",	"unique",	"boolean",	1,	0,	"out",	"nils",	"boolean",	1,	0,	"out",	"minval",	"clob",	0,	0,	"out",	"maxval",	"clob",	0,	0,	"out",	"sorted",	"boolean",	1,	0,	"out",	"revsorted",	"boolean",	1,	0,	"out",	"sname",	"varchar",	1024,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"statistics",	"SYSTEM",	"create function sys.\"statistics\"(\"sname\" varchar(1024), \"tname\" varchar(1024)) returns table (\"column_id\" integer, \"schema\" varchar(1024), \"table\" varchar(1024), \"column\" varchar(1024), \"type\" varchar(1024), \"width\" integer, \"count\" bigint, \"unique\" boolean, \"nils\" boolean, \"minval\" string, \"maxval\" string, \"sorted\" boolean, \"revsorted\" boolean) external name sql.\"statistics\";",	"sql",	"MAL",	"Function returning a table",	false,	false,	false,	true,	"column_id",	"int",	32,	0,	"out",	"schema",	"varchar",	1024,	0,	"out",	"table",	"varchar",	1024,	0,	"out",	"column",	"varchar",	1024,	0,	"out",	"type",	"varchar",	1024,	0,	"out",	"width",	"int",	32,	0,	"out",	"count",	"bigint",	64,	0,	"out",	"unique",	"boolean",	1,	0,	"out",	"nils",	"boolean",	1,	0,	"out",	"minval",	"clob",	0,	0,	"out",	"maxval",	"clob",	0,	0,	"out",	"sorted",	"boolean",	1,	0,	"out",	"revsorted",	"boolean",	1,	0,	"out",	"sname",	"varchar",	1024,	0,	"in",	"tname",	"varchar",	1024,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"statistics",	"SYSTEM",	"create function sys.\"statistics\"(\"sname\" varchar(1024), \"tname\" varchar(1024), \"cname\" varchar(1024)) returns table (\"column_id\" integer, \"schema\" varchar(1024), \"table\" varchar(1024), \"column\" varchar(1024), \"type\" varchar(1024), \"width\" integer, \"count\" bigint, \"unique\" boolean, \"nils\" boolean, \"minval\" string, \"maxval\" string, \"sorted\" boolean, \"revsorted\" boolean) external name sql.\"statistics\";",	"sql",	"MAL",	"Function returning a table",	false,	false,	false,	true,	"column_id",	"int",	32,	0,	"out",	"schema",	"varchar",	1024,	0,	"out",	"table",	"varchar",	1024,	0,	"out",	"column",	"varchar",	1024,	0,	"out",	"type",	"varchar",	1024,	0,	"out",	"width",	"int",	32,	0,	"out",	"count",	"bigint",	64,	0,	"out",	"unique",	"boolean",	1,	0,	"out",	"nils",	"boolean",	1,	0,	"out",	"minval",	"clob",	0,	0,	"out",	"maxval",	"clob",	0,	0,	"out",	"sorted",	"boolean",	1,	0,	"out",	"revsorted",	"boolean",	1,	0,	"out",	"sname",	"varchar",	1024,	0,	"in",	"tname",	"varchar",	1024,	0,	"in",	"cname",	"varchar",	1024,	0,	"in"	]
+[ "sys.functions",	"sys",	"statistics",	"SYSTEM",	"create function sys.\"statistics\"() returns table (\"column_id\" integer, \"schema\" varchar(1024), \"table\" varchar(1024), \"column\" varchar(1024), \"type\" varchar(1024), \"width\" integer, \"count\" bigint, \"unique\" boolean, \"nils\" boolean, \"minval\" string, \"maxval\" string, \"sorted\" boolean, \"revsorted\" boolean) external name sql.\"statistics\";",	"sql",	"MAL",	"Function returning a table",	false,	false,	false,	true,	"column_id",	"int",	32,	0,	"out",	"schema",	"varchar",	1024,	0,	"out",	"table",	"varchar",	1024,	0,	"out",	"column",	"varchar",	1024,	0,	"out",	"type",	"varchar",	1024,	0,	"out",	"width",	"int",	32,	0,	"out",	"count",	"bigint",	64,	0,	"out",	"unique",	"boolean",	1,	0,	"out",	"nils",	"boolean",	1,	0,	"out",	"minval",	"clob",	0,	0,	"out",	"maxval",	"clob",	0,	0,	"out",	"sorted",	"boolean",	1,	0,	"out",	"revsorted",	"boolean",	1,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"stddev_pop",	"SYSTEM",	"create aggregate stddev_pop(val bigint) returns double external name \"aggr\".\"stdevp\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"val",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"stddev_pop",	"SYSTEM",	"create aggregate stddev_pop(val double) returns double external name \"aggr\".\"stdevp\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"val",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"stddev_pop",	"SYSTEM",	"create aggregate stddev_pop(val integer) returns double external name \"aggr\".\"stdevp\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"val",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4591,6 +4603,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "function used by view",	"sys",	"rejects",	"sys",	"rejects",	"VIEW"	]
 [ "function used by view",	"sys",	"db_users",	"sys",	"roles",	"VIEW"	]
 [ "function used by view",	"sys",	"sessions",	"sys",	"sessions",	"VIEW"	]
+[ "function used by view",	"sys",	"statistics",	"sys",	"statistics",	"VIEW"	]
 [ "function used by view",	"sys",	"storage",	"sys",	"storage",	"VIEW"	]
 [ "function used by view",	"sys",	"columnsize",	"sys",	"storagemodel",	"VIEW"	]
 [ "function used by view",	"sys",	"hashsize",	"sys",	"storagemodel",	"VIEW"	]
@@ -4812,6 +4825,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "table used by view",	"tmp",	"triggers",	"sys",	"ids",	"VIEW"	]
 [ "table used by view",	"sys",	"auths",	"sys",	"roles",	"VIEW"	]
 [ "table used by view",	"sys",	"storage",	"sys",	"schemastorage",	"VIEW"	]
+[ "table used by view",	"sys",	"schemas",	"sys",	"statistics",	"VIEW"	]
+[ "table used by view",	"sys",	"tables",	"sys",	"statistics",	"VIEW"	]
 [ "table used by view",	"sys",	"schemas",	"sys",	"storage",	"VIEW"	]
 [ "table used by view",	"sys",	"tables",	"sys",	"storage",	"VIEW"	]
 [ "table used by view",	"sys",	"storagemodelinput",	"sys",	"storagemodel",	"VIEW"	]
@@ -5524,6 +5539,11 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "column used by view",	"sys",	"storage",	"imprints",	"sys",	"schemastorage",	"VIEW"	]
 [ "column used by view",	"sys",	"storage",	"orderidx",	"sys",	"schemastorage",	"VIEW"	]
 [ "column used by view",	"sys",	"storage",	"schema",	"sys",	"schemastorage",	"VIEW"	]
+[ "column used by view",	"sys",	"schemas",	"id",	"sys",	"statistics",	"VIEW"	]
+[ "column used by view",	"sys",	"schemas",	"name",	"sys",	"statistics",	"VIEW"	]
+[ "column used by view",	"sys",	"tables",	"name",	"sys",	"statistics",	"VIEW"	]
+[ "column used by view",	"sys",	"tables",	"schema_id",	"sys",	"statistics",	"VIEW"	]
+[ "column used by view",	"sys",	"tables",	"system",	"sys",	"statistics",	"VIEW"	]
 [ "column used by view",	"sys",	"schemas",	"id",	"sys",	"storage",	"VIEW"	]
 [ "column used by view",	"sys",	"schemas",	"name",	"sys",	"storage",	"VIEW"	]
 [ "column used by view",	"sys",	"tables",	"name",	"sys",	"storage",	"VIEW"	]
@@ -5839,6 +5859,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "grant on table",	"schemas",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"sequences",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"spatial_ref_sys",	"public",	"SELECT",	"monetdb",	0	]
+[ "grant on table",	"statistics",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"table_partitions",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"table_types",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"tables",	"public",	"SELECT",	NULL,	0	]
@@ -5875,6 +5896,10 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "grant on function",	"logging",	"compinfo",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"abbrev",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"alpha",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"analyze",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"analyze",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"analyze",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"analyze",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"broadcast",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"contains",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"corr",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -6135,6 +6160,10 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "grant on function",	"sys",	"st_ymin",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"st_ymin",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"st_z",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"statistics",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"statistics",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"statistics",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"statistics",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"stddev_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"stddev_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"stddev_pop",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -6198,8 +6227,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	name,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 13,	0,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1 # table_name
-% %1 # name
+% .%21 # table_name
+% %21 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -6773,8 +6802,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	name # name
 % char,	bigint,	varchar # type
 % 26,	1,	0 # length
-% .%2,	sys.%1,	sys.statistics # table_name
-% %2,	%1,	column_id # name
+% .%24,	.%21,	.statistics # table_name
+% %24,	%21,	column_id # name
 % char,	bigint,	int # type
 % 24,	1,	1 # length
 % .%3,	.%2,	.%1,	.%1,	.%1 # table_name
@@ -7201,14 +7230,14 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %7,	optimizer,	sessionid,	username,	login,	idle,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
 % char,	clob,	int,	clob,	timestamp,	timestamp,	clob,	int,	int,	int,	int # type
 % 39,	0,	1,	0,	26,	26,	0,	1,	1,	1,	1 # length
-% .%12,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %12,	column_id,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	int,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 41,	1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%5,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %5,	type,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	clob,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 36,	0,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+% .%34,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %34,	column_id,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	int,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 41,	1,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%27,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %27,	type,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	varchar,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 36,	0,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
 % .%6,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % %6,	schema,	schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
@@ -7701,46 +7730,50 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	cycle,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	boolean,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 23,	5,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	column_id,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	int,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 28,	1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	type,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	clob,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 23,	0,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	width,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	int,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 24,	1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	stamp,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	timestamp,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 24,	26,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	sample,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 25,	1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	count,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 24,	1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	unique,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 25,	1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	nils,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 23,	1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	sorted,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	boolean,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 25,	5,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-% .%1,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% %1,	revsorted,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% char,	boolean,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 28,	5,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	column_id,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	int,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 28,	1,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	schema,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	varchar,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 25,	0,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	table,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	varchar,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 24,	0,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	column,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	varchar,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 25,	0,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	type,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	varchar,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 23,	0,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	width,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	int,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 24,	1,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	count,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	bigint,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 24,	1,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	unique,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	boolean,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 25,	5,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	nils,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	boolean,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 23,	5,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	sorted,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	boolean,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 25,	5,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
+% .%23,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics,	.statistics # table_name
+% %23,	revsorted,	column_id,	schema,	table,	column,	type,	width,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% char,	boolean,	int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	boolean,	clob,	clob,	boolean,	boolean # type
+% 28,	5,	1,	0,	0,	0,	0,	1,	1,	5,	5,	0,	0,	5,	5 # length
 % .%2,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % %2,	schema,	schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
