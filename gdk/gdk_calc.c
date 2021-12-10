@@ -450,10 +450,8 @@ BATcalcnot(BAT *b, BAT *s)
 		break;
 #endif
 	default:
-		bat_iterator_end(&bi);
-		BBPunfix(bn->batCacheid);
 		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
-		return NULL;
+		goto bailout;
 	}
 	bat_iterator_end(&bi);
 
@@ -474,6 +472,7 @@ BATcalcnot(BAT *b, BAT *s)
 	return bn;
 
 bailout:
+	bat_iterator_end(&bi);
 	BBPunfix(bn->batCacheid);
 	return NULL;
 }
@@ -621,10 +620,8 @@ BATcalcnegate(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, dbl, NEGATE);
 		break;
 	default:
-		bat_iterator_end(&bi);
-		BBPunfix(bn->batCacheid);
 		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
-		return NULL;
+		goto bailout;
 	}
 	bat_iterator_end(&bi);
 
@@ -644,6 +641,7 @@ BATcalcnegate(BAT *b, BAT *s)
 
 	return bn;
 bailout:
+	bat_iterator_end(&bi);
 	BBPunfix(bn->batCacheid);
 	return NULL;
 }
@@ -764,10 +762,8 @@ BATcalcabsolute(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, dbl, fabs);
 		break;
 	default:
-		bat_iterator_end(&bi);
-		BBPunfix(bn->batCacheid);
 		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
-		return NULL;
+		goto bailout;
 	}
 	bat_iterator_end(&bi);
 
@@ -789,6 +785,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 
 	return bn;
 bailout:
+	bat_iterator_end(&bi);
 	BBPunfix(bn->batCacheid);
 	return NULL;
 }
@@ -910,10 +907,8 @@ BATcalciszero(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, bit, ISZERO);
 		break;
 	default:
-		bat_iterator_end(&bi);
-		BBPunfix(bn->batCacheid);
 		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
-		return NULL;
+		goto bailout;
 	}
 	bat_iterator_end(&bi);
 
@@ -932,6 +927,7 @@ BATcalciszero(BAT *b, BAT *s)
 
 	return bn;
 bailout:
+	bat_iterator_end(&bi);
 	BBPunfix(bn->batCacheid);
 	return NULL;
 }
@@ -1055,10 +1051,8 @@ BATcalcsign(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, bte, SIGN);
 		break;
 	default:
-		bat_iterator_end(&bi);
-		BBPunfix(bn->batCacheid);
 		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
-		return NULL;
+		goto bailout;
 	}
 	bat_iterator_end(&bi);
 
@@ -1080,6 +1074,7 @@ BATcalcsign(BAT *b, BAT *s)
 
 	return bn;
 bailout:
+	bat_iterator_end(&bi);
 	BBPunfix(bn->batCacheid);
 	return NULL;
 }
@@ -1261,7 +1256,8 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 		  notnil ? "true" : "false", ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bailout:
+bailout:
+	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -14852,6 +14848,7 @@ BATcalcifthenelse_intern(BAT *b,
 							p = col2;
 					}
 					if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
+						bat_iterator_end(&bi);
 						BBPreclaim(bn);
 						return NULL;
 					}
@@ -14876,6 +14873,7 @@ BATcalcifthenelse_intern(BAT *b,
 						p = col2;
 				}
 				if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
 					BBPreclaim(bn);
 					return NULL;
 				}
@@ -15083,9 +15081,9 @@ BATcalcifthenelse_intern(BAT *b,
 
 	return bn;
 bailout:
+	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
-
 }
 
 BAT *
@@ -16059,11 +16057,12 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 				mask = 0;
 			}
 		}
+		bat_iterator_end(&bi);
 		if (j > 0)
 			*d = mask;
 		return 0;
-
 	}
+
 	for (BUN i = 0; i < ncand; i++) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(bi, x);
