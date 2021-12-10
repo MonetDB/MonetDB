@@ -31,7 +31,7 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN q = 0;
 	daytime *restrict ret = NULL;
 	int tpe = getArgType(mb, pci, 1), *digits = getArgReference_int(stk, pci, pci->argc == 4 ? 3 : 2), d = (*digits) ? *digits - 1 : 0;
-	bool is_a_bat = false, nils = false;
+	bool is_a_bat = false, nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	bat *r = NULL, *sid = pci->argc == 4 ? getArgReference_bat(stk, pci, 2): NULL;
 	struct canditer ci = {0};
 #ifdef HAVE_HGE
@@ -109,6 +109,9 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
+		btkey = b->tkey;
+		btsorted = b->tsorted;
+		btrevsorted = b->trevsorted;
 		bat_iterator_end(&bi);
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);
@@ -116,20 +119,20 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (res && !msg) {
-		BATsetcount(res, q);
-		res->tnil = nils;
-		res->tnonil = !nils;
-		res->tkey = b->tkey;
-		res->tsorted = b->tsorted;
-		res->trevsorted  = b->trevsorted;
-		BBPkeepref(*r = res->batCacheid);
-	} else if (res)
-		BBPreclaim(res);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = nils;
+		res->tnonil = !nils;
+		res->tkey = btkey;
+		res->tsorted = btsorted;
+		res->trevsorted = btrevsorted;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
 	return msg;
 }
 
@@ -568,7 +571,7 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN q = 0;
 	timestamp *restrict ret = NULL;
 	int tpe = getArgType(mb, pci, 1);
-	bool is_a_bat = false, nils = false;
+	bool is_a_bat = false, nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	bat *r = NULL, *sid = pci->argc == 4 ? getArgReference_bat(stk, pci, 2) : NULL;
 	struct canditer ci = {0};
 
@@ -612,26 +615,29 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils |= is_timestamp_nil(ret[i]);
 			}
 		}
+		btkey = b->tkey;
+		btsorted = b->tsorted;
+		btrevsorted = b->trevsorted;
 		bat_iterator_end(&bi);
 	} else {
 		*ret = timestamp_fromdate(*(date*)getArgReference(stk, pci, 1));
 	}
 
 bailout:
-	if (res && !msg) {
-		BATsetcount(res, q);
-		res->tnil = nils;
-		res->tnonil = !nils;
-		res->tkey = b->tkey;
-		res->tsorted = b->tsorted;
-		res->trevsorted  = b->trevsorted;
-		BBPkeepref(*r = res->batCacheid);
-	} else if (res)
-		BBPreclaim(res);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = nils;
+		res->tnonil = !nils;
+		res->tkey = btkey;
+		res->tsorted = btsorted;
+		res->trevsorted = btrevsorted;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
 	return msg;
 }
 
@@ -658,7 +664,7 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	BUN q = 0;
 	timestamp *restrict ret = NULL;
 	int tpe = getArgType(mb, pci, 1), *digits = getArgReference_int(stk, pci, pci->argc == 4 ? 3 : 2), d = (*digits) ? *digits - 1 : 0;
-	bool is_a_bat = false, nils = false;
+	bool is_a_bat = false, nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	bat *r = NULL, *sid = pci->argc == 4 ? getArgReference_bat(stk, pci, 2): NULL;
 	struct canditer ci = {0};
 #ifdef HAVE_HGE
@@ -736,6 +742,9 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				}
 			}
 		}
+		btkey = b->tkey;
+		btsorted = b->tsorted;
+		btrevsorted = b->trevsorted;
 		bat_iterator_end(&bi);
 	} else {
 		timestamp next = *(timestamp*)getArgReference(stk, pci, 1);
@@ -743,20 +752,20 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 bailout:
-	if (res && !msg) {
-		BATsetcount(res, q);
-		res->tnil = nils;
-		res->tnonil = !nils;
-		res->tkey = b->tkey;
-		res->tsorted = b->tsorted;
-		res->trevsorted  = b->trevsorted;
-		BBPkeepref(*r = res->batCacheid);
-	} else if (res)
-		BBPreclaim(res);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = nils;
+		res->tnonil = !nils;
+		res->tkey = btkey;
+		res->tsorted = btsorted;
+		res->trevsorted = btrevsorted;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
 	return msg;
 }
 
@@ -1232,7 +1241,7 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	int *restrict ret = NULL, multiplier = 1, k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2)),
 		tpe = getArgType(mb, pci, 1);
-	bool is_a_bat = false, nils = false;
+	bool is_a_bat = false, nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	BAT *b = NULL, *s = NULL, *res = NULL;
 	bat *r = NULL, *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2): NULL;
 	BUN q = 0;
@@ -1297,24 +1306,27 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(ILLARG, "batcalc.month_interval", SQLSTATE(42000) "Illegal argument in month interval");
 	}
 	}
+	btkey = b->tkey;
+	btsorted = b->tsorted;
+	btrevsorted = b->trevsorted;
 bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	if (res && !msg) {
-		BATsetcount(res, q);
-		res->tnil = nils;
-		res->tnonil = !nils;
-		res->tkey = b->tkey;
-		res->tsorted = b->tsorted;
-		res->trevsorted  = b->trevsorted;
-		BBPkeepref(*r = res->batCacheid);
-	} else if (res)
-		BBPreclaim(res);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = nils;
+		res->tnonil = !nils;
+		res->tkey = btkey;
+		res->tsorted = btsorted;
+		res->trevsorted = btrevsorted;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
 	return msg;
 }
 
@@ -1339,7 +1351,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng *restrict ret = NULL, multiplier = 1;
 	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2)),
 		scale = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3);
-	bool is_a_bat = false, nils = false;
+	bool is_a_bat = false, nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	BAT *b = NULL, *s = NULL, *res = NULL;
 	bat *r = NULL, *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2) : NULL;
 	BUN q = 0;
@@ -1430,24 +1442,27 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(ILLARG, "batcalc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
 	}
+	btkey = b->tkey;
+	btsorted = b->tsorted;
+	btrevsorted = b->trevsorted;
 bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	if (res && !msg) {
-		BATsetcount(res, q);
-		res->tnil = nils;
-		res->tnonil = !nils;
-		res->tkey = b->tkey;
-		res->tsorted = b->tsorted;
-		res->trevsorted  = b->trevsorted;
-		BBPkeepref(*r = res->batCacheid);
-	} else if (res)
-		BBPreclaim(res);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = nils;
+		res->tnonil = !nils;
+		res->tkey = btkey;
+		res->tsorted = btsorted;
+		res->trevsorted = btrevsorted;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
 	return msg;
 }
 
@@ -1457,7 +1472,7 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	lng *restrict ret = NULL, multiplier = 1, divider = 1;
 	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2));
-	bool is_a_bat = false, nils = false;
+	bool is_a_bat = false, nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	BAT *b = NULL, *s = NULL, *res = NULL;
 	bat *r = NULL, *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2) : NULL;
 	BUN q = 0;
@@ -1536,6 +1551,9 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
+		btkey = b->tkey;
+		btsorted = b->tsorted;
+		btrevsorted = b->trevsorted;
 		bat_iterator_end(&bi);
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);
@@ -1543,20 +1561,20 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (res && !msg) {
-		BATsetcount(res, q);
-		res->tnil = nils;
-		res->tnonil = !nils;
-		res->tkey = b->tkey;
-		res->tsorted = b->tsorted;
-		res->trevsorted  = b->trevsorted;
-		BBPkeepref(*r = res->batCacheid);
-	} else if (res)
-		BBPreclaim(res);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = nils;
+		res->tnonil = !nils;
+		res->tkey = btkey;
+		res->tsorted = btsorted;
+		res->trevsorted = btrevsorted;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
 	return msg;
 }
 
