@@ -50,7 +50,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN q = 0;
 	TYPE *restrict src, *restrict dst, x, r = *(TYPE *)getArgReference(stk, pci, 2);
 	str msg = MAL_SUCCEED;
-	bool nils = false;
+	bool nils = false, btsorted = false, btrevsorted = false;
 	struct canditer ci1 = {0};
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
@@ -122,10 +122,12 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	btsorted = b->tsorted;
+	btrevsorted = b->trevsorted;
 bailout1:
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, btsorted, btrevsorted);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -217,7 +219,7 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -321,7 +323,7 @@ bailout1:
 	bat_iterator_end(&righti);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -373,7 +375,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TYPE *restrict src, *restrict dst, x;
 	bte r = *getArgReference_bte(stk, pci, 2);
 	str msg = MAL_SUCCEED;
-	bool nils = false;
+	bool nils = false, btsorted = false, btrevsorted = false;
 	struct canditer ci1 = {0};
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
@@ -445,10 +447,12 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	btsorted = b->tsorted;
+	btrevsorted = b->trevsorted;
 bailout1:
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, btsorted, btrevsorted);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -541,7 +545,7 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -650,7 +654,7 @@ bailout1:
 	bat_iterator_end(&righti);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
