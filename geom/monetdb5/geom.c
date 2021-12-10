@@ -745,12 +745,18 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom)
 		/* Line/LinearRing and Polygon */
 		GeoLines a = geoLinesFromGeom(aGeom);
 		GeoPolygon b = geoPolygonFromGeom(bGeom);
+		// If the geometry doesn't have BoundingBoxe, calculate it
+		if (b.bbox == NULL)
+			b.bbox = boundingBoxLines(b.exteriorRing);
 		distance = geoDistanceLinePolygon(a, b);
 		freeGeoLines(a);
 		freeGeoPolygon(b);
 	} else if (dimA == 2 && dimB == 1) {
 		/* Polygon and Line/LinearRing */
 		GeoPolygon a = geoPolygonFromGeom(aGeom);
+		// If the geometry doesn't have BoundingBoxe, calculate it
+		if (a.bbox == NULL)
+			a.bbox = boundingBoxLines(a.exteriorRing);
 		GeoLines b = geoLinesFromGeom(bGeom);
 		distance = geoDistanceLinePolygon(b, a);
 		freeGeoPolygon(a);
@@ -759,7 +765,7 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom)
 		/* Polygon and Polygon */
 		GeoPolygon a = geoPolygonFromGeom(aGeom);
 		GeoPolygon b = geoPolygonFromGeom(bGeom);
-		//If the geometry don't have BoundingBoxes, calculate them
+		// If the geometries don't have BoundingBoxes, calculate them
 		if (a.bbox == NULL)
 			a.bbox = boundingBoxLines(a.exteriorRing);
 		if (b.bbox == NULL)
