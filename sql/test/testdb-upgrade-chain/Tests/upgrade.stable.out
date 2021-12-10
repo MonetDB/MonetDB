@@ -4574,4 +4574,104 @@ update sys.functions set system = true where system <> true and schema_id = (sel
 update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc') and name in ('clock', 'tick');
 update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr') and name in ('clock', 'tick');
 drop view sys.systemfunctions;
+drop table sys.statistics;
+drop procedure sys.analyze(int,bigint);
+drop procedure sys.analyze(int,bigint,string);
+drop procedure sys.analyze(int,bigint,string,string);
+drop procedure sys.analyze(int,bigint,string,string,string);
+create procedure sys."analyze"()
+external name sql."analyze";
+grant execute on procedure sys."analyze"() to public;
+create procedure sys."analyze"("sname" varchar(1024))
+external name sql."analyze";
+grant execute on procedure sys."analyze"(varchar(1024)) to public;
+create procedure sys."analyze"("sname" varchar(1024), "tname" varchar(1024))
+external name sql."analyze";
+grant execute on procedure sys."analyze"(varchar(1024),varchar(1024)) to public;
+create procedure sys."analyze"("sname" varchar(1024), "tname" varchar(1024), "cname" varchar(1024))
+external name sql."analyze";
+grant execute on procedure sys."analyze"(varchar(1024),varchar(1024),varchar(1024)) to public;
+create function sys."statistics"()
+returns table (
+	"column_id" integer,
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"width" integer,
+	"count" bigint,
+	"unique" boolean,
+	"nils" boolean,
+	"minval" string,
+	"maxval" string,
+	"sorted" boolean,
+	"revsorted" boolean
+)
+external name sql."statistics";
+grant execute on function sys."statistics"() to public;
+create view sys."statistics" as
+select * from sys."statistics"()
+-- exclude system tables
+where ("schema", "table") in (
+	SELECT sch."name", tbl."name"
+	FROM sys."tables" AS tbl JOIN sys."schemas" AS sch ON tbl.schema_id = sch.id
+	WHERE tbl."system" = FALSE)
+order by "schema", "table", "column";
+grant select on sys."statistics" to public;
+create function sys."statistics"("sname" varchar(1024))
+returns table (
+	"column_id" integer,
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"width" integer,
+	"count" bigint,
+	"unique" boolean,
+	"nils" boolean,
+	"minval" string,
+	"maxval" string,
+	"sorted" boolean,
+	"revsorted" boolean
+)
+external name sql."statistics";
+grant execute on function sys."statistics"(varchar(1024)) to public;
+create function sys."statistics"("sname" varchar(1024), "tname" varchar(1024))
+returns table (
+	"column_id" integer,
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"width" integer,
+	"count" bigint,
+	"unique" boolean,
+	"nils" boolean,
+	"minval" string,
+	"maxval" string,
+	"sorted" boolean,
+	"revsorted" boolean
+)
+external name sql."statistics";
+grant execute on function sys."statistics"(varchar(1024),varchar(1024)) to public;
+create function sys."statistics"("sname" varchar(1024), "tname" varchar(1024), "cname" varchar(1024))
+returns table (
+	"column_id" integer,
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"width" integer,
+	"count" bigint,
+	"unique" boolean,
+	"nils" boolean,
+	"minval" string,
+	"maxval" string,
+	"sorted" boolean,
+	"revsorted" boolean
+)
+external name sql."statistics";
+grant execute on function sys."statistics"(varchar(1024),varchar(1024),varchar(1024)) to public;
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'statistics';
+update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('analyze','statistics');
 
