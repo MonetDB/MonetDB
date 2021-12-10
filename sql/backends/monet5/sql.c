@@ -6259,3 +6259,4 @@ static mel_func sql_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_sql_mal)
 { mal_module("sql", NULL, sql_init_funcs); }
+
