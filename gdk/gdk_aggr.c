@@ -2929,7 +2929,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			n++;						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      TIMEOUT_HANDLER(GDK_FAIL));		\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
 		/* the sum fit, so now we can calculate the average */	\
 		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
 		if (0) {						\
@@ -2988,7 +2988,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			AVERAGE_ITER_FLOAT(TYPE, x, a, n);	\
 		}						\
 		TIMEOUT_CHECK(timeoffset,			\
-			      TIMEOUT_HANDLER(GDK_FAIL));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 		*avg = n > 0 ? a : dbl_nil;			\
 	} while (0)
 
@@ -3045,10 +3045,9 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 		AVERAGE_FLOATTYPE(dbl);
 		break;
 	default:
-		bat_iterator_end(&bi);
 		GDKerror("average of type %s unsupported.\n",
 			 ATOMname(b->ttype));
-		return GDK_FAIL;
+		goto bailout;
 	}
 	bat_iterator_end(&bi);
 	if (scale != 0 && !is_dbl_nil(*avg))
@@ -3056,6 +3055,9 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	if (vals)
 		*vals = (BUN) n;
 	return GDK_SUCCEED;
+bailout:
+	bat_iterator_end(&bi);
+	return GDK_FAIL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -4664,7 +4666,7 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 				goto overflow;				\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      TIMEOUT_HANDLER(dbl_nil));		\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
 	} while (0)
 
 dbl
@@ -4710,10 +4712,8 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 		AGGR_CORRELATION_SINGLE(dbl);
 		break;
 	default:
-		bat_iterator_end(&b1i);
-		bat_iterator_end(&b2i);
 		GDKerror("type (%s) not supported.\n", ATOMname(tp));
-		return dbl_nil;
+		goto bailout;
 	}
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
@@ -4725,9 +4725,10 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
 	return aux;
   overflow:
+	GDKerror("22003!overflow in calculation.\n");
+  bailout:
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
-	GDKerror("22003!overflow in calculation.\n");
 	return dbl_nil;
 }
 
