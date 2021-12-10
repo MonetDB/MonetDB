@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, glob
 from subprocess import run, PIPE, CalledProcessError
 
 HOST=os.getenv('HOST')
@@ -62,11 +62,8 @@ if __name__ == '__main__':
         raise SystemExit(e.stderr)
 
 # cleanup created data export files from Tests/DownloadData.sql
-    cmd = ['rm', '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/sys_tables_by_id.*')]
-    try:
-        p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
-    except CalledProcessError as e:
-        raise SystemExit(e.stderr)
+    for tfile in glob.glob(os.path.join(TSTSRCBASE, TSTDIR, 'Tests/sys_tables_by_id.*')):
+        os.remove(tfile)
 
 #set -e
 #
