@@ -595,17 +595,33 @@ static gdk_return
 la_bat_update_count(logger *lg, log_id id, lng cnt)
 {
 	BATiter cni = bat_iterator_nolock(lg->catalog_id);
-	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
 		MT_rwlock_rdlock(&cni.b->thashlock);
+		BUN p, cp = BUN_NONE;
+
 		HASHloop_int(cni, cni.b->thash, p, &id) {
-			lng ocnt = *(lng*) Tloc(lg->catalog_cnt, p);
+			lng lid = *(lng *) Tloc(lg->catalog_lid, p);
+
+			if (lid != lng_nil && lid <= lg->saved_tid)
+				break;
+			cp = p;
+		}
+		if (cp != BUN_NONE) {
+			lng ocnt = *(lng*) Tloc(lg->catalog_cnt, cp);
 			assert(lg->catalog_cnt->hseqbase == 0);
-			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED) {
+			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, cp, &cnt, false) != GDK_SUCCEED) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return GDK_FAIL;
 			}
+#ifndef NDEBUG
+			if (ocnt < cnt) {
+				log_bid bid = *(log_bid *) Tloc(lg->catalog_bid, cp);
+				BAT *b = BBP_record(bid).cache;
+				if (!(b == NULL || b->theap == NULL || b->ttype == 0 || b->theap->dirty) && (!b->batTransient))
+					fprintf(stderr, "update count: sqlid: %d, cnt: "LLFMT"->"LLFMT", "ALGOBATFMT"\n", id, ocnt, cnt, ALGOBATPAR(b));
+			}
+#endif
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}

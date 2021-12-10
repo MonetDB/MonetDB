@@ -393,6 +393,7 @@ convert_oid( BAT *o, int rt)
 	BATiter oi = bat_iterator(o);
 	BAT *b = COLnew(o->hseqbase, rt, BATcount(o), TRANSIENT);
 	int brokenrange = 0, nil = 0;
+	bool osorted = o->tsorted, okey = o->tkey;
 
 	if (!b)
 		return NULL;
@@ -435,8 +436,8 @@ convert_oid( BAT *o, int rt)
 	BATsetcount(b, BATcount(o));
 	BATnegateprops(b);
 	if (!brokenrange)
-		b->tsorted = o->tsorted;
-	b->tkey = o->tkey;
+		b->tsorted = osorted;
+	b->tkey = okey;
 	if (nil) {
 		b->tnil = true;
 		b->tnonil = false;
@@ -534,24 +535,32 @@ DICTrenumber_intern( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 	}
 	if (o->ttype == TYPE_bte) {
 		bte *op = Tloc(no, 0);
-		unsigned char *ip = Tloc(o, 0);
 		oid *c = Tloc(rc, 0);
+		BATiter oi = bat_iterator(o);
+		unsigned char *ip = Tloc(o, 0);
+		bool otkey = o->tkey;
+
 		for(BUN i = 0; i<cnt; i++) {
 			op[i] = (bte) ((BUN)ip[i]==offcnt?offcnt:c[ip[i]]);
 		}
+		bat_iterator_end(&oi);
 		BATsetcount(no, cnt);
 		BATnegateprops(no);
-		no->tkey = o->tkey;
+		no->tkey = otkey;
 	} else if (o->ttype == TYPE_sht) {
 		sht *op = Tloc(no, 0);
-		unsigned short *ip = Tloc(o, 0);
 		oid *c = Tloc(rc, 0);
+		BATiter oi = bat_iterator(o);
+		unsigned short *ip = Tloc(o, 0);
+		bool otkey = o->tkey;
+
 		for(BUN i = 0; i<cnt; i++) {
 			op[i] = (sht) ((BUN)ip[i]==offcnt?offcnt:c[ip[i]]);
 		}
+		bat_iterator_end(&oi);
 		BATsetcount(no, cnt);
 		BATnegateprops(no);
-		no->tkey = o->tkey;
+		no->tkey = otkey;
 	} else {
 		assert(0);
 	}

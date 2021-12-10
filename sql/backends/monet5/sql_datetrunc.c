@@ -166,16 +166,17 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
+	bool btnonil = b->tnonil, btnil = b->tnil, btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
 	BATsetcount(bn, (BUN) lo);
 	/* we can inherit most properties */
-	bn->tnonil = b->tnonil;
-	bn->tnil = b->tnil;
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
+	bn->tnonil = btnonil;
+	bn->tnil = btnil;
+	bn->tsorted = btsorted;
+	bn->trevsorted = btrevsorted;
 	bn->tkey = false;	/* can't be sure */
 	BBPkeepref(*res = bn->batCacheid);
-	BBPunfix(b->batCacheid);
 	return msg;
 }
 
