@@ -396,6 +396,7 @@ BATcalcnot(BAT *b, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted, btkey = b->tkey;
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_msk:
 		if (ci.tpe == cand_dense) {
@@ -459,11 +460,11 @@ BATcalcnot(BAT *b, BAT *s)
 	BATsetcount(bn, ci.ncand);
 
 	/* NOT reverses the order, but NILs mess it up */
-	bn->tsorted = nils == 0 && b->trevsorted;
-	bn->trevsorted = nils == 0 && b->tsorted;
+	bn->tsorted = nils == 0 && btrevsorted;
+	bn->trevsorted = nils == 0 && btsorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = b->tkey && nils <= 1;
+	bn->tkey = btkey && nils <= 1;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -594,6 +595,7 @@ BATcalcnegate(BAT *b, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted, btkey = b->tkey;
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, NEGATE);
@@ -629,11 +631,11 @@ BATcalcnegate(BAT *b, BAT *s)
 	BATsetcount(bn, ncand);
 
 	/* unary - reverses the order, but NILs mess it up */
-	bn->tsorted = nils == 0 && b->trevsorted;
-	bn->trevsorted = nils == 0 && b->tsorted;
+	bn->tsorted = nils == 0 && btrevsorted;
+	bn->trevsorted = nils == 0 && btsorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = b->tkey && nils <= 1;
+	bn->tkey = btkey && nils <= 1;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -1027,6 +1029,7 @@ BATcalcsign(BAT *b, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, SIGN);
@@ -1064,8 +1067,8 @@ BATcalcsign(BAT *b, BAT *s)
 	/* SIGN is ordered if the input is ordered (negative comes
 	 * first, positive comes after) and NILs stay in the same
 	 * position */
-	bn->tsorted = b->tsorted || ncand <= 1 || nils == ncand;
-	bn->trevsorted = b->trevsorted || ncand <= 1 || nils == ncand;
+	bn->tsorted = btsorted || ncand <= 1 || nils == ncand;
+	bn->trevsorted = btrevsorted || ncand <= 1 || nils == ncand;
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
@@ -1193,6 +1196,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	dst = (bit *) Tloc(bn, 0);
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		ISNIL_TYPE(bte, notnil);
@@ -1241,11 +1245,11 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	 * 1's and ends with 0's, hence bn is revsorted.  Similarly
 	 * for revsorted. At the notnil case, these properties remain the same */
 	if (notnil) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
+		bn->tsorted = btsorted;
+		bn->trevsorted = btrevsorted;
 	} else {
-		bn->tsorted = b->trevsorted;
-		bn->trevsorted = b->tsorted;
+		bn->tsorted = btrevsorted;
+		bn->trevsorted = btsorted;
 	}
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
@@ -4311,13 +4315,12 @@ add_typeswitchloop(const void *lft, int tp1, bool incr1,
 }
 
 static BUN
-addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
+addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn, BATiter b1i, BATiter b2i,
 	    struct canditer *restrict ci1, struct canditer *restrict ci2)
 {
 	BUN nils = 0, ncand = ci1->ncand;
 	char *s;
 	size_t slen, llen, rlen;
-	BATiter b1i, b2i;
 	oid candoff1, candoff2;
 
 	lng timeoffset = 0;
@@ -4333,8 +4336,6 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	s = GDKmalloc(slen);
 	if (s == NULL)
 		return BUN_NONE;
-	b1i = bat_iterator(b1);
-	b2i = bat_iterator(b2);
 	TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 		oid x1 = canditer_next(ci1) - candoff1;
 		oid x2 = canditer_next(ci2) - candoff2;
@@ -4361,8 +4362,6 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 				goto bunins_failed;
 		}
 	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 	TIMEOUT_CHECK(timeoffset,
 		      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	GDKfree(s);
@@ -4370,8 +4369,6 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	return nils;
 
   bunins_failed:
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 	GDKfree(s);
 	return BUN_NONE;
 }
@@ -4403,20 +4400,22 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
+	BATiter b1i = bat_iterator(b1);
+	BATiter b2i = bat_iterator(b2);
+	bool b1tsorted = b1->tsorted, b1trevsorted = b1->trevsorted;
+	bool b2tsorted = b2->tsorted, b2trevsorted = b2->trevsorted;
 	if (b1->ttype == TYPE_str && b2->ttype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(b1, NULL, b2, NULL, bn, &ci1, &ci2);
+		nils = addstr_loop(b1, NULL, b2, NULL, bn, b1i, b2i, &ci1, &ci2);
 	} else {
-		BATiter b1i = bat_iterator(b1);
-		BATiter b2i = bat_iterator(b2);
 		nils = add_typeswitchloop(b1i.base, b1->ttype, true,
 					  b2i.base, b2->ttype, true,
 					  Tloc(bn, 0), tp,
 					  &ci1, &ci2,
 					  b1->hseqbase, b2->hseqbase,
 					  abort_on_error, __func__);
-		bat_iterator_end(&b1i);
-		bat_iterator_end(&b2i);
 	}
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -4428,9 +4427,9 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	/* if both inputs are sorted the same way, and no overflow
 	 * occurred (we only know for sure if abort_on_error is set),
 	 * the result is also sorted */
-	bn->tsorted = (abort_on_error && b1->tsorted && b2->tsorted && nils == 0)
+	bn->tsorted = (abort_on_error && b1tsorted && b2tsorted && nils == 0)
 		|| ncand <= 1 || nils == ncand;
-	bn->trevsorted = (abort_on_error && b1->trevsorted && b2->trevsorted && nils == 0)
+	bn->trevsorted = (abort_on_error && b1trevsorted && b2trevsorted && nils == 0)
 		|| ncand <= 1 || nils == ncand;
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
@@ -4467,10 +4466,11 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
+	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ncand});
+		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, bi, (BATiter){0}, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ncand});
 	} else {
-		BATiter bi = bat_iterator(b);
 		nils = add_typeswitchloop(bi.base, b->ttype, true,
 					  VALptr(v), v->vtype, false,
 					  Tloc(bn, 0), tp,
@@ -4478,8 +4478,8 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 					  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 					  b->hseqbase, 0,
 					  abort_on_error, __func__);
-		bat_iterator_end(&bi);
 	}
+	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -4491,9 +4491,9 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->tsorted = (abort_on_error && b->tsorted && nils == 0) ||
+	bn->tsorted = (abort_on_error && btsorted && nils == 0) ||
 		ncand <= 1 || nils == ncand;
-	bn->trevsorted = (abort_on_error && b->trevsorted && nils == 0) ||
+	bn->trevsorted = (abort_on_error && btrevsorted && nils == 0) ||
 		ncand <= 1 || nils == ncand;
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
@@ -4528,10 +4528,11 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
+	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, &(struct canditer){.tpe=cand_dense, .ncand=ncand}, &ci);
+		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, (BATiter){0}, bi, &(struct canditer){.tpe=cand_dense, .ncand=ncand}, &ci);
 	} else {
-		BATiter bi = bat_iterator(b);
 		nils = add_typeswitchloop(VALptr(v), v->vtype, false,
 					  bi.base, b->ttype, true,
 					  Tloc(bn, 0), tp,
@@ -4539,8 +4540,8 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 					  &ci,
 					  0, b->hseqbase,
 					  abort_on_error, __func__);
-		bat_iterator_end(&bi);
 	}
+	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -4552,9 +4553,9 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->tsorted = (abort_on_error && b->tsorted && nils == 0) ||
+	bn->tsorted = (abort_on_error && btsorted && nils == 0) ||
 		ncand <= 1 || nils == ncand;
-	bn->trevsorted = (abort_on_error && b->trevsorted && nils == 0) ||
+	bn->trevsorted = (abort_on_error && btrevsorted && nils == 0) ||
 		ncand <= 1 || nils == ncand;
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
@@ -4611,6 +4612,7 @@ BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 		return bn;
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	nils = (*typeswitchloop)(bi.base, b->ttype, true,
 				 &(bte){1}, TYPE_bte, false,
 				 Tloc(bn, 0), bn->ttype,
@@ -4630,9 +4632,9 @@ BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->tsorted = (abort_on_error && b->tsorted) ||
+	bn->tsorted = (abort_on_error && btsorted) ||
 		ncand <= 1 || nils == ncand;
-	bn->trevsorted = (abort_on_error && b->trevsorted) ||
+	bn->trevsorted = (abort_on_error && btrevsorted) ||
 		ncand <= 1 || nils == ncand;
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
@@ -6304,6 +6306,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	nils = sub_typeswitchloop(bi.base, b->ttype, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
@@ -6323,9 +6326,9 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->tsorted = (abort_on_error && b->tsorted && nils == 0) ||
+	bn->tsorted = (abort_on_error && btsorted && nils == 0) ||
 		ncand <= 1 || nils == ncand;
-	bn->trevsorted = (abort_on_error && b->trevsorted && nils == 0) ||
+	bn->trevsorted = (abort_on_error && btrevsorted && nils == 0) ||
 		ncand <= 1 || nils == ncand;
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
@@ -6361,6 +6364,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	nils = sub_typeswitchloop(VALptr(v), v->vtype, false,
 				  bi.base, b->ttype, true,
 				  Tloc(bn, 0), tp,
@@ -6381,9 +6385,9 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	 * know for sure if abort_on_error is set), the result is
 	 * sorted in the opposite direction (except that NILs mess
 	 * things up */
-	bn->tsorted = (abort_on_error && nils == 0 && b->trevsorted) ||
+	bn->tsorted = (abort_on_error && nils == 0 && btrevsorted) ||
 		ncand <= 1 || nils == ncand;
-	bn->trevsorted = (abort_on_error && nils == 0 && b->tsorted) ||
+	bn->trevsorted = (abort_on_error && nils == 0 && btsorted) ||
 		ncand <= 1 || nils == ncand;
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
@@ -8774,6 +8778,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	nils = mul_typeswitchloop(bi.base, b->ttype, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
@@ -8797,11 +8802,11 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		ValRecord sign;
 
 		VARcalcsign(&sign, v);
-		bn->tsorted = (sign.val.btval >= 0 && b->tsorted && nils == 0) ||
-			(sign.val.btval <= 0 && b->trevsorted && nils == 0) ||
+		bn->tsorted = (sign.val.btval >= 0 && btsorted && nils == 0) ||
+			(sign.val.btval <= 0 && btrevsorted && nils == 0) ||
 			ncand <= 1 || nils == ncand;
-		bn->trevsorted = (sign.val.btval >= 0 && b->trevsorted && nils == 0) ||
-			(sign.val.btval <= 0 && b->tsorted && nils == 0) ||
+		bn->trevsorted = (sign.val.btval >= 0 && btrevsorted && nils == 0) ||
+			(sign.val.btval <= 0 && btsorted && nils == 0) ||
 			ncand <= 1 || nils == ncand;
 	} else {
 		bn->tsorted = ncand <= 1 || nils == ncand;
@@ -8841,6 +8846,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	nils = mul_typeswitchloop(VALptr(v), v->vtype, false,
 				  bi.base, b->ttype, true,
 				  Tloc(bn, 0), tp,
@@ -8864,11 +8870,11 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		ValRecord sign;
 
 		VARcalcsign(&sign, v);
-		bn->tsorted = (sign.val.btval >= 0 && b->tsorted && nils == 0) ||
-			(sign.val.btval <= 0 && b->trevsorted && nils == 0) ||
+		bn->tsorted = (sign.val.btval >= 0 && btsorted && nils == 0) ||
+			(sign.val.btval <= 0 && btrevsorted && nils == 0) ||
 			ncand <= 1 || nils == ncand;
-		bn->trevsorted = (sign.val.btval >= 0 && b->trevsorted && nils == 0) ||
-			(sign.val.btval <= 0 && b->tsorted && nils == 0) ||
+		bn->trevsorted = (sign.val.btval >= 0 && btrevsorted && nils == 0) ||
+			(sign.val.btval <= 0 && btsorted && nils == 0) ||
 			ncand <= 1 || nils == ncand;
 	} else {
 		bn->tsorted = ncand <= 1 || nils == ncand;
@@ -11120,6 +11126,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
+	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	nils = div_typeswitchloop(bi.base, b->ttype, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
@@ -11144,11 +11151,11 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		ValRecord sign;
 
 		VARcalcsign(&sign, v);
-		bn->tsorted = (sign.val.btval > 0 && b->tsorted && nils == 0) ||
-			(sign.val.btval < 0 && b->trevsorted && nils == 0) ||
+		bn->tsorted = (sign.val.btval > 0 && btsorted && nils == 0) ||
+			(sign.val.btval < 0 && btrevsorted && nils == 0) ||
 			ncand <= 1 || nils == ncand;
-		bn->trevsorted = (sign.val.btval > 0 && b->trevsorted && nils == 0) ||
-			(sign.val.btval < 0 && b->tsorted && nils == 0) ||
+		bn->trevsorted = (sign.val.btval > 0 && btrevsorted && nils == 0) ||
+			(sign.val.btval < 0 && btsorted && nils == 0) ||
 			ncand <= 1 || nils == ncand;
 	} else {
 		bn->tsorted = ncand <= 1 || nils == ncand;
