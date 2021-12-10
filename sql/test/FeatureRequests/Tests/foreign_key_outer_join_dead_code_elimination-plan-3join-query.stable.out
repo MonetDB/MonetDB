@@ -1,24 +1,22 @@
 % .plan # table_name
 % rel # name
 % clob # type
-% 65 # length
+% 80 # length
 project (
 | group by (
-| | semijoin (
-| | | table("sys"."fk") [ "fk"."fk1" ],
-| | | table("sys"."pk1") [ "pk1"."pk1" NOT NULL UNIQUE HASHCOL  ]
-| | ) [ ("fk"."fk1") = ("pk1"."pk1" NOT NULL HASHCOL ) ]
+| | select (
+| | | table("sys"."fk") [ "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
+| | ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ]
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 % .plan # table_name
 % rel # name
 % clob # type
-% 73 # length
+% 114 # length
 project (
-| semijoin (
-| | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."fk1" ],
-| | table("sys"."pk1") [ "pk1"."pk1" NOT NULL UNIQUE HASHCOL  ]
-| ) [ ("fk"."fk1") = ("pk1"."pk1" NOT NULL HASHCOL ) ]
+| select (
+| | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
+| ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ]
 ) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 % .plan # table_name
 % rel # name
@@ -56,12 +54,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 170 # length
+% 171 # length
 project (
 | join (
-| | select (
-| | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
-| | ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ],
+| | semijoin (
+| | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ],
+| | | table("sys"."pk1") [ "pk1"."%TID%" NOT NULL UNIQUE ]
+| | ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ],
 | | table("sys"."pk2") [ "pk2"."v2", "pk2"."%TID%" NOT NULL UNIQUE ]
 | ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]

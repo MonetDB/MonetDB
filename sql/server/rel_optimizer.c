@@ -9517,8 +9517,10 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 {
 	/* push_join_down introduces semijoins */
 	int level = *(int*) v->data;
-	if (level <= 0)
+	if (level <= 0) {
+		rel = rel_semijoin_use_fk(v, rel);
 		rel = rel_push_join_down(v, rel);
+	}
 
 	rel = rel_simplify_fk_joins(v, rel);
 	rel = rel_push_select_down(v, rel);
@@ -9609,13 +9611,8 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 		rel = rel_visitor_topdown(v, rel, &rel_optimize_joins);
 		if (!gp->cnt[op_update])
 			rel = rel_join_order(v, rel);
-	}
-
-	/* Important -> Re-write semijoins after rel_join_order */
-	if (gp->cnt[op_anti] || gp->cnt[op_semi]) {
+		/* Important -> Re-write semijoins after rel_join_order */
 		rel = rel_visitor_bottomup(v, rel, &rel_optimize_semi_and_anti);
-		if (level <= 0)
-			rel = rel_visitor_topdown(v, rel, &rel_semijoin_use_fk);
 	}
 
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,
