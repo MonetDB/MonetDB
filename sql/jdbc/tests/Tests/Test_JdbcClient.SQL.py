@@ -21,14 +21,14 @@ if __name__ == '__main__':
     except CalledProcessError as e:
         raise SystemExit(e.stderr)
 
-    cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/JdbcClient_create_tables.sql')]
+    cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'JdbcClient_create_tables.sql')]
     try:
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
     except CalledProcessError as e:
         print(e.stderr, file=sys.stderr)
         raise SystemExit('ERROR: failed to create tables!')
 
-    cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/JdbcClient_inserts_selects.sql')]
+    cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'JdbcClient_inserts_selects.sql')]
     try:
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
     except CalledProcessError as e:
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     except CalledProcessError as e:
         raise SystemExit(e.stderr)
 
-    cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/JdbcClient_drop_tables.sql')]
+    cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'JdbcClient_drop_tables.sql')]
     try:
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
     except CalledProcessError as e:
@@ -49,16 +49,16 @@ if __name__ == '__main__':
 
     try:
         # test the ON CLIENT download/export functionality via JdbcClient with --csvdir argument (to enable the ON CLIENT functionality)
-        cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/OnClientDownloadData.sql')]
+        cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'OnClientDownloadData.sql')]
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         # test the ON CLIENT upload/import functionality via JdbcClient with --csvdir argument (to enable the ON CLIENT functionality)
-        cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/OnClientUploadData.sql')]
+        cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'OnClientUploadData.sql')]
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
     except CalledProcessError as e:
         sys.stderr.write(str(e))
     finally:
         # cleanup created data export files from Tests/DownloadData.sql
-        for tfile in glob.glob(os.path.join(TSTSRCBASE, TSTDIR, 'Tests/sys_tables_by_id.*')):
+        for tfile in glob.glob(os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'sys_tables_by_id.*')):
             os.remove(tfile)
 
 #set -e

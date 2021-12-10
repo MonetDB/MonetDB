@@ -913,18 +913,18 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		}
 		}
 	}
+	bool btnonil = b->tnonil, btkey = b->tkey;
 	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bs->batCacheid);
 
 	BATsetcount(bn, cnt);
 	bn->tsorted = false;
 	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
-	bn->tkey = b->tkey;
-	bn->tnonil = b->tnonil;
+	bn->tkey = btkey;
+	bn->tnonil = btnonil;
 	bn->tnil = false;		/* can't be sure if values deleted */
-
-	BBPunfix(b->batCacheid);
-	BBPunfix(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
