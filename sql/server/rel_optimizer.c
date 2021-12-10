@@ -9492,6 +9492,7 @@ rel_optimize_joins(visitor *v, sql_rel *rel)
 {
 	rel = rel_push_join_exps_down(v, rel);
 	rel = rel_out2inner(v, rel);
+	rel = rel_join2semijoin(v, rel);
 	rel = rel_push_join_down_outer(v, rel);
 	return rel;
 }
@@ -9521,7 +9522,6 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 
 	rel = rel_simplify_fk_joins(v, rel);
 	rel = rel_push_select_down(v, rel);
-	rel = rel_join2semijoin(v, rel);
 	if (rel && rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
 
