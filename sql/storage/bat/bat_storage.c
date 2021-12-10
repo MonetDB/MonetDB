@@ -2573,7 +2573,7 @@ log_segments(sql_trans *tr, segments *segs, sqlid id)
 {
 	/* log segments */
 	for (segment *seg = segs->h; seg; seg=seg->next) {
-		if (seg->ts == tr->tid) {
+		if (seg->ts == tr->tid && seg->end-seg->start) {
 			if (log_segment(tr, seg, id) != LOG_OK)
 				return LOG_ERR;
 		}
@@ -3086,6 +3086,8 @@ log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 	int ok = LOG_OK, cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
 		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
+	if (ok == LOG_OK)
+		ok = segments2cs(tr, s->segs, &s->cs);
 	if (ok == LOG_OK)
 		ok = log_segments(tr, s->segs, id);
 	if (ok == LOG_OK && !cleared)
