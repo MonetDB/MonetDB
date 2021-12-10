@@ -155,6 +155,8 @@ static str
 UUIDisaUUID(bit *retval, str *s)
 {
 	*retval = isaUUID(*s);
+	if (*retval == false)
+		GDKclrerr();
 	return MAL_SUCCEED;
 }
 
@@ -181,6 +183,7 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 	for (BUN p = 0 ; p < q ; p++)
 		dst[p] = isaUUID(BUNtvar(bi, p));
 	bat_iterator_end(&bi);
+	GDKclrerr(); /* Not interested in atomFromStr errors */
 	BATsetcount(bn, q);
 	bn->tnonil = b->tnonil;
 	bn->tnil = b->tnil;
