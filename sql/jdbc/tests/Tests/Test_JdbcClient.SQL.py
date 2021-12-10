@@ -47,23 +47,19 @@ if __name__ == '__main__':
     except CalledProcessError as e:
         raise SystemExit(e.stderr)
 
-# test the ON CLIENT download/export functionality via JdbcClient with --csvdir argument (to enable the ON CLIENT functionality)
-    cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/OnClientDownloadData.sql')]
     try:
+        # test the ON CLIENT download/export functionality via JdbcClient with --csvdir argument (to enable the ON CLIENT functionality)
+        cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/OnClientDownloadData.sql')]
+        p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
+        # test the ON CLIENT upload/import functionality via JdbcClient with --csvdir argument (to enable the ON CLIENT functionality)
+        cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/OnClientUploadData.sql')]
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
     except CalledProcessError as e:
-        raise SystemExit(e.stderr)
-
-# test the ON CLIENT upload/import functionality via JdbcClient with --csvdir argument (to enable the ON CLIENT functionality)
-    cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/OnClientUploadData.sql')]
-    try:
-        p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
-    except CalledProcessError as e:
-        raise SystemExit(e.stderr)
-
-# cleanup created data export files from Tests/DownloadData.sql
-    for tfile in glob.glob(os.path.join(TSTSRCBASE, TSTDIR, 'Tests/sys_tables_by_id.*')):
-        os.remove(tfile)
+         sys.stderr.write(str(e))
+    finally:
+        # cleanup created data export files from Tests/DownloadData.sql
+        for tfile in glob.glob(os.path.join(TSTSRCBASE, TSTDIR, 'Tests/sys_tables_by_id.*')):
+            os.remove(tfile)
 
 #set -e
 #
