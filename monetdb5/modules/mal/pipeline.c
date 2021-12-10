@@ -160,7 +160,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 	return res;
 }
 
-#define unique(Type) \
+#define unique_2_naive(Type) \
 		if (tt == TYPE_##Type) { \
             Type *bp = Tloc(b, 0);        \
 			for(BUN i = 0; i<cnt; i++) { \
@@ -181,6 +181,35 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 			}												\
 		}
 
+#define unique(Type) \
+		if (tt == TYPE_##Type) { \
+			Hash *hs = u->thash; \
+            Type *bp = Tloc(b, 0); \
+            Type *up = Tloc(u, 0); \
+			BUN cur = BATcount(u); \
+			\
+			for(BUN i = 0; i<cnt; i++) { \
+				bool fnd = 0; \
+				BUN hb, prb = HASHprobe(hs, bp+i); \
+                for (hb = HASHget(hs, prb); \
+                    hb != BUN_NONE; \
+                    hb = HASHgetlink(hs, hb)) { \
+                    if (bp[i] == up[hb]) { \
+						fnd = 1; \
+                        break; \
+					} \
+                } \
+				if (!fnd) { \
+					BUN p = cur; \
+					up[cur++] = bp[i]; \
+                    HASHputlink(hs, p, HASHget(hs, prb)); \
+                    HASHput(hs, prb, p); \
+					gp[r++] = b->hseqbase + i; \
+				} \
+			} \
+			BATsetcount(u, cur); \
+		}
+
 static str
 LALGunique(bat *gid, bat *uid, const ptr *h, bat *bid, bat *sid)
 {
@@ -194,7 +223,6 @@ LALGunique(bat *gid, bat *uid, const ptr *h, bat *bid, bat *sid)
 	if (u) {
 		MT_lock_set(&p->l);
 		BUN cnt = BATcount(b);
-		BATiter ui = bat_iterator_nolock(u);
 
 		BAT *g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 
@@ -202,8 +230,13 @@ LALGunique(bat *gid, bat *uid, const ptr *h, bat *bid, bat *sid)
 		int err = 0, tt = b->ttype;
 		oid *gp = Tloc(g, 0);
 		BUN r = 0;
+		BUN ucap = BATcapacity(u), ucnt = BATcount(u);
 
-        if (BAThash(u) == GDK_SUCCEED) {
+		if ((ucap - ucnt) < cnt) {
+			if (BATextend(u, (ucap - ucnt) + cnt ) != GDK_SUCCEED)
+				err = 1;
+		}
+        if (!err && BAThash(u) == GDK_SUCCEED) {
 			unique(bte)
 			unique(sht)
 			unique(int)
