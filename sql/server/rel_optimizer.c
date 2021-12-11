@@ -514,8 +514,12 @@ find_basetable( sql_rel *r)
 		if (!r->l)
 			return NULL;
 		return r;
+	case op_semi:
+	case op_anti:
 	case op_project:
 	case op_select:
+	case op_topn:
+	case op_sample:
 		return find_basetable(r->l);
 	default:
 		return NULL;
