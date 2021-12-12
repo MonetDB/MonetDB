@@ -5264,6 +5264,10 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+/* TODO At the moment I have to disable the new join2semi because the join order optimizer doesn't take semi-joins into account,
+so plans get deteriorated if more joins are optimized into semi-joins. Later I will review the join order with semi-joins and hopefully,
+I will be able to re-enable the new join2semi. */
+#if 0
 #define NO_EXP_FOUND 0
 #define FOUND_WITH_DUPLICATES 1
 #define MAY_HAVE_DUPLICATE_NULLS 2
@@ -5399,6 +5403,163 @@ rel_join2semijoin(visitor *v, sql_rel *rel)
 {
 	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l)
 		rel->l = rewrite_joins2semi(v, rel, rel->l);
+	return rel;
+}
+#endif
+
+#define NO_PROJECTION_FOUND 0
+#define MAY_HAVE_DUPLICATE_NULLS 1
+#define ALL_VALUES_DISTINCT 2
+
+static int
+find_projection_for_join2semi(sql_rel *rel)
+{
+	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op) || is_base(rel->op) || (is_union(rel->op) && need_distinct(rel))) {
+		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
+			return ALL_VALUES_DISTINCT;
+		if (list_length(rel->exps) == 1) {
+			sql_exp *e = rel->exps->h->data;
+			/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
+			if (e->type == e_column) {
+				sql_rel *res = NULL;
+				sql_exp *found = NULL;
+				bool underjoin = false;
+
+				/* if just one groupby column is projected or the relation needs distinct values and one column is projected or is a primary key, it will be distinct */
+				if ((is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)) || (need_distinct(rel) && list_length(rel->exps) == 1))
+					return ALL_VALUES_DISTINCT;
+				if (is_unique(e))
+					return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
+
+				if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op)) &&
+					(found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
+					if (need_distinct(res) && list_length(res->exps) == 1)
+						return ALL_VALUES_DISTINCT;
+					if (is_unique(found))
+						return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
+					if (found->type == e_column && found->card <= CARD_AGGR) {
+						if (!is_groupby(res->op) && list_length(res->exps) != 1)
+							return NO_PROJECTION_FOUND;
+						for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
+							sql_exp *e = n->data;
+							if (e != found && e->type == e_column)
+								return NO_PROJECTION_FOUND;
+						}
+						return ALL_VALUES_DISTINCT;
+					}
+				}
+			}
+		}
+	}
+	return NO_PROJECTION_FOUND;
+}
+
+static sql_rel *
+find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
+{
+	/* generalize possibility : we need the visitor 'step' here */
+	if (rel_is_ref(rel)) /* if the join has multiple references, it's dangerous to convert it into a semijoin */
+		return NULL;
+	if (rel->op == op_join && !list_empty(rel->exps)) {
+		sql_rel *l = rel->l, *r = rel->r;
+		int foundr = NO_PROJECTION_FOUND, foundl = NO_PROJECTION_FOUND, found = NO_PROJECTION_FOUND;
+		bool ok = false;
+
+		foundr = find_projection_for_join2semi(r);
+		if (foundr < ALL_VALUES_DISTINCT)
+			foundl = find_projection_for_join2semi(l);
+		if (foundr && foundr > foundl) {
+			*swap = false;
+			found = foundr;
+		} else if (foundl) {
+			*swap = true;
+			found = foundl;
+		}
+
+		if (found > NO_PROJECTION_FOUND) {
+			/* if all join expressions can be pushed down or have function calls, then it cannot be rewritten into a semijoin */
+			for (node *n=rel->exps->h; n && !ok; n = n->next) {
+				sql_exp *e = n->data;
+
+				ok |= e->type == e_cmp && e->flag == cmp_equal && !exp_has_func(e) && !rel_rebind_exp(v->sql, l, e) && !rel_rebind_exp(v->sql, r, e) &&
+					(found == ALL_VALUES_DISTINCT || !is_semantics(e) || !has_nil((sql_exp *)e->l) || !has_nil((sql_exp *)e->r));
+			}
+		}
+
+		if (ok)
+			return rel;
+	}
+	if (is_join(rel->op) || is_semi(rel->op)) {
+		sql_rel *c;
+
+		if ((c=find_candidate_join2semi(v, rel->l, swap)) != NULL ||
+		    (c=find_candidate_join2semi(v, rel->r, swap)) != NULL)
+			return c;
+	}
+	if (is_topn(rel->op) || is_sample(rel->op))
+		return find_candidate_join2semi(v, rel->l, swap);
+	return NULL;
+}
+
+static int
+subrel_uses_exp_outside_subrel(sql_rel *rel, list *l, sql_rel *c)
+{
+	if (rel == c)
+		return 0;
+	/* for subrel only expect joins (later possibly selects) */
+	if (is_join(rel->op) || is_semi(rel->op)) {
+		if (exps_uses_any(rel->exps, l))
+			return 1;
+		if (subrel_uses_exp_outside_subrel(rel->l, l, c) ||
+		    subrel_uses_exp_outside_subrel(rel->r, l, c))
+			return 1;
+	}
+	if (is_topn(rel->op) || is_sample(rel->op))
+		return subrel_uses_exp_outside_subrel(rel->l, l, c);
+	return 0;
+}
+
+static int
+rel_uses_exp_outside_subrel(sql_rel *rel, list *l, sql_rel *c)
+{
+	/* for now we only expect sub relations of type project, selects (rel) or join/semi */
+	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op)) {
+		if (!list_empty(rel->exps) && exps_uses_any(rel->exps, l))
+			return 1;
+		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r) && exps_uses_any(rel->r, l))
+			return 1;
+		if (rel->l)
+			return subrel_uses_exp_outside_subrel(rel->l, l, c);
+	}
+	if (is_topn(rel->op) || is_sample(rel->op))
+		return subrel_uses_exp_outside_subrel(rel->l, l, c);
+	return 1;
+}
+
+static inline sql_rel *
+rel_join2semijoin(visitor *v, sql_rel *rel)
+{
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
+		bool swap = false;
+		sql_rel *l = rel->l;
+		sql_rel *c = find_candidate_join2semi(v, l, &swap);
+
+		if (c) {
+			/* 'p' is a project */
+			sql_rel *p = swap ? c->l : c->r;
+
+			/* now we need to check if ce is only used at the level of c */
+			if (!rel_uses_exp_outside_subrel(rel, p->exps, c)) {
+				c->op = op_semi;
+				if (swap) {
+					sql_rel *tmp = c->r;
+					c->r = c->l;
+					c->l = tmp;
+				}
+				v->changes++;
+			}
+		}
+	}
 	return rel;
 }
 

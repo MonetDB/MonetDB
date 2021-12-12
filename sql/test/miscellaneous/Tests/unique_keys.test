@@ -71,11 +71,11 @@ plan select othertable.a from testkeys inner join othertable on testkeys.a = oth
 ----
 project (
 | select (
-| | semijoin (
-| | | table("sys"."othertable") [ "othertable"."a" ],
+| | join (
 | | | select (
 | | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
-| | | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = (int(32) "1") ]
+| | | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = (int(32) "1") ],
+| | | table("sys"."othertable") [ "othertable"."a" ]
 | | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
 | ) [ ("othertable"."a") = (int(32) "2") ]
 ) [ "othertable"."a" ]
