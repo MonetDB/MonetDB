@@ -1158,12 +1158,12 @@ backend_create_mal_func(mvc *m, sql_func *f)
 	if (!(fimp = mal_function_find_implementation_address(m, f)))
 		return -1;
 	if (!backend_resolve_function(&clientid, f, fimp, &new_side_effect)) {
-		(void) sql_error(m, 10, SQLSTATE(3F000) "MAL external name %s.%s not bound (%s.%s)", f->mod, fimp, f->s->base.name, f->base.name);
+		(void) sql_error(m, 10, SQLSTATE(3F000) "MAL external name %s.%s not bound (%s.%s)", f->mod, fimp, f->s->base.name, f->sql_name);
 		return -1;
 	}
 	if (old_side_effect != new_side_effect) {
 		(void) sql_error(m, 10, SQLSTATE(42000) "Side-effect value from the SQL %s %s.%s doesn't match the MAL definition %s.%s\n"
-						 "Either re-create the %s, or fix the MAL definition and restart the database", fn, f->s->base.name, f->base.name, f->mod, fimp, fn);
+						 "Either re-create the %s, or fix the MAL definition and restart the database", fn, f->s->base.name, f->sql_name, f->mod, fimp, fn);
 		return -1;
 	}
 	MT_lock_set(&sql_gencodeLock);
@@ -1210,11 +1210,11 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 #ifndef NDEBUG
 	/* for debug builds we keep the SQL function name in the MAL function name to make it easy to debug */
-	if (strlen(f->base.name) + 21 >= IDLENGTH) { /* 20 bits for u64 number + '%' */
-		(void) sql_error(m, 10, SQLSTATE(42000) "MAL function name '%s' too large for the backend", f->base.name);
+	if (strlen(f->sql_name) + 21 >= IDLENGTH) { /* 20 bits for u64 number + '%' */
+		(void) sql_error(m, 10, SQLSTATE(42000) "MAL function name '%s' too large for the backend", f->sql_name);
 		return -1;
 	}
-	(void) snprintf(befname, IDLENGTH, "%%" LLFMT "%s", store_function_counter(m->store), f->base.name);
+	(void) snprintf(befname, IDLENGTH, "%%" LLFMT "%s", store_function_counter(m->store), f->sql_name);
 #else
 	(void) snprintf(befname, IDLENGTH, "f_" LLFMT, store_function_counter(m->store));
 #endif

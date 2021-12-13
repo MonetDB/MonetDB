@@ -19,11 +19,11 @@
 #define exp2list(sa,e)   append(sa_list(sa),e)
 
 #define is_compare_func(sf) (!sf->func->s && \
-	(strcmp(sf->func->base.name, "<") == 0 || strcmp(sf->func->base.name, "<=") == 0 || \
- 	 strcmp(sf->func->base.name, "=") == 0 || strcmp(sf->func->base.name, "<>") == 0 || \
- 	 strcmp(sf->func->base.name, ">") == 0 || strcmp(sf->func->base.name, ">=") == 0) )
+	(strcmp(sf->func->sql_name, "<") == 0 || strcmp(sf->func->sql_name, "<=") == 0 || \
+ 	 strcmp(sf->func->sql_name, "=") == 0 || strcmp(sf->func->sql_name, "<>") == 0 || \
+ 	 strcmp(sf->func->sql_name, ">") == 0 || strcmp(sf->func->sql_name, ">=") == 0) )
 
-#define is_notequal_func(sf) (!sf->func->s && strcmp(sf->func->base.name, "<>") == 0)
+#define is_notequal_func(sf) (!sf->func->s && strcmp(sf->func->sql_name, "<>") == 0)
 
 extern comp_type compare_str2type(const char *compare_op);
 extern comp_type swap_compare( comp_type t );

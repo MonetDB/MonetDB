@@ -123,6 +123,7 @@ func_destroy(sqlstore *store, sql_func *f)
 	_DELETE(f->mod);
 	_DELETE(f->query);
 	_DELETE(f->base.name);
+	_DELETE(f->sql_name);
 	_DELETE(f);
 }
 
@@ -900,8 +901,11 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 
 	rid = store->table_api.column_find_row(tr, find_sql_column(funcs, "id"), &fid, NULL);
 	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "name"), rid, &cbat);
-	update_env = strcmp(v, "env") == 0;
 	base_init(tr->sa, &t->base, fid, 0, v);
+	store->table_api.column_find_string_end(cbat);
+	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "sqlname"), rid, &cbat);
+	t->sql_name = SA_STRDUP(tr->sa, v);
+	update_env = strcmp(v, "env") == 0;
 	store->table_api.column_find_string_end(cbat);
 	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "func"), rid, &cbat);
 	update_env = update_env && strstr(v, "EXTERNAL NAME sql.sql_environment") != NULL;
@@ -1843,7 +1847,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	functions = t = bootstrap_create_table(tr, s, "functions", 2016);
 	bootstrap_create_column(tr, t, "id", 2017, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2018, "varchar", 256);
-	bootstrap_create_column(tr, t, "mangled_name", 2165, "varchar", 256);
+	bootstrap_create_column(tr, t, "sqlname", 2165, "varchar", 256);
 	bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196);
 	bootstrap_create_column(tr, t, "mod", 2020, "varchar", 8196);
 
@@ -3201,6 +3205,7 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 	/* 'func_dup' is aimed at FUNC_LANG_SQL functions ONLY, so f->imp and f->instantiated won't be set */
 	base_init(sa, &f->base, of->base.id, 0, of->base.name);
 	f->mod = SA_STRDUP(sa, of->mod);
+	f->sql_name= SA_STRDUP(sa, of->sql_name);
 	f->type = of->type;
 	f->lang = of->lang;
 	f->semantics = of->semantics;

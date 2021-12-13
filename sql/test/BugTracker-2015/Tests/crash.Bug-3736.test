@@ -328,9 +328,3 @@ person15
 4.500
 12.000
 
-statement ok
-drop table bidder
-
-statement ok
-drop table open_auctions
-
