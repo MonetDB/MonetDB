@@ -62,6 +62,22 @@
  * Windows since otherwise we can't compile this at all in C99 mode */
 #if defined(HAVE_STDATOMIC_H) && (!defined(__STDC_NO_ATOMICS__) || (defined(__INTEL_COMPILER) && defined(_WINDOWS))) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
+#ifdef __cplusplus
+
+#include <atomic>
+
+#if SIZEOF_LONG_LONG == 8
+typedef atomic_ullong ATOMIC_TYPE;
+typedef unsigned long long ATOMIC_BASE_TYPE;
+#elif SIZEOF_LONG == 8
+typedef atomic_ulong ATOMIC_TYPE;
+typedef unsigned long ATOMIC_BASE_TYPE;
+#else
+#error "we need a 64 bit atomic type"
+#endif
+
+#else
+
 #include <stdatomic.h>
 
 #if SIZEOF_LONG_LONG == 8
@@ -104,6 +120,8 @@ typedef volatile atomic_flag ATOMIC_FLAG;
 /* ATOMIC_FLAG_INIT is already defined by the include file */
 #define ATOMIC_CLEAR(var)	atomic_flag_clear(var)
 #define ATOMIC_TAS(var)		atomic_flag_test_and_set(var)
+
+#endif	/* __cplusplus */
 
 #elif defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
