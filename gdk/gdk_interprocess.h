@@ -55,9 +55,9 @@ gdk_export gdk_return GDKreleasesem(int sem_id);
  */
 
 //! Returns the size of the buffer necessary to copy the BAT into
-gdk_export size_t GDKbatcopysize(BAT *bat, str colname);
+gdk_export size_t GDKbatcopysize(BAT *bat, const char *colname);
 //! Copies a BAT into the given destination. Returns the amount of bytes copied (equiv. to GDKbatcopysize(bat))
-gdk_export size_t GDKbatcopy(char *dest, BAT *bat, str colname);
+gdk_export size_t GDKbatcopy(char *dest, BAT *bat, const char *colname);
 //! Reads a BAT from the given source (one that was copied into by GDKbatcopy)
 gdk_export size_t GDKbatread(char *src, BAT **bat, str *colname);
 
