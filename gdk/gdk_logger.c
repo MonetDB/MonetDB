@@ -614,14 +614,6 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return GDK_FAIL;
 			}
-#ifndef NDEBUG
-			if (ocnt < cnt) {
-				log_bid bid = *(log_bid *) Tloc(lg->catalog_bid, cp);
-				BAT *b = BBP_record(bid).cache;
-				if (!(b == NULL || b->theap == NULL || b->ttype == 0 || b->theap->dirty) && (!b->batTransient))
-					fprintf(stderr, "update count: sqlid: %d, cnt: "LLFMT"->"LLFMT", "ALGOBATFMT"\n", id, ocnt, cnt, ALGOBATPAR(b));
-			}
-#endif
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
