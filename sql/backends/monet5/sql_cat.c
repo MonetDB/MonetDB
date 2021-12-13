@@ -995,7 +995,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			sql_func *sff = sf->func;
 
 			if (!sff->s || sff->system)
-				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->base.name);
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->sql_name);
 
 			/* if all function parameters are the same, return */
 			if (sff->lang == f->lang && sff->type == f->type &&
@@ -1006,7 +1006,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 				return MAL_SUCCEED;
 
 			if (mvc_check_dependency(sql, sff->base.id, !IS_PROC(sff) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
-				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: there are database objects dependent on %s %s;", base, F, fn, sff->base.name);
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: there are database objects dependent on %s %s;", base, F, fn, sff->sql_name);
 			switch (mvc_drop_func(sql, s, sff, 0)) {
 				case -1:
 					throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);

@@ -233,7 +233,7 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 		allowed = sql_grantable(sql, grantor, f->base.id, privs) == 1;
 
 	if (!allowed)
-		throw(SQL, "sql.grant_func", SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant privileges for function '%s'", get_string_global_var(sql, "current_user"), f->base.name);
+		throw(SQL, "sql.grant_func", SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant privileges for function '%s'", get_string_global_var(sql, "current_user"), f->sql_name);
 
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0)
@@ -371,7 +371,7 @@ sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fu
 		allowed = sql_grantable(sql, grantor, f->base.id, privs) == 1;
 
 	if (!allowed)
-		throw(SQL, "sql.revoke_func", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke privileges for function '%s'", get_string_global_var(sql, "current_user"), f->base.name);
+		throw(SQL, "sql.revoke_func", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke privileges for function '%s'", get_string_global_var(sql, "current_user"), f->sql_name);
 
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0)

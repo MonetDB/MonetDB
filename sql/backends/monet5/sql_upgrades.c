@@ -76,9 +76,9 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 
 		pos += snprintf(buf + pos, bufsize - pos,
 				"insert into sys.functions values"
-				" (%d, '%s', '%s', '%s',"
+				" (%d, '%s', '%s', '%s', '%s',"
 				" %d, %d, %s, %s, %s, %d, %s, %s);\n",
-				func->base.id, func->sql_name,
+				func->base.id, func->base.name, func->sql_name,
 				sql_func_imp(func), sql_func_mod(func), (int) FUNC_LANG_INT,
 				(int) func->type,
 				boolnames[func->side_effect],
@@ -236,10 +236,10 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-			"update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = %d;\n",
+			"update sys.functions set system = true where system <> true and sqlname in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and sqlname in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and sqlname in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and sqlname = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = %d;\n",
 			(int) F_UNION, (int) F_AGGR, (int) F_ANALYTIC, (int) F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
@@ -620,13 +620,13 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema, bool oct202
 		" and name in ('storage', 'tablestorage', 'schemastorage', 'storagemodelinput', 'storagemodel', 'tablestoragemodel');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 		"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-		" and name in ('storage') and type = %d;\n", (int) F_UNION);
+		" and sqlname in ('storage') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 		"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-		" and name in ('storagemodelinit') and type = %d;\n", (int) F_PROC);
+		" and sqlname in ('storagemodelinit') and type = %d;\n", (int) F_PROC);
 	pos += snprintf(buf + pos, bufsize - pos,
 		"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-		" and name in ('columnsize', 'heapsize', 'hashsize', 'imprintsize') and type = %d;\n", (int) F_FUNC);
+		" and sqlname in ('columnsize', 'heapsize', 'hashsize', 'imprintsize') and type = %d;\n", (int) F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -805,7 +805,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"select id from sys.args where func_id in (select id from sys.functions where schema_id = (select id from sys.schemas where name = 'sys') and name = 'second' and func = 'sql_seconds') and number = 0 and type_scale = 3;\n");
+			"select id from sys.args where func_id in (select id from sys.functions where schema_id = (select id from sys.schemas where name = 'sys') and sqlname = 'second' and func = 'sql_seconds') and number = 0 and type_scale = 3;\n");
 	err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
 	if (err) {
 		GDKfree(buf);
@@ -953,24 +953,24 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('deltas') and type = %d;\n", (int) F_UNION);
+			" and sqlname in ('deltas') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('median_avg', 'quantile_avg') and type = %d;\n", (int) F_AGGR);
+			" and sqlname in ('median_avg', 'quantile_avg') and type = %d;\n", (int) F_AGGR);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.schemas set system = true where name in ('wlc', 'wlr');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc')"
-			" and name in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
+			" and sqlname in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc')"
-			" and name in ('master', 'stop', 'flush', 'beat') and type = %d;\n", (int) F_PROC);
+			" and sqlname in ('master', 'stop', 'flush', 'beat') and type = %d;\n", (int) F_PROC);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr')"
-			" and name in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
+			" and sqlname in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr')"
-			" and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
+			" and sqlname in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
 
 	/* 39_analytics.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1019,7 +1019,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile') and type = %d;\n", (int) F_AGGR);
+			" and sqlname in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile') and type = %d;\n", (int) F_AGGR);
 
 	/* The MAL implementation of functions json.text(string) and json.text(int) do not exist */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1029,7 +1029,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	/* The first argument to copyfrom is a PTR type */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.args set type = 'ptr' where"
-			" func_id = (select id from sys.functions where name = 'copyfrom' and func = 'copy_from' and mod = 'sql' and type = %d) and name = 'arg_1';\n", (int) F_UNION);
+			" func_id = (select id from sys.functions where sqlname = 'copyfrom' and func = 'copy_from' and mod = 'sql' and type = %d) and name = 'arg_1';\n", (int) F_UNION);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -1067,7 +1067,7 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and name in ('median_avg', 'quantile_avg') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_AGGR);
+			"update sys.functions set system = true where system <> true and sqlname in ('median_avg', 'quantile_avg') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_AGGR);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -1106,7 +1106,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.args set name = name || '_' || cast(number as string) where name in ('arg', 'res') and func_id in (select id from sys.functions f where f.system);\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.dependencies values ((select id from sys.functions where name = 'ms_trunc' and schema_id = (select id from sys.schemas where name = 'sys')), (select id from sys.functions where name = 'ms_round' and schema_id = (select id from sys.schemas where name = 'sys')), (select dependency_type_id from sys.dependency_types where dependency_type_name = 'FUNCTION'));\n");
+			"insert into sys.dependencies values ((select id from sys.functions where sqlname = 'ms_trunc' and schema_id = (select id from sys.schemas where name = 'sys')), (select id from sys.functions where sqlname = 'ms_round' and schema_id = (select id from sys.schemas where name = 'sys')), (select dependency_type_id from sys.dependency_types where dependency_type_name = 'FUNCTION'));\n");
 
 	/* 12_url */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1115,7 +1115,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" EXTERNAL NAME url.\"isaURL\";\n"
 			"GRANT EXECUTE ON FUNCTION isaURL(string) TO PUBLIC;\n"
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name = 'isaurl' and type = %d;\n", (int) F_FUNC);
+			" and sqlname = 'isaurl' and type = %d;\n", (int) F_FUNC);
 
 	/* 13_date.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1135,7 +1135,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"grant execute on function time_to_str to public;\n"
 			"grant execute on function str_to_timestamp to public;\n"
 			"grant execute on function timestamp_to_str to public;\n"
-			"update sys.functions set system = true where system <> true and name in"
+			"update sys.functions set system = true where system <> true and sqlname in"
 			" ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str')"
 			" and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_FUNC);
 
@@ -1153,7 +1153,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name sql.dump_trace;\n"
 			"create view sys.tracelog as select * from sys.tracelog();\n"
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name = 'tracelog' and type = %d;\n", (int) F_UNION);
+			" and sqlname = 'tracelog' and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'tracelog';\n");
@@ -1177,7 +1177,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"grant execute on function sys.epoch (BIGINT) to public;\n"
 			"grant execute on function sys.epoch (INT) to public;\n"
 			"grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;\n"
-			"update sys.functions set system = true where system <> true and name in"
+			"update sys.functions set system = true where system <> true and sqlname in"
 			" ('epoch', 'date_trunc')"
 			" and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_FUNC);
 
@@ -1266,13 +1266,13 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('sessions', 'prepared_statements', 'prepared_statements_args') and type = %d;\n", (int) F_UNION);
+			" and sqlname in ('sessions', 'prepared_statements', 'prepared_statements_args') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('sessions', 'prepared_statements', 'prepared_statements_args');\n");
+			" and sqlname in ('sessions', 'prepared_statements', 'prepared_statements_args');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);
+			" and sqlname in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);
 
 	/* 25_debug */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1281,7 +1281,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"create procedure sys.resume_log_flushing()\n"
 			" external name sql.resume_log_flushing;\n"
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
+			" and sqlname in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function sys.debug(flag string) returns integer\n"
@@ -1291,9 +1291,9 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name mdb.\"getDebugFlags\";\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('debug') and type = %d;\n"
+			" and sqlname in ('debug') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('debugflags') and type = %d;\n",
+			" and sqlname in ('debugflags') and type = %d;\n",
 			(int) F_FUNC, (int) F_UNION);
 
 	/* 26_sysmon */
@@ -1329,7 +1329,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name = 'queue' and type = %d;\n", (int) F_UNION);
+			" and sqlname = 'queue' and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue';\n");
@@ -1568,7 +1568,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		"GRANT EXECUTE ON WINDOW sys.group_concat(STRING, STRING) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and name in"
+			"update sys.functions set system = true where system <> true and sqlname in"
 			" ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop', 'corr', 'group_concat')"
 			" and schema_id = (select id from sys.schemas where name = 'sys') and type in (%d, %d);\n", (int) F_ANALYTIC, (int) F_AGGR);
 
@@ -1607,7 +1607,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"create procedure sys.hot_snapshot(tarfile string)\n"
 			" external name sql.hot_snapshot;\n"
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('hot_snapshot') and type = %d;\n", (int) F_PROC);
+			" and sqlname in ('hot_snapshot') and type = %d;\n", (int) F_PROC);
 
 	/* 81_tracer.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1642,10 +1642,10 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT SELECT ON logging.compinfo TO public;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.schemas set system = true where name = 'logging';\n"
-			"update sys.functions set system = true where system <> true and name in"
+			"update sys.functions set system = true where system <> true and sqlname in"
 			" ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter')"
-			" and schema_id = (select id from sys.schemas where name = 'logging') and type = %d;\n"
-			"update sys.functions set system = true where system <> true and name in"
+			" and schema_id = (select id from sys.schemas where sqlname = 'logging') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and sqlname in"
 			" ('compinfo')"
 			" and schema_id = (select id from sys.schemas where name = 'logging') and type = %d;\n"
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'logging')"
@@ -1793,8 +1793,8 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and name in ('covar_samp', 'covar_pop') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n",
+			"update sys.functions set system = true where system <> true and sqlname in ('covar_samp', 'covar_pop') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and sqlname in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n",
 			(int) F_AGGR, (int) F_ANALYTIC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
@@ -1815,7 +1815,7 @@ sql_update_jun2020_sp2(Client c, mvc *sql, const char *prev_schema, bool *systab
 	if (*systabfixed)
 		return MAL_SUCCEED;		/* already done */
 
-	char *buf = "select id from sys.functions where name = 'nullif' and schema_id = (select id from sys.schemas where name = 'sys');\n";
+	char *buf = "select id from sys.functions where sqlname = 'nullif' and schema_id = (select id from sys.schemas where name = 'sys');\n";
 	res_table *output;
 	char *err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
 	if (err == NULL) {
@@ -1888,7 +1888,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 					" mod = 'inspect',"
 					" func = 'CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";'"
 					" where schema_id = (select id from sys.schemas where name = 'sys')"
-					" and name = 'env' and type = %d;\n",
+					" and sqlname = 'env' and type = %d;\n",
 					(int) F_UNION);
 
 			/* 26_sysmon */
@@ -1929,9 +1929,9 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 
 			pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-					" and name = 'queue' and type = %d;\n"
+					" and sqlname = 'queue' and type = %d;\n"
 					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-					" and name in ('pause', 'resume', 'stop') and type = %d;\n",
+					" and sqlname in ('pause', 'resume', 'stop') and type = %d;\n",
 					(int) F_UNION, (int) F_PROC);
 			pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
@@ -1953,7 +1953,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 					"create procedure sys.hot_snapshot(tarfile string, onserver bool)\n"
 					"external name sql.hot_snapshot;\n"
 					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-					" and name in ('hot_snapshot') and type = %d;\n",
+					" and sqlname in ('hot_snapshot') and type = %d;\n",
 					(int) F_PROC);
 			/* .snapshot user */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -1972,9 +1972,9 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 			pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true,"
 					//" func = 'CREATE FUNCTION \"sys\".\"var\"() RETURNS TABLE(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) EXTERNAL NAME \"sql\".\"sql_variables\";',"
-					" language = 2, side_effect = false where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-					"update sys.args set type = 'char' where func_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d) and type = 'clob';\n"
-					"update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d);\n",
+					" language = 2, side_effect = false where sqlname = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+					"update sys.args set type = 'char' where func_id = (select id from sys.functions where sqlname = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d) and type = 'clob';\n"
+					"update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where sqlname = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d);\n",
 					(int) F_UNION,
 					(int) F_UNION,
 					(int) F_UNION);
@@ -2064,7 +2064,7 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 						" maxquery string\n"
 					")\n"
 					"external name sysmon.user_statistics;\n"
-					"update sys.functions set system = true where system <> true and name = 'user_statistics' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
+					"update sys.functions set system = true where system <> true and sqlname = 'user_statistics' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
 
 			/* Remove entries on sys.args table without correspondents on sys.functions table */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -2106,13 +2106,13 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY\n"
 					" external name \"aggr\".\"quantile\";\n"
 					"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;\n"
-					"update sys.functions set system = true where system <> true and name in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_AGGR);
+					"update sys.functions set system = true where system <> true and sqlname in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_AGGR);
 
 			/* 90_generator.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"create function sys.generate_series(first timestamp, \"limit\" timestamp, stepsize interval day) returns table (value timestamp)\n"
 					" external name generator.series;\n"
-					"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
+					"update sys.functions set system = true where system <> true and sqlname in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
 
 			/* 51_sys_schema_extensions.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -2174,7 +2174,7 @@ sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systab
 			"create function sys.uuid(d int) returns uuid\n"
 			" external name uuid.\"new\";\n"
 			"GRANT EXECUTE ON FUNCTION sys.uuid(int) TO PUBLIC;\n"
-			"update sys.functions set system = true where system <> true and name = 'uuid' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_FUNC);
+			"update sys.functions set system = true where system <> true and sqlname = 'uuid' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_FUNC);
 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 		assert(pos < bufsize);
@@ -2223,7 +2223,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"create function sys.current_sessionid() returns int\n"
 							"external name clients.current_sessionid;\n"
 							"grant execute on function sys.current_sessionid to public;\n"
-							"update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'current_sessionid' and type = %d;\n", (int) F_FUNC);
+							"update sys.functions set system = true where system <> true and schema_id = 2000 and sqlname = 'current_sessionid' and type = %d;\n", (int) F_FUNC);
 
 			/* 25_debug.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -2244,7 +2244,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"returns table (\"id\" int, \"segments\" bigint, \"all\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)\n"
 							"external name \"sql\".\"deltas\";\n"
 							"update sys.functions set system = true"
-							" where schema_id = 2000 and name = 'deltas';\n");
+							" where schema_id = 2000 and sqlname = 'deltas';\n");
 
 			/* 26_sysmon */
 			t = mvc_bind_table(sql, s, "queue");
@@ -2271,14 +2271,14 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"grant select on sys.queue to public;\n");
 			pos += snprintf(buf + pos, bufsize - pos,
 							"update sys.functions set system = true where system <> true and schema_id = 2000"
-							" and name = 'queue' and type = %d;\n", (int) F_UNION);
+							" and sqlname = 'queue' and type = %d;\n", (int) F_UNION);
 			pos += snprintf(buf + pos, bufsize - pos,
 							"update sys._tables set system = true where schema_id = 2000"
-							" and name = 'queue';\n");
+							" and sqlname = 'queue';\n");
 
 			/* fix up dependencies for function getproj4 (if it exists) */
 			pos += snprintf(buf + pos, bufsize - pos,
-							"delete from sys.dependencies d where d.depend_id = (select id from sys.functions where name = 'getproj4' and schema_id = 2000) and id in (select id from sys._columns where name not in ('proj4text', 'srid'));\n");
+							"delete from sys.dependencies d where d.depend_id = (select id from sys.functions where sqlname = 'getproj4' and schema_id = 2000) and id in (select id from sys._columns where name not in ('proj4text', 'srid'));\n");
 
 			/* 41_json.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -2290,7 +2290,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"grant execute on function json.isvalid(json) to public;\n"
 							"update sys.functions set system = true"
 							" where schema_id = (select id from sys.schemas where name = 'json')"
-							" and name = 'isvalid';\n");
+							" and sqlname = 'isvalid';\n");
 
 			/* 51_sys_schema_extensions, remove stream table entries and update window function description */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -2628,7 +2628,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"            UNION ALL\n"
 					"            SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id\n"
 					"            UNION ALL\n"
-					"            SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.name) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id\n"
+					"            SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.sqlname) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id\n"
 					"            ) AS o(id, tpe, nme)\n"
 					"            JOIN sys.comments c ON c.id = o.id;\n"
 					"CREATE VIEW sys.fully_qualified_functions AS\n"
@@ -2638,9 +2638,9 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"            f.id,\n"
 					"            ft.function_type_keyword,\n"
 					"            CASE WHEN a.type IS NULL THEN\n"
-					"                s.name || '.' || f.name || '()'\n"
+					"                s.name || '.' || f.sqlname || '()'\n"
 					"            ELSE\n"
-					"                s.name || '.' || f.name || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'\n"
+					"                s.name || '.' || f.sqlname || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'\n"
 					"            END,\n"
 					"            a.number\n"
 					"        FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id\n"
@@ -2788,7 +2788,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    SELECT\n"
 					"        f.id o,\n"
 					"        s.name sch,\n"
-					"        f.name fun,\n"
+					"        f.sqlname fun,\n"
 					"        f.func def\n"
 					"    FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id WHERE s.name <> 'tmp' AND NOT f.system;\n"
 					"CREATE FUNCTION sys.describe_columns(schemaName string, tableName string)\n"
@@ -2806,13 +2806,13 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"CREATE FUNCTION sys.describe_function(schemaName string, functionName string)\n"
 					"    RETURNS TABLE(id integer, name string, type string, language string, remark string)\n"
 					"BEGIN\n"
-					"    RETURN SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark\n"
+					"    RETURN SELECT f.id, f.sqlname, ft.function_type_keyword, fl.language_keyword, c.remark\n"
 					"        FROM sys.functions f\n"
 					"        JOIN sys.schemas s ON f.schema_id = s.id\n"
 					"        JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
 					"        LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id\n"
 					"        LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
-					"        WHERE f.name=functionName AND s.name = schemaName;\n"
+					"        WHERE f.sqlname=functionName AND s.name = schemaName;\n"
 					"END;\n");
 
 			/* 75_storagemodel.sql not changed but dependencies changed
@@ -2858,7 +2858,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"        WHERE sch.\"id\" = tbl.\"schema_id\"\n"
 					"          AND tbl.\"id\" = col.\"table_id\");\n"
 					"end;\n"
-					"update sys.functions set system = true where name = 'storagemodelinit' and schema_id = 2000;\n");
+					"update sys.functions set system = true where sqlname = 'storagemodelinit' and schema_id = 2000;\n");
 
 			/* 76_dump.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -3092,7 +3092,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    system <> true AND\n"
 					"    schema_id = 2000 AND\n"
 					"    type = %d AND\n"
-					"    name in (\n"
+					"    sqlname in (\n"
 					"        'describe_columns',\n"
 					"        'describe_function',\n"
 					"        'describe_table',\n"
@@ -3104,7 +3104,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    system <> true AND\n"
 					"    schema_id = 2000 AND\n"
 					"    type = %d AND\n"
-					"    name in (\n"
+					"    sqlname in (\n"
 					"        'alter_table',\n"
 					"        'describe_type',\n"
 					"        'dq',\n"
@@ -3123,7 +3123,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    system <> true AND\n"
 					"    schema_id = 2000 AND\n"
 					"    type = %d AND\n"
-					"    name in (\n"
+					"    sqlname in (\n"
 					"        '_dump_table_data',\n"
 					"        'dump_table_data',\n"
 					"        'eval'\n"
@@ -3279,7 +3279,7 @@ sql_update_jul2021_5(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 								"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL\n"
 								"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
 								"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL\n"
-								"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' FROM sys.functions UNION ALL\n"
+								"SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' FROM sys.functions UNION ALL\n"
 								"SELECT a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' FROM sys.args a JOIN sys.functions f ON a.func_id = f.id UNION ALL\n"
 								"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' FROM sys.sequences UNION ALL\n"
 								"SELECT o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects' FROM sys.objects o JOIN sys._tables pt ON o.sub = pt.id JOIN sys._tables mt ON o.nr = mt.id WHERE mt.type = 3 UNION ALL\n"
@@ -3342,7 +3342,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	/* sys.epoch_ms now returns a decimal(18,3) */
 	pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.args set type = 'decimal', type_digits = 18, type_scale = 3 where func_id in (select id from sys.functions where name = 'epoch_ms' and schema_id = 2000) and number = 0 and type = 'bigint';\n");
+					"update sys.args set type = 'decimal', type_digits = 18, type_scale = 3 where func_id in (select id from sys.functions where sqlname = 'epoch_ms' and schema_id = 2000) and number = 0 and type = 'bigint';\n");
 
 	/* 16_tracelog */
 	t = mvc_bind_table(sql, s, "tracelog");
@@ -3361,7 +3361,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"update sys._tables set system = true where system <> true and schema_id = 2000"
 			" and name = 'tracelog';\n"
 			"update sys.functions set system = true where system <> true and schema_id = 2000"
-			" and name = 'tracelog' and type = %d;\n", (int) F_UNION);
+			" and sqlname = 'tracelog' and type = %d;\n", (int) F_UNION);
 
 	/* 17_temporal.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -3371,7 +3371,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"returns TIMESTAMP WITH TIME ZONE\n"
 					"external name mtime.epoch;\n"
 					"grant execute on function sys.epoch (DECIMAL(18,3)) to public;\n"
-					"update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = %d;\n", F_FUNC);
+					"update sys.functions set system = true where system <> true and sqlname in ('epoch') and schema_id = 2000 and type = %d;\n", F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
@@ -3385,7 +3385,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"update sys._tables set system = true where system <> true and schema_id = 2000"
 					" and name = 'malfunctions';\n"
 					"update sys.functions set system = true where system <> true and schema_id = 2000"
-					" and name = 'malfunctions';\n");
+					" and sqlname = 'malfunctions';\n");
 
 	/* 21_dependency_views.sql */
 	t = mvc_bind_table(sql, s, "ids");
@@ -3407,8 +3407,8 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index' , 'tmp.idxs', t.system FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL\n"
 					"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, ifthenelse(t.system, 'system trigger', 'trigger'), 'sys.triggers', t.system FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
 					"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers', t.system FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL\n"
-					"SELECT f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system FROM sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
-					"SELECT a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system FROM sys.args a JOIN sys.functions f ON a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
+					"SELECT f.id, f.sqlname, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system FROM sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
+					"SELECT a.id, a.name, f.schema_id, a.func_id as table_id, f.sqlname as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system FROM sys.args a JOIN sys.functions f ON a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
 					"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false FROM sys.sequences UNION ALL\n"
 					"SELECT o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false FROM sys.objects o JOIN sys._tables pt ON o.sub = pt.id JOIN sys._tables mt ON o.nr = mt.id WHERE mt.type = 3 UNION ALL\n"
 					"SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid')) FROM sys.types WHERE id > 2000\n"
@@ -3609,7 +3609,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"			UNION ALL\n"
 					"			SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id\n"
 					"			UNION ALL\n"
-					"			SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.name) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id\n"
+					"			SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.sqlname) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id\n"
 					"			) AS o(id, tpe, nme)\n"
 					"			JOIN sys.comments c ON c.id = o.id;\n"
 					"CREATE VIEW sys.describe_privileges AS\n"
@@ -3740,8 +3740,8 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"	SELECT\n"
 					"		f.id o,\n"
 					"		s.name sch,\n"
-					"		f.name fun,\n"
-					"		CASE WHEN f.language IN (1, 2) THEN f.func ELSE 'CREATE ' || ft.function_type_keyword || ' ' || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ')' || CASE WHEN f.type = 5 THEN ' RETURNS TABLE (' || coalesce(fr.func_ret, '') || ')' WHEN f.type IN (1,3) THEN ' RETURNS ' || fr.func_ret_type ELSE '' END || CASE WHEN fl.language_keyword IS NULL THEN '' ELSE ' LANGUAGE ' || fl.language_keyword END || ' ' || f.func END def\n"
+					"		f.sqlname fun,\n"
+					"		CASE WHEN f.language IN (1, 2) THEN f.func ELSE 'CREATE ' || ft.function_type_keyword || ' ' || sys.FQN(s.name, f.sqlname) || '(' || coalesce(fa.func_arg, '') || ')' || CASE WHEN f.type = 5 THEN ' RETURNS TABLE (' || coalesce(fr.func_ret, '') || ')' WHEN f.type IN (1,3) THEN ' RETURNS ' || fr.func_ret_type ELSE '' END || CASE WHEN fl.language_keyword IS NULL THEN '' ELSE ' LANGUAGE ' || fl.language_keyword END || ' ' || f.func END def\n"
 					"	FROM sys.functions f\n"
 					"		LEFT OUTER JOIN func_args fa ON fa.func_id = f.id\n"
 					"		LEFT OUTER JOIN func_rets fr ON fr.func_id = f.id\n"
@@ -3798,7 +3798,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"GRANT SELECT ON sys.describe_sequences TO PUBLIC;\n"
 					"GRANT SELECT ON sys.describe_functions TO PUBLIC;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = %d;\n", F_FUNC);
+					"update sys.functions set system = true where system <> true and sqlname in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = %d;\n", F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
 				"update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_sequences', 'describe_functions') AND schema_id = 2000;\n");
 
@@ -3903,7 +3903,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"  (SELECT func_id, func_arg FROM func_args_all WHERE number = max_number)\n"
 					"  SELECT\n"
 					"    'GRANT ' || pc.privilege_code_name || ' ON ' || ft.function_type_keyword || ' '\n"
-					"      || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '\n"
+					"      || sys.FQN(s.name, f.sqlname) || '(' || coalesce(fa.func_arg, '') || ') TO '\n"
 					"      || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))\n"
 					"      || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,\n"
 					"    s.name schema_name,\n"
@@ -3923,7 +3923,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"     AND p.privileges = pc.privilege_code_id\n"
 					"     AND f.type = ft.function_type_id\n"
 					"     AND NOT f.system\n"
-					"   ORDER BY s.name, f.name, a.name, g.name, p.grantable;\n"
+					"   ORDER BY s.name, f.sqlname, a.name, g.name, p.grantable;\n"
 					"CREATE VIEW sys.dump_indices AS\n"
 					"  SELECT\n"
 					"    'CREATE ' || tpe || ' ' || sys.DQ(ind) || ' ON ' || sys.FQN(sch, tbl) || '(' || GROUP_CONCAT(col) || ');' stmt,\n"
@@ -4125,11 +4125,11 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"  RETURN sys.dump_statements;\n"
 					"END;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where system <> true and name in ('esc', 'prepare_esc') and schema_id = 2000 and type = %d;\n", F_FUNC);
+					"update sys.functions set system = true where system <> true and sqlname in ('esc', 'prepare_esc') and schema_id = 2000 and type = %d;\n", F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = %d;\n", F_UNION);
+					"update sys.functions set system = true where system <> true and sqlname in ('dump_database') and schema_id = 2000 and type = %d;\n", F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where system <> true and name in ('dump_table_data') and schema_id = 2000 and type = %d;\n", F_PROC);
+					"update sys.functions set system = true where system <> true and sqlname in ('dump_table_data') and schema_id = 2000 and type = %d;\n", F_PROC);
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where name in ('dump_create_roles', 'dump_create_users', 'dump_create_schemas', 'dump_add_schemas_to_users', 'dump_grant_user_privileges', 'dump_table_constraint_type', 'dump_table_grants', 'dump_column_grants', 'dump_function_grants', 'dump_indices', 'dump_column_defaults', 'dump_foreign_keys', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'dump_functions', 'dump_tables', 'dump_triggers', 'dump_comments', 'dump_user_defined_types') AND schema_id = 2000;\n");
 
@@ -4147,7 +4147,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"create procedure sys.stop_vacuum(sname string, tname string, cname string)\n"
 					"	external name sql.stop_vacuum;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where system <> true and name in ('vacuum', 'stop_vacuum') and schema_id = 2000 and type = %d;\n", F_PROC);
+					"update sys.functions set system = true where system <> true and sqlname in ('vacuum', 'stop_vacuum') and schema_id = 2000 and type = %d;\n", F_PROC);
 
 	/* 10_sys_schema_extension.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -4182,8 +4182,8 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"CREATE PROCEDURE sys.strimp_create(sch string, tab string, col string)\n"
 					" EXTERNAL NAME sql.createstrimps;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where system <> true and name = 'strimp_filter' and schema_id = 2000 and type = %d;\n"
-					"update sys.functions set system = true where system <> true and name = 'strimp_create' and schema_id = 2000 and type = %d;\n",
+					"update sys.functions set system = true where system <> true and sqlname = 'strimp_filter' and schema_id = 2000 and type = %d;\n"
+					"update sys.functions set system = true where system <> true and sqlname = 'strimp_create' and schema_id = 2000 and type = %d;\n",
 					F_FILT, F_PROC);
 
 	/* recreate SQL functions that just need to be recompiled since the
@@ -4491,11 +4491,11 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"grant select on logging.compinfo to public;\n"
 					"update sys._tables set system = true where system <> true and schema_id = 2000 and name in ('schemastorage', 'tablestorage', 'storage', 'rejects', 'queue', 'optimizers', 'prepared_statements_args', 'prepared_statements', 'sessions', 'querylog_history', 'querylog_calls', 'querylog_catalog');\n"
 					"update sys._tables set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';\n"
-					"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('storagemodelinit', 'storage', 'rejects', 'user_statistics', 'queue', 'debugflags', 'bbp', 'optimizers', 'querycache', 'optimizer_stats', 'current_sessionid', 'prepared_statements_args', 'prepared_statements', 'sessions', 'querylog_calls', 'querylog_catalog');\n"
-					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';\n"
-					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'profiler') and name = 'getlimit';\n"
-					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc') and name in ('clock', 'tick');\n"
-					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr') and name in ('clock', 'tick');\n"
+					"update sys.functions set system = true where system <> true and schema_id = 2000 and sqlname in ('storagemodelinit', 'storage', 'rejects', 'user_statistics', 'queue', 'debugflags', 'bbp', 'optimizers', 'querycache', 'optimizer_stats', 'current_sessionid', 'prepared_statements_args', 'prepared_statements', 'sessions', 'querylog_calls', 'querylog_catalog');\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'logging') and sqlname = 'compinfo';\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'profiler') and sqlname = 'getlimit';\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc') and sqlname in ('clock', 'tick');\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr') and sqlname in ('clock', 'tick');\n"
 		);
 	/* 99_system.sql */
 	t = mvc_bind_table(sql, s, "systemfunctions");
