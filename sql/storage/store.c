@@ -1802,10 +1802,6 @@ store_load(sqlstore *store, sql_allocator *pa)
 	/* we store some spare oids */
 	store->obj_id = FUNC_OIDS;
 
-	if (!sequences_init()) {
-		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
-		return NULL;
-	}
 	tr = sql_trans_create(store, NULL, NULL);
 	if (!tr) {
 		TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
@@ -1818,6 +1814,8 @@ store_load(sqlstore *store, sql_allocator *pa)
 	store->active = list_create(NULL);
 	store->dependencies = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
 	store->depchanges = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
+	store->sequences = hash_new(NULL, 32, (fkeyvalue)&seq_hash);
+	store->seqchanges = list_create(NULL);
 
 	s = bootstrap_create_schema(tr, "sys", 2000, ROLE_SYSADMIN, USER_MONETDB);
 	if (!store->first)
@@ -2206,13 +2204,14 @@ store_exit(sqlstore *store)
 		os_destroy(store->cat->objects, store);
 		os_destroy(store->cat->schemas, store);
 		_DELETE(store->cat);
-		sequences_exit();
 	}
 	store->logger_api.destroy(store);
 
 	list_destroy(store->active);
 	dep_hash_destroy(store->dependencies);
 	dep_hash_destroy(store->depchanges);
+	list_destroy(store->seqchanges);
+	seq_hash_destroy(store->sequences);
 
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
 	MT_lock_unset(&store->flush);
@@ -3935,6 +3934,17 @@ sql_trans_commit(sql_trans *tr)
 
 				if (c->log && ok == LOG_OK)
 					ok = c->log(tr, c);
+			}
+			if (ok == LOG_OK) {
+				if (!list_empty(store->seqchanges)) {
+					sequences_lock(store);
+					for(node *n = store->seqchanges->h; n; n = n->next) {
+						log_store_sequence(store, n->data);
+					}
+					list_destroy(store->seqchanges);
+					store->seqchanges = list_create(NULL);
+					sequences_unlock(store);
+				}
 			}
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
