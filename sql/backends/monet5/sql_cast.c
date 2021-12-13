@@ -13,7 +13,7 @@
 #include "mal_instruction.h"
 
 static inline str
-str_2_blob_imp(blob **r, size_t *rlen, const str val)
+str_2_blob_imp(blob **r, size_t *rlen, const char *val)
 {
 	ssize_t e = ATOMfromstr(TYPE_blob, (void**)r, rlen, val, false);
 	if (e < 0 || (ATOMcmp(TYPE_blob, *r, ATOMnilptr(TYPE_blob)) == 0 && !strNil(val))) {

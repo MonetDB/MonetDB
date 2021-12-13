@@ -606,9 +606,9 @@ nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
 }
 
 static inline str
-str_2dec_body(TYPE *res, const str val, const int d, const int sc)
+str_2dec_body(TYPE *res, const char *val, const int d, const int sc)
 {
-	char *s = val;
+	const char *s = val;
 	int digits;
 	int scale;
 	BIG value;
@@ -739,7 +739,7 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const str next = BUNtail(bi, p);
+			const char *next = BUNtail(bi, p);
 
 			if (strNil(next)) {
 				ret[i] = NIL(TYPE);
@@ -750,7 +750,7 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next(&ci) - off);
-			const str next = BUNtail(bi, p);
+			const char *next = BUNtail(bi, p);
 
 			if (strNil(next)) {
 				ret[i] = NIL(TYPE);

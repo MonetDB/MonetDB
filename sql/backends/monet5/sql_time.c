@@ -285,7 +285,7 @@ nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static inline str
-str_2time_daytimetz_internal_imp(daytime *ret, str next, ssize_t (*fromstr_func)(const char *, size_t *, daytime **, bool),
+str_2time_daytimetz_internal_imp(daytime *ret, const char *next, ssize_t (*fromstr_func)(const char *, size_t *, daytime **, bool),
 #ifdef HAVE_HGE
 hge shift, hge divider, hge multiplier
 #else
@@ -366,7 +366,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtvar(it, p);
+				const char *next = BUNtvar(it, p);
 
 				if (strNil(next)) {
 					ret[i] = daytime_nil;
@@ -378,7 +378,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtvar(it, p);
+				const char *next = BUNtvar(it, p);
 
 				if (strNil(next)) {
 					ret[i] = daytime_nil;
@@ -390,7 +390,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 		}
 		bat_iterator_end(&it);
 	} else {
-		str next = *(str*)in;
+		const char *next = *(str*)in;
 		if (strNil(next))
 			*ret = daytime_nil;
 		else
@@ -793,7 +793,7 @@ nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static inline str
-str_2time_timestamptz_internal_imp(timestamp *ret, str next, ssize_t (*fromstr_func)(const char *, size_t *, timestamp **, bool),
+str_2time_timestamptz_internal_imp(timestamp *ret, const char *next, ssize_t (*fromstr_func)(const char *, size_t *, timestamp **, bool),
 #ifdef HAVE_HGE
 hge shift, hge divider, hge multiplier
 #else
@@ -874,7 +874,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtvar(bi, p);
+				const char *next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = timestamp_nil;
@@ -886,7 +886,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtvar(bi, p);
+				const char *next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = timestamp_nil;
@@ -898,7 +898,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 		}
 		bat_iterator_end(&bi);
 	} else {
-		str next = *(str*)in;
+		const char *next = *(str*)in;
 		if (strNil(next))
 			*ret = timestamp_nil;
 		else
@@ -954,7 +954,7 @@ batstr_2time_timestamp(bat *res, const bat *bid, const bat *sid, const int *digi
 }
 
 static inline str
-month_interval_str_imp(int *ret, str next, int d, int sk)
+month_interval_str_imp(int *ret, const char *next, int d, int sk)
 {
 	lng upcast;
 	if (interval_from_str(next, d, sk, &upcast) < 0)
@@ -1006,7 +1006,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtvar(bi, p);
+				const char *next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = int_nil;
@@ -1018,7 +1018,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtvar(bi, p);
+				const char *next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = int_nil;
@@ -1030,7 +1030,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bat_iterator_end(&bi);
 	} else {
-		const str next = *getArgReference_str(stk, pci, 1);
+		const char *next = *getArgReference_str(stk, pci, 1);
 
 		if (strNil(next))
 			*ret = int_nil;
@@ -1057,7 +1057,7 @@ bailout:
 }
 
 static inline str
-second_interval_str_imp(lng *ret, str next, int d, int sk)
+second_interval_str_imp(lng *ret, const char *next, int d, int sk)
 {
 	if (interval_from_str(next, d, sk, ret) < 0)
 		return createException(SQL, "batcalc.second_interval_str", SQLSTATE(42000) "Wrong format (%s)", next);
@@ -1106,7 +1106,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtvar(bi, p);
+				const char *next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = lng_nil;
@@ -1118,7 +1118,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtvar(bi, p);
+				const char *next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = lng_nil;
@@ -1130,7 +1130,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bat_iterator_end(&bi);
 	} else {
-		const str next = *getArgReference_str(stk, pci, 1);
+		const char *next = *getArgReference_str(stk, pci, 1);
 
 		if (strNil(next))
 			*ret = lng_nil;
@@ -1606,7 +1606,7 @@ nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static inline str
-str_2_date_internal_imp(date *ret, str next)
+str_2_date_internal_imp(date *ret, const char *next)
 {
 	ssize_t pos = 0;
 	date dt = 0, *conv = &dt;
@@ -1657,7 +1657,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtvar(it, p);
+				const char *next = BUNtvar(it, p);
 
 				if (strNil(next)) {
 					ret[i] = date_nil;
@@ -1669,7 +1669,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtvar(it, p);
+				const char *next = BUNtvar(it, p);
 
 				if (strNil(next)) {
 					ret[i] = date_nil;
@@ -1681,7 +1681,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 		}
 		bat_iterator_end(&it);
 	} else {
-		str next = *(str*)in;
+		const char *next = *(str*)in;
 		if (strNil(next))
 			*ret = date_nil;
 		else
