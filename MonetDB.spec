@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP2/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -846,6 +846,40 @@ else
 fi
 
 %changelog
+* Mon Dec 13 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.13-20211213
+- Rebuilt.
+- GH#7163: Multiple sql.mvc() invocations in the same query
+- GH#7167: sys.shutdown() problems
+- GH#7184: Insert into query blocks all other queries
+- GH#7185: GROUPING SETS on groups with aliases provided in the SELECT
+  returns empty result
+- GH#7186: data files created with COPY SELECT .. INTO 'file.csv' fail to
+  be loaded using COPY INTO .. FROM 'file.csv' when double quoted string
+  data contains the field values delimiter character
+- GH#7191: [MonetDBe] monetdbe_cleanup_statement() with bound NULLs on
+  variable-sized types bug
+- GH#7196: BATproject2: does not match always
+- GH#7198: Suboptimal query plan for query containing JSON access filter
+  and two negative string comparisons
+- GH#7200: PRIMARY KEY unique constraint is violated with concurrent
+  inserts
+- GH#7206: Python UDF fails when returning an empty table as a dictionary
+
+* Mon Dec 13 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.13-20211213
+- clients: Dumping the database now also dumps the read-only and insert-only
+  states of tables.
+
+* Mon Dec 13 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.13-20211213
+- gdk: Sometimes when the server was restarted, it wouldn't start anymore due
+  to an error from BBPcheckbats.  We finally found and fixed a (hopefully
+  "the") cause of this problem.
+
+* Thu Oct 28 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.13-20211213
+- sql: Number parsing for SQL was fixed.  If a number was immediately followed
+  by letters (i.e. without a space), the number was accepted and the
+  alphanumeric string starting with the letter was interpreted as an alias
+  (if aliases were allowed in that position).
+
 * Thu Sep 30 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.11-20210930
 - Rebuilt.
 
