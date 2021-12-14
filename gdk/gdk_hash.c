@@ -990,6 +990,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	return h;
 
   bailout:
+	bat_iterator_end(&bi);
 	GDKfree(h);
 	return NULL;
 }

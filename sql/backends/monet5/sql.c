@@ -1122,7 +1122,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_lng_nil(start))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL", sname, seqname);
 	if (start < seq->minvalue)
-		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value lesser than the minimum ("LLFMT" < "LLFMT")", sname, seqname, start, seq->minvalue);
+		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value less than the minimum ("LLFMT" < "LLFMT")", sname, seqname, start, seq->minvalue);
 	if (start > seq->maxvalue)
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value higher than the maximum ("LLFMT" > "LLFMT")", sname, seqname, start, seq->maxvalue);
 	switch (sql_trans_sequence_restart(m->session->tr, seq, start)) {
@@ -3770,11 +3770,8 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *tbl = *getArgReference_str(stk, pci, 2);
 	sql_schema *s;
 	sql_table *t;
-	sql_column *c;
 	mvc *m = NULL;
 	str msg;
-	BAT *b;
-	node *o;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3793,11 +3790,17 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	sqlstore *store = m->session->tr->store;
-	for (o = ol_first_node(t->columns); o; o = o->next) {
-		c = o->data;
-		b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
-		if (b == NULL)
+	for (node *n = ol_first_node(t->columns); n; n = n->next) {
+		sql_column *c = n->data;
+		BAT *b = NULL, *nb = NULL;
+
+		if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
 			throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+			BBPunfix(b->batCacheid);
+			if (!(b = BATdescriptor(nb->batCacheid)))
+				throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
 		HASHdestroy(b);
 		BBPunfix(b->batCacheid);
 	}
@@ -6256,3 +6259,4 @@ static mel_func sql_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_sql_mal)
 { mal_module("sql", NULL, sql_init_funcs); }
+

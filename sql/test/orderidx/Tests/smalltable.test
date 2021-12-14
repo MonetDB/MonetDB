@@ -122,7 +122,7 @@ readonly
 0
 0
 0
-0
+1
 
 query I rowsort
 SELECT * FROM xtmp4 WHERE i>=0 AND i<8
