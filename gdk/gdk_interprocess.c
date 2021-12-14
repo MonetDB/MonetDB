@@ -268,7 +268,7 @@ GDKreleasesem(int sem_id)
 #define align(sz) ((sz + 7) & ~7)
 
 size_t
-GDKbatcopysize(BAT *bat, str colname)
+GDKbatcopysize(BAT *bat, const char *colname)
 {
 	size_t size = 0;
 
@@ -284,7 +284,7 @@ GDKbatcopysize(BAT *bat, str colname)
 }
 
 size_t
-GDKbatcopy(char *dest, BAT *bat, str colname)
+GDKbatcopy(char *dest, BAT *bat, const char *colname)
 {
 	MT_lock_set(&bat->theaplock);
 	size_t batsize = bat->twidth * BATcount(bat);

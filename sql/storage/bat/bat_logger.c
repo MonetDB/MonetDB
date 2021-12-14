@@ -1849,10 +1849,12 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 			MT_rwlock_rdlock(&cii.b->thashlock);
 			HASHloop_int(cii, cii.b->thash, p, &colid) {
 				if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
-					if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED) {
+					if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED ||
+						BUNreplace(lg->catalog_lid, (oid) p, &(lng){0}, false) != GDK_SUCCEED) {
 						MT_rwlock_rdunlock(&cii.b->thashlock);
 						return GDK_FAIL;
 					}
+					lg->deleted++;
 					break;
 				}
 			}

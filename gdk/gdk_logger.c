@@ -286,6 +286,8 @@ log_read_seq(logger *lg, logformat *l)
 		TRC_CRITICAL(GDK, "read failed\n");
 		return LOG_EOF;
 	}
+	if (lg->flushing)
+		return LOG_OK;
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
@@ -2766,7 +2768,7 @@ log_tdone(logger *lg, ulng commit_ts)
 }
 
 static gdk_return
-log_sequence_(logger *lg, int seq, lng val, int flush)
+log_sequence_(logger *lg, int seq, lng val)
 {
 	logformat l;
 
@@ -2779,9 +2781,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 		fprintf(stderr, "#log_sequence_ (%d," LLFMT ")\n", seq, val);
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    !mnstr_writeLng(lg->output_log, val) ||
-	    (flush && mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA)) ||
-	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log))) {
+	    !mnstr_writeLng(lg->output_log, val)) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
@@ -2819,7 +2819,7 @@ log_sequence(logger *lg, int seq, lng val)
 			return GDK_FAIL;
 		}
 	}
-	gdk_return r = log_sequence_(lg, seq, val, 1);
+	gdk_return r = log_sequence_(lg, seq, val);
 	logger_unlock(lg);
 	return r;
 }
