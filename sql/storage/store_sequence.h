@@ -17,7 +17,6 @@ extern void sequences_exit(void);
 extern int seq_hash(void *seq);
 extern void seq_hash_destroy(sql_hash *h);
 extern int seq_get_value(sql_store store, sql_sequence *seq, lng *val);
-extern int seq_peak_next_value(sql_store store, sql_sequence *seq, lng *val);
 extern int seq_next_value(sql_store store, sql_sequence *seq, lng *val);
 extern int seq_restart(sql_store store, sql_sequence *seq, lng start);
 
