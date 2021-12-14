@@ -3303,11 +3303,6 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	if (GDKinmemory(0))
 		return LOG_OK;
 
-	/*
-	if (cs->cleared && log_bat_clear(store->logger, id) != GDK_SUCCEED)
-		return LOG_ERR;
-		*/
-
 	if (cs->cleared) {
 		assert(cs->ucnt == 0);
 		BAT *ins = temp_descriptor(cs->bid);
@@ -3366,6 +3361,14 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				assert(BATcount(ins) >= cur->end);
 				ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start);
 				bat_destroy(ins);
+				if (ok == GDK_SUCCEED && cs->ebid) {
+					BAT *ins = temp_descriptor(cs->ebid);
+					assert(ins);
+					if (BUNlast(ins) > ins->batInserted)
+						ok = log_bat(store->logger, ins, -c->base.id, ins->batInserted, BATcount(ins)-ins->batInserted);
+					BATcommit(ins, BATcount(ins));
+					bat_destroy(ins);
+				}
 			}
 			if (t->idxs) {
 				for (node *n = ol_first_node(t->idxs); n && ok; n = n->next) {

@@ -25,7 +25,7 @@ typedef struct {
 typedef struct {
 	size_t pos;
 	size_t lim;
-	str s;
+	const char *s;
 } PairIterator;
 
 typedef struct {
@@ -35,6 +35,6 @@ typedef struct {
 
 
 gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
-gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const str q);
-gdk_export gdk_return STRMPappendBitstring(BAT *b, const str s);
+gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
+gdk_export gdk_return STRMPappendBitstring(BAT *b, const char *s);
 #endif /* _GDK_STRIMPS_H_ */
