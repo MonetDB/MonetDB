@@ -33,6 +33,13 @@ typedef struct {
 #define ccand_first(b)	((b)->tvheap->base + sizeof(ccand_t))
 #define ccand_free(b)	((b)->tvheap->free - sizeof(ccand_t))
 
+enum cand_type {
+	cand_dense,	/* simple dense BAT, i.e. no look ups */
+	cand_materialized, /* simple materialized OID list */
+	cand_except,	/* list of exceptions in vheap */
+	cand_mask,	/* bitmask (TYPE_msk) bat as candidate list */
+};
+
 struct canditer {
 	BAT *s;			/* candidate BAT the iterator is based on */
 	union {
@@ -55,12 +62,7 @@ struct canditer {
 	BUN nvals;		/* number of values in .oids/.mask */
 	BUN ncand;		/* number of candidates */
 	BUN next;		/* next BUN to return value for */
-	enum {
-		cand_dense,	/* simple dense BAT, i.e. no look ups */
-		cand_materialized, /* simple materialized OID list */
-		cand_except,	/* list of exceptions in vheap */
-		cand_mask,	/* bitmask (TYPE_msk) bat as candidate list */
-	} tpe;
+	enum cand_type tpe;
 };
 
 /* returns the position of the lowest order bit in x, i.e. the
