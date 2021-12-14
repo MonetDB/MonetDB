@@ -74,7 +74,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( updates == 0)
-		return 0;
+		goto wrapup;
 
 	// Get a free instruction, don't get it from mb
 	lcks= newInstruction(0, oltpRef,lockRef);
@@ -89,13 +89,13 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( lcks->argc == 1 ){
 		freeInstruction(lcks);
-		return MAL_SUCCEED;
+		goto wrapup;
 	}
 
 	// Now optimize the code
 	if ( newMalBlkStmt(mb,mb->ssize + 6) < 0) {
 		freeInstruction(lcks);
-		return 0;
+		throw(MAL,"optimizer.oltp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	pushInstruction(mb,old[0]);
 	pushInstruction(mb,lcks);
@@ -133,6 +133,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//	msg = chkDeclarations(mb);
 
 	/* keep actions taken as a fake argument*/
+wrapup:
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }
