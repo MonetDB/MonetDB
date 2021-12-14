@@ -12,8 +12,8 @@ call profiler."starttrace"()
 
 query T rowsort
 with
-t as (select 1 as r, * from sys.functions where name in ('sum', 'prod'))
-select distinct name from t where r in (select n from i)
+t as (select 1 as r, * from sys.functions where sqlname in ('sum', 'prod'))
+select distinct sqlname from t where r in (select n from i)
 ----
 prod
 sum

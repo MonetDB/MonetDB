@@ -41,7 +41,7 @@ BEGIN
 END
 
 query TTT rowsort
-SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name
+SELECT f1.sqlname, f2.sqlname, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.sqlname, f1.sqlname
 ----
 describe_type
 describe_columns
@@ -105,7 +105,7 @@ statement ok
 DROP ALL FUNCTION f1
 
 query TTT rowsort
-SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name
+SELECT f1.sqlname, f2.sqlname, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.sqlname, f1.sqlname
 ----
 describe_type
 describe_columns

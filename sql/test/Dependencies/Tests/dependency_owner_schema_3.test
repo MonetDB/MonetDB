@@ -69,7 +69,7 @@ SELECT t.name, fk.name, 'DEP_FKEY' from sys.tables as t, sys.keys as k, sys.keys
 ----
 
 query TTT rowsort
-SELECT t.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as t, sys.dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type in (0, 10, 20, 30) ORDER BY t.name, f.name
+SELECT t.name, f.sqlname, 'DEP_FUNC' from sys.functions as f, sys.tables as t, sys.dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type in (0, 10, 20, 30) ORDER BY t.name, f.sqlname
 ----
 _columns
 describe_columns
@@ -126,7 +126,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-2259 values hashing to 601d3047954820aa935c1cb583bed2f1
+2262 values hashing to 7f955580cce3b65ea87758f286b3e6a2
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
@@ -191,16 +191,16 @@ SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c,  sys.objects as kc, sy
 ----
 
 query TTT rowsort
-SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
+SELECT c.name, f.sqlname, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.sqlname
 ----
-270 values hashing to cffffcc5c307d9fbc2f33b06858b20fa
+273 values hashing to 30ee6b016a50b55ec8f71f46211980d7
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
 ----
 
 query TTT rowsort
-SELECT v.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type in (1, 11, 21, 31) ORDER BY v.name, f.name
+SELECT v.name, f.sqlname, 'DEP_FUNC' from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type in (1, 11, 21, 31) ORDER BY v.name, f.sqlname
 ----
 columns
 get_merge_table_partition_expressions
@@ -275,7 +275,7 @@ SELECT v.name, tri.name, 'DEP_TRIGGER' from sys.tables as v, sys.objects as tri,
 ----
 
 query TTT rowsort
-SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name
+SELECT f1.sqlname, f2.sqlname, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.sqlname, f2.sqlname
 ----
 describe_type
 describe_columns
@@ -321,7 +321,7 @@ st_transform
 DEP_FUNC
 
 query TTT rowsort
-SELECT f.name, tri.name, 'DEP_TRIGGER' from sys.functions as f, sys.objects as tri, sys.dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by f.name, tri.name
+SELECT f.sqlname, tri.name, 'DEP_TRIGGER' from sys.functions as f, sys.objects as tri, sys.dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by f.sqlname, tri.name
 ----
 
 query TTT rowsort

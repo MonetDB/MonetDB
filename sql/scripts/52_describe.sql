@@ -343,7 +343,7 @@ CREATE VIEW sys.describe_comments AS
 
 			UNION ALL
 
-			SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.name) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
+			SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.sqlname) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
 
 			) AS o(id, tpe, nme)
 			JOIN sys.comments c ON c.id = o.id;
@@ -355,9 +355,9 @@ CREATE VIEW sys.fully_qualified_functions AS
 			f.id,
 			ft.function_type_keyword,
 			CASE WHEN a.type IS NULL THEN
-				s.name || '.' || f.name || '()'
+				s.name || '.' || f.sqlname || '()'
 			ELSE
-				s.name || '.' || f.name || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
+				s.name || '.' || f.sqlname || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
 			END,
 			a.number
 		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
@@ -562,8 +562,8 @@ CREATE VIEW sys.describe_functions AS
 	SELECT
 		f.id o,
 		s.name sch,
-		f.name fun,
-		CASE WHEN f.language IN (1, 2) THEN f.func ELSE 'CREATE ' || ft.function_type_keyword || ' ' || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ')' || CASE WHEN f.type = 5 THEN ' RETURNS TABLE (' || coalesce(fr.func_ret, '') || ')' WHEN f.type IN (1,3) THEN ' RETURNS ' || fr.func_ret_type ELSE '' END || CASE WHEN fl.language_keyword IS NULL THEN '' ELSE ' LANGUAGE ' || fl.language_keyword END || ' ' || f.func END def
+		f.sqlname fun,
+		CASE WHEN f.language IN (1, 2) THEN f.func ELSE 'CREATE ' || ft.function_type_keyword || ' ' || sys.FQN(s.name, f.sqlname) || '(' || coalesce(fa.func_arg, '') || ')' || CASE WHEN f.type = 5 THEN ' RETURNS TABLE (' || coalesce(fr.func_ret, '') || ')' WHEN f.type IN (1,3) THEN ' RETURNS ' || fr.func_ret_type ELSE '' END || CASE WHEN fl.language_keyword IS NULL THEN '' ELSE ' LANGUAGE ' || fl.language_keyword END || ' ' || f.func END def
 	FROM sys.functions f
 		LEFT OUTER JOIN func_args fa ON fa.func_id = f.id
 		LEFT OUTER JOIN func_rets fr ON fr.func_id = f.id
@@ -588,13 +588,13 @@ END;
 CREATE FUNCTION sys.describe_function(schemaName string, functionName string)
 	RETURNS TABLE(id integer, name string, type string, language string, remark string)
 BEGIN
-	RETURN SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark
+	RETURN SELECT f.id, f.sqlname, ft.function_type_keyword, fl.language_keyword, c.remark
 		FROM sys.functions f
 		JOIN sys.schemas s ON f.schema_id = s.id
 		JOIN sys.function_types ft ON f.type = ft.function_type_id
 		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
 		LEFT OUTER JOIN sys.comments c ON f.id = c.id
-		WHERE f.name=functionName AND s.name = schemaName;
+		WHERE f.sqlname=functionName AND s.name = schemaName;
 END;
 
 GRANT SELECT ON sys.describe_constraints TO PUBLIC;
