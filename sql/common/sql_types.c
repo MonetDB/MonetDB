@@ -653,13 +653,18 @@ mangle_name(char *buf, const char *name, sql_ftype type, list *res, list *ops) {
 	if (res) {
 		for (node* n = res->h; n; n = n->next) {
 			sql_arg *o = n->data;
-			c += sprintf(c, "%%%s(%u,%u)", o->type.type->base.name, o->type.digits, o->type.scale);
+			if (o)
+				c += sprintf(c, "%%%s(%u,%u)", o->type.type->base.name, o->type.digits, o->type.scale);
+			// else can happen when with underdetermined prepared statement, those will later compile to an error.
 		}
 	}
 
 	for (node* n = ops->h; n; n = n->next) {
 		sql_arg *a = n->data;
-		c += sprintf(c, "%%%s(%u,%u)", a->type.type->base.name, a->type.digits, a->type.scale);
+		if (a->type.type)
+			c += sprintf(c, "%%%s(%u,%u)", a->type.type->base.name, a->type.digits, a->type.scale);
+		// else can happen when with underdetermined prepared statement, those will later compile to an error.
+		
 	}
 
 	return buf;

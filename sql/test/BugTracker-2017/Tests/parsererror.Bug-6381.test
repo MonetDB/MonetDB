@@ -11,7 +11,7 @@ begin
 END
 
 query TTTIII rowsort
-select name, func, "mod", language, "type", side_effect from functions where name ='mycounter1'
+select sqlname, func, "mod", language, "type", side_effect from functions where sqlname ='mycounter1'
 ----
 mycounter1
 create function mycounter1()@returns integer@begin@ declare s int;@ while (true)@ do@ set s =1;@ end while;@ return s;@end@;
@@ -33,7 +33,7 @@ begin
 END
 
 query TTTIII rowsort
-select name, func, "mod", language, "type", side_effect from functions where name ='mycounter2'
+select sqlname, func, "mod", language, "type", side_effect from functions where sqlname ='mycounter2'
 ----
 mycounter2
 create function mycounter2()@returns integer@begin@ declare s int;@ while (select true)@ do@ set s =1;@ end while;@ return s;@end@;

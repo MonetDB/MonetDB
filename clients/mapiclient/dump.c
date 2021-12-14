@@ -213,6 +213,44 @@ static char *actions[] = {
 };
 #define NR_ACTIONS	((int) (sizeof(actions) / sizeof(actions[0])))
 
+static bool
+functions_has_sqlname(Mapi mid)
+{
+	bool ret;
+	MapiHdl hdl;
+
+	if ((hdl = mapi_query(mid, 
+		"select c.name"
+		"	from columns c, tables t"
+		"	where"
+		"		c.table_id = t.id and"
+		"		t.name = 'functions' and"
+		"		t.schema_id = (select id from schemas where name = 'sys') and"
+		"		c.name = 'sqlname'")) == NULL
+		|| mapi_error(mid))
+		goto bailout;
+	ret = (int) mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	return ret;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return 0;
+}
+
 static char *
 get_schema(Mapi mid)
 {
@@ -1145,6 +1183,8 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 	int type = 0;
 	size_t maxquerylen;
 	bool hashge;
+	bool has_sqlname;
+	const char* functions_sqlname;
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -1224,6 +1264,9 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		goto bailout2;
 	}
 
+	has_sqlname = functions_has_sqlname(mid);
+	functions_sqlname = has_sqlname ? "sqlname" : "name";
+
 	if (type == 1) {
 		/* the table is actually a view */
 		mnstr_printf(toConsole, "%s\n", view);
@@ -1232,11 +1275,11 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		if (!databaseDump) { //if it is not a database dump the table might depend on UDFs that must be dumped first
 			assert(table_id);
 			snprintf(query, maxquerylen,
-					 "SELECT f.id, s.name, f.name "
+					 "SELECT f.id, s.name, f.%s "
 					 "FROM sys.schemas s, "
 					      "sys.functions f "
 					 "WHERE s.id = f.schema_id "
-					   "AND f.id IN (SELECT id FROM sys.dependencies WHERE depend_id = '%d')",
+					   "AND f.id IN (SELECT id FROM sys.dependencies WHERE depend_id = '%d')", functions_sqlname,
 					 table_id);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
@@ -1966,7 +2009,7 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 }
 
 static int
-dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
+dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge, const char* functions_sqlname)
 {
 	MapiHdl hdl = NULL;
 	size_t query_size = 5120 + strlen(fid);
@@ -1987,7 +2030,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 			     "f.language, "
 			     "f.type, "
 			     "s.name, "
-			     "f.name, "
+			     "f.%s, "
 			     "ft.function_type_keyword, "
 			     "fl.language_keyword, "
 		             "c.remark "
@@ -1997,7 +2040,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 			   "LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id "
 			   "LEFT OUTER JOIN sys.comments c ON f.id = c.id "
 		      "WHERE f.id = %s",
-		      fid);
+		      functions_sqlname, fid);
 	assert(query_len < (int) query_size);
 	if (query_len < 0 || query_len >= (int) query_size ||
 	    (hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
@@ -2268,6 +2311,8 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	size_t query_size;
 	int query_len;
 	bool hashge;
+	bool has_sqlname;
+	const char* functions_sqlname = NULL;
 	char *to_free = NULL;
 	bool wantSystem;
 	long prev_sid;
@@ -2297,6 +2342,8 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	}
 
 	hashge = has_hugeint(mid);
+	has_sqlname = functions_has_sqlname(mid);
+	functions_sqlname = has_sqlname ? "sqlname" : "name";
 
 	query_size = 5120 + (sname ? strlen(sname) : 0) + (fname ? strlen(fname) : 0);
 	query = malloc(query_size);
@@ -2318,7 +2365,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 					      query_size - query_len,
 					      "AND s.name = '%s' ", sname);
 		if (fname)
-			query_len += snprintf(query + query_len, query_size - query_len, "AND f.name = '%s' ", fname);
+			query_len += snprintf(query + query_len, query_size - query_len, "AND f.%s = '%s' ", functions_sqlname, fname);
 		if (!wantSystem) {
 			query_len += snprintf(query + query_len, query_size - query_len, "AND NOT f.system ");
 		}
@@ -2346,7 +2393,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 				dquoted_print(toConsole, schema, ";\n");
 				prev_sid = sid;
 			}
-			dump_function(mid, toConsole, fid, hashge);
+			dump_function(mid, toConsole, fid, hashge, functions_sqlname);
 			free(fid);
 		} else {
 			goto bailout;
@@ -2457,23 +2504,6 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND p.grantor = g.id "
 		  "AND p.privileges = pc.privilege_code_id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
-	const char *function_grants =
-		"SELECT s.name, f.name, a.name, "
-		       "pc.privilege_code_name, "
-		       "g.name, p.grantable, "
-		       "ft.function_type_keyword "
-		"FROM sys.schemas s, sys.functions f, "
-		     "sys.auths a, sys.privileges p, sys.auths g, "
-		     "sys.function_types ft, "
-		     "sys.privilege_codes pc "
-		"WHERE s.id = f.schema_id "
-		  "AND f.id = p.obj_id "
-		  "AND p.auth_id = a.id "
-		  "AND p.grantor = g.id "
-		  "AND p.privileges = pc.privilege_code_id "
-		  "AND f.type = ft.function_type_id "
-		  "AND NOT f.system "
-		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
 	const char *schemas =
 		"SELECT s.name, a.name, rem.remark "
 		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
@@ -2488,61 +2518,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name, seq.name";
 	const char *sequences2 =
-		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
-	/* we must dump tables, views, functions/procedures and triggers in order of creation since they can refer to each other */
-	const char *tables_views_functions_triggers =
-		"with vft (sname, name, id, query, remark, type) AS ("
-			"SELECT s.name AS sname, " /* tables */
-			       "t.name AS name, "
-			       "t.id AS id, "
-			       "NULL AS query, "
-			       "NULL AS remark, " /* emitted separately */
-			       "t.type AS type "
-			"FROM sys.schemas s, "
-			      "sys._tables t "
-			"WHERE t.type IN (0, 3, 4, 5, 6) "
-			  "AND t.system = FALSE "
-			  "AND s.id = t.schema_id "
-			  "AND s.name <> 'tmp' "
-			"UNION ALL "
-			"SELECT s.name AS sname, " /* views */
-			       "t.name AS name, "
-			       "t.id AS id, "
-			       "t.query AS query, "
-			       "rem.remark AS remark, "
-			       "NULL AS type "
-			"FROM sys.schemas s, "
-			     "sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id "
-			"WHERE t.type = 1 "
-			  "AND t.system = FALSE "
-			  "AND s.id = t.schema_id "
-			  "AND s.name <> 'tmp' "
-			"UNION ALL "
-			"SELECT s.name AS sname, " /* functions and procedures */
-			       "f.name AS name, "
-			       "f.id AS id, "
-			       "NULL AS query, "
-			       "NULL AS remark, " /* emitted separately */
-			       "NULL AS type "
-			"FROM sys.schemas s, "
-			     "sys.functions f "
-			"WHERE s.id = f.schema_id "
-			"AND NOT f.system "
-			"UNION ALL "
-			"SELECT s.name AS sname, " /* triggers */
-			       "tr.name AS name, "
-			       "tr.id AS id, "
-			       "tr.\"statement\" AS query, "
-			       "NULL AS remark, " /* not available yet */
-			       "NULL AS type "
-			"FROM sys.triggers tr, "
-			     "sys.schemas s, "
-			     "sys._tables t "
-			"WHERE s.id = t.schema_id "
-			  "AND t.id = tr.table_id "
-			  "AND t.system = FALSE"
-		") "
-		"SELECT id, sname, name, query, remark, type FROM vft ORDER BY id";
+		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";	
 	const char *mergetables =
 		has_table_partitions(mid) ?
 		"SELECT subq.s1name, "
@@ -2597,6 +2573,9 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 
 	/* start a transaction for the dump */
 	mnstr_printf(toConsole, "%s;\n", start_trx);
+
+	bool has_sqlname = functions_has_sqlname(mid);
+	const char* functions_sqlname = has_sqlname ? "sqlname" : "name";
 
 	if ((hdl = mapi_query(mid, start_trx)) == NULL || mapi_error(mid))
 		goto bailout;
@@ -2749,10 +2728,68 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
-	/* dump tables, views, functions and triggers
-	 * note that merge tables refer to other tables,
+	has_sqlname = functions_has_sqlname(mid);
+	functions_sqlname = has_sqlname ? "sqlname" : "name";
+
+	/* we must dump tables, views, functions/procedures and triggers in order of creation since they can refer to each other.
+	 * Note that merge tables refer to other tables,
 	 * so we make sure the contents of merge tables are added
 	 * (ALTERed) after all table definitions */
+	char tables_views_functions_triggers[5000];
+	snprintf(tables_views_functions_triggers, sizeof(tables_views_functions_triggers),
+			"with vft (sname, name, id, query, remark, type) AS ("
+			"SELECT s.name AS sname, " /* tables */
+			       "t.name AS name, "
+			       "t.id AS id, "
+			       "NULL AS query, "
+			       "NULL AS remark, " /* emitted separately */
+			       "t.type AS type "
+			"FROM sys.schemas s, "
+			      "sys._tables t "
+			"WHERE t.type IN (0, 3, 4, 5, 6) "
+			  "AND t.system = FALSE "
+			  "AND s.id = t.schema_id "
+			  "AND s.name <> 'tmp' "
+			"UNION ALL "
+			"SELECT s.name AS sname, " /* views */
+			       "t.name AS name, "
+			       "t.id AS id, "
+			       "t.query AS query, "
+			       "rem.remark AS remark, "
+			       "NULL AS type "
+			"FROM sys.schemas s, "
+			     "sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id "
+			"WHERE t.type = 1 "
+			  "AND t.system = FALSE "
+			  "AND s.id = t.schema_id "
+			  "AND s.name <> 'tmp' "
+			"UNION ALL "
+			"SELECT s.name AS sname, " /* functions and procedures */
+			       "f.%s AS name, "
+			       "f.id AS id, "
+			       "NULL AS query, "
+			       "NULL AS remark, " /* emitted separately */
+			       "NULL AS type "
+			"FROM sys.schemas s, "
+			     "sys.functions f "
+			"WHERE s.id = f.schema_id "
+			"AND NOT f.system "
+			"UNION ALL "
+			"SELECT s.name AS sname, " /* triggers */
+			       "tr.name AS name, "
+			       "tr.id AS id, "
+			       "tr.\"statement\" AS query, "
+			       "NULL AS remark, " /* not available yet */
+			       "NULL AS type "
+			"FROM sys.triggers tr, "
+			     "sys.schemas s, "
+			     "sys._tables t "
+			"WHERE s.id = t.schema_id "
+			  "AND t.id = tr.table_id "
+			  "AND t.system = FALSE"
+		") "
+		"SELECT id, sname, name, query, remark, type FROM vft ORDER BY id", functions_sqlname);
+	
 	if ((hdl = mapi_query(mid, tables_views_functions_triggers)) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
@@ -3084,6 +3121,26 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
+
+
+	char function_grants[5120];
+	snprintf(function_grants, sizeof(function_grants),
+		"SELECT s.name, f.%s, a.name, "
+		       "pc.privilege_code_name, "
+		       "g.name, p.grantable, "
+		       "ft.function_type_keyword "
+		"FROM sys.schemas s, sys.functions f, "
+		     "sys.auths a, sys.privileges p, sys.auths g, "
+		     "sys.function_types ft, "
+		     "sys.privilege_codes pc "
+		"WHERE s.id = f.schema_id "
+		  "AND f.id = p.obj_id "
+		  "AND p.auth_id = a.id "
+		  "AND p.grantor = g.id "
+		  "AND p.privileges = pc.privilege_code_id "
+		  "AND f.type = ft.function_type_id "
+		  "AND NOT f.system "
+		"ORDER BY s.name, f.%s, a.name, g.name, p.grantable", functions_sqlname, functions_sqlname);
 
 	if ((hdl = mapi_query(mid, function_grants)) == NULL ||
 	    mapi_error(mid))

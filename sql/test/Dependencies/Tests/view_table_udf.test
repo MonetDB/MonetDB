@@ -10,7 +10,7 @@ select count(*) from dependencies inner join tables on dependencies.id = tables.
 0
 
 query I rowsort
-select count(*) from dependencies inner join functions on dependencies.id = functions.id where functions.name = 'test1'
+select count(*) from dependencies inner join functions on dependencies.id = functions.id where functions.sqlname = 'test1'
 ----
 1
 
@@ -29,7 +29,7 @@ select count(*) from dependencies inner join tables on dependencies.id = tables.
 1
 
 query I rowsort
-select count(*) from dependencies inner join functions on dependencies.id = functions.id where functions.name = 'test1'
+select count(*) from dependencies inner join functions on dependencies.id = functions.id where functions.sqlname = 'test1'
 ----
 1
 
@@ -48,7 +48,7 @@ select count(*) from dependencies inner join tables on dependencies.id = tables.
 0
 
 query I rowsort
-select count(*) from dependencies inner join functions on dependencies.id = functions.id where functions.name = 'test1'
+select count(*) from dependencies inner join functions on dependencies.id = functions.id where functions.sqlname = 'test1'
 ----
 0
 
