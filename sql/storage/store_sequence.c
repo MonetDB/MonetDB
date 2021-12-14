@@ -27,7 +27,6 @@ sequences_unlock(sql_store Store)
 typedef struct store_sequence {
 	sqlid seqid;
 	lng cur;
-	bool called;
 	bool intrans;
 } store_sequence;
 
@@ -36,7 +35,7 @@ log_store_sequence(sql_store Store, void *s)
 {
 	sqlstore *store = Store;
 	store_sequence *seq = s;
-	store->logger_api.log_sequence(store, seq->seqid,  (seq->called)?seq->cur:lng_nil);
+	store->logger_api.log_sequence(store, seq->seqid,  seq->cur);
 	seq->intrans = false;
 }
 
@@ -113,11 +112,8 @@ sequence_create(sqlstore *store, sql_sequence *seq )
 		.cur = seq->start,
 	};
 
-	if (!isNew(seq) && store->logger_api.get_sequence(store, seq->base.id, &val )) {
+	if (!isNew(seq) && store->logger_api.get_sequence(store, seq->base.id, &val ))
 		s->cur = val;
-		if (val != lng_nil)
-			s->called = 1; /* val is last used value */
-	}
 	hash_add(store->sequences, seq_hash(s), s);
 	return s;
 }
@@ -147,7 +143,6 @@ seq_restart(sql_store Store, sql_sequence *seq, lng start)
 		}
 	}
 	s->cur = start;
-	s->called = 0;
 	update_sequence(store, s);
 	sequences_unlock(store);
 	return 1;
@@ -173,71 +168,61 @@ seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
 		}
 	}
 
-	lng start_index = 0;
-	bool initial = false;
-
-	if (!s->called) {
-		s->cur = seq->start;
-		*dest = s->cur;
-		start_index = 1;
-		s->called = 1;
-		initial = 1;
-	}
-
 	lng min = seq->minvalue;
 	lng max = seq->maxvalue;
 	lng cur = s->cur;
 
+	if (!seq->cycle) {
+		if ((seq->increment > 0 && s->cur > max) ||
+		    (seq->increment < 0 && s->cur < min)) {
+			sequences_unlock(store);
+			return 0;
+		}
+	}
 	bool store_unlocked = false;
 	if (seq->increment > 0) {
 		lng inc = seq->increment; // new value = old value + inc;
 
-		if (start_index < cnt && !seq->cycle && !(max > 0 && s->cur < 0)) {
-			if ((max -s->cur) / (cnt - start_index) >= inc) {
-				s->cur += inc * (cnt - start_index);
+		if (0 < cnt && !seq->cycle && !(max > 0 && s->cur < 0)) {
+			if ((max - s->cur) >= ((cnt-1) * inc)) {
+				s->cur += inc * cnt;
 
 				update_sequence(store, s);
 				sequences_unlock(store);
 				store_unlocked = true;
 			} else {
-				if (initial)
-					s->called = 0;
 				sequences_unlock(store);
 				return 0;
 			}
 		}
-		for(lng i = start_index; i < cnt; i++) {
+		for(lng i = 0; i < cnt; i++) {
+			dest[i] = cur;
 			if ((GDK_lng_max - inc < cur) || ((cur += inc) > max)) {
 				// overflow
-				assert(seq->cycle);
-				cur = min;
+				cur = (seq->cycle)?min:lng_nil;
 			}
-			dest[i] = cur;
 		}
 	} else { // seq->increment < 0
 		lng inc = -seq->increment; // new value = old value - inc;
 
-		if (start_index < cnt && !seq->cycle && !(min < 0 && s->cur > 0)) {
-			if ((s->cur - min) / (cnt - start_index) >= inc) {
-				s->cur -= inc * (cnt - start_index);
+		if (0 < cnt && !seq->cycle && !(min < 0 && s->cur > 0)) {
+			if ((s->cur - min) >= ((cnt-1) * inc)) {
+				s->cur -= inc * cnt;
 
 				update_sequence(store, s);
 				sequences_unlock(store);
 				store_unlocked = true;
 			} else {
-				if (initial)
-					s->called = 0;
 				sequences_unlock(store);
 				return 0;
 			}
 		}
-		for(lng i = start_index; i < cnt; i++) {
+		for(lng i = 0; i < cnt; i++) {
+			dest[i] = cur;
 			if ((-GDK_lng_max + inc > cur) || ((cur -= inc)  < min)) {
 				// underflow
-				assert(seq->cycle);
-				cur = max;
+				cur = (seq->cycle)?max:lng_nil;
 			}
-			dest[i] = cur;
 		}
 	}
 
@@ -272,65 +257,7 @@ seq_get_value(sql_store Store, sql_sequence *seq, lng *val)
 			return 0;
 		}
 	}
-	*val = s->called ? s->cur : lng_nil;
-
-	sequences_unlock(store);
-	return 1;
-}
-
-
-int
-seq_peak_next_value(sql_store Store, sql_sequence *seq, lng *val)
-{
-	store_sequence *s;
-	sqlstore *store = Store;
-
-	*val = 0;
-	sequences_lock(store);
-	s = sequence_lookup(store->sequences, seq->base.id);
-	if (!s) {
-		s = sequence_create(store, seq);
-		if (!s) {
-			sequences_unlock(store);
-			return 0;
-		}
-	}
-
-	if (!s->called) {
-		*val = seq->start;
-		sequences_unlock(store);
-		return 1;
-	}
-
-	lng min = seq->minvalue;
-	lng max = seq->maxvalue;
-
 	*val = s->cur;
-
-	if (seq->increment > 0) {
-		lng inc = seq->increment; // new value = old value + inc;
-		if ((GDK_lng_max - inc < *val) || ((*val += inc) > max)) {
-			// overflow
-			if (seq->cycle) {
-				*val = min;
-			} else {
-				sequences_unlock(store);
-				return 0;
-			}
-		}
-	} else { // seq->increment < 0
-		lng inc = -seq->increment; // new value = old value - inc;
-		if ((-GDK_lng_max + inc > *val) || ((*val -= inc)  < min)) {
-			// underflow
-			if (seq->cycle) {
-				*val = max;
-			} else {
-				sequences_unlock(store);
-				return 0;
-			}
-		}
-	}
-
 	sequences_unlock(store);
 	return 1;
 }
