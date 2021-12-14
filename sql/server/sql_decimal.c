@@ -12,7 +12,7 @@
 
 
 DEC_TPE
-decimal_from_str(char *dec, int* digits, int* scale, int* has_errors)
+decimal_from_str(const char *dec, int* digits, int* scale, int* has_errors)
 {
 
 #ifdef HAVE_HGE

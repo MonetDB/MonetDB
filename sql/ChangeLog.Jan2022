@@ -1,9 +1,14 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Dec  6 2021 Sjoerd Mullender <sjoerd@acm.org>
+- In previous versions there was no check that the INCREMENT BY value of
+  a SEQUENCE was not zero.  During the automatic upgrade of a database,
+  INCREMENT BY values that are zero are set to one.
+
 * Tue Nov  9 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - The method to compute the 'side_effect' effect property was changed
-  for SQL functions defined in the backend engine (eg. ``CREATE FUNCTION 
+  for SQL functions defined in the backend engine (eg. ``CREATE FUNCTION
   ... EXTERNAL NAME "module"."function"''). It was changed from being
   computed by the SQL layer to the backend engine itself. As a consequence,
   the computed 'side_effect' value may be different, thus bringing

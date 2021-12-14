@@ -821,12 +821,19 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else if (BATatoms[tt].atomFix) {
 			/* oops, we need to fix/unfix atoms */
 			slowcopy = true;
-		} else if (bi.h && bi.h->parentid != b->batCacheid) {
-			/* extra checks needed for views */
-			if (BATcapacity(BBP_cache(bi.h->parentid)) > bi.count + bi.count)
-				/* reduced slice view: do not copy too
-				 * much garbage */
-				slowcopy = true;
+		} else if (bi.h && bi.h->parentid != b->batCacheid &&
+			   BATcapacity(BBP_cache(bi.h->parentid)) > bi.count + bi.count) {
+			/* reduced slice view: do not copy too much
+			 * garbage */
+			slowcopy = true;
+		} else if (bi.vh && bi.vh->parentid != b->batCacheid &&
+			   BATcount(BBP_cache(bi.vh->parentid)) > bi.count + bi.count) {
+			/* reduced vheap view: do not copy too much
+			 * garbage; this really is a heuristic since the
+			 * vheap could be used completely, even if the
+			 * offset heap is only (less than) half the size
+			 * of the parent's offset heap */
+			slowcopy = true;
 		}
 
 		bn = COLnew2(b->hseqbase, tt, bi.count, role, bi.width);

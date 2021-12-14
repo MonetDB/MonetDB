@@ -926,10 +926,16 @@ static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
 {
 	sql_delta *d = col_timestamp_delta(tr, c);
+	int type = c->type.type->localtype;
 
 	if (!d)
 		return NULL;
-	return bind_ubat(tr, d, access, c->type.type->localtype, cnt);
+	if (d->cs.st == ST_DICT) {
+		BAT *b = quick_descriptor(d->cs.bid);
+
+		type = b->ttype;
+	}
+	return bind_ubat(tr, d, access, type, cnt);
 }
 
 static BAT *
@@ -2515,20 +2521,16 @@ create_col(sql_trans *tr, sql_column *c)
 
 	if (!isNew(c) && !isTempTable(c->t)){
 		bat->cs.ts = tr->ts;
-		if (c->storage_type && strcmp(c->storage_type, "DICT") == 0) {
-			ok=load_cs(tr, &bat->cs, type, c->base.id);
-
-			if (ok == LOG_OK) {
-				sqlstore *store = tr->store;
-				int bid = logger_find_bat(store->logger, -c->base.id);
-				if (!bid)
-					return LOG_ERR;
-				bat->cs.ebid = temp_dup(bid);
-				bat->cs.st = ST_DICT;
-			}
-			return ok;
+		ok = load_cs(tr, &bat->cs, type, c->base.id);
+		if (ok == LOG_OK && c->storage_type && strcmp(c->storage_type, "DICT") == 0) {
+			sqlstore *store = tr->store;
+			int bid = logger_find_bat(store->logger, -c->base.id);
+			if (!bid)
+				return LOG_ERR;
+			bat->cs.ebid = temp_dup(bid);
+			bat->cs.st = ST_DICT;
 		}
-		return load_cs(tr, &bat->cs, type, c->base.id);
+		return ok;
 	} else if (bat && bat->cs.bid && !isTempTable(c->t)) {
 		return new_persistent_delta(ATOMIC_PTR_GET(&c->data));
 	} else {
@@ -2859,7 +2861,7 @@ log_segments(sql_trans *tr, segments *segs, sqlid id)
 {
 	/* log segments */
 	for (segment *seg = segs->h; seg; seg=seg->next) {
-		if (seg->ts == tr->tid) {
+		if (seg->ts == tr->tid && seg->end-seg->start) {
 			if (log_segment(tr, seg, id) != LOG_OK)
 				return LOG_ERR;
 		}
@@ -3301,11 +3303,6 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	if (GDKinmemory(0))
 		return LOG_OK;
 
-	/*
-	if (cs->cleared && log_bat_clear(store->logger, id) != GDK_SUCCEED)
-		return LOG_ERR;
-		*/
-
 	if (cs->cleared) {
 		assert(cs->ucnt == 0);
 		BAT *ins = temp_descriptor(cs->bid);
@@ -3364,6 +3361,14 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				assert(BATcount(ins) >= cur->end);
 				ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start);
 				bat_destroy(ins);
+				if (ok == GDK_SUCCEED && cs->ebid) {
+					BAT *ins = temp_descriptor(cs->ebid);
+					assert(ins);
+					if (BUNlast(ins) > ins->batInserted)
+						ok = log_bat(store->logger, ins, -c->base.id, ins->batInserted, BATcount(ins)-ins->batInserted);
+					BATcommit(ins, BATcount(ins));
+					bat_destroy(ins);
+				}
 			}
 			if (t->idxs) {
 				for (node *n = ol_first_node(t->idxs); n && ok; n = n->next) {
@@ -3394,6 +3399,8 @@ log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 	int ok = LOG_OK, cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
 		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
+	if (ok == LOG_OK)
+		ok = segments2cs(tr, s->segs, &s->cs);
 	if (ok == LOG_OK)
 		ok = log_segments(tr, s->segs, id);
 	if (ok == LOG_OK && !cleared)

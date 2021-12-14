@@ -1296,25 +1296,25 @@ PCREsql2pcre(str *ret, const str *pat, const str *esc)
 }
 
 static inline str
-choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty, const str *pat, const str *esc)
+choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty, const char *pat, const char *esc)
 {
 	str res = MAL_SUCCEED;
 	*use_re = false;
 	*use_strcmp = false;
 	*empty = false;
 
-	if (strNil(*pat) || strNil(*esc)) {
+	if (strNil(pat) || strNil(esc)) {
 		*empty = true;
 	} else {
-		if (!re_is_pattern_properly_escaped(*pat, (unsigned char) **esc))
+		if (!re_is_pattern_properly_escaped(pat, (unsigned char) *esc))
 			throw(MAL, "pcre.sql2pcre", SQLSTATE(22019) ILLEGAL_ARGUMENT ": (I)LIKE pattern must not end with escape character");
-		if (is_strcmpable(*pat, *esc)) {
+		if (is_strcmpable(pat, esc)) {
 			*use_re = true;
 			*use_strcmp = true;
-		} else if (re_simple(*pat, (unsigned char) **esc)) {
+		} else if (re_simple(pat, (unsigned char) *esc)) {
 			*use_re = true;
 		} else {
-			if ((res = sql2pcre(ppat, *pat, *esc)) != MAL_SUCCEED)
+			if ((res = sql2pcre(ppat, pat, esc)) != MAL_SUCCEED)
 				return res;
 			if (strNil(*ppat)) {
 				GDKfree(*ppat);
@@ -1335,7 +1335,7 @@ PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc, const bit *
 	bool use_re = false, use_strcmp = false, empty = false;
 	struct RE *re = NULL;
 
-	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, *pat, *esc)) != MAL_SUCCEED)
 		return res;
 
 	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
@@ -1401,7 +1401,7 @@ re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore,
 	} while (0)
 
 static inline bit
-re_like_proj_apply(str s, struct RE *re, uint32_t *wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
+re_like_proj_apply(const char *s, struct RE *re, uint32_t *wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
 {
 	if (use_strcmp) {
 		if (caseignore) {
@@ -1518,7 +1518,7 @@ pcre_like_build(
 	} while(0)
 
 static inline str
-pcre_like_apply(bit *ret, str s,
+pcre_like_apply(bit *ret, const char *s,
 #ifdef HAVE_LIBPCRE
 	pcre *re, pcre_extra *ex
 #else
@@ -1618,9 +1618,9 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 			input = *getArgReference_str(stk, pci, 1);
 
 		for (BUN p = 0; p < q; p++) {
-			const str next_input = b ? BUNtail(bi, p) : input, np = BUNtail(pi, p);
+			const char *next_input = b ? BUNtail(bi, p) : input, *np = BUNtail(pi, p);
 
-			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &np, esc)) != MAL_SUCCEED) {
+			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, np, *esc)) != MAL_SUCCEED) {
 				bat_iterator_end(&pi);
 				if (b)
 					bat_iterator_end(&bi);
@@ -1662,7 +1662,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 			bat_iterator_end(&bi);
 	} else {
 		pat = *getArgReference_str(stk, pci, 2);
-		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &pat, esc)) != MAL_SUCCEED)
+		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, *esc)) != MAL_SUCCEED)
 			goto bailout;
 
 		bi = bat_iterator(b);
@@ -1675,7 +1675,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
-				const str s = BUNtail(bi, p);
+				const char *s = BUNtail(bi, p);
 				ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
 			}
@@ -1689,7 +1689,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
-				const str s = BUNtail(bi, p);
+				const char *s = BUNtail(bi, p);
 				if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED) {
 					bat_iterator_end(&bi);
 					goto bailout;
@@ -1883,7 +1883,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
-	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
+	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, *pat, *esc)) != MAL_SUCCEED)
 		goto bailout;
 
 	/* Since the strimp pre-filtering of a LIKE query produces a superset of
@@ -1994,7 +1994,7 @@ bailout:
 			vr = VALUE(r, ro - rbase); \
 			nl = 0; \
 			use_re = use_strcmp = empty = false; \
-			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, (const str*)&vr, (const str*)&esc))) \
+			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, vr, esc))) \
 				goto bailout; \
 			if (!empty) { \
 				if (use_re) { \

@@ -23,15 +23,15 @@
 #define STRING(a)		#a
 
 static void
-finalize_ouput_copy_sorted_property(bat *res, BAT *bn, BAT *b, str msg, bool nils, BUN q, bool try_copy_sorted)
+finalize_ouput_copy_sorted_property(bat *res, BAT *bn, str msg, bool nils, BUN q, bool istsorted, bool istrevsorted)
 {
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = nils;
 		bn->tnonil = !nils;
 		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = ((try_copy_sorted && b->tsorted) || BATcount(bn) <= 1);
-		bn->trevsorted = ((try_copy_sorted && b->trevsorted) || BATcount(bn) <= 1);
+		bn->tsorted = istsorted || BATcount(bn) <= 1;
+		bn->trevsorted = istrevsorted || BATcount(bn) <= 1;
 		BBPkeepref(*res = bn->batCacheid);
 	} else if (bn)
 		BBPreclaim(bn);

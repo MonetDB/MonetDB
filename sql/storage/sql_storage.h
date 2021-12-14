@@ -490,6 +490,8 @@ typedef struct sqlstore {
 	list *changes;			/* pending changes to cleanup */
 	sql_hash *dependencies; /* pending dependencies created to cleanup */
 	sql_hash *depchanges;	/* pending dependencies changes to cleanup */
+	list *seqchanges;		/* pending sequence number changes to be add to the first commiting transaction */
+	sql_hash *sequences;	/* loaded store sequence numbers */
 
 	sql_allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
 	sqlid obj_id, prev_oid;

@@ -116,7 +116,7 @@
 					prev = grps[r];			\
 				}					\
 				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+					      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 			} else {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, !groups"); \
 				TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {	\
@@ -132,7 +132,7 @@
 					KEEP;				\
 				}					\
 				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+					      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 			}						\
 		} else {						\
 			if (grps) {					\
@@ -151,7 +151,7 @@
 					prev = grps[r];			\
 				}					\
 				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+					      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 			} else {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, !groups"); \
 				TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {	\
@@ -167,7 +167,7 @@
 					KEEP;				\
 				}					\
 				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+					      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 			}						\
 		}							\
 	} while(0)
@@ -244,7 +244,7 @@
 				GRPnotfound();				\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 		} else {						\
 			MT_thread_setalgorithm("GRP_subscan_old_groups, !dense"); \
 			TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {		\
@@ -286,7 +286,7 @@
 				GRPnotfound();				\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 		}							\
 	} while(0)
 
@@ -378,7 +378,7 @@
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 		} else {						\
 			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, !dense, parent hash" : "GRP_use_existing_hash_table, !dense"); \
 			TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {		\
@@ -414,7 +414,7 @@
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 		}							\
 	} while(0)
 
@@ -528,7 +528,7 @@ ctz(oid x)
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 		} else {						\
 			MT_thread_setalgorithm("GRP_create_partial_hash_table, !dense"); \
 			TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {		\
@@ -562,7 +562,7 @@ ctz(oid x)
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
 		}							\
 	} while (0)
 #define GCGRPTST(i, j)	if (grps[i] != grps[j]) { hb = BUN_NONE; break; }
@@ -644,7 +644,7 @@ ctz(oid x)
 			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(error));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(error1));	\
 	} while (0)
 
 gdk_return

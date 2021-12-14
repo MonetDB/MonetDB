@@ -4,20 +4,10 @@ create sequence seq as int
 query I rowsort
 select get_value_for('sys','seq')
 ----
-NULL
-
-query I rowsort
-select get_value_for('sys','seq')
-----
-NULL
-
-query I rowsort
-select peak_next_value_for('sys','seq')
-----
 1
 
 query I rowsort
-select peak_next_value_for('sys','seq')
+select get_value_for('sys','seq')
 ----
 1
 
@@ -34,12 +24,12 @@ select next_value_for('sys','seq')
 query I rowsort
 select get_value_for('sys','seq')
 ----
-2
+3
 
 query I rowsort
 select get_value_for('sys','seq')
 ----
-2
+3
 
 query I rowsort
 select next_value_for('sys','seq')
@@ -49,7 +39,7 @@ select next_value_for('sys','seq')
 query I rowsort
 select get_value_for('sys','seq')
 ----
-3
+4
 
 query I rowsort
 SELECT NEXT VALUE FOR sys.seq
@@ -58,16 +48,6 @@ SELECT NEXT VALUE FOR sys.seq
 
 query I rowsort
 select get_value_for('sys','seq')
-----
-4
-
-query I rowsort
-select peak_next_value_for('sys','seq')
-----
-5
-
-query I rowsort
-select peak_next_value_for('sys','seq')
 ----
 5
 
@@ -83,20 +63,10 @@ create sequence seq as int
 query I rowsort
 select get_value_for('sys','seq')
 ----
-NULL
-
-query I rowsort
-select get_value_for('sys','seq')
-----
-NULL
-
-query I rowsort
-select peak_next_value_for('sys','seq')
-----
 1
 
 query I rowsort
-select peak_next_value_for('sys','seq')
+select get_value_for('sys','seq')
 ----
 1
 
@@ -113,12 +83,12 @@ select next_value_for('sys','seq')
 query I rowsort
 select get_value_for('sys','seq')
 ----
-2
+3
 
 query I rowsort
 select get_value_for('sys','seq')
 ----
-2
+3
 
 query I rowsort
 select next_value_for('sys','seq')
@@ -128,7 +98,7 @@ select next_value_for('sys','seq')
 query I rowsort
 select get_value_for('sys','seq')
 ----
-3
+4
 
 query I rowsort
 SELECT NEXT VALUE FOR sys.seq
@@ -137,16 +107,6 @@ SELECT NEXT VALUE FOR sys.seq
 
 query I rowsort
 select get_value_for('sys','seq')
-----
-4
-
-query I rowsort
-select peak_next_value_for('sys','seq')
-----
-5
-
-query I rowsort
-select peak_next_value_for('sys','seq')
 ----
 5
 

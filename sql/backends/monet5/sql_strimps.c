@@ -49,7 +49,7 @@ sql_load_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BAT **b)
 		throw(SQL, "sql.createstrimps", SQLSTATE(38000) "Unknown column %s.%s.%s", sch, tbl, col);
 
 	sqlstore *store = m->session->tr->store;
-	*b = store->storage_api.bind_col(m->session->tr, c, 0);
+	*b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
 	if (*b == 0)
 		throw(SQL, "sql.createstrimps", SQLSTATE(HY005) "Cannot access column %s", col);
 

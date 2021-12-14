@@ -2924,11 +2924,30 @@ BATcount_no_nil(BAT *b, BAT *s)
 		}
 		break;
 	}
-	if (cnt == BATcount(b)) {
-		/* we learned something */
-		b->tnonil = true;
-		assert(!b->tnil);
-		b->tnil = false;
+	if (cnt == bi.count) {
+		MT_lock_set(&b->theaplock);
+		if (cnt == BATcount(b) && bi.h == b->theap) {
+			/* we learned something */
+			b->batDirtydesc = true;
+			b->tnonil = true;
+			assert(!b->tnil);
+			b->tnil = false;
+		}
+		MT_lock_unset(&b->theaplock);
+		bat pbid = VIEWtparent(b);
+		if (pbid) {
+			BAT *pb = BBP_cache(pbid);
+			MT_lock_set(&pb->theaplock);
+			if (cnt == BATcount(pb) &&
+			    bi.h == pb->theap &&
+			    !pb->tnonil) {
+				pb->batDirtydesc = true;
+				pb->tnonil = true;
+				assert(!pb->tnil);
+				pb->tnil = false;
+			}
+			MT_lock_unset(&pb->theaplock);
+		}
 	}
 	bat_iterator_end(&bi);
 	return cnt;

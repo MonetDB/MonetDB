@@ -273,6 +273,21 @@ BATunique(BAT *b, BAT *s)
 		TIMEOUT_CHECK(timeoffset,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	}
+	if (BATcount(bn) == bi.count) {
+		/* it turns out all values are distinct */
+		MT_lock_set(&b->theaplock);
+		if (BATcount(b) == bi.count) {
+			/* and the input hasn't changed in the mean
+			 * time--the only allowed change being appends;
+			 * updates not allowed since the candidate list
+			 * covers the complete bat */
+			assert(b->tnokey[0] == 0);
+			assert(b->tnokey[1] == 0);
+			b->tkey = true;
+			b->batDirtydesc = true;
+		}
+		MT_lock_unset(&b->theaplock);
+	}
 	bat_iterator_end(&bi);
 
 	bn->theap->dirty = true;
@@ -281,13 +296,6 @@ BATunique(BAT *b, BAT *s)
 	bn->tkey = true;
 	bn->tnil = false;
 	bn->tnonil = true;
-	if (BATcount(bn) == bi.count) {
-		/* it turns out all values are distinct */
-		assert(b->tnokey[0] == 0);
-		assert(b->tnokey[1] == 0);
-		b->tkey = true;
-		b->batDirtydesc = true;
-	}
 	bn = virtualize(bn);
 	MT_thread_setalgorithm(algomsg);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT

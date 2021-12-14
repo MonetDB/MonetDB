@@ -462,7 +462,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 				cnt += (TEST) != 0;			\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (false)
 
 /* argument list for type-specific core scan select function call */
