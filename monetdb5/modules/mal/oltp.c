@@ -255,6 +255,33 @@ OLTPis_enabled(int *ret) {
   return MAL_SUCCEED;
 }
 
+static str
+OLTPassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bool flg = (bool) *getArgReference_bit(stk, pci, 1);
+	str msg = *getArgReference_str(stk, pci, 2);
+
+	(void) cntxt;
+	(void) mb;
+	if (flg) {
+		if (strlen(msg) > 6 &&
+		    msg[5] == '!' &&
+		    (isdigit((unsigned char) msg[0]) ||
+		     isupper((unsigned char) msg[0])) &&
+		    (isdigit((unsigned char) msg[1]) ||
+		     isupper((unsigned char) msg[1])) &&
+		    (isdigit((unsigned char) msg[2]) ||
+		     isupper((unsigned char) msg[2])) &&
+		    (isdigit((unsigned char) msg[3]) ||
+		     isupper((unsigned char) msg[3])) &&
+		    (isdigit((unsigned char) msg[4]) ||
+		     isupper((unsigned char) msg[4])))
+			throw(OPTIMIZER, "assert", "%s", msg); /* includes state */
+		throw(OPTIMIZER, "assert", SQLSTATE(M0M29) "%s", msg);
+	}
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 mel_func oltp_init_funcs[] = {
  pattern("oltp", "init", OLTPinit, true, "Initialize the lock table", noargs),
@@ -265,6 +292,7 @@ mel_func oltp_init_funcs[] = {
  pattern("oltp", "release", OLTPrelease, true, "Release for all write locks needed", args(1,2, arg("",void),vararg("lck",int))),
  pattern("oltp", "table", OLTPtable, true, "Show status of lock table", args(4,4, batarg("start",timestamp),batarg("usr",str),batarg("unit",int),batarg("cnt",int))),
  command("oltp", "isenabled", OLTPis_enabled, true, "Query the OLTP state", args(1,1, arg("",int))),
+ pattern("oltp", "assert", OLTPassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
