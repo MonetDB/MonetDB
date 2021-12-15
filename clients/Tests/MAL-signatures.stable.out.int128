@@ -12377,6 +12377,7 @@
 [ "netcdf",	"importvar",	"unsafe command netcdf.importvar(X_0:str, X_1:int):str ",	"NCDFimportVarStmt;",	"Import variable: compose create array string"	]
 [ "netcdf",	"importvariable",	"unsafe pattern netcdf.importvariable(X_0:int, X_1:str):void ",	"NCDFimportVariable;",	"Import variable: create array and load data from variable varname of file fileid"	]
 [ "netcdf",	"test",	"command netcdf.test(X_0:str):int ",	"NCDFtest;",	"Returns number of variables in a given NetCDF dataset (file)"	]
+[ "oltp",	"assert",	"pattern oltp.assert(X_0:bit, X_1:str):void ",	"OLTPassert;",	"Generate an exception when b==true"	]
 [ "oltp",	"disable",	"unsafe pattern oltp.disable():void ",	"OLTPdisable;",	"Disable the OLTP delay monitor"	]
 [ "oltp",	"enable",	"unsafe pattern oltp.enable():void ",	"OLTPenable;",	"Enable the OLTP delay monitor"	]
 [ "oltp",	"init",	"unsafe pattern oltp.init():void ",	"OLTPinit;",	"Initialize the lock table"	]
