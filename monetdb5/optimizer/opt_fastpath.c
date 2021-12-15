@@ -26,7 +26,6 @@
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
-#include "opt_oltp.h"
 #include "opt_postfix.h"
 #include "opt_mask.h"
 #include "opt_mergetable.h"
@@ -66,7 +65,7 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
 	for( int i=0; i<mb->stop; i++){
 		InstrPtr q = getInstrPtr(mb,i);
-		if (q->modname == sqlRef && q->fcnname == importTableRef) 
+		if (q->modname == sqlRef && q->fcnname == importTableRef)
 			bincopy= 1;
 		if( getModuleId(q) == generatorRef)
 			generator = 1;
@@ -100,7 +99,7 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
 	for( int i=0; i<mb->stop; i++){
 		InstrPtr q = getInstrPtr(mb,i);
-		if (q->modname == sqlRef && q->fcnname == importTableRef) 
+		if (q->modname == sqlRef && q->fcnname == importTableRef)
 			bincopy= 1;
 		if( getModuleId(q) == generatorRef)
 			generator = 1;
