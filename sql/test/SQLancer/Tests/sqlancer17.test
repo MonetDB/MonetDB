@@ -416,6 +416,24 @@ statement ok
 ROLLBACK
 
 statement ok
+CREATE TABLE t1(c0 boolean)
+
+statement ok
+SET "optimizer"='default_fast'
+
+statement ok rowcount 0
+DELETE FROM t1
+
+statement ok
+SET "optimizer"='default_pipe'
+
+statement ok
+DROP TABLE t1
+
+statement ok
+SET "optimizer"='default_pipe'
+
+statement ok
 CREATE TABLE t2(c0 INTERVAL DAY)
 
 statement ok rowcount 1

@@ -20,17 +20,6 @@
 #include "mal_exception.h"
 #include "mal.h"
 
-#ifndef WIN32
-#define __declspec(x)
-#endif
-
-extern __declspec(dllexport) str MBMrandom(bat *ret, oid *base, lng *size, int *domain);
-extern __declspec(dllexport) str MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed);
-extern __declspec(dllexport) str MBMuniform(bat *ret, oid *base, lng *size, int *domain);
-extern __declspec(dllexport) str MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean);
-extern __declspec(dllexport) str MBMmix(bat *ret, bat *batid);
-extern __declspec(dllexport) str MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew);
-
 static gdk_return
 BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 {
@@ -325,12 +314,7 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
  * The M5 wrapper code
  */
 
-str
-MBMrandom(bat *ret, oid *base, lng *size, int *domain){
-	return MBMrandom_seed ( ret, base, size, domain, &int_nil );
-}
-
-str
+static str
 MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed){
 	BAT *bn = NULL;
 
@@ -341,8 +325,12 @@ MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed){
 	return MAL_SUCCEED;
 }
 
+static str
+MBMrandom(bat *ret, oid *base, lng *size, int *domain){
+	return MBMrandom_seed ( ret, base, size, domain, &int_nil );
+}
 
-str
+static str
 MBMuniform(bat *ret, oid *base, lng *size, int *domain){
 	BAT *bn = NULL;
 
@@ -353,7 +341,7 @@ MBMuniform(bat *ret, oid *base, lng *size, int *domain){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean){
 	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
@@ -364,7 +352,7 @@ MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean){
 }
 
 
-str
+static str
 MBMmix(bat *bn, bat *batid)
 {
 	BUN n, r, i;
@@ -389,7 +377,7 @@ MBMmix(bat *bn, bat *batid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew){
 	BAT *bn = NULL;
 
@@ -399,8 +387,6 @@ MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew){
 	} else throw(MAL, "microbenchmark.skewed", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
-
-#if 0
 
 #include "mel.h"
 mel_func microbenchmark_init_funcs[] = {
@@ -419,5 +405,3 @@ mel_func microbenchmark_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_microbenchmark_mal)
 { mal_module("microbenchmark", NULL, microbenchmark_init_funcs); }
-
-#endif

@@ -37,7 +37,7 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	limit= mb->stop;
 
 	if ( mb->inlineProp )
-		return MAL_SUCCEED;
+		goto bailout;
 
 	for(i=0; i < limit; i++) {
 		p = old[i];

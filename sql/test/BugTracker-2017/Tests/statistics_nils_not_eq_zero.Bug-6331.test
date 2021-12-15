@@ -1,72 +1,33 @@
-query I rowsort
+query T rowsort
 SELECT count(*) = 0 FROM sys.statistics
 ----
-1
+True
+
+statement ok
+create table x (a int)
+
+statement ok rowcount 1
+insert into x values (NULL)
 
 statement ok
 ANALYZE sys
 
-query I rowsort
+query T rowsort
 SELECT count(*) > 0 FROM sys.statistics WHERE nils <> 0
 ----
-1
-
-query I rowsort
-SELECT count(*) > 0 FROM sys.statistics WHERE nils <> 0 AND (minval IS NULL OR maxval IS NULL)
-----
-1
-
-query I rowsort
-SELECT count(*) > 0 FROM sys.statistics WHERE count > 0 AND (minval IS NULL OR maxval IS NULL)
-----
-1
-
-statement ok
-ANALYZE tmp
-
-query I rowsort
-SELECT count(*) > 0 FROM sys.statistics WHERE nils <> 0
-----
-1
-
-query I rowsort
-SELECT count(*) > 0 FROM sys.statistics WHERE nils <> 0 AND (minval IS NULL OR maxval IS NULL)
-----
-1
-
-query I rowsort
-SELECT count(*) > 0 FROM sys.statistics WHERE count > 0 AND (minval IS NULL OR maxval IS NULL)
-----
-1
-
-statement ok
-ANALYZE profiler
-
-query I rowsort
-SELECT count(*) > 0 FROM sys.statistics WHERE nils <> 0
-----
-1
-
-query I rowsort
-SELECT count(*) > 0 FROM sys.statistics WHERE nils <> 0 AND (minval IS NULL OR maxval IS NULL)
-----
-1
-
-query I rowsort
-SELECT count(*) > 0 FROM sys.statistics WHERE count > 0 AND (minval IS NULL OR maxval IS NULL)
-----
-1
+True
 
 query T rowsort
-select '~BeginVariableOutput~'
+SELECT count(*) > 0 FROM sys.statistics WHERE nils <> 0 AND (minval IS NULL OR maxval IS NULL)
 ----
-~BeginVariableOutput~
-
-statement ok
-DELETE FROM sys.statistics
+True
 
 query T rowsort
-select '~EndVariableOutput~'
+SELECT count(*) > 0 FROM sys.statistics WHERE count > 0 AND (minval IS NULL OR maxval IS NULL)
 ----
-~EndVariableOutput~
+True
+
+statement ok
+DROP TABLE x
+
 

@@ -210,7 +210,6 @@ const char *not_uniqueRef;
 const char *nth_valueRef;
 const char *ntileRef;
 const char *oidRef;
-const char *oltpRef;
 const char *openRef;
 const char *optimizerRef;
 const char *orRef;
@@ -528,7 +527,6 @@ void optimizerInit(void)
 	nth_valueRef = putName("nth_value");
 	ntileRef = putName("ntile");
 	oidRef = putName("oid");
-	oltpRef = putName("oltp");
 	openRef = putName("open");
 	optimizerRef = putName("optimizer");
 	orRef = putName("or");
