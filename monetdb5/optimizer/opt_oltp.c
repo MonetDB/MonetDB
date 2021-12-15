@@ -116,6 +116,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL,"optimizer.oltp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			setFunctionId(q, releaseRef);
+			getArg(q,0) = newTmpVariable(mb, TYPE_void);
 			pushInstruction(mb,q);
 		}
 		pushInstruction(mb,p);
