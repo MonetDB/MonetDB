@@ -2320,6 +2320,48 @@ dcount_col(sql_trans *tr, sql_column *c)
 	return cnt;
 }
 
+static int
+min_max_col(sql_trans *tr, sql_column *c)
+{
+	int ok = 0;
+	BAT *b = NULL;
+	sql_delta *d = NULL;
+
+	assert(tr->active);
+	if (!c || !ATOMIC_PTR_GET(&c->data) || !isTable(c->t) || !c->t->s)
+		return 0;
+	if (c->min && c->max)
+		return 1;
+
+	lock_column(tr->store, c->base.id);
+	if (c->min && c->max) {
+		unlock_column(tr->store, c->base.id);
+		return 1;
+	}
+	_DELETE(c->min);
+	_DELETE(c->max);
+	if ((d = ATOMIC_PTR_GET(&c->data)) && (b = temp_descriptor(d->cs.bid))) {
+		BATiter bi = bat_iterator(b);
+		if (b->tminpos != BUN_NONE && b->tmaxpos != BUN_NONE) {
+			void *nmin = BUNtail(bi, b->tminpos), *nmax = BUNtail(bi, b->tmaxpos);
+			size_t minlen = ATOMlen(b->ttype, nmin), maxlen = ATOMlen(b->ttype, nmax);
+
+			if (!(c->min = GDKmalloc(minlen)) || !(c->max = GDKmalloc(maxlen))) {
+				_DELETE(c->min);
+				_DELETE(c->max);
+			} else {
+				memcpy(c->min, nmin, minlen);
+				memcpy(c->max, nmax, maxlen);
+				ok = 1;
+			}
+		}
+		bat_iterator_end(&bi);
+		bat_destroy(b);
+	}
+	unlock_column(tr->store, c->base.id);
+	return ok;
+}
+
 static size_t
 count_segs(segment *s)
 {
@@ -4447,6 +4489,7 @@ bat_storage_init( store_functions *sf)
 	sf->count_col = &count_col;
 	sf->count_idx = &count_idx;
 	sf->dcount_col = &dcount_col;
+	sf->min_max_col = &min_max_col;
 	sf->sorted_col = &sorted_col;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;

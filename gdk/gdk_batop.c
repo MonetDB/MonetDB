@@ -2852,7 +2852,6 @@ BATrmprop(BAT *b, enum prop_t idx)
 	MT_lock_unset(&b->theaplock);
 }
 
-
 /*
  * The BATcount_no_nil function counts all BUN in a BAT that have a
  * non-nil tail value.
