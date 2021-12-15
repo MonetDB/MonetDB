@@ -2852,18 +2852,6 @@ BATrmprop(BAT *b, enum prop_t idx)
 	MT_lock_unset(&b->theaplock);
 }
 
-#define BATcount_no_nil_fixed(TPE) \
-	do { \
-		const TPE *restrict tp = (const TPE *) p; \
-		if (ci.tpe == cand_dense) { \
-			for (i = 0; i < n; i++) \
-				cnt += !is_##TPE##_nil(tp[canditer_next_dense(&ci) - hseq]); \
-		} else { \
-			for (i = 0; i < n; i++) \
-				cnt += !is_##TPE##_nil(tp[canditer_next(&ci) - hseq]); \
-		} \
-	} while(0)
-
 /*
  * The BATcount_no_nil function counts all BUN in a BAT that have a
  * non-nil tail value.
@@ -2897,75 +2885,60 @@ BATcount_no_nil(BAT *b, BAT *s)
 		cnt = n;
 		break;
 	case TYPE_bte:
-		BATcount_no_nil_fixed(bte);
+		for (i = 0; i < n; i++)
+			cnt += !is_bte_nil(((const bte *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_sht:
-		BATcount_no_nil_fixed(sht);
+		for (i = 0; i < n; i++)
+			cnt += !is_sht_nil(((const sht *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_int:
-		BATcount_no_nil_fixed(int);
+		for (i = 0; i < n; i++)
+			cnt += !is_int_nil(((const int *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_lng:
-		BATcount_no_nil_fixed(lng);
+		for (i = 0; i < n; i++)
+			cnt += !is_lng_nil(((const lng *) p)[canditer_next(&ci) - hseq]);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		BATcount_no_nil_fixed(hge);
+		for (i = 0; i < n; i++)
+			cnt += !is_hge_nil(((const hge *) p)[canditer_next(&ci) - hseq]);
 		break;
 #endif
 	case TYPE_flt:
-		BATcount_no_nil_fixed(flt);
+		for (i = 0; i < n; i++)
+			cnt += !is_flt_nil(((const flt *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_dbl:
-		BATcount_no_nil_fixed(dbl);
+		for (i = 0; i < n; i++)
+			cnt += !is_dbl_nil(((const dbl *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_uuid:
-		BATcount_no_nil_fixed(uuid);
+		for (i = 0; i < n; i++)
+			cnt += !is_uuid_nil(((const uuid *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
 		base = bi.vh->base;
-		if (ci.tpe == cand_dense) {
-			switch (bi.width) {
-			case 1:
-				for (i = 0; i < n; i++)
-					cnt += base[(var_t) ((const unsigned char *) p)[canditer_next_dense(&ci) - hseq] + GDK_VAROFFSET] != '\200';
-				break;
-			case 2:
-				for (i = 0; i < n; i++)
-					cnt += base[(var_t) ((const unsigned short *) p)[canditer_next_dense(&ci) - hseq] + GDK_VAROFFSET] != '\200';
-				break;
+		switch (bi.width) {
+		case 1:
+			for (i = 0; i < n; i++)
+				cnt += base[(var_t) ((const unsigned char *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
+			break;
+		case 2:
+			for (i = 0; i < n; i++)
+				cnt += base[(var_t) ((const unsigned short *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
+			break;
 #if SIZEOF_VAR_T != SIZEOF_INT
-			case 4:
-				for (i = 0; i < n; i++)
-					cnt += base[(var_t) ((const unsigned int *) p)[canditer_next_dense(&ci) - hseq]] != '\200';
-				break;
+		case 4:
+			for (i = 0; i < n; i++)
+				cnt += base[(var_t) ((const unsigned int *) p)[canditer_next(&ci) - hseq]] != '\200';
+			break;
 #endif
-			default:
-				for (i = 0; i < n; i++)
-					cnt += base[((const var_t *) p)[canditer_next_dense(&ci) - hseq]] != '\200';
-				break;
-			}
-		} else {
-			switch (bi.width) {
-			case 1:
-				for (i = 0; i < n; i++)
-					cnt += base[(var_t) ((const unsigned char *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
-				break;
-			case 2:
-				for (i = 0; i < n; i++)
-					cnt += base[(var_t) ((const unsigned short *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
-				break;
-#if SIZEOF_VAR_T != SIZEOF_INT
-			case 4:
-				for (i = 0; i < n; i++)
-					cnt += base[(var_t) ((const unsigned int *) p)[canditer_next(&ci) - hseq]] != '\200';
-				break;
-#endif
-			default:
-				for (i = 0; i < n; i++)
-					cnt += base[((const var_t *) p)[canditer_next(&ci) - hseq]] != '\200';
-				break;
-			}
+		default:
+			for (i = 0; i < n; i++)
+				cnt += base[((const var_t *) p)[canditer_next(&ci) - hseq]] != '\200';
+			break;
 		}
 		break;
 	default:
@@ -2975,21 +2948,11 @@ BATcount_no_nil(BAT *b, BAT *s)
 			cnt = n;
 		} else if (b->tvarsized) {
 			base = b->tvheap->base;
-			if (ci.tpe == cand_dense) {
-				for (i = 0; i < n; i++)
-					cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next_dense(&ci) - hseq]) != 0;
-			} else {
-				for (i = 0; i < n; i++)
-					cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]) != 0;
-			}
+			for (i = 0; i < n; i++)
+				cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]) != 0;
 		} else {
-			if (ci.tpe == cand_dense) {
-				for (i = 0, n += i; i < n; i++)
-					cnt += (*cmp)(BUNtloc(bi, canditer_next_dense(&ci) - hseq), nil) != 0;
-			} else {
-				for (i = 0, n += i; i < n; i++)
-					cnt += (*cmp)(BUNtloc(bi, canditer_next(&ci) - hseq), nil) != 0;
-			}
+			for (i = 0, n += i; i < n; i++)
+				cnt += (*cmp)(BUNtloc(bi, canditer_next(&ci) - hseq), nil) != 0;
 		}
 		break;
 	}
