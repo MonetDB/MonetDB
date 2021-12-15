@@ -11,122 +11,45 @@ Most optimizers need easy access to key information
 for proper plan generation. Amongst others, this
 information consists of the tuple count, size,
 min- and max-value, and the null-density.
-They are kept around as persistent tables, modeled
-directly as a collection of BATs.
 
 We made need an directly accessible structure to speedup
 analysis by optimizers.
 */
 #include "monetdb_config.h"
 #include "sql_statistics.h"
-#include "sql_execute.h"
-
-str
-sql_drop_statistics(mvc *m, sql_table *t)
-{
-	node *ncol;
-	sql_trans *tr;
-	sql_schema *sys;
-	sql_table *sysstats;
-	sql_column *statsid;
-	oid rid;
-	int log_res = LOG_OK;
-
-	tr = m->session->tr;
-	sys = mvc_bind_schema(m, "sys");
-	if (sys == NULL)
-		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "Internal error: No schema sys");
-	sysstats = mvc_bind_table(m, sys, "statistics");
-	if (sysstats == NULL)
-		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
-	statsid = mvc_bind_column(m, sysstats, "column_id");
-	if (statsid == NULL)
-		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
-
-	/* Do all the validations before any drop */
-	if (!isTable(t))
-		throw(SQL, "sql_drop_statistics", SQLSTATE(42S02) "DROP STATISTICS: %s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
-	if (!table_privs(m, t, PRIV_SELECT))
-		throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to table '%s.%s'",
-			  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
-	if (isTable(t) && ol_first_node(t->columns)) {
-		for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
-			sql_column *c = (sql_column *) ncol->data;
-
-			if (!column_privs(m, c, PRIV_SELECT))
-				throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to column '%s' on table '%s.%s'",
-					  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
-		}
-	}
-
-	sqlstore *store = tr->store;
-	if (isTable(t) && ol_first_node(t->columns)) {
-		for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
-			sql_column *c = ncol->data;
-
-			rid = store->table_api.column_find_row(tr, statsid, &c->base.id, NULL);
-			if (!is_oid_nil(rid) && (log_res = store->table_api.table_delete(tr, sysstats, rid)) != LOG_OK)
-				throw(SQL, "sql.sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
-		}
-	}
-	return MAL_SUCCEED;
-}
 
 str
 sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getSQLContext(cntxt, mb, &m, NULL);
-	sql_trans *tr = m->session->tr;
-	node *ncol;
-	char *maxval = NULL, *minval = NULL;
-	size_t minlen = 0, maxlen = 0;
-	str sch = 0, tbl = 0, col = 0;
-	bit sorted, revsorted;	/* not bool since address is taken */
-	lng nils = 0;
-	lng uniq = 0;
-	lng samplesize = *getArgReference_lng(stk, pci, 2);
-	int argc = pci->argc;
-	int width = 0;
-	int minmax = *getArgReference_int(stk, pci, 1);
-	int sfnd = 0, tfnd = 0, cfnd = 0, log_res = LOG_OK;
-	sql_schema *sys;
-	sql_table *sysstats;
-	sql_column *statsid;
-	oid rid;
-	timestamp ts;
+	sql_trans *tr = NULL;
+	str sch = NULL, tbl = NULL, col = NULL, msg = MAL_SUCCEED;
+	int argc = pci->argc, sfnd = 0, tfnd = 0, cfnd = 0;
 
-	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	sys = mvc_bind_schema(m, "sys");
-	if (sys == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No schema sys");
-	sysstats = mvc_bind_table(m, sys, "statistics");
-	if (sysstats == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
-	statsid = mvc_bind_column(m, sysstats, "column_id");
-	if (statsid == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
-
+	tr = m->session->tr;
 	switch (argc) {
-	case 6:
-		col = *getArgReference_str(stk, pci, 5);
+	case 4:
+		col = *getArgReference_str(stk, pci, 3);
 		if (strNil(col))
 			throw(SQL, "sql.analyze", SQLSTATE(42000) "Column name cannot be NULL");
 		/* fall through */
-	case 5:
-		tbl = *getArgReference_str(stk, pci, 4);
+	case 3:
+		tbl = *getArgReference_str(stk, pci, 2);
 		if (strNil(tbl))
 			throw(SQL, "sql.analyze", SQLSTATE(42000) "Table name cannot be NULL");
 		/* fall through */
-	case 4:
-		sch = *getArgReference_str(stk, pci, 3);
+	case 2:
+		sch = *getArgReference_str(stk, pci, 1);
 		if (strNil(sch))
 			throw(SQL, "sql.analyze", SQLSTATE(42000) "Schema name cannot be NULL");
 	}
 
-	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
+	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "));
 
 	/* Do all the validations before doing any analyze */
 	struct os_iter si;
@@ -148,30 +71,30 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				continue;
 			tfnd = 1;
 			if (tbl && !isTable(t))
-				throw(SQL, "analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+				throw(SQL, "sql.analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 			if (!table_privs(m, t, PRIV_SELECT))
-				throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'",
+				throw(SQL, "sql.analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'",
 					  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
 			if (isTable(t) && ol_first_node(t->columns)) {
-				for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_column *c = (sql_column *) ncol->data;
 
 					if (col && strcmp(c->base.name, col))
 						continue;
 					cfnd = 1;
 					if (!column_privs(m, c, PRIV_SELECT))
-						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to column '%s' on table '%s.%s'",
+						throw(SQL, "sql.analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to column '%s' on table '%s.%s'",
 							  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
 				}
 			}
 		}
 	}
 	if (sch && !sfnd)
-		throw(SQL, "analyze", SQLSTATE(3F000) "Schema '%s' does not exist", sch);
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Schema '%s' does not exist", sch);
 	if (tbl && !tfnd)
-		throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' does not exist", tbl);
+		throw(SQL, "sql.analyze", SQLSTATE(42S02) "Table '%s' does not exist", tbl);
 	if (col && !cfnd)
-		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
+		throw(SQL, "sql.analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
 
 	sqlstore *store = tr->store;
 	os_iterator(&si, tr->cat->schemas, tr, NULL);
@@ -190,169 +113,297 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (tbl && strcmp(b->name, tbl))
 				continue;
 			if (isTable(t) && ol_first_node(t->columns)) {
-				BAT *cands;
-
-				if ((cands = store->storage_api.bind_cands(tr, t, 1, 0)) == NULL) {
-					GDKfree(maxval);
-					GDKfree(minval);
-					throw(SQL, "analyze", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-				}
-
-				for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
-					sql_base *bc = ncol->data;
+				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_column *c = (sql_column *) ncol->data;
-					BAT *bn, *nbn, *br;
-					BAT *bsample;
-					lng sz;
-					ssize_t (*tostr)(str*,size_t*,const void*,bool);
-					void *val=0;
+					BAT *b, *unq;
+					ptr mn, mx;
 
-					if (col && strcmp(bc->name, col))
+					if (col && strcmp(c->base.name, col))
 						continue;
+					if (!(b = store->storage_api.bind_col(tr, c, RDONLY)))
+						continue; /* At the moment we ignore the error, but maybe we can change this */
+					if (isVIEW(b)) { /* If it is a view get the parent BAT */
+						BAT *nb = BBP_cache(VIEWtparent(b));
+						BBPunfix(b->batCacheid);
+						if (!(b = BATdescriptor(nb->batCacheid)))
+							continue;
+					}
 
-					/* remove cached value */
-					if (c->min)
-						c->min = NULL;
-					if (c->max)
-						c->max = NULL;
+					/* Collect new sorted and revsorted properties */
+					/* At the moment the heap must be locked around the BATordered calls to prevent a race condition on it */
+					MT_lock_set(&b->theaplock);
+					(void) BATordered(b);
+					(void) BATordered_rev(b);
+					MT_lock_unset(&b->theaplock);
 
-					if ((bn = store->storage_api.bind_col(tr, c, RDONLY)) == NULL) {
-						/* XXX throw error instead? */
-						continue;
-					}
-					nbn = BATproject(cands, bn);
-					BBPunfix(bn->batCacheid);
-					if (!nbn) {
-						/* XXX throw error instead? */
-						continue;
-					}
-					bn = nbn;
-					sz = BATcount(bn);
-					tostr = BATatoms[bn->ttype].atomToStr;
+					/* Check for nils existence */
+					(void) BATcount_no_nil(b, NULL);
 
-					rid = store->table_api.column_find_row(tr, statsid, &c->base.id, NULL);
-					if (samplesize > 0) {
-						bsample = BATsample(bn, (BUN) samplesize);
-					} else
-						bsample = NULL;
-					br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, true, false, false);
-					if (br == NULL) {
-						BBPunfix(bn->batCacheid);
-						if (bsample)
-							BBPunfix(bsample->batCacheid);
-						/* XXX throw error instead? */
-						continue;
-					}
-					nils = BATcount(br);
-					BBPunfix(br->batCacheid);
-					if (bn->tkey)
-						uniq = sz;
-					else if (!minmax) {
-						BAT *en;
-						if (bsample)
-							br = BATproject(bsample, bn);
-						else
-							br = bn;
-						if (br && (en = BATunique(br, NULL)) != NULL) {
-							uniq = canditer_init(&(struct canditer){0}, NULL, en);
-							BBPunfix(en->batCacheid);
-						} else
-							uniq = 0;
-						if (bsample && br)
-							BBPunfix(br->batCacheid);
-					}
-					if (bsample)
-						BBPunfix(bsample->batCacheid);
-					/* use BATordered(_rev)
-					 * and not
-					 * BATt(rev)ordered
-					 * because we want to
-					 * know for sure */
-					sorted = BATordered(bn);
-					revsorted = BATordered_rev(bn);
+					/* Test if column is unique */
+					if ((unq = BATunique(b, NULL)))
+						BBPunfix(unq->batCacheid);
 
-					// Gather the min/max value for builtin types
-					width = bn->twidth;
+					/* Guess number of uniques if not entirely unique */
+					(void) BATguess_uniques(b, NULL);
 
-					if (maxlen < 4) {
-						GDKfree(maxval);
-						maxval = GDKmalloc(4);
-						if (maxval == NULL) {
-							GDKfree(minval);
-							BBPunfix(bn->batCacheid);
-							BBPunfix(cands->batCacheid);
-							throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						}
-						maxlen = 4;
-					}
-					if (minlen < 4) {
-						GDKfree(minval);
-						minval = GDKmalloc(4);
-						if (minval == NULL){
-							GDKfree(maxval);
-							BBPunfix(bn->batCacheid);
-							BBPunfix(cands->batCacheid);
-							throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						}
-						minlen = 4;
-					}
-					if (tostr) {
-						if ((val = BATmax(bn, NULL)) == NULL)
-							strcpy(maxval, str_nil);
-						else {
-							if (tostr(&maxval, &maxlen, val, false) < 0) {
-								GDKfree(val);
-								GDKfree(minval);
-								GDKfree(maxval);
-								BBPunfix(bn->batCacheid);
-								BBPunfix(cands->batCacheid);
-								throw(SQL, "analyze", GDK_EXCEPTION);
-							}
-							GDKfree(val);
-						}
-						if ((val = BATmin(bn, NULL)) == NULL)
-							strcpy(minval, str_nil);
-						else {
-							if (tostr(&minval, &minlen, val, false) < 0) {
-								GDKfree(val);
-								GDKfree(minval);
-								GDKfree(maxval);
-								BBPunfix(bn->batCacheid);
-								BBPunfix(cands->batCacheid);
-								throw(SQL, "analyze", GDK_EXCEPTION);
-							}
-							GDKfree(val);
-						}
-					} else {
-						strcpy(maxval, str_nil);
-						strcpy(minval, str_nil);
-					}
-					BBPunfix(bn->batCacheid);
-					ts = timestamp_current();
-					if (!is_oid_nil(rid) && (log_res = store->table_api.table_delete(tr, sysstats, rid)) != LOG_OK) {
-						GDKfree(maxval);
-						GDKfree(minval);
-						BBPunfix(cands->batCacheid);
-						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
-					}
-					if ((log_res = store->table_api.table_insert(tr, sysstats, &c->base.id, &c->type.type->base.name, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, &minval, &maxval, &sorted, &revsorted)) != LOG_OK) {
-						GDKfree(maxval);
-						GDKfree(minval);
-						BBPunfix(cands->batCacheid);
-						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
-					}
-					if (!isNew(c) && (log_res = sql_trans_add_dependency(tr, c->base.id, ddl)) != LOG_OK) {
-						GDKfree(maxval);
-						GDKfree(minval);
-						BBPunfix(cands->batCacheid);
-						throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					}
+					/* Collect min and max values */
+					mn = BATmin(b, NULL);
+					GDKfree(mn);
+					mx = BATmax(b, NULL);
+					GDKfree(mx);
+					BBPunfix(b->batCacheid);
 				}
-				BBPunfix(cands->batCacheid);
 			}
 		}
 	}
-	GDKfree(maxval);
-	GDKfree(minval);
 	return MAL_SUCCEED;
+}
+
+str
+sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *cid, *sch, *tab, *col, *type, *width, *count, *unique, *nils, *minval, *maxval, *sorted, *revsorted, *bs = NULL, *fb = NULL;
+	mvc *m = NULL;
+	sql_trans *tr = NULL;
+	sqlstore *store = NULL;
+	bat *rcid = getArgReference_bat(stk, pci, 0);
+	bat *rsch = getArgReference_bat(stk, pci, 1);
+	bat *rtab = getArgReference_bat(stk, pci, 2);
+	bat *rcol = getArgReference_bat(stk, pci, 3);
+	bat *rtype = getArgReference_bat(stk, pci, 4);
+	bat *rwidth = getArgReference_bat(stk, pci, 5);
+	bat *rcount = getArgReference_bat(stk, pci, 6);
+	bat *runique = getArgReference_bat(stk, pci, 7);
+	bat *rnils = getArgReference_bat(stk, pci, 8);
+	bat *rminval = getArgReference_bat(stk, pci, 9);
+	bat *rmaxval = getArgReference_bat(stk, pci, 10);
+	bat *rsorted = getArgReference_bat(stk, pci, 11);
+	bat *rrevsorted = getArgReference_bat(stk, pci, 12);
+	str sname = NULL, tname = NULL, cname = NULL, msg = MAL_SUCCEED;
+	struct os_iter si = {0};
+	BUN nrows = 0;
+	int sfnd = 0, tfnd = 0, cfnd = 0;
+	size_t buflen = 0;
+	char *buf = NULL, *nval = NULL;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	if (pci->argc - pci->retc >= 1) {
+		sname = *getArgReference_str(stk, pci, pci->retc);
+		if (strNil(sname))
+			throw(SQL, "sql.statistics", SQLSTATE(42000) "Schema name cannot be NULL");
+	}
+	if (pci->argc - pci->retc >= 2) {
+		tname = *getArgReference_str(stk, pci, pci->retc + 1);
+		if (strNil(tname))
+			throw(SQL, "sql.statistics", SQLSTATE(42000) "Table name cannot be NULL");
+	}
+	if (pci->argc - pci->retc >= 3) {
+		cname = *getArgReference_str(stk, pci, pci->retc + 2);
+		if (strNil(cname))
+			throw(SQL, "sql.statistics", SQLSTATE(42000) "Column name cannot be NULL");
+	}
+
+	tr = m->session->tr;
+	store = tr->store;
+	/* Do all the validations before retrieving any statistics */
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
+		sql_schema *s = (sql_schema *)b;
+		if (s->base.name[0] == '%')
+			continue;
+
+		if (sname && strcmp(s->base.name, sname))
+			continue;
+		sfnd = 1;
+		struct os_iter oi;
+		os_iterator(&oi, s->tables, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *t = (sql_table *)b;
+
+			if (tname && strcmp(t->base.name, tname))
+				continue;
+			tfnd = 1;
+			if (tname && !isTable(t))
+				throw(SQL, "sql.statistics", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+			if (!table_privs(m, t, PRIV_SELECT))
+				throw(SQL, "sql.statistics", SQLSTATE(42000) "STATISTICS: access denied for %s to table '%s.%s'",
+					  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
+			if (isTable(t) && ol_first_node(t->columns)) {
+				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+					sql_column *c = (sql_column *) ncol->data;
+
+					if (cname && strcmp(c->base.name, cname))
+						continue;
+					cfnd = 1;
+					nrows++;
+					if (!column_privs(m, c, PRIV_SELECT))
+						throw(SQL, "sql.statistics", SQLSTATE(42000) "STATISTICS: access denied for %s to column '%s' on table '%s.%s'",
+							  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
+				}
+			}
+		}
+	}
+	if (sname && !sfnd)
+		throw(SQL, "sql.statistics", SQLSTATE(3F000) "Schema '%s' does not exist", sname);
+	if (tname && !tfnd)
+		throw(SQL, "sql.statistics", SQLSTATE(42S02) "Table '%s' does not exist", tname);
+	if (cname && !cfnd)
+		throw(SQL, "sql.statistics", SQLSTATE(38000) "Column '%s' does not exist", cname);
+
+	cid = COLnew(0, TYPE_int, nrows, TRANSIENT);
+	sch = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	tab = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	col = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	type = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	width = COLnew(0, TYPE_int, nrows, TRANSIENT);
+	count = COLnew(0, TYPE_lng, nrows, TRANSIENT);
+	unique = COLnew(0, TYPE_bit, nrows, TRANSIENT);
+	nils = COLnew(0, TYPE_bit, nrows, TRANSIENT);
+	minval = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	maxval = COLnew(0, TYPE_str, nrows, TRANSIENT);
+	sorted = COLnew(0, TYPE_bit, nrows, TRANSIENT);
+	revsorted = COLnew(0, TYPE_bit, nrows, TRANSIENT);
+
+	if (!cid || !sch || !tab || !col || !type || !width || !count || !unique || !nils || !minval || !maxval || !sorted || !revsorted) {
+		msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	si = (struct os_iter) {0};
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
+		sql_schema *s = (sql_schema *) b;
+		if ((sname && strcmp(b->name, sname)) || b->name[0] == '%')
+			continue;
+		if (s->tables) {
+			struct os_iter oi;
+
+			os_iterator(&oi, s->tables, tr, NULL);
+			for (sql_base *bt = oi_next(&oi); bt; bt = oi_next(&oi)) {
+				sql_table *t = (sql_table *) bt;
+				if (tname && strcmp(bt->name, tname))
+					continue;
+				if (isTable(t) && ol_first_node(t->columns)) {
+					for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+						sql_column *c = (sql_column *) ncol->data;
+						int w;
+						lng cnt;
+						bit un, hnils, issorted, isrevsorted;
+
+						if (cname && strcmp(c->base.name, cname))
+							continue;
+						if (!(bs = store->storage_api.bind_col(tr, c, QUICK))) {
+							msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+							goto bailout;
+						}
+						w = bs->twidth;
+						cnt = BATcount(bs);
+						un = BATtkey(bs);
+						hnils = !bs->tnonil || bs->tnil;
+						issorted = BATtordered(bs);
+						isrevsorted = BATtrevordered(bs);
+
+						if (BUNappend(cid, &c->base.id, false) != GDK_SUCCEED ||
+							BUNappend(sch, b->name, false) != GDK_SUCCEED ||
+							BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
+							BUNappend(col, c->base.name, false) != GDK_SUCCEED ||
+							BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED ||
+							BUNappend(width, &w, false) != GDK_SUCCEED ||
+							BUNappend(count, &cnt, false) != GDK_SUCCEED ||
+							BUNappend(unique, &un, false) != GDK_SUCCEED ||
+							BUNappend(nils, &hnils, false) != GDK_SUCCEED ||
+							BUNappend(sorted, &issorted, false) != GDK_SUCCEED ||
+							BUNappend(revsorted, &isrevsorted, false) != GDK_SUCCEED)
+							goto bailout;
+
+						if (bs->tminpos != BUN_NONE || bs->tmaxpos != BUN_NONE) {
+							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[bs->ttype].atomToStr;
+
+							if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
+								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+								goto bailout;
+							}
+
+							BATiter bi = bat_iterator(fb);
+							if (fb->tminpos != BUN_NONE) {
+								if (tostr(&buf, &buflen, BUNtail(bi, fb->tminpos), false) < 0) {
+									bat_iterator_end(&bi);
+									BBPunfix(fb->batCacheid);
+									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+									goto bailout;
+								}
+								nval = buf;
+							} else {
+								nval = (char *) str_nil;
+							}
+							if (BUNappend(minval, nval, false) != GDK_SUCCEED) {
+								bat_iterator_end(&bi);
+								BBPunfix(fb->batCacheid);
+								goto bailout;
+							}
+
+							if (fb->tmaxpos != BUN_NONE) {
+								if (tostr(&buf, &buflen, BUNtail(bi, fb->tmaxpos), false) < 0) {
+									bat_iterator_end(&bi);
+									BBPunfix(fb->batCacheid);
+									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+									goto bailout;
+								}
+								nval = buf;
+							} else {
+								nval = (char *) str_nil;
+							}
+							if (BUNappend(maxval, nval, false) != GDK_SUCCEED) {
+								bat_iterator_end(&bi);
+								BBPunfix(fb->batCacheid);
+								goto bailout;
+							}
+							bat_iterator_end(&bi);
+							BBPunfix(fb->batCacheid);
+						} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
+							goto bailout;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	GDKfree(buf);
+	BBPkeepref(*rcid = cid->batCacheid);
+	BBPkeepref(*rsch = sch->batCacheid);
+	BBPkeepref(*rtab = tab->batCacheid);
+	BBPkeepref(*rcol = col->batCacheid);
+	BBPkeepref(*rtype = type->batCacheid);
+	BBPkeepref(*rwidth = width->batCacheid);
+	BBPkeepref(*rcount = count->batCacheid);
+	BBPkeepref(*runique = unique->batCacheid);
+	BBPkeepref(*rnils = nils->batCacheid);
+	BBPkeepref(*rminval = minval->batCacheid);
+	BBPkeepref(*rmaxval = maxval->batCacheid);
+	BBPkeepref(*rsorted = sorted->batCacheid);
+	BBPkeepref(*rrevsorted = revsorted->batCacheid);
+	return MAL_SUCCEED;
+bailout:
+	GDKfree(buf);
+	BBPreclaim(cid);
+	BBPreclaim(sch);
+	BBPreclaim(tab);
+	BBPreclaim(col);
+	BBPreclaim(type);
+	BBPreclaim(width);
+	BBPreclaim(count);
+	BBPreclaim(unique);
+	BBPreclaim(nils);
+	BBPreclaim(minval);
+	BBPreclaim(maxval);
+	BBPreclaim(sorted);
+	BBPreclaim(revsorted);
+	if (!msg)
+		msg = createException(SQL, "sql.statistics", GDK_EXCEPTION);
+	return msg;
 }

@@ -1,6 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Dec 15 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- With the storage cleanup in the 11.41.5 (Jul2021) release, the ANALYZE
+  statement was updated to accomodate those changes. The SAMPLE parameter
+  is now ignored because ANALYZE generated statistics used by
+  relational operators, are required to be precise.
+
 * Mon Dec  6 2021 Sjoerd Mullender <sjoerd@acm.org>
 - In previous versions there was no check that the INCREMENT BY value of
   a SEQUENCE was not zero.  During the automatic upgrade of a database,

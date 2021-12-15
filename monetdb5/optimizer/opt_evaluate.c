@@ -127,7 +127,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void)stk;
 
 	if ( mb->inlineProp )
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	cntxt->itrace = 0;
 
