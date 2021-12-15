@@ -39,7 +39,6 @@ BATunique(BAT *b, BAT *s)
 	struct canditer ci;
 	const char *algomsg = "";
 	lng t0 = 0;
-	bool ordered, ordered_rev;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -65,9 +64,7 @@ BATunique(BAT *b, BAT *s)
 	}
 
 	BATiter bi = bat_iterator(b);
-	ordered = BATordered(b);
-	ordered_rev = BATordered_rev(b);
-	if ((ordered && ordered_rev) ||
+	if ((BATordered(b) && BATordered_rev(b)) ||
 		(b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
 		bat_iterator_end(&bi);
@@ -160,7 +157,7 @@ BATunique(BAT *b, BAT *s)
 		}
 		TIMEOUT_CHECK(timeoffset,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
-	} else if (ordered || ordered_rev) {
+	} else if (BATordered(b) || BATordered_rev(b)) {
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
 		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
