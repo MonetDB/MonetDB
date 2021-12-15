@@ -415,3 +415,81 @@ UPDATE t2 SET c0 = 1 FROM t0 WHERE (least(TRUE, FALSE) AND 0.63 = t2.c0) OR (0.2
 statement ok
 ROLLBACK
 
+statement ok
+CREATE TABLE t1(c0 boolean)
+
+statement ok
+SET "optimizer"='default_fast'
+
+statement ok rowcount 0
+DELETE FROM t1
+
+statement ok
+SET "optimizer"='default_pipe'
+
+statement ok
+DROP TABLE t1
+
+statement ok
+SET "optimizer"='oltp_pipe'
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 boolean)
+
+statement ok
+CREATE TABLE t1(LIKE t0)
+
+statement ok
+CREATE TABLE t2(LIKE t0)
+
+statement ok rowcount 1
+INSERT INTO t1(c0) VALUES(FALSE)
+
+statement ok rowcount 2
+INSERT INTO t2(c0) VALUES(TRUE), (TRUE)
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(TRUE)
+
+statement ok
+CREATE VIEW v0(vc0) AS (SELECT 5 FROM t0, t2 WHERE t0.c0)
+
+statement ok
+CREATE VIEW v1(vc0) AS (SELECT t0.c0 FROM t0, v0 WHERE TRUE)
+
+statement error M0M29!Exception occurred in the OLTP plan, please check the server log
+UPDATE t1 SET c0 = TRUE FROM v1
+
+statement ok
+ROLLBACK
+
+statement ok
+SET "optimizer"='default_pipe'
+
+statement ok
+CREATE TABLE t2(c0 INTERVAL DAY)
+
+statement ok rowcount 1
+INSERT INTO t2(c0) VALUES(INTERVAL '3' DAY)
+
+statement ok rowcount 1
+DELETE FROM t2 WHERE TRUE
+
+statement error types tinyint(1,0) and day_interval(4,0) are not equal
+INSERT INTO t2(c0) VALUES(1)
+
+statement ok rowcount 2
+INSERT INTO t2(c0) VALUES(INTERVAL '2' DAY), (INTERVAL '1' DAY)
+
+query T rowsort
+SELECT c0 FROM t2
+----
+1
+2
+
+statement ok
+DROP TABLE t2
+

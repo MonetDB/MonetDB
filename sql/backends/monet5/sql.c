@@ -958,36 +958,9 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot get sequence value %s.%s", sname, seqname);
 }
 
-/* str mvc_peak_next_value(lng *res, str *sname, str *seqname); */
-str
-mvc_peak_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg;
-	sql_schema *s;
-	sql_sequence *seq;
-	lng *res = getArgReference_lng(stk, pci, 0);
-	const char *sname = *getArgReference_str(stk, pci, 1);
-	const char *seqname = *getArgReference_str(stk, pci, 2);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (!(s = mvc_bind_schema(m, sname)))
-		throw(SQL, "sql.peak_next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
-	if (!(seq = find_sql_sequence(m->session->tr, s, seqname)))
-		throw(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
-
-	if (seq_peak_next_value(m->session->tr->store, seq, res))
-		return MAL_SUCCEED;
-
-	throw(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot peak at next sequence value %s.%s", sname, seqname);
-}
-
 /* needed for msqldump and describe_sequences view */
 static str
-mvc_peak_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	sql_schema *s;
@@ -1008,20 +981,20 @@ mvc_peak_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if (!(scheb = BATdescriptor(*l)) || !(seqb = BATdescriptor(*r))) {
-		msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "sql.get_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(sches = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(seqs = BATdescriptor(*sid2)))) {
-		msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "sql.get_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, scheb, sches);
 	if (canditer_init(&ci2, seqb, seqs) != q || ci1.hseq != ci2.hseq) {
-		msg = createException(SQL, "sql.peak_next_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		msg = createException(SQL, "sql.get_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_lng, q, TRANSIENT))) {
-		msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.get_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -1040,15 +1013,15 @@ mvc_peak_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			nils = true;
 		} else {
 			if (!(s = mvc_bind_schema(m, sname))) {
-				msg = createException(SQL, "sql.peak_next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+				msg = createException(SQL, "sql.get_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 				goto bailout1;
 			}
 			if (!(seq = find_sql_sequence(m->session->tr, s, seqname))) {
-				msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
+				msg = createException(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 				goto bailout1;
 			}
-			if (!seq_peak_next_value(m->session->tr->store, seq, &(vals[i]))) {
-				msg = createException(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot peak at next sequence value %s.%s", sname, seqname);
+			if (!seq_get_value(m->session->tr->store, seq, &(vals[i]))) {
+				msg = createException(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot get the next sequence value %s.%s", sname, seqname);
 				goto bailout1;
 			}
 		}
@@ -5204,10 +5177,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "logfile", mvc_logfile, true, "Enable/disable saving the sql statement traces", args(1,2, arg("",void),arg("filename",str))),
  pattern("sql", "next_value", mvc_next_value, true, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("batsql", "next_value", mvc_next_value_bulk, true, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
- pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
- pattern("sql", "peak_next_value", mvc_peak_next_value, false, "Peaks at the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
- pattern("batsql", "peak_next_value", mvc_peak_next_value_bulk, false, "Peaks at the next value of the sequence", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
- pattern("batsql", "peak_next_value", mvc_peak_next_value_bulk, false, "Peaks at the next value of the sequence", args(1,5, batarg("",lng),batarg("sname",str),batarg("sequence",str),batarg("s1",oid),batarg("s2",oid))),
+ pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence (ie the next to be used value)", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
+ pattern("batsql", "get_value", mvc_get_value_bulk, false, "return the current value of the sequence (ie the next to be used value)", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
+ pattern("batsql", "get_value", mvc_get_value_bulk, false, "return the current value of the sequence (ie the next to be used value)", args(1,5, batarg("",lng),batarg("sname",str),batarg("sequence",str),batarg("s1",oid),batarg("s2",oid))),
  pattern("sql", "restart", mvc_restart_seq, true, "restart the sequence with value start", args(1,4, arg("",lng),arg("sname",str),arg("sequence",str),arg("start",lng))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes from the table's columns, plus the current transaction level", args(7,9, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str))),

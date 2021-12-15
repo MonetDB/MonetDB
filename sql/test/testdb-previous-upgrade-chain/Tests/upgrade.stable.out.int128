@@ -5527,7 +5527,7 @@ CREATE VIEW sys.describe_sequences AS
 		s.name sch,
 		seq.name seq,
 		seq."start" s,
-		peak_next_value_for(s.name, seq.name) rs,
+		get_value_for(s.name, seq.name) rs,
 		seq."minvalue" mi,
 		seq."maxvalue" ma,
 		seq."increment" inc,

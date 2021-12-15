@@ -1163,15 +1163,13 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
 		MT_lock_set(&b->theaplock);
-		BUN minpos = b->tminpos;
-		BUN maxpos = b->tmaxpos;
 		MT_lock_unset(&b->theaplock);
 		const void *minvalp = NULL, *maxvalp = NULL;
 		BATiter bi = bat_iterator_nolock(b);
-		if (minpos != BUN_NONE)
-			minvalp = BUNtail(bi, minpos);
-		if (maxpos != BUN_NONE)
-			maxvalp = BUNtail(bi, maxpos);
+		if (bi.minpos != BUN_NONE)
+			minvalp = BUNtail(bi, bi.minpos);
+		if (bi.maxpos != BUN_NONE)
+			maxvalp = BUNtail(bi, bi.maxpos);
 		if (b->tvarsized) {
 			const void *vbase = b->tvheap->base;
 			for (BUN i = 0; i < count; i++) {
@@ -1189,27 +1187,27 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					 * we don't know) */
 					bi = bat_iterator_nolock(b);
 					vbase = b->tvheap->base;
-					if (minpos != BUN_NONE)
-						minvalp = BUNtvar(bi, minpos);
-					if (maxpos != BUN_NONE)
-						maxvalp = BUNtvar(bi, maxpos);
+					if (bi.minpos != BUN_NONE)
+						minvalp = BUNtvar(bi, bi.minpos);
+					if (bi.maxpos != BUN_NONE)
+						maxvalp = BUNtvar(bi, bi.maxpos);
 				}
 				if (b->thash) {
 					HASHappend_locked(b, p, t);
 				}
 				if (atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
-						minpos = maxpos = 0;
+						bi.minpos = bi.maxpos = 0;
 						minvalp = maxvalp = t;
 					} else {
-						if (minpos != BUN_NONE &&
+						if (bi.minpos != BUN_NONE &&
 						    atomcmp(minvalp, t) > 0) {
-							minpos = p;
+							bi.minpos = p;
 							minvalp = t;
 						}
-						if (maxpos != BUN_NONE &&
+						if (bi.maxpos != BUN_NONE &&
 						    atomcmp(maxvalp, t) < 0) {
-							maxpos = p;
+							bi.maxpos = p;
 							maxvalp = t;
 						}
 					}
@@ -1217,7 +1215,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				p++;
 			}
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
-			minpos = maxpos = BUN_NONE;
+			bi.minpos = bi.maxpos = BUN_NONE;
 			minvalp = maxvalp = NULL;
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
@@ -1237,17 +1235,17 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				if (atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
-						minpos = maxpos = 0;
+						bi.minpos = bi.maxpos = 0;
 						minvalp = maxvalp = t;
 					} else {
-						if (minpos != BUN_NONE &&
+						if (bi.minpos != BUN_NONE &&
 						    atomcmp(minvalp, t) > 0) {
-							minpos = p;
+							bi.minpos = p;
 							minvalp = t;
 						}
-						if (maxpos != BUN_NONE &&
+						if (bi.maxpos != BUN_NONE &&
 						    atomcmp(maxvalp, t) < 0) {
-							maxpos = p;
+							bi.maxpos = p;
 							maxvalp = t;
 						}
 					}
@@ -1256,8 +1254,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 		}
 		MT_lock_set(&b->theaplock);
-		b->tminpos = minpos;
-		b->tmaxpos = maxpos;
+		b->tminpos = bi.minpos;
+		b->tmaxpos = bi.maxpos;
 		MT_lock_unset(&b->theaplock);
 	} else {
 		for (BUN i = 0; i < count; i++) {
@@ -1411,8 +1409,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	} else if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
 		b->tunique_est = 0;
 	}
-	BUN minpos = b->tminpos;
-	BUN maxpos = b->tmaxpos;
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
@@ -1453,36 +1449,36 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				b->tnil = false;
 			}
 			if (b->ttype != TYPE_void) {
-				if (maxpos != BUN_NONE) {
-					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, maxpos), t) < 0) {
+				if (bi.maxpos != BUN_NONE) {
+					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, bi.maxpos), t) < 0) {
 						/* new value is larger
 						 * than previous
 						 * largest */
-						maxpos = p;
-					} else if (maxpos == p && ATOMcmp(b->ttype, BUNtail(bi, maxpos), t) != 0) {
+						bi.maxpos = p;
+					} else if (bi.maxpos == p && ATOMcmp(b->ttype, BUNtail(bi, bi.maxpos), t) != 0) {
 						/* old value is equal to
 						 * largest and new value
 						 * is smaller or nil (see
 						 * above), so we don't
 						 * know anymore which is
 						 * the largest */
-						maxpos = BUN_NONE;
+						bi.maxpos = BUN_NONE;
 					}
 				}
-				if (minpos != BUN_NONE) {
-					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, minpos), t) > 0) {
+				if (bi.minpos != BUN_NONE) {
+					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, bi.minpos), t) > 0) {
 						/* new value is smaller
 						 * than previous
 						 * smallest */
-						minpos = p;
-					} else if (minpos == p && ATOMcmp(b->ttype, BUNtail(bi, minpos), t) != 0) {
+						bi.minpos = p;
+					} else if (bi.minpos == p && ATOMcmp(b->ttype, BUNtail(bi, bi.minpos), t) != 0) {
 						/* old value is equal to
 						 * smallest and new value
 						 * is larger or nil (see
 						 * above), so we don't
 						 * know anymore which is
 						 * the largest */
-						minpos = BUN_NONE;
+						bi.minpos = BUN_NONE;
 					}
 				}
 			}
@@ -1497,8 +1493,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				doHASHdestroy(b, hs);
 			}
 			MT_lock_set(&b->theaplock);
-			minpos = BUN_NONE;
-			maxpos = BUN_NONE;
+			bi.minpos = BUN_NONE;
+			bi.maxpos = BUN_NONE;
 			b->tunique_est = 0.0;
 			MT_lock_unset(&b->theaplock);
 		}
@@ -1539,7 +1535,14 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				}
 			}
 			/* reinitialize iterator after possible heap upgrade */
-			bi = bat_iterator_nolock(b);
+			{
+				/* save and restore minpos/maxpos */
+				BUN minpos = bi.minpos;
+				BUN maxpos = bi.maxpos;
+				bi = bat_iterator_nolock(b);
+				bi.minpos = minpos;
+				bi.maxpos = maxpos;
+			}
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
 			default:	/* only three or four cases possible */
@@ -1644,8 +1647,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
-	b->tminpos = minpos;
-	b->tmaxpos = maxpos;
+	b->tminpos = bi.minpos;
+	b->tmaxpos = bi.maxpos;
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;

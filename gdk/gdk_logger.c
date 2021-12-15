@@ -286,6 +286,8 @@ log_read_seq(logger *lg, logformat *l)
 		TRC_CRITICAL(GDK, "read failed\n");
 		return LOG_EOF;
 	}
+	if (lg->flushing)
+		return LOG_OK;
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
@@ -614,14 +616,6 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return GDK_FAIL;
 			}
-#ifndef NDEBUG
-			if (ocnt < cnt) {
-				log_bid bid = *(log_bid *) Tloc(lg->catalog_bid, cp);
-				BAT *b = BBP_record(bid).cache;
-				if (!(b == NULL || b->theap == NULL || b->ttype == 0 || b->theap->dirty) && (!b->batTransient))
-					fprintf(stderr, "update count: sqlid: %d, cnt: "LLFMT"->"LLFMT", "ALGOBATFMT"\n", id, ocnt, cnt, ALGOBATPAR(b));
-			}
-#endif
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
@@ -2774,7 +2768,7 @@ log_tdone(logger *lg, ulng commit_ts)
 }
 
 static gdk_return
-log_sequence_(logger *lg, int seq, lng val, int flush)
+log_sequence_(logger *lg, int seq, lng val)
 {
 	logformat l;
 
@@ -2787,9 +2781,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 		fprintf(stderr, "#log_sequence_ (%d," LLFMT ")\n", seq, val);
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    !mnstr_writeLng(lg->output_log, val) ||
-	    (flush && mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA)) ||
-	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log))) {
+	    !mnstr_writeLng(lg->output_log, val)) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
@@ -2827,7 +2819,7 @@ log_sequence(logger *lg, int seq, lng val)
 			return GDK_FAIL;
 		}
 	}
-	gdk_return r = log_sequence_(lg, seq, val, 1);
+	gdk_return r = log_sequence_(lg, seq, val);
 	logger_unlock(lg);
 	return r;
 }
