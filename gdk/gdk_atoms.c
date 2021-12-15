@@ -230,7 +230,7 @@ ATOMindex(const char *nme)
 	return -j;
 }
 
-char *
+const char *
 ATOMname(int t)
 {
 	return t >= 0 && t < GDKatomcnt && *BATatoms[t].name ? BATatoms[t].name : "null";
@@ -1693,7 +1693,7 @@ ATOMunknown_find(const char *nme)
 	return -j;
 }
 
-str
+const char *
 ATOMunknown_name(int i)
 {
 	assert(i < 0);
