@@ -1,16 +1,5 @@
 statement ok
-delete from statistics
-
-query I rowsort
-select count(*) from statistics
-----
-0
-
-statement ok
 CREATE SCHEMA "ttt"
-
-statement ok
-CREATE TABLE "ttt"."a"("id" INTEGER)
 
 statement error
 CREATE STREAM TABLE "ttt"."strt" (
@@ -29,20 +18,21 @@ CREATE merge TABLE "ttt"."strt" (
 statement error
 analyze "ttt"."strt"
 
-query I rowsort
+query T rowsort
 select (count(*) > 0) as has_rows from statistics
 ----
-0
+False
 
-query I rowsort
+statement ok
+CREATE TABLE "ttt"."a"("id" INTEGER)
+
+statement ok
 analyze ttt
-----
-0
 
-query I rowsort
+query T rowsort
 select (count(*) > 0) as has_rows from statistics
 ----
-1
+True
 
 statement ok
 drop table "ttt"."strt"
@@ -50,13 +40,10 @@ drop table "ttt"."strt"
 statement ok
 analyze ttt
 
-query I rowsort
+query T rowsort
 select (count(*) > 0) as has_rows from statistics
 ----
-1
-
-statement ok
-delete from statistics
+True
 
 statement ok
 drop schema "ttt" cascade

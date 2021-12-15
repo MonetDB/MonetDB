@@ -8698,10 +8698,10 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 						if (!skip && pt->access == TABLE_READONLY) {
 							/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
 							if (!cmin && !cmax && first_attempt) {
-								char *min = NULL, *max = NULL;
+								void *min = NULL, *max = NULL;
 								if (sql_trans_ranges(v->sql->session->tr, col, &min, &max) && min && max) {
-									cmin = atom_general(v->sql->sa, &col->type, min);
-									cmax = atom_general(v->sql->sa, &col->type, max);
+									cmin = atom_general_ptr(v->sql->sa, &col->type, min);
+									cmax = atom_general_ptr(v->sql->sa, &col->type, max);
 								}
 								first_attempt = false; /* no more attempts to read from storage */
 							}
@@ -9267,7 +9267,7 @@ exp_is_zero_rows(visitor *v, sql_rel *rel, sql_rel *sel)
 					if (lval && hval) {
 						sql_rel *bt;
 						sql_column *col = name_find_column(sel, exp_relname(c), exp_name(c), -2, &bt);
-						char *min = NULL, *max = NULL;
+						void *min = NULL, *max = NULL;
 						atom *amin, *amax;
 						sql_subtype *ct = exp_subtype(c);
 
@@ -9275,7 +9275,7 @@ exp_is_zero_rows(visitor *v, sql_rel *rel, sql_rel *sel)
 							&& col->t == t
 							&& sql_trans_ranges(v->sql->session->tr, col, &min, &max)
 							&& min && max
-							&& (amin = atom_general(v->sql->sa, ct, min)) && (amax = atom_general(v->sql->sa, ct, max))
+							&& (amin = atom_general_ptr(v->sql->sa, ct, min)) && (amax = atom_general_ptr(v->sql->sa, ct, max))
 							&& !exp_range_overlap(amin, amax, lval, hval, false, false)) {
 							return 1;
 						}

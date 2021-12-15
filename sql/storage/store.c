@@ -560,8 +560,6 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	c->t = t;
 	if (isTable(c->t))
 		store->storage_api.create_col(tr, c);
-	c->sorted = sql_trans_is_sorted(tr, c);
-	c->dcount = 0;
 	TRC_DEBUG(SQL_STORE, "Load column: %s\n", c->base.name);
 	return c;
 }
@@ -808,7 +806,7 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	/* after loading keys and idxs, update properties derived from indexes that require keys */
 	if (ol_length(t->idxs))
 		for (node *n = ol_first_node(t->idxs); n; n = n->next)
-			create_sql_idx_done(n->data);
+			create_sql_idx_done(tr, n->data);
 
 	for ( ; rt_triggers->cur_row < rt_triggers->nr_rows; rt_triggers->cur_row++) {
 		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "table_id"));
@@ -1584,8 +1582,6 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	col->storage_type = NULL;
 	if (c->storage_type)
 		col->storage_type = SA_STRDUP(sa, c->storage_type);
-	col->sorted = c->sorted;
-	col->dcount = c->dcount;
 	if (ol_add(t->columns, &col->base))
 		return NULL;
 	return col;
@@ -4321,27 +4317,6 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 }
 
 static int
-sys_drop_statistics(sql_trans *tr, sql_column *col)
-{
-	sqlstore *store = tr->store;
-	int res = LOG_OK;
-
-	if (isGlobal(col->t)) {
-		sql_schema *syss = find_sql_schema(tr, "sys");
-		sql_table *sysstats = find_sql_table(tr, syss, "statistics");
-
-		oid rid = store->table_api.column_find_row(tr, find_sql_column(sysstats, "column_id"), &col->base.id, NULL);
-
-		if (is_oid_nil(rid)) /* no statistics */
-			return 0;
-
-		if ((res = store->table_api.table_delete(tr, sysstats, rid)))
-			return res;
-	}
-	return res;
-}
-
-static int
 sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 {
 	const char *next_value_for = "next value for ";
@@ -4447,8 +4422,6 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	if ((res = sys_drop_default_object(tr, col, drop_action)))
 		return res;
 
-	if ((res = sys_drop_statistics(tr, col)))
-		return res;
 	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, col->base.id, COLUMN_DEPENDENCY)))
 		return res;
 	if (col->type.type->s && (res = sql_trans_drop_dependency(tr, col->base.id, col->type.type->base.id, TYPE_DEPENDENCY)))
@@ -5738,16 +5711,11 @@ create_sql_ic(sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c)
 	list_append(i->columns, ic);
 
 	(void)store;
-	/* should we switch to oph_idx ? */
-	if (i->type == hash_idx && list_length(i->columns) == 1 && ic->c->sorted) {
-		/*i->type = oph_idx;*/
-		i->type = no_idx;
-	}
 	return i;
 }
 
 sql_idx *
-create_sql_idx_done(sql_idx *i)
+create_sql_idx_done(sql_trans *tr, sql_idx *i)
 {
 	if (i && i->key && hash_index(i->type)) {
 		int ncols = list_length(i->columns);
@@ -5757,6 +5725,9 @@ create_sql_idx_done(sql_idx *i)
 			kc->c->unique = (ncols == 1) ? 2 : MAX(kc->c->unique, 1);
 		}
 	}
+	/* should we switch to oph_idx ? */
+	if (i->type == hash_idx && list_length(i->columns) == 1 && sql_trans_is_sorted(tr, ((sql_kc*)i->columns->h->data)->c))
+		i->type = no_idx;
 	return i;
 }
 
@@ -6203,66 +6174,29 @@ size_t
 sql_trans_dist_count( sql_trans *tr, sql_column *col )
 {
 	sqlstore *store = tr->store;
-	if (col->dcount)
-		return col->dcount;
 
 	if (col && isTable(col->t)) {
-		/* get from statistics */
-		sql_schema *sys = find_sql_schema(tr, "sys");
-		sql_table *stats = find_sql_table(tr, sys, "statistics");
-		if (stats) {
-			sql_column *stats_column_id = find_sql_column(stats, "column_id");
-			oid rid = store->table_api.column_find_row(tr, stats_column_id, &col->base.id, NULL);
-			if (!is_oid_nil(rid)) {
-				col->dcount = (size_t) store->table_api.column_find_lng(tr, find_sql_column(stats, "unique"), rid);
-			} else { /* sample and put in statistics */
-				col->dcount = store->storage_api.dcount_col(tr, col);
-			}
-		}
+		if (!col->dcount)
+			col->dcount = store->storage_api.dcount_col(tr, col);
 		return col->dcount;
 	}
 	return 0;
 }
 
 int
-sql_trans_ranges( sql_trans *tr, sql_column *col, char **min, char **max )
+sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 {
 	sqlstore *store = tr->store;
+
 	*min = NULL;
 	*max = NULL;
 	if (col && isTable(col->t)) {
-		/* get from statistics */
-		sql_schema *sys = find_sql_schema(tr, "sys");
-		sql_table *stats = find_sql_table(tr, sys, "statistics");
-
-		if (col->min && col->max) {
-			*min = col->min;
-			*max = col->max;
-			return 1;
-		}
-		if (stats) {
-			sql_column *stats_column_id = find_sql_column(stats, "column_id");
-			oid rid = store->table_api.column_find_row(tr, stats_column_id, &col->base.id, NULL);
-			if (!is_oid_nil(rid)) {
-				char *v1 = NULL, *v2 = NULL;
-				sql_column *stats_min = find_sql_column(stats, "minval");
-				sql_column *stats_max = find_sql_column(stats, "maxval");
-
-				if (!(v1 = store->table_api.column_find_value(tr, stats_min, rid)) ||
-					!(v2 = store->table_api.column_find_value(tr, stats_max, rid))) {
-					_DELETE(v1);
-					_DELETE(v2);
-					return 0;
-				}
-				*min = col->min = SA_STRDUP(tr->sa, v1);
-				_DELETE(v1);
-				*max = col->max = SA_STRDUP(tr->sa, v2);
-				_DELETE(v2);
-				return 1;
-			}
-		}
+		if (!col->min || !col->max)
+			(void) store->storage_api.min_max_col(tr, col);
+		*min = col->min;
+		*max = col->max;
 	}
-	return 0;
+	return *min != NULL && *max != NULL;
 }
 
 int
@@ -6455,9 +6389,10 @@ table_has_idx( sql_table *t, list *keycols)
 }
 
 sql_key *
-key_create_done(sqlstore *store, sql_allocator *sa, sql_key *k)
+key_create_done(sql_trans *tr, sql_allocator *sa, sql_key *k)
 {
 	sql_idx *i;
+	sqlstore *store = tr->store;
 
 	if (k->type != fkey) {
 		if ((i = table_has_idx(k->t, k->columns)) != NULL) {
@@ -6479,7 +6414,7 @@ key_create_done(sqlstore *store, sql_allocator *sa, sql_key *k)
 			create_sql_ic(store, sa, k->idx, kc->c);
 		}
 	}
-	k->idx = create_sql_idx_done(k->idx);
+	k->idx = create_sql_idx_done(tr, k->idx);
 	return k;
 }
 
@@ -6512,7 +6447,7 @@ sql_trans_key_done(sql_trans *tr, sql_key *k)
 				return res;
 		}
 	}
-	k->idx = create_sql_idx_done(k->idx);
+	k->idx = create_sql_idx_done(tr, k->idx);
 	return res;
 }
 
