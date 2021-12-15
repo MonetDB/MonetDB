@@ -431,42 +431,6 @@ statement ok
 DROP TABLE t1
 
 statement ok
-SET "optimizer"='oltp_pipe'
-
-statement ok
-START TRANSACTION
-
-statement ok
-CREATE TABLE t0(c0 boolean)
-
-statement ok
-CREATE TABLE t1(LIKE t0)
-
-statement ok
-CREATE TABLE t2(LIKE t0)
-
-statement ok rowcount 1
-INSERT INTO t1(c0) VALUES(FALSE)
-
-statement ok rowcount 2
-INSERT INTO t2(c0) VALUES(TRUE), (TRUE)
-
-statement ok rowcount 1
-INSERT INTO t0(c0) VALUES(TRUE)
-
-statement ok
-CREATE VIEW v0(vc0) AS (SELECT 5 FROM t0, t2 WHERE t0.c0)
-
-statement ok
-CREATE VIEW v1(vc0) AS (SELECT t0.c0 FROM t0, v0 WHERE TRUE)
-
-statement error M0M29!Exception occurred in the OLTP plan, please check the server log
-UPDATE t1 SET c0 = TRUE FROM v1
-
-statement ok
-ROLLBACK
-
-statement ok
 SET "optimizer"='default_pipe'
 
 statement ok
