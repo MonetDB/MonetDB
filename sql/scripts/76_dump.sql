@@ -111,11 +111,11 @@ CREATE VIEW sys.dump_function_grants AS
   (SELECT func_id, func_arg FROM func_args_all WHERE number = max_number)
   SELECT
     'GRANT ' || pc.privilege_code_name || ' ON ' || ft.function_type_keyword || ' '
-      || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '
+      || sys.FQN(s.name, f.sqlname) || '(' || coalesce(fa.func_arg, '') || ') TO '
       || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
       || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     s.name schema_name,
-    f.name function_name,
+    f.sqlname function_name,
     a.name grantee
     FROM sys.schemas s,
 	 sys.functions f LEFT OUTER JOIN func_args fa ON f.id = fa.func_id,
@@ -131,7 +131,7 @@ CREATE VIEW sys.dump_function_grants AS
      AND p.privileges = pc.privilege_code_id
      AND f.type = ft.function_type_id
      AND NOT f.system
-   ORDER BY s.name, f.name, a.name, g.name, p.grantable;
+   ORDER BY s.name, f.sqlname, a.name, g.name, p.grantable;
 
 CREATE VIEW sys.dump_indices AS
   SELECT
