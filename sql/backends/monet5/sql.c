@@ -548,14 +548,14 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
-		str atoname = ATOMname(b->ttype);
+		const char *atomname = ATOMname(b->ttype);
 		sql_subtype tpe;
 		sql_column *col = NULL;
 
-		if (!strcmp(atoname, "str"))
+		if (!strcmp(atomname, "str"))
 			sql_find_subtype(&tpe, "clob", 0, 0);
 		else {
-			sql_subtype *t = sql_bind_localtype(atoname);
+			sql_subtype *t = sql_bind_localtype(atomname);
 			if (!t)
 				throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
 			tpe = *t;
@@ -6235,4 +6235,3 @@ static mel_func sql_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_sql_mal)
 { mal_module("sql", NULL, sql_init_funcs); }
-

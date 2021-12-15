@@ -68,7 +68,7 @@ gdk_export int GDKatomcnt;
 gdk_export int ATOMallocate(const char *nme);
 gdk_export int ATOMindex(const char *nme);
 
-gdk_export str ATOMname(int id);
+gdk_export const char *ATOMname(int id);
 gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export void *ATOMnil(int id)
 	__attribute__((__malloc__));
