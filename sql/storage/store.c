@@ -1846,7 +1846,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 
 	functions = t = bootstrap_create_table(tr, s, "functions", 2016);
 	bootstrap_create_column(tr, t, "id", 2017, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2018, "varchar", 256);
+	bootstrap_create_column(tr, t, "name", 2018, "varchar", 4098);
 	bootstrap_create_column(tr, t, "sqlname", 2165, "varchar", 256);
 	bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196);
 	bootstrap_create_column(tr, t, "mod", 2020, "varchar", 8196);

@@ -631,7 +631,7 @@ mangle_name(char *buf, const char *name, sql_ftype type, list *res, list *ops) {
 	char* c = buf; // cursor
 
 	int retc = res ? res->cnt : 0;
-	int argc = retc + ops->cnt;
+	int argc = retc + (ops ? ops->cnt : 0);
 
 	switch (type) {
 	case F_FUNC:
@@ -659,7 +659,7 @@ mangle_name(char *buf, const char *name, sql_ftype type, list *res, list *ops) {
 		}
 	}
 
-	for (node* n = ops->h; n; n = n->next) {
+	if (ops) for (node* n = ops->h; n; n = n->next) {
 		sql_arg *a = n->data;
 		if (a->type.type)
 			c += sprintf(c, "%%%s(%u,%u)", a->type.type->base.name, a->type.digits, a->type.scale);
