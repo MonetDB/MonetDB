@@ -1270,6 +1270,9 @@ exp_match_list( list *l, list *r)
 		return l == r;
 	if (list_length(l) != list_length(r) || list_length(l) == 0 || list_length(r) == 0)
 		return 0;
+	if (list_length(l) > 10 || list_length(r) > 10)
+		return 0;/* to expensive */
+
 	lu = ZNEW_ARRAY(char, list_length(l));
 	ru = ZNEW_ARRAY(char, list_length(r));
 	if (!lu || !ru) {

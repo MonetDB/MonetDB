@@ -30,7 +30,7 @@ addLock(Client cntxt, OLTPlocks locks, MalBlkPtr mb, InstrPtr p, int sch, int tb
 str
 OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i, limit, slimit, updates=0;
-	InstrPtr p, q, lcks;
+	InstrPtr p, q, r, lcks;
 	int actions = 0;
 	InstrPtr *old;
 	OLTPlocks wlocks, rlocks;
@@ -74,7 +74,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( updates == 0)
-		return 0;
+		goto wrapup;
 
 	// Get a free instruction, don't get it from mb
 	lcks= newInstruction(0, oltpRef,lockRef);
@@ -89,20 +89,33 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( lcks->argc == 1 ){
 		freeInstruction(lcks);
-		return MAL_SUCCEED;
+		goto wrapup;
 	}
 
 	// Now optimize the code
 	if ( newMalBlkStmt(mb,mb->ssize + 6) < 0) {
 		freeInstruction(lcks);
-		return 0;
+		throw(MAL,"optimizer.oltp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	pushInstruction(mb,old[0]);
 	pushInstruction(mb,lcks);
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 		if( p->token == ENDsymbol){
-			// unlock all if there is an error
+			/* path when no errors are found, just release the lock */
+			q= copyInstruction(lcks);
+			if( q == NULL){
+				for(; i<slimit; i++)
+					if( old[i])
+						freeInstruction(old[i]);
+				GDKfree(old);
+				throw(MAL,"optimizer.oltp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			setFunctionId(q, releaseRef);
+			getArg(q,0) = newTmpVariable(mb, TYPE_void);
+			pushInstruction(mb,q);
+			pushEndInstruction(mb);
+			/* path when errors are found, catch error, release lock and re-throw the error */
 			q= newCatchStmt(mb,"MALException");
 			q= newExitStmt(mb,"MALException");
 			q= newCatchStmt(mb,"SQLException");
@@ -116,7 +129,14 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL,"optimizer.oltp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			setFunctionId(q, releaseRef);
+			getArg(q,0) = newTmpVariable(mb, TYPE_void);
 			pushInstruction(mb,q);
+			/* At the moment I cannot figure out a way to get the exception error.
+			   A MAL expert could improve this to throw the original message.
+			   This also happens with remote plans (check sql_gencode.c) */
+			r = newStmt(mb, oltpRef, assertRef);
+			r = pushBit(mb, r, TRUE);
+			r = pushStr(mb, r, "Exception occurred in the OLTP plan, please check the server log");
 		}
 		pushInstruction(mb,p);
 	}
@@ -133,6 +153,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//	msg = chkDeclarations(mb);
 
 	/* keep actions taken as a fake argument*/
+wrapup:
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }

@@ -24,7 +24,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	// query log needed?
 	if ( !QLOGisset() )
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
@@ -38,7 +38,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	if ( defineQuery == NULL)
 		/* nothing to do */
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	actions++;
 	limit= mb->stop;
@@ -195,6 +195,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (!msg)
 		msg = chkDeclarations(mb);
 	/* keep actions taken as a fake argument*/
+wrapup:
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }
