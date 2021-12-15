@@ -69,7 +69,7 @@ typedef struct __attribute__((__designated_init__)) mel_arg {
 } mel_arg;
 
 typedef struct __attribute__((__designated_init__)) mel_func {
-	char mod[14];
+	char mod[16];
 	char fcn[30];
 	const char *cname;
 	uint16_t command:1,
