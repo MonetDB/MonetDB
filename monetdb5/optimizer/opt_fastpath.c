@@ -52,7 +52,7 @@
 			if ((msg = OPT(cntxt, mb, stk, pci)) != MAL_SUCCEED) \
 				goto bailout; \
 			actions += *(int*)getVarValue(mb, getArg(pci, pci->argc - 1)); \
-			pci->argc--; /* keep number of argc low, so 'pci' is not reallocated */ \
+			delArgument(pci, pci->argc - 1); /* keep number of argc low, so 'pci' is not reallocated */ \
 		} \
 	} while (0)
 

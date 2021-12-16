@@ -329,8 +329,8 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							}
 
 							BATiter bi = bat_iterator(fb);
-							if (fb->tminpos != BUN_NONE) {
-								if (tostr(&buf, &buflen, BUNtail(bi, fb->tminpos), false) < 0) {
+							if (bi.minpos != BUN_NONE) {
+								if (tostr(&buf, &buflen, BUNtail(bi, bi.minpos), false) < 0) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -346,8 +346,8 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto bailout;
 							}
 
-							if (fb->tmaxpos != BUN_NONE) {
-								if (tostr(&buf, &buflen, BUNtail(bi, fb->tmaxpos), false) < 0) {
+							if (bi.maxpos != BUN_NONE) {
+								if (tostr(&buf, &buflen, BUNtail(bi, bi.maxpos), false) < 0) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
