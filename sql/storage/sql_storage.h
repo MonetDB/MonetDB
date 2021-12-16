@@ -539,4 +539,8 @@ extern BAT *DICTdecompress_(BAT *o, BAT *u, role_t role);
 extern int DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict);
 extern int DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict);
 
+extern BAT *FORdecompress_(BAT *o, lng minval, int tt, role_t role);
+extern int FORprepare4append(BAT **noffsets, BAT *vals, lng minval, int tt);
+extern int FORprepare4append_vals(void **noffsets, void *vals, BUN cnt, lng minval, int vtype, int ft);
+
 #endif /*SQL_STORAGE_H */
