@@ -1,0 +1,243 @@
+statement ok
+CREATE SCHEMA foo
+
+statement ok
+SET SCHEMA foo
+
+query TT rowsort
+SELECT s.name, c.remark FROM sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id where not s.system
+----
+foo
+NULL
+
+query TTT rowsort
+SELECT s.name, a.name, c.remark FROM sys.auths a, sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id WHERE s."authorization" = a.id AND s.name = 'foo'
+----
+foo
+monetdb
+NULL
+
+statement ok
+COMMENT ON SCHEMA foo IS 'foo foo'
+
+query TT rowsort
+SELECT s.name, c.remark FROM sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id where not s.system
+----
+foo
+foo foo
+
+query TTT rowsort
+SELECT s.name, a.name, c.remark FROM sys.auths a, sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id WHERE s."authorization" = a.id AND s.name = 'foo'
+----
+foo
+monetdb
+foo foo
+
+statement ok
+COMMENT ON SCHEMA foo IS 'bar bar'
+
+query TT rowsort
+SELECT s.name, c.remark FROM sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id where not s.system
+----
+foo
+bar bar
+
+query TTT rowsort
+SELECT s.name, a.name, c.remark FROM sys.auths a, sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id WHERE s."authorization" = a.id AND s.name = 'foo'
+----
+foo
+monetdb
+bar bar
+
+statement ok
+COMMENT ON SCHEMA foo IS NULL
+
+query TT rowsort
+SELECT s.name, c.remark FROM sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id where not s.system
+----
+foo
+NULL
+
+query TTT rowsort
+SELECT s.name, a.name, c.remark FROM sys.auths a, sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id WHERE s."authorization" = a.id AND s.name = 'foo'
+----
+foo
+monetdb
+NULL
+
+statement ok
+COMMENT ON SCHEMA foo IS 'foo bar'
+
+query TT rowsort
+SELECT s.name, c.remark FROM sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id where not s.system
+----
+foo
+foo bar
+
+query TTT rowsort
+SELECT s.name, a.name, c.remark FROM sys.auths a, sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id WHERE s."authorization" = a.id AND s.name = 'foo'
+----
+foo
+monetdb
+foo bar
+
+statement ok
+COMMENT ON SCHEMA foo IS ''
+
+query TT rowsort
+SELECT s.name, c.remark FROM sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id where not s.system
+----
+foo
+NULL
+
+query TTT rowsort
+SELECT s.name, a.name, c.remark FROM sys.auths a, sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id WHERE s."authorization" = a.id AND s.name = 'foo'
+----
+foo
+monetdb
+NULL
+
+statement ok
+COMMENT ON SCHEMA foo IS 'one final comment'
+
+statement ok
+CREATE SCHEMA "space separated"
+
+statement ok
+COMMENT ON SCHEMA "space separated" IS 'space separated'
+
+query TT rowsort
+SELECT s.name, c.remark FROM sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id where not s.system
+----
+foo
+one final comment
+space separated
+space separated
+
+query TTT rowsort
+SELECT s.name, a.name, c.remark FROM sys.auths a, sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id WHERE s."authorization" = a.id AND s.name = 'space separated'
+----
+space separated
+monetdb
+space separated
+
+statement ok
+DROP SCHEMA "space separated"
+
+query TTTT rowsort
+SELECT s.name,
+      t.name,
+      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name,
+      c.remark
+    FROM sys._tables t
+    LEFT OUTER JOIN sys.comments c ON t.id = c.id
+    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
+    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
+    WHERE NOT t.system
+----
+
+statement ok
+CREATE TABLE tab(i INT, j DECIMAL(4,2))
+
+query TTTT rowsort
+SELECT s.name,
+      t.name,
+      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name,
+      c.remark
+    FROM sys._tables t
+    LEFT OUTER JOIN sys.comments c ON t.id = c.id
+    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
+    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
+    WHERE NOT t.system
+----
+foo
+tab
+TABLE
+NULL
+
+statement ok
+COMMENT ON TABLE tab IS 'table'
+
+query TTTT rowsort
+SELECT s.name,
+      t.name,
+      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name,
+      c.remark
+    FROM sys._tables t
+    LEFT OUTER JOIN sys.comments c ON t.id = c.id
+    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
+    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
+    WHERE NOT t.system
+----
+foo
+tab
+TABLE
+table
+
+statement ok
+COMMENT ON TABLE foo.tab IS 'qualified table'
+
+query TTTT rowsort
+SELECT s.name,
+      t.name,
+      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name,
+      c.remark
+    FROM sys._tables t
+    LEFT OUTER JOIN sys.comments c ON t.id = c.id
+    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
+    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
+    WHERE NOT t.system
+----
+foo
+tab
+TABLE
+qualified table
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+COMMENT ON TABLE foo.tab IS 'table'
+
+statement ok
+SET SCHEMA foo
+
+query TTTT rowsort
+SELECT s.name,
+      t.name,
+      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name,
+      c.remark
+    FROM sys._tables t
+    LEFT OUTER JOIN sys.comments c ON t.id = c.id
+    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
+    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
+    WHERE NOT t.system
+----
+foo
+tab
+TABLE
+table
+
+statement ok
+CREATE VIEW vivi AS SELECT * FROM tab
+
+statement ok
+COMMENT ON VIEW vivi IS 'phew'
+
+query TTTT rowsort
+SELECT s.name,
+      t.name,
+      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name,
+      c.remark
+    FROM sys._tables t
+    LEFT OUTER JOIN sys.comments c ON t.id = c.id
+    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
+    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
+    WHERE NOT t.system
+      AND t.type = 1
+----
+foo
+vivi
+VIEW
+phew
+

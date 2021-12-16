@@ -2,7 +2,8 @@
 # leftovers from other tests
 comment-dump
 comment-on
-comment-auth
+comment-auth-1
+USER=user_a&PASSWD=user_a?comment-auth-2
 
 bincopycollist-prepare
 bincopycollist
