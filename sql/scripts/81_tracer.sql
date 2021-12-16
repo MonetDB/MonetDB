@@ -56,3 +56,7 @@ GRANT EXECUTE ON FUNCTION logging.compinfo TO public;
 
 CREATE view logging.compinfo AS SELECT * FROM logging.compinfo();
 GRANT SELECT ON logging.compinfo TO public;
+
+create or replace procedure sys.dict_compress(sname string, tname string, cname string) external name "dict"."compress";
+create or replace procedure sys.dict_compress(sname string, tname string, cname string, ordered_values bool) external name "dict"."compress";
+create or replace procedure sys.for_compress(sname string, tname string, cname string) external name "for"."compress";
