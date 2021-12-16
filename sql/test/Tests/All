@@ -80,7 +80,8 @@ sessioncontrol
 add_column_with_seq
 
 zones
-zones2
+zones-1
+zones-2
 coalesce
 round
 rank
