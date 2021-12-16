@@ -19,7 +19,7 @@
 #include "bat/bat_logger.h"
 
 /* version 05.23.01 of catalog */
-#define CATALOG_VERSION 52301	/* first in Jan2022 */
+#define CATALOG_VERSION 52302
 
 static int sys_drop_table(sql_trans *tr, sql_table *t, int drop_action);
 
@@ -1847,7 +1847,6 @@ store_load(sqlstore *store, sql_allocator *pa)
 	functions = t = bootstrap_create_table(tr, s, "functions", 2016);
 	bootstrap_create_column(tr, t, "id", 2017, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2018, "varchar", 4098);
-	bootstrap_create_column(tr, t, "sqlname", 2165, "varchar", 256);
 	bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196);
 	bootstrap_create_column(tr, t, "mod", 2020, "varchar", 8196);
 
@@ -1862,6 +1861,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "schema_id", 2026, "int", 32);
 	bootstrap_create_column(tr, t, "system", 2027, "boolean", 1);
 	bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1);
+	bootstrap_create_column(tr, t, "sqlname", 2165, "varchar", 256);
 
 	arguments = t = bootstrap_create_table(tr, s, "args", 2028);
 	bootstrap_create_column(tr, t, "id", 2029, "int", 32);
