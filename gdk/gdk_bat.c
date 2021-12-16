@@ -1162,8 +1162,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	if (values && b->ttype) {
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
-		MT_lock_set(&b->theaplock);
-		MT_lock_unset(&b->theaplock);
 		const void *minvalp = NULL, *maxvalp = NULL;
 		BATiter bi = bat_iterator_nolock(b);
 		if (bi.minpos != BUN_NONE)
