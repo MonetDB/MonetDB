@@ -3,5 +3,5 @@
 
 * Wed Dec 15 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - The storage cleanup in the 11.41.5 (Jul2021) release made the OLTP
-  optimizer pipeline absolete, thus it was removed.
+  optimizer pipeline obsolete, thus it was removed.
 
