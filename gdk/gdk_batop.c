@@ -1174,14 +1174,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
-				{
-					/* save and restore minpos/maxpos */
-					BUN minpos = bi.minpos;
-					BUN maxpos = bi.maxpos;
-					bi = bat_iterator_nolock(b);
-					bi.minpos = minpos;
-					bi.maxpos = maxpos;
-				}
+				bi = bat_iterator_nolock(b);
 				continue;
 			}
 
@@ -1505,14 +1498,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
-				{
-					/* save and restore minpos/maxpos */
-					BUN minpos = bi.minpos;
-					BUN maxpos = bi.maxpos;
-					bi = bat_iterator_nolock(b);
-					bi.minpos = minpos;
-					bi.maxpos = maxpos;
-				}
+				bi = bat_iterator_nolock(b);
 				continue;
 			}
 
