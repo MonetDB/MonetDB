@@ -740,6 +740,7 @@ typedef struct {
 	Strimps *strimps;	/* string imprint index  */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
+	void *ht;
 } COLrec;
 
 #define ORDERIDXOFF		3

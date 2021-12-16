@@ -3696,12 +3696,15 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 				sql_exp *a = el->h->data;
 				sql_subtype *t = exp_subtype(a);
 				int tt = t->type->localtype;
-				InstrPtr q = newStmt(be->mb, batRef, newRef);
+				//InstrPtr q = newStmt(be->mb, batRef, newRef);
+				InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
+				int estimate = 85000000;
 
 				if (q == NULL)
 					return NULL;
 				setVarType(be->mb, getArg(q, 0), newBatType(tt));
 				q = pushType(be->mb, q, tt);
+				q = pushInt(be->mb, q, estimate);
 				assert(!e->shared);
 				e->shared = q->argv[0];
 			}
@@ -3735,7 +3738,7 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 	} else {
 		return NULL;
 	}
-	stmt *pp = pp_create(be, 8*GDKnr_threads);
+	stmt *pp = pp_create(be, 32*GDKnr_threads);
 	pp -> op4.lval = shared;
 	return pp;
 }
