@@ -1048,7 +1048,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
 		const char *nm = argv[i]->tident;
-		mnstr_write(s, nm, 1, strlen(buf));
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # name\n", 1, 9);
 	mnstr_write(s, "# ", 1, 2);
@@ -1056,7 +1056,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
 		const char *nm = ATOMname(argv[i]->ttype);
-		mnstr_write(s, nm, 1, strlen(buf));
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # type\n", 1, 9);
 	mnstr_write(s, "#--------------------------#\n", 1, 29);
