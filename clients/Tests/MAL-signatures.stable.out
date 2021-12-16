@@ -6351,7 +6351,7 @@
 [ "batsql",	"diff",	"pattern batsql.diff(X_0:bit, X_1:bat[:any_1]):bat[:bit] ",	"SQLdiff;",	"return true if cur != prev row"	]
 [ "batsql",	"first_value",	"pattern batsql.first_value(X_0:bat[:any_1], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:any_1] ",	"SQLfirst_value;",	"return the first value of groups"	]
 [ "batsql",	"get_value",	"pattern batsql.get_value(X_0:bat[:str], X_1:bat[:str]):bat[:lng] ",	"mvc_get_value_bulk;",	"return the current value of the sequence (ie the next to be used value)"	]
-[ "batsql",	"get_value",	"pattern batsql.get_value(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] ",	"mvc_get_value_bulk;",	"return the current value of the sequence (ie the next to be used value)"	
+[ "batsql",	"get_value",	"pattern batsql.get_value(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] ",	"mvc_get_value_bulk;",	"return the current value of the sequence (ie the next to be used value)"	]
 [ "batsql",	"index",	"command batsql.index(X_0:bat[:str], X_1:bit):bat[:bte] ",	"BATSTRindex_bte;",	"Return the offsets as an index bat"	]
 [ "batsql",	"index",	"command batsql.index(X_0:bat[:str], X_1:bit):bat[:int] ",	"BATSTRindex_int;",	"Return the offsets as an index bat"	]
 [ "batsql",	"index",	"command batsql.index(X_0:bat[:str], X_1:bit):bat[:sht] ",	"BATSTRindex_sht;",	"Return the offsets as an index bat"	]
