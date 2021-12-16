@@ -11,18 +11,20 @@ COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.csv.gz' ON CLIE
 -- test error handling
 COPY SELECT * FROM sys.tables ORDER BY id INTO '' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
 -- Error [22000] Missing file name
-COPY SELECT * FROM sys.tables ORDER BY id INTO '.' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
+
+-- next tests are disabled due to variable path in error msg
+--COPY SELECT * FROM sys.tables ORDER BY id INTO '.' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
 -- Error [22000] File already exists: /home/dinther/csvfiles
-COPY SELECT * FROM sys.tables ORDER BY id INTO '..' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
+--COPY SELECT * FROM sys.tables ORDER BY id INTO '..' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
 -- Error [22000] File is not in download directory: /home/dinther/csvfiles
-COPY SELECT * FROM sys.tables ORDER BY id INTO '../b' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
+--COPY SELECT * FROM sys.tables ORDER BY id INTO '../b' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
 -- Error [22000] File is not in download directory: /home/dinther/csvfiles
-COPY SELECT * FROM sys.tables ORDER BY id INTO '/home/Doesnotexist/sys_tables_by_id.dsv' ON CLIENT;
+--COPY SELECT * FROM sys.tables ORDER BY id INTO '/home/Doesnotexist/sys_tables_by_id.dsv' ON CLIENT;
 -- Error [22000] File is not in download directory: /home/dinther/csvfiles
 
-COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.dsv' ON CLIENT;
+--COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.dsv' ON CLIENT;
 -- Error [22000] File already exists: /home/dinther/csvfiles/sys_tables_by_id.dsv
-COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.csv.gz' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
+--COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.csv.gz' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
 -- Error [22000] File already exists: /home/dinther/csvfiles/sys_tables_by_id.csv.gz
 
 COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.csv.bz2' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
