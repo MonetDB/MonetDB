@@ -17,6 +17,8 @@
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
+#include "opt_dict.h"
+#include "opt_for.h"
 #include "opt_emptybind.h"
 #include "opt_evaluate.h"
 #include "opt_garbageCollector.h"
@@ -76,7 +78,10 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTinlineImplementation);
 	optcall(true, OPTremapImplementation);
 	optcall(bincopy, OPTbincopyfromImplementation);
+	optcall(true, OPTemptybindImplementation);
 	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTforImplementation);
+	optcall(true, OPTdictImplementation);
 	optcall(multiplex, OPTmultiplexImplementation);
 	optcall(generator, OPTgeneratorImplementation);
 	optcall(malProfileMode, OPTprofilerImplementation);
@@ -117,6 +122,8 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTdeadcodeImplementation);
 	optcall(true, OPTpushselectImplementation);
 	optcall(true, OPTaliasesImplementation);
+	optcall(true, OPTforImplementation);
+	optcall(true, OPTdictImplementation);
 	optcall(true, OPTmitosisImplementation);
 	optcall(true, OPTmergetableImplementation);
 	optcall(bincopy, OPTbincopyfromImplementation);
