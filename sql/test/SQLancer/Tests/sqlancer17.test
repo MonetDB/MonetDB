@@ -437,6 +437,18 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t1(c1 int, c2 FLOAT)
+
+statement ok rowcount 0
+UPDATE t1 SET c1 = 1 FROM (SELECT t1.c2 FROM t1) v1(vc0) WHERE ((SELECT NULL WHERE FALSE)) IN (levenshtein('', '', t1.c1, t1.c1, t1.c1), 4)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 create table tx(c0 VARCHAR(32), c1 BOOLEAN)
 
 statement ok
