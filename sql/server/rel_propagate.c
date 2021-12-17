@@ -446,7 +446,7 @@ static sql_rel* rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, s
 static sql_exp*
 exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 {
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e)
@@ -522,7 +522,7 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 static sql_rel*
 rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 {
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
@@ -630,6 +630,7 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		}
 		(*changes)++;
 	}
+	rel_destroy(rel);
 	return sel;
 }
 
@@ -653,7 +654,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 			sql_exp *e = (sql_exp *) n->data;
 			const char *cname = exp_name(e);
 
-			if (strcmp(cname, TID) != 0) { /* Skip TID column */
+			if (cname[0] != '%') { /* Skip TID column */
 				sql_column *c = mvc_bind_column(sql, sub, cname);
 
 				if (!c)
@@ -682,7 +683,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		}
 		(*changes)++;
 	}
-
+	rel_destroy(rel);
 	return sel;
 }
 
@@ -874,6 +875,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		sql_exp *exception = exp_exception(sql->sa, aggr, buf);
 		sel = rel_exception(query->sql->sa, sel, anti_rel, list_append(new_exp_list(query->sql->sa), exception));
 	}
+	rel_destroy(rel);
 	return sel;
 }
 

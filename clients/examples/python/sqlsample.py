@@ -41,3 +41,5 @@ if cursor.executemany("insert into python_table VALUES (%s, %s);", s) != 2:
     sys.stderr.write("2 rows inserted expected")
 
 cursor.execute('drop table python_table;')
+cursor.close()
+dbh.close()

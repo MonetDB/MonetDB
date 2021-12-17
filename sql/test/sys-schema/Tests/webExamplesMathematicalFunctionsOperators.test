@@ -13,24 +13,24 @@ select 2 ^ 3
 ----
 1
 
-query T rowsort
+query T nosort
 plan select 2 ^ 3 
 ----
-) [ "sys"."bit_xor"(tinyint "2", tinyint "3") NOT NULL ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query R rowsort
 select 2.0 ^ 3.0 
 ----
 1.000
 
-query T rowsort
+query T nosort
 plan select 2.0 ^ 3.0 
 ----
-) [ "sys"."bit_xor"(decimal(2,1) "20", decimal(2,1) "30") NOT NULL ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."bit_xor"(decimal(2,1) "20", decimal(2,1) "30") NOT NULL ]
 
 statement error
 select |/ 25.0 
@@ -67,48 +67,48 @@ select 17 ^ 5
 ----
 20
 
-query T rowsort
+query T nosort
 plan select 17 ^ 5 
 ----
-) [ "sys"."bit_xor"(tinyint "17", tinyint "5") NOT NULL ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."bit_xor"(tinyint(5) "17", tinyint(3) "5") NOT NULL ]
 
 query I rowsort
 select 2 ^ 3 
 ----
 1
 
-query T rowsort
+query T nosort
 plan select 2 ^ 3 
 ----
-) [ "sys"."bit_xor"(tinyint "2", tinyint "3") NOT NULL ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query I rowsort
 select ~1 
 ----
 -2
 
-query T rowsort
+query T nosort
 plan select ~1 
 ----
-) [ "sys"."bit_not"(tinyint "1") NOT NULL ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."bit_not"(tinyint(1) "1") NOT NULL ]
 
 query I rowsort
 select 1 << 4 
 ----
 16
 
-query T rowsort
+query T nosort
 plan select 1 << 4 
 ----
-) [ "sys"."left_shift"(tinyint "1", int "4") NOT NULL ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."left_shift"(tinyint(8) "1", int(32) "4") NOT NULL ]
 
 query I rowsort
 select left_shift(1, 4) 
@@ -120,12 +120,12 @@ select 8 >> 2
 ----
 2
 
-query T rowsort
+query T nosort
 plan select 8 >> 2 
 ----
-) [ "sys"."right_shift"(tinyint "8", int "2") NOT NULL ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."right_shift"(tinyint(8) "8", int(32) "2") NOT NULL ]
 
 query I rowsort
 select right_shift(16, 2) 
@@ -328,12 +328,12 @@ query I rowsort
 ----
 0
 
-query T rowsort
+query T nosort
 plan select CAST(RAND() as float) / 2147483648
 ----
-) [ "sys"."sql_div"(double["sys"."rand"()] as "%1"."%1", double "2147483648") ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."sql_div"(double(53)["sys"."rand"()], double(53) "2147483648") ]
 
 query I rowsort
 select rand(0)
@@ -455,16 +455,6 @@ query R rowsort
 select sys.alpha(5.0, 1.2)
 ----
 1.205
-
-query I rowsort
-select sys.fuse(2, 6)
-----
-518
-
-query I rowsort
-select sys.fuse(256 , 1)
-----
-16777217
 
 query R rowsort
 select sys.ms_round(1.2359, 2, 0)

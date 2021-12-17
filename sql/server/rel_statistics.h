@@ -33,12 +33,12 @@ statistics_atom_max(mvc *sql, atom *v1, atom *v2)
 
 	supertype(&super, &v1->tpe, &v2->tpe);
 	if (subtype_cmp(&v1->tpe, &super) != 0) {
-		cast1 = atom_dup(sql->sa, v1);
+		cast1 = atom_copy(sql->sa, v1);
 		if (!atom_cast(sql->sa, cast1, &super))
 			return NULL;
 	}
 	if (subtype_cmp(&v2->tpe, &super) != 0) {
-		cast2 = atom_dup(sql->sa, v2);
+		cast2 = atom_copy(sql->sa, v2);
 		if (!atom_cast(sql->sa, cast2, &super))
 			return NULL;
 	}
@@ -53,12 +53,12 @@ statistics_atom_min(mvc *sql, atom *v1, atom *v2)
 
 	supertype(&super, &v1->tpe, &v2->tpe);
 	if (subtype_cmp(&v1->tpe, &super) != 0) {
-		cast1 = atom_dup(sql->sa, v1);
+		cast1 = atom_copy(sql->sa, v1);
 		if (!atom_cast(sql->sa, cast1, &super))
 			return NULL;
 	}
 	if (subtype_cmp(&v2->tpe, &super) != 0) {
-		cast2 = atom_dup(sql->sa, v2);
+		cast2 = atom_copy(sql->sa, v2);
 		if (!atom_cast(sql->sa, cast2, &super))
 			return NULL;
 	}
@@ -72,7 +72,7 @@ set_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 	prop *found = find_prop(e->p, kind);
 
 	if (subtype_cmp(&val->tpe, tpe) != 0) { /* make sure it's the same type */
-		val = atom_dup(sql->sa, val);
+		val = atom_copy(sql->sa, val);
 		if (!atom_cast(sql->sa, val, tpe))
 			return;
 	}

@@ -17,6 +17,8 @@
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
+#include "opt_dict.h"
+#include "opt_for.h"
 #include "opt_emptybind.h"
 #include "opt_evaluate.h"
 #include "opt_garbageCollector.h"
@@ -26,7 +28,6 @@
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
-#include "opt_oltp.h"
 #include "opt_postfix.h"
 #include "opt_mask.h"
 #include "opt_mergetable.h"
@@ -44,93 +45,110 @@
 #include "opt_wlc.h"
 #include "optimizer_private.h"
 #include "mal_interpreter.h"
+#include "mal_profiler.h"
+#include "opt_prelude.h"
+
+#define optcall(TEST, OPT) \
+	do { \
+		if (TEST) { \
+			if ((msg = OPT(cntxt, mb, stk, pci)) != MAL_SUCCEED) \
+				goto bailout; \
+			actions += *(int*)getVarValue(mb, getArg(pci, pci->argc - 1)); \
+			delArgument(pci, pci->argc - 1); /* keep number of argc low, so 'pci' is not reallocated */ \
+		} \
+	} while (0)
 
 str
-OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int actions = 0;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	int bincopy = 0, generator = 0, multiplex = 0, actions = 0;
 
-	(void)cntxt;
-	(void)stk;
-	(void) p;
+	/* perform a single scan through the plan to determine which optimizer steps to skip */
+	for( int i=0; i<mb->stop; i++){
+		InstrPtr q = getInstrPtr(mb,i);
+		if (q->modname == sqlRef && q->fcnname == importTableRef)
+			bincopy= 1;
+		if( getModuleId(q) == generatorRef)
+			generator = 1;
+		if ( getFunctionId(q) == multiplexRef)
+			multiplex = 1;
+	}
 
-
-	msg = OPTinlineImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTremapImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTbincopyfromImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmultiplexImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgeneratorImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
-	//if( msg == MAL_SUCCEED) msg = OPTcandidatesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgarbageCollectorImplementation(cntxt, mb, stk, p);
+	optcall(true, OPTinlineImplementation);
+	optcall(true, OPTremapImplementation);
+	optcall(bincopy, OPTbincopyfromImplementation);
+	optcall(true, OPTemptybindImplementation);
+	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTforImplementation);
+	optcall(true, OPTdictImplementation);
+	optcall(multiplex, OPTmultiplexImplementation);
+	optcall(generator, OPTgeneratorImplementation);
+	optcall(malProfileMode, OPTprofilerImplementation);
+	optcall(malProfileMode, OPTcandidatesImplementation);
+	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
-	/* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","minimalfast", usec);
-	newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
-
+	/* keep actions taken as a fake argument*/
+bailout:
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }
 
 str
-OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int actions = 0;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	int bincopy = 0, generator = 0, multiplex = 0, actions = 0;
 
-	(void)cntxt;
-	(void)stk;
-	(void) p;
+	/* perform a single scan through the plan to determine which optimizer steps to skip */
+	for( int i=0; i<mb->stop; i++){
+		InstrPtr q = getInstrPtr(mb,i);
+		if (q->modname == sqlRef && q->fcnname == importTableRef)
+			bincopy= 1;
+		if( getModuleId(q) == generatorRef)
+			generator = 1;
+		if ( getFunctionId(q) == multiplexRef)
+			multiplex = 1;
+	}
 
-
-	msg = OPTinlineImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTremapImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTcostModelImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTcoercionImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTaliasesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTevaluateImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTemptybindImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTpushselectImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTaliasesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmitosisImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmergetableImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTbincopyfromImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTaliasesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTconstantsImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTcommonTermsImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTprojectionpathImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTreorderImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmatpackImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdataflowImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTquerylogImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmultiplexImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgeneratorImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTcandidatesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTpostfixImplementation(cntxt, mb, stk, p);
-	// if( msg == MAL_SUCCEED) msg = OPTjitImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTwlcImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgarbageCollectorImplementation(cntxt, mb, stk, p);
+	optcall(true, OPTinlineImplementation);
+	optcall(true, OPTremapImplementation);
+	optcall(true, OPTcostModelImplementation);
+	optcall(true, OPTcoercionImplementation);
+	optcall(true, OPTaliasesImplementation);
+	optcall(true, OPTevaluateImplementation);
+	optcall(true, OPTemptybindImplementation);
+	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTpushselectImplementation);
+	optcall(true, OPTaliasesImplementation);
+	optcall(true, OPTforImplementation);
+	optcall(true, OPTdictImplementation);
+	optcall(true, OPTmitosisImplementation);
+	optcall(true, OPTmergetableImplementation);
+	optcall(bincopy, OPTbincopyfromImplementation);
+	optcall(true, OPTaliasesImplementation);
+	optcall(true, OPTconstantsImplementation);
+	optcall(true, OPTcommonTermsImplementation);
+	optcall(true, OPTprojectionpathImplementation);
+	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTreorderImplementation);
+	optcall(true, OPTmatpackImplementation);
+	optcall(true, OPTdataflowImplementation);
+	optcall(true, OPTquerylogImplementation);
+	optcall(multiplex, OPTmultiplexImplementation);
+	optcall(generator, OPTgeneratorImplementation);
+	optcall(malProfileMode, OPTprofilerImplementation);
+	optcall(malProfileMode, OPTcandidatesImplementation);
+	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTpostfixImplementation);
+	// optcall(true, OPTjitImplementation);
+	optcall(true, OPTwlcImplementation);
+	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
-	/* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","defaultfast", usec);
-	newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
-
+	/* keep actions taken as a fake argument*/
+bailout:
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

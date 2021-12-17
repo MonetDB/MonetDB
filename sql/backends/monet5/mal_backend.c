@@ -13,6 +13,8 @@
 backend *
 backend_reset(backend *b)
 {
+	if (b->subbackend)
+		b->subbackend->reset(b->subbackend);
 	*b = (backend) {
 		.mvc = b->mvc,
 		.client = b->client,
@@ -20,6 +22,7 @@ backend_reset(backend *b)
 		.output_format = OFMT_CSV,
 		.rowcnt = -1,
 		.last_id = -1,
+		.subbackend = b->subbackend,
 	};
 	return b;
 }
@@ -35,11 +38,26 @@ backend_create(mvc *m, Client c)
 		.mvc = m,
 		.client = c,
 	};
+	if (b && be_funcs.sub_backend)
+		b->subbackend = be_funcs.sub_backend(m, c);
 	return backend_reset(b);
 }
 
 void
 backend_destroy(backend *b)
 {
+	if (b->subbackend)
+		b->subbackend->destroy(b->subbackend);
 	_DELETE(b);
+}
+
+/* for recursive functions, if the implementation is not set yet, take it from the current compilation */
+str
+backend_function_imp(backend *b, sql_func *f)
+{
+	str res = sql_func_imp(f);
+
+	if (b->mvc->forward && strcmp(res, "") == 0 && b->mvc->forward->base.id == f->base.id)
+		res = b->fimp;
+	return res;
 }

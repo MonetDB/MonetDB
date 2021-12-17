@@ -96,7 +96,7 @@
  * high-performance hash-lookup (all code inlined).
  */
 
-/* These tables were generated from the Unicode 12.1.0 spec. */
+/* These tables were generated from the Unicode 13.0.0 spec. */
 struct UTF8_lower_upper {
 	unsigned int from, to;
 } UTF8_toUpper[] = { /* code points with non-null uppercase conversion */
@@ -1175,6 +1175,9 @@ struct UTF8_lower_upper {
 	{ 0xA7BD, 0xA7BC, },
 	{ 0xA7BF, 0xA7BE, },
 	{ 0xA7C3, 0xA7C2, },
+	{ 0xA7C8, 0xA7C7, },
+	{ 0xA7CA, 0xA7C9, },
+	{ 0xA7F6, 0xA7F5, },
 	{ 0xAB53, 0xA7B3, },
 	{ 0xAB70, 0x13A0, },
 	{ 0xAB71, 0x13A1, },
@@ -2647,6 +2650,9 @@ struct UTF8_lower_upper {
 	{ 0xA7C4, 0xA794, },
 	{ 0xA7C5, 0x0282, },
 	{ 0xA7C6, 0x1D8E, },
+	{ 0xA7C7, 0xA7C8, },
+	{ 0xA7C9, 0xA7CA, },
+	{ 0xA7F5, 0xA7F6, },
 	{ 0xFF21, 0xFF41, },
 	{ 0xFF22, 0xFF42, },
 	{ 0xFF23, 0xFF43, },
@@ -2910,26 +2916,52 @@ STRprelude(void *ret)
 	if (UTF8_toUpperFrom == NULL) {
 		size_t i;
 
-		UTF8_toUpperFrom = COLnew(0, TYPE_int, 1500, TRANSIENT);
-		UTF8_toUpperTo = COLnew(0, TYPE_int, 1500, TRANSIENT);
-		UTF8_toLowerFrom = COLnew(0, TYPE_int, 1500, TRANSIENT);
-		UTF8_toLowerTo = COLnew(0, TYPE_int, 1500, TRANSIENT);
+		UTF8_toUpperFrom = COLnew(0, TYPE_int, sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]), TRANSIENT);
+		UTF8_toUpperTo = COLnew(0, TYPE_int, sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]), TRANSIENT);
+		UTF8_toLowerFrom = COLnew(0, TYPE_int, sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]), TRANSIENT);
+		UTF8_toLowerTo = COLnew(0, TYPE_int, sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]), TRANSIENT);
 		if (UTF8_toUpperFrom == NULL || UTF8_toUpperTo == NULL ||
 			UTF8_toLowerFrom == NULL || UTF8_toLowerTo == NULL) {
 			goto bailout;
 		}
 
+		int *fp = (int *) Tloc(UTF8_toUpperFrom, 0);
+		int *tp = (int *) Tloc(UTF8_toUpperTo, 0);
 		for (i = 0; i < sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]); i++) {
-			if (BUNappend(UTF8_toUpperFrom, &UTF8_toUpper[i].from, false) != GDK_SUCCEED ||
-				BUNappend(UTF8_toUpperTo, &UTF8_toUpper[i].to, false) != GDK_SUCCEED)
-				goto bailout;
+			fp[i] = UTF8_toUpper[i].from;
+			tp[i] = UTF8_toUpper[i].to;
 		}
+		BATsetcount(UTF8_toUpperFrom, i);
+		UTF8_toUpperFrom->tkey = true;
+		UTF8_toUpperFrom->tsorted = true;
+		UTF8_toUpperFrom->trevsorted = false;
+		UTF8_toUpperFrom->tnil = false;
+		UTF8_toUpperFrom->tnonil = true;
+		BATsetcount(UTF8_toUpperTo, i);
+		UTF8_toUpperTo->tkey = false;
+		UTF8_toUpperTo->tsorted = false;
+		UTF8_toUpperTo->trevsorted = false;
+		UTF8_toUpperTo->tnil = false;
+		UTF8_toUpperTo->tnonil = true;
 
+		fp = (int *) Tloc(UTF8_toLowerFrom, 0);
+		tp = (int *) Tloc(UTF8_toLowerTo, 0);
 		for (i = 0; i < sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]); i++) {
-			if (BUNappend(UTF8_toLowerFrom, &UTF8_toLower[i].from, false) != GDK_SUCCEED ||
-				BUNappend(UTF8_toLowerTo, &UTF8_toLower[i].to, false) != GDK_SUCCEED)
-				goto bailout;
+			fp[i] = UTF8_toLower[i].from;
+			tp[i] = UTF8_toLower[i].to;
 		}
+		BATsetcount(UTF8_toLowerFrom, i);
+		UTF8_toLowerFrom->tkey = true;
+		UTF8_toLowerFrom->tsorted = true;
+		UTF8_toLowerFrom->trevsorted = false;
+		UTF8_toLowerFrom->tnil = false;
+		UTF8_toLowerFrom->tnonil = true;
+		BATsetcount(UTF8_toLowerTo, i);
+		UTF8_toLowerTo->tkey = false;
+		UTF8_toLowerTo->tsorted = false;
+		UTF8_toLowerTo->trevsorted = false;
+		UTF8_toLowerTo->tnil = false;
+		UTF8_toLowerTo->tnonil = true;
 
 		if (BBPrename(UTF8_toUpperFrom->batCacheid, "monet_unicode_upper_from") != 0 ||
 			BBPrename(UTF8_toUpperTo->batCacheid, "monet_unicode_upper_to") != 0 ||
@@ -3165,23 +3197,39 @@ UTF8_offset(char *restrict s, int n)
 	return s;
 }
 
-static str
+str
+str_case_hash_lock(bool upper)
+{
+	BAT *b = upper ? UTF8_toUpperFrom : UTF8_toLowerFrom;
+
+	if (BAThash(b) != GDK_SUCCEED)
+		throw(MAL, "str.str_case_hash_lock", GDK_EXCEPTION);
+	MT_rwlock_rdlock(&b->thashlock);
+	return MAL_SUCCEED;
+}
+
+void
+str_case_hash_unlock(bool upper)
+{
+	BAT *b = upper ? UTF8_toUpperFrom : UTF8_toLowerFrom;
+	MT_rwlock_rdunlock(&b->thashlock);
+}
+
+static inline str
 convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const char *malfunc)
 {
 	size_t len = strlen(src);
 	char *dst;
 	const char *end = src + len;
 	bool lower_to_upper = from == UTF8_toUpperFrom;
-	Hash *h;
+	const Hash *h = from->thash;
+	const int *restrict fromb = (const int *restrict) from->theap->base;
+	const int *restrict tob = (const int *restrict) to->theap->base;
 	size_t nextlen = len + 1;
 
 	/* the from and to bats are not views */
 	assert(from->tbaseoff == 0);
 	assert(to->tbaseoff == 0);
-	if (BAThash(from) != GDK_SUCCEED)
-		throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	MT_rwlock_rdlock(&from->thashlock);
-	h = from->thash;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, malfunc);
 	dst = *buf;
 	while (src < end) {
@@ -3202,8 +3250,8 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 			for (BUN hb = HASHget(h, hash_int(h, &c));
 					hb != BUN_NONE;
 					hb = HASHgetlink(h, hb)) {
-				if (c == ((int *) from->theap->base)[hb]) {
-					c = ((int *) to->theap->base)[hb];
+				if (c == fromb[hb]) {
+					c = tob[hb];
 					break;
 				}
 			}
@@ -3221,7 +3269,6 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 		UTF8_PUTCHAR(c, dst);
 	}
 	*dst = 0;
-	MT_rwlock_rdunlock(&from->thashlock);
 	return MAL_SUCCEED;
 illegal:
 	throw(MAL, malfunc, SQLSTATE(42000) "Illegal Unicode code point");
@@ -3539,7 +3586,13 @@ STRLower(str *res, const str *arg1)
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = str_lower(&buf, &buflen, s)) != MAL_SUCCEED) {
+		if ((msg = str_case_hash_lock(false))) {
+			GDKfree(buf);
+			return msg;
+		}
+		msg = str_lower(&buf, &buflen, s);
+		str_case_hash_unlock(false);
+		if (msg != MAL_SUCCEED) {
 			GDKfree(buf);
 			return msg;
 		}
@@ -3571,7 +3624,13 @@ STRUpper(str *res, const str *arg1)
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = str_upper(&buf, &buflen, s)) != MAL_SUCCEED) {
+		if ((msg = str_case_hash_lock(true))) {
+			GDKfree(buf);
+			return msg;
+		}
+		msg = str_upper(&buf, &buflen, s);
+		str_case_hash_unlock(true);
+		if (msg != MAL_SUCCEED) {
 			GDKfree(buf);
 			return msg;
 		}

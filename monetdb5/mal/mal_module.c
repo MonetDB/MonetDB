@@ -64,6 +64,8 @@ getModules(void)
 	int i;
 	Module s,n;
 
+	if (!b)
+		return NULL;
 	for( i = 0; i< MODULE_HASH_SIZE; i++){
 		s = moduleIndex[i];
 		while(s){
@@ -272,11 +274,13 @@ void freeModule(Module m)
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
 		InstrPtr pci = getInstrPtr(s->def,0);
 		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
-			int ret = 0;
+			int status = 0;
+			str ret = MAL_SUCCEED;
 
 			assert(pci->fcn != NULL);
-			(*pci->fcn)(&ret);
-			(void)ret;
+			ret = (*pci->fcn)(&status);
+			freeException(ret);
+			(void)status;
 		}
 	}
 	freeSubScope(m);

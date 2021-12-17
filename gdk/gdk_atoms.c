@@ -230,7 +230,7 @@ ATOMindex(const char *nme)
 	return -j;
 }
 
-char *
+const char *
 ATOMname(int t)
 {
 	return t >= 0 && t < GDKatomcnt && *BATatoms[t].name ? BATatoms[t].name : "null";
@@ -301,12 +301,10 @@ ATOMlen(int t, const void *src)
 gdk_return
 ATOMheap(int t, Heap *hp, size_t cap)
 {
-	void (*h) (Heap *, size_t) = BATatoms[t].atomHeap;
+	gdk_return (*h) (Heap *, size_t) = BATatoms[t].atomHeap;
 
 	if (h) {
-		(*h) (hp, cap);
-		if (hp->base == NULL)
-			return GDK_FAIL;
+		return (*h) (hp, cap);
 	}
 	return GDK_SUCCEED;
 }
@@ -1150,6 +1148,8 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 		} else {
 			while (src[n] && GDKisspace(src[n]))
 				n++;
+			if (f == -0)
+				f = 0;
 			**dst = (flt) f;
 		}
 	}
@@ -1693,10 +1693,11 @@ ATOMunknown_find(const char *nme)
 	return -j;
 }
 
-str
+const char *
 ATOMunknown_name(int i)
 {
 	assert(i < 0);
+	assert(-i < MAXATOMS);
 	assert(unknown[-i]);
 	return unknown[-i];
 }

@@ -238,7 +238,7 @@ macro(monetdb_configure_sizes)
   check_type_size(short SIZEOF_SHORT LANGUAGE C)
   check_type_size(int SIZEOF_INT LANGUAGE C)
   check_type_size(long SIZEOF_LONG LANGUAGE C)
-  check_type_size("long int" SIZEOF_LONG_INT LANGUAGE C)
+  check_type_size("long long" SIZEOF_LONG_LONG LANGUAGE C)
   check_type_size(double SIZEOF_DOUBLE LANGUAGE C)
   check_type_size(wchar_t SIZEOF_WCHAR_T LANGUAGE C)
   cmake_push_check_state()
@@ -303,7 +303,7 @@ macro(monetdb_configure_misc)
   endif()
 
   # Used for installing testing python module (don't pass a location, else we need to strip this again)
-  execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,''))"
+  execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': ''})[1:])"
     RESULT_VARIABLE PY3_LIBDIR_CODE
     OUTPUT_VARIABLE PYTHON3_SITEDIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)

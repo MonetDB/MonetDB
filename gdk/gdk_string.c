@@ -64,15 +64,14 @@
 
 const char str_nil[2] = { '\200', 0 };
 
-void
+gdk_return
 strHeap(Heap *d, size_t cap)
 {
 	size_t size;
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1, 1) != GDK_SUCCEED)
-		GDKerror("alloc failed");
+	return HEAPalloc(d, size, 1, 1);
 }
 
 
@@ -141,7 +140,7 @@ strCleanHash(Heap *h, bool rebuild)
 /*
  * The strPut routine. The routine strLocate can be used to identify
  * the location of a string in the heap if it exists. Otherwise it
- * returns zero.
+ * returns (var_t) -2 (-1 is reserved for error).
  */
 var_t
 strLocate(Heap *h, const char *v)
@@ -152,7 +151,7 @@ strLocate(Heap *h, const char *v)
 	BUN off;
 	if (h->free == 0) {
 		/* empty, so there are no strings */
-		return 0;
+		return (var_t) -2;
 	}
 
 	off = strHash(v);
@@ -167,18 +166,8 @@ strLocate(Heap *h, const char *v)
 		if (strcmp(v, (str) (next + 1)) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
 	}
-	return 0;
+	return (var_t) -2;
 }
-
-#ifdef __GNUC__
-/* __builtin_expect returns its first argument; it is expected to be
- * equal to the second argument */
-#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
-#define likely(expr)	__builtin_expect((expr) != 0, 1)
-#else
-#define unlikely(expr)	(expr)
-#define likely(expr)	(expr)
-#endif
 
 var_t
 strPut(BAT *b, var_t *dst, const void *V)
@@ -193,7 +182,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (h->free == 0) {
 		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
 			if (HEAPgrow(&b->theaplock, &b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
-				return 0;
+				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
@@ -245,7 +234,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 #ifndef NDEBUG
 	if (!checkUTF8(v)) {
 		GDKerror("incorrectly encoded UTF-8\n");
-		return 0;
+		return (var_t) -1;
 	}
 #endif
 
@@ -278,12 +267,12 @@ strPut(BAT *b, var_t *dst, const void *V)
 		assert(newsize);
 
 		if (h->free + pad + len >= (size_t) VAR_MAX) {
-			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
-			return 0;
+			GDKerror("string heap gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
+			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
 		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, true) != GDK_SUCCEED) {
-			return 0;
+			return (var_t) -1;
 		}
 		h = b->tvheap;
 
@@ -316,6 +305,16 @@ strPut(BAT *b, var_t *dst, const void *V)
  * Convert an "" separated string to a GDK string value, checking that
  * the input is correct UTF-8.
  */
+
+#ifdef __GNUC__
+/* __builtin_expect returns its first argument; it is expected to be
+ * equal to the second argument */
+#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
+#define likely(expr)	__builtin_expect((expr) != 0, 1)
+#else
+#define unlikely(expr)	(expr)
+#define likely(expr)	(expr)
+#endif
 
 ssize_t
 GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
@@ -759,6 +758,13 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	assert((bnp == NULL) != (pt == NULL));
 	/* if pt not NULL, only a single group allowed */
 	assert(pt == NULL || ngrp == 1);
+
+	bi = bat_iterator(b);
+	if (sep)
+		bis = bat_iterator(sep);
+	else
+		separator_length = strlen(separator);
+
 	if (bnp) {
 		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
 			rres = GDK_FAIL;
@@ -766,12 +772,6 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		}
 		*bnp = bn;
 	}
-
-	bi = bat_iterator(b);
-	if (sep)
-		bis = bat_iterator(sep);
-	else
-		separator_length = strlen(separator);
 
 	if (ngrp == 1) {
 		size_t offset = 0, single_length = 0;
@@ -1078,28 +1078,39 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 {
 	BUN ncand;
 	struct canditer ci;
+	gdk_return r = GDK_SUCCEED;
+	bool free_nseparator = false;
+	char *nseparator = (char *)separator;
 
 	(void) abort_on_error;
-	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
+	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	res->vtype = TYPE_str;
 
 	ncand = canditer_init(&ci, b, s);
 
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
-		separator = BUNtvar(bi, 0);
+		nseparator = GDKstrdup(BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
+		if (!nseparator)
+			return GDK_FAIL;
+		free_nseparator = true;
 		sep = NULL;
 	}
 
-	if (ncand == 0 || (separator && strNil(separator))) {
+	if (ncand == 0 || (nseparator && strNil(nseparator))) {
 		if (VALinit(res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
-			return GDK_FAIL;
-		return GDK_SUCCEED;
+			r = GDK_FAIL;
+		if (free_nseparator)
+			GDKfree(nseparator);
+		return r;
 	}
 
-	return concat_strings(NULL, res, b, b->hseqbase, 1, &ci, ncand, NULL, 0, 0,
-			      skip_nils, sep, separator, NULL);
+	r = concat_strings(NULL, res, b, b->hseqbase, 1, &ci, ncand, NULL, 0, 0,
+			      skip_nils, sep, nseparator, NULL);
+	if (free_nseparator)
+		GDKfree(nseparator);
+	return r;
 }
 
 BAT *
@@ -1112,8 +1123,10 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	struct canditer ci;
 	const char *err;
 	gdk_return res;
+	bool free_nseparator = false;
+	char *nseparator = (char *)separator;
 
-	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
+	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp,
@@ -1128,29 +1141,37 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
-		separator = BUNtvar(bi, 0);
+		nseparator = GDKstrdup(BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
+		if (!nseparator)
+			return NULL;
+		free_nseparator = true;
 		sep = NULL;
 	}
 
-	if (ncand == 0 || ngrp == 0 || (separator && strNil(separator))) {
+	if (ncand == 0 || ngrp == 0 || (nseparator && strNil(nseparator))) {
 		/* trivial: no strings to concat, so return bat
 		 * aligned with g with nil in the tail */
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
+		goto done;
 	}
 
 	if (BATtdense(g) || (g->tkey && g->tnonil)) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, TYPE_str, abort_on_error, 0, 0, 0);
+		bn = BATconvert(b, s, TYPE_str, abort_on_error, 0, 0, 0);
+		goto done;
 	}
 
 	res = concat_strings(&bn, NULL, b, b->hseqbase, ngrp, &ci, ncand,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
-			     separator, &nils);
+			     nseparator, &nils);
 	if (res != GDK_SUCCEED)
-		return NULL;
+		bn = NULL;
 
+done:
+	if (free_nseparator)
+		GDKfree(nseparator);
 	return bn;
 }
 

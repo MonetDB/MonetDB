@@ -39,22 +39,22 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 
 static int OPTsimpleflow(MalBlkPtr mb, int pc)
 {
-    int i, block =0, simple= TRUE;
-    InstrPtr p;
+	int i, block =0, simple= TRUE;
+	InstrPtr p;
 
-    for ( i= pc; i< mb->stop; i++){
-        p =getInstrPtr(mb,i);
-        if (blockStart(p))
-            block++;
-        if ( blockExit(p))
-            block--;
-        if ( blockCntrl(p))
-            simple= FALSE;
-        if ( block == 0){
-            return simple;
-        }
-    }
-    return FALSE;
+	for ( i= pc; i< mb->stop; i++){
+		p =getInstrPtr(mb,i);
+		if (blockStart(p))
+			block++;
+		if ( blockExit(p))
+			block--;
+		if ( blockCntrl(p))
+			simple= FALSE;
+		if ( block == 0){
+			return simple;
+		}
+	}
+	return FALSE;
 }
 
 /* barrier blocks can only be dropped when they are fully excluded.  */
@@ -122,15 +122,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	MalStkPtr env = NULL;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
 	int *assigned = 0, use;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	(void)stk;
-	(void)pci;
 
 	if ( mb->inlineProp )
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	cntxt->itrace = 0;
 
@@ -167,7 +164,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
 		/* be aware that you only assign once to a variable */
-		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
+		if (use && p->retc == 1 && getFunctionId(p) && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
 			p->barrier = 0;
 			if ( env == NULL) {
@@ -218,7 +215,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		msg = OPTremoveUnusedBlocks(cntxt, mb);
 	cntxt->itrace = debugstate;
 
-    	/* Defense line against incorrect plans */
+		/* Defense line against incorrect plans */
 	/* Plan is unaffected */
 	if (!msg)
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
@@ -226,14 +223,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		msg = chkFlow(mb);
 	if (!msg)
 		msg = chkDeclarations(mb);
-    	/* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,usec);
-    	newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+		/* keep all actions taken as a post block comment */
 
 wrapup:
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
+
 	if (env) {
 		assert(env->stktop < env->stksize);
 		freeStack(env);

@@ -38,9 +38,10 @@
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
-#include "opt_oltp.h"
 #include "opt_postfix.h"
 #include "opt_mask.h"
+#include "opt_for.h"
+#include "opt_dict.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
@@ -53,17 +54,17 @@
 #include "opt_reorder.h"
 #include "opt_volcano.h"
 #include "opt_fastpath.h"
+#include "opt_strimps.h"
 #include "opt_wlc.h"
 #include "optimizer_private.h"
 
+// keep the optimizer list sorted
 struct{
 	str nme;
 	str (*fcn)();
 	int calls;
 	lng timing;
 } codes[] = {
-	{"defaultfast", &OPTdefaultfastImplementation,0,0},
-	{"minimalfast", &OPTminimalfastImplementation,0,0},
 	{"aliases", &OPTaliasesImplementation,0,0},
 	{"bincopyfrom", &OPTbincopyfromImplementation,0,0},
 	{"candidates", &OPTcandidatesImplementation,0,0},
@@ -73,6 +74,7 @@ struct{
 	{"costModel", &OPTcostModelImplementation,0,0},
 	{"dataflow", &OPTdataflowImplementation,0,0},
 	{"deadcode", &OPTdeadcodeImplementation,0,0},
+	{"defaultfast", &OPTdefaultfastImplementation,0,0},
 	{"emptybind", &OPTemptybindImplementation,0,0},
 	{"evaluate", &OPTevaluateImplementation,0,0},
 	{"garbageCollector", &OPTgarbageCollectorImplementation,0,0},
@@ -81,11 +83,13 @@ struct{
 	{"jit", &OPTjitImplementation,0,0},
 	{"json", &OPTjsonImplementation,0,0},
 	{"mask", &OPTmaskImplementation,0,0},
+	{"for", &OPTforImplementation,0,0},
+	{"dict", &OPTdictImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},
 	{"mergetable", &OPTmergetableImplementation,0,0},
+	{"minimalfast", &OPTminimalfastImplementation,0,0},
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"multiplex", &OPTmultiplexImplementation,0,0},
-	{"oltp", &OPToltpImplementation,0,0},
 	{"postfix", &OPTpostfixImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},
@@ -95,10 +99,27 @@ struct{
 	{"remap", &OPTremapImplementation,0,0},
 	{"remoteQueries", &OPTremoteQueriesImplementation,0,0},
 	{"reorder", &OPTreorderImplementation,0,0},
+	{"strimps", &OPTstrimpsImplementation,0,0},
 	{"volcano", &OPTvolcanoImplementation,0,0},
 	{"wlc", &OPTwlcImplementation,0,0},
 	{0,0,0,0}
 };
+int codehash[256];
+
+static
+void fillcodehash(void)
+{
+	int i, idx;
+
+	for( i=0;  i< 256; i++)
+		codehash[i] = -1;
+	for (i=0; codes[i].nme; i++){
+		idx = (int) codes[i].nme[0];
+		if( codehash[idx] == -1 ){
+			codehash[idx] = i;
+		}
+	}
+}
 
 str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme = "(NONE)";
@@ -108,6 +129,9 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str msg = MAL_SUCCEED;
 	lng clk;
 
+	// no optimizer starts with a null byte, initialization sets a zero
+	if( codehash[0] != -1 || codehash[0] == 0)
+		fillcodehash();
 	if (cntxt->mode == FINISHCLIENT)
 		throw(MAL, "optimizer", SQLSTATE(42000) "prematurely stopped client");
 
@@ -133,27 +157,37 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			modnme= getArgDefault(mb,p,1);
 			fcnnme= getArgDefault(mb,p,2);
 		}
-		removeInstruction(mb, p);
+		//removeInstruction(mb, p);
+		p->token = REMsymbol;
 		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
 		if( s == NULL)
 			throw(MAL, getFunctionId(p), SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED "%s.%s", modnme, fcnnme);
 		mb = s->def;
 		stk= 0;
-	} else if( p )
-		removeInstruction(mb, p);
+	} else if( p ){
+		p->token = REMsymbol;
+	}
 
-	for (i=0; codes[i].nme; i++)
-		if (strcmp(codes[i].nme, getFunctionId(p)) == 0){
-			clk = GDKusec();
-			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, 0);
-			codes[i].timing += GDKusec() - clk;
+	clk = GDKusec();
+	const char *id = getFunctionId(p);
+	for (i=codehash[*id]; codes[i].nme; i++){
+		if (codes[i].nme[0] == *id && strcmp(codes[i].nme, getFunctionId(p)) == 0){
+			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, p);
+			clk = GDKusec() - clk;
+			codes[i].timing += clk;
+			codes[i].calls++;
+			p= pushLng(mb, p, clk);
 			codes[i].calls++;
 			if (msg) {
-				throw(MAL, codes[i].nme, SQLSTATE(42000) "Error in optimizer %s: %s", codes[i].nme, msg);
+				str newmsg = createException(MAL, getFunctionId(p), SQLSTATE(42000) "Error in optimizer %s: %s", getFunctionId(p), msg);
+				freeException(msg);
+				return newmsg;
 			}
+			addtoMalBlkHistory(mb);
 			break;
 		}
+	}
 	if (codes[i].nme == 0)
 		throw(MAL, fcnnme,  SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 

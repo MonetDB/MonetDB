@@ -91,6 +91,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
 	fprintf(stderr, "    --readonly                Safeguard database\n");
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
+	fprintf(stderr, "    --loadmodule=<module>     Load extra <module> from lib/monetdb5\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
@@ -341,7 +342,6 @@ main(int argc, char **av)
 
 	modules[mods++] = "sql";
 	modules[mods++] = "generator";
-	modules[mods++] = "opt_sql_append";
 #ifdef HAVE_GEOM
 	modules[mods++] = "geom";
 #endif
@@ -356,7 +356,6 @@ main(int argc, char **av)
 #ifdef HAVE_CUDF
 	modules[mods++] = "capi";
 #endif
-	modules[mods++] = "udf";
 #ifdef HAVE_FITS
 	modules[mods++] = "fits";
 #endif

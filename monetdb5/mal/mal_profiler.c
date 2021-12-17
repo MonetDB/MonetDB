@@ -60,18 +60,17 @@ static struct rusage prevUsage;
 #define LOGLEN 8192
 
 // The heart beat events should be sent to all outstanding channels.
-static void logjsonInternal(char *logbuffer)
+static void logjsonInternal(char *logbuffer, bool flush)
 {
 	size_t len;
 	len = strlen(logbuffer);
 
-	MT_lock_set(&mal_profileLock);
 	if (maleventstream) {
 	// upon request the log record is sent over the profile stream
 		(void) mnstr_write(maleventstream, logbuffer, 1, len);
-		(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
+		if (flush)
+			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 	}
-	MT_lock_unset(&mal_profileLock);
 }
 
 /*
@@ -141,7 +140,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			/* includes first time when logbuffer == NULL and logcap = 0 */
 			char *alloc_buff;
 			if (logbuf->loglen > 0)
-				logjsonInternal(logbuf->logbuffer);
+				logjsonInternal(logbuf->logbuffer, false);
 			logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len/2;
 			if (logbuf->logcap < LOGLEN)
 				logbuf->logcap = LOGLEN;
@@ -156,7 +155,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			logbuf->logbuffer = alloc_buff;
 			lognew(logbuf);
 		} else {
-			logjsonInternal(logbuf->logbuffer);
+			logjsonInternal(logbuf->logbuffer, false);
 			lognew(logbuf);
 		}
 	}
@@ -307,7 +306,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			c =getVarName(mb, getArg(pci,j));
 			if(getVarSTC(mb,getArg(pci,j))){
 				InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
-				if (stc &&
+				if (stc && getModuleId(stc) &&
 					strcmp(getModuleId(stc),"sql") ==0 &&
 					strncmp(getFunctionId(stc),"bind",4)==0 &&
 					!logadd(&logbuf, ",\"alias\":\"%s.%s.%s\"",
@@ -328,7 +327,13 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 				}
 				if(d) {
 					BAT *v;
-					cnt = BATcount(d);
+					MT_lock_set(&d->theaplock);
+					BATiter di = bat_iterator_nolock(d);
+					/* outside the lock we cannot dereference di.h or di.vh,
+					 * but we can use all values without dereference and
+					 * without further locking */
+					MT_lock_unset(&d->theaplock);
+					cnt = di.count;
 					if(isVIEW(d)){
 						v= BBP_cache(VIEWtparent(d));
 						if (!logadd(&logbuf,
@@ -339,8 +344,8 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 									VIEWtparent(d),
 									d->hseqbase,
 									v && !v->batTransient ? "persistent" : "transient")) {
-										BBPunfix(d->batCacheid);
-										goto cleanup_and_exit;
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
 						}
 					} else {
 						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"))) {
@@ -379,14 +384,15 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			}															\
 		}																\
 	} while (0)
-					keepprop(GDK_MIN_VALUE,"min");
-					keepprop(GDK_MAX_VALUE,"max");
-					keepprop(GDK_MIN_POS,"minpos");
-					keepprop(GDK_MIN_POS,"minpos");
-					keepprop(GDK_MAX_POS,"maxpos");
-					keepprop(GDK_HASH_BUCKETS,"hbuckets");
-					keepprop(GDK_NUNIQUE,"nunique");
-					keepprop(GDK_UNIQUE_ESTIMATE,"nestimate");
+					if ((di.minpos != BUN_NONE &&
+						 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", di.minpos)) ||
+						(di.maxpos != BUN_NONE &&
+						 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", di.maxpos)) ||
+						(di.unique_est != 0 &&
+						 !logadd(&logbuf, ",\"nestimate\":\"%g\"", di.unique_est))) {
+						BBPunfix(d->batCacheid);
+						goto cleanup_and_exit;
+					}
 
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					c = strchr(cv, '>');
@@ -398,8 +404,8 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
-					total += cnt << d->tshift;
-					if (!logadd(&logbuf, ",\"width\":%d", d->twidth)) {
+					total += cnt << di.shift;
+					if (!logadd(&logbuf, ",\"width\":%d", di.width)) {
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
@@ -411,7 +417,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						goto cleanup_and_exit;
 					}
 					MT_rwlock_rdunlock(&d->thashlock);
-					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid))) {
+					if( di.vh && !logadd(&logbuf, ",\"vheap\":" BUNFMT, di.vhfree)) {
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
@@ -467,11 +473,13 @@ static void
 renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	str ev;
+	MT_lock_set(&mal_profileLock);
 	ev = prepareProfilerEvent(cntxt, mb, stk, pci, start);
 	if( ev ){
-		logjsonInternal(ev);
+		logjsonInternal(ev, true);
 		free(ev);
 	}
+	MT_lock_unset(&mal_profileLock);
 }
 
 /* the OS details on cpu load are read from /proc/stat
@@ -607,7 +615,7 @@ profilerHeartbeatEvent(char *alter)
 				"}\n",			// end marker
 				alter, cpuload))
 		return;
-	logjsonInternal(logbuf.logbuffer);
+	logjsonInternal(logbuf.logbuffer, true);
 	logdel(&logbuf);
 }
 
@@ -640,16 +648,19 @@ openProfilerStream(Client cntxt)
 	getrusage(RUSAGE_SELF, &infoUsage);
 	prevUsage = infoUsage;
 #endif
+	MT_lock_set(&mal_profileLock);
 	if (myname == 0){
 		myname = putName("profiler");
-		logjsonInternal(monet_characteristics);
+		logjsonInternal(monet_characteristics, true);
 	}
 	if(maleventstream){
 		/* The DBA can always grab the stream, others have to wait */
-		if (cntxt->user == MAL_ADMIN)
+		if (cntxt->user == MAL_ADMIN) {
 			closeProfilerStream(cntxt);
-		else
+		} else {
+			MT_lock_unset(&mal_profileLock);
 			throw(MAL,"profiler.start","Profiler already running, stream not available");
+		}
 	}
 	malProfileMode = -1;
 	maleventstream = cntxt->fdout;
@@ -663,16 +674,18 @@ openProfilerStream(Client cntxt)
 
 	MT_sleep_ms(200);
 
-	MT_lock_set(&mal_profileLock);
 	for(j = 0; j <THREADS; j++){
 		Client c = 0; MalBlkPtr m=0; MalStkPtr s = 0; InstrPtr p = 0;
 		c = workingset[j].cntxt;
 		m = workingset[j].mb;
 		s = workingset[j].stk;
 		p =  workingset[j].pci;
-		if( c && m && s && p )
+		if( c && m && s && p ) {
 			/* show the event  assuming the quadruple is aligned*/
+			MT_lock_unset(&mal_profileLock);
 			profilerEvent(c, m, s, p, 1);
+			MT_lock_set(&mal_profileLock);
+		}
 	}
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
@@ -708,8 +721,8 @@ startProfiler(Client cntxt)
 		myname = putName("profiler");
 	}
 	malProfileMode = 1;
+	logjsonInternal(monet_characteristics, true);
 	MT_lock_unset(&mal_profileLock);
-	logjsonInternal(monet_characteristics);
 	// reset the trace table
 	clearTrace(cntxt);
 
@@ -877,6 +890,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_profileLock);
  	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
+		GDKfree(stmt);
 		return;
 	}
 	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;

@@ -808,8 +808,7 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bat *sl
 		BBPunfix(R->batCacheid);
 		if (sl)
 			BBPunfix(sl->batCacheid);
-		if (sr)
-			BBPunfix(sr->batCacheid);
+		/* sr == NULL, so no need to unfix */
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	ret = BATsubcross(&bn1, r ? &bn2 : NULL, L, R, sl, sr,
@@ -992,13 +991,12 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 	}
 	if (b->ttype == TYPE_msk || mask_cand(b)) {
 		BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false);
-	} else
-        if (*ignore_nils) {
-			*result = (lng) BATcount_no_nil(b, s);
-        } else {
-			struct canditer ci;
-			*result = (lng) canditer_init(&ci, b, s);
-        }
+	} else if (*ignore_nils) {
+		*result = (lng) BATcount_no_nil(b, s);
+	} else {
+		struct canditer ci;
+		*result = (lng) canditer_init(&ci, b, s);
+	}
 	if (s)
 		BBPunfix(s->batCacheid);
 	BBPunfix(b->batCacheid);

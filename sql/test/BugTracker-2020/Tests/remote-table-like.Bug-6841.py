@@ -71,6 +71,17 @@ with tempfile.TemporaryDirectory() as farm_dir:
                                         case id when 1 then 5 when 2 then 10 when 3 then 60 else 4 end, greatest(id - 7, id + 7), lead(1,1,1) over () from remote_data""")
             if node2_cur.fetchall() != [(2, None, 1, 5, 8, 1)]:
                 sys.stderr.write("Just row (2, None, 1, 5, 8, 1) expected")
+            node2_cur.execute("create function \"myfunc\"(\"myarg\" int) returns int return \"myarg\";")
+            try:
+                node2_cur.execute("select \"myfunc\"(1) from remote_data")
+                sys.stderr.write("Exception expected")
+            except pymonetdb.DatabaseError as e:
+                pass
+
             # cleanup: shutdown the monetdb servers and remove tempdir
+            node1_cur.close()
+            node1_conn.close()
+            node2_cur.close()
+            node2_conn.close()
             node1_proc.communicate()
             node2_proc.communicate()

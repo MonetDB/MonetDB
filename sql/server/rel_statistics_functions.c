@@ -32,8 +32,8 @@ sql_add_propagate_statistics(mvc *sql, sql_exp *e)
 		sql_subfunc *f = (sql_subfunc *)e->f;
 
 		if (strcmp(f->func->mod, "calc") == 0) {
-			res1 = atom_add(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmax));
-			res2 = atom_add(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmin));
+			res1 = atom_add(sql->sa, atom_copy(sql->sa, lmax), atom_copy(sql->sa, rmax));
+			res2 = atom_add(sql->sa, atom_copy(sql->sa, lmin), atom_copy(sql->sa, rmin));
 		} else {
 			sql_subtype tp;
 
@@ -106,8 +106,8 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 		str msg1 = NULL, msg2 = NULL;
 
 		if (strcmp(f->func->mod, "calc") == 0) {
-			res1 = atom_sub(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmin));
-			res2 = atom_sub(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmax));
+			res1 = atom_sub(sql->sa, atom_copy(sql->sa, lmax), atom_copy(sql->sa, rmin));
+			res2 = atom_sub(sql->sa, atom_copy(sql->sa, lmin), atom_copy(sql->sa, rmax));
 		} else {
 			sql_subtype tp;
 
@@ -203,8 +203,8 @@ sql_mul_propagate_statistics(mvc *sql, sql_exp *e)
 
 	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
 		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
-		atom *res1 = atom_mul(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmax));
-		atom *res2 = atom_mul(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmin));
+		atom *res1 = atom_mul(sql->sa, atom_copy(sql->sa, lmax), atom_copy(sql->sa, rmax));
+		atom *res2 = atom_mul(sql->sa, atom_copy(sql->sa, lmin), atom_copy(sql->sa, rmin));
 
 		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
 			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
@@ -230,8 +230,8 @@ sql_div_propagate_statistics(mvc *sql, sql_exp *e)
 
 	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
 		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
-		atom *res1 = atom_div(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmin));
-		atom *res2 = atom_div(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmax));
+		atom *res1 = atom_div(sql->sa, atom_copy(sql->sa, lmax), atom_copy(sql->sa, rmin));
+		atom *res2 = atom_div(sql->sa, atom_copy(sql->sa, lmin), atom_copy(sql->sa, rmax));
 
 		if (res1 && res2) { /* on div by zero don't propagate */
 			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
@@ -359,13 +359,13 @@ sql_neg_propagate_statistics(mvc *sql, sql_exp *e)
 	atom *lval;
 
 	if ((lval = find_prop_and_get(first->p, PROP_MIN))) {
-		atom *res = atom_dup(sql->sa, lval);
-		if (!atom_neg(res))
+		atom *res = atom_copy(sql->sa, lval);
+		if ((res = atom_neg(sql->sa, res)))
 			set_property(sql, e, PROP_MAX, res);
 	}
 	if ((lval = find_prop_and_get(first->p, PROP_MAX))) {
-		atom *res = atom_dup(sql->sa, lval);
-		if (!atom_neg(res))
+		atom *res = atom_copy(sql->sa, lval);
+		if ((res = atom_neg(sql->sa, res)))
 			set_property(sql, e, PROP_MIN, res);
 	}
 }
@@ -414,16 +414,16 @@ sql_abs_propagate_statistics(mvc *sql, sql_exp *e)
 			set_property(sql, e, PROP_MAX, omax);
 			set_property(sql, e, PROP_MIN, omin);
 		} else if (cmp1 < 0 && cmp2 < 0) {
-			atom *res1 = atom_dup(sql->sa, omin), *res2 = atom_dup(sql->sa, omax);
+			atom *res1 = atom_copy(sql->sa, omin), *res2 = atom_copy(sql->sa, omax);
 
-			if (!atom_absolute(res1) && !atom_absolute(res2)) {
+			if ((res1 = atom_absolute(sql->sa, res1)) && (res2 = atom_absolute(sql->sa, res2))) {
 				set_property(sql, e, PROP_MAX, res1);
 				set_property(sql, e, PROP_MIN, res2);
 			}
 		} else {
-			atom *res1 = atom_dup(sql->sa, omin);
+			atom *res1 = atom_copy(sql->sa, omin);
 
-			if (!atom_absolute(res1)) {
+			if ((res1 = atom_absolute(sql->sa, res1))) {
 				set_property(sql, e, PROP_MAX, atom_cmp(res1, omax) > 0 ? res1 : omax);
 				set_property(sql, e, PROP_MIN, zero);
 			}

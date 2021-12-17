@@ -525,6 +525,7 @@ int yydebug=1;
 
 %type <i_val>
 	_transaction_mode_list
+	any_all_some
 	check_identity
 	datetime_field
 	dealloc_ref
@@ -539,7 +540,6 @@ int yydebug=1;
 	join_type
 	non_second_datetime_field
 	nonzero
-	opt_any_all_some
 	opt_bounds
 	opt_column
 	opt_encrypted
@@ -1425,9 +1425,9 @@ opt_alt_seq_param:
 opt_seq_common_param:
 	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
   |	MINVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
-  |	NO MINVALUE			{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
+  |	NO MINVALUE			{ $$ = _symbol_create_int(SQL_MINVALUE, int_nil); /* Hack: SQL_MINVALUE + int_nil signals NO MINVALUE */ }
   |	MAXVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
-  |	NO MAXVALUE			{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
+  |	NO MAXVALUE			{ $$ = _symbol_create_int(SQL_MAXVALUE, int_nil); /* Hack: SQL_MAXVALUE + int_nil signals NO MAXVALUE */ }
   |	CACHE nonzerolng		{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
   |	CYCLE				{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
   |	NO CYCLE			{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
@@ -3058,6 +3058,7 @@ insert_atom:
 value:
     search_condition
  |  select_no_parens
+ |  with_query
  ;
 
 opt_distinct:
@@ -3579,31 +3580,42 @@ pred_exp:
  |  predicate	 { $$ = $1; }
  ;
 
-opt_any_all_some:
-    		{ $$ = -1; }
- |  ANY		{ $$ = 0; }
+any_all_some:
+    ANY		{ $$ = 0; }
  |  SOME	{ $$ = 0; }
  |  ALL		{ $$ = 1; }
  ;
 
 comparison_predicate:
-    pred_exp COMPARISON opt_any_all_some pred_exp
+    pred_exp COMPARISON pred_exp
 		{ dlist *l = L();
 
 		  append_symbol(l, $1);
 		  append_string(l, $2);
-		  append_symbol(l, $4);
-		  if ($3 > -1)
-		     append_int(l, $3);
+		  append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- |  pred_exp '=' opt_any_all_some pred_exp
+ |  pred_exp '=' pred_exp
 		{ dlist *l = L();
 
 		  append_symbol(l, $1);
 		  append_string(l, sa_strdup(SA, "="));
-		  append_symbol(l, $4);
-		  if ($3 > -1)
-		     append_int(l, $3);
+		  append_symbol(l, $3);
+		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
+ | pred_exp COMPARISON any_all_some '(' value ')'
+		{ dlist *l = L();
+
+		  append_symbol(l, $1);
+		  append_string(l, $2);
+		  append_symbol(l, $5);
+		  append_int(l, $3);
+		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
+ |  pred_exp '=' any_all_some '(' value ')'
+		{ dlist *l = L();
+
+		  append_symbol(l, $1);
+		  append_string(l, sa_strdup(SA, "="));
+		  append_symbol(l, $5);
+		  append_int(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  ;
 
@@ -4289,12 +4301,6 @@ opt_alias_name:
 
 atom:
     literal
-	{ 
-		AtomNode *an = (AtomNode*)$1;
-		atom *a = an->a; 
-		an->a = atom_dup(SA, a); 
-		$$ = $1;
-	}
  ;
 
 qrank:
@@ -4691,7 +4697,7 @@ literal:
 		  }
 
 		  if (err) {
-			sqlformaterror(m, SQLSTATE(22003) "integer value too large or not a number (%s)", $1);
+			sqlformaterror(m, SQLSTATE(22003) "Integer value too large or not a number (%s)", $1);
 			$$ = NULL;
 			YYABORT;
 		  } else {
@@ -4796,7 +4802,7 @@ literal:
 	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
-			sqlformaterror(m, SQLSTATE(22M28) "incorrect blob %s", $2);
+			sqlformaterror(m, SQLSTATE(22M28) "Incorrect blob (%s)", $2);
 			YYABORT;
 		  }
 		}
@@ -4810,55 +4816,56 @@ literal:
 	          if (r && (a = atom_general(SA, &t, $1)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
-			sqlformaterror(m, SQLSTATE(22M28) "incorrect blob %s", $1);
+			sqlformaterror(m, SQLSTATE(22M28) "Incorrect blob (%s)", $1);
 			YYABORT;
 		  }
 		}
  |  aTYPE string
 		{ sql_subtype t;
-		  atom *a= 0;
+		  atom *a = NULL;
 		  int r;
 
-		  $$ = NULL;
-		  r = sql_find_subtype(&t, $1, 0, 0);
-	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
-			$$ = _newAtomNode(a);
-		  if (!$$) {
-			sqlformaterror(m, SQLSTATE(22000) "incorrect %s %s", $1, $2);
+		  if (!(r = sql_find_subtype(&t, $1, 0, 0))) {
+			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
+		  if (!(a = atom_general(SA, &t, $2))) {
+			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
+			YYABORT;
+		  }
+		  $$ = _newAtomNode(a);
 		}
  | type_alias string
 		{ sql_subtype t; 
-		  atom *a = 0;
+		  atom *a = NULL;
 		  int r;
 
-		  $$ = NULL;
-		  r = sql_find_subtype(&t, $1, 0, 0);
-	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
-			$$ = _newAtomNode(a);
-		  if (!$$) {
-			sqlformaterror(m, SQLSTATE(22000) "incorrect %s %s", $1, $2);
+		  if (!(r = sql_find_subtype(&t, $1, 0, 0))) {
+			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
+		  if (!(a = atom_general(SA, &t, $2))) {
+			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
+			YYABORT;
+		  }
+		  $$ = _newAtomNode(a);
 		}
  | ident_or_uident string
 		{
-		  sql_type *t = mvc_bind_type(m, $1);
-		  atom *a;
+		  sql_type *t = NULL;
+		  sql_subtype tpe;
+		  atom *a = NULL;
 
-		  $$ = NULL;
-		  if (t) {
-		  	sql_subtype tpe;
-			sql_init_subtype(&tpe, t, 0, 0);
-			a = atom_general(SA, &tpe, $2);
-			if (a)
-				$$ = _newAtomNode(a);
-		  }
-		  if (!t || !$$) {
-			sqlformaterror(m, SQLSTATE(22000) "type (%s) unknown", $1);
+		  if (!(t = mvc_bind_type(m, $1))) {
+			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
+		  sql_init_subtype(&tpe, t, 0, 0);
+		  if (!(a = atom_general(SA, &tpe, $2))) {
+			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
+			YYABORT;
+		  }
+		  $$ = _newAtomNode(a);
 		}
  |  BOOL_FALSE
 		{ sql_subtype t;
@@ -5215,7 +5222,7 @@ data_type:
 			}
 | GEOMETRY {
 		if (!sql_find_subtype(&$$, "geometry", 0, 0 )) {
-			sqlformaterror(m, "%s", SQLSTATE(22000) "type (geometry) unknown");
+			sqlformaterror(m, "%s", SQLSTATE(22000) "Type (geometry) unknown");
 			$$.type = NULL;
 			YYABORT;
 		}
@@ -5248,7 +5255,7 @@ data_type:
 	}
 | GEOMETRYA {
 		if (!sql_find_subtype(&$$, "geometrya", 0, 0 )) {
-			sqlformaterror(m, "%s", SQLSTATE(22000) "type (geometrya) unknown");
+			sqlformaterror(m, "%s", SQLSTATE(22000) "Type (geometrya) unknown");
 			$$.type = NULL;
 			YYABORT;
 		}

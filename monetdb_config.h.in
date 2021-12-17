@@ -265,15 +265,25 @@
 #define MONETDB5_PASSWDHASH_TOKEN @PASSWORD_BACKEND@
 
 #ifndef _Noreturn
+#ifdef __cplusplus
+#define _Noreturn
+#else
 #cmakedefine _Noreturn @_Noreturn@
 #endif
-#ifndef __cplusplus
+#endif
 /* Does your compiler support `inline' keyword? (C99 feature) */
 #ifndef inline
+#ifdef __cplusplus
+#define inline
+#else
 #cmakedefine inline @inline@
+#endif
 #endif
 /* Does your compiler support `restrict' keyword? (C99 feature) */
 #ifndef restrict
+#ifdef __cplusplus
+#define restrict
+#else
 #cmakedefine restrict @restrict@
 #endif
 #endif
@@ -290,7 +300,7 @@
 #cmakedefine SIZEOF_SHORT @SIZEOF_SHORT@
 #cmakedefine SIZEOF_INT @SIZEOF_INT@
 #cmakedefine SIZEOF_LONG @SIZEOF_LONG@
-#cmakedefine SIZEOF_LONG_INT @SIZEOF_LONG_INT@
+#cmakedefine SIZEOF_LONG_LONG @SIZEOF_LONG_LONG@
 #cmakedefine SIZEOF_DOUBLE @SIZEOF_DOUBLE@
 #cmakedefine SIZEOF_WCHAR_T @SIZEOF_WCHAR_T@
 #define HAVE_LONG_LONG 1	/* for ODBC include files */

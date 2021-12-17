@@ -1,98 +1,98 @@
-query T rowsort
+query I rowsort
 SELECT 5 = 5 as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT NULL = NULL as nul
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT 5 > 5 as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT NULL > NULL as nul
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT 5 IS NULL as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT NULL IS NULL as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 5 IS NOT NULL as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT NULL IS NOT NULL as fals
 ----
-False
+0
 
-query TT rowsort
+query II rowsort
 select 2 < 5 as t1, 2 > 5 as f1
 ----
-True
-False
+1
+0
 
-query TT rowsort
+query II rowsort
 select 2 <= 5 as t1, 2 >= 5 as f1
 ----
-True
-False
+1
+0
 
-query TT rowsort
+query II rowsort
 select 2 = 5 as f1, 2 <> 5 as t1
 ----
-False
-True
+0
+1
 
 statement error
 select 2 != 5 as t1
 
-query T rowsort
+query I rowsort
 select "<"('aa', 'ab') as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select ">"('aa', 'ab') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select "<="('aa', 'ab') as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select ">="('aa', 'ab') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select "="('aa', 'ab') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select "<>"('aa', 'ab') as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select "between"('ab', 'aa', 'ac', false, false, false, false, false) as tru
 ----
-True
+1
 
 statement error
 select "between"('ab', 'aa', 'ac') as tru
@@ -346,86 +346,86 @@ bb2
 statement ok
 drop table if exists t6933
 
-query T rowsort
+query I rowsort
 select isnull('aa') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '%b%', '', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_b%', '', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_b_', '', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_c_', '', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('%b%', 'abc', '', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('_b%', 'abc', '', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('_b_', 'abc', '', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('_c_', 'abc', '', false) as tru
 ----
-True
+1
 
 statement error
 select not_like('abc', '%b%', '%', false) as fals
 
-query T rowsort
+query I rowsort
 select not_like('abc', '%b%c', '%', false) as tru
 ----
-True
+1
 
 statement error
 select not_like('abc', '_b%', '%', false) as fals
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_b%c', '%', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_b_', '%', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_c_', '%', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('abc', '%b%', '_', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_b%', '_', false) as tru
 ----
-True
+1
 
 statement error
 select not_like('abc', '_b_', '_', false) as tru
@@ -433,153 +433,153 @@ select not_like('abc', '_b_', '_', false) as tru
 statement error
 select not_like('abc', '_c_', '_', false) as tru
 
-query T rowsort
+query I rowsort
 select not_like('abc', '%b%', '#', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_b%', '#', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_b_', '#', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_c_', '#', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('ab#c', '%b%', '#', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('ab#c', '_b%', '#', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('ab#c', '_b_', '#', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('ab#c', '_c_', '#', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('abc', '%b#%', '#', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_b#%', '#', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('a_bc', '_#_b_', '#', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_c#_', '#', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('aabbccdd', '%bc\\_d%', '\\', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('aabbccdd', '%bc_d%', '', false) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('aabbccdd', '%bc\\_d%', '\\', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('abc', '%B%', '', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_B%', '', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_B_', '', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('abc', '%B%', '', true) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_B%', '', true) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_B_', '', true) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('abc', '_C_', '', true) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not_like('a_bc', '_#_B_', '#', true) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('aabbccdd', '%bc_d%', '', true) as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not_like('aabbccdd', '%bc\\_d%', '\\', true) as tru
 ----
-True
+1
 
 statement error
 select like('aabbccdd', '%bc_d%', '', false) as tru
 
-query T rowsort
+query I rowsort
 select "like"('aabbccdd', '%bc_d%', '', false) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select "like"('aabbccdd', '%bc_d%', '', true) as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select sql_exists('abc') as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select sql_not_exists('abc') as fals
 ----
-False
+0
 
 query T rowsort
 select coalesce(1, 'b', null)
@@ -712,95 +712,95 @@ select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
 NULL
 
-query T rowsort
+query T nosort
 plan select nullif(null, null)
 ----
-) [ "sys"."nullif"(smallint "NULL", smallint "NULL") ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."nullif"(smallint(16) NULL, smallint(16) NULL) ]
 
-query T rowsort
+query T nosort
 plan select CASE WHEN null = null THEN NULL ELSE null END
 ----
-) [ "sys"."case"(boolean "NULL", smallint "NULL", smallint "NULL") ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."case"(boolean(1) NULL, smallint(16) NULL, smallint(16) NULL) ]
 
-query T rowsort
+query T nosort
 plan select nullif('ac', 'ac')
 ----
-) [ "sys"."nullif"(char(2) "ac", char(2) "ac") ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."nullif"(char(2) "ac", char(2) "ac") ]
 
-query T rowsort
+query T nosort
 plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
 ----
-) [ "sys"."case"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char "NULL", char "ac") ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."case"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char NULL, char "ac") ]
 
-query T rowsort
+query T nosort
 plan select nullif(9, 9)
 ----
-) [ "sys"."nullif"(tinyint "9", tinyint "9") ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."nullif"(tinyint(4) "9", tinyint(4) "9") ]
 
-query T rowsort
+query T nosort
 plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
-) [ "sys"."case"("sys"."="(tinyint "9", tinyint "9") NOT NULL, tinyint "NULL", tinyint "9") ]
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
+) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(8) NULL, tinyint(8) "9") ]
 
-query T rowsort
+query I rowsort
 select 'db' between 'abc' and 'db' as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select 'db' not between 'abc' and 'db' as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not 'db' between 'abc' and 'db' as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select 'db' between SYMMETRIC 'abc' and 'db' as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select 'db' between SYMMETRIC 'db' and 'abc' as tru
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select 'db' not between SYMMETRIC 'abc' and 'db' as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select 'db' not between SYMMETRIC 'db' and 'abc' as fals
 ----
-False
+0
 
 statement error
 select 'a' IS DISTINCT FROM 'b' as tru
 
-query T rowsort
+query I rowsort
 select 'a' IS NULL as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select 'a' IS NOT NULL as tru
 ----
-True
+1
 
 statement error
 select 'a' ISNULL as fals
@@ -825,5 +825,4 @@ select ('a' = 'b') IS UNKNOWN
 
 statement error
 select ('a' = 'b') IS NOT UNKNOWN
-
 

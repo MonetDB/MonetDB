@@ -4,20 +4,6 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
 
-create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();
-create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();
-
--- only system functions until now
-update sys.functions set system = true;
-create view sys.systemfunctions as select id as function_id from sys.functions where system;
-grant select on sys.systemfunctions to public;
-
--- only system tables until now
-update sys._tables set system = true;
-
--- only system schemas until now
-update sys.schemas set system = true;
-
--- correct invalid FK schema ids, set them to schema id 2000 (the "sys" schema)
-UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);
-UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);
+This file is unused.
+The code that previously was in this file is now in sql_scenario.c.
+Please see there.

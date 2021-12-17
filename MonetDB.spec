@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.42.0
+%global version 11.44.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -71,9 +71,6 @@
 %bcond_without fits
 %endif
 
-%{!?__python3: %global __python3 /usr/bin/python3}
-%{!?python3_sitelib: %global python3_sitelib %(%{__python3} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -84,7 +81,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP2/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -98,7 +95,7 @@ BuildRequires: hardlink
 BuildRequires: cmake3 >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
-BuildRequires: /usr/bin/python3
+BuildRequires: python3-devel
 %if %{?rhel:1}%{!?rhel:0}
 # RH 7 (and for readline also 8)
 BuildRequires: bzip2-devel
@@ -527,7 +524,6 @@ exit 0
 %{_libdir}/monetdb5/lib_capi.so
 %endif
 %{_libdir}/monetdb5/lib_generator.so
-%{_libdir}/monetdb5/lib_udf.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
@@ -683,7 +679,6 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
-Requires: /usr/bin/python3
 BuildArch: noarch
 
 %description testing-python
@@ -828,10 +823,9 @@ install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
-rm -f %{buildroot}%{_libdir}/monetdb5/run_*.mal
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_run_*.so
-rm -f %{buildroot}%{_libdir}/monetdb5/microbenchmark.mal
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
 rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
 
@@ -842,7 +836,111 @@ else
     /usr/bin/hardlink -cv %{buildroot}%{_datadir}/selinux
 fi
 
+# update shebang lines for Python scripts
+%if %{?py3_shebang_fix:1}%{!?py3_shebang_fix:0}
+    # Fedora has py3_shebang_fix macro
+    %{py3_shebang_fix} %{buildroot}%{_bindir}/*.py
+%else
+    # EPEL does not, but we can use the script directly
+    /usr/bin/pathfix.py -pni "%{__python3} -s" %{buildroot}%{_bindir}/*.py
+%endif
+
 %changelog
+* Mon Dec 13 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.13-20211213
+- Rebuilt.
+- GH#7163: Multiple sql.mvc() invocations in the same query
+- GH#7167: sys.shutdown() problems
+- GH#7184: Insert into query blocks all other queries
+- GH#7185: GROUPING SETS on groups with aliases provided in the SELECT
+  returns empty result
+- GH#7186: data files created with COPY SELECT .. INTO 'file.csv' fail to
+  be loaded using COPY INTO .. FROM 'file.csv' when double quoted string
+  data contains the field values delimiter character
+- GH#7191: [MonetDBe] monetdbe_cleanup_statement() with bound NULLs on
+  variable-sized types bug
+- GH#7196: BATproject2: does not match always
+- GH#7198: Suboptimal query plan for query containing JSON access filter
+  and two negative string comparisons
+- GH#7200: PRIMARY KEY unique constraint is violated with concurrent
+  inserts
+- GH#7206: Python UDF fails when returning an empty table as a dictionary
+
+* Mon Dec 13 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.13-20211213
+- clients: Dumping the database now also dumps the read-only and insert-only
+  states of tables.
+
+* Mon Dec 13 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.13-20211213
+- gdk: Sometimes when the server was restarted, it wouldn't start anymore due
+  to an error from BBPcheckbats.  We finally found and fixed a (hopefully
+  "the") cause of this problem.
+
+* Thu Oct 28 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.13-20211213
+- sql: Number parsing for SQL was fixed.  If a number was immediately followed
+  by letters (i.e. without a space), the number was accepted and the
+  alphanumeric string starting with the letter was interpreted as an alias
+  (if aliases were allowed in that position).
+
+* Thu Sep 30 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.11-20210930
+- Rebuilt.
+
+* Tue Sep 28 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.9-20210928
+- Rebuilt.
+
+* Mon Sep 27 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- Rebuilt.
+- GH#7140: SQL Query Plan Non Optimal with View
+- GH#7162: Extend sys.var_values table
+- GH#7165: `JOINIDX: missing '.'` when running distributed join query on
+  merged remote tables
+- GH#7172: Unexpected query result with merge tables
+- GH#7173: If truncate is in transaction then after restart of MonetDB the
+  table is empty
+- GH#7178: Remote Table Throws Error - createExceptionInternal: !ERROR:
+  SQLException:RAstatement2:42000!The number of projections don't match
+  between the generated plan and the expected one: 1 != 1200
+
+* Wed Sep 22 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- gdk: Some deadlock and race condition issues were fixed.
+- gdk: Handling of the list of free bats has been improved, leading to less
+  thread contention.
+- gdk: A problem was fixed where the server wouldn't start with a message from
+  BBPcheckbats about files being too small.  The issue was not that the
+  file was too small, but that BBPcheckbats was looking at the wrong file.
+- gdk: An issue was fixed where a "short read" error was produced when memory
+  was getting tight.
+
+* Wed Sep 22 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- sql: If the server has been idle for a while with no active clients, the
+  write-ahead log is now rotated.
+- sql: A problem was fixed where files belonging to bats that had been deleted
+  internally were not cleaned up, leading to a growing database (dbfarm)
+  directory.
+- sql: A leak was fixed where extra bats were created but never cleaned up,
+  each taking up several kilobytes of memory.
+
+* Tue Aug 17 2021 Ying Zhang <y.zhang@cwi.nl> - 11.41.7-20210927
+- sql: [This feature was already released in Jul2021 (11.41.5), but the ChangeLog was missing]
+  Grant indirect privileges.  With "GRANT SELECT ON <my_view> TO
+  <another_user>"  and "GRANT EXECUTE ON FUNCTION <my_func> TO
+  <another_user>", one can grant access to "my_view" and "my_func"
+  to another user who does not have access to the underlying database
+  objects (e.g. tables, views) used in "my_view" and "my_func".  The
+  grantee will only be able to access data revealed by "my_view" or
+  conduct operations provided by "my_func".
+
+* Mon Aug 16 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- sql: Improved error reporting in COPY INTO by giving the line number
+  (starting with one) for the row in which an error was found.  In
+  particular, the sys.rejects() table now lists the line number of the
+  CSV file on which the record started in which an error was found.
+
+* Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- gdk: When appending to a string bat, we made an optimization where the string
+  heap was sometimes copied completely to avoid having to insert strings
+  individually.  This copying was still done too eagerly, so now the
+  string heap is copied less frequently.  In particular, when appending
+  to an empty bat, the string heap is now not always copied whole.
+
 * Tue Aug 03 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.5-20210803
 - Rebuilt.
 - GH#7161: fix priority

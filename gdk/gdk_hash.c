@@ -474,6 +474,10 @@ BATcheckhash(BAT *b)
 				strconcat_len(h->heapbckt.filename,
 					      sizeof(h->heapbckt.filename),
 					      nme, ".thashb", NULL);
+				h->heaplink.storage = STORE_INVALID;
+				h->heaplink.newstorage = STORE_INVALID;
+				h->heapbckt.storage = STORE_INVALID;
+				h->heapbckt.newstorage = STORE_INVALID;
 
 				/* check whether a persisted hash can be found */
 				if ((fd = GDKfdlocate(h->heapbckt.farmid, nme, "rb+", "thashb")) >= 0) {
@@ -583,10 +587,9 @@ BATcheckhash(BAT *b)
 	return ret;
 }
 
-static gdk_return
+static void
 BAThashsave_intern(BAT *b, bool dosync)
 {
-	gdk_return rc = GDK_SUCCEED;
 	Hash *h;
 	lng t0 = 0;
 
@@ -600,7 +603,6 @@ BAThashsave_intern(BAT *b, bool dosync)
 		dosync = false;
 #endif
 
-		rc = GDK_FAIL;
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
 		if (!b->theap->dirty &&
@@ -609,20 +611,20 @@ BAThashsave_intern(BAT *b, bool dosync)
 		    HEAPsave(hp, hp->filename, NULL, dosync, hp->free) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
 			hp->dirty = false;
-			rc = HASHfix(h, true, dosync);
+			gdk_return rc = HASHfix(h, true, dosync);
 			TRC_DEBUG(ACCELERATOR,
 				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
+		GDKclrerr();
 	}
-	return rc;
 }
 
-gdk_return
+void
 BAThashsave(BAT *b, bool dosync)
 {
 	Hash *h = b->thash;
 	if (h == NULL)
-		return GDK_SUCCEED;
+		return;
 	((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
 	((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
 	((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
@@ -630,7 +632,7 @@ BAThashsave(BAT *b, bool dosync)
 	((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
 	((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
 	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
-	return BAThashsave_intern(b, dosync);
+	BAThashsave_intern(b, dosync);
 }
 
 #ifdef PERSISTENTHASH
@@ -739,7 +741,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	Hash *h = NULL;
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
-	const ValRecord *prop;
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	lng timeoffset = 0;
@@ -809,18 +810,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
- 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_NUNIQUE)) != NULL) {
-		assert(prop->vtype == TYPE_oid);
-		mask = prop->val.oval * 8 / 7;
- 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_HASH_BUCKETS)) != NULL) {
-		assert(prop->vtype == TYPE_oid);
-		mask = prop->val.oval;
-		maxmask = HASHmask(ci->ncand);
-		if (mask > maxmask)
-			mask = maxmask;
- 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_UNIQUE_ESTIMATE)) != NULL) {
-		assert(prop->vtype == TYPE_dbl);
-		mask = (BUN) (prop->val.dval * 8 / 7);
+ 	} else if (!hascand && bi.unique_est != 0) {
+		mask = (BUN) (bi.unique_est * 1.15); /* about 8/7 */
 	} else {
 		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
 		 * if ci->ncand large enough, HASHmask(ci->ncand)/256; if there
@@ -983,15 +974,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		break;
 	}
 	bat_iterator_end(&bi);
-	if (!hascand) {
-		/* don't keep these properties while we have a hash
-		 * structure: they get added again when the hash is
-		 * freed */
-		MT_lock_set(&b->theaplock);
-		BATrmprop_nolock(b, GDK_HASH_BUCKETS);
-		BATrmprop_nolock(b, GDK_NUNIQUE);
-		MT_lock_unset(&b->theaplock);
-	}
 	h->heapbckt.parentid = b->batCacheid;
 	h->heaplink.parentid = b->batCacheid;
 	/* if the number of unique values is equal to the bat count,
@@ -1008,6 +990,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	return h;
 
   bailout:
+	bat_iterator_end(&bi);
 	GDKfree(h);
 	return NULL;
 }
@@ -1015,7 +998,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 gdk_return
 BAThash(BAT *b)
 {
-	assert(b->batCacheid > 0);
 	if (ATOMstorage(b->ttype) == TYPE_msk) {
 		GDKerror("No hash on msk type bats\n");
 		return GDK_FAIL;
@@ -1123,21 +1105,25 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	if (h == (Hash *) 1) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	assert(i * h->width == h->heaplink.free);
 	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	if (HASHfix(h, false, true) != GDK_SUCCEED) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	if (HASHwidth(i + 1) > h->width &&
 	     HASHupgradehashheap(b) != GDK_SUCCEED) {
+		GDKclrerr();
 		return;
 	}
 	if ((ATOMsize(b->ttype) > 2 &&
@@ -1150,6 +1136,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		HEAPfree(&h->heapbckt, true);
 		HEAPfree(&h->heaplink, true);
 		GDKfree(h);
+		GDKclrerr();
 		return;
 	}
 	h->Link = h->heaplink.base;
@@ -1192,17 +1179,20 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 	if (h == (Hash *) 1) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
 	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	if (HASHfix(h, false, true) != GDK_SUCCEED) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	BUN c = HASHprobe(h, v);
@@ -1273,17 +1263,20 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 	if (h == (Hash *) 1) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
 	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	if (HASHfix(h, false, true) != GDK_SUCCEED) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	BUN c = HASHprobe(h, v);

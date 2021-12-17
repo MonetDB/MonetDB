@@ -21,3 +21,6 @@ c.execute('select * from tables')
 results = c.fetchall()
 x.commit()
 print(results)
+
+c.close()
+x.close()

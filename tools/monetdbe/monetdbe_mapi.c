@@ -295,9 +295,8 @@ monetdbe_mapi_dump_database(monetdbe_database dbhdl, const char *filename)
 		}
 		close_stream(fd);
 	} else {
-		return createException(MAL, "embedded.monetdbe_dump_database", "Unable to open file %s", filename);
+		return createException(MAL, "embedded.monetdbe_dump_database", "Unable to open file %s: %s", filename, mnstr_peek_error(NULL));
 	}
-
 	return msg;
 }
 
@@ -316,7 +315,7 @@ monetdbe_mapi_dump_table(monetdbe_database dbhdl, const char *sname, const char 
 		}
 		close_stream(fd);
 	} else {
-		return createException(MAL, "embedded.monetdbe_dump_table", "Unable to open file %s", filename);
+		return createException(MAL, "embedded.monetdbe_dump_table", "Unable to open file %s: %s", filename, mnstr_peek_error(NULL));
 	}
 	return msg;
 }

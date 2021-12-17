@@ -16,12 +16,15 @@
 #include "stream.h"
 #include "matomic.h"
 
-#define tr_none		0
-#define tr_readonly	1
-#define tr_writable	2
-#define tr_snapshot 4
-#define tr_serializable 8
-#define tr_append 	16
+#define sql_shared_module_name "sql"
+#define sql_private_module_name "user"
+
+#define tr_none		1
+#define tr_readonly	2
+#define tr_writable	4
+#define tr_append 	8
+#define tr_snapshot 16
+#define tr_serializable 32
 
 #define ACT_NO_ACTION 0
 #define ACT_CASCADE 1
@@ -72,11 +75,6 @@ typedef enum sql_dependency {
 #define ROLE_SYSADMIN 2
 #define USER_MONETDB  3
 
-#define ISO_READ_UNCOMMITED 1
-#define ISO_READ_COMMITED   2
-#define ISO_READ_REPEAT	    3
-#define ISO_SERIALIZABLE    4
-
 #define SCALE_NONE	0
 #define SCALE_FIX	1	/* many numerical functions require equal
                            scales/precision for all their inputs */
@@ -92,6 +90,7 @@ typedef enum sql_dependency {
 #define RD_UPD_ID 2
 #define RD_UPD_VAL 3
 #define QUICK  4
+#define RD_EXT 5
 
 /* the following list of macros are used by rel_rankop function */
 #define UNBOUNDED_PRECEDING_BOUND 0
@@ -480,16 +479,16 @@ typedef enum sql_flang {
 typedef struct sql_func {
 	sql_base base;
 
-	char *imp;
 	char *mod;
+	char *imp;
+		/*
+		Backend implementation function after it gets instantiated.
+		During instantiation 'imp' will be set, but look for the 'instantiated' value to check if it's done or not.
+		Note that functions other than SQL and MAL, don't require instantiation and 'imp' is always set.
+		*/
 	sql_ftype type;
 	list *ops;	/* param list */
 	list *res;	/* list of results */
-	int nr;
-	int sql;	/* 0 native implementation
-			   1 sql
-			   2 sql instantiated proc
-			*/
 	sql_flang lang;
 	char *query;	/* sql code */
 	bit semantics; /*When set to true, function incorporates some kind of null semantics.*/
@@ -497,6 +496,7 @@ typedef struct sql_func {
 	bit varres;	/* variable output result */
 	bit vararg;	/* variable input arguments */
 	bit system;	/* system function */
+	bit instantiated; /* if the function is instantiated */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing
@@ -511,7 +511,6 @@ typedef struct sql_func {
 	 		*/
 	sql_schema *s;
 	sql_allocator *sa;
-	void *rel;	/* implementation */
 } sql_func;
 
 typedef struct sql_subfunc {
@@ -575,7 +574,7 @@ typedef struct sql_ukey {	/* pkey, ukey */
 
 typedef struct sql_fkey {	/* fkey */
 	sql_key k;
-	/* no action, restrict (default), cascade, set null, set default */
+	/* 0=no action, 1=cascade, 2=restrict (default setting), 3=set null, 4=set default */
 	int on_delete;
 	int on_update;
 	sqlid rkey;
@@ -615,13 +614,12 @@ typedef struct sql_column {
 	int colnr;
 	bit null;
 	char *def;
-	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
+	char unique; 		/* 0 NOT UNIQUE, 1 SUB_UNIQUE, 2 UNIQUE */
 	int drop_action;	/* only used for alter statements */
 	char *storage_type;
-	int sorted;		/* for DECLARED (dupped tables) we keep order info */
 	size_t dcount;
-	char *min;
-	char *max;
+	void *min;
+	void *max;
 
 	struct sql_table *t;
 	ATOMIC_PTR_TYPE data;
@@ -798,6 +796,7 @@ typedef struct {
 } sql_emit_col;
 
 extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
+extern bool is_column_unique(sql_column *c);
 sql_export sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 extern node *members_find_child_id(list *l, sqlid id);
 
@@ -862,7 +861,8 @@ typedef struct atom {
 } atom;
 
 /* duplicate atom */
-extern atom *atom_dup(sql_allocator *sa, atom *a);
+extern ValPtr SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s);
+extern atom *atom_copy(sql_allocator *sa, atom *a);
 
 typedef struct pl {
 	sql_column *c;

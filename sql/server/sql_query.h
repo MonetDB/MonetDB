@@ -33,7 +33,7 @@ extern sql_rel *query_pop_outer(sql_query *q);
 extern sql_rel *query_fetch_outer(sql_query *q, int i);
 extern int query_fetch_outer_state(sql_query *q, int i);
 extern void query_update_outer(sql_query *q, sql_rel *r, int i);
-extern int query_has_outer(sql_query *q); /* returns number of outer relations */
+extern unsigned int query_has_outer(sql_query *q); /* returns number of outer relations */
 
 extern int query_outer_used_exp(sql_query *q, int i, sql_exp *e, int f);
 extern void query_outer_pop_last_used(sql_query *q, int i);

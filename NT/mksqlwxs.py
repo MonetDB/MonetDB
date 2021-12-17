@@ -52,7 +52,9 @@ def main():
         if vsdir is not None:
             vcdir = os.path.join(vsdir, 'VC')
     if vcdir is None:
-        if os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
+        if os.path.exists(r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'):
+            vcdir = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'
+        elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
             vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'
         elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'):
             vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'
@@ -191,9 +193,9 @@ def main():
     print(r'            <Directory Id="lib" Name="lib">')
     print(r'              <Directory Id="monetdb5" Name="monetdb5">')
     id = comp(features, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x) and ('run_' not in x) and ('microbenchmark' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x) and ('run_' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(debug, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x) and ('run_' not in x) and ('microbenchmark' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x) and ('run_' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(geom, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(pyapi3, id, 16,

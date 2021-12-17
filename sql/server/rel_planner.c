@@ -196,7 +196,7 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 }
 
 static int
-exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, char **min, char **max)
+exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, void **min, void **max)
 {
 	switch(e->type) {
 	case e_column: {
@@ -248,15 +248,15 @@ exp_getatom( mvc *sql, sql_exp *e, atom *m)
 }
 
 static dbl
-exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, char *min, char *max)
+exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, void *min, void *max)
 {
 	atom *amin, *amax, *emin, *emax;
 	dbl sel = 1.0;
 	sql_subtype *t = exp_subtype(e->l);
 
 	(void)r;
-	emin = amin = atom_general(sql->sa, t, min);
-	emax = amax = atom_general(sql->sa, t, max);
+	emin = amin = atom_general_ptr(sql->sa, t, min);
+	emax = amax = atom_general_ptr(sql->sa, t, max);
 
 	if (e->f || e->flag == cmp_gt || e->flag == cmp_gte)
 		emin = exp_getatom(sql, e->r, amin);
@@ -305,7 +305,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		case cmp_gte:
 		case cmp_lt:
 		case cmp_lte: {
-			char *min, *max;
+			void *min, *max;
 			if (exp_getranges( sql, r, e->l, &min, &max )) {
 				sel = (dbl)exp_getrange_sel( sql, r, e, min, max);
 			} else {

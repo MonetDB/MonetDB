@@ -16,12 +16,11 @@
 
 #define isCandidateList(M,P,I) ((M)->var[getArg(P,I)].id[0]== 'C')
 str
-OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, slimit, actions = 0;
-	lng usec = GDKusec();
-	char buf[256];
 	str msg = MAL_SUCCEED;
+	InstrPtr p;
 
 	(void) cntxt;
 	(void) stk;
@@ -160,10 +159,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		// if (!msg)
 		// 	msg = chkDeclarations(mb);
 	}
-	usec= GDKusec() - usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec", "postfix", actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }
