@@ -512,7 +512,7 @@ DICTrenumber_intern( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 		oid *restrict op = Tloc(nrc, 0);
 		unsigned char *lp = Tloc(lc, 0);
 		if (BATtvoid(rc)) {
-			oid seq = rc->tseqbase + rc->hseqbase, j = 0;
+			oid seq = rc->tseqbase, j = 0;
 			for(BUN i = 0; i<offcnt; i++) {
 				if (lp[j] > i) {
 					op[i] = offcnt;
