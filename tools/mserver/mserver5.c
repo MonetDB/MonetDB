@@ -91,6 +91,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
 	fprintf(stderr, "    --readonly                Safeguard database\n");
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
+	fprintf(stderr, "    --loadmodule=<module>     Load extra <module> from lib/monetdb5\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 

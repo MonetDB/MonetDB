@@ -69,7 +69,3 @@ install(TARGETS
   microbenchmark
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   COMPONENT microbenchmark)
-install(FILES
-  microbenchmark.mal
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
-  COMPONENT microbenchmark)

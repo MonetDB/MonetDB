@@ -45,7 +45,9 @@ def main():
         if vsdir is not None:
             vcdir = os.path.join(vsdir, 'VC')
     if vcdir is None:
-        if os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
+        if os.path.exists(r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'):
+            vcdir = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'
+        elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
             vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'
         elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'):
             vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'

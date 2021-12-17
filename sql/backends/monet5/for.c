@@ -92,6 +92,7 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 	char buf[64];
 	int tt = b->ttype;
 	ptr mn = NULL, mx = NULL;
+	BUN cnt = BATcount(b);
 
 	if (
 #ifdef HAVE_HGE
@@ -99,6 +100,8 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 #endif
 			tt != TYPE_lng && tt != TYPE_int)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: invalid column type");
+	if (cnt == 0)
+		throw(SQL, "for.compress", SQLSTATE(42000) "for compress: cannot compute range of values on empty columns");
 
 	/* For now we only handle hge, lng, and int -> sht and bte */
 	if (!(mn = BATmin(b, NULL)))
@@ -108,12 +111,15 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		throw(SQL, "for.compress", GDK_EXCEPTION);
 	}
 
-	BUN cnt = BATcount(b);
 	if (tt == TYPE_lng) {
 		lng min_val = *(lng*)mn;
 		lng max_val = *(lng*)mx;
+
 		GDKfree(mn);
 		GDKfree(mx);
+		/* defensive line, if there are 'holes' on b, 'for' compression cannot be done */
+		if (is_lng_nil(min_val) || is_lng_nil(max_val))
+			throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: for 'for' compression column's cannot have NULL's");
 		if ((max_val-min_val) > GDK_sht_max)
 			throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: too large value spread for 'for' compression");
 		if ((max_val-min_val) < GDK_bte_max/2) {

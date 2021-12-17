@@ -823,9 +823,7 @@ install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
-rm -f %{buildroot}%{_libdir}/monetdb5/run_*.mal
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_run_*.so
-rm -f %{buildroot}%{_libdir}/monetdb5/microbenchmark.mal
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh

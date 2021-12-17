@@ -2,7 +2,8 @@
 # leftovers from other tests
 comment-dump
 comment-on
-comment-auth
+comment-auth-1
+USER=user_a&PASSWD=user_a?comment-auth-2
 
 bincopycollist-prepare
 bincopycollist
@@ -79,7 +80,8 @@ sessioncontrol
 add_column_with_seq
 
 zones
-zones2
+zones-1
+zones-2
 coalesce
 round
 rank
@@ -91,7 +93,6 @@ order_by_complex_exp
 
 setoptimizer
 string
-#NOT_WIN32?crashme   bug #1825
 50ways
 load_with_offset
 copy_into

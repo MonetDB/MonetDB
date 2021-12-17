@@ -1098,7 +1098,7 @@ mvc_create_key_done(mvc *m, sql_key *k)
 	int res = LOG_OK;
 
 	if (k->t->persistence == SQL_DECLARED_TABLE)
-		key_create_done(m->store, m->sa, k);
+		key_create_done(m->session->tr, m->sa, k);
 	else
 		res = sql_trans_key_done(m->session->tr, k);
 	return res;
@@ -1186,7 +1186,7 @@ mvc_create_idx_done(mvc *m, sql_idx *i)
 	int res = LOG_OK;
 
 	(void) m;
-	(void) create_sql_idx_done(i);
+	(void) create_sql_idx_done(m->session->tr, i);
 	return res;
 }
 

@@ -163,45 +163,6 @@ static struct PIPELINES {
 	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},
 /*
- * Optimistic concurreny control in general leads to more transaction failures
- * in an OLTP setting. The partial solution provided is to give out
- * advisory locks and delay updates until they are released or timeout.
- */
-	{"oltp_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
-	 "optimizer.pushselect();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.bincopyfrom();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.matpack();"
-	 "optimizer.reorder();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.candidates();"
-	 //"optimizer.mask();"
-	 "optimizer.deadcode();"
-	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.oltp();"
-	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-/*
  * Volcano style execution produces a sequence of blocks from the source relation
  */
 	{"volcano_pipe",

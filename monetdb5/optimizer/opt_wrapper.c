@@ -38,7 +38,6 @@
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
-#include "opt_oltp.h"
 #include "opt_postfix.h"
 #include "opt_mask.h"
 #include "opt_for.h"
@@ -91,7 +90,6 @@ struct{
 	{"minimalfast", &OPTminimalfastImplementation,0,0},
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"multiplex", &OPTmultiplexImplementation,0,0},
-	{"oltp", &OPToltpImplementation,0,0},
 	{"postfix", &OPTpostfixImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},

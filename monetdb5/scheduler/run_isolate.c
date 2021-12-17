@@ -36,13 +36,7 @@
 #include "mal_client.h"
 #include "mal_exception.h"
 
-#ifndef WIN32
-#define __declspec(x)
-#endif
-
-extern __declspec(dllexport) str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
-str
+static str
 RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
@@ -51,3 +45,16 @@ RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	removeInstruction(mb, p);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func run_isolate_init_funcs[] = {
+ pattern("run_isolate", "isolation", RUNisolation, false, "Run a private copy of the MAL program", args(1,1, arg("",void))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_run_isolate_mal)
+{ mal_module("run_isolate", NULL, run_isolate_init_funcs); }

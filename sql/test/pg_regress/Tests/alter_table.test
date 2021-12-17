@@ -1198,7 +1198,7 @@ statement error
 analyze atacc1("........pg.dropped.1........")
 
 statement ok
-call analyze(0, 0, 'sys', 'atacc1')
+analyze sys.atacc1
 
 statement error
 alter table atacc1 alter a set storage plain

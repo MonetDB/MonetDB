@@ -203,10 +203,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 	// If the first input argument is of type lng, this is a cardinality-only bulk operation.
 	int has_card_arg = 0;
-	lng card; // cardinality of non-bat inputs
+	BUN card; // cardinality of non-bat inputs
 	if (getArgType(mb, pci, pci->retc) == TYPE_lng) {
 		has_card_arg=1;
-		card = *getArgReference_lng(stk, pci, pci->retc);
+		card = (BUN) *getArgReference_lng(stk, pci, pci->retc);
 	}
 	else {
 		has_card_arg=0;

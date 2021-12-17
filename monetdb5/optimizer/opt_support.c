@@ -445,8 +445,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 
 	if ( getModuleId(p) == sqlcatalogRef)
 		return TRUE;
-	if ( getModuleId(p) == oltpRef)
-		return TRUE;
 	if ( getModuleId(p) == wlrRef)
 		return TRUE;
 	if ( getModuleId(p) == wlcRef)
@@ -674,4 +672,3 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== mirrorRef
 			));
 }
-

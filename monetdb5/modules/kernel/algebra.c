@@ -992,14 +992,12 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 	lng result1 = 0;
 	if (b->ttype == TYPE_msk || mask_cand(b)) {
 		BATsum(&result1, TYPE_lng, b, s, *ignore_nils, false, false, false);
+	} else if (*ignore_nils) {
+		result1 = (lng) BATcount_no_nil(b, s);
 	} else {
-        if (*ignore_nils) {
-			result1 = (lng) BATcount_no_nil(b, s);
-        } else {
-			struct canditer ci;
-			result1 = (lng) canditer_init(&ci, b, s);
-        }
-    }
+		struct canditer ci;
+		result1 = (lng) canditer_init(&ci, b, s);
+	}
 	if (is_lng_nil(*result))
 		*result = result1;
 	else if (!is_lng_nil(result1))

@@ -208,7 +208,6 @@ mal_export  const char *not_uniqueRef;
 mal_export  const char *nth_valueRef;
 mal_export  const char *ntileRef;
 mal_export  const char *oidRef;
-mal_export  const char *oltpRef;
 mal_export  const char *openRef;
 mal_export  const char *optimizerRef;
 mal_export  const char *orRef;

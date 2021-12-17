@@ -378,7 +378,7 @@ is_subtype(sql_subtype *sub, sql_subtype *super)
 	if (super->digits > 0 && sub->digits > super->digits)
 		return 0;
 	/* while binding a function, 'char' types match each other */
-	if (super->digits == 0 && 
+	if (super->digits == 0 &&
 		((super->type->eclass == EC_STRING && EC_VARCHAR(sub->type->eclass)) ||
 		 (super->type->eclass == EC_CHAR && sub->type->eclass == EC_CHAR)))
 		return 1;
@@ -1439,7 +1439,6 @@ sqltypeinit( sql_allocator *sa)
 	for (t = strings; t < numerical; t++) {
 		sql_create_func(sa, "next_value_for", "sql", "next_value", TRUE, SCALE_NONE, 0, LNG, 2, *t, *t);
 		sql_create_func(sa, "get_value_for", "sql", "get_value", TRUE, SCALE_NONE, 0, LNG, 2, *t, *t);
-		sql_create_func(sa, "peak_next_value_for", "sql", "peak_next_value", TRUE, SCALE_NONE, 0, LNG, 2, *t, *t);
 		sql_create_func(sa, "restart", "sql", "restart", TRUE, SCALE_NONE, 0, LNG, 3, *t, *t, LNG);
 
 		sql_create_func(sa, "index", "sql", "index", TRUE, SCALE_NONE, 0, BTE, 2, *t, BIT);

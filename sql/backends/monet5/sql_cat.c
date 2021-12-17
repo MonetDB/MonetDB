@@ -491,7 +491,6 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 {
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	str msg = MAL_SUCCEED;
 
 	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
@@ -514,8 +513,6 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 			default:
 				break;
 		}
-		if (access == 0 && (msg = sql_drop_statistics(sql, t)))
-			return msg;
 	}
 	return MAL_SUCCEED;
 }

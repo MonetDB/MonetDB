@@ -53,7 +53,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	def = 0;
 
 	if(query) // nothing to log
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	// We use a fake collection of objects to speed up the checking later.
 

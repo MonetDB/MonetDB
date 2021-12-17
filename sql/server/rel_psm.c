@@ -1405,29 +1405,16 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 }
 
 static sql_rel *
-psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, symbol *sample, int minmax )
+psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 {
 	mvc *sql = query->sql;
-	exp_kind ek = {type_value, card_value, FALSE};
-	sql_exp *sample_exp = NULL, *call, *mm_exp = NULL;
 	const char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
-	list *tl = sa_list(sql->sa);
-	list *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
+	list *tl = sa_list(sql->sa), *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
+	sql_subtype tpe;
 
-	append(exps, mm_exp = exp_atom_int(sql->sa, minmax));
-	append(tl, exp_subtype(mm_exp));
-	if (sample) {
-		sql_rel *rel = NULL;
-		sample_exp = rel_value_exp(query, &rel, sample, sql_sel | sql_psm, ek);
-		psm_zero_or_one(sample_exp);
-		if (!sample_exp || !(sample_exp = exp_check_type(sql, sql_bind_localtype("lng"), NULL, sample_exp, type_cast)))
-			return NULL;
-	} else {
-		sample_exp = exp_atom_lng(sql->sa, 0);
-	}
-	append(exps, sample_exp);
-	append(tl, exp_subtype(sample_exp));
+	if (!sql_find_subtype(&tpe, "varchar", 1024, 0))
+		return sql_error(sql, 02, SQLSTATE(HY013) "varchar type missing?");
 
 	if (sname && tname) {
 		sql_table *t = NULL;
@@ -1438,41 +1425,43 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 			return sql_error(sql, 02, SQLSTATE(42000) "Cannot analyze a declared table");
 		sname = t->s->base.name;
 	}
-	/* call analyze( [schema, [ table ]], opt_sample_size, opt_minmax ) */
+	/* call analyze( [schema, [ table ]] ) */
 	if (sname) {
-		sql_exp *sname_exp = exp_atom_clob(sql->sa, sname);
+		sql_exp *sname_exp = exp_atom_str(sql->sa, sname, &tpe);
 
-		append(exps, sname_exp);
-		append(tl, exp_subtype(sname_exp));
+		list_append(exps, sname_exp);
+		list_append(tl, exp_subtype(sname_exp));
 	}
 	if (tname) {
-		sql_exp *tname_exp = exp_atom_clob(sql->sa, tname);
+		sql_exp *tname_exp = exp_atom_str(sql->sa, tname, &tpe);
 
-		append(exps, tname_exp);
-		append(tl, exp_subtype(tname_exp));
+		list_append(exps, tname_exp);
+		list_append(tl, exp_subtype(tname_exp));
 
 		if (columns)
-			append(tl, exp_subtype(tname_exp));
+			list_append(tl, exp_subtype(tname_exp));
 	}
 	if (!columns) {
-		if (!(f = sql_bind_func_(sql, "sys", analyzeType, tl, F_PROC)))
+		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
-		call = exp_op(sql->sa, exps, f);
-		append(analyze_calls, call);
+		if (!execute_priv(sql, f->func))
+			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
+		list_append(analyze_calls, exp_op(sql->sa, exps, f));
 	} else {
 		if (!sname || !tname)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze schema or table name missing");
-		if (!(f = sql_bind_func_(sql, "sys", analyzeType, tl, F_PROC)))
+		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
+		if (!execute_priv(sql, f->func))
+			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
 		for(dnode *n = columns->h; n; n = n->next) {
 			const char *cname = n->data.sval;
 			list *nexps = list_dup(exps, NULL);
-			sql_exp *cname_exp = exp_atom_clob(sql->sa, cname);
+			sql_exp *cname_exp = exp_atom_str(sql->sa, cname, &tpe);
 
-			append(nexps, cname_exp);
+			list_append(nexps, cname_exp);
 			/* call analyze( opt_minmax, opt_sample_size, sname, tname, cname) */
-			call = exp_op(sql->sa, nexps, f);
-			append(analyze_calls, call);
+			list_append(analyze_calls, exp_op(sql->sa, nexps, f));
 		}
 	}
 	return rel_psm_block(sql->sa, analyze_calls);
@@ -1585,7 +1574,8 @@ rel_psm(sql_query *query, symbol *s)
 	case SQL_ANALYZE: {
 		dlist *l = s->data.lval;
 
-		ret = psm_analyze(query, "analyze", l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */, l->h->next->next->data.sym /* opt_sample_size */, l->h->next->next->next->data.i_val);
+		/* Jan2022 update: The 'sample' and 'minmax' parameters are now ignored because they are no longer used in the backend */
+		ret = psm_analyze(query, l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */);
 		sql->type = Q_UPDATE;
 	} 	break;
 	default:
