@@ -658,6 +658,45 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t0" ("c0" INET,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"))
+
+statement ok
+CREATE TABLE "t1" ("c0" INET,CONSTRAINT "con2" UNIQUE ("c0"))
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES ('25.170.105.65/11'),('50.132.219.7/25'),('83.196.168.47'),('201.118.197.112/24')
+
+statement ok
+create view v1(vc0) as (select blob 'b0' from t1, t0)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','t1','c0')
+
+statement ok rowcount 0
+UPDATE t1 SET c0 = least(INET '110.84.240.170', t1.c0) FROM v1 WHERE (0.4) IN (2, 0.8)
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP VIEW v1
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
 DROP ALL PROCEDURE "sys"."dict_compress"
 
 statement ok
