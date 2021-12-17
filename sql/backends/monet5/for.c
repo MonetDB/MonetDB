@@ -302,7 +302,7 @@ FORprepare4append(BAT **noffsets, BAT *b, lng minval, int tt)
 
 		GDKfree(mn);
 		GDKfree(mx);
-		if (min_val < minval || max_val < minval || (max_val - minval) > maxcnt)
+		if (min_val < minval || max_val < minval || (max_val - minval) > maxcnt || is_lng_nil(min_val) || is_lng_nil(max_val))
 			return 0; /* decompress */
 
 		*noffsets = FORcompress_(b, minval, max_val, TRANSIENT);
@@ -314,10 +314,40 @@ int
 FORprepare4append_vals(void **noffsets, void *vals, BUN cnt, lng minval, int vtype, int tt)
 {
 	*noffsets = NULL;
-	(void)vals;
-	(void)cnt;
-	(void)minval;
-	(void)vtype;
-	(void)tt;
+
+	assert(cnt);
+	if (vtype == TYPE_lng) {
+		BUN i = 0;
+		lng min = GDK_lng_max;
+		lng max = GDK_lng_min;
+		lng *v = vals;
+
+		for(i=0; i<cnt; i++) {
+			if (is_lng_nil(v[i]))
+					break;
+			if (min > v[i])
+				min = v[i];
+			if (max < v[i])
+				max = v[i];
+		}
+		if (i<cnt)
+			return 0;
+		lng maxcnt = (tt == TYPE_bte)?GDK_bte_max/2:GDK_sht_max;
+		if (min < minval || max < minval || (max - min) > maxcnt)
+			return 0; /* decompress */
+		if (tt == TYPE_bte) {
+			bte *n = *noffsets = GDKmalloc(sizeof(bte) * cnt);
+			if (!n)
+				return -1;
+			for(BUN i=0; i<cnt; i++)
+				n[i] = v[i] - minval;
+		} else {
+			sht *n = *noffsets = GDKmalloc(sizeof(sht) * cnt);
+			if (!n)
+				return -1;
+			for(BUN i=0; i<cnt; i++)
+				n[i] = v[i] - minval;
+		}
+	}
 	return 0;
 }
