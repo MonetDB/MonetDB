@@ -340,13 +340,13 @@ FORprepare4append_vals(void **noffsets, void *vals, BUN cnt, lng minval, int vty
 			if (!n)
 				return -1;
 			for(BUN i=0; i<cnt; i++)
-				n[i] = v[i] - minval;
+				n[i] = (bte) (v[i] - minval);
 		} else {
 			sht *n = *noffsets = GDKmalloc(sizeof(sht) * cnt);
 			if (!n)
 				return -1;
 			for(BUN i=0; i<cnt; i++)
-				n[i] = v[i] - minval;
+				n[i] = (sht) (v[i] - minval);
 		}
 	}
 	return 0;
