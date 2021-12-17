@@ -120,7 +120,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 					if (col && strcmp(c->base.name, col))
 						continue;
-					if (!(b = store->storage_api.bind_col(tr, c, RDONLY)))
+
+					int access = c->storage_type && c->storage_type[0] == 'D' ? RD_EXT : RDONLY;
+					if (!(b = store->storage_api.bind_col(tr, c, access)))
 						continue; /* At the moment we ignore the error, but maybe we can change this */
 					if (isVIEW(b)) { /* If it is a view get the parent BAT */
 						BAT *nb = BBP_cache(VIEWtparent(b));
@@ -162,7 +164,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *cid, *sch, *tab, *col, *type, *width, *count, *unique, *nils, *minval, *maxval, *sorted, *revsorted, *bs = NULL, *fb = NULL;
+	BAT *cid, *sch, *tab, *col, *type, *width, *count, *unique, *nils, *minval, *maxval, *sorted, *revsorted;
 	mvc *m = NULL;
 	sql_trans *tr = NULL;
 	sqlstore *store = NULL;
@@ -292,20 +294,35 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						sql_column *c = (sql_column *) ncol->data;
 						int w;
 						lng cnt;
-						bit un, hnils, issorted, isrevsorted;
+						bit un, hnils, issorted, isrevsorted, dict;
+						BAT *qd = NULL, *fb = NULL, *re = NULL, *pos = NULL;
 
 						if (cname && strcmp(c->base.name, cname))
 							continue;
-						if (!(bs = store->storage_api.bind_col(tr, c, QUICK))) {
+
+						if (!(qd = store->storage_api.bind_col(tr, c, QUICK))) {
 							msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 							goto bailout;
 						}
-						w = bs->twidth;
-						cnt = BATcount(bs);
-						un = BATtkey(bs);
-						hnils = !bs->tnonil || bs->tnil;
-						issorted = BATtordered(bs);
-						isrevsorted = BATtrevordered(bs);
+						if ((dict = (c->storage_type && c->storage_type[0] == 'D'))) {
+							if (!(re = store->storage_api.bind_col(tr, c, RD_EXT))) {
+								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+								goto bailout;
+							}
+							issorted = BATtordered(qd) && BATtordered(re);
+							isrevsorted = BATtrevordered(qd) && BATtrevordered(re);
+							hnils = !re->tnonil || re->tnil;
+							pos = re;
+						} else {
+							issorted = BATtordered(qd);
+							isrevsorted = BATtrevordered(qd);
+							hnils = !qd->tnonil || qd->tnil;
+							pos = qd;
+						}
+
+						w = qd->twidth;
+						cnt = BATcount(qd);
+						un = BATtkey(qd);
 
 						if (BUNappend(cid, &c->base.id, false) != GDK_SUCCEED ||
 							BUNappend(sch, b->name, false) != GDK_SUCCEED ||
@@ -317,17 +334,21 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							BUNappend(unique, &un, false) != GDK_SUCCEED ||
 							BUNappend(nils, &hnils, false) != GDK_SUCCEED ||
 							BUNappend(sorted, &issorted, false) != GDK_SUCCEED ||
-							BUNappend(revsorted, &isrevsorted, false) != GDK_SUCCEED)
+							BUNappend(revsorted, &isrevsorted, false) != GDK_SUCCEED) {
+							if (re)
+								BBPunfix(re->batCacheid);
 							goto bailout;
+						}
 
-						if (bs->tminpos != BUN_NONE || bs->tmaxpos != BUN_NONE) {
-							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[bs->ttype].atomToStr;
-
-							if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
+						if (pos->tminpos != BUN_NONE || pos->tmaxpos != BUN_NONE) {
+							if (dict) {
+								fb = re;
+							} else if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
 								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 								goto bailout;
 							}
 
+							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[fb->ttype].atomToStr;
 							BATiter bi = bat_iterator(fb);
 							if (bi.minpos != BUN_NONE) {
 								if (tostr(&buf, &buflen, BUNtail(bi, bi.minpos), false) < 0) {
@@ -365,8 +386,11 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							bat_iterator_end(&bi);
 							BBPunfix(fb->batCacheid);
 						} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
+							if (re)
+								BBPunfix(re->batCacheid);
 							goto bailout;
-						}
+						} else if (re)
+							BBPunfix(re->batCacheid);
 					}
 				}
 			}
