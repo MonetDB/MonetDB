@@ -69,12 +69,12 @@ FORdecompress_(BAT *o, lng minval, int type, role_t role)
 			int *ov = Tloc(b, 0);
 			bte *iv = Tloc(o, 0);
 			for(BUN i = 0; i<cnt; i++)
-				ov[i] = minval + iv[i];
+				ov[i] = (int) (minval + iv[i]);
 		} else {
 			int *ov = Tloc(b, 0);
 			sht *iv = Tloc(o, 0);
 			for(BUN i = 0; i<cnt; i++)
-				ov[i] = minval + iv[i];
+				ov[i] = (int) (minval + iv[i]);
 		}
 	}
 	BATsetcount(b, cnt);
