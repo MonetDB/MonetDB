@@ -637,6 +637,24 @@ statement ok
 DROP TABLE t0
 
 statement ok
+CREATE TABLE sys.t2(c0 UUID NULL, c1 smallint)
+
+statement ok rowcount 5
+INSERT INTO sys.t2(c1) VALUES(9739), (1), (NULL), (22505), (26325)
+
+statement ok rowcount 5
+DELETE FROM sys.t2
+
+statement ok
+CALL "sys"."dict_compress"('sys','t2','c0')
+
+statement ok
+ANALYZE sys.t2(c0, c1)
+
+statement ok
+DROP TABLE t2
+
+statement ok
 START TRANSACTION
 
 statement ok
