@@ -27,14 +27,11 @@
 #include "mal_debugger.h"
 
 #include "rel_select.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_prop.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_bin.h"
 #include "rel_dump.h"
-#include "rel_remote.h"
 #include "orderidx.h"
 
 #define initcontext() \
@@ -84,44 +81,71 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 
 		if (subtype_cmp(&nc->type, &mc->type) != 0)
 			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column type doesn't match %s definition", errtable, errtable);
+		if (nc->null != mc->null)
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errtable, errtable);
 		if (isRangePartitionTable(nt) || isListPartitionTable(nt)) {
-			if (nc->null != mc->null)
-				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errtable, errtable);
-			if ((!nc->def && mc->def) || (nc->def && !mc->def) || (nc->def && mc->def && strcmp(nc->def, mc->def) != 0))
+			if ((nc->def || mc->def) && (!nc->def || !mc->def || strcmp(nc->def, mc->def) != 0))
 				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column DEFAULT value doesn't match %s definition", errtable, errtable);
 		}
 	}
-	if (isNonPartitionedTable(nt)) {
-		if (ol_length(nt->idxs) != ol_length(nnt->idxs))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index doesn't match %s definition", errtable, errtable);
-		if (ol_length(nt->idxs))
-			for (n = ol_first_node(nt->idxs), m = ol_first_node(nnt->idxs); n && m; n = n->next, m = m->next) {
-				sql_idx *ni = n->data;
-				sql_idx *mi = m->data;
+	if (ol_length(nt->keys) != ol_length(nnt->keys))
+		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key doesn't match %s definition", errtable, errtable);
+	if (ol_length(nt->keys))
+		for (n = ol_first_node(nt->keys), m = ol_first_node(nnt->keys); n && m; n = n->next, m = m->next) {
+			sql_key *ni = n->data;
+			sql_key *mi = m->data;
 
-				if (ni->type != mi->type)
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index type doesn't match %s definition", errtable, errtable);
+			if (ni->type != mi->type)
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
+			if (list_length(ni->columns) != list_length(mi->columns))
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
+			for (nn = ni->columns->h, mm = mi->columns->h; nn && mm; nn = nn->next, mm = mm->next) {
+				sql_kc *nni = nn->data;
+				sql_kc *mmi = mm->data;
+
+				if (nni->c->colnr != mmi->c->colnr)
+					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key's columns doesn't match %s definition", errtable, errtable);
 			}
-	} else { //for partitioned tables we allow indexes but the key set must be exactly the same
-		if (ol_length(nt->keys) != ol_length(nnt->keys))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key doesn't match %s definition", errtable, errtable);
-		if (ol_length(nt->keys))
-			for (n = ol_first_node(nt->keys), m = ol_first_node(nnt->keys); n && m; n = n->next, m = m->next) {
-				sql_key *ni = n->data;
-				sql_key *mi = m->data;
+		}
 
-				if (ni->type != mi->type)
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
-				if (list_length(ni->columns) != list_length(mi->columns))
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
-				for (nn = ni->columns->h, mm = mi->columns->h; nn && mm; nn = nn->next, mm = mm->next) {
-					sql_kc *nni = nn->data;
-					sql_kc *mmi = mm->data;
+	/* For indexes, empty ones can be ignored, which makes validation trickier */
+	n = ol_length(nt->idxs) ? ol_first_node(nt->idxs) : NULL;
+	m = ol_length(nnt->idxs) ? ol_first_node(nnt->idxs) : NULL;
+	for (; n || m; n = n->next, m = m->next) {
+		sql_idx *ni, *mi;
 
-					if (nni->c->colnr != mmi->c->colnr)
-						throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key's columns doesn't match %s definition", errtable, errtable);
-				}
-			}
+		while (n) {
+			ni = n->data;
+			if ((!hash_index(ni->type) || list_length(ni->columns) > 1) && idx_has_column(ni->type))
+				break;
+			n = n->next;
+		}
+		while (m) {
+			mi = m->data;
+			if ((!hash_index(mi->type) || list_length(mi->columns) > 1) && idx_has_column(mi->type))
+				break;
+			m = m->next;
+		}
+
+		if (!n && !m) /* no more idxs to check, done */
+			break;
+		if ((m && !n) || (!m && n))
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index type doesn't match %s definition", errtable, errtable);
+
+		assert(m && n);
+		ni = n->data;
+		mi = m->data;
+		if (ni->type != mi->type)
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index type doesn't match %s definition", errtable, errtable);
+		if (list_length(ni->columns) != list_length(mi->columns))
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
+		for (nn = ni->columns->h, mm = mi->columns->h; nn && mm; nn = nn->next, mm = mm->next) {
+			sql_kc *nni = nn->data;
+			sql_kc *mmi = mm->data;
+
+			if (nni->c->colnr != mmi->c->colnr)
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index's columns doesn't match %s definition", errtable, errtable);
+		}
 	}
 
 	if (nested_mergetable(sql->session->tr, nt/*mergetable*/, nnt->s->base.name, nnt->base.name/*parts*/))
@@ -467,7 +491,6 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 {
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	str msg = MAL_SUCCEED;
 
 	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
@@ -490,65 +513,82 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 			default:
 				break;
 		}
-		if (access == 0 && (msg = sql_drop_statistics(sql, t)))
-			return msg;
 	}
 	return MAL_SUCCEED;
 }
 
 static char *
-create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
+create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query, int replace)
 {
-	sql_trigger *tri = NULL;
+	sql_trigger *tri = NULL, *other = NULL;
 	sql_schema *s = NULL;
 	sql_table *t;
+	const char *base = replace ? "CREATE OR REPLACE TRIGGER" : "CREATE TRIGGER";
 
 	if (!(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: no such schema '%s'", sname);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_trigger",SQLSTATE(42000) "CREATE TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if (mvc_bind_trigger(sql, s, triggername))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: name '%s' already in use", triggername);
+		throw(SQL,"sql.create_trigger",SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+	if ((other = mvc_bind_trigger(sql, s, triggername)) && !replace)
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: name '%s' already in use", base, triggername);
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: unknown table '%s'", tname);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: unknown table '%s'", base, tname);
 	if (isView(t))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: cannot create trigger on view '%s'", base, tname);
 
-	if ((tri = mvc_create_trigger(sql, t, triggername, time, orientation, event, old_name, new_name, condition, query))) {
-		char *buf;
-		sql_rel *r = NULL;
-		sql_allocator *sa = sql->sa;
+	if (replace && other) {
+		if (other->t->base.id != t->base.id) /* defensive line */
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: the to be replaced trigger '%s' is not from table '%s'", base, triggername, tname);
+		switch (mvc_drop_trigger(sql, s, other)) {
+			case -1:
+				throw(SQL,"sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.create_trigger", SQLSTATE(42000) "%s: transaction conflict detected", base);
+			default:
+				break;
+		}
+	}
+	switch (mvc_create_trigger(&tri, sql, t, triggername, time, orientation, event, old_name, new_name, condition, query)) {
+		case -1:
+			throw(SQL,"sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.create_trigger", SQLSTATE(42000) "%s: transaction conflict detected", base);
+		default: {
+			char *buf;
+			sql_rel *r = NULL;
+			sql_allocator *sa = sql->sa;
 
-		if (!(sql->sa = sa_create(sql->pa))) {
-			sql->sa = sa;
-			throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		if (!(buf = sa_strdup(sql->sa, query))) {
-			sa_destroy(sql->sa);
-			sql->sa = sa;
-			throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		r = rel_parse(sql, s, buf, m_deps);
-		if (r)
-			r = sql_processrelation(sql, r, 0, 0);
-		if (r) {
-			list *blist = rel_dependencies(sql, r);
-			if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
+			if (!(sql->sa = sa_create(sql->pa))) {
+				sql->sa = sa;
+				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			if (!(buf = sa_strdup(sql->sa, query))) {
 				sa_destroy(sql->sa);
 				sql->sa = sa;
 				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
+			r = rel_parse(sql, s, buf, m_deps);
+			if (r)
+				r = sql_processrelation(sql, r, 0, 0, 0);
+			if (r) {
+				list *blist = rel_dependencies(sql, r);
+				if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
+					sa_destroy(sql->sa);
+					sql->sa = sa;
+					throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+			}
+			sa_destroy(sql->sa);
+			sql->sa = sa;
+			if (!r) {
+				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+					throw(SQL, "sql.create_trigger", "%s", sql->errstr);
+				else
+					throw(SQL, "sql.create_trigger", SQLSTATE(42000) "%s", sql->errstr);
+			}
 		}
-		sa_destroy(sql->sa);
-		sql->sa = sa;
-		if (!r) {
-			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
-				throw(SQL, "sql.create_trigger", "%s", sql->errstr);
-			else
-				throw(SQL, "sql.create_trigger", SQLSTATE(42000) "%s", sql->errstr);
-		}
-	} else {
-		throw(SQL,"sql.create_trigger", SQLSTATE(42000) "CREATE TRIGGER: transaction conflict detected");
 	}
 	return MAL_SUCCEED;
 }
@@ -694,10 +734,28 @@ drop_key(mvc *sql, char *sname, char *tname, char *kname, int drop_action)
 }
 
 static str
-drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
+IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void (*func)(BAT *))
+{
+	BAT *b = mvc_bind(sql, sname, tname, iname, RDONLY), *nb = NULL;
+
+	if (!b)
+		throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
+	if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+		BBPunfix(b->batCacheid);
+		if (!(b = BATdescriptor(nb->batCacheid)))
+			throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
+	}
+	func(b);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+drop_index(mvc *sql, char *sname, char *iname)
 {
 	sql_schema *s = NULL;
 	sql_idx *i = NULL;
+	str msg = MAL_SUCCEED;
 
 	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.drop_index", SQLSTATE(3F000) "DROP INDEX: no such schema '%s'", sname);
@@ -707,21 +765,10 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: no such index '%s'", iname);
 	if (i->key)
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: cannot drop index '%s', because the constraint '%s' depends on it", iname, i->key->base.name);
-	if (i->type == ordered_idx) {
+	if (i->type == ordered_idx || i->type == imprints_idx) {
 		sql_kc *ic = i->columns->h->data;
-		BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-		if (b) {
-			OIDXdropImplementation(cntxt, b);
-			BBPunfix(b->batCacheid);
-		}
-	}
-	if (i->type == imprints_idx) {
-		sql_kc *ic = i->columns->h->data;
-		BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-		if (b) {
-			IMPSdestroy(b);
-			BBPunfix(b->batCacheid);
-		}
+		if ((msg = IDXdrop(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, i->type == ordered_idx ? OIDXdestroy : IMPSdestroy)))
+			return msg;
 	}
 	switch (mvc_drop_idx(sql, s, i)) {
 		case -1:
@@ -750,12 +797,19 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 	if (is_lng_nil(seq->start) || is_lng_nil(seq->minvalue) || is_lng_nil(seq->maxvalue) ||
 			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_bit_nil(seq->cycle))
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence properties must be non-NULL");
-	if (seq->minvalue && seq->start < seq->minvalue)
-		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->start, seq->minvalue);
-	if (seq->maxvalue && seq->start > seq->maxvalue)
+	if (seq->start < seq->minvalue)
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is less than the minimum ("LLFMT" < "LLFMT")", seq->start, seq->minvalue);
+	if (seq->start > seq->maxvalue)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is higher than the maximum ("LLFMT" > "LLFMT")", seq->start, seq->maxvalue);
-	if (seq->minvalue && seq->maxvalue && seq->maxvalue < seq->minvalue)
-		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->maxvalue, seq->minvalue);
+	if (seq->maxvalue < seq->minvalue)
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: maximum value is less than the minimum ("LLFMT" < "LLFMT")", seq->maxvalue, seq->minvalue);
+	if (seq->increment == 0)
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence increment cannot be 0");
+	if (seq->cacheinc <= 0)
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence cache must be positive");
+	lng calc = llabs(seq->increment) * seq->cacheinc;
+	if (calc < llabs(seq->increment) || calc < seq->cacheinc)
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: The specified range of cached values cannot be set. Either reduce increment or cache value");
 	switch (sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped)) {
 		case -1:
 			throw(SQL,"sql.create_seq",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -792,14 +846,21 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 		default:
 			break;
 	}
-	if (nseq->minvalue && nseq->maxvalue && nseq->maxvalue < seq->minvalue)
-		throw(SQL, "sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", nseq->maxvalue, nseq->minvalue);
+	if (nseq->maxvalue < nseq->minvalue)
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: maximum value is less than the minimum ("LLFMT" < "LLFMT")", nseq->maxvalue, nseq->minvalue);
+	if (nseq->increment == 0)
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence increment cannot be 0");
+	if (nseq->cacheinc <= 0)
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence cache must be positive");
+	lng calc = llabs(nseq->increment) * nseq->cacheinc;
+	if (calc < llabs(nseq->increment) || calc < nseq->cacheinc)
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: The specified range of cached values cannot be set. Either reduce increment or cache value");
 	if (val) {
 		if (is_lng_nil(*val))
 			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence value must be non-NULL");
-		if (nseq->minvalue && *val < nseq->minvalue)
-			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value lesser than the minimum ("LLFMT" < "LLFMT")", *val, nseq->minvalue);
-		if (nseq->maxvalue && *val > nseq->maxvalue)
+		if (*val < nseq->minvalue)
+			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value less than the minimum ("LLFMT" < "LLFMT")", *val, nseq->minvalue);
+		if (*val > nseq->maxvalue)
 			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value higher than the maximum ("LLFMT" > "LLFMT")", *val, nseq->maxvalue);
 		switch (sql_trans_sequence_restart(sql->session->tr, nseq, *val)) {
 			case -1:
@@ -898,32 +959,85 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 	return MAL_SUCCEED;
 }
 
+static int
+args_cmp(sql_arg *a1, sql_arg *a2)
+{
+	if (a1->inout != a2->inout)
+		return -1;
+	if (strcmp(a1->name, a2->name) != 0)
+		return -1;
+	return subtype_cmp(&a1->type, &a2->type);
+}
+
 static char *
-create_func(mvc *sql, char *sname, char *fname, sql_func *f)
+create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 {
 	sql_func *nf;
+	sql_subfunc *sf;
 	sql_schema *s = NULL;
-	int clientid = sql->clientid;
-	char *F = NULL, *fn = NULL;
+	char *F = NULL, *fn = NULL, *base = replace ? "CREATE OR REPLACE" : "CREATE";
 
 	FUNC_TYPE_STR(f->type, F, fn)
 
 	(void) fn;
 	if (!(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
+		throw(SQL,"sql.create_func", SQLSTATE(3F000) "%s %s: no such schema '%s'", base, F, sname);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: access denied for %s to schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
-	if (strlen(fname) >= IDLENGTH)
-		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: name '%s' too large for the backend", F, fname);
-	if (!(nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system)))
-		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
-	switch (nf->lang) {
-	case FUNC_LANG_INT:
-	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */
-		if (!backend_resolve_function(&clientid, nf))
-			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound", F, nf->mod, nf->base.name);
-		if (nf->query == NULL)
+		throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: access denied for %s to schema '%s'", base, F, get_string_global_var(sql, "current_user"), s->base.name);
+
+	if (replace) {
+		list *tl = sa_list(sql->sa);
+		if (!list_empty(f->ops)) {
+			for (node *n = f->ops->h ; n ; n = n->next ) {
+				sql_arg *arg = n->data;
+
+				list_append(tl, &arg->type);
+			}
+		}
+
+		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type)) != NULL) {
+			sql_func *sff = sf->func;
+
+			if (!sff->s || sff->system)
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->base.name);
+
+			/* if all function parameters are the same, return */
+			if (sff->lang == f->lang && sff->type == f->type &&
+				sff->varres == f->varres && sff->vararg == f->vararg &&
+				((!sff->query && !f->query) || (sff->query && f->query && strcmp(sff->query, f->query) == 0)) &&
+				list_cmp(sff->res, f->res, (fcmp) &args_cmp) == 0 &&
+				list_cmp(sff->ops, f->ops, (fcmp) &args_cmp) == 0)
+				return MAL_SUCCEED;
+
+			if (mvc_check_dependency(sql, sff->base.id, !IS_PROC(sff) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: there are database objects dependent on %s %s;", base, F, fn, sff->base.name);
+			switch (mvc_drop_func(sql, s, sff, 0)) {
+				case -1:
+					throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: transaction conflict detected", base, F);
+				default:
+					break;
+			}
+		} else {
+			sql->session->status = 0; /* if the function was not found clean the error */
+			sql->errstr[0] = '\0';
+		}
+	}
+	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect)) {
+		case -1:
+			throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: transaction conflict detected", base, F);
+		default:
 			break;
+	}
+	switch (nf->lang) {
+	case FUNC_LANG_MAL:
+		assert(nf->imp);
+		nf->instantiated = TRUE; /* MAL functions get instantiated while being created */
 		/* fall through */
 	case FUNC_LANG_SQL: {
 		char *buf;
@@ -942,7 +1056,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		}
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0, 0);
+			r = sql_processrelation(sql, r, 0, 0, 0);
 		if (r) {
 			node *n;
 			list *blist = rel_dependencies(sql, r);
@@ -1019,7 +1133,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	}
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
-
 		/* null or default value changes */
 		sql_column *c = n->data;
 
@@ -1046,7 +1159,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					sql_kc *kc = m->data;
 
 					if (kc->c->base.id == c->base.id)
-						throw(SQL,"sql.alter_table", SQLSTATE(40000) "NOT NULL CONSTRAINT: cannot change NOT NULL CONSTRAINT for column '%s' as its part of the PRIMARY KEY\n", c->base.name);
+						throw(SQL,"sql.alter_table", SQLSTATE(40000) "NOT NULL CONSTRAINT: cannot remove NOT NULL CONSTRAINT for column '%s' part of the PRIMARY KEY\n", c->base.name);
 				}
 			}
 			switch (mvc_null(sql, nc, c->null)) {
@@ -1070,7 +1183,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 			}
 		}
-		if (c->def != nc->def) {
+		if ((c->def || nc->def) && (!c->def || !nc->def || strcmp(c->def, nc->def) != 0)) {
 			switch (mvc_default(sql, nc, c->def)) {
 				case -1:
 					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1082,7 +1195,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			}
 		}
 
-		if (c->storage_type != nc->storage_type) {
+		if ((c->storage_type || nc->storage_type) && (!c->storage_type || !nc->storage_type || strcmp(c->storage_type, nc->storage_type) != 0)) {
 			if (c->t->access == TABLE_WRITABLE)
 				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
 			switch (mvc_storage(sql, nc, c->storage_type)) {
@@ -1134,15 +1247,20 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		/* alter add index */
 		for (n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
+			BAT *b = NULL, *nb = NULL;
 
 			if (!i->base.new || i->base.deleted)
 				continue;
 
 			if (i->type == ordered_idx) {
 				sql_kc *ic = i->columns->h->data;
-				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				if (b == NULL)
+				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+					BBPunfix(b->batCacheid);
+					if (!(b = BATdescriptor(nb->batCacheid)))
+						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				}
 				char *msg = OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
 				if (msg != MAL_SUCCEED) {
@@ -1150,13 +1268,16 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					freeException(msg);
 					return smsg;
 				}
-			}
-			if (i->type == imprints_idx) {
+			} else if (i->type == imprints_idx) {
 				gdk_return r;
 				sql_kc *ic = i->columns->h->data;
-				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				if (b == NULL)
+				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+					BBPunfix(b->batCacheid);
+					if (!(b = BATdescriptor(nb->batCacheid)))
+						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				}
 				r = BATimprints(b);
 				BBPunfix(b->batCacheid);
 				if (r != GDK_SUCCEED)
@@ -1361,7 +1482,7 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0);
 	return msg;
 }
 
@@ -1373,9 +1494,10 @@ SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//str vname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
+	int replace = *getArgReference_int(stk, pci, 5);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp, replace);
 	return msg;
 }
 
@@ -1687,7 +1809,7 @@ SQLdrop_index(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *iname = *getArgReference_str(stk, pci, 2);
 
 	initcontext();
-	msg = drop_index(cntxt, sql, sname, iname);
+	msg = drop_index(sql, sname, iname);
 	return msg;
 }
 
@@ -1713,9 +1835,10 @@ SQLcreate_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1);
 	str fname = *getArgReference_str(stk, pci, 2);
 	sql_func *f = *(sql_func **) getArgReference(stk, pci, 3);
+	int replace = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_func(sql, sname, fname, f);
+	msg = create_func(sql, sname, fname, f, replace);
 	return msg;
 }
 
@@ -1733,12 +1856,13 @@ SQLcreate_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *new_name = *getArgReference_str(stk, pci, 8);
 	char *condition = *getArgReference_str(stk, pci, 9);
 	char *query = *getArgReference_str(stk, pci, 10);
+	int replace = *getArgReference_int(stk, pci, 11);
 
 	initcontext();
 	old_name=(strNil(old_name))?NULL:old_name;
 	new_name=(strNil(new_name))?NULL:new_name;
 	condition=(strNil(condition))?NULL:condition;
-	msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query);
+	msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query, replace);
 	return msg;
 }
 

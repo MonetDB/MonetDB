@@ -28,10 +28,10 @@
 backend_functions be_funcs;
 
 void
-backend_freecode(int clientid, const char *name)
+backend_freecode(const char *mod, int clientid, const char *name)
 {
 	if (be_funcs.fcode != NULL)
-		be_funcs.fcode(clientid, name);
+		be_funcs.fcode(mod, clientid, name);
 }
 
 char *
@@ -99,10 +99,10 @@ backend_schema_user_dependencies(ptr trans, sqlid schema_id)
 }
 
 int
-backend_resolve_function(ptr M, sql_func *f)
+backend_resolve_function(ptr M, sql_func *f, const char *fimp, bit *side_effect)
 {
 	if (be_funcs.fresolve_function != NULL)
-		return be_funcs.fresolve_function(M, f);
+		return be_funcs.fresolve_function(M, f, fimp, side_effect);
 	return 0;
 }
 

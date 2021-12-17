@@ -282,10 +282,12 @@ log_read_seq(logger *lg, logformat *l)
 	BUN p;
 
 	assert(!lg->inmemory);
-	if (!mnstr_readLng(lg->input_log, &val)) {
+	if (mnstr_readLng(lg->input_log, &val) != 1) {
 		TRC_CRITICAL(GDK, "read failed\n");
 		return LOG_EOF;
 	}
+	if (lg->flushing)
+		return LOG_OK;
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
@@ -375,7 +377,7 @@ string_reader(logger *lg, BAT *b, lng nr)
 }
 
 static log_return
-log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
+log_read_updates(logger *lg, trans *tr, logformat *l, log_id id)
 {
 	log_return res = LOG_OK;
 	lng nr, pnr;
@@ -386,7 +388,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger found log_read_updates %d %s\n", id, l->flag == LOG_UPDATE ? "update" : "update_buld");
 
-	if (!mnstr_readLng(lg->input_log, &nr) ||
+	if (mnstr_readLng(lg->input_log, &nr) != 1 ||
 	    mnstr_read(lg->input_log, &type_id, 1, 1) != 1)
 		return LOG_ERR;
 
@@ -396,6 +398,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 		BAT *uid = NULL;
 		BAT *r = NULL;
 		void *(*rt) (ptr, size_t *, stream *, size_t) = BATatoms[tpe].atomRead;
+		lng offset;
 
 		assert(nr <= (lng) BUN_MAX);
 		if (!lg->flushing && l->flag == LOG_UPDATE) {
@@ -414,7 +417,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 		}
 
 		if (l->flag == LOG_UPDATE_CONST) {
-	    		if (!mnstr_readLng(lg->input_log, &offset)) {
+	    		if (mnstr_readLng(lg->input_log, &offset) != 1) {
 				if (r)
 					BBPreclaim(r);
 				return LOG_ERR;
@@ -432,7 +435,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 				}
 			}
 		} else if (l->flag == LOG_UPDATE_BULK) {
-	    		if (!mnstr_readLng(lg->input_log, &offset)) {
+	    		if (mnstr_readLng(lg->input_log, &offset) != 1) {
 				if (r)
 					BBPreclaim(r);
 				return LOG_ERR;
@@ -502,6 +505,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 		} else {
 			void *(*rh) (ptr, size_t *, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
 			void *hv = ATOMnil(TYPE_oid);
+			offset = 0;
 
 			if (hv == NULL)
 				res = LOG_ERR;
@@ -593,14 +597,22 @@ static gdk_return
 la_bat_update_count(logger *lg, log_id id, lng cnt)
 {
 	BATiter cni = bat_iterator_nolock(lg->catalog_id);
-	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
 		MT_rwlock_rdlock(&cni.b->thashlock);
+		BUN p, cp = BUN_NONE;
+
 		HASHloop_int(cni, cni.b->thash, p, &id) {
-			lng ocnt = *(lng*) Tloc(lg->catalog_cnt, p);
+			lng lid = *(lng *) Tloc(lg->catalog_lid, p);
+
+			if (lid != lng_nil && lid <= lg->saved_tid)
+				break;
+			cp = p;
+		}
+		if (cp != BUN_NONE) {
+			lng ocnt = *(lng*) Tloc(lg->catalog_cnt, cp);
 			assert(lg->catalog_cnt->hseqbase == 0);
-			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED) {
+			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, cp, &cnt, false) != GDK_SUCCEED) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return GDK_FAIL;
 			}
@@ -772,34 +784,36 @@ la_bat_create(logger *lg, logaction *la)
 }
 
 static gdk_return
-logger_write_new_types(logger *lg, FILE *fp)
+logger_write_new_types(logger *lg, FILE *fp, bool append)
 {
 	bte id = 0;
 
 	/* write types and insert into bats */
 	/* first the fixed sized types */
-	for (int i=0;i<GDKatomcnt; i++) {
+	for (int i = 0; i < GDKatomcnt; i++) {
 		if (ATOMvarsized(i))
 			continue;
-		if (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED ||
-		    fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0) {
+		if (append &&
+		    (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
+		     BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
+		     BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED))
 			return GDK_FAIL;
-		}
+		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
+			return GDK_FAIL;
 		id++;
 	}
 	/* second the var sized types */
-	id=-127; /* start after nil */
-	for (int i=0;i<GDKatomcnt; i++) {
+	id = -127; /* start after nil */
+	for (int i = 0; i < GDKatomcnt; i++) {
 		if (!ATOMvarsized(i))
 			continue;
-		if (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED ||
-		    fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0) {
+		if (append &&
+		    (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
+		     BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
+		     BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED))
 			return GDK_FAIL;
-		}
+		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
+			return GDK_FAIL;
 		id++;
 	}
 	return GDK_SUCCEED;
@@ -955,7 +969,7 @@ logger_read_types_file(logger *lg, FILE *fp)
 
 
 gdk_return
-logger_create_types_file(logger *lg, const char *filename)
+logger_create_types_file(logger *lg, const char *filename, bool append)
 {
 	FILE *fp;
 
@@ -970,7 +984,7 @@ logger_create_types_file(logger *lg, const char *filename)
 		return GDK_FAIL;
 	}
 
-	if (logger_write_new_types(lg, fp) != GDK_SUCCEED) {
+	if (logger_write_new_types(lg, fp, append) != GDK_SUCCEED) {
 		fclose(fp);
 		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
@@ -985,13 +999,14 @@ logger_create_types_file(logger *lg, const char *filename)
 		     && fsync(fileno(fp)) < 0
 #endif
 	    )) {
+		GDKsyserror("flushing log file %s failed", filename);
+		fclose(fp);
 		MT_remove(filename);
-		GDKerror("flushing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 	if (fclose(fp) < 0) {
+		GDKsyserror("closing log file %s failed", filename);
 		MT_remove(filename);
-		GDKerror("closing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -1007,9 +1022,8 @@ logger_open_output(logger *lg)
 		return GDK_FAIL;
 	}
 
-	if (LOG_DISABLED(lg)) {
-		lg->end = 0;
-	} else {
+	lg->end = 0;
+	if (!LOG_DISABLED(lg)) {
 		char id[32];
 		char *filename;
 
@@ -1163,7 +1177,7 @@ logger_read_transaction(logger *lg)
 			if (tr == NULL)
 				err = LOG_EOF;
 			else
-				err = log_read_updates(lg, tr, &l, l.id, 0);
+				err = log_read_updates(lg, tr, &l, l.id);
 			break;
 		case LOG_CREATE:
 			if (tr == NULL)
@@ -1304,7 +1318,7 @@ logger_commit(logger *lg)
 }
 
 static gdk_return
-check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const char *filename)
+check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const char *filename, bool *needsnew)
 {
 	int version = 0;
 
@@ -1333,6 +1347,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
 			return GDK_FAIL;
 		}
+		*needsnew = false; /* already written a new log file */
 		return GDK_SUCCEED;
 	} else if (version != lg->version) {
 		if (lg->prefuncp == NULL ||
@@ -1344,11 +1359,13 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 			fclose(fp);
 			return GDK_FAIL;
 		}
+		*needsnew = true;	/* we need to write a new log file */
 	} else {
-		lg->postfuncp = NULL;	 /* don't call */
+		lg->postfuncp = NULL;	/* don't call */
+		*needsnew = false;	/* log file already up-to-date */
 	}
-	if (fgetc(fp) != '\n' ||	 /* skip \n */
-	    fgetc(fp) != '\n') {	 /* skip \n */
+	if (fgetc(fp) != '\n' ||	/* skip \n */
+	    fgetc(fp) != '\n') {	/* skip \n */
 		GDKerror("Badly formatted log file");
 		fclose(fp);
 		return GDK_FAIL;
@@ -1414,6 +1431,7 @@ bm_get_counts(logger *lg)
 
 		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 			BAT *b = BBPquickdesc(bids[p]);
+			assert(b);
 			cnt = BATcount(b);
 		} else {
 			deleted++;
@@ -1675,8 +1693,10 @@ bm_subcommit(logger *lg)
 		i = subcommit_list_add(i, n, sizes, ids->batCacheid, BATcount(ids));
 		i = subcommit_list_add(i, n, sizes, vals->batCacheid, BATcount(ids));
 
-		r[rcnt++] = lg->seqs_id->batCacheid;
-		r[rcnt++] = lg->seqs_val->batCacheid;
+		if (BBP_lrefs(lg->seqs_id->batCacheid) > 0)
+			r[rcnt++] = lg->seqs_id->batCacheid;
+		if (BBP_lrefs(lg->seqs_val->batCacheid) > 0)
+			r[rcnt++] = lg->seqs_val->batCacheid;
 
 		logbat_destroy(lg->seqs_id);
 		logbat_destroy(lg->seqs_val);
@@ -1766,6 +1786,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	bool needcommit = false;
 	int dbg = GDKdebug;
 	bool readlogs = false;
+	bool needsnew = false;	/* need to write new log file? */
 
 	/* refactor */
 	if (!LOG_DISABLED(lg)) {
@@ -1868,7 +1889,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 				GDKerror("cannot create directory for log file %s\n", filename);
 				goto error;
 			}
-			if (logger_create_types_file(lg, filename) != GDK_SUCCEED)
+			if (logger_create_types_file(lg, filename, true) != GDK_SUCCEED)
 				goto error;
 		}
 
@@ -1900,7 +1921,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		}
 		if (fp != NULL) {
 			/* check_version always closes fp */
-			if (check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) {
+			if (check_version(lg, fp, fn, logdir, filename, &needsnew) != GDK_SUCCEED) {
 				fp = NULL;
 				goto error;
 			}
@@ -2014,6 +2035,16 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		}
 		if (lg->postfuncp && (*lg->postfuncp)(lg->funcdata, lg) != GDK_SUCCEED)
 			goto error;
+		if (needsnew) {
+			if (GDKmove(0, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak", true) != GDK_SUCCEED) {
+				TRC_CRITICAL(GDK, "couldn't move log to log.bak\n");
+				return GDK_FAIL;
+			}
+			if (logger_create_types_file(lg, filename, false) != GDK_SUCCEED) {
+				TRC_CRITICAL(GDK, "couldn't write new log\n");
+				return GDK_FAIL;
+			}
+		}
 		dbg = GDKdebug;
 		GDKdebug &= ~(CHECKMASK|PROPMASK);
 		if (logger_commit(lg) != GDK_SUCCEED) {
@@ -2022,6 +2053,11 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		GDKdebug = dbg;
 		for( ; log_id <= lg->saved_id; log_id++)
 			(void)logger_cleanup(lg, log_id);  /* ignore error of removing file */
+		if (needsnew &&
+		    GDKunlink(0, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "couldn't remove old log.bak file\n");
+			return GDK_FAIL;
+		}
 	} else {
 		lg->id = lg->saved_id+1;
 	}
@@ -2329,9 +2365,12 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (nr)
-			return la_bat_update_count(lg, id, offset+cnt);
-		return GDK_SUCCEED;
+		if (nr) {
+			logger_lock(lg);
+			ok = la_bat_update_count(lg, id, offset+cnt);
+			logger_unlock(lg);
+		}
+		return ok;
 	}
 
 	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[type].atomWrite;
@@ -2384,7 +2423,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 		}
 		char *dst = buf;
 		for(; p < end && sz < bufsz; p++) {
-			char *s = BUNtail(bi, p);
+			char *s = BUNtvar(bi, p);
 			size_t len = strlen(s)+1;
 			if ((sz+len) > bufsz) {
 				if (len > bufsz)
@@ -2425,8 +2464,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (LOG_DISABLED(lg))
-			lg->end += nr;
+		lg->end += nr;
 		if (nr)
 			return la_bat_update_count(lg, id, offset+cnt);
 		return GDK_SUCCEED;
@@ -2520,9 +2558,8 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
-	} else {
-		lg->end++;
 	}
+	lg->end++;
 	if (lg->debug & 1)
 		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
 	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0);
@@ -2546,9 +2583,8 @@ log_bat_transient(logger *lg, log_id id)
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
-	} else {
-		lg->end++;
 	}
+	lg->end++;
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
 				bid);
@@ -2590,8 +2626,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	nr = (BUNlast(uval));
 	assert(nr);
 
+	lg->end += nr;
 	if (LOG_DISABLED(lg)) {
-		lg->end += nr;
 		/* logging is switched off */
 		logger_unlock(lg);
 		return GDK_SUCCEED;
@@ -2615,6 +2651,10 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	if (uval->ttype == TYPE_msk) {
 		if (!mnstr_writeIntArray(lg->output_log, vi.base, (BUNlast(uval) + 31) / 32))
 			ok = GDK_FAIL;
+	} else if (uval->ttype < TYPE_str && !isVIEW(uval)) {
+		const void *t = BUNtail(vi, 0);
+
+		ok = wt(t, lg->output_log, (size_t)nr);
 	} else if (uval->ttype == TYPE_str) {
 		/* efficient string writes */
 		ok = string_writer(lg, uval, 0, nr);
@@ -2645,8 +2685,8 @@ log_bat_clear(logger *lg, int id)
 {
 	logformat l;
 
+	lg->end++;
 	if (LOG_DISABLED(lg)) {
-		lg->end++;
 		logger_lock(lg);
 		gdk_return res = la_bat_update_count(lg, id, 0);
 		logger_unlock(lg);
@@ -2699,8 +2739,8 @@ log_tend(logger *lg)
 		return logger_commit(lg);
 	}
 
+	lg->end++;
 	if (LOG_DISABLED(lg)) {
-		lg->end++;
 		return GDK_SUCCEED;
 	}
 
@@ -2728,7 +2768,7 @@ log_tdone(logger *lg, ulng commit_ts)
 }
 
 static gdk_return
-log_sequence_(logger *lg, int seq, lng val, int flush)
+log_sequence_(logger *lg, int seq, lng val)
 {
 	logformat l;
 
@@ -2741,9 +2781,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 		fprintf(stderr, "#log_sequence_ (%d," LLFMT ")\n", seq, val);
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    !mnstr_writeLng(lg->output_log, val) ||
-	    (flush && mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA)) ||
-	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log))) {
+	    !mnstr_writeLng(lg->output_log, val)) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
@@ -2781,7 +2819,7 @@ log_sequence(logger *lg, int seq, lng val)
 			return GDK_FAIL;
 		}
 	}
-	gdk_return r = log_sequence_(lg, seq, val, 1);
+	gdk_return r = log_sequence_(lg, seq, val);
 	logger_unlock(lg);
 	return r;
 }
@@ -2906,8 +2944,8 @@ log_tstart(logger *lg, bool flushnow)
 		lg->flushnow = flushnow;
 	}
 
+	lg->end++;
 	if (LOG_DISABLED(lg)) {
-		lg->end++;
 		return GDK_SUCCEED;
 	}
 

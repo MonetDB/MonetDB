@@ -143,16 +143,17 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 {
 	h->base = NULL;
 	h->size = 1;
-	if (itemsize)
+	if (itemsize) {
+		/* check for overflow */
+		if (nitems > BUN_NONE / itemsize) {
+			GDKerror("allocating more than heap can accomodate\n");
+			return GDK_FAIL;
+		}
 		h->size = MAX(1, nitems) * itemsize;
+	}
 	h->free = 0;
 	h->cleanhash = false;
 
-	/* check for overflow */
-	if (itemsize && nitems > (h->size / itemsize)) {
-		GDKerror("allocating more than heap can accomodate\n");
-		return GDK_FAIL;
-	}
 	if (GDKinmemory(h->farmid) ||
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
@@ -291,7 +292,12 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			}
 			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
 			if (fd >= 0) {
+				gdk_return rc = GDKextendf(fd, size, nme);
 				close(fd);
+				if (rc != GDK_SUCCEED) {
+					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && GDKextendf() != GDK_SUCCEED";
+					goto failed;
+				}
 				h->storage = h->newstorage == STORE_MMAP && existing && !mayshare ? STORE_PRIV : h->newstorage;
 				/* make sure we really MMAP */
 				if (must_mmap && h->newstorage == STORE_MEM)
@@ -745,7 +751,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	char *srcpath, *dstpath, *tmp;
 	int t0;
 
-	h->storage = h->newstorage = h->size < GDK_mmap_minsize_persistent ? STORE_MEM : STORE_MMAP;
+	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID)
+		h->storage = h->newstorage = h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ? STORE_MEM : STORE_MMAP;
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)
@@ -806,6 +813,12 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		h->base = GDKmalloc(h->size);
 		h->wasempty = true;
 	} else {
+		if (h->free == 0) {
+			int fd = GDKfdlocate(h->farmid, nme, "wb", ext);
+			if (fd >= 0)
+				close(fd);
+			h->wasempty = true;
+		}
 		h->base = GDKload(h->farmid, nme, ext, h->free, &h->size, h->storage);
 	}
 	if (h->base == NULL)
@@ -882,27 +895,6 @@ gdk_return
 HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free)
 {
 	return HEAPsave_intern(h, nme, ext, ".new", dosync, free);
-}
-
-/*
- * @- HEAPdelete
- * Delete any saved heap file. For memory mapped files, also try to
- * remove any remaining X.new
- */
-gdk_return
-HEAPdelete(Heap *h, const char *o, const char *ext)
-{
-	char ext2[64];
-
-	if (h->size <= 0) {
-		assert(h->base == 0);
-		return GDK_SUCCEED;
-	}
-	if (h->base)
-		HEAPfree(h, false);	/* we will do the unlinking */
-	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
-	strconcat_len(ext2, sizeof(ext2), ext, ".new", NULL);
-	return ((GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1037,7 +1029,7 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	headp->next = 0;
 }
 
-void
+gdk_return
 HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 {
 	/* For now we know about two alignments. */
@@ -1053,12 +1045,13 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 
 		total = roundup_8(total);
 		if (HEAPalloc(heap, total, 1, 1) != GDK_SUCCEED)
-			return;
+			return GDK_FAIL;
 		heap->free = heap->size;
 	}
 
 	/* initialize heap as empty */
 	HEAP_empty(heap, nprivate, alignment);
+	return GDK_SUCCEED;
 }
 
 
@@ -1089,7 +1082,7 @@ HEAP_malloc(BAT *b, size_t nbytes)
 		assert(trail == 0 || block > trail);
 		if (trail != 0 && block <= trail) {
 			GDKerror("Free list is not orderered\n");
-			return 0;
+			return (var_t) -1;
 		}
 
 		if (blockp->size >= nbytes)
@@ -1112,7 +1105,7 @@ HEAP_malloc(BAT *b, size_t nbytes)
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
 		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, false) != GDK_SUCCEED) {
-			return 0;
+			return (var_t) -1;
 		}
 		heap = b->tvheap;
 		heap->free = newsize;

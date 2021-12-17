@@ -1679,24 +1679,24 @@ setFormatter(const char *s)
 		noquote = true;
 		formatter = CSVformatter;
 		separator = strdup(",");
-	} else if (strncmp(s, "csv-noquote=", 4) == 0) {
+	} else if (strncmp(s, "csv-noquote=", 12) == 0) {
 		noquote = true;
 		formatter = CSVformatter;
-		if (s[4] == '"') {
-			separator = strdup(s + 5);
+		if (s[12] == '"') {
+			separator = strdup(s + 13);
 			if (separator[strlen(separator) - 1] == '"')
 				separator[strlen(separator) - 1] = 0;
 		} else
-			separator = strdup(s + 4);
-	} else if (strncmp(s, "csv-noquote+", 4) == 0) {
+			separator = strdup(s + 12);
+	} else if (strncmp(s, "csv-noquote+", 12) == 0) {
 		noquote = true;
 		formatter = CSVformatter;
-		if (s[4] == '"') {
-			separator = strdup(s + 5);
+		if (s[12] == '"') {
+			separator = strdup(s + 13);
 			if (separator[strlen(separator) - 1] == '"')
 				separator[strlen(separator) - 1] = 0;
 		} else
-			separator = strdup(s + 4);
+			separator = strdup(s + 12);
 		csvheader = true;
 	} else if (strcmp(s, "tab") == 0) {
 		formatter = CSVformatter;
@@ -2515,7 +2515,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						start_pager(&saveFD);
 #endif
 						if (x & MD_TABLE || x & MD_VIEW)
-							describe_table(mid, NULL, line, toConsole, 1, false);
+							dump_table(mid, NULL, line, toConsole, true, true, false, false, false);
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)

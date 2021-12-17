@@ -400,7 +400,7 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 #endif
 
-		data = GDKmalloc(sizeof(*data));
+		data = GDKzalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
 			TRC_ERROR(MAL_SERVER, MAL_MALLOC_FAIL "\n");
@@ -1695,13 +1695,11 @@ static int SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 		break;
 	case TYPE_str:
 		if(fld==0 || strcmp(fld,"nil")==0){
-			if((v->val.sval= GDKstrdup(str_nil)) == NULL)
+			if (VALinit(v, TYPE_str, str_nil) == NULL)
 				return -1;
-			v->len = strlen(v->val.sval);
 		} else {
-			if((v->val.sval= GDKstrdup(fld)) == NULL)
+			if (VALinit(v, TYPE_str, fld) == NULL)
 				return -1;
-			v->len = strlen(fld);
 		}
 		break;
 	}
@@ -1857,12 +1855,11 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		/* generate a tuple batch */
 		/* and reload it into the proper format */
 		str ht,tt;
-		BAT *b= BATdescriptor(BBPindex(*nme));
+		BAT *b = BBPquickdesc(BBPindex(*nme));
 		size_t len;
 
-		if( b== NULL){
-			throw(MAL,"mapi.put","Can not access BAT");
-		}
+		if (!b)
+			throw(MAL, "mapi.put", RUNTIME_OBJECT_MISSING);
 
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);
@@ -1876,8 +1873,8 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			mapi_close_handle(SERVERsessions[i].hdl);
 		SERVERsessions[i].hdl= mapi_query(mid, buf);
 
-		GDKfree(ht); GDKfree(tt);
-		BBPrelease(b->batCacheid);
+		GDKfree(ht);
+		GDKfree(tt);
 		break;
 		}
 	case TYPE_str:

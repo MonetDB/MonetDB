@@ -1,0 +1,20 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE T (t1 int, t2 int)
+
+statement ok rowcount 2
+INSERT INTO t VALUES (1, 1), (1, 2)
+
+query I nosort
+SELECT DISTINCT t1 FROM T ORDER BY t1
+----
+1
+
+statement error 42000!SELECT: with DISTINCT ORDER BY expressions must appear in select list
+SELECT DISTINCT t1 FROM T ORDER BY t1, t2
+
+statement ok
+ROLLBACK
+

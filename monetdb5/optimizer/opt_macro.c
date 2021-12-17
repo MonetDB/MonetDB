@@ -234,7 +234,7 @@ MACROvalidate(MalBlkPtr mb)
 	return MAL_SUCCEED;
 }
 
-str
+static int
 MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 {
 	InstrPtr q;
@@ -243,28 +243,29 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 
 	(void) cntxt;
 	if (t == NULL)
-		return msg;
-	msg = MACROvalidate(t->def);
-	if (msg)
-		return msg;
+		return 0;
+	if ((msg = MACROvalidate(t->def))) {
+		freeException(msg);
+		return 0;
+	}
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 &&
 			getSignature(t)->token == FUNCTIONsymbol) {
-			if (i == last)
-				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY002) MACRO_DUPLICATE);
+			if (i == last) /* Duplicate macro expansion */
+				return cnt;
 
 			last = i;
 			i = inlineMALblock(mb, i, t->def);
-			if( i < 0)
-				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			if( i < 0) /* Allocation failure */
+				return cnt;
 
 			cnt++;
-			if (cnt > MAXEXPANSION)
-				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY002) MACRO_TOO_DEEP);
+			if (cnt > MAXEXPANSION) /* Too many macro expansions */
+				return cnt;
 		}
 	}
-	return msg;
+	return cnt;
 }
 
 /*
@@ -354,7 +355,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 }
 
 static str
-ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
+ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t, int *actions)
 {
 	MalBlkPtr mc;
 	int i;
@@ -373,6 +374,7 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			if (msg == MAL_SUCCEED){
 				if( replaceMALblock(mb, i, mc) < 0)
 					throw(MAL,"orcam", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				(*actions)++;
 			} else
 				break;
 		}
@@ -385,17 +387,15 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 	return msg;
 }
 
-str
+static int
 OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	MalBlkPtr target= mb;
 	Module s;
 	Symbol t;
 	str mod,fcn;
-	int j;
-	str msg = MAL_SUCCEED;
+	int j, actions = 0;
 
-	(void) cntxt;
 	(void) stk;
 
 	if( p->argc == 3){
@@ -419,15 +419,11 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for (t = s->space[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol){
-					msg = MACROprocessor(cntxt, target, t);
-					// failures from the macro expansion are ignored
-					// They leave the scene as is
-					if ( msg)
-						freeException(msg);
+					actions += MACROprocessor(cntxt, target, t);
 				}
 			}
 	}
-	return MAL_SUCCEED;
+	return actions;
 }
 /*
  * The optimizer call infrastructure is identical to the liners
@@ -435,8 +431,8 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * functions, regardless their
  */
 
-str
-OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+static str
+OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int *actions)
 {
 	MalBlkPtr target= mb;
 	Module s;
@@ -470,7 +466,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol) {
 					freeException(msg);
-					msg =ORCAMprocessor(cntxt, target, t);
+					msg =ORCAMprocessor(cntxt, target, t, actions);
 				}
 			}
 	}
@@ -480,9 +476,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol t;
 	str msg = MAL_SUCCEED, mod, fcn;
-	lng clk= GDKusec();
-	char buf[256];
-	lng usec = GDKusec();
+	int actions = 0;
 
 	if( p ==NULL )
 		return 0;
@@ -502,36 +496,25 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( msg)
 		return msg;
 	if( mb->errors == 0)
-		msg= OPTmacroImplementation(cntxt,mb,stk,p);
-	// similar to OPTmacro
-	if( msg) {
-		freeException(msg);
-		msg= MAL_SUCCEED;
-	}
+		actions = OPTmacroImplementation(cntxt,mb,stk,p);
 
-    /* Defense line against incorrect plans */
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
-	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
-	if (msg != MAL_SUCCEED)
-		return msg;
-	usec += GDKusec() - clk;
-	/* keep all actions taken as a post block comment */
-	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","macro",usec);
-	newComment(mb,buf);
-	addtoMalBlkHistory(mb);
-	if (mb->errors)
-		throw(MAL, "optimizer.macro", SQLSTATE(42000) PROGRAM_GENERAL);
-	return MAL_SUCCEED;
+	/* Defense line against incorrect plans */
+	if (actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, p, actions);
+	return msg;
 }
 
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol t;
-	str mod,fcn;
-	lng clk= GDKusec();
-	char buf[256];
-	lng usec = GDKusec();
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, mod, fcn;
+	int actions = 0;
 
 	if( p ==NULL )
 		return 0;
@@ -551,21 +534,18 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( msg)
 		return msg;
 	if( mb->errors == 0)
-		msg= OPTorcamImplementation(cntxt,mb,stk,p);
+		msg= OPTorcamImplementation(cntxt,mb,stk,p, &actions);
 	if( msg)
 		return msg;
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
-	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
-	if (msg != MAL_SUCCEED)
-		return msg;
-	usec += GDKusec() - clk;
-	/* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","orcam",usec);
-	newComment(mb,buf);
-	addtoMalBlkHistory(mb);
-	if (mb->errors)
-		throw(MAL, "optimizer.orcam", SQLSTATE(42000) PROGRAM_GENERAL);
-	return MAL_SUCCEED;
+	/* Defense line against incorrect plans */
+	if (actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, p, actions);
+	return msg;
 }

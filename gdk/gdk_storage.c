@@ -308,6 +308,7 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 		GDKfree(path);
 		return GDK_SUCCEED;
 	}
+	GDKerror("no name specified");
 	return GDK_FAIL;
 }
 
@@ -559,7 +560,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					/* we couldn't read all, error
 					 * already generated */
 					GDKfree(ret);
-					GDKerror("short read from heap %s%s\n", nme, ext ? ext : "");
+					GDKerror("short read from heap %s%s%s, expected %zu, missing %zd\n", nme, ext ? "." : "", ext ? ext : "", size, n_expected);
 					ret = NULL;
 				}
 #ifndef NDEBUG
@@ -778,7 +779,7 @@ gettailnamebi(const BATiter *bi)
 }
 
 gdk_return
-BATsave_locked(BAT *b, BATiter *bi)
+BATsave_locked(BAT *b, BATiter *bi, BUN size)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
@@ -788,7 +789,6 @@ BATsave_locked(BAT *b, BATiter *bi)
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 	assert(!GDKinmemory(b->theap->farmid));
-	assert(b->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
@@ -802,7 +802,7 @@ BATsave_locked(BAT *b, BATiter *bi)
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
 	const char *tail = gettailnamebi(bi);
-	if (bi->type != TYPE_void && bi->h->base == NULL) {
+	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
 			int fd = GDKfdlocate(bi->h->farmid, nme, "rb+", tail);
@@ -858,7 +858,6 @@ BATsave_locked(BAT *b, BATiter *bi)
 
 	if (err == GDK_SUCCEED) {
 		MT_lock_set(&b->theaplock);
-		b->batCopiedtodisk = true;
 		if (b->theap != bi->h) {
 			assert(b->theap->dirty);
 			b->theap->wasempty = bi->h->wasempty;
@@ -867,20 +866,22 @@ BATsave_locked(BAT *b, BATiter *bi)
 			assert(b->tvheap->dirty);
 			b->tvheap->wasempty = bi->vh->wasempty;
 		}
-		b->batDirtyflushed = DELTAdirty(b);
-		b->batDirtydesc = false;
-		MT_lock_unset(&b->theaplock);
-		if (MT_rwlock_rdtry(&b->thashlock)) {
-			/* if we can't get the lock, don't bother saving
-			 * the hash (normally, the hash lock should not
-			 * be acquired when the heap lock has already
-			 * been acquired, and here we have the heap
-			 * lock, so we must be careful with the hash
-			 * lock) */
-			if (b->thash && b->thash != (Hash *) 1)
-				BAThashsave(b, dosync);
-			MT_rwlock_rdunlock(&b->thashlock);
+		if (size != b->batCount || b->batInserted < b->batCount) {
+			/* if the sizes don't match, the BAT must be dirty */
+			b->batCopiedtodisk = false;
+			b->batDirtyflushed = true;
+			b->batDirtydesc = true;
+			b->theap->dirty = true;
+			if (b->tvheap)
+				b->tvheap->dirty = true;
+		} else {
+			b->batCopiedtodisk = true;
+			b->batDirtyflushed = DELTAdirty(b);
+			b->batDirtydesc = false;
 		}
+		MT_lock_unset(&b->theaplock);
+		if (b->thash && b->thash != (Hash *) 1)
+			BAThashsave(b, dosync);
 	}
 	return err;
 }
@@ -890,11 +891,11 @@ BATsave(BAT *b)
 {
 	gdk_return rc;
 
-	MT_rwlock_rdlock(&b->thashlock);
 	BATiter bi = bat_iterator(b);
-	rc = BATsave_locked(b, &bi);
-	bat_iterator_end(&bi);
+	MT_rwlock_rdlock(&b->thashlock);
+	rc = BATsave_locked(b, &bi, bi.count);
 	MT_rwlock_rdunlock(&b->thashlock);
+	bat_iterator_end(&bi);
 	return rc;
 }
 
@@ -920,6 +921,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
+		b->theap->storage = b->theap->newstorage = STORE_INVALID;
 		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;
@@ -936,6 +938,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
+		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);
@@ -982,7 +985,6 @@ void
 BATdelete(BAT *b)
 {
 	bat bid = b->batCacheid;
-	const char *o = BBP_physical(bid);
 	BAT *loaded = BBP_cache(bid);
 
 	assert(bid > 0);
@@ -993,24 +995,10 @@ BATdelete(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
-	if (b->batCopiedtodisk || (b->theap->storage != STORE_MEM)) {
-		if (b->ttype != TYPE_void &&
-		    HEAPdelete(b->theap, o, gettailname(b)) != GDK_SUCCEED &&
-		    b->batCopiedtodisk)
-			TRC_DEBUG(IO_, "BATdelete(%s): bun heap\n", BATgetId(b));
-	} else if (b->theap->base) {
-		HEAPfree(b->theap, true);
-	}
-	if (b->tvheap) {
-		assert(b->tvheap->parentid == bid);
-		if (b->batCopiedtodisk || (b->tvheap->storage != STORE_MEM)) {
-			if (HEAPdelete(b->tvheap, o, "theap") != GDK_SUCCEED &&
-			    b->batCopiedtodisk)
-				TRC_DEBUG(IO_, "BATdelete(%s): tail heap\n", BATgetId(b));
-		} else {
-			HEAPfree(b->tvheap, true);
-		}
-	}
+	STRMPdestroy(b);
+	HEAPfree(b->theap, true);
+	if (b->tvheap)
+		HEAPfree(b->tvheap, true);
 	b->batCopiedtodisk = false;
 }
 
@@ -1059,16 +1047,16 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		buf = argv[i]->tident;
-		mnstr_write(s, buf, 1, strlen(buf));
+		const char *nm = argv[i]->tident;
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # name\n", 1, 9);
 	mnstr_write(s, "# ", 1, 2);
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		buf = ATOMname(argv[i]->ttype);
-		mnstr_write(s, buf, 1, strlen(buf));
+		const char *nm = ATOMname(argv[i]->ttype);
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # type\n", 1, 9);
 	mnstr_write(s, "#--------------------------#\n", 1, 29);
@@ -1104,18 +1092,20 @@ BATprint(stream *fdout, BAT *b)
 {
 	if (complex_cand(b)) {
 		struct canditer ci;
-		canditer_init(&ci, NULL, b);
+		BUN ncand = canditer_init(&ci, NULL, b);
+		oid hseq = ci.hseq;
+
 		mnstr_printf(fdout,
 			     "#--------------------------#\n"
 			     "# h\t%s  # name\n"
 			     "# void\toid  # type\n"
 			     "#--------------------------#\n",
 			     b->tident);
-		for (BUN i = 0; i < ci.ncand; i++) {
+		for (BUN i = 0; i < ncand; i++) {
 			oid o = canditer_next(&ci);
 			mnstr_printf(fdout,
 				     "[ " OIDFMT "@0,\t" OIDFMT "@0  ]\n",
-				     (oid) (i + ci.hseq), o);
+				     (oid) (i + hseq), o);
 		}
 		return GDK_SUCCEED;
 	}

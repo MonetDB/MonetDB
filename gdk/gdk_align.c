@@ -91,7 +91,7 @@ VIEWcreate(oid seq, BAT *b)
 		return BATdense(seq, b->tseqbase, b->batCount);
 	}
 
-	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT);
+	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT, 0);
 	if (bn == NULL)
 		return NULL;
 	assert(bn->theap == NULL);
@@ -133,6 +133,8 @@ VIEWcreate(oid seq, BAT *b)
 	bn->timprints = NULL;
 	/* Order OID index */
 	bn->torderidx = NULL;
+	/* Only the parent should have a pointer to the strimp */
+	bn->tstrimps = NULL;
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp) {
 			BBPunshare(tp);
@@ -178,7 +180,6 @@ BATmaterialize(BAT *b)
 	cnt = BATcapacity(b);
 	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
 		return GDK_FAIL;
-	*tail = *b->theap;
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
@@ -194,8 +195,7 @@ BATmaterialize(BAT *b)
 		.parentid = b->batCacheid,
 		.dirty = true,
 	};
-	strconcat_len(tail->filename, sizeof(tail->filename),
-		      BBP_physical(b->batCacheid), ".tail", NULL);
+	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
 	if (HEAPalloc(tail, cnt, sizeof(oid), 0) != GDK_SUCCEED) {
 		GDKfree(tail);
 		return GDK_FAIL;
@@ -254,11 +254,10 @@ BATmaterialize(BAT *b)
 	b->theap = tail;
 	b->tbaseoff = 0;
 	b->theap->dirty = true;
-	BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){is_oid_nil(t) ? 1 : b->batCount});
-	BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){is_oid_nil(t) ? 1.0 : (dbl)b->batCount});
+	b->tunique_est = is_oid_nil(t) ? 1.0 : (double) b->batCount;
 	MT_lock_unset(&b->theaplock);
 	b->ttype = TYPE_oid;
-	BATsetdims(b);
+	BATsetdims(b, 0);
 	b->batDirtydesc = true;
 	BATsetcount(b, b->batCount);
 
@@ -280,7 +279,6 @@ VIEWunlink(BAT *b)
 		BAT *tpb = NULL;
 		BAT *vtpb = NULL;
 
-		assert(b->batCacheid > 0);
 		if (tp)
 			tpb = BBP_cache(tp);
 		if (tp && !vtp)
@@ -359,6 +357,14 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	} else {
 		view->tnokey[0] = view->tnokey[1] = 0;
 	}
+	if (view->tminpos >= l && view->tminpos < l + cnt)
+		view->tminpos -= l;
+	else
+		view->tminpos = BUN_NONE;
+	if (view->tmaxpos >= l && view->tmaxpos < l + cnt)
+		view->tmaxpos -= l;
+	else
+		view->tmaxpos = BUN_NONE;
 }
 
 /*
@@ -373,6 +379,7 @@ VIEWdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
+	STRMPdestroy(b);
 	PROPdestroy(b);
 	VIEWunlink(b);
 

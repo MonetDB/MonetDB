@@ -21,13 +21,12 @@ OPTaliasRemap(InstrPtr p, int *alias){
 }
 
 str
-OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j,k=1, limit, actions=0;
 	int *alias = 0;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	InstrPtr p;
 
 	(void) stk;
 	(void) cntxt;
@@ -39,6 +38,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			break;
 	}
 	if( i == limit){
+		// we didn't found a simple assignment that warrants a rewrite
 		goto wrapup;
 	}
 	k = i;
@@ -82,12 +82,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	// if ( msg == MAL_SUCCEED)
 	// 	msg = chkDeclarations(mb);
 wrapup:
-	/* keep all actions taken as a post block comment
-	 * and update statics */
-	usec= GDKusec() - usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","aliases",actions,usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

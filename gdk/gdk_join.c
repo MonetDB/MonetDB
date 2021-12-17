@@ -451,6 +451,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	BUN i;
 	oid o, *o1p = NULL, *o2p = NULL;
 	BAT *r1 = NULL, *r2 = NULL;
+	bool ltsorted = false, ltrevsorted = false, ltkey = false;
 
 	/* r is dense, and if there is a candidate list, it too is
 	 * dense.  This means we don't have to do any searches, we
@@ -551,10 +552,10 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					o2p[o] = lp[o1p[o] - l->hseqbase] - r->tseqbase + r->hseqbase;
 				}
 			}
-			bat_iterator_end(&li);
 			r2->tkey = l->tkey;
 			r2->tsorted = l->tsorted;
 			r2->trevsorted = l->trevsorted;
+			bat_iterator_end(&li);
 			r2->tnil = false;
 			r2->tnonil = true;
 			BATsetcount(r2, BATcount(r1));
@@ -717,6 +718,9 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	r2->tnil = false;
 	r2->tnonil = true;
 	if (complex_cand(l)) {
+		ltsorted = l->tsorted;
+		ltrevsorted = l->trevsorted;
+		ltkey = l->tkey;
 		TIMEOUT_LOOP(lci->ncand, timeoffset) {
 			oid c = canditer_next(lci);
 
@@ -735,6 +739,9 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else {
 		BATiter li = bat_iterator(l);
 		const oid *lvals = (const oid *) li.base;
+		ltsorted = l->tsorted;
+		ltrevsorted = l->trevsorted;
+		ltkey = l->tkey;
 		TIMEOUT_LOOP(lci->ncand, timeoffset) {
 			oid c = canditer_next(lci);
 
@@ -760,9 +767,9 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	r1->tnonil = true;
 	BATsetcount(r1, lci->ncand);
 	BATsetcount(r2, lci->ncand);
-	r2->tsorted = l->tsorted || BATcount(r2) <= 1;
-	r2->trevsorted = l->trevsorted || BATcount(r2) <= 1;
-	r2->tkey = l->tkey || BATcount(r2) <= 1;
+	r2->tsorted = ltsorted || BATcount(r2) <= 1;
+	r2->trevsorted = ltrevsorted || BATcount(r2) <= 1;
+	r2->tkey = ltkey || BATcount(r2) <= 1;
 	r2->tseqbase = oid_nil;
 
   doreturn:
@@ -3166,8 +3173,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			mask = (BUN) 1 << 16;
 		if ((hs.heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hs.heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshunil%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
-		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshunib%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
+		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
+		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
 		    HASHnew(&hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
@@ -3220,11 +3227,13 @@ guess_uniques(BAT *b, struct canditer *ci)
 
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		const ValRecord *p = BATgetprop(b, GDK_UNIQUE_ESTIMATE);
-		if (p) {
+		MT_lock_set(&b->theaplock);
+		double unique_est = b->tunique_est;
+		MT_lock_unset(&b->theaplock);
+		if (unique_est != 0) {
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT " use cached value\n",
 				  ALGOBATPAR(b));
-			return p->val.dval;
+			return unique_est;
 		}
 		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
@@ -3243,7 +3252,10 @@ guess_uniques(BAT *b, struct canditer *ci)
 	B += A * ci->ncand;
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		BATsetprop(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &B);
+		MT_lock_set(&b->theaplock);
+		if (b->tunique_est == 0)
+			b->tunique_est = B;
+		MT_lock_unset(&b->theaplock);
 	}
 	return B;
 }
@@ -3309,15 +3321,14 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
 		if (!rhash) {
-			const ValRecord *prop = BATgetprop(r, GDK_NUNIQUE);
-			if (prop) {
-				/* we know number of unique values, assume some
-				 * collisions */
-				rcost *= 1.1 * ((double) BATcount(r) / prop->val.oval);
-			} else {
-				/* guess number of unique value and work with that */
-				rcost *= 1.1 * ((double) cnt / guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)}));
-			}
+			MT_lock_set(&r->theaplock);
+			double unique_est = r->tunique_est;
+			MT_lock_unset(&r->theaplock);
+			if (unique_est == 0)
+				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)});
+			/* we have an estimate of the number of unique
+			 * values, assume some collisions */
+			rcost *= 1.1 * ((double) cnt / unique_est);
 #ifdef PERSISTENTHASH
 			/* only count the cost of creating the hash for
 			 * non-persistent bats */
@@ -3340,15 +3351,14 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		if (rhash && !prhash) {
 			rccost = (double) cnt / nheads;
 		} else {
-			ValPtr prop = BATgetprop(r, GDK_NUNIQUE);
-			if (prop) {
-				/* we know number of unique values, assume some
-				 * chains */
-				rccost = 1.1 * ((double) cnt / prop->val.oval);
-			} else {
-				/* guess number of unique value and work with that */
-				rccost = 1.1 * ((double) cnt / guess_uniques(r, rci));
-			}
+			MT_lock_set(&r->theaplock);
+			double unique_est = r->tunique_est;
+			MT_lock_unset(&r->theaplock);
+			if (unique_est == 0)
+				unique_est = guess_uniques(r, rci);
+			/* we have an estimate of the number of unique
+			 * values, assume some chains */
+			rccost = 1.1 * ((double) cnt / unique_est);
 		}
 		rccost *= lci->ncand;
 		rccost += rci->ncand * 2.0; /* cost of building the hash */
@@ -3601,15 +3611,16 @@ fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	*r1p = r1;
 	oid *op = (oid *) Tloc(r1, 0);
 	BATiter ri = bat_iterator(r);
+	bool rtkey = r->tkey, rtsorted = r->tsorted, rtrevsorted = r->trevsorted;
 	const oid *rp = (const oid *) ri.base;
 	for (p = b; p < e; p++) {
 		*op++ = rp[p] + l->hseqbase - l->tseqbase;
 	}
 	bat_iterator_end(&ri);
 	BATsetcount(r1, e - b);
-	r1->tkey = r->tkey;
-	r1->tsorted = r->tsorted || e - b <= 1;
-	r1->trevsorted = r->trevsorted || e - b <= 1;
+	r1->tkey = rtkey;
+	r1->tsorted = rtsorted || e - b <= 1;
+	r1->trevsorted = rtrevsorted || e - b <= 1;
 	r1->tseqbase = e == b ? 0 : e - b == 1 ? *(const oid *)Tloc(r1, 0) : oid_nil;
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","

@@ -358,6 +358,9 @@ Hence, in practice it is only relevant for connections to remote
 databases to use redirects instead of proxies.
 Changing this property takes effect immediately at runtime.
 .SH REMOTE DATABASES
+.B Deprecation notice:
+This feature is deprecated and may be removed in the future.
+.P
 The neighbor discovery capabilities of
 .I monetdbd
 allow a user to contact a remote database transparently, as if it were
@@ -457,6 +460,9 @@ or
 and use the necessary pattern to match them.
 It is up to the user to decide how to use the tags.
 .SH MULTIPLEX-FUNNELS
+.B Deprecation notice:
+This feature is deprecated and may be removed in the future.
+.P
 .I Monetdbd
 implements multiplex-funnel capabilities.
 As the name suggests two techniques are combined, the multiplexer and

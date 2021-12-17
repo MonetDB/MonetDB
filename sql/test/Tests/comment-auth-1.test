@@ -1,0 +1,30 @@
+statement ok
+CREATE USER user_a WITH PASSWORD 'user_a' NAME 'User A' SCHEMA sys
+
+statement ok
+CREATE USER user_b WITH PASSWORD 'user_b' NAME 'User B' SCHEMA sys
+
+statement ok
+CREATE ROLE role_b
+
+statement ok
+GRANT role_b to user_b
+
+statement ok
+CREATE SCHEMA schema_a AUTHORIZATION user_a
+
+statement ok
+CREATE SCHEMA schema_b AUTHORIZATION role_b
+
+statement ok
+CREATE TABLE schema_a.tab_a(i INTEGER)
+
+statement ok
+CREATE TABLE schema_b.tab_b(i INTEGER)
+
+statement ok
+COMMENT ON SCHEMA schema_a IS 'set by super user'
+
+statement ok
+COMMENT ON SCHEMA schema_b IS 'set by super user'
+

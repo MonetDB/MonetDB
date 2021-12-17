@@ -31,8 +31,9 @@ OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p)
 	Symbol s;
 	str mod,fcn;
 
-	mod = VALget(&getVar(mb, getArg(p, p->retc+0))->value);
-	fcn = VALget(&getVar(mb, getArg(p, p->retc+1))->value);
+	int plus_one = getArgType(mb, p, p->retc) == TYPE_lng ? 1 : 0;
+	mod = VALget(&getVar(mb, getArg(p, p->retc+0+plus_one))->value);
+	fcn = VALget(&getVar(mb, getArg(p, p->retc+1+plus_one))->value);
 	if ((s = findSymbolInModule(getModule(putName(mod)), putName(fcn))) == 0)
 		return false;
 	return s->def->inlineProp;
@@ -40,16 +41,13 @@ OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p)
 
 
 str
-OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	InstrPtr q,sig;
+	InstrPtr q, sig;
 	int actions = 0;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	(void) p;
 	(void)stk;
 
 	for (i = 1; i < mb->stop; i++) {
@@ -75,19 +73,16 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","inline",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	//mnstr_printf(cntxt->fdout,"inline limit %d ssize %d vtop %d vsize %d\n", mb->stop, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

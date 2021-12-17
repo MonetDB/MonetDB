@@ -1,0 +1,5 @@
+query R nosort
+select degrees(-0.1)
+----
+-5.730
+

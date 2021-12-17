@@ -13,6 +13,7 @@
 #include "mal_client.h"
 #include "sql_mvc.h"
 #include "sql_qc.h"
+#include "opt_backend.h"
 
 /*
  * The back-end structure collects the information needed to support
@@ -61,10 +62,13 @@ typedef struct backend {
 	res_table *results;
 	lng last_id;
 	lng rowcnt;
+	subbackend *subbackend;
+	str fimp; /* for recurisve functions keep the to be generated MAL function name here */
 } backend;
 
 extern backend *backend_reset(backend *b);
 extern backend *backend_create(mvc *m, Client c);
 extern void backend_destroy(backend *b);
+extern str backend_function_imp(backend *b, sql_func *f);
 
 #endif /*MAL_BACKEND_H*/

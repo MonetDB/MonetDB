@@ -375,6 +375,8 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 #define PERFMASK	(1<<12)
 #define DELTAMASK	(1<<13)
 #define LOADMASK	(1<<14)
+#define PUSHCANDMASK	(1<<15)	/* used in opt_pushselect.c */
+#define TAILCHKMASK	(1<<16)	/* check .tail file size during commit */
 #define ACCELMASK	(1<<20)
 #define ALGOMASK	(1<<21)
 
@@ -535,14 +537,14 @@ typedef enum {
 
 /* Heap storage modes */
 typedef enum {
-	STORE_MEM     = 0,	/* load into GDKmalloced memory */
-	STORE_MMAP    = 1,	/* mmap() into virtual memory */
-	STORE_PRIV    = 2,	/* BAT copy of copy-on-write mmap */
-	STORE_CMEM    = 3,	/* load into malloc (not GDKmalloc) memory*/
-	STORE_NOWN    = 4,	/* memory not owned by the BAT */
-	STORE_MMAPABS = 5,	/* mmap() into virtual memory from an
+	STORE_INVALID = 0,	/* invalid value, used to indicate error */
+	STORE_MEM,		/* load into GDKmalloced memory */
+	STORE_MMAP,		/* mmap() into virtual memory */
+	STORE_PRIV,		/* BAT copy of copy-on-write mmap */
+	STORE_CMEM,		/* load into malloc (not GDKmalloc) memory*/
+	STORE_NOWN,		/* memory not owned by the BAT */
+	STORE_MMAPABS,		/* mmap() into virtual memory from an
 				 * absolute path (not part of dbfarm) */
-	STORE_INVALID		/* invalid value, used to indicate error */
 } storage_t;
 
 typedef struct {
@@ -568,6 +570,7 @@ typedef struct {
 
 typedef struct Hash Hash;
 typedef struct Imprints Imprints;
+typedef struct Strimps Strimps;
 
 /*
  * @+ Binary Association Tables
@@ -724,6 +727,8 @@ typedef struct {
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
+	BUN minpos, maxpos;	/* location of min/max value */
+	double unique_est;	/* estimated number of unique values */
 	oid seq;		/* start of dense sequence */
 
 	Heap *heap;		/* space for the column. */
@@ -732,6 +737,7 @@ typedef struct {
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
+	Strimps *strimps;	/* string imprint index  */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -749,11 +755,11 @@ typedef struct {
 
 typedef struct BAT {
 	/* static bat properties */
-	bat batCacheid;		/* index into BBP */
 	oid hseqbase;		/* head seq base */
+	MT_Id creator_tid;	/* which thread created it */
+	bat batCacheid;		/* index into BBP */
 
 	/* dynamic bat properties */
-	MT_Id creator_tid;	/* which thread created it */
 	bool
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
@@ -793,12 +799,16 @@ typedef struct BAT {
 #define tnokey		T.nokey
 #define tnosorted	T.nosorted
 #define tnorevsorted	T.norevsorted
+#define tminpos		T.minpos
+#define tmaxpos		T.maxpos
+#define tunique_est	T.unique_est
 #define theap		T.heap
 #define tbaseoff	T.baseoff
 #define tvheap		T.vheap
 #define thash		T.hash
 #define timprints	T.imprints
 #define tprops		T.props
+#define tstrimps	T.strimps
 
 
 /* some access functions for the bitmask type */
@@ -853,9 +863,6 @@ mskGetVal(BAT *b, BUN p)
  * @item int
  * @tab
  *  HEAPcopy (Heap *dst,*src);
- * @item int
- * @tab
- *  HEAPdelete (Heap *dst, str o, str ext);
  * @item int
  * @tab
  *  HEAPwarm (Heap *h);
@@ -919,6 +926,8 @@ typedef struct BATiter {
 	int8_t type;
 	oid tseq;
 	BUN hfree, vhfree;
+	BUN minpos, maxpos;
+	double unique_est;
 	union {
 		oid tvid;
 		bool tmsk;
@@ -929,13 +938,11 @@ typedef struct BATiter {
 } BATiter;
 
 static inline BATiter
-bat_iterator(BAT *b)
+bat_iterator_nolock(BAT *b)
 {
-	/* needs matching bat_iterator_end */
-	BATiter bi;
+	/* does not get matched by bat_iterator_end */
 	if (b) {
-		MT_lock_set(&b->theaplock);
-		bi = (BATiter) {
+		return (BATiter) {
 			.b = b,
 			.h = b->theap,
 			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
@@ -947,10 +954,28 @@ bat_iterator(BAT *b)
 			.tseq = b->tseqbase,
 			.hfree = b->theap->free,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
+			.minpos = b->tminpos,
+			.maxpos = b->tmaxpos,
+			.unique_est = b->tunique_est,
 #ifndef NDEBUG
-			.locked = true,
+			.locked = false,
 #endif
 		};
+	}
+	return (BATiter) {0};
+}
+
+static inline BATiter
+bat_iterator(BAT *b)
+{
+	/* needs matching bat_iterator_end */
+	BATiter bi;
+	if (b) {
+		MT_lock_set(&b->theaplock);
+		bi = bat_iterator_nolock(b);
+#ifndef NDEBUG
+		bi.locked = true;
+#endif
 		HEAPincref(bi.h);
 		if (bi.vh)
 			HEAPincref(bi.vh);
@@ -977,31 +1002,6 @@ bat_iterator_end(BATiter *bip)
 	if (bip->vh)
 		HEAPdecref(bip->vh, false);
 	*bip = (BATiter) {0};
-}
-
-static inline BATiter
-bat_iterator_nolock(BAT *b)
-{
-	/* does not get matched by bat_iterator_end */
-	if (b) {
-		return (BATiter) {
-			.b = b,
-			.h = b->theap,
-			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
-			.vh = b->tvheap,
-			.count = b->batCount,
-			.width = b->twidth,
-			.shift = b->tshift,
-			.type = b->ttype,
-			.tseq = b->tseqbase,
-			.hfree = b->theap->free,
-			.vhfree = b->tvheap ? b->tvheap->free : 0,
-#ifndef NDEBUG
-			.locked = false,
-#endif
-		};
-	}
-	return (BATiter) {0};
 }
 
 /*
@@ -1033,7 +1033,7 @@ bat_iterator_nolock(BAT *b)
  * private space.
  */
 
-gdk_export void HEAP_initialize(
+gdk_export gdk_return HEAP_initialize(
 	Heap *heap,		/* nbytes -- Initial size of the heap. */
 	size_t nbytes,		/* alignment -- for objects on the heap. */
 	size_t nprivate,	/* nprivate -- Size of private space */
@@ -1064,6 +1064,8 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  * properties inherited from its argument.
  */
 gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role)
+	__attribute__((__warn_unused_result__));
+gdk_export BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((__warn_unused_result__));
@@ -1153,59 +1155,6 @@ typedef var_t stridx_t;
 #include "gdk_atoms.h"
 
 #include "gdk_cand.h"
-
-/* return the oid value at BUN position p from the (v)oid bat b
- * works with any TYPE_void or TYPE_oid bat */
-static inline oid
-BUNtoid(BAT *b, BUN p)
-{
-	oid o;
-
-	assert(ATOMtype(b->ttype) == TYPE_oid);
-	/* BATcount is the number of valid entries, so with
-	 * exceptions, the last value can well be larger than
-	 * b->tseqbase + BATcount(b) */
-	assert(p < BATcount(b));
-	assert(b->ttype == TYPE_void || b->tvheap == NULL);
-	if (is_oid_nil(b->tseqbase)) {
-		if (b->ttype == TYPE_void)
-			return b->tseqbase; /* i.e. oid_nil */
-		MT_lock_set(&b->theaplock);
-		o = ((const oid *) b->theap->base)[p + b->tbaseoff];
-		MT_lock_unset(&b->theaplock);
-		return o;
-	}
-	o = b->tseqbase + p;
-	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
-		return o;
-	}
-	/* b->tvheap != NULL, so we know there will be no parallel
-	 * modifications (so no locking) */
-	assert(!mask_cand(b));
-	/* exceptions only allowed on transient BATs */
-	assert(b->batRole == TRANSIENT);
-	/* make sure exception area is a reasonable size */
-	assert(ccand_free(b) % SIZEOF_OID == 0);
-	BUN nexc = (BUN) (ccand_free(b) / SIZEOF_OID);
-	if (nexc == 0) {
-		/* no exceptions (why the vheap?) */
-		return o;
-	}
-	const oid *exc = (oid *) ccand_first(b);
-	if (o < exc[0])
-		return o;
-	if (o + nexc > exc[nexc - 1])
-		return o + nexc;
-	BUN lo = 0, hi = nexc - 1;
-	while (hi - lo > 1) {
-		BUN mid = (hi + lo) / 2;
-		if (exc[mid] - mid > o)
-			hi = mid;
-		else
-			lo = mid;
-	}
-	return o + hi;
-}
 
 /*
  * @- BAT properties
@@ -1310,7 +1259,6 @@ gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
 	__attribute__((__warn_unused_result__));
-
 /*
  * @- BAT Input/Output
  * @multitable @columnfractions 0.08 0.7
@@ -1446,6 +1394,8 @@ BATsettrivprop(BAT *b)
 			} else {
 				b->tnonil = true;
 				b->tnil = false;
+				b->tminpos = 0;
+				b->tmaxpos = 0;
 			}
 			b->tseqbase = sqbs;
 		}
@@ -1542,10 +1492,11 @@ gdk_export bat BBPlimit;
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT
  * this also gives the longest possible "physical" name and "bak" name
- * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on
- * 64 bit architecture and 11 + \0 on 32 bit architecture; the
- * physical name is a bit more complicated, but the longest possible
- * name is 22 + \0 bytes (16 + \0 on 32 bits) */
+ * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on 64
+ * bit architecture and 11 + \0 on 32 bit architecture; the physical
+ * name is a bit more complicated, but the longest possible name is 22 +
+ * \0 bytes (16 + \0 on 32 bits), the longest possible extension adds
+ * another 17 bytes (.thsh(grp|uni)(l|b)%08x) */
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
@@ -1944,12 +1895,12 @@ BATdescriptor(bat i)
 static inline void *
 Tpos(BATiter *bi, BUN p)
 {
-	if (bi->h->base) {
-		bi->tvid = ((const oid *) bi->h->base)[p];
-	} else if (bi->vh) {
+	assert(bi->base == NULL);
+	if (bi->vh) {
 		oid o;
+		assert(!is_oid_nil(bi->tseq));
 		if (((ccand_t *) bi->vh)->type == CAND_NEGOID) {
-			BUN nexc = (bi->vh->free - sizeof(ccand_t)) / SIZEOF_OID;
+			BUN nexc = (bi->vhfree - sizeof(ccand_t)) / SIZEOF_OID;
 			o = bi->tseq + p;
 			if (nexc > 0) {
 				const oid *exc = (const oid *) (bi->vh->base + sizeof(ccand_t));
@@ -1972,7 +1923,7 @@ Tpos(BATiter *bi, BUN p)
 			}
 		} else {
 			const uint32_t *msk = (const uint32_t *) (bi->vh->base + sizeof(ccand_t));
-			BUN nmsk = (bi->vh->free - sizeof(ccand_t)) / sizeof(uint32_t);
+			BUN nmsk = (bi->vhfree - sizeof(ccand_t)) / sizeof(uint32_t);
 			o = 0;
 			for (BUN i = 0; i < nmsk; i++) {
 				uint32_t m = candmask_pop(msk[i]);
@@ -1988,17 +1939,18 @@ Tpos(BATiter *bi, BUN p)
 			}
 		}
 		bi->tvid = o;
+	} else if (is_oid_nil(bi->tseq)) {
+		bi->tvid = oid_nil;
 	} else {
 		bi->tvid = bi->tseq + p;
 	}
-	bi->tvid = BUNtoid(bi->b, p);
-	return (void*)&bi->tvid;
+	return (void *) &bi->tvid;
 }
 
 static inline bool
 Tmskval(BATiter *bi, BUN p)
 {
-	return ((uint32_t *) bi->h->base)[p / 32] & (1U << (p % 32));
+	return ((uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
 }
 
 static inline void *
@@ -2006,6 +1958,34 @@ Tmsk(BATiter *bi, BUN p)
 {
 	bi->tmsk = Tmskval(bi, p);
 	return &bi->tmsk;
+}
+
+/* return the oid value at BUN position p from the (v)oid bat b
+ * works with any TYPE_void or TYPE_oid bat */
+static inline oid
+BUNtoid(BAT *b, BUN p)
+{
+	assert(ATOMtype(b->ttype) == TYPE_oid);
+	/* BATcount is the number of valid entries, so with
+	 * exceptions, the last value can well be larger than
+	 * b->tseqbase + BATcount(b) */
+	assert(p < BATcount(b));
+	assert(b->ttype == TYPE_void || b->tvheap == NULL);
+	if (is_oid_nil(b->tseqbase)) {
+		if (b->ttype == TYPE_void)
+			return oid_nil;
+		MT_lock_set(&b->theaplock);
+		oid o = ((const oid *) b->theap->base)[p + b->tbaseoff];
+		MT_lock_unset(&b->theaplock);
+		return o;
+	}
+	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
+		return b->tseqbase + p;
+	}
+	/* b->tvheap != NULL, so we know there will be no parallel
+	 * modifications (so no locking) */
+	BATiter bi = bat_iterator_nolock(b);
+	return * (oid *) Tpos(&bi, p);
 }
 
 /*
@@ -2172,9 +2152,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * correct for the reversed view.
  */
 #define isVIEW(x)							\
-	(assert((x)->batCacheid > 0),					\
-	 (((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
-	  ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid)))
+	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
+	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
 
 #define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
@@ -2242,13 +2221,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * levels.
  */
 enum prop_t {
-	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
-	GDK_MIN_POS,		/* BUN position of smallest value (oid) */
-	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
-	GDK_MAX_POS,		/* BUN position of largest value (oid) */
-	GDK_HASH_BUCKETS,	/* last used hash bucket size (oid) */
-	GDK_NUNIQUE,		/* number of unique values (oid) */
-	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values (dbl) */
+	CURRENTLY_NO_PROPERTIES_DEFINED,
 };
 
 gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
@@ -2385,19 +2358,19 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
  * on each iteration */
 #define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_MASK) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
 #define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_MASK) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
 #define TIMEOUT_LOOP(REPEATS, TIMEOFFSET)				\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_MASK) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
 		for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
 
 /* break out of the loop (cannot use do/while trick here) */
@@ -2414,5 +2387,26 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 		if (TIMEOFFSET == -1)		\
 			CALLBACK;		\
 	} while (0)
+
+/*
+ * String Imprints Development/Testing. TODO: remove the following.
+ */
+
+#include "gdk_strimps.h"
+typedef struct gdk_callback {
+	char *name;
+	int argc;
+	int interval;  // units sec
+	lng last_called; // timestamp GDKusec
+	gdk_return (*func)(int argc, void *argv[]);
+	struct gdk_callback *next;
+	void *argv[FLEXIBLE_ARRAY_MEMBER];
+} gdk_callback;
+
+typedef gdk_return gdk_callback_func(int argc, void *argv[]);
+
+gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void
+		*argv[], int interval);
+gdk_export gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
 
 #endif /* _GDK_H_ */

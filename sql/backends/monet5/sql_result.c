@@ -699,21 +699,17 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 	*bats =0;	// initialize the receiver
 
-	if (!bs) {
-		sql_error(m, 500, "no stream (pointer) provided");
-		return NULL;
-	}
+	if (!bs)
+		throw(IO, "sql.copy_from", SQLSTATE(42000) "No stream (pointer) provided");
 	if (mnstr_errnr(bs->s)) {
 		mnstr_error_kind errnr = mnstr_errnr(bs->s);
-		char *msg = mnstr_error(bs->s);
-		sql_error(m, 500, "stream not open %s: %s", mnstr_error_kind_name(errnr), msg ? msg : "unknown error");
-		free(msg);
-		return NULL;
+		char *stream_msg = mnstr_error(bs->s);
+		msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Stream not open %s: %s", mnstr_error_kind_name(errnr), stream_msg ? stream_msg : "unknown error");
+		free(stream_msg);
+		return msg;
 	}
-	if (offset < 0 || offset > (lng) BUN_MAX) {
-		sql_error(m, 500, "offset out of range");
-		return NULL;
-	}
+	if (offset < 0 || offset > (lng) BUN_MAX)
+		throw(IO, "sql.copy_from", SQLSTATE(42000) "Offset out of range");
 
 	if (offset > 0)
 		offset--;
@@ -730,10 +726,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			.filename = m->scanner.rs == bs ? NULL : "",
 		};
 		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
-		if (fmt == NULL) {
-			sql_error(m, 500, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return NULL;
-		}
+		if (fmt == NULL)
+			throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		as.format = fmt;
 		if (!isa_block_stream(bs->s))
 			out = NULL;
@@ -758,8 +752,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					BBPunfix(fmt[j].c->batCacheid);
 				}
 				GDKfree(fmt[i].data);
-				sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
-				return NULL;
+				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
@@ -782,15 +775,14 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
-					sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
 					TABLETdestroy_format(&as);
-					return NULL;
+					throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				msg = TABLETcollect(*bats,&as);
 			}
 		}
 		if (as.error) {
-			if( !best) sql_error(m, 500, "%s", getExceptionMessage(as.error));
+			if( !best) msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, getExceptionMessage(as.error));
 			freeException(as.error);
 			as.error = NULL;
 		}
@@ -827,7 +819,7 @@ mvc_export_warning(stream *s, str w)
 static int
 mvc_export_binary_bat(stream *s, BAT* bn)
 {
-	bool sendtheap = bn->ttype != TYPE_void && bn->tvarsized;
+	bool sendtheap = bn->ttype != TYPE_void, sendtvheap = sendtheap && bn->tvarsized;
 
 	if (mnstr_printf(s, /*JSON*/"{"
 		"\"version\":1,"
@@ -850,17 +842,17 @@ mvc_export_binary_bat(stream *s, BAT* bn)
 		bn->tnonil,
 		BATtdense(bn),
 		bn->batCount,
-		(size_t)bn->batCount << bn->tshift,
-		sendtheap && bn->batCount > 0 ? bn->tvheap->free : 0) < 0)
+		sendtheap ? (size_t)bn->batCount << bn->tshift : 0,
+		sendtvheap && bn->batCount > 0 ? bn->tvheap->free : 0) < 0)
 		return -4;
 
-	if (bn->batCount > 0) {
+	if (sendtheap && bn->batCount > 0) {
 		BATiter bni = bat_iterator(bn);
 		if (mnstr_write(s, /* tail */ bni.base, bni.count * bni.width, 1) < 1) {
 			bat_iterator_end(&bni);
 			return -4;
 		}
-		if (sendtheap && mnstr_write(s, /* theap */ bni.vh->base, bni.vh->free, 1) < 1) {
+		if (sendtvheap && mnstr_write(s, /* tvheap */ bni.vh->base, bni.vh->free, 1) < 1) {
 			bat_iterator_end(&bni);
 			return -4;
 		}
@@ -884,7 +876,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 	BAT* order		= NULL;
 	node *n;
 
-	const int nr_columns = b->client->protocol == PROTOCOL_COLUMNAR? 7 : 6;
+	const int nr_columns = (b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) ? 7 : 6;
 
 	int len1 = 0, len4 = 0, len5 = 0, len6 = 0, len7 =0;	/* column widths */
 	int len2 = 1, len3 = 1;
@@ -1019,7 +1011,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		goto wrapup;
 	}
 
-	if (b->client->protocol == PROTOCOL_COLUMNAR && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, bimpl))
+	if ((b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, bimpl))
 		error = -1;
 
 	wrapup:
@@ -1027,6 +1019,8 @@ create_prepare_result(backend *b, cq *q, int nrows)
 			BBPunfix(btype->batCacheid);
 		if (bdigits)
 			BBPunfix(bdigits->batCacheid);
+		if (bimpl)
+			BBPunfix(bimpl->batCacheid);
 		if (bscale)
 			BBPunfix(bscale->batCacheid);
 		if (bschema)
@@ -1336,15 +1330,14 @@ mvc_export_table_columnar(stream *s, res_table *t)
 }
 
 static int
-mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
+mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
-	mvc *m = b->mvc;
 	Tablet as;
 	Column *fmt;
 	int i, ok = 0;
 	struct time_res *tres;
-	int csv = (b->output_format == OFMT_CSV);
-	int json = (b->output_format == OFMT_JSON);
+	int csv = (output_format == OFMT_CSV);
+	int json = (output_format == OFMT_JSON);
 	char *bj;
 
 	if (!s || !t)
@@ -1475,6 +1468,28 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		return ok;
 	return 0;
 }
+
+static int
+mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
+{
+	return mvc_export_table_(b->mvc, b->output_format, s, t, order, offset, nr, btag, sep, rsep, ssep, ns);
+}
+
+int
+mvc_export(mvc *m, stream *s, res_table *t, BUN nr)
+{
+	backend b = {0};
+	b.mvc = m;
+	b.results = t;
+	b.reloptimizer = 0;
+	t->order = t->cols[0].b;
+	t->nr_rows = nr;
+	BBPretain(t->order);
+	if (mvc_export_head(&b, s, t->id, TRUE, TRUE, 0/*starttime*/, 0/*maloptimizer*/) < 0)
+		return -1;
+	return mvc_export_table_(m, OFMT_CSV, s, t, BBPquickdesc(t->cols[0].b), 0, nr, "[ ", ",\t", "\t]\n", "\"", "NULL");
+}
+
 
 static lng
 get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
@@ -1661,13 +1676,11 @@ mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng mal_optimi
 	return 0;
 }
 
-int
-mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer)
-{
-	mvc *m = b->mvc;
 
-	b->rowcnt = val;
-	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
+int
+mvc_affrows(mvc *m, stream *s, lng val, str w, oid query_id, lng last_id, lng starttime, lng maloptimizer, lng reloptimizer)
+{
+	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), val);
 
 	/* if we don't have a stream, nothing can go wrong, so we return
 	 * success.  This is especially vital for execution of internal SQL
@@ -1680,7 +1693,7 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
 	    mvc_send_lng(s, val) != 1 ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
-	    mvc_send_lng(s, b->last_id) != 1 ||
+	    mvc_send_lng(s, last_id) != 1 ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
 	    mvc_send_lng(s, (lng) query_id) != 1 ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
@@ -1688,13 +1701,20 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	    mnstr_write(s, " ", 1, 1) != 1 ||
 	    mvc_send_lng(s, maloptimizer) != 1 ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
-	    mvc_send_lng(s, b->reloptimizer) != 1 ||
+	    mvc_send_lng(s, reloptimizer) != 1 ||
 	    mnstr_write(s, "\n", 1, 1) != 1)
 		return -4;
 	if (mvc_export_warning(s, w) != 1)
 		return -4;
 
 	return 0;
+}
+
+int
+mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer)
+{
+	b->rowcnt = val;
+	return mvc_affrows(b->mvc, s, val, w, query_id, b->last_id, starttime, maloptimizer, b->reloptimizer);
 }
 
 static int
@@ -1744,7 +1764,8 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		return -4;
 
 	/* row count, min(count, reply_size) */
-	if (mvc_send_int(s, (m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
+	/* the columnar protocol ignores the reply size by fetching the entire resultset at once, so don't set it */
+	if (mvc_send_int(s, (b->client && b->client->protocol != PROTOCOL_COLUMNAR && m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
 		return -4;
 
 	// export query id

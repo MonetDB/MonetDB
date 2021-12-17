@@ -227,8 +227,10 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	ok = t->bootstrap?
 		store->storage_api.claim_tab(tr, t, 1, &offset, NULL):
 		store->storage_api.key_claim_tab(tr, t, 1, &offset, NULL);
-	if (ok != LOG_OK)
+	if (ok != LOG_OK) {
+		va_end(va);
 		return ok;
+	}
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
@@ -527,6 +529,8 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 		return NULL;
 	s = BATproject(r->data, b);
 	bat_destroy(b);
+	if (s == NULL)
+		return NULL;
 	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 		bat_destroy(s);
 		return NULL;
@@ -593,6 +597,33 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 		return NULL;
 	}
 	ret = BATjoin(&s, NULL, lcb, rcb, l->data, r->data, false, BATcount(lcb));
+	bat_destroy(l->data);
+	if (ret != GDK_SUCCEED) {
+		l->data = NULL;
+	} else {
+		l->data = s;
+	}
+	bat_destroy(lcb);
+	bat_destroy(rcb);
+	return l;
+}
+
+static rids *
+rids_semijoin(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
+{
+	BAT *lcb, *rcb, *s = NULL;
+	gdk_return ret;
+
+	lcb = full_column(tr, lc);
+	rcb = full_column(tr, rc);
+	if (!lcb || !rcb) {
+		bat_destroy(l->data);
+		l->data = NULL;
+		bat_destroy(lcb);
+		bat_destroy(rcb);
+		return NULL;
+	}
+	ret = BATsemijoin(&s, NULL, lcb, rcb, l->data, r->data, false, false, BATcount(lcb));
 	bat_destroy(l->data);
 	if (ret != GDK_SUCCEED) {
 		l->data = NULL;
@@ -798,6 +829,7 @@ bat_table_init( table_functions *tf )
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;
 	tf->rids_join = rids_join;
+	tf->rids_semijoin = rids_semijoin;
 	tf->rids_next = rids_next;
 	tf->rids_destroy = rids_destroy;
 	tf->rids_empty = rids_empty;

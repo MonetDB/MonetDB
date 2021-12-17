@@ -179,9 +179,9 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(ptrn[i]);						\
 		}																\
 	}																	\
+	BATsetcount(bn, n);													\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	BATsetcount(bn, n);													\
 	SETFLAGS;															\
 	bn->tkey = false;													\
 bailout: 																\
@@ -239,7 +239,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	DEC_SRC1(INTYPE1, 1);												\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
-	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
 	(void) cntxt;														\
 	(void) mb;															\
@@ -247,6 +246,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	b2 = BATdescriptor(*bid2);											\
 	b1i = bat_iterator(b1);												\
 	b2i = bat_iterator(b2);												\
+	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 	if (b1 == NULL || b2 == NULL) {										\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
@@ -295,9 +295,9 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
+	BATsetcount(bn, n);													\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	BATsetcount(bn, n);													\
 	bn->tsorted = n < 2;												\
 	bn->trevsorted = n < 2;												\
 	bn->tkey = false;													\
@@ -376,9 +376,9 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
+	BATsetcount(bn, n);													\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	BATsetcount(bn, n);													\
 	bn->tsorted = n < 2;												\
 	bn->trevsorted = n < 2;												\
 	bn->tkey = false;													\
@@ -453,9 +453,9 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
+	BATsetcount(bn, n);													\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	BATsetcount(bn, n);													\
 	bn->tsorted = n < 2;												\
 	bn->trevsorted = n < 2;												\
 	bn->tkey = false;													\

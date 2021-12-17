@@ -19,7 +19,7 @@ i:= bbp.getLRefCount(b)
 query T rowsort
 io.printf("start of selections %d [1]\n",i)
 ----
-start of selections 5 [1]
+start of selections 1 [1]
 
 statement ok
 s:= algebra.select(b,nil:bat[:oid],0,2,true,true,false)
@@ -51,7 +51,7 @@ i:= bbp.getLRefCount(b)
 query T rowsort
 io.printf("select %d [1]\n",i)
 ----
-select 5 [1]
+select 1 [1]
 
 statement ok
 s:= algebra.select(b,nil:bat[:oid],0,2,true,false,false)
@@ -73,7 +73,7 @@ i:= bbp.getLRefCount(b)
 query T rowsort
 io.printf("select %d [1]\n",i)
 ----
-select 5 [1]
+select 1 [1]
 
 statement ok
 s:= algebra.select(b,nil:bat[:oid],0,2,false,true,false)

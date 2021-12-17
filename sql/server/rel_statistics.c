@@ -186,22 +186,13 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 }
 
 static atom *
-atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValPtr pt)
+atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValRecord *v)
 {
-	atom *a = SA_ZNEW(sa, atom);
+	atom *a = SA_NEW(sa, atom);
 
-	a->tpe = *tpe;
-	a->data.vtype = tpe->type->localtype;
-	if (ATOMstorage(a->data.vtype) == TYPE_str) {
-		if (VALisnil(pt)) {
-			VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
-		} else {
-			a->data.val.sval = sa_strdup(sa, pt->val.sval);
-			a->data.len = strlen(a->data.val.sval);
-		}
-	} else {
-		VALcopy(&a->data, pt);
-	}
+	assert(!VALisnil(v));
+	*a = (atom) {.tpe = *tpe,};
+	SA_VALcopy(sa, &a->data, v);
 	return a;
 }
 
@@ -213,19 +204,25 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	(void)depth;
 	if ((c = name_find_column(rel, exp_relname(e), exp_name(e), -2, NULL))) {
-		ValPtr min = NULL, max = NULL;
+		ValRecord min, max;
 
 		if (has_nil(e) && mvc_has_no_nil(sql, c))
 			set_has_no_nil(e);
  
 		if (EC_NUMBER(c->type.type->eclass) || EC_VARCHAR(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) {
-			if ((max = mvc_has_max_value(sql, c)) && !VALisnil(max)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
-				p->value = atom_from_valptr(sql->sa, &c->type, max);
+			if (mvc_has_max_value(sql, c, &max)) {
+				if (!VALisnil(&max)) {
+					prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
+					p->value = atom_from_valptr(sql->sa, &c->type, &max);
+				}
+				VALclear(&max);
 			}
-			if ((min = mvc_has_min_value(sql, c)) && !VALisnil(min)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-				p->value = atom_from_valptr(sql->sa, &c->type, min);
+			if (mvc_has_min_value(sql, c, &min)) {
+				if (!VALisnil(&min)) {
+					prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
+					p->value = atom_from_valptr(sql->sa, &c->type, &min);
+				}
+				VALclear(&min);
 			}
 		}
 	}
@@ -318,12 +315,12 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 		if (fr == too) {
 			if ((lval = find_prop_and_get(l->p, PROP_MAX))) {
-				atom *res = atom_dup(sql->sa, lval);
+				atom *res = atom_copy(sql->sa, lval);
 				if (atom_cast(sql->sa, res, to))
 					set_property(sql, e, PROP_MAX, res);
 			}
 			if ((lval = find_prop_and_get(l->p, PROP_MIN))) {
-				atom *res = atom_dup(sql->sa, lval);
+				atom *res = atom_copy(sql->sa, lval);
 				if (atom_cast(sql->sa, res, to))
 					set_property(sql, e, PROP_MIN, res);
 			}

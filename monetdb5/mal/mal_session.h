@@ -24,7 +24,8 @@ mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
 mal_export str MALcallback(Client c, str msg);
 mal_export void MSresetInstructions(MalBlkPtr mb, int start);
-mal_export void MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start);
+mal_export void MSresetVariables(MalBlkPtr mb);
+mal_export void MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb);
 mal_export int MALcommentsOnly(MalBlkPtr mb);
 
 #endif /*  _MAL_SESSION_H */

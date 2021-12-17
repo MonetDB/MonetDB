@@ -5247,7 +5247,7 @@ wkbPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkb_size(val->len));
 	base = b->tvheap->base;
-	if (*bun) {
+	if (*bun != (var_t) -1) {
 		memcpy(&base[*bun], val, wkb_size(val->len));
 		b->tvheap->dirty = true;
 	}
@@ -5269,10 +5269,10 @@ wkbLENGTH(const void *P)
 	return (size_t) len;
 }
 
-static void
+static gdk_return
 wkbHEAP(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
 /***********************************************/
@@ -5702,7 +5702,7 @@ wkbaPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkba_size(val->itemsNum));
 	base = b->tvheap->base;
-	if (*bun) {
+	if (*bun != (var_t) -1) {
 		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
 		b->tvheap->dirty = true;
 	}
@@ -5724,10 +5724,10 @@ wkbaLENGTH(const void *P)
 	return (size_t) len;
 }
 
-static void
+static gdk_return
 wkbaHEAP(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
 geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
@@ -5799,10 +5799,9 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	}
 	bat_iterator_end(&bpxi);
 	bat_iterator_end(&bpyi);
-
+	BATsetcount(bo, cnt);
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
-	BATsetcount(bo, cnt);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
 	BBPkeepref(*out = bo->batCacheid);
@@ -5892,9 +5891,9 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	}
 	bat_iterator_end(&bpxi);
 	bat_iterator_end(&bpyi);
+	BATsetcount(bo, cnt);
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
-	BATsetcount(bo, cnt);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
 	BBPkeepref(*out = bo->batCacheid);

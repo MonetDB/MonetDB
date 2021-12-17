@@ -22,13 +22,11 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 {
 	str msg = MAL_SUCCEED;
 	InstrPtr *old_mb_stmt = NULL;
-	lng usec = GDKusec();
 	int actions = 0;
+	size_t old_ssize = 0;
+	size_t old_stop = 0;
 
 	(void)stk;
-	(void)pci;
-
-	const char *importTableRef = putName("importTable");
 
 	int found_at = -1;
 	for (int i = 0; i < mb->stop; i++) {
@@ -39,15 +37,14 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		}
 	}
 	if (found_at == -1)
-		return MAL_SUCCEED;
+		// we didn't find a reason to modify the plan
+		goto wrapup;
 
 	old_mb_stmt = mb->stmt;
-	size_t old_ssize = mb->ssize;
-	size_t old_stop = mb->stop;
-	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0) {
-		msg = createException(MAL, "optimizer.bincopyfrom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto end;
-	}
+	old_ssize = mb->ssize;
+	old_stop = mb->stop;
+	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0)
+		throw(MAL, "optimizer.bincopyfrom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (size_t i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
@@ -65,27 +62,23 @@ end:
 	if (old_mb_stmt) {
 		for (size_t i = old_stop; i < old_ssize; i++)
 			if (old_mb_stmt[i])
-				freeInstruction(old_mb_stmt[i]);
+				pushInstruction(mb, old_mb_stmt[i]);
 		GDKfree(old_mb_stmt);
 	}
 
-    /* Defense line against incorrect plans */
-    if (actions > 0 && msg == MAL_SUCCEED) {
-	    if (!msg)
-        	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	    if (!msg)
-        	msg = chkFlow(mb);
-	    if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-	char buf[256];
-    snprintf(buf, sizeof(buf), "%-20s actions=%2d time=" LLFMT " usec","bincopyfrom",actions, usec);
-   	newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
-
+	/* Defense line against incorrect plans */
+	if (actions > 0 && msg == MAL_SUCCEED) {
+		if (!msg)
+			msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+	/* keep all actions taken as a post block comment */
+wrapup:
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb,pci,actions);
 	return msg;
 }
 
@@ -160,7 +153,7 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 	// same backend type, for example nul- and newline terminated strings.
 	// For the time being we just use the name of the storage type as the method
 	// name.
-	str method = ATOMname(getBatType(var_type));
+	const char *method = ATOMname(getBatType(var_type));
 
 	int onclient = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
 
@@ -182,12 +175,12 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 			setReturnArgument(p, old->argv[idx]);
 			int new_count_var = newTmpVariable(mb, TYPE_oid);
 			pushReturn(mb, p, new_count_var);
-			pushStr(mb, p, method);
-			pushBit(mb, p, byteswap);
-			pushStr(mb, p, path);
-			pushInt(mb, p, onclient);
+			p = pushStr(mb, p, method);
+			p = pushBit(mb, p, byteswap);
+			p = pushStr(mb, p, path);
+			p = pushInt(mb, p, onclient);
 			if (count_var < 0)
-				pushOid(mb, p, 0);
+				p = pushOid(mb, p, 0);
 			else
 				p = pushArgument(mb, p, count_var);
 			return new_count_var;

@@ -18,6 +18,7 @@ KNOWNFAIL?singlekeyconstraint
 part-elim
 mergedropcascade
 addtable
+replicas
 transaction-conflict
 
 HAVE_NETCDF&HAVE_NETCDF?mergedb_create
@@ -30,3 +31,6 @@ sqlsmith-exists2
 mergetable_rel_push_aggr_down
 multiple-merge-tables
 concurrent_merge_tables
+
+mergetabledependencies
+replicatabledependencies

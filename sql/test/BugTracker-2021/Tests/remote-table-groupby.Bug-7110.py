@@ -53,8 +53,11 @@ with tempfile.TemporaryDirectory() as farm_dir:
                 sys.stderr.write("[('*', 8)] expected")
 
             # cleanup: shutdown the monetdb servers and remove tempdir
+            node1_cur.close()
+            node1_conn.close()
+            node2_cur.close()
+            node2_conn.close()
             out, err = node1_proc.communicate()
             sys.stderr.write(err)
-
             out, err = node2_proc.communicate()
             sys.stderr.write(err)

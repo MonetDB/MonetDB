@@ -13,26 +13,22 @@
 
 
 str
-OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0, mt = -1;
 	str schema = 0, table = 0;
-	BUN r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
-	InstrPtr q, *old, target = 0;
+	BUN r = 0, rowcnt = 0;	/* table should be sizeable to consider parallel execution*/
+	InstrPtr p, q, *old, target = 0;
 	size_t argsize = 6 * sizeof(lng), m = 0, memclaim;
-	/*     estimate size per operator estimate:   4 args + 2 res*/
-	int threads = GDKnr_threads ? GDKnr_threads : 1;
-	char buf[256];
-	lng usec = GDKusec();
+	/*	 estimate size per operator estimate:   4 args + 2 res*/
+	int threads = GDKnr_threads ? GDKnr_threads : 1, maxslices = MAXSLICES;
 	str msg = MAL_SUCCEED;
 
 	/* if the user has associated limitation on the number of threads, respect it in the
-     * generation of the number of partitions. Beware, they may lead to larger pieces, it only
-     * limits the CPU power */
+	 * generation of the number of partitions. Beware, they may lead to larger pieces, it only
+	 * limits the CPU power */
 	if( cntxt->workerlimit)
 		threads= cntxt->workerlimit;
-	//if ( optimizerIsApplied(mb,"mitosis") )
-		//return 0;
 	(void) cntxt;
 	(void) stk;
 
@@ -51,21 +47,24 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 
 		/* mitosis/mergetable bailout conditions */
+		/* Crude protection against self join explosion */
+		if (p->retc == 2 && isMatJoinOp(p))
+			maxslices = threads;
 
 		if (p->argc > 2 && getModuleId(p) == aggrRef &&
-		        getFunctionId(p) != subcountRef &&
-		    	getFunctionId(p) != subminRef &&
-		    	getFunctionId(p) != submaxRef &&
-		    	getFunctionId(p) != subavgRef &&
-		    	getFunctionId(p) != subsumRef &&
-		    	getFunctionId(p) != subprodRef &&
+				getFunctionId(p) != subcountRef &&
+				getFunctionId(p) != subminRef &&
+				getFunctionId(p) != submaxRef &&
+				getFunctionId(p) != subavgRef &&
+				getFunctionId(p) != subsumRef &&
+				getFunctionId(p) != subprodRef &&
 
-		        getFunctionId(p) != countRef &&
-		    	getFunctionId(p) != minRef &&
-		    	getFunctionId(p) != maxRef &&
-		    	getFunctionId(p) != avgRef &&
-		    	getFunctionId(p) != sumRef &&
-		    	getFunctionId(p) != prodRef){
+				getFunctionId(p) != countRef &&
+				getFunctionId(p) != minRef &&
+				getFunctionId(p) != maxRef &&
+				getFunctionId(p) != avgRef &&
+				getFunctionId(p) != sumRef &&
+				getFunctionId(p) != prodRef){
 				pieces = 0;
 				goto bailout;
 			}
@@ -86,7 +85,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 
 		if (p->argc > 2 && (getModuleId(p) == capiRef || getModuleId(p) == rapiRef || getModuleId(p) == pyapi3Ref) &&
-		        getFunctionId(p) == subeval_aggrRef){
+				getFunctionId(p) == subeval_aggrRef){
 				pieces = 0;
 				goto bailout;
 			}
@@ -156,8 +155,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * Determine the memory available for this client
 		 */
 
-		/* respect the memory limit size set for the user 
-		* and determine the column slice size 
+		/* respect the memory limit size set for the user
+		* and determine the column slice size
 		*/
 		if( cntxt->memorylimit)
 			m = (((size_t) cntxt->memorylimit) * 1048576) / argsize;
@@ -179,7 +178,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * i.e., (rowcnt/pieces <= m/threads),
 			 * i.e., (pieces => rowcnt/(m/threads))
 			 * (assuming that (m > threads*MINPARTCNT)) */
-			/* the number of pieces affects SF-100, going beyond 8x increases 
+			/* the number of pieces affects SF-100, going beyond 8x increases
 			 * the optimizer costs beyond the execution time
 			 */
 			pieces = 4 * (int) ceil((double)rowcnt / m / threads);
@@ -196,8 +195,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (pieces < threads)
 		pieces = (int) MIN((BUN) threads, rowcnt);
 	/* prevent plan explosion */
-	if (pieces > MAXSLICES)
-		pieces = MAXSLICES;
+	if (pieces > maxslices)
+		pieces = maxslices;
 	/* to enable experimentation we introduce the option to set
 	 * the number of parts required and/or the size of each chunk (in K)
 	 */
@@ -253,7 +252,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (p->retc == 2)
 			upd = 1;
 		if (mt < 0 && (strcmp(schema, getVarConstant(mb, getArg(p, 2 + upd)).val.sval) ||
-			       strcmp(table, getVarConstant(mb, getArg(p, 3 + upd)).val.sval))) {
+				   strcmp(table, getVarConstant(mb, getArg(p, 3 + upd)).val.sval))) {
 			pushInstruction(mb, p);
 			continue;
 		}
@@ -300,21 +299,17 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	for (; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
 
-    /* Defense line against incorrect plans */
-    	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	/* Defense line against incorrect plans */
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
-        	msg = chkFlow(mb);
+		msg = chkFlow(mb);
 	if (!msg)
-        	msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
+		msg = chkDeclarations(mb);
 bailout:
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%d time=" LLFMT " usec","mitosis", pieces, usec);
-    newComment(mb,buf);
-	if( pieces > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, pieces);
 	return msg;
 }

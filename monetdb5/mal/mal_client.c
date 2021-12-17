@@ -188,6 +188,9 @@ void
 MCexitClient(Client c)
 {
 	MCresetProfiler(c->fdout);
+	// Remove any left over constant symbols
+	if( c->curprg)
+		resetMalBlk(c->curprg->def);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
 			close_stream(c->fdout);
@@ -541,7 +544,6 @@ MCmemoryClaim(void)
 void
 MCcloseClient(Client c)
 {
-	/* free resources of a single thread */
 	MCfreeClient(c);
 }
 
@@ -596,7 +598,7 @@ MCreadClient(Client c)
 		in->pos++;
 
 	if (in->pos >= in->len || in->mode) {
-		ssize_t rd, sum = 0;
+		ssize_t rd;
 
 		if (in->eof || !isa_block_stream(c->fdout)) {
 			if (!isa_block_stream(c->fdout) && c->promptlength > 0)
@@ -605,7 +607,6 @@ MCreadClient(Client c)
 			in->eof = false;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
-			sum += rd;
 			if (!in->mode) /* read one line at a time in line mode */
 				break;
 		}

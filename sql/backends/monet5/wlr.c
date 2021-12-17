@@ -198,8 +198,7 @@ WLRgetMaster(void)
  */
 
 #define cleanup(){\
-	resetMalBlkAndFreeInstructions(mb, 1);\
-	trimMalVariables(mb, NULL);\
+	resetMalBlk(mb);\
 	}
 
 static str
@@ -320,7 +319,9 @@ WLRprocessBatch(Client cntxt)
 			}
 			q= getInstrPtr(mb, mb->stop - 1);
 			if( getModuleId(q) != wlrRef){
-				msg =createException(MAL,"wlr.process", "batch %d:improper wlr instruction: %s\n", i, instruction2str(mb,0, q, LIST_MAL_CALL));
+				char *s = instruction2str(mb,0, q, LIST_MAL_CALL);
+				msg = createException(MAL,"wlr.process", "batch %d:improper wlr instruction: %s\n", i, s);
+				GDKfree(s);
 				cleanup();
 				break;
 			}
@@ -355,6 +356,8 @@ WLRprocessBatch(Client cntxt)
 					msg = chkFlow(mb);
 				if (!msg)
 					msg = chkDeclarations(mb);
+				if (!msg)
+					setVariableScope(mb);
 				wlr_tag =  tag; // remember which transaction we executed
 				snprintf(wlr_read, sizeof(wlr_read), "%s", tag_read);
 				if(!msg && mb->errors == 0){
@@ -1093,6 +1096,7 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg= MAL_SUCCEED;
 	str *sname = getArgReference_str(stk, pci, 1);
 	str *tname = getArgReference_str(stk, pci, 2);
+	int restart_sequences = *getArgReference_int(stk, pci, 3);
 	BUN res;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
@@ -1110,5 +1114,38 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	res = mvc_clear_table(m, t);
 	if (res >= BUN_NONE - 1)
 		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
+	if (restart_sequences) { /* restart the sequences if it's the case */
+		sql_trans *tr = m->session->tr;
+		const char *next_value_for = "next value for ";
+
+		for (node *n = ol_first_node(t->columns); n; n = n->next) {
+			sql_column *col = n->data;
+
+			if (col->def && !strncmp(col->def, next_value_for, strlen(next_value_for))) {
+				sql_schema *seqs = NULL;
+				sql_sequence *seq = NULL;
+				char *schema = NULL, *seq_name = NULL;
+
+				extract_schema_and_sequence_name(m->ta, col->def + strlen(next_value_for), &schema, &seq_name);
+				if (!schema || !seq_name || !(seqs = find_sql_schema(tr, schema)))
+					continue;
+
+				assert(seqs->base.id == s->base.id);
+				if ((seq = find_sql_sequence(tr, seqs, seq_name))) {
+					switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
+						case -1:
+							throw(SQL, "sql.clear_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						case -2:
+						case -3:
+							throw(SQL, "sql.clear_table", SQLSTATE(HY005) "RESTART SEQUENCE: transaction conflict detected");
+						case -4:
+							throw(SQL, "sql.clear_table", SQLSTATE(HY005) "Could not restart sequence %s.%s", seqs->base.name, seq_name);
+						default:
+							break;
+					}
+				}
+			}
+		}
+	}
 	return MAL_SUCCEED;
 }

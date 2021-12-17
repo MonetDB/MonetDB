@@ -10,14 +10,41 @@
 #include "store_sequence.h"
 #include "sql_storage.h"
 
+void
+sequences_lock(sql_store Store)
+{
+	sqlstore *store = Store;
+	MT_lock_set(&store->column_locks[NR_COLUMN_LOCKS-1]);
+}
+
+void
+sequences_unlock(sql_store Store)
+{
+	sqlstore *store = Store;
+	MT_lock_unset(&store->column_locks[NR_COLUMN_LOCKS-1]);
+}
+
 typedef struct store_sequence {
 	sqlid seqid;
-	bit called;
 	lng cur;
-	lng cached;
+	bool intrans;
 } store_sequence;
 
-static list *sql_seqs = NULL;
+void
+log_store_sequence(sql_store Store, void *s)
+{
+	sqlstore *store = Store;
+	store_sequence *seq = s;
+	store->logger_api.log_sequence(store, seq->seqid,  seq->cur);
+	seq->intrans = false;
+}
+
+int
+seq_hash(void *s)
+{
+	store_sequence *seq = s;
+	return seq->seqid;
+}
 
 static void
 sequence_destroy( void *dummy, store_sequence *s )
@@ -26,34 +53,55 @@ sequence_destroy( void *dummy, store_sequence *s )
 	_DELETE(s);
 }
 
-void*
-sequences_init(void)
+void
+seq_hash_destroy( sql_hash *h )
 {
-	sql_seqs = list_create( (fdestroy)sequence_destroy );
-	return (void*) sql_seqs;
+    if (h == NULL || h->sa)
+        return ;
+    for (int i = 0; i < h->size; i++) {
+        sql_hash_e *e = h->buckets[i];
+
+        while (e) {
+            sql_hash_e *next = e->chain;
+
+            sequence_destroy(NULL, e->value);
+            _DELETE(e);
+            e = next;
+        }
+    }
+    _DELETE(h->buckets);
+    _DELETE(h);
 }
 
-void
-sequences_exit(void)
+static store_sequence *
+sequence_lookup( sql_hash *h, sqlid id)
 {
-	if(sql_seqs) {
-		list_destroy(sql_seqs);
-		sql_seqs = NULL;
+	sql_hash_e *e = h->buckets[id & (h->size-1)];
+	while(e) {
+            sql_hash_e *next = e->chain;
+			store_sequence *s = e->value;
+
+			if (s->seqid == id)
+				return s;
+			e = next;
 	}
+	return NULL;
 }
 
 /* lock is held */
 static void
-sql_update_sequence_cache(sqlstore *store, sql_sequence *seq, lng cached)
+update_sequence(sqlstore *store, store_sequence *s)
 {
-	store->logger_api.log_sequence(store, seq->base.id, cached);
+	if (!s->intrans)
+		list_append(store->seqchanges, s);
+	s->intrans = true;
 }
 
 /* lock is held */
 static store_sequence *
-sql_create_sequence(sqlstore *store, sql_sequence *seq )
+sequence_create(sqlstore *store, sql_sequence *seq )
 {
-	lng id = 0;
+	lng val = 0;
 	store_sequence *s = NULL;
 	s = MNEW(store_sequence);
 	if(!s)
@@ -62,273 +110,154 @@ sql_create_sequence(sqlstore *store, sql_sequence *seq )
 	*s = (store_sequence) {
 		.seqid = seq->base.id,
 		.cur = seq->start,
-		.cached = seq->start,
 	};
 
-	if (!isNew(seq) && store->logger_api.get_sequence(store, seq->base.id, &id ))
-		s->cached = id;
-	s -> cur = s->cached;
+	if (!isNew(seq) && store->logger_api.get_sequence(store, seq->base.id, &val ))
+		s->cur = val;
+	hash_add(store->sequences, seq_hash(s), s);
 	return s;
 }
 
 int
-seq_restart(sql_store store, sql_sequence *seq, lng start)
+seq_restart(sql_store Store, sql_sequence *seq, lng start)
 {
-	node *n = NULL;
 	store_sequence *s;
+	sqlstore *store = Store;
 
 	assert(!is_lng_nil(start));
-	store_lock(store);
-	for ( n = sql_seqs->h; n; n = n ->next ) {
-		s = n->data;
-		if (s->seqid == seq->base.id)
-			break;
+	sequences_lock(store);
+	s = sequence_lookup(store->sequences, seq->base.id);
+
+	if (!s) {
+		lng val = 0;
+
+		if (isNew(seq) || !store->logger_api.get_sequence(store, seq->base.id, &val )) {
+			sequences_unlock(store);
+			return 1;
+		} else {
+			s = sequence_create(store, seq);
+			if (!s) {
+				sequences_unlock(store);
+				return 0;
+			}
+		}
 	}
-	if (!n) {
-		s = sql_create_sequence(store, seq);
+	s->cur = start;
+	update_sequence(store, s);
+	sequences_unlock(store);
+	return 1;
+}
+
+int
+seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
+{
+	store_sequence *s;
+	sqlstore *store = Store;
+
+	// either dest is an array of size cnt or dest is a normal pointer and cnt == 1.
+
+	assert(dest);
+
+	sequences_lock(store);
+	s = sequence_lookup(store->sequences, seq->base.id);
+	if (!s) {
+		s = sequence_create(store, seq);
 		if (!s) {
-			store_unlock(store);
+			sequences_unlock(store);
 			return 0;
 		}
-		list_append(sql_seqs, s);
-	} else {
-		s = n->data;
 	}
-	s->called = 0;
-	s->cur = start;
-	s->cached = start;
-	/* handle min/max and cycle */
-	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
-	    (seq->minvalue && s->cur < seq->minvalue))
-	{
-		/* we're out of numbers */
-		store_unlock(store);
-		return 0;
+
+	lng min = seq->minvalue;
+	lng max = seq->maxvalue;
+	lng cur = s->cur;
+
+	if (!seq->cycle) {
+		if ((seq->increment > 0 && s->cur > max) ||
+		    (seq->increment < 0 && s->cur < min)) {
+			sequences_unlock(store);
+			return 0;
+		}
 	}
-	sql_update_sequence_cache(store, seq, s->cached);
-	store_unlock(store);
+	bool store_unlocked = false;
+	if (seq->increment > 0) {
+		lng inc = seq->increment; // new value = old value + inc;
+
+		if (0 < cnt && !seq->cycle && !(max > 0 && s->cur < 0)) {
+			if ((max - s->cur) >= ((cnt-1) * inc)) {
+				s->cur += inc * cnt;
+
+				update_sequence(store, s);
+				sequences_unlock(store);
+				store_unlocked = true;
+			} else {
+				sequences_unlock(store);
+				return 0;
+			}
+		}
+		for(lng i = 0; i < cnt; i++) {
+			dest[i] = cur;
+			if ((GDK_lng_max - inc < cur) || ((cur += inc) > max)) {
+				// overflow
+				cur = (seq->cycle)?min:lng_nil;
+			}
+		}
+	} else { // seq->increment < 0
+		lng inc = -seq->increment; // new value = old value - inc;
+
+		if (0 < cnt && !seq->cycle && !(min < 0 && s->cur > 0)) {
+			if ((s->cur - min) >= ((cnt-1) * inc)) {
+				s->cur -= inc * cnt;
+
+				update_sequence(store, s);
+				sequences_unlock(store);
+				store_unlocked = true;
+			} else {
+				sequences_unlock(store);
+				return 0;
+			}
+		}
+		for(lng i = 0; i < cnt; i++) {
+			dest[i] = cur;
+			if ((-GDK_lng_max + inc > cur) || ((cur -= inc)  < min)) {
+				// underflow
+				cur = (seq->cycle)?max:lng_nil;
+			}
+		}
+	}
+
+	if (!store_unlocked) {
+		s->cur = cur;
+
+		update_sequence(store, s);
+		sequences_unlock(store);
+	}
 	return 1;
 }
 
 int
 seq_next_value(sql_store store, sql_sequence *seq, lng *val)
 {
-	lng nr = 0;
-	node *n = NULL;
+	return seqbulk_next_value(store, seq, 1, val);
+}
+
+int
+seq_get_value(sql_store Store, sql_sequence *seq, lng *val)
+{
 	store_sequence *s;
-	int save = 0;
+	sqlstore *store = Store;
 
 	*val = 0;
-	store_lock(store);
-	for ( n = sql_seqs->h; n; n = n ->next ) {
-		s = n->data;
-		if (s->seqid == seq->base.id)
-			break;
-	}
-	if (!n) {
-		s = sql_create_sequence(store, seq);
+	sequences_lock(store);
+	s = sequence_lookup(store->sequences, seq->base.id);
+	if (!s) {
+		s = sequence_create(store, seq);
 		if (!s) {
-			store_unlock(store);
+			sequences_unlock(store);
 			return 0;
 		}
-		list_append(sql_seqs, s);
-	} else {
-		s = n->data;
-		if (s->called)
-			s->cur += seq->increment;
-	}
-	/* handle min/max and cycle */
-	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
-	    (seq->minvalue && s->cur < seq->minvalue))
-	{
-		if (seq->cycle) {
-			/* cycle to the min value again */
-			s->cur = seq->minvalue;
-			save = 1;
-		} else { /* we're out of numbers */
-			store_unlock(store);
-			return 0;
-		}
-	}
-	s->called = 1;
-	nr = s->cur;
-	*val = nr;
-	if (save || nr == s->cached) {
-		s->cached = nr + seq->cacheinc*seq->increment;
-		sql_update_sequence_cache(store, seq, s->cached);
-		store_unlock(store);
-		return 1;
-	}
-	assert(nr<s->cached);
-	store_unlock(store);
-	return 1;
-}
-
-seqbulk *
-seqbulk_create(sql_store store, sql_sequence *seq, BUN cnt)
-{
-	seqbulk *sb = MNEW(seqbulk);
-	store_sequence *s;
-	node *n = NULL;
-
-	if (!sb)
-		return NULL;
-
-	store_lock(store);
-	*sb = (seqbulk) {
-		.seq = seq,
-		.cnt = cnt,
-	};
-
-	for ( n = sql_seqs->h; n; n = n ->next ) {
-		s = n->data;
-		if (s->seqid == seq->base.id)
-			break;
-	}
-	if (!n) {
-		s = sql_create_sequence(store, seq);
-		if (!s) {
-			_DELETE(sb);
-			store_unlock(store);
-			return NULL;
-		}
-		list_append(sql_seqs, s);
-	} else {
-		s = n->data;
-	}
-	sb->internal_seq = s;
-	return sb;
-}
-
-void
-seqbulk_destroy(sql_store store, seqbulk *sb)
-{
-	if (sb->save) {
-		sql_sequence *seq = sb->seq;
-		store_sequence *s = sb->internal_seq;
-
-		sql_update_sequence_cache(store, seq, s->cached);
-	}
-	_DELETE(sb);
-	store_unlock(store);
-}
-
-int
-seqbulk_next_value(seqbulk *sb, lng *val)
-{
-	lng nr = 0;
-	store_sequence *s = sb->internal_seq;
-	sql_sequence *seq = sb->seq;
-
-	if (s->called)
-		s->cur += seq->increment;
-
-	/* handle min/max and cycle */
-	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
-	    (seq->minvalue && s->cur < seq->minvalue))
-	{
-		if (seq->cycle) {
-			/* cycle to the min value again */
-			s->cur = seq->minvalue;
-			sb->save = 1;
-		} else { /* we're out of numbers */
-			return 0;
-		}
-	}
-	s->called = 1;
-	nr = s->cur;
-	*val = nr;
-	if (nr == s->cached) {
-		s->cached = nr + seq->cacheinc*seq->increment;
-		sb->save = 1;
-		return 1;
-	}
-	assert(nr<s->cached);
-	return 1;
-}
-
-int
-seq_get_value(sql_store store, sql_sequence *seq, lng *val)
-{
-	node *n = NULL;
-	store_sequence *s;
-
-	*val = 0;
-	store_lock(store);
-	for ( n = sql_seqs->h; n; n = n ->next ) {
-		s = n->data;
-		if (s->seqid == seq->base.id)
-			break;
-	}
-	if (!n) {
-		s = sql_create_sequence(store, seq);
-		if (!s) {
-			store_unlock(store);
-			return 0;
-		}
-		list_append(sql_seqs, s);
-	} else {
-		s = n->data;
 	}
 	*val = s->cur;
-	if (s->called)
-		*val += seq->increment;
-	/* handle min/max and cycle */
-	if ((seq->maxvalue && *val > seq->maxvalue) ||
-	    (seq->minvalue && *val < seq->minvalue))
-	{
-		if (seq->cycle) {
-			/* cycle to the min value again */
-			*val = seq->minvalue;
-		} else { /* we're out of numbers */
-			store_unlock(store);
-			return 0;
-		}
-	}
-	store_unlock(store);
-	return 1;
-}
-
-int
-seqbulk_get_value(seqbulk *sb, lng *val)
-{
-	store_sequence *s = sb->internal_seq;
-	sql_sequence *seq = sb->seq;
-
-	*val = s->cur;
-	if (s->called)
-		*val += seq->increment;
-	/* handle min/max and cycle */
-	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
-	    (seq->minvalue && s->cur < seq->minvalue))
-	{
-		if (seq->cycle) {
-			/* cycle to the min value again */
-			s->cur = seq->minvalue;
-			sb->save = 1;
-		} else { /* we're out of numbers */
-			return 0;
-		}
-	}
-	return 1;
-}
-
-int
-seqbulk_restart(sql_store store, seqbulk *sb, lng start)
-{
-	store_sequence *s = sb->internal_seq;
-	sql_sequence *seq = sb->seq;
-
-	assert(!is_lng_nil(start));
-	s->called = 0;
-	s->cur = start;
-	s->cached = start;
-	/* handle min/max and cycle */
-	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
-	    (seq->minvalue && s->cur < seq->minvalue))
-	{
-		return 0;
-	}
-	sql_update_sequence_cache(store, seq, s->cached);
+	sequences_unlock(store);
 	return 1;
 }

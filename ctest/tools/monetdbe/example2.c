@@ -170,10 +170,38 @@ main(void)
 	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
 		error(err)
 
+	/* NULL value version */
+	if ((err = monetdbe_prepare(mdbe, "SELECT b, t FROM test where t = ?; ", &stmt, NULL)) != NULL)
+		error(err)
+	char *s2 = NULL;
+	if ((err = monetdbe_bind(stmt, s2, 0)) != NULL)
+		error(err)
+	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
+		error(err)
+	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
+	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
+		error(err)
+	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
+		error(err)
+
 	if ((err = monetdbe_prepare(mdbe, "SELECT b, y FROM test where y = ?; ", &stmt, NULL)) != NULL)
 		error(err)
 	char *y = "Hello";
 	if ((err = monetdbe_bind(stmt, y, 0)) != NULL)
+		error(err)
+	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
+		error(err)
+	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
+	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
+		error(err)
+	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
+		error(err)
+
+	/* NULL value version */
+	if ((err = monetdbe_prepare(mdbe, "SELECT b, y FROM test where y = ?; ", &stmt, NULL)) != NULL)
+		error(err)
+	char *y2 = NULL;
+	if ((err = monetdbe_bind(stmt, y2, 0)) != NULL)
 		error(err)
 	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
 		error(err)

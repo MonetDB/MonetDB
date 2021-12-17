@@ -181,21 +181,18 @@ checksize(matlist_t *ml, int v)
 
 		unsigned int nvsize = ml->vsize * 2;
 		nhorigin = (int*) GDKrealloc(ml->horigin, sizeof(int)* nvsize);
-		ntorigin = (int*) GDKrealloc(ml->torigin, sizeof(int)* nvsize);
-		nvars = (int*) GDKrealloc(ml->vars, sizeof(int)* nvsize);
-		if(!nhorigin || !ntorigin || !nvars) {
-			if(nhorigin)
-				GDKfree(nhorigin);
-			if(ntorigin)
-				GDKfree(ntorigin);
-			if(nvars)
-				GDKfree(nvars);
+		if (nhorigin == NULL)
 			return -1;
-		}
-		ml->vsize = nvsize;
 		ml->horigin = nhorigin;
+		ntorigin = (int*) GDKrealloc(ml->torigin, sizeof(int)* nvsize);
+		if (ntorigin == NULL)
+			return -1;
 		ml->torigin = ntorigin;
+		nvars = (int*) GDKrealloc(ml->vars, sizeof(int)* nvsize);
+		if (nvars == NULL)
+			return -1;
 		ml->vars = nvars;
+		ml->vsize = nvsize;
 
 		for (i = sz; i < ml->vsize; i++) {
 			ml->horigin[i] = ml->torigin[i] = -1;
@@ -588,7 +585,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 
 			getArg(s,0) = newTmpVariable(mb, getArgType(mb, mat[n].mi, k));
 
-		       	ttpe = getArgType(mb, mat[n].mi, 0);
+			ttpe = getArgType(mb, mat[n].mi, 0);
 			for (j=1; j<mat[n].mi->argc; j++) {
 				int ov = 0;
 				if (getBatType(ttpe) != TYPE_oid || (ov = overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 1)) == 1){
@@ -1901,20 +1898,17 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 }
 
 str
-OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr *old;
+	InstrPtr p, *old;
 	matlist_t ml;
 	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit, bailout = 0;
 	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;//, maxvars;
-	char buf[256], *group_input;
-	lng usec = GDKusec();
+	char *group_input;
 	str msg = MAL_SUCCEED;
 
-	if( isOptimizerUsed(mb,"mitosis") <= 0)
+	if( isOptimizerUsed(mb, pci, mitosisRef) <= 0)
 		goto cleanup2;
-	//if( optimizerIsApplied(mb, "mergetable") || !optimizerIsApplied(mb,"mitosis"))
-		//return 0;
 	old = mb->stmt;
 	oldtop= mb->stop;
 
@@ -1964,22 +1958,22 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			group_input[input] = 1;
 		}
 		if (getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == selectNotNilRef ) {
+			getFunctionId(p) == selectNotNilRef ) {
 			TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout not nil ref\n");
 			bailout = 1;
 		}
 		if (getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == semijoinRef ) {
+			getFunctionId(p) == semijoinRef ) {
 			TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout semijoin ref\n");
 			bailout = 1;
 		}
 		if (getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == thetajoinRef) {
-		      assert(p->argc == 9);
-		      if (p->argc == 9 && getVarConstant(mb,getArg(p,6)).val.ival == 6 /* op == '<>' */) {
+			getFunctionId(p) == thetajoinRef) {
+			  assert(p->argc == 9);
+			  if (p->argc == 9 && getVarConstant(mb,getArg(p,6)).val.ival == 6 /* op == '<>' */) {
 			TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout thetajoin ref\n");
 			bailout = 1;
-		      }
+			  }
 		}
 		if (isSample(p)) {
 			bailout = 1;
@@ -2032,6 +2026,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		InstrPtr r, cp;
 
 		p = old[i];
+
+		if (p->token == ENDsymbol) /* don't copy the optimizer pipeline added after final instruction */
+			break;
 		if (getModuleId(p) == matRef &&
 		   (getFunctionId(p) == newRef || getFunctionId(p) == packRef)){
 			if(mat_set_prop(&ml, mb, p) || mat_add_var(&ml, p, NULL, getArg(p,0), mat_none, -1, -1, 1)) {
@@ -2079,7 +2076,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * NxM -> (l,r) filter-joins (l1,..,ln,r1,..,rm)
 		 */
 		if (match > 0 && isMatJoinOp(p) &&
-		    p->argc >= 5 && p->retc == 2 && bats+nilbats >= 4) {
+			p->argc >= 5 && p->retc == 2 && bats+nilbats >= 4) {
 			if (bats+nilbats == 4) {
 		   		m = is_a_mat(getArg(p,p->retc), &ml);
 		   		n = is_a_mat(getArg(p,p->retc+1), &ml);
@@ -2172,7 +2169,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) &&
 		   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
-		     ml.v[n].im >= 0 /* not packed */) {
+			 ml.v[n].im >= 0 /* not packed */) {
 			if(mat_group_derive(mb, p, &ml, m, n)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -2183,11 +2180,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		/* TODO sub'aggr' with cand list */
 		if (match == 3 && bats == 3 && getModuleId(p) == aggrRef && p->argc >= 4 &&
 		   (getFunctionId(p) == subcountRef ||
-		    getFunctionId(p) == subminRef ||
-		    getFunctionId(p) == submaxRef ||
-		    getFunctionId(p) == subavgRef ||
-		    getFunctionId(p) == subsumRef ||
-		    getFunctionId(p) == subprodRef) &&
+			getFunctionId(p) == subminRef ||
+			getFunctionId(p) == submaxRef ||
+			getFunctionId(p) == subavgRef ||
+			getFunctionId(p) == subsumRef ||
+			getFunctionId(p) == subprodRef) &&
 		   ((m=is_a_mat(getArg(p,p->retc+0), &ml)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
 		   ((o=is_a_mat(getArg(p,p->retc+2), &ml)) >= 0)) {
@@ -2200,7 +2197,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		/* Handle cases of ext.projection and .projection(grp) */
 		if (match == 2 && getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == projectionRef &&
+			getFunctionId(p) == projectionRef &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,2), &ml)) >= 0 &&
 		   (ml.v[m].type == mat_ext || ml.v[n].type == mat_grp)) {
@@ -2221,7 +2218,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 		if (match == 1 && getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == projectRef &&
+			getFunctionId(p) == projectRef &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0 &&
 		   (ml.v[m].type == mat_ext)) {
 			assert(ml.v[m].pushed);
@@ -2236,7 +2233,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* Handle cases of slice.projection */
 		if (match == 2 && getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == projectionRef &&
+			getFunctionId(p) == projectionRef &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,2), &ml)) >= 0 &&
 		   (ml.v[m].type == mat_slc)) {
@@ -2249,8 +2246,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* Handle projection */
-		if (match > 0 && getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == projectionRef &&
+		if (match > 0 &&
+				((getModuleId(p) == algebraRef &&
+			getFunctionId(p) == projectionRef) ||
+				((getModuleId(p) == dictRef || getModuleId(p) == forRef) &&
+			getFunctionId(p) == decompressRef)) &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) {
 		   	n=is_a_mat(getArg(p,2), &ml);
 			if(mat_projection(mb, p, &ml, m, n)) {
@@ -2262,8 +2262,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		/* Handle setops */
 		if (match > 0 && getModuleId(p) == algebraRef &&
-		    (getFunctionId(p) == differenceRef ||
-		     getFunctionId(p) == intersectRef) &&
+			(getFunctionId(p) == differenceRef ||
+			 getFunctionId(p) == intersectRef) &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) {
 		   	n=is_a_mat(getArg(p,2), &ml);
 			o=is_a_mat(getArg(p,3), &ml);
@@ -2359,6 +2359,25 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
+		/* handle dict select */
+		if ((match == 1 || match == bats-1) && p->retc == 1 && isSelect(p) && getModuleId(p) == dictRef) {
+			if(mat_apply(mb, p, &ml, match)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+		/* handle dict renumber */
+		if (match == 1 && match == bats-1 && p->retc == 1 && getFunctionId(p) == renumberRef && getModuleId(p) == dictRef) {
+			if(mat_apply(mb, p, &ml, match)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+
 		if (match == bats && p->retc == 1 && (isMap2Op(p) || isMapOp(p) || isFragmentGroup(p) || isFragmentGroup2(p))) {
 			if(mat_apply(mb, p, &ml, match)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2388,10 +2407,16 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 	(void) stk;
 
+	for (; i<oldtop; i++) { /* add optimizer pipeline back again */
+		pushInstruction(mb, old[i]);
+	}
+
 	if ( mb->errors == MAL_SUCCEED) {
-		for(i=0; i<slimit; i++)
-			if (old[i])
-				freeInstruction(old[i]);
+		for(i=0; i<slimit; i++) {
+			if (old[i] && old[i]->token == ENDsymbol) /* don't free optimizer calls */
+				break;
+			freeInstruction(old[i]);
+		}
 		GDKfree(old);
 	}
 	for (i=0; i<ml.top; i++) {
@@ -2404,25 +2429,22 @@ cleanup:
 	if (ml.horigin) GDKfree(ml.horigin);
 	if (ml.torigin) GDKfree(ml.torigin);
 	if (ml.vars) GDKfree(ml.vars);
-    /* Defense line against incorrect plans */
-    if( actions > 0 && msg == MAL_SUCCEED){
-	    if (!msg)
-        	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	    if (!msg)
-        	msg = chkFlow(mb);
-	    if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-cleanup2:
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions, usec);
-   	newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
-	if( bailout){
-		snprintf(buf,256,"Merge table bailout");
-		newComment(mb,buf);
+	/* Defense line against incorrect plans */
+	if( actions > 0 && msg == MAL_SUCCEED){
+		if (!msg)
+			msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
 	}
+cleanup2:
+	/* keep actions taken as a fake argument */
+	(void) pushInt(mb, pci, actions);
+
+#ifndef NDEBUG
+	if( bailout)
+		TRC_INFO(MAL_OPTIMIZER, "Merge table bailout\n");
+#endif
 	return msg;
 }

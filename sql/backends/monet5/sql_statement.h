@@ -119,7 +119,9 @@ typedef struct stmt {
 	 key:1,			/* key (aka all values are unique) */ // TODO make this thing a bool
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */
-	 reduce:1;		/* used to reduce number of rows (also for joins) */
+	 reduce:1,		/* used to reduce number of rows (also for joins) */
+	 loop:1,		/* cond statement is looping */
+	 argument_independence:1; /*list statement represents a list of function call arguments which are independent of the inner project relation. */
 
 	struct stmt *cand;	/* optional candidate list */
 
@@ -133,12 +135,12 @@ typedef struct stmt {
 } stmt;
 
 /* which MAL modules can push candidates */
-#define can_push_cands(sel, f) \
-	(sel && (((strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") != 0))  || \
-			 strcmp(sql_func_mod(f->func), "mmath") == 0 || \
-			 strcmp(sql_func_mod(f->func), "mtime") == 0 || \
-			 strcmp(sql_func_mod(f->func), "blob") == 0 || \
-			 (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
+#define can_push_cands(sel, mod, fimp) \
+	(sel && (((strcmp(mod, "calc") == 0 && strcmp(fimp, "ifthenelse") != 0)) || \
+			 strcmp(mod, "mmath") == 0 || \
+			 strcmp(mod, "mtime") == 0 || \
+			 strcmp(mod, "blob") == 0 || \
+			 (strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp))))
 
 extern int stmt_key(stmt *s);
 
@@ -165,7 +167,7 @@ extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
 extern stmt *stmt_append_bulk(backend *be, stmt *c, list *l);
 extern stmt *stmt_replace(backend *be, stmt *c, stmt *id, stmt *val);
-extern stmt *stmt_table_clear(backend *be, sql_table *t);
+extern stmt *stmt_table_clear(backend *be, sql_table *t, int restart_sequences);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
 extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
@@ -205,6 +207,8 @@ extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rc
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd);
 extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
+extern stmt *stmt_dict(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_for(backend *be, stmt *op1, stmt *minval);
 
 extern stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
@@ -235,7 +239,7 @@ extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, st
 extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sql_subtype *to);
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op);
-extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op);
+extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op, stmt* rows);
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);

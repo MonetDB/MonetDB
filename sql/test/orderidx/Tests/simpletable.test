@@ -52,7 +52,7 @@ readonly
 0
 0
 0
-0
+1
 
 query I rowsort
 SELECT * FROM xtmp1 WHERE i<0

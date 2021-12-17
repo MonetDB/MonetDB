@@ -19,11 +19,8 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 {
 	int i;
 	InstrPtr p;
-	char  buf[256];
-	lng usec = GDKusec();
 	str msg= MAL_SUCCEED;
 
-	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 	for (i = 0; i < mb->stop; i++) {
@@ -68,7 +65,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		else if (getModuleId(p) == groupRef && p->retc > 1) {
 			if (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
-			    getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)
+				getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)
 				setVarCList(mb, getArg(p, 1));
 		} else if (getModuleId(p) == batRef) {
 			if (getFunctionId(p) == mergecandRef ||
@@ -79,17 +76,14 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	/* plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if( ms== MAL_SUCCEED)
 	//	msg = chkFlow(mb);
 	// if( ms== MAL_SUCCEED)
 	// 	msg = chkDeclarations(mb);
-	/* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","candidates",usec);
-	newComment(mb,buf);
-	addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, 1);
 	return msg;
 }

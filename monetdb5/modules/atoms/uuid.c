@@ -19,7 +19,7 @@
 #endif
 #include "mal.h"
 #include "mal_exception.h"
-#include "mal_atom.h"			/* for malAtomSize */
+#include "mal_interpreter.h"
 
 #if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
 static inline bool
@@ -109,28 +109,36 @@ isaUUID(const char *s)
 }
 
 static str
-UUIDgenerateUuidInt_bulk(bat *ret, const bat *bid)
+UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b = NULL, *bn = NULL;
 	BUN n = 0;
 	str msg = MAL_SUCCEED;
 	uuid *restrict bnt = NULL;
+	bat *ret = getArgReference_bat(stk, pci, 0);
 
-	if ((b = BBPquickdesc(*bid)) == NULL)	{
-		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+	(void) cntxt;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *bid = getArgReference_bat(stk, pci, 1);
+		if (!(b = BBPquickdesc(*bid))) {
+			msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		n = BATcount(b);
+	} else {
+		n = (BUN) *getArgReference_lng(stk, pci, 1);
 	}
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_uuid, n, TRANSIENT)) == NULL) {
+
+	if ((bn = COLnew(b ? b->hseqbase : 0, TYPE_uuid, n, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	bnt = Tloc(bn, 0);
 	for (BUN i = 0 ; i < n ; i++)
 		UUIDgenerateUuid_internal(&(bnt[i]));
+	BATsetcount(bn, n);
 	bn->tnonil = true;
 	bn->tnil = false;
-	BATsetcount(bn, n);
 	bn->tsorted = n <= 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = n <= 1;
@@ -147,6 +155,8 @@ static str
 UUIDisaUUID(bit *retval, str *s)
 {
 	*retval = isaUUID(*s);
+	if (*retval == false)
+		GDKclrerr();
 	return MAL_SUCCEED;
 }
 
@@ -173,17 +183,16 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 	for (BUN p = 0 ; p < q ; p++)
 		dst[p] = isaUUID(BUNtvar(bi, p));
 	bat_iterator_end(&bi);
+	GDKclrerr(); /* Not interested in atomFromStr errors */
+	BATsetcount(bn, q);
 	bn->tnonil = b->tnonil;
 	bn->tnil = b->tnil;
-	BATsetcount(bn, q);
 	bn->tsorted = bn->trevsorted = q < 2;
 	bn->tkey = false;
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
-	if (msg && bn)
-		BBPreclaim(bn);
-	else if (bn)
+	if (bn)						/* implies msg==MAL_SUCCEED */
 		BBPkeepref(*ret = bn->batCacheid);
 	return msg;
 }
@@ -204,7 +213,7 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	struct canditer ci;
 	BUN q = 0;
 	oid off;
-	bool nils = false;
+	bool nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	BATiter bi;
 
 	if (sid && !is_bat_nil(*sid)) {
@@ -247,23 +256,25 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= is_uuid_nil(v);
 		}
 	}
+	btkey = b->tkey;
+	btsorted = b->tsorted;
+	btrevsorted = b->trevsorted;
 	bat_iterator_end(&bi);
 
 bailout:
-	if (dst && !msg) {
-		BATsetcount(dst, q);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
-		dst->tsorted = b->tsorted;
-		dst->trevsorted = b->trevsorted;
-		BBPkeepref(*res = dst->batCacheid);
-	} else if (dst)
-		BBPreclaim(dst);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (dst) {					/* implies msg==MAL_SUCCEED */
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = btkey;
+		dst->tsorted = btsorted;
+		dst->trevsorted = btrevsorted;
+		BBPkeepref(*res = dst->batCacheid);
+	}
 	return msg;
 }
 
@@ -288,7 +299,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	struct canditer ci;
 	BUN q = 0;
 	oid off;
-	bool nils = false;
+	bool nils = false, btkey = false;
 	size_t l = UUID_SIZE;
 	ssize_t (*conv)(const char *, size_t *, void **, bool) = BATatoms[TYPE_uuid].atomFromStr;
 
@@ -336,23 +347,24 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(v);
 		}
 	}
+	btkey = b->tkey;
 	bat_iterator_end(&bi);
 
 bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
 		BATsetcount(dst, q);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
+		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -375,7 +387,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	BUN q = 0;
 	struct canditer ci;
 	oid off;
-	bool nils = false;
+	bool nils = false, btkey = false;
 	char buf[UUID_STRLEN + 2], *pbuf = buf;
 	size_t l = sizeof(buf);
 	ssize_t (*conv)(char **, size_t *, const void *, bool) = BATatoms[TYPE_uuid].atomToStr;
@@ -433,31 +445,33 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(buf);
 		}
 	}
+	btkey = b->tkey;
 	bat_iterator_end(&bi);
 
 bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
 		BATsetcount(dst, q);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
+		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	return msg;
 }
 
 #include "mel.h"
 mel_func uuid_init_funcs[] = {
  command("uuid", "new", UUIDgenerateUuid, true, "Generate a new uuid", args(1,1, arg("",uuid))),
- command("uuid", "new", UUIDgenerateUuidInt, true, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, arg("",uuid),arg("d",int))),
- command("batuuid", "new", UUIDgenerateUuidInt_bulk, true, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),batarg("d",int))),
+ command("uuid", "new", UUIDgenerateUuidInt, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, arg("",uuid),arg("d",int))),
+ pattern("batuuid", "new", UUIDgenerateUuidInt_bulk, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),batarg("d",int))),
+ pattern("batuuid", "new", UUIDgenerateUuidInt_bulk, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),arg("card",lng))), /* version with cardinality input */
  command("uuid", "uuid", UUIDstr2uuid, false, "Coerce a string to a uuid, validating its format", args(1,2, arg("",uuid),arg("s",str))),
  command("uuid", "str", UUIDuuid2str, false, "Coerce a uuid to its string type", args(1,2, arg("",str),arg("u",uuid))),
  command("uuid", "isaUUID", UUIDisaUUID, false, "Test a string for a UUID format", args(1,2, arg("",bit),arg("u",str))),

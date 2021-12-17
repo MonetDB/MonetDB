@@ -46,14 +46,34 @@ static struct PIPELINES {
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.bincopyfrom();"
+	 "optimizer.emptybind();"
 	 "optimizer.deadcode();"
+	 "optimizer.for();"
+	 "optimizer.dict();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();" 
 	 //"optimizer.candidates();" only for decoration in explain
 	 //"optimizer.mask();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
+#ifdef USE_STRIMPS_OPTIMIZERS
+	{"minimal_strimps_pipe",
+	 "optimizer.inline();"
+	 "optimizer.remap();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
+	 "optimizer.deadcode();"
+	 "optimizer.multiplex();"
+	 "optimizer.strimps();"
+	 "optimizer.generator();"
+	 //"optimizer.candidates();" only for decoration in explain
+	 //"optimizer.mask();"
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
+	 "stable", NULL, 1},
+#endif  // USE_STRIMPS_OPTIMIZERS
 	{"minimal_fast",
 	 "optimizer.minimalfast()",
 	 "stable", NULL, 1},
@@ -77,6 +97,8 @@ static struct PIPELINES {
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
+	 "optimizer.for();"
+	 "optimizer.dict();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
@@ -91,28 +113,22 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
-	{"default_fast",
-	 "optimizer.defaultfast()",
-	 "stable", NULL, 1},
-/*
- * Optimistic concurreny control in general leads to more transaction failures
- * in an OLTP setting. The partial solution provided is to give out
- * advisory locks and delay updates until they are released or timeout.
- */
-	{"oltp_pipe",
+#ifdef USE_STRIMPS_OPTIMIZERS
+	{"strimps_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
+	 "optimizer.aliases();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
@@ -131,16 +147,20 @@ static struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
+	 "optimizer.strimps();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.oltp();"
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
+	 "stable", NULL, 1},
+#endif  // USE_STRIMPS_OPTIMIZERS
+	{"default_fast",
+	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},
 /*
  * Volcano style execution produces a sequence of blocks from the source relation
@@ -171,14 +191,14 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.volcano();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
@@ -214,14 +234,14 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
 /* The sequential pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
@@ -244,6 +264,8 @@ static struct PIPELINES {
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
+	 "optimizer.for();"
+	 "optimizer.dict();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"
@@ -256,14 +278,14 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
@@ -519,12 +541,12 @@ compileOptimizer(Client cntxt, const char *name)
 str
 compileAllOptimizers(Client cntxt)
 {
-    int i;
-    str msg = MAL_SUCCEED;
+	int i;
+	str msg = MAL_SUCCEED;
 
-    for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
-        msg =compileOptimizer(cntxt,pipes[i].name);
-    }
+	for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
+		msg =compileOptimizer(cntxt,pipes[i].name);
+	}
 	return msg;
 }
 
@@ -568,7 +590,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			// Not needed at this place typeChecker(cntxt->usermodule, mb, p, j, FALSE);
+			// typecheck to get its internal address typeChecker(cntxt->usermodule, mb, p, j, FALSE);
 			pushInstruction(mb, p);
 		}
 	}

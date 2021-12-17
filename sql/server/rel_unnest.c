@@ -17,7 +17,6 @@
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_select.h"
-#include "rel_remote.h"
 #include "rel_rewriter.h"
 #include "sql_query.h"
 #include "mal_errors.h" /* for SQLSTATE() */
@@ -86,7 +85,7 @@ static int
 is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
 {
 	int distinct = 0;
-	if (ad && exps_unique(sql, rel, ad ))
+	if (ad && exps_unique(sql, rel, ad) && !have_nil(ad))
 		return 1;
 	if (ad && is_groupby(rel->op) && exp_match_list(rel->r, ad))
 		return 1;
@@ -290,7 +289,7 @@ rel_only_freevar(sql_query *query, sql_rel *rel, bool *arguments_correlated, boo
 static int
 freevar_equal( sql_exp *e1, sql_exp *e2)
 {
-	assert(e1 && e2 && e1->freevar && e2->freevar);
+	assert(e1 && e2 && is_freevar(e1) && is_freevar(e2));
 	if (e1 == e2)
 		return 0;
 	if (e1->type != e_column || e2->type != e_column)
@@ -323,7 +322,7 @@ exp_freevar(mvc *sql, sql_exp *e)
 
 	switch(e->type) {
 	case e_column:
-		if (e->freevar)
+		if (is_freevar(e))
 			return append(sa_list(sql->sa), e);
 		break;
 	case e_convert:
@@ -497,7 +496,7 @@ rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 		for(n = fvs->h; n; n=n->next) {
 			sql_exp *e = n->data;
 
-			if (e->freevar && (exp_is_atom(e) || rel_find_exp(rel,e)))
+			if (is_freevar(e) && (exp_is_atom(e) || rel_find_exp(rel,e)))
 				reset_freevar(e);
 		}
 	}
@@ -824,7 +823,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 	}
 
 	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */
-	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
+	if (rel && is_join(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
 		/* find constant expressions and move these down */
@@ -834,11 +833,11 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			list *cexps = NULL;
 			sql_rel *l = r->l;
 
-			if (l && is_select(l->op) && !rel_is_ref(l)) {
+			if (l && (is_select(l->op) || l->op == op_join) && !rel_is_ref(l)) {
 				for(n=r->exps->h; n; n=n->next) {
 					sql_exp *e = n->data;
 
-					if (exp_is_atom(e) || rel_find_exp(l,e)) { /* move down */
+					if (exp_is_atom(e) || rel_find_exp(l->l,e)) { /* move down */
 						if (!cexps)
 							cexps = sa_list(sql->sa);
 						append(cexps, e);
@@ -884,7 +883,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			for (m=r->exps->h; m; m = m->next) {
 				sql_exp *e = m->data;
 
-				if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+				if (!is_freevar(e) || exp_name(e)) { /* only skip full freevars */
 					if (exp_has_freevar(sql, e)) {
 						rel_bind_var(sql, rel->l, e);
 						if (is_left(rel->op)) { /* add ifthenelse */
@@ -908,7 +907,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				for (m=exps->h; m; m = m->next) {
 					sql_exp *e = m->data;
 
-					if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+					if (!is_freevar(e) || exp_name(e)) { /* only skip full freevars */
 						if (exp_has_freevar(sql, e))
 							rel_bind_var(sql, rel->l, e);
 					}
@@ -1105,6 +1104,8 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					if (strcmp(exp_name(col), TID) != 0) {
 						col = exp_ref(sql, col);
 						col = exp_unop(sql->sa, col, sql_bind_func(sql, "sys", "identity", exp_subtype(col), NULL, F_FUNC));
+						set_has_no_nil(col);
+						set_unique(col);
 						col = exp_label(sql->sa, col, ++sql->label);
 						append(p->exps, col);
 					}
@@ -1220,6 +1221,19 @@ push_up_select_l(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static void
+bind_join_vars(mvc *sql, sql_rel *rel)
+{
+	if (list_empty(rel->exps))
+		return;
+	for(node *n = rel->exps->h; n; n = n->next){
+		sql_exp *e = n->data;
+
+		if (exp_has_freevar(sql, e))
+			rel_bind_var(sql, rel->l, e);
+	}
+}
+
 static sql_rel *
 push_up_join(mvc *sql, sql_rel *rel, list *ad)
 {
@@ -1229,6 +1243,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 		if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps) {
 			rel->exps =	rel->exps?list_merge(rel->exps, j->exps, (fdup)NULL):j->exps;
 			j->exps = NULL;
+			bind_join_vars(sql, rel);
 			return rel;
 		}
 	}
@@ -1263,7 +1278,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = rel_dup(jl);
 				rel->exps = sa_list(sql->sa);
 				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
-				if (j->single)
+				if (is_single(j))
 					set_single(nj);
 				rel_destroy(j);
 				j = nj;
@@ -1304,7 +1319,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!rd) {
 				rel->r = rel_dup(jl);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel, rel_dup(jr), j->op);
-				if (j->single)
+				if (is_single(j))
 					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
@@ -1319,7 +1334,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!ld) {
 				rel->r = rel_dup(jr);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel_dup(jl), rel, j->op);
-				if (j->single)
+				if (is_single(j))
 					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
@@ -1553,67 +1568,68 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static void reset_has_nil(sql_rel *rel, sql_exp *e);
+static void exp_reset_props(sql_rel *rel, sql_exp *e, bool setnil);
 
 static void
-exps_reset_has_nil(sql_rel *rel, list *exps)
+exps_reset_props(sql_rel *rel, list *exps, bool setnil)
 {
 	if (!list_empty(exps))
 		for(node *n=exps->h; n; n=n->next)
-			reset_has_nil(rel, n->data);
+			exp_reset_props(rel, n->data, setnil);
 }
 
 static void
-reset_has_nil(sql_rel *rel, sql_exp *e)
+exp_reset_props(sql_rel *rel, sql_exp *e, bool setnil)
 {
 	switch (e->type) {
 	case e_column: {
-		if (((is_right(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, e) != NULL) ||
-			((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->r, e) != NULL))
+		if (setnil && (((is_right(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, e) != NULL) ||
+			((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->r, e) != NULL)))
 			set_has_nil(e);
 	} break;
 	case e_convert: {
-		reset_has_nil(rel, e->l);
-		if (has_nil((sql_exp*)e->l))
+		exp_reset_props(rel, e->l, setnil);
+		if (setnil && has_nil((sql_exp*)e->l))
 			set_has_nil(e);
 	} break;
 	case e_func: {
 		sql_subfunc *f = e->f;
 
-		exps_reset_has_nil(rel, e->l);
-		if (!f->func->semantics && e->l && have_nil(e->l))
+		exps_reset_props(rel, e->l, setnil);
+		if (setnil && !f->func->semantics && e->l && have_nil(e->l))
 			set_has_nil(e);
 	} break;
 	case e_aggr: {
 		sql_subfunc *a = e->f;
 
-		exps_reset_has_nil(rel, e->l);
-		if ((a->func->s || strcmp(a->func->base.name, "count") != 0) && !a->func->semantics && !has_nil(e) && e->l && have_nil(e->l))
+		exps_reset_props(rel, e->l, setnil);
+		if (setnil && (a->func->s || strcmp(a->func->base.name, "count") != 0) && !a->func->semantics && !has_nil(e) && e->l && have_nil(e->l))
 			set_has_nil(e);
 	} break;
 	case e_cmp: {
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			exps_reset_has_nil(rel, e->l);
-			exps_reset_has_nil(rel, e->r);
-			if (have_nil(e->l) || have_nil(e->r))
+			exps_reset_props(rel, e->l, setnil);
+			exps_reset_props(rel, e->r, setnil);
+			if (setnil && (have_nil(e->l) || have_nil(e->r)))
 				set_has_nil(e);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			reset_has_nil(rel, e->l);
-			exps_reset_has_nil(rel, e->r);
-			if (has_nil((sql_exp*)e->l) || have_nil(e->r))
+			exp_reset_props(rel, e->l, setnil);
+			exps_reset_props(rel, e->r, setnil);
+			if (setnil && (has_nil((sql_exp*)e->l) || have_nil(e->r)))
 				set_has_nil(e);
 		} else {
-			reset_has_nil(rel, e->l);
-			reset_has_nil(rel, e->r);
+			exp_reset_props(rel, e->l, setnil);
+			exp_reset_props(rel, e->r, setnil);
 			if (e->f)
-				reset_has_nil(rel, e->f);
-			if (!is_semantics(e) && (((sql_exp*)e->l) || has_nil((sql_exp*)e->r) || (e->f && has_nil((sql_exp*)e->f))))
+				exp_reset_props(rel, e->f, setnil);
+			if (setnil && !is_semantics(e) && (((sql_exp*)e->l) || has_nil((sql_exp*)e->r) || (e->f && has_nil((sql_exp*)e->f))))
 				set_has_nil(e);
 		}
 	} break;
 	default:
 		break;
 	}
+	set_not_unique(e);
 }
 
 static sql_exp *
@@ -1698,8 +1714,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		} else {
 			e = exp_rel_update_exp(v->sql, e);
 		}
-		if (is_left(rewrite->op))
-			reset_has_nil(rewrite, e);
+		exp_reset_props(rewrite, e, is_left(rewrite->op));
 		v->changes++;
 	}
 	return e;
@@ -2107,6 +2122,9 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 static sql_rel *
 rewrite_or_exp(visitor *v, sql_rel *rel)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		for(node *n=rel->exps->h; n; n=n->next) {
 			sql_exp *e = n->data, *id;
@@ -2133,14 +2151,14 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						if (strcmp(exp_name(e), TID) == 0) { /* remove TID references and later restore them with identity function references */
 							if (!tids)
 								tids = sa_list(v->sql->sa);
-							list_append(tids, exp_alias(v->sql->sa, exp_relname(e), TID, idrname, idname, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+							list_append(tids, exp_alias(v->sql->sa, exp_relname(e), TID, idrname, idname, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
 							list_remove_node(exps, NULL, n);
 						}
 						n = next;
 					}
 
-					sql_rel *l = rel;
-					sql_rel *r = rel_dup(rel);
+					sql_rel *l = rel, *r = rel_dup(rel);
+					set_processed(rel);
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
 					if (!(l = rewrite_or_exp(v, l)))
@@ -2151,7 +2169,7 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						return NULL;
 					if (!(rel = rel_setop_check_types(v->sql, l, r, exps_copy(v->sql, exps), exps_copy(v->sql, exps), op_union)))
 						return NULL;
-					rel_setop_set_exps(v->sql, rel, exps);
+					rel_setop_set_exps(v->sql, rel, exps, false);
 					set_processed(rel);
 					rel = rel_distinct(rel);
 					if (tids) /* restore TIDs with identity function references */
@@ -2449,6 +2467,9 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 	list *exps = NULL;
 	int freevar = 0;
 
+	if (mvc_highwater(sql))
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	for (node *n=vals->h; n; n = n->next) {
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
@@ -2497,7 +2518,8 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 			u = sq;
 		} else {
 			u = rel_setop(sql->sa, u, sq, op_union);
-			rel_setop_set_exps(sql, u, exps);
+			rel_setop_set_exps(sql, u, exps, false);
+			set_distinct(u);
 			set_processed(u);
 		}
 		exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
@@ -2610,6 +2632,9 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					return NULL;
 				re = rsq->exps->t->data;
 
+				if (!is_tuple && is_func(re->type))
+					depth++;
+
 				if (rsq && lsq)
 					exp_set_freevar(sql, re, rsq);
 				if (!is_tuple && !is_freevar(re)) {
@@ -2648,26 +2673,30 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				if (sq) {
 					sql_rel *l = NULL, *rewrite = NULL;
-					(void)rewrite_inner(sql, rel, lsq, op_join, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, le);
+					if (rsq && lsq->card == CARD_ATOM && rsq->card == CARD_ATOM) { /* add project true */
+						lsq = rel_crossproduct(sql->sa, lsq, rsq, op_full);
+						lsq = rel_crossproduct(sql->sa, rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1)), lsq, op_left);
+						rsq = 0;
+					}
+					(void)rewrite_inner(sql, rel, lsq, rel->card <= CARD_ATOM?op_left:op_join, &rewrite);
+					exp_reset_props(rewrite, le, is_left(rewrite->op));
 					l = rel->l;
-					if (l && on_right && !is_join(l->op))
+					if (l && on_right && (!is_join(l->op) || (is_project(rel->op) && lsq->card <= CARD_ATOM && rsq->card <= CARD_ATOM)))
 						on_right = 0;
+					if (l && on_right && exp_has_freevar(sql, le))
+						set_dependent(l);
 				}
 				if (rsq) {
 					if (on_right) {
 						sql_rel *join = rel->l; /* the introduced join */
 						join->r = rel_crossproduct(sql->sa, join->r, rsq, (depth && is_select(rel->op))?op_right:op_left);
 						set_dependent(join);
-						if (depth)
-							reset_has_nil(join->r, le);
+						exp_reset_props(join->r, le, depth > 0);
 					} else {
 						sql_rel *rewrite = NULL;
 						operator_type op = !is_tuple?((depth>0)?op_left:op_join):is_anyequal(sf)?op_semi:op_anti;
 						(void)rewrite_inner(sql, rel, rsq, op, &rewrite);
-						if (is_left(rewrite->op))
-							reset_has_nil(rewrite, re);
+						exp_reset_props(rewrite, re, is_left(rewrite->op));
 					}
 				}
 
@@ -2717,16 +2746,14 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			} else {
 				if (lsq) {
 					sql_rel *rewrite = NULL;
-					(void)rewrite_inner(sql, rel, lsq, op_join, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, le);
+					(void)rewrite_inner(sql, rel, lsq, rel->card<=CARD_ATOM?op_left:op_join, &rewrite);
+					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 				if (rsq) {
 					sql_rel *rewrite = NULL;
 					operator_type op = !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti;
 					(void)rewrite_inner(sql, rel, rsq, op, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, re);
+					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
 				if (is_tuple) {
 					list *t = le->f;
@@ -2862,8 +2889,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					sql_rel *rewrite = NULL;
 					operator_type op = (depth||quantifier)?op_left:op_join;
 					(void)rewrite_inner(v->sql, rel, sq, op, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, le);
+					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 				if (quantifier) {
 					sql_subfunc *a;
@@ -2891,8 +2917,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					sql_rel *rewrite = NULL;
 					operator_type op = ((!quantifier && depth > 0)||is_cnt)?op_left:op_join;
 					(void)rewrite_inner(v->sql, rel, rsq, op, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, re);
+					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
 
 				if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
@@ -2921,15 +2946,13 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (lsq) {
 					sql_rel *rewrite = NULL;
 					(void)rewrite_inner(v->sql, rel, lsq, op_join, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, le);
+					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 				if (rsq) {
 					sql_rel *rewrite = NULL;
 					operator_type op = !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti;
 					(void)rewrite_inner(v->sql, rel, rsq, op, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, re);
+					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
 				if (is_tuple) {
 					list *t = le->f;
@@ -2966,47 +2989,40 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static sql_rel *
 rewrite_join2semi(visitor *v, sql_rel *rel)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
 		sql_rel *j = rel->l;
-		int needed=0;
+		int needed = 0, changed = 0;
 
 		if (!j || (!is_join(j->op) && !is_semi(j->op)) || !list_empty(j->exps))
 			return rel;
 		/* if needed first push select exps down under the join */
-		for(node *n = rel->exps->h; n && !needed; n = n->next) {
+		for (node *n = rel->exps->h; n;) {
+			node *next = n->next;
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 
-			if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
-				needed = 1;
-		}
-		if (needed) {
-			list *exps = sa_list(v->sql->sa);
-			sql_rel *l = j->l = rel_select(v->sql->sa, j->l, NULL);
-
-			for (node *n = rel->exps->h; n;) {
-				node *next = n->next;
-				sql_exp *e = n->data;
-				sql_subfunc *sf = e->f;
-
-				if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l)) {
-					append(exps, e);
+			if (is_func(e->type) && is_anyequal_func(sf)) {
+				if (exp_card(e) > CARD_ATOM && rel_has_all_exps(j->l, e->l)) {
+					sql_rel *l = j->l;
+					if (!is_select(l->op) || rel_is_ref(l)) {
+						set_processed(l);
+						j->l = l = rel_select(v->sql->sa, j->l, NULL);
+					}
+					rel_select_add_exp(v->sql->sa, l, e);
 					list_remove_node(rel->exps, NULL, n);
+					changed = 1;
+					v->changes++;
+				} else {
+					needed = 1;
 				}
-				n = next;
 			}
-			l->exps = exps;
-			j->l = rewrite_join2semi(v, j->l);
+			n = next;
 		}
-
-		needed = 0;
-		for(node *n = rel->exps->h; n && !needed; n = n->next) {
-			sql_exp *e = n->data;
-			sql_subfunc *sf = e->f;
-
-			if (is_func(e->type) && is_anyequal_func(sf))
-				needed = 1;
-		}
+		if (changed && !(j->l = rewrite_join2semi(v, j->l)))
+			return NULL;
 		if (!needed)
 			return try_remove_empty_select(v, rel);
 		if (!j->exps)
@@ -3107,7 +3123,9 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			}
 
 			sq = exp_rel_get_rel(v->sql->sa, ie); /* get subquery */
-
+			/* number of expressions in set relations must match the children */
+			if (!is_project(sq->op) || (is_set(sq->op) && list_length(sq->exps) > 1) || (is_simple_project(sq->op) && !list_empty(sq->r)))
+				sq = rel_project(v->sql->sa, sq, rel_projections(v->sql, sq, NULL, 1, 1));
 			le = rel_reduce2one_exp(v->sql, sq);
 			le = exp_ref(v->sql, le);
 			if (is_project(rel->op) && is_freevar(le)) {
@@ -3197,9 +3215,9 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_exp *cond = l->h->data;
 		sql_exp *then_exp = l->h->next->data;
 		sql_exp *else_exp = l->h->next->next->data;
-		sql_exp *not_cond, *cond_is_null;
+		sql_exp *not_cond;//, *cond_is_null;
 
-		if (exp_has_rel(then_exp) || exp_has_rel(else_exp)) {
+		if (!exp_has_rel(cond) && (exp_has_rel(then_exp) || exp_has_rel(else_exp))) {
 			bool single = false;
 			//return sql_error(v->sql, 10, SQLSTATE(42000) "time to rewrite into union\n");
 			// union(
@@ -3235,15 +3253,21 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			rsq = rel_project(v->sql->sa, rsq, append(sa_list(v->sql->sa), else_exp));
 			cond = exp_copy(v->sql, cond);
 			exp_set_freevar(v->sql, cond, rsq);
-			not_cond = exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 0), cmp_equal);
+			//not_cond = exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 0), cmp_equal);
+			not_cond = exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 1), cmp_notequal);
+			set_semantics(not_cond); /* also compare nulls */
+
+			/*
 			cond = exp_copy(v->sql, cond);
 			cond_is_null = exp_compare(v->sql->sa, cond, exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(cond), NULL)), cmp_equal);
 			set_has_no_nil(cond_is_null);
 			set_semantics(cond_is_null);
+			*/
 			set_processed(rsq);
-			rsq = rel_select(v->sql->sa, rsq, exp_or(v->sql->sa, list_append(new_exp_list(v->sql->sa), not_cond), list_append(new_exp_list(v->sql->sa), cond_is_null), 0));
+			//rsq = rel_select(v->sql->sa, rsq, exp_or(v->sql->sa, list_append(new_exp_list(v->sql->sa), not_cond), list_append(new_exp_list(v->sql->sa), cond_is_null), 0));
+			rsq = rel_select(v->sql->sa, rsq, not_cond);
 			usq = rel_setop(v->sql->sa, lsq, rsq, op_union);
-			rel_setop_set_exps(v->sql, usq, append(sa_list(v->sql->sa), exp_ref(v->sql, e)));
+			rel_setop_set_exps(v->sql, usq, append(sa_list(v->sql->sa), exp_ref(v->sql, e)), false);
 			if (single)
 				set_single(usq);
 			set_processed(usq);
@@ -3257,8 +3281,11 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static list *
 rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	if (list_empty(exps))
 		return exps;
+
 	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -3293,7 +3320,7 @@ rewrite_compare_exp(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rewrite_remove_xp_project(visitor *v, sql_rel *rel)
 {
-	if (rel->op == op_join && list_empty(rel->exps)) {
+	if (rel->op == op_join && list_empty(rel->exps) && !rel_is_ref(rel)) {
 		sql_rel *r = rel->r;
 
 		if (is_simple_project(r->op) && r->l && !project_unsafe(r, 1)) {
@@ -3303,7 +3330,10 @@ rewrite_remove_xp_project(visitor *v, sql_rel *rel)
 				sql_exp *t = rl->exps->h->data;
 
 				if (is_atom(t->type) && !exp_name(t)) { /* atom with out alias cannot be used later */
-					rel = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
+					sql_rel *nrel = rel->l;
+					rel->l = NULL;
+					rel_destroy(rel);
+					rel = rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1));
 					list_merge(rel->exps, r->exps, (fdup)NULL);
 					set_processed(rel);
 					v->changes++;
@@ -3317,15 +3347,18 @@ rewrite_remove_xp_project(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rewrite_remove_xp(visitor *v, sql_rel *rel)
 {
-	if (rel->op == op_join && list_empty(rel->exps)) {
+	if (rel->op == op_join && list_empty(rel->exps) && !rel_is_ref(rel)) {
 		sql_rel *r = rel->r;
 
 		if (is_simple_project(r->op) && !r->l && list_length(r->exps) == 1) {
 			sql_exp *t = r->exps->h->data;
 
 			if (is_atom(t->type) && !exp_name(t)) { /* atom with out alias cannot be used later */
+				sql_rel *nrel = rel->l;
+				rel->l = NULL;
+				rel_destroy(rel);
+				rel = nrel;
 				v->changes++;
-				return rel->l;
 			}
 		}
 	}
@@ -3462,6 +3495,18 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				if (list_empty(exps))
 					append(exps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
 				nrel->exps = exps;
+				if (!list_empty(rel->r) && !list_empty(nrel->r)) { /* aliases on grouping columns, ugh */
+					for (node *n = ((list*)nrel->r)->h ; n ; n = n->next) {
+						sql_exp *e = n->data;
+						const char *rname = exp_relname(e), *cname = exp_name(e);
+						if (rname && cname) {
+							n->data = exp_copy(v->sql, exps_bind_column2(rel->r, rname, cname, NULL));
+						} else if (cname) {
+							n->data = exp_copy(v->sql, exps_bind_column(rel->r, cname, NULL, NULL, 1));
+						}
+					}
+					list_hash_clear(nrel->r);
+				}
 				set_processed(nrel);
 				if (list_empty(pexps))
 					append(pexps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
@@ -3472,7 +3517,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					unions = nrel;
 				else {
 					unions = rel_setop(v->sql->sa, unions, nrel, op_union);
-					rel_setop_set_exps(v->sql, unions, rel_projections(v->sql, rel, NULL, 1, 1));
+					rel_setop_set_exps(v->sql, unions, rel_projections(v->sql, rel, NULL, 1, 1), false);
 					set_processed(unions);
 				}
 				if (!unions)
@@ -3551,7 +3596,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			rel_join_add_exp(v->sql->sa, nrel, f);
@@ -3560,7 +3605,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					prel,
 					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
 					op_union);
-			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(nrel);
 			v->changes++;
 			return nrel;
@@ -3569,7 +3614,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			rel_join_add_exp(v->sql->sa, nrel, f);
@@ -3578,7 +3623,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					prel,
 					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
 					op_union);
-			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(nrel);
 			v->changes++;
 			return nrel;
@@ -3587,7 +3632,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *lrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			rel_join_add_exp(v->sql->sa, lrel, f);
@@ -3595,7 +3640,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *rrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			rel_join_add_exp(v->sql->sa, rrel, f);
@@ -3603,14 +3648,14 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					rel_project(v->sql->sa, lrel,  rel_projections(v->sql, lrel, NULL, 1, 1)),
 					rel_project(v->sql->sa, rrel, rel_projections(v->sql, rrel, NULL, 1, 1)),
 					op_union);
-			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(lrel);
 			rel->op = op_join;
 			lrel = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, prel,  rel_projections(v->sql, rel, NULL, 1, 1)),
 					rel_project(v->sql->sa, lrel, rel_projections(v->sql, lrel, NULL, 1, 1)),
 					op_union);
-			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(lrel);
 			v->changes++;
 			return lrel;
@@ -3682,11 +3727,12 @@ rewrite_values(visitor *v, sql_rel *rel)
 			}
 			if (cur) {
 				nrel = rel_setop(v->sql->sa, cur, nrel, op_union);
-				rel_setop_set_exps(v->sql, nrel, exps);
+				rel_setop_set_exps(v->sql, nrel, exps, false);
 				set_processed(nrel);
 			}
 			cur = nrel;
 		}
+		rel_destroy(rel);
 		rel = cur;
 		if (single)
 			set_single(rel);

@@ -24,17 +24,17 @@ CREATE LOADER myfunc3(i integer, f string, d double) LANGUAGE PYTHON {
 	_emit.emit({'a':i,'d':4, 's': 'hello'})
 }
 
-query TTTIIIII rowsort
+query TTTIITTT rowsort
 SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHERE name='myfunc'
 ----
 myfunc
 {@@_emit.emit({'a':42,'d':1})@}@;
-pyapi
+pyapi3
 6
 7
-1
-1
-0
+True
+True
+False
 
 statement ok
 COPY LOADER INTO mytable FROM myfunc()
@@ -86,7 +86,7 @@ DROP LOADER myfunc2
 statement ok
 DROP LOADER myfunc3
 
-query ITTTIIIIIIII rowsort
+query ITTTIITTTITT rowsort
 SELECT * FROM functions WHERE name='myfunc'
 ----
 
