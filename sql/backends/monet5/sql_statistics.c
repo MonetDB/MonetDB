@@ -164,7 +164,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *cid, *sch, *tab, *col, *type, *width, *count, *unique, *nils, *minval, *maxval, *sorted, *revsorted, *bs = NULL, *fb = NULL;
+	BAT *cid, *sch, *tab, *col, *type, *width, *count, *unique, *nils, *minval, *maxval, *sorted, *revsorted;
 	mvc *m = NULL;
 	sql_trans *tr = NULL;
 	sqlstore *store = NULL;
@@ -294,21 +294,35 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						sql_column *c = (sql_column *) ncol->data;
 						int w;
 						lng cnt;
-						bit un, hnils, issorted, isrevsorted;
+						bit un, hnils, issorted, isrevsorted, dict;
+						BAT *qd = NULL, *fb = NULL, *re = NULL, *pos = NULL;
 
 						if (cname && strcmp(c->base.name, cname))
 							continue;
-						int access = c->storage_type && c->storage_type[0] == 'D' ? RD_EXT : QUICK;
-						if (!(bs = store->storage_api.bind_col(tr, c, access))) {
+
+						if (!(qd = store->storage_api.bind_col(tr, c, QUICK))) {
 							msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 							goto bailout;
 						}
-						w = bs->twidth;
-						cnt = BATcount(bs);
-						un = BATtkey(bs);
-						hnils = !bs->tnonil || bs->tnil;
-						issorted = BATtordered(bs);
-						isrevsorted = BATtrevordered(bs);
+						if ((dict = (c->storage_type && c->storage_type[0] == 'D'))) {
+							if (!(re = store->storage_api.bind_col(tr, c, RD_EXT))) {
+								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+								goto bailout;
+							}
+							issorted = BATtordered(qd) && BATtordered(re);
+							isrevsorted = BATtrevordered(qd) && BATtrevordered(re);
+							hnils = !re->tnonil || re->tnil;
+							pos = re;
+						} else {
+							issorted = BATtordered(qd);
+							isrevsorted = BATtrevordered(qd);
+							hnils = !qd->tnonil || qd->tnil;
+							pos = qd;
+						}
+
+						w = qd->twidth;
+						cnt = BATcount(qd);
+						un = BATtkey(qd);
 
 						if (BUNappend(cid, &c->base.id, false) != GDK_SUCCEED ||
 							BUNappend(sch, b->name, false) != GDK_SUCCEED ||
@@ -321,29 +335,25 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							BUNappend(nils, &hnils, false) != GDK_SUCCEED ||
 							BUNappend(sorted, &issorted, false) != GDK_SUCCEED ||
 							BUNappend(revsorted, &isrevsorted, false) != GDK_SUCCEED) {
-							if (access != QUICK)
-								BBPunfix(bs->batCacheid);
+							if (re)
+								BBPunfix(re->batCacheid);
 							goto bailout;
 						}
 
-						if (bs->tminpos != BUN_NONE || bs->tmaxpos != BUN_NONE) {
-							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[bs->ttype].atomToStr;
-
-							int maccess = c->storage_type && c->storage_type[0] == 'D' ? RD_EXT : RDONLY;
-							if (!(fb = store->storage_api.bind_col(tr, c, maccess))) {
-								if (access != QUICK)
-									BBPunfix(bs->batCacheid);
+						if (pos->tminpos != BUN_NONE || pos->tmaxpos != BUN_NONE) {
+							if (dict) {
+								fb = re;
+							} else if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
 								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 								goto bailout;
 							}
 
+							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[fb->ttype].atomToStr;
 							BATiter bi = bat_iterator(fb);
 							if (bi.minpos != BUN_NONE) {
 								if (tostr(&buf, &buflen, BUNtail(bi, bi.minpos), false) < 0) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
-									if (access != QUICK)
-										BBPunfix(bs->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									goto bailout;
 								}
@@ -354,8 +364,6 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (BUNappend(minval, nval, false) != GDK_SUCCEED) {
 								bat_iterator_end(&bi);
 								BBPunfix(fb->batCacheid);
-								if (access != QUICK)
-									BBPunfix(bs->batCacheid);
 								goto bailout;
 							}
 
@@ -363,8 +371,6 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (tostr(&buf, &buflen, BUNtail(bi, bi.maxpos), false) < 0) {
 									bat_iterator_end(&bi);
 									BBPunfix(fb->batCacheid);
-									if (access != QUICK)
-										BBPunfix(bs->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									goto bailout;
 								}
@@ -375,19 +381,16 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (BUNappend(maxval, nval, false) != GDK_SUCCEED) {
 								bat_iterator_end(&bi);
 								BBPunfix(fb->batCacheid);
-								if (access != QUICK)
-									BBPunfix(bs->batCacheid);
 								goto bailout;
 							}
 							bat_iterator_end(&bi);
 							BBPunfix(fb->batCacheid);
 						} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
-							if (access != QUICK)
-								BBPunfix(bs->batCacheid);
+							if (re)
+								BBPunfix(re->batCacheid);
 							goto bailout;
-						}
-						if (access != QUICK)
-							BBPunfix(bs->batCacheid);
+						} else if (re)
+							BBPunfix(re->batCacheid);
 					}
 				}
 			}
