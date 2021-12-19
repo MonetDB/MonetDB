@@ -2449,7 +2449,8 @@ min_max_col(sql_trans *tr, sql_column *c)
 	}
 	_DELETE(c->min);
 	_DELETE(c->max);
-	if ((d = ATOMIC_PTR_GET(&c->data)) && (b = temp_descriptor(d->cs.bid))) {
+	if ((d = ATOMIC_PTR_GET(&c->data)) &&
+		(b = temp_descriptor(d->cs.st == ST_DICT ? d->cs.ebid : d->cs.bid))) {
 		BATiter bi = bat_iterator(b);
 		if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
 			void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
