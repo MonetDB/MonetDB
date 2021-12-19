@@ -645,20 +645,20 @@ sql_epoch_ms_propagate_statistics(mvc *sql, sql_exp *e)
 	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
 		switch (tp->type->eclass) {
 		case EC_DATE: {
-			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), date_to_msec_since_epoch((date)omax->data.val.ival));
-			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), date_to_msec_since_epoch((date)omin->data.val.ival));
+			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), date_to_msec_since_epoch((date)omax->data.val.ival));
+			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), date_to_msec_since_epoch((date)omin->data.val.ival));
 		} break;
 		case EC_TIME: {
-			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_to_msec_since_epoch((daytime)omax->data.val.lval));
-			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_to_msec_since_epoch((daytime)omin->data.val.lval));
+			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_to_msec_since_epoch((daytime)omax->data.val.lval));
+			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_to_msec_since_epoch((daytime)omin->data.val.lval));
 		} break;
 		case EC_TIMESTAMP: {
-			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), timestamp_to_msec_since_epoch((timestamp)omax->data.val.lval));
-			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), timestamp_to_msec_since_epoch((timestamp)omin->data.val.lval));
+			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), timestamp_to_msec_since_epoch((timestamp)omax->data.val.lval));
+			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), timestamp_to_msec_since_epoch((timestamp)omin->data.val.lval));
 		} break;
 		case EC_SEC: {
-			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), msec_since_epoch(omax->data.val.lval));
-			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), msec_since_epoch(omin->data.val.lval));
+			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), msec_since_epoch(omax->data.val.lval));
+			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), msec_since_epoch(omin->data.val.lval));
 		} break;
 		default:
 			break;

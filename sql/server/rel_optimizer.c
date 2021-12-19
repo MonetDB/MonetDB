@@ -9633,8 +9633,11 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 	if (gp->cnt[op_union])
 		rel = rel_visitor_topdown(v, rel, &rel_optimize_unions_topdown);
 
-	if (v->storage_based_opt && level <= 0) /* storage statistics related optimizations */
-		rel = rel_visitor_bottomup(v, rel, &rel_get_statistics);
+	if (v->storage_based_opt && level <= 0) { /* storage statistics related optimizations */
+		/* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
+		if (!(is_modify(rel->op) && rel->flag&UPD_COMP))
+			rel = rel_visitor_bottomup(v, rel, &rel_get_statistics);
+	}
 
 	/* Remove unused expressions */
 	if (level <= 0)
