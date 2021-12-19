@@ -2602,6 +2602,19 @@ col_min_value(sql_trans *tr, sql_column *c, ValPtr res)
 	if (!c || !ATOMIC_PTR_GET(&c->data) || !isTable(c->t) || !c->t->s)
 		return 0;
 
+	if (c->storage_type) {
+		sql_delta *d = ATOMIC_PTR_GET(&c->data);
+
+		if (d->cs.st == ST_DICT) {
+			b = temp_descriptor(d->cs.ebid);
+			BATiter bi = bat_iterator(b);
+			if (bi.minpos != BUN_NONE && d->cs.ucnt == 0 && VALinit(res, bi.type, BUNtail(bi, bi.minpos)))
+				ok = 1;
+			bat_iterator_end(&bi);
+			bat_destroy(b);
+		}
+		return ok;
+	}
 	if ((d = ATOMIC_PTR_GET(&c->data)) &&
 		(b = quick_descriptor(d->cs.bid)) && (u = quick_descriptor(d->cs.uvbid)) &&
 		b->tminpos != BUN_NONE && BATcount(u) == 0 &&
@@ -2626,6 +2639,19 @@ col_max_value(sql_trans *tr, sql_column *c, ValPtr res)
 	if (!c || !ATOMIC_PTR_GET(&c->data) || !isTable(c->t) || !c->t->s)
 		return 0;
 
+	if (c->storage_type) {
+		sql_delta *d = ATOMIC_PTR_GET(&c->data);
+
+		if (d->cs.st == ST_DICT) {
+			b = temp_descriptor(d->cs.ebid);
+			BATiter bi = bat_iterator(b);
+			if (bi.maxpos != BUN_NONE && d->cs.ucnt == 0 && VALinit(res, bi.type, BUNtail(bi, bi.maxpos)))
+				ok = 1;
+			bat_iterator_end(&bi);
+			bat_destroy(b);
+		}
+		return ok;
+	}
 	if ((d = ATOMIC_PTR_GET(&c->data)) &&
 		(b = quick_descriptor(d->cs.bid)) && (u = quick_descriptor(d->cs.uvbid)) &&
 		b->tmaxpos != BUN_NONE && BATcount(u) == 0 &&

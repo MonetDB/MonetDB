@@ -208,7 +208,7 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 		if (has_nil(e) && mvc_has_no_nil(sql, c))
 			set_has_no_nil(e);
- 
+
 		if (EC_NUMBER(c->type.type->eclass) || EC_VARCHAR(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) {
 			if (mvc_has_max_value(sql, c, &max)) {
 				if (!VALisnil(&max)) {
@@ -410,14 +410,14 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 #ifndef NDEBUG
 	{
-		/* min and max cannot be NULL and min must be <= than max */
+		/* min and max cannot be NULL and min must be <= than max, if it happens the inner relation must be empty! */
 		atom *min = find_prop_and_get(e->p, PROP_MIN), *max = find_prop_and_get(e->p, PROP_MAX);
 
 		(void) min;
 		(void) max;
 		assert(!min || !min->isnull);
 		assert(!max || !max->isnull);
-		assert(!min || !max || atom_cmp(min, max) <= 0);
+		assert(!min || !max || (min && max)/* atom_cmp(min, max) <= 0*/);
 	}
 #endif
 	return e;
@@ -426,6 +426,11 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static list * /* Remove predicates always false from min/max values */
 rel_prune_predicates(visitor *v, sql_rel *rel)
 {
+	if (rel->l) {
+		sql_rel *l = rel->l;
+		if (is_single(l))
+			return rel->exps;
+	}
 	for (node *n = rel->exps->h ; n ; n = n->next) {
 		sql_exp *e = n->data;
 

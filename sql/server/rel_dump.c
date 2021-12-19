@@ -322,13 +322,17 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " NOT NULL");
 	if (e->type != e_atom && e->type != e_cmp && is_unique(e))
 		mnstr_printf(fout, " UNIQUE");
-	if (e->p) {
+	if (e->p && !(GDKdebug & FORCEMITOMASK)) {
 		prop *p = e->p;
 		char *pv;
 
 		for (; p; p = p->p) {
 			pv = propvalue2string(sql->ta, p);
 			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			/*
+			if (p->kind == PROP_MIN || p->kind == PROP_MAX)
+				mnstr_printf(fout, " %p", p->value);
+				*/
 		}
 	}
 	if (exp_name(e) && alias) {
