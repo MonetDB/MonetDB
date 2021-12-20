@@ -6072,6 +6072,8 @@ sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access)
 			return res;
 		t = dup;
 		t->access = access;
+		if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
+			return res;
 		if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 			return res;
 	}
