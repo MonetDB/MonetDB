@@ -374,70 +374,70 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int size = *getArgReference_int(s, p, 2);
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
-	b->T.ht = (void*)ht_create(tt, size*16);
+	b->T.ht = (void*)ht_create(tt, size*1.1);
 	BBPkeepref(*res = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 #define unique(Type) \
-		if (tt == TYPE_##Type) { \
-            Type *bp = Tloc(b, 0); \
-            Type *vals = h->vals; \
+	if (tt == TYPE_##Type) { \
+		Type *bp = Tloc(b, 0); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool new = 0, fnd = 0; \
 			\
-			for(BUN i = 0; i<cnt; i++) { \
-			    bool new = 0, fnd = 0; \
-				\
-                for(; !fnd; ) { \
-					gid k = (gid)_hash_##Type(bp[i])&h->mask; \
-					gid g = ATOMIC_GET(h->gids+k); \
-                    for(;g&1 && vals[k] != bp[i];) { \
-					    k++; \
-                        k &= h->mask; \
-						g = ATOMIC_GET(h->gids+k); \
-                    } \
-                    if (!g && ATOMIC_CAS(h->gids+k, &expected, (k<<1))) { \
-                        vals[k] = bp[i]; \
-                        new = 1; \
-						g = ATOMIC_INC(h->gids+k); \
-                    } \
-					if ((g&1) == 0) \
-						continue; \
-					fnd = 1; \
-                } \
-				if (new) \
-					gp[r++] = b->hseqbase + i; \
+			for(; !fnd; ) { \
+				gid k = (gid)_hash_##Type(bp[i])&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && vals[k] != bp[i];) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, (k<<1))) { \
+					vals[k] = bp[i]; \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+				continue; \
+				fnd = 1; \
 			} \
-		}
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+	}
 
 #define funique(Type, BaseType) \
-		if (tt == TYPE_##Type) { \
-            Type *bp = Tloc(b, 0); \
-            Type *vals = h->vals; \
+	if (tt == TYPE_##Type) { \
+		Type *bp = Tloc(b, 0); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool new = 0, fnd = 0; \
 			\
-			for(BUN i = 0; i<cnt; i++) { \
-			    bool new = 0, fnd = 0; \
-				\
-                for(; !fnd; ) { \
-					gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
-					gid g = ATOMIC_GET(h->gids+k); \
-					for(;g&1 && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && vals[k] != bp[i]);) { \
-					    k++; \
-                        k &= h->mask; \
-						g = ATOMIC_GET(h->gids+k); \
-                    } \
-                    if (!g && ATOMIC_CAS(h->gids+k, &expected, (k<<1))) { \
-                        vals[k] = bp[i]; \
-                        new = 1; \
-						g = ATOMIC_INC(h->gids+k); \
-                    } \
-					if ((g&1) == 0) \
-						continue; \
-					fnd = 1; \
-                } \
-				if (new) \
-					gp[r++] = b->hseqbase + i; \
+			for(; !fnd; ) { \
+				gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && vals[k] != bp[i]);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, (k<<1))) { \
+					vals[k] = bp[i]; \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+				continue; \
+				fnd = 1; \
 			} \
-		}
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+	}
 
 static str
 LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
@@ -463,7 +463,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		oid *gp = Tloc(g, 0);
 		BUN r = 0;
 
-        if (!err) {
+		if (!err) {
 			unique(bte)
 			unique(sht)
 			unique(int)
