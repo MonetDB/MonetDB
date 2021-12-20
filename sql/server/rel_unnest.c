@@ -1481,8 +1481,15 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		}
 
 		if (!rel_has_freevar(sql, r)) {
-			reset_dependent(rel);
-			return rel;
+			if (rel_has_freevar(sql, l) && is_join(rel->op) && !rel->exps) {
+				rel->l = r;
+				rel->r = l;
+				l = rel->l;
+				r = rel->r;
+			} else {
+				reset_dependent(rel);
+				return rel;
+			}
 		}
 
 		/* try to push dependent join down */
