@@ -3666,9 +3666,111 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	return sub;
 }
 
-static stmt *
-rel_pp(list **aggrresults, backend *be, sql_rel *rel)
+static lng
+rel_getcount(sql_rel *rel)
 {
+	prop *p = NULL;
+
+	if (rel && (p = find_prop(rel->p, PROP_COUNT)) != NULL)
+		return p->number;
+	return -1;
+}
+
+/*
+ * The groupby execution plan:
+ * The various choices:
+ *			global - grouped aggregation
+ *			cardinality
+ *			relation or expression properties
+ *			parallel pipeline execution
+ *			complicating expressions such as distinct
+ */
+
+
+static lng
+exp_getcard(sql_rel *rel, sql_exp *e)
+{
+	lng cnt = rel_getcount(rel);
+	sql_subtype *t = exp_subtype(e);
+
+	/* for now only based on type info, later use propagated cardinality estimation */
+	switch (ATOMstorage(t->type->localtype)) {
+		case TYPE_bte:
+			return MIN(256,cnt);
+		case TYPE_sht:
+			return MIN(64*1024,cnt);
+		default:
+			return cnt;
+	}
+	return cnt;
+}
+
+/* return true iff groupby can (ie only simple aggregation, which allows for 2 phases)
+ *					and cardinality estimation is low enough for extra resources for aggregation per thread.
+ */
+static bool
+rel_groupby_2_phases(sql_rel *rel)
+{
+	lng card = 1;
+	lng cnt = rel_getcount(rel);
+
+	if (!list_empty(rel->r)) {
+		list *l = rel->r;
+		for( node *n = l->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			lng lcard = exp_getcard(rel, e);
+			if (lcard == cnt) {
+				card = cnt;
+				break;
+			}
+			card *= lcard; /* TODO check for overflow */
+		}
+	}
+	if (card > 64*1024) /* TODO add tunable */
+		return false;
+	for( node *n = rel->exps->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (is_aggr(e->type)) {
+			sql_subfunc *sf = e->f;
+
+			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+			    strcmp(sf->func->base.name, "prod") == 0)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+static bool
+rel_single_distinct(sql_rel *rel)
+{
+	int nr = 0;
+	for( node *n = rel->exps->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (is_aggr(e->type)) {
+			nr += need_distinct(e);
+		}
+	}
+	if (nr==1)
+		return true;
+	return false;
+}
+
+/* initialize the result variable for the parallel execution */
+static stmt *
+rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
+{
+	bool _2phases = rel_groupby_2_phases(rel);
+
+	if (!_2phases && list_empty(rel->r)) /* cannot handle global aggregation without 2 phases */
+		return NULL;
+
+	if (rel_single_distinct(rel))
+		printf("single distinct\n");
 	list *shared = NULL;
 	if (is_groupby(rel->op) && list_empty(rel->r) && !list_empty(rel->exps)) { /* global aggregation */
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
@@ -3698,7 +3800,11 @@ rel_pp(list **aggrresults, backend *be, sql_rel *rel)
 				int tt = t->type->localtype;
 				//InstrPtr q = newStmt(be->mb, batRef, newRef);
 				InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-				int estimate = 85000000;
+				int estimate = rel_getcount(rel->l);
+				if (estimate<0) {
+					assert(0);
+					estimate = 85000000;
+				}
 
 				if (q == NULL)
 					return NULL;
@@ -3891,7 +3997,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 	stmt *pp = NULL;
 	if (SQLrunning)
-		pp = rel_pp(&aggrresults, be, rel);
+		pp = rel_prepare_pp(&aggrresults, be, rel);
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
 		sub = subrel_project(be, sub, refs, rel->l);

@@ -585,7 +585,7 @@ dofsum(const void *restrict values, oid seqb,
 		if (ngrp == 1 && ci->tpe == cand_dense) {		\
 			/* single group, no candidate list */		\
 			TYPE2 sum;					\
-			sum = *sums;					\
+			sum = 0;					\
 			if (nonil) {					\
 				*algo = "sum: no candidates, no groups, no nils, no overflow"; \
 				*seen = ncand > 0;			\
@@ -1032,7 +1032,7 @@ mskCountOnes(BAT *b, struct canditer *ci)
 }
 
 gdk_return
-BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
+BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1042,8 +1042,15 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	const char *err;
 	const char *algo = NULL;
 	lng t0 = 0;
+#ifdef HAVE_HGE
+	hge result = 0;
+#else
+	lng result = 0;
+#endif
+	void *res = &result;
 
-	(void)inout;
+	if (!inout)
+		res = resout;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
@@ -1200,6 +1207,44 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, __func__, &algo);
 	bat_iterator_end(&bi);
+	if (inout) {
+		switch (tp) {
+		case TYPE_bte:
+			if (is_bte_nil(*(bte*)resout))
+				* (bte *) resout = *(bte*) res;
+			else if (!is_bte_nil(*(bte*)res))
+				* (bte *) resout += *(bte*) res;
+			break;
+		case TYPE_sht:
+			if (is_sht_nil(*(sht*)resout))
+				* (sht *) resout = *(sht*) res;
+			else if (!is_sht_nil(*(sht*)res))
+				* (sht *) resout += *(sht*) res;
+			break;
+		case TYPE_flt:
+		case TYPE_int:
+			if (is_int_nil(*(int*)resout))
+				* (int *) resout = *(int*) res;
+			else if (!is_int_nil(*(int*)res))
+				* (int *) resout += *(int*) res;
+			break;
+		case TYPE_dbl:
+		case TYPE_lng:
+			if (is_lng_nil(*(lng*)resout))
+				* (lng *) resout = *(lng*) res;
+			else if (!is_lng_nil(*(lng*)res))
+				* (lng *) resout += *(lng*) res;
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			if (is_hge_nil(*(hge*)resout))
+				* (hge *) resout = *(hge*) res;
+			else if (!is_hge_nil(*(hge*)res))
+				* (hge *) resout += *(hge*) res;
+			break;
+#endif
+		}
+	}
 	if (algo)
 		MT_thread_setalgorithm(algo);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "

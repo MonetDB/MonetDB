@@ -21,6 +21,7 @@ typedef enum rel_prop {
 
 typedef struct prop {
 	rel_prop kind;  /* kind of property */
+	lng number;		/* property with simple counts */
 	void *value;    /* property value */
 	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
 } prop;

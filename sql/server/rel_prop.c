@@ -83,23 +83,28 @@ propvalue2string(sql_allocator *sa, prop *p)
 {
 	char buf [BUFSIZ];
 
-	if (p->value) {
-		switch(p->kind) {
-		case PROP_JOINIDX: {
-		   sql_idx *i = p->value;
+	switch(p->kind) {
+	case PROP_COUNT: {
+	   snprintf(buf, BUFSIZ, "%ld", p->number);
+	   return sa_strdup(sa, buf);
+	}
+	case PROP_JOINIDX: {
+	    sql_idx *i = p->value;
 
-		   snprintf(buf, BUFSIZ, "\"%s\".\"%s\".\"%s\"", sql_escape_ident(sa, i->t->s->base.name),
-		   			sql_escape_ident(sa, i->t->base.name), sql_escape_ident(sa, i->base.name));
-		   return sa_strdup(sa, buf);
+	    if (i) {
+			snprintf(buf, BUFSIZ, "\"%s\".\"%s\".\"%s\"", sql_escape_ident(sa, i->t->s->base.name),
+	   			sql_escape_ident(sa, i->t->base.name), sql_escape_ident(sa, i->base.name));
+			return sa_strdup(sa, buf);
 		}
-		case PROP_REMOTE: {
-			char *uri = p->value;
+	} break;
+	case PROP_REMOTE: {
+		char *uri = p->value;
 
+		if (uri)
 			return sa_strdup(sa, uri);
-		}
-		default:
-			break;
-		}
+	} break;
+	default:
+		break;
 	}
 	return sa_strdup(sa, "");
 }

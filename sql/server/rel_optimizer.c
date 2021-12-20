@@ -241,6 +241,10 @@ rel_properties(visitor *v, sql_rel *rel)
 		sql_table *t = (sql_table *) rel->l;
 		sql_part *pt;
 
+		sqlstore *store = v->sql->session->tr->store;
+		prop *p = rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
+		p->number = (lng)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 0);
+
 		/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
 		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
