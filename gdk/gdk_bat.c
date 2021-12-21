@@ -1154,7 +1154,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			b->tnil = b->tnonil = false;
 		}
 	} else {
-		b->tnil = values == NULL;
+		b->tnil |= values == NULL;
 		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
