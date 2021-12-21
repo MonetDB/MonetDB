@@ -138,6 +138,7 @@ tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 			}
 			else {
 				BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
+				bn = BATsetaccess(bn, BAT_READ);
 				BBPretain(bn->batCacheid);
 				bat_destroy(b);
 				if ((rc = BUNappend(lg->catalog_id, &cid, false)) == GDK_SUCCEED &&
@@ -3182,7 +3183,6 @@ bl_postversion(void *Store, void *Lg)
 		BAT* funcs_name_mangled_rid = COLnew(funcs_name->hseqbase, TYPE_oid, funcs_name->batCapacity, TRANSIENT);
 		// TODO errors
 
-		BATiter _bi_funcs_name = bat_iterator(funcs_name);
 		for (size_t i = 0; i < BATcount(funcs_cands); i ++ ) {
 			oid frid = *(oid*) BUNtail(bi_funcs, i);
 
@@ -3200,8 +3200,6 @@ bl_postversion(void *Store, void *Lg)
 					if (BUNappend(funcs_name_mangled_rid, &func_rid, false) != GDK_SUCCEED) {
 						// TODO ERROR
 					}
-					printf("check name: %s\n", (str) BUNtvar(_bi_funcs_name, func_rid));
-					printf("%s\n", mangled);
 				}
 
 				func_rid = frid;
@@ -3245,7 +3243,6 @@ bl_postversion(void *Store, void *Lg)
 		// flush the last name
 		size_t pos = snprintf(mangled, 2*4098, "%s(%d,%d)%s", prefix, retc, argc, postfix);
 		assert (pos < 2*4098);
-		printf("and last one:\n");
 
 		if (BUNappend(funcs_name_mangled, mangled, false) != GDK_SUCCEED) {
 			// TODO ERROR
@@ -3253,8 +3250,6 @@ bl_postversion(void *Store, void *Lg)
 		if (BUNappend(funcs_name_mangled_rid, &func_rid, false) != GDK_SUCCEED) {
 			// TODO ERROR
 		}
-		printf("check name: %s\n", (str) BUNtvar(_bi_funcs_name, func_rid));
-		printf("%s\n", mangled);
 
 		// bat_iterator_end(&bi_args);
 		bat_iterator_end(&bi_funcs);
@@ -3313,9 +3308,6 @@ bl_postversion(void *Store, void *Lg)
 			if (BUNappend(funcs_name_mangled_rid, &frid, false) != GDK_SUCCEED) {
 				// TODO ERROR
 			}
-
-			printf("check name: %s\n", (str) BUNtvar(_bi_funcs_name, frid));
-			printf("%s\n", mangled);
 		}
 		bat_iterator_end(&bi_argless_tid);
 		bat_iterator_end(&bi_name_argless);
@@ -3329,10 +3321,13 @@ bl_postversion(void *Store, void *Lg)
 		if ((funcs_sqlname = BATsetaccess(funcs_sqlname, BAT_READ)) == NULL ||
 			/* 2165 is sys.functions.sqlname */
 			BUNappend(lg->catalog_id, &(int) {2165}, false) != GDK_SUCCEED ||
-			BUNappend(lg->catalog_bid, &funcs_sqlname->batCacheid, false) != GDK_SUCCEED) {
+			BUNappend(lg->catalog_bid, &funcs_sqlname->batCacheid, false) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_cnt, &(lng){BATcount(funcs_sqlname)}, false) != GDK_SUCCEED) {
 			bat_destroy(funcs_sqlname);
 			return GDK_FAIL;
 		}
+
 		BBPretain(funcs_sqlname->batCacheid);
 		BBPretain(funcs_sqlname->batCacheid); /* yep, twice */
 		bat_destroy(funcs_sqlname);
