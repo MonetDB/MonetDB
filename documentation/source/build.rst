@@ -118,7 +118,7 @@ Run as Administrator::
 
 To compile MonetDB (as normal user)::
 
-  hg clone http://dev.monetdb.org/hg/MonetDB/
+  hg clone https://dev.monetdb.org/hg/MonetDB/
 
   "c:\Program Files (x86)\Microsoft Visual Studio\2017\Community\common7\tools\vsdevcmd.bat"
   "c:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
@@ -157,7 +157,7 @@ optional::
 
 To compile MonetDB (as normal user)::
 
-  hg clone http://dev.monetdb.org/hg/MonetDB/
+  hg clone https://dev.monetdb.org/hg/MonetDB/
 
   cd MonetDB
   mkdir build
