@@ -861,8 +861,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			if (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED) {
  				goto bunins_failed;
  			}
-			memcpy(bn->theap->base, bi.base, bi.count << bi.shift);
-			bn->theap->free = bi.count << bi.shift;
+			memcpy(bn->theap->base, bi.base, bi.hfree);
+			bn->theap->free = bi.hfree;
 			bn->theap->dirty = true;
  			if (bn->tvheap) {
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
