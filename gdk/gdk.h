@@ -1492,10 +1492,11 @@ gdk_export bat BBPlimit;
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT
  * this also gives the longest possible "physical" name and "bak" name
- * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on
- * 64 bit architecture and 11 + \0 on 32 bit architecture; the
- * physical name is a bit more complicated, but the longest possible
- * name is 22 + \0 bytes (16 + \0 on 32 bits) */
+ * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on 64
+ * bit architecture and 11 + \0 on 32 bit architecture; the physical
+ * name is a bit more complicated, but the longest possible name is 22 +
+ * \0 bytes (16 + \0 on 32 bits), the longest possible extension adds
+ * another 17 bytes (.thsh(grp|uni)(l|b)%08x) */
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */

@@ -128,7 +128,6 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("reorder", "Reorder by dataflow dependencies"),
  pattern("inspect", "optimizer_stats", OPTstatistics, false, "Get optimizer use statistics, i.e. calls and total time", args(3,3, batarg("",str),batarg("",int),batarg("",lng))),
  optwrapper_pattern("pushselect", "Push selects down projections"),
- optwrapper_pattern("oltp", "Inject the OLTP locking primitives"),
  optwrapper_pattern("wlc", "Inject the workload capture-replay primitives"),
  optwrapper_pattern("postfix", "Postfix the plan,e.g. pushing projections"),
  optwrapper_pattern("strimps", "Use strimps index if appropriate"),
