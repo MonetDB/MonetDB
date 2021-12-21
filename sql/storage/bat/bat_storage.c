@@ -2441,33 +2441,36 @@ min_max_col(sql_trans *tr, sql_column *c)
 		return 0;
 	if (c->min && c->max)
 		return 1;
-
-	lock_column(tr->store, c->base.id);
-	if (c->min && c->max) {
-		unlock_column(tr->store, c->base.id);
-		return 1;
-	}
-	_DELETE(c->min);
-	_DELETE(c->max);
-	if ((d = ATOMIC_PTR_GET(&c->data)) && (b = temp_descriptor(d->cs.bid))) {
-		BATiter bi = bat_iterator(b);
-		if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
-			void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
-			size_t minlen = ATOMlen(bi.type, nmin), maxlen = ATOMlen(bi.type, nmax);
-
-			if (!(c->min = GDKmalloc(minlen)) || !(c->max = GDKmalloc(maxlen))) {
-				_DELETE(c->min);
-				_DELETE(c->max);
-			} else {
-				memcpy(c->min, nmin, minlen);
-				memcpy(c->max, nmax, maxlen);
-				ok = 1;
-			}
+	if ((d = ATOMIC_PTR_GET(&c->data))) {
+		if (d->cs.st == ST_FOR)
+			return 0;
+		lock_column(tr->store, c->base.id);
+		if (c->min && c->max) {
+			unlock_column(tr->store, c->base.id);
+			return 1;
 		}
-		bat_iterator_end(&bi);
-		bat_destroy(b);
+		_DELETE(c->min);
+		_DELETE(c->max);
+		if ((b = temp_descriptor(d->cs.st == ST_DICT ? d->cs.ebid : d->cs.bid))) {
+			BATiter bi = bat_iterator(b);
+			if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
+				void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
+				size_t minlen = ATOMlen(bi.type, nmin), maxlen = ATOMlen(bi.type, nmax);
+
+				if (!(c->min = GDKmalloc(minlen)) || !(c->max = GDKmalloc(maxlen))) {
+					_DELETE(c->min);
+					_DELETE(c->max);
+				} else {
+					memcpy(c->min, nmin, minlen);
+					memcpy(c->max, nmax, maxlen);
+					ok = 1;
+				}
+			}
+			bat_iterator_end(&bi);
+			bat_destroy(b);
+		}
+		unlock_column(tr->store, c->base.id);
 	}
-	unlock_column(tr->store, c->base.id);
 	return ok;
 }
 
