@@ -104,31 +104,53 @@ tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 			va_end(va);
 			return GDK_FAIL;
 		}
-		if (first && (!old_lg || BUNfnd(old_lg->add, &b->batCacheid) == BUN_NONE)) {
-			BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
-			if (
-				bn == NULL ||
-				(old_lg && BUNappend(old_lg->add, &bn->batCacheid, false) != GDK_SUCCEED) ||
-				(old_lg && BUNappend(old_lg->del, &b->batCacheid, false) != GDK_SUCCEED)
-				)
-				 {
-				va_end(va);
+		if (first) {
+			if (old_lg) {
+				if (BUNfnd(old_lg->add, &b->batCacheid) == BUN_NONE) {
+					BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
+					if (bn == NULL ||
+						BUNappend(old_lg->add, &bn->batCacheid, false) != GDK_SUCCEED ||
+						BUNappend(old_lg->del, &b->batCacheid, false) != GDK_SUCCEED) {
+						va_end(va);
+						bat_destroy(b);
+						bat_destroy(bn);
+						return GDK_FAIL;
+					}
+					BBPretain(bn->batCacheid);
+					/* logical refs of b stay the same: it is moved from catalog_bid to del */
+					bat_destroy(b);
+					BUN p = BUNfnd(lg->catalog_id, &cid);
+					assert(p != BUN_NONE);
+					if (BUNreplace(lg->catalog_bid, p, &bn->batCacheid, false) != GDK_SUCCEED) {
+						va_end(va);
+						bat_destroy(bn);
+						return GDK_FAIL;
+					}
+					BBPretain(bn->batCacheid);
+					b = bn;
+				}
+				rc = BUNappend(b, cval, true);
 				bat_destroy(b);
-				bat_destroy(bn);
-				return GDK_FAIL;
+				if (rc != GDK_SUCCEED) {
+					va_end(va);
+					return rc;
+				}
 			}
-			BBPretain(bn->batCacheid);
-			/* logical refs of b stay the same: it is moved from catalog_bid to del */
-			bat_destroy(b);
-			BUN p = BUNfnd(lg->catalog_id, &cid);
-			assert(p != BUN_NONE);
-			if (BUNreplace(lg->catalog_bid, p, &bn->batCacheid, false) != GDK_SUCCEED) {
-				va_end(va);
-				bat_destroy(bn);
-				return GDK_FAIL;
+			else {
+				BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
+				BBPretain(bn->batCacheid);
+				bat_destroy(b);
+				if ((rc = BUNappend(lg->catalog_id, &cid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_bid, &bn->batCacheid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(bn)}, false)) == GDK_SUCCEED) {
+					BBPretain(bn->batCacheid);
+				}
+				else {
+					// TODO ERROR?
+				}
+				b = bn;
 			}
-			BBPretain(bn->batCacheid);
-			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
 		bat_destroy(b);
