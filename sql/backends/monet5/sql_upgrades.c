@@ -76,9 +76,9 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 
 		pos += snprintf(buf + pos, bufsize - pos,
 				"insert into sys.functions values"
-				" (%d, '%s', '%s', '%s', '%s',"
-				" %d, %d, %s, %s, %s, %d, %s, %s);\n",
-				func->base.id, func->base.name, func->sql_name,
+				" (%d, '%s', '%s', '%s',"
+				" %d, %d, %s, %s, %s, %d, %s, %s, '%s');\n",
+				func->base.id, func->base.name,
 				sql_func_imp(func), sql_func_mod(func), (int) FUNC_LANG_INT,
 				(int) func->type,
 				boolnames[func->side_effect],
@@ -86,7 +86,8 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 				boolnames[func->vararg],
 				func->s ? func->s->base.id : s->base.id,
 				boolnames[func->system],
-				boolnames[func->semantics]);
+				boolnames[func->semantics],
+				func->sql_name);
 		if (func->res) {
 			for (m = func->res->h; m; m = m->next, number++) {
 				arg = m->data;
@@ -4627,10 +4628,35 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	(void) sql;
 	(void) prev_schema;
-	(void) systabfixed;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"select id from tables where name = 'fully_qualified_functions' and query like '%%sqlname%%' and schema_id = (select s.id from sys.schemas s where name = 'sys');\n");
+	res_table *output;
+	err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+
+	BAT* b;
+	if ((b = BATdescriptor(output->cols[0].b)) == NULL) {
+		res_table_destroy(output);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	BUN rowcnt = BATcount(b);
+
+	BBPunfix(b->batCacheid);
+	res_table_destroy(output);
+
+	if (rowcnt > 0) {
+		GDKfree(buf);
+		/* nothing to do */
+		return NULL;
+	}
 
 	if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
 		return err;

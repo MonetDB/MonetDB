@@ -1457,7 +1457,7 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 
-		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->sql_name, &f->imp, &f->mod, &flang, &ftype, &f->side_effect, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics)))
+		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &f->side_effect, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics, &f->sql_name)))
 			return res;
 		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
 			return res;
@@ -4870,8 +4870,8 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
-	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, &t->sql_name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
-			&t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics)))
+	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
+			&t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics, &t->sql_name)))
 		return res;
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
