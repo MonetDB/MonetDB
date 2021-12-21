@@ -50,6 +50,7 @@ target_link_libraries(mserver5
   monetdb5
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
+  $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>
   Threads::Threads)
 
 add_executable(shutdowntest)
