@@ -107,16 +107,13 @@ with SQLTestCase() as mdb1:
         # The current setup gives a duplicate entry in the 'comments' table, so that cannot happen
         mdb1.execute('SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.comments;').assertDataResultMatch([(1,)])
 
-        mdb1.execute("TRUNCATE sys.myvar;")
-        mdb1.execute("INSERT INTO sys.myvar VALUES ((SELECT COUNT(*) FROM sys.statistics));").assertRowCount(1)
+        # Since Jan2022 we allow concurrent analyze statements
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('ANALYZE "sys"."integers";').assertSucceeded()
-        mdb2.execute('ANALYZE "sys"."integers";').assertFailed(err_code="42000", err_message="ANALYZE: failed due to conflict with another transaction")
+        mdb2.execute('ANALYZE "sys"."integers";').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed() # Not sure here
-        # The current setup gives a duplicate entry in the 'statistics' table, so that cannot happen
-        mdb1.execute('SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.statistics;').assertDataResultMatch([(1,)])
+        mdb2.execute('commit;').assertSucceeded()
 
         mdb1.execute('create merge table parent(a int);').assertSucceeded()
         mdb1.execute('create table child1(c int);').assertSucceeded()

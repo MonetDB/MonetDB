@@ -145,7 +145,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	subselects = (subselect_t) {0};
 	if( mb->errors)
-		return MAL_SUCCEED;
+		throw(MAL, "optimizer.pushselect", "%s", mb->errors);
 
 	no_mito = !isOptimizerEnabled(mb, mitosisRef);
 	(void) stk;
