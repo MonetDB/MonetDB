@@ -95,7 +95,7 @@ class _BufferedPipe:
         w = 0
         first = True
         while True:
-            c = fh.read(1024)
+            c = fh.readline()
             if first:
                 if type(c) is type(b''):
                     self._empty = b''

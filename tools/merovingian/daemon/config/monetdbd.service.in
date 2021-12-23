@@ -1,6 +1,6 @@
 [Unit]
 Description=MonetDB database server daemon
-Documentation=man:monetdbd https://www.monetdb.org/Documentation/monetdbd-man-page
+Documentation=man:monetdbd https://www.monetdb.org/documentation/admin-guide/manpages/monetdbd/
 After=network.target
 
 [Service]
