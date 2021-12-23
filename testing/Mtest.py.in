@@ -1631,16 +1631,9 @@ def GetBitsAndModsAndThreads(env) :
         pass
     cmd.append('--dbpath=%s' % dbpath)
     os.environ['TSTDB'] = TSTPREF
-    if env.get('MULTIFARM'):
-        cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-        shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
-                      ignore_errors = True)
-        os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-    elif env.get('TRANS_INMEM'):
-        cmd.append('--dbextra=in-memory')
+    cmd.extend(mserver5_opts)
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
-    cmd.extend(mserver5_opts)
     setpgrp = True
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
                        stderr=process.PIPE, text=True) as proc:
