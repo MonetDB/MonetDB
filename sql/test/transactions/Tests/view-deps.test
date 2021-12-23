@@ -34,3 +34,4 @@ select * from myv7
 @connection(id=2)
 statement ok
 drop table fine
+
