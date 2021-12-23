@@ -446,7 +446,12 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());
-  error:
+  error:;
+#ifdef HAVE_SYS_UN_H
+	const char *usockfile = GDKgetenv("mapi_usock");
+	if (usockfile && MT_remove(usockfile) == -1 && errno != ENOENT)
+		perror(usockfile);
+#endif
 	(void) ATOMIC_DEC(&nlistener);
 	for (i = 0; i < 3; i++)
 		if (socks[i] != INVALID_SOCKET)
