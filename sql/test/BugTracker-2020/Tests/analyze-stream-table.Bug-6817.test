@@ -18,10 +18,10 @@ CREATE merge TABLE "ttt"."strt" (
 statement error
 analyze "ttt"."strt"
 
-query T rowsort
+query I rowsort
 select (count(*) > 0) as has_rows from statistics
 ----
-False
+0
 
 statement ok
 CREATE TABLE "ttt"."a"("id" INTEGER)
@@ -29,10 +29,10 @@ CREATE TABLE "ttt"."a"("id" INTEGER)
 statement ok
 analyze ttt
 
-query T rowsort
+query I rowsort
 select (count(*) > 0) as has_rows from statistics
 ----
-True
+1
 
 statement ok
 drop table "ttt"."strt"
@@ -40,10 +40,10 @@ drop table "ttt"."strt"
 statement ok
 analyze ttt
 
-query T rowsort
+query I rowsort
 select (count(*) > 0) as has_rows from statistics
 ----
-True
+1
 
 statement ok
 drop schema "ttt" cascade
