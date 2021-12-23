@@ -57,3 +57,4 @@ select * from f4()
 
 statement ok
 ROLLBACK
+

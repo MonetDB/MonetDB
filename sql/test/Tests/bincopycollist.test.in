@@ -13,7 +13,7 @@ COPY BINARY INTO intvals (z) FROM (E'$QTSTTRGDIR/bincopyint.bin')
 statement ok
 COPY BINARY INTO intvals (z, y) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
 
-query I
+query I nosort
 SELECT count(*) FROM intvals
 ----
 30
@@ -30,7 +30,7 @@ CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
 statement ok
 COPY BINARY INTO intvals (x, x) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
 
-query I
+query I nosort
 SELECT count(*) FROM intvals
 ----
 10
