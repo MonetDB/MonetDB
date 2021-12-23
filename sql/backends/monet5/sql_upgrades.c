@@ -3480,6 +3480,8 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	t->system = 0;
 	t = mvc_bind_table(sql, s, "dump_user_defined_types");
 	t->system = 0;
+	t = mvc_bind_table(sql, s, "fully_qualified_functions");
+	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
 					/* drop dependant stuff from 76_dump.sql */
 					"drop function sys.dump_database(boolean);\n"
@@ -3509,6 +3511,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"drop view sys.describe_functions;\n"
 					"drop view sys.describe_partition_tables;\n"
 					"drop view sys.describe_privileges;\n"
+					"drop view sys.fully_qualified_functions;\n"
 					"drop view sys.describe_comments;\n"
 					"drop view sys.describe_tables;\n"
 					"drop view sys.describe_sequences;\n"
@@ -3590,6 +3593,28 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"		AND s.id = t.schema_id\n"
 					"		AND ts.table_type_id = t.type\n"
 					"		AND s.name <> 'tmp';\n"
+					"CREATE VIEW sys.fully_qualified_functions AS\n"
+					"	WITH fqn(id, tpe, sig, num) AS\n"
+					"	(\n"
+					"		SELECT\n"
+					"			f.id,\n"
+					"			ft.function_type_keyword,\n"
+					"			CASE WHEN a.type IS NULL THEN\n"
+					"				sys.fqn(s.name, f.name) || '()'\n"
+					"			ELSE\n"
+					"				sys.fqn(s.name, f.name) || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'\n"
+					"			END,\n"
+					"			a.number\n"
+					"		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id\n"
+					"		WHERE s.id= f.schema_id AND f.type = ft.function_type_id\n"
+					"	)\n"
+					"	SELECT\n"
+					"		fqn1.id id,\n"
+					"		fqn1.tpe tpe,\n"
+					"		fqn1.sig nme\n"
+					"	FROM\n"
+					"		fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)\n"
+					"		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);\n"
 					"CREATE VIEW sys.describe_comments AS\n"
 					"		SELECT\n"
 					"			o.id id,\n"
@@ -3609,7 +3634,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"			UNION ALL\n"
 					"			SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id\n"
 					"			UNION ALL\n"
-					"			SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.name) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id\n"
+					"			SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf WHERE f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id\n"
 					"			) AS o(id, tpe, nme)\n"
 					"			JOIN sys.comments c ON c.id = o.id;\n"
 					"CREATE VIEW sys.describe_privileges AS\n"
@@ -3800,7 +3825,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = %d;\n", F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
-				"update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_sequences', 'describe_functions') AND schema_id = 2000;\n");
+				"update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'fully_qualified_functions', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_sequences', 'describe_functions') AND schema_id = 2000;\n");
 
 	/* 76_dump.sql (most everything already dropped) */
 	pos += snprintf(buf + pos, bufsize - pos,
