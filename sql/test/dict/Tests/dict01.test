@@ -374,7 +374,7 @@ CALL "sys"."dict_compress"('sys','rmct21','c0',true)
 statement ok rowcount 4
 INSERT INTO rmct21(c0) VALUES(1829991355000),(2073175664000),(1969480299000),(1534889714000)
 
-query T rowsort
+query I rowsort
 (SELECT greatest(rmct21.c0, rmct21.c0) FROM rmct21) INTERSECT ALL (SELECT DISTINCT sql_max(737555899, rmct21.c0) FROM rmct21)
 ----
 1054357633000

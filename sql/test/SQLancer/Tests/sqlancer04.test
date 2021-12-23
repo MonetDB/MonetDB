@@ -797,4 +797,3 @@ UPDATE t1 SET c1 = 0 WHERE t1.c1 > 3
 statement ok
 DROP TABLE t1
 
-
