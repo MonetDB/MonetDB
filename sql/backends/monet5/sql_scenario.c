@@ -692,6 +692,8 @@ SQLinitClientFromMAL(Client c)
 	}
 
 	mvc* m = ((backend*) c->sqlcontext)->mvc;
+	if (c->glb)
+		c->glb->keepTmps = true;
 
 	/* Crucial step:
 	 * MAL scripts that interact with the sql module
