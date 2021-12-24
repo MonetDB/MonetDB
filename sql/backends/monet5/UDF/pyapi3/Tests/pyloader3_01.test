@@ -25,7 +25,7 @@ CREATE LOADER myfunc3(i integer, f string, d double) LANGUAGE PYTHON {
 }
 
 query TTTIITTT rowsort
-SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHERE name='myfunc'
+SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHERE sqlname='myfunc'
 ----
 myfunc
 {@@_emit.emit({'a':42,'d':1})@}@;
@@ -87,7 +87,7 @@ statement ok
 DROP LOADER myfunc3
 
 query ITTTIITTTITT rowsort
-SELECT * FROM functions WHERE name='myfunc'
+SELECT * FROM functions WHERE sqlname='myfunc'
 ----
 
 statement ok
