@@ -4666,7 +4666,7 @@ rel_push_join_exps_down(visitor *v, sql_rel *rel)
 				rel_select_add_exp(v->sql->sa, rel->l, e);
 				list_remove_node(rel->exps, NULL, n);
 				v->changes++;
-			} else if (right && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in)) &&
+			} else if (right && ((rel->op != op_anti && rel->op != op_left) || (e->flag != mark_notin && e->flag != mark_in)) &&
 					   rel_rebind_exp(v->sql, rel->r, e)) { /* select expressions on right */
 				sql_rel *r = rel->r;
 				if (!is_select(r->op) || rel_is_ref(r)) {
@@ -6503,6 +6503,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		} else if (is_join(rel->op)) {
 			list *r_exps = rel_projections(v->sql, r, NULL, 1, 1);
 			list_merge(exps, r_exps, (fdup)NULL);
+			if (rel->attr)
+				append(exps, exp_ref(v->sql, rel->attr->h->data));
 		}
 		/* Here we should check for ambigious names ? */
 		if (is_join(rel->op) && r) {
@@ -6510,6 +6512,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			l_exps = rel_projections(v->sql, t, NULL, 1, 1);
 			/* conflict with old right expressions */
 			r_exps = rel_projections(v->sql, r, NULL, 1, 1);
+			if (rel->attr)
+				append(r_exps, exp_ref(v->sql, rel->attr->h->data));
 			for(n = l_exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 				const char *rname = exp_relname(e);
@@ -9871,6 +9875,103 @@ need_optimization(mvc *sql, sql_rel *rel, int instantiate)
 	return 2;
 }
 
+static sql_rel *
+rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
+{
+	if (rel && is_join(rel->op) && (rel->exps || rel->attr)) {
+		sql_exp *me = NULL;
+		int needed = 0;
+		if (rel->exps) {
+			for (node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
+					me = e;
+					needed++;
+				}
+			}
+		}
+		if (needed && rel->op == op_join) {
+			rel->op = (me->flag == mark_in)?op_semi:op_anti;
+			return rel;
+		}
+		if (needed || rel->attr) {
+			assert(needed || rel->attr);
+			sql_exp *nequal = NULL;
+			sql_exp *lid = NULL, *rid = NULL;
+			sql_rel *l = rel->l, *p = rel;
+			sql_rel *pp = NULL; /* maybe one project in between (TODO keep list) */
+
+			if (me && rel->op == op_left) {
+				/* find parent of join involving the right hand side of the mark expression */
+				sql_rel *c = p->r;
+				while (c) {
+					if (is_join(c->op) && rel_find_exp(c->r, me->r)) {
+						p = c;
+						c = p->r;
+					} if (!pp && is_project(c->op) && c->l && rel_find_exp(c->l, me->r)) {
+						pp = c;
+						c = c->l;
+					} else {
+						c = NULL;
+					}
+				}
+			}
+			if (p && p->r == pp)
+				pp = NULL;
+
+			rel->l = l = rel_add_identity(v->sql, l, &lid);
+			lid = exp_ref(v->sql, lid);
+			if (rel->op == op_left) {
+				p->r = rel_add_identity(v->sql, p->r, &rid);
+				rid = exp_ref(v->sql, rid);
+				if (pp) {
+					append(pp->exps, rid);
+					rid = exp_ref(v->sql, rid);
+				}
+			}
+
+			list *nexps = sa_list(v->sql->sa);
+			list *aexps = sa_list(v->sql->sa);
+			if (rel->exps) {
+				for (node *n = rel->exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+
+					if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
+						sql_exp *le = e->l;
+						sql_exp *re = e->r;
+						sql_subfunc *ea = sql_bind_func(v->sql, "sys", e->flag==mark_in?"anyequal":"allnotequal", exp_subtype(re), NULL, F_AGGR);
+
+						sql_exp *ne = exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
+						append(ne->l, re);
+						if (rid)
+							append(ne->l, rid);
+
+						append(aexps, ne);
+						nequal = ne;
+					} else
+						append(nexps, e);
+				}
+			}
+			rel->exps = nexps;
+
+			if (rel->attr) {
+				sql_exp *a = rel->attr->h->data;
+
+				exp_setname(v->sql->sa, nequal, exp_find_rel_name(a), exp_name(a));
+				rel->attr = NULL;
+			} else {
+				exp_label(v->sql->sa, nequal, ++v->sql->label);
+			}
+			list *lexps = rel_projections(v->sql, l, NULL, 1, 1);
+			aexps = list_merge(aexps, lexps, (fdup)NULL);
+			rel = rel_groupby(v->sql, rel, exp2list(v->sql->sa, lid));
+			rel->exps = aexps;
+		}
+	}
+	return rel;
+}
+
 /* 'instantiate' means to rewrite logical tables: (merge, remote, replica tables) */
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt)
@@ -9911,5 +10012,6 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 		v.data = &level;
 		rel = rel_visitor_bottomup(&v, rel, &rel_remote_func);
 	}
+	rel = rel_visitor_bottomup(&v, rel, &rel_setjoins_2_joingroupby);
 	return rel;
 }
