@@ -279,6 +279,13 @@ typedef struct relation {
 	void *l;
 	void *r;
 	list *exps;
+	list *attr; /* attributes: mark-joins return extra attributes */
+				/* later put all 'projection' attributes in here, ie for set ops, project/group/table/basetable by
+				 * select/ (semi/anti/left/outer/right)join will use exps for predicates
+				 * groupby will use exps for group by exps
+				 * project can use exps for the order by bits
+				 * topn/sample use exps for the input arguments of the limit/sample
+				 */
 	int nrcols;	/* nr of cols */
 	unsigned int
 	 flag:16,
