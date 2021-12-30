@@ -1959,7 +1959,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			} else if (exp_is_rel(re)) {
 				sql_rel *r = exp_rel_get_rel(sql->sa, re);
 				add_select = 1;
-				if (*rel)
+				if (rel && *rel)
 					set_dependent((*rel));
 				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
 					re = r->exps->h->data;
@@ -3395,7 +3395,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	sql_rel *groupby = rel ? *rel : NULL, *sel = NULL, *gr, *og = NULL, *res = groupby;
 	sql_rel *subquery = NULL;
 	list *exps = NULL;
-	bool is_grouping = !strcmp(aname, "grouping"), has_args = false, found = false;
+	bool is_grouping = !strcmp(aname, "grouping"), has_args = false, found = false, used_rel = false;
 
 	if (!query_has_outer(query)) {
 		if (!groupby) {
@@ -3443,6 +3443,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 
 			if (!e)
 				return NULL;
+			used_rel |= (rel_has_exp(gl, e, true) == 0);
 			has_args = true;
 			if (gl && gl != ogl) {
 				if (gl->grouped) {
@@ -3506,6 +3507,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 									return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
 								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 							}
+						} else if (!used_rel && is_sql_where(of)) {
+							char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+							return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
 						} else if (!is_sql_aggr(of)) {
 							set_outer(outer);
 						}

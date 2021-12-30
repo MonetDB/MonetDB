@@ -2676,16 +2676,18 @@ create_col(sql_trans *tr, sql_column *c)
 	if (!isNew(c) && !isTempTable(c->t)){
 		bat->cs.ts = tr->ts;
 		ok = load_cs(tr, &bat->cs, type, c->base.id);
-		if (ok == LOG_OK && c->storage_type && strcmp(c->storage_type, "DICT") == 0) {
-			sqlstore *store = tr->store;
-			int bid = logger_find_bat(store->logger, -c->base.id);
-			if (!bid)
-				return LOG_ERR;
-			bat->cs.ebid = temp_dup(bid);
-			bat->cs.st = ST_DICT;
+		if (ok == LOG_OK && c->storage_type) {
+			if (strcmp(c->storage_type, "DICT") == 0) {
+				sqlstore *store = tr->store;
+				int bid = logger_find_bat(store->logger, -c->base.id);
+				if (!bid)
+					return LOG_ERR;
+				bat->cs.ebid = temp_dup(bid);
+				bat->cs.st = ST_DICT;
+			} else if (strncmp(c->storage_type, "FOR", 3) == 0) {
+				bat->cs.st = ST_FOR;
+			}
 		}
-		if (ok == LOG_OK && c->storage_type && strncmp(c->storage_type, "FOR", 3) == 0)
-			bat->cs.st = ST_FOR;
 		return ok;
 	} else if (bat && bat->cs.bid && !isTempTable(c->t)) {
 		return new_persistent_delta(ATOMIC_PTR_GET(&c->data));
