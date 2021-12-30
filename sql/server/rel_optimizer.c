@@ -386,12 +386,18 @@ static sql_exp *
 joinexp_col(sql_exp *e, sql_rel *r)
 {
 	if (e->type == e_cmp) {
-		if (rel_has_exp(r, e->l) >= 0)
+		if (rel_has_exp(r, e->l, false) >= 0)
 			return e->l;
 		return e->r;
 	}
 	assert(0);
 	return NULL;
+}
+
+static int
+rel_has_exp2(sql_rel *r, sql_exp *e)
+{
+	return rel_has_exp(r, e, false);
 }
 
 static sql_column *
@@ -831,8 +837,8 @@ order_joins(visitor *v, list *rels, list *exps)
 			node *ln, *rn, *en;
 
 			cje = djn->data;
-			ln = list_find(n_rels, cje->l, (fcmp)&rel_has_exp);
-			rn = list_find(n_rels, cje->r, (fcmp)&rel_has_exp);
+			ln = list_find(n_rels, cje->l, (fcmp)&rel_has_exp2);
+			rn = list_find(n_rels, cje->r, (fcmp)&rel_has_exp2);
 
 			if (ln && rn) {
 				assert(0);
@@ -996,7 +1002,7 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 					if (e->type == e_cmp && e->flag == cmp_equal) {
 						/* in values are on
 							the right of the join */
-						if (rel_has_exp(r, e->r) >= 0)
+						if (rel_has_exp(r, e->r, false) >= 0)
 							je = e;
 					}
 				}
@@ -4299,7 +4305,7 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 			if (exp_is_atom(ce))
 				list_append(aliases, ce);
 			else if (ce->type == e_column) {
-				if (rel_has_exp(cl, ce) == 0) /* collect aliases outside groupby */
+				if (rel_has_exp(cl, ce, false) == 0) /* collect aliases outside groupby */
 					list_append(aliases, ce);
 				else
 					list_append(aggrs, ce);
@@ -4307,7 +4313,7 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 				list *args = ce->l;
 
 				/* check args are part of left/right */
-				if (!list_empty(args) && rel_has_exps(cl, args) == 0)
+				if (!list_empty(args) && rel_has_exps(cl, args, false) == 0)
 					return rel;
 				if (rel->op != op_join && exp_aggr_is_count(ce))
 					ce->p = prop_create(sql->sa, PROP_COUNT, ce->p);
@@ -5432,7 +5438,7 @@ find_projection_for_join2semi(sql_rel *rel)
 					return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
 
 				if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op)) &&
-					(found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
+					(found = rel_find_exp_and_corresponding_rel(rel->l, e, false, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
 					if (need_distinct(res) && list_length(res->exps) == 1)
 						return ALL_VALUES_DISTINCT;
 					if (is_unique(found))
