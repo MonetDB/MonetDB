@@ -498,3 +498,7 @@ SELECT c0 FROM t2
 statement ok
 DROP TABLE t2
 
+query T nosort
+VALUES (CASE WHEN 5 = ANY(SELECT -1) THEN 2 END)
+----
+NULL
