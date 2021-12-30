@@ -1391,15 +1391,6 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 	return rel;
 }
 
-/*
-static void
-exp_must_ref(mvc *sql, sql_exp *p, sql_exp *c)
-{
-	if (c->type == e_column)
-		exp_setname(sql->sa, p, c->l, c->r);
-}
-*/
-
 static sql_rel *
 push_up_set(mvc *sql, sql_rel *rel, list *ad)
 {
@@ -1413,11 +1404,9 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			sl = rel_project(sql->sa, sl, rel_projections(sql, sl, NULL, 1, 1));
 			for (node *n = sl->exps->h, *m = s->exps->h; n && m; n = n->next, m = m->next)
 				exp_prop_alias(sql->sa, n->data, m->data);
-				//exp_must_ref(sql, n->data, m->data);
 			sr = rel_project(sql->sa, sr, rel_projections(sql, sr, NULL, 1, 1));
 			for (node *n = sr->exps->h, *m = s->exps->h; n && m; n = n->next, m = m->next)
 				exp_prop_alias(sql->sa, n->data, m->data);
-				//exp_must_ref(sql, n->data, m->data);
 			/* D djoin (sl setop sr) -> (D djoin sl) setop (D djoin sr) */
 			rel->r = sl;
 			n = rel_crossproduct(sql->sa, rel_dup(d), sr, rel->op);
