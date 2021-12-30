@@ -1983,9 +1983,9 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 			sql_exp *le = NULL, *re = NULL;
 			bool underjoinl = false, underjoinr = false;
 
-			le = rel_find_exp_and_corresponding_rel(rel->l, e, NULL, &underjoinl);
+			le = rel_find_exp_and_corresponding_rel(rel->l, e, false, NULL, &underjoinl);
 			if (!is_simple_project(rel->op) && !is_inter(rel->op) && !is_except(rel->op) && !is_semi(rel->op) && rel->r) {
-				re = rel_find_exp_and_corresponding_rel(rel->r, e, NULL, &underjoinr);
+				re = rel_find_exp_and_corresponding_rel(rel->r, e, false, NULL, &underjoinr);
 				/* if the expression is found under a join, the cardinality expands to multi */
 				e->card = MAX(le?underjoinl?CARD_MULTI:le->card:CARD_ATOM, re?underjoinr?CARD_MULTI:re->card:CARD_ATOM);
 			} else if (e->card == CARD_ATOM) { /* unnested columns vs atoms */
