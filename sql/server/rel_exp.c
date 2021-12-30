@@ -1541,20 +1541,20 @@ distinct_rel(sql_exp *e, const char **rname)
 }
 
 int
-rel_has_exp(sql_rel *rel, sql_exp *e)
+rel_has_exp(sql_rel *rel, sql_exp *e, bool subexp)
 {
-	if (rel_find_exp(rel, e) != NULL)
+	if (rel_find_exp_and_corresponding_rel(rel, e, subexp, NULL, NULL))
 		return 0;
 	return -1;
 }
 
 int
-rel_has_exps(sql_rel *rel, list *exps)
+rel_has_exps(sql_rel *rel, list *exps, bool subexp)
 {
 	if (list_empty(exps))
 		return 0;
 	for (node *n = exps->h; n; n = n->next)
-		if (rel_has_exp(rel, n->data) >= 0)
+		if (rel_has_exp(rel, n->data, subexp) >= 0)
 			return 0;
 	return -1;
 }
@@ -1565,15 +1565,21 @@ rel_has_all_exps(sql_rel *rel, list *exps)
 	if (list_empty(exps))
 		return 1;
 	for (node *n = exps->h; n; n = n->next)
-		if (rel_has_exp(rel, n->data) < 0)
+		if (rel_has_exp(rel, n->data, false) < 0)
 			return 0;
 	return 1;
+}
+
+static int
+rel_has_exp2(sql_rel *rel, sql_exp *e)
+{
+	return rel_has_exp(rel, e, false);
 }
 
 sql_rel *
 find_rel(list *rels, sql_exp *e)
 {
-	node *n = list_find(rels, e, (fcmp)&rel_has_exp);
+	node *n = list_find(rels, e, (fcmp)&rel_has_exp2);
 	if (n)
 		return n->data;
 	return NULL;
@@ -1586,7 +1592,7 @@ find_one_rel(list *rels, sql_exp *e)
 	sql_rel *fnd = NULL;
 
 	for(n = rels->h; n; n = n->next) {
-		if (rel_has_exp(n->data, e) == 0) {
+		if (rel_has_exp(n->data, e, false) == 0) {
 			if (fnd)
 				return NULL;
 			fnd = n->data;
@@ -1658,7 +1664,7 @@ exps_find_prop(list *exps, rel_prop kind)
 }
 
 static sql_exp *
-rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
+rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_rel **res)
 {
 	sql_exp *ne = NULL;
 
@@ -1683,7 +1689,7 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 			*res = rel;
 		return ne;
 	case e_convert:
-		return rel_find_exp_and_corresponding_rel_(rel, e->l, res);
+		return rel_find_exp_and_corresponding_rel_(rel, e->l, subexp, res);
 	case e_aggr:
 	case e_func:
 		if (e->l) {
@@ -1691,8 +1697,10 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 			node *n = l->h;
 
 			ne = n->data;
-			while (ne != NULL && n != NULL) {
-				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, res);
+			while ((subexp || ne != NULL) && n != NULL) {
+				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, subexp, res);
+				if (subexp && ne)
+					break;
 				n = n->next;
 			}
 			return ne;
@@ -1708,8 +1716,10 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 			node *n = l->h;
 
 			ne = n->data;
-			while (ne != NULL && n != NULL) {
-				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, res);
+			while ((subexp || ne != NULL) && n != NULL) {
+				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, subexp, res);
+				if (subexp && ne)
+					break;
 				n = n->next;
 			}
 			return ne;
@@ -1720,9 +1730,9 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 }
 
 sql_exp *
-rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool *under_join)
+rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, bool subexp, sql_rel **res, bool *under_join)
 {
-	sql_exp *ne = rel_find_exp_and_corresponding_rel_(rel, e, res);
+	sql_exp *ne = rel_find_exp_and_corresponding_rel_(rel, e, subexp, res);
 
 	if (rel && !ne) {
 		switch(rel->op) {
@@ -1732,9 +1742,9 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 		case op_join:
 		case op_semi:
 		case op_anti:
-			ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
+			ne = rel_find_exp_and_corresponding_rel(rel->l, e, subexp, res, under_join);
 			if (!ne && is_join(rel->op))
-				ne = rel_find_exp_and_corresponding_rel(rel->r, e, res, under_join);
+				ne = rel_find_exp_and_corresponding_rel(rel->r, e, subexp, res, under_join);
 			if (ne && under_join)
 				*under_join = true;
 			break;
@@ -1743,7 +1753,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 			break;
 		default:
 			if (!is_project(rel->op) && rel->l)
-				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
+				ne = rel_find_exp_and_corresponding_rel(rel->l, e, subexp, res, under_join);
 		}
 	}
 	return ne;
@@ -1752,7 +1762,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 sql_exp *
 rel_find_exp(sql_rel *rel, sql_exp *e)
 {
-	return rel_find_exp_and_corresponding_rel(rel, e, NULL, NULL);
+	return rel_find_exp_and_corresponding_rel(rel, e, false, NULL, NULL);
 }
 
 int
