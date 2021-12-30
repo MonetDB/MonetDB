@@ -694,6 +694,21 @@ statement ok
 COMMIT
 
 statement ok
+CREATE TABLE "t1" ("c0" BIGINT NOT NULL)
+
+statement ok
+INSERT INTO "t1" VALUES (-1981639662)
+
+statement ok
+CALL "sys"."for_compress"('sys','t1','c0')
+
+statement ok rowcount 0
+UPDATE t1 SET c0 = 1 FROM t1 tx WHERE -t1.c0 = 2
+
+statement ok
+DROP TABLE t1
+
+statement ok
 START TRANSACTION
 
 statement ok
