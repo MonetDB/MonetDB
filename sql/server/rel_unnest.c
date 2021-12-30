@@ -2745,6 +2745,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					sql_exp *inexp = exp_compare(v->sql->sa, le, re, is_anyequal(sf)?mark_in:mark_notin);
 					append(join->exps, inexp);
 				}
+				v->changes++;
 				if (join) {
 					if (!join->attr)
 						join->attr = sa_list(sql->sa);
@@ -2754,21 +2755,13 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					set_has_nil(re); /* outerjoins could have introduced nils */
 					re->card = 3; /* mark as multi value, the real attribute is introduced later */
 					append(join->attr, a);
-				}
-				if (is_select(rel->op) && !depth) {
-					assert(0);
-					re = exp_atom_bool(v->sql->sa, 1);
-					set_has_nil(re); /* anyequal/anynotequal could have nils */
-					re->card = 3;
-					return re;
-				} else {
-					v->changes++;
-					if (join && (is_project(rel->op) || depth))
+					assert(is_project(rel->op) || depth);
+					if ((is_project(rel->op) || depth))
 						return re;
-					set_has_nil(le); /* outer joins could have introduced nils */
-					set_has_nil(re); /* outer joins could have introduced nils */
-					return exp_compare(v->sql->sa, le, re, is_anyequal(sf)?cmp_equal:cmp_notequal);
 				}
+				set_has_nil(le); /* outer joins could have introduced nils */
+				set_has_nil(re); /* outer joins could have introduced nils */
+				return exp_compare(v->sql->sa, le, re, is_anyequal(sf)?cmp_equal:cmp_notequal);
 			} else {
 				if (lsq) {
 					sql_rel *rewrite = NULL;
