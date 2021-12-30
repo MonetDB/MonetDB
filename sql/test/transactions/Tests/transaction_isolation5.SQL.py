@@ -200,3 +200,18 @@ with SQLTestCase() as mdb1:
         mdb1.execute('drop function otherfunc;').assertSucceeded()
         mdb1.execute('drop view otherview;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
+
+        # If one transaction changes read access of a table, disallow concurrent dml
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('create table t0(c0 int);').assertSucceeded()
+        mdb1.execute('insert into t0 values (1),(2),(3);').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('alter table t0 set read only;').assertSucceeded()
+        mdb2.execute("insert into t0 values (4),(5),(6);").assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb1.execute('select c0 from t0;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
+        mdb2.execute('select c0 from t0;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
+        mdb1.execute('drop table t0;').assertSucceeded()

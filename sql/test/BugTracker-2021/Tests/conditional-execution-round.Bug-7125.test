@@ -100,4 +100,3 @@ NULL
 statement ok
 rollback
 
-

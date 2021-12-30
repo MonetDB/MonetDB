@@ -233,6 +233,8 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!isTable(t))
 		throw(SQL, "dict.compress", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (t->system)
+		throw(SQL, "dict.compress", SQLSTATE(42000) "columns from system tables cannot be compressed");
 	sql_column *c = find_sql_column(t, cname);
 	if (!c)
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "column '%s.%s.%s' unknown", sname, tname, cname);
@@ -497,7 +499,7 @@ DICTrenumber_intern( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 	}
 	/* dense or cheap dense check */
 	if (!BATtdense(lc) && !(lc->tsorted && lc->tkey && BATcount(lc) == offcnt && *(oid*)Tloc(lc, offcnt-1) == offcnt-1)) {
-		BAT *nrc = COLnew(0, rc->ttype, offcnt, TRANSIENT);
+		BAT *nrc = COLnew(0, ATOMtype(rc->ttype), offcnt, TRANSIENT);
 		if (!nrc) {
 			if (lc != olc)
 				bat_destroy(lc);
@@ -507,14 +509,26 @@ DICTrenumber_intern( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 		}
 
 		/* create map with holes filled in */
-		oid *op = Tloc(nrc, 0);
-		oid *ip = Tloc(rc, 0);
+		oid *restrict op = Tloc(nrc, 0);
 		unsigned char *lp = Tloc(lc, 0);
-		for(BUN i = 0, j = 0; i<offcnt; i++) {
-			if (lp[j] > i) {
-				op[i] = offcnt;
-			} else {
-				op[i] = ip[j++];
+		if (BATtvoid(rc)) {
+			oid seq = rc->tseqbase, j = 0;
+			for(BUN i = 0; i<offcnt; i++) {
+				if (lp[j] > i) {
+					op[i] = offcnt;
+				} else {
+					op[i] = seq + j;
+					j++;
+				}
+			}
+		} else {
+			oid *ip = Tloc(rc, 0);
+			for(BUN i = 0, j = 0; i<offcnt; i++) {
+				if (lp[j] > i) {
+					op[i] = offcnt;
+				} else {
+					op[i] = ip[j++];
+				}
 			}
 		}
 		BATsetcount(nrc, offcnt);
@@ -685,7 +699,7 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN max_cnt = lv->ttype == TYPE_bte?256:(64*1024);
 	if ((lv->tkey && (op[0] == '=' || op[0] == '!')) || ((op[0] == '<' || op[0] == '>') && lv->tsorted && BATcount(lv) < (max_cnt/2))) {
 		BUN p = BUN_NONE;
-		if (ATOMvarsized(lv->ttype))
+		if (ATOMextern(lv->ttype))
 			v = *(ptr*)v;
 		if (op[0] == '=' || op[0] == '!') {
 			p =  BUNfnd(lv, v);
@@ -707,7 +721,7 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = BATdense(0, 0, 0);
 		}
 	} else { /* select + intersect */
-		if (ATOMvarsized(lv->ttype))
+		if (ATOMextern(lv->ttype))
 			v = *(ptr*)v;
 		bn = BATthetaselect(lv, NULL, v, op);
 		/* call dict convert */
@@ -767,7 +781,7 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "dict.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	if (ATOMvarsized(lv->ttype)) {
+	if (ATOMextern(lv->ttype)) {
 		l = *(ptr*)l;
 		h = *(ptr*)h;
 	}

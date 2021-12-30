@@ -117,13 +117,13 @@ SELECT col1 FROM another_t t1 GROUP BY col1 HAVING 1 = ANY (SELECT col1)
 ----
 1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT i = ANY(VALUES(1), (i))) FROM integers
 ----
+1
+1
+1
 NULL
-True
-True
-True
 
 statement error 42000!SELECT: subquery uses ungrouped column "i1.i" from outer query
 SELECT (SELECT i1.i IN (SELECT SUM(i1.i))) FROM integers i1
@@ -353,18 +353,18 @@ SELECT (VALUES(col1)), (VALUES(MAX(col2))) FROM another_t
 statement error 42000!SELECT: aggregate function calls cannot be nested
 SELECT (SELECT CORR(MIN(i1.i), 1) FROM integers i2) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 1) IN (SELECT 2 UNION SELECT 3) FROM integers i1
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 statement error 21000!Cardinality violation, scalar value expected
 SELECT (SELECT 1 UNION SELECT 2) IN (SELECT 1) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MAX(i1.i) = 1) IN (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1
 ----
 NULL
@@ -375,10 +375,10 @@ SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) IN (SELECT MIN(i1.i)) FROM int
 statement error 42000!SELECT: subquery uses ungrouped column from outer query
 SELECT (SELECT COVAR_SAMP(i1.i, i2.i) FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT COVAR_POP(i1.i, 1)) IN (SELECT SUM(i1.i)) FROM integers i1
 ----
-False
+0
 
 statement error 42000!SELECT: subquery uses ungrouped column from outer query
 SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) = MIN(i1.i) FROM integers i1
@@ -386,18 +386,18 @@ SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) = MIN(i1.i) FROM integers i1
 statement error GDK reported error: mergejoin: more than one match
 SELECT (SELECT i2.i FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 5) NOT IN (SELECT MIN(i1.i)) FROM integers i1
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 1) IN (SELECT i1.i) FROM integers i1
 ----
-False
-False
+0
+0
+1
 NULL
-True
 
 query I rowsort
 SELECT SUM((SELECT MAX(i1.i + i2.i) FROM integers i2)) FROM integers i1
@@ -412,20 +412,20 @@ SELECT i1.i FROM integers i1 WHERE (SELECT TRUE EXCEPT SELECT i1.i > 0)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i
 ----
-False
+0
+1
+1
 NULL
-True
-True
 
-query T rowsort
+query I rowsort
 SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i
 HAVING (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1)
 ----
-True
-True
+1
+1
 
 query R rowsort
 SELECT (VALUES (SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) FROM integers i1
@@ -450,26 +450,26 @@ SELECT ((SELECT SUM(i1.i)) UNION ALL (SELECT AVG(i1.i))) FROM integers i1
 statement error 42000!SELECT: subquery uses ungrouped column "i1.i" from outer query
 SELECT ((SELECT i1.i NOT IN (SELECT i1.i)) UNION (SELECT SUM(i1.i) IN (SELECT i1.i))) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 6 EXCEPT (SELECT SUM(i1.i))) IN (SELECT 1) FROM integers i1
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT (SELECT col1) IN (col2) FROM another_T
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
-query T rowsort
+query I rowsort
 SELECT (col2) IN ((SELECT col2), MIN(col3)) FROM another_T GROUP BY col2
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
 query I rowsort
 SELECT (SELECT CASE WHEN MIN(i1.i) IS NULL THEN (SELECT i2.i FROM integers i2) ELSE MAX(i1.i) END) FROM integers i1
@@ -487,5 +487,4 @@ DROP TABLE another_T
 
 statement ok
 DROP TABLE integers
-
 

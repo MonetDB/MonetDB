@@ -69,7 +69,6 @@ WHERE i.id = ca.id
   AND i.sec = ca.sec
   AND i.uuid = ca.uuid
 
-
 query II nosort
 SELECT id, COUNT(*) as cnt FROM extra GROUP BY id ORDER BY id
 ----
@@ -89,5 +88,4 @@ DROP TABLE IF EXISTS test
 
 statement ok
 DROP TABLE IF EXISTS extra
-
 

@@ -135,3 +135,4 @@ select 1 from t_qh where 3 = (select c_y2 union all select c_f)
 
 statement ok
 ROLLBACK
+

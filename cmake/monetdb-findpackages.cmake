@@ -101,6 +101,27 @@ if(RINTEGRATION)
   find_package(LibR)
 endif()
 
+if(WITH_MALLOC)
+  find_package(PkgConfig QUIET)
+  if(${WITH_MALLOC} STREQUAL "mimalloc")
+    find_package(mimalloc REQUIRED)
+    add_library(Malloc::Malloc ALIAS mimalloc)
+    set(MALLOC_FOUND 1)
+  else()
+    pkg_search_module(PC_MALLOC ${WITH_MALLOC} lib${WITH_MALLOC})
+
+    if(PC_MALLOC_FOUND)
+      set(MALLOC_FOUND 1)
+      find_library(MALLOC_LIBRARY ${PC_MALLOC_LIBRARIES} HINTS ${PC_MALLOC_LIBDIR} ${PC_MALLOC_LIBRARY_DIRS})
+      add_library(Malloc::Malloc UNKNOWN IMPORTED)
+      set_target_properties(Malloc::Malloc
+        PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${PC_MALLOC_INCLUDE_DIR}"
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C" IMPORTED_LOCATION "${MALLOC_LIBRARY}")
+    endif()
+  endif()
+endif()
+
 find_package(Sphinx)
 find_package(Createrepo)
 find_package(Rpmbuild)

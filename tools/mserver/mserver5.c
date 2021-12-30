@@ -573,19 +573,19 @@ main(int argc, char **av)
 		exit(1);
 	}
 
-	if (!dbpath) {
-		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
-		if (!dbpath) {
-			fprintf(stderr, "!ERROR: cannot allocate memory for database directory \n");
-			exit(1);
-		}
-	}
 	if (inmemory) {
 		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);
 		}
 	} else {
+		if (dbpath == NULL) {
+			dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
+			if (dbpath == NULL) {
+				fprintf(stderr, "!ERROR: cannot allocate memory for database directory \n");
+				exit(1);
+			}
+		}
 		if (BBPaddfarm(dbpath, 1U << PERSISTENT, true) != GDK_SUCCEED ||
 		    BBPaddfarm(dbextra ? dbextra : dbpath, 1U << TRANSIENT, true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add farm\n");
@@ -595,8 +595,8 @@ main(int argc, char **av)
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
 			exit(1);
 		}
+		GDKfree(dbpath);
 	}
-	GDKfree(dbpath);
 
 	if (dbtrace) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */

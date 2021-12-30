@@ -20,21 +20,21 @@ statement ok
 create table t2 as select * from orderconnectormetrics where
 toplevelorderid = 5508 with data
 
-query ITTTTIT rowsort
+query ITTRRIR rowsort
 select * from t2
 ----
 5508
 2013-02-01
 C1
-3000000.0
-3000000.0
+3000000.000
+3000000.000
 4
 NULL
 5508
 2013-02-01
 C2
-2000000.0
-2000000.0
+2000000.000
+2000000.000
 2
 NULL
 

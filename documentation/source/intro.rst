@@ -11,7 +11,7 @@ The MonetDB database is developed by the CWI database research group
 (see https://www.monetdb.org/).
 
 Via the MonetDB project we have brought the MonetDB system in open source,
-where it is accessible at https://www.monetdb.org/Downloads/
+where it is accessible at https://www.monetdb.org/easy-setup/
 
 The MonetDB database system is a high-performance database kernel for
 query-intensive applications. The MonetDB source can be found at our `Mercurial

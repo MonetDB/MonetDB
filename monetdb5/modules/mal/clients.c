@@ -982,7 +982,7 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "getScenario", CLTgetScenario, false, "Retrieve current scenario name.", args(1,1, arg("",str))),
  pattern("clients", "setScenario", CLTsetScenario, true, "Switch to other scenario handler, return previous one.", args(1,2, arg("",str),arg("msg",str))),
  pattern("clients", "quit", CLTquit, true, "Terminate the client session.", args(1,1, arg("",void))),
- pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error.\nIt is the privilige of the console user.", args(1,2, arg("",void),arg("idx",int))),
+ pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error.\nIt is the privilege of the console user.", args(1,2, arg("",void),arg("idx",int))),
  command("clients", "getLogins", CLTLogin, false, "Pseudo bat of client id and login time.", args(2,2, batarg("user",oid),batarg("start",str))),
  pattern("clients", "stop", CLTstop, true, "Stop the query execution at the next eligble statement.", args(0,1, arg("id",int))),
  pattern("clients", "suspend", CLTsuspend, true, "Put a client process to sleep for some time.\nIt will simple sleep for a second at a time, until\nthe awake bit has been set in its descriptor", args(1,2, arg("",void),arg("id",int))),

@@ -13,7 +13,7 @@ CMake
 
 ``Packaging``
 =============
-The source packages are located at https://www.monetdb.org/downloads/sources/Apr2019-SP1/
+The source packages are located at https://www.monetdb.org/downloads/sources/
 
 RPM
 ===
@@ -28,7 +28,7 @@ The source packages are located in https://www.monetdb.org/downloads/deb/dists/s
 MSI
 ===
 
-The windows packages are located at https://www.monetdb.org/downloads/Windows/Apr2019-SP1/
+The windows packages are located at https://www.monetdb.org/downloads/Windows/
 
 Mac OS X
 ========

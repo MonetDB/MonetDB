@@ -197,9 +197,11 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if ((isMapOp(p) || isMap2Op(p)) && (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef)  && allConstExcept(mb, p, j)) {
+				} else if ((isMapOp(p) || isMap2Op(p)) && (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef) &&
+							p->argc > 2 && getBatType(getArgType(mb, p, 2)) != TYPE_oid && allConstExcept(mb, p, j)) {
+					/* filter out unary batcalc.- with and without a candidate list */
 					/* batcalc.-(1, col) with col = for.decompress(o,min_val)
-					 * v1 = batcalc.-(1, min_val)
+					 * v1 = calc.-(1, min_val)
 					 * for.decompress(o, v1) */
 					/* we assume binary operators only ! */
 					InstrPtr r = newInstructionArgs(mb, calcRef, getFunctionId(p), 3);

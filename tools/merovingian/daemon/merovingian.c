@@ -480,7 +480,7 @@ main(int argc, char *argv[])
 				if (len > 0 && (size_t)len >= sizeof(dbfarm)) {
 					Mfprintf(stderr, "fatal: dbfarm exceeds allocated " \
 							"path length, please file a bug at " \
-							"http://bugs.monetdb.org/\n");
+							"https://github.com/MonetDB/MonetDB/issues/\n");
 					exit(1);
 				}
 			} else {
@@ -605,7 +605,7 @@ main(int argc, char *argv[])
 		if (getcwd(dbfarm, sizeof(dbfarm)) == NULL) {
 			if (errno == ERANGE) {
 				Mfprintf(stderr, "current path exceeds allocated path length" \
-						"please file a bug at http://bugs.monetdb.org\n");
+						"please file a bug at https://github.com/MonetDB/MonetDB/issues/\n");
 			} else {
 				Mfprintf(stderr, "could not get dbfarm working directory: %s\n",
 						strerror(errno));

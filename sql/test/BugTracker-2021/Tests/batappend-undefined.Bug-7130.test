@@ -18,12 +18,12 @@ create view t_vehkuero as select distinct abs( cast(subq_0.c1 as INTEGER)) as c0
 as subq_0 where cast(nullif('zdo', 'apqonv1a') as CHAR) like 'aou%2' AND length( cast(case when subq_0.c1 = ( select subq_0.c3 as c0 from t_qh as ref_6
 where (subq_0.c0 <> ( select subq_0.c0 as c0 from t_qh as ref_7)) ) then 'xk' else 'xk' end as CHAR)) <> subq_0.c0
 
-query T rowsort
+query I rowsort
 select 1000 in (select 2 from t_vehkuero) from (select 1 as c0 from t_ckfystsc) as subq_0
 ----
-False
-False
-False
+0
+0
+0
 
 query T rowsort
 select case when subq_0.c0 in ( select ref_5.c_tqx as c0 from t_qh as ref_5 where ref_5.c_y2 in ( select ref_6.c_y2 as c0 from t_qh as ref_6 union select 2 as c0 from t_vehkuero as ref_7))
@@ -67,5 +67,4 @@ select EXISTS(select 1 from t_qh left outer join (select cast(2 as INTEGER) from
 
 statement ok
 drop table t_qh cascade
-
 

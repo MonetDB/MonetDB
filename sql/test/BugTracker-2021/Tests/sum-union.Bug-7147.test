@@ -102,4 +102,3 @@ query TI rowsort
 select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c0, c2
 ----
 
-

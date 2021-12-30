@@ -1,4 +1,4 @@
-query IIITIITI nosort
+query IIITIIRI nosort
 select * from media
 ----
 

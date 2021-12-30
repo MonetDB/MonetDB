@@ -28,4 +28,3 @@ as c3, ref_23.c0 as c4 from cte_1 as ref_23 group by ref_23.c0
 statement ok
 rollback
 
-

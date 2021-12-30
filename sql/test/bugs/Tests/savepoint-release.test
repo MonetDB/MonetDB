@@ -21,3 +21,4 @@ CREATE TABLE myt(id int)
 
 statement ok
 ROLLBACK
+

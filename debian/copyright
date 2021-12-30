@@ -1,7 +1,7 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: MonetDB
 Upstream-Contact: info@monetdb.org
-Source: http://dev.monetdb.org/downloads/
+Source: https://dev.monetdb.org/downloads/
 
 Files: *
 Copyright: 1997 - July 2008 CWI

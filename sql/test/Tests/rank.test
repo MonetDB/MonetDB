@@ -1130,4 +1130,3 @@ varchar
 statement ok
 drop table ranktest
 
-
