@@ -601,7 +601,7 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 		HASHloop_int(cni, cni.b->thash, p, &id) {
 			lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 
-			if (lid != lng_nil && lid <= lg->saved_tid)
+			if (lid != lng_nil && lid <= lg->tid)
 				break;
 			cp = p;
 		}
@@ -616,7 +616,6 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 	return GDK_SUCCEED;
-
 }
 
 static gdk_return
