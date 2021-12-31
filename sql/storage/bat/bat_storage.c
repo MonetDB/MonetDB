@@ -4578,7 +4578,7 @@ col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 			temp_destroy(d->cs.ebid);
 		d->cs.ebid = temp_create(u);
 	}
-	return 0;
+	return LOG_OK;
 }
 
 
