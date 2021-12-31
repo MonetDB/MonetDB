@@ -6105,7 +6105,6 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 		if ((res = new_column(tr, col, &dup)))
 			return res;
 		_DELETE(dup->def);
-		dup->def = NULL;
 		if (val)
 			dup->def = SA_STRDUP(tr->sa, val);
 		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
@@ -6136,7 +6135,7 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 
 		if ((res = new_column(tr, col, &dup)))
 			return res;
-		dup->storage_type = NULL;
+		_DELETE(dup->storage_type);
 		if (storage)
 			dup->storage_type = SA_STRDUP(tr->sa, storage);
 		if (!isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
