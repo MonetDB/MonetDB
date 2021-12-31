@@ -47,7 +47,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('call "sys"."dict_compress"(\'sys\',\'t0\',\'c0\',false);').assertSucceeded()
         mdb2.execute("insert into t0 values (4),(5),(6);").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
         mdb1.execute('select c0 from t0;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
         mdb2.execute('select c0 from t0;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
 
