@@ -439,10 +439,13 @@ The previous example could hence also be setup like this:
 .PP
 .RS 0
 tableQ/master
+.RE
 .RS 0
 tableQ/slave
+.RE
 .RS 0
 tableQ/slave
+.RE
 .PP
 Connecting to
 .I tableQ/slave
