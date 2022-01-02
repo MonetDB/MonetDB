@@ -527,9 +527,15 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if (!tr->parent && !name) {
-		if (sql_trans_end(m->session, ok) != SQL_OK) {
-			/* transaction conflict */
-			return createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+		switch (sql_trans_end(m->session, ok)) {
+			case SQL_ERR:
+				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
+				break;
+			case SQL_CONFLICT:
+				/* transaction conflict */
+				return createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+			default:
+				break;
 		}
 		msg = WLCcommit(m->clientid);
 		if (msg != MAL_SUCCEED) {
@@ -559,19 +565,37 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 
 	/* if there is nothing to commit reuse the current transaction */
 	if (list_empty(tr->changes)) {
-		if (!chain)
-			(void)sql_trans_end(m->session, ok);
+		if (!chain) {
+			switch (sql_trans_end(m->session, ok)) {
+				case SQL_ERR:
+					GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
+					break;
+				case SQL_CONFLICT:
+					if (!msg)
+						msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+					break;
+				default:
+					break;
+			}
+		}
 		m->type = Q_TRANS;
 		TRC_INFO(SQL_TRANS,
 			"Commit done (no changes)\n");
 		return msg;
 	}
 
-	if ((ok = sql_trans_commit(tr)) == SQL_ERR)
-		GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
-
-	(void)sql_trans_end(m->session, ok);
-	if (chain && sql_trans_begin(m->session) < 0)
+	switch (sql_trans_end(m->session, ok)) {
+		case SQL_ERR:
+			GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
+			break;
+		case SQL_CONFLICT:
+			if (!msg)
+				msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+			break;
+		default:
+			break;
+	}
+	if (chain && sql_trans_begin(m->session) < 0 && !msg)
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
