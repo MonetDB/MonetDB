@@ -398,10 +398,13 @@ Consider for instance the following three databases with their tag:
 .PP
 .RS 0
 dbX/master/tableQ
+.RE
 .RS 0
 dbY/slave/tableQ
+.RE
 .RS 0
 dbZ/slave/tableQ
+.RE
 .PP
 A default match has implicit `/*' added to the search, making more
 generic search strings match more specific ones.
@@ -436,10 +439,13 @@ The previous example could hence also be setup like this:
 .PP
 .RS 0
 tableQ/master
+.RE
 .RS 0
 tableQ/slave
+.RE
 .RS 0
 tableQ/slave
+.RE
 .PP
 Connecting to
 .I tableQ/slave
