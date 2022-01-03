@@ -363,8 +363,7 @@ WLRprocessBatch(Client cntxt)
 				if(!msg && mb->errors == 0){
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
-					sql->session->level = 0;
-					if(mvc_trans(sql) < 0) {
+					if (mvc_trans(sql) < 0) {
 						TRC_ERROR(SQL_TRANS, "Allocation failure while starting the transaction\n");
 					} else {
 						msg= runMAL(c,mb,0,0);
