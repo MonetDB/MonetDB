@@ -139,6 +139,18 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
+        mdb1.execute("CREATE TABLE integers (i int);").assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('alter table integers add primary key (i);').assertSucceeded()
+        mdb2.execute('insert into integers values (5),(5),(5);').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit and chain;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        # At the moment while chaining, if the finishing transaction has conflcts, the new transaction won't start
+        mdb2.execute('commit;').assertFailed(err_code="2DM30", err_message="COMMIT: not allowed in auto commit mode")
+        mdb1.execute('SELECT i from integers;').assertSucceeded().assertDataResultMatch([])
+        mdb2.execute('SELECT i from integers;').assertSucceeded().assertDataResultMatch([])
+
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('drop table myt;').assertSucceeded()
         mdb1.execute('drop table t2;').assertSucceeded()
@@ -174,6 +186,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('drop table parent9;').assertSucceeded()
         mdb1.execute('drop table parent10;').assertSucceeded()
         mdb1.execute('drop schema mys2;').assertSucceeded()
+        mdb1.execute('drop table integers;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
 
 with SQLTestCase() as mdb1:
