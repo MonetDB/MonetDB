@@ -1870,7 +1870,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
-	bool use_strimps = !GDKgetenv_istext("gdk_use_strimps", "no"), with_strimps = false;
+	bool use_strimps = GDKgetenv_isyes("gdk_use_strimps"), with_strimps = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
