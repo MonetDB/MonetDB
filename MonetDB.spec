@@ -616,7 +616,11 @@ This package contains files needed to develop SQL extensions.
 
 %files SQL-server5-devel
 %defattr(-,root,root)
+%{_includedir}/monetdb/exception_buffer.h
+%{_includedir}/monetdb/opt_backend.h
+%{_includedir}/monetdb/rel_*.h
 %{_includedir}/monetdb/sql*.h
+%{_includedir}/monetdb/store_*.h
 
 %package embedded
 Summary: MonetDB as an embedded library
