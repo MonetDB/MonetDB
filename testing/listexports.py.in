@@ -16,6 +16,7 @@ dirlist = {
     'mapi': ['clients/mapilib', 'common/options', 'common/utils/mcrypt.h'],
     'monetdb5': ['monetdb5', 'common/utils/msabaoth.h', 'common/utils/muuid.h'],
     'stream': ['common/stream'],
+    'monetdbe': ['tools/monetdbe/monetdbe.h'],
     }
 libs = sorted(dirlist.keys())
 
