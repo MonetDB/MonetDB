@@ -1870,7 +1870,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
-	bool use_strimps = !GDKgetenv_istext("gdk_use_strimps", "no"), with_strimps = false;
+	bool use_strimps = GDKgetenv_isyes("gdk_use_strimps"), with_strimps = false;
+	BUN strimp_creation_threshold = GDKgetenv_int("gdk_strimps_threshold", 1000000);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1893,7 +1894,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	 * A better solution is to run the PCRElikeselect as a LIKE query with
 	 * strimps and return the complement of the result.
 	 */
-	if (!empty && use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD && !*anti) {
+	if (!empty && use_strimps && BATcount(b) >= strimp_creation_threshold && !*anti) {
 		BAT *tmp_s = NULL;
 		if (STRMPcreate(b, NULL) == GDK_SUCCEED && (tmp_s = STRMPfilter(b, s, *pat))) {
 			if (s)
