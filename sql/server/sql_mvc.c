@@ -544,12 +544,9 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			return msg;
 		}
 		if (chain) {
-			if (sql_trans_begin(m->session) < 0) {
-				if (!msg)
-					msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
-			} else {
-				m->session->auto_commit = 0; /* disable auto-commit while chaining */
-			}
+			if (sql_trans_begin(m->session) < 0)
+				return createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
+			m->session->auto_commit = 0; /* disable auto-commit while chaining */
 		}
 		m->type = Q_TRANS;
 		TRC_INFO(SQL_TRANS,
@@ -602,7 +599,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		case SQL_CONFLICT:
 			if (!msg)
 				msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
-			break;
+			return msg;
 		default:
 			break;
 	}
@@ -610,9 +607,9 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		if (sql_trans_begin(m->session) < 0) {
 			if (!msg)
 				msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
-		} else {
-			m->session->auto_commit = 0; /* disable auto-commit while chaining */
+			return msg;
 		}
+		m->session->auto_commit = 0; /* disable auto-commit while chaining */
 	}
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
@@ -667,11 +664,11 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		(void)sql_trans_end(m->session, SQL_ERR);
 		if (chain) {
 			if (sql_trans_begin(m->session) < 0) {
-				if (!msg)
-					msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found while starting the next transaction");
-			} else {
-				m->session->auto_commit = 0; /* disable auto-commit while chaining */
+				msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found while starting the next transaction");
+				m->session->status = -1;
+				return msg;
 			}
+			m->session->auto_commit = 0; /* disable auto-commit while chaining */
 		}
 	}
 	if (msg == MAL_SUCCEED)
