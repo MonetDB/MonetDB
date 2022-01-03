@@ -952,7 +952,12 @@ bat_iterator_nolock(BAT *b)
 			.shift = b->tshift,
 			.type = b->ttype,
 			.tseq = b->tseqbase,
-			.hfree = b->theap->free,
+			/* don't use b->theap->free in case b is a slice */
+			.hfree = b->ttype ?
+				  b->ttype == TYPE_msk ?
+				   (((size_t) b->batCount + 31) / 32) * 4 :
+				  (size_t) b->batCount << b->tshift :
+				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
 			.minpos = b->tminpos,
 			.maxpos = b->tmaxpos,
