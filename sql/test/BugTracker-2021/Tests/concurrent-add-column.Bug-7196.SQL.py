@@ -12,7 +12,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('alter table test add column data int;').assertSucceeded()
         mdb2.execute("insert into test values (2);").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('select * from test;').assertDataResultMatch([(1,None)])
         mdb2.execute('select * from test;').assertDataResultMatch([(1,None)])
