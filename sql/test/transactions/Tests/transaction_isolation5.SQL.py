@@ -39,7 +39,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute("drop table child2;").assertSucceeded()
         mdb2.execute("ALTER TABLE parent2 ADD TABLE child2;").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('create merge table parent3(a int, b int);').assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
@@ -55,7 +55,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('CREATE schema mysch AUTHORIZATION myrole;').assertSucceeded()
         mdb2.execute('DROP ROLE myrole;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('alter table parent1 drop table child1;').assertSucceeded()
@@ -83,7 +83,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute("alter table parent add table child1;").assertSucceeded()
         mdb2.execute('alter table child1 add column data int;').assertSucceeded() # number of columns must match
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('select * from parent;').assertDataResultMatch([(1,1)])
         mdb2.execute('select * from parent;').assertDataResultMatch([(1,1)])
@@ -95,7 +95,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute("alter table parent add table child1;").assertSucceeded()
         mdb2.execute('alter table child1 alter column a set not null;').assertSucceeded() # null constraints must match
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('select * from parent;').assertDataResultMatch([(1,1),(2,2)])
         mdb2.execute('select * from parent;').assertDataResultMatch([(1,1),(2,2)])
@@ -107,7 +107,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute("alter table parent add table child1;").assertSucceeded()
         mdb2.execute('alter table child1 drop column b;').assertSucceeded() # number of columns must match
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('select * from parent;').assertDataResultMatch([(1,1),(2,2)])
         mdb2.execute('select * from parent;').assertDataResultMatch([(1,1),(2,2)])
@@ -211,7 +211,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('alter table t0 set read only;').assertSucceeded()
         mdb2.execute("insert into t0 values (4),(5),(6);").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
         mdb1.execute('select c0 from t0;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
         mdb2.execute('select c0 from t0;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
         mdb1.execute('drop table t0;').assertSucceeded()

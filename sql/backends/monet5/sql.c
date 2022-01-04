@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -5026,7 +5026,18 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 
 	} while(0);
 
-	sql_trans_end(session, SQL_OK);
+	switch (sql_trans_end(session, SQL_OK)) {
+		case SQL_ERR:
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction commit failed (kernel error: %s)", GDKerrbuf);
+			res = GDK_FAIL;
+			break;
+		case SQL_CONFLICT:
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
+			res = GDK_FAIL;
+			break;
+		default:
+			break;
+	}
 	sql_session_destroy(session);
 	sa_destroy(sa);
 	return res;

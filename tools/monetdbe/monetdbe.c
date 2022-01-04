@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -487,7 +487,7 @@ monetdbe_workers_internal(monetdbe_database_internal *mdbe, monetdbe_options *op
 		if (opts->nr_threads < 0)
 			set_error(mdbe,createException(MAL, "monetdbe.monetdbe_startup", "Nr_threads should be positive"));
 		else
-			workers = GDKnr_threads = opts->nr_threads;
+			workers = opts->nr_threads;
 	}
 	return workers;
 }
@@ -682,12 +682,32 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 		GDKtracer_set_adapter("MBEDDED");
 	}
 
-	workers = monetdbe_workers_internal(mdbe, opts);
-	memory = monetdbe_memory_internal(mdbe, opts);
-	if (memory)
-			GDK_vm_maxsize = (size_t) memory << 20; /* convert from MiB to bytes */
-	if (mdbe->msg)
+	if ((workers = monetdbe_workers_internal(mdbe, opts))) {
+		int psetlen = setlen;
+		char workstr[16];
+
+		snprintf(workstr, sizeof(workstr), "%d", workers);
+		if ((setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_nr_threads", workstr)) == psetlen) {
+			mo_free_options(set, setlen);
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL));
 			goto cleanup;
+		}
+	}
+	if ((memory = monetdbe_memory_internal(mdbe, opts))) {
+		int psetlen = setlen;
+		char memstr[32];
+
+		snprintf(memstr, sizeof(memstr), "%zu", (size_t) memory << 20); /* convert from MiB to bytes */
+		if ((setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_vm_maxsize", memstr)) == psetlen) {
+			mo_free_options(set, setlen);
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL));
+			goto cleanup;
+		}
+	}
+	if (mdbe->msg) {
+		mo_free_options(set, setlen);
+		goto cleanup;
+	}
 
 	if (!dbdir) { /* in-memory */
 		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), false) != GDK_SUCCEED) {
