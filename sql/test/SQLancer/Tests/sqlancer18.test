@@ -679,3 +679,6 @@ SELECT 1 FROM v100 AS vx WHERE vx.vc0 = ANY(SELECT 1 FROM v100 HAVING count(vx.v
 
 statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
 SELECT 1 FROM v100 WHERE (SELECT 1 HAVING count(v100.vc0 + (SELECT 1 FROM v104)))
+
+statement ok
+DROP TABLE "tx" CASCADE
