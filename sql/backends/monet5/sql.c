@@ -5026,18 +5026,23 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 
 	} while(0);
 
-	switch (sql_trans_end(session, SQL_OK)) {
-		case SQL_ERR:
-			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction commit failed (kernel error: %s)", GDKerrbuf);
-			res = GDK_FAIL;
-			break;
-		case SQL_CONFLICT:
-			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
-			res = GDK_FAIL;
-			break;
-		default:
-			break;
+	if (res == GDK_SUCCEED) { /* everything is ok, do the commit route */
+		switch (sql_trans_end(session, SQL_OK)) {
+			case SQL_ERR:
+				TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction commit failed (kernel error: %s)", GDKerrbuf);
+				res = GDK_FAIL;
+				break;
+			case SQL_CONFLICT:
+				TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
+				res = GDK_FAIL;
+				break;
+			default:
+				break;
+		}
+	} else { /* an error triggered, rollback and ignore further errors */
+		(void)sql_trans_end(session, SQL_ERR);
 	}
+
 	sql_session_destroy(session);
 	sa_destroy(sa);
 	return res;
