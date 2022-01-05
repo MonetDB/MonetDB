@@ -71,7 +71,7 @@ with SQLTestCase() as mdb1:
         mdb2.execute("alter table x drop column y;").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb1.execute('select * from myv;').assertSucceeded().assertSucceeded().assertDataResultMatch([(1,1)])
+        mdb1.execute('select * from myv;').assertSucceeded().assertDataResultMatch([(1,1)])
 
         mdb1.execute("create table ups.no (a int, b int);").assertSucceeded()
         mdb1.execute('insert into ups.no values (2, 2);').assertSucceeded()
@@ -81,7 +81,7 @@ with SQLTestCase() as mdb1:
         mdb2.execute("alter table ups.no drop column a;").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb1.execute('select * from another();').assertSucceeded().assertSucceeded().assertDataResultMatch([(2,)])
+        mdb1.execute('select * from another();').assertSucceeded().assertDataResultMatch([(2,)])
 
         mdb1.execute("CREATE TABLE y (i int);").assertSucceeded()
         mdb1.execute('CREATE TABLE integers2 (i int, j int);').assertSucceeded()
@@ -101,7 +101,7 @@ with SQLTestCase() as mdb1:
         mdb2.execute("drop function pain();").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb1.execute('select * from myv2;').assertSucceeded().assertSucceeded().assertDataResultMatch([(1,)])
+        mdb1.execute('select * from myv2;').assertSucceeded().assertDataResultMatch([(1,)])
 
         mdb1.execute("CREATE TABLE longs (i bigint);").assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
@@ -111,7 +111,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
         mdb1.execute('insert into integers values (4,4);').assertSucceeded()
-        mdb1.execute('select * from longs;').assertSucceeded().assertSucceeded().assertDataResultMatch([(16,)])
+        mdb1.execute('select * from longs;').assertSucceeded().assertDataResultMatch([(16,)])
 
         mdb1.execute("create table z (i int);").assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
@@ -137,7 +137,7 @@ with SQLTestCase() as mdb1:
         mdb2.execute("alter table ww rename column y to yy;").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb1.execute('select * from myv4;').assertSucceeded().assertSucceeded().assertDataResultMatch([(1,1)])
+        mdb1.execute('select * from myv4;').assertSucceeded().assertDataResultMatch([(1,1)])
 
         mdb1.execute('create table bbb(y int, z int);').assertSucceeded()
         mdb1.execute('insert into bbb values (1, 1);').assertSucceeded()
@@ -156,7 +156,7 @@ with SQLTestCase() as mdb1:
         mdb2.execute("alter table zz set schema ups;").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb1.execute('select * from myv5;').assertSucceeded().assertSucceeded().assertDataResultMatch([(1,1)])
+        mdb1.execute('select * from myv5;').assertSucceeded().assertDataResultMatch([(1,1)])
 
         mdb1.execute('create table xx(y int, z int);').assertSucceeded()
         mdb1.execute('insert into xx values (1, 1);').assertSucceeded()
