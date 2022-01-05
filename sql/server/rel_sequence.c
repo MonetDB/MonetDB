@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -122,9 +122,9 @@ rel_create_seq(
 	if (calc < llabs(inc) || calc < cache)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: The specified range of cached values cannot be set. Either reduce increment or cache value");
 	if (max < min)
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE value is lesser than MINVALUE ("LLFMT" < "LLFMT")", max, min);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE value is less than MINVALUE ("LLFMT" < "LLFMT")", max, min);
 	if (start < min)
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START value is lesser than MINVALUE ("LLFMT" < "LLFMT")", start, min);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START value is less than MINVALUE ("LLFMT" < "LLFMT")", start, min);
 	if (start > max)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START value is higher than MAXVALUE ("LLFMT" > "LLFMT")", start, max);
 
@@ -297,7 +297,7 @@ rel_alter_seq(
 	if (calc < llabs(inc) || calc < cache)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: The specified range of cached values cannot be set. Either reduce increment or cache value");
 	if (max < min)
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE value is lesser than MINVALUE ("LLFMT" < "LLFMT")", max, min);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE value is less than MINVALUE ("LLFMT" < "LLFMT")", max, min);
 	/* first alter the known values */
 	seq = create_sql_sequence(sql->store, sql->sa, seq->s, name, seq->start, min, max, inc, cache, cycle);
 

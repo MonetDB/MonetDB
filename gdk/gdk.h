@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -952,7 +952,12 @@ bat_iterator_nolock(BAT *b)
 			.shift = b->tshift,
 			.type = b->ttype,
 			.tseq = b->tseqbase,
-			.hfree = b->theap->free,
+			/* don't use b->theap->free in case b is a slice */
+			.hfree = b->ttype ?
+				  b->ttype == TYPE_msk ?
+				   (((size_t) b->batCount + 31) / 32) * 4 :
+				  (size_t) b->batCount << b->tshift :
+				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
 			.minpos = b->tminpos,
 			.maxpos = b->tmaxpos,
@@ -1492,10 +1497,11 @@ gdk_export bat BBPlimit;
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT
  * this also gives the longest possible "physical" name and "bak" name
- * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on
- * 64 bit architecture and 11 + \0 on 32 bit architecture; the
- * physical name is a bit more complicated, but the longest possible
- * name is 22 + \0 bytes (16 + \0 on 32 bits) */
+ * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on 64
+ * bit architecture and 11 + \0 on 32 bit architecture; the physical
+ * name is a bit more complicated, but the longest possible name is 22 +
+ * \0 bytes (16 + \0 on 32 bits), the longest possible extension adds
+ * another 17 bytes (.thsh(grp|uni)(l|b)%08x) */
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */

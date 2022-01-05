@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /**
@@ -49,18 +49,18 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER TABLE [ IF EXISTS ] qname DROP TABLE qname [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE [ IF EXISTS ] qname SET TABLE qname AS PARTITION partition_spec",
 	 "qname,partition_spec",
-	 "See also https://www.monetdb.org/Documentation/ServerAdministration/DistributedQueryProcessing/DataPartitioning"},
+	 "See also https://www.monetdb.org/documentation/admin-guide/distributed-query-processing/"},
 	{"ALTER SCHEMA",
 	 "",
 	 "ALTER SCHEMA [ IF EXISTS ] ident RENAME TO ident",
 	 "ident",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataDefinition/SchemaDefinitions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/schema-definitions/"},
 	{"ALTER SEQUENCE",
 	 "",
 	 "ALTER SEQUENCE qname [ AS seq_int_datatype] [ RESTART [WITH intval]] [INCREMENT BY intval]\n"
 	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
 	 "seq_int_datatype,intval",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataTypes/SerialDatatypes"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
 	{"ALTER TABLE",
 	 "",
 	 "ALTER TABLE [ IF EXISTS ] qname ADD [ COLUMN ] column_def\n"
@@ -76,7 +76,7 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER TABLE [ IF EXISTS ] qname SET { INSERT ONLY | READ ONLY | READ WRITE }\n"
 	 "ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident",
 	 "qname,column_def,table_constraint,ident",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/TableDefinitions/AlterStatement"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/alter-statement/"},
 	{"ALTER USER",
 	 "Change a user's login name or password or default schema",
 	 "ALTER USER ident RENAME TO ident\n"
@@ -85,17 +85,17 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SET SCHEMA ident\n"
 	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SCHEMA PATH string",
 	 "ident",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataDefinition/Privileges/Users"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"ANALYZE",
 	 "Collect column/table/schema data statistics for analysis and optimizer usage",
 	 "ANALYZE ident [ . ident [ column_list ] ] [SAMPLE size] [MINMAX]",
 	 "ident,column_list",
-	 "See also https://www.monetdb.org/Documentation/ServerAdministration/TableStatistics"},
+	 "See also https://www.monetdb.org/documentation/admin-guide/monitoring/table-statistics/"},
 	{"CALL",
 	 "Call a stored procedure",
 	 "CALL qname '(' [ scalar_expression [',' ...] ] ')' | CALL ident '.' ident",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
 	{"COMMENT",
 	 "Add, update or remove a comment or description for a database object",
 	 "COMMENT ON { SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE | function_type }\n"
@@ -106,12 +106,12 @@ SQLhelp sqlhelp1[] = {
 	 "Commit the current transaction",
 	 "COMMIT [ WORK ] [ AND CHAIN | AND NO CHAIN ]",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Transactions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/transactions/"},
 	{"COPY BINARY",
 	 "Append binary representations into a table",
 	 "COPY [( BIG | LITTLE | NATIVE) ENDIAN] BINARY INTO qname [column_list] FROM string [',' ...] [ON { CLIENT | SERVER }] [NO CONSTRAINT]",
 	 "qname,column_list",
-	 "See also https://www.monetdb.org/Documentation/ServerAdministration/LoadingBulkData/BinaryBulkLoad"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/binary-loading/"},
 	{"COPY INTO",
 	 "Parse a csv file into a table or write a query result to a csv file",
 	 "COPY [nrofrecords] INTO qname [column_list] FROM string [',' ...] [headerlist] [ON { CLIENT | SERVER }] [ separators]\n"
@@ -120,7 +120,7 @@ SQLhelp sqlhelp1[] = {
 	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT]\n"
 	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [separators] [NULL [AS] string]",
 	 "nrofrecords,qname,column_list,headerlist,separators",
-	 "See also https://www.monetdb.org/Documentation/ServerAdministration/LoadingBulkData"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/"},
 	{"COPY LOADER",
 	 "Copy into using a user supplied parsing function",
 	 "COPY LOADER INTO qname FROM qname '(' [ scalar_expression ... ] ')'",
@@ -136,14 +136,14 @@ SQLhelp sqlhelp1[] = {
 	 "    RETURNS function_return_data_type\n"
 	 "    LANGUAGE language_keyword external_code",
 	 "qname,param,function_return_data_type,ident,language_keyword,external_code",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/ProgrammingSQL/Functions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE FILTER FUNCTION",
 	 "Create a user-defined filter function. Currently only MAL definitions\n"
 	 "CREATE [ OR REPLACE ] FILTER [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
 	 "    EXTERNAL NAME ident ',' ident",
 	 "qname,param,function_return_data_type,ident",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/ProgrammingSQL/Functions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE FUNCTION",
 	 "Create a user-defined function (UDF). The body of the function can be defined in\n"
 	 " PL/SQL or programming languages such as Python, R, C or CPP when embedded on the server.",
@@ -157,23 +157,23 @@ SQLhelp sqlhelp1[] = {
 	 "    RETURNS function_return_data_type\n"
 	 "    LANGUAGE language_keyword external_code",
 	 "qname,param,function_return_data_type,statement,ident,language_keyword,external_code",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/ProgrammingSQL/Functions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE INDEX",
 	 "Create a hint for a secondary index on a column or set of columns of a table",
 	 "CREATE [ UNIQUE | ORDERED | IMPRINTS ] INDEX ident ON qname '(' ident_list ')'",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/TableDefinitions/IndexDefinitions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/index-definitions/"},
 	{"CREATE LOADER",
 	 "Create a custom (external) data loader function. The body is defined in Python language",
 	 "CREATE [ OR REPLACE ] LOADER [ FUNCTION ] qname '(' [ param [',' ...]] ')'\n"
 	 "    LANGUAGE PYTHON external_code",
 	 "qname,param,external_code",
-	 "See also https://www.monetdb.org/blog/monetdbpython-loader-functions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/blog-archive/python-loader/"},
 	{"CREATE MERGE TABLE",
 	 "",
 	 "CREATE MERGE TABLE [ IF NOT EXISTS ] qname table_source [ partition_by ]",
 	 "table_source,partition_by",
-	 "See also https://www.monetdb.org/Documentation/ServerAdministration/DistributedQueryProcessing/DataPartitioning"},
+	 "See also https://www.monetdb.org/documentation/admin-guide/distributed-query-processing/"},
 	{"CREATE PROCEDURE",
 	 "Create a user-defined procedure",
 	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
@@ -181,7 +181,7 @@ SQLhelp sqlhelp1[] = {
 	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    EXTERNAL NAME ident ',' ident",
 	 "qname,param,procedure_statement,ident",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/ProgrammingSQL/Procedures"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/procedure-definitions/"},
 	{"CREATE REMOTE TABLE",
 	 "",
 	 "CREATE REMOTE TABLE [ IF NOT EXISTS ] qname ON string [WITH [USER 'username'] [[ENCRYPTED] PASSWORD 'password']]",
@@ -191,38 +191,38 @@ SQLhelp sqlhelp1[] = {
 	 "",
 	 "CREATE REPLICA TABLE [ IF NOT EXISTS ] qname table_source",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLReference/TableDefinitions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-definition/"},
 	{"CREATE ROLE",
 	 "Create a new role. You can grant privileges to a role and next\n"
 	 "grant a role (or multiple roles) to specific users",
 	 "CREATE ROLE ident [ WITH ADMIN { CURRENT_USER | CURRENT_ROLE } ]",
 	 "ident",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataDefinition/Privileges/Roles"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/#roles"},
 	{"CREATE SCHEMA",
 	 "Create a new schema",
 	 "CREATE SCHEMA [ IF NOT EXISTS ] schema_name [default_char_set] [path_spec] [schema_element]",
 	 "schema_name,default_char_set,path_spec,schema_element",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataDefinition/SchemaDefinitions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/schema-definitions/"},
 	{"CREATE SEQUENCE",
 	 "Define a new integer number sequence generator",
 	 "CREATE SEQUENCE qname [ AS seq_int_datatype] [ START [WITH intval]] [INCREMENT BY intval]\n"
 	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
 	 "seq_int_datatype,intval",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataTypes/SerialDatatypes"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
 	{"CREATE TABLE",
 	 "Create a new table",
 	 "CREATE TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
 	 "CREATE TABLE [ IF NOT EXISTS ] qname FROM LOADER function_ref\n"
 	 "CREATE [ LOCAL | GLOBAL ] { TEMPORARY | TEMP } TABLE [ IF NOT EXISTS ] qname table_source [on_commit]",
 	 "table_source,on_commit,function_ref",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/TableDefinitions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-definition/"},
 	{"CREATE TRIGGER",
 	 "Define a triggered action for a table data update event",
 	 "CREATE [ OR REPLACE ] TRIGGER ident { BEFORE | AFTER }\n"
 	 " { INSERT | DELETE | TRUNCATE | UPDATE [ OF ident_list ] }\n"
 	 " ON qname [ REFERENCING trigger_reference [...] ] triggered_action",
 	 "qname,ident_list,trigger_reference,triggered_action",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/ProgrammingSQL/Triggers"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/trigger-definition/"},
 	{"CREATE TYPE",
 	 "Add user defined type to the type system ",
 	 "CREATE TYPE qname EXTERNAL NAME ident",
@@ -232,13 +232,13 @@ SQLhelp sqlhelp1[] = {
 	 "Create a new database user",
 	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string SCHEMA ident [SCHEMA PATH string]",
 	 "ident",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataDefinition/Privileges/Users"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"CREATE VIEW",
 	 "Create a new view",
 	 "CREATE [ OR REPLACE ] VIEW qname [ column_list ] AS { query_expression | '(' query_expression ')' }\n"
 	 "[ WITH CHECK OPTION ]",
 	 "qname,column_list,query_expression",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataDefinition/ViewDefinitions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/view-definition/"},
 	{"CREATE WINDOW",
 	 "Create a user-defined window function. Currently only MAL definitions\n"
 	 "are supported.",
@@ -246,7 +246,7 @@ SQLhelp sqlhelp1[] = {
 	 "    RETURNS function_return_data_type\n"
 	 "    EXTERNAL NAME ident ',' ident",
 	 "qname,param,function_return_data_type,ident",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataManipulation/WindowFunctions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/window-expressions/"},
 	{"CURRENT_DATE",
 	 "Pseudo column or function to get the current date",
 	 "CURRENT_DATE [ '(' ')' ]",
@@ -291,7 +291,7 @@ SQLhelp sqlhelp1[] = {
 	 "Debug a SQL statement using MAL debugger",
 	 "DEBUG statement",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/RuntimeFeatures/Debug"},
+	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/debug-sql-stmt/"},
 	{"DECLARE",
 	 "Define a local variable",
 	 "DECLARE ident_list data_type",
@@ -387,12 +387,12 @@ SQLhelp sqlhelp1[] = {
 	 "Execute a prepared SQL statement with supplied parameter values",
 	 "EXECUTE { intnr | ** } '(' [ value [, ...] ] ')'",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/RuntimeFeatures/PrepareExec"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/prepare-statement/"},
 	{"EXPLAIN",
 	 "Give MAL execution plan for the SQL statement",
 	 "EXPLAIN statement",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/RuntimeFeatures/Explain"},
+	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/explain-sql-stmt/"},
 	{"EXTRACT",
 	 "Built-in function",
 	 "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | CENTURY | DECADE | QUARTER | WEEK | DOW | DOY | EPOCH } FROM scalar_expression ')'",
@@ -403,13 +403,13 @@ SQLhelp sqlhelp1[] = {
 	 "[ WITH cte_list ] INSERT INTO qname [ column_list ]\n"
 	 " [ { DEFAULT VALUES | VALUES row_values | query_expression } ]",
 	 "cte_list,column_list,row_values,query_expression",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataManipulation/TableUpdates"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-updates/"},
 	{"GRANT",
 	 "Define access privileges",
 	 "GRANT privileges TO grantee [',' ...] [ WITH GRANT OPTION ]\n"
 	 "GRANT role [',' ...] TO grantee [',' ...] [ WITH ADMIN OPTION]",
 	 "privileges,table_privileges,global_privileges,role,grantee",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataDefinition/Privileges/GrantAndRevoke"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/#grant-and-revoke"},
 	{"LOCALTIME",
 	 "Pseudo column or function to get the current client time excluding timezone",
 	 "LOCALTIME [ '(' ')' ]",
@@ -429,12 +429,12 @@ SQLhelp sqlhelp1[] = {
 	 "Give relational execution plan for the SQL statement",
 	 "PLAN statement",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/RuntimeFeatures/PlanSQL"},
+	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/plan-sql-stmt/"},
 	{"PREPARE",
 	 "Prepare a SQL DML statement with optional question-mark parameter markers",
 	 "PREPARE statement",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/RuntimeFeatures/PrepareExec"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/prepare-statement/"},
 	{"RELEASE SAVEPOINT",
 	 "",
 	 "RELEASE SAVEPOINT ident",
@@ -445,12 +445,12 @@ SQLhelp sqlhelp1[] = {
 	 "REVOKE [GRANT OPTION FOR] privileges FROM { grantee [',' ...] | CURRENT_USER | CURRENT_ROLE }\n"
 	 "REVOKE [ADMIN OPTION FOR] role [',' ...] FROM { grantee [',' ...] | CURRENT_USER | CURRENT_ROLE }",
 	 "privileges,table_privileges,global_privileges,grantee,role",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataDefinition/Privileges/GrantAndRevoke"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/#grant-and-revoke"},
 	{"ROLLBACK",
 	 "Rollback the current transaction",
 	 "ROLLBACK [WORK] [ AND CHAIN | AND NO CHAIN ] [TO SAVEPOINT ident]",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Transactions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/transactions/"},
 	{"SAVEPOINT",
 	 NULL,
 	 "SAVEPOINT ident",
@@ -472,17 +472,17 @@ SQLhelp sqlhelp1[] = {
 	 "[ OFFSET { count | param } ]\n"
 	 "[ SAMPLE size [ SEED size ] ]",
 	 "cte_list,expression,group_by_element,window_definition",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataManipulation/TableExpressions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-expressions/"},
 	{"SET",
 	 "Assign a value to a variable or column",
 	 "SET ident '=' simple_atom",
 	 "simple_atom",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/ProgrammingSQL/Variables"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/variable-definitions/"},
 	{"SET LOCAL TRANSACTION",
 	 "",
 	 "SET LOCAL TRANSACTION [ transactionmode ]",
 	 "transactionmode",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/SQLSyntaxOverview#SET_LOCAL_TRANSACTION"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-summary/#set-local-transaction"},
 	{"SET ROLE",
 	 "Change current role",
 	 "SET ROLE ident",
@@ -512,7 +512,7 @@ SQLhelp sqlhelp1[] = {
 	 "",
 	 "SET TRANSACTION [ transactionmode ]",
 	 "transactionmode",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/SQLSyntaxOverview#SET_TRANSACTION"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-summary/#set-transaction"},
 	{"SET USER",
 	 "Change current user",
 	 "SET USER '=' ident",
@@ -522,7 +522,7 @@ SQLhelp sqlhelp1[] = {
 	 "Change transaction mode from auto-commit to user controlled commit/rollback",
 	 "{ START | BEGIN } TRANSACTION [ transactionmode ]",
 	 "transactionmode",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Transactions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/transactions/"},
 	{"TABLE JOINS",
 	 "",
 	 "'(' joined_table ') |\n"
@@ -531,12 +531,12 @@ SQLhelp sqlhelp1[] = {
 	 "table_ref UNION JOIN table_ref { ON search_condition | USING column_list } |\n"
 	 "table_ref [ INNER | LEFT | RIGHT | FULL ] JOIN table_ref { ON search_condition | USING column_list }",
 	 "table_ref,search_condition,column_list",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataManipulation/TableExpressions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-expressions/"},
 	{"TRACE",
 	 "Give execution trace for the SQL statement",
 	 "TRACE statement",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/RuntimeFeatures/Trace"},
+	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/trace-sql-stmt/"},
 	{"TRUNCATE",
 	 "Remove all rows from a table",
 	 "TRUNCATE [ TABLE ] qname [ CONTINUE IDENTITY | RESTART IDENTITY ] [ CASCADE | RESTRICT ]",
@@ -557,7 +557,7 @@ SQLhelp sqlhelp1[] = {
 	 "",
 	 "{ window_aggregate_function | window_rank_function } OVER { ident | '(' window_specification ')' }",
 	 "window_aggregate_function,window_rank_function,window_specification",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataManipulation/WindowFunctions"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/window-expressions/"},
 	{NULL, NULL, NULL, NULL, NULL}	/* End of list marker */
 };
 
@@ -582,7 +582,7 @@ SQLhelp sqlhelp2[] = {
 	 "Case statement for procedures/functions",
 	 "CASE scalar_expression [ when_statement ...]  [ELSE procedure_statement ... ] END CASE",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
 	{"column_def",
 	 NULL,
 	 "ident { data_type [ column_option ... ] | SERIAL | BIGSERIAL }",
@@ -608,18 +608,18 @@ SQLhelp sqlhelp2[] = {
 	 "[ CONSTRAINT ident ] { NOT NULL | NULL | UNIQUE | PRIMARY KEY | CHECK '(' search_condition ')' |\n"
 	 "    REFERENCES qname [ column_list ] [ match_options ] [ reference_action ] }\n",
 	 "column_list,search_condition,match_options,reference_action",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/TableDefinitions/TableIElements"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-elements/"},
 	{"control_statement",
 	 NULL,
 	 "call_procedure | while_statement | if_statement | case_statement | return_statement",
 	 "call_procedure,while_statement,if_statement,case_statement,return_statement",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
 	{"datetime_type",
 	 NULL,
 	 "DATE | TIME [ time_precision ] [ WITH TIME ZONE ] |\n"
 	 " TIMESTAMP [ timestamp_precision ] [ WITH TIME ZONE ]",
 	 "time_precision,timestamp_precision",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataTypes/TemporalTypes"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/temporal-types/"},
 	{"data_type",
 	 NULL,
 	 "BOOLEAN | BOOL | TINYINT | SMALLINT | INT | INTEGER | BIGINT | HUGEINT |\n"
@@ -630,7 +630,7 @@ SQLhelp sqlhelp2[] = {
 	 " { BINARY LARGE OBJECT | BLOB } [ '(' nonzero ')' ] |\n"
 	 " UUID | INET | datetime_type | interval_type | geometry_type",
 	 "datetime_type,interval_type,geometry_type",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataTypes"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/"},
 	{"default_char_set",
 	 NULL,
 	 "DEFAULT CHARACTER SET ident",
@@ -661,7 +661,7 @@ SQLhelp sqlhelp2[] = {
 	 "AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS data_type] [ START [WITH start]] [INCREMENT BY increment]\n"
 	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE] ')' ] ",
 	 "data_type",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/DataTypes/SerialDatatypes"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
 	{"global_privileges",
 	 NULL,
 	 "{ COPY FROM | COPY INTO } [',' ...]",
@@ -700,7 +700,7 @@ SQLhelp sqlhelp2[] = {
 	 "[ELSE IF search_condition THEN procedure_statement ... ]...\n"
 	 "[ ELSE procedure_statement ... ] END IF",
 	 "search_condition,procedure_statement",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
 	{"seq_int_datatype",
 	 NULL,
 	 "BIGINT | INTEGER | INT | SMALLINT | TINYINT",
@@ -881,7 +881,7 @@ SQLhelp sqlhelp2[] = {
 	 "[ CONSTRAINT ident ] { PRIMARY KEY column_list | UNIQUE column_list |\n"
 	 "    FOREIGN KEY column_list REFERENCES qname [ column_list ] [ match_options ] [ reference_action ] }",
 	 "column_list,match_options,reference_action",
-	 "See also https://www.monetdb.org/Documentation/SQLReference/TableDefinitions/TableIElements"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-elements/"},
 	{"table_element",
 	 NULL,
 	 "column_def | table_constraint | column_option_list | LIKE qname",
@@ -959,7 +959,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "[ident ':'] WHILE search_condition DO procedure_statement ... END WHILE [ident]",
 	 "search_condition,procedure_statement",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
 	{"window_aggregate_function",
 	 NULL,
 	 "{ AVG '(' query_expression ')' | COUNT '(' { '*' | query_expression } ')' | MAX '(' query_expression ')'\n"
@@ -1150,5 +1150,5 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 		"{ A | B } ...     a series of A and B's\n"
 		"{ A B } [',' ...] a series of A B,A B,A B,A B\n"
 		"For more search terms type: \\help *\n"
-		"See also https://www.monetdb.org/Documentation/SQLreference\n");
+		"See also https://www.monetdb.org/documentation/user-guide/sql-manual/\n");
 }

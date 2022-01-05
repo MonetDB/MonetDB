@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -24,7 +24,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	// query log needed?
 	if ( !QLOGisset() )
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
@@ -38,7 +38,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	if ( defineQuery == NULL)
 		/* nothing to do */
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	actions++;
 	limit= mb->stop;
@@ -195,6 +195,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (!msg)
 		msg = chkDeclarations(mb);
 	/* keep actions taken as a fake argument*/
+wrapup:
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }

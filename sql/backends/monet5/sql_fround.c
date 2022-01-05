@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -23,15 +23,15 @@
 #define STRING(a)		#a
 
 static void
-finalize_ouput_copy_sorted_property(bat *res, BAT *bn, BAT *b, str msg, bool nils, BUN q, bool try_copy_sorted)
+finalize_ouput_copy_sorted_property(bat *res, BAT *bn, str msg, bool nils, BUN q, bool istsorted, bool istrevsorted)
 {
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = nils;
 		bn->tnonil = !nils;
 		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = ((try_copy_sorted && b->tsorted) || BATcount(bn) <= 1);
-		bn->trevsorted = ((try_copy_sorted && b->trevsorted) || BATcount(bn) <= 1);
+		bn->tsorted = istsorted || BATcount(bn) <= 1;
+		bn->trevsorted = istrevsorted || BATcount(bn) <= 1;
 		BBPkeepref(*res = bn->batCacheid);
 	} else if (bn)
 		BBPreclaim(bn);

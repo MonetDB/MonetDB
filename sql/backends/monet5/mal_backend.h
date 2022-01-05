@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef MAL_BACKEND_H
@@ -59,10 +59,12 @@ typedef struct backend {
 	lng last_id;
 	lng rowcnt;
 	subbackend *subbackend;
+	str fimp; /* for recurisve functions keep the to be generated MAL function name here */
 } backend;
 
 extern backend *backend_reset(backend *b);
 extern backend *backend_create(mvc *m, Client c);
 extern void backend_destroy(backend *b);
+extern str backend_function_imp(backend *b, sql_func *f);
 
 #endif /*MAL_BACKEND_H*/

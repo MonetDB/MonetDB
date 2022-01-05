@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -203,10 +203,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 	// If the first input argument is of type lng, this is a cardinality-only bulk operation.
 	int has_card_arg = 0;
-	lng card; // cardinality of non-bat inputs
+	BUN card; // cardinality of non-bat inputs
 	if (getArgType(mb, pci, pci->retc) == TYPE_lng) {
 		has_card_arg=1;
-		card = *getArgReference_lng(stk, pci, pci->retc);
+		card = (BUN) *getArgReference_lng(stk, pci, pci->retc);
 	}
 	else {
 		has_card_arg=0;

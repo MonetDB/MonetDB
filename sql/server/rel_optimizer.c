@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -386,12 +386,18 @@ static sql_exp *
 joinexp_col(sql_exp *e, sql_rel *r)
 {
 	if (e->type == e_cmp) {
-		if (rel_has_exp(r, e->l) >= 0)
+		if (rel_has_exp(r, e->l, false) >= 0)
 			return e->l;
 		return e->r;
 	}
 	assert(0);
 	return NULL;
+}
+
+static int
+rel_has_exp2(sql_rel *r, sql_exp *e)
+{
+	return rel_has_exp(r, e, false);
 }
 
 static sql_column *
@@ -514,8 +520,12 @@ find_basetable( sql_rel *r)
 		if (!r->l)
 			return NULL;
 		return r;
+	case op_semi:
+	case op_anti:
 	case op_project:
 	case op_select:
+	case op_topn:
+	case op_sample:
 		return find_basetable(r->l);
 	default:
 		return NULL;
@@ -827,8 +837,8 @@ order_joins(visitor *v, list *rels, list *exps)
 			node *ln, *rn, *en;
 
 			cje = djn->data;
-			ln = list_find(n_rels, cje->l, (fcmp)&rel_has_exp);
-			rn = list_find(n_rels, cje->r, (fcmp)&rel_has_exp);
+			ln = list_find(n_rels, cje->l, (fcmp)&rel_has_exp2);
+			rn = list_find(n_rels, cje->r, (fcmp)&rel_has_exp2);
 
 			if (ln && rn) {
 				assert(0);
@@ -992,7 +1002,7 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 					if (e->type == e_cmp && e->flag == cmp_equal) {
 						/* in values are on
 							the right of the join */
-						if (rel_has_exp(r, e->r) >= 0)
+						if (rel_has_exp(r, e->r, false) >= 0)
 							je = e;
 					}
 				}
@@ -4059,6 +4069,8 @@ exps_uses_any(list *exps, list *l)
 {
 	bool uses_any = false;
 
+	if (list_empty(exps) || list_empty(l))
+		return false;
 	for (node *n = l->h; n && !uses_any; n = n->next) {
 		sql_exp *e = n->data;
 		uses_any |= list_exps_uses_exp(exps, exp_relname(e), exp_name(e)) != NULL;
@@ -4293,7 +4305,7 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 			if (exp_is_atom(ce))
 				list_append(aliases, ce);
 			else if (ce->type == e_column) {
-				if (rel_has_exp(cl, ce) == 0) /* collect aliases outside groupby */
+				if (rel_has_exp(cl, ce, false) == 0) /* collect aliases outside groupby */
 					list_append(aliases, ce);
 				else
 					list_append(aggrs, ce);
@@ -4301,7 +4313,7 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 				list *args = ce->l;
 
 				/* check args are part of left/right */
-				if (!list_empty(args) && rel_has_exps(cl, args) == 0)
+				if (!list_empty(args) && rel_has_exps(cl, args, false) == 0)
 					return rel;
 				if (rel->op != op_join && exp_aggr_is_count(ce))
 					ce->p = prop_create(sql->sa, PROP_COUNT, ce->p);
@@ -5258,6 +5270,149 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+/* TODO At the moment I have to disable the new join2semi because the join order optimizer doesn't take semi-joins into account,
+so plans get deteriorated if more joins are optimized into semi-joins. Later I will review the join order with semi-joins and hopefully,
+I will be able to re-enable the new join2semi. */
+#if 0
+#define NO_EXP_FOUND 0
+#define FOUND_WITH_DUPLICATES 1
+#define MAY_HAVE_DUPLICATE_NULLS 2
+#define ALL_VALUES_DISTINCT 3
+
+static int
+find_projection_for_join2semi(sql_rel *rel, sql_exp *jc)
+{
+	sql_rel *res = NULL;
+	sql_exp *e = NULL;
+	bool underjoin = false;
+
+	if ((e = rel_find_exp_and_corresponding_rel(rel, jc, &res, &underjoin))) {
+		if (underjoin || e->type != e_column)
+			return FOUND_WITH_DUPLICATES;
+		/* if just one groupby column is projected or the relation needs distinct values and one column is projected or is a primary key, it will be distinct */
+		if (is_unique(e) ||
+			(is_groupby(res->op) && list_length(res->r) == 1 && exps_find_exp(res->r, e)) ||
+			((is_project(res->op) || is_base(res->op)) && ((need_distinct(res) && list_length(res->exps) == 1) || res->card < CARD_AGGR)))
+			return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
+		return FOUND_WITH_DUPLICATES;
+	}
+	return NO_EXP_FOUND;
+}
+
+static int
+subrel_uses_exp_outside_subrel(visitor *v, sql_rel *rel, list *l, sql_rel *j)
+{
+	if (rel == j)
+		return 0;
+	if (mvc_highwater(v->sql))
+		return 1;
+	switch(rel->op){
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+		return exps_uses_any(rel->exps, l) ||
+			subrel_uses_exp_outside_subrel(v, rel->l, l, j) || subrel_uses_exp_outside_subrel(v, rel->r, l, j);
+	case op_semi:
+	case op_anti:
+	case op_select:
+		return exps_uses_any(rel->exps, l) ||
+			subrel_uses_exp_outside_subrel(v, rel->l, l, j);
+	case op_project:
+	case op_groupby:
+		return exps_uses_any(rel->exps, l) || exps_uses_any(rel->r, l);
+	case op_basetable:
+	case op_table:
+	case op_union:
+	case op_except:
+	case op_inter:
+		return exps_uses_any(rel->exps, l);
+	case op_topn:
+	case op_sample:
+		return subrel_uses_exp_outside_subrel(v, rel->l, l, j);
+	default:
+		return 1;
+	}
+}
+
+static int
+projrel_uses_exp_outside_subrel(visitor *v, sql_rel *rel, list *l, sql_rel *j)
+{
+	/* test if projecting relation uses any of the join expressions */
+	assert((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l);
+	return exps_uses_any(rel->exps, l) || exps_uses_any(rel->r, l) || subrel_uses_exp_outside_subrel(v, rel->l, l, j);
+}
+
+static sql_rel *
+rewrite_joins2semi(visitor *v, sql_rel *proj, sql_rel *rel)
+{
+	/* generalize possibility : we need the visitor 'step' here */
+	if (rel_is_ref(rel) || mvc_highwater(v->sql)) /* if the join has multiple references, it's dangerous to convert it into a semijoin */
+		return rel;
+	if (is_innerjoin(rel->op) && !list_empty(rel->exps)) {
+		sql_rel *l = rel->l, *r = rel->r;
+		bool left_unique = true, right_unique = true;
+
+		/* these relations don't project anything, so skip them */
+		while (is_topn(l->op) || is_sample(l->op) || is_select(l->op) || is_semi(l->op))
+			l = l->l;
+		/* joins will expand values, so don't search on those */
+		if (!is_base(l->op) && !is_project(l->op))
+			left_unique = false;
+		while (is_topn(r->op) || is_sample(r->op) || is_select(r->op) || is_semi(r->op))
+			r = r->l;
+		if (!is_base(r->op) && !is_project(r->op))
+			right_unique = false;
+		/* if all columns used in equi-joins from one of the sides are unique, the join can be rewritten into a semijoin */
+		for (node *n=rel->exps->h; n && (left_unique || right_unique); n = n->next) {
+			sql_exp *e = n->data, *el = e->l, *er = e->r;
+
+			if (!is_compare(e->type) || e->flag != cmp_equal || exp_has_func(el) || exp_has_func(er)) {
+				left_unique = right_unique = false;
+			} else {
+				int found = 0;
+
+				if (left_unique && (found = find_projection_for_join2semi(l, el)) > NO_EXP_FOUND)
+					left_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && (!is_semantics(e) || !has_nil(er))));
+				if (left_unique && (found = find_projection_for_join2semi(l, er)) > NO_EXP_FOUND)
+					left_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && (!is_semantics(e) || !has_nil(el))));
+				if (right_unique && (found = find_projection_for_join2semi(r, el)) > NO_EXP_FOUND)
+					right_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && (!is_semantics(e) || !has_nil(er))));
+				if (right_unique && (found = find_projection_for_join2semi(r, er)) > NO_EXP_FOUND)
+					right_unique &= (found == ALL_VALUES_DISTINCT || (found == MAY_HAVE_DUPLICATE_NULLS && (!is_semantics(e) || !has_nil(el))));
+			}
+		}
+
+		/* now we need to check relation's expressions are not used */
+		if (left_unique && !projrel_uses_exp_outside_subrel(v, proj, l->exps, rel)) {
+			sql_rel *tmp = rel->r;
+			rel->r = rel->l;
+			rel->l = tmp;
+			rel->op = op_semi;
+			v->changes++;
+		} else if (right_unique && !projrel_uses_exp_outside_subrel(v, proj, r->exps, rel)) {
+			rel->op = op_semi;
+			v->changes++;
+		}
+	}
+	if (is_join(rel->op)) {
+		rel->l = rewrite_joins2semi(v, proj, rel->l);
+		rel->r = rewrite_joins2semi(v, proj, rel->r);
+	} else if (is_topn(rel->op) || is_sample(rel->op) || is_select(rel->op) || is_semi(rel->op)) {
+		rel->l = rewrite_joins2semi(v, proj, rel->l);
+	}
+	return rel;
+}
+
+static inline sql_rel *
+rel_join2semijoin(visitor *v, sql_rel *rel)
+{
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l)
+		rel->l = rewrite_joins2semi(v, rel, rel->l);
+	return rel;
+}
+#endif
+
 #define NO_PROJECTION_FOUND 0
 #define MAY_HAVE_DUPLICATE_NULLS 1
 #define ALL_VALUES_DISTINCT 2
@@ -5283,7 +5438,7 @@ find_projection_for_join2semi(sql_rel *rel)
 					return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
 
 				if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op)) &&
-					(found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
+					(found = rel_find_exp_and_corresponding_rel(rel->l, e, false, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
 					if (need_distinct(res) && list_length(res->exps) == 1)
 						return ALL_VALUES_DISTINCT;
 					if (is_unique(found))
@@ -8698,10 +8853,10 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 						if (!skip && pt->access == TABLE_READONLY) {
 							/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
 							if (!cmin && !cmax && first_attempt) {
-								char *min = NULL, *max = NULL;
+								void *min = NULL, *max = NULL;
 								if (sql_trans_ranges(v->sql->session->tr, col, &min, &max) && min && max) {
-									cmin = atom_general(v->sql->sa, &col->type, min);
-									cmax = atom_general(v->sql->sa, &col->type, max);
+									cmin = atom_general_ptr(v->sql->sa, &col->type, min);
+									cmax = atom_general_ptr(v->sql->sa, &col->type, max);
 								}
 								first_attempt = false; /* no more attempts to read from storage */
 							}
@@ -9267,7 +9422,7 @@ exp_is_zero_rows(visitor *v, sql_rel *rel, sql_rel *sel)
 					if (lval && hval) {
 						sql_rel *bt;
 						sql_column *col = name_find_column(sel, exp_relname(c), exp_name(c), -2, &bt);
-						char *min = NULL, *max = NULL;
+						void *min = NULL, *max = NULL;
 						atom *amin, *amax;
 						sql_subtype *ct = exp_subtype(c);
 
@@ -9275,7 +9430,7 @@ exp_is_zero_rows(visitor *v, sql_rel *rel, sql_rel *sel)
 							&& col->t == t
 							&& sql_trans_ranges(v->sql->session->tr, col, &min, &max)
 							&& min && max
-							&& (amin = atom_general(v->sql->sa, ct, min)) && (amax = atom_general(v->sql->sa, ct, max))
+							&& (amin = atom_general_ptr(v->sql->sa, ct, min)) && (amax = atom_general_ptr(v->sql->sa, ct, max))
 							&& !exp_range_overlap(amin, amax, lval, hval, false, false)) {
 							return 1;
 						}
@@ -9533,8 +9688,10 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 {
 	/* push_join_down introduces semijoins */
 	int level = *(int*) v->data;
-	if (level <= 0)
+	if (level <= 0) {
+		rel = rel_semijoin_use_fk(v, rel);
 		rel = rel_push_join_down(v, rel);
+	}
 
 	rel = rel_simplify_fk_joins(v, rel);
 	rel = rel_push_select_down(v, rel);
@@ -9625,13 +9782,8 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 		rel = rel_visitor_topdown(v, rel, &rel_optimize_joins);
 		if (!gp->cnt[op_update])
 			rel = rel_join_order(v, rel);
-	}
-
-	/* Important -> Re-write semijoins after rel_join_order */
-	if (gp->cnt[op_anti] || gp->cnt[op_semi]) {
+		/* Important -> Re-write semijoins after rel_join_order */
 		rel = rel_visitor_bottomup(v, rel, &rel_optimize_semi_and_anti);
-		if (level <= 0)
-			rel = rel_visitor_topdown(v, rel, &rel_semijoin_use_fk);
 	}
 
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,

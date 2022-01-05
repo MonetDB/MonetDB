@@ -82,7 +82,7 @@ set schema myschema
 statement ok
 create table testtab(ts timestamp default now)
 
-query T
+query T nosort
 select "default" from sys._columns where table_id = (select id from sys._tables where name = 'testtab')
 ----
 "current_timestamp"()

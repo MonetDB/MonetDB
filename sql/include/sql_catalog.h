@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
@@ -511,7 +511,6 @@ typedef struct sql_func {
 	 		*/
 	sql_schema *s;
 	sql_allocator *sa;
-	MT_Lock function_lock; /* protecting concurrent function instantiations. Only used in MAL and SQL functions */
 } sql_func;
 
 typedef struct sql_subfunc {
@@ -618,10 +617,9 @@ typedef struct sql_column {
 	char unique; 		/* 0 NOT UNIQUE, 1 SUB_UNIQUE, 2 UNIQUE */
 	int drop_action;	/* only used for alter statements */
 	char *storage_type;
-	int sorted;		/* for DECLARED (dupped tables) we keep order info */
 	size_t dcount;
-	char *min;
-	char *max;
+	void *min;
+	void *max;
 
 	struct sql_table *t;
 	ATOMIC_PTR_TYPE data;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 
@@ -194,7 +194,7 @@ STRMPpairLookup(Strimps *s, CharPair *p)
  *
  */
 static uint64_t
-STRMPmakebitstring(const str s, Strimps *r)
+STRMPmakebitstring(const char *s, Strimps *r)
 {
 	uint64_t ret = 0;
 	int8_t pair_idx = 0;
@@ -505,7 +505,7 @@ BATcheckstrimps(BAT *b)
  * list.
  */
 BAT *
-STRMPfilter(BAT *b, BAT *s, const str q)
+STRMPfilter(BAT *b, BAT *s, const char *q)
 {
 	BAT *r = NULL;
 	BUN i, ncand, j = 0;
@@ -765,7 +765,7 @@ STRMPcreate(BAT *b, BAT *s)
 }
 
 gdk_return
-STRMPappendBitstring(BAT *b, const str s)
+STRMPappendBitstring(BAT *b, const char *s)
 {
 	lng t0 = 0;
 	BAT *pb;
@@ -797,7 +797,7 @@ STRMPappendBitstring(BAT *b, const str s)
 		size_t sizes_offset = (char *)strmp->sizes_base - strmp->strimps.base;
 		size_t pairs_offset = (char *)strmp->pairs_base - strmp->strimps.base;
 		size_t bitstrings_offset = (char *)strmp->bitstrings_base - strmp->strimps.base;
-		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) == GDK_FAIL) {
+		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) != GDK_SUCCEED) {
 			MT_lock_unset(&pb->batIdxLock);
 			GDKerror("Cannot extend heap\n");
 			return GDK_FAIL;

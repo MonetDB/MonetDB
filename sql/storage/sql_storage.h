@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef SQL_STORAGE_H
@@ -152,6 +152,7 @@ typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t, int access);
 typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 
 /*
@@ -176,7 +177,7 @@ typedef void *(*del_dup_fptr) (sql_table *t);
 typedef int (*upgrade_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*upgrade_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*upgrade_del_fptr) (sql_trans *tr, sql_table *t);
-typedef int (*swap_bats_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*swap_bats_fptr) (sql_trans *tr, sql_column *c, BAT *b);
 
 /*
 -- free the storage resources for columns, indices and tables
@@ -234,6 +235,7 @@ typedef struct store_functions {
 	count_col_fptr count_col;
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
+	min_max_col_fptr min_max_col;
 	prop_col_fptr sorted_col;
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
@@ -393,7 +395,7 @@ extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
-extern int sql_trans_ranges(sql_trans *tr, sql_column *col, char **min, char **max);
+extern int sql_trans_ranges(sql_trans *tr, sql_column *col, void **min, void **max);
 
 extern void column_destroy(struct sqlstore *store, sql_column *c);
 extern void idx_destroy(struct sqlstore *store, sql_idx * i);
@@ -440,11 +442,11 @@ extern sql_column *create_sql_column(struct sqlstore *store, sql_allocator *sa, 
 extern sql_key *create_sql_ukey(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
 extern sql_key *create_sql_kc(struct sqlstore *store, sql_allocator *sa, sql_key *k, sql_column *c);
-extern sql_key * key_create_done(struct sqlstore *store, sql_allocator *sa, sql_key *k);
+extern sql_key * key_create_done(sql_trans *tr, sql_allocator *sa, sql_key *k);
 
 extern sql_idx *create_sql_idx(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
 extern sql_idx *create_sql_ic(struct sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c);
-extern sql_idx *create_sql_idx_done(sql_idx *i);
+extern sql_idx *create_sql_idx_done(sql_trans *tr, sql_idx *i);
 extern sql_func *create_sql_func(struct sqlstore *store, sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
 								 const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect);
 
@@ -490,6 +492,8 @@ typedef struct sqlstore {
 	list *changes;			/* pending changes to cleanup */
 	sql_hash *dependencies; /* pending dependencies created to cleanup */
 	sql_hash *depchanges;	/* pending dependencies changes to cleanup */
+	list *seqchanges;		/* pending sequence number changes to be add to the first commiting transaction */
+	sql_hash *sequences;	/* loaded store sequence numbers */
 
 	sql_allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
 	sqlid obj_id, prev_oid;
@@ -530,9 +534,13 @@ extern int sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_chan
 sql_export int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
 
 /* later move intop dict.h on this level */
-extern BAT *DICTenlarge(BAT *offsets, BUN cnt, BUN sz);
-extern BAT *DICTdecompress_(BAT *o, BAT *u);
+extern BAT *DICTenlarge(BAT *offsets, BUN cnt, BUN sz, role_t role);
+extern BAT *DICTdecompress_(BAT *o, BAT *u, role_t role);
 extern int DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict);
 extern int DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict);
+
+extern BAT *FORdecompress_(BAT *o, lng minval, int tt, role_t role);
+extern int FORprepare4append(BAT **noffsets, BAT *vals, lng minval, int tt);
+extern int FORprepare4append_vals(void **noffsets, void *vals, BUN cnt, lng minval, int vtype, int ft);
 
 #endif /*SQL_STORAGE_H */

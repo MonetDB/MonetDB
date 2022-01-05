@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -99,10 +99,10 @@ backend_schema_user_dependencies(ptr trans, sqlid schema_id)
 }
 
 int
-backend_resolve_function(ptr M, sql_func *f)
+backend_resolve_function(ptr M, sql_func *f, const char *fimp, bit *side_effect)
 {
 	if (be_funcs.fresolve_function != NULL)
-		return be_funcs.fresolve_function(M, f);
+		return be_funcs.fresolve_function(M, f, fimp, side_effect);
 	return 0;
 }
 

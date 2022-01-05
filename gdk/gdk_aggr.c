@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1732,10 +1732,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		TYPE *restrict avgs = GDKzalloc(ngrp * sizeof(TYPE));	\
-		if (avgs == NULL) {					\
-			bat_iterator_end(&bi);				\
-			goto alloc_fail;				\
-		}							\
+		if (avgs == NULL)			\
+			goto bailout;				\
 		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - b->hseqbase;		\
@@ -1752,7 +1750,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
@@ -1785,7 +1783,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
@@ -1812,6 +1810,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	BUN ncand;
 	const char *err;
 	lng t0 = 0;
+	BATiter bi = {0};
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1884,25 +1883,25 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 #endif
 		rems = GDKzalloc(ngrp * sizeof(lng));
 		if (rems == NULL)
-			goto alloc_fail;
+			goto bailout;
 		break;
 	default:
 		break;
 	}
 	if (cntsp) {
 		if ((cn = COLnew(min, TYPE_lng, ngrp, TRANSIENT)) == NULL)
-			goto alloc_fail;
+			goto bailout;
 		cnts = (lng *) Tloc(cn, 0);
 		memset(cnts, 0, ngrp * sizeof(lng));
 	} else {
 		cnts = GDKzalloc(ngrp * sizeof(lng));
 		if (cnts == NULL)
-			goto alloc_fail;
+			goto bailout;
 	}
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
 	if (bn == NULL)
-		goto alloc_fail;
+		goto bailout;
 	dbls = (dbl *) Tloc(bn, 0);
 
 	if (BATtdense(g))
@@ -1910,7 +1909,6 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	BATiter bi;
 	bi = bat_iterator(b);
 	switch (b->ttype) {
 	case TYPE_bte:
@@ -1937,15 +1935,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		AGGR_AVG_FLOAT(dbl);
 		break;
 	default:
-		bat_iterator_end(&bi);
-		GDKfree(rems);
-		if (cn)
-			BBPreclaim(cn);
-		else
-			GDKfree(cnts);
-		BBPunfix(bn->batCacheid);
 		GDKerror("type (%s) not supported.\n", ATOMname(b->ttype));
-		return GDK_FAIL;
+		goto bailout;
 	}
 	bat_iterator_end(&bi);
 	GDKfree(rems);
@@ -1981,8 +1972,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
 		  ci.seq, ncand, GDKusec() - t0);
 	return GDK_SUCCEED;
-
-  alloc_fail:
+  bailout:
+	bat_iterator_end(&bi);
 	if (bn)
 		BBPunfix(bn->batCacheid);
 	GDKfree(rems);
@@ -2916,7 +2907,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			n++;						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      TIMEOUT_HANDLER(GDK_FAIL));		\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
 		/* the sum fit, so now we can calculate the average */	\
 		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
 		if (0) {						\
@@ -2975,7 +2966,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			AVERAGE_ITER_FLOAT(TYPE, x, a, n);	\
 		}						\
 		TIMEOUT_CHECK(timeoffset,			\
-			      TIMEOUT_HANDLER(GDK_FAIL));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 		*avg = n > 0 ? a : dbl_nil;			\
 	} while (0)
 
@@ -3032,10 +3023,9 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 		AVERAGE_FLOATTYPE(dbl);
 		break;
 	default:
-		bat_iterator_end(&bi);
 		GDKerror("average of type %s unsupported.\n",
 			 ATOMname(b->ttype));
-		return GDK_FAIL;
+		goto bailout;
 	}
 	bat_iterator_end(&bi);
 	if (scale != 0 && !is_dbl_nil(*avg))
@@ -3043,6 +3033,9 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	if (vals)
 		*vals = (BUN) n;
 	return GDK_SUCCEED;
+bailout:
+	bat_iterator_end(&bi);
+	return GDK_FAIL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -3081,6 +3074,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	BUN ncand;
 	const char *err;
 	lng t0 = 0;
+	BATiter bi = {0};
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -3145,7 +3139,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 		atomcmp = ATOMcompare(t);
 		t = ATOMbasetype(t);
 
-		BATiter bi = bat_iterator(b);
+		bi = bat_iterator(b);
 
 		switch (t) {
 		case TYPE_bte:
@@ -3201,6 +3195,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	return bn;
 
   bailout:
+	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -3800,9 +3795,21 @@ BATmin_skipnil(void *aggr, BAT *b, BAT *s, bit skipnil)
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
 		} else {
-			res = BUNtail(bi, pos - b->hseqbase);
-			if (ci.tpe == cand_dense && ci.ncand == BATcount(b))
-				b->tminpos = pos - b->hseqbase;
+			bi.minpos = pos - b->hseqbase;
+			res = BUNtail(bi, bi.minpos);
+			MT_lock_set(&b->theaplock);
+			if (ci.tpe == cand_dense && bi.count == BATcount(b) && bi.h == b->theap)
+				b->tminpos = bi.minpos;
+			MT_lock_unset(&b->theaplock);
+			bat pbid = VIEWtparent(b);
+			if (pbid) {
+				BAT *pb = BBP_cache(pbid);
+				MT_lock_set(&pb->theaplock);
+				if (bi.count == BATcount(pb) &&
+				    bi.h == pb->theap)
+					pb->tminpos = bi.minpos;
+				MT_lock_unset(&pb->theaplock);
+			}
 		}
 	}
 	if (aggr == NULL) {
@@ -3944,9 +3951,21 @@ BATmax_skipnil(void *aggr, BAT *b, BAT *s, bit skipnil)
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
 		} else {
-			res = BUNtail(bi, pos - b->hseqbase);
-			if (ci.tpe == cand_dense && ci.ncand == BATcount(b))
-				b->tmaxpos = pos - b->hseqbase;
+			bi.maxpos = pos - b->hseqbase;
+			res = BUNtail(bi, bi.maxpos);
+			MT_lock_set(&b->theaplock);
+			if (ci.tpe == cand_dense && bi.count == BATcount(b) && bi.h == b->theap)
+				b->tmaxpos = bi.maxpos;
+			MT_lock_unset(&b->theaplock);
+			bat pbid = VIEWtparent(b);
+			if (pbid) {
+				BAT *pb = BBP_cache(pbid);
+				MT_lock_set(&pb->theaplock);
+				if (bi.count == BATcount(pb) &&
+				    bi.h == pb->theap)
+					pb->tmaxpos = bi.maxpos;
+				MT_lock_unset(&pb->theaplock);
+			}
 		}
 	}
 	if (aggr == NULL) {
@@ -4005,7 +4024,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	struct canditer ci;
 	BUN ncand;
 	BAT *t1, *t2;
-	BATiter bi;
+	BATiter bi = {0};
 	const void *v;
 	const void *nil = ATOMnilptr(tp);
 	const void *dnil = nil;
@@ -4186,10 +4205,8 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				if (!skip_nils && !b->tnonil)
 					nils += (*atomcmp)(v, dnil) == 0;
 			}
-			if (bunfastapp_nocheck(bn, v) != GDK_SUCCEED) {
-				bat_iterator_end(&bi);
+			if (bunfastapp_nocheck(bn, v) != GDK_SUCCEED)
 				goto bunins_failed;
-			}
 		}
 		bat_iterator_end(&bi);
 		nils += ngrp - BATcount(bn);
@@ -4332,6 +4349,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	return bn;
 
   bunins_failed:
+	bat_iterator_end(&bi);
 	if (b && b != origb)
 		BBPunfix(b->batCacheid);
 	if (g && g != origg)
@@ -4656,7 +4674,7 @@ BATcalccovariance_sample(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				goto overflow;				\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      TIMEOUT_HANDLER(dbl_nil));		\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
 	} while (0)
 
 dbl
@@ -4709,10 +4727,8 @@ BATcalccorrelation(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		AGGR_CORRELATION_SINGLE(dbl);
 		break;
 	default:
-		bat_iterator_end(&b1i);
-		bat_iterator_end(&b2i);
 		GDKerror("type (%s) not supported.\n", ATOMname(tp));
-		return dbl_nil;
+		goto bailout;
 	}
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
@@ -4724,9 +4740,10 @@ BATcalccorrelation(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
 	return aux;
   overflow:
+	GDKerror("22003!overflow in calculation.\n");
+  bailout:
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
-	GDKerror("22003!overflow in calculation.\n");
 	return dbl_nil;
 }
 
@@ -4793,6 +4810,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	BUN ncand;
 	const char *err;
 	lng t0 = 0;
+	BATiter bi = {0};
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -4861,7 +4879,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		m2[i] = 0;
 	}
 
-	BATiter bi;
 	bi = bat_iterator(b);
 	if (BATtdense(g))
 		gids = NULL;
@@ -4893,18 +4910,9 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		AGGR_STDEV(dbl);
 		break;
 	default:
-		bat_iterator_end(&bi);
-		if (an)
-			BBPreclaim(an);
-		else
-			GDKfree(mean);
-		GDKfree(delta);
-		GDKfree(m2);
-		GDKfree(cnts);
-		BBPunfix(bn->batCacheid);
 		GDKerror("%s: type (%s) not supported.\n",
 			 func, ATOMname(b->ttype));
-		return NULL;
+		goto alloc_fail;
 	}
 	bat_iterator_end(&bi);
 	if (an) {
@@ -4942,9 +4950,9 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		  func, GDKusec() - t0);
 	return bn;
   overflow:
-	bat_iterator_end(&bi);
 	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
+	bat_iterator_end(&bi);
 	if (an)
 		BBPreclaim(an);
 	else
@@ -5045,6 +5053,7 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp,
 	struct canditer ci1, ci2;
 	const char *err;
 	lng t0 = 0;
+	BATiter b1i = {0}, b2i = {0};
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -5110,7 +5119,6 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp,
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	BATiter b1i, b2i;
 	b1i = bat_iterator(b1);
 	b2i = bat_iterator(b2);
 	switch (b1->ttype) {
@@ -5138,8 +5146,6 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp,
 		AGGR_COVARIANCE(dbl);
 		break;
 	default:
-		bat_iterator_end(&b1i);
-		bat_iterator_end(&b2i);
 		GDKerror("%s: type (%s) not supported.\n", func, ATOMname(b1->ttype));
 		goto alloc_fail;
 	}
@@ -5173,10 +5179,10 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp,
 		  func, GDKusec() - t0);
 	return bn;
   overflow:
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	BBPreclaim(bn);
 	GDKfree(mean1);
 	GDKfree(mean2);
@@ -5259,6 +5265,7 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp, 
 	struct canditer ci1, ci2;
 	const char *err;
 	lng t0 = 0;
+	BATiter b1i = {0}, b2i = {0};
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -5328,7 +5335,6 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp, 
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	BATiter b1i, b2i;
 	b1i = bat_iterator(b1);
 	b2i = bat_iterator(b2);
 	switch (b1->ttype) {
@@ -5356,8 +5362,6 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp, 
 		AGGR_CORRELATION(dbl);
 		break;
 	default:
-		bat_iterator_end(&b1i);
-		bat_iterator_end(&b2i);
 		GDKerror("type (%s) not supported.\n", ATOMname(b1->ttype));
 		goto alloc_fail;
 	}
@@ -5389,10 +5393,10 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp, 
 		  GDKusec() - t0);
 	return bn;
   overflow:
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	BBPreclaim(bn);
 	GDKfree(mean1);
 	GDKfree(mean2);

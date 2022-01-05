@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -378,7 +378,7 @@ is_subtype(sql_subtype *sub, sql_subtype *super)
 	if (super->digits > 0 && sub->digits > super->digits)
 		return 0;
 	/* while binding a function, 'char' types match each other */
-	if (super->digits == 0 && 
+	if (super->digits == 0 &&
 		((super->type->eclass == EC_STRING && EC_VARCHAR(sub->type->eclass)) ||
 		 (super->type->eclass == EC_CHAR && sub->type->eclass == EC_CHAR)))
 		return 1;
@@ -661,7 +661,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 
 	/* grouping aggregate doesn't have a backend */
 	if (strlen(imp) != 0 && strlen(mod) != 0)
-		backend_resolve_function(&(int){0}, t); /* backend_resolve_function sets 'side_effect' flag */
+		backend_resolve_function(&(int){0}, t, t->imp, &(t->side_effect)); /* backend_resolve_function sets 'side_effect' flag */
 	return t;
 }
 
@@ -1439,7 +1439,6 @@ sqltypeinit( sql_allocator *sa)
 	for (t = strings; t < numerical; t++) {
 		sql_create_func(sa, "next_value_for", "sql", "next_value", TRUE, SCALE_NONE, 0, LNG, 2, *t, *t);
 		sql_create_func(sa, "get_value_for", "sql", "get_value", TRUE, SCALE_NONE, 0, LNG, 2, *t, *t);
-		sql_create_func(sa, "peak_next_value_for", "sql", "peak_next_value", TRUE, SCALE_NONE, 0, LNG, 2, *t, *t);
 		sql_create_func(sa, "restart", "sql", "restart", TRUE, SCALE_NONE, 0, LNG, 3, *t, *t, LNG);
 
 		sql_create_func(sa, "locate", "str", "locate", FALSE, SCALE_NONE, 0, INT, 2, *t, *t);

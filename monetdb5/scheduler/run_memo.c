@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -102,15 +102,6 @@
 #include "mal_exception.h"
 #include "mal_function.h"
 
-#ifndef WIN32
-#define __declspec(x)
-#endif
-
-extern __declspec(dllexport) str RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-extern __declspec(dllexport) str RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-extern __declspec(dllexport) str RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-extern __declspec(dllexport) str RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
 static void
 propagateNonTarget(MalBlkPtr mb, int pc)
 {
@@ -135,7 +126,7 @@ propagateNonTarget(MalBlkPtr mb, int pc)
  * the fragment to be optimized and to gain access to the variables
  * without the need to declare them upfront.
  */
-str
+static str
 RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int target;
@@ -207,7 +198,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * At the end of the query plan we save the result in
  * a separate variable.
  */
-str
+static str
 RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	ValPtr lhs, rhs;
@@ -234,7 +225,7 @@ RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * The MAL compiler ensures that all arguments have been
  * assigned a value.
  */
-str
+static str
 RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	lng *cost = getArgReference_lng(stk, p, 0);
@@ -249,7 +240,7 @@ RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * instructions to assess the total cost if you follow the path
  * starting at the argument given.
  */
-str
+static str
 RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	lng *cost = getArgReference_lng(stk, p, 0);
@@ -259,3 +250,20 @@ RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	*cost = 0;
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func run_memo_init_funcs[] = {
+ pattern("run_memo", "choice", RUNchoice, false, "Select the next step in a query memo plan", args(1,1, arg("",void))),
+ pattern("run_memo", "choice", RUNchoice, false, "Select the next step in a query memo plan", args(1,2, arg("",void),varargany("arg",0))),
+ pattern("run_memo", "pick", RUNpickResult, false, "Pickup the first result", args(1,2, argany("",1),varargany("arg",1))),
+ pattern("run_memo", "volumeCost", RUNvolumeCost, false, "A sample cost function based on materialized results", args(1,2, arg("",lng), argany("a",0))),
+ pattern("run_memo", "costPrediction", RUNcostPrediction, false, "A sample cost prediction function", args(1,2, arg("",lng), argany("a",0))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_run_memo_mal)
+{ mal_module("run_memo", NULL, run_memo_init_funcs); }
