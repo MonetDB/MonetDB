@@ -29,15 +29,15 @@ with SQLTestCase() as mdb:
         mdb.execute('GRANT EXECUTE ON FUNCTION s1.f1 TO u1;').assertFailed(err_code="42000", err_message="GRANT FUNCTION: there are more than one function called 'f1', please use the full signature")
 
         mdb.execute('GRANT EXECUTE ON FUNCTION s1.f1() TO u1;').assertSucceeded()
-        tc.execute('SELECT s1.f1();').assertDataResultMatch([(10,)])
+        tc.execute('SELECT s1.f1();').assertSucceeded().assertDataResultMatch([(10,)])
         tc.execute('SELECT s1.f1(1);').assertFailed(err_code="42000", err_message="SELECT: insufficient privileges for unary operator 's1'.'f1'(tinyint)")
         tc.execute('SELECT s1.f1(cast(1 as int));').assertFailed(err_code="42000", err_message="SELECT: insufficient privileges for unary operator 's1'.'f1'(int)")
 
         mdb.execute('REVOKE EXECUTE ON FUNCTION s1.f1() FROM u1;').assertSucceeded()
         tc.execute('SELECT s1.f1();').assertFailed(err_code="42000", err_message="SELECT: insufficient privileges for operator 's1'.'f1'()")
         mdb.execute('GRANT EXECUTE ON FUNCTION s1.f1(int) TO u1;').assertSucceeded()
-        tc.execute('SELECT s1.f1(1);').assertDataResultMatch([(11,)])
-        tc.execute('SELECT s1.f1(cast(1 as int));').assertDataResultMatch([(11,)])
+        tc.execute('SELECT s1.f1(1);').assertSucceeded().assertDataResultMatch([(11,)])
+        tc.execute('SELECT s1.f1(cast(1 as int));').assertSucceeded().assertDataResultMatch([(11,)])
 
     mdb.execute("""
         start transaction;

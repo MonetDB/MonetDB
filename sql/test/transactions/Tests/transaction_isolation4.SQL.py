@@ -148,8 +148,8 @@ with SQLTestCase() as mdb1:
         mdb2.execute('commit and chain;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
         # At the moment while chaining, if the finishing transaction has conflcts, the new transaction won't start
         mdb2.execute('commit;').assertFailed(err_code="2DM30", err_message="COMMIT: not allowed in auto commit mode")
-        mdb1.execute('SELECT i from integers;').assertSucceeded().assertDataResultMatch([])
-        mdb2.execute('SELECT i from integers;').assertSucceeded().assertDataResultMatch([])
+        mdb1.execute('SELECT i from integers;').assertSucceeded().assertSucceeded().assertDataResultMatch([])
+        mdb2.execute('SELECT i from integers;').assertSucceeded().assertSucceeded().assertDataResultMatch([])
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('drop table myt;').assertSucceeded()
