@@ -901,7 +901,10 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == RUNCLIENT) {
-			if (BUNappend(user, c->username, false) != GDK_SUCCEED)
+			const char *username = c->username;
+			if (!username)
+				username = str_nil;
+			if (BUNappend(user, username, false) != GDK_SUCCEED)
 				goto bailout;
 			ret = timestamp_fromtime(c->login);
 			if (is_timestamp_nil(ret)) {

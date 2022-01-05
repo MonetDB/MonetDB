@@ -4529,7 +4529,11 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 		return LOG_CONFLICT;
 
 	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
+	storage *s = NULL;
 
+	if ((s = bind_del_data(tr, col->t, &update_conflict)) == NULL)
+		return update_conflict ? LOG_CONFLICT : LOG_ERR;
+	(void)s;
 	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	assert(d && d->cs.ts == tr->tid);
