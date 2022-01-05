@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -1296,25 +1296,25 @@ PCREsql2pcre(str *ret, const str *pat, const str *esc)
 }
 
 static inline str
-choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty, const str *pat, const str *esc)
+choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty, const char *pat, const char *esc)
 {
 	str res = MAL_SUCCEED;
 	*use_re = false;
 	*use_strcmp = false;
 	*empty = false;
 
-	if (strNil(*pat) || strNil(*esc)) {
+	if (strNil(pat) || strNil(esc)) {
 		*empty = true;
 	} else {
-		if (!re_is_pattern_properly_escaped(*pat, (unsigned char) **esc))
+		if (!re_is_pattern_properly_escaped(pat, (unsigned char) *esc))
 			throw(MAL, "pcre.sql2pcre", SQLSTATE(22019) ILLEGAL_ARGUMENT ": (I)LIKE pattern must not end with escape character");
-		if (is_strcmpable(*pat, *esc)) {
+		if (is_strcmpable(pat, esc)) {
 			*use_re = true;
 			*use_strcmp = true;
-		} else if (re_simple(*pat, (unsigned char) **esc)) {
+		} else if (re_simple(pat, (unsigned char) *esc)) {
 			*use_re = true;
 		} else {
-			if ((res = sql2pcre(ppat, *pat, *esc)) != MAL_SUCCEED)
+			if ((res = sql2pcre(ppat, pat, esc)) != MAL_SUCCEED)
 				return res;
 			if (strNil(*ppat)) {
 				GDKfree(*ppat);
@@ -1335,7 +1335,7 @@ PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc, const bit *
 	bool use_re = false, use_strcmp = false, empty = false;
 	struct RE *re = NULL;
 
-	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, *pat, *esc)) != MAL_SUCCEED)
 		return res;
 
 	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
@@ -1401,7 +1401,7 @@ re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore,
 	} while (0)
 
 static inline bit
-re_like_proj_apply(str s, struct RE *re, uint32_t *wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
+re_like_proj_apply(const char *s, struct RE *re, uint32_t *wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
 {
 	if (use_strcmp) {
 		if (caseignore) {
@@ -1518,7 +1518,7 @@ pcre_like_build(
 	} while(0)
 
 static inline str
-pcre_like_apply(bit *ret, str s,
+pcre_like_apply(bit *ret, const char *s,
 #ifdef HAVE_LIBPCRE
 	pcre *re, pcre_extra *ex
 #else
@@ -1634,9 +1634,9 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 
 			for (BUN p = 0; p < q; p++) {
 				oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
-				const str input = BUNtvar(bi, p1), np = BUNtvar(pi, p2);
+				const char *input = BUNtvar(bi, p1), *np = BUNtvar(pi, p2);
 
-				if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &np, esc)) != MAL_SUCCEED)
+				if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, np, *esc)) != MAL_SUCCEED)
 					goto bailout;
 
 				if (use_re) {
@@ -1658,13 +1658,13 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 				ppat = NULL;
 			}
 		} else {
-			const str input = *getArgReference_str(stk, pci, 1);
+			const char *input = *getArgReference_str(stk, pci, 1);
 
 			for (BUN p = 0; p < q; p++) {
 				oid o = (canditer_next(&ci1) - off1);
-				const str np = BUNtvar(pi, o);
+				const char *np = BUNtvar(pi, o);
 
-				if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &np, esc)) != MAL_SUCCEED)
+				if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, np, *esc)) != MAL_SUCCEED)
 					goto bailout;
 
 				if (use_re) {
@@ -1687,9 +1687,9 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 			}
 		}
 	} else {
-		const str pat = *getArgReference_str(stk, pci, 2);
+		const char *pat = *getArgReference_str(stk, pci, 2);
 		bi = bat_iterator(b);
-		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &pat, esc)) != MAL_SUCCEED)
+		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, *esc)) != MAL_SUCCEED)
 			goto bailout;
 
 		MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
@@ -1701,14 +1701,14 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 			if (ci1.tpe == cand_dense) {
 				for (BUN p = 0; p < q; p++) {
 					oid o = (canditer_next_dense(&ci1) - off1);
-					const str s = BUNtvar(bi, o);
+					const char *s = BUNtvar(bi, o);
 					ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
 					has_nil |= is_bit_nil(ret[p]);
 				}
 			} else {
 				for (BUN p = 0; p < q; p++) {
 					oid o = (canditer_next(&ci1) - off1);
-					const str s = BUNtvar(bi, o);
+					const char *s = BUNtvar(bi, o);
 					ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
 					has_nil |= is_bit_nil(ret[p]);
 				}
@@ -1723,7 +1723,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 			if (ci1.tpe == cand_dense) {
 				for (BUN p = 0; p < q; p++) {
 					oid o = (canditer_next_dense(&ci1) - off1);
-					const str s = BUNtvar(bi, o);
+					const char *s = BUNtvar(bi, o);
 					if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED)
 						goto bailout;
 					has_nil |= is_bit_nil(ret[p]);
@@ -1731,7 +1731,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 			} else {
 				for (BUN p = 0; p < q; p++) {
 					oid o = (canditer_next(&ci1) - off1);
-					const str s = BUNtvar(bi, o);
+					const char *s = BUNtvar(bi, o);
 					if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED)
 						goto bailout;
 					has_nil |= is_bit_nil(ret[p]);
@@ -1918,7 +1918,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
-	bool use_strimps = !GDKgetenv_istext("gdk_use_strimps", "no"), with_strimps = false;
+	bool use_strimps = GDKgetenv_isyes("gdk_use_strimps"), with_strimps = false;
+	BUN strimp_creation_threshold = GDKgetenv_int("gdk_strimps_threshold", 1000000);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1931,7 +1932,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
-	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
+	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, *pat, *esc)) != MAL_SUCCEED)
 		goto bailout;
 
 	/* Since the strimp pre-filtering of a LIKE query produces a superset of
@@ -1941,7 +1942,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	 * A better solution is to run the PCRElikeselect as a LIKE query with
 	 * strimps and return the complement of the result.
 	 */
-	if (!empty && use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD && !*anti) {
+	if (!empty && use_strimps && BATcount(b) >= strimp_creation_threshold && !*anti) {
 		BAT *tmp_s = NULL;
 		if (STRMPcreate(b, NULL) == GDK_SUCCEED && (tmp_s = STRMPfilter(b, s, *pat))) {
 			if (s)
@@ -2042,7 +2043,7 @@ bailout:
 			vr = VALUE(r, ro - rbase); \
 			nl = 0; \
 			use_re = use_strcmp = empty = false; \
-			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, (const str*)&vr, (const str*)&esc))) \
+			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, vr, esc))) \
 				goto bailout; \
 			if (!empty) { \
 				if (use_re) { \

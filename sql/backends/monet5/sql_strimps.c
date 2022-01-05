@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -49,7 +49,7 @@ sql_load_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BAT **b)
 		throw(SQL, "sql.createstrimps", SQLSTATE(38000) "Unknown column %s.%s.%s", sch, tbl, col);
 
 	sqlstore *store = m->session->tr->store;
-	*b = store->storage_api.bind_col(m->session->tr, c, 0);
+	*b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
 	if (*b == 0)
 		throw(SQL, "sql.createstrimps", SQLSTATE(HY005) "Cannot access column %s", col);
 

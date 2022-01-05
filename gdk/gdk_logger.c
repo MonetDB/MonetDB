@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -286,6 +286,8 @@ log_read_seq(logger *lg, logformat *l)
 		TRC_CRITICAL(GDK, "read failed\n");
 		return LOG_EOF;
 	}
+	if (lg->flushing)
+		return LOG_OK;
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
@@ -595,14 +597,22 @@ static gdk_return
 la_bat_update_count(logger *lg, log_id id, lng cnt)
 {
 	BATiter cni = bat_iterator_nolock(lg->catalog_id);
-	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
 		MT_rwlock_rdlock(&cni.b->thashlock);
+		BUN p, cp = BUN_NONE;
+
 		HASHloop_int(cni, cni.b->thash, p, &id) {
-			lng ocnt = *(lng*) Tloc(lg->catalog_cnt, p);
+			lng lid = *(lng *) Tloc(lg->catalog_lid, p);
+
+			if (lid != lng_nil && lid <= lg->tid)
+				break;
+			cp = p;
+		}
+		if (cp != BUN_NONE) {
+			lng ocnt = *(lng*) Tloc(lg->catalog_cnt, cp);
 			assert(lg->catalog_cnt->hseqbase == 0);
-			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED) {
+			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, cp, &cnt, false) != GDK_SUCCEED) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return GDK_FAIL;
 			}
@@ -610,7 +620,6 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 	return GDK_SUCCEED;
-
 }
 
 static gdk_return
@@ -2413,7 +2422,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 		}
 		char *dst = buf;
 		for(; p < end && sz < bufsz; p++) {
-			char *s = BUNtail(bi, p);
+			char *s = BUNtvar(bi, p);
 			size_t len = strlen(s)+1;
 			if ((sz+len) > bufsz) {
 				if (len > bufsz)
@@ -2641,6 +2650,10 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	if (uval->ttype == TYPE_msk) {
 		if (!mnstr_writeIntArray(lg->output_log, vi.base, (BUNlast(uval) + 31) / 32))
 			ok = GDK_FAIL;
+	} else if (uval->ttype < TYPE_str && !isVIEW(uval)) {
+		const void *t = BUNtail(vi, 0);
+
+		ok = wt(t, lg->output_log, (size_t)nr);
 	} else if (uval->ttype == TYPE_str) {
 		/* efficient string writes */
 		ok = string_writer(lg, uval, 0, nr);
@@ -2754,7 +2767,7 @@ log_tdone(logger *lg, ulng commit_ts)
 }
 
 static gdk_return
-log_sequence_(logger *lg, int seq, lng val, int flush)
+log_sequence_(logger *lg, int seq, lng val)
 {
 	logformat l;
 
@@ -2767,9 +2780,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 		fprintf(stderr, "#log_sequence_ (%d," LLFMT ")\n", seq, val);
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    !mnstr_writeLng(lg->output_log, val) ||
-	    (flush && mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA)) ||
-	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log))) {
+	    !mnstr_writeLng(lg->output_log, val)) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
@@ -2807,7 +2818,7 @@ log_sequence(logger *lg, int seq, lng val)
 			return GDK_FAIL;
 		}
 	}
-	gdk_return r = log_sequence_(lg, seq, val, 1);
+	gdk_return r = log_sequence_(lg, seq, val);
 	logger_unlock(lg);
 	return r;
 }

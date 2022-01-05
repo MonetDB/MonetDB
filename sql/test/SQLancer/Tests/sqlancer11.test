@@ -118,14 +118,14 @@ INSERT INTO "t2" VALUES (4, 0, 6, NULL),(0.692789052132086, -1, 9, NULL),(2, 0, 
 (0.39272912837466945, 8, NULL, NULL),(NULL, NULL, 4, NULL),(2, 0, 6, NULL),(-1596101049, 0, 6, NULL),(-1951243968, 0, 6, NULL),(NULL, 0, 6, NULL),
 (NULL, 0, 6, NULL),(NULL, 0, 6, NULL),(NULL, 0, 6, NULL)
 
-query T rowsort
+query I rowsort
 SELECT 4 = ANY(SELECT t2.c2 FROM t2) FROM t0
 ----
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
 
 statement ok
 ROLLBACK
@@ -158,12 +158,12 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query I rowsort
 SELECT FALSE BETWEEN t0.c3 = ANY(SELECT t0.c0 FROM t0 WHERE t0.c1) AND TRUE FROM t2, t0
 ----
-True
-True
-True
+1
+1
+1
 
 statement ok
 ROLLBACK
@@ -212,33 +212,33 @@ F4BECB7E
 F4BECB7E
 F4BECB7E
 
-query T rowsort
+query I rowsort
 SELECT 4 NOT IN (6, 1.7976931348623157E308, 0) FROM t1, t0
 ----
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 statement ok
 ROLLBACK
@@ -263,16 +263,16 @@ cTR' Abp
 cTR' Abp
 cTR' Abp
 
-query T rowsort
+query I rowsort
 SELECT CASE 3 WHEN ((SELECT 0.48) INTERSECT DISTINCT (SELECT -1.2)) THEN FALSE ELSE TRUE END FROM t1
 ----
-True
-True
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
+1
+1
 
 statement ok
 ROLLBACK
@@ -387,99 +387,99 @@ SELECT t1.c0 FROM t1 FULL OUTER JOIN (SELECT 3.3 FROM t2) AS sub0 ON true WHERE 
 9
 9
 
-query T rowsort
+query I rowsort
 SELECT (EXISTS (SELECT 1)) OR greatest(TRUE, FALSE) FROM t1 FULL OUTER JOIN (SELECT 3.3 FROM t2) AS sub0 ON true
 ----
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 SELECT 1 FROM t1 JOIN (SELECT 3.3 FROM t2) AS sub0 ON true WHERE (EXISTS (SELECT 1)) OR true >= true
@@ -718,11 +718,9 @@ query I rowsort
 SELECT 1 FROM t0 HAVING max((t0.c2) IN (52545019, 6))
 ----
 
-
 query I rowsort
 SELECT 1 FROM t0 GROUP BY t0.c1 HAVING max((t0.c2) IN (52545019, 6))
 ----
-
 
 statement ok
 ROLLBACK
@@ -769,11 +767,9 @@ query I rowsort
 SELECT 1 FROM t0, t2 RIGHT OUTER JOIN (VALUES (((SELECT '1') INTERSECT ALL (SELECT DISTINCT '3' FROM t2 AS l1t2 WHERE FALSE)))) AS sub0 ON ('6' LIKE (SELECT DISTINCT 'e' FROM t1 AS l2t1)) GROUP BY t0.c1 HAVING NOT (count(*) <> 0)
 ----
 
-
 query I rowsort
 SELECT 1 FROM t0, t2 RIGHT OUTER JOIN (VALUES (((SELECT '1') INTERSECT ALL (SELECT DISTINCT '3' FROM t2 AS l1t2 WHERE FALSE)))) AS sub0 ON ('6' LIKE (SELECT DISTINCT 'e' FROM t1 AS l2t1)) GROUP BY t0.c1 HAVING (count(*) <> 0) IS NULL
 ----
-
 
 statement ok
 ROLLBACK
@@ -821,27 +817,27 @@ SELECT t1.c2 FROM t1, t2 RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A
 7982
 7982
 
-query T rowsort
+query I rowsort
 SELECT ((SELECT DISTINCT 3 FROM t0 AS l2t0) EXCEPT ALL (SELECT 2 FROM t0 AS l2t0)) IS NULL FROM t1, t2 RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', 1)) AS sub0 ON false
 ----
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query T rowsort
 SELECT t1.c2 FROM t1, t2 RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', ((scale_down(4, 3))&(sql_max(1220354535, -236857972))))) AS sub0 ON ((((NOT (FALSE))AND("isauuid"('*O'))))AND((('h')NOT LIKE('N')))) 
@@ -937,7 +933,6 @@ query I nosort
 select 1 from t0 having min(t0.c0) > 2 order by null asc nulls last, '0.9' desc nulls last
 ----
 
-
 query TI nosort
 select interval '4' month, count(*) from t2, t0, t1 cross join (select t2.c0, case when least(false, true) then 2 when (date '1970-01-01') is not null then 3.2 when (values (true), (true)) 
 then sql_max(0.54, 0.15) end from t1, t2, t0 full outer join (select (select 0.16 from t1 as l2t1, t2 as l2t2 where true) from t0 as l1t0, t1 as l1t1, t2 as l1t2 where false) as sub0 on case blob ''
@@ -945,6 +940,6 @@ when blob '14' then false when blob '15' then false end where ((t2.c2)ilike(t2.c
 having (scale_up(min(case when ((t2.c2)ilike(t2.c2)) then t0.c0 end), 2)) between asymmetric (cast(0.42 as smallint)) and (least(-3, 0.31)) order by null asc nulls last, lower('0.4') desc nulls last
 ----
 
-
 statement ok
 ROLLBACK
+

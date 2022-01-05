@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -210,7 +210,6 @@ const char *not_uniqueRef;
 const char *nth_valueRef;
 const char *ntileRef;
 const char *oidRef;
-const char *oltpRef;
 const char *openRef;
 const char *optimizerRef;
 const char *orRef;
@@ -528,7 +527,6 @@ void optimizerInit(void)
 	nth_valueRef = putName("nth_value");
 	ntileRef = putName("ntile");
 	oidRef = putName("oid");
-	oltpRef = putName("oltp");
 	openRef = putName("open");
 	optimizerRef = putName("optimizer");
 	orRef = putName("or");

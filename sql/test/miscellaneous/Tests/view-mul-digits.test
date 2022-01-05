@@ -91,4 +91,3 @@ create view myschema.ups as select code, amount as eind from myschema.mygroyp gr
 statement ok
 drop schema myschema cascade
 
-

@@ -34,7 +34,7 @@ select * from "noNULLtinyint" where x is not null
 statement ok
 insert into "noNULLtinyint" values (null)
 
-queey I rowsort
+query I rowsort
 select * from "noNULLtinyint"
 ----
 0
@@ -66,7 +66,7 @@ create table "NULLtinyint" (x tinyint)
 statement ok
 copy binary into "NULLtinyint" from (E'$QTSTSRCDIR/NULLtinyintBAT.bin')
 
-query I 
+query I nosort
 select * from "NULLtinyint"
 ----
 0
@@ -79,12 +79,12 @@ select count(*), count(x) from "NULLtinyint"
 3
 2
 
-query I
+query I nosort
 select * from "NULLtinyint" where x is null
 ----
 NULL
 
-query I
+query I nosort
 select * from "NULLtinyint" where x is not null
 ----
 0

@@ -86,4 +86,3 @@ DROP TABLE IF EXISTS test
 statement ok
 DROP TABLE IF EXISTS extra
 
-

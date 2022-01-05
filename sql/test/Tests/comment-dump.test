@@ -1,0 +1,99 @@
+statement ok
+CREATE SCHEMA foo
+
+statement ok
+SET SCHEMA foo
+
+statement ok
+COMMENT ON SCHEMA foo IS 'foo foo'
+
+statement ok
+CREATE TABLE tab(i INT, j DECIMAL(4,2))
+
+statement ok
+COMMENT ON TABLE tab IS 'table'
+
+statement ok
+COMMENT ON COLUMN tab.j IS 'jj'
+
+statement ok
+COMMENT ON COLUMN foo.tab.i IS 'ii'
+
+statement ok
+CREATE VIEW vivi AS SELECT * FROM tab
+
+statement ok
+COMMENT ON VIEW vivi IS 'phew'
+
+statement ok
+CREATE INDEX idx ON tab(j,i)
+
+statement ok
+COMMENT ON INDEX idx IS 'index on j'
+
+statement ok
+CREATE SEQUENCE counter AS INT
+
+statement ok
+COMMENT ON SEQUENCE counter IS 'counting'
+
+statement ok
+CREATE FUNCTION f() RETURNS INT BEGIN RETURN 42; END
+
+statement ok
+COMMENT ON FUNCTION f() IS '0 parms'
+
+statement ok
+CREATE FUNCTION f(i INT) RETURNS INT BEGIN RETURN 43; END
+
+statement ok
+COMMENT ON FUNCTION f(INT) IS '1 parm'
+
+statement ok
+CREATE FUNCTION f(i INT, j INT) RETURNS INT BEGIN RETURN 44; END
+
+statement ok
+COMMENT ON FUNCTION f(INTEGER, INTEGER) IS '2 parms'
+
+statement ok
+CREATE FUNCTION f(i INT, j INT, k INT) RETURNS INT BEGIN RETURN 45; END
+
+statement ok
+CREATE FUNCTION f(i INT, j INT, k INT, l INT) RETURNS INT BEGIN RETURN 45; END
+
+statement ok
+CREATE PROCEDURE g() BEGIN DELETE FROM tab WHERE FALSE; END
+
+statement ok
+COMMENT ON PROCEDURE g() IS 'proc'
+
+query T nosort
+select stmt from sys.dump_database(false) order by o, stmt
+----
+START TRANSACTION;
+SET SCHEMA "sys";
+CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
+CREATE SEQUENCE "foo"."counter" AS BIGINT START WITH 1;
+CREATE TABLE "foo"."tab" ("i" INTEGER, "j" DECIMAL(4,2));
+create view "foo"."vivi" as select * from tab@;
+create "foo"."f" unction "foo"."f" () returns int begin return 42; end@;
+create "foo"."f" unction "foo"."f" (i int) returns int begin return 43; end@;
+create "foo"."f" unction "foo"."f" (i int, j int) returns int begin return 44; end@;
+create "foo"."f" unction "foo"."f" (i int, j int, k int) returns int begin return 45; end@;
+create "foo"."f" unction "foo"."f" (i int, j int, k int, l int) returns int begin return 45; end@;
+create procedure "foo"."g" () be "foo"."g" in delete from tab where false; end@;
+UPDATE sys.sequences seq SET start = 1 WHERE name = 'counter' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = 'foo');
+CREATE INDEX "idx" ON "foo"."tab"(j,i);
+COMMENT ON COLUMN "foo"."tab"."i" IS 'ii';
+COMMENT ON COLUMN "foo"."tab"."j" IS 'jj';
+COMMENT ON FUNCTION "foo"."f"(INTEGER) IS '0 parms';
+COMMENT ON FUNCTION "foo"."f"(INTEGER,INTEGER) IS '1 parm';
+COMMENT ON FUNCTION "foo"."f"(INTEGER,INTEGER,INTEGER) IS '2 parms';
+COMMENT ON INDEX "foo"."idx" IS 'index on j';
+COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
+COMMENT ON SCHEMA "foo" IS 'foo foo';
+COMMENT ON SEQUENCE "foo"."counter" IS 'counting';
+COMMENT ON TABLE "foo"."tab" IS 'table';
+COMMENT ON VIEW "foo"."vivi" IS 'phew';
+COMMIT;
+

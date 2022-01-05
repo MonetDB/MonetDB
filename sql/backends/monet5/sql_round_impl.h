@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #define dec_round_body		FUN(TYPE, dec_round_body)
@@ -59,7 +59,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN q = 0;
 	TYPE *restrict src, *restrict dst, x, r = *(TYPE *)getArgReference(stk, pci, 2);
 	str msg = MAL_SUCCEED;
-	bool nils = false;
+	bool nils = false, btsorted = false, btrevsorted = false;
 	struct canditer ci1 = {0};
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
@@ -123,9 +123,11 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	btsorted = b->tsorted;
+	btrevsorted = b->trevsorted;
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, btsorted, btrevsorted);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -209,7 +211,7 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -305,7 +307,7 @@ bailout1:
 	bat_iterator_end(&righti);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -364,7 +366,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bte r = *getArgReference_bte(stk, pci, 2);
 	int d = *getArgReference_int(stk, pci, pci->argc == 6 ? 4 : 3), s = *getArgReference_int(stk, pci, pci->argc == 6 ? 5 : 4);
 	str msg = MAL_SUCCEED;
-	bool nils = false;
+	bool nils = false, btsorted = false, btrevsorted = false;
 	struct canditer ci1 = {0};
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
@@ -420,10 +422,12 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	btsorted = b->tsorted;
+	btrevsorted = b->trevsorted;
 	bat_iterator_end(&bi);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, btsorted, btrevsorted);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -496,7 +500,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -585,7 +589,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&righti);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -602,9 +606,9 @@ nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
 }
 
 static inline str
-str_2dec_body(TYPE *res, const str val, const int d, const int sc)
+str_2dec_body(TYPE *res, const char *val, const int d, const int sc)
 {
-	char *s = val;
+	const char *s = val;
 	int digits;
 	int scale;
 	BIG value;
@@ -735,7 +739,7 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const str next = BUNtail(bi, p);
+			const char *next = BUNtail(bi, p);
 
 			if (strNil(next)) {
 				ret[i] = NIL(TYPE);
@@ -746,7 +750,7 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next(&ci) - off);
-			const str next = BUNtail(bi, p);
+			const char *next = BUNtail(bi, p);
 
 			if (strNil(next)) {
 				ret[i] = NIL(TYPE);
@@ -759,7 +763,7 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	finalize_ouput_copy_sorted_property(r, res, b, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(r, res, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(2, b, s);
 	return msg;
 }
@@ -887,7 +891,7 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 
 bailout:
-	finalize_ouput_copy_sorted_property(r, res, b, msg, nils, q, false);
+	finalize_ouput_copy_sorted_property(r, res, msg, nils, q, false, false/* don't propagate here*/);
 	unfix_inputs(2, b, s);
 	return msg;
 }

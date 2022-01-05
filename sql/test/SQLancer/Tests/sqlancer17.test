@@ -415,3 +415,90 @@ UPDATE t2 SET c0 = 1 FROM t0 WHERE (least(TRUE, FALSE) AND 0.63 = t2.c0) OR (0.2
 statement ok
 ROLLBACK
 
+statement ok
+CREATE TABLE t1(c0 boolean)
+
+statement ok
+SET "optimizer"='default_fast'
+
+statement ok rowcount 0
+DELETE FROM t1
+
+statement ok
+SET "optimizer"='default_pipe'
+
+statement ok
+DROP TABLE t1
+
+statement ok
+SET "optimizer"='default_pipe'
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t1(c1 int, c2 FLOAT)
+
+statement ok rowcount 0
+UPDATE t1 SET c1 = 1 FROM (SELECT t1.c2 FROM t1) v1(vc0) WHERE ((SELECT NULL WHERE FALSE)) IN (levenshtein('', '', t1.c1, t1.c1, t1.c1), 4)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table tx(c0 VARCHAR(32), c1 BOOLEAN)
+
+statement ok
+create table ty(c0 BOOLEAN)
+
+statement ok rowcount 2
+insert into tx values ('a', true), ('b', false)
+
+statement ok rowcount 2
+insert into ty values (true), (false)
+
+query I nosort
+SELECT 1 FROM tx, ty WHERE CASE tx.c0 = ANY(SELECT 'c') WHEN (SELECT ty.c0 WHERE tx.c1) THEN true END
+----
+1
+
+query I nosort
+SELECT 1 FROM tx, ty WHERE CASE tx.c0 = ANY(SELECT 'c') WHEN (SELECT ty.c0 WHERE true) THEN true END
+----
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t2(c0 INTERVAL DAY)
+
+statement ok rowcount 1
+INSERT INTO t2(c0) VALUES(INTERVAL '3' DAY)
+
+statement ok rowcount 1
+DELETE FROM t2 WHERE TRUE
+
+statement error types tinyint(1,0) and day_interval(4,0) are not equal
+INSERT INTO t2(c0) VALUES(1)
+
+statement ok rowcount 2
+INSERT INTO t2(c0) VALUES(INTERVAL '2' DAY), (INTERVAL '1' DAY)
+
+query T rowsort
+SELECT c0 FROM t2
+----
+1
+2
+
+statement ok
+DROP TABLE t2
+
+query T nosort
+VALUES (CASE WHEN 5 = ANY(SELECT -1) THEN 2 END)
+----
+NULL

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _SQL_STATEMENT_H_
@@ -186,7 +186,7 @@ extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
 extern stmt *stmt_append_bulk(backend *be, stmt *c, list *l);
 extern stmt *stmt_replace(backend *be, stmt *c, stmt *id, stmt *val);
-extern stmt *stmt_table_clear(backend *be, sql_table *t);
+extern stmt *stmt_table_clear(backend *be, sql_table *t, int restart_sequences);
 
 extern stmt *stmt_export(backend *be, rel_bin_stmt *st, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
 extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);

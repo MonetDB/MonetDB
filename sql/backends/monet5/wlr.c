@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -363,8 +363,7 @@ WLRprocessBatch(Client cntxt)
 				if(!msg && mb->errors == 0){
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
-					sql->session->level = 0;
-					if(mvc_trans(sql) < 0) {
+					if (mvc_trans(sql) < 0) {
 						TRC_ERROR(SQL_TRANS, "Allocation failure while starting the transaction\n");
 					} else {
 						msg= runMAL(c,mb,0,0);
@@ -1096,6 +1095,7 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg= MAL_SUCCEED;
 	str *sname = getArgReference_str(stk, pci, 1);
 	str *tname = getArgReference_str(stk, pci, 2);
+	int restart_sequences = *getArgReference_int(stk, pci, 3);
 	BUN res;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
@@ -1113,5 +1113,38 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	res = mvc_clear_table(m, t);
 	if (res >= BUN_NONE - 1)
 		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
+	if (restart_sequences) { /* restart the sequences if it's the case */
+		sql_trans *tr = m->session->tr;
+		const char *next_value_for = "next value for ";
+
+		for (node *n = ol_first_node(t->columns); n; n = n->next) {
+			sql_column *col = n->data;
+
+			if (col->def && !strncmp(col->def, next_value_for, strlen(next_value_for))) {
+				sql_schema *seqs = NULL;
+				sql_sequence *seq = NULL;
+				char *schema = NULL, *seq_name = NULL;
+
+				extract_schema_and_sequence_name(m->ta, col->def + strlen(next_value_for), &schema, &seq_name);
+				if (!schema || !seq_name || !(seqs = find_sql_schema(tr, schema)))
+					continue;
+
+				assert(seqs->base.id == s->base.id);
+				if ((seq = find_sql_sequence(tr, seqs, seq_name))) {
+					switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
+						case -1:
+							throw(SQL, "sql.clear_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						case -2:
+						case -3:
+							throw(SQL, "sql.clear_table", SQLSTATE(HY005) "RESTART SEQUENCE: transaction conflict detected");
+						case -4:
+							throw(SQL, "sql.clear_table", SQLSTATE(HY005) "Could not restart sequence %s.%s", seqs->base.name, seq_name);
+						default:
+							break;
+					}
+				}
+			}
+		}
+	}
 	return MAL_SUCCEED;
 }

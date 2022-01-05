@@ -42,4 +42,3 @@ SELECT "id", "version", COUNT(distinct "version") FROM test GROUP BY "id", "vers
 statement ok
 ROLLBACK
 
-
