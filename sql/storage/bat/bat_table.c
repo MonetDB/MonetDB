@@ -162,7 +162,7 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
 	} \
 	if (q != BUN_NONE) { \
 		BATiter bi = bat_iterator(b); \
-		res = *(TPE*)BUNtail(bi, q); \
+		res = *(TPE*)BUNtloc(bi, q); \
 		bat_iterator_end(&bi); \
 	} \
 	bat_destroy(b); \
@@ -174,12 +174,12 @@ column_find_tpe(bte)
 column_find_tpe(int)
 column_find_tpe(lng)
 
-static str
+static const char *
 column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
 {
 	BUN q = BUN_NONE;
 	BAT **b = (BAT**) cbat;
-	str res = NULL;
+	const char *res = NULL;
 
 	*b = full_column(tr, c);
 	if (*b) {
@@ -190,7 +190,7 @@ column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
 	}
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(*b);
-		res = (str) BUNtvar(bi, q);
+		res = BUNtvar(bi, q);
 		bat_iterator_end(&bi);
 	}
 	return res;

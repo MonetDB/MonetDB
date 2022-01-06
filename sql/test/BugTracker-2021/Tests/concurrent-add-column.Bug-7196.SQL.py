@@ -14,8 +14,8 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
-        mdb1.execute('select * from test;').assertDataResultMatch([(1,None)])
-        mdb2.execute('select * from test;').assertDataResultMatch([(1,None)])
+        mdb1.execute('select * from test;').assertSucceeded().assertDataResultMatch([(1,None)])
+        mdb2.execute('select * from test;').assertSucceeded().assertDataResultMatch([(1,None)])
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
@@ -24,7 +24,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertSucceeded()
 
-        mdb1.execute('select * from test;').assertDataResultMatch([(1,),(3,)])
-        mdb2.execute('select * from test;').assertDataResultMatch([(1,),(3,)])
+        mdb1.execute('select * from test;').assertSucceeded().assertDataResultMatch([(1,),(3,)])
+        mdb2.execute('select * from test;').assertSucceeded().assertDataResultMatch([(1,),(3,)])
 
         mdb1.execute('drop table test;').assertSucceeded()

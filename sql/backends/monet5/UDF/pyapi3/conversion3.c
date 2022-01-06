@@ -195,7 +195,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		data = PyArray_DATA((PyArrayObject *)vararray);
 		BATloop(b, p, q)
 		{
-			blob *t = (blob *)BUNtvar(li, p);
+			const blob *t = (const blob *)BUNtvar(li, p);
 			if (t->nitems == ~(size_t)0) {
 				data[p] = Py_None;
 				Py_INCREF(Py_None);
@@ -250,7 +250,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				BATloop(b, p, q)
 				{
-					char *t = (char *)BUNtvar(li, p);
+					const char *t = (const char *)BUNtvar(li, p);
 					for (; *t != 0; t++) {
 						if (*t & 0x80) {
 							unicode = true;
@@ -311,7 +311,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtvar(li, p);
+								const char *t = (const char *)BUNtvar(li, p);
 								if (strNil(t)) {
 									// str_nil isn't a valid UTF-8 character
 									// (it's 0x80), so we can't decode it as
@@ -361,7 +361,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtvar(li, p);
+								const char *t = (const char *)BUNtvar(li, p);
 								obj = PyString_FromString(t);
 								if (obj == NULL) {
 									bat_iterator_end(&li);
@@ -1106,7 +1106,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		BATiter li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			void *element = (void *)BUNtail(li, p);
+			const void *element = (const void*)BUNtail(li, p);
 			if (strConversion(&result, &length, element, false) < 0) {
 				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);
