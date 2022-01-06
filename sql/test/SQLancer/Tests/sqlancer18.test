@@ -680,5 +680,21 @@ SELECT 1 FROM v100 AS vx WHERE vx.vc0 = ANY(SELECT 1 FROM v100 HAVING count(vx.v
 statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
 SELECT 1 FROM v100 WHERE (SELECT 1 HAVING count(v100.vc0 + (SELECT 1 FROM v104)))
 
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 < ANY(SELECT sum(vx.vc0) FROM tx) FROM (select 240 FROM tx) vx(vc0)
+
+statement error 42000!SELECT: subquery uses ungrouped column "vx.vc0" from outer query
+SELECT sum(vx.vc0) < ANY(SELECT vx.vc0 FROM tx) FROM (select 240 FROM tx) vx(vc0)
+
+#these are right
+query I nosort
+SELECT sum(vx.vc0) < ANY(SELECT sum(vx.vc0) FROM tx) FROM (select 240 FROM tx) vx(vc0)
+----
+0
+
+query I nosort
+SELECT vx.vc0 < ANY(SELECT vx.vc0 FROM tx) FROM (select 240 FROM tx) vx(vc0)
+----
+
 statement ok
 DROP TABLE "tx" CASCADE
