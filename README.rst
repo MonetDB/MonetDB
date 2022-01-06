@@ -6,7 +6,7 @@ research group`__ (see https://www.monetdb.org/).  Development has now
 shifted to the spin-off company `MonetDB Solutions`__.
 
 Via the MonetDB project we have brought the MonetDB system in open
-source, where it is accessible at https://www.monetdb.org/Downloads/.
+source, where it is accessible at https://www.monetdb.org/easy-setup/.
 Even though development happens mostly in a company, the MonetDB
 database system will remain open source.  It is available under the
 `Mozilla Public License 2.0`__.
@@ -137,7 +137,7 @@ Please note that we do not accept github Pull Requests. See the
 .. _github: https://github.com/MonetDB/MonetDB/issues
 __ github_
 
-.. _developers: https://www.monetdb.org/Developers
+.. _developers: https://www.monetdb.org/documentation/dev-guide/
 __ developers_
 
 Copyright Notice
@@ -147,4 +147,4 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0.  If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.

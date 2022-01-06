@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 # python mksqlwxs.py VERSION BITS PREFIX > PREFIX/MonetDB5-SQL-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB5-SQL-Installer.wxs
@@ -179,7 +179,7 @@ def main():
     print(r'            <Directory Id="include" Name="include">')
     print(r'              <Directory Id="monetdb" Name="monetdb">')
     id = comp(extend, id, 16,
-              sorted([r'include\monetdb\{}'.format(x) for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal') or x.startswith('sql')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
+              sorted([r'include\monetdb\{}'.format(x) for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal') or x.startswith('sql') or x.startswith('rel') or x.startswith('store') or x.startswith('exception') or x.startswith('opt_backend')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
                      [r'include\monetdb\copybinary.h',
                       r'include\monetdb\mapi.h',
                       r'include\monetdb\matomic.h',

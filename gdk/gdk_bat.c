@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -861,8 +861,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			if (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED) {
  				goto bunins_failed;
  			}
-			memcpy(bn->theap->base, bi.base, bi.count << bi.shift);
-			bn->theap->free = bi.count << bi.shift;
+			memcpy(bn->theap->base, bi.base, bi.hfree);
+			bn->theap->free = bi.hfree;
 			bn->theap->dirty = true;
  			if (bn->tvheap) {
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
@@ -1154,7 +1154,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			b->tnil = b->tnonil = false;
 		}
 	} else {
-		b->tnil = values == NULL;
+		b->tnil |= values == NULL;
 		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
