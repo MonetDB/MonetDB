@@ -1082,6 +1082,16 @@ segments_is_deleted(segment *s, sql_trans *tr, oid rid)
 	return 0;
 }
 
+static sql_delta *
+tr_dup_delta(sql_trans *tr, sql_delta *bat)
+{
+	sql_delta *n = ZNEW(sql_delta);
+	*n = *bat;
+	n->next = NULL;
+	n->cs.ts = tr->tid;
+	return n;
+}
+
 static BAT *
 dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 {
@@ -1131,11 +1141,11 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 					return NULL;
 				}
 				if (cs->ts != tr->tid) {
-					*batp = ZNEW(sql_delta);
-					**batp = *bat;
-					(*batp)->next = NULL;
+					if ((*batp = tr_dup_delta(tr, bat)) == NULL) {
+						bat_destroy(n);
+						return NULL;
+					}
 					cs = &(*batp)->cs;
-					cs->ts = tr->tid;
 					new = 1;
 				}
 				if (cs->bid && !new)
@@ -1167,11 +1177,11 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 					return NULL;
 				}
 				if (cs->ts != tr->tid) {
-					*batp = ZNEW(sql_delta);
-					**batp = *bat;
-					(*batp)->next = NULL;
+					if ((*batp = tr_dup_delta(tr, bat)) == NULL) {
+						bat_destroy(n);
+						return NULL;
+					}
 					cs = &(*batp)->cs;
-					cs->ts = tr->tid;
 					new = 1;
 					temp_dup(cs->ebid);
 					if (cs->uibid) {
@@ -1614,11 +1624,11 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 					return NULL;
 				}
 				if (cs->ts != tr->tid) {
-					*batp = ZNEW(sql_delta);
-					**batp = *bat;
-					(*batp)->next = NULL;
+					if ((*batp = tr_dup_delta(tr, bat)) == NULL) {
+						bat_destroy(n);
+						return NULL;
+					}
 					cs = &(*batp)->cs;
-					cs->ts = tr->tid;
 					new = 1;
 					cs->uibid = cs->uvbid = 0;
 				}
@@ -1646,11 +1656,11 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 					return NULL;
 				}
 				if (cs->ts != tr->tid) {
-					*batp = ZNEW(sql_delta);
-					**batp = *bat;
-					(*batp)->next = NULL;
+					if ((*batp = tr_dup_delta(tr, bat)) == NULL) {
+						bat_destroy(n);
+						return NULL;
+					}
 					cs = &(*batp)->cs;
-					cs->ts = tr->tid;
 					new = 1;
 					temp_dup(cs->ebid);
 					if (cs->uibid) {
