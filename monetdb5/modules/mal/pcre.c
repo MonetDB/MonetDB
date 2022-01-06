@@ -1401,7 +1401,7 @@ re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore,
 	} while (0)
 
 static inline bit
-re_like_proj_apply(const char *s, struct RE *re, uint32_t *wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
+re_like_proj_apply(const char *s, const struct RE *restrict re, const uint32_t *restrict wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
 {
 	if (use_strcmp) {
 		if (caseignore) {
@@ -1520,7 +1520,7 @@ pcre_like_build(
 static inline str
 pcre_like_apply(bit *ret, const char *s,
 #ifdef HAVE_LIBPCRE
-	pcre *re, pcre_extra *ex
+	const pcre *re, const pcre_extra *ex
 #else
 	regex_t re, void *ex
 #endif
@@ -1574,7 +1574,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 		 input_is_a_bat = isaBatType(getArgType(mb, pci, 1)), pattern_is_a_bat = isaBatType(getArgType(mb, pci, 2));
 	bat *r = getArgReference_bat(stk, pci, 0), *sid1 = pci->argc > 5 ? getArgReference_bat(stk, pci, 5) : NULL, *sid2 = pci->argc == 7 ? getArgReference_bat(stk, pci, 6) : NULL;
 	BUN q = 0;
-	bit *ret = NULL;
+	bit *restrict ret = NULL;
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid off1, off2;
 #ifdef HAVE_LIBPCRE
@@ -2266,7 +2266,8 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 {
 	BAT *left = NULL, *right = NULL, *escape = NULL, *caseignore = NULL, *candleft = NULL, *candright = NULL;
 	BAT *result1 = NULL, *result2 = NULL;
-	char *msg = MAL_SUCCEED, *esc = "";
+	char *msg = MAL_SUCCEED;
+	const char *esc = "";
 	bit ci;
 	BATiter bi;
 
