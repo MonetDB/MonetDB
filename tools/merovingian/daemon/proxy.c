@@ -184,8 +184,10 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		msg.msg_controllen = cmsg->cmsg_len;
 		msg.msg_flags = 0;
 
+		/* Jan2022: disabled logging of next info message to reduce merovingian.log size:
 		Mfprintf(stdout, "target connection is on local UNIX domain socket, "
 				"passing on filedescriptor instead of proxying\n");
+		*/
 		if (sendmsg(ssock, &msg, 0) < 0) {
 			closesocket(ssock);
 			return(newErr("could not send initial byte: %s", strerror(errno)));
