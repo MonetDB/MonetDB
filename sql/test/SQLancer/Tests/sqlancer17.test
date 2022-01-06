@@ -498,3 +498,13 @@ SELECT c0 FROM t2
 statement ok
 DROP TABLE t2
 
+query T nosort
+VALUES (CASE WHEN 5 = ANY(SELECT -1) THEN 2 END)
+----
+NULL
+
+query I nosort
+SELECT 1 FROM (SELECT 1, TRUE) vx(vc0, vc2) INNER JOIN (SELECT 1) AS sub0(c0)
+ON vx.vc0 <= ALL(SELECT 1) OR vx.vc2 WHERE 0.5 < ALL(SELECT 0.6 WHERE vx.vc2)
+----
+1

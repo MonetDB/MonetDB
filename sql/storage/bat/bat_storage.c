@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1082,10 +1082,24 @@ segments_is_deleted(segment *s, sql_trans *tr, oid rid)
 	return 0;
 }
 
+static sql_delta *
+tr_dup_delta(sql_trans *tr, sql_delta *bat)
+{
+	sql_delta *n = ZNEW(sql_delta);
+	if (!n)
+		return NULL;
+	*n = *bat;
+	n->next = NULL;
+	n->cs.ts = tr->tid;
+	return n;
+}
+
 static BAT *
-dict_append_bat(column_storage *cs, BAT *i)
+dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 {
 	BAT *newoffsets = NULL;
+	sql_delta *bat = *batp;
+	column_storage *cs = &bat->cs;
 	BAT *u = temp_descriptor(cs->ebid), *b = NULL, *n = NULL;
 
 	if (!u)
@@ -1094,6 +1108,7 @@ dict_append_bat(column_storage *cs, BAT *i)
 	if (DICTprepare4append(&newoffsets, i, u) < 0) {
 		assert(0);
 	} else {
+		int new = 0;
 		/* returns new offset bat (ie to be appended), possibly with larger type ! */
 		if (BATcount(u) >= max_cnt) {
 			if (max_cnt == 64*1024) { /* decompress */
@@ -1127,17 +1142,25 @@ dict_append_bat(column_storage *cs, BAT *i)
 					bat_destroy(u);
 					return NULL;
 				}
-				if (cs->bid)
+				if (cs->ts != tr->tid) {
+					if ((*batp = tr_dup_delta(tr, bat)) == NULL) {
+						bat_destroy(n);
+						return NULL;
+					}
+					cs = &(*batp)->cs;
+					new = 1;
+				}
+				if (cs->bid && !new)
 					temp_destroy(cs->bid);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
-				if (cs->ebid)
+				if (cs->ebid && !new)
 					temp_destroy(cs->ebid);
 				cs->ebid = 0;
 				cs->ucnt = 0;
-				if (cs->uibid)
+				if (cs->uibid && !new)
 					temp_destroy(cs->uibid);
-				if (cs->uvbid)
+				if (cs->uvbid && !new)
 					temp_destroy(cs->uvbid);
 				cs->uibid = cs->uvbid = 0;
 				cs->st = ST_DEFAULT;
@@ -1155,7 +1178,20 @@ dict_append_bat(column_storage *cs, BAT *i)
 					bat_destroy(u);
 					return NULL;
 				}
-				if (cs->bid)
+				if (cs->ts != tr->tid) {
+					if ((*batp = tr_dup_delta(tr, bat)) == NULL) {
+						bat_destroy(n);
+						return NULL;
+					}
+					cs = &(*batp)->cs;
+					new = 1;
+					temp_dup(cs->ebid);
+					if (cs->uibid) {
+						temp_dup(cs->uibid);
+						temp_dup(cs->uvbid);
+					}
+				}
+				if (cs->bid && !new)
 					temp_destroy(cs->bid);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
@@ -1230,9 +1266,11 @@ for_append_bat(column_storage *cs, BAT *i, char *storage_type)
  * Returns LOG_OK, LOG_ERR or LOG_CONFLICT
  */
 static int
-cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *updates, int is_new)
+cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *updates, int is_new)
 {
 	int res = LOG_OK;
+	sql_delta *bat = *batp;
+	column_storage *cs = &bat->cs;
 	BAT *otids = tids, *oupdates = updates;
 
 	if (!BATcount(tids))
@@ -1261,7 +1299,9 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 
 	if (cs->st == ST_DICT) {
 		/* possibly a new array is returned */
-		BAT *nupdates = dict_append_bat(cs, updates);
+		BAT *nupdates = dict_append_bat(tr, batp, updates);
+		bat = *batp;
+		cs = &bat->cs;
 		if (oupdates != updates)
 			bat_destroy(updates);
 		updates = nupdates;
@@ -1341,7 +1381,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							}
 						}
 						for (oid i = 0, rid = start; rid < lend && res == LOG_OK; rid++, i++) {
-							ptr upd = BUNtail(upi, rid-offset);
+							const void *upd = BUNtail(upi, rid-offset);
 							if (void_inplace(b, rid, upd, true) != GDK_SUCCEED)
 								res = LOG_ERR;
 
@@ -1383,7 +1423,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 								memset(msk, 0, end * sizeof(int));
 							}
 						}
-						ptr upd = BUNtail(upi, i);
+						const void *upd = BUNtail(upi, i);
 						if (void_inplace(b, rid[i], upd, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 
@@ -1427,7 +1467,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 					res = LOG_ERR;
 
 				if (res == LOG_OK) {
-					ptr upd = NULL;
+					const void *upd = NULL;
 					nui = bat_new(TYPE_oid, cs->ucnt + ucnt - cnt, TRANSIENT);
 					nuv = bat_new(uv->ttype, cs->ucnt + ucnt - cnt, TRANSIENT);
 
@@ -1550,15 +1590,17 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 }
 
 static int
-delta_update_bat( sql_trans *tr, sql_delta *bat, sql_table *t, BAT *tids, BAT *updates, int is_new)
+delta_update_bat( sql_trans *tr, sql_delta **bat, sql_table *t, BAT *tids, BAT *updates, int is_new)
 {
-	return cs_update_bat(tr, &bat->cs, t, tids, updates, is_new);
+	return cs_update_bat(tr, bat, t, tids, updates, is_new);
 }
 
 static void *
-dict_append_val(column_storage *cs, void *i, BUN cnt)
+dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 {
 	void *newoffsets = NULL;
+	sql_delta *bat = *batp;
+	column_storage *cs = &bat->cs;
 	BAT *u = temp_descriptor(cs->ebid), *b = NULL, *n = NULL;
 
 	if (!u)
@@ -1567,6 +1609,7 @@ dict_append_val(column_storage *cs, void *i, BUN cnt)
 	if (DICTprepare4append_vals(&newoffsets, i, cnt, u) < 0) {
 		assert(0);
 	} else {
+		int new = 0;
 		/* returns new offset bat (ie to be appended), possibly with larger type ! */
 		if (BATcount(u) >= max_cnt) {
 			if (max_cnt == 64*1024) { /* decompress */
@@ -1582,11 +1625,20 @@ dict_append_val(column_storage *cs, void *i, BUN cnt)
 					bat_destroy(u);
 					return NULL;
 				}
-				if (cs->bid)
+				if (cs->ts != tr->tid) {
+					if ((*batp = tr_dup_delta(tr, bat)) == NULL) {
+						bat_destroy(n);
+						return NULL;
+					}
+					cs = &(*batp)->cs;
+					new = 1;
+					cs->uibid = cs->uvbid = 0;
+				}
+				if (cs->bid && !new)
 					temp_destroy(cs->bid);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
-				if (cs->ebid)
+				if (cs->ebid && !new)
 					temp_destroy(cs->ebid);
 				cs->ebid = 0;
 				cs->st = ST_DEFAULT;
@@ -1604,6 +1656,19 @@ dict_append_val(column_storage *cs, void *i, BUN cnt)
 					GDKfree(newoffsets);
 					bat_destroy(u);
 					return NULL;
+				}
+				if (cs->ts != tr->tid) {
+					if ((*batp = tr_dup_delta(tr, bat)) == NULL) {
+						bat_destroy(n);
+						return NULL;
+					}
+					cs = &(*batp)->cs;
+					new = 1;
+					temp_dup(cs->ebid);
+					if (cs->uibid) {
+						temp_dup(cs->uibid);
+						temp_dup(cs->uvbid);
+					}
 				}
 				if (cs->bid)
 					temp_destroy(cs->bid);
@@ -1656,16 +1721,20 @@ for_append_val(column_storage *cs, void *i, BUN cnt, char *storage_type, int tt)
 }
 
 static int
-cs_update_val( sql_trans *tr, column_storage *cs, sql_table *t, oid rid, void *upd, int is_new)
+cs_update_val( sql_trans *tr, sql_delta **batp, sql_table *t, oid rid, void *upd, int is_new)
 {
 	void *oupd = upd;
+	sql_delta *bat = *batp;
+	column_storage *cs = &bat->cs;
 	storage *s = ATOMIC_PTR_GET(&t->data);
 	assert(!is_oid_nil(rid));
 	int inplace = is_new || cs->cleared || segments_is_append (s->segs->h, tr, rid);
 
 	if (cs->st == ST_DICT) {
 		/* possibly a new array is returned */
-		upd = dict_append_val(cs, upd, 1);
+		upd = dict_append_val(tr, batp, upd, 1);
+		bat = *batp;
+		cs = &bat->cs;
 		if (!upd)
 			return LOG_ERR;
 	}
@@ -1724,11 +1793,11 @@ cs_update_val( sql_trans *tr, column_storage *cs, sql_table *t, oid rid, void *u
 }
 
 static int
-delta_update_val( sql_trans *tr, sql_delta *bat, sql_table *t, oid rid, void *upd, int is_new)
+delta_update_val( sql_trans *tr, sql_delta **bat, sql_table *t, oid rid, void *upd, int is_new)
 {
 	int res = LOG_OK;
 	lock_table(tr->store, t->base.id);
-	res = cs_update_val(tr, &bat->cs, t, rid, upd, is_new);
+	res = cs_update_val(tr, bat, t, rid, upd, is_new);
 	unlock_table(tr->store, t->base.id);
 	return res;
 }
@@ -1799,7 +1868,7 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 		/* abort */
 		if (update_conflict)
 			*update_conflict = true;
-		else
+		else if (!obat->cs.cleared) /* concurrent appends are only allowed on concurrent updates */
 			return timestamp_delta(tr, ATOMIC_PTR_GET(&c->data));
 		return NULL;
 	}
@@ -1823,7 +1892,7 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 }
 
 static int
-update_col_execute(sql_trans *tr, sql_delta *delta, sql_table *table, bool is_new, void *incoming_tids, void *incoming_values, bool is_bat)
+update_col_execute(sql_trans *tr, sql_delta **delta, sql_table *table, bool is_new, void *incoming_tids, void *incoming_values, bool is_bat)
 {
 	int ok = LOG_OK;
 
@@ -1859,8 +1928,10 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 
-	if ((res = update_col_execute(tr, delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat)) != LOG_OK)
+	odelta = delta;
+	if ((res = update_col_execute(tr, &delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat)) != LOG_OK)
 		return res;
+	assert(delta == odelta);
 	if (delta->cs.st == ST_DEFAULT && c->storage_type)
 		res = sql_trans_alter_storage(tr, c, NULL);
 	return res;
@@ -1904,6 +1975,7 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict)
 static int
 update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
+	int res = LOG_OK;
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
@@ -1920,14 +1992,18 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
 
-	return update_col_execute(tr, delta, i->t, isNew(i), tids, upd, tpe == TYPE_bat);
+	odelta = delta;
+	res = update_col_execute(tr, &delta, i->t, isNew(i), tids, upd, tpe == TYPE_bat);
+	assert(delta == odelta);
+	return res;
 }
 
 static int
-delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offsets, BAT *i, char *storage_type)
+delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *offsets, BAT *i, char *storage_type)
 {
 	BAT *b, *oi = i;
 	int err = 0;
+	sql_delta *bat = *batp;
 
 	assert(!offsets || BATcount(offsets) == BATcount(i));
 	if (!BATcount(i))
@@ -1937,7 +2013,8 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 
 	lock_column(tr->store, id);
 	if (bat->cs.st == ST_DICT) {
-		BAT *ni = dict_append_bat(&bat->cs, oi);
+		BAT *ni = dict_append_bat(tr, batp, oi);
+		bat = *batp;
 		if (oi != i) /* oi will be replaced, so destroy possible unmask reference */
 			bat_destroy(oi);
 		oi = ni;
@@ -1948,6 +2025,7 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 	}
 	if (bat->cs.st == ST_FOR) {
 		BAT *ni = for_append_bat(&bat->cs, oi, storage_type);
+		bat = *batp;
 		if (oi != i) /* oi will be replaced, so destroy possible unmask reference */
 			bat_destroy(oi);
 		oi = ni;
@@ -1985,15 +2063,17 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 }
 
 static int
-delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, void *i, BUN cnt, char *storage_type, int tt)
+delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, void *i, BUN cnt, char *storage_type, int tt)
 {
 	void *oi = i;
 	BAT *b;
 	lock_column(tr->store, id);
+	sql_delta *bat = *batp;
 
 	if (bat->cs.st == ST_DICT) {
 		/* possibly a new array is returned */
-		i = dict_append_val(&bat->cs, i, cnt);
+		i = dict_append_val(tr, batp, i, cnt);
+		bat = *batp;
 		if (!i) {
 			unlock_column(tr->store, id);
 			return LOG_ERR;
@@ -2002,6 +2082,7 @@ delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, void *i, B
 	if (bat->cs.st == ST_FOR) {
 		/* possibly a new array is returned */
 		i = for_append_val(&bat->cs, i, cnt, storage_type, tt);
+		bat = *batp;
 		if (!i) {
 			unlock_column(tr->store, id);
 			return LOG_ERR;
@@ -2070,11 +2151,11 @@ dup_storage( sql_trans *tr, storage *obat, storage *bat, int temp)
 }
 
 static int
-append_col_execute(sql_trans *tr, sql_delta *delta, sqlid id, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, int tt, char *storage_type)
+append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, int tt, char *storage_type)
 {
 	int ok = LOG_OK;
 
-	delta->cs.merged = 0;
+	(*delta)->cs.merged = 0; /* TODO needs to move */
 	if (tt == TYPE_bat) {
 		BAT *bat = incoming_data;
 
@@ -2101,8 +2182,17 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *i, BUN 
 	if ((!inTransaction(tr, c->t) && (odelta != delta || !segments_in_transaction(tr, c->t) || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 
-	if ((res = append_col_execute(tr, delta, c->base.id, offset, offsets, i, cnt, tpe, c->storage_type)) != LOG_OK)
+	odelta = delta;
+	if ((res = append_col_execute(tr, &delta, c->base.id, offset, offsets, i, cnt, tpe, c->storage_type)) != LOG_OK)
 		return res;
+	if (odelta != delta) {
+		delta->next = odelta;
+		if (!ATOMIC_PTR_CAS(&c->data, (void**)&delta->next, delta)) {
+			delta->next = NULL;
+			destroy_delta(delta, false);
+			return LOG_CONFLICT;
+		}
+	}
 	if (delta->cs.st == ST_DEFAULT && c->storage_type)
 		res = sql_trans_alter_storage(tr, c, NULL);
 	return res;
@@ -2111,6 +2201,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *i, BUN 
 static int
 append_idx(sql_trans *tr, sql_idx * i, BUN offset, BAT *offsets, void *data, BUN cnt, int tpe)
 {
+	int res = LOG_OK;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
 	if ((delta = bind_idx_data(tr, i, NULL)) == NULL)
@@ -2122,7 +2213,10 @@ append_idx(sql_trans *tr, sql_idx * i, BUN offset, BAT *offsets, void *data, BUN
 	if ((!inTransaction(tr, i->t) && (odelta != delta || !segments_in_transaction(tr, i->t) || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
 
-	return append_col_execute(tr, delta, i->base.id, offset, offsets, data, cnt, tpe, NULL);
+	odelta = delta;
+	res = append_col_execute(tr, &delta, i->base.id, offset, offsets, data, cnt, tpe, NULL);
+	assert (odelta == delta);
+	return res;
 }
 
 static int
@@ -2441,33 +2535,36 @@ min_max_col(sql_trans *tr, sql_column *c)
 		return 0;
 	if (c->min && c->max)
 		return 1;
-
-	lock_column(tr->store, c->base.id);
-	if (c->min && c->max) {
-		unlock_column(tr->store, c->base.id);
-		return 1;
-	}
-	_DELETE(c->min);
-	_DELETE(c->max);
-	if ((d = ATOMIC_PTR_GET(&c->data)) && (b = temp_descriptor(d->cs.bid))) {
-		BATiter bi = bat_iterator(b);
-		if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
-			void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
-			size_t minlen = ATOMlen(bi.type, nmin), maxlen = ATOMlen(bi.type, nmax);
-
-			if (!(c->min = GDKmalloc(minlen)) || !(c->max = GDKmalloc(maxlen))) {
-				_DELETE(c->min);
-				_DELETE(c->max);
-			} else {
-				memcpy(c->min, nmin, minlen);
-				memcpy(c->max, nmax, maxlen);
-				ok = 1;
-			}
+	if ((d = ATOMIC_PTR_GET(&c->data))) {
+		if (d->cs.st == ST_FOR)
+			return 0;
+		lock_column(tr->store, c->base.id);
+		if (c->min && c->max) {
+			unlock_column(tr->store, c->base.id);
+			return 1;
 		}
-		bat_iterator_end(&bi);
-		bat_destroy(b);
+		_DELETE(c->min);
+		_DELETE(c->max);
+		if ((b = temp_descriptor(d->cs.st == ST_DICT ? d->cs.ebid : d->cs.bid))) {
+			BATiter bi = bat_iterator(b);
+			if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
+				const void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
+				size_t minlen = ATOMlen(bi.type, nmin), maxlen = ATOMlen(bi.type, nmax);
+
+				if (!(c->min = GDKmalloc(minlen)) || !(c->max = GDKmalloc(maxlen))) {
+					_DELETE(c->min);
+					_DELETE(c->max);
+				} else {
+					memcpy(c->min, nmin, minlen);
+					memcpy(c->max, nmax, maxlen);
+					ok = 1;
+				}
+			}
+			bat_iterator_end(&bi);
+			bat_destroy(b);
+		}
+		unlock_column(tr->store, c->base.id);
 	}
-	unlock_column(tr->store, c->base.id);
 	return ok;
 }
 
@@ -2771,16 +2868,18 @@ create_col(sql_trans *tr, sql_column *c)
 	if (!isNew(c) && !isTempTable(c->t)){
 		bat->cs.ts = tr->ts;
 		ok = load_cs(tr, &bat->cs, type, c->base.id);
-		if (ok == LOG_OK && c->storage_type && strcmp(c->storage_type, "DICT") == 0) {
-			sqlstore *store = tr->store;
-			int bid = logger_find_bat(store->logger, -c->base.id);
-			if (!bid)
-				return LOG_ERR;
-			bat->cs.ebid = temp_dup(bid);
-			bat->cs.st = ST_DICT;
+		if (ok == LOG_OK && c->storage_type) {
+			if (strcmp(c->storage_type, "DICT") == 0) {
+				sqlstore *store = tr->store;
+				int bid = logger_find_bat(store->logger, -c->base.id);
+				if (!bid)
+					return LOG_ERR;
+				bat->cs.ebid = temp_dup(bid);
+				bat->cs.st = ST_DICT;
+			} else if (strncmp(c->storage_type, "FOR", 3) == 0) {
+				bat->cs.st = ST_FOR;
+			}
 		}
-		if (ok == LOG_OK && c->storage_type && strncmp(c->storage_type, "FOR", 3) == 0)
-			bat->cs.st = ST_FOR;
 		return ok;
 	} else if (bat && bat->cs.bid && !isTempTable(c->t)) {
 		return new_persistent_delta(ATOMIC_PTR_GET(&c->data));
@@ -3525,6 +3624,9 @@ clear_table(sql_trans *tr, sql_table *t)
 	if ((clear_ok = clear_del(tr, t, in_transaction)) >= BUN_NONE - 1)
 		return clear_ok;
 
+	if (in_transaction && !isTempTable(t))
+		return sz;
+
 	for (; n; n = n->next) {
 		c = n->data;
 
@@ -3605,6 +3707,11 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 			for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
 				sql_column *c = n->data;
 				column_storage *cs = ATOMIC_PTR_GET(&c->data);
+
+				if (cs->cleared) {
+					ok = (tr_log_cs(tr, t, cs, cur, c->base.id) == LOG_OK)? GDK_SUCCEED : GDK_FAIL;
+					continue;
+				}
 
 				/* append col*/
 				BAT *ins = temp_descriptor(cs->bid);
@@ -4671,7 +4778,7 @@ col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 			temp_destroy(d->cs.ebid);
 		d->cs.ebid = temp_create(u);
 	}
-	return 0;
+	return LOG_OK;
 }
 
 

@@ -335,7 +335,7 @@ query can also be a URL. It then has to have the form
 *schema*\ **://**\ *string*\ **,** *e*.\ *g*.,
 *https://www.example.org/dumpdata.csv*.
 
-See https://www.monetdb.org/Documentation/Manuals/SQLreference/CopyInto
+See https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/
 for more information about the COPY INTO query.
 
 SEE ALSO

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -1481,8 +1481,15 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		}
 
 		if (!rel_has_freevar(sql, r)) {
-			reset_dependent(rel);
-			return rel;
+			if (rel_has_freevar(sql, l) && is_join(rel->op) && !rel->exps) {
+				rel->l = r;
+				rel->r = l;
+				l = rel->l;
+				r = rel->r;
+			} else {
+				reset_dependent(rel);
+				return rel;
+			}
 		}
 
 		/* try to push dependent join down */
@@ -1938,9 +1945,9 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 			sql_exp *le = NULL, *re = NULL;
 			bool underjoinl = false, underjoinr = false;
 
-			le = rel_find_exp_and_corresponding_rel(rel->l, e, NULL, &underjoinl);
+			le = rel_find_exp_and_corresponding_rel(rel->l, e, false, NULL, &underjoinl);
 			if (!is_simple_project(rel->op) && !is_inter(rel->op) && !is_except(rel->op) && !is_semi(rel->op) && rel->r) {
-				re = rel_find_exp_and_corresponding_rel(rel->r, e, NULL, &underjoinr);
+				re = rel_find_exp_and_corresponding_rel(rel->r, e, false, NULL, &underjoinr);
 				/* if the expression is found under a join, the cardinality expands to multi */
 				e->card = MAX(le?underjoinl?CARD_MULTI:le->card:CARD_ATOM, re?underjoinr?CARD_MULTI:re->card:CARD_ATOM);
 			} else if (e->card == CARD_ATOM) { /* unnested columns vs atoms */
@@ -3085,9 +3092,12 @@ exp_exist(mvc *sql, sql_exp *le, sql_exp *ne, int exists)
 	if (!exists_func)
 		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le)->type->base.name);
 	if (ne) { /* correlated case */
-		ne = rel_unop_(sql, NULL, ne, "sys", "isnull", card_value);
-		set_has_no_nil(ne);
-		le = rel_nop_(sql, NULL, ne, exp_atom_bool(sql->sa, !exists), exp_atom_bool(sql->sa, exists), NULL, "sys", "ifthenelse", card_value);
+		if (exists)
+			le = rel_nop_(sql, NULL, ne, exp_atom_bool(sql->sa, exists), exp_atom_bool(sql->sa, !exists), NULL, "sys", "ifthenelse", card_value);
+		else {
+			ne = rel_unop_(sql, NULL, ne, "sys", "not", card_value);
+			le = rel_nop_(sql, NULL, ne, exp_atom_bool(sql->sa, exists), exp_atom_bool(sql->sa, !exists), NULL, "sys", "ifthenelse", card_value);
+		}
 		return le;
 	} else {
 		sql_exp *res = exp_unop(sql->sa, le, exists_func);

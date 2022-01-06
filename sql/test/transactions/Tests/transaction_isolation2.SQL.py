@@ -88,7 +88,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
         # The current setup gives a duplicate entry in the 'roles' table, so that cannot happen
-        mdb1.execute('SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.roles;').assertDataResultMatch([(1,)])
+        mdb1.execute('SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.roles;').assertSucceeded().assertDataResultMatch([(1,)])
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('DROP USER dummyuser;').assertSucceeded()
@@ -105,7 +105,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
         # The current setup gives a duplicate entry in the 'comments' table, so that cannot happen
-        mdb1.execute('SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.comments;').assertDataResultMatch([(1,)])
+        mdb1.execute('SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.comments;').assertSucceeded().assertDataResultMatch([(1,)])
 
         # Since Jan2022 we allow concurrent analyze statements
         mdb1.execute('start transaction;').assertSucceeded()
@@ -173,7 +173,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute("ALTER TABLE parent1 ADD TABLE child AS PARTITION FROM '1' TO '2';").assertSucceeded()
         mdb2.execute("ALTER TABLE parent2 ADD TABLE child AS PARTITION FROM '0' TO '4';").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('ALTER TABLE parent1 DROP TABLE child;').assertSucceeded()
         mdb1.execute('DROP TABLE parent1;').assertSucceeded()
@@ -196,16 +196,16 @@ with SQLTestCase() as mdb1:
         mdb1.execute('insert into longs values (4),(5),(6);').assertSucceeded()
         mdb2.execute('insert into longs values (5),(6),(7);').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead") # Duplicate values on the primary key 'i' from 'longs'
-        mdb1.execute('SELECT i FROM longs order by i;').assertDataResultMatch([(1,),(2,),(3,),(4,),(5,),(6,)])
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead") # Duplicate values on the primary key 'i' from 'longs'
+        mdb1.execute('SELECT i FROM longs order by i;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,),(4,),(5,),(6,)])
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('delete from longs where i > 3;').assertRowCount(3)
         mdb2.execute('insert into integers values (4);').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead") # The foreign key value 4 doesn't exist on the primary key
-        mdb1.execute('SELECT i FROM longs order by i;').assertDataResultMatch([(1,),(2,),(3,)])
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead") # The foreign key value 4 doesn't exist on the primary key
+        mdb1.execute('SELECT i FROM longs order by i;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('DROP TYPE myurl;').assertSucceeded()

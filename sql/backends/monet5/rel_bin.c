@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -2862,6 +2862,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid, swap = 0;
 					stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
 
+					if (l && left && l->nrcols==0 && left->nrcols >0)
+						l = stmt_const(be, bin_find_smallest_column(be, left), l);
 					if (!l) {
 						swap = 1;
 						clean_mal_statements(be, oldstop, oldvtop, oldvid);
@@ -4293,7 +4295,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (t->idxs) {
 		idx_m = m;
-		for (n = ol_first_node(t->idxs); n && m; n = n->next) {
+		for (n = ol_first_node(t->idxs); n && m; n = n->next, m = m->next) {
 			stmt *is = m->data;
 			sql_idx *i = n->data;
 
@@ -4308,27 +4310,26 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			}
 			if (!insert)
 				insert = is;
-			/* If the index doesn't hold delta structures, don't update the 'm' variable */
-			m = m->next;
 		}
+		assert(!n && !m);
 	}
 
 	if (t->s) /* only not declared tables, need this */
 		pos = stmt_claim(be, t, cnt);
 
-	if (t->idxs)
-	for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next) {
-		stmt *is = m->data;
-		sql_idx *i = n->data;
+	if (t->idxs) {
+		for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next, m = m->next) {
+			stmt *is = m->data;
+			sql_idx *i = n->data;
 
-		if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
-			continue;
-		if (hash_index(i->type) && list_length(i->columns) <= 1)
-			is = NULL;
-		if (is)
-			is = stmt_append_idx(be, i, pos, is);
-		/* If the index doesn't hold delta structures, don't update the 'm' variable */
-		m = m->next;
+			if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
+				continue;
+			if (hash_index(i->type) && list_length(i->columns) <= 1)
+				is = NULL;
+			if (is)
+				is = stmt_append_idx(be, i, pos, is);
+		}
+		assert(!n && !m);
 	}
 
 	int mvc_var = be->mvc_var;

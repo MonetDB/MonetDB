@@ -16,4 +16,3 @@ where (EXISTS ( select distinct ref_5.c_i768 as c0 from t_qh as ref_5)) and (ref
 statement ok
 rollback
 
-

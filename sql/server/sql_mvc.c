@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -529,9 +529,15 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if (!tr->parent && !name) {
-		if (sql_trans_end(m->session, ok) != SQL_OK) {
-			/* transaction conflict */
-			return createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+		switch (sql_trans_end(m->session, ok)) {
+			case SQL_ERR:
+				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
+				break;
+			case SQL_CONFLICT:
+				/* transaction conflict */
+				return createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+			default:
+				break;
 		}
 		msg = WLCcommit(m->clientid);
 		if (msg != MAL_SUCCEED) {
@@ -539,6 +545,14 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 				freeException(other);
 			return msg;
 		}
+		if (chain) {
+			if (sql_trans_begin(m->session) < 0)
+				return createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
+			m->session->auto_commit = 0; /* disable auto-commit while chaining */
+		}
+		m->type = Q_TRANS;
+		TRC_INFO(SQL_TRANS,
+			"Commit done\n");
 		return msg;
 	}
 
@@ -561,20 +575,44 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 
 	/* if there is nothing to commit reuse the current transaction */
 	if (list_empty(tr->changes)) {
-		if (!chain)
-			(void)sql_trans_end(m->session, ok);
+		if (!chain) {
+			switch (sql_trans_end(m->session, ok)) {
+				case SQL_ERR:
+					GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
+					break;
+				case SQL_CONFLICT:
+					if (!msg)
+						msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+					break;
+				default:
+					break;
+			}
+		}
 		m->type = Q_TRANS;
 		TRC_INFO(SQL_TRANS,
 			"Commit done (no changes)\n");
 		return msg;
 	}
 
-	if ((ok = sql_trans_commit(tr)) == SQL_ERR)
-		GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
-
-	(void)sql_trans_end(m->session, ok);
-	if (chain && sql_trans_begin(m->session) < 0)
-		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
+	switch (sql_trans_end(m->session, ok)) {
+		case SQL_ERR:
+			GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
+			break;
+		case SQL_CONFLICT:
+			if (!msg)
+				msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+			return msg;
+		default:
+			break;
+	}
+	if (chain) {
+		if (sql_trans_begin(m->session) < 0) {
+			if (!msg)
+				msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
+			return msg;
+		}
+		m->session->auto_commit = 0; /* disable auto-commit while chaining */
+	}
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
 		"Commit done\n");
@@ -626,8 +664,14 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		if (!list_empty(tr->changes))
 			tr->status = 1;
 		(void)sql_trans_end(m->session, SQL_ERR);
-		if (chain && sql_trans_begin(m->session) < 0)
-			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found while starting the next transaction");
+		if (chain) {
+			if (sql_trans_begin(m->session) < 0) {
+				msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found while starting the next transaction");
+				m->session->status = -1;
+				return msg;
+			}
+			m->session->auto_commit = 0; /* disable auto-commit while chaining */
+		}
 	}
 	if (msg == MAL_SUCCEED)
 		msg = WLCrollback(m->clientid);

@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 cmake_minimum_required(VERSION 3.12)
@@ -88,7 +88,7 @@ monetdb_configure_misc()
 # Some custom target will need these setting.
 include(monetdb-custom-targets)
 
-if(NOT ${CMAKE_INSTALL_PREFIX} STREQUAL "/usr")
+if(NOT ${CMAKE_INSTALL_PREFIX} STREQUAL "/usr" AND NOT ${CPACK_PACKAGING_INSTALL_PREFIX} STREQUAL "/")
   SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
   SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
