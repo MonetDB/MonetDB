@@ -1401,7 +1401,7 @@ re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore,
 	} while (0)
 
 static inline bit
-re_like_proj_apply(const char *s, struct RE *re, uint32_t *wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
+re_like_proj_apply(const char *s, const struct RE *restrict re, const uint32_t *restrict wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
 {
 	if (use_strcmp) {
 		if (caseignore) {
@@ -1520,7 +1520,7 @@ pcre_like_build(
 static inline str
 pcre_like_apply(bit *ret, const char *s,
 #ifdef HAVE_LIBPCRE
-	pcre *re, pcre_extra *ex
+	const pcre *re, const pcre_extra *ex
 #else
 	regex_t re, void *ex
 #endif
@@ -1567,14 +1567,15 @@ pcre_clean(
 static str
 BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str *esc, const bit *isens, const bit *not)
 {
-	str msg = MAL_SUCCEED, input = NULL, pat = NULL;
+	str msg = MAL_SUCCEED;
 	BAT *b = NULL, *pbn = NULL, *bn = NULL;
 	char *ppat = NULL;
+	const char *input;
 	bool use_re = false, use_strcmp = false, empty = false, isensitive = (bool) *isens, anti = (bool) *not, has_nil = false,
 		 input_is_a_bat = isaBatType(getArgType(mb, pci, 1)), pattern_is_a_bat = isaBatType(getArgType(mb, pci, 2));
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BUN q = 0;
-	bit *ret = NULL;
+	bit *restrict ret = NULL;
 #ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
 	pcre_extra *ex = NULL;
@@ -1618,7 +1619,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 			input = *getArgReference_str(stk, pci, 1);
 
 		for (BUN p = 0; p < q; p++) {
-			const char *next_input = b ? BUNtail(bi, p) : input, *np = BUNtail(pi, p);
+			const char *next_input = b ? BUNtvar(bi, p) : input, *np = BUNtvar(pi, p);
 
 			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, np, *esc)) != MAL_SUCCEED) {
 				bat_iterator_end(&pi);
@@ -1661,7 +1662,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 		if (b)
 			bat_iterator_end(&bi);
 	} else {
-		pat = *getArgReference_str(stk, pci, 2);
+		const char *pat = *getArgReference_str(stk, pci, 2);
 		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, *esc)) != MAL_SUCCEED)
 			goto bailout;
 
@@ -1675,7 +1676,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
-				const char *s = BUNtail(bi, p);
+				const char *s = BUNtvar(bi, p);
 				ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
 			}
@@ -1689,7 +1690,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
-				const char *s = BUNtail(bi, p);
+				const char *s = BUNtvar(bi, p);
 				if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED) {
 					bat_iterator_end(&bi);
 					goto bailout;
@@ -2218,7 +2219,8 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 {
 	BAT *left = NULL, *right = NULL, *escape = NULL, *caseignore = NULL, *candleft = NULL, *candright = NULL;
 	BAT *result1 = NULL, *result2 = NULL;
-	char *msg = MAL_SUCCEED, *esc = "";
+	char *msg = MAL_SUCCEED;
+	const char *esc = "";
 	bit ci;
 	BATiter bi;
 
