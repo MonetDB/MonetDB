@@ -1,3 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Mar 18 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Disabled logging into merovingian.log of next info message types:
+  "proxying client <host>:<port> for database '<dbname>' to <url>" and
+  "target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying".
+  These messages were written to the log file at each connection. In most
+  cases this information is not used. The disabling reduces the log file size.
+
