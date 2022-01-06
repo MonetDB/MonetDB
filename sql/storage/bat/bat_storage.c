@@ -1086,6 +1086,8 @@ static sql_delta *
 tr_dup_delta(sql_trans *tr, sql_delta *bat)
 {
 	sql_delta *n = ZNEW(sql_delta);
+	if (!n)
+		return NULL;
 	*n = *bat;
 	n->next = NULL;
 	n->cs.ts = tr->tid;
