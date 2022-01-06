@@ -1150,7 +1150,7 @@ mvc_send_hge(stream *s, hge cnt)
 #endif
 
 ssize_t
-convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, size_t *len)
+convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len)
 {
 	ssize_t l = 0;
 

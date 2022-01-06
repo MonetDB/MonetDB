@@ -70,7 +70,7 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 
 			if ((msg = str_2_blob_imp(&r, &rlen, v)))
 				goto bailout1;
@@ -83,7 +83,7 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 	} else {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 
 			if ((msg = str_2_blob_imp(&r, &rlen, v)))
 				goto bailout1;
@@ -150,7 +150,7 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 }
 
 static inline str
-SQLstr_cast_any_type(str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
+SQLstr_cast_any_type(str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, const void *p, int tpe, int len)
 {
 	ssize_t sz = convert2str(m, eclass, d, s, has_tz, p, tpe, r, rlen);
 	if ((len > 0 && sz > (ssize_t) len) || sz < 0)
@@ -165,7 +165,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_class eclass = (sql_class)*getArgReference_int(stk, pci, 1);
 	int d = *getArgReference_int(stk, pci, 2), s = *getArgReference_int(stk, pci, 3);
 	int has_tz = *getArgReference_int(stk, pci, 4), tpe = getArgType(mb, pci, 5), digits = *getArgReference_int(stk, pci, 6);
-	ptr p = getArgReference(stk, pci, 5);
+	const void *p = getArgReference(stk, pci, 5);
 	mvc *m = NULL;
 	bool from_str = EC_VARCHAR(eclass) || tpe == TYPE_str;
 
@@ -258,7 +258,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (from_str && ci.tpe == cand_dense && q == BATcount(b)) { /* from string case, just do validation, if right, return */
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 
 			if (!strNil(v))
 				SQLstr_cast_str(v, digits);
@@ -286,7 +286,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < q; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str v = (str) BUNtvar(bi, p);
+				const char *v = BUNtvar(bi, p);
 
 				if (strNil(v)) {
 					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
@@ -305,7 +305,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* any other type to string */
 			for (BUN i = 0; i < q; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				ptr v = BUNtail(bi, p);
+				const void *v = BUNtail(bi, p);
 
 				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
 					goto bailout1;
@@ -320,7 +320,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < q; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str v = (str) BUNtvar(bi, p);
+				const char *v = BUNtvar(bi, p);
 
 				if (strNil(v)) {
 					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
@@ -339,7 +339,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* any other type to string */
 			for (BUN i = 0; i < q; i++) {
 				oid p = (canditer_next(&ci) - off);
-				ptr v = BUNtail(bi, p);
+				const void *v = BUNtail(bi, p);
 
 				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
 					goto bailout1;
