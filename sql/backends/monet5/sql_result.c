@@ -2020,7 +2020,7 @@ mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type, BAT 
 }
 
 int
-mvc_result_column(backend *be, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
+mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
 	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b, false) ? 0 : -1;
