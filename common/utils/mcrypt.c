@@ -32,8 +32,7 @@ mcrypt_getHashAlgorithms(void)
 	 * desire.
 	 */
 	static const char *algorithms =
-		"INVALID"
-		",RIPEMD160"
+		"RIPEMD160"
 		",SHA512"
 		",SHA384"
 		",SHA256"
