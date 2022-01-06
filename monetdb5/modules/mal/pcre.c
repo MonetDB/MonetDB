@@ -2219,7 +2219,8 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 {
 	BAT *left = NULL, *right = NULL, *escape = NULL, *caseignore = NULL, *candleft = NULL, *candright = NULL;
 	BAT *result1 = NULL, *result2 = NULL;
-	char *msg = MAL_SUCCEED, *esc = "";
+	char *msg = MAL_SUCCEED;
+	const char *esc = "";
 	bit ci;
 	BATiter bi;
 
