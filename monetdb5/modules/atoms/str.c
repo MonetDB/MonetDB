@@ -97,8 +97,8 @@
  */
 
 /* These tables were generated from the Unicode 13.0.0 spec. */
-struct UTF8_lower_upper {
-	unsigned int from, to;
+const struct UTF8_lower_upper {
+	const unsigned int from, to;
 } UTF8_toUpper[] = { /* code points with non-null uppercase conversion */
 	{ 0x0061, 0x0041, },
 	{ 0x0062, 0x0042, },
