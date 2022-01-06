@@ -162,9 +162,9 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 				uint16_t width = res->twidth;
 				for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
 					BUN noid = oids[i];
-					void *next;
+					const void *next;
 					if (noid == BUN_NONE) {
-						next = (void*) nilp;
+						next = nilp;
 						hasnil = 1;
 					} else {
 						next = BUNtloc(li, noid);
