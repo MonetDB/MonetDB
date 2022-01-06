@@ -749,7 +749,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
 	oid gid;
 	BUN i1, i2, p1, p2, nils = 0;
 	size_t *restrict lengths = NULL, *restrict lastseplength = NULL, separator_length = 0, next_length;
-	str *restrict astrings = NULL, s, sl;
+	str *restrict astrings = NULL;
 	BATiter bi, bis = (BATiter) {0};
 	BAT *bn = NULL;
 	gdk_return rres = GDK_SUCCEED;
@@ -780,7 +780,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
 		if (separator) {
 			for (BUN i = 0; i < ncand; i++) {
 				p1 = canditer_next(ci1) - bhseq;
-				s = BUNtvar(bi, p1);
+				const char *s = BUNtvar(bi, p1);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -798,8 +798,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
 			for (BUN i = 0; i < ncand; i++) {
 				p1 = canditer_next(ci1) - bhseq;
 				p2 = canditer_next(ci2) - shseq;
-				s = BUNtvar(bi, p1);
-				sl = BUNtvar(bis, p2);
+				const char *s = BUNtvar(bi, p1);
+				const char *sl = BUNtvar(bis, p2);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -837,7 +837,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
 			if (separator) {
 				for (BUN i = 0; i < ncand; i++) {
 					p1 = canditer_next(ci1) - bhseq;
-					s = BUNtvar(bi, p1);
+					const char *s = BUNtvar(bi, p1);
 					if (strNil(s))
 						continue;
 					if (!empty) {
@@ -854,8 +854,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
 				for (BUN i = 0; i < ncand; i++) {
 					p1 = canditer_next(ci1) - bhseq;
 					p2 = canditer_next(ci2) - shseq;
-					s = BUNtvar(bi, p1);
-					sl = BUNtvar(bis, p2);
+					const char *s = BUNtvar(bi, p1);
+					const char *sl = BUNtvar(bis, p2);
 					if (strNil(s))
 						continue;
 					if (!empty && !strNil(sl)) {
@@ -929,7 +929,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
 					gid -= min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					s = BUNtvar(bi, i1);
+					const char *s = BUNtvar(bi, i1);
 					if (!strNil(s)) {
 						lengths[gid] += strlen(s) + separator_length;
 						astrings[gid] = NULL;
@@ -950,8 +950,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
 					gid -= min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					s = BUNtvar(bi, i1);
-					sl = BUNtvar(bis, i2);
+					const char *s = BUNtvar(bi, i1);
+					const char *sl = BUNtvar(bis, i2);
 					if (!strNil(s)) {
 						lengths[gid] += strlen(s);
 						if (!strNil(sl)) {
@@ -1008,7 +1008,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
 				if (gid >= min && gid <= max) {
 					gid -= min;
 					if (astrings[gid]) {
-						s = BUNtvar(bi, i1);
+						const char *s = BUNtvar(bi, i1);
 						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]]) {
@@ -1031,8 +1031,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
 				if (gid >= min && gid <= max) {
 					gid -= min;
 					if (astrings[gid]) {
-						s = BUNtvar(bi, i1);
-						sl = BUNtvar(bis, i2);
+						const char *s = BUNtvar(bi, i1);
+						const char *sl = BUNtvar(bis, i2);
 						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]] && !strNil(sl)) {
@@ -1205,7 +1205,7 @@ done:
 #define compute_next_single_str(START, END)				\
 	do {								\
 		for (oid m = START; m < END; m++) {			\
-			sb = BUNtvar(bi, m);				\
+			const char *sb = BUNtvar(bi, m);				\
 									\
 			if (separator) {				\
 				if (!strNil(sb)) {			\
@@ -1216,7 +1216,7 @@ done:
 				}					\
 			} else { /* sep case */				\
 				assert(sep != NULL);			\
-				sl = BUNtvar(sepi, m);			\
+				const char *sl = BUNtvar(sepi, m);			\
 									\
 				if (!strNil(sb)) {			\
 					next_group_length += strlen(sb); \
@@ -1253,7 +1253,7 @@ done:
 			}						\
 									\
 			for (oid m = START; m < END; m++) {		\
-				sb = BUNtvar(bi, m);			\
+				const char *sb = BUNtvar(bi, m);			\
 									\
 				if (separator) {			\
 					if (strNil(sb))			\
@@ -1268,7 +1268,7 @@ done:
 					empty = false;			\
 				} else { /* sep case */			\
 					assert(sep != NULL);		\
-					sl = BUNtvar(sepi, m);		\
+					const char *sl = BUNtvar(sepi, m);		\
 									\
 					if (strNil(sb))			\
 						continue;		\
@@ -1296,19 +1296,19 @@ done:
 		compute_next_single_str(k, i); /* compute the entire string then slice it starting from the beginning */ \
 		empty = true;						\
 		for (; k < i;) {					\
-			str nsep, nstr;					\
+			const char *nsep;					\
 			oid m = k;					\
 			j = k;						\
 			do {						\
 				k++;					\
 			} while (k < i && !op[k]);			\
 			for (; j < k; j++) {				\
-				nstr = BUNtvar(bi, j);			\
+				const char *nstr = BUNtvar(bi, j);			\
 				if (!strNil(nstr)) {			\
 					slice_length += strlen(nstr);	\
 					if (!empty) {			\
 						if (separator) {	\
-							nsep = (str) separator; \
+							nsep = (const char *) separator; \
 						} else { /* sep case */	\
 							assert(sep != NULL); \
 							nsep = BUNtvar(sepi, j); \
@@ -1348,7 +1348,7 @@ done:
 #define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW				\
 	do {								\
 		for (; k < i; k++) {					\
-			str next = BUNtvar(bi, k);			\
+			const char *next = BUNtvar(bi, k);			\
 			if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED) \
 				goto allocation_error;			\
 			has_nils |= strNil(next);			\
@@ -1390,7 +1390,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	BATiter ei = bat_iterator(e);
 	oid i = 0, j = 0, k = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base;
 	bit *np = pi.base, *op = oi.base;
-	str sb, sl, single_str = NULL, next_single_str;
+	str single_str = NULL, next_single_str;
 	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
 
 	assert((sep && !separator && BATcount(b) == BATcount(sep)) || (!sep && separator));

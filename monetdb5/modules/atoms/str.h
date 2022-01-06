@@ -99,25 +99,25 @@ mal_export bool batstr_func_has_candidates(const char *func);
 
 extern str str_from_wchr(str *buf, size_t *buflen, int c)
 __attribute__((__visibility__("hidden")));
-extern str str_wchr_at(int *res, str s, int at)
+extern str str_wchr_at(int *res, const char *s, int at)
 __attribute__((__visibility__("hidden")));
 
-extern bit str_is_prefix(str s, str prefix)
+extern bit str_is_prefix(const char *s, const char *prefix)
 __attribute__((__visibility__("hidden")));
-extern bit str_is_suffix(str s, str suffix)
+extern bit str_is_suffix(const char *s, const char *suffix)
 __attribute__((__visibility__("hidden")));
 
-extern str str_tail(str *buf, size_t *buflen, str s, int off)
+extern str str_tail(str *buf, size_t *buflen, const char *s, int off)
 __attribute__((__visibility__("hidden")));
-extern str str_Sub_String(str *buf, size_t *buflen, str s, int off, int l)
+extern str str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 __attribute__((__visibility__("hidden")));
-extern str str_substring_tail(str *buf, size_t *buflen, str s, int start)
+extern str str_substring_tail(str *buf, size_t *buflen, const char *s, int start)
 __attribute__((__visibility__("hidden")));
-extern str str_sub_string(str *buf, size_t *buflen, str s, int start, int l)
+extern str str_sub_string(str *buf, size_t *buflen, const char *s, int start, int l)
 __attribute__((__visibility__("hidden")));
-extern str str_suffix(str *buf, size_t *buflen, str s, int l)
+extern str str_suffix(str *buf, size_t *buflen, const char *s, int l)
 __attribute__((__visibility__("hidden")));
-extern str str_repeat(str *buf, size_t *buflen, str s, int c)
+extern str str_repeat(str *buf, size_t *buflen, const char *s, int c)
 __attribute__((__visibility__("hidden")));
 
 extern str str_case_hash_lock(bool upper)
@@ -125,45 +125,45 @@ __attribute__((__visibility__("hidden")));
 extern void str_case_hash_unlock(bool upper)
 __attribute__((__visibility__("hidden")));
 /* Make sure the UTF8_toLowerFrom hash is locked! */
-extern str str_lower(str *buf, size_t *buflen, str s)
+extern str str_lower(str *buf, size_t *buflen, const char *s)
 __attribute__((__visibility__("hidden")));
 /* Make sure the UTF8_toUpperFrom hash is locked! */
-extern str str_upper(str *buf, size_t *buflen, str s)
+extern str str_upper(str *buf, size_t *buflen, const char *s)
 __attribute__((__visibility__("hidden")));
 
-extern str str_strip(str *buf, size_t *buflen, str s)
+extern str str_strip(str *buf, size_t *buflen, const char *s)
 __attribute__((__visibility__("hidden")));
-extern str str_ltrim(str *buf, size_t *buflen, str s)
+extern str str_ltrim(str *buf, size_t *buflen, const char *s)
 __attribute__((__visibility__("hidden")));
-extern str str_rtrim(str *buf, size_t *buflen, str s)
+extern str str_rtrim(str *buf, size_t *buflen, const char *s)
 __attribute__((__visibility__("hidden")));
-extern str str_strip2(str *buf, size_t *buflen, str s, str s2)
+extern str str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
 __attribute__((__visibility__("hidden")));
-extern str str_ltrim2(str *buf, size_t *buflen, str s, str s2)
+extern str str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 __attribute__((__visibility__("hidden")));
-extern str str_rtrim2(str *buf, size_t *buflen, str s, str s2)
+extern str str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 __attribute__((__visibility__("hidden")));
-extern str str_lpad(str *buf, size_t *buflen, str s, int len)
+extern str str_lpad(str *buf, size_t *buflen, const char *s, int len)
 __attribute__((__visibility__("hidden")));
-extern str str_rpad(str *buf, size_t *buflen, str s, int len)
+extern str str_rpad(str *buf, size_t *buflen, const char *s, int len)
 __attribute__((__visibility__("hidden")));
-extern str str_lpad3(str *buf, size_t *buflen, str s, int len, str s2)
+extern str str_lpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
 __attribute__((__visibility__("hidden")));
-extern str str_rpad3(str *buf, size_t *buflen, str s, int len, str s2)
-__attribute__((__visibility__("hidden")));
-
-extern int str_search(str s, str s2)
-__attribute__((__visibility__("hidden")));
-extern int str_reverse_str_search(str s, str s2)
-__attribute__((__visibility__("hidden")));
-extern int str_locate2(str needle, str haystack, int start)
+extern str str_rpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
 __attribute__((__visibility__("hidden")));
 
-extern str str_splitpart(str *buf, size_t *buflen, str s, str s2, int f)
+extern int str_search(const char *s, const char *s2)
 __attribute__((__visibility__("hidden")));
-extern str str_insert(str *buf, size_t *buflen, str s, int strt, int l, str s2)
+extern int str_reverse_str_search(const char *s, const char *s2)
 __attribute__((__visibility__("hidden")));
-extern str str_substitute(str *buf, size_t *buflen, str s, str src, str dst, bit repeat)
+extern int str_locate2(const char *needle, const char *haystack, int start)
+__attribute__((__visibility__("hidden")));
+
+extern str str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f)
+__attribute__((__visibility__("hidden")));
+extern str str_insert(str *buf, size_t *buflen, const char *s, int strt, int l, const char *s2)
+__attribute__((__visibility__("hidden")));
+extern str str_substitute(str *buf, size_t *buflen, const char *s, const char *src, const char *dst, bit repeat)
 __attribute__((__visibility__("hidden")));
 
 #endif /* __string_H__ */

@@ -1,4 +1,4 @@
-’statement ok
+statement ok
 START TRANSACTION
 
 statement ok

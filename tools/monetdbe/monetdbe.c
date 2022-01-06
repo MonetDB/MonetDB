@@ -1269,12 +1269,11 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	for (size_t i = 0; i < nparams; i++) {
 
-		char* table	= BUNtvar(btable_iter, i);
-
+		const char *table	= BUNtvar(btable_iter, i);
 		sql_type *t = SA_ZNEW(sa, sql_type);
-		char* name = BUNtvar(btype_iter, i);
+		const char *name = BUNtvar(btype_iter, i);
 		t->base.name = SA_STRDUP(sa, name);
-		char* impl = BUNtvar(bimpl_iter, i);
+		const char *impl = BUNtvar(bimpl_iter, i);
 		t->impl	= SA_STRDUP(sa, impl);
 		t->localtype = ATOMindex(t->impl);
 
@@ -1301,7 +1300,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		else {
 			// output argument
 
-			char* column = BUNtvar(bcolumn_iter, i);
+			const char *column = BUNtvar(bcolumn_iter, i);
 			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false, false);
 			append(rets, c);
 		}
@@ -2624,7 +2623,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			char *t = (char *)BUNtail(li, p);
+			const char *t = (const char*)BUNtvar(li, p);
 			if (strcmp(t, str_nil) == 0) {
 				bat_data->data[j] = NULL;
 			} else {
@@ -2703,7 +2702,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			blob *t = (blob *)BUNtail(li, p);
+			const blob *t = (const blob *)BUNtvar(li, p);
 			if (t->nitems == ~(size_t)0) {
 				bat_data->data[j].size = 0;
 				bat_data->data[j].data = NULL;
@@ -2741,7 +2740,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			void *t = BUNtail(li, p);
+			const void *t = BUNtail(li, p);
 			if (BATatoms[bat_type].atomCmp(t, BATatoms[bat_type].atomNull) == 0) {
 				bat_data->data[j] = NULL;
 			} else {

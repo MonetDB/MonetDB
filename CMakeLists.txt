@@ -88,7 +88,7 @@ monetdb_configure_misc()
 # Some custom target will need these setting.
 include(monetdb-custom-targets)
 
-if(NOT ${CMAKE_INSTALL_PREFIX} STREQUAL "/usr")
+if(NOT ${CMAKE_INSTALL_PREFIX} STREQUAL "/usr" AND NOT ${CPACK_PACKAGING_INSTALL_PREFIX} STREQUAL "/")
   SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
   SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
