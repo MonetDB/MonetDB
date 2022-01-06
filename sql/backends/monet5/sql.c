@@ -1005,8 +1005,8 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vals = Tloc(bn, 0);
 	for (BUN i = 0; i < q; i++) {
 		oid p1 = canditer_next(&ci1) - off1, p2 = canditer_next(&ci2) - off2;
-		const char *sname = (str) BUNtvar(schi, p1);
-		const char *seqname = (str) BUNtvar(seqi, p2);
+		const char *sname = BUNtvar(schi, p1);
+		const char *seqname = BUNtvar(seqi, p2);
 
 		if (strNil(sname) || strNil(seqname)) {
 			vals[i] = lng_nil;
@@ -2307,7 +2307,8 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat scaleId= *getArgReference_bat(stk, pci,5);
 	bat bid;
 	int i, res, ok;
-	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	const char *tblname, *colname, *tpename;
+	str msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
@@ -2398,7 +2399,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stream *s = NULL;
 	bat bid;
 	int i, res, ok;
-	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	const char *tblname, *colname, *tpename;
+	str msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
@@ -2542,7 +2544,8 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat lenId= *getArgReference_bat(stk, pci,4);
 	bat scaleId= *getArgReference_bat(stk, pci,5);
 	int i, res, ok;
-	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	const char *tblname, *colname, *tpename;
+	str msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
@@ -2632,7 +2635,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	int i, res, ok;
 	stream *s = NULL;
-	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	const char *tblname, *colname, *tpename;
+	str msg = MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;

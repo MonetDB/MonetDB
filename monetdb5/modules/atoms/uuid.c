@@ -323,7 +323,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {
@@ -336,7 +336,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	} else {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {

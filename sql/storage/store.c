@@ -575,7 +575,7 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	rs = store->table_api.rids_select(tr, find_sql_column(ranges, "table_id"), &pt->member, &pt->member, NULL);
 	if ((rid = store->table_api.rids_next(rs)) != oid_nil) {
 		ptr cbat;
-		str v;
+		const char *v;
 
 		pt->with_nills = (bit) store->table_api.column_find_bte(tr, find_sql_column(ranges, "with_nulls"), rid);
 		v = store->table_api.column_find_string_start(tr, find_sql_column(ranges, "minimum"), rid, &cbat);
@@ -608,9 +608,8 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		ptr cbat;
-		str v;
 
-		v = store->table_api.column_find_string_start(tr, find_sql_column(values, "value"), rid, &cbat);
+		const char *v = store->table_api.column_find_string_start(tr, find_sql_column(values, "value"), rid, &cbat);
 		if (strNil(v)) { /* check for null value */
 			pt->with_nills = true;
 		} else {
@@ -634,7 +633,7 @@ load_part(sql_trans *tr, sql_table *mt, oid rid)
 	sql_table *objects = find_sql_table(tr, syss, "objects");
 	sqlid id;
 	sqlstore *store = tr->store;
-	str v;
+	const char *v;
 	ptr cbat;
 
 	assert(isMergeTable(mt) || isReplicaTable(mt));
@@ -832,7 +831,7 @@ load_type(sql_trans *tr, sql_schema *s, oid rid)
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *types = find_sql_table(tr, syss, "types");
 	sqlid tid;
-	str v;
+	const char *v;
 	ptr cbat;
 
 	tid = store->table_api.column_find_sqlid(tr, find_sql_column(types, "id"), rid);
@@ -860,7 +859,7 @@ load_arg(sql_trans *tr, sql_func *f, oid rid)
 	unsigned int digits, scale;
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *args = find_sql_table(tr, syss, "args");
-	str v, tpe;
+	const char *v, *tpe;
 	ptr cbat;
 
 	v = store->table_api.column_find_string_start(tr, find_sql_column(args, "name"), rid, &cbat);
@@ -893,7 +892,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	sql_table *funcs = find_sql_table(tr, syss, "functions");
 	oid rid;
 	bool update_env;	/* hacky way to update env function */
-	str v;
+	const char *v;
 	ptr cbat;
 
 	rid = store->table_api.column_find_row(tr, find_sql_column(funcs, "id"), &fid, NULL);
@@ -986,7 +985,7 @@ load_seq(sql_trans *tr, sql_schema * s, oid rid)
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *seqs = find_sql_table(tr, syss, "sequences");
 	sqlid sid;
-	str v;
+	const char *v;
 	ptr cbat;
 
 	sid = store->table_api.column_find_sqlid(tr, find_sql_column(seqs, "id"), rid);

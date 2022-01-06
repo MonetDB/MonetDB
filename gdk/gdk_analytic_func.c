@@ -1001,7 +1001,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			for (; k < i;) {				\
 				j = k;					\
 				do {					\
-					void *next = BUNtvar(bi, k);	\
+					const void *next = BUNtvar(bi, k);	\
 					if (atomcmp(next, nil) != 0) {	\
 						if (atomcmp(curval, nil) == 0) \
 							curval = next;	\
@@ -1019,7 +1019,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			for (; k < i;) {				\
 				j = k;					\
 				do {					\
-					void *next = BUNtloc(bi, k);	\
+					const void *next = BUNtloc(bi, k);	\
 					if (atomcmp(next, nil) != 0) {	\
 						if (atomcmp(curval, nil) == 0) \
 							curval = next;	\
@@ -1043,7 +1043,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		l = i - 1;						\
 		if (ATOMvarsized(tpe)) {				\
 			for (j = l; ; j--) {				\
-				void *next = BUNtvar(bi, j);		\
+				const void *next = BUNtvar(bi, j);		\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1065,7 +1065,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			}						\
 		} else {						\
 			for (j = l; ; j--) {				\
-				void *next = BUNtloc(bi, j);		\
+				const void *next = BUNtloc(bi, j);		\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1092,10 +1092,10 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 #define ANALYTICAL_MIN_MAX_CALC_OTHERS_ALL_ROWS(GT_LT)			\
 	do {								\
-		void *curval = (void*) nil;				\
+		const void *curval = (void*) nil;				\
 		if (ATOMvarsized(tpe)) {				\
 			for (j = k; j < i; j++) {			\
-				void *next = BUNtvar(bi, j);		\
+				const void *next = BUNtvar(bi, j);		\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1108,7 +1108,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 					goto cleanup;			\
 		} else {						\
 			for (j = k; j < i; j++) {			\
-				void *next = BUNtloc(bi, j);		\
+				const void *next = BUNtloc(bi, j);		\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1128,14 +1128,14 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	do {								\
 		if (ATOMvarsized(tpe)) {				\
 			for (; k < i; k++) {				\
-				void *next = BUNtvar(bi, k);		\
+				const void *next = BUNtvar(bi, k);		\
 				if ((res = tfastins_nocheckVAR(r, k, next)) != GDK_SUCCEED) \
 					goto cleanup;			\
 				has_nils |= atomcmp(next, nil) == 0;	\
 			}						\
 		} else {						\
 			for (; k < i; k++) {				\
-				void *next = BUNtloc(bi, k);		\
+				const void *next = BUNtloc(bi, k);		\
 				memcpy(rcast, next, width);		\
 				rcast += width;				\
 				has_nils |= atomcmp(next, nil) == 0;	\
