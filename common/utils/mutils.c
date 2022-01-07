@@ -589,6 +589,8 @@ MT_stat(const char *pathname, struct _stat64 *st)
 	return ret;
 }
 
+#define RETRIES 10
+
 int
 MT_rmdir(const char *pathname)
 {
@@ -597,16 +599,36 @@ MT_rmdir(const char *pathname)
 	if (wpathname == NULL)
 		return -1;
 
-	ret = _wrmdir(wpathname);
-	if (ret < 0 && errno != ENOENT) {
+	for (int i = 0; i < RETRIES; i++) {
+		ret = _wrmdir(wpathname);
+		if (ret == 0 || errno == ENOENT)
+			break;
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
 //		fprintf(stderr, "#Retry rmdir %s\n", pathname);
-		Sleep(100);	/* wait a little */
-		ret = _wrmdir(wpathname);
+		Sleep(10);	/* wait a little */
 	}
 	free(wpathname);
+	return ret;
+}
+
+static inline int
+WMT_remove(const wchar_t *wpathname)
+{
+	int ret;
+
+	SetFileAttributesW(wpathname, FILE_ATTRIBUTE_NORMAL);
+	for (int i = 0; i < RETRIES; i++) {
+		ret = _wunlink(wpathname);
+		if (ret == 0 || errno == ENOENT)
+			break;
+		/* it could be the <expletive deleted> indexing
+		 * service which prevents us from doing what we have a
+		 * right to do, so try again (once) */
+//		fprintf(stderr, "#Retry unlink %ls\n", wpathname);
+		Sleep(10);	/* wait a little */
+	}
 	return ret;
 }
 
@@ -618,16 +640,7 @@ MT_remove(const char *pathname)
 	if (wpathname == NULL)
 		return -1;
 
-	SetFileAttributesW(wpathname, FILE_ATTRIBUTE_NORMAL);
-	ret = _wunlink(wpathname);
-	if (ret < 0 && errno != ENOENT) {
-		/* it could be the <expletive deleted> indexing
-		 * service which prevents us from doing what we have a
-		 * right to do, so try again (once) */
-//		fprintf(stderr, "#Retry unlink %s\n", pathname);
-		Sleep(100);	/* wait a little */
-		ret = _wunlink(wpathname);
-	}
+	ret = WMT_remove(wpathname);
 	free(wpathname);
 	return ret;
 }
@@ -641,18 +654,21 @@ MT_rename(const char *old, const char *dst)
 	wdst = utf8towchar(dst);
 
 	if (wold && wdst) {
-		ret = _wrename(wold, wdst);
-		if (ret < 0 && errno == EEXIST) {
-			(void) _wunlink(wdst);
+		for (int i = 0; i < RETRIES; i++) {
 			ret = _wrename(wold, wdst);
-		}
-		if (ret < 0 && errno != ENOENT) {
+			if (ret < 0 && errno == EEXIST) {
+				if ((ret = WMT_remove(wdst)) < 0 &&
+				    errno != ENOENT)
+					break;
+				ret = _wrename(wold, wdst);
+			}
+			if (ret == 0 || errno == ENOENT)
+				break;
 			/* it could be the <expletive deleted> indexing
 			 * service which prevents us from doing what we have a
 			 * right to do, so try again (once) */
 //			fprintf(stderr, "#Retry rename %s %s\n", old, dst);
-			Sleep(100);	/* wait a little */
-			ret = _wrename(wold, wdst);
+			Sleep(10);	/* wait a little */
 		}
 	}
 	free(wold);
