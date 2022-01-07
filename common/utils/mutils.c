@@ -598,16 +598,14 @@ MT_rmdir(const char *pathname)
 		return -1;
 
 	ret = _wrmdir(wpathname);
-#if 0
 	if (ret < 0 && errno != ENOENT) {
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		TRC_DEBUG(IO_, "Retry rmdir %s\n", pathname);
-		MT_sleep_ms(100);	/* wait a little */
+//		fprintf(stderr, "#Retry rmdir %s\n", pathname);
+		Sleep(100);	/* wait a little */
 		ret = _wrmdir(wpathname);
 	}
-#endif
 	free(wpathname);
 	return ret;
 }
@@ -622,16 +620,14 @@ MT_remove(const char *pathname)
 
 	SetFileAttributesW(wpathname, FILE_ATTRIBUTE_NORMAL);
 	ret = _wunlink(wpathname);
-#if 0
 	if (ret < 0 && errno != ENOENT) {
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		TRC_DEBUG(IO_, "Retry unlink %s\n", pathname);
-		MT_sleep_ms(100);	/* wait a little */
+//		fprintf(stderr, "#Retry unlink %s\n", pathname);
+		Sleep(100);	/* wait a little */
 		ret = _wunlink(wpathname);
 	}
-#endif
 	free(wpathname);
 	return ret;
 }
@@ -650,16 +646,14 @@ MT_rename(const char *old, const char *dst)
 			(void) _wunlink(wdst);
 			ret = _wrename(wold, wdst);
 		}
-#if 0
 		if (ret < 0 && errno != ENOENT) {
 			/* it could be the <expletive deleted> indexing
 			 * service which prevents us from doing what we have a
 			 * right to do, so try again (once) */
-			TRC_DEBUG(IO_, "Retry rename %s %s\n", old, dst);
-			MT_sleep_ms(100);	/* wait a little */
+//			fprintf(stderr, "#Retry rename %s %s\n", old, dst);
+			Sleep(100);	/* wait a little */
 			ret = _wrename(wold, wdst);
 		}
-#endif
 	}
 	free(wold);
 	free(wdst);
