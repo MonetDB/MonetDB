@@ -1,6 +1,7 @@
 from MonetDBtesting.sqltest import SQLTestCase
 
 with SQLTestCase() as tc:
+    tc.connect()
     tc.execute("create table foo(id bigserial, value int);").assertSucceeded()
     tc.execute("create table bar(id bigserial, value int);").assertSucceeded()
     # test cross product

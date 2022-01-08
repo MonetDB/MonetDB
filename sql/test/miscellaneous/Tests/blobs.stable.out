@@ -1,0 +1,27 @@
+stdout of test 'blobs` in directory 'sql/test/sql_dump` itself:
+
+
+# 10:39:12 >  
+# 10:39:12 >  "/usr/bin/python3" "blobs.SQL.py" "blobs"
+# 10:39:12 >  
+
+START TRANSACTION;
+SET SCHEMA "sys";
+CREATE TABLE "sys"."myt" (
+	"c0" BINARY LARGE OBJECT,
+	"c1" INTEGER
+);
+COPY 7 RECORDS INTO "sys"."myt" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+""	1
+""	1
+"AB"	1
+"A1EFD3"	1
+NULL	NULL
+NULL	1
+""	NULL
+COMMIT;
+
+# 10:39:14 >  
+# 10:39:14 >  "Done."
+# 10:39:14 >  
+

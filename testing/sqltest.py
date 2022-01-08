@@ -481,6 +481,7 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
             self.lineno = lineno
             if query:
                 self.query = query
+                crs = None
                 try:
                     conn = self.test_case.conn_ctx.connect()
                     crs = conn.cursor()
@@ -495,6 +496,9 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
                     self.err_code, self.err_message = self._parse_error(e.args[0])
                 except (OSError, ValueError) as e:
                     self.test_run_error = e
+                finally:
+                    if crs is not None:
+                        crs.close()
             self.did_run = True
         return self
 
