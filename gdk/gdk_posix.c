@@ -734,6 +734,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		mode3 = PAGE_READWRITE;
 		mode4 = FILE_MAP_WRITE;
 	}
+	mode2 |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = 0;

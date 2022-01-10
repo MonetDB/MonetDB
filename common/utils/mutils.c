@@ -498,7 +498,7 @@ MT_lockf(const char *filename, int mode)
 		 * directly */
 		fh = CreateFileW(wfilename,
 				GENERIC_READ | GENERIC_WRITE, 0,
-				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED, NULL);
 		free(wfilename);
 		if (fh == INVALID_HANDLE_VALUE)
 			return -2;
@@ -560,8 +560,8 @@ MT_fopen(const char *filename, const char *mode)
 	wfilename = utf8towchar(filename);
 	wmode = utf8towchar(mode);
 	FILE *f = NULL;
-	if (wfilename != NULL && wmode != NULL)
-		f = _wfopen(wfilename, wmode);
+	if (wfilename != NULL && wmode != NULL && (f = _wfopen(wfilename, wmode)) != NULL && strchr(mode, 'w') != NULL)
+		SetFileAttributesW(wfilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
 	free(wfilename);
 	free(wmode);
 	return f;
@@ -576,6 +576,8 @@ MT_open(const char *filename, int flags)
 	int fd;
 	if (_wsopen_s(&fd, wfilename, flags, _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0)
 		fd = -1;
+	else if (flags & O_CREAT)
+		SetFileAttributesW(wfilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
 	free(wfilename);
 	return fd;
 }
