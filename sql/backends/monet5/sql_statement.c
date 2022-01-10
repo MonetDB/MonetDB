@@ -1454,13 +1454,16 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		const char *mod = calcRef;
 		const char *op = "=";
 		int k;
+		int notin = 0;
 
 		switch (cmptype) {
 		case mark_in:
-		case mark_notin:
 		case cmp_equal:
 			op = "=";
 			break;
+		case mark_notin:
+			notin = 1;
+			/* fall through */
 		case cmp_notequal:
 			op = "!=";
 			break;
@@ -1497,6 +1500,14 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		if (is_semantics)
 			q = pushBit(mb, q, TRUE);
 		k = getDestVar(q);
+
+		if (notin) {
+			q = newStmt(mb, batcalcRef, "ifthenelse");
+			q = pushArgument(mb, q, k);
+			q = pushBit(mb, q, FALSE);
+			q = pushBit(mb, q, TRUE);
+			k = getDestVar(q);
+		}
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
