@@ -192,7 +192,7 @@ MNDBStatistics(ODBCStmt *stmt,
 		       "i.name as index_name, "
 		       "case i.type when 0 then cast(%d as smallint) "
 		                   "else cast(%d as smallint) end as type, "
-		       "cast(kc.nr as smallint) as ordinal_position, "
+		       "cast(kc.nr + 1 as smallint) as ordinal_position, "
 		       "c.name as column_name, "
 		       "cast(null as char(1)) as asc_or_desc, "
 		       "cast(null as integer) as cardinality, "
@@ -209,7 +209,8 @@ MNDBStatistics(ODBCStmt *stmt,
 		      "i.id = kc.id and "
 		      "t.id = c.table_id and "
 		      "kc.name = c.name and "
-		      "(k.type is null or k.type = 1)",
+		      "k.name = i.name and "
+		      "k.type in (0, 1)",
 		stmt->Dbc->dbname,
 		SQL_INDEX_HASHED, SQL_INDEX_OTHER);
 	assert(pos < 1000);
