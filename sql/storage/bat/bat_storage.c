@@ -2256,8 +2256,10 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 				unlock_table(tr->store, t->base.id);
 				return LOG_CONFLICT;
 			}
-			if (!split_segment(s->segs, seg, p, tr, rid, 1, true))
+			if (!split_segment(s->segs, seg, p, tr, rid, 1, true)) {
+				unlock_table(tr->store, t->base.id);
 				return LOG_ERR;
+			}
 			break;
 		}
 	}
