@@ -2264,7 +2264,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 		}
 	}
 	unlock_table(tr->store, t->base.id);
-	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
 	return LOG_OK;
 }
@@ -2382,7 +2382,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 	}
 	if (i != oi)
 		bat_destroy(i);
-	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
 	return ok;
 }
@@ -4310,7 +4310,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		unlock_table(tr->store, t->base.id);
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
+	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
 		in_transaction = true;
 	}
@@ -4386,7 +4386,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 		unlock_table(tr->store, t->base.id);
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
+	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
 		in_transaction = true;
 	}
