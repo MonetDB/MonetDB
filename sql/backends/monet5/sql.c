@@ -1850,7 +1850,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (!schema || !seq_name || !(seqs = find_sql_schema(tr, schema)))
 					continue;
 
-				assert(seqs->base.id == s->base.id);
+				/* TODO - At the moment the sequence may not be stored in the same schema as the table itself */
 				if ((seq = find_sql_sequence(tr, seqs, seq_name))) {
 					switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
 						case -1:
