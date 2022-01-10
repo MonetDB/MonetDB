@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -4330,19 +4330,18 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 		gbe = sa_list(sql->sa);
 		/* push groupby to right, group on join exps */
 		if (j->exps) for (n = j->exps->h; n; n = n->next) {
-			sql_exp *ce = n->data, *e;
+			sql_exp *ce = n->data, *l = ce->l, *r = ce->r, *e;
 
 			/* get left/right hand of e_cmp */
 			assert(ce->type == e_cmp);
-			if (ce->flag != cmp_equal)
+			if (ce->flag == cmp_equal && is_alias(l->type) && is_alias(r->type) &&
+				(((e = rel_find_exp(cr, l)) && rel_find_exp(cl, r)) ||
+				 ((e = rel_find_exp(cr, r)) && rel_find_exp(cl, l)))) {
+				e = exp_ref(sql, e);
+				list_append(gbe, e);
+			} else {
 				return rel;
-			e = rel_find_exp(cr, ce->l);
-			if (!e)
-				e = rel_find_exp(cr, ce->r);
-			if (!e)
-				return rel;
-			e = exp_ref(sql, e);
-			list_append(gbe, e);
+			}
 		}
 		if (!left)
 			cr = j->r = rel_groupby(sql, cr, gbe);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -184,8 +184,10 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		msg.msg_controllen = cmsg->cmsg_len;
 		msg.msg_flags = 0;
 
+		/* Jan2022: disabled logging of next info message to reduce merovingian.log size:
 		Mfprintf(stdout, "target connection is on local UNIX domain socket, "
 				"passing on filedescriptor instead of proxying\n");
+		*/
 		if (sendmsg(ssock, &msg, 0) < 0) {
 			closesocket(ssock);
 			return(newErr("could not send initial byte: %s", strerror(errno)));

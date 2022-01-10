@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -93,7 +93,7 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	sql_rel *ins = inserts->r;
 
 	assert(is_project(ins->op) || ins->op == op_table);
-	if (list_length(i->columns) <= 1 || i->type == no_idx) {
+	if (list_length(i->columns) <= 1 || non_updatable_index(i->type)) {
 		/* dummy append */
 		inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
 		list_append(ins->exps, exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
@@ -243,7 +243,7 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 	for (node *n = ol_first_node(t->idxs); n; n = n->next) {
 		sql_idx *i = n->data;
 
-		if (hash_index(i->type) || i->type == no_idx) {
+		if (hash_index(i->type) || non_updatable_index(i->type)) {
 			rel_insert_hash_idx(sql, alias, i, inserts);
 		} else if (i->type == join_idx) {
 			rel_insert_join_idx(sql, alias, i, inserts);
@@ -691,7 +691,7 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	sql_rel *ups = updates->r;
 
 	assert(is_project(ups->op) || ups->op == op_table);
-	if (list_length(i->columns) <= 1 || i->type == no_idx) {
+	if (list_length(i->columns) <= 1 || non_updatable_index(i->type)) {
 		h = exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label);
 	} else {
 		it = sql_bind_localtype("int");
@@ -889,7 +889,7 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		 * Ie todo check for new indices.
 		 */
 
-		if (hash_index(i->type) || i->type == no_idx) {
+		if (hash_index(i->type) || non_updatable_index(i->type)) {
 			rel_update_hash_idx(sql, alias, i, relup);
 		} else if (i->type == join_idx) {
 			rel_update_join_idx(sql, alias, i, relup);

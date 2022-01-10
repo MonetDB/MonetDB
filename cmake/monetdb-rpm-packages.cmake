@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 include(os_release_info)
@@ -24,13 +24,12 @@ set(CPACK_RPM_PACKAGE_RELOCATABLE OFF)
 
 set(CPACK_RPM_monetdb_PACKAGE_NAME "${CMAKE_PROJECT_NAME}")
 set(CPACK_RPM_monetdb_FILE_NAME "${CPACK_RPM_monetdb_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
-set(CPACK_RPM_monetdb_PACKAGE_SUGGESTS "%{name}-client%{?_isa} = %{version}-%{release}")
+#set(CPACK_RPM_monetdb_PACKAGE_SUGGESTS "%{name}-client%{?_isa} = %{version}-%{release}")
 
 set(CPACK_RPM_monetdbdev_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-devel")
 set(CPACK_RPM_monetdbdev_FILE_NAME "${CPACK_RPM_monetdbdev_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_monetdbdev_PACKAGE_SUMMARY "MonetDB development files")
-set(CPACK_RPM_monetdbdev_PACKAGE_REQUIRES
-  "%{name}%{?_isa} = %{version}-%{release}, %{name}-stream-devel%{?_isa} = %{version}-%{release}")
+set(CPACK_RPM_monetdbdev_PACKAGE_REQUIRES "%{name}%{?_isa} = %{version}-%{release}, %{name}-stream-devel%{?_isa} = %{version}-%{release}")
 
 set(CPACK_RPM_stream_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-stream")
 set(CPACK_RPM_stream_FILE_NAME "${CPACK_RPM_stream_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
@@ -58,7 +57,7 @@ set(CPACK_RPM_odbc_PACKAGE_REQUIRES "%{name}-client%{?_isa} = %{version}-%{relea
 set(CPACK_RPM_odbc_PACKAGE_REQUIRES_POST "unixODBC")
 set(CPACK_RPM_odbc_PACKAGE_REQUIRES_POSTUN "unixODBC")
 
-set(CPACK_RPM_clienttest_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-client-test")
+set(CPACK_RPM_clienttest_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-client-tests")
 set(CPACK_RPM_clienttest_FILE_NAME "${CPACK_RPM_clienttest_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_clienttest_PACKAGE_SUMMARY "MonetDB Client tests package")
 set(CPACK_RPM_clienttest_PACKAGE_REQUIRES "MonetDB5-server%{?_isa} = %{version}-%{release}, %{name}-client%{?_isa} = %{version}-%{release}, %{name}-client-odbc%{?_isa} = %{version}-%{release}, %{name}-SQL-server5%{?_isa} = %{version}-%{release}, python3-pymonetdb >= 1.0.6")
@@ -72,44 +71,59 @@ set(CPACK_RPM_geom_PACKAGE_REQUIRES "MonetDB5-server%{?_isa} = %{version}-%{rele
 set(CPACK_RPM_rapi_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-R")
 set(CPACK_RPM_rapi_FILE_NAME "${CPACK_RPM_rapi_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_rapi_PACKAGE_SUMMARY "Integration of MonetDB and R, allowing use of R from within SQL")
-set(CPACK_RPM_rapi_PACKAGE_REQUIRES "MonetDB-SQL-server5%{?_isa} = %{version}-%{release}")
+set(CPACK_RPM_rapi_PACKAGE_REQUIRES "%{name}-SQL-server5%{?_isa} = %{version}-%{release}")
 
 set(CPACK_RPM_pyapi3_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-python3")
 set(CPACK_RPM_pyapi3_FILE_NAME "${CPACK_RPM_pyapi3_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_pyapi3_PACKAGE_SUMMARY "Integration of MonetDB and Python, allowing use of Python from within SQL")
-set(CPACK_RPM_pyapi3_PACKAGE_REQUIRES "MonetDB-SQL-server5%{?_isa} = %{version}-%{release}")
+set(CPACK_RPM_pyapi3_PACKAGE_REQUIRES "%{name}-SQL-server5%{?_isa} = %{version}-%{release}")
 
 set(CPACK_RPM_fits_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-cfitsio")
 set(CPACK_RPM_fits_FILE_NAME "${CPACK_RPM_fits_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_fits_PACKAGE_SUMMARY "MonetDB: Add on module that provides support for FITS files")
-set(CPACK_RPM_fits_PACKAGE_REQUIRES "MonetDB-SQL-server5%{?_isa} = %{version}-%{release}")
+set(CPACK_RPM_fits_PACKAGE_REQUIRES "%{name}-SQL-server5%{?_isa} = %{version}-%{release}")
 
-set(CPACK_RPM_server_PACKAGE_NAME "MonetDB5-server")
+set(CPACK_RPM_server_PACKAGE_NAME "${CMAKE_PROJECT_NAME}5-server")
 set(CPACK_RPM_server_FILE_NAME "${CPACK_RPM_server_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_server_PACKAGE_SUMMARY "MonetDB - Monet Database Management System")
 set(CPACK_RPM_server_PACKAGE_REQUIRES "%{name}-client%{?_isa} = %{version}-%{release}")
 set(CPACK_RPM_server_PACKAGE_RECOMMENDS "%{name}-SQL-server5%{?_isa} = %{version}-%{release}")
 
-set(CPACK_RPM_server_PACKAGE_SUGGESTS "%{name}-client%{?_isa} = %{version}-%{release}")
+#set(CPACK_RPM_server_PACKAGE_SUGGESTS "%{name}-client%{?_isa} = %{version}-%{release}")
 set(CPACK_RPM_server_PACKAGE_CONFLICTS "python-pymonetdb < 1.0.6")
 # TODO: check for rhel
 set(CPACK_RPM_server_PACKAGE_REQUIRES_PRE "shadow-utils, systemd")
 
-set(CPACK_RPM_serverdev_PACKAGE_NAME "MonetDB5-server-devel")
+set(CPACK_RPM_serverdev_PACKAGE_NAME "${CMAKE_PROJECT_NAME}5-server-devel")
 set(CPACK_RPM_serverdev_FILE_NAME "${CPACK_RPM_serverdev_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_serverdev_PACKAGE_SUMMARY "MonetDB development files")
 set(CPACK_RPM_serverdev_PACKAGE_REQUIRES "MonetDB5-server%{?_isa} = %{version}-%{release}, %{name}-devel%{?_isa} = %{version}-%{release}")
+
+set(CPACK_RPM_embedded_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-embedded")
+set(CPACK_RPM_embedded_FILE_NAME "${CPACK_RPM_embedded_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
+set(CPACK_RPM_embedded_PACKAGE_SUMMARY "MonetDBe - Monet Embedded Database Management System")
+set(CPACK_RPM_embedded_PACKAGE_REQUIRES "%{name}-SQL-server5%{?_isa} = %{version}-%{release}")
+
+set(CPACK_RPM_embeddeddev_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-embedded-devel")
+set(CPACK_RPM_embeddeddev_FILE_NAME "${CPACK_RPM_embeddeddev_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
+set(CPACK_RPM_embeddeddev_PACKAGE_SUMMARY "MonetDBe development files")
+set(CPACK_RPM_embeddeddev_PACKAGE_REQUIRES "MonetDB-embedded%{?_isa} = %{version}-%{release}, %{name}-devel%{?_isa} = %{version}-%{release}")
+
+set(CPACK_RPM_mbeddedtest_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-embedded-tests")
+set(CPACK_RPM_mbeddedtest_FILE_NAME "${CPACK_RPM_mbeddedtest_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
+set(CPACK_RPM_mbeddedtest_PACKAGE_SUMMARY "MonetDBe test files")
+set(CPACK_RPM_mbeddedtest_PACKAGE_REQUIRES "%{name}-embedded%{?_isa} = %{version}-%{release}")
 
 set(CPACK_RPM_sql_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-SQL-server5")
 set(CPACK_RPM_sql_FILE_NAME "${CPACK_RPM_sql_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_sql_PACKAGE_SUMMARY "MonetDB5 SQL server modules")
 set(CPACK_RPM_sql_PACKAGE_REQUIRES_PRE "MonetDB5-server%{?_isa} = %{version}-%{release}")
-set(CPACK_RPM_sql_PACKAGE_SUGGESTS "%{name}-client%{?_isa} = %{version}-%{release}")
+#set(CPACK_RPM_sql_PACKAGE_SUGGESTS "%{name}-client%{?_isa} = %{version}-%{release}")
 # TODO: systemd_requires?
 
 set(CPACK_RPM_testing_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-testing")
 set(CPACK_RPM_testing_FILE_NAME "${CPACK_RPM_testing_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
-set(CPACK_RPM_TESTING_PACKAGE_SUMMARY "MonetDB - Monet Database Management System")
+set(CPACK_RPM_testing_PACKAGE_SUMMARY "MonetDB - Monet Database Management System")
 
 set(CPACK_RPM_pytesting_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-testing-python")
 set(CPACK_RPM_pytesting_FILE_NAME "${CPACK_RPM_pytesting_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")

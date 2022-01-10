@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 
@@ -287,7 +287,6 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 {
 	lng t0 = 0;
 	BATiter bi;
-	str cs;
 	BUN i, ncand;
 	size_t hidx;
 	oid x;
@@ -323,7 +322,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	cpp = &cp;
 	for (i = 0; i < ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		cs = (str)BUNtvar(bi, x);
+		const char *cs = BUNtvar(bi, x);
 		if (!strNil(cs)) {
 			pi.s = cs;
 			pi.pos = 0;
@@ -731,7 +730,6 @@ STRMPcreate(BAT *b, BAT *s)
 			BUN i, ncand;
 			oid x;
 			struct canditer ci;
-			str cs;
 			uint64_t *dh;
 
 			if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
@@ -745,7 +743,7 @@ STRMPcreate(BAT *b, BAT *s)
 			bi = bat_iterator(pb);
 			for (i = 0; i < ncand; i++) {
 				x = canditer_next(&ci);
-				cs = (str)BUNtvar(bi, x);
+				const char *cs = BUNtvar(bi, x);
 				if (!strNil(cs))
 					*dh++ = STRMPmakebitstring(cs, r);
 				else
@@ -973,7 +971,6 @@ STRMPcreate(BAT *b, BAT *s)
 	lng t0 = 0;
 	BATiter bi;
 	BUN i, ncand;
-	str cs;
 	Strimps *h;
 	uint64_t *dh;
 	BAT *pb;
@@ -1007,7 +1004,7 @@ STRMPcreate(BAT *b, BAT *s)
 	bi = bat_iterator(b);
 	for (i = 0; i < ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		cs = (str)BUNtvar(bi, x);
+		const char *cs = BUNtvar(bi, x);
 		if (!strNil(cs))
 			*dh++ = STRMPmakebitstring(cs, h);
 		else

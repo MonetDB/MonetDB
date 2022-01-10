@@ -233,6 +233,8 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!isTable(t))
 		throw(SQL, "dict.compress", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (isTempTable(t))
+		throw(SQL, "dict.compress", SQLSTATE(42000) "columns from temporary tables cannot be compressed");
 	if (t->system)
 		throw(SQL, "dict.compress", SQLSTATE(42000) "columns from system tables cannot be compressed");
 	sql_column *c = find_sql_column(t, cname);

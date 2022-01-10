@@ -1433,6 +1433,27 @@ const char *wlrRef;
 Workingset workingset[THREADS];
 const char *zero_or_oneRef;
 
+# monetdbe
+char *monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, monetdbe_column **input, size_t column_count);
+char *monetdbe_bind(monetdbe_statement *stmt, void *data, size_t parameter_nr);
+char *monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result *result);
+char *monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt);
+int monetdbe_close(monetdbe_database db);
+char *monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);
+char *monetdbe_dump_table(monetdbe_database dbhdl, const char *schema_name, const char *table_name, const char *backupfile);
+char *monetdbe_error(monetdbe_database db);
+char *monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cnt *affected_rows);
+char *monetdbe_get_autocommit(monetdbe_database dbhdl, int *result);
+char *monetdbe_get_columns(monetdbe_database dbhdl, const char *schema_name, const char *table_name, size_t *column_count, monetdbe_column **columns);
+int monetdbe_in_transaction(monetdbe_database dbhdl);
+const void *monetdbe_null(monetdbe_database dbhdl, monetdbe_types t);
+int monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *opts);
+char *monetdbe_prepare(monetdbe_database dbhdl, char *query, monetdbe_statement **stmt, monetdbe_result **result);
+char *monetdbe_query(monetdbe_database dbhdl, char *query, monetdbe_result **result, monetdbe_cnt *affected_rows);
+char *monetdbe_result_fetch(monetdbe_result *mres, monetdbe_column **res, size_t column_index);
+char *monetdbe_set_autocommit(monetdbe_database dbhdl, int value);
+const char *monetdbe_version(void);
+
 # stream
 stream *block_stream(stream *s);
 stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);

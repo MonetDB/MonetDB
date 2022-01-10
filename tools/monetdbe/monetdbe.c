@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -487,7 +487,7 @@ monetdbe_workers_internal(monetdbe_database_internal *mdbe, monetdbe_options *op
 		if (opts->nr_threads < 0)
 			set_error(mdbe,createException(MAL, "monetdbe.monetdbe_startup", "Nr_threads should be positive"));
 		else
-			workers = GDKnr_threads = opts->nr_threads;
+			workers = opts->nr_threads;
 	}
 	return workers;
 }
@@ -682,12 +682,32 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 		GDKtracer_set_adapter("MBEDDED");
 	}
 
-	workers = monetdbe_workers_internal(mdbe, opts);
-	memory = monetdbe_memory_internal(mdbe, opts);
-	if (memory)
-			GDK_vm_maxsize = (size_t) memory << 20; /* convert from MiB to bytes */
-	if (mdbe->msg)
+	if ((workers = monetdbe_workers_internal(mdbe, opts))) {
+		int psetlen = setlen;
+		char workstr[16];
+
+		snprintf(workstr, sizeof(workstr), "%d", workers);
+		if ((setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_nr_threads", workstr)) == psetlen) {
+			mo_free_options(set, setlen);
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL));
 			goto cleanup;
+		}
+	}
+	if ((memory = monetdbe_memory_internal(mdbe, opts))) {
+		int psetlen = setlen;
+		char memstr[32];
+
+		snprintf(memstr, sizeof(memstr), "%zu", (size_t) memory << 20); /* convert from MiB to bytes */
+		if ((setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_vm_maxsize", memstr)) == psetlen) {
+			mo_free_options(set, setlen);
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL));
+			goto cleanup;
+		}
+	}
+	if (mdbe->msg) {
+		mo_free_options(set, setlen);
+		goto cleanup;
+	}
 
 	if (!dbdir) { /* in-memory */
 		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), false) != GDK_SUCCEED) {
@@ -1249,12 +1269,11 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	for (size_t i = 0; i < nparams; i++) {
 
-		char* table	= BUNtvar(btable_iter, i);
-
+		const char *table	= BUNtvar(btable_iter, i);
 		sql_type *t = SA_ZNEW(sa, sql_type);
-		char* name = BUNtvar(btype_iter, i);
+		const char *name = BUNtvar(btype_iter, i);
 		t->base.name = SA_STRDUP(sa, name);
-		char* impl = BUNtvar(bimpl_iter, i);
+		const char *impl = BUNtvar(bimpl_iter, i);
 		t->impl	= SA_STRDUP(sa, impl);
 		t->localtype = ATOMindex(t->impl);
 
@@ -1281,7 +1300,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		else {
 			// output argument
 
-			char* column = BUNtvar(bcolumn_iter, i);
+			const char *column = BUNtvar(bcolumn_iter, i);
 			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false, false);
 			append(rets, c);
 		}
@@ -2604,7 +2623,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			char *t = (char *)BUNtail(li, p);
+			const char *t = (const char*)BUNtvar(li, p);
 			if (strcmp(t, str_nil) == 0) {
 				bat_data->data[j] = NULL;
 			} else {
@@ -2683,7 +2702,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			blob *t = (blob *)BUNtail(li, p);
+			const blob *t = (const blob *)BUNtvar(li, p);
 			if (t->nitems == ~(size_t)0) {
 				bat_data->data[j].size = 0;
 				bat_data->data[j].data = NULL;
@@ -2721,7 +2740,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			void *t = BUNtail(li, p);
+			const void *t = BUNtail(li, p);
 			if (BATatoms[bat_type].atomCmp(t, BATatoms[bat_type].atomNull) == 0) {
 				bat_data->data[j] = NULL;
 			} else {

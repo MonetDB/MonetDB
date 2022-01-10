@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -901,7 +901,10 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == RUNCLIENT) {
-			if (BUNappend(user, c->username, false) != GDK_SUCCEED)
+			const char *username = c->username;
+			if (!username)
+				username = str_nil;
+			if (BUNappend(user, username, false) != GDK_SUCCEED)
 				goto bailout;
 			ret = timestamp_fromtime(c->login);
 			if (is_timestamp_nil(ret)) {
