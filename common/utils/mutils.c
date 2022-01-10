@@ -590,6 +590,7 @@ MT_stat(const char *pathname, struct _stat64 *st)
 }
 
 #define RETRIES 10
+#define SLEEPTIME 20
 
 int
 MT_rmdir(const char *pathname)
@@ -607,7 +608,7 @@ MT_rmdir(const char *pathname)
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
 //		fprintf(stderr, "#Retry rmdir %s\n", pathname);
-		Sleep(10);	/* wait a little */
+		Sleep(SLEEPTIME);	/* wait a little */
 	}
 	free(wpathname);
 	return ret;
@@ -627,7 +628,7 @@ WMT_remove(const wchar_t *wpathname)
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
 //		fprintf(stderr, "#Retry unlink %ls\n", wpathname);
-		Sleep(10);	/* wait a little */
+		Sleep(SLEEPTIME);	/* wait a little */
 	}
 	return ret;
 }
@@ -668,7 +669,7 @@ MT_rename(const char *old, const char *dst)
 			 * service which prevents us from doing what we have a
 			 * right to do, so try again (once) */
 //			fprintf(stderr, "#Retry rename %s %s\n", old, dst);
-			Sleep(10);	/* wait a little */
+			Sleep(SLEEPTIME);	/* wait a little */
 		}
 	}
 	free(wold);
