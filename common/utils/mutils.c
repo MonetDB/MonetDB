@@ -30,7 +30,11 @@
 #endif
 
 #ifndef O_CLOEXEC
+#ifdef _O_NOINHERIT
+#define O_CLOEXEC _O_NOINHERIT	/* Windows */
+#else
 #define O_CLOEXEC 0
+#endif
 #endif
 
 #ifdef NATIVE_WIN32

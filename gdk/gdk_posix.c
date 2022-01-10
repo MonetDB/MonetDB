@@ -60,7 +60,11 @@
 #define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
 
 #ifndef O_CLOEXEC
+#ifdef _O_NOINHERIT
+#define O_CLOEXEC _O_NOINHERIT	/* Windows */
+#else
 #define O_CLOEXEC 0
+#endif
 #endif
 
 /* Crude VM buffer management that keep a list of all memory mapped
