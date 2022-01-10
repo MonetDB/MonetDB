@@ -1761,7 +1761,7 @@ column_def:
 				sql_find_subtype(&it, "bigint", 64, 0);
 			else
 				sql_find_subtype(&it, "int", 32, 0);
-    			append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
+			append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 			append_list(l, o);
 			append_int(l, 1); /* to be dropped */
 
@@ -1770,7 +1770,7 @@ column_def:
 			} else {
 				stmts = L();
 				m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
-			}	
+			}
 			append_symbol(stmts, _symbol_create_list(SQL_CREATE_SEQ, l));
 
 			l = L();
@@ -1864,7 +1864,7 @@ generated_column:
 		} else {
 			stmts = L();
 			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
-		}	
+		}
 		append_symbol(stmts, _symbol_create_list(SQL_CREATE_SEQ, l));
 	}
  |	AUTO_INCREMENT
@@ -1886,7 +1886,7 @@ generated_column:
 			append_string(seqn1, m->scanner.schema);
 		append_list(l, append_string(seqn1, sn));
 		sql_find_subtype(&it, "int", 32, 0);
-    		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
+		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
 		append_int(l, 1); /* to be dropped */
 		if (m->scanner.schema)
