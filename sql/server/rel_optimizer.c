@@ -149,7 +149,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			alias = exps_bind_column2(rel->exps, rname, name, NULL);
 		else
 			alias = exps_bind_column(rel->exps, name, NULL, NULL, 1);
-		if (is_groupby(rel->op) && alias && alias->type == e_column && rel->r) {
+		if (is_groupby(rel->op) && alias && alias->type == e_column && !list_empty(rel->r)) {
 			if (alias->l)
 				alias = exps_bind_column2(rel->r, alias->l, alias->r, NULL);
 			else
@@ -1917,10 +1917,10 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			return rel;
 
 		/* push topn/sample under projections */
-		if (!rel_is_ref(rel) && r && is_simple_project(r->op) && !need_distinct(r) && !rel_is_ref(r) && r->l && !r->r) {
+		if (!rel_is_ref(rel) && r && is_simple_project(r->op) && !need_distinct(r) && !rel_is_ref(r) && r->l && list_empty(r->r)) {
 			sql_rel *x = r, *px = x;
 
-			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r) {
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r)) {
 				px = x;
 				x = x->l;
 			}
@@ -1943,7 +1943,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			bool changed = false;
 
 			x = ul;
-			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
 				x = x->l;
 			if (x && x->op != rel->op) { /* only push topn once */
 				ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
@@ -1952,7 +1952,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			}
 
 			x = ur;
-			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
 				x = x->l;
 			if (x && x->op != rel->op) { /* only push topn once */
 				ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
@@ -1968,7 +1968,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 		/* duplicate topn/sample + [ project-order ] under union */
 		if (r)
 			rp = r->l;
-		if (r && r->exps && is_simple_project(r->op) && !rel_is_ref(r) && r->r && r->l && is_union(rp->op)) {
+		if (r && r->exps && is_simple_project(r->op) && !rel_is_ref(r) && !list_empty(r->r) && r->l && is_union(rp->op)) {
 			sql_rel *u = rp, *ou = u, *x;
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
@@ -1977,12 +1977,12 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 
 			/* only push topn/sample once */
 			x = ul;
-			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
 				x = x->l;
 			if (x && x->op == rel->op)
 				return rel;
 			x = ur;
-			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
 				x = x->l;
 			if (x && x->op == rel->op)
 				return rel;
@@ -2119,7 +2119,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				return NULL;
 		}
 		/* possibly a groupby/project column is renamed */
-		if (is_groupby(f->op) && f->r) {
+		if (is_groupby(f->op) && !list_empty(f->r)) {
 			sql_exp *gbe = NULL;
 			if (ne->l)
 				gbe = exps_bind_column2(f->r, ne->l, ne->r, NULL);
@@ -2753,7 +2753,7 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 	node *n;
 
 	if (rel->op == op_project &&
-	    prj && prj->op == op_project && !(rel_is_ref(prj)) && !prj->r) {
+	    prj && prj->op == op_project && !(rel_is_ref(prj)) && list_empty(prj->r)) {
 		int all = 1;
 
 		if (project_unsafe(rel,0) || project_unsafe(prj,0) || exps_share_expensive_exp(rel->exps, prj->exps))
@@ -2788,7 +2788,7 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 		if (all) {
 			/* we can now remove the intermediate project */
 			/* push order by expressions */
-			if (rel->r) {
+			if (!list_empty(rel->r)) {
 				list *nr = new_exp_list(v->sql->sa), *res = rel->r;
 				for (n = res->h; n; n = n->next) {
 					sql_exp *e = n->data, *ne = NULL;
@@ -4177,7 +4177,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			}
 		}
 
-		if (rel->r) {
+		if (!list_empty(rel->r)) {
 			list *ogbe = rel->r;
 
 			gbe = new_exp_list(v->sql->sa);
@@ -5506,7 +5506,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		v->changes++;
 	}
 
-	if (rel->op == op_project && rel->l && rel->exps && !rel->r) {
+	if (rel->op == op_project && rel->l && rel->exps && list_empty(rel->r)) {
 		int need_distinct = need_distinct(rel);
 		sql_rel *u = rel->l;
 		sql_rel *p = rel;
@@ -7851,7 +7851,7 @@ rel_split_project(visitor *v, sql_rel *rel, int top)
 			if (nrel->l && !(nrel->l = rel_split_project(v, nrel->l, (is_topn(rel->op)||is_sample(rel->op))?top:0)))
 				return NULL;
 			return rel;
-		} else if (funcs && !top && !rel->r) {
+		} else if (funcs && !top && list_empty(rel->r)) {
 			/* projects can have columns point back into the expression list, ie
 			 * create a new list including the split expressions */
 			node *n;
@@ -7860,7 +7860,7 @@ rel_split_project(visitor *v, sql_rel *rel, int top)
 			rel->exps = sa_list(v->sql->sa);
 			for (n=exps->h; n; n = n->next)
 				append(rel->exps, split_exp(v->sql, n->data, rel));
-		} else if (funcs && top && rel_is_ref(rel) && !rel->r) {
+		} else if (funcs && top && rel_is_ref(rel) && list_empty(rel->r)) {
 			/* inplace */
 			list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 			sql_rel *l = rel_project(v->sql->sa, rel->l, NULL);
@@ -7969,7 +7969,7 @@ rel_split_select(visitor *v, sql_rel *rel, int top)
 			if (nrel->l && !(nrel->l = rel_split_project(v, nrel->l, (is_topn(rel->op)||is_sample(rel->op))?top:0)))
 				return NULL;
 			return rel;
-		} else if (funcs && !top && !rel->r) {
+		} else if (funcs && !top && list_empty(rel->r)) {
 			/* projects can have columns point back into the expression list, ie
 			 * create a new list including the split expressions */
 			node *n;
@@ -7978,7 +7978,7 @@ rel_split_select(visitor *v, sql_rel *rel, int top)
 			rel->exps = sa_list(v->sql->sa);
 			for (n=exps->h; n; n = n->next)
 				append(rel->exps, select_split_exp(v->sql, n->data, rel));
-		} else if (funcs && top && rel_is_ref(rel) && !rel->r) {
+		} else if (funcs && top && rel_is_ref(rel) && list_empty(rel->r)) {
 			/* inplace */
 			list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 			sql_rel *l = rel_project(v->sql->sa, rel->l, NULL);
