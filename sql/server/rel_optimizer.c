@@ -1969,10 +1969,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 		if (r)
 			rp = r->l;
 		if (r && r->exps && is_simple_project(r->op) && !rel_is_ref(r) && !list_empty(r->r) && r->l && is_union(rp->op)) {
-			sql_rel *u = rp, *ou = u, *x;
-			sql_rel *ul = u->l;
-			sql_rel *ur = u->r;
-			int add_r = 0;
+			sql_rel *u = rp, *ou = u, *x, *ul = u->l, *ur = u->r;
 			list *rcopy = NULL;
 
 			/* only push topn/sample once */
@@ -1987,14 +1984,11 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			if (x && x->op == rel->op)
 				return rel;
 
-			if (list_length(ul->exps) > list_length(r->exps)) {
-				add_r = 1;
-				rcopy = exps_copy(v->sql, r->r);
-				for (node *n = rcopy->h ; n ; n = n->next) {
-					sql_exp *e = n->data;
-					set_descending(e);
-					set_nulls_first(e);
-				}
+			rcopy = exps_copy(v->sql, r->r);
+			for (node *n = rcopy->h ; n ; n = n->next) {
+				sql_exp *e = n->data;
+				set_descending(e); /* remove ordering properties for projected columns */
+				set_nulls_first(e);
 			}
 			ul = rel_dup(ul);
 			ur = rel_dup(ur);
@@ -2011,8 +2005,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ul = rel_project(v->sql->sa, ul, NULL);
 			ul->exps = exps_copy(v->sql, r->exps);
 			/* possibly add order by column */
-			if (add_r)
-				ul->exps = list_distinct(list_merge(ul->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
+			ul->exps = list_distinct(list_merge(ul->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
 			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(v->sql, r->r);
 			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
@@ -2020,8 +2013,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ur = rel_project(v->sql->sa, ur, NULL);
 			ur->exps = exps_copy(v->sql, r->exps);
 			/* possibly add order by column */
-			if (add_r)
-				ur->exps = list_distinct(list_merge(ur->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
+			ur->exps = list_distinct(list_merge(ur->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
 			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(v->sql, r->r);
 			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
@@ -2031,8 +2023,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			u->nrcols = list_length(u->exps);
 			set_processed(u);
 			/* possibly add order by column */
-			if (add_r)
-				u->exps = list_distinct(list_merge(u->exps, rcopy, NULL), (fcmp) exp_equal, (fdup) NULL);
+			u->exps = list_distinct(list_merge(u->exps, rcopy, NULL), (fcmp) exp_equal, (fdup) NULL);
 			if (need_distinct(r)) {
 				set_distinct(ul);
 				set_distinct(ur);
