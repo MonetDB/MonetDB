@@ -666,3 +666,16 @@ SELECT vx.vc0 < ANY(SELECT vx.vc0 FROM tx) FROM (select 240 FROM tx) vx(vc0)
 
 statement ok
 DROP TABLE "tx" CASCADE
+
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t2(c0 INT) ON COMMIT DELETE ROWS
+
+statement ok rowcount 1
+INSERT INTO tmp.t2(c0) VALUES(3)
+
+query I nosort
+SELECT c0 FROM tmp.t2
+----
+
+statement ok
+DROP TABLE t2
