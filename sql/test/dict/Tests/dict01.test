@@ -727,7 +727,7 @@ SELECT c0 FROM t0
 2
 3
 
-statement ok
+statement error 42000!columns from temporary tables cannot be compressed
 CALL "sys"."dict_compress"('tmp','t0','c0',false)
 
 query I rowsort
