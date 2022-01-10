@@ -579,6 +579,8 @@ BATclear(BAT *b, bool force)
 		return GDK_FAIL;
 	}
 
+	TRC_DEBUG(ALGO, ALGOBATFMT "\n", ALGOBATPAR(b));
+
 	/* kill all search accelerators */
 	HASHdestroy(b);
 	IMPSdestroy(b);
@@ -1010,6 +1012,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	if (count == 0)
 		return GDK_SUCCEED;
 
+	TRC_DEBUG(ALGO, ALGOBATFMT " appending " BUNFMT " values%s\n", ALGOBATPAR(b), count, values ? "" : " (all nil)");
+
 	p = BUNlast(b);		/* insert at end */
 	if (p == BUN_MAX || BATcount(b) + count >= BUN_MAX) {
 		GDKerror("bat too large\n");
@@ -1302,6 +1306,7 @@ BUNdelete(BAT *b, oid o)
 		GDKerror("cannot delete committed value\n");
 		return GDK_FAIL;
 	}
+	TRC_DEBUG(ALGO, ALGOBATFMT " deleting oid " OIDFMT "\n", ALGOBATPAR(b), o);
 	b->batDirtydesc = true;
 	val = BUNtail(bi, p);
 	/* writing the values should be locked, reading could be done
@@ -1398,6 +1403,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
+	TRC_DEBUG(ALGO, ALGOBATFMT " replacing " BUNFMT " values\n", ALGOBATPAR(b), count);
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void) {
 		PROPdestroy(b);
