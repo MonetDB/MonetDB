@@ -4625,9 +4625,8 @@ static int
 swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 {
 	bool update_conflict = false;
-	int in_transaction = segments_in_transaction(tr, col->t);
 
-	if (in_transaction)
+	if (!isTempTable(col->t) && segments_in_transaction(tr, col->t))
 		return LOG_CONFLICT;
 
 	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
@@ -4657,9 +4656,8 @@ static int
 col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 {
 	bool update_conflict = false;
-	int in_transaction = segments_in_transaction(tr, col->t);
 
-	if (in_transaction)
+	if (!isTempTable(col->t) && segments_in_transaction(tr, col->t))
 		return LOG_CONFLICT;
 
 	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
