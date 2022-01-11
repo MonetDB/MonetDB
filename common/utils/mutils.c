@@ -690,6 +690,8 @@ MT_mkdir(const char *pathname)
 	if (wpathname == NULL)
 		return -1;
 	int ret = _wmkdir(wpathname);
+	if (ret == 0)
+		SetFileAttributesW(wpathname, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
 	free(wpathname);
 	return ret;
 }
