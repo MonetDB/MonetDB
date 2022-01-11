@@ -45,3 +45,14 @@ with SQLTestCase() as cli:
     DROP TABLE mct21;
     DROP TABLE mt2;
     COMMIT;""").assertSucceeded()
+
+# testing temporary tables
+with SQLTestCase() as mdb1:
+    mdb1.connect(username="monetdb", password="monetdb")
+    mdb1.execute("CREATE GLOBAL TEMPORARY TABLE tt2(c0 JSON, c1 DATE) ON COMMIT PRESERVE ROWS;").assertSucceeded()
+    mdb1.execute("INSERT INTO tmp.tt2(c1, c0) VALUES(DATE '2010-10-10', JSON 'true');").assertSucceeded()
+
+with SQLTestCase() as mdb2:
+    mdb2.connect(username="monetdb", password="monetdb")
+    mdb2.execute("TRUNCATE TABLE tmp.tt2;").assertSucceeded()
+    mdb2.execute("DROP TABLE tmp.tt2;").assertSucceeded()
