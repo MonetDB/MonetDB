@@ -1455,7 +1455,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 		}
 	} else {
-		for (BUN i = 0, j = ni.count; i < j; i++) {
+		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
 			if (positions) {
 				/* assert(!autoincr) */
@@ -1475,7 +1475,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				goto bailout;
 			}
 
-			const void *new = BUNtail(ni, i);
+			const void *new = BUNtloc(ni, i);
 
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
