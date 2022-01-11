@@ -879,6 +879,10 @@ gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 
+#define isVIEW(x)							\
+	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
+	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
+
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
  * A BAT iterator has to be used with caution, but it does have to be
@@ -942,6 +946,7 @@ bat_iterator_nolock(BAT *b)
 {
 	/* does not get matched by bat_iterator_end */
 	if (b) {
+		bool isview = isVIEW(b);
 		return (BATiter) {
 			.b = b,
 			.h = b->theap,
@@ -959,8 +964,8 @@ bat_iterator_nolock(BAT *b)
 				  (size_t) b->batCount << b->tshift :
 				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
-			.minpos = b->tminpos,
-			.maxpos = b->tmaxpos,
+			.minpos = isview ? BUN_NONE : b->tminpos,
+			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
 #ifndef NDEBUG
 			.locked = false,
@@ -2151,13 +2156,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 			return (e);					\
 		}							\
 	} while (false)
-
-/* the parentid in a VIEW is correct for the normal view. We must
- * correct for the reversed view.
- */
-#define isVIEW(x)							\
-	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
-	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
 
 #define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
