@@ -4485,9 +4485,10 @@ has_deletes_in_range( segment *s, sql_trans *tr, BUN start, BUN end)
 }
 
 static BAT *
-segments2cands(segment *s, sql_trans *tr, sql_table *t, size_t start, size_t end)
+segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end)
 {
 	lock_table(tr->store, t->base.id);
+	segment *s = S->segs->h;
 	/* step one no deletes -> dense range */
 	uint32_t cur = 0;
 	size_t dnr = has_deletes_in_range(s, tr, start, end), nr = end - start, pos = 0;
@@ -4588,7 +4589,7 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 	if (part_nr == (nr_of_parts-1))
 		end = nr;
 	assert(end <= nr);
-	return segments2cands(s->segs->h, tr, t, start, end);
+	return segments2cands(s, tr, t, start, end);
 }
 
 static void
