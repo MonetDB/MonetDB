@@ -233,8 +233,6 @@ void STRMPincref(Strimps *strimps)
 	__attribute__((__visibility__("hidden")));
 void STRMPdecref(Strimps *strimps, bool remove)
 	__attribute__((__visibility__("hidden")));
-void STRMPdestroy(BAT *b)
-	__attribute__((__visibility__("hidden")));
 void STRMPfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void MT_init_posix(void)
