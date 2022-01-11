@@ -6,6 +6,7 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 #include "monetdb_config.h"
+#include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_exception.h"
