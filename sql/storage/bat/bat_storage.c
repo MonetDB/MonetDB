@@ -3527,16 +3527,17 @@ clear_del(sql_trans *tr, sql_table *t, int in_transaction)
 static BUN
 clear_table(sql_trans *tr, sql_table *t)
 {
-	int in_transaction = segments_in_transaction(tr, t);
-	int clear = !in_transaction || isTempTable(t);
-
 	node *n = ol_first_node(t->columns);
 	sql_column *c = n->data;
 	storage *d = tab_timestamp_storage(tr, t);
+	int in_transaction, clear;
+	BUN sz, clear_ok;
 
 	if (!d)
 		return BUN_NONE;
-	BUN sz = count_col(tr, c, CNT_ACTIVE), clear_ok;
+	in_transaction = segments_in_transaction(tr, t);
+	clear = !in_transaction || isTempTable(t);
+	sz = count_col(tr, c, CNT_ACTIVE);
 	if ((clear_ok = clear_del(tr, t, in_transaction)) >= BUN_NONE - 1)
 		return clear_ok;
 
