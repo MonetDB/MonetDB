@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1821,12 +1821,14 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	if (te->token == SQL_ALTER_TABLE) {
 		int state = te->data.i_val;
 
-		if (state == tr_readonly)
+		if (state == tr_readonly) {
 			state = TABLE_READONLY;
-		else if (state == tr_append)
+		} else if (state == tr_append) {
 			state = TABLE_APPENDONLY;
-		else
+		} else {
+			assert(state == tr_writable);
 			state = TABLE_WRITABLE;
+		}
 		return rel_alter_table(sql->sa, ddl_alter_table_set_access, sname, tname, NULL, NULL, state);
 	}
 

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -33,7 +33,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 {
 	list *exps;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
@@ -1156,6 +1156,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (exp)
 					break;
 			}
+			if (exp && exp->card != CARD_AGGR && is_groupby(outer->op) && !is_sql_aggr(f) && rel_find_exp(outer->l, exp))
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 			if (exp && outer && !is_sql_aggr(f)) {
@@ -1237,6 +1239,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (exp)
 					break;
 			}
+			if (exp && exp->card != CARD_AGGR && is_groupby(outer->op) && !is_sql_aggr(f) && rel_find_exp(outer->l, exp))
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 			if (exp && outer && !is_sql_aggr(f)) {
@@ -1959,6 +1963,8 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			} else if (exp_is_rel(re)) {
 				sql_rel *r = exp_rel_get_rel(sql->sa, re);
 				add_select = 1;
+				if (rel && *rel)
+					set_dependent((*rel));
 				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
 					re = r->exps->h->data;
 			}
@@ -2207,7 +2213,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	if (!sc)
 		return NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch (sc->token) {
@@ -2269,6 +2275,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		symbol *ro = n->next->next->data.sym;
 		char *compare_op = n->next->data.sval;
 		int quantifier = 0;
+		int grouped = 0;
 
 		sql_exp *rs = NULL, *ls;
 		comp_type cmp_type = compare_str2type(compare_op);
@@ -2302,6 +2309,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			compare_op = "=";
 		}
 
+		grouped = (rel && (*rel) && is_groupby((*rel)->op));
 		ls = rel_value_exp(query, rel, lo, f|sql_farg, ek);
 		if (!ls)
 			return NULL;
@@ -2311,6 +2319,13 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		rs = rel_value_exp(query, rel, ro, f|sql_farg, ek);
 		if (!rs)
 			return NULL;
+
+		if (!grouped && rel && (*rel) && is_groupby((*rel)->op) && !rel_find_exp(*rel, ls) && !is_freevar(ls) && (!exp_is_rel(ls))) {
+			if (exp_name(ls) && exp_relname(ls))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
+			else
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery uses ungrouped column");
+		}
 
 		if (!exp_is_rel(ls) && !exp_is_rel(rs) && ls->card < rs->card) {
 			sql_exp *swap = ls; /* has to swap parameters like in the rel_logical_exp case */
@@ -2480,7 +2495,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	if (!sc)
 		return NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch (sc->token) {
@@ -3393,7 +3408,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	sql_rel *groupby = rel ? *rel : NULL, *sel = NULL, *gr, *og = NULL, *res = groupby;
 	sql_rel *subquery = NULL;
 	list *exps = NULL;
-	bool is_grouping = !strcmp(aname, "grouping"), has_args = false, found = false;
+	bool is_grouping = !strcmp(aname, "grouping"), has_args = false, found = false, used_rel = false;
 
 	if (!query_has_outer(query)) {
 		if (!groupby) {
@@ -3441,6 +3456,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 
 			if (!e)
 				return NULL;
+			used_rel |= (rel_has_exp(gl, e, true) == 0);
 			has_args = true;
 			if (gl && gl != ogl) {
 				if (gl->grouped) {
@@ -3504,6 +3520,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 									return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
 								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 							}
+						} else if (!used_rel && is_sql_where(of)) {
+							char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+							return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
 						} else if (!is_sql_aggr(of)) {
 							set_outer(outer);
 						}
@@ -4252,7 +4271,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 	mvc *sql = query->sql;
 	list *exps = new_exp_list(sql->sa);
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	for (dnode *o = groupby->data.lval->h; o; o = o->next) {
@@ -4380,7 +4399,7 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 /* find selection expressions matching the order by column expression */
 /* complex columns only */
 static sql_exp *
-rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
+rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int needs_distinct, int f)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = *R, *p = NULL;
@@ -4390,7 +4409,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 	if (!r)
 		return e;
 
-	if (r && is_simple_project(r->op) && is_processed(r)) {
+	if (is_simple_project(r->op) && is_processed(r)) {
 		p = r;
 		r = r->l;
 	}
@@ -4405,6 +4424,8 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 		if (is_project(p->op) && (found = exps_any_match(p->exps, e))) { /* if one of the projections matches, return a reference to it */
 			e = exp_ref(sql, found);
 		} else {
+			if (needs_distinct)
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
 			e = rel_project_add_exp(sql, p, e);
 			for (node *n = p->exps->h ; n ; n = n->next) {
 				sql_exp *ee = n->data;
@@ -4422,6 +4443,8 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 		sql_exp *found = exps_find_exp(r->exps, e);
 
 		if (!found) {
+			if (needs_distinct)
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
 			append(r->exps, e);
 		} else {
 			e = found;
@@ -4446,7 +4469,7 @@ simple_selection(symbol *sq)
 }
 
 static list *
-rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
+rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct, int f)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel = *R, *or = rel; /* the order by relation */
@@ -4504,6 +4527,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 					sql_exp *found = exps_find_exp(rel->exps, e);
 
 					if (!found) {
+						if (needs_distinct)
+							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
 						append(rel->exps, e);
 					} else {
 						e = found;
@@ -4517,8 +4542,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 
-				if (!e)
-					e = rel_order_by_column_exp(query, &rel, col, sql_sel | sql_orderby | (f & sql_group_totals));
+				e = rel_order_by_column_exp(query, &rel, col, needs_distinct, sql_sel | sql_orderby | (f & sql_group_totals));
 			}
 			if (!e)
 				return NULL;
@@ -4666,7 +4690,7 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	char *window_ident;
 	int pos;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if ((window_specification = frame_get_window_def(sql, ident, &pos)) == NULL)
@@ -4794,7 +4818,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	/* Order By */
 	if (order_by_clause) {
-		obe = rel_order_by(query, &p, order_by_clause, nf | sql_window);
+		obe = rel_order_by(query, &p, order_by_clause, 0, nf | sql_window);
 		if (!obe)
 			return NULL;
 	}
@@ -5062,7 +5086,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (!se)
 		return NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (rel && *rel && (*rel)->card == CARD_AGGR) { /* group by expression case, handle it before */
@@ -5224,7 +5248,7 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 	if (se->token == SQL_SELECT)
 		sn = (SelectNode*)se;
-	if (THRhighwater())
+	if (mvc_highwater(query->sql))
 		return sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	e = rel_value_exp2(query, rel, se, f, ek);
@@ -5484,7 +5508,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		}
 		rel = rel_orderby(sql, rel);
 		set_processed(rel);
-		obe = rel_order_by(query, &rel, sn->orderby, sql_orderby | group_totals);
+		obe = rel_order_by(query, &rel, sn->orderby, sn->distinct, sql_orderby | group_totals);
 		if (!obe)
 			return NULL;
 		rel->r = obe;

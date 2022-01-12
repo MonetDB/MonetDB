@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 %{
@@ -525,6 +525,7 @@ int yydebug=1;
 
 %type <i_val>
 	_transaction_mode_list
+	any_all_some
 	check_identity
 	datetime_field
 	dealloc_ref
@@ -539,7 +540,6 @@ int yydebug=1;
 	join_type
 	non_second_datetime_field
 	nonzero
-	opt_any_all_some
 	opt_bounds
 	opt_column
 	opt_encrypted
@@ -1761,7 +1761,7 @@ column_def:
 				sql_find_subtype(&it, "bigint", 64, 0);
 			else
 				sql_find_subtype(&it, "int", 32, 0);
-    			append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
+			append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 			append_list(l, o);
 			append_int(l, 1); /* to be dropped */
 
@@ -1770,7 +1770,7 @@ column_def:
 			} else {
 				stmts = L();
 				m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
-			}	
+			}
 			append_symbol(stmts, _symbol_create_list(SQL_CREATE_SEQ, l));
 
 			l = L();
@@ -1864,7 +1864,7 @@ generated_column:
 		} else {
 			stmts = L();
 			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
-		}	
+		}
 		append_symbol(stmts, _symbol_create_list(SQL_CREATE_SEQ, l));
 	}
  |	AUTO_INCREMENT
@@ -1886,7 +1886,7 @@ generated_column:
 			append_string(seqn1, m->scanner.schema);
 		append_list(l, append_string(seqn1, sn));
 		sql_find_subtype(&it, "int", 32, 0);
-    		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
+		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
 		append_int(l, 1); /* to be dropped */
 		if (m->scanner.schema)
@@ -3058,6 +3058,7 @@ insert_atom:
 value:
     search_condition
  |  select_no_parens
+ |  with_query
  ;
 
 opt_distinct:
@@ -3579,31 +3580,42 @@ pred_exp:
  |  predicate	 { $$ = $1; }
  ;
 
-opt_any_all_some:
-    		{ $$ = -1; }
- |  ANY		{ $$ = 0; }
+any_all_some:
+    ANY		{ $$ = 0; }
  |  SOME	{ $$ = 0; }
  |  ALL		{ $$ = 1; }
  ;
 
 comparison_predicate:
-    pred_exp COMPARISON opt_any_all_some pred_exp
+    pred_exp COMPARISON pred_exp
 		{ dlist *l = L();
 
 		  append_symbol(l, $1);
 		  append_string(l, $2);
-		  append_symbol(l, $4);
-		  if ($3 > -1)
-		     append_int(l, $3);
+		  append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- |  pred_exp '=' opt_any_all_some pred_exp
+ |  pred_exp '=' pred_exp
 		{ dlist *l = L();
 
 		  append_symbol(l, $1);
 		  append_string(l, sa_strdup(SA, "="));
-		  append_symbol(l, $4);
-		  if ($3 > -1)
-		     append_int(l, $3);
+		  append_symbol(l, $3);
+		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
+ | pred_exp COMPARISON any_all_some '(' value ')'
+		{ dlist *l = L();
+
+		  append_symbol(l, $1);
+		  append_string(l, $2);
+		  append_symbol(l, $5);
+		  append_int(l, $3);
+		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
+ |  pred_exp '=' any_all_some '(' value ')'
+		{ dlist *l = L();
+
+		  append_symbol(l, $1);
+		  append_string(l, sa_strdup(SA, "="));
+		  append_symbol(l, $5);
+		  append_int(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  ;
 

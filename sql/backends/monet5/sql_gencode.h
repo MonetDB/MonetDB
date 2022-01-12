@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _SQL2MAL_H
@@ -20,7 +20,8 @@
 extern int backend_dumpproc(backend *be, Client c, cq *q, sql_rel *r);
 extern int backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int addend, const char *query);
 extern int monet5_has_module(ptr M, char *module);
-extern int monet5_resolve_function(ptr M, sql_func *f);
+extern void monet5_freecode(const char *mod, int clientid, const char *name);
+extern int monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bit *side_effect);
 extern int backend_create_mal_func(mvc *m, sql_func *f);
 extern int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);
 

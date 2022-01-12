@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten, N. Nes
@@ -26,7 +26,7 @@
 #define MAX_MAL_MODULES 128
 static int mel_modules = 0;
 static struct mel_module {
-	char *name;
+	const char *name;
 	mel_atom *atoms;
 	mel_func *funcs;
 	mel_init inits;
@@ -47,7 +47,7 @@ mal_startup(void)
  */
 
 void
-mal_module2(str name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code)
+mal_module2(const char *name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code)
 {
 	assert (mel_modules < MAX_MAL_MODULES);
 	mel_module[mel_modules].name = name;
@@ -59,7 +59,7 @@ mal_module2(str name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const
 }
 
 void
-mal_module(str name, mel_atom *atoms, mel_func *funcs)
+mal_module(const char *name, mel_atom *atoms, mel_func *funcs)
 {
 	assert (mel_modules < MAX_MAL_MODULES);
 	mel_module[mel_modules].name = name;
@@ -71,7 +71,7 @@ mal_module(str name, mel_atom *atoms, mel_func *funcs)
 }
 
 static char *
-initModule(Client c, char *name)
+initModule(Client c, const char *name)
 {
 	char *msg = MAL_SUCCEED;
 
@@ -240,7 +240,7 @@ addFunctions(mel_func *fcn){
 		sig->fcn = (MALfcn)fcn->imp;
 		if( fcn->unsafe)
 			mb->unsafeProp = 1;
-		
+
 		/* add the return variables */
 		if(fcn->retc == 0){
 			int idx = newTmpVariable(mb, TYPE_void);

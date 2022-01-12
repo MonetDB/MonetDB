@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -37,7 +37,7 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	limit= mb->stop;
 
 	if ( mb->inlineProp )
-		return MAL_SUCCEED;
+		goto bailout;
 
 	for(i=0; i < limit; i++) {
 		p = old[i];

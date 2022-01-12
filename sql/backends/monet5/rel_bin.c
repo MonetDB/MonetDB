@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1110,7 +1110,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
 
- 	if (THRhighwater())
+ 	if (mvc_highwater(sql))
 		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e) {
@@ -1249,7 +1249,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (f->func->lang == FUNC_LANG_MAL && backend_create_mal_func(be->mvc, f->func) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);
-		fimp = sql_func_imp(f->func);
+		fimp = backend_function_imp(be, f->func);
 
 		if (f->func->side_effect && left && left->nrcols > 0 && f->func->type != F_LOADER && exps_card(exps) < CARD_MULTI) {
 			rows = bin_find_smallest_column(be, left);
@@ -1567,13 +1567,14 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->s) /*&& !c->t->commit_action*/) {
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
+		assert(u);
+		sc = stmt_project_delta(be, sc, u);
 		if (c->storage_type && c->storage_type[0] == 'D') {
 			stmt *v = stmt_bat(be, c, RD_EXT, part);
 			sc = stmt_dict(be, sc, v);
 		} else if (c->storage_type && c->storage_type[0] == 'F') {
 			sc = stmt_for(be, sc, stmt_atom(be, atom_general( be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/)));
 		}
-		sc = stmt_project_delta(be, sc, u);
 		if (del)
 			sc = stmt_project(be, del, sc);
 	} else if (del) { /* always handle the deletes */
@@ -1641,7 +1642,7 @@ check_types(backend *be, sql_subtype *t, stmt *s, check_type tpe)
 		}
 	}
 	if (err) {
-		stmt *res = sql_error(sql, 03, SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
+		stmt *res = sql_error(sql, 10, SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
 			fromtype->type->base.name,
 			fromtype->digits,
 			fromtype->scale,
@@ -1868,7 +1869,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 {
 	mvc *sql = be->mvc;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e || !args)
@@ -1948,7 +1949,7 @@ exps2bin_args(backend *be, list *exps, list *args)
 static list *
 rel2bin_args(backend *be, sql_rel *rel, list *args)
 {
-	if (THRhighwater())
+	if (mvc_highwater(be->mvc))
 		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel || !args)
@@ -2130,7 +2131,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					if (backend_create_subfunc(be, f, ops) < 0)
 		 				return NULL;
 					str mod = sql_func_mod(f->func);
-					str fcn = sql_func_imp(f->func);
+					str fcn = backend_function_imp(be, f->func);
 					q = pushStr(be->mb, q, mod);
 					q = pushStr(be->mb, q, fcn);
 					psub = stmt_direct_func(be, q);
@@ -2700,6 +2701,25 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
 	}
+	if (rel->attr) {
+		sql_exp *e = rel->attr->h->data;
+		const char *rnme = exp_relname(e);
+		const char *nme = exp_name(e);
+		stmt *last = l->t->data;
+		sql_subtype *tp = tail_type(last);
+
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", tp, NULL, F_FUNC);
+
+		stmt *s = stmt_unop(be, last, NULL, isnil);
+
+		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
+
+		s = stmt_unop(be, s, NULL, not);
+		s = stmt_alias(be, s, rnme, nme);
+		list_append(l, s);
+	}
+
 	res = stmt_list(be, l);
 	res->extra = l2; /* used for merge statments, this will be cleaned out on the pushcands branch :) */
 	return res;
@@ -2861,6 +2881,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid, swap = 0;
 					stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
 
+					if (l && left && l->nrcols==0 && left->nrcols >0)
+						l = stmt_const(be, bin_find_smallest_column(be, left), l);
 					if (!l) {
 						swap = 1;
 						clean_mal_statements(be, oldstop, oldvtop, oldvid);
@@ -3924,7 +3946,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 
 				/* foreach column add predicate */
 				if (add_column_predicate(be, c->c) != LOG_OK)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				if ((k->type == ukey) && stmt_has_null(col)) {
@@ -3947,7 +3969,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 
 				/* foreach column add predicate */
 				if (add_column_predicate(be, c->c) != LOG_OK)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				list_append(lje, col);
@@ -4011,7 +4033,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 
 		/* add predicate for this column */
 		if (add_column_predicate(be, c->c) != LOG_OK)
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		s = stmt_col(be, c->c, dels, dels->partition);
 		if ((k->type == ukey) && stmt_has_null(s)) {
@@ -4083,7 +4105,7 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 
 		/* foreach column add predicate */
 		if (add_column_predicate(be, c->c) != LOG_OK)
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	if (pin && list_length(pin->op4.lval))
@@ -4201,7 +4223,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 
 			/* foreach column add predicate */
 			if (add_column_predicate(be, c) != LOG_OK)
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
@@ -4544,7 +4566,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 /* before */
 	if (!sql_insert_triggers(be, t, updates, 0))
-		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
 	insert = inserts->op4.lval->h->data;
 	if (insert->nrcols == 0) {
@@ -4558,7 +4580,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (t->idxs) {
 		idx_m = m;
-		for (n = ol_first_node(t->idxs); n && m; n = n->next) {
+		for (n = ol_first_node(t->idxs); n && m; n = n->next, m = m->next) {
 			stmt *is = m->data;
 			sql_idx *i = n->data;
 
@@ -4573,29 +4595,26 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			}
 			if (!insert)
 				insert = is;
-			/* If the index doesn't hold delta structures, don't update the 'm' variable */
-			m = m->next;
 		}
+		assert(!n && !m);
 	}
 
 	if (t->s) /* only not declared tables, need this */
 		pos = stmt_claim(be, t, cnt);
 
-	/* by now the sql.claim has been generated */
+	if (t->idxs) {
+		for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next, m = m->next) {
+			stmt *is = m->data;
+			sql_idx *i = n->data;
 
-	if (t->idxs)
-	for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next) {
-		stmt *is = m->data;
-		sql_idx *i = n->data;
-
-		if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
-			continue;
-		if (hash_index(i->type) && list_length(i->columns) <= 1)
-			is = NULL;
-		if (is)
-			is = stmt_append_idx(be, i, pos, is);
-		/* If the index doesn't hold delta structures, don't update the 'm' variable */
-		m = m->next;
+			if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
+				continue;
+			if (hash_index(i->type) && list_length(i->columns) <= 1)
+				is = NULL;
+			if (is)
+				is = stmt_append_idx(be, i, pos, is);
+		}
+		assert(!n && !m);
 	}
 
 	int mvc_var = be->mvc_var;
@@ -4616,12 +4635,12 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 
 	if (!sql_insert_triggers(be, t, updates, 1))
-		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	/* update predicate list */
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	// dump_code(-1);
 
@@ -5466,26 +5485,26 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
 	if (!idx_updates) {
 		assert(0);
-		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: failed to update indexes for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(42000) "UPDATE: failed to update indexes for table '%s'", t->base.name);
 	}
 
 /* before */
 	if (!sql_update_triggers(be, t, rows, updates, 0))
-		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* apply updates */
 	for (i = 0, n = ol_first_node(t->columns); i < nr_cols && n; i++, n = n->next) {
 		sql_column *c = n->data;
 
 		if (updates[i])
-	       		append(l, stmt_update_col(be, c, rows, updates[i]));
+			append(l, stmt_update_col(be, c, rows, updates[i]));
 	}
 	if (cascade_updates(be, t, rows, updates))
-		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
 	if (!sql_update_triggers(be, t, rows, updates, 1))
-		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* cascade ?? */
 	return l;
@@ -5575,7 +5594,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	if (!sql_update_triggers(be, t, tids, updates, 0)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
-		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 	}
 
 /* apply the update */
@@ -5590,14 +5609,14 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	if (cascade_updates(be, t, tids, updates)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
-		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 	}
 
 /* after */
 	if (!sql_update_triggers(be, t, tids, updates, 1)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
-		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 	}
 
 	if (ddl) {
@@ -5616,7 +5635,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return cnt;
 }
 
@@ -5806,22 +5825,22 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 
 /* before */
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 0, 1, 3))
-		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 
 	if (!sql_delete_keys(be, t, v, l, "DELETE", 0))
-		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: failed to delete indexes for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(42000) "DELETE: failed to delete indexes for table '%s'", t->base.name);
 
 	if (rows) {
 		s = stmt_delete(be, t, rows);
 		if (!be->silent)
 			s = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	} else { /* delete all */
-		s = stmt_table_clear(be, t); /* first column */
+		s = stmt_table_clear(be, t, 0); /* first column */
 	}
 
 /* after */
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 1, 1, 3))
-		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 10, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 	return s;
 }
 
@@ -5859,7 +5878,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	return stdelete;
 }
@@ -5869,34 +5888,26 @@ struct tablelist {
 	struct tablelist* next;
 };
 
-static void /* inspect the other tables recursively for foreign key dependencies */
-check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct tablelist* next_append, sql_table *t, int cascade, int *error)
+static sql_table * /* inspect the other tables recursively for foreign key dependencies */
+check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct tablelist* next_append, sql_table *t, int cascade)
 {
-	node *n;
-	int found;
-	struct tablelist* new_node, *node_check;
+	struct tablelist* new_node;
 	sql_trans *tr = sql->session->tr;
-
-	if (THRhighwater()) {
-		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-		*error = 1;
-		return;
-	}
-
-	if (*error)
-		return;
-
 	sqlstore *store = sql->session->tr->store;
+
+	if (mvc_highwater(sql))
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if (t->keys) { /* Check for foreign key references */
-		for (n = ol_first_node(t->keys); n; n = n->next) {
+		for (node *n = ol_first_node(t->keys); n; n = n->next) {
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {
 				list *keys = sql_trans_get_dependencies(tr, k->base.id, FKEY_DEPENDENCY, NULL);
 
 				if (keys) {
-					for (node *n = keys->h; n; n = n->next->next) {
-						sqlid fkey_id = *(sqlid*)n->data;
+					for (node *nn = keys->h; nn; nn = nn->next->next) {
+						sqlid fkey_id = *(sqlid*)nn->data;
 						sql_base *b = os_find_id(tr->cat->objects, tr, fkey_id);
 						sql_key *fk = (sql_key*)b;
 						sql_fkey *rk = (sql_fkey*)b;
@@ -5906,32 +5917,31 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 						k = fk;
 						/* make sure it is not a self referencing key */
 						if (k->t != t && !cascade && isTable(t)) {
-							node *n = ol_first_node(t->columns);
-							sql_column *c = n->data;
+							node *nnn = ol_first_node(t->columns);
+							sql_column *c = nnn->data;
 							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 10);
 							if (n_rows > 0) {
 								list_destroy(keys);
-								sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
-								*error = 1;
-								return;
+								return sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
 							}
 						} else if (k->t != t) {
-							found = 0;
-							for (node_check = tlist; node_check; node_check = node_check->next) {
+							int found = 0;
+							for (struct tablelist *node_check = tlist; node_check; node_check = node_check->next) {
 								if (node_check->table == k->t)
 									found = 1;
 							}
 							if (!found) {
 								if ((new_node = SA_NEW(sql->ta, struct tablelist)) == NULL) {
 									list_destroy(keys);
-									sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-									*error = 1;
-									return;
+									return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 								}
 								new_node->table = k->t;
 								new_node->next = NULL;
 								next_append->next = new_node;
-								check_for_foreign_key_references(sql, tlist, new_node, k->t, cascade, error);
+								if (!check_for_foreign_key_references(sql, tlist, new_node, k->t, cascade)) {
+									list_destroy(keys);
+									return NULL;
+								}
 							}
 						}
 					}
@@ -5940,6 +5950,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 			}
 		}
 	}
+	return t;
 }
 
 static stmt *
@@ -5947,72 +5958,22 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 {
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
-	stmt *v, *ret = NULL, *other = NULL;
-	const char *next_value_for = "next value for ";
-	sql_column *col = NULL;
-	sql_schema *sche = NULL;
-	sql_table *next = NULL;
-	sql_trans *tr = sql->session->tr;
-	int error = 0;
-	struct tablelist* new_list = SA_NEW(sql->ta, struct tablelist), *list_node;
+	stmt *ret = NULL, *other = NULL;
+	struct tablelist *new_list = SA_NEW(sql->ta, struct tablelist);
 	stmt **deleted_cols = NULL;
 
-	if (!new_list) {
-		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		error = 1;
-		goto finalize;
-	}
-
+	if (!new_list)
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	new_list->table = t;
 	new_list->next = NULL;
-	check_for_foreign_key_references(sql, new_list, new_list, t, cascade, &error);
-	if (error)
+	if (!check_for_foreign_key_references(sql, new_list, new_list, t, cascade))
 		goto finalize;
 
-	for (list_node = new_list; list_node; list_node = list_node->next) {
-		next = list_node->table;
-		sche = next->s;
+	for (struct tablelist *list_node = new_list; list_node; list_node = list_node->next) {
+		sql_table *next = list_node->table;
+		stmt *v = stmt_tid(be, next, 0);
 
-		if (restart_sequences) { /* restart the sequences if it's the case */
-			for (node *n = ol_first_node(next->columns); n; n = n->next) {
-				col = n->data;
-
-				if (col->def && !strncmp(col->def, next_value_for, strlen(next_value_for))) {
-					sql_schema *s = NULL;
-					sql_sequence *seq = NULL;
-					char *schema = NULL, *seq_name = NULL;
-
-					extract_schema_and_sequence_name(sql->ta, col->def + strlen(next_value_for), &schema, &seq_name);
-					if (!schema || !seq_name || !(s = find_sql_schema(tr, schema)))
-						continue;
-
-					assert(s->base.id == sche->base.id);
-					if ((seq = find_sql_sequence(tr, s, seq_name))) {
-						switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
-							case -1:
-								sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-								error = 1;
-								goto finalize;
-							case -2:
-							case -3:
-								sql_error(sql, 02, SQLSTATE(HY005) "RESTART SEQUENCE: transaction conflict detected");
-								error = 1;
-								goto finalize;
-							case -4:
-								sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
-								error = 1;
-								goto finalize;
-							default:
-								break;
-						}
-					}
-				}
-			}
-		}
-
-		v = stmt_tid(be, next, 0);
-
-		/*  project all columns */
+		/* project all columns */
 		if (ol_length(t->triggers) || partition_find_part(sql->session->tr, t, NULL)) {
 			int nr = 0;
 			deleted_cols = table_update_stmts(sql, t, &nr);
@@ -6028,26 +5989,26 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 		/* before */
 		if (!sql_delete_triggers(be, next, v, deleted_cols, 0, 3, 4)) {
-			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
-			error = 1;
+			(void) sql_error(sql, 10, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			ret = NULL;
 			goto finalize;
 		}
 
 		if (!sql_delete_keys(be, next, v, l, "TRUNCATE", cascade)) {
-			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
-			error = 1;
+			(void) sql_error(sql, 10, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
+			ret = NULL;
 			goto finalize;
 		}
 
-		other = stmt_table_clear(be, next);
+		other = stmt_table_clear(be, next, restart_sequences);
 		list_append(l, other);
-		if (next == t)
+		if (next && t && next->base.id == t->base.id)
 			ret = other;
 
 		/* after */
 		if (!sql_delete_triggers(be, next, v, deleted_cols, 1, 3, 4)) {
-			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
-			error = 1;
+			(void) sql_error(sql, 10, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			ret = NULL;
 			goto finalize;
 		}
 
@@ -6059,8 +6020,6 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 finalize:
 	sa_reset(sql->ta);
-	if (error)
-		return NULL;
 	return ret;
 }
 
@@ -6087,7 +6046,7 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	cascade = E_ATOM_INT(n->next->data);
 
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	truncate = sql_truncate(be, t, restart_sequences, cascade);
 	if (sql->cascade_action)
@@ -6627,7 +6586,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)

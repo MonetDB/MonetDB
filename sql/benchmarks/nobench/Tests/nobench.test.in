@@ -12,32 +12,86 @@ select count(*) from bench10
 query T rowsort
 select json.filter(js, '$..str1,$..num') from bench10
 ----
-10 values hashing to 82d54e0bb4907c3fb947e48f9215329b
+["GBRDA===",5,0]
+["GBRDC===",6,1]
+["GBRDCMA=",7,2]
+["GBRDCMBQ",9,4]
+["GBRDCMBQGA======",3,8]
+["GBRDCMBQGE======",4,9]
+["GBRDCMBR",0,5]
+["GBRDCMI=",8,3]
+["GBRDCMJQ",1,6]
+["GBRDCMJR",2,7]
 
 query T rowsort
 select json.filter(js,'.nested_obj.str,.nested_obj.num') from bench10
 ----
-10 values hashing to 17356fd017450908c78ab86c0c7c3937
+["GBRDA===",0]
+["GBRDC===",1]
+["GBRDCMA=",2]
+["GBRDCMBQ",4]
+["GBRDCMBQGA======",8]
+["GBRDCMBQGE======",9]
+["GBRDCMBR",5]
+["GBRDCMI=",3]
+["GBRDCMJQ",6]
+["GBRDCMJR",7]
 
 query T rowsort
 select json.filter(js,'..sparse_000,..sparse_001') from bench10
 ----
-10 values hashing to 6e2ef665e0a091fa7d0f08dd0907513a
+["GBRDA===","GBRDA==="]
+[]
+[]
+[]
+[]
+[]
+[]
+[]
+[]
+[]
 
 query T rowsort
 select json.filter(js,'..sparse_000,..sparse_110') from bench10
 ----
-10 values hashing to bc36e721713c8363e38d891c6e07090d
+["GBRDA==="]
+[]
+[]
+[]
+[]
+[]
+[]
+[]
+[]
+[]
 
 query T rowsort
 select json.filter(js,'str1') from bench10
 ----
-10 values hashing to 3b65f4c74d826c85ec24e32e473f1bd2
+["GBRDA==="]
+["GBRDC==="]
+["GBRDCMA="]
+["GBRDCMBQ"]
+["GBRDCMBQGA======"]
+["GBRDCMBQGE======"]
+["GBRDCMBR"]
+["GBRDCMI="]
+["GBRDCMJQ"]
+["GBRDCMJR"]
 
 query T rowsort
 select json.text(json.filter(js,'str1')) from bench10
 ----
-10 values hashing to 843a171c9d7f154802fa11b23e9e0262
+GBRDA===
+GBRDC===
+GBRDCMA=
+GBRDCMBQ
+GBRDCMBQGA======
+GBRDCMBQGE======
+GBRDCMBR
+GBRDCMI=
+GBRDCMJQ
+GBRDCMJR
 
 query T rowsort
 select * from bench10 where json.text(json.filter(js,'str1')) = 'GBRDCMBR'
@@ -47,17 +101,44 @@ select * from bench10 where json.text(json.filter(js,'str1')) = 'GBRDCMBR'
 query R rowsort
 select json.number(json.filter(js,'num')) from bench10
 ----
-10 values hashing to 8e06beba240f96e23de7d2ba7291282c
+0.000
+1.000
+2.000
+3.000
+4.000
+5.000
+6.000
+7.000
+8.000
+9.000
 
 query I rowsort
 select json."integer"(json.filter(js,'num')) from bench10
 ----
-10 values hashing to e20b902b49a98b1a05ed62804c757f94
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
 
 query I rowsort
 select cast(json.text(json.filter(js,'num')) as integer) from bench10
 ----
-10 values hashing to e20b902b49a98b1a05ed62804c757f94
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
 
 query T rowsort
 select * from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0
@@ -70,12 +151,30 @@ select * from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3
 query R rowsort
 select json.number(json.filter(js,'dyn1')) from bench10
 ----
-10 values hashing to a85ee39c52beec32bd4fa585e700130a
+1.000
+2.000
+3.000
+4.000
+5.000
+6.000
+7.000
+8.000
+9.000
+NULL
 
 query I rowsort
 select json."integer"(json.filter(js,'dyn1')) from bench10
 ----
-10 values hashing to a2d031bfd330134c09212db81ed8b42b
+1
+2
+3
+4
+5
+6
+7
+8
+9
+NULL
 
 statement error
 select cast(json.text(json.filter(js,'dyn1')) as integer) from bench10
@@ -90,7 +189,16 @@ select * from bench10 where json.number(json.filter(js,'dyn1')) between 0.0 and 
 query T rowsort
 select json.filter(js,'nested_arr') from bench10
 ----
-10 values hashing to 7b03637038d6f80c61a51ca3ca8ea921
+[["button-down"]]
+[["check", "it", "the"]]
+[["especially"]]
+[["its", "for", "if", "he", "questions", "to", "put"]]
+[["potatoes", "a", "to", "authentic"]]
+[["she", "beyond"]]
+[["the", "state", "aware", "''", "the"]]
+[["to", "interrupted", "some", "daily", "has", "averages"]]
+[[]]
+[[]]
 
 query T rowsort
 select * from bench10 where json.text(json.filter(js,'nested_arr')) = 'check it the'

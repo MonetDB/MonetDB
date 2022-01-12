@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -691,7 +691,7 @@ mvc_send_hge(stream *s, hge cnt)
 #endif
 
 ssize_t
-convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, size_t *len)
+convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len)
 {
 	ssize_t l = 0;
 
@@ -1551,7 +1551,7 @@ mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type, BAT 
 }
 
 int
-mvc_result_column(backend *be, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
+mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
 	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b, false) ? 0 : -1;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -130,7 +130,7 @@ GDKreleasemmap(void *ptr, size_t size, size_t id)
  * id: Identifier of the file
 */
 gdk_return
-GDKmmapfile(str buffer, size_t max, size_t id)
+GDKmmapfile(char *buffer, size_t max, size_t id)
 {
 	snprintf(buffer, max, "pymmap%zu", id);
 	return GDK_SUCCEED;
@@ -268,7 +268,7 @@ GDKreleasesem(int sem_id)
 #define align(sz) ((sz + 7) & ~7)
 
 size_t
-GDKbatcopysize(BAT *bat, str colname)
+GDKbatcopysize(BAT *bat, const char *colname)
 {
 	size_t size = 0;
 
@@ -284,7 +284,7 @@ GDKbatcopysize(BAT *bat, str colname)
 }
 
 size_t
-GDKbatcopy(char *dest, BAT *bat, str colname)
+GDKbatcopy(char *dest, BAT *bat, const char *colname)
 {
 	MT_lock_set(&bat->theaplock);
 	size_t batsize = bat->twidth * BATcount(bat);

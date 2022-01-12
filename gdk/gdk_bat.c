@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -579,6 +579,8 @@ BATclear(BAT *b, bool force)
 		return GDK_FAIL;
 	}
 
+	TRC_DEBUG(ALGO, ALGOBATFMT "\n", ALGOBATPAR(b));
+
 	/* kill all search accelerators */
 	HASHdestroy(b);
 	IMPSdestroy(b);
@@ -821,12 +823,19 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else if (BATatoms[tt].atomFix) {
 			/* oops, we need to fix/unfix atoms */
 			slowcopy = true;
-		} else if (bi.h && bi.h->parentid != b->batCacheid) {
-			/* extra checks needed for views */
-			if (BATcapacity(BBP_cache(bi.h->parentid)) > bi.count + bi.count)
-				/* reduced slice view: do not copy too
-				 * much garbage */
-				slowcopy = true;
+		} else if (bi.h && bi.h->parentid != b->batCacheid &&
+			   BATcapacity(BBP_cache(bi.h->parentid)) > bi.count + bi.count) {
+			/* reduced slice view: do not copy too much
+			 * garbage */
+			slowcopy = true;
+		} else if (bi.vh && bi.vh->parentid != b->batCacheid &&
+			   BATcount(BBP_cache(bi.vh->parentid)) > bi.count + bi.count) {
+			/* reduced vheap view: do not copy too much
+			 * garbage; this really is a heuristic since the
+			 * vheap could be used completely, even if the
+			 * offset heap is only (less than) half the size
+			 * of the parent's offset heap */
+			slowcopy = true;
 		}
 
 		bn = COLnew2(b->hseqbase, tt, bi.count, role, bi.width);
@@ -854,8 +863,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			if (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED) {
  				goto bunins_failed;
  			}
-			memcpy(bn->theap->base, bi.base, bi.count << bi.shift);
-			bn->theap->free = bi.count << bi.shift;
+			memcpy(bn->theap->base, bi.base, bi.hfree);
+			bn->theap->free = bi.hfree;
 			bn->theap->dirty = true;
  			if (bn->tvheap) {
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
@@ -1003,6 +1012,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	if (count == 0)
 		return GDK_SUCCEED;
 
+	TRC_DEBUG(ALGO, ALGOBATFMT " appending " BUNFMT " values%s\n", ALGOBATPAR(b), count, values ? "" : " (all nil)");
+
 	p = BUNlast(b);		/* insert at end */
 	if (p == BUN_MAX || BATcount(b) + count >= BUN_MAX) {
 		GDKerror("bat too large\n");
@@ -1147,7 +1158,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			b->tnil = b->tnonil = false;
 		}
 	} else {
-		b->tnil = values == NULL;
+		b->tnil |= values == NULL;
 		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
@@ -1155,16 +1166,12 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	if (values && b->ttype) {
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
-		MT_lock_set(&b->theaplock);
-		BUN minpos = b->tminpos;
-		BUN maxpos = b->tmaxpos;
-		MT_lock_unset(&b->theaplock);
 		const void *minvalp = NULL, *maxvalp = NULL;
 		BATiter bi = bat_iterator_nolock(b);
-		if (minpos != BUN_NONE)
-			minvalp = BUNtail(bi, minpos);
-		if (maxpos != BUN_NONE)
-			maxvalp = BUNtail(bi, maxpos);
+		if (bi.minpos != BUN_NONE)
+			minvalp = BUNtail(bi, bi.minpos);
+		if (bi.maxpos != BUN_NONE)
+			maxvalp = BUNtail(bi, bi.maxpos);
 		if (b->tvarsized) {
 			const void *vbase = b->tvheap->base;
 			for (BUN i = 0; i < count; i++) {
@@ -1182,27 +1189,27 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					 * we don't know) */
 					bi = bat_iterator_nolock(b);
 					vbase = b->tvheap->base;
-					if (minpos != BUN_NONE)
-						minvalp = BUNtvar(bi, minpos);
-					if (maxpos != BUN_NONE)
-						maxvalp = BUNtvar(bi, maxpos);
+					if (bi.minpos != BUN_NONE)
+						minvalp = BUNtvar(bi, bi.minpos);
+					if (bi.maxpos != BUN_NONE)
+						maxvalp = BUNtvar(bi, bi.maxpos);
 				}
 				if (b->thash) {
 					HASHappend_locked(b, p, t);
 				}
 				if (atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
-						minpos = maxpos = 0;
+						bi.minpos = bi.maxpos = 0;
 						minvalp = maxvalp = t;
 					} else {
-						if (minpos != BUN_NONE &&
+						if (bi.minpos != BUN_NONE &&
 						    atomcmp(minvalp, t) > 0) {
-							minpos = p;
+							bi.minpos = p;
 							minvalp = t;
 						}
-						if (maxpos != BUN_NONE &&
+						if (bi.maxpos != BUN_NONE &&
 						    atomcmp(maxvalp, t) < 0) {
-							maxpos = p;
+							bi.maxpos = p;
 							maxvalp = t;
 						}
 					}
@@ -1210,7 +1217,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				p++;
 			}
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
-			minpos = maxpos = BUN_NONE;
+			bi.minpos = bi.maxpos = BUN_NONE;
 			minvalp = maxvalp = NULL;
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
@@ -1230,17 +1237,17 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				if (atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
-						minpos = maxpos = 0;
+						bi.minpos = bi.maxpos = 0;
 						minvalp = maxvalp = t;
 					} else {
-						if (minpos != BUN_NONE &&
+						if (bi.minpos != BUN_NONE &&
 						    atomcmp(minvalp, t) > 0) {
-							minpos = p;
+							bi.minpos = p;
 							minvalp = t;
 						}
-						if (maxpos != BUN_NONE &&
+						if (bi.maxpos != BUN_NONE &&
 						    atomcmp(maxvalp, t) < 0) {
-							maxpos = p;
+							bi.maxpos = p;
 							maxvalp = t;
 						}
 					}
@@ -1249,8 +1256,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 		}
 		MT_lock_set(&b->theaplock);
-		b->tminpos = minpos;
-		b->tmaxpos = maxpos;
+		b->tminpos = bi.minpos;
+		b->tmaxpos = bi.maxpos;
 		MT_lock_unset(&b->theaplock);
 	} else {
 		for (BUN i = 0; i < count; i++) {
@@ -1299,6 +1306,7 @@ BUNdelete(BAT *b, oid o)
 		GDKerror("cannot delete committed value\n");
 		return GDK_FAIL;
 	}
+	TRC_DEBUG(ALGO, ALGOBATFMT " deleting oid " OIDFMT "\n", ALGOBATPAR(b), o);
 	b->batDirtydesc = true;
 	val = BUNtail(bi, p);
 	/* writing the values should be locked, reading could be done
@@ -1395,6 +1403,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
+	TRC_DEBUG(ALGO, ALGOBATFMT " replacing " BUNFMT " values\n", ALGOBATPAR(b), count);
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void) {
 		PROPdestroy(b);
@@ -1404,8 +1413,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	} else if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
 		b->tunique_est = 0;
 	}
-	BUN minpos = b->tminpos;
-	BUN maxpos = b->tmaxpos;
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
@@ -1446,36 +1453,36 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				b->tnil = false;
 			}
 			if (b->ttype != TYPE_void) {
-				if (maxpos != BUN_NONE) {
-					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, maxpos), t) < 0) {
+				if (bi.maxpos != BUN_NONE) {
+					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, bi.maxpos), t) < 0) {
 						/* new value is larger
 						 * than previous
 						 * largest */
-						maxpos = p;
-					} else if (maxpos == p && ATOMcmp(b->ttype, BUNtail(bi, maxpos), t) != 0) {
+						bi.maxpos = p;
+					} else if (bi.maxpos == p && ATOMcmp(b->ttype, BUNtail(bi, bi.maxpos), t) != 0) {
 						/* old value is equal to
 						 * largest and new value
 						 * is smaller or nil (see
 						 * above), so we don't
 						 * know anymore which is
 						 * the largest */
-						maxpos = BUN_NONE;
+						bi.maxpos = BUN_NONE;
 					}
 				}
-				if (minpos != BUN_NONE) {
-					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, minpos), t) > 0) {
+				if (bi.minpos != BUN_NONE) {
+					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, bi.minpos), t) > 0) {
 						/* new value is smaller
 						 * than previous
 						 * smallest */
-						minpos = p;
-					} else if (minpos == p && ATOMcmp(b->ttype, BUNtail(bi, minpos), t) != 0) {
+						bi.minpos = p;
+					} else if (bi.minpos == p && ATOMcmp(b->ttype, BUNtail(bi, bi.minpos), t) != 0) {
 						/* old value is equal to
 						 * smallest and new value
 						 * is larger or nil (see
 						 * above), so we don't
 						 * know anymore which is
 						 * the largest */
-						minpos = BUN_NONE;
+						bi.minpos = BUN_NONE;
 					}
 				}
 			}
@@ -1490,8 +1497,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				doHASHdestroy(b, hs);
 			}
 			MT_lock_set(&b->theaplock);
-			minpos = BUN_NONE;
-			maxpos = BUN_NONE;
+			bi.minpos = BUN_NONE;
+			bi.maxpos = BUN_NONE;
 			b->tunique_est = 0.0;
 			MT_lock_unset(&b->theaplock);
 		}
@@ -1532,7 +1539,14 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				}
 			}
 			/* reinitialize iterator after possible heap upgrade */
-			bi = bat_iterator_nolock(b);
+			{
+				/* save and restore minpos/maxpos */
+				BUN minpos = bi.minpos;
+				BUN maxpos = bi.maxpos;
+				bi = bat_iterator_nolock(b);
+				bi.minpos = minpos;
+				bi.maxpos = maxpos;
+			}
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
 			default:	/* only three or four cases possible */
@@ -1637,8 +1651,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
-	b->tminpos = minpos;
-	b->tmaxpos = maxpos;
+	b->tminpos = bi.minpos;
+	b->tmaxpos = bi.maxpos;
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;
@@ -2447,6 +2461,14 @@ BATmode(BAT *b, bool transient)
  * newly created and filled BAT, you may want to first make sure the
  * batCount is set correctly (e.g. by calling BATsetcount), then use
  * BATtseqbase and BATkey, and finally set the other properties.
+ *
+ * For a view, we cannot check all properties, since it is possible with
+ * the way the SQL layer works, that a parent BAT gets changed, changing
+ * the properties, while there is a view.  The view is supposed to look
+ * at only at the non-changing part of the BAT (through candidate
+ * lists), but this means that the properties of the view might not be
+ * correct.  For this reason, for views, we skip all property checking
+ * that looks at the BAT content.
  */
 
 void
@@ -2458,6 +2480,7 @@ BATassertProps(BAT *b)
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
 	char filename[sizeof(b->theap->filename)];
+	bool isview;
 
 	/* do the complete check within a lock */
 	MT_lock_set(&b->theaplock);
@@ -2471,6 +2494,8 @@ BATassertProps(BAT *b)
 	assert(b->hseqbase <= GDK_oid_max); /* non-nil seqbase */
 	assert(b->hseqbase + BATcount(b) <= GDK_oid_max);
 
+	isview = isVIEW(b);
+
 	bbpstatus = BBP_status(b->batCacheid);
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
 	assert(((bbpstatus & BBPDELETED) != 0) +
@@ -2480,10 +2505,10 @@ BATassertProps(BAT *b)
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
-	assert(isVIEW(b) ||
+	assert(isview ||
 	       b->ttype == TYPE_void ||
 	       BBPfarms[b->theap->farmid].roles & (1 << b->batRole));
-	assert(isVIEW(b) ||
+	assert(isview ||
 	       b->tvheap == NULL ||
 	       (BBPfarms[b->tvheap->farmid].roles & (1 << b->batRole)));
 
@@ -2601,7 +2626,8 @@ BATassertProps(BAT *b)
 		       (b->tnosorted > 0 &&
 			b->tnosorted < b->batCount));
 		assert(!b->tsorted || b->tnosorted == 0);
-		if (!b->tsorted &&
+		if (!isview &&
+		    !b->tsorted &&
 		    b->tnosorted > 0 &&
 		    b->tnosorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnosorted - 1),
@@ -2610,7 +2636,8 @@ BATassertProps(BAT *b)
 		       (b->tnorevsorted > 0 &&
 			b->tnorevsorted < b->batCount));
 		assert(!b->trevsorted || b->tnorevsorted == 0);
-		if (!b->trevsorted &&
+		if (!isview &&
+		    !b->trevsorted &&
 		    b->tnorevsorted > 0 &&
 		    b->tnorevsorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnorevsorted - 1),
@@ -2618,7 +2645,7 @@ BATassertProps(BAT *b)
 	}
 	/* if tkey property set, both tnokey values must be 0 */
 	assert(!b->tkey || (b->tnokey[0] == 0 && b->tnokey[1] == 0));
-	if (!b->tkey && (b->tnokey[0] != 0 || b->tnokey[1] != 0)) {
+	if (!isview && !b->tkey && (b->tnokey[0] != 0 || b->tnokey[1] != 0)) {
 		/* if tkey not set and tnokey indicates a proof of
 		 * non-key-ness, make sure the tnokey values are in
 		 * range and indeed provide a proof */
@@ -2638,7 +2665,9 @@ BATassertProps(BAT *b)
 		return;
 	}
 
-	PROPDEBUG { /* only do a scan if property checking is requested */
+	/* only do a scan if property checking is requested and the bat
+	 * is not a view */
+	if (!isview && GDKdebug & PROPMASK) {
 		const void *maxval = NULL;
 		const void *minval = NULL;
 		bool seenmax = false, seenmin = false;

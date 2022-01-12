@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 # python mkodbcwxs.py VERSION BITS PREFIX > PREFIX/MonetDB-ODBC-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB-ODBC-Installer.wxs
@@ -45,7 +45,9 @@ def main():
         if vsdir is not None:
             vcdir = os.path.join(vsdir, 'VC')
     if vcdir is None:
-        if os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
+        if os.path.exists(r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'):
+            vcdir = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'
+        elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
             vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'
         elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'):
             vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'

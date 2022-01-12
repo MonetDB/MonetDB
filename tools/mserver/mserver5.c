@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -91,6 +91,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
 	fprintf(stderr, "    --readonly                Safeguard database\n");
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
+	fprintf(stderr, "    --loadmodule=<module>     Load extra <module> from lib/monetdb5\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
@@ -172,7 +173,7 @@ monet_hello(void)
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
 	printf("# Copyright (c) 1993 - July 2008 CWI.\n");
-	printf("# Copyright (c) August 2008 - 2021 MonetDB B.V., all rights reserved\n");
+	printf("# Copyright (c) August 2008 - 2022 MonetDB B.V., all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
@@ -572,19 +573,19 @@ main(int argc, char **av)
 		exit(1);
 	}
 
-	if (!dbpath) {
-		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
-		if (!dbpath) {
-			fprintf(stderr, "!ERROR: cannot allocate memory for database directory \n");
-			exit(1);
-		}
-	}
 	if (inmemory) {
 		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);
 		}
 	} else {
+		if (dbpath == NULL) {
+			dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
+			if (dbpath == NULL) {
+				fprintf(stderr, "!ERROR: cannot allocate memory for database directory \n");
+				exit(1);
+			}
+		}
 		if (BBPaddfarm(dbpath, 1U << PERSISTENT, true) != GDK_SUCCEED ||
 		    BBPaddfarm(dbextra ? dbextra : dbpath, 1U << TRANSIENT, true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add farm\n");
@@ -594,8 +595,8 @@ main(int argc, char **av)
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
 			exit(1);
 		}
+		GDKfree(dbpath);
 	}
-	GDKfree(dbpath);
 
 	if (dbtrace) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */

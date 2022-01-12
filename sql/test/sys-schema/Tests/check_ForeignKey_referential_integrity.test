@@ -286,12 +286,12 @@ query ITTTTIIII rowsort
 SELECT * FROM sys.sessions WHERE "username" NOT IN (SELECT name FROM sys.users)
 ----
 
-query ITITIIIITTII rowsort
+query ITTTTIIIITTII rowsort
 SELECT * FROM sys.statistics WHERE column_id NOT IN (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns)
 ----
 
-query ITITIIIITTII rowsort
-SELECT * FROM sys.statistics WHERE type NOT IN (SELECT sqlname FROM sys.types)
+query ITTTTIIIITTII rowsort
+SELECT * FROM sys.statistics WHERE "type" NOT IN (SELECT sqlname FROM sys.types)
 ----
 
 query TTTTTTIIIIIIIIIII rowsort

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -84,7 +84,7 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 		if (nc->null != mc->null)
 			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errtable, errtable);
 		if (isRangePartitionTable(nt) || isListPartitionTable(nt)) {
-			if ((!nc->def && mc->def) || (nc->def && !mc->def) || (nc->def && mc->def && strcmp(nc->def, mc->def) != 0))
+			if ((nc->def || mc->def) && (!nc->def || !mc->def || strcmp(nc->def, mc->def) != 0))
 				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column DEFAULT value doesn't match %s definition", errtable, errtable);
 		}
 	}
@@ -491,7 +491,6 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 {
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	str msg = MAL_SUCCEED;
 
 	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
@@ -514,8 +513,6 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 			default:
 				break;
 		}
-		if (access == 0 && (msg = sql_drop_statistics(sql, t)))
-			return msg;
 	}
 	return MAL_SUCCEED;
 }
@@ -737,10 +734,28 @@ drop_key(mvc *sql, char *sname, char *tname, char *kname, int drop_action)
 }
 
 static str
-drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
+IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void (*func)(BAT *))
+{
+	BAT *b = mvc_bind(sql, sname, tname, iname, RDONLY), *nb = NULL;
+
+	if (!b)
+		throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
+	if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+		BBPunfix(b->batCacheid);
+		if (!(b = BATdescriptor(nb->batCacheid)))
+			throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
+	}
+	func(b);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+drop_index(mvc *sql, char *sname, char *iname)
 {
 	sql_schema *s = NULL;
 	sql_idx *i = NULL;
+	str msg = MAL_SUCCEED;
 
 	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.drop_index", SQLSTATE(3F000) "DROP INDEX: no such schema '%s'", sname);
@@ -750,21 +765,10 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: no such index '%s'", iname);
 	if (i->key)
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: cannot drop index '%s', because the constraint '%s' depends on it", iname, i->key->base.name);
-	if (i->type == ordered_idx) {
+	if (i->type == ordered_idx || i->type == imprints_idx) {
 		sql_kc *ic = i->columns->h->data;
-		BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-		if (b) {
-			OIDXdropImplementation(cntxt, b);
-			BBPunfix(b->batCacheid);
-		}
-	}
-	if (i->type == imprints_idx) {
-		sql_kc *ic = i->columns->h->data;
-		BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-		if (b) {
-			IMPSdestroy(b);
-			BBPunfix(b->batCacheid);
-		}
+		if ((msg = IDXdrop(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, i->type == ordered_idx ? OIDXdestroy : IMPSdestroy)))
+			return msg;
 	}
 	switch (mvc_drop_idx(sql, s, i)) {
 		case -1:
@@ -794,11 +798,11 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_bit_nil(seq->cycle))
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence properties must be non-NULL");
 	if (seq->start < seq->minvalue)
-		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->start, seq->minvalue);
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is less than the minimum ("LLFMT" < "LLFMT")", seq->start, seq->minvalue);
 	if (seq->start > seq->maxvalue)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is higher than the maximum ("LLFMT" > "LLFMT")", seq->start, seq->maxvalue);
 	if (seq->maxvalue < seq->minvalue)
-		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->maxvalue, seq->minvalue);
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: maximum value is less than the minimum ("LLFMT" < "LLFMT")", seq->maxvalue, seq->minvalue);
 	if (seq->increment == 0)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence increment cannot be 0");
 	if (seq->cacheinc <= 0)
@@ -843,7 +847,7 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 			break;
 	}
 	if (nseq->maxvalue < nseq->minvalue)
-		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", nseq->maxvalue, nseq->minvalue);
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: maximum value is less than the minimum ("LLFMT" < "LLFMT")", nseq->maxvalue, nseq->minvalue);
 	if (nseq->increment == 0)
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence increment cannot be 0");
 	if (nseq->cacheinc <= 0)
@@ -855,7 +859,7 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 		if (is_lng_nil(*val))
 			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence value must be non-NULL");
 		if (*val < nseq->minvalue)
-			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value lesser than the minimum ("LLFMT" < "LLFMT")", *val, nseq->minvalue);
+			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value less than the minimum ("LLFMT" < "LLFMT")", *val, nseq->minvalue);
 		if (*val > nseq->maxvalue)
 			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value higher than the maximum ("LLFMT" > "LLFMT")", *val, nseq->maxvalue);
 		switch (sql_trans_sequence_restart(sql->session->tr, nseq, *val)) {
@@ -1129,7 +1133,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	}
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
-
 		/* null or default value changes */
 		sql_column *c = n->data;
 
@@ -1180,7 +1183,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 			}
 		}
-		if (c->def != nc->def) {
+		if ((c->def || nc->def) && (!c->def || !nc->def || strcmp(c->def, nc->def) != 0)) {
 			switch (mvc_default(sql, nc, c->def)) {
 				case -1:
 					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1192,7 +1195,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			}
 		}
 
-		if (c->storage_type != nc->storage_type) {
+		if ((c->storage_type || nc->storage_type) && (!c->storage_type || !nc->storage_type || strcmp(c->storage_type, nc->storage_type) != 0)) {
 			if (c->t->access == TABLE_WRITABLE)
 				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
 			switch (mvc_storage(sql, nc, c->storage_type)) {
@@ -1244,15 +1247,20 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		/* alter add index */
 		for (n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
+			BAT *b = NULL, *nb = NULL;
 
 			if (!i->base.new || i->base.deleted)
 				continue;
 
 			if (i->type == ordered_idx) {
 				sql_kc *ic = i->columns->h->data;
-				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				if (b == NULL)
+				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+					BBPunfix(b->batCacheid);
+					if (!(b = BATdescriptor(nb->batCacheid)))
+						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				}
 				char *msg = OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
 				if (msg != MAL_SUCCEED) {
@@ -1260,13 +1268,16 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					freeException(msg);
 					return smsg;
 				}
-			}
-			if (i->type == imprints_idx) {
+			} else if (i->type == imprints_idx) {
 				gdk_return r;
 				sql_kc *ic = i->columns->h->data;
-				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				if (b == NULL)
+				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+					BBPunfix(b->batCacheid);
+					if (!(b = BATdescriptor(nb->batCacheid)))
+						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
+				}
 				r = BATimprints(b);
 				BBPunfix(b->batCacheid);
 				if (r != GDK_SUCCEED)
@@ -1798,7 +1809,7 @@ SQLdrop_index(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *iname = *getArgReference_str(stk, pci, 2);
 
 	initcontext();
-	msg = drop_index(cntxt, sql, sname, iname);
+	msg = drop_index(sql, sname, iname);
 	return msg;
 }
 

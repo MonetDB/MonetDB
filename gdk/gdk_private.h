@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -40,7 +40,7 @@ bool ATOMisdescendant(int id, int parentid)
 int ATOMunknown_find(const char *nme)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-str ATOMunknown_name(int a)
+const char *ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
 void ATOMunknown_clean(void)
 	__attribute__((__visibility__("hidden")));
@@ -268,7 +268,7 @@ var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
 var_t strPut(BAT *b, var_t *dst, const void *v)
 	__attribute__((__visibility__("hidden")));
-str strRead(str a, size_t *dstlen, stream *s, size_t cnt)
+char *strRead(str a, size_t *dstlen, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
 ssize_t strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 	__attribute__((__visibility__("hidden")));

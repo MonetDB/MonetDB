@@ -31,4 +31,3 @@ WHEN MATCHED THEN DELETE
 statement ok
 rollback
 
-
