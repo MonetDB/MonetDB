@@ -1779,6 +1779,12 @@ gdk_export gdk_return BATimprints(BAT *b);
 gdk_export void IMPSdestroy(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
 
+/* Strimps exported functions */
+gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
+gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
+gdk_export void STRMPdestroy(BAT *b);
+gdk_export bool BAThasstrimps(BAT *b);
+
 /* The ordered index structure */
 
 gdk_export gdk_return BATorderidx(BAT *b, bool stable);
@@ -2390,11 +2396,6 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 			CALLBACK;		\
 	} while (0)
 
-/*
- * String Imprints Development/Testing. TODO: remove the following.
- */
-
-#include "gdk_strimps.h"
 typedef struct gdk_callback {
 	char *name;
 	int argc;

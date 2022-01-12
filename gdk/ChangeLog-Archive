@@ -6,18 +6,6 @@
   FILE_ATTIBUTE_NOT_CONTENT_INDEXED, meaning that they should not be
   indexed by indexing or search services.
 
-* Mon Jan  3 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.43.1-20220103
-- Implement string imprints (strimps for short) a pre-filter structure
-  for strings in order to accelerate LIKE queries. If a strimp exists
-  for a specific string column the strings are pre-filtered, rejecting
-  strings that cannot possibly match, before the more expensive and
-  accurate matching algorithms run. Strimps are created automatically
-  or using 'sys.strimp_create' with arguments the names of the schema,
-  table and column. Automatic strimp creation is controlled by two
-  user settable gdk options: 'gdk_use_strimps' (default value "no") and
-  'gdk_strimps_threshold' (default value 1.000.000). See the manual for
-  more details.
-
 * Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.43.1-20220103
 - Many (most) low level functions that could take a long time (such as
   BATjoin) can now be aborted with a timeout.  When the function takes too
