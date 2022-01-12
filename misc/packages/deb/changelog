@@ -40,21 +40,6 @@ monetdb (11.43.1) unstable; urgency=low
 
 monetdb (11.43.1) unstable; urgency=low
 
-  * gdk: Implement string imprints (strimps for short) a pre-filter structure
-    for strings in order to accelerate LIKE queries. If a strimp exists
-    for a specific string column the strings are pre-filtered, rejecting
-    strings that cannot possibly match, before the more expensive and
-    accurate matching algorithms run. Strimps are created automatically
-    or using 'sys.strimp_create' with arguments the names of the schema,
-    table and column. Automatic strimp creation is controlled by two
-    user settable gdk options: 'gdk_use_strimps' (default value "no") and
-    'gdk_strimps_threshold' (default value 1.000.000). See the manual for
-    more details.
-
- -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Mon, 3 Jan 2022 14:02:13 +0100
-
-monetdb (11.43.1) unstable; urgency=low
-
   * monetdb5: The storage cleanup in the 11.41.5 (Jul2021) release made the OLTP
     optimizer pipeline obsolete, thus it was removed.
 
