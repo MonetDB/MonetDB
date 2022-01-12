@@ -63,28 +63,28 @@ TMPL_FUNC_NAME(void *dst, size_t dst_len, const char *s, unsigned int digits, un
 }
 
 
-static int
+static ConversionResult
 TMPL_BULK_FUNC_NAME(READERtask *task, Column *c, int col, int count, size_t width, unsigned int digits, unsigned int scale)
 {
 	void *cursor = task->primary.data;
 	size_t w = width;
 	for (int i = 0; i < count; i++) {
 		char *unescaped = NULL;
-		int ret = prepare_conversion(task, c, col, i, &cursor, &w, &unescaped);
-		if (ret > 0) {
+		ConversionResult res = prepare_conversion(task, c, col, i, &unescaped);
+		if (res != ConversionFailed) {
 			void *p = TMPL_FUNC_NAME(cursor, w, unescaped, digits, scale);
 			if (p == NULL) {
-				ret = report_conversion_failed(task, c, i, col + 1, unescaped);
-				make_it_nil(c, &cursor, &w);
+				res = report_conversion_failed(task, c, i, col + 1, unescaped);
+				set_nil(c, &cursor);
 			}
 		}
-		if (ret < 0) {
-			return -1;
+		if (res == ConversionFailed) {
+			return res;
 		}
 		assert(w == width); // should not have attempted to reallocate!
 		cursor = (char*)cursor + width;
 	}
-	return 0;
+	return ConversionOk;
 }
 
 

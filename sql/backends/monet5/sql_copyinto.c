@@ -94,6 +94,21 @@ typedef struct Table_t {
 	BAT *complaints;			/* lines that did not match the required input */
 } Tablet;
 
+/*
+ * Conversion result.
+ */
+typedef enum {
+	/* An error occurred, the import should be aborted */
+	ConversionFailed,
+	/* The result of the conversion should be considered nil.
+	 * The state of the destination buffer is indeterminate.
+	 */
+	ConversionNull,
+	/* The converted value has been written to the destination buffer */
+	ConversionOk,
+
+} ConversionResult;
+
 
 struct directappend {
 	mvc *mvc;
@@ -810,29 +825,21 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
 }
 
 static void report_append_failed(READERtask *task, Column *fmt, int idx, lng col);
-static int report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *s);
+static ConversionResult report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *s);
 
-static inline void
-make_it_nil(Column *fmt, void **dst, size_t *dst_len)
+static void
+set_nil(Column *c, void *dst)
 {
-	if (fmt->c)
-		fmt->c->tnonil = false;
-	if (*dst_len >= fmt->nil_len)
-		memcpy(*dst, fmt->nildata, fmt->nil_len);
-	else {
-		GDKfree(*dst);
-		*dst_len = 0;
-	}
+	memcpy(dst, c->nildata, c->nil_len);
 }
 
 // -1 means error, 0 means fully done, 1 means please parse *unescaped
-static inline int
-prepare_conversion(READERtask *task, Column *fmt, int col, int idx, void **dst, size_t *dst_len, char **unescaped) {
+static inline ConversionResult
+prepare_conversion(READERtask *task, Column *fmt, int col, int idx, char **unescaped) {
 	char *s = task->fields[col][idx];
 
 	if (s == NULL) {
-		make_it_nil(fmt, dst, dst_len);
-		return 0;
+		return ConversionNull;
 	}
 	size_t slen = strlen(s);
 
@@ -842,43 +849,39 @@ prepare_conversion(READERtask *task, Column *fmt, int col, int idx, void **dst, 
 		// reallocate scratch space if necessary
 		size_t needed = slen + 1;
 		if (adjust_scratch_buffer(&task->scratch, needed, needed / 2) == NULL) {
-			int ret = report_conversion_failed(task, fmt, idx, col + 1, "ALLOCATION FAILURE");
-			make_it_nil(fmt, dst, dst_len);
-			return ret;
+			ConversionResult res = report_conversion_failed(task, fmt, idx, col + 1, "ALLOCATION FAILURE");
+			return res;
 		}
 		// unescape into the scratch space
 		if (GDKstrFromStr((unsigned char*)task->scratch.data, (unsigned char*)s, slen) < 0) {
-			int ret = report_conversion_failed(task, fmt, idx, col + 1, s);
-			make_it_nil(fmt, dst, dst_len);
-			return ret;
+			ConversionResult res = report_conversion_failed(task, fmt, idx, col + 1, s);
+			return res;
 		}
 		*unescaped = task->scratch.data;
 	}
 
-	return 1;
+	return ConversionOk;
 }
 
-static inline int
-SQLconvert_val(READERtask *task, Column *fmt, int col, int idx, void **dst, size_t *dst_len) {
+static inline ConversionResult
+SQLconvert_val(READERtask *task, Column *fmt, int col, int idx) {
 	char *unescaped = NULL;
-	int ret = prepare_conversion(task, fmt, col, idx, dst, dst_len, &unescaped);
-	if (ret <= 0) {
-		// < 0 means error, 0 means fully handled
-		return ret;
+	ConversionResult res = prepare_conversion(task, fmt, col, idx, &unescaped);
+	if (res == ConversionFailed) {
+		return res;
 	}
 
 	// convert using the frstr callback.
-	void *p = fmt->frstr(fmt, fmt->adt, dst, dst_len, unescaped);
+	void *p = fmt->frstr(fmt, fmt->adt, &fmt->data, &fmt->len, unescaped);
 	if (p == NULL) {
-		int ret = report_conversion_failed(task, fmt, idx, col + 1, unescaped);
-		make_it_nil(fmt, dst, dst_len);
-		return ret;
+		ConversionResult res = report_conversion_failed(task, fmt, idx, col + 1, unescaped);
+		return res;
 	}
 
-	return 0;
+	return ConversionOk;
 }
 
-static int
+static ConversionResult
 report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *s)
 {
 	char buf[1024];
@@ -901,7 +904,7 @@ report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *
 					;		/* ignore error here: we're already not best effort */
 				}
 				GDKfree(err);
-				return -1;
+				return ConversionFailed;
 			}
 			mycpstr(scpy, s);
 			s = scpy;
@@ -924,12 +927,12 @@ report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *
 			GDKfree(err);
 			task->besteffort = 0; /* no longer best effort */
 			MT_lock_unset(&errorlock);
-			return -1;
+			return ConversionFailed;
 		}
 		MT_lock_unset(&errorlock);
 	}
 	GDKfree(err);
-	return task->besteffort ? 0 : -1;
+	return task->besteffort ? ConversionNull : ConversionFailed;
 }
 
 static void
@@ -956,23 +959,25 @@ report_append_failed(READERtask *task, Column *fmt, int idx, lng col)
 
 }
 
-static int
+static ConversionResult
 SQLworker_onebyone_column(READERtask *task, int col)
 {
 	Column *fmt = &task->as->format[col];
 	int count = task->top[task->cur];
 
 	for (int i = 0; i < count; i++) {
-		if (SQLconvert_val(task, fmt, col, i, &fmt->data, &fmt->len) < 0)
-			return -1;
-		const void *value = fmt->data ? fmt->data : fmt->nildata;
+		ConversionResult res = SQLconvert_val(task, fmt, col, i);
+		if (res == ConversionFailed)
+			return ConversionFailed;
+
+		const void *value = res == ConversionOk ? fmt->data : fmt->nildata;
 		str msg = directappend_append_one(task->directappend, i, value, fmt->appendcol);
 		if (msg != MAL_SUCCEED) {
 			report_append_failed(task, fmt, i, col + 1);
-			return -1;
+			return ConversionFailed;
 		}
 	}
-	return 0;
+	return ConversionOk;
 }
 
 #define TMPL_TYPE bte
@@ -1001,31 +1006,34 @@ SQLworker_onebyone_column(READERtask *task, int col)
 
 
 
-static int
+static ConversionResult
 bulk_convert_frstr(READERtask *task, Column *c, int col, int count, size_t width)
 {
 	void *cursor = task->primary.data;
 	size_t w = width;
 	for (int i = 0; i < count; i++) {
 		char *unescaped = NULL;
-		int ret = prepare_conversion(task, c, col, i, &cursor, &w, &unescaped);
-		if (ret > 0) {
+		ConversionResult res = prepare_conversion(task, c, col, i, &unescaped);
+		if (res == ConversionOk) {
 			void *p = c->frstr(c, c->adt, &cursor, &w, unescaped);
 			if (p == NULL) {
-				ret = report_conversion_failed(task, c, i, col + 1, unescaped);
-				make_it_nil(c, &cursor, &w);
+				res = report_conversion_failed(task, c, i, col + 1, unescaped);
+				set_nil(c, cursor);
 			}
 		}
-		if (ret < 0) {
-			return -1;
+		if (res == ConversionFailed) {
+			return res;
+		}
+		if (res == ConversionNull) {
+			set_nil(c, cursor);
 		}
 		assert(w == width); // should not have attempted to reallocate!
 		cursor = (char*)cursor + width;
 	}
-	return 0;
+	return ConversionOk;
 }
 
-static int
+static ConversionResult
 SQLworker_fixedwidth_column(READERtask *task, int col)
 {
 	Column *c = &task->as->format[col];
@@ -1038,48 +1046,49 @@ SQLworker_fixedwidth_column(READERtask *task, int col)
 
 	if (adjust_scratch_buffer(&task->primary, allocation_size, 0) == NULL) {
 		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
-		return -1;
+		return ConversionFailed;
 	}
 
-	int ret;
+	ConversionResult res;
 	if (c->column->type.type->eclass == EC_DEC) {
 		switch (c->adt) {
 			case TYPE_bte:
-				ret = bulk_convert_bte_dec(task, c, col, count, width, t->digits, t->scale);
+				res = bulk_convert_bte_dec(task, c, col, count, width, t->digits, t->scale);
 				break;
 			case TYPE_sht:
-				ret = bulk_convert_sht_dec(task, c, col, count, width, t->digits, t->scale);
+				res = bulk_convert_sht_dec(task, c, col, count, width, t->digits, t->scale);
 				break;
 			case TYPE_int:
-				ret = bulk_convert_int_dec(task, c, col, count, width, t->digits, t->scale);
+				res = bulk_convert_int_dec(task, c, col, count, width, t->digits, t->scale);
 				break;
 			case TYPE_lng:
-				ret = bulk_convert_lng_dec(task, c, col, count, width, t->digits, t->scale);
+				res = bulk_convert_lng_dec(task, c, col, count, width, t->digits, t->scale);
 				break;
 			case TYPE_hge:
-				ret = bulk_convert_hge_dec(task, c, col, count, width, t->digits, t->scale);
+				res = bulk_convert_hge_dec(task, c, col, count, width, t->digits, t->scale);
 				break;
 			default:
 				assert(0 && "unexpected column type for decimal");
-				return -1;
+				return ConversionFailed;
 		}
 	} else {
-		ret = bulk_convert_frstr(task, c, col, count, width);
+		res = bulk_convert_frstr(task, c, col, count, width);
+
 	}
-	if (ret < 0)
-		return ret;
+	if (res == ConversionFailed)
+		return res;
 
 	// Now insert it.
 	str msg = directappend_append_batch(task->directappend, task->primary.data, count, width, c->appendcol);
 	if (msg != MAL_SUCCEED) {
 		tablet_error(task, lng_nil, lng_nil, col, "bulk insert failed", msg);
-		return -1;
+		return ConversionFailed;
 	}
 
-	return 0;
+	return ConversionOk;
 }
 
-static int
+static ConversionResult
 SQLworker_str_column(READERtask *task, int col)
 {
 	Column *c = &task->as->format[col];
@@ -1091,7 +1100,7 @@ SQLworker_str_column(READERtask *task, int col)
 
 	size_t secondary_size = 0;
 	for (int i = 0; i < count; i++) {
-		size_t max_field_size = c->nil_len;
+		size_t max_field_size = c->nil_len; // includes trailing \0
 		char *v = task->fields[col][i];
 		if (v) {
 			max_field_size += strlen(v) + 1;
@@ -1101,11 +1110,11 @@ SQLworker_str_column(READERtask *task, int col)
 
 	if (adjust_scratch_buffer(&task->primary, primary_size, 0) == NULL) {
 		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", NULL);
-		return -1;
+		return ConversionFailed;
 	}
 	if (adjust_scratch_buffer(&task->secondary, secondary_size, 0) == NULL) {
 		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", NULL);
-		return -1;
+		return ConversionFailed;
 	}
 
 	char **p = task->primary.data;
@@ -1113,29 +1122,29 @@ SQLworker_str_column(READERtask *task, int col)
 	void *s_end = (char*)s + task->secondary.len;
 	for (int i = 0; i < count; i++) {
 		assert(s <= s_end);
-		size_t s_len = (char*)s_end - (char*)s;
 
 		char *v = task->fields[col][i];
 		if (v == NULL) {
-			make_it_nil(c, &s, &s_len);
 			*p++ = s;
-			s = (char*)s + c->nil_len; // includes trailing NUL byte
+			memcpy(s, str_nil, sizeof(str_nil));
+			s = (char*)s + sizeof(str_nil); // includes trailing NUL byte
 			continue;
 		}
 
 		// Copy or unescape directly into the secondary buffer.
 		size_t len = strlen(v);
+		ssize_t frstr_len;
 		if (!task->escape) {
 			memcpy(s, v, len + 1);
-		} else if (GDKstrFromStr((unsigned char*)s, (unsigned char *)v, len) >= 0) {
-			len = strlen(s);
+		} else if ((frstr_len = GDKstrFromStr((unsigned char*)s, (unsigned char *)v, len)) >= 0) {
+			len = (size_t) frstr_len;
 		} else {
 			// GDKstrFromStr failed. How bad is it?
-			int ret = report_conversion_failed(task, c, i, col + 1, v);
-			make_it_nil(c, &s, &s_len);
-			if (ret < 0)
-				return ret;
-			len = c->nil_len - 1; // trailing NUL byte will be accounted for later
+			ConversionResult res = report_conversion_failed(task, c, i, col + 1, v);
+			if (res == ConversionFailed)
+				return res;
+			memcpy(s, str_nil, sizeof(str_nil));
+			len = sizeof(str_nil) - 1; // trailing NUL byte will be accounted for later
 		}
 
 		// Validate against the column's length restriction.
@@ -1143,11 +1152,11 @@ SQLworker_str_column(READERtask *task, int col)
 		if (c->maxwidth > 0 && len > c->maxwidth && !strNil(s)) {
 			if ((unsigned int)UTF8_strlen(s) > c->maxwidth) {
 				if ((unsigned int)strPrintWidth(s) > c->maxwidth) {
-					int ret = report_conversion_failed(task, c, i, col + 1, v);
-					make_it_nil(c, &s, &s_len);
-					if (ret < 0)
-						return ret;
-					len = c->nil_len - 1; // trailing NUL byte will be accounted for later
+					ConversionResult res = report_conversion_failed(task, c, i, col + 1, v);
+					if (res == ConversionFailed)
+						return res;
+					memcpy(s, str_nil, sizeof(str_nil));
+					len = sizeof(str_nil) - 1; // trailing NUL byte will be accounted for later
 				}
 			}
 		}
@@ -1161,17 +1170,17 @@ SQLworker_str_column(READERtask *task, int col)
 	str msg = directappend_append_batch(task->directappend, task->primary.data, count, width, c->appendcol);
 	if (msg != MAL_SUCCEED) {
 		tablet_error(task, lng_nil, lng_nil, col, "bulk insert failed", msg);
-		return -1;
+		return ConversionFailed;
 	}
 
-	return 0;
+	return ConversionOk;
 }
 
-static int
+static ConversionResult
 SQLworker_bat_column(READERtask *task, int col)
 {
 	Column *c = &task->as->format[col];
-	int ret = 0;
+	ConversionResult res = ConversionOk;
 
 	/* do we really need this lock? don't think so */
 	MT_lock_set(&mal_copyLock);
@@ -1179,36 +1188,45 @@ SQLworker_bat_column(READERtask *task, int col)
 		if (BATextend(c->c, BATgrows(c->c) + task->limit) != GDK_SUCCEED) {
 			tablet_error(task, lng_nil, lng_nil, col, "Failed to extend the BAT\n", "SQLworker_column");
 			MT_lock_unset(&mal_copyLock);
-			return -1;
+			return ConversionFailed;
 		}
 	}
 	MT_lock_unset(&mal_copyLock);
 
 	for (int i = 0; i < task->top[task->cur]; i++) {
-		if (SQLconvert_val(task, c, col, i, &c->data, &c->len) < 0) {
-			ret = -1;
+ 		res = SQLconvert_val(task, c, col, i);
+		if (res == ConversionFailed) {
 			break;
 		}
-		const char *value = c->data ? c->data : c->nildata;
+		const char *value;
+		if (res == ConversionNull) {
+			value = c->nildata;
+			c->c->tnonil = false;
+			res = ConversionOk;
+		} else { // ConversionOk
+			value = c->data;
+		}
 		if (bunfastapp(c->c, value) != GDK_SUCCEED) {
 			report_append_failed(task, c, i, col + 1);
-			ret = -1;
+			res = ConversionFailed;
 			break;
+		} else {
+			res = ConversionOk;
 		}
 
 	}
 	BATsetcount(c->c, BATcount(c->c));
 	c->c->theap->dirty |= BATcount(c->c) > 0;
 
-	return ret;
+	return res;
 }
 
-static int
+static ConversionResult
 SQLworker_column(READERtask *task, int col)
 {
 	Column *fmt = &task->as->format[col];
 	if (fmt->skip)
-		return 0;
+		return ConversionOk;
 
 	if (!task->directappend)
 		return SQLworker_bat_column(task, col);
@@ -1388,7 +1406,7 @@ SQLworker(void *arg)
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
 					t0 = GDKusec();
-					if (SQLworker_column(task, task->cols[i] - 1) < 0)
+					if (SQLworker_column(task, task->cols[i] - 1) == ConversionFailed)
 						break;
 					t0 = GDKusec() - t0;
 					task->time[i] += t0;
