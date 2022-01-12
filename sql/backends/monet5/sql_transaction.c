@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -52,7 +52,7 @@ SQLtransaction_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	initcontext();
 
 	(void) chain;
-	if (sql->session->auto_commit == 1)
+	if (sql->session->auto_commit)
 		throw(SQL, "sql.trans", SQLSTATE(3BM30) "RELEASE SAVEPOINT: not allowed in auto commit mode");
 	return mvc_release(sql, name);
 }
@@ -67,11 +67,10 @@ SQLtransaction_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 
-	if (sql->session->auto_commit == 1) {
+	if (sql->session->auto_commit) {
 		if (name)
 			throw(SQL, "sql.trans", SQLSTATE(3BM30) "SAVEPOINT: not allowed in auto commit mode");
-		else
-			throw(SQL, "sql.trans", SQLSTATE(2DM30) "COMMIT: not allowed in auto commit mode");
+		throw(SQL, "sql.trans", SQLSTATE(2DM30) "COMMIT: not allowed in auto commit mode");
 	}
 	return mvc_commit(sql, chain, name, false);
 }
@@ -86,7 +85,7 @@ SQLtransaction_rollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 
-	if (sql->session->auto_commit == 1)
+	if (sql->session->auto_commit)
 		throw(SQL, "sql.trans", SQLSTATE(2DM30) "ROLLBACK: not allowed in auto commit mode");
 	return mvc_rollback(sql, chain, name, false);
 }
@@ -101,13 +100,11 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 
-	if (sql->session->auto_commit == 0)
+	(void) chain;
+	if (!sql->session->auto_commit)
 		throw(SQL, "sql.trans", SQLSTATE(25001) "START TRANSACTION: cannot start a transaction within a transaction");
 	if (sql->session->tr->active)
 		msg = mvc_rollback(sql, 0, NULL, false);
-	sql->session->auto_commit = 0;
-	sql->session->ac_on_commit = 1;
-	sql->session->level = chain;
 	if (msg)
 		return msg;
 	switch (mvc_trans(sql)) {
@@ -118,38 +115,8 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 			break;
 	}
-	return MAL_SUCCEED;
-}
-
-str
-SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg;
-
-	(void) stk;
-	(void) pci;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (sql->session->auto_commit == 0)
-		throw(SQL, "sql.trans", SQLSTATE(25001) "START TRANSACTION: cannot start a transaction within a transaction");
-	if (sql->session->tr->active)
-		msg = mvc_rollback(sql, 0, NULL, false);
+	/* set transaction properties after successfuly starting */
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
-	sql->session->level = 0;
-	if (msg)
-		return msg;
-	switch (mvc_trans(sql)) {
-		case -1:
-			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		case -3:
-			throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this transaction won't start");
-		default:
-			break;
-	}
 	return MAL_SUCCEED;
 }

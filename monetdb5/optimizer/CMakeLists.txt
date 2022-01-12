@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 add_library(optimizer OBJECT)
@@ -37,7 +37,6 @@ target_sources(optimizer
   opt_mergetable.c opt_mergetable.h
   opt_mitosis.c opt_mitosis.h
   opt_multiplex.c opt_multiplex.h
-  opt_oltp.c opt_oltp.h
   opt_wlc.c opt_wlc.h
   opt_pipes.c
   opt_prelude.c opt_prelude.h

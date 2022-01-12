@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* Author(s) Martin Kersten
@@ -128,7 +128,6 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("reorder", "Reorder by dataflow dependencies"),
  pattern("inspect", "optimizer_stats", OPTstatistics, false, "Get optimizer use statistics, i.e. calls and total time", args(3,3, batarg("",str),batarg("",int),batarg("",lng))),
  optwrapper_pattern("pushselect", "Push selects down projections"),
- optwrapper_pattern("oltp", "Inject the OLTP locking primitives"),
  optwrapper_pattern("wlc", "Inject the workload capture-replay primitives"),
  optwrapper_pattern("postfix", "Postfix the plan,e.g. pushing projections"),
  optwrapper_pattern("strimps", "Use strimps index if appropriate"),

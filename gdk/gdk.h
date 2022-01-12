@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -879,6 +879,10 @@ gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 
+#define isVIEW(x)							\
+	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
+	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
+
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
  * A BAT iterator has to be used with caution, but it does have to be
@@ -942,6 +946,7 @@ bat_iterator_nolock(BAT *b)
 {
 	/* does not get matched by bat_iterator_end */
 	if (b) {
+		bool isview = isVIEW(b);
 		return (BATiter) {
 			.b = b,
 			.h = b->theap,
@@ -952,10 +957,15 @@ bat_iterator_nolock(BAT *b)
 			.shift = b->tshift,
 			.type = b->ttype,
 			.tseq = b->tseqbase,
-			.hfree = b->theap->free,
+			/* don't use b->theap->free in case b is a slice */
+			.hfree = b->ttype ?
+				  b->ttype == TYPE_msk ?
+				   (((size_t) b->batCount + 31) / 32) * 4 :
+				  (size_t) b->batCount << b->tshift :
+				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
-			.minpos = b->tminpos,
-			.maxpos = b->tmaxpos,
+			.minpos = isview ? BUN_NONE : b->tminpos,
+			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
 #ifndef NDEBUG
 			.locked = false,
@@ -1492,10 +1502,11 @@ gdk_export bat BBPlimit;
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT
  * this also gives the longest possible "physical" name and "bak" name
- * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on
- * 64 bit architecture and 11 + \0 on 32 bit architecture; the
- * physical name is a bit more complicated, but the longest possible
- * name is 22 + \0 bytes (16 + \0 on 32 bits) */
+ * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on 64
+ * bit architecture and 11 + \0 on 32 bit architecture; the physical
+ * name is a bit more complicated, but the longest possible name is 22 +
+ * \0 bytes (16 + \0 on 32 bits), the longest possible extension adds
+ * another 17 bytes (.thsh(grp|uni)(l|b)%08x) */
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
@@ -2146,13 +2157,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 			return (e);					\
 		}							\
 	} while (false)
-
-/* the parentid in a VIEW is correct for the normal view. We must
- * correct for the reversed view.
- */
-#define isVIEW(x)							\
-	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
-	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
 
 #define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)

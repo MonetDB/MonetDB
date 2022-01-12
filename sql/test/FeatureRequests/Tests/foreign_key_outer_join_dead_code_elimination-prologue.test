@@ -451,4 +451,3 @@ select count(*) from testme inner join "myt" on testme.good = "myt".myid where t
 statement ok
 rollback
 
-

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
@@ -19,12 +19,12 @@
 #define sql_shared_module_name "sql"
 #define sql_private_module_name "user"
 
-#define tr_none		0
-#define tr_readonly	1
-#define tr_writable	2
-#define tr_snapshot 4
-#define tr_serializable 8
-#define tr_append 	16
+#define tr_none		1
+#define tr_readonly	2
+#define tr_writable	4
+#define tr_append 	8
+#define tr_snapshot 16
+#define tr_serializable 32
 
 #define ACT_NO_ACTION 0
 #define ACT_CASCADE 1
@@ -74,11 +74,6 @@ typedef enum sql_dependency {
 #define ROLE_PUBLIC   1
 #define ROLE_SYSADMIN 2
 #define USER_MONETDB  3
-
-#define ISO_READ_UNCOMMITED 1
-#define ISO_READ_COMMITED   2
-#define ISO_READ_REPEAT	    3
-#define ISO_SERIALIZABLE    4
 
 #define SCALE_NONE	0
 #define SCALE_FIX	1	/* many numerical functions require equal
@@ -516,7 +511,6 @@ typedef struct sql_func {
 	 		*/
 	sql_schema *s;
 	sql_allocator *sa;
-	MT_Lock function_lock; /* protecting concurrent function instantiations. Only used in MAL and SQL functions */
 } sql_func;
 
 typedef struct sql_subfunc {
@@ -623,10 +617,9 @@ typedef struct sql_column {
 	char unique; 		/* 0 NOT UNIQUE, 1 SUB_UNIQUE, 2 UNIQUE */
 	int drop_action;	/* only used for alter statements */
 	char *storage_type;
-	int sorted;		/* for DECLARED (dupped tables) we keep order info */
 	size_t dcount;
-	char *min;
-	char *max;
+	void *min;
+	void *max;
 
 	struct sql_table *t;
 	ATOMIC_PTR_TYPE data;

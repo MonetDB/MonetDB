@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -31,7 +31,7 @@ gdk_export void *GDKinitmmap(size_t id, size_t size, size_t *return_size);
 //! Release a memory mapped file that was created through GDKinitmmap
 gdk_export gdk_return GDKreleasemmap(void *ptr, size_t size, size_t id);
 //! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
-gdk_export gdk_return GDKmmapfile(str buffer, size_t max, size_t id);
+gdk_export gdk_return GDKmmapfile(char *buffer, size_t max, size_t id);
 
 /*
  * Interprocess-Semaphores, used for cross process lock operations
@@ -55,9 +55,9 @@ gdk_export gdk_return GDKreleasesem(int sem_id);
  */
 
 //! Returns the size of the buffer necessary to copy the BAT into
-gdk_export size_t GDKbatcopysize(BAT *bat, str colname);
+gdk_export size_t GDKbatcopysize(BAT *bat, const char *colname);
 //! Copies a BAT into the given destination. Returns the amount of bytes copied (equiv. to GDKbatcopysize(bat))
-gdk_export size_t GDKbatcopy(char *dest, BAT *bat, str colname);
+gdk_export size_t GDKbatcopy(char *dest, BAT *bat, const char *colname);
 //! Reads a BAT from the given source (one that was copied into by GDKbatcopy)
 gdk_export size_t GDKbatread(char *src, BAT **bat, str *colname);
 

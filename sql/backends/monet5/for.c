@@ -29,6 +29,59 @@ BATnegateprops(BAT *b)
 	b->tnokey[1] = 0;
 }
 
+BAT *
+FORdecompress_(BAT *o, lng minval, int type, role_t role)
+{
+	BAT *b = COLnew(o->hseqbase, type, BATcount(o), role);
+
+	if (!b)
+		return NULL;
+	BUN cnt = BATcount(o);
+#ifdef HAVE_HGE
+	if (type == TYPE_hge) {
+		if (o->ttype == TYPE_bte) {
+			hge *ov = Tloc(b, 0);
+			bte *iv = Tloc(o, 0);
+			for(BUN i = 0; i<cnt; i++)
+				ov[i] = minval + iv[i];
+		} else {
+			hge *ov = Tloc(b, 0);
+			sht *iv = Tloc(o, 0);
+			for(BUN i = 0; i<cnt; i++)
+				ov[i] = minval + iv[i];
+		}
+	} else
+#endif
+	if (type == TYPE_lng) {
+		if (o->ttype == TYPE_bte) {
+			lng *ov = Tloc(b, 0);
+			bte *iv = Tloc(o, 0);
+			for(BUN i = 0; i<cnt; i++)
+				ov[i] = minval + iv[i];
+		} else {
+			lng *ov = Tloc(b, 0);
+			sht *iv = Tloc(o, 0);
+			for(BUN i = 0; i<cnt; i++)
+				ov[i] = minval + iv[i];
+		}
+	} else if (type == TYPE_int) {
+		if (o->ttype == TYPE_bte) {
+			int *ov = Tloc(b, 0);
+			bte *iv = Tloc(o, 0);
+			for(BUN i = 0; i<cnt; i++)
+				ov[i] = (int) (minval + iv[i]);
+		} else {
+			int *ov = Tloc(b, 0);
+			sht *iv = Tloc(o, 0);
+			for(BUN i = 0; i<cnt; i++)
+				ov[i] = (int) (minval + iv[i]);
+		}
+	}
+	BATsetcount(b, cnt);
+	BATnegateprops(b);
+	return b;
+}
+
 str
 FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -54,35 +107,44 @@ FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "for.decompress", SQLSTATE(3F000) "for decompress: invalid type");
 	}
 
-	BUN cnt = BATcount(o);
-	if (tt == TYPE_lng) {
-		lng minval = *getArgReference_lng(stk, pci, 2);
+	lng minval = *getArgReference_lng(stk, pci, 2);
 
-		b = COLnew(o->hseqbase, TYPE_lng, cnt, PERSISTENT);
-		if (!b) {
-			bat_destroy(o);
-			throw(SQL, "for.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		if (o->ttype == TYPE_bte) {
-			lng *ov = Tloc(b, 0);
-			bte *iv = Tloc(o, 0);
-			for(BUN i = 0; i<cnt; i++)
-				ov[i] = minval + iv[i];
-		} else {
-			lng *ov = Tloc(b, 0);
-			sht *iv = Tloc(o, 0);
-			for(BUN i = 0; i<cnt; i++)
-				ov[i] = minval + iv[i];
-		}
-	} else {
+	b = FORdecompress_(o, minval, tt, TRANSIENT);
+	if (!b) {
 		bat_destroy(o);
-		throw(SQL, "for.decompress", SQLSTATE(3F000) "offset type %s not yet implemented", ATOMname(tt));
+		throw(SQL, "for.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bat_destroy(o);
-	BATsetcount(b, cnt);
-	BATnegateprops(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
+}
+
+static BAT *
+FORcompress_(BAT *b, lng min_val, lng max_val, role_t role)
+{
+	BAT *o;
+	BUN cnt = BATcount(b);
+
+	if ((max_val-min_val) < GDK_bte_max/2) {
+		o = COLnew(b->hseqbase, TYPE_bte, cnt, role);
+		if (!o)
+			return NULL;
+		bte *ov = Tloc(o, 0);
+		lng *iv = Tloc(b, 0);
+		for(BUN i = 0; i<cnt; i++)
+			ov[i] = (bte)(iv[i] - min_val);
+	} else {
+		o = COLnew(b->hseqbase, TYPE_sht, cnt, role);
+		if (!o)
+			return NULL;
+		sht *ov = Tloc(o, 0);
+		lng *iv = Tloc(b, 0);
+		for(BUN i = 0; i<cnt; i++)
+			ov[i] = (sht)(iv[i] - min_val);
+	}
+	BATsetcount(o, cnt);
+	BATnegateprops(o);
+	return o;
 }
 
 static str
@@ -92,6 +154,7 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 	char buf[64];
 	int tt = b->ttype;
 	ptr mn = NULL, mx = NULL;
+	BUN cnt = BATcount(b);
 
 	if (
 #ifdef HAVE_HGE
@@ -99,6 +162,8 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 #endif
 			tt != TYPE_lng && tt != TYPE_int)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: invalid column type");
+	if (cnt == 0)
+		throw(SQL, "for.compress", SQLSTATE(42000) "for compress: cannot compute range of values on empty columns");
 
 	/* For now we only handle hge, lng, and int -> sht and bte */
 	if (!(mn = BATmin(b, NULL)))
@@ -108,31 +173,20 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		throw(SQL, "for.compress", GDK_EXCEPTION);
 	}
 
-	BUN cnt = BATcount(b);
 	if (tt == TYPE_lng) {
 		lng min_val = *(lng*)mn;
 		lng max_val = *(lng*)mx;
+
 		GDKfree(mn);
 		GDKfree(mx);
+		/* defensive line, if there are 'holes' on b, 'for' compression cannot be done */
+		if (is_lng_nil(min_val) || is_lng_nil(max_val))
+			throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: for 'for' compression column's cannot have NULL's");
 		if ((max_val-min_val) > GDK_sht_max)
 			throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: too large value spread for 'for' compression");
-		if ((max_val-min_val) < GDK_bte_max/2) {
-			o = COLnew(b->hseqbase, TYPE_bte, cnt, PERSISTENT);
-			if (!o)
-				throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			bte *ov = Tloc(o, 0);
-			lng *iv = Tloc(b, 0);
-			for(BUN i = 0; i<cnt; i++)
-				ov[i] = (bte)(iv[i] - min_val);
-		} else {
-			o = COLnew(b->hseqbase, TYPE_sht, cnt, PERSISTENT);
-			if (!o)
-				throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			sht *ov = Tloc(o, 0);
-			lng *iv = Tloc(b, 0);
-			for(BUN i = 0; i<cnt; i++)
-				ov[i] = (sht)(iv[i] - min_val);
-		}
+		o = FORcompress_(b, min_val, max_val, PERSISTENT);
+		if (!o)
+			throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(buf, 64, "FOR-" LLFMT, min_val);
 	} else {
 		GDKfree(mn);
@@ -143,8 +197,6 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		bat_destroy(o);
 		throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BATsetcount(o, cnt);
-	BATnegateprops(o);
 	*r = o;
 	return NULL;
 }
@@ -182,6 +234,10 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!isTable(t))
 		throw(SQL, "for.compress", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (isTempTable(t))
+		throw(SQL, "for.compress", SQLSTATE(42000) "columns from temporary tables cannot be compressed");
+	if (t->system)
+		throw(SQL, "for.compress", SQLSTATE(42000) "columns from system tables cannot be compressed");
 	sql_column *c = find_sql_column(t, cname);
 	if (!c)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "column '%s.%s.%s' unknown", sname, tname, cname);
@@ -229,4 +285,73 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_destroy(o);
 	}
 	return msg;
+}
+
+int
+FORprepare4append(BAT **noffsets, BAT *b, lng minval, int tt)
+{
+	ptr mn = NULL, mx = NULL;
+	*noffsets = NULL;
+
+	if (!(mn = BATmin(b, NULL)))
+		return -1;
+	if (!(mx = BATmax(b, NULL))) {
+		GDKfree(mn);
+		return -1;
+	}
+	if (b->ttype == TYPE_lng) {
+		lng min_val = *(lng*)mn;
+		lng max_val = *(lng*)mx;
+		lng maxcnt = (tt == TYPE_bte)?GDK_bte_max/2:GDK_sht_max;
+
+		GDKfree(mn);
+		GDKfree(mx);
+		if (min_val < minval || max_val < minval || (max_val - minval) > maxcnt || is_lng_nil(min_val) || is_lng_nil(max_val))
+			return 0; /* decompress */
+
+		*noffsets = FORcompress_(b, minval, max_val, TRANSIENT);
+	}
+	return 0;
+}
+
+int
+FORprepare4append_vals(void **noffsets, void *vals, BUN cnt, lng minval, int vtype, int tt)
+{
+	*noffsets = NULL;
+
+	assert(cnt);
+	if (vtype == TYPE_lng) {
+		BUN i = 0;
+		lng min = GDK_lng_max;
+		lng max = GDK_lng_min;
+		lng *v = vals;
+
+		for(i=0; i<cnt; i++) {
+			if (is_lng_nil(v[i]))
+					break;
+			if (min > v[i])
+				min = v[i];
+			if (max < v[i])
+				max = v[i];
+		}
+		if (i<cnt)
+			return 0;
+		lng maxcnt = (tt == TYPE_bte)?GDK_bte_max/2:GDK_sht_max;
+		if (min < minval || max < minval || (max - min) > maxcnt)
+			return 0; /* decompress */
+		if (tt == TYPE_bte) {
+			bte *n = *noffsets = GDKmalloc(sizeof(bte) * cnt);
+			if (!n)
+				return -1;
+			for(BUN i=0; i<cnt; i++)
+				n[i] = (bte) (v[i] - minval);
+		} else {
+			sht *n = *noffsets = GDKmalloc(sizeof(sht) * cnt);
+			if (!n)
+				return -1;
+			for(BUN i=0; i<cnt; i++)
+				n[i] = (sht) (v[i] - minval);
+		}
+	}
+	return 0;
 }

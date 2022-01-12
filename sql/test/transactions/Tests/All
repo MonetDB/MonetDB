@@ -5,3 +5,4 @@ transaction_isolation4
 transaction_isolation5
 mergetable-deps-crash
 view-deps
+chaining

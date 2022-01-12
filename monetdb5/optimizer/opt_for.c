@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -91,7 +91,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if (p->argc == 2 && p->retc == 1 && getFunctionId(p) == NULL) {
+				} else if (p->argc == 2 && p->retc == 1 && p->barrier == ASSIGNsymbol) {
 					/* a = b */
 					int l = getArg(p, 0);
 					varisfor[l] = varisfor[k];
@@ -108,16 +108,15 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
-					/* id = mirror(col) with col = for.decompress(o,min_val)
-					 * id = mirror(o) */
+				} else if ((getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) || (getModuleId(p) == batcalcRef && getFunctionId(p) == identityRef)) {
+					/* id = mirror/identity(col) with col = for.decompress(o,min_val)
+					 * id = mirror/identity(o) */
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = varisfor[k];
 					pushInstruction(mb,r);
 					freeInstruction(p);
 					done = 1;
 					break;
-				//} else if (isSelect(p)) {
 				} else// if (isSelect(p)) {
 					if (getFunctionId(p) == thetaselectRef) {
 						/* pos = thetaselect(col, cand, l, ...) with col = for.decompress(o, minval)
@@ -198,9 +197,11 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if ((isMapOp(p) || isMap2Op(p)) && (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef)  && allConstExcept(mb, p, j)) {
+				} else if ((isMapOp(p) || isMap2Op(p)) && (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef) &&
+							p->argc > 2 && getBatType(getArgType(mb, p, 2)) != TYPE_oid && allConstExcept(mb, p, j)) {
+					/* filter out unary batcalc.- with and without a candidate list */
 					/* batcalc.-(1, col) with col = for.decompress(o,min_val)
-					 * v1 = batcalc.-(1, min_val)
+					 * v1 = calc.-(1, min_val)
 					 * for.decompress(o, v1) */
 					/* we assume binary operators only ! */
 					InstrPtr r = newInstructionArgs(mb, calcRef, getFunctionId(p), 3);

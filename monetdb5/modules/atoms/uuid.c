@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -155,6 +155,8 @@ static str
 UUIDisaUUID(bit *retval, str *s)
 {
 	*retval = isaUUID(*s);
+	if (*retval == false)
+		GDKclrerr();
 	return MAL_SUCCEED;
 }
 
@@ -181,6 +183,7 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 	for (BUN p = 0 ; p < q ; p++)
 		dst[p] = isaUUID(BUNtvar(bi, p));
 	bat_iterator_end(&bi);
+	GDKclrerr(); /* Not interested in atomFromStr errors */
 	BATsetcount(bn, q);
 	bn->tnonil = b->tnonil;
 	bn->tnil = b->tnil;
@@ -210,7 +213,7 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	struct canditer ci;
 	BUN q = 0;
 	oid off;
-	bool nils = false;
+	bool nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	BATiter bi;
 
 	if (sid && !is_bat_nil(*sid)) {
@@ -253,22 +256,25 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= is_uuid_nil(v);
 		}
 	}
+	btkey = b->tkey;
+	btsorted = b->tsorted;
+	btrevsorted = b->trevsorted;
 	bat_iterator_end(&bi);
 
 bailout:
-	if (dst) {					/* implies msg==MAL_SUCCEED */
-		BATsetcount(dst, q);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
-		dst->tsorted = b->tsorted;
-		dst->trevsorted = b->trevsorted;
-		BBPkeepref(*res = dst->batCacheid);
-	}
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (dst) {					/* implies msg==MAL_SUCCEED */
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = btkey;
+		dst->tsorted = btsorted;
+		dst->trevsorted = btrevsorted;
+		BBPkeepref(*res = dst->batCacheid);
+	}
 	return msg;
 }
 
@@ -293,7 +299,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	struct canditer ci;
 	BUN q = 0;
 	oid off;
-	bool nils = false;
+	bool nils = false, btkey = false;
 	size_t l = UUID_SIZE;
 	ssize_t (*conv)(const char *, size_t *, void **, bool) = BATatoms[TYPE_uuid].atomFromStr;
 
@@ -317,7 +323,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {
@@ -330,7 +336,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	} else {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {
@@ -341,23 +347,24 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(v);
 		}
 	}
+	btkey = b->tkey;
 	bat_iterator_end(&bi);
 
 bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
 		BATsetcount(dst, q);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
+		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -380,7 +387,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	BUN q = 0;
 	struct canditer ci;
 	oid off;
-	bool nils = false;
+	bool nils = false, btkey = false;
 	char buf[UUID_STRLEN + 2], *pbuf = buf;
 	size_t l = sizeof(buf);
 	ssize_t (*conv)(char **, size_t *, const void *, bool) = BATatoms[TYPE_uuid].atomToStr;
@@ -438,23 +445,24 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(buf);
 		}
 	}
+	btkey = b->tkey;
 	bat_iterator_end(&bi);
 
 bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
 		BATsetcount(dst, q);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
+		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	return msg;
 }
 

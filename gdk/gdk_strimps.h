@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _GDK_STRIMPS_H_
@@ -25,7 +25,7 @@ typedef struct {
 typedef struct {
 	size_t pos;
 	size_t lim;
-	str s;
+	const char *s;
 } PairIterator;
 
 typedef struct {
@@ -35,6 +35,6 @@ typedef struct {
 
 
 gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
-gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const str q);
-gdk_export gdk_return STRMPappendBitstring(BAT *b, const str s);
+gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
+gdk_export gdk_return STRMPappendBitstring(BAT *b, const char *s);
 #endif /* _GDK_STRIMPS_H_ */

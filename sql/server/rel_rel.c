@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -948,7 +948,7 @@ exps_reset_props(list *exps, bool setnil)
 list *
 _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
 {
-	list *lexps, *rexps, *exps;
+	list *lexps, *rexps = NULL, *exps;
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -966,9 +966,14 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_full:
 		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
 		exps_reset_props(lexps, is_right(rel->op) || is_full(rel->op));
-		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
+		if (!rel->attr)
+			rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op));
-		return list_merge(lexps, rexps, (fdup)NULL);
+		if (rexps)
+			lexps = list_merge(lexps, rexps, (fdup)NULL);
+		if (rel->attr)
+			append(lexps, exp_ref(sql, rel->attr->h->data));
+		return lexps;
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
 			list *r = rel->r;

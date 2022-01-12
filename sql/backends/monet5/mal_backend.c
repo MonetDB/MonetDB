@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -49,4 +49,15 @@ backend_destroy(backend *b)
 	if (b->subbackend)
 		b->subbackend->destroy(b->subbackend);
 	_DELETE(b);
+}
+
+/* for recursive functions, if the implementation is not set yet, take it from the current compilation */
+str
+backend_function_imp(backend *b, sql_func *f)
+{
+	str res = sql_func_imp(f);
+
+	if (b->mvc->forward && strcmp(res, "") == 0 && b->mvc->forward->base.id == f->base.id)
+		res = b->fimp;
+	return res;
 }

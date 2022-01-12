@@ -23,3 +23,5 @@ prepare
 rel_push_count_down
 NOT_ASSERT?sqlfuncnames
 sequences
+analyze_test
+blobs

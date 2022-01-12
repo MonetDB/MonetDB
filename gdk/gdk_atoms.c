@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -230,7 +230,7 @@ ATOMindex(const char *nme)
 	return -j;
 }
 
-char *
+const char *
 ATOMname(int t)
 {
 	return t >= 0 && t < GDKatomcnt && *BATatoms[t].name ? BATatoms[t].name : "null";
@@ -1693,7 +1693,7 @@ ATOMunknown_find(const char *nme)
 	return -j;
 }
 
-str
+const char *
 ATOMunknown_name(int i)
 {
 	assert(i < 0);

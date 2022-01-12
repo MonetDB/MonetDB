@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _SQL_DATETIME_H_
@@ -37,12 +37,12 @@ int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int
 lng qualifier2multiplier( int sk );
 /* returns the multiplier for the given interval qualifier */
 
-int parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, lng *i);
+int parse_interval(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int ep, lng *i);
 /* returns 0 for month intervals and value in val,
  *         1 for sec intervals and value in val,
  *         <0 for errors */
 
-int interval_from_str(char *str, int d, int p, lng *val);
+int interval_from_str(const char *str, int d, int p, lng *val);
 /* returns 0 for month intervals and value in val,
  *         1 for sec intervals and value in val,
  *         <0 for errors */
@@ -55,4 +55,3 @@ int digits2sk( int digits);
 int digits2ek( int digits );
 
 #endif /*_SQL_DATETIME_H_*/
-

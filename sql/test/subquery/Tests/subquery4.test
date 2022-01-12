@@ -206,13 +206,13 @@ SELECT DISTINCT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, inte
 ----
 36
 
-query T rowsort
+query I rowsort
 SELECT NOT EXISTS(SELECT i1.i) from integers i1
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 query II rowsort
 SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = NOT EXISTS (SELECT i2.i)
@@ -282,10 +282,10 @@ NULL
 3
 NULL
 
-query T rowsort
+query I rowsort
 SELECT 1 IN ((SELECT MIN(col2)), (SELECT SUM(col4))) FROM another_t
 ----
-False
+0
 
 query I rowsort
 SELECT 1 FROM another_t WHERE (1,col1) IN ((SELECT MIN(i1.i), SUM(i1.i) FROM integers i1))
@@ -660,11 +660,11 @@ BEGIN
 	RETURN n;
 END
 
-query TT rowsort
+query II rowsort
 SELECT debugme(1), debugme(2)
 ----
-False
-True
+0
+1
 
 statement ok
 DROP FUNCTION debugme
@@ -707,5 +707,4 @@ DROP TABLE another_T
 
 statement ok
 DROP TABLE integers
-
 

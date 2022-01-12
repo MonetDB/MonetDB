@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -76,25 +76,6 @@ static sql_store SQLstore = NULL;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
-
-/* if 'mod' not NULL, use it otherwise get the module from the client id */
-static void
-monet5_freecode(const char *mod, int clientid, const char *name)
-{
-	Module m = NULL;
-	str msg = MAL_SUCCEED;
-
-	if (mod) {
-		m = getModule(putName(mod));
-	} else {
-		Client c = MCgetClient(clientid);
-		if (c)
-			m = c->usermodule;
-	}
-
-	if (m && (msg = SQLCacheRemove(m, name)))
-		freeException(msg);	/* do something with error? */
-}
 
 static str SQLinit(Client c);
 
@@ -222,7 +203,7 @@ SQLepilogue(void *ret)
 		if (!res)
 			res = msab_retreatScenario(s);
 		if (res != NULL) {
-			char *err = createException(MAL, "sql.start", "%s", res);
+			char *err = createException(MAL, "sql.epilogue", "%s", res);
 			free(res);
 			return err;
 		}
@@ -711,6 +692,8 @@ SQLinitClientFromMAL(Client c)
 	}
 
 	mvc* m = ((backend*) c->sqlcontext)->mvc;
+	if (c->glb)
+		c->glb->keepTmps = true;
 
 	/* Crucial step:
 	 * MAL scripts that interact with the sql module
@@ -1330,16 +1313,6 @@ SQLengine(Client c)
 	if (be && be->subbackend)
 		be->subbackend->reset(be->subbackend);
 	return SQLengineIntern(c, be);
-}
-
-str
-SQLCacheRemove(Module m, const char *nme)
-{
-	Symbol s = findSymbolInModule(m, nme);
-	if (s == NULL)
-		throw(MAL, "cache.remove", SQLSTATE(42000) "internal error, symbol missing\n");
-	deleteSymbol(m, s);
-	return MAL_SUCCEED;
 }
 
 str

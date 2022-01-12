@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -32,7 +32,11 @@
 #endif
 
 #ifndef O_CLOEXEC
+#ifdef _O_NOINHERIT
+#define O_CLOEXEC _O_NOINHERIT	/* Windows */
+#else
 #define O_CLOEXEC 0
+#endif
 #endif
 
 /* GDKfilepath returns a newly allocated string containing the path
@@ -1047,16 +1051,16 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		buf = argv[i]->tident;
-		mnstr_write(s, buf, 1, strlen(buf));
+		const char *nm = argv[i]->tident;
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # name\n", 1, 9);
 	mnstr_write(s, "# ", 1, 2);
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		buf = ATOMname(argv[i]->ttype);
-		mnstr_write(s, buf, 1, strlen(buf));
+		const char *nm = ATOMname(argv[i]->ttype);
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # type\n", 1, 9);
 	mnstr_write(s, "#--------------------------#\n", 1, 29);

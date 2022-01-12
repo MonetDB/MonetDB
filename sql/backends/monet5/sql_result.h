@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef sql_result_H
@@ -28,7 +28,7 @@ extern int mvc_export_prepare(backend *b, stream *s);
 
 sql5_export int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type, BAT *order);
 
-sql5_export int mvc_result_column(backend *be, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
+sql5_export int mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, BAT *b);
 extern int mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype);
 
 /*
@@ -41,7 +41,7 @@ extern int mvc_result_value(backend *be, const char *tn, const char *name, const
 */
 extern const char *mvc_export_error(backend *be, stream *s, int err_code);
 
-extern ssize_t convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, size_t *len);
+extern ssize_t convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len);
 extern int mvc_export(mvc *m, stream *s, res_table *t, BUN nr);
 
 #endif /* sql_result_H */

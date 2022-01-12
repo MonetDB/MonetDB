@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 add_library(kernel OBJECT)
@@ -67,9 +67,5 @@ set_target_properties(microbenchmark
 
 install(TARGETS
   microbenchmark
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
-  COMPONENT microbenchmark)
-install(FILES
-  microbenchmark.mal
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   COMPONENT microbenchmark)

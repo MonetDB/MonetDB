@@ -148,7 +148,7 @@ PLAN SELECT * FROM complete where x >= 1.0 AND x < 2.0
 project (
 | select (
 | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
-| ) [ (double(53,1) "1") <= ("complete"."x") < (double(53,1) "2") ]
+| ) [ (double(53) "1") <= ("complete"."x") < (double(53) "2") ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
 query RRR rowsort
@@ -167,7 +167,7 @@ PLAN SELECT * FROM complete where x > 1.0 AND x <= 2.0
 project (
 | select (
 | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
-| ) [ (double(53,1) "1") < ("complete"."x") <= (double(53,1) "2") ]
+| ) [ (double(53) "1") < ("complete"."x") <= (double(53) "2") ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
 query RRR rowsort
@@ -200,12 +200,12 @@ union (
 | project (
 | | select (
 | | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
-| | ) [ (double(53,1) "1") <= ("complete"."x") <= (double(53,1) "2") ]
+| | ) [ (double(53) "1") <= ("complete"."x") <= (double(53) "2") ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ],
 | project (
 | | select (
 | | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
-| | ) [ (double(53,1) "1") <= ("complete"."x") <= (double(53,1) "2") ]
+| | ) [ (double(53) "1") <= ("complete"."x") <= (double(53) "2") ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
@@ -232,12 +232,12 @@ union (
 | project (
 | | select (
 | | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
-| | ) [ (double(53) "0") <= ("complete"."x") <= (double(53) "2"), (double(53) "0") <= ("complete"."y") <= (double(53) "2") ]
+| | ) [ (double(53) "0") <= ("complete"."y") <= (double(53) "2"), (double(53) "0") <= ("complete"."x") <= (double(53) "2") ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ],
 | project (
 | | select (
 | | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
-| | ) [ (double(53) "0") <= ("complete"."x") <= (double(53) "2"), (double(53) "0") <= ("complete"."y") <= (double(53) "2") ]
+| | ) [ (double(53) "0") <= ("complete"."y") <= (double(53) "2"), (double(53) "0") <= ("complete"."x") <= (double(53) "2") ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 

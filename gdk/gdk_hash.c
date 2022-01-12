@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -990,6 +990,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	return h;
 
   bailout:
+	bat_iterator_end(&bi);
 	GDKfree(h);
 	return NULL;
 }

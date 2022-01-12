@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1270,6 +1270,9 @@ exp_match_list( list *l, list *r)
 		return l == r;
 	if (list_length(l) != list_length(r) || list_length(l) == 0 || list_length(r) == 0)
 		return 0;
+	if (list_length(l) > 10 || list_length(r) > 10)
+		return 0;/* to expensive */
+
 	lu = ZNEW_ARRAY(char, list_length(l));
 	ru = ZNEW_ARRAY(char, list_length(r));
 	if (!lu || !ru) {
@@ -1538,20 +1541,20 @@ distinct_rel(sql_exp *e, const char **rname)
 }
 
 int
-rel_has_exp(sql_rel *rel, sql_exp *e)
+rel_has_exp(sql_rel *rel, sql_exp *e, bool subexp)
 {
-	if (rel_find_exp(rel, e) != NULL)
+	if (rel_find_exp_and_corresponding_rel(rel, e, subexp, NULL, NULL))
 		return 0;
 	return -1;
 }
 
 int
-rel_has_exps(sql_rel *rel, list *exps)
+rel_has_exps(sql_rel *rel, list *exps, bool subexp)
 {
 	if (list_empty(exps))
 		return 0;
 	for (node *n = exps->h; n; n = n->next)
-		if (rel_has_exp(rel, n->data) >= 0)
+		if (rel_has_exp(rel, n->data, subexp) >= 0)
 			return 0;
 	return -1;
 }
@@ -1562,15 +1565,21 @@ rel_has_all_exps(sql_rel *rel, list *exps)
 	if (list_empty(exps))
 		return 1;
 	for (node *n = exps->h; n; n = n->next)
-		if (rel_has_exp(rel, n->data) < 0)
+		if (rel_has_exp(rel, n->data, false) < 0)
 			return 0;
 	return 1;
+}
+
+static int
+rel_has_exp2(sql_rel *rel, sql_exp *e)
+{
+	return rel_has_exp(rel, e, false);
 }
 
 sql_rel *
 find_rel(list *rels, sql_exp *e)
 {
-	node *n = list_find(rels, e, (fcmp)&rel_has_exp);
+	node *n = list_find(rels, e, (fcmp)&rel_has_exp2);
 	if (n)
 		return n->data;
 	return NULL;
@@ -1583,7 +1592,7 @@ find_one_rel(list *rels, sql_exp *e)
 	sql_rel *fnd = NULL;
 
 	for(n = rels->h; n; n = n->next) {
-		if (rel_has_exp(n->data, e) == 0) {
+		if (rel_has_exp(n->data, e, false) == 0) {
 			if (fnd)
 				return NULL;
 			fnd = n->data;
@@ -1655,7 +1664,7 @@ exps_find_prop(list *exps, rel_prop kind)
 }
 
 static sql_exp *
-rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
+rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_rel **res)
 {
 	sql_exp *ne = NULL;
 
@@ -1680,7 +1689,7 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 			*res = rel;
 		return ne;
 	case e_convert:
-		return rel_find_exp_and_corresponding_rel_(rel, e->l, res);
+		return rel_find_exp_and_corresponding_rel_(rel, e->l, subexp, res);
 	case e_aggr:
 	case e_func:
 		if (e->l) {
@@ -1688,8 +1697,10 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 			node *n = l->h;
 
 			ne = n->data;
-			while (ne != NULL && n != NULL) {
-				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, res);
+			while ((subexp || ne != NULL) && n != NULL) {
+				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, subexp, res);
+				if (subexp && ne)
+					break;
 				n = n->next;
 			}
 			return ne;
@@ -1705,8 +1716,10 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 			node *n = l->h;
 
 			ne = n->data;
-			while (ne != NULL && n != NULL) {
-				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, res);
+			while ((subexp || ne != NULL) && n != NULL) {
+				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, subexp, res);
+				if (subexp && ne)
+					break;
 				n = n->next;
 			}
 			return ne;
@@ -1717,9 +1730,9 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 }
 
 sql_exp *
-rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool *under_join)
+rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, bool subexp, sql_rel **res, bool *under_join)
 {
-	sql_exp *ne = rel_find_exp_and_corresponding_rel_(rel, e, res);
+	sql_exp *ne = rel_find_exp_and_corresponding_rel_(rel, e, subexp, res);
 
 	if (rel && !ne) {
 		switch(rel->op) {
@@ -1729,10 +1742,10 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 		case op_join:
 		case op_semi:
 		case op_anti:
-			ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
+			ne = rel_find_exp_and_corresponding_rel(rel->l, e, subexp, res, under_join);
 			if (!ne && is_join(rel->op))
-				ne = rel_find_exp_and_corresponding_rel(rel->r, e, res, under_join);
-			if (ne && under_join)
+				ne = rel_find_exp_and_corresponding_rel(rel->r, e, subexp, res, under_join);
+			if (ne && under_join && is_join(rel->op))
 				*under_join = true;
 			break;
 		case op_table:
@@ -1740,7 +1753,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 			break;
 		default:
 			if (!is_project(rel->op) && rel->l)
-				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
+				ne = rel_find_exp_and_corresponding_rel(rel->l, e, subexp, res, under_join);
 		}
 	}
 	return ne;
@@ -1749,7 +1762,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 sql_exp *
 rel_find_exp(sql_rel *rel, sql_exp *e)
 {
-	return rel_find_exp_and_corresponding_rel(rel, e, NULL, NULL);
+	return rel_find_exp_and_corresponding_rel(rel, e, false, NULL, NULL);
 }
 
 int
@@ -2729,7 +2742,7 @@ exps_copy(mvc *sql, list *exps)
 {
 	list *nl;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!exps)
@@ -2751,7 +2764,7 @@ exp_copy(mvc *sql, sql_exp * e)
 {
 	sql_exp *l, *r, *r2, *ne = NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e)
@@ -3049,7 +3062,6 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 
 	if ((na = atom_cast(sql->sa, a, t))) {
 		exp->l = na;
-		exp->tpe = *t;
 		return exp;
 	}
 	return NULL;
@@ -3181,7 +3193,7 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super)
 static int
 exp_set_list_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relname, const char** expname)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
@@ -3220,7 +3232,7 @@ exp_set_list_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 static int
 exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relname, const char** expname)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
@@ -3312,7 +3324,7 @@ exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 int
 rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **relname, const char **expname)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}

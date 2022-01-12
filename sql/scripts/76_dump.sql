@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 CREATE VIEW sys.dump_create_roles AS
   SELECT
@@ -182,12 +182,21 @@ CREATE VIEW sys.dump_partition_tables AS
 CREATE VIEW sys.dump_sequences AS
   SELECT
     'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||
-      CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
-      CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
-      CASE WHEN "mi" <> 0 THEN ' MINVALUE ' || "mi" ELSE '' END ||
-      CASE WHEN "ma" <> 0 THEN ' MAXVALUE ' || "ma" ELSE '' END ||
-      CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
-      CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';' stmt,
+    CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
+    CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
+    CASE
+      WHEN nomin THEN ' NO MINVALUE'
+      WHEN rmi IS NOT NULL THEN ' MINVALUE ' || rmi
+      ELSE ''
+    END ||
+    CASE
+      WHEN nomax THEN ' NO MAXVALUE'
+      WHEN rma IS NOT NULL THEN ' MAXVALUE ' || rma
+      ELSE ''
+    END ||
+    CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
+    CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END ||
+    ';' stmt,
     sch schema_name,
     seq seqname
     FROM sys.describe_sequences;
