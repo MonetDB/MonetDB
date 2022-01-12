@@ -925,28 +925,38 @@ bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
 static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
 {
+	lock_column(tr->store, c->base.id);
 	sql_delta *d = col_timestamp_delta(tr, c);
 	int type = c->type.type->localtype;
 
-	if (!d)
+	if (!d) {
+		unlock_column(tr->store, c->base.id);
 		return NULL;
+	}
 	if (d->cs.st == ST_DICT) {
 		BAT *b = quick_descriptor(d->cs.bid);
 
 		type = b->ttype;
 	}
-	return bind_ubat(tr, d, access, type, cnt);
+	BAT *bn = bind_ubat(tr, d, access, type, cnt);
+	unlock_column(tr->store, c->base.id);
+	return bn;
 }
 
 static BAT *
 bind_uidx(sql_trans *tr, sql_idx * i, int access, size_t cnt)
 {
+	lock_column(tr->store, i->base.id);
 	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
 	sql_delta *d = idx_timestamp_delta(tr, i);
 
-	if (!d)
+	if (!d) {
+		unlock_column(tr->store, i->base.id);
 		return NULL;
-	return bind_ubat(tr, d, access, type, cnt);
+	}
+	BAT *bn = bind_ubat(tr, d, access, type, cnt);
+	unlock_column(tr->store, i->base.id);
+	return bn;
 }
 
 static BAT *
