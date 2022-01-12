@@ -149,6 +149,7 @@ BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_n
 BUN BATgrows(BAT *b);
 BUN BATguess_uniques(BAT *b, struct canditer *ci);
 gdk_return BAThash(BAT *b);
+bool BAThasstrimps(BAT *b);
 void BAThseqbase(BAT *b, oid o);
 gdk_return BATimprints(BAT *b);
 BAT *BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool max_one, BUN estimate);
@@ -393,8 +394,8 @@ BUN ORDERfndlast(BAT *b, Heap *oidxh, const void *v);
 BUN SORTfnd(BAT *b, const void *v);
 BUN SORTfndfirst(BAT *b, const void *v);
 BUN SORTfndlast(BAT *b, const void *v);
-gdk_return STRMPappendBitstring(BAT *b, const char *s);
 gdk_return STRMPcreate(BAT *b, BAT *s);
+void STRMPdestroy(BAT *b);
 BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
 MT_Id THRcreate(void (*f)(void *), void *arg, enum MT_thr_detach d, const char *name);
 void *THRdata[THREADDATA];
