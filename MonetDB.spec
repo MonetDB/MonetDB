@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.43.2
+%global version 11.43.4
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -850,6 +850,23 @@ fi
 %endif
 
 %changelog
+* Tue Jan 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.3-20220111
+- Rebuilt.
+- GH#7215: ODBC Driver SQLStatistics returns duplicate rows/rows for other
+  tables
+
+* Tue Jan 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.3-20220111
+- gdk: On Windows, files and directories we create now get the attribute
+  FILE_ATTIBUTE_NOT_CONTENT_INDEXED, meaning that they should not be
+  indexed by indexing or search services.
+
+* Thu Jan  6 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.43.3-20220111
+- merovingian: Disabled logging into merovingian.log of next info message types:
+  - proxying client <host>:<port> for database '<dbname>' to <url>
+  - target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying
+  These messages were written to the log file at each connection. In most
+  cases this information is not used. The disabling reduces the log file size.
+
 * Mon Jan 03 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.1-20220103
 - Rebuilt.
 - GH#7168: Loosing the documentation
