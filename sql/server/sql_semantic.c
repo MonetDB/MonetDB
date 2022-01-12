@@ -117,7 +117,7 @@ tmp_schema(mvc *sql)
  \
 			EXTRA; \
 			if (!res && !sql->schema_path_has_tmp && strcmp(session_schema, "tmp") != 0) { /* if 'tmp' is not in the search path, search it before all others */ \
-				next = mvc_bind_schema(sql, "tmp"); \
+				next = tmp_schema(sql); \
 				CALL; \
 			} \
 			if (!res) { /* then current session's schema */ \
