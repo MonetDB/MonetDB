@@ -331,6 +331,16 @@
 #include <limits.h>		/* for *_MIN and *_MAX */
 #include <float.h>		/* for FLT_MAX and DBL_MAX */
 
+#ifdef WIN32
+#ifndef LIBGDK
+#define gdk_export extern __declspec(dllimport)
+#else
+#define gdk_export extern __declspec(dllexport)
+#endif
+#else
+#define gdk_export extern
+#endif
+
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 #include "gdk_system.h"
