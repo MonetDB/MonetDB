@@ -172,4 +172,3 @@ DROP function f1 cascade
 statement ok
 DROP table t1
 
-

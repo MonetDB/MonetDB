@@ -437,6 +437,18 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t1(c1 int, c2 FLOAT)
+
+statement ok rowcount 0
+UPDATE t1 SET c1 = 1 FROM (SELECT t1.c2 FROM t1) v1(vc0) WHERE ((SELECT NULL WHERE FALSE)) IN (levenshtein('', '', t1.c1, t1.c1, t1.c1), 4)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 create table tx(c0 VARCHAR(32), c1 BOOLEAN)
 
 statement ok
@@ -486,3 +498,42 @@ SELECT c0 FROM t2
 statement ok
 DROP TABLE t2
 
+query T nosort
+VALUES (CASE WHEN 5 = ANY(SELECT -1) THEN 2 END)
+----
+NULL
+
+query I nosort
+SELECT 1 FROM (SELECT 1, TRUE) vx(vc0, vc2) INNER JOIN (SELECT 1) AS sub0(c0)
+ON vx.vc0 <= ALL(SELECT 1) OR vx.vc2 WHERE 0.5 < ALL(SELECT 0.6 WHERE vx.vc2)
+----
+1
+
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t3(c0 bigserial) ON COMMIT PRESERVE ROWS
+
+statement ok rowcount 1
+INSERT INTO t3
+
+query I nosort
+SELECT c0 FROM t3
+----
+1
+
+statement ok rowcount 1
+TRUNCATE tmp.t3 RESTART IDENTITY
+
+query I nosort
+SELECT c0 FROM t3
+----
+
+statement ok rowcount 1
+INSERT INTO t3
+
+query I nosort
+SELECT c0 FROM t3
+----
+1
+
+statement ok
+DROP TABLE t3

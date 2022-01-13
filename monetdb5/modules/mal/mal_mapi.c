@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -446,7 +446,12 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());
-  error:
+  error:;
+#ifdef HAVE_SYS_UN_H
+	const char *usockfile = GDKgetenv("mapi_usock");
+	if (usockfile && MT_remove(usockfile) == -1 && errno != ENOENT)
+		perror(usockfile);
+#endif
 	(void) ATOMIC_DEC(&nlistener);
 	for (i = 0; i < 3; i++)
 		if (socks[i] != INVALID_SOCKET)

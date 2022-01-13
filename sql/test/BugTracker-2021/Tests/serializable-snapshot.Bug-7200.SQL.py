@@ -20,7 +20,7 @@ class TestClient(threading.Thread):
         for i in range(0, MAX_ITERATIONS):
             try:
                 self._cursor.execute("INSERT INTO t VALUES (%d,%d);" % (i, i))
-            except pymonetdb.exceptions.IntegrityError:
+            except pymonetdb.exceptions.DatabaseError:
                 pass
 
 

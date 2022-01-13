@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -17,6 +17,8 @@
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
+#include "opt_dict.h"
+#include "opt_for.h"
 #include "opt_emptybind.h"
 #include "opt_evaluate.h"
 #include "opt_garbageCollector.h"
@@ -76,7 +78,10 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTinlineImplementation);
 	optcall(true, OPTremapImplementation);
 	optcall(bincopy, OPTbincopyfromImplementation);
+	optcall(true, OPTemptybindImplementation);
 	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTforImplementation);
+	optcall(true, OPTdictImplementation);
 	optcall(multiplex, OPTmultiplexImplementation);
 	optcall(generator, OPTgeneratorImplementation);
 	optcall(malProfileMode, OPTprofilerImplementation);
@@ -117,6 +122,8 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTdeadcodeImplementation);
 	optcall(true, OPTpushselectImplementation);
 	optcall(true, OPTaliasesImplementation);
+	optcall(true, OPTforImplementation);
+	optcall(true, OPTdictImplementation);
 	optcall(true, OPTmitosisImplementation);
 	optcall(true, OPTmergetableImplementation);
 	optcall(bincopy, OPTbincopyfromImplementation);

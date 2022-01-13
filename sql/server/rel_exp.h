@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _REL_EXP_H_
@@ -129,7 +129,7 @@ extern unsigned int exp_card(sql_exp *e);
 extern const char *exp_find_rel_name(sql_exp *e);
 
 extern sql_exp *rel_find_exp(sql_rel *rel, sql_exp *e);
-extern sql_exp *rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool *under_join);
+extern sql_exp *rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, bool subexp, sql_rel **res, bool *under_join);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_equal( sql_exp *e1, sql_exp *e2);
@@ -170,10 +170,10 @@ extern int exp_has_sideeffect(sql_exp *e);
 
 extern sql_exp *exps_find_prop(list *exps, rel_prop kind);
 
-/* returns 0 when the relation contain the passed expression else < 0 */
-extern int rel_has_exp(sql_rel *rel, sql_exp *e);
-/* return 0 when the relation contain atleast one of the passed expressions else < 0 */
-extern int rel_has_exps(sql_rel *rel, list *e);
+/* returns 0 when the relation contain the passed expression (or sub expressions if subexp is set) else < 0 */
+extern int rel_has_exp(sql_rel *rel, sql_exp *e, bool subexp);
+/* return 0 when the relation contain atleast one of the passed expressions (or sub expressions if subexp is set) else < 0 */
+extern int rel_has_exps(sql_rel *rel, list *e, bool subexp);
 /* return 1 when the relation contains all of the passed expressions else 0 */
 extern int rel_has_all_exps(sql_rel *rel, list *e);
 

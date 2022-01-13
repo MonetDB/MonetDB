@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -901,7 +901,10 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == RUNCLIENT) {
-			if (BUNappend(user, c->username, false) != GDK_SUCCEED)
+			const char *username = c->username;
+			if (!username)
+				username = str_nil;
+			if (BUNappend(user, username, false) != GDK_SUCCEED)
 				goto bailout;
 			ret = timestamp_fromtime(c->login);
 			if (is_timestamp_nil(ret)) {
@@ -982,7 +985,7 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "getScenario", CLTgetScenario, false, "Retrieve current scenario name.", args(1,1, arg("",str))),
  pattern("clients", "setScenario", CLTsetScenario, true, "Switch to other scenario handler, return previous one.", args(1,2, arg("",str),arg("msg",str))),
  pattern("clients", "quit", CLTquit, true, "Terminate the client session.", args(1,1, arg("",void))),
- pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error.\nIt is the privilige of the console user.", args(1,2, arg("",void),arg("idx",int))),
+ pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error.\nIt is the privilege of the console user.", args(1,2, arg("",void),arg("idx",int))),
  command("clients", "getLogins", CLTLogin, false, "Pseudo bat of client id and login time.", args(2,2, batarg("user",oid),batarg("start",str))),
  pattern("clients", "stop", CLTstop, true, "Stop the query execution at the next eligble statement.", args(0,1, arg("id",int))),
  pattern("clients", "suspend", CLTsuspend, true, "Put a client process to sleep for some time.\nIt will simple sleep for a second at a time, until\nthe awake bit has been set in its descriptor", args(1,2, arg("",void),arg("id",int))),

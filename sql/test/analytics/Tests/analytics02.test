@@ -1304,116 +1304,116 @@ create table debugme (aa real, bb int)
 statement ok
 insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
 
-query T rowsort
+query R rowsort
 select sum(aa) over (rows between 2 preceding and 0 following) from debugme
 ----
-10.0
-13.0
-14.0
-15.0
-18.0
-18.0
-20.0
-7.0
-7.0
-8.0
+10.000
+13.000
+14.000
+15.000
+18.000
+18.000
+20.000
+7.000
+7.000
+8.000
 
-query T rowsort
+query R rowsort
 select sum(aa) over (rows between 2 preceding and 2 following) from debugme
 ----
-13.0
-14.0
-14.0
-18.0
-18.0
-20.0
-21.0
-21.0
-25.0
-25.0
+13.000
+14.000
+14.000
+18.000
+18.000
+20.000
+21.000
+21.000
+25.000
+25.000
 
-query T rowsort
+query R rowsort
 select sum(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme
 ----
-11.0
-15.0
-20.0
-26.0
-3.0
-3.0
-5.0
-9.0
+11.000
+15.000
+20.000
+26.000
+3.000
+3.000
+5.000
+9.000
 NULL
 NULL
 
-query T rowsort
+query R rowsort
 select sum(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme
 ----
-11.0
-11.0
-11.0
-26.0
-26.0
-26.0
-9.0
-9.0
-9.0
+11.000
+11.000
+11.000
+26.000
+26.000
+26.000
+9.000
+9.000
+9.000
 NULL
 
-query T rowsort
+query R rowsort
 select prod(aa) over (rows between 2 preceding and 0 following) from debugme
 ----
-10.0
-12.0
-15.0
-15.0
-192.0
-30.0
-45.0
-48.0
-72.0
-90.0
+10.000
+12.000
+15.000
+15.000
+192.000
+30.000
+45.000
+48.000
+72.000
+90.000
 
-query T rowsort
+query R rowsort
 select prod(aa) over (rows between 2 preceding and 2 following) from debugme
 ----
-120.0
-192.0
-360.0
-450.0
-450.0
-48.0
-576.0
-576.0
-90.0
-90.0
+120.000
+192.000
+360.000
+450.000
+450.000
+48.000
+576.000
+576.000
+90.000
+90.000
 
-query T rowsort
+query R rowsort
 select prod(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme
 ----
-15.0
-24.0
-24.0
-3.0
-3.0
-450.0
-6.0
-75.0
+15.000
+24.000
+24.000
+3.000
+3.000
+450.000
+6.000
+75.000
 NULL
 NULL
 
-query T rowsort
+query R rowsort
 select prod(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme
 ----
-24.0
-24.0
-24.0
-24.0
-24.0
-24.0
-450.0
-450.0
-450.0
+24.000
+24.000
+24.000
+24.000
+24.000
+24.000
+450.000
+450.000
+450.000
 NULL
 
 query R rowsort
@@ -1530,3 +1530,4 @@ select min(a) over (order by a range between current row and unbounded following
 ----
 aee1a538-aca1-381b-d9f4-8c29ef3f5f34
 aee1a538-aca1-381b-d9f4-8c29ef3f5f35
+

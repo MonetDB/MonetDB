@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef BATSTORAGE_H
@@ -18,7 +18,7 @@ typedef struct column_storage {
 	int ebid;		/* extra bid */
 	int uibid;		/* bat with positions of updates */
 	int uvbid;		/* bat with values of updates */
-	storage_type st; /* ST_DEFAULT, ST_DICT ?? */
+	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR */
 	bool cleared;
 	bool alter;		/* set when the delta is created for an alter statement */
 	bool merged;	/* only merge changes once */

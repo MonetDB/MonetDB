@@ -131,51 +131,6 @@ The name of the database that a client can connect to is
 .TP
 \fB\-d\fP[\fIvalue\fP]
 Set debug level.  This is mostly for debugging purposes.
-The value is an integer, which can be (a bit-wise OR of):
-.EX
-          \fB1\fP = THRDMASK     = thread-specific debug output
-          \fB2\fP = CHECKMASK    = property enforcing on new BATs
-          \fB8\fP = PROPMASK     = property checking on all values:
-                             tells about wrongly set properties
-         \fB16\fP = IOMASK       = major IO activity
-         \fB32\fP = BATMASK      = BAT handling
-        \fB128\fP = PARMASK      = Thread management
-        \fB512\fP = TMMASK       = Transaction management
-       \fB1024\fP = TEMMASK      = Locks and Triggers
-       \fB4096\fP = PERFMASK     = BBP Performance (?)
-       \fB8192\fP = DELTAMASK    = Delta debugging (?)
-      \fB16384\fP = LOADMASK     = Module loading
-    \fB1048576\fP = ACCELMASK    = Accelerator debugging
-    \fB2097152\fP = ALGOMASK     = show low level algorithm chosen
-   \fB16777216\fP = NOSYNCMASK   = disable forcefully synchronizing files
-                             to disk.  If this flag is set, there is
-                             no guarantee that the database remains
-                             consistent after a crash.  DO NOT USE
-                             (unless you really don't care about your
-                             data).
-   \fB33554432\fP = DEADBEEFMASK = disable "cleaning" of freed memory
-                             in GDKfree() which only happens in a
-                             debug build (i.e. with assertions
-                             enabled) e.g., for performance
-                             measurements
-   \fB67108864\fP = ALLOCMASK    = exhaustive GDK malloc & free tracing
-                             for debugging (GDK developers, only)
-  \fB134217728\fP = OPTMASK      = trace the actions, decisions and
-                             effects of MAL optimizers
-  \fB268435456\fP = HEAPMASK     = trace/debug HEAPextend;
-                             used only for development & debugging
-  \fB536870912\fP = FORCEMITOMASK = forcefully activate mitosis even on
-                              small tables, i.e., split small tables
-                              in as many (tiny) pieces as there are
-                              cores (threads) available;
-                              this allows us to test mitosis
-                              functionality without requiring large
-                              data sets (\(em at the expense of a
-                              potentially significant interpretation
-                              overhead for unnecessarily large plans);
-                              used only for development & testing;
-                              set automatically by Mtest.py
-.EE
 The
 .I value
 together with the
@@ -185,6 +140,88 @@ sign is optional.  If not specified, it defaults to
 In the short form \fB\-d\fP, the value, if present, must immediately
 (i.e. without space) follow the option.
 The values of multiple instances of this flag are OR-ed together.
+The value is an integer, which can be (a bit-wise OR of):
+.RS
+.TP
+.B 1
+(THRDMASK) thread-specific debug output
+.TP
+.B 2
+(CHECKMASK) property enforcing on new BATs
+.TP
+.B 8
+(PROPMASK) property checking on all values:
+tells about wrongly set properties
+.TP
+.B 16
+(IOMASK) major IO activity
+.TP
+.B 32
+(BATMASK) BAT handling
+.TP
+.B 128
+(PARMASK) Thread management
+.TP
+.B 512
+(TMMASK) Transaction management
+.TP
+.B 1024
+(TEMMASK) Locks and Triggers
+.TP
+.B 4096
+(PERFMASK) BBP Performance (?)
+.TP
+.B 8192
+(DELTAMASK) Delta debugging (?)
+.TP
+.B 16384
+(LOADMASK) Module loading
+.TP
+.B 1048576
+(ACCELMASK) Accelerator debugging
+.TP
+.B 2097152
+(ALGOMASK) show low level algorithm chosen
+.TP
+.B 16777216
+(NOSYNCMASK) disable forcefully synchronizing files
+to disk.  If this flag is set, there is
+no guarantee that the database remains
+consistent after a crash.  DO NOT USE
+(unless you really don't care about your
+data).
+.TP
+.B 33554432
+(DEADBEEFMASK) disable "cleaning" of freed memory
+in GDKfree() which only happens in a
+debug build (i.e. with assertions
+enabled) e.g., for performance
+measurements
+.TP
+.B 67108864
+(ALLOCMASK) exhaustive GDK malloc & free tracing
+for debugging (GDK developers, only)
+.TP
+.B 134217728
+(OPTMASK) trace the actions, decisions and
+effects of MAL optimizers
+.TP
+.B 268435456
+(HEAPMASK) trace/debug HEAPextend;
+used only for development & debugging
+.B 536870912
+(FORCEMITOMASK) forcefully activate mitosis even on
+small tables, i.e., split small tables
+in as many (tiny) pieces as there are
+cores (threads) available;
+this allows us to test mitosis
+functionality without requiring large
+data sets (\(em at the expense of a
+potentially significant interpretation
+overhead for unnecessarily large plans);
+used only for development & testing;
+set automatically by Mtest.py
+.RE
 .TP
 .B \-\-algorithms
 Equivalent to \fB\-\-debug=\fP\fI(ALGOMASK)\fP.

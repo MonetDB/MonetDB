@@ -232,10 +232,10 @@ select cast(sum("aa"+"bb") as bigint) from "groupings" order by 1
 ----
 10
 
-query T rowsort
+query I rowsort
 select distinct "aa" > "bb" from "groupings" order by "aa" > "bb"
 ----
-False
+0
 
 query I rowsort
 select count(*) from "groupings" having count("aa") <= count("aa" + "bb") order by sum("aa") > sum("bb")

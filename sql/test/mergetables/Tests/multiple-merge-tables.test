@@ -81,4 +81,3 @@ drop table mt2
 statement ok
 drop table t
 
-

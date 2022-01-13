@@ -18,47 +18,47 @@ two
 statement ok
 ANALYZE sys.abc
 
-query TTITTTTTT nosort
+query TTIIITTII nosort
 SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics ORDER BY "column"
 ----
 a
 int
 4
-True
-False
+1
+0
 1
 2
-True
-False
+1
+0
 b
 varchar
 1
-True
-False
+1
+0
 one
 two
-True
-False
+1
+0
 
-query TTITTTTTT nosort
+query TTIIITTII nosort
 SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics WHERE "column" NOT IN (select "name" from sys.columns) ORDER BY "column"
 ----
 
 statement ok
 ALTER TABLE sys.abc DROP COLUMN b
 
-query TTITTTTTT nosort
+query TTIIITTII nosort
 SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics WHERE "column" NOT IN (select "name" from sys.columns) ORDER BY "column"
 ----
 
 statement ok
 DROP TABLE sys.abc CASCADE
 
-query TTITTTTTT nosort
+query TTIIITTII nosort
 SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics WHERE "column" NOT IN (select "name" from sys.columns) ORDER BY "column"
 ----
 
-query TTITTTTTT rowsort
+query TTIIITTII rowsort
 SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics
 ----
 

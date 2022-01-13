@@ -42,4 +42,3 @@ select 1 from t_qh where c_f in (select 2 from t_ckfystsc) and c_y2 = (select c_
 statement ok
 rollback
 
-

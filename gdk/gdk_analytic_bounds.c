@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -129,7 +129,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		}
 	} break;
 	default:{
-		ptr v = BUNtail(bi, 0), next;
+		const void *v = BUNtail(bi, 0), *next;
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(tpe);
 		if (np) {
 			for (i = 0; i < cnt; i++) {
@@ -764,7 +764,7 @@ GDKanalyticalpeers(BAT *r, BAT *b, BAT *p, bool preceding) /* used in range when
 		}
 	} break;
 	default: {
-		ptr prev, next;
+		const void *prev, *next;
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 
 		if (preceding) {

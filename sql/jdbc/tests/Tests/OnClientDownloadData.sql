@@ -1,11 +1,11 @@
 -- test ON CLIENT data exports with different delimiters
-COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.dsv' ON CLIENT;
-COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.csv' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
-COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.tsv' ON CLIENT USING DELIMITERS E'\t' , E'\n' , '"' NULL AS '';
-COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.psv' ON CLIENT USING DELIMITERS '|' , E'\n' , '"' NULL AS '';
+COPY SELECT * FROM sys.tables ORDER BY id LIMIT 121 INTO 'sys_tables_by_id.dsv' ON CLIENT;
+COPY SELECT * FROM sys.tables ORDER BY id LIMIT 122 INTO 'sys_tables_by_id.csv' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
+COPY SELECT * FROM sys.tables ORDER BY id LIMIT 123 INTO 'sys_tables_by_id.tsv' ON CLIENT USING DELIMITERS E'\t' , E'\n' , '"' NULL AS '';
+COPY SELECT * FROM sys.tables ORDER BY id LIMIT 124 INTO 'sys_tables_by_id.psv' ON CLIENT USING DELIMITERS '|' , E'\n' , '"' NULL AS '';
 
 -- and compressed exports (only .gz is supported)
-COPY SELECT * FROM sys.tables ORDER BY id INTO 'sys_tables_by_id.csv.gz' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
+COPY SELECT * FROM sys.tables ORDER BY id LIMIT 120 INTO 'sys_tables_by_id.csv.gz' ON CLIENT USING DELIMITERS ',' , E'\n' , '"' NULL AS '';
 
 
 -- test error handling

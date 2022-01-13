@@ -422,47 +422,47 @@ query IIITIIIIII rowsort
 SELECT "start", * FROM "sys"."sequences" WHERE "start" IS NULL
 ----
 
-query IITTTTIITTTTTT rowsort
+query IITTTTIIIITTII rowsort
 SELECT "column_id", * FROM "sys"."statistics" WHERE "column_id" IS NULL
 ----
 
-query TITTTTIITTTTTT rowsort
+query TITTTTIIIITTII rowsort
 SELECT "schema", * FROM "sys"."statistics" WHERE "schema" IS NULL
 ----
 
-query TITTTTIITTTTTT rowsort
+query TITTTTIIIITTII rowsort
 SELECT "table", * FROM "sys"."statistics" WHERE "table" IS NULL
 ----
 
-query TITTTTIITTTTTT rowsort
+query TITTTTIIIITTII rowsort
 SELECT "column", * FROM "sys"."statistics" WHERE "column" IS NULL
 ----
 
-query TITTTTIITTTTTT rowsort
+query TITTTTIIIITTII rowsort
 SELECT "type", * FROM "sys"."statistics" WHERE "type" IS NULL
 ----
 
-query IITTTTIITTTTTT rowsort
+query IITTTTIIIITTII rowsort
 SELECT "width", * FROM "sys"."statistics" WHERE "width" IS NULL
 ----
 
-query IITTTTIITTTTTT rowsort
+query IITTTTIIIITTII rowsort
 SELECT "count", * FROM "sys"."statistics" WHERE "count" IS NULL
 ----
 
-query TITTTTIITTTTTT rowsort
+query IITTTTIIIITTII rowsort
 SELECT "unique", * FROM "sys"."statistics" WHERE "unique" IS NULL
 ----
 
-query TITTTTIITTTTTT rowsort
+query IITTTTIIIITTII rowsort
 SELECT "nils", * FROM "sys"."statistics" WHERE "nils" IS NULL
 ----
 
-query TITTTTIITTTTTT rowsort
+query IITTTTIIIITTII rowsort
 SELECT "sorted", * FROM "sys"."statistics" WHERE "sorted" IS NULL
 ----
 
-query TITTTTIITTTTTT rowsort
+query IITTTTIIIITTII rowsort
 SELECT "revsorted", * FROM "sys"."statistics" WHERE "revsorted" IS NULL
 ----
 

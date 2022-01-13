@@ -42,4 +42,3 @@ SELECT myfunc(x) FROM test
 statement ok
 ROLLBACK
 
-

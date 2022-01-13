@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -323,7 +323,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {
@@ -336,7 +336,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	} else {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {

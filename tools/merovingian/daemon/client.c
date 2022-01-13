@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -371,9 +371,11 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 	} else {
+		/* Jan2022: disabled logging of next info message to reduce merovingian.log size:
 		Mfprintf(stdout, "proxying client %s for database '%s' to "
 				"%s?database=%s\n",
 				host, database, redirs[0].conns->val, redirs[0].dbname);
+		*/
 		/* merovingian is in control, only consider the first redirect */
 		mnstr_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
 				redirs[0].dbname);

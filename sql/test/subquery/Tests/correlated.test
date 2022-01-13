@@ -63,29 +63,29 @@ NULL
 3
 NULL
 
-query IT nosort
+query II nosort
 SELECT i, EXISTS(SELECT i FROM integers WHERE 1=0 AND i1.i=i) AS j FROM integers i1 ORDER BY i
 ----
 NULL
-False
+0
 1
-False
+0
 2
-False
+0
 3
-False
+0
 
-query IT nosort
+query II nosort
 SELECT i, i=ANY(SELECT i FROM integers WHERE 1=0 AND i1.i=i) AS j FROM integers i1 ORDER BY i
 ----
 NULL
-False
+0
 1
-False
+0
 2
-False
+0
 3
-False
+0
 
 statement error
 SELECT i, (SELECT i+i1.i FROM integers LIMIT 1 OFFSET 1) AS j FROM integers i1 ORDER BY i
@@ -539,41 +539,41 @@ SELECT CAST(SUM(i) AS BIGINT) FROM integers i1 WHERE i>(SELECT (SUM(i)+i1.i)/2 F
 ----
 5
 
-query IT nosort
+query II nosort
 SELECT i, (SELECT MIN(i) FROM integers WHERE i=i1.i) >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i
 ----
 NULL
 NULL
 1
-False
+0
 2
-False
+0
 3
-True
+1
 
-query IT nosort
+query II nosort
 SELECT i, (SELECT MIN(i) FROM integers WHERE i<>i1.i) > ANY(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i
 ----
 NULL
 NULL
 1
-True
+1
 2
-False
+0
 3
-False
+0
 
-query IT nosort
+query II nosort
 SELECT i, NOT((SELECT MIN(i) FROM integers WHERE i<>i1.i) > ANY(SELECT i FROM integers WHERE i IS NOT NULL)) FROM integers i1 ORDER BY i
 ----
 NULL
 NULL
 1
-False
+0
 2
-True
+1
 3
-True
+1
 
 query II nosort
 SELECT i, (SELECT i FROM integers i2 WHERE i=(SELECT SUM(i) FROM integers i2 WHERE i2.i>i1.i)) FROM integers i1 ORDER BY 1
@@ -731,35 +731,35 @@ b
 3
 c
 
-query IT nosort
+query II nosort
 SELECT a, a>=ANY(SELECT test2.a+c-b FROM test2 WHERE c>=b AND "str"=str2) FROM test ORDER BY 1
 ----
 11
-True
+1
 12
-False
+0
 13
-False
+0
 
-query TT rowsort
+query TI rowsort
 SELECT "str", "str"=ANY(SELECT str2 FROM test2) FROM test
 ----
 a
-True
+1
 b
-True
+1
 c
-False
+0
 
-query TT rowsort
+query TI rowsort
 SELECT "str", "str"=ANY(SELECT str2 FROM test2 WHERE test.a<>test2.a) FROM test
 ----
 a
-False
+0
 b
-True
+1
 c
-False
+0
 
 query II nosort
 SELECT i, (SELECT s1.i FROM (SELECT * FROM integers WHERE i=i1.i) s1) AS j FROM integers i1 ORDER BY i
@@ -1320,17 +1320,17 @@ NULL
 3
 6
 
-query IT nosort
+query II nosort
 SELECT i, (SELECT i=ANY(SELECT i FROM integers WHERE i=s1.i) FROM integers s1 WHERE i=i1.i) AS j FROM integers i1 ORDER BY i
 ----
 NULL
 NULL
 1
-True
+1
 2
-True
+1
 3
-True
+1
 
 query II nosort
 SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i OR i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i
@@ -1458,31 +1458,31 @@ NULL
 3
 6
 
-query T nosort
+query I nosort
 SELECT NULL IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v
 ----
-False
+0
 NULL
 NULL
 
 statement error 22018!conversion of string to type bte failed.
 SELECT 3 IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v
 
-query T nosort
+query I nosort
 SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v
 ----
-False
-True
-False
+0
+1
+0
 
-query T nosort
+query I nosort
 SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v
 ----
 NULL
-True
+1
 NULL
 
-query T nosort
+query I nosort
 SELECT 'bla' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v
 ----
 NULL
@@ -1534,5 +1534,4 @@ DROP TABLE test2
 
 statement ok
 DROP TABLE strings
-
 

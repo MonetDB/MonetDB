@@ -27,4 +27,3 @@ a
 statement ok
 rollback
 
-

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten
@@ -443,7 +443,7 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 
 	if (mb->errors == MAL_SUCCEED){
 		for (i = sig->argc; i < mb->vtop; i++) {
-			if (glb && i < glb->stktop && isTmpVar(mb,i) ) {
+			if (glb && i < glb->stktop && isTmpVar(mb,i) && !glb->keepTmps) {
 				/* clean stack entry */
 				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;

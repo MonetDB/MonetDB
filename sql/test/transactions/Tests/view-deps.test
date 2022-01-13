@@ -23,7 +23,7 @@ statement ok
 commit
 
 @connection(id=2)
-statement error 40000!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
 commit
 
 @connection(id=2)
@@ -34,3 +34,4 @@ select * from myv7
 @connection(id=2)
 statement ok
 drop table fine
+

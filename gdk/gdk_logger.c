@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -605,7 +605,7 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 		HASHloop_int(cni, cni.b->thash, p, &id) {
 			lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 
-			if (lid != lng_nil && lid <= lg->saved_tid)
+			if (lid != lng_nil && lid <= lg->tid)
 				break;
 			cp = p;
 		}
@@ -620,7 +620,6 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 	return GDK_SUCCEED;
-
 }
 
 static gdk_return
@@ -2423,7 +2422,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 		}
 		char *dst = buf;
 		for(; p < end && sz < bufsz; p++) {
-			char *s = BUNtvar(bi, p);
+			const char *s = BUNtvar(bi, p);
 			size_t len = strlen(s)+1;
 			if ((sz+len) > bufsz) {
 				if (len > bufsz)

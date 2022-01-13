@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -363,8 +363,7 @@ WLRprocessBatch(Client cntxt)
 				if(!msg && mb->errors == 0){
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
-					sql->session->level = 0;
-					if(mvc_trans(sql) < 0) {
+					if (mvc_trans(sql) < 0) {
 						TRC_ERROR(SQL_TRANS, "Allocation failure while starting the transaction\n");
 					} else {
 						msg= runMAL(c,mb,0,0);
@@ -1130,7 +1129,7 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (!schema || !seq_name || !(seqs = find_sql_schema(tr, schema)))
 					continue;
 
-				assert(seqs->base.id == s->base.id);
+				/* TODO - At the moment the sequence may not be stored in the same schema as the table itself */
 				if ((seq = find_sql_sequence(tr, seqs, seq_name))) {
 					switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
 						case -1:

@@ -1253,7 +1253,87 @@ select * from customer_address limit 9
 query ITTTITIII rowsort
 select * from customer_demographics limit 9
 ----
-81 values hashing to 6b7c14b377185780bd2a20e13811077d
+1
+M
+M
+Primary
+500
+Good
+0
+0
+0
+2
+F
+M
+Primary
+500
+Good
+0
+0
+0
+3
+M
+S
+Primary
+500
+Good
+0
+0
+0
+4
+F
+S
+Primary
+500
+Good
+0
+0
+0
+5
+M
+D
+Primary
+500
+Good
+0
+0
+0
+6
+F
+D
+Primary
+500
+Good
+0
+0
+0
+7
+M
+W
+Primary
+500
+Good
+0
+0
+0
+8
+F
+W
+Primary
+500
+Good
+0
+0
+0
+9
+M
+U
+Primary
+500
+Good
+0
+0
+0
 
 query ITTIIIIIIIIIIITTTTTIIIITTTTT rowsort
 select * from date_dim limit 9
@@ -1263,27 +1343,290 @@ select * from date_dim limit 9
 query ITTITTTTTTTTTR rowsort
 select * from warehouse limit 9
 ----
-70 values hashing to b91f7865f868330352cf4a9dbc61497b
+1
+AAAAAAAABAAAAAAA
+Conventional childr
+977787
+651
+6th 
+Parkway
+Suite 470
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.000
+2
+AAAAAAAACAAAAAAA
+Important issues liv
+138504
+600
+View First
+Avenue
+Suite P
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.000
+3
+AAAAAAAADAAAAAAA
+Doors canno
+294242
+534
+Ash Laurel
+Dr.
+Suite 0
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.000
+4
+AAAAAAAAEAAAAAAA
+Bad cards must make.
+621234
+368
+Wilson Elm
+Drive
+Suite 80
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.000
+5
+AAAAAAAAFAAAAAAA
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+Fairview
+Williamson County
+TN
+35709
+United States
+NULL
 
 query ITTTTT rowsort
 select * from ship_mode limit 9
 ----
-54 values hashing to 5b45e05965badc3d8e056a625a3c5442
+1
+AAAAAAAABAAAAAAA
+EXPRESS
+AIR
+UPS
+YvxVaJI10
+2
+AAAAAAAACAAAAAAA
+NEXT DAY
+AIR
+FEDEX
+ldhM8IvpzHgdbBgDfI
+3
+AAAAAAAADAAAAAAA
+OVERNIGHT
+AIR
+AIRBORNE
+6Hzzp4JkzjqD8MGXLCDa
+4
+AAAAAAAAEAAAAAAA
+TWO DAY
+AIR
+USPS
+UaAJjKDnL4gTOqbpj
+5
+AAAAAAAAFAAAAAAA
+LIBRARY
+AIR
+DHL
+HVDFCcQ
+6
+AAAAAAAAGAAAAAAA
+REGULAR
+SURFACE
+TBS
+Ek
+7
+AAAAAAAAHAAAAAAA
+EXPRESS
+SURFACE
+ZHOU
+hGoF18SLDDPBj
+8
+AAAAAAAAIAAAAAAA
+NEXT DAY
+SURFACE
+ZOUROS
+yVfotg7Tio3MVhBg6Bkn
+9
+AAAAAAAAJAAAAAAA
+OVERNIGHT
+SURFACE
+MSC
+Xjy3ZPuiDjzHlRx14Z3
 
 query ITIIIITTTT rowsort
 select * from time_dim limit 9
 ----
-90 values hashing to 807a7b4a3795cda2f9a8c881be840aad
+0
+AAAAAAAABAAAAAAA
+0
+0
+0
+0
+AM
+third
+night
+NULL
+1
+AAAAAAAACAAAAAAA
+1
+0
+0
+1
+AM
+third
+night
+NULL
+2
+AAAAAAAADAAAAAAA
+2
+0
+0
+2
+AM
+third
+night
+NULL
+3
+AAAAAAAAEAAAAAAA
+3
+0
+0
+3
+AM
+third
+night
+NULL
+4
+AAAAAAAAFAAAAAAA
+4
+0
+0
+4
+AM
+third
+night
+NULL
+5
+AAAAAAAAGAAAAAAA
+5
+0
+0
+5
+AM
+third
+night
+NULL
+6
+AAAAAAAAHAAAAAAA
+6
+0
+0
+6
+AM
+third
+night
+NULL
+7
+AAAAAAAAIAAAAAAA
+7
+0
+0
+7
+AM
+third
+night
+NULL
+8
+AAAAAAAAJAAAAAAA
+8
+0
+0
+8
+AM
+third
+night
+NULL
 
 query ITT rowsort
 select * from reason limit 9
 ----
-27 values hashing to 497036250446c67d80d9be797e95fc3a
+1
+AAAAAAAABAAAAAAA
+Package was damaged
+2
+AAAAAAAACAAAAAAA
+Stopped working
+3
+AAAAAAAADAAAAAAA
+Did not get it on time
+4
+AAAAAAAAEAAAAAAA
+Not the product that was ordred
+5
+AAAAAAAAFAAAAAAA
+Parts missing
+6
+AAAAAAAAGAAAAAAA
+Does not work with a product that I have
+7
+AAAAAAAAHAAAAAAA
+Gift exchange
+8
+AAAAAAAAIAAAAAAA
+Did not like the color
+9
+AAAAAAAAJAAAAAAA
+Did not like the model
 
 query III rowsort
 select * from income_band limit 9
 ----
-27 values hashing to 02cab54299df1322c1b62a356999d7c6
+1
+0
+10000
+2
+10001
+20000
+3
+20001
+30000
+4
+30001
+40000
+5
+40001
+50000
+6
+50001
+60000
+7
+60001
+70000
+8
+70001
+80000
+9
+80001
+90000
 
 query ITTTTRRITITITITTTTTTIT rowsort
 select * from item limit 9
@@ -1318,7 +1661,51 @@ select * from store_returns limit 9
 query IITII rowsort
 select * from household_demographics limit 9
 ----
-45 values hashing to 38fbe49a9327cdea7bb8de8f49fc8c9b
+1
+2
+0-500
+0
+0
+2
+3
+0-500
+0
+0
+3
+4
+0-500
+0
+0
+4
+5
+0-500
+0
+0
+5
+6
+0-500
+0
+0
+6
+7
+0-500
+0
+0
+7
+8
+0-500
+0
+0
+8
+9
+0-500
+0
+0
+9
+10
+0-500
+0
+0
 
 query ITTTIITITTIIII rowsort
 select * from web_page limit 9
@@ -1333,12 +1720,127 @@ select * from promotion limit 9
 query ITIITIITT rowsort
 select * from catalog_page limit 9
 ----
-81 values hashing to c30e102f8f308bbbeda17d8bc54bda78
+1
+AAAAAAAABAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+1
+In general basic characters welcome. Clearly lively friends conv
+bi-annual
+2
+AAAAAAAACAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+2
+English areas will leave prisoners. Too public countries ought to become beneath the years. 
+bi-annual
+3
+AAAAAAAADAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+3
+Times could not address disabled indians. Effectively public ports c
+bi-annual
+4
+AAAAAAAAEAAAAAAA
+2450815
+NULL
+NULL
+1
+NULL
+NULL
+bi-annual
+5
+AAAAAAAAFAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+5
+Classic buildings ensure in a tests. Real years may not receive open systems. Now broad m
+bi-annual
+6
+AAAAAAAAGAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+6
+Exciting principles wish greatly only excellent women. Appropriate fortunes shall not
+bi-annual
+7
+AAAAAAAAHAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+7
+National services must not come at least into a girls
+bi-annual
+8
+AAAAAAAAIAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+8
+Areas see early for a pounds. New goods study too serious women. Unwittingly sorry incentives shall
+bi-annual
+9
+AAAAAAAAJAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+9
+Intensive, economic changes resist bloody of course simple economies; 
+bi-annual
 
 query IIII rowsort
 select * from inventory limit 9
 ----
-36 values hashing to 7e1f93034a2b08327c0eeb46dda7e4ac
+2450815
+1
+1
+211
+2450815
+10
+1
+834
+2450815
+13
+1
+591
+2450815
+14
+1
+579
+2450815
+16
+1
+622
+2450815
+2
+1
+235
+2450815
+4
+1
+859
+2450815
+7
+1
+704
+2450815
+8
+1
+891
 
 query IIIIIIIIIIIIIIIIIIRRRRRRRRR rowsort
 select * from catalog_returns limit 9
@@ -1393,7 +1895,106 @@ and ctr1.ctr_customer_sk = c_customer_sk
 order by c_customer_id
 limit 100
 ----
-100 values hashing to 9ace740d2b6b717b43d7cdee1ef41373
+AAAAAAAAAAABBAAA
+AAAAAAAAAAADBAAA
+AAAAAAAAAAADBAAA
+AAAAAAAAAAAKAAAA
+AAAAAAAAAABDAAAA
+AAAAAAAAAABHBAAA
+AAAAAAAAAABLAAAA
+AAAAAAAAAABMAAAA
+AAAAAAAAAACHAAAA
+AAAAAAAAAACMAAAA
+AAAAAAAAAADDAAAA
+AAAAAAAAAADGAAAA
+AAAAAAAAAADGBAAA
+AAAAAAAAAADGBAAA
+AAAAAAAAAADPAAAA
+AAAAAAAAAAEBAAAA
+AAAAAAAAAAEFBAAA
+AAAAAAAAAAEGBAAA
+AAAAAAAAAAEIAAAA
+AAAAAAAAAAEMAAAA
+AAAAAAAAAAFAAAAA
+AAAAAAAAAAFPAAAA
+AAAAAAAAAAGGBAAA
+AAAAAAAAAAGHBAAA
+AAAAAAAAAAGJAAAA
+AAAAAAAAAAGMAAAA
+AAAAAAAAAAHEBAAA
+AAAAAAAAAAHFBAAA
+AAAAAAAAAAIEBAAA
+AAAAAAAAAAJGBAAA
+AAAAAAAAAAJHBAAA
+AAAAAAAAAAKCAAAA
+AAAAAAAAAAKCAAAA
+AAAAAAAAAAKJAAAA
+AAAAAAAAAAKMAAAA
+AAAAAAAAAAKMAAAA
+AAAAAAAAAALAAAAA
+AAAAAAAAAALABAAA
+AAAAAAAAAALGAAAA
+AAAAAAAAAALHBAAA
+AAAAAAAAAALJAAAA
+AAAAAAAAAANHAAAA
+AAAAAAAAAANHBAAA
+AAAAAAAAAANJAAAA
+AAAAAAAAAANMAAAA
+AAAAAAAAAANMAAAA
+AAAAAAAAAANNAAAA
+AAAAAAAAAAOBBAAA
+AAAAAAAAAAODBAAA
+AAAAAAAAAAOLAAAA
+AAAAAAAAAAPGBAAA
+AAAAAAAAABAAAAAA
+AAAAAAAAABAEAAAA
+AAAAAAAAABAEBAAA
+AAAAAAAAABAFBAAA
+AAAAAAAAABAIAAAA
+AAAAAAAAABAOAAAA
+AAAAAAAAABBDBAAA
+AAAAAAAAABCFAAAA
+AAAAAAAAABCHBAAA
+AAAAAAAAABDHAAAA
+AAAAAAAAABENAAAA
+AAAAAAAAABFEBAAA
+AAAAAAAAABFGAAAA
+AAAAAAAAABFMAAAA
+AAAAAAAAABFPAAAA
+AAAAAAAAABGFAAAA
+AAAAAAAAABGFBAAA
+AAAAAAAAABGJAAAA
+AAAAAAAAABIBBAAA
+AAAAAAAAABICBAAA
+AAAAAAAAABIIAAAA
+AAAAAAAAABJNAAAA
+AAAAAAAAABKGBAAA
+AAAAAAAAABLOAAAA
+AAAAAAAAABLPAAAA
+AAAAAAAAABMABAAA
+AAAAAAAAABMPAAAA
+AAAAAAAAABNAAAAA
+AAAAAAAAABNCBAAA
+AAAAAAAAABNEBAAA
+AAAAAAAAABNLAAAA
+AAAAAAAAABNOAAAA
+AAAAAAAAABNPAAAA
+AAAAAAAAABOAAAAA
+AAAAAAAAABOFBAAA
+AAAAAAAAABOOAAAA
+AAAAAAAAABOPAAAA
+AAAAAAAAABPEAAAA
+AAAAAAAAACADAAAA
+AAAAAAAAACAFAAAA
+AAAAAAAAACAFAAAA
+AAAAAAAAACAHBAAA
+AAAAAAAAACAJAAAA
+AAAAAAAAACBDAAAA
+AAAAAAAAACBDAAAA
+AAAAAAAAACBEBAAA
+AAAAAAAAACBNAAAA
+AAAAAAAAACBPAAAA
+AAAAAAAAACCHAAAA
 
 query IRRRRRRR rowsort
 -- query 2
@@ -1596,7 +2197,38 @@ union all
          ,t_s_secyear.customer_preferred_cust_flag
 limit 100
 ----
-32 values hashing to 7a8b2d6bbb49f57a4ea14649aff4399e
+AAAAAAAABIJBAAAA
+James
+White
+N
+AAAAAAAADIIOAAAA
+David
+Carroll
+Y
+AAAAAAAAIJCIBAAA
+Thomas
+Oneal
+Y
+AAAAAAAAKJBLAAAA
+Kerry
+Davis
+Y
+AAAAAAAAMFPFBAAA
+Jamie
+Woods
+Y
+AAAAAAAANJAMAAAA
+Thaddeus
+Griffin
+N
+AAAAAAAANJOLAAAA
+Debra
+Underwood
+Y
+AAAAAAAAPEHEBAAA
+Edith
+Molina
+Y
 
 query TTRRR rowsort
 -- query 5
@@ -1891,7 +2523,96 @@ select  a.ca_state state, count(*) cnt
  order by cnt, a.ca_state 
  limit 100
 ----
-90 values hashing to 34f84ca8c7a7eb6cab76fac880c8656a
+AK
+21
+AL
+49
+AR
+73
+CA
+60
+CO
+48
+FL
+49
+GA
+153
+IA
+96
+ID
+36
+IL
+106
+IN
+76
+KS
+80
+KY
+103
+LA
+49
+MA
+24
+MD
+19
+ME
+16
+MI
+83
+MN
+81
+MO
+83
+MS
+69
+MT
+55
+NC
+107
+ND
+28
+NE
+87
+NH
+21
+NJ
+18
+NM
+36
+NULL
+73
+NV
+26
+NY
+52
+OH
+102
+OK
+57
+OR
+27
+PA
+56
+SC
+47
+SD
+35
+TN
+74
+TX
+228
+UT
+31
+VA
+137
+VT
+14
+WA
+46
+WI
+53
+WV
+45
 
 query TRRRR rowsort
 -- query 7
@@ -2150,7 +2871,76 @@ select
           cd_dep_college_count
 limit 100
 ----
-70 values hashing to 1043c6194e50a472bcee641a3c500347
+F
+D
+Advanced Degree
+1
+3000
+1
+High Risk
+1
+2
+1
+4
+1
+5
+1
+F
+D
+Unknown
+1
+1500
+1
+Good
+1
+6
+1
+5
+1
+4
+1
+M
+D
+College
+1
+8500
+1
+Low Risk
+1
+3
+1
+0
+1
+1
+1
+M
+D
+Primary
+1
+7000
+1
+Unknown
+1
+2
+1
+1
+1
+1
+1
+M
+W
+Unknown
+1
+4500
+1
+Good
+1
+5
+1
+0
+1
+1
+1
 
 query TTTIIITIIIIIII rowsort
 -- query 10a
@@ -2212,7 +3002,76 @@ select
           cd_dep_college_count
 limit 100
 ----
-70 values hashing to 1043c6194e50a472bcee641a3c500347
+F
+D
+Advanced Degree
+1
+3000
+1
+High Risk
+1
+2
+1
+4
+1
+5
+1
+F
+D
+Unknown
+1
+1500
+1
+Good
+1
+6
+1
+5
+1
+4
+1
+M
+D
+College
+1
+8500
+1
+Low Risk
+1
+3
+1
+0
+1
+1
+1
+M
+D
+Primary
+1
+7000
+1
+Unknown
+1
+2
+1
+1
+1
+1
+1
+M
+W
+Unknown
+1
+4500
+1
+Good
+1
+5
+1
+0
+1
+1
+1
 
 query TTTT rowsort
 -- query 11
@@ -2929,7 +3788,21 @@ select  i_item_id
          ,s_state
 limit 100
 ----
-15 values hashing to 8d03239c926841a21e591460dcd068a9
+AAAAAAAAKPFEAAAA
+Recently right
+TN
+1
+99.000
+NULL
+NULL
+1
+66.000
+NULL
+NULL
+1
+32.000
+NULL
+NULL
 
 query TTTTRRRRRRR rowsort
 -- query 18
@@ -3292,7 +4165,18 @@ query TTR rowsort
      order by c_last_name,c_first_name,sales
   limit 100
 ----
-12 values hashing to e9dca7e9086fa43e13de7740b40f7ed3
+Brown
+Monika
+6031.520
+Collins
+Gordon
+727.570
+Green
+Jesse
+9672.960
+NULL
+Robert
+598.860
 
 query TTTR rowsort
 -- query 24-1
@@ -3348,7 +4232,18 @@ order by c_last_name
         ,c_first_name
         ,s_store_name
 ----
-12 values hashing to 5992b1802ba74abfa0ac3d4a351bfc47
+Martins
+Cara
+bar
+241.960
+Smallwood
+Rhonda
+bar
+3089.280
+Terry
+Sandra
+bar
+509.420
 
 query TTTR rowsort
 -- query 24-2
@@ -3404,7 +4299,22 @@ order by c_last_name
         ,c_first_name
         ,s_store_name
 ----
-16 values hashing to 84204543ca8b5570e0614918dd1bbe48
+Hamlin
+Heather
+able
+149.650
+Martin
+Harold
+bar
+5834.880
+Nall
+Mike
+able
+999.700
+Southern
+Jeannie
+bar
+446.310
 
 query TTTTRRR rowsort
 -- query 25
@@ -3601,7 +4511,24 @@ from (select avg(ss_list_price) B1_LP
           or ss_wholesale_cost between 7 and 7+20)) B6
 limit 100
 ----
-18 values hashing to 83f7276f6cf08db0b772952a8121cdeb
+77.720
+36142
+9210
+69.500
+35250
+6592
+134.010
+27875
+9741
+82.550
+31422
+7678
+61.830
+36100
+8664
+39.280
+29776
+5210
 
 query TTTTIII rowsort
 -- query 29
@@ -4301,7 +5228,46 @@ select  dt.d_year
  		,item.i_category
 limit 100 
 ----
-40 values hashing to 277d4a46be86731fd9046570777f9f4a
+2000
+1
+Women
+320132.430
+2000
+10
+Electronics
+281421.740
+2000
+2
+Men
+368718.950
+2000
+3
+Children
+370261.290
+2000
+4
+Shoes
+221242.250
+2000
+5
+Music
+223420.700
+2000
+6
+Jewelry
+167920.910
+2000
+7
+Home
+458017.850
+2000
+8
+Sports
+200806.450
+2000
+9
+Books
+161721.110
 
 query TTRRRRRRR rowsort
 -- query 43
@@ -4322,7 +5288,60 @@ select  s_store_name, s_store_id,
  order by s_store_name, s_store_id,sun_sales,mon_sales,tue_sales,wed_sales,thu_sales,fri_sales,sat_sales
  limit 100
 ----
-54 values hashing to df97069d9c9b7a81b697d4597b01b5ca
+able
+AAAAAAAACAAAAAAA
+517884.590
+469230.500
+505832.670
+443696.300
+479716.970
+462447.500
+503064.600
+ation
+AAAAAAAAHAAAAAAA
+508811.680
+474290.020
+448808.840
+492870.990
+498127.640
+474355.890
+505906.680
+bar
+AAAAAAAAKAAAAAAA
+496021.800
+459933.010
+479825.960
+474630.240
+482326.790
+478330.870
+505252.220
+eing
+AAAAAAAAIAAAAAAA
+498752.970
+476119.010
+485965.240
+454921.280
+491953.890
+476014.690
+484633.670
+ese
+AAAAAAAAEAAAAAAA
+493724.010
+499637.850
+452314.620
+466232.230
+481922.380
+477933.290
+500577.950
+ought
+AAAAAAAABAAAAAAA
+505735.340
+471490.230
+463248.390
+482690.520
+485818.980
+481816.200
+491354.680
 
 query ITT rowsort
 -- query 44
@@ -4359,7 +5378,36 @@ where asceding.rnk = descending.rnk
 order by asceding.rnk
 limit 100
 ----
-30 values hashing to ddb97fd32ecc4efb37677d4564aa8083
+1
+oughtantiprin st
+callyeingbarcallyought
+10
+eingoughtn station
+barcallyableought
+2
+barcallyprioughtought
+bareseationcallyought
+3
+ableeingantiable
+barn stcallycally
+4
+n stesebarn st
+eingoughtn stn st
+5
+antioughtationbarought
+callycallybarantiought
+6
+callyeseationantiought
+NULL
+7
+priableeseableought
+eseableablepriought
+8
+ableoughtableeseought
+ationoughtantianti
+9
+esebarableeseought
+callyn stantieseought
 
 query TTR rowsort
 -- query 45
@@ -4381,7 +5429,63 @@ select  ca_zip, ca_city, sum(ws_sales_price)
  order by ca_zip, ca_city
  limit 100
 ----
-57 values hashing to d24aec88e27d57724ba09ea2c3fe3e1c
+10150
+Bunker Hill
+20.250
+16098
+Five Points
+18.050
+28048
+Salem
+9.810
+29584
+Oakdale
+41.210
+31289
+Lincoln
+1.260
+34975
+Kingston
+56.670
+36971
+Wilson
+202.630
+38354
+Sulphur Springs
+25.680
+44975
+Kingston
+12.620
+62808
+Hamilton
+85.390
+62812
+Shady Grove
+48.770
+66557
+Arlington
+2.680
+68252
+Maple Grove
+11.370
+69583
+Jackson
+54.420
+73003
+Hillcrest
+36.030
+78222
+Clinton
+85.870
+83683
+Plainview
+43.820
+84536
+Friendship
+64.440
+88370
+Oak Grove
+52.420
 
 query TTTTIRR rowsort
 -- query 46
@@ -4731,7 +5835,96 @@ order by s_store_name
         ,s_zip
 limit 100
 ----
-90 values hashing to 7536f9d8491df0a83b3e861ed15dae2f
+able
+1
+255
+Sycamore 
+Dr.
+Suite 410
+Midway
+Williamson County
+TN
+31904
+67
+48
+61
+66
+98
+ation
+1
+811
+Lee 
+Circle
+Suite T
+Midway
+Williamson County
+TN
+31904
+70
+51
+50
+61
+109
+bar
+1
+175
+4th 
+Court
+Suite C
+Midway
+Williamson County
+TN
+31904
+96
+53
+55
+76
+86
+eing
+1
+226
+12th 
+Lane
+Suite D
+Fairview
+Williamson County
+TN
+35709
+69
+63
+62
+63
+114
+ese
+1
+27
+Lake 
+Ln
+Suite 260
+Midway
+Williamson County
+TN
+31904
+58
+57
+55
+54
+106
+ought
+1
+767
+Spring 
+Wy
+Suite 250
+Midway
+Williamson County
+TN
+31904
+81
+63
+52
+58
+103
 
 query ITRRRR rowsort
 -- query 51
@@ -5161,7 +6354,30 @@ with ss_items as
          ,ss_item_rev
  limit 100
 ----
-24 values hashing to f446c6f4af44b37ebec94339282eaaca
+AAAAAAAACNGBAAAA
+1900.150
+100.300
+1950.920
+103.000
+1829.520
+96.600
+1893.530
+AAAAAAAAIDOAAAAA
+6605.220
+104.100
+6078.330
+95.800
+6338.250
+99.900
+6340.600
+AAAAAAAAJMFCAAAA
+3608.520
+103.000
+3590.470
+102.500
+3305.820
+94.400
+3501.600
 
 query TTIRRRRRRR rowsort
 -- query 59
@@ -6033,7 +7249,21 @@ select
   ,rank_within_parent
  limit 100
 ----
-15 values hashing to 303509a74b576739dc44d9d8167c5646
+-440986113.220
+NULL
+NULL
+2
+1
+-440986113.220
+TN
+NULL
+1
+1
+-440986113.220
+TN
+Williamson County
+0
+1
 
 query RTTII rowsort
 -- query 70a
@@ -6078,7 +7308,21 @@ with results as
   ,rank_within_parent
  limit 100
 ----
-15 values hashing to 303509a74b576739dc44d9d8167c5646
+-440986113.220
+NULL
+NULL
+2
+1
+-440986113.220
+TN
+NULL
+1
+1
+-440986113.220
+TN
+Williamson County
+0
+1
 
 query ITIIR rowsort
 -- query 71
@@ -6181,7 +7425,36 @@ select c_last_name
       and cnt between 1 and 5
     order by cnt desc, c_last_name asc
 ----
-30 values hashing to e6bec92a38d1b016eac9ba71db39b03c
+Dion
+Alva
+Mrs.
+N
+113766
+4
+Greene
+Clarence
+NULL
+N
+1541
+5
+Peterson
+Chantell
+Miss
+N
+47551
+5
+Scott
+Anne
+Dr.
+N
+86396
+5
+Wheeler
+Ashley
+Mrs.
+N
+174863
+5
 
 query TTT rowsort
 -- query 74
@@ -7015,7 +8288,56 @@ select  c_customer_id as customer_id
  order by c_customer_id
  limit 100
 ----
-50 values hashing to a6de87dd0e44c5b0791ba9e4ab49c316
+AAAAAAAAAIPGAAAA
+Carter, Rodney
+AAAAAAAAAKMBBAAA
+Mcarthur, Emma
+AAAAAAAACBNHBAAA
+Wells, Ron
+AAAAAAAADBMEAAAA
+Vera, Tina
+AAAAAAAADBMEAAAA
+Vera, Tina
+AAAAAAAADHKGBAAA
+Scott, Pamela
+AAAAAAAAEIIBBAAA
+Atkins, Susan
+AAAAAAAAFKAHAAAA
+Batiste, Ernest
+AAAAAAAAGHMAAAAA
+Mitchell, Gregory
+AAAAAAAAIAODBAAA
+Murray, Karen
+AAAAAAAAIEOKAAAA
+Solomon, Clyde
+AAAAAAAAIIBOAAAA
+Owens, David
+AAAAAAAAIPDCAAAA
+Wallace, Eric
+AAAAAAAAIPIMAAAA
+Hayward, Benjamin
+AAAAAAAAJCIKAAAA
+Ramos, Donald
+AAAAAAAAKFJEAAAA
+Roberts, Yvonne
+AAAAAAAAKPGBBAAA
+Moore, 
+AAAAAAAALCLABAAA
+Whitaker, Lettie
+AAAAAAAAMGMEAAAA
+Sharp, Michael
+AAAAAAAAMIGBBAAA
+Montgomery, Jesenia
+AAAAAAAAMPDKAAAA
+Lopez, Isabel
+AAAAAAAANEOMAAAA
+Powell, Linda
+AAAAAAAANKPCAAAA
+Shaffer, Sergio
+AAAAAAAANOCKAAAA
+Vargas, James
+AAAAAAAAOGJEBAAA
+Owens, Denice
 
 query TRRR rowsort
 -- query 85
@@ -7101,7 +8423,30 @@ order by substr(r_reason_desc,1,20)
         ,avg(wr_fee)
 limit 100
 ----
-24 values hashing to dac2d5cdadf6d570a89fad289aa04d2f
+Gift exchange
+76.000
+464.360
+8.620
+Not the product that
+70.000
+876.670
+46.670
+Parts missing
+7.000
+129.420
+38.650
+reason 23
+47.000
+734.610
+6.170
+reason 25
+5.000
+48.940
+53.150
+reason 28
+8.000
+306.200
+37.060
 
 query RTTII rowsort
 -- query 86

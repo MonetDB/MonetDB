@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -189,7 +189,7 @@ atom_float(sql_allocator *sa, sql_subtype *tpe, dbl val)
 }
 
 #ifdef HAVE_HGE
-hge scales[39] = {
+const hge scales[39] = {
 	(hge) LL_CONSTANT(1),
 	(hge) LL_CONSTANT(10),
 	(hge) LL_CONSTANT(100),
@@ -231,7 +231,7 @@ hge scales[39] = {
 	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
 };
 #else
-lng scales[19] = {
+const lng scales[19] = {
 	LL_CONSTANT(1),
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),

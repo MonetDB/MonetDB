@@ -2,7 +2,7 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 Dumping a MonetDB SQL database
 ------------------------------
@@ -76,8 +76,8 @@ Online documentation
 --------------------
 
 For more information visit web pages:
-.. Dump-Restore Guide: https://www.monetdb.org/Documentation/UserGuide/DumpRestore
-.. msqldump-man-page: https://www.monetdb.org/Documentation/msqldump-man-page
-.. mclient-man-page: https://www.monetdb.org/Documentation/mclient-man-page
-.. mserver5-man-page: https://www.monetdb.org/Documentation/mserver5-man-page
+.. Dump-Restore Guide: https://www.monetdb.org/documentation/admin-guide/backup-upgrade/sql-dump-and-restore/
+.. msqldump-man-page: https://www.monetdb.org/documentation/user-guide/client-interfaces/msqldump/
+.. mclient-man-page: https://www.monetdb.org/documentation/user-guide/client-interfaces/mclient/
+.. mserver5-man-page: https://www.monetdb.org/documentation/admin-guide/manpages/mserver5/
 

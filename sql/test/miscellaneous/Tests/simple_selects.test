@@ -897,3 +897,4 @@ select dosomething()
 
 statement ok
 drop function dosomething
+

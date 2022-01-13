@@ -31,4 +31,3 @@ LANGUAGE PYTHON {
 statement ok
 ROLLBACK
 
-
