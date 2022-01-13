@@ -2708,21 +2708,20 @@ static int
 nonil_col(sql_trans *tr, sql_column *col)
 {
 	int nonil = 0;
+	BAT *b = NULL;
+	sql_delta *d = NULL;
 
 	assert(tr->active);
-	if (!isTable(col->t) || !col->t->s)
+	if (!col || !isTable(col->t) || !col->t->s)
 		return 0;
 
-	if (col && ATOMIC_PTR_GET(&col->data)) {
-		BAT *b = bind_col(tr, col, QUICK), *c;
+	if ((d = ATOMIC_PTR_GET(&col->data)) && (b = quick_descriptor(d->cs.bid))) {
+		nonil = b->tnonil && !b->tnil;
 
-		if (b) {
-			nonil = b->tnonil && !b->tnil; /* check deltas as well */
-
-			if ((c = bind_col(tr, col, RD_UPD_VAL))) {
-				nonil &= c->tnonil && !c->tnil;
-				BBPunfix(c->batCacheid);
-			}
+		if (nonil && d->cs.ucnt > 0) {
+			if (!(b = quick_descriptor(d->cs.uvbid)))
+				return 0;
+			nonil &= b->tnonil && !b->tnil;
 		}
 	}
 	return nonil;
