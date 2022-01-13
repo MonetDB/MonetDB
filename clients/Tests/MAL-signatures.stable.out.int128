@@ -12519,7 +12519,6 @@
 [ "rapi",	"eval_aggr",	"pattern rapi.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any... ",	"RAPIevalAggr;",	"grouped aggregates through R"	]
 [ "rapi",	"prelude",	"command rapi.prelude():void ",	"RAPIprelude;",	""	]
 [ "rapi",	"subeval_aggr",	"pattern rapi.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... ",	"RAPIevalAggr;",	"grouped aggregates through R"	]
-[ "remote",	"assert",	"pattern remote.assert(X_0:bit, X_1:str):void ",	"RMTassert;",	"Generate an exception when b==true"	]
 [ "remote",	"batbincopy",	"pattern remote.batbincopy():bat[:any] ",	"RMTbincopyfrom;",	"store the binary BAT data in the BBP and return as BAT"	]
 [ "remote",	"batbincopy",	"pattern remote.batbincopy(X_0:bat[:any]):void ",	"RMTbincopyto;",	"dump BAT b in binary form to the stream"	]
 [ "remote",	"batload",	"pattern remote.batload(X_0:any_1, X_1:int):bat[:any_1] ",	"RMTbatload;",	"create a BAT of the given type and size, and load values from the input stream"	]
