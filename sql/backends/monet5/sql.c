@@ -1854,7 +1854,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (!schema || !seq_name || !(seqs = find_sql_schema(tr, schema)))
 					continue;
 
-				assert(seqs->base.id == s->base.id);
+				/* TODO - At the moment the sequence may not be stored in the same schema as the table itself */
 				if ((seq = find_sql_sequence(tr, seqs, seq_name))) {
 					switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
 						case -1:
@@ -4965,6 +4965,8 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!isTable(t))
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (isTempTable(t))
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 	if (c->storage_type)
@@ -5100,6 +5102,8 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (!isTable(t))
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (isTempTable(t))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 	if (c->storage_type)
@@ -5141,18 +5145,20 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_column *c = NULL;
 
 	if (strNil(sname))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
 	if (strNil(tname))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
 	if (strNil(cname))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
 	if (!isTable(t))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (isTempTable(t))
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 

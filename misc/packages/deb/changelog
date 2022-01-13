@@ -1,3 +1,29 @@
+monetdb (11.43.3) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7215: ODBC Driver SQLStatistics returns duplicate rows/rows for other
+    tables
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 Jan 2022 10:46:27 +0100
+
+monetdb (11.43.3) unstable; urgency=low
+
+  * gdk: On Windows, files and directories we create now get the attribute
+    FILE_ATTIBUTE_NOT_CONTENT_INDEXED, meaning that they should not be
+    indexed by indexing or search services.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 Jan 2022 10:46:27 +0100
+
+monetdb (11.43.3) unstable; urgency=low
+
+  * merovingian: Disabled logging into merovingian.log of next info message types:
+    - proxying client <host>:<port> for database '<dbname>' to <url>
+    - target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying
+    These messages were written to the log file at each connection. In most
+    cases this information is not used. The disabling reduces the log file size.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 6 Jan 2022 10:46:27 +0100
+
 monetdb (11.43.1) unstable; urgency=low
 
   * Rebuilt.
@@ -11,21 +37,6 @@ monetdb (11.43.1) unstable; urgency=low
   * GH#7202: DISTINCT does not work when sorting by additional columns
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 03 Jan 2022 14:02:13 +0100
-
-monetdb (11.43.1) unstable; urgency=low
-
-  * gdk: Implement string imprints (strimps for short) a pre-filter structure
-    for strings in order to accelerate LIKE queries. If a strimp exists
-    for a specific string column the strings are pre-filtered, rejecting
-    strings that cannot possibly match, before the more expensive and
-    accurate matching algorithms run. Strimps are created automatically
-    or using 'sys.strimp_create' with arguments the names of the schema,
-    table and column. Automatic strimp creation is controlled by two
-    user settable gdk options: 'gdk_use_strimps' (default value "no") and
-    'gdk_strimps_threshold' (default value 1.000.000). See the manual for
-    more details.
-
- -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Mon, 3 Jan 2022 14:02:13 +0100
 
 monetdb (11.43.1) unstable; urgency=low
 

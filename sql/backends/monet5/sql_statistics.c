@@ -309,6 +309,14 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 								goto bailout;
 							}
+							if (isVIEW(re)) { /* If it is a view get the parent BAT */
+								BAT *nb = BBP_cache(VIEWtparent(re));
+								BBPunfix(re->batCacheid);
+								if (!(re = BATdescriptor(nb->batCacheid))) {
+									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+									goto bailout;
+								}
+							}
 							issorted = BATtordered(qd) && BATtordered(re);
 							isrevsorted = BATtrevordered(qd) && BATtrevordered(re);
 							hnils = !re->tnonil || re->tnil;
@@ -343,9 +351,19 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (pos->tminpos != BUN_NONE || pos->tmaxpos != BUN_NONE) {
 							if (dict) {
 								fb = re;
-							} else if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
-								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
-								goto bailout;
+							} else {
+								if (!(fb = store->storage_api.bind_col(tr, c, RDONLY))) {
+									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+									goto bailout;
+								}
+								if (isVIEW(fb)) { /* If it is a view get the parent BAT */
+									BAT *nb = BBP_cache(VIEWtparent(fb));
+									BBPunfix(fb->batCacheid);
+									if (!(fb = BATdescriptor(nb->batCacheid))) {
+										msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+										goto bailout;
+									}
+								}
 							}
 
 							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[fb->ttype].atomToStr;

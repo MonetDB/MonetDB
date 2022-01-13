@@ -36,7 +36,7 @@
 
 int TYPE_blob;
 
-static blob nullval = {
+static const blob nullval = {
 	~(size_t) 0
 };
 

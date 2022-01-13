@@ -1,7 +1,6 @@
-query ITTIII rowsort
-select sessionid, s."username", s."optimizer", s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+query TTIII rowsort
+select s."username", s."optimizer", s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
-0
 monetdb
 default_pipe
 0
@@ -20,10 +19,9 @@ call setquerytimeout(123)
 statement ok
 call setworkerlimit(12)
 
-query ITTIIII rowsort
-select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+query TTIIII rowsort
+select s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
-0
 monetdb
 minimal_pipe
 5000
@@ -43,10 +41,9 @@ call setquerytimeout(-1)
 statement error
 call setworkerlimit( -1)
 
-query ITTIIII rowsort
-select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+query TTIIII rowsort
+select s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
-0
 monetdb
 minimal_pipe
 5000
@@ -66,10 +63,9 @@ call setquerytimeout(0, 60)
 statement ok
 call setworkerlimit(0,8)
 
-query ITTIIII rowsort
-select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+query TTIIII rowsort
+select s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
-0
 monetdb
 sequential_pipe
 1000

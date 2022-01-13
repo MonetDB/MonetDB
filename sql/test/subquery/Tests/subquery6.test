@@ -482,7 +482,7 @@ select (select not exists (select sum(i1.i + i2.i)) from integers i2) from integ
 statement error GDK reported error: BATsubcross: more than one match
 select 1 where (select 1 union all select 2) in (1)
 
-statement error 21000!Cardinality violation, scalar value expected
+statement error GDK reported error: BATsubcross: more than one match
 select (select 1 union all select 2) in (1)
 
 statement ok

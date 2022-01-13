@@ -30,7 +30,11 @@
 #endif
 
 #ifndef O_CLOEXEC
+#ifdef _O_NOINHERIT
+#define O_CLOEXEC _O_NOINHERIT	/* Windows */
+#else
 #define O_CLOEXEC 0
+#endif
 #endif
 
 #ifdef NATIVE_WIN32
@@ -494,7 +498,7 @@ MT_lockf(const char *filename, int mode)
 		 * directly */
 		fh = CreateFileW(wfilename,
 				GENERIC_READ | GENERIC_WRITE, 0,
-				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED, NULL);
 		free(wfilename);
 		if (fh == INVALID_HANDLE_VALUE)
 			return -2;
@@ -556,8 +560,8 @@ MT_fopen(const char *filename, const char *mode)
 	wfilename = utf8towchar(filename);
 	wmode = utf8towchar(mode);
 	FILE *f = NULL;
-	if (wfilename != NULL && wmode != NULL)
-		f = _wfopen(wfilename, wmode);
+	if (wfilename != NULL && wmode != NULL && (f = _wfopen(wfilename, wmode)) != NULL && strchr(mode, 'w') != NULL)
+		SetFileAttributesW(wfilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
 	free(wfilename);
 	free(wmode);
 	return f;
@@ -572,6 +576,8 @@ MT_open(const char *filename, int flags)
 	int fd;
 	if (_wsopen_s(&fd, wfilename, flags, _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0)
 		fd = -1;
+	else if (flags & O_CREAT)
+		SetFileAttributesW(wfilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
 	free(wfilename);
 	return fd;
 }
@@ -589,6 +595,9 @@ MT_stat(const char *pathname, struct _stat64 *st)
 	return ret;
 }
 
+#define RETRIES 10
+#define SLEEPTIME 20
+
 int
 MT_rmdir(const char *pathname)
 {
@@ -597,18 +606,36 @@ MT_rmdir(const char *pathname)
 	if (wpathname == NULL)
 		return -1;
 
-	ret = _wrmdir(wpathname);
-#if 0
-	if (ret < 0 && errno != ENOENT) {
+	for (int i = 0; i < RETRIES; i++) {
+		ret = _wrmdir(wpathname);
+		if (ret == 0 || errno == ENOENT)
+			break;
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		TRC_DEBUG(IO_, "Retry rmdir %s\n", pathname);
-		MT_sleep_ms(100);	/* wait a little */
-		ret = _wrmdir(wpathname);
+//		fprintf(stderr, "#Retry rmdir %s\n", pathname);
+		Sleep(SLEEPTIME);	/* wait a little */
 	}
-#endif
 	free(wpathname);
+	return ret;
+}
+
+static inline int
+WMT_remove(const wchar_t *wpathname)
+{
+	int ret;
+
+	SetFileAttributesW(wpathname, FILE_ATTRIBUTE_NORMAL);
+	for (int i = 0; i < RETRIES; i++) {
+		ret = _wunlink(wpathname);
+		if (ret == 0 || errno == ENOENT)
+			break;
+		/* it could be the <expletive deleted> indexing
+		 * service which prevents us from doing what we have a
+		 * right to do, so try again (once) */
+//		fprintf(stderr, "#Retry unlink %ls\n", wpathname);
+		Sleep(SLEEPTIME);	/* wait a little */
+	}
 	return ret;
 }
 
@@ -620,18 +647,7 @@ MT_remove(const char *pathname)
 	if (wpathname == NULL)
 		return -1;
 
-	SetFileAttributesW(wpathname, FILE_ATTRIBUTE_NORMAL);
-	ret = _wunlink(wpathname);
-#if 0
-	if (ret < 0 && errno != ENOENT) {
-		/* it could be the <expletive deleted> indexing
-		 * service which prevents us from doing what we have a
-		 * right to do, so try again (once) */
-		TRC_DEBUG(IO_, "Retry unlink %s\n", pathname);
-		MT_sleep_ms(100);	/* wait a little */
-		ret = _wunlink(wpathname);
-	}
-#endif
+	ret = WMT_remove(wpathname);
 	free(wpathname);
 	return ret;
 }
@@ -645,21 +661,22 @@ MT_rename(const char *old, const char *dst)
 	wdst = utf8towchar(dst);
 
 	if (wold && wdst) {
-		ret = _wrename(wold, wdst);
-		if (ret < 0 && errno == EEXIST) {
-			(void) _wunlink(wdst);
+		for (int i = 0; i < RETRIES; i++) {
 			ret = _wrename(wold, wdst);
-		}
-#if 0
-		if (ret < 0 && errno != ENOENT) {
+			if (ret < 0 && errno == EEXIST) {
+				if ((ret = WMT_remove(wdst)) < 0 &&
+				    errno != ENOENT)
+					break;
+				ret = _wrename(wold, wdst);
+			}
+			if (ret == 0 || errno == ENOENT)
+				break;
 			/* it could be the <expletive deleted> indexing
 			 * service which prevents us from doing what we have a
 			 * right to do, so try again (once) */
-			TRC_DEBUG(IO_, "Retry rename %s %s\n", old, dst);
-			MT_sleep_ms(100);	/* wait a little */
-			ret = _wrename(wold, wdst);
+//			fprintf(stderr, "#Retry rename %s %s\n", old, dst);
+			Sleep(SLEEPTIME);	/* wait a little */
 		}
-#endif
 	}
 	free(wold);
 	free(wdst);
@@ -673,6 +690,8 @@ MT_mkdir(const char *pathname)
 	if (wpathname == NULL)
 		return -1;
 	int ret = _wmkdir(wpathname);
+	if (ret == 0)
+		SetFileAttributesW(wpathname, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
 	free(wpathname);
 	return ret;
 }
