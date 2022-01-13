@@ -3770,7 +3770,7 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 		return NULL;
 
 	if (rel_single_distinct(rel))
-		printf("single distinct\n");
+		printf("#single distinct\n");
 	list *shared = NULL;
 	if (is_groupby(rel->op) && list_empty(rel->r) && !list_empty(rel->exps)) { /* global aggregation */
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */

@@ -276,9 +276,38 @@ typedef ATOMIC_TYPE hash_key_t;
 #define HT_MIN_SIZE 1024*64
 #define HT_MAX_SIZE 1024*1024*1024
 
+typedef int (*fcmp)(void *v1, void *v2);
+typedef lng (*fhsh)(void *v);
+
+static int
+str_cmp(str s1, str s2)
+{
+	return strcmp(s1,s2);
+}
+
+static lng
+str_hsh(str v)
+{
+	hash_key_t key = 1;
+
+	if (v) {
+		for(;*v; v++) {
+			key += ((hash_key_t)(*v));
+			key += (key<<10);
+			key ^= (key>>6);
+		}
+		key += (key << 3);
+		key ^= (key >> 11);
+		key += (key << 15);
+	}
+	return key;
+}
+
 typedef struct uhash_table {
         int type;
         int width;
+		fcmp cmp;
+		fhsh hsh;
 
         void *vals;			/* hash(ed) values */
         hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
@@ -314,12 +343,17 @@ _ht_create( int type, int size)
         uhash_table *h = (uhash_table*)GDKzalloc(sizeof(uhash_table));
         int bits = log_base2(size-1);
 
+		printf("size %d\n", size);
         if (bits >= GIDBITS)
                 bits = GIDBITS-1;
         h->size = (gid)1<<bits;
         h->mask = h->size-1;
         h->type = type;
         h->width = ATOMsize(type);
+		if (type == TYPE_str) {
+			h->cmp = (fcmp)str_cmp;
+			h->hsh = (fhsh)str_hsh;
+		}
         return _ht_init(h);
 }
 
@@ -361,8 +395,6 @@ ht_create(int type, int size)
 #define _hash_flt(X)  (_hash_int(X))
 #define _hash_dbl(X)  (_hash_lng(X))
 #define _hash_gid(X)  (_hash_lng(X))
-
-
 
 static str
 UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
@@ -439,6 +471,37 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		} \
 	}
 
+#define aunique(Type) \
+	if (tt == TYPE_##Type) { \
+		BATiter bi = bat_iterator(b); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool new = 0, fnd = 0; \
+			\
+			for(; !fnd; ) { \
+				Type bpi = BUNtvar(bi, i); \
+				gid k = (gid)h->hsh(bpi)&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && (h->cmp(vals[k], bpi) != 0);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, (k<<1))) { \
+					vals[k] = bpi; \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+				continue; \
+				fnd = 1; \
+			} \
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+	}
+
 static str
 LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 {
@@ -471,6 +534,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			unique(hge)
 			funique(flt, int)
 			funique(dbl, lng)
+			aunique(str)
 		}
 		if (!err) {
 			BBPunfix(b->batCacheid);
