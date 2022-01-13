@@ -101,7 +101,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 c.execute("select * from " + shardtable + workers[0]['tpf'] )
                 sys.stderr.write('Exception expected')
-            except pymonetdb.IntegrityError as e:
+            except pymonetdb.DatabaseError as e:
                 if 'Exception occurred in the remote server, please check the log there' not in str(e):
                    print(str(e))
             else:

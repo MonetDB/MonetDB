@@ -54,7 +54,7 @@ with SQLTestCase() as cli:
     COMMIT;""" % (port, db)).assertSucceeded()
 
     cli.execute('SELECT "setmasklen"(INET \'9.49.240.200/13\', 48061431) FROM rrt0;') \
-        .assertFailed(err_message="(mapi:monetdb://monetdb@localhost/%s) Illegal netmask length value: 48061431" % (db,))
+        .assertFailed(err_message="Exception occurred in the remote server, please check the log there")
     cli.execute('INSERT INTO rt0(c0) VALUES(1);') \
         .assertSucceeded().assertRowCount(1)
     cli.execute('ALTER TABLE rt0 ADD CONSTRAINT con3 UNIQUE(c0);') \
