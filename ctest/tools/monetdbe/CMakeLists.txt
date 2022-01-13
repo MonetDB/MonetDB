@@ -102,4 +102,11 @@ if (TESTING)
   install(TARGETS
     example_proxy
     DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:example_proxy>
+      DESTINATION ${CMAKE_INSTALL_BINDIR}
+      OPTIONAL)
+  endif()
 endif()
