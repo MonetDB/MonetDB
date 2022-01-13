@@ -850,6 +850,23 @@ fi
 %endif
 
 %changelog
+* Tue Jan 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.3-20220111
+- Rebuilt.
+- GH#7215: ODBC Driver SQLStatistics returns duplicate rows/rows for other
+  tables
+
+* Tue Jan 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.3-20220111
+- gdk: On Windows, files and directories we create now get the attribute
+  FILE_ATTIBUTE_NOT_CONTENT_INDEXED, meaning that they should not be
+  indexed by indexing or search services.
+
+* Thu Jan  6 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.43.3-20220111
+- merovingian: Disabled logging into merovingian.log of next info message types:
+  - proxying client <host>:<port> for database '<dbname>' to <url>
+  - target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying
+  These messages were written to the log file at each connection. In most
+  cases this information is not used. The disabling reduces the log file size.
+
 * Mon Jan 03 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.1-20220103
 - Rebuilt.
 - GH#7168: Loosing the documentation
@@ -860,18 +877,6 @@ fi
 - GH#7201: Selection of a subquery with a LEFT JOIN returns the wrong
   result set
 - GH#7202: DISTINCT does not work when sorting by additional columns
-
-* Mon Jan  3 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.43.1-20220103
-- gdk: Implement string imprints (strimps for short) a pre-filter structure
-  for strings in order to accelerate LIKE queries. If a strimp exists
-  for a specific string column the strings are pre-filtered, rejecting
-  strings that cannot possibly match, before the more expensive and
-  accurate matching algorithms run. Strimps are created automatically
-  or using 'sys.strimp_create' with arguments the names of the schema,
-  table and column. Automatic strimp creation is controlled by two
-  user settable gdk options: 'gdk_use_strimps' (default value "no") and
-  'gdk_strimps_threshold' (default value 1.000.000). See the manual for
-  more details.
 
 * Wed Dec 15 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.43.1-20220103
 - monetdb5: The storage cleanup in the 11.41.5 (Jul2021) release made the OLTP

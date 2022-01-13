@@ -9,16 +9,6 @@
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
 
-#ifdef WIN32
-#ifndef LIBGDK
-#define gdk_export extern __declspec(dllimport)
-#else
-#define gdk_export extern __declspec(dllexport)
-#endif
-#else
-#define gdk_export extern
-#endif
-
 /* if __has_attribute is not known to the preprocessor, we ignore
  * attributes completely; if it is known, use it to find out whether
  * specific attributes that we use are known */

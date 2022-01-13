@@ -369,7 +369,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			alias = exps_bind_column2(rel->exps, rname, name, NULL);
 		else
 			alias = exps_bind_column(rel->exps, name, NULL, NULL, 1);
-		if (is_groupby(rel->op) && alias && alias->type == e_column && rel->r) {
+		if (is_groupby(rel->op) && alias && alias->type == e_column && !list_empty(rel->r)) {
 			if (alias->l)
 				alias = exps_bind_column2(rel->r, alias->l, alias->r, NULL);
 			else
