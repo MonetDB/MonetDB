@@ -1,0 +1,6 @@
+# ChangeLog file for NT
+# This file is updated with Maddlog
+
+* Thu Jan 13 2022 Sjoerd Mullender <sjoerd@acm.org>
+- We now build Windows binaries using Visual Studio 2022.
+

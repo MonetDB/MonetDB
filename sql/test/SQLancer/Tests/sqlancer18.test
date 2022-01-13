@@ -348,7 +348,7 @@ select greatest(1, (select (select vy.vc0 from t1) from vy))
 statement ok
 DROP VIEW vy
 
-statement error 42000!SELECT: subquery uses ungrouped column "vz.c0" from outer query
+statement error 42000!SELECT: cannot use non GROUP BY column 'vz.c0' in query results without an aggregate function
 SELECT 1 FROM (select 0,1) vz(c0,c1) GROUP BY c1 HAVING sum(1) < ANY(SELECT vz.c0 FROM t1)
 
 statement ok
@@ -601,38 +601,6 @@ select (case when false then v100.vc1 when true then (values (2)) end) in (3) fr
 0
 0
 
-statement ok
-START TRANSACTION
-
-statement ok
-CREATE TABLE "t2" ("c0" INT)
-
-statement ok
-create view v1(vc0) as (select 1 where false)
-
-statement ok
-create view v2(vc0) as (select true)
-
-query I nosort
-SELECT (SELECT 'a' FROM v1) <> ALL(SELECT 'b' FROM t2) FROM v2
-----
-1
-
-query I nosort
-SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((SELECT 'a' FROM v1) <> ALL((SELECT 'b' FROM t2) UNION (SELECT 'c' FROM v1)) AS INT)
-as count FROM v2) as res
-----
-1
-
-# this one is right
-query I nosort
-SELECT 1 FROM v2 WHERE (SELECT 'a' FROM v1) <> ALL((SELECT 'b' FROM t2) UNION (SELECT 'c' FROM v1))
-----
-1
-
-statement ok
-ROLLBACK
-
 query I nosort
 SELECT ((SELECT 5) INTERSECT (SELECT 9)) = ALL(SELECT 4) >= TRUE
 ----
@@ -680,5 +648,34 @@ SELECT 1 FROM v100 AS vx WHERE vx.vc0 = ANY(SELECT 1 FROM v100 HAVING count(vx.v
 statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
 SELECT 1 FROM v100 WHERE (SELECT 1 HAVING count(v100.vc0 + (SELECT 1 FROM v104)))
 
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 < ANY(SELECT sum(vx.vc0) FROM tx) FROM (select 240 FROM tx) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT sum(vx.vc0) < ANY(SELECT vx.vc0 FROM tx) FROM (select 240 FROM tx) vx(vc0)
+
+#these are right
+query I nosort
+SELECT sum(vx.vc0) < ANY(SELECT sum(vx.vc0) FROM tx) FROM (select 240 FROM tx) vx(vc0)
+----
+0
+
+query I nosort
+SELECT vx.vc0 < ANY(SELECT vx.vc0 FROM tx) FROM (select 240 FROM tx) vx(vc0)
+----
+
 statement ok
 DROP TABLE "tx" CASCADE
+
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t2(c0 INT) ON COMMIT DELETE ROWS
+
+statement ok rowcount 1
+INSERT INTO tmp.t2(c0) VALUES(3)
+
+query I nosort
+SELECT c0 FROM tmp.t2
+----
+
+statement ok
+DROP TABLE t2

@@ -383,7 +383,7 @@ SELECT (SELECT COVAR_POP(i1.i, 1)) IN (SELECT SUM(i1.i)) FROM integers i1
 statement error 42000!SELECT: subquery uses ungrouped column from outer query
 SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) = MIN(i1.i) FROM integers i1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT (SELECT i2.i FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1
 
 query I rowsort

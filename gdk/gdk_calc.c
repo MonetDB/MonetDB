@@ -15233,7 +15233,7 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
  */
 
 #ifdef HAVE_HGE
-static hge scales[39] = {
+static const hge scales[39] = {
 	(hge) LL_CONSTANT(1),
 	(hge) LL_CONSTANT(10),
 	(hge) LL_CONSTANT(100),
@@ -15275,7 +15275,7 @@ static hge scales[39] = {
 	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
 };
 #else
-static lng scales[19] = {
+static const lng scales[19] = {
 	LL_CONSTANT(1),
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),

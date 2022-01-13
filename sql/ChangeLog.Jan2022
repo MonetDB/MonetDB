@@ -1,3 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Jan 12 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Add string imprints to the existing imprints index creation syntax. On
+  string column "col" of a table "tbl" marked read only ("ALTER TABLE tbl
+  SET READ ONLY") the user can create a string imprint using the syntax:
+  "CREATE IMPRINTS INDEX index_name ON tbl(col);".
+
