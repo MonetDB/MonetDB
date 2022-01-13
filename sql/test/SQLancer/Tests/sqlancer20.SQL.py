@@ -46,6 +46,26 @@ with SQLTestCase() as cli:
     DROP TABLE mt2;
     COMMIT;""").assertSucceeded()
 
+    # testing remote tables with transaction isolation
+    cli.execute("""
+    START TRANSACTION;
+    CREATE TABLE rt0(c0 INT);
+    CREATE REMOTE TABLE rrt0(c0 INT) on 'mapi:monetdb://localhost:%s/%s/sys/rt0';
+    COMMIT;""" % (port, db)).assertSucceeded()
+
+    cli.execute('SELECT "setmasklen"(INET \'9.49.240.200/13\', 48061431) FROM rrt0;') \
+        .assertFailed(err_message="Exception occurred in the remote server, please check the log there")
+    cli.execute('INSERT INTO rt0(c0) VALUES(1);') \
+        .assertSucceeded().assertRowCount(1)
+    cli.execute('ALTER TABLE rt0 ADD CONSTRAINT con3 UNIQUE(c0);') \
+        .assertSucceeded()
+
+    cli.execute("""
+    START TRANSACTION;
+    DROP TABLE rrt0;
+    DROP TABLE rt0;
+    COMMIT;""").assertSucceeded()
+
 # testing temporary tables
 with SQLTestCase() as mdb1:
     mdb1.connect(username="monetdb", password="monetdb")

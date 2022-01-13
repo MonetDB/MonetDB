@@ -17,6 +17,7 @@ dirlist = {
     'monetdb5': ['monetdb5', 'common/utils/msabaoth.h', 'common/utils/muuid.h'],
     'stream': ['common/stream'],
     'monetdbe': ['tools/monetdbe/monetdbe.h'],
+    'sql': ['sql'],
     }
 libs = sorted(dirlist.keys())
 
