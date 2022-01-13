@@ -75,6 +75,13 @@ install(FILES
   DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d
   COMPONENT sql)
 
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:monetdbd>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    OPTIONAL)
+endif()
+
 add_subdirectory(config)
 
 # vim: set ts=2:sw=2:et
