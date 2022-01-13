@@ -2772,6 +2772,24 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
 	}
+	if (rel->attr) {
+		sql_exp *e = rel->attr->h->data;
+		const char *rnme = exp_relname(e);
+		const char *nme = exp_name(e);
+		stmt *last = l->t->data;
+		sql_subtype *tp = tail_type(last);
+
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", tp, NULL, F_FUNC);
+
+		stmt *s = stmt_unop(be, last, NULL, isnil);
+
+		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
+
+		s = stmt_unop(be, s, NULL, not);
+		s = stmt_alias(be, s, rnme, nme);
+		list_append(l, s);
+	}
 	return create_rel_bin_join_stmt(sql->sa, rel, l, NULL, left, right, jl, jr, ld, rd);
 }
 

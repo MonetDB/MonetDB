@@ -669,10 +669,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	pushInstruction(curBlk, p);
 
 	/* catch exceptions */
-	p = newCatchStmt(curBlk,"MALException");
-	p = newExitStmt(curBlk,"MALException");
-	p = newCatchStmt(curBlk,"SQLException");
-	p = newExitStmt(curBlk,"SQLException");
+	p = newCatchStmt(curBlk, "ANYexception");
+	p = newExitStmt(curBlk, "ANYexception");
 
 	/* end remote transaction */
 	p = newInstruction(curBlk, remoteRef, execRef);
@@ -691,9 +689,13 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	p = newStmt(curBlk, remoteRef, disconnectRef);
 	p = pushArgument(curBlk, p, q);
 
+	/* the connection may not start (eg bad credentials),
+		so calling 'disconnect' on the catch block may throw another exception, add another catch */
+	p = newCatchStmt(curBlk, "ANYexception");
+	p = newExitStmt(curBlk, "ANYexception");
+
 	/* throw the exception back */
-	p = newStmt(curBlk, remoteRef, assertRef);
-	p = pushBit(curBlk, p, TRUE);
+	p = newRaiseStmt(curBlk, "RemoteException");
 	p = pushStr(curBlk, p, "Exception occurred in the remote server, please check the log there");
 
 	pushEndInstruction(curBlk);

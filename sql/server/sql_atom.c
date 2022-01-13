@@ -189,7 +189,7 @@ atom_float(sql_allocator *sa, sql_subtype *tpe, dbl val)
 }
 
 #ifdef HAVE_HGE
-hge scales[39] = {
+const hge scales[39] = {
 	(hge) LL_CONSTANT(1),
 	(hge) LL_CONSTANT(10),
 	(hge) LL_CONSTANT(100),
@@ -231,7 +231,7 @@ hge scales[39] = {
 	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
 };
 #else
-lng scales[19] = {
+const lng scales[19] = {
 	LL_CONSTANT(1),
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),

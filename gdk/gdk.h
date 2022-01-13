@@ -331,6 +331,16 @@
 #include <limits.h>		/* for *_MIN and *_MAX */
 #include <float.h>		/* for FLT_MAX and DBL_MAX */
 
+#ifdef WIN32
+#ifndef LIBGDK
+#define gdk_export extern __declspec(dllimport)
+#else
+#define gdk_export extern __declspec(dllexport)
+#endif
+#else
+#define gdk_export extern
+#endif
+
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 #include "gdk_system.h"
@@ -879,6 +889,10 @@ gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 
+#define isVIEW(x)							\
+	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
+	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
+
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
  * A BAT iterator has to be used with caution, but it does have to be
@@ -942,6 +956,7 @@ bat_iterator_nolock(BAT *b)
 {
 	/* does not get matched by bat_iterator_end */
 	if (b) {
+		bool isview = isVIEW(b);
 		return (BATiter) {
 			.b = b,
 			.h = b->theap,
@@ -959,8 +974,8 @@ bat_iterator_nolock(BAT *b)
 				  (size_t) b->batCount << b->tshift :
 				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
-			.minpos = b->tminpos,
-			.maxpos = b->tmaxpos,
+			.minpos = isview ? BUN_NONE : b->tminpos,
+			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
 #ifndef NDEBUG
 			.locked = false,
@@ -1775,6 +1790,12 @@ gdk_export gdk_return BATimprints(BAT *b);
 gdk_export void IMPSdestroy(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
 
+/* Strimps exported functions */
+gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
+gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
+gdk_export void STRMPdestroy(BAT *b);
+gdk_export bool BAThasstrimps(BAT *b);
+
 /* The ordered index structure */
 
 gdk_export gdk_return BATorderidx(BAT *b, bool stable);
@@ -2153,13 +2174,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 		}							\
 	} while (false)
 
-/* the parentid in a VIEW is correct for the normal view. We must
- * correct for the reversed view.
- */
-#define isVIEW(x)							\
-	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
-	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
-
 #define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
 
@@ -2393,11 +2407,6 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 			CALLBACK;		\
 	} while (0)
 
-/*
- * String Imprints Development/Testing. TODO: remove the following.
- */
-
-#include "gdk_strimps.h"
 typedef struct gdk_callback {
 	char *name;
 	int argc;
