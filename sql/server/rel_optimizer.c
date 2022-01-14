@@ -9917,20 +9917,16 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 				pp = NULL;
 
 			rel->l = l = rel_add_identity(v->sql, l, &lid);
-			lid = exp_ref(v->sql, lid);
 			if (rel->op == op_left) {
 				p->r = rel_add_identity(v->sql, p->r, &rid);
-				rid = exp_ref(v->sql, rid);
-				if (pp) {
-					append(pp->exps, rid);
-					rid = exp_ref(v->sql, rid);
-				}
+				if (pp)
+					list_append(pp->exps, exp_ref(v->sql, rid));
 			}
 
-			list *nexps = sa_list(v->sql->sa);
 			list *aexps = sa_list(v->sql->sa);
 			if (rel->exps) {
-				for (node *n = rel->exps->h; n; n = n->next) {
+				for (node *n = rel->exps->h; n;) {
+					node *next = n->next;
 					sql_exp *e = n->data;
 
 					if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
@@ -9941,15 +9937,15 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 						sql_exp *ne = exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
 						append(ne->l, re);
 						if (rid)
-							append(ne->l, rid);
+							list_append(ne->l, exp_ref(v->sql, rid));
 
 						append(aexps, ne);
 						nequal = ne;
-					} else
-						append(nexps, e);
+						list_remove_node(rel->exps, NULL, n);
+					}
+					n = next;
 				}
 			}
-			rel->exps = nexps;
 
 			if (rel->attr) {
 				sql_exp *a = rel->attr->h->data;
@@ -9961,7 +9957,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 			}
 			list *lexps = rel_projections(v->sql, l, NULL, 1, 1);
 			aexps = list_merge(aexps, lexps, (fdup)NULL);
-			rel = rel_groupby(v->sql, rel, exp2list(v->sql->sa, lid));
+			rel = rel_groupby(v->sql, rel, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)));
 			rel->exps = aexps;
 		}
 	}
