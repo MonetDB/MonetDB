@@ -981,6 +981,34 @@ SQLworker_onebyone_column(READERtask *task, int col)
 }
 
 #define TMPL_TYPE bte
+#define TMPL_FUNC_NAME integer_bte_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_bte
+#include "sql_copyinto_int_tmpl.h"
+
+#define TMPL_TYPE sht
+#define TMPL_FUNC_NAME integer_sht_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_sht
+#include "sql_copyinto_int_tmpl.h"
+
+#define TMPL_TYPE int
+#define TMPL_FUNC_NAME integer_int_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_int
+#include "sql_copyinto_int_tmpl.h"
+
+#define TMPL_TYPE lng
+#define TMPL_FUNC_NAME integer_lng_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_lng
+#include "sql_copyinto_int_tmpl.h"
+
+#ifdef HAVE_HGE
+#define TMPL_TYPE hge
+#define TMPL_FUNC_NAME integer_hge_frstr
+#define TMPL_BULK_FUNC_NAME bulk_convert_hge
+#include "sql_copyinto_int_tmpl.h"
+#endif
+
+
+#define TMPL_TYPE bte
 #define TMPL_FUNC_NAME dec_bte_frstr
 #define TMPL_BULK_FUNC_NAME bulk_convert_bte_dec
 #include "sql_copyinto_dec_tmpl.h"
@@ -1050,7 +1078,31 @@ SQLworker_fixedwidth_column(READERtask *task, int col)
 	}
 
 	ConversionResult res;
-	if (c->column->type.type->eclass == EC_DEC) {
+	sql_class eclass = c->column->type.type->eclass;
+	if (eclass == EC_NUM && c->adt == TYPE_bte) {
+		switch (c->adt) {
+			case TYPE_bte:
+				res = bulk_convert_bte(task, c, col, count, width);
+				break;
+			case TYPE_sht:
+				res = bulk_convert_sht(task, c, col, count, width);
+				break;
+			case TYPE_int:
+				res = bulk_convert_int(task, c, col, count, width);
+				break;
+			case TYPE_lng:
+				res = bulk_convert_lng(task, c, col, count, width);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				res = bulk_convert_hge(task, c, col, count, width);
+				break;
+#endif
+			default:
+				assert(0 && "unexpected column type for decimal");
+				return ConversionFailed;
+		}
+	} else if (eclass == EC_DEC) {
 		switch (c->adt) {
 			case TYPE_bte:
 				res = bulk_convert_bte_dec(task, c, col, count, width, t->digits, t->scale);
@@ -1064,9 +1116,11 @@ SQLworker_fixedwidth_column(READERtask *task, int col)
 			case TYPE_lng:
 				res = bulk_convert_lng_dec(task, c, col, count, width, t->digits, t->scale);
 				break;
+#ifdef HAVE_HGE
 			case TYPE_hge:
 				res = bulk_convert_hge_dec(task, c, col, count, width, t->digits, t->scale);
 				break;
+#endif
 			default:
 				assert(0 && "unexpected column type for decimal");
 				return ConversionFailed;
