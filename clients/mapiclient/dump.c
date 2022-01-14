@@ -1872,7 +1872,72 @@ bailout:
 }
 
 static int
-dump_table_alters(Mapi mid, const char *schema, const char *tname, stream *toConsole)
+dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *toConsole)
+{
+	char *sname = NULL;
+	char *query = NULL;
+	size_t maxquerylen;
+	MapiHdl hdl = NULL;
+	char *s = NULL;
+	char *t = NULL;
+	int rc = 1;
+
+	if (schema == NULL) {
+		if ((sname = strchr(tname, '.')) != NULL) {
+			size_t len = sname - tname + 1;
+
+			sname = malloc(len);
+			if (sname == NULL)
+				goto bailout;
+			strcpy_len(sname, tname, len);
+			tname += len;
+		} else if ((sname = get_schema(mid)) == NULL) {
+			goto bailout;
+		}
+		schema = sname;
+	}
+
+	maxquerylen = 5120 + 2*strlen(tname) + 2*strlen(schema);
+	query = malloc(maxquerylen);
+	s = sescape(schema);
+	t = sescape(tname);
+	if (query == NULL || s == NULL || t == NULL)
+		goto bailout;
+
+	snprintf(query, maxquerylen,
+			 "SELECT name, storage FROM sys._columns "
+			 "WHERE storage IS NOT NULL "
+			 "AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
+			 "AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
+			 t, s);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+		goto bailout;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		const char *cname = mapi_fetch_field(hdl, 0);
+		const char *storage = mapi_fetch_field(hdl, 1);
+		char *stg = sescape(storage);
+		if (stg == NULL)
+			goto bailout;
+		mnstr_printf(toConsole, "ALTER TABLE ");
+		dquoted_print(toConsole, schema, ".");
+		dquoted_print(toConsole, tname, " ");
+		mnstr_printf(toConsole, "ALTER COLUMN ");
+		dquoted_print(toConsole, cname, " ");
+		mnstr_printf(toConsole, "SET STORAGE '%s';\n", stg);
+		free(stg);
+	}
+	rc = 0;						/* success */
+  bailout:
+	free(query);
+	free(s);
+	free(t);
+	mapi_close_handle(hdl);		/* may be NULL */
+	free(sname);				/* may be NULL */
+	return rc;
+}
+
+static int
+dump_table_access(Mapi mid, const char *schema, const char *tname, stream *toConsole)
 {
 	char *sname = NULL;
 	char *query = NULL;
@@ -1925,29 +1990,6 @@ dump_table_alters(Mapi mid, const char *schema, const char *tname, stream *toCon
 			dquoted_print(toConsole, tname, " ");
 			mnstr_printf(toConsole, "SET %s ONLY;\n", *access == '1' ? "READ" : "INSERT");
 		}
-	}
-	mapi_close_handle(hdl);
-	snprintf(query, maxquerylen,
-			 "SELECT name, storage FROM sys._columns "
-			 "WHERE storage IS NOT NULL "
-			 "AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
-			 "AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
-			 t, s);
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
-		goto bailout;
-	while ((mapi_fetch_row(hdl)) != 0) {
-		const char *cname = mapi_fetch_field(hdl, 0);
-		const char *storage = mapi_fetch_field(hdl, 1);
-		char *stg = sescape(storage);
-		if (stg == NULL)
-			goto bailout;
-		mnstr_printf(toConsole, "ALTER TABLE ");
-		dquoted_print(toConsole, schema, ".");
-		dquoted_print(toConsole, tname, " ");
-		mnstr_printf(toConsole, "ALTER COLUMN ");
-		dquoted_print(toConsole, cname, " ");
-		mnstr_printf(toConsole, "SET STORAGE '%s';\n", stg);
-		free(stg);
 	}
 	rc = 0;						/* success */
   bailout:
@@ -2046,10 +2088,12 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 	int rc;
 
 	rc = describe_table(mid, schema, tname, toConsole, foreign, databaseDump);
+	if (rc == 0)
+		rc = dump_table_storage(mid, schema, tname, toConsole);
 	if (rc == 0 && !describe)
 		rc = dump_table_data(mid, schema, tname, toConsole, useInserts, noescape);
 	if (rc == 0)
-		rc = dump_table_alters(mid, schema, tname, toConsole);
+		rc = dump_table_access(mid, schema, tname, toConsole);
 	if (rc == 0 && !databaseDump)
 		rc = dump_table_defaults(mid, schema, tname, toConsole);
 	return rc;
