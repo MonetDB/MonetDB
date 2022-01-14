@@ -1140,6 +1140,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 	MapiHdl hdl = NULL;
 	char *query = NULL, *view = NULL, *remark = NULL, *sname = NULL, *s = NULL, *t = NULL;
 	int type = 0;
+	int ca = 0;
 	size_t maxquerylen;
 	bool hashge;
 
@@ -1168,7 +1169,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		goto bailout;
 
 	snprintf(query, maxquerylen,
-		 "SELECT t.name, t.query, t.type, t.id, c.remark "
+		 "SELECT t.name, t.query, t.type, t.id, c.remark, t.commit_action "
 		 "FROM sys.schemas s, sys._tables t "
 			"LEFT OUTER JOIN sys.comments c ON t.id = c.id "
 		 "WHERE s.name = '%s' "
@@ -1187,6 +1188,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		view = mapi_fetch_field(hdl, 1);
 		table_id = atoi(mapi_fetch_field(hdl, 3));
 		remark = mapi_fetch_field(hdl, 4);
+		ca = atoi(mapi_fetch_field(hdl, 5));
 	}
 	if (mapi_error(mid)) {
 		view = NULL;
@@ -1260,17 +1262,23 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		}
 		/* the table is a real table */
 		mnstr_printf(toConsole, "CREATE %sTABLE ",
-			    type == 3 ? "MERGE " :
-			    type == 4 ? "STREAM " :
-			    type == 5 ? "REMOTE " :
-			    type == 6 ? "REPLICA " :
-			    "");
+					 ca > 0 ? "GLOBAL TEMPORARY " :
+					 type == 3 ? "MERGE " :
+					 type == 4 ? "STREAM " :
+					 type == 5 ? "REMOTE " :
+					 type == 6 ? "REPLICA " :
+					 "");
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, tname, " ");
 
 		if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign, hashge))
 			goto bailout;
-		if (type == 5) { /* remote table */
+		if (ca > 0) {			/* temporary table */
+			mnstr_printf(toConsole, " ON COMMIT %s",
+						 ca == 1 /* the default */ ? "DELETE ROWS" :
+						 ca == 2 ? "PRESERVE ROWS" :
+						 /* ca == 3 */ "DROP");
+		} else if (type == 5) { /* remote table */
 			char *rt_user = NULL;
 			char *rt_hash = NULL;
 			snprintf(query, maxquerylen,
@@ -1996,8 +2004,7 @@ dump_table_defaults(Mapi mid, const char *schema, const char *tname, stream *toC
 				 "WHERE c.\"default\" IS NOT NULL "
 				 "AND c.table_id = t.id "
 				 "AND t.schema_id = s.id "
-				 "AND NOT t.system "
-				 "AND t.commit_action = 0"); /* no temp tables */
+				 "AND NOT t.system");
 	else
 		snprintf(query, maxquerylen,
 				 "SELECT s.name, t.name, c.name, c.\"default\" "
@@ -2583,7 +2590,6 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"WHERE t.type IN (0, 3, 4, 5, 6) "
 		  "AND t.system = FALSE "
 		  "AND s.id = t.schema_id "
-		  "AND s.name <> 'tmp' "
 		"ORDER BY id";
 	const char *mergetables =
 		has_table_partitions(mid) ?
@@ -2862,18 +2868,20 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			free(name);
 			continue;
 		}
-		if (curschema == NULL || strcmp(schema, curschema) != 0) {
-			if (curschema)
-				free(curschema);
-			curschema = schema ? strdup(schema) : NULL;
-			if (schema && !curschema) {
-				free(id);
-				free(schema);
-				free(name);
-				goto bailout;
+		if (strcmp(schema, "tmp") != 0) {
+			if (curschema == NULL || strcmp(schema, curschema) != 0) {
+				if (curschema)
+					free(curschema);
+				curschema = schema ? strdup(schema) : NULL;
+				if (schema && !curschema) {
+					free(id);
+					free(schema);
+					free(name);
+					goto bailout;
+				}
+				mnstr_printf(toConsole, "SET SCHEMA ");
+				dquoted_print(toConsole, curschema, ";\n");
 			}
-			mnstr_printf(toConsole, "SET SCHEMA ");
-			dquoted_print(toConsole, curschema, ";\n");
 		}
 		int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
 		rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true, noescape);
