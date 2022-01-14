@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -232,8 +232,6 @@ void IMPSprint(BAT *b)		/* never called: for debugging only */
 void STRMPincref(Strimps *strimps)
 	__attribute__((__visibility__("hidden")));
 void STRMPdecref(Strimps *strimps, bool remove)
-	__attribute__((__visibility__("hidden")));
-void STRMPdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void STRMPfree(BAT *b)
 	__attribute__((__visibility__("hidden")));

@@ -498,3 +498,66 @@ SELECT c0 FROM t2
 statement ok
 DROP TABLE t2
 
+query T nosort
+VALUES (CASE WHEN 5 = ANY(SELECT -1) THEN 2 END)
+----
+NULL
+
+query I nosort
+SELECT 1 FROM (SELECT 1, TRUE) vx(vc0, vc2) INNER JOIN (SELECT 1) AS sub0(c0)
+ON vx.vc0 <= ALL(SELECT 1) OR vx.vc2 WHERE 0.5 < ALL(SELECT 0.6 WHERE vx.vc2)
+----
+1
+
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t3(c0 bigserial) ON COMMIT PRESERVE ROWS
+
+statement ok rowcount 1
+INSERT INTO t3
+
+query I nosort
+SELECT c0 FROM t3
+----
+1
+
+statement ok rowcount 1
+TRUNCATE tmp.t3 RESTART IDENTITY
+
+query I nosort
+SELECT c0 FROM t3
+----
+
+statement ok rowcount 1
+INSERT INTO t3
+
+query I nosort
+SELECT c0 FROM t3
+----
+1
+
+statement ok
+DROP TABLE t3
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rt0 ("c0" INET, "c1" TINYINT)
+
+statement ok
+CREATE TABLE tz(c1 BLOB)
+
+statement ok
+create or replace view va(vc0) as ((select 4 from tz) union all (select 2 from rt0))
+
+statement ok
+create or replace view vb(vc0) as (select (select 4 from rt0) from rt0)
+
+statement ok
+create or replace view vx(vc0) as (select 9 = vb.vc0 from vb, rt0, va order by rt0.c0)
+
+statement ok rowcount 1
+INSERT INTO tz(c1) VALUES(CASE WHEN EXISTS (SELECT DISTINCT 3, vc0 FROM vx WHERE vc0) THEN BLOB 'AD' END)
+
+statement ok
+ROLLBACK

@@ -45,3 +45,61 @@ with SQLTestCase() as cli:
     DROP TABLE mct21;
     DROP TABLE mt2;
     COMMIT;""").assertSucceeded()
+
+    # testing remote tables with transaction isolation
+    cli.execute("""
+    START TRANSACTION;
+    CREATE TABLE rt0(c0 INT);
+    CREATE REMOTE TABLE rrt0(c0 INT) on 'mapi:monetdb://localhost:%s/%s/sys/rt0';
+    COMMIT;""" % (port, db)).assertSucceeded()
+
+    cli.execute('SELECT "setmasklen"(INET \'9.49.240.200/13\', 48061431) FROM rrt0;') \
+        .assertFailed(err_message="Exception occurred in the remote server, please check the log there")
+    cli.execute('INSERT INTO rt0(c0) VALUES(1);') \
+        .assertSucceeded().assertRowCount(1)
+    cli.execute('ALTER TABLE rt0 ADD CONSTRAINT con3 UNIQUE(c0);') \
+        .assertSucceeded()
+
+    cli.execute("""
+    START TRANSACTION;
+    DROP TABLE rrt0;
+    DROP TABLE rt0;
+    COMMIT;""").assertSucceeded()
+
+    cli.execute("""
+    START TRANSACTION;
+    CREATE TABLE t0(c0 INT);
+    INSERT INTO t0 VALUES (1),(2),(3);
+    CREATE MERGE TABLE mt2 (c0 INT);
+    CREATE TABLE mct20 (c0 INT);
+    CREATE TABLE rmct21 (c0 INT);
+    CREATE REMOTE TABLE rrmct21 (c0 INT) ON 'mapi:monetdb://localhost:%s/%s/sys/rmct21';
+    ALTER TABLE mt2 ADD TABLE mct20;
+    ALTER TABLE mt2 ADD TABLE rrmct21;
+    COMMIT;""" % (port, db)).assertSucceeded()
+
+    cli.execute("""SELECT 1 FROM (SELECT 1 FROM t0, mt2) vx(vc0) LEFT OUTER JOIN
+        (SELECT 2 FROM t0) AS sub0(c0) ON CASE 5 WHEN 2 THEN sub0.c0 <> ALL(VALUES (3), (4)) END;""") \
+        .assertSucceeded().assertDataResultMatch([])
+
+    cli.execute("""
+    START TRANSACTION;
+    DROP TABLE t0;
+    ALTER TABLE mt2 DROP TABLE rrmct21;
+    ALTER TABLE mt2 DROP TABLE mct20;
+    DROP TABLE mt2;
+    DROP TABLE mct20;
+    DROP TABLE rmct21;
+    DROP TABLE rrmct21;
+    COMMIT;""").assertSucceeded()
+
+# testing temporary tables
+with SQLTestCase() as mdb1:
+    mdb1.connect(username="monetdb", password="monetdb")
+    mdb1.execute("CREATE GLOBAL TEMPORARY TABLE tt2(c0 JSON, c1 DATE) ON COMMIT PRESERVE ROWS;").assertSucceeded()
+    mdb1.execute("INSERT INTO tmp.tt2(c1, c0) VALUES(DATE '2010-10-10', JSON 'true');").assertSucceeded()
+
+with SQLTestCase() as mdb2:
+    mdb2.connect(username="monetdb", password="monetdb")
+    mdb2.execute("TRUNCATE TABLE tmp.tt2;").assertSucceeded()
+    mdb2.execute("DROP TABLE tmp.tt2;").assertSucceeded()

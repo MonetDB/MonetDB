@@ -3,21 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
-
-#ifdef WIN32
-#ifndef LIBGDK
-#define gdk_export extern __declspec(dllimport)
-#else
-#define gdk_export extern __declspec(dllexport)
-#endif
-#else
-#define gdk_export extern
-#endif
 
 /* if __has_attribute is not known to the preprocessor, we ignore
  * attributes completely; if it is known, use it to find out whether

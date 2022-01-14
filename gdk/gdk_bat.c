@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -579,6 +579,8 @@ BATclear(BAT *b, bool force)
 		return GDK_FAIL;
 	}
 
+	TRC_DEBUG(ALGO, ALGOBATFMT "\n", ALGOBATPAR(b));
+
 	/* kill all search accelerators */
 	HASHdestroy(b);
 	IMPSdestroy(b);
@@ -1010,6 +1012,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	if (count == 0)
 		return GDK_SUCCEED;
 
+	TRC_DEBUG(ALGO, ALGOBATFMT " appending " BUNFMT " values%s\n", ALGOBATPAR(b), count, values ? "" : " (all nil)");
+
 	p = BUNlast(b);		/* insert at end */
 	if (p == BUN_MAX || BATcount(b) + count >= BUN_MAX) {
 		GDKerror("bat too large\n");
@@ -1302,6 +1306,7 @@ BUNdelete(BAT *b, oid o)
 		GDKerror("cannot delete committed value\n");
 		return GDK_FAIL;
 	}
+	TRC_DEBUG(ALGO, ALGOBATFMT " deleting oid " OIDFMT "\n", ALGOBATPAR(b), o);
 	b->batDirtydesc = true;
 	val = BUNtail(bi, p);
 	/* writing the values should be locked, reading could be done
@@ -1398,6 +1403,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
+	TRC_DEBUG(ALGO, ALGOBATFMT " replacing " BUNFMT " values\n", ALGOBATPAR(b), count);
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void) {
 		PROPdestroy(b);
@@ -2455,6 +2461,14 @@ BATmode(BAT *b, bool transient)
  * newly created and filled BAT, you may want to first make sure the
  * batCount is set correctly (e.g. by calling BATsetcount), then use
  * BATtseqbase and BATkey, and finally set the other properties.
+ *
+ * For a view, we cannot check all properties, since it is possible with
+ * the way the SQL layer works, that a parent BAT gets changed, changing
+ * the properties, while there is a view.  The view is supposed to look
+ * at only at the non-changing part of the BAT (through candidate
+ * lists), but this means that the properties of the view might not be
+ * correct.  For this reason, for views, we skip all property checking
+ * that looks at the BAT content.
  */
 
 void
@@ -2466,6 +2480,7 @@ BATassertProps(BAT *b)
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
 	char filename[sizeof(b->theap->filename)];
+	bool isview;
 
 	/* do the complete check within a lock */
 	MT_lock_set(&b->theaplock);
@@ -2479,6 +2494,8 @@ BATassertProps(BAT *b)
 	assert(b->hseqbase <= GDK_oid_max); /* non-nil seqbase */
 	assert(b->hseqbase + BATcount(b) <= GDK_oid_max);
 
+	isview = isVIEW(b);
+
 	bbpstatus = BBP_status(b->batCacheid);
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
 	assert(((bbpstatus & BBPDELETED) != 0) +
@@ -2488,10 +2505,10 @@ BATassertProps(BAT *b)
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
-	assert(isVIEW(b) ||
+	assert(isview ||
 	       b->ttype == TYPE_void ||
 	       BBPfarms[b->theap->farmid].roles & (1 << b->batRole));
-	assert(isVIEW(b) ||
+	assert(isview ||
 	       b->tvheap == NULL ||
 	       (BBPfarms[b->tvheap->farmid].roles & (1 << b->batRole)));
 
@@ -2609,7 +2626,8 @@ BATassertProps(BAT *b)
 		       (b->tnosorted > 0 &&
 			b->tnosorted < b->batCount));
 		assert(!b->tsorted || b->tnosorted == 0);
-		if (!b->tsorted &&
+		if (!isview &&
+		    !b->tsorted &&
 		    b->tnosorted > 0 &&
 		    b->tnosorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnosorted - 1),
@@ -2618,7 +2636,8 @@ BATassertProps(BAT *b)
 		       (b->tnorevsorted > 0 &&
 			b->tnorevsorted < b->batCount));
 		assert(!b->trevsorted || b->tnorevsorted == 0);
-		if (!b->trevsorted &&
+		if (!isview &&
+		    !b->trevsorted &&
 		    b->tnorevsorted > 0 &&
 		    b->tnorevsorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnorevsorted - 1),
@@ -2626,7 +2645,7 @@ BATassertProps(BAT *b)
 	}
 	/* if tkey property set, both tnokey values must be 0 */
 	assert(!b->tkey || (b->tnokey[0] == 0 && b->tnokey[1] == 0));
-	if (!b->tkey && (b->tnokey[0] != 0 || b->tnokey[1] != 0)) {
+	if (!isview && !b->tkey && (b->tnokey[0] != 0 || b->tnokey[1] != 0)) {
 		/* if tkey not set and tnokey indicates a proof of
 		 * non-key-ness, make sure the tnokey values are in
 		 * range and indeed provide a proof */
@@ -2646,7 +2665,9 @@ BATassertProps(BAT *b)
 		return;
 	}
 
-	PROPDEBUG { /* only do a scan if property checking is requested */
+	/* only do a scan if property checking is requested and the bat
+	 * is not a view */
+	if (!isview && GDKdebug & PROPMASK) {
 		const void *maxval = NULL;
 		const void *minval = NULL;
 		bool seenmax = false, seenmin = false;

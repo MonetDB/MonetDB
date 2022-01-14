@@ -261,3 +261,4 @@ SELECT a from myfunc()
 
 statement ok
 rollback
+

@@ -1,78 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Wed Dec 15 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- With the storage cleanup in the 11.41.5 (Jul2021) release, the ANALYZE
-  statement was updated to accomodate those changes. The SAMPLE parameter
-  is now ignored because ANALYZE generated statistics used by
-  relational operators, are required to be precise.
-- In order to mitigate the I/O required to update the 'statistics' table,
-  this table is no longer persisted. Alternately, it was changed into a
-  computed view every time when queried. The 'stamp' and 'sample' fields
-  were removed for the aforementioned reasons. The 'schema', 'table' and
-  'column' fields were added for convenience.
-
-* Mon Dec  6 2021 Sjoerd Mullender <sjoerd@acm.org>
-- In previous versions there was no check that the INCREMENT BY value of
-  a SEQUENCE was not zero.  During the automatic upgrade of a database,
-  INCREMENT BY values that are zero are set to one.
-
-* Tue Nov  9 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- The method to compute the 'side_effect' effect property was changed
-  for SQL functions defined in the backend engine (eg. ``CREATE FUNCTION
-  ... EXTERNAL NAME "module"."function"''). It was changed from being
-  computed by the SQL layer to the backend engine itself. As a consequence,
-  the computed 'side_effect' value may be different, thus bringing
-  incompatibilities. After an upgrade, if a 'side_effect' incompatibility
-  arises, either the 'side_effect' value in the backend should be changed or
-  the function should be re-created in SQL.
-
-* Thu Nov  4 2021 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Removed deprecated system view sys.systemfunctions. It was marked
-  as deprecated from release Apr2019 (11.33.3).  Use query:
-    select id as function_id from sys.functions where system;
-  to get the same data as the old view.
-
-* Thu Oct 21 2021 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Extended SQL system catalog with lookup table sys.fkey_actions and
-  view sys.fkeys to provide user friendly querying of existing foreign
-  keys and their ON UPDATE and ON DELETE referential action specifications.
-
-* Tue Oct 12 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Many improvements were done for REMOTE table plans. As a consequence,
-  master or slave servers from this feature release are not compatible
-  with older releases.
-
-* Tue Sep  7 2021 Sjoerd Mullender <sjoerd@acm.org>
-- The view sys.ids has been changed to give more information about the
-  objects in the system.  In particular, there is an extra column
-  added at the end that indicates whether the object is a system
-  object.
-
-* Mon Aug 23 2021 Sjoerd Mullender <sjoerd@acm.org>
-- The example modules opt_sql_append and udf are no longer loaded by
-  default and no longer part of the binary release.  If installed,
-  they can be loaded using the --loadmodule option.
-
-* Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org>
-- The built-in SQL functions to produce a dump that were added as a
-  proof-of-concept in the previous release have been improved and are
-  now usable.  Use the query ``SELECT stmt FROM sys.dump_database(FALSE)
-  ORDER BY o'' to produce a dump.  The dump code built into mclient and
-  msqldump is probably still more efficient, though.
-
-* Thu Jun  3 2021 Sjoerd Mullender <sjoerd@acm.org>
-- The sys.epoch function has always been confusing.  There are two
-  versions, one with an INTEGER argument, and one with a BIGINT
-  argument.  The former accepted values as seconds, whereas the
-  latter expected milliseconds.  Also, the construct EXTRACT(EPOCH
-  FROM value) returns a BIGINT with millisecond precision.  This has
-  now been overhauled.  There is no longer a function sys.epoch with
-  BIGINT argument, but instead there is a new function sys.epoch with
-  DECIMAL(18,3) argument.  The argument is seconds, but with 3 decimals,
-  it provides millisecond accuracy. Also the EXTRACT(EPOCH FROM value)
-  now returns a DECIMAL(18,3), again seconds with 3 decimals giving
-  millisecond accuracy.  Note that the internal, binary representation
-  of DECIMAL(18,3) interpreted as seconds with 3 decimals and BIGINT
-  with millisecond precision is exactly the same.
+* Wed Jan 12 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Add string imprints to the existing imprints index creation syntax. On
+  string column "col" of a table "tbl" marked read only ("ALTER TABLE tbl
+  SET READ ONLY") the user can create a string imprint using the syntax:
+  "CREATE IMPRINTS INDEX index_name ON tbl(col);".
 

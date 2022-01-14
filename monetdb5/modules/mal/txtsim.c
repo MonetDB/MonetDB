@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -696,7 +696,7 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, i
 	} while (0)
 
 static str
-fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, str string1, str string2, dbl minimum)
+fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const char *string1, const char *string2, dbl minimum)
 {
 	int i, max_edits, *fdiag, *bdiag, too_expensive = 1;
 	size_t fdiag_len;
@@ -801,7 +801,7 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN q = 0;
 	size_t fdiag_buflen = INITIAL_INT_BUFFER_LENGTH;
-	str x, y, msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 	bool nils = false;
 	dbl *restrict vals;
 	int *fdiag_buf = GDKmalloc(fdiag_buflen);
@@ -824,8 +824,8 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
 	for (BUN i = 0; i < q && !msg; i++) {
-		x = (str) BUNtvar(lefti, i);
-		y = (str) BUNtvar(righti, i);
+		const char *x = BUNtvar(lefti, i);
+		const char *y = BUNtvar(righti, i);
 
 		if (strNil(x) || strNil(y)) {
 			vals[i] = dbl_nil;

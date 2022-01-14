@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1156,6 +1156,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (exp)
 					break;
 			}
+			if (exp && exp->card != CARD_AGGR && is_groupby(outer->op) && !is_sql_aggr(f) && rel_find_exp(outer->l, exp))
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 			if (exp && outer && !is_sql_aggr(f)) {
@@ -1237,6 +1239,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (exp)
 					break;
 			}
+			if (exp && exp->card != CARD_AGGR && is_groupby(outer->op) && !is_sql_aggr(f) && rel_find_exp(outer->l, exp))
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 			if (exp && outer && !is_sql_aggr(f)) {
@@ -1959,7 +1963,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			} else if (exp_is_rel(re)) {
 				sql_rel *r = exp_rel_get_rel(sql->sa, re);
 				add_select = 1;
-				if (*rel)
+				if (rel && *rel)
 					set_dependent((*rel));
 				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
 					re = r->exps->h->data;
@@ -2271,6 +2275,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		symbol *ro = n->next->next->data.sym;
 		char *compare_op = n->next->data.sval;
 		int quantifier = 0;
+		int grouped = 0;
 
 		sql_exp *rs = NULL, *ls;
 		comp_type cmp_type = compare_str2type(compare_op);
@@ -2304,6 +2309,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			compare_op = "=";
 		}
 
+		grouped = (rel && (*rel) && is_groupby((*rel)->op));
 		ls = rel_value_exp(query, rel, lo, f|sql_farg, ek);
 		if (!ls)
 			return NULL;
@@ -2313,6 +2319,13 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		rs = rel_value_exp(query, rel, ro, f|sql_farg, ek);
 		if (!rs)
 			return NULL;
+
+		if (!grouped && rel && (*rel) && is_groupby((*rel)->op) && !rel_find_exp(*rel, ls) && !is_freevar(ls) && (!exp_is_rel(ls))) {
+			if (exp_name(ls) && exp_relname(ls))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
+			else
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery uses ungrouped column");
+		}
 
 		if (!exp_is_rel(ls) && !exp_is_rel(rs) && ls->card < rs->card) {
 			sql_exp *swap = ls; /* has to swap parameters like in the rel_logical_exp case */
@@ -3395,7 +3408,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	sql_rel *groupby = rel ? *rel : NULL, *sel = NULL, *gr, *og = NULL, *res = groupby;
 	sql_rel *subquery = NULL;
 	list *exps = NULL;
-	bool is_grouping = !strcmp(aname, "grouping"), has_args = false, found = false;
+	bool is_grouping = !strcmp(aname, "grouping"), has_args = false, found = false, used_rel = false;
 
 	if (!query_has_outer(query)) {
 		if (!groupby) {
@@ -3443,6 +3456,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 
 			if (!e)
 				return NULL;
+			used_rel |= (rel_has_exp(gl, e, true) == 0);
 			has_args = true;
 			if (gl && gl != ogl) {
 				if (gl->grouped) {
@@ -3506,6 +3520,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 									return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
 								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 							}
+						} else if (!used_rel && is_sql_where(of)) {
+							char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+							return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
 						} else if (!is_sql_aggr(of)) {
 							set_outer(outer);
 						}

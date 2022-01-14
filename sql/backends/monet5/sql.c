@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -1005,8 +1005,8 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vals = Tloc(bn, 0);
 	for (BUN i = 0; i < q; i++) {
 		oid p1 = canditer_next(&ci1) - off1, p2 = canditer_next(&ci2) - off2;
-		const char *sname = (str) BUNtvar(schi, p1);
-		const char *seqname = (str) BUNtvar(seqi, p2);
+		const char *sname = BUNtvar(schi, p1);
+		const char *seqname = BUNtvar(seqi, p2);
 
 		if (strNil(sname) || strNil(seqname)) {
 			vals[i] = lng_nil;
@@ -1850,7 +1850,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (!schema || !seq_name || !(seqs = find_sql_schema(tr, schema)))
 					continue;
 
-				assert(seqs->base.id == s->base.id);
+				/* TODO - At the moment the sequence may not be stored in the same schema as the table itself */
 				if ((seq = find_sql_sequence(tr, seqs, seq_name))) {
 					switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
 						case -1:
@@ -2307,7 +2307,8 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat scaleId= *getArgReference_bat(stk, pci,5);
 	bat bid;
 	int i, res, ok;
-	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	const char *tblname, *colname, *tpename;
+	str msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
@@ -2398,7 +2399,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stream *s = NULL;
 	bat bid;
 	int i, res, ok;
-	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	const char *tblname, *colname, *tpename;
+	str msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
@@ -2542,7 +2544,8 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat lenId= *getArgReference_bat(stk, pci,4);
 	bat scaleId= *getArgReference_bat(stk, pci,5);
 	int i, res, ok;
-	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	const char *tblname, *colname, *tpename;
+	str msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
@@ -2632,7 +2635,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	int i, res, ok;
 	stream *s = NULL;
-	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	const char *tblname, *colname, *tpename;
+	str msg = MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
@@ -4957,6 +4961,8 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!isTable(t))
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (isTempTable(t))
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 	if (c->storage_type)
@@ -5026,7 +5032,23 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 
 	} while(0);
 
-	sql_trans_end(session, SQL_OK);
+	if (res == GDK_SUCCEED) { /* everything is ok, do the commit route */
+		switch (sql_trans_end(session, SQL_OK)) {
+			case SQL_ERR:
+				TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction commit failed (kernel error: %s)", GDKerrbuf);
+				res = GDK_FAIL;
+				break;
+			case SQL_CONFLICT:
+				TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
+				res = GDK_FAIL;
+				break;
+			default:
+				break;
+		}
+	} else { /* an error triggered, rollback and ignore further errors */
+		(void)sql_trans_end(session, SQL_ERR);
+	}
+
 	sql_session_destroy(session);
 	sa_destroy(sa);
 	return res;
@@ -5076,6 +5098,8 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (!isTable(t))
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (isTempTable(t))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 	if (c->storage_type)
@@ -5117,18 +5141,20 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_column *c = NULL;
 
 	if (strNil(sname))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
 	if (strNil(tname))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
 	if (strNil(cname))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
 	if (!isTable(t))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (isTempTable(t))
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
