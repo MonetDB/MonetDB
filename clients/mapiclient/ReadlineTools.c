@@ -31,6 +31,10 @@
 #include <sys/stat.h>
 #endif
 
+#ifdef HAVE_SIGACTION
+#include <signal.h>		/* to intercept SIGINT */
+#endif
+
 static const char *sql_commands[] = {
 	"SELECT",
 	"INSERT",
@@ -418,6 +422,16 @@ bailout:
 	return 1;
 }
 
+static void
+prompt_int_handler(int status)
+{
+	(void)status;
+	printf("\n"); // Move to a new line
+	rl_on_new_line(); // Regenerate the prompt on a newline
+	rl_replace_line("", 0); // Clear the previous text
+	rl_redisplay();
+}
+
 void
 init_readline(Mapi mid, const char *lang, bool save_history)
 {
@@ -439,6 +453,8 @@ init_readline(Mapi mid, const char *lang, bool save_history)
 
 	rl_add_funmap_entry("invoke-editor", invoke_editor);
 	rl_bind_keyseq("\\M-e", invoke_editor);
+
+	signal(SIGINT, prompt_int_handler);
 
 	if (save_history) {
 		int len;
@@ -497,6 +513,5 @@ save_line(const char *s)
 	if (_save_history)
 		append_history(1, _history_file);
 }
-
 
 #endif /* HAVE_LIBREADLINE */
