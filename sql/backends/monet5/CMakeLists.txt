@@ -226,3 +226,10 @@ install(EXPORT sqlTargets
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:sql>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()

@@ -103,4 +103,11 @@ if (TESTING)
     example_proxy
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT mbeddedtest)
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:example_proxy>
+      DESTINATION ${CMAKE_INSTALL_BINDIR}
+      OPTIONAL)
+  endif()
 endif()
