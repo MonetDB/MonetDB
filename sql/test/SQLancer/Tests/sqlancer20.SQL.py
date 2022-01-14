@@ -66,6 +66,33 @@ with SQLTestCase() as cli:
     DROP TABLE rt0;
     COMMIT;""").assertSucceeded()
 
+    cli.execute("""
+    START TRANSACTION;
+    CREATE TABLE t0(c0 INT);
+    INSERT INTO t0 VALUES (1),(2),(3);
+    CREATE MERGE TABLE mt2 (c0 INT);
+    CREATE TABLE mct20 (c0 INT);
+    CREATE TABLE rmct21 (c0 INT);
+    CREATE REMOTE TABLE rrmct21 (c0 INT) ON 'mapi:monetdb://localhost:%s/%s/sys/rmct21';
+    ALTER TABLE mt2 ADD TABLE mct20;
+    ALTER TABLE mt2 ADD TABLE rrmct21;
+    COMMIT;""" % (port, db)).assertSucceeded()
+
+    cli.execute("""SELECT 1 FROM (SELECT 1 FROM t0, mt2) vx(vc0) LEFT OUTER JOIN
+        (SELECT 2 FROM t0) AS sub0(c0) ON CASE 5 WHEN 2 THEN sub0.c0 <> ALL(VALUES (3), (4)) END;""") \
+        .assertSucceeded().assertDataResultMatch([])
+
+    cli.execute("""
+    START TRANSACTION;
+    DROP TABLE t0;
+    ALTER TABLE mt2 DROP TABLE rrmct21;
+    ALTER TABLE mt2 DROP TABLE mct20;
+    DROP TABLE mt2;
+    DROP TABLE mct20;
+    DROP TABLE rmct21;
+    DROP TABLE rrmct21;
+    COMMIT;""").assertSucceeded()
+
 # testing temporary tables
 with SQLTestCase() as mdb1:
     mdb1.connect(username="monetdb", password="monetdb")
