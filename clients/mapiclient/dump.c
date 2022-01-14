@@ -839,7 +839,8 @@ dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_di
 
 static int
 dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
-		       const char *tname, const char *tid, bool foreign, bool hashge)
+					   const char *tname, const char *tid, bool foreign,
+					   bool hashge)
 {
 	MapiHdl hdl = NULL;
 	char *query = NULL;
@@ -876,8 +877,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 				"c.type_digits, "	/* 2 */
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
-				"c.\"default\", "	/* 5 */
-				"c.number "			/* 6 */
+				"c.number "			/* 5 */
 			 "FROM sys._columns c "
 			 "WHERE c.table_id = %s "
 			 "ORDER BY c.number", tid);
@@ -888,8 +888,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 				"c.type_digits, "	/* 2 */
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
-				"c.\"default\", "	/* 5 */
-				"c.number "			/* 6 */
+				"c.number "			/* 5 */
 			 "FROM sys._columns c, "
 			      "sys._tables t, "
 			      "sys.schemas s "
@@ -909,7 +908,6 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 		char *c_type_digits = strdup(mapi_fetch_field(hdl, 2));
 		char *c_type_scale = strdup(mapi_fetch_field(hdl, 3));
 		const char *c_null = mapi_fetch_field(hdl, 4);
-		const char *c_default = mapi_fetch_field(hdl, 5);
 		int space;
 
 		if (mapi_error(mid) || !c_type || !c_type_digits || !c_type_scale) {
@@ -918,6 +916,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 			free(c_type_scale);
 			goto bailout;
 		}
+
 		if (cnt)
 			mnstr_printf(toConsole, ",\n");
 
@@ -955,12 +954,9 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 		space = dump_type(mid, toConsole, c_type, c_type_digits, c_type_scale, hashge);
 		if (strcmp(c_null, "false") == 0) {
 			mnstr_printf(toConsole, "%*s NOT NULL",
-					CAP(13 - space), "");
+						 CAP(13 - space), "");
 			space = 13;
 		}
-		if (c_default != NULL)
-			mnstr_printf(toConsole, "%*s DEFAULT %s",
-					CAP(13 - space), "", c_default);
 
 		cnt++;
 		free(c_type);
@@ -973,6 +969,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 		goto bailout;
 	mapi_close_handle(hdl);
 	hdl = NULL;
+
 	/* presumably we don't need to order on id, since there should
 	   only be a single primary key, but it doesn't hurt, and the
 	   code is then close to the code for the uniqueness
@@ -1810,7 +1807,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 				   certain characters escaped */
 				squoted_print(toConsole, s, '"', noescape);
 			} else if (strcmp(tp, "blob") == 0) {
-				/* inside blobs, special characters 
+				/* inside blobs, special characters
 				   don't occur */
 				mnstr_printf(toConsole, "\"%s\"", s);
 			} else
@@ -1954,6 +1951,86 @@ dump_table_alters(Mapi mid, const char *schema, const char *tname, stream *toCon
 	return rc;
 }
 
+static int
+dump_table_defaults(Mapi mid, const char *schema, const char *tname, stream *toConsole)
+{
+	char *sname = NULL;
+	char *query = NULL;
+	size_t maxquerylen;
+	MapiHdl hdl = NULL;
+	char *s = NULL;
+	char *t = NULL;
+	int rc = 1;
+
+	if (schema == NULL && tname != NULL) {
+		if ((sname = strchr(tname, '.')) != NULL) {
+			size_t len = sname - tname + 1;
+
+			sname = malloc(len);
+			if (sname == NULL)
+				goto bailout;
+			strcpy_len(sname, tname, len);
+			tname += len;
+		} else if ((sname = get_schema(mid)) == NULL) {
+			goto bailout;
+		}
+		schema = sname;
+	}
+
+	maxquerylen = 512;
+	if (schema != NULL && tname != NULL) {
+		maxquerylen += 2*strlen(tname) + 2*strlen(schema);
+		s = sescape(schema);
+		t = sescape(tname);
+		if (s == NULL || t == NULL)
+			goto bailout;
+	}
+	query = malloc(maxquerylen);
+	if (query == NULL)
+		goto bailout;
+
+	if (schema == NULL && tname == NULL)
+		snprintf(query, maxquerylen,
+				 "SELECT s.name, t.name, c.name, c.\"default\" "
+				 "FROM sys._columns c, sys._tables t, sys.schemas s "
+				 "WHERE c.\"default\" IS NOT NULL "
+				 "AND c.table_id = t.id "
+				 "AND t.schema_id = s.id "
+				 "AND NOT t.system "
+				 "AND t.commit_action = 0"); /* no temp tables */
+	else
+		snprintf(query, maxquerylen,
+				 "SELECT s.name, t.name, c.name, c.\"default\" "
+				 "FROM sys._columns c, sys._tables t, sys.schemas s "
+				 "WHERE c.\"default\" IS NOT NULL "
+				 "AND c.table_id = t.id "
+				 "AND t.schema_id = s.id "
+				 "AND t.name = '%s' AND s.name = '%s'",
+				 t, s);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+		goto bailout;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		const char *sch = mapi_fetch_field(hdl, 0);
+		const char *tab = mapi_fetch_field(hdl, 1);
+		const char *col = mapi_fetch_field(hdl, 2);
+		const char *def = mapi_fetch_field(hdl, 3);
+		mnstr_printf(toConsole, "ALTER TABLE ");
+		dquoted_print(toConsole, sch, ".");
+		dquoted_print(toConsole, tab, " ");
+		mnstr_printf(toConsole, "ALTER COLUMN ");
+		dquoted_print(toConsole, col, " ");
+		mnstr_printf(toConsole, "SET DEFAULT %s;\n", def);
+	}
+	rc = 0;						/* success */
+  bailout:
+	free(query);
+	free(s);
+	free(t);
+	mapi_close_handle(hdl);		/* may be NULL */
+	free(sname);				/* may be NULL */
+	return rc;
+}
+
 int
 dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 		   bool describe, bool foreign, bool useInserts, bool databaseDump,
@@ -1966,6 +2043,8 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 		rc = dump_table_data(mid, schema, tname, toConsole, useInserts, noescape);
 	if (rc == 0)
 		rc = dump_table_alters(mid, schema, tname, toConsole);
+	if (rc == 0 && !databaseDump)
+		rc = dump_table_defaults(mid, schema, tname, toConsole);
 	return rc;
 }
 
@@ -2494,59 +2573,18 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	const char *sequences2 =
 		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
 	/* we must dump tables, views, functions/procedures and triggers in order of creation since they can refer to each other */
-	const char *tables_views_functions_triggers =
-		"with vft (sname, name, id, query, remark, type) AS ("
-			"SELECT s.name AS sname, " /* tables */
-			       "t.name AS name, "
-			       "t.id AS id, "
-			       "NULL AS query, "
-			       "NULL AS remark, " /* emitted separately */
-			       "t.type AS type "
-			"FROM sys.schemas s, "
-			      "sys._tables t "
-			"WHERE t.type IN (0, 3, 4, 5, 6) "
-			  "AND t.system = FALSE "
-			  "AND s.id = t.schema_id "
-			  "AND s.name <> 'tmp' "
-			"UNION ALL "
-			"SELECT s.name AS sname, " /* views */
-			       "t.name AS name, "
-			       "t.id AS id, "
-			       "t.query AS query, "
-			       "rem.remark AS remark, "
-			       "NULL AS type "
-			"FROM sys.schemas s, "
-			     "sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id "
-			"WHERE t.type = 1 "
-			  "AND t.system = FALSE "
-			  "AND s.id = t.schema_id "
-			  "AND s.name <> 'tmp' "
-			"UNION ALL "
-			"SELECT s.name AS sname, " /* functions and procedures */
-			       "f.name AS name, "
-			       "f.id AS id, "
-			       "NULL AS query, "
-			       "NULL AS remark, " /* emitted separately */
-			       "NULL AS type "
-			"FROM sys.schemas s, "
-			     "sys.functions f "
-			"WHERE s.id = f.schema_id "
-			"AND NOT f.system "
-			"UNION ALL "
-			"SELECT s.name AS sname, " /* triggers */
-			       "tr.name AS name, "
-			       "tr.id AS id, "
-			       "tr.\"statement\" AS query, "
-			       "NULL AS remark, " /* not available yet */
-			       "NULL AS type "
-			"FROM sys.triggers tr, "
-			     "sys.schemas s, "
-			     "sys._tables t "
-			"WHERE s.id = t.schema_id "
-			  "AND t.id = tr.table_id "
-			  "AND t.system = FALSE"
-		") "
-		"SELECT id, sname, name, query, remark, type FROM vft ORDER BY id";
+	const char *tables =
+		"SELECT t.id AS id, "
+			   "s.name AS sname, "
+			   "t.name AS name, "
+			   "t.type AS type "
+		"FROM sys.schemas s, "
+			  "sys._tables t "
+		"WHERE t.type IN (0, 3, 4, 5, 6) "
+		  "AND t.system = FALSE "
+		  "AND s.id = t.schema_id "
+		  "AND s.name <> 'tmp' "
+		"ORDER BY id";
 	const char *mergetables =
 		has_table_partitions(mid) ?
 		"SELECT subq.s1name, "
@@ -2594,6 +2632,43 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND d.id = t2.id "
 		  "AND t2.schema_id = s2.id "
 		"ORDER BY t1.id, t2.id";
+	const char *views_functions_triggers =
+		"with vft (sname, name, id, query, remark) AS ("
+			"SELECT s.name AS sname, " /* views */
+			       "t.name AS name, "
+			       "t.id AS id, "
+			       "t.query AS query, "
+			       "rem.remark AS remark "
+			"FROM sys.schemas s, "
+			     "sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id "
+			"WHERE t.type = 1 "
+			  "AND t.system = FALSE "
+			  "AND s.id = t.schema_id "
+			  "AND s.name <> 'tmp' "
+			"UNION ALL "
+			"SELECT s.name AS sname, " /* functions and procedures */
+			       "f.name AS name, "
+			       "f.id AS id, "
+			       "NULL AS query, "
+			       "NULL AS remark " /* emitted separately */
+			"FROM sys.schemas s, "
+			     "sys.functions f "
+			"WHERE s.id = f.schema_id "
+			"AND NOT f.system "
+			"UNION ALL "
+			"SELECT s.name AS sname, " /* triggers */
+			       "tr.name AS name, "
+			       "tr.id AS id, "
+			       "tr.\"statement\" AS query, "
+			       "NULL AS remark " /* not available yet */
+			"FROM sys.triggers tr, "
+			     "sys.schemas s, "
+			     "sys._tables t "
+			"WHERE s.id = t.schema_id "
+			  "AND t.id = tr.table_id "
+			  "AND t.system = FALSE"
+		") "
+		"SELECT id, sname, name, query, remark FROM vft ORDER BY id";
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl = NULL;
@@ -2753,12 +2828,18 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
-	/* dump tables, views, functions and triggers
-	 * note that merge tables refer to other tables,
-	 * so we make sure the contents of merge tables are added
-	 * (ALTERed) after all table definitions */
-	if ((hdl = mapi_query(mid, tables_views_functions_triggers)) == NULL ||
-	    mapi_error(mid))
+	/* Tables, views, triggers, and functions can all reference each
+	 * other, so we need to be very careful in how we dump them.  We
+	 * first dump the tables (all types), including data, but without
+	 * the DEFAULT clause which is the one that can reference functions,
+	 * views, and other tables.  Then we add tables to the MERGE tables
+	 * they belong to.  After this, we dump the views, triggers, and
+	 * functions in order of original creation (they can't be altered
+	 * afterwards, so they can only reference objects that were created
+	 * earlier).  Finally, we set the DEFAULT clauses on the tables. */
+
+	/* dump tables */
+	if ((hdl = mapi_query(mid, tables)) == NULL || mapi_error(mid))
 		goto bailout;
 
 	while (rc == 0 &&
@@ -2767,9 +2848,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		char *id = strdup(mapi_fetch_field(hdl, 0));
 		char *nschema = mapi_fetch_field(hdl, 1), *schema = nschema ? strdup(nschema) : NULL; /* the fetched value might be null, so do this */
 		char *name = strdup(mapi_fetch_field(hdl, 2));
-		const char *query = mapi_fetch_field(hdl, 3);
-		const char *remark = mapi_fetch_field(hdl, 4);
-		const char *type = mapi_fetch_field(hdl, 5);
+		const char *type = mapi_fetch_field(hdl, 3);
 
 		if (mapi_error(mid) || !id || (nschema && !schema) || !name) {
 			free(id);
@@ -2796,18 +2875,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			mnstr_printf(toConsole, "SET SCHEMA ");
 			dquoted_print(toConsole, curschema, ";\n");
 		}
-		if (type) { /* table */
-			int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
-			rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true, noescape);
-		} else if (query) {
-			/* view or trigger */
-			mnstr_printf(toConsole, "%s\n", query);
-			/* only views have comments due to query */
-			comment_on(toConsole, "VIEW", schema, name, NULL, remark);
-		} else {
-			/* procedure */
-			dump_functions(mid, toConsole, 0, schema, name, id);
-		}
+		int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
+		rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true, noescape);
 		free(id);
 		free(schema);
 		free(name);
@@ -2815,8 +2884,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
-	if ((hdl = mapi_query(mid, mergetables)) == NULL ||
-	    mapi_error(mid))
+	/* add tables to MERGE tables */
+	if ((hdl = mapi_query(mid, mergetables)) == NULL || mapi_error(mid))
 		goto bailout;
 
 	while (rc == 0 &&
@@ -2945,6 +3014,65 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
+
+	/* dump views, functions and triggers */
+	if ((hdl = mapi_query(mid, views_functions_triggers)) == NULL ||
+		mapi_error(mid))
+		goto bailout;
+
+	while (rc == 0 &&
+	       !mnstr_errnr(toConsole) &&
+	       mapi_fetch_row(hdl) != 0) {
+		char *id = strdup(mapi_fetch_field(hdl, 0));
+		char *nschema = mapi_fetch_field(hdl, 1), *schema = nschema ? strdup(nschema) : NULL; /* the fetched value might be null, so do this */
+		char *name = strdup(mapi_fetch_field(hdl, 2));
+		const char *query = mapi_fetch_field(hdl, 3);
+		const char *remark = mapi_fetch_field(hdl, 4);
+
+		if (mapi_error(mid) || !id || (nschema && !schema) || !name) {
+			free(id);
+			free(schema);
+			free(name);
+			goto bailout;
+		}
+		if (sname != NULL && strcmp(schema, sname) != 0) {
+			free(id);
+			free(schema);
+			free(name);
+			continue;
+		}
+		if (curschema == NULL || strcmp(schema, curschema) != 0) {
+			if (curschema)
+				free(curschema);
+			curschema = schema ? strdup(schema) : NULL;
+			if (schema && !curschema) {
+				free(id);
+				free(schema);
+				free(name);
+				goto bailout;
+			}
+			mnstr_printf(toConsole, "SET SCHEMA ");
+			dquoted_print(toConsole, curschema, ";\n");
+		}
+		if (query) {
+			/* view or trigger */
+			mnstr_printf(toConsole, "%s\n", query);
+			/* only views have comments due to query */
+			comment_on(toConsole, "VIEW", schema, name, NULL, remark);
+		} else {
+			/* procedure */
+			dump_functions(mid, toConsole, 0, schema, name, id);
+		}
+		free(id);
+		free(schema);
+		free(name);
+	}
+	mapi_close_handle(hdl);
+	hdl = NULL;
+
+	/* dump DEFAULT clauses for tables */
+	if (dump_table_defaults(mid, NULL, NULL, toConsole))
+		goto bailout2;
 
 	if (!describe) {
 		if (dump_foreign_keys(mid, NULL, NULL, NULL, toConsole))
