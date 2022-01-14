@@ -26,11 +26,11 @@ with SQLTestCase() as mdb:
         # Check that the admin can change the default schema of a user, and
         #   this will take effect the next time this user logs-in.
         tc.connect(username="april", password="april")
-        tc.execute("SELECT current_schema;").assertDataResultMatch([('bank',)])
+        tc.execute("SELECT current_schema;").assertSucceeded().assertDataResultMatch([('bank',)])
         tc.execute('SELECT * from accounts;').assertSucceeded()
         mdb.execute('ALTER USER "april" SET SCHEMA library').assertSucceeded()
         tc.connect(username="april", password="april")
-        tc.execute("SELECT current_schema;").assertDataResultMatch([('library',)])
+        tc.execute("SELECT current_schema;").assertSucceeded().assertDataResultMatch([('library',)])
 
         # Check that after the schema change, the user no longer has direct access to tables in schema 'bank'
         tc.execute('SELECT * from accounts;').assertFailed(err_code="42S02", err_message="SELECT: no such table 'accounts'")

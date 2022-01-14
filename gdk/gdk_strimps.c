@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 
@@ -79,6 +79,8 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+
+#include "gdk_strimps.h"
 
 
 /* Macros for accessing metadada of a strimp. These are recorded in the
@@ -287,7 +289,6 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 {
 	lng t0 = 0;
 	BATiter bi;
-	str cs;
 	BUN i, ncand;
 	size_t hidx;
 	oid x;
@@ -323,7 +324,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	cpp = &cp;
 	for (i = 0; i < ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		cs = (str)BUNtvar(bi, x);
+		const char *cs = BUNtvar(bi, x);
 		if (!strNil(cs)) {
 			pi.s = cs;
 			pi.pos = 0;
@@ -699,6 +700,21 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	return r;
 }
 
+bool
+BAThasstrimps(BAT *b)
+{
+	BAT *pb;
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	return BATcheckstrimps(pb);
+
+}
+
 gdk_return
 STRMPcreate(BAT *b, BAT *s)
 {
@@ -731,7 +747,6 @@ STRMPcreate(BAT *b, BAT *s)
 			BUN i, ncand;
 			oid x;
 			struct canditer ci;
-			str cs;
 			uint64_t *dh;
 
 			if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
@@ -745,7 +760,7 @@ STRMPcreate(BAT *b, BAT *s)
 			bi = bat_iterator(pb);
 			for (i = 0; i < ncand; i++) {
 				x = canditer_next(&ci);
-				cs = (str)BUNtvar(bi, x);
+				const char *cs = BUNtvar(bi, x);
 				if (!strNil(cs))
 					*dh++ = STRMPmakebitstring(cs, r);
 				else
@@ -764,58 +779,6 @@ STRMPcreate(BAT *b, BAT *s)
 	return GDK_SUCCEED;
 }
 
-gdk_return
-STRMPappendBitstring(BAT *b, const char *s)
-{
-	lng t0 = 0;
-	BAT *pb;
-	uint64_t *dh;
-	Strimps *strmp;
-	const float extend_factor = 1.5;
-
-	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-	if (ATOMstorage(b->ttype) != TYPE_str) {
-		GDKerror("Cannot manipulate strimps index for non string bats\n");
-		return GDK_FAIL;
-	}
-
-	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
-	} else {
-		pb = b;
-	}
-
-	if (!BATcheckstrimps(pb)) {
-		GDKerror("Strimp missing, cannot append value\n");
-		return GDK_FAIL;
-	}
-	MT_lock_set(&pb->batIdxLock);
-	strmp = pb->tstrimps;
-	/* Extend heap if there is not enough space */
-	if (strmp->strimps.free >= strmp->strimps.size + sizeof(uint64_t)) {
-		size_t sizes_offset = (char *)strmp->sizes_base - strmp->strimps.base;
-		size_t pairs_offset = (char *)strmp->pairs_base - strmp->strimps.base;
-		size_t bitstrings_offset = (char *)strmp->bitstrings_base - strmp->strimps.base;
-		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) != GDK_SUCCEED) {
-			MT_lock_unset(&pb->batIdxLock);
-			GDKerror("Cannot extend heap\n");
-			return GDK_FAIL;
-		}
-		strmp->sizes_base = (uint8_t *)strmp->strimps.base + sizes_offset;
-		strmp->pairs_base = (uint8_t *)strmp->strimps.base + pairs_offset;
-		strmp->bitstrings_base = strmp->strimps.base + bitstrings_offset;
-	}
-	dh = (uint64_t *)strmp->strimps.base + pb->tstrimps->strimps.free;
-	*dh = STRMPmakebitstring(s, strmp);
-	strmp->strimps.free += sizeof(uint64_t);
-
-	strmp->rec_cnt++;
-	MT_lock_unset(&pb->batIdxLock);
-
-	TRC_DEBUG(ACCELERATOR, "appending to strimp took " LLFMT " usec\n", GDKusec()-t0);
-	return GDK_SUCCEED;
-}
 
 void
 STRMPdecref(Strimps *strimps, bool remove)
@@ -844,7 +807,6 @@ void
 STRMPdestroy(BAT *b)
 {
 	if (b && b->tstrimps) {
-		TRC_DEBUG(ACCELERATOR, "Destroying strimp %s\n", b->tstrimps->strimps.filename);
 		MT_lock_set(&b->batIdxLock);
 		if (b->tstrimps == (Strimps *)1) {
 			b->tstrimps = NULL;
@@ -864,7 +826,6 @@ void
 STRMPfree(BAT *b)
 {
 	if (b && b->tstrimps) {
-		TRC_DEBUG(ACCELERATOR, "Freeing strimp for BAT %s\n", b->tstrimps->strimps.filename);
 		Strimps *s;
 		MT_lock_set(&b->batIdxLock);
 		if ((s = b->tstrimps) != NULL && s != (Strimps *)1) {
@@ -973,7 +934,6 @@ STRMPcreate(BAT *b, BAT *s)
 	lng t0 = 0;
 	BATiter bi;
 	BUN i, ncand;
-	str cs;
 	Strimps *h;
 	uint64_t *dh;
 	BAT *pb;
@@ -1007,7 +967,7 @@ STRMPcreate(BAT *b, BAT *s)
 	bi = bat_iterator(b);
 	for (i = 0; i < ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		cs = (str)BUNtvar(bi, x);
+		const char *cs = BUNtvar(bi, x);
 		if (!strNil(cs))
 			*dh++ = STRMPmakebitstring(cs, h);
 		else
@@ -1025,6 +985,62 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
+	return GDK_SUCCEED;
+}
+
+/* Update the strimp by computing a bitstring and adding it to the heap.
+   This will probably be useful later when strimps take updates into
+   account. */
+gdk_return
+STRMPappendBitstring(BAT *b, const char *s)
+{
+	lng t0 = 0;
+	BAT *pb;
+	uint64_t *dh;
+	Strimps *strmp;
+	const float extend_factor = 1.5;
+
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+	if (ATOMstorage(b->ttype) != TYPE_str) {
+		GDKerror("Cannot manipulate strimps index for non string bats\n");
+		return GDK_FAIL;
+	}
+
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	if (!BATcheckstrimps(pb)) {
+		GDKerror("Strimp missing, cannot append value\n");
+		return GDK_FAIL;
+	}
+	MT_lock_set(&pb->batIdxLock);
+	strmp = pb->tstrimps;
+	/* Extend heap if there is not enough space */
+	if (strmp->strimps.free >= strmp->strimps.size + sizeof(uint64_t)) {
+		size_t sizes_offset = (char *)strmp->sizes_base - strmp->strimps.base;
+		size_t pairs_offset = (char *)strmp->pairs_base - strmp->strimps.base;
+		size_t bitstrings_offset = (char *)strmp->bitstrings_base - strmp->strimps.base;
+		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) != GDK_SUCCEED) {
+			MT_lock_unset(&pb->batIdxLock);
+			GDKerror("Cannot extend heap\n");
+			return GDK_FAIL;
+		}
+		strmp->sizes_base = (uint8_t *)strmp->strimps.base + sizes_offset;
+		strmp->pairs_base = (uint8_t *)strmp->strimps.base + pairs_offset;
+		strmp->bitstrings_base = strmp->strimps.base + bitstrings_offset;
+	}
+	dh = (uint64_t *)strmp->strimps.base + pb->tstrimps->strimps.free;
+	*dh = STRMPmakebitstring(s, strmp);
+	strmp->strimps.free += sizeof(uint64_t);
+
+	strmp->rec_cnt++;
+	MT_lock_unset(&pb->batIdxLock);
+
+	TRC_DEBUG(ACCELERATOR, "appending to strimp took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
 }
 #endif

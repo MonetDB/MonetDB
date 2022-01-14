@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 CREATE FUNCTION sys.describe_type(ctype string, digits integer, tscale integer)
   RETURNS string
@@ -314,6 +314,29 @@ CREATE VIEW sys.describe_triggers AS
 		FROM sys.schemas s, sys.tables t, sys.triggers tr
 		WHERE s.id = t.schema_id AND t.id = tr.table_id AND NOT t.system;
 
+CREATE VIEW sys.fully_qualified_functions AS
+	WITH fqn(id, tpe, sig, num) AS
+	(
+		SELECT
+			f.id,
+			ft.function_type_keyword,
+			CASE WHEN a.type IS NULL THEN
+				sys.fqn(s.name, f.sqlname) || '()'
+			ELSE
+				sys.fqn(s.name, f.sqlname) || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
+			END,
+			a.number
+		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
+		WHERE s.id= f.schema_id AND f.type = ft.function_type_id
+	)
+	SELECT
+		fqn1.id id,
+		fqn1.tpe tpe,
+		fqn1.sig nme
+	FROM
+		fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
+		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
+
 CREATE VIEW sys.describe_comments AS
 		SELECT
 			o.id id,
@@ -343,33 +366,10 @@ CREATE VIEW sys.describe_comments AS
 
 			UNION ALL
 
-			SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.sqlname) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
+			SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf WHERE f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
 
 			) AS o(id, tpe, nme)
 			JOIN sys.comments c ON c.id = o.id;
-
-CREATE VIEW sys.fully_qualified_functions AS
-	WITH fqn(id, tpe, sig, num) AS
-	(
-		SELECT
-			f.id,
-			ft.function_type_keyword,
-			CASE WHEN a.type IS NULL THEN
-				s.name || '.' || f.sqlname || '()'
-			ELSE
-				s.name || '.' || f.sqlname || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
-			END,
-			a.number
-		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
-		WHERE s.id= f.schema_id AND f.type = ft.function_type_id
-	)
-	SELECT
-		fqn1.id id,
-		fqn1.tpe tpe,
-		fqn1.sig nme
-	FROM
-		fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
-		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
 
 CREATE VIEW sys.describe_privileges AS
 	SELECT

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -1455,7 +1455,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 		}
 	} else {
-		for (BUN i = 0, j = ni.count; i < j; i++) {
+		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
 			if (positions) {
 				/* assert(!autoincr) */
@@ -1475,7 +1475,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				goto bailout;
 			}
 
-			const void *new = BUNtail(ni, i);
+			const void *new = BUNtloc(ni, i);
 
 			if (updid >= BATcount(b)) {
 				assert(mayappend);

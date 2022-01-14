@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef SQL_STORAGE_H
@@ -45,7 +45,7 @@ typedef bte (*column_find_bte_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef sht (*column_find_sht_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef int (*column_find_int_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef lng (*column_find_lng_fptr)(sql_trans *tr, sql_column *c, oid rid);
-typedef str (*column_find_string_start_fptr)(sql_trans *tr, sql_column *c, oid rid, ptr *cbat);
+typedef const char * (*column_find_string_start_fptr)(sql_trans *tr, sql_column *c, oid rid, ptr *cbat);
 typedef void (*column_find_string_end_fptr)(ptr cbat);
 typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);

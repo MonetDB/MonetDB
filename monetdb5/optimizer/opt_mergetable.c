@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -2075,7 +2075,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * 3 -> (l,r) range-joins (l,r1,r2)
 		 * NxM -> (l,r) filter-joins (l1,..,ln,r1,..,rm)
 		 */
-		if (match > 0 && isMatJoinOp(p) &&
+		if (match > 0 && isMatJoinOp(p) && !isMatLeftJoinOp(p) &&
 			p->argc >= 5 && p->retc == 2 && bats+nilbats >= 4) {
 			if (bats+nilbats == 4) {
 		   		m = is_a_mat(getArg(p,p->retc), &ml);

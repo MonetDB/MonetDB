@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -211,7 +211,8 @@ typedef struct MALSTK {
 	int stkbot;			/* the first variable to be initialized */
 	int stkdepth;		/* to protect against runtime stack overflow */
 	int calldepth;		/* to protect against runtime stack overflow */
-	short keepAlive;	/* do not garbage collect when set */
+	bool keepAlive:1,	/* do not garbage collect when set */
+		 keepTmps:1;	/* also do not garbage collect tmps (needed for interactive debugging only) */
 	/*
 	 * Parallel processing is mostly driven by dataflow, but within this context
 	 * there may be different schemes to take instructions into execution.

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1816,11 +1816,11 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		}
 
 		for (i = 0; i < cnt; i++) {
+			const char *tp = mapi_get_type(hdl, i);
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
 				mnstr_printf(toConsole, "NULL");
 			else if (useInserts) {
-				const char *tp = mapi_get_type(hdl, i);
 				if (strlen(tp) > 4 && strcmp(tp+3, "_interval") == 0) {
 					const char *p = strchr(s, '.');
 					if (p == NULL)
@@ -1852,6 +1852,10 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 				/* write double-quoted string with
 				   certain characters escaped */
 				squoted_print(toConsole, s, '"', noescape);
+			} else if (strcmp(tp, "blob") == 0) {
+				/* inside blobs, special characters 
+				   don't occur */
+				mnstr_printf(toConsole, "\"%s\"", s);
 			} else
 				mnstr_printf(toConsole, "%s", s);
 

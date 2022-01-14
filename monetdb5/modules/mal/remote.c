@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -1681,39 +1681,10 @@ RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid) {
 	return MAL_SUCCEED;
 }
 
-/* this is needed in remote plans */
-static str
-RMTassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bool flg = (bool) *getArgReference_bit(stk, pci, 1);
-	str msg = *getArgReference_str(stk, pci, 2);
-
-	(void) cntxt;
-	(void) mb;
-	if (flg) {
-		if (strlen(msg) > 6 &&
-		    msg[5] == '!' &&
-		    (isdigit((unsigned char) msg[0]) ||
-		     isupper((unsigned char) msg[0])) &&
-		    (isdigit((unsigned char) msg[1]) ||
-		     isupper((unsigned char) msg[1])) &&
-		    (isdigit((unsigned char) msg[2]) ||
-		     isupper((unsigned char) msg[2])) &&
-		    (isdigit((unsigned char) msg[3]) ||
-		     isupper((unsigned char) msg[3])) &&
-		    (isdigit((unsigned char) msg[4]) ||
-		     isupper((unsigned char) msg[4])))
-			throw(REMOTE, "assert", "%s", msg); /* includes state */
-		throw(REMOTE, "assert", SQLSTATE(M0M29) "%s", msg);
-	}
-	return MAL_SUCCEED;
-}
-
 #include "mel.h"
 mel_func remote_init_funcs[] = {
  command("remote", "prelude", RMTprelude, false, "initialise the remote module", args(1,1, arg("",void))),
  command("remote", "epilogue", RMTepilogue, false, "release the resources held by the remote module", args(1,1, arg("",void))),
- pattern("remote", "assert", RMTassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  command("remote", "resolve", RMTresolve, false, "resolve a pattern against Merovingian and return the URIs", args(1,2, batarg("",str),arg("pattern",str))),
  pattern("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
  command("remote", "connect", RMTconnectScen, false, "returns a newly created connection for uri, using user name, password and scenario", args(1,6, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str),arg("columnar",bit))),

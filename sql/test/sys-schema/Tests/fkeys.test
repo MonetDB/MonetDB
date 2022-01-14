@@ -82,4 +82,3 @@ drop table c
 statement ok
 drop table p
 
-

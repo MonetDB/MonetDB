@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 set(sql_public_headers
@@ -106,8 +106,7 @@ set(include_sql_files
   75_storagemodel
   76_dump
   80_statistics
-  81_tracer
-  90_strimps)
+  81_tracer)
 
 if(HAVE_HGE)
   list(APPEND include_sql_files
@@ -187,8 +186,8 @@ target_link_libraries(sql
 set_target_properties(sql
   PROPERTIES
   OUTPUT_NAME monetdbsql
-  VERSION ${MONETDB_VERSION}
-  SOVERSION ${MONETDB_VERSION_MAJOR}
+  VERSION ${SQL_VERSION}
+  SOVERSION ${SQL_VERSION_MAJOR}
   PUBLIC_HEADER "${sql_public_headers}")
 
 target_compile_definitions(sql
