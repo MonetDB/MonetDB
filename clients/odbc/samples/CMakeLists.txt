@@ -45,6 +45,16 @@ if(TESTING)
     DESTINATION
     ${CMAKE_INSTALL_BINDIR}
     COMPONENT clienttest)
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:odbcsample1>
+      $<TARGET_PDB_FILE:testgetinfo>
+      $<TARGET_PDB_FILE:arraytest>
+      $<TARGET_PDB_FILE:testStmtAttr>
+      DESTINATION ${CMAKE_INSTALL_BINDIR}
+      OPTIONAL)
+  endif()
 endif()
 
 # vim: set ts=2:sw=2:et

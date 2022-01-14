@@ -69,3 +69,10 @@ install(TARGETS
   microbenchmark
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   COMPONENT microbenchmark)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:microbenchmark>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    OPTIONAL)
+endif()

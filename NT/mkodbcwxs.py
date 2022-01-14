@@ -82,10 +82,10 @@ def main():
     id = 1
     print(r'            <Directory Id="lib" Name="lib">')
     id = comp(features, id, 14,
-              [r'bin\mapi.dll', # r'lib\mapi.pdb',
-               r'lib\MonetODBC.dll', # r'lib\MonetODBC.pdb',
-               r'lib\MonetODBCs.dll', # r'lib\MonetODBCs.pdb',
-               r'bin\stream.dll', # r'lib\stream.pdb',
+              [r'bin\mapi.dll', r'lib\mapi.pdb',
+               r'lib\MonetODBC.dll', r'lib\MonetODBC.pdb',
+               r'lib\MonetODBCs.dll', r'lib\MonetODBCs.pdb',
+               r'bin\stream.dll', r'lib\stream.pdb',
                vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
