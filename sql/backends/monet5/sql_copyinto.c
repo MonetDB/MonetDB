@@ -845,40 +845,40 @@ prepare_conversion(READERtask *task, Column *fmt, int col, int idx, char **unesc
 
 	if (!task->escape) {
 		*unescaped = s;
+		return ConversionOk;
 	} else {
 		// reallocate scratch space if necessary
 		size_t needed = slen + 1;
 		if (adjust_scratch_buffer(&task->scratch, needed, needed / 2) == NULL) {
-			ConversionResult res = report_conversion_failed(task, fmt, idx, col + 1, "ALLOCATION FAILURE");
-			return res;
+			report_conversion_failed(task, fmt, idx, col + 1, "ALLOCATION FAILURE");
+			return ConversionFailed;
 		}
 		// unescape into the scratch space
-		if (GDKstrFromStr((unsigned char*)task->scratch.data, (unsigned char*)s, slen) < 0) {
+		if (GDKstrFromStr((unsigned char*)task->scratch.data, (unsigned char*)s, slen) >= 0) {
+			*unescaped = task->scratch.data;
+			return ConversionOk;
+		} else {
 			ConversionResult res = report_conversion_failed(task, fmt, idx, col + 1, s);
 			return res;
 		}
-		*unescaped = task->scratch.data;
+		return ConversionOk;
 	}
-
-	return ConversionOk;
 }
 
 static inline ConversionResult
 SQLconvert_val(READERtask *task, Column *fmt, int col, int idx) {
 	char *unescaped = NULL;
+
 	ConversionResult res = prepare_conversion(task, fmt, col, idx, &unescaped);
-	if (res == ConversionFailed) {
-		return res;
+	if (res == ConversionOk) {
+		// convert using the frstr callback, leave known nulls alone
+		void *p = fmt->frstr(fmt, fmt->adt, &fmt->data, &fmt->len, unescaped);
+		if (p == NULL) {
+			res = report_conversion_failed(task, fmt, idx, col + 1, unescaped);
+		}
 	}
 
-	// convert using the frstr callback.
-	void *p = fmt->frstr(fmt, fmt->adt, &fmt->data, &fmt->len, unescaped);
-	if (p == NULL) {
-		ConversionResult res = report_conversion_failed(task, fmt, idx, col + 1, unescaped);
-		return res;
-	}
-
-	return ConversionOk;
+	return res;
 }
 
 static ConversionResult
@@ -1011,23 +1011,23 @@ bulk_convert_frstr(READERtask *task, Column *c, int col, int count, size_t width
 {
 	void *cursor = task->primary.data;
 	size_t w = width;
+	ConversionResult res = ConversionOk;
 	for (int i = 0; i < count; i++) {
 		char *unescaped = NULL;
-		ConversionResult res = prepare_conversion(task, c, col, i, &unescaped);
+		res = prepare_conversion(task, c, col, i, &unescaped);
 		if (res == ConversionOk) {
 			void *p = c->frstr(c, c->adt, &cursor, &w, unescaped);
+			assert(w == width); // should not have attempted to reallocate!
 			if (p == NULL) {
 				res = report_conversion_failed(task, c, i, col + 1, unescaped);
-				set_nil(c, cursor);
 			}
+		}
+		if (res != ConversionOk) {
+			set_nil(c, cursor);
 		}
 		if (res == ConversionFailed) {
 			return res;
 		}
-		if (res == ConversionNull) {
-			set_nil(c, cursor);
-		}
-		assert(w == width); // should not have attempted to reallocate!
 		cursor = (char*)cursor + width;
 	}
 	return ConversionOk;
@@ -1121,7 +1121,7 @@ SQLworker_str_column(READERtask *task, int col)
 	void *s = task->secondary.data;
 	void *s_end = (char*)s + task->secondary.len;
 	for (int i = 0; i < count; i++) {
-		assert(s <= s_end);
+		assert(s <= s_end);(void) s_end;
 
 		char *v = task->fields[col][i];
 		if (v == NULL) {
