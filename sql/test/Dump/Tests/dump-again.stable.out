@@ -1,34 +1,9 @@
-stdout of test 'dump-again` in directory 'sql/test/Dump` itself:
-
-
-# 22:27:57 >  
-# 22:27:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34099" "--set" "mapi_usock=/var/tmp/mtest-27453/.s.monetdb.34099" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_Dump" "--set" "embedded_c=true"
-# 22:27:57 >  
-
-# MonetDB 5 server v11.29.4 (hg id: c717aa6c1f76)
-# This is an unreleased version
-# Serving database 'mTests_sql_test_Dump', using 4 threads
-# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
-# Found 15.513 GiB available main-memory.
-# Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
-# Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:34099/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27453/.s.monetdb.34099
-# MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-
-# 22:27:57 >  
-# 22:27:57 >  "/usr/bin/python" "dump-again.SQL.py" "dump-again"
-# 22:27:57 >  
-
 START TRANSACTION;
 CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
 SET SCHEMA "sys";
 CREATE TABLE "sys"."test" (
 	"id" INTEGER,
-	"i"  SMALLINT      DEFAULT next value for "sys"."test_seq"
+	"i"  SMALLINT
 );
 INSERT INTO "sys"."test" VALUES (0, 7);
 INSERT INTO "sys"."test" VALUES (1, 10);
@@ -100,11 +75,7 @@ CREATE TABLE "sys"."keytest2" (
 );
 INSERT INTO "sys"."keytest2" VALUES (0, 0);
 INSERT INTO "sys"."keytest2" VALUES (0, 1);
+ALTER TABLE "sys"."test" ALTER COLUMN "i" SET DEFAULT next value for "sys"."test_seq";
 ALTER TABLE "sys"."keytest2" ADD CONSTRAINT "keytest2_key1_key2_fkey" FOREIGN KEY ("key1", "key2") REFERENCES "sys"."keytest1" ("key1", "key2");
 ALTER SEQUENCE "sys"."test_seq" RESTART WITH 8 INCREMENT BY 3 MINVALUE 5 MAXVALUE 10 CYCLE;
 COMMIT;
-
-# 22:27:57 >  
-# 22:27:57 >  "Done."
-# 22:27:57 >  
-

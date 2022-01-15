@@ -28,7 +28,8 @@ typedef struct global_props {
 		instantiate:1,
 		needs_mergetable_rewrite:1,
 		needs_remote_replica_rewrite:1,
-		needs_distinct:1;
+		needs_distinct:1,
+		needs_setjoin_rewrite:1;
 } global_props;
 
 extern sql_exp *rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth);
