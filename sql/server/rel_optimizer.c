@@ -27,7 +27,8 @@ typedef struct global_props {
 		instantiate:1,
 		needs_mergetable_rewrite:1,
 		needs_remote_replica_rewrite:1,
-		needs_distinct:1;
+		needs_distinct:1,
+		needs_setjoin_rewrite:1;
 } global_props;
 
 static int
@@ -244,6 +245,22 @@ rel_properties(visitor *v, sql_rel *rel)
 		/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
 		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
+	} else if (is_join(rel->op)) {
+		/* check for setjoin rewrite */
+		if (!list_empty(rel->attr)) {
+			gp->needs_setjoin_rewrite = 1;
+			return rel;
+		}
+		if (!list_empty(rel->exps)) {
+			for (node *n = rel->exps->h; n ; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
+					gp->needs_setjoin_rewrite = 1;
+					return rel;
+				}
+			}
+		}
 	}
 	return rel;
 }
@@ -9874,16 +9891,17 @@ need_optimization(mvc *sql, sql_rel *rel, int instantiate)
 static sql_rel *
 rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 {
-	if (rel && is_join(rel->op) && (rel->exps || rel->attr)) {
+	if (rel && is_join(rel->op) && (!list_empty(rel->exps) || !list_empty(rel->attr))) {
 		sql_exp *me = NULL;
-		int needed = 0;
-		if (rel->exps) {
-			for (node *n = rel->exps->h; n; n = n->next) {
+		bool needed = false;
+
+		if (!list_empty(rel->exps)) {
+			for (node *n = rel->exps->h; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 
 				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
 					me = e;
-					needed++;
+					needed = true;
 				}
 			}
 		}
@@ -9891,8 +9909,8 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 			rel->op = (me->flag == mark_in)?op_semi:op_anti;
 			return rel;
 		}
-		if (needed || rel->attr) {
-			assert(needed || rel->attr);
+		if (needed || !list_empty(rel->attr)) {
+			assert(needed || !list_empty(rel->attr));
 			sql_exp *nequal = NULL;
 			sql_exp *lid = NULL, *rid = NULL;
 			sql_rel *l = rel->l, *p = rel;
@@ -9924,7 +9942,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 			}
 
 			list *aexps = sa_list(v->sql->sa);
-			if (rel->exps) {
+			if (!list_empty(rel->exps)) {
 				for (node *n = rel->exps->h; n;) {
 					node *next = n->next;
 					sql_exp *e = n->data;
@@ -9947,7 +9965,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 				}
 			}
 
-			if (rel->attr) {
+			if (!list_empty(rel->attr)) {
 				sql_exp *a = rel->attr->h->data;
 
 				exp_setname(v->sql->sa, nequal, exp_find_rel_name(a), exp_name(a));
@@ -10004,6 +10022,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 		v.data = &level;
 		rel = rel_visitor_bottomup(&v, rel, &rel_remote_func);
 	}
-	rel = rel_visitor_bottomup(&v, rel, &rel_setjoins_2_joingroupby);
+	if (gp.needs_setjoin_rewrite)
+		rel = rel_visitor_bottomup(&v, rel, &rel_setjoins_2_joingroupby);
 	return rel;
 }
