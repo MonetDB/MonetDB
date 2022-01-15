@@ -10009,11 +10009,14 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 #ifndef NDEBUG
 	assert(level < 20);
 #endif
-	/* Run the following optimizers only once at the end to avoid an infinite optimization loop */
+	/* Run rel_push_select_up only once at the end to avoid an infinite optimization loop */
 	if (opt == 2)
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
+	if (gp.needs_setjoin_rewrite)
+		rel = rel_visitor_bottomup(&v, rel, &rel_setjoins_2_joingroupby);
 
 	/* merge table rewrites may introduce remote or replica tables */
+	/* at the moment, make sure the remote table rewriters always run last*/
 	if (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite) {
 		v.data = NULL;
 		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_remote);
@@ -10022,7 +10025,5 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 		v.data = &level;
 		rel = rel_visitor_bottomup(&v, rel, &rel_remote_func);
 	}
-	if (gp.needs_setjoin_rewrite)
-		rel = rel_visitor_bottomup(&v, rel, &rel_setjoins_2_joingroupby);
 	return rel;
 }
