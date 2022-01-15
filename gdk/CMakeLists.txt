@@ -153,3 +153,10 @@ install(EXPORT gdkTargets
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:bat>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()

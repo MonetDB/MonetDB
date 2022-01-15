@@ -999,7 +999,9 @@ CREATE TABLE "sys"."range_partitions" ("table_id" INTEGER, "partition_id" INTEGE
 CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
 CREATE TABLE "sys"."sequences" ("id" INTEGER, "schema_id" INTEGER, "name" VARCHAR(256), "start" BIGINT, "minvalue" BIGINT, "maxvalue" BIGINT, "increment" BIGINT, "cacheinc" BIGINT, "cycle" BOOLEAN);
 CREATE TABLE "sys"."spatial_ref_sys" ("srid" INTEGER NOT NULL, "auth_name" VARCHAR(256), "auth_srid" INTEGER, "srtext" VARCHAR(2048), "proj4text" VARCHAR(2048), CONSTRAINT "spatial_ref_sys_srid_pkey" PRIMARY KEY ("srid"));
-CREATE TABLE "sys"."storagemodelinput" ("schema" VARCHAR(1024) NOT NULL, "table" VARCHAR(1024) NOT NULL, "column" VARCHAR(1024) NOT NULL, "type" VARCHAR(1024) NOT NULL, "typewidth" INTEGER NOT NULL, "count" BIGINT NOT NULL, "distinct" BIGINT NOT NULL, "atomwidth" INTEGER NOT NULL, "reference" BOOLEAN NOT NULL DEFAULT false, "sorted" BOOLEAN, "unique" BOOLEAN, "isacolumn" BOOLEAN NOT NULL DEFAULT true);
+CREATE TABLE "sys"."storagemodelinput" ("schema" VARCHAR(1024) NOT NULL, "table" VARCHAR(1024) NOT NULL, "column" VARCHAR(1024) NOT NULL, "type" VARCHAR(1024) NOT NULL, "typewidth" INTEGER NOT NULL, "count" BIGINT NOT NULL, "distinct" BIGINT NOT NULL, "atomwidth" INTEGER NOT NULL, "reference" BOOLEAN NOT NULL, "sorted" BOOLEAN, "unique" BOOLEAN, "isacolumn" BOOLEAN NOT NULL);
+ALTER TABLE "sys"."storagemodelinput" ALTER COLUMN "reference" SET DEFAULT false;
+ALTER TABLE "sys"."storagemodelinput" ALTER COLUMN "isacolumn" SET DEFAULT true;
 CREATE TABLE "sys"."table_partitions" ("id" INTEGER, "table_id" INTEGER, "column_id" INTEGER, "expression" VARCHAR(2048), "type" TINYINT);
 CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
 ALTER TABLE "sys"."table_types" SET READ ONLY;
