@@ -615,7 +615,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			/* convert \r\n into just \n */
 			if (s[1] != '\n') {
 				TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			*s++ = '\n';
 			*s = 0;
@@ -630,12 +630,12 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			   &count, &capacity, &base,
 			   &nread) < 8) {
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 
 		if (batid >= N_BBPINIT * BBPINIT) {
 			TRC_CRITICAL(GDK, "bat ID (%" PRIu64 ") too large to accomodate (max %d), on line %d.", batid, N_BBPINIT * BBPINIT - 1, lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 
 		/* convert both / and \ path separators to our own DIR_SEP */
@@ -654,26 +654,26 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		if (batid >= (uint64_t) ATOMIC_GET(&BBPsize)) {
 			if ((bat) ATOMIC_GET(&BBPsize) + 1 >= BBPlimit &&
 			    BBPextend(0, false, bid + 1) != GDK_SUCCEED)
-				return GDK_FAIL;
+				goto bailout;
 			ATOMIC_SET(&BBPsize, bid + 1);
 		}
 		if (BBP_desc(bid) != NULL) {
 			TRC_CRITICAL(GDK, "duplicate entry in BBP.dir (ID = "
 				     "%" PRIu64 ") on line %d.", batid, lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		if ((bn = GDKzalloc(sizeof(BAT))) == NULL ||
 		    (bn->theap = GDKzalloc(sizeof(Heap))) == NULL) {
 			GDKfree(bn);
 			TRC_CRITICAL(GDK, "cannot allocate memory for BAT.");
-			return GDK_FAIL;
+			goto bailout;
 		}
 		bn->batCacheid = bid;
 		if (BATroles(bn, NULL) != GDK_SUCCEED) {
 			GDKfree(bn->theap);
 			GDKfree(bn);
 			TRC_CRITICAL(GDK, "BATroles failed.");
-			return GDK_FAIL;
+			goto bailout;
 		}
 		bn->batTransient = false;
 		bn->batCopiedtodisk = true;
@@ -693,7 +693,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		if (base > (uint64_t) GDK_oid_max) {
 			BATdestroy(bn);
 			TRC_CRITICAL(GDK, "head seqbase out of range (ID = %" PRIu64 ", seq = %" PRIu64 ") on line %d.", batid, base, lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		bn->hseqbase = (oid) base;
 		n = heapinit(bn, buf + nread,
@@ -703,13 +703,13 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			     bbpversion, bid, filename, lineno);
 		if (n < 0) {
 			BATdestroy(bn);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		nread += n;
 		n = vheapinit(bn, buf + nread, bid, filename, lineno);
 		if (n < 0) {
 			BATdestroy(bn);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		nread += n;
 #ifdef GDKLIBRARY_HASHASH
@@ -717,9 +717,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			assert(bbpversion <= GDKLIBRARY_HASHASH);
 			bat *sb = GDKrealloc(hbats, ++nhbats * sizeof(bat));
 			if (sb == NULL) {
-				GDKfree(hbats);
 				BATdestroy(bn);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			hbats = sb;
 			hbats[nhbats - 1] = bn->batCacheid;
@@ -728,22 +727,16 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		if (buf[nread] != '\n' && buf[nread] != ' ') {
 			BATdestroy(bn);
-#ifdef GDKLIBRARY_HASHASH
-			GDKfree(hbats);
-#endif
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		if (buf[nread] == ' ')
 			options = buf + nread + 1;
 
 		if (snprintf(BBP_bak(bid), sizeof(BBP_bak(bid)), "tmp_%o", (unsigned) bid) >= (int) sizeof(BBP_bak(bid))) {
 			BATdestroy(bn);
-#ifdef GDKLIBRARY_HASHASH
-			GDKfree(hbats);
-#endif
 			TRC_CRITICAL(GDK, "BBP logical filename directory is too large, on line %d\n", lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
 			/* sizeof(logical) > sizeof(BBP_bak(bid)), so
@@ -760,11 +753,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			BBP_logical(bid) = GDKstrdup(logical);
 			if (BBP_logical(bid) == NULL) {
 				BATdestroy(bn);
-#ifdef GDKLIBRARY_HASHASH
-				GDKfree(hbats);
-#endif
 				TRC_CRITICAL(GDK, "GDKstrdup failed\n");
-				return GDK_FAIL;
+				goto bailout;
 			}
 		}
 		/* tailname is ignored */
@@ -778,11 +768,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			BBP_options(bid) = GDKstrdup(options);
 			if (BBP_options(bid) == NULL) {
 				BATdestroy(bn);
-#ifdef GDKLIBRARY_HASHASH
-				GDKfree(hbats);
-#endif
 				TRC_CRITICAL(GDK, "GDKstrdup failed\n");
-				return GDK_FAIL;
+				goto bailout;
 			}
 		}
 		BBP_refs(bid) = 0;
@@ -796,6 +783,12 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 	*nhashbats = nhbats;
 #endif
 	return GDK_SUCCEED;
+
+  bailout:
+#ifdef GDKLIBRARY_HASHASH
+	GDKfree(hbats);
+#endif
+	return GDK_FAIL;
 }
 
 /* check that the necessary files for all BATs exist and are large
@@ -2137,7 +2130,7 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 			}
 			*obbpfp = NULL;
 		} else {
-			if (sscanf(buf, "%d", &n) != 1 || n <= 0) {
+			if (sscanf(buf, "%d", &n) != 1 || n <= 0 || n >= N_BBPINIT * BBPINIT) {
 				GDKerror("subcommit attempted with invalid backup BBP.dir.");
 				goto bailout;
 			}
@@ -3070,7 +3063,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	 * conditions are met */
 	if (BBP_refs(i) == 0 &&
 	    (BBP_lrefs(i) == 0 ||
-	     (b != NULL
+	     (b != NULL && b->theap != NULL
 	      ? (!BATdirty(b) &&
 		 !(BBP_status(i) & chkflag) &&
 		 (BBP_status(i) & BBPPERSISTENT) &&

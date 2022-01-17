@@ -2623,7 +2623,6 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"ORDER BY sch.name, seq.name";
 	const char *sequences2 =
 		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
-	/* we must dump tables, views, functions/procedures and triggers in order of creation since they can refer to each other */
 	const char *tables =
 		"SELECT t.id AS id, "
 			   "s.name AS sname, "
@@ -2682,6 +2681,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND d.id = t2.id "
 		  "AND t2.schema_id = s2.id "
 		"ORDER BY t1.id, t2.id";
+	/* we must dump views, functions/procedures and triggers in order
+	 * of creation since they can refer to each other */
 	const char *views_functions_triggers =
 		"with vft (sname, name, id, query, remark) AS ("
 			"SELECT s.name AS sname, " /* views */
@@ -2896,11 +2897,11 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
 		char *id = strdup(mapi_fetch_field(hdl, 0));
-		char *nschema = mapi_fetch_field(hdl, 1), *schema = nschema ? strdup(nschema) : NULL; /* the fetched value might be null, so do this */
+		char *schema = strdup(mapi_fetch_field(hdl, 1));
 		char *name = strdup(mapi_fetch_field(hdl, 2));
 		const char *type = mapi_fetch_field(hdl, 3);
 
-		if (mapi_error(mid) || !id || (nschema && !schema) || !name) {
+		if (mapi_error(mid) || id == NULL || schema == NULL || name == NULL) {
 			free(id);
 			free(schema);
 			free(name);
@@ -2916,8 +2917,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			if (curschema == NULL || strcmp(schema, curschema) != 0) {
 				if (curschema)
 					free(curschema);
-				curschema = schema ? strdup(schema) : NULL;
-				if (schema && !curschema) {
+				curschema = strdup(schema);
+				if (curschema == NULL) {
 					free(id);
 					free(schema);
 					free(name);
@@ -3076,12 +3077,12 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
 		char *id = strdup(mapi_fetch_field(hdl, 0));
-		char *nschema = mapi_fetch_field(hdl, 1), *schema = nschema ? strdup(nschema) : NULL; /* the fetched value might be null, so do this */
+		char *schema = strdup(mapi_fetch_field(hdl, 1));
 		char *name = strdup(mapi_fetch_field(hdl, 2));
 		const char *query = mapi_fetch_field(hdl, 3);
 		const char *remark = mapi_fetch_field(hdl, 4);
 
-		if (mapi_error(mid) || !id || (nschema && !schema) || !name) {
+		if (mapi_error(mid) || id == NULL || schema == NULL || name == NULL) {
 			free(id);
 			free(schema);
 			free(name);
