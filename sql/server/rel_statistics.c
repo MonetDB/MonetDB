@@ -559,7 +559,9 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 			}
 			sql_rel *l = rel_project(v->sql->sa, NULL, rel->exps);
 			l = rel_select(v->sql->sa, l, exp_atom_bool(v->sql->sa, 0));
-			rel = rel_inplace_project(v->sql->sa, rel, l, rel_projections(v->sql, l, NULL, 1, 1));
+			rel->op = op_project;
+			rel->l = l;
+			rel->exps = rel_projections(v->sql, l, NULL, 1, 1);
 		}
 	} break;
 	case op_join:
