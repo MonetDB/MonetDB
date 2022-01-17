@@ -3771,6 +3771,9 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 	if (!_2phases && list_empty(rel->r)) /* cannot handle global aggregation without 2 phases */
 		return NULL;
 
+	if (list_length(rel->r) > 1) /* single group by for now */
+		return NULL;
+
 	if (rel_single_distinct(rel))
 		printf("#single distinct\n");
 	list *shared = NULL;
@@ -3820,16 +3823,28 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 		list *gbexps = rel->r;
+		*aggrresults = sa_list(be->mvc->sa);
 		for(node *n = gbexps->h; n; n = n->next ) {
-			int tt = TYPE_oid;
+			sql_exp *e = n->data;
+			//int tt = TYPE_oid;
+			sql_subtype *t = exp_subtype(e);
+			int tt = t->type->localtype;
 			/* ext */
-			InstrPtr q = newStmt(be->mb, batRef, newRef);
+			//InstrPtr q = newStmt(be->mb, batRef, newRef);
+			InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
+			int estimate = rel_getcount(rel->l);
+			if (estimate<0) {
+				assert(0);
+				estimate = 85000000;
+			}
 
 			if (q == NULL)
 				return NULL;
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
+			q = pushInt(be->mb, q, estimate);
 			append(shared, q->argv);
+			append(*aggrresults, q->argv);
 		}
 		for( node *n = rel->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
@@ -3842,6 +3857,7 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			append(shared, q->argv);
+			append(*aggrresults, q->argv);
 		}
 	} else {
 		return NULL;
@@ -3858,7 +3874,7 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 	node *o = sub->h;
 	(void)grp; (void)cnt;
 	list *shared = NULL;
-	if (rel && !list_empty(rel->r)) { /* for group by case re-project group by cols */
+	if (0 && rel && !list_empty(rel->r)) { /* for group by case re-project group by cols */
 		list *ngbstmts = sa_list(be->mvc->sa);
 		for( node *m = gbstmts->h; m; m = m->next) {
 			stmt *gstmt = m->data;
@@ -3907,6 +3923,8 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 			append(shared, s);
 		}
 	} else if (rel && !list_empty(rel->r)) {
+	(void)pp_end(be, pp);
+	return cursub;
 		list *sub = cursub->op4.lval;
 
 		/* phase 2 of grouping */
@@ -4041,7 +4059,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			}
 			if (!gbcol->nrcols)
 				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
-			groupby = stmt_group(be, gbcol, grp, ext, cnt, !en->next);
+			groupby = stmt_group(be, gbcol, grp, grp /*ext*/, cnt, !en->next);
 
 			/* make sure we reuse the extend */
 			if (groupby && m) {
@@ -4053,7 +4071,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
-			cnt = stmt_result(be, groupby, 2);
+			//cnt = stmt_result(be, groupby, 2);
+			cnt = NULL;
 			gbcol = stmt_alias(be, gbcol, exp_find_rel_name(e), exp_name(e));
 			list_append(gbexps, gbcol);
 		}
@@ -4075,7 +4094,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column(be, gbexps, aggrexp->l, aggrexp->r);
 			if (aggrstmt && groupby) {
-				aggrstmt = stmt_project(be, ext, aggrstmt);
+				aggrstmt = stmt_project(be, grp /*ext*/, aggrstmt);
+				aggrstmt->q = pushArgument(be->mb, aggrstmt->q, be->pipeline);
 				if (list_length(gbexps) == 1)
 					aggrstmt->key = 1;
 			}

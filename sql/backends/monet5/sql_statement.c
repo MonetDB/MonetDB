@@ -199,13 +199,16 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	if (grp && (grp->nr < 0 || ext->nr < 0 || cnt->nr < 0))
 		return NULL;
 
-	q = newStmt(mb, groupRef, done ? grp ? subgroupdoneRef : groupdoneRef : grp ? subgroupRef : groupRef);
+	(void)done;
+	//q = newStmt(mb, groupRef, done ? grp ? subgroupdoneRef : groupdoneRef : grp ? subgroupRef : groupRef);
+	q = newStmt(mb, groupRef, groupRef);
 	if(!q)
 		return NULL;
 
 	/* output variables extent and hist */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	//q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, be->pipeline);
 	q = pushArgument(mb, q, s->nr);
 	if (grp)
 		q = pushArgument(mb, q, grp->nr);
