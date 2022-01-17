@@ -561,3 +561,22 @@ INSERT INTO tz(c1) VALUES(CASE WHEN EXISTS (SELECT DISTINCT 3, vc0 FROM vx WHERE
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "rt0" ("c0" REAL,"c1" DECIMAL(18,3))
+
+statement ok
+create view vx(vc0, vc1) as (values (inet '229.210.31.233', 1), (greatest((select inet '187.205.97.37/28'), (select inet '136.216.53.173/0')), 1))
+
+statement ok
+create view vy(vc0, vc1) as (select distinct 208, 49 from sys.vx as tv5l0n1)
+
+query I nosort
+SELECT 1 FROM vy, vx GROUP BY COALESCE('b', (SELECT 'c' FROM rt0)) HAVING max(1 IN ((SELECT 2 FROM rt0), 3))
+----
+
+statement ok
+ROLLBACK

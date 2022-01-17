@@ -112,6 +112,7 @@ static inline void
 logdel(struct logbuf *logbuf)
 {
 	free(logbuf->logbuffer);
+	logbuf->logbuffer = NULL;
 }
 
 static bool logadd(struct logbuf *logbuf,
@@ -669,7 +670,7 @@ openProfilerStream(Client cntxt)
 	// Ignore the JSON rendering mode, use compiled time version
 
 	/* show all in progress instructions for stethoscope startup */
-	/* wait a short time for instructions to finish updating there thread admin
+	/* wait a short time for instructions to finish updating their thread admin
 	 * and then follow the locking scheme */
 
 	MT_sleep_ms(200);
