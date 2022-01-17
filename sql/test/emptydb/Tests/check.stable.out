@@ -1009,12 +1009,12 @@ CREATE TABLE "sys"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" IN
 CREATE TABLE "sys"."types" ("id" INTEGER, "systemname" VARCHAR(256), "sqlname" VARCHAR(1024), "digits" INTEGER, "scale" INTEGER, "radix" INTEGER, "eclass" INTEGER, "schema_id" INTEGER);
 CREATE TABLE "sys"."user_role" ("login_id" INTEGER, "role_id" INTEGER);
 CREATE TABLE "sys"."value_partitions" ("table_id" INTEGER, "partition_id" INTEGER, "value" VARCHAR(2048));
-CREATE TABLE "tmp"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048));
-CREATE TABLE "tmp"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(1048576), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
-CREATE TABLE "tmp"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024));
-CREATE TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER);
-CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER, "sub" INTEGER);
-CREATE TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
+CREATE GLOBAL TEMPORARY TABLE "tmp"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048)) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(1048576), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024)) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER, "sub" INTEGER) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048)) ON COMMIT PRESERVE ROWS;
 create view logging.compinfo as select * from logging.compinfo();
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
 create view sys.dependencies_vw as select d.id, i1.obj_type, i1.name, d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name, d.depend_type, dt.dependency_type_name from sys.dependencies d join sys.ids i1 on d.id = i1.id join sys.ids i2 on d.depend_id = i2.id join sys.dependency_types dt on d.depend_type = dt.dependency_type_id order by id, depend_id;
