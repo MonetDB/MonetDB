@@ -225,11 +225,13 @@ addFunctions(mel_func *fcn){
 		if ( s == NULL)
 			throw(LOADER, "addFunctions", "Can not create symbol for %s.%s missing", fcn->mod, fcn->fcn);
 		mb = s->def;
-		if( mb == NULL)
+		if( mb == NULL) {
+			freeSymbol(s);
 			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
+		}
 
 		if (fcn->cname && fcn->cname[0])
-			strcpy(mb->binding, fcn->cname);
+			strcpy_len(mb->binding, fcn->cname, sizeof(mb->binding));
 		/* keep the comment around, setting the static avoid freeing the string accidentally , saving on duplicate documentation in the code. */
 		mb->statichelp = mb->help = fcn->comment;
 
@@ -240,7 +242,7 @@ addFunctions(mel_func *fcn){
 		sig->fcn = (MALfcn)fcn->imp;
 		if( fcn->unsafe)
 			mb->unsafeProp = 1;
-		
+
 		/* add the return variables */
 		if(fcn->retc == 0){
 			int idx = newTmpVariable(mb, TYPE_void);
@@ -340,7 +342,7 @@ melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char
 	mb = s->def;
 	(void)comment;
 	if (fname)
-		strcpy(mb->binding, fname);
+		strcpy_len(mb->binding, fname, sizeof(mb->binding));
 	if (mb == NULL) {
 		freeSymbol(s);
 		return MEL_ERR;
