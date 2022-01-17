@@ -311,7 +311,9 @@ typedef struct hash_table {
 
         void *vals;			/* hash(ed) values */
         hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
+		gid *pgids;			/* id of the parent hash */
 
+		struct hash_table *p;	/* parent hash */
         size_t last;
         size_t size;
         gid mask;
@@ -334,12 +336,14 @@ _ht_init( hash_table *h )
         if (h->gids == NULL) {
                 h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
                 h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
+				if (h->p)
+					h->pgids = (gid*)GDKzalloc(sizeof(gid)* h->size);
         }
         return h;
 }
 
 static hash_table *
-_ht_create( int type, int size)
+_ht_create( int type, int size, hash_table *p)
 {
         hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
         int bits = log_base2(size-1);
@@ -351,7 +355,8 @@ _ht_create( int type, int size)
         h->mask = h->size-1;
         h->type = type;
         h->width = ATOMsize(type);
-		h->last = 0;
+		h->last = 1; /* 0 used for marking unused */
+		h->p = p;
 		if (type == TYPE_str) {
 			h->cmp = (fcmp)str_cmp;
 			h->hsh = (fhsh)str_hsh;
@@ -360,13 +365,13 @@ _ht_create( int type, int size)
 }
 
 static hash_table *
-ht_create(int type, int size)
+ht_create(int type, int size, hash_table *p)
 {
         if (size < HT_MIN_SIZE)
                 size = HT_MIN_SIZE;
         if (size > HT_MAX_SIZE)
                 size = HT_MAX_SIZE;
-        return _ht_create(type, size);
+        return _ht_create(type, size, p);
 }
 
 
@@ -397,6 +402,10 @@ ht_create(int type, int size)
 #define _hash_flt(X)  (_hash_int(X))
 #define _hash_dbl(X)  (_hash_lng(X))
 #define _hash_gid(X)  (_hash_lng(X))
+#define ROT64(x, y)  ((x << y) | (x >> (64 - y)))
+#define combine(X,Y)  (X^Y)
+
+//(_hash_lng(ROT64(X, 3) ^ ROT64((lng)Y, 17)))
 
 static str
 UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
@@ -406,9 +415,16 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	bat *res = getArgReference_bat(s, p, 0);
 	int tt = getArgType(m, p, 1);
 	int size = *getArgReference_int(s, p, 2);
+	hash_table *parent = NULL;
+	if (p->argc == 4) {
+		bat pid = *getArgReference_bat(s, p, 3);
+		BAT *p = BATdescriptor(pid);
+		parent = (void*)p->T.ht;
+		BBPunfix(p->batCacheid);
+	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
-	b->T.ht = (void*)ht_create(tt, size*1.2*2.1);
+	b->T.ht = (void*)ht_create(tt, size*1.2*2.1, parent);
 	BBPkeepref(*res = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -429,7 +445,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, (k<<1))) { \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
 					vals[k] = bp[i]; \
 					new = 1; \
 					g = ATOMIC_INC(h->gids+k); \
@@ -459,7 +475,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, (k<<1))) { \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
 					vals[k] = bp[i]; \
 					new = 1; \
 					g = ATOMIC_INC(h->gids+k); \
@@ -490,7 +506,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, (k<<1))) { \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
 					vals[k] = bpi; \
 					new = 1; \
 					g = ATOMIC_INC(h->gids+k); \
@@ -544,6 +560,149 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			/* props */
 			BBPkeepref(*uid = u->batCacheid);
 			BBPkeepref(*rid = g->batCacheid);
+		}
+	}
+	return MAL_SUCCEED;
+}
+
+#define gunique(Type) \
+	if (tt == TYPE_##Type) { \
+		Type *bp = Tloc(b, 0); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool new = 0, fnd = 0; \
+			\
+			for(; !fnd; ) { \
+				gid k = (gid)combine(p[i], _hash_##Type(bp[i]))&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && (pgids[k] != p[i] || vals[k] != bp[i]);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
+					vals[k] = bp[i]; \
+					pgids[k] = p[i]; \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+					continue; \
+				fnd = 1; \
+			} \
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+	}
+
+#define gfunique(Type, BaseType) \
+	if (tt == TYPE_##Type) { \
+		Type *bp = Tloc(b, 0); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool new = 0, fnd = 0; \
+			\
+			for(; !fnd; ) { \
+				gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && (pgids[k] != p[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && vals[k] != bp[i]));) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
+					vals[k] = bp[i]; \
+					pgids[k] = p[i]; \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+					continue; \
+				fnd = 1; \
+			} \
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+	}
+
+#define gaunique(Type) \
+	if (tt == TYPE_##Type) { \
+		BATiter bi = bat_iterator(b); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool new = 0, fnd = 0; \
+			\
+			for(; !fnd; ) { \
+				Type bpi = BUNtvar(bi, i); \
+				gid k = (gid)combine(p[i], h->hsh(bpi))&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && (pgids[k] != p[i] || h->cmp(vals[k], bpi) != 0);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
+					vals[k] = bpi; \
+					pgids[k] = p[i]; \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+					continue; \
+				fnd = 1; \
+			} \
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+	}
+
+static str
+LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
+{
+	//Pipeline *p = (Pipeline*)*H;
+	(void)H;
+	assert(*uid && !is_bat_nil(*uid));
+	BAT *u = BATdescriptor(*uid);
+	BAT *G = BATdescriptor(*Gid);
+	BAT *b = BATdescriptor(*bid);
+	assert(is_bat_nil(*sid)); /* no cands jet */
+	(void)sid;
+
+	hash_table *h = (hash_table*)u->T.ht;
+	assert(h);
+	if (h) {
+		ATOMIC_BASE_TYPE expected = 0;
+		BUN cnt = BATcount(b);
+
+		BAT *ng = COLnew(0, TYPE_oid, cnt, TRANSIENT);
+
+		/* probably need bat resize and create hash */
+		int err = 0, tt = b->ttype;
+		oid *gp = Tloc(ng, 0);
+		gid *p = Tloc(G, 0);
+		gid *pgids = h->pgids;
+		BUN r = 0;
+
+		if (!err) {
+			gunique(bte)
+			gunique(sht)
+			gunique(int)
+			gunique(lng)
+			gunique(hge)
+			gfunique(flt, int)
+			gfunique(dbl, lng)
+			gaunique(str)
+		}
+		if (!err) {
+			BBPunfix(G->batCacheid);
+			BBPunfix(b->batCacheid);
+			BATsetcount(ng, r);
+			/* props */
+			BBPkeepref(*uid = u->batCacheid);
+			BBPkeepref(*rid = ng->batCacheid);
 		}
 	}
 	return MAL_SUCCEED;
@@ -677,7 +836,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
 
-		BAT *g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
+		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 
 		/* probably need bat resize and create hash */
 		int err = 0, tt = b->ttype;
@@ -697,9 +856,10 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			BBPunfix(b->batCacheid);
 			BATsetcount(g, cnt);
 			/* props */
-			gid last = h->last;
+			gid last = ATOMIC_GET(&h->last);
 			/* pass max id */
-			g->tseqbase = last;
+			g->T.maxval = last;
+			g->tkey = FALSE;
 			BBPkeepref(*uid = u->batCacheid);
 			BBPkeepref(*rid = g->batCacheid);
 		}
@@ -735,10 +895,11 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	BAT *g = BATdescriptor(*gid);
 	BAT *b = BATdescriptor(*bid);
 	BAT *r = NULL;
-	oid max = g->tseqbase;
+	oid max = g->T.maxval;
 	int err = 0;
 
 	MT_lock_set(&p->l);
+		/* probably need bat resize and create hash */
 	if (*rid) {
 		r = BATdescriptor(*rid);
 		if (r->ttype == TYPE_str && BATcount(r) == 0 && r->twidth < b->twidth) {
@@ -774,7 +935,6 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	if (!err && max) {
 		BUN cnt = BATcount(b);
 
-		/* probably need bat resize and create hash */
 		int err = 0, tt = b->ttype;
 		oid *gp = Tloc(g, 0);
 
@@ -802,6 +962,56 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	return MAL_SUCCEED;
 }
 
+static str
+LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
+{
+	(void)bid;
+	(void)nonil;
+	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
+	BAT *g = BATdescriptor(*gid);
+	BAT *r = NULL;
+	int err = 0;
+
+	MT_lock_set(&p->l);
+	BAT *pg = BATdescriptor(*pid);
+	oid max = pg->T.maxval;
+	BBPunfix(pg->batCacheid);
+	if (*rid) {
+		r = BATdescriptor(*rid);
+	} else {
+		r = COLnew(0, TYPE_lng, max, TRANSIENT);
+	}
+	/* probably need bat resize and create hash */
+	if (BATcapacity(r) < max) {
+		BUN cnt = BATcount(r);
+		if (BATextend(r, max*2) != GDK_SUCCEED)
+			err = 1;
+		memset(Tloc(r, cnt), 0, sizeof(lng)*((max*2)-cnt));
+	}
+
+	/* get max id from gid */
+	if (!err && max) {
+		BUN cnt = BATcount(g);
+
+		int err = 0;
+
+		if (!err) {
+			oid *v = Tloc(g, 0);
+			lng *o = Tloc(r, 0);
+			for(BUN i = 0; i<cnt; i++)
+				o[v[i]]++;
+		}
+		if (!err) {
+			BBPunfix(g->batCacheid);
+			BATsetcount(r, max);
+			r->trevsorted = r->tsorted = FALSE;
+			r->tkey = FALSE;
+			BBPkeepref(*rid = r->batCacheid);
+		}
+	}
+	MT_lock_unset(&p->l);
+	return MAL_SUCCEED;
+}
 
 
 #include "mel.h"
@@ -811,10 +1021,13 @@ static mel_func pipeline_init_funcs[] = {
  pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",3), arg("pipeline", ptr), batarg("left",oid),batargany("right",3))),
- command("algebra", "unique", LALGunique, false, "Project left input onto right input.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid))),
+ command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid))),
+ command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid), batarg("gid",oid))),
  command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",4))),
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
+ command("aggr", "count", LALGcount, false, "Project.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
+ pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",int), batargany("p",2))),
  { .imp=NULL }
 };
 #include "mal_import.h"

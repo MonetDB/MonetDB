@@ -196,7 +196,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 
 	if (s->nr < 0)
 		return NULL;
-	if (grp && (grp->nr < 0 || ext->nr < 0 || cnt->nr < 0))
+	if (grp && (grp->nr < 0 || ext->nr < 0 || (cnt && cnt->nr < 0)))
 		return NULL;
 
 	(void)done;
@@ -209,9 +209,9 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	//q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, be->pipeline);
-	q = pushArgument(mb, q, s->nr);
 	if (grp)
 		q = pushArgument(mb, q, grp->nr);
+	q = pushArgument(mb, q, s->nr);
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_group);
 		if (ns == NULL) {

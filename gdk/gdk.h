@@ -728,6 +728,7 @@ typedef struct {
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN minpos, maxpos;	/* location of min/max value */
+	oid maxval;
 	double unique_est;	/* estimated number of unique values */
 	oid seq;		/* start of dense sequence */
 

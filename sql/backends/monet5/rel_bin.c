@@ -1300,6 +1300,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		list *attr = e->l;
 		stmt *as = NULL;
 		sql_subfunc *a = e->f;
+		int pipeline = grp?be->pipeline:0, ogrp = grp?grp->nr:0;
 
 		assert(sel == NULL);
 		if (attr && attr->h) {
@@ -1323,7 +1324,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					return NULL;
 				append(l, as);
 			}
-			if (need_distinct(e) && (grp || list_length(l) > 1)){
+			if (need_distinct(e) && (/*grp ||*/ list_length(l) > 1)){
 				list *nl = sa_list(sql->sa);
 				stmt *ngrp = grp;
 				stmt *next = ext;
@@ -1333,6 +1334,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					stmt *g = stmt_group(be, as, ngrp, next, ncnt, 1);
 					ngrp = stmt_result(be, g, 0);
 					next = stmt_result(be, g, 1);
+					if (cnt)
 					ncnt = stmt_result(be, g, 2);
 				}
 				for (en = l->h; en; en = en->next) {
@@ -1347,10 +1349,18 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				stmt *u;
 				if (e->shared) {
 					u = stmt_unique(be, a, e->shared);
+					if (grp)
+						u->q = pushArgument(be->mb, u->q, grp->nr);
 				} else {
 					u = stmt_unique(be, a, 0);
 				}
 				l = sa_list(sql->sa);
+				if (grp) {
+					append(l, stmt_project(be, u, grp));
+					grp = NULL;
+					ext = NULL;
+					cnt = NULL;
+				}
 				append(l, stmt_project(be, u, a));
 			}
 			as = stmt_list(be, l);
@@ -1369,6 +1379,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 		}
 		s = stmt_aggr(be, as, grp, ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e) );
+		if (pipeline) {
+				s->q = pushArgument(be->mb, s->q, pipeline);
+				s->q = pushArgument(be->mb, s->q, ogrp);
+				s->q->inout = 0;
+				s->nrcols = 1;
+		}
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
 			s->flag |= OUTER_ZERO;
 	} 	break;
@@ -3821,6 +3837,7 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 			}
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
+		int curhash = 0;
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 		list *gbexps = rel->r;
 		*aggrresults = sa_list(be->mvc->sa);
@@ -3843,6 +3860,9 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			q = pushInt(be->mb, q, estimate);
+			if (curhash)
+				q = pushArgument(be->mb, q, curhash);
+			curhash = getArg(q,0);
 			append(shared, q->argv);
 			append(*aggrresults, q->argv);
 		}
@@ -3858,6 +3878,31 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 			q = pushType(be->mb, q, tt);
 			append(shared, q->argv);
 			append(*aggrresults, q->argv);
+
+			if (need_distinct(e)) { /* create shared bat, for hash table */
+				list *el = e->l;
+				sql_exp *a = el->h->data;
+				sql_subtype *t = exp_subtype(a);
+				int tt = t->type->localtype;
+				//InstrPtr q = newStmt(be->mb, batRef, newRef);
+				//optionaly pass the base (hash)
+				InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
+				int estimate = rel_getcount(rel->l);
+				if (estimate<0) {
+					assert(0);
+					estimate = 85000000;
+				}
+
+				if (q == NULL)
+					return NULL;
+				setVarType(be->mb, getArg(q, 0), newBatType(tt));
+				q = pushType(be->mb, q, tt);
+				q = pushInt(be->mb, q, estimate);
+				if (curhash)
+					q = pushArgument(be->mb, q, curhash);
+				assert(!e->shared);
+				e->shared = q->argv[0];
+			}
 		}
 	} else {
 		return NULL;
@@ -4096,6 +4141,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			if (aggrstmt && groupby) {
 				aggrstmt = stmt_project(be, grp /*ext*/, aggrstmt);
 				aggrstmt->q = pushArgument(be->mb, aggrstmt->q, be->pipeline);
+				aggrstmt->q->inout = 1;
 				if (list_length(gbexps) == 1)
 					aggrstmt->key = 1;
 			}
