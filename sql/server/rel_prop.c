@@ -118,7 +118,7 @@ propvalue2string(sql_allocator *sa, prop *p)
 		case PROP_MIN:
 		case PROP_MAX: {
 			atom *a = p->value;
-			char *res;
+			char *res = NULL;
 
 			if (a->isnull) {
 				res = sa_strdup(sa, "\"NULL\"");
