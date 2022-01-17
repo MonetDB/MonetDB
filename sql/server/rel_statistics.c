@@ -434,7 +434,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 	for (node *n = rel->exps->h ; n ; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->type == e_cmp && (is_theta_exp(e->flag) || e->f)) {
+		if (e->type == e_cmp && is_theta_exp(e->flag)) {
 			sql_exp *le = e->l, *re = e->r, *fe = e->f;
 			atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX),
 				*rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
