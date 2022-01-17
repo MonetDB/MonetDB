@@ -43,7 +43,7 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	old_mb_stmt = mb->stmt;
 	old_ssize = mb->ssize;
 	old_stop = mb->stop;
-	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0) 
+	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0)
 		throw(MAL, "optimizer.bincopyfrom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (size_t i = 0; i < old_stop; i++) {
@@ -174,7 +174,7 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 			InstrPtr p = newFcnCall(mb, sqlRef, importColumnRef);
 			setReturnArgument(p, old->argv[idx]);
 			int new_count_var = newTmpVariable(mb, TYPE_oid);
-			pushReturn(mb, p, new_count_var);
+			p = pushReturn(mb, p, new_count_var);
 			p = pushStr(mb, p, method);
 			p = pushBit(mb, p, byteswap);
 			p = pushStr(mb, p, path);
