@@ -1742,12 +1742,18 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 /* ---------------------------------------------------------------------- */
 /* average */
 
+#define GOTO_BAILOUT()					\
+	do {						\
+		GDKfree(avgs);				\
+		GOTO_LABEL_TIMEOUT_HANDLER(bailout);	\
+	} while (0)
+
 #define AGGR_AVG(TYPE)							\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		TYPE *restrict avgs = GDKzalloc(ngrp * sizeof(TYPE));	\
-		if (avgs == NULL)			\
-			goto bailout;				\
+		if (avgs == NULL)					\
+			goto bailout;					\
 		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
@@ -1767,8 +1773,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(timeoffset, GOTO_BAILOUT());		\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
@@ -4023,8 +4028,8 @@ BATmax(BAT *b, void *aggr)
 
 #define DO_QUANTILE_AVG(TPE)						\
 	do {								\
-		TPE low = *(TPE*) BUNtail(bi, r + (BUN) hi);		\
-		TPE high = *(TPE*) BUNtail(bi, r + (BUN) lo);		\
+		TPE low = *(TPE*) BUNtloc(bi, r + (BUN) hi);		\
+		TPE high = *(TPE*) BUNtloc(bi, r + (BUN) lo);		\
 		if (is_##TPE##_nil(low) || is_##TPE##_nil(high)) {	\
 			val = dbl_nil;					\
 			nils++;						\
