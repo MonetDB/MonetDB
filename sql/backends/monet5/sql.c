@@ -2998,7 +2998,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int onclient = *getArgReference_int(stk, pci, pci->retc + 10);
 	bool escape = *getArgReference_int(stk, pci, pci->retc + 11);
 	str msg = MAL_SUCCEED;
-	bstream *s = NULL;
+	bstream *bstream_to_destroy;
+	bstream *s;
+	bool from_stdin;
 	stream *ss;
 
 	(void) mb;		/* NOT USED */
@@ -3017,7 +3019,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
-		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape, append_directly);
+		s = be->mvc->scanner.rs;
+		from_stdin = true;
+		bstream_to_destroy = NULL;
 	} else {
 		if (onclient) {
 			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
@@ -3094,24 +3098,23 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			ss = ns;
 		}
-#if SIZEOF_VOID_P == 4
-		s = bstream_create(ss, 0x20000);
-#else
-		s = bstream_create(ss, 0x200000);
-#endif
+		s = bstream_create(ss, sizeof(void*) == 4 ? 0x20000 : 0x200000);
+		bstream_to_destroy = s;
+		from_stdin = false;
 		if (s == NULL) {
 			close_stream(ss);
 			throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape, append_directly);
-		if (onclient) {
-			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
-			be->mvc->scanner.rs->eof = s->eof;
-			s->s = NULL;
-		}
-		bstream_destroy(s);
 	}
+	msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, from_stdin, escape, append_directly);
+	if (onclient) {
+		mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+		mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
+		be->mvc->scanner.rs->eof = s->eof;
+		s->s = NULL;
+	}
+	bstream_destroy(bstream_to_destroy);
+
 	if (b && !msg)
 		bat2return(stk, pci, b);
 	GDKfree(b);
