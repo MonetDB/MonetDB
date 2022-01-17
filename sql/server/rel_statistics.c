@@ -456,7 +456,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 					lval_min && lval_max && rval_min && rval_max && fval_min && fval_max &&
 					(e->anti ? ((lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0) || (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0) || atom_cmp(rval_min, fval_max) > 0) :
 					((lower == cmp_gte ? atom_cmp(lval_min, rval_max) >= 0 : atom_cmp(lval_min, rval_max) > 0) && (higher == cmp_lte ? atom_cmp(fval_min, lval_max) >= 0 : atom_cmp(fval_min, lval_max) > 0)));
-			} else {
+			} else if (!fe) {
 				switch (e->flag) {
 				case cmp_equal:
 					if (lval_min && lval_max && rval_min && rval_max)
