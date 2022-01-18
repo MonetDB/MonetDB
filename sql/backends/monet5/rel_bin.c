@@ -3701,6 +3701,8 @@ rel_getcount(sql_rel *rel)
 		return p->number;
 	if (rel && rel->l && rel->op == op_select)
 		return rel_getcount(rel->l);
+	if (rel && rel->l && rel->op == op_project)
+		return rel_getcount(rel->l);
 	return -1;
 }
 
@@ -3746,7 +3748,8 @@ rel_groupby_2_phases(sql_rel *rel)
 		list *l = rel->r;
 		for( node *n = l->h; n; n = n->next ) {
 			sql_exp *e = n->data;
-			lng lcard = exp_getcard(rel, e);
+			lng lcard = exp_getcard(rel->l, e);
+			printf("lcard %ld\n", lcard);
 			if (lcard == cnt) {
 				card = cnt;
 				break;
@@ -3828,7 +3831,7 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 				int tt = t->type->localtype;
 				//InstrPtr q = newStmt(be->mb, batRef, newRef);
 				InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-				int estimate = rel_getcount(rel->l);
+				int estimate = exp_getcard(rel->l, e);//rel_getcount(rel->l);
 				if (estimate<0) {
 					assert(0);
 					estimate = 85000000;

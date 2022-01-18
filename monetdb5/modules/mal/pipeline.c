@@ -966,11 +966,13 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		/* probably need bat resize and create hash */
 	if (*rid) {
 		r = BATdescriptor(*rid);
-		if (r->ttype == TYPE_str && BATcount(r) == 0 && r->twidth < b->twidth) {
-			int m = b->twidth / r->twidth;
-			r->twidth = b->twidth;
-			r->tshift = b->tshift;
-			r->batCapacity /= m;
+		if (r->ttype == TYPE_str && BATcount(r) == 0) {
+		   	if (r->twidth < b->twidth) {
+				int m = b->twidth / r->twidth;
+				r->twidth = b->twidth;
+				r->tshift = b->tshift;
+				r->batCapacity /= m;
+			}
 
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);
@@ -979,6 +981,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			r->batDirtydesc = true;
 		}
 	} else {
+		assert(0);
 		if (b->ttype == TYPE_str) {
 			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
@@ -1085,10 +1088,10 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	return LALGcountstar(rid, gid, H, pid);
 }
 
-#define gsum(Type) \
-	if (tt == TYPE_##Type) { \
-			Type *in = Tloc(b, 0); \
-			Type *o  = Tloc(r, 0); \
+#define gsum(OutType, InType) \
+	if (tt == TYPE_##InType && ot == TYPE_##OutType) { \
+			InType *in = Tloc(b, 0); \
+			OutType *o = Tloc(r, 0); \
 			for(BUN i = 0; i<cnt; i++) \
 				o[grp[i]] += in[i]; \
 	}
@@ -1109,6 +1112,7 @@ LALGsum(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	if (*rid) {
 		r = BATdescriptor(*rid);
 	} else {
+		assert(0); /* should exist! */
 		r = COLnew(b->hseqbase, b->ttype, max, TRANSIENT);
 	}
 	BUN cnt = BATcount(r);
@@ -1124,16 +1128,26 @@ LALGsum(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 	if (!err && max) {
 		BUN cnt = BATcount(g);
-		int err = 0, tt = b->ttype;
+		int err = 0, tt = b->ttype, ot = r->ttype;
 
 		if (!err) {
 			oid *grp = Tloc(g, 0);
 
-			gsum(bte);
-			gsum(sht);
-			gsum(int);
-			gsum(lng);
-			gsum(hge);
+			gsum(bte,bte);
+			gsum(sht,bte);
+			gsum(sht,sht);
+			gsum(int,bte);
+			gsum(int,sht);
+			gsum(int,int);
+			gsum(lng,bte);
+			gsum(lng,sht);
+			gsum(lng,int);
+			gsum(lng,lng);
+			gsum(hge,bte);
+			gsum(hge,sht);
+			gsum(hge,int);
+			gsum(hge,lng);
+			gsum(hge,hge);
 		}
 		if (!err) {
 			BBPunfix(b->batCacheid);
@@ -1162,7 +1176,7 @@ static mel_func pipeline_init_funcs[] = {
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Project.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "count", LALGcountstar, false, "Project.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "sum", LALGsum, false, "Project.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "sum", LALGsum, false, "Project.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",int), batargany("p",2))),
  { .imp=NULL }
