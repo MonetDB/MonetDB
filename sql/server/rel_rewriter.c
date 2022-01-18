@@ -11,6 +11,7 @@
 #include "rel_prop.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
+#include "rel_dump.h"
 #include "rel_basetable.h"
 #include "mal_errors.h" /* for SQLSTATE() */
 

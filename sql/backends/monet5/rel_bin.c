@@ -17,6 +17,7 @@
 #include "rel_select.h"
 #include "rel_updates.h"
 #include "rel_predicates.h"
+#include "rel_rewriter.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -3735,13 +3736,20 @@ rel_getcount(sql_rel *rel)
  *			complicating expressions such as distinct
  */
 
-
 static lng
-exp_getcard(sql_rel *rel, sql_exp *e)
+exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	lng cnt = rel_getcount(rel);
 	sql_subtype *t = exp_subtype(e);
 
+	if (e->type == e_column && t && t->type->localtype == TYPE_str) {
+		sql_column *c = name_find_column(rel, e->l, e->r, -1, NULL);
+
+		if (c) {
+			int de = mvc_is_duplicate_eliminated(sql, c);
+			return de;
+		}
+	}
 	/* for now only based on type info, later use propagated cardinality estimation */
 	switch (ATOMstorage(t->type->localtype)) {
 		case TYPE_bte:
@@ -3758,7 +3766,7 @@ exp_getcard(sql_rel *rel, sql_exp *e)
  *					and cardinality estimation is low enough for extra resources for aggregation per thread.
  */
 static bool
-rel_groupby_2_phases(sql_rel *rel)
+rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 {
 	lng card = 1;
 	lng cnt = rel_getcount(rel);
@@ -3767,8 +3775,7 @@ rel_groupby_2_phases(sql_rel *rel)
 		list *l = rel->r;
 		for( node *n = l->h; n; n = n->next ) {
 			sql_exp *e = n->data;
-			lng lcard = exp_getcard(rel->l, e);
-			printf("lcard %ld\n", lcard);
+			lng lcard = exp_getcard(sql, rel, e);
 			if (lcard == cnt) {
 				card = cnt;
 				break;
@@ -3814,7 +3821,7 @@ rel_single_distinct(sql_rel *rel)
 static stmt *
 rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 {
-	bool _2phases = rel_groupby_2_phases(rel);
+	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 
 	if (!_2phases && list_empty(rel->r)) /* cannot handle global aggregation without 2 phases */
 		return NULL;
@@ -3850,7 +3857,7 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 				int tt = t->type->localtype;
 				//InstrPtr q = newStmt(be->mb, batRef, newRef);
 				InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-				int estimate = exp_getcard(rel->l, e);//rel_getcount(rel->l);
+				int estimate = exp_getcard(be->mvc, rel, e);//rel_getcount(rel->l);
 				if (estimate<0) {
 					assert(0);
 					estimate = 85000000;
