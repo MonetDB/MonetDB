@@ -1369,6 +1369,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			   and/or an attribute to count */
 			if (grp) {
 				as = grp;
+				grp = ext = NULL;
 			} else if (left) {
 				as = bin_find_smallest_column(be, left);
 				as = exp_count_no_nil_arg(e, ext, NULL, as);
@@ -3691,6 +3692,8 @@ rel_getcount(sql_rel *rel)
 
 	if (rel && (p = find_prop(rel->p, PROP_COUNT)) != NULL)
 		return p->number;
+	if (rel && rel->l && rel->op == op_select)
+		return rel_getcount(rel->l);
 	return -1;
 }
 
@@ -3785,9 +3788,6 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 	bool _2phases = rel_groupby_2_phases(rel);
 
 	if (!_2phases && list_empty(rel->r)) /* cannot handle global aggregation without 2 phases */
-		return NULL;
-
-	if (list_length(rel->r) > 1) /* single group by for now */
 		return NULL;
 
 	if (rel_single_distinct(rel))

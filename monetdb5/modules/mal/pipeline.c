@@ -169,105 +169,6 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 	return res;
 }
 
-#define unique_2_naive(Type) \
-		if (tt == TYPE_##Type) { \
-            Type *bp = Tloc(b, 0);        \
-			for(BUN i = 0; i<cnt; i++) { \
-				BUN p;					 \
-				bool fnd = 0;			 \
-                HASHloop_##Type(ui, ui.b->thash, p, bp+i) { \
-					fnd = 1;			 \
-					break;				 \
-				}						 \
-				if (!fnd) {				 \
-					if (BUNappend(u, bp+i, true) != GDK_SUCCEED) { \
-						err = 1;							\
-						break;								\
-					}									    \
-					ui.base = u->T.heap->base;				\
-					gp[r++] = b->hseqbase + i;			    \
-				}											\
-			}												\
-		}
-
-#define unique_2_lock(Type) \
-		if (tt == TYPE_##Type) { \
-			Hash *hs = u->thash; \
-            Type *bp = Tloc(b, 0); \
-            Type *up = Tloc(u, 0); \
-			BUN cur = BATcount(u); \
-			\
-			for(BUN i = 0; i<cnt; i++) { \
-				bool fnd = 0; \
-				BUN hb, prb = HASHprobe(hs, bp+i); \
-                for (hb = HASHget(hs, prb); \
-                    hb != BUN_NONE; \
-                    hb = HASHgetlink(hs, hb)) { \
-                    if (bp[i] == up[hb]) { \
-						fnd = 1; \
-                        break; \
-					} \
-                } \
-				if (!fnd) { \
-					BUN p = cur; \
-					up[cur++] = bp[i]; \
-                    HASHputlink(hs, p, HASHget(hs, prb)); \
-                    HASHput(hs, prb, p); \
-					gp[r++] = b->hseqbase + i; \
-				} \
-			} \
-			BATsetcount(u, cur); \
-		}
-
-#if 0
-static str
-LALGunique(bat *gid, bat *uid, const ptr *h, bat *bid, bat *sid)
-{
-	Pipeline *p = (Pipeline*)*h;
-	assert(*uid && !is_bat_nil(*uid));
-	BAT *u = BATdescriptor(*uid);
-	BAT *b = BATdescriptor(*bid);
-	assert(is_bat_nil(*sid)); /* no cands jet */
-	(void)sid;
-
-	if (u) {
-		MT_lock_set(&p->l);
-		BUN cnt = BATcount(b);
-
-		BAT *g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
-
-		/* probably need bat resize and create hash */
-		int err = 0, tt = b->ttype;
-		oid *gp = Tloc(g, 0);
-		BUN r = 0;
-		BUN ucap = BATcapacity(u), ucnt = BATcount(u);
-
-		if ((ucap - ucnt) < cnt) {
-			if (BATextend(u, (ucap - ucnt) + cnt ) != GDK_SUCCEED)
-				err = 1;
-		}
-        if (!err && BAThash(u) == GDK_SUCCEED) {
-			unique(bte)
-			unique(sht)
-			unique(int)
-			unique(lng)
-			unique(hge)
-		}
-		if (!err) {
-			BBPunfix(b->batCacheid);
-			BATsetcount(g, r);
-			/* props */
-			BBPkeepref(*uid = u->batCacheid);
-			BBPkeepref(*gid = g->batCacheid);
-		}
-		MT_lock_unset(&p->l);
-	}
-	return MAL_SUCCEED;
-}
-
-#endif
-
-
 #define GIDBITS 63
 typedef lng gid;
 
@@ -355,7 +256,7 @@ _ht_create( int type, int size, hash_table *p)
         h->mask = h->size-1;
         h->type = type;
         h->width = ATOMsize(type);
-		h->last = 1; /* 0 used for marking unused */
+		h->last = 0;
 		h->p = p;
 		if (type == TYPE_str) {
 			h->cmp = (fcmp)str_cmp;
@@ -734,7 +635,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
 					} \
 					slots--; \
-					g = slot++; \
+					g = ++slot; \
 					vals[g] = bp[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
@@ -770,7 +671,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
 					} \
 					slots--; \
-					g = slot++; \
+					g = ++slot; \
 					vals[g] = bp[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
@@ -807,7 +708,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
 					} \
 					slots--; \
-					g = slot++; \
+					g = ++slot; \
 					vals[g] = bpi; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
@@ -820,7 +721,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 
 
 static str
-LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
+LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 {
 	//Pipeline *p = (Pipeline*)*H;
 	(void)H;
@@ -828,7 +729,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	BAT *u = BATdescriptor(*uid);
 	BAT *b = BATdescriptor(*bid);
 	//assert(is_bat_nil(*sid)); /* no cands jet */
-	(void)sid;
+	//(void)sid;
 
 	hash_table *h = (hash_table*)u->T.ht;
 	assert(h);
@@ -838,7 +739,6 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 
-		/* probably need bat resize and create hash */
 		int err = 0, tt = b->ttype;
 		oid *gp = Tloc(g, 0);
 
@@ -854,6 +754,170 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		}
 		if (!err) {
 			BBPunfix(b->batCacheid);
+			BATsetcount(g, cnt);
+			/* props */
+			gid last = ATOMIC_GET(&h->last);
+			/* pass max id */
+			g->T.maxval = last;
+			g->tkey = FALSE;
+			BBPkeepref(*uid = u->batCacheid);
+			BBPkeepref(*rid = g->batCacheid);
+		}
+	}
+	return MAL_SUCCEED;
+}
+
+#define derive(Type) \
+	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
+		Type *bp = Tloc(b, 0); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool fnd = 0; \
+			gid k = (gid)combine(p[i], _hash_##Type(bp[i]))&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && (pgids[g] != p[i] || vals[g] != bp[i]);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bp[i]; \
+					pgids[g] = p[i]; \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+	}
+
+#define fderive(Type, BaseType) \
+	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
+		Type *bp = Tloc(b, 0); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool fnd = 0; \
+			gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && (pgids[g] != p[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]));) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bp[i]; \
+					pgids[g] = p[i]; \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+	}
+
+#define aderive(Type) \
+	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
+		BATiter bi = bat_iterator(b); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool fnd = 0; \
+			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			gid k = (gid)combine(p[i], str_hsh(bpi))&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && (pgids[g] != p[i] || (vals[g] && h->cmp(vals[g], bpi) != 0));) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bpi; \
+					pgids[g] = p[i]; \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+	}
+
+
+static str
+LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
+{
+	//Pipeline *p = (Pipeline*)*H;
+	(void)H;
+	assert(*uid && !is_bat_nil(*uid));
+	BAT *u = BATdescriptor(*uid);
+	BAT *b = BATdescriptor(*bid);
+	BAT *G = BATdescriptor(*Gid);
+	//assert(is_bat_nil(*sid)); /* no cands jet */
+	//(void)sid;
+
+	hash_table *h = (hash_table*)u->T.ht;
+	assert(h);
+	if (h) {
+		ATOMIC_BASE_TYPE expected = 0;
+		BUN cnt = BATcount(b);
+
+		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
+
+		int err = 0, tt = b->ttype;
+		oid *gp = Tloc(g, 0);
+		gid *p = Tloc(G, 0);
+		gid *pgids = h->pgids;
+
+		if (!err) {
+			derive(bte)
+			derive(sht)
+			derive(int)
+			derive(lng)
+			derive(hge)
+			fderive(flt, int)
+			fderive(dbl, lng)
+			aderive(str)
+		}
+		if (!err) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(G->batCacheid);
 			BATsetcount(g, cnt);
 			/* props */
 			gid last = ATOMIC_GET(&h->last);
@@ -963,10 +1027,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 }
 
 static str
-LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
+LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 {
-	(void)bid;
-	(void)nonil;
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = BATdescriptor(*gid);
 	BAT *r = NULL;
@@ -982,11 +1044,15 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 		r = COLnew(0, TYPE_lng, max, TRANSIENT);
 	}
 	/* probably need bat resize and create hash */
+	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
-		BUN cnt = BATcount(r);
-		if (BATextend(r, max*2) != GDK_SUCCEED)
+		BUN sz = max*2;
+		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
-		memset(Tloc(r, cnt), 0, sizeof(lng)*((max*2)-cnt));
+		memset(Tloc(r, cnt), 0, sizeof(lng)*(sz-cnt));
+	} else if (cnt == 0) {
+		BUN sz = BATcapacity(r);
+		memset(Tloc(r, 0), 0, sizeof(lng)*sz);
 	}
 
 	/* get max id from gid */
@@ -1013,6 +1079,14 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	return MAL_SUCCEED;
 }
 
+static str
+LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
+{
+	(void)bid;
+	(void)nonil;
+	return LALGcountstar(rid, gid, H, pid);
+}
+
 
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
@@ -1024,8 +1098,10 @@ static mel_func pipeline_init_funcs[] = {
  command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid))),
  command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid), batarg("gid",oid))),
  command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",4))),
+ command("group", "group", LALGderive, false, "Sub Group input.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batarg("pgid", oid), batargany("b",4))),
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Project.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "count", LALGcountstar, false, "Project.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",int), batargany("p",2))),
  { .imp=NULL }
