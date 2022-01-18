@@ -1,6 +1,9 @@
-START TRANSACTION;
+statement ok
+START TRANSACTION
 
-COPY 8115 RECORDS INTO "voc"."voyages" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+statement ok
+COPY 8115 RECORDS INTO "voc"."voyages" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 1	""	1	""	"AMSTERDAM"	"Jan Jakobsz. Schellinger"	260	NULL	"1594"	NULL	NULL	"A"	NULL	1595-04-02	"Texel"	NULL	NULL	true	1596-06-06	"Engano"	NULL	"from 04-08 till 11-08 in the Mosselbaai; from 13-09 till 07-10 in the Ampalazabaai; from 09-10 till 13-12 in S. Augustins Bay, where before departure 127 of the 249 men were still alive; 11-01 till 21-01 at Ste. Marie I.; from 23-01 till 12-02 in the Bay of Antongil. The AMSTERDAM was set on fire near Bawean, 11-01-1597."
 2	""	1	""	"DUIFJE"	"Simon Lambrechtsz. Mau"	50	"pinas"	"1594"	NULL	NULL	"A"	NULL	1595-04-02	"Texel"	NULL	NULL	true	1596-06-06	"Engano"	5001	"HOLLANDIA on 26-10-1595; he was succeeded by Hendrik Jansz."
 3	""	1	""	"HOLLANDIA"	"Jan Dignumsz. van Kwadijk+"	460	NULL	"1594"	NULL	NULL	"A"	NULL	1595-04-02	"Texel"	NULL	NULL	true	1596-06-06	"Engano"	5002	"Jan Dignumsz. died on 29-05-1595 and Mau was his successor."
@@ -8116,7 +8119,10 @@ COPY 8115 RECORDS INTO "voc"."voyages" FROM stdin USING DELIMITERS E'\t',E'\n','
 8399	""	1	""	"JONGE BONIFACIUS"	"Jan Nikolaas Kroese"	488	NULL	NULL	NULL	NULL	"Z"	"Z"	1795-01-01	NULL	1795-06-24	NULL	true	NULL	NULL	4774	"Almost all data concerning this homeward-bound voyage are missing. In August, 1795, the JONGE BONIFACIUS was captured by the English at the Cape."
 8400	""	1	""	"LOUISA ANTHONY"	"Kersje Hillebrandsz."	640	"fluit"	NULL	NULL	NULL	"A"	"A"	1795-01-01	NULL	1795-08-15	NULL	true	NULL	NULL	4777	"Almost all data concerning this homeward-bound voyage are missing. In August, 1795, the LOUISA ANTHONY was taken by the English at the Cape."
 8401	""	1	""	"VERTROUWEN"	"Hillebrand van Uijen"	890	"fluit"	NULL	NULL	NULL	"A"	"A"	1795-01-01	NULL	1795-08-14	NULL	true	NULL	NULL	4778	"the English at the Cape."
-COPY 2349 RECORDS INTO "voc"."craftsmen" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+
+statement ok
+COPY 2349 RECORDS INTO "voc"."craftsmen" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 1376	""	3	""	19	NULL	NULL	NULL	NULL	19
 1378	""	5	""	22	NULL	NULL	NULL	NULL	22
 1379	""	5	""	18	NULL	NULL	NULL	2	16
@@ -10466,7 +10472,10 @@ COPY 2349 RECORDS INTO "voc"."craftsmen" FROM stdin USING DELIMITERS E'\t',E'\n'
 8326	""	1	""	2	NULL	NULL	NULL	NULL	NULL
 8329	""	2	""	5	NULL	NULL	NULL	NULL	NULL
 8341	""	2	""	1	NULL	NULL	NULL	NULL	NULL
-COPY 938 RECORDS INTO "voc"."impotenten" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+
+statement ok
+COPY 938 RECORDS INTO "voc"."impotenten" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 5733	""	3	""	18	NULL	NULL	NULL	NULL	NULL
 5734	""	2	""	19	NULL	NULL	NULL	NULL	NULL
 5735	""	1	""	18	NULL	NULL	NULL	NULL	NULL
@@ -11405,7 +11414,10 @@ COPY 938 RECORDS INTO "voc"."impotenten" FROM stdin USING DELIMITERS E'\t',E'\n'
 8265	""	1	""	1	NULL	NULL	NULL	NULL	NULL
 8371	""	3	""	1	NULL	NULL	NULL	NULL	NULL
 8396	""	3	""	11	NULL	NULL	NULL	NULL	NULL
-COPY 3782 RECORDS INTO "voc"."invoices" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+
+statement ok
+COPY 3782 RECORDS INTO "voc"."invoices" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 5102	""	2	""	268964	"A"
 5103	""	2	""	164562	"Z"
 5105	""	2	""	110370	"A"
@@ -15188,7 +15200,10 @@ COPY 3782 RECORDS INTO "voc"."invoices" FROM stdin USING DELIMITERS E'\t',E'\n',
 8399	""	1	""	50232	"Z"
 8400	""	1	""	85711	"A"
 8401	""	1	""	106435	"A"
-COPY 2813 RECORDS INTO "voc"."passengers" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+
+statement ok
+COPY 2813 RECORDS INTO "voc"."passengers" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 310	""	2	""	66	NULL	NULL	NULL	2	64
 311	""	2	""	55	NULL	NULL	NULL	5	55
 318	""	5	""	17	NULL	NULL	NULL	4	13
@@ -18002,7 +18017,10 @@ COPY 2813 RECORDS INTO "voc"."passengers" FROM stdin USING DELIMITERS E'\t',E'\n
 8384	""	1	""	5	NULL	NULL	NULL	NULL	NULL
 8390	""	3	""	1	1	7	NULL	NULL	NULL
 8396	""	3	""	5	NULL	NULL	NULL	NULL	NULL
-COPY 4468 RECORDS INTO "voc"."seafarers" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+
+statement ok
+COPY 4468 RECORDS INTO "voc"."seafarers" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 196	""	1	""	65	NULL	NULL	NULL	NULL	NULL
 197	""	1	""	22	NULL	NULL	NULL	NULL	NULL
 296	""	1	""	126	NULL	NULL	NULL	NULL	NULL
@@ -22471,7 +22489,10 @@ COPY 4468 RECORDS INTO "voc"."seafarers" FROM stdin USING DELIMITERS E'\t',E'\n'
 8371	""	3	""	120	NULL	NULL	NULL	NULL	NULL
 8384	""	1	""	118	NULL	NULL	NULL	NULL	NULL
 8396	""	3	""	105	1	11	NULL	NULL	NULL
-COPY 4177 RECORDS INTO "voc"."soldiers" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+
+statement ok
+COPY 4177 RECORDS INTO "voc"."soldiers" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 296	""	1	""	90	NULL	NULL	NULL	NULL	NULL
 298	""	1	""	90	NULL	NULL	NULL	NULL	NULL
 299	""	1	""	55	NULL	NULL	NULL	NULL	NULL
@@ -26649,7 +26670,10 @@ COPY 4177 RECORDS INTO "voc"."soldiers" FROM stdin USING DELIMITERS E'\t',E'\n',
 8351	""	2	""	6	NULL	NULL	NULL	NULL	NULL
 8354	""	2	""	4	NULL	NULL	NULL	NULL	NULL
 8396	""	3	""	44	NULL	NULL	NULL	NULL	NULL
-COPY 2454 RECORDS INTO "voc"."total" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+
+statement ok
+COPY 2454 RECORDS INTO "voc"."total" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 1	""	1	""	59	NULL	NULL	NULL	NULL	NULL
 2	""	1	""	20	NULL	NULL	NULL	NULL	NULL
 3	""	1	""	85	NULL	NULL	NULL	NULL	NULL
@@ -29105,28 +29129,55 @@ COPY 2454 RECORDS INTO "voc"."total" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 8395	""	2	""	107	NULL	3	NULL	NULL	NULL
 8398	""	2	""	40	NULL	NULL	NULL	NULL	NULL
 
+statement ok
+ALTER TABLE "voyages" ADD PRIMARY KEY ("number", "number_sup")
 
-ALTER TABLE "voyages" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "craftsmen" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "impotenten" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "passengers" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "seafarers" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "soldiers" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "total" ADD PRIMARY KEY ("number", "number_sup");
+statement ok
+ALTER TABLE "craftsmen" ADD PRIMARY KEY ("number", "number_sup")
 
+statement ok
+ALTER TABLE "impotenten" ADD PRIMARY KEY ("number", "number_sup")
+
+statement ok
+ALTER TABLE "passengers" ADD PRIMARY KEY ("number", "number_sup")
+
+statement ok
+ALTER TABLE "seafarers" ADD PRIMARY KEY ("number", "number_sup")
+
+statement ok
+ALTER TABLE "soldiers" ADD PRIMARY KEY ("number", "number_sup")
+
+statement ok
+ALTER TABLE "total" ADD PRIMARY KEY ("number", "number_sup")
+
+statement ok
 ALTER TABLE "craftsmen" ADD FOREIGN KEY ("number", "number_sup")
-	REFERENCES "voyages" ("number", "number_sup");
-ALTER TABLE "impotenten" ADD FOREIGN KEY ("number", "number_sup")
-	REFERENCES "voyages" ("number", "number_sup");
-ALTER TABLE "invoices" ADD FOREIGN KEY ("number", "number_sup")
-	REFERENCES "voyages" ("number", "number_sup");
-ALTER TABLE "passengers" ADD FOREIGN KEY ("number", "number_sup")
-	REFERENCES "voyages" ("number", "number_sup");
-ALTER TABLE "seafarers" ADD FOREIGN KEY ("number", "number_sup")
-	REFERENCES "voyages" ("number", "number_sup");
-ALTER TABLE "soldiers" ADD FOREIGN KEY ("number", "number_sup")
-	REFERENCES "voyages" ("number", "number_sup");
-ALTER TABLE "total" ADD FOREIGN KEY ("number", "number_sup")
-	REFERENCES "voyages" ("number", "number_sup");
+	REFERENCES "voyages" ("number", "number_sup")
 
-commit;
+statement ok
+ALTER TABLE "impotenten" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup")
+
+statement ok
+ALTER TABLE "invoices" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup")
+
+statement ok
+ALTER TABLE "passengers" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup")
+
+statement ok
+ALTER TABLE "seafarers" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup")
+
+statement ok
+ALTER TABLE "soldiers" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup")
+
+statement ok
+ALTER TABLE "total" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup")
+
+statement ok
+commit
+

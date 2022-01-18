@@ -1,5 +1,7 @@
-START TRANSACTION;
+statement ok
+START TRANSACTION
 
+statement ok
 CREATE TABLE "voyages" (
 	"number"            integer	NOT NULL,
 	"number_sup"        char(1)	NOT NULL,
@@ -23,8 +25,9 @@ CREATE TABLE "voyages" (
 	"arrival_harbour"   varchar(30),
 	"next_voyage"       integer,
 	"particulars"       varchar(530)
-);
+)
 
+statement ok
 CREATE TABLE "craftsmen" (
 	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
@@ -36,8 +39,9 @@ CREATE TABLE "craftsmen" (
 	"onboard_at_cape"      integer,
 	"death_during_voyage"  integer,
 	"onboard_at_arrival"   integer
-);
+)
 
+statement ok
 CREATE TABLE "impotenten" (
 	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
@@ -49,8 +53,9 @@ CREATE TABLE "impotenten" (
 	"onboard_at_cape"      integer,
 	"death_during_voyage"  integer,
 	"onboard_at_arrival"   integer
-);
+)
 
+statement ok
 CREATE TABLE "invoices" (
 	"number"     integer,
 	"number_sup" char(1),
@@ -58,8 +63,9 @@ CREATE TABLE "invoices" (
 	"trip_sup"   char(1),
 	"invoice"    integer,
 	"chamber"    char(1)
-);
+)
 
+statement ok
 CREATE TABLE "passengers" (
 	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
@@ -71,8 +77,9 @@ CREATE TABLE "passengers" (
 	"onboard_at_cape"      integer,
 	"death_during_voyage"  integer,
 	"onboard_at_arrival"   integer
-);
+)
 
+statement ok
 CREATE TABLE "seafarers" (
 	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
@@ -84,8 +91,9 @@ CREATE TABLE "seafarers" (
 	"onboard_at_cape"      integer,
 	"death_during_voyage"  integer,
 	"onboard_at_arrival"   integer
-);
+)
 
+statement ok
 CREATE TABLE "soldiers" (
 	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
@@ -97,8 +105,9 @@ CREATE TABLE "soldiers" (
 	"onboard_at_cape"      integer,
 	"death_during_voyage"  integer,
 	"onboard_at_arrival"   integer
-);
+)
 
+statement ok
 CREATE TABLE "total" (
 	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
@@ -110,6 +119,8 @@ CREATE TABLE "total" (
 	"onboard_at_cape"      integer,
 	"death_during_voyage"  integer,
 	"onboard_at_arrival"   integer
-);
+)
 
-commit;
+statement ok
+commit
+
