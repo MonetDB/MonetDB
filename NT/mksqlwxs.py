@@ -86,7 +86,7 @@ def main():
     print(r'    </Property>')
     print(r'    <Property Id="DEBUGEXISTS">')
     print(r'      <DirectorySearch Id="CheckFileDir1" Path="[INSTALLDIR]\bin" Depth="0">')
-    print(r'        <FileSearch Id="CheckFile1" Name="libbat.pdb"/>')
+    print(r'        <FileSearch Id="CheckFile1" Name="mserver5.pdb"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     print(r'    <Property Id="INCLUDEEXISTS">')
@@ -161,14 +161,14 @@ def main():
                vcpkg.format(r'bin\lzma.dll'),
                vcpkg.format(r'bin\pcre.dll'),
                vcpkg.format(r'bin\zlib1.dll')])
-    # id = comp(debug, id, 14,
-    #           [r'bin\mclient.pdb',
-    #            r'bin\mserver5.pdb',
-    #            r'bin\msqldump.pdb',
-    #            r'lib\libbat.pdb',
-    #            r'lib\libmapi.pdb',
-    #            r'lib\libmonetdb5.pdb',
-    #            r'lib\libstream.pdb'])
+    id = comp(debug, id, 14,
+              [r'bin\mclient.pdb',
+               r'bin\mserver5.pdb',
+               r'bin\msqldump.pdb',
+               r'lib\bat.pdb',
+               r'lib\mapi.pdb',
+               r'lib\monetdb5.pdb',
+               r'lib\stream.pdb'])
     id = comp(geom, id, 14,
               [vcpkg.format(r'bin\geos_c.dll'),
                vcpkg.format(r'bin\geos.dll')])

@@ -22,6 +22,16 @@
                           strcmp((sf)->func->base.name, "nullif") == 0)
 #define is_case_func(sf) (strcmp((sf)->func->base.name, "case") == 0)
 
+typedef struct global_props {
+	int cnt[ddl_maxops];
+	uint8_t
+		instantiate:1,
+		needs_mergetable_rewrite:1,
+		needs_remote_replica_rewrite:1,
+		needs_distinct:1,
+		needs_setjoin_rewrite:1;
+} global_props;
+
 extern sql_exp *rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth);
 extern sql_rel *rewrite_simplify(visitor *v, sql_rel *rel);
 
@@ -41,5 +51,8 @@ try_remove_empty_select(visitor *v, sql_rel *rel)
 extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
 
 extern atom *exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e);
+
+extern int find_member_pos(list *l, sql_table *t);
+extern sql_column *name_find_column(sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt);
 
 #endif /*_REL_REWRITER_H_*/

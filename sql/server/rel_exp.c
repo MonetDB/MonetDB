@@ -1678,11 +1678,13 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_r
 					ne = e;
 			} else if (rel_base_bind_column_(rel, e->r))
 				ne = e;
-		} else if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
+		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op))) ||
+					(!list_empty(rel->attr) && is_join(rel->op))) {
+			list *l = rel->attr ? rel->attr : rel->exps; 
 			if (e->l) {
-				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
+				ne = exps_bind_column2(l, e->l, e->r, NULL);
 			} else {
-				ne = exps_bind_column(rel->exps, e->r, NULL, NULL, 1);
+				ne = exps_bind_column(l, e->r, NULL, NULL, 1);
 			}
 		}
 		if (ne && res)
@@ -1745,8 +1747,6 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, bool subexp, sql_re
 			ne = rel_find_exp_and_corresponding_rel(rel->l, e, subexp, res, under_join);
 			if (!ne && is_join(rel->op))
 				ne = rel_find_exp_and_corresponding_rel(rel->r, e, subexp, res, under_join);
-			if (ne && under_join && is_join(rel->op))
-				*under_join = true;
 			break;
 		case op_table:
 		case op_basetable:
@@ -1756,6 +1756,8 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, bool subexp, sql_re
 				ne = rel_find_exp_and_corresponding_rel(rel->l, e, subexp, res, under_join);
 		}
 	}
+	if (ne && under_join && is_join(rel->op))
+		*under_join = true;
 	return ne;
 }
 

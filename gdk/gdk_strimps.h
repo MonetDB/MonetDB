@@ -34,7 +34,4 @@ typedef struct {
 } PairHistogramElem;
 
 
-gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
-gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
-gdk_export gdk_return STRMPappendBitstring(BAT *b, const char *s);
 #endif /* _GDK_STRIMPS_H_ */

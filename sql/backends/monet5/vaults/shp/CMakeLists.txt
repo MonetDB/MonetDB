@@ -36,7 +36,7 @@ if(GDAL_FOUND)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
-  target_link_libraries(shp 
+  target_link_libraries(shp
     PRIVATE
     monetdb_config_header
     mutils
@@ -46,17 +46,24 @@ if(GDAL_FOUND)
     $<$<VERSION_LESS:${CMAKE_VERSION},3.14.0>:${GDAL_LIBRARY}>
     $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.14.0>:GDAL::GDAL>)
 
-  set_target_properties(shp 
-    PROPERTIES 
-    OUTPUT_NAME 
+  set_target_properties(shp
+    PROPERTIES
+    OUTPUT_NAME
     _shp)
 
-  target_compile_definitions(shp 
-    PRIVATE 
+  target_compile_definitions(shp
+    PRIVATE
     LIBGTIFF)
 
-  install(TARGETS 
-    shp 
+  install(TARGETS
+    shp
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
     COMPONENT server)
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:shp>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      OPTIONAL)
+  endif()
 endif()

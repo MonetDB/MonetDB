@@ -126,4 +126,12 @@ install(FILES
   ${CMAKE_INSTALL_DOCDIR}
   COMPONENT server)
 
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:mserver5>
+    $<TARGET_PDB_FILE:shutdowntest>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    OPTIONAL)
+endif()
+
 # vim: set ts=2:sw=2:et

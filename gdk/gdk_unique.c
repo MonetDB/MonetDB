@@ -267,11 +267,11 @@ BATunique(BAT *b, BAT *s)
 				HASHput(hs, prb, p);
 			}
 		}
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	}
 	if (BATcount(bn) == bi.count) {
 		/* it turns out all values are distinct */

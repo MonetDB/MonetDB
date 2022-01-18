@@ -1950,6 +1950,12 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 					"grant execute on function \"sys\".\"var\" to public;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set system = true"
+					" where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys');\n"
+					"update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d);\n",
+					(int) F_UNION);
+
+			pos += snprintf(buf + pos, bufsize - pos,
 					"create procedure sys.hot_snapshot(tarfile string, onserver bool)\n"
 					"external name sql.hot_snapshot;\n"
 					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
@@ -1964,20 +1970,6 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 				"grant execute on procedure sys.hot_snapshot(string) to \".snapshot\";\n"
 				"grant execute on procedure sys.hot_snapshot(string, bool) to \".snapshot\";\n"
 			);
-
-			/* update system tables so that the content
-			 * looks more like what it would be if sys.var
-			 * had been defined by the C code in
-			 * sql_create_env() */
-			pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true,"
-					//" func = 'CREATE FUNCTION \"sys\".\"var\"() RETURNS TABLE(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) EXTERNAL NAME \"sql\".\"sql_variables\";',"
-					" language = 2, side_effect = false where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-					"update sys.args set type = 'char' where func_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d) and type = 'clob';\n"
-					"update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d);\n",
-					(int) F_UNION,
-					(int) F_UNION,
-					(int) F_UNION);
 
 			/* SQL functions without backend implementations */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -3323,6 +3315,32 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
 
+	/* this bit of code is to upgrade from a Jan2022 RC to the Jan2022 release */
+	sql_allocator *old_sa = sql->sa;
+	if ((sql->sa = sa_create(sql->pa)) != NULL) {
+		list *l;
+		if ((l = sa_list(sql->sa)) != NULL) {
+			sql_find_subtype(&tp, "varchar", 0, 0);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			if (sql_bind_func_(sql, s->base.name, "strimp_create", l, F_PROC)) {
+				/* do the upgrade by removing the two functions */
+				const char *query =
+					"drop filter function sys.strimp_filter(string, string);\n"
+					"drop procedure sys.strimp_create(string, string, string);\n";
+				printf("Running database upgrade commands:\n%s\n", query);
+				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			}
+			sql->session->status = 0; /* if the function was not found clean the error */
+			sql->errstr[0] = '\0';
+		}
+		sa_destroy(sql->sa);
+		if (err)
+			return err;
+	}
+	sql->sa = old_sa;
+
 	sql_find_subtype(&tp, "bigint", 0, 0);
 	if (!sql_bind_func(sql, s->base.name, "epoch", &tp, NULL, F_FUNC)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
@@ -3331,12 +3349,12 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		return NULL;
 	}
 
-	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
 	if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
 		return err;
 	*systabfixed = true;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
 
@@ -4199,17 +4217,6 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					);
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where name in ('fkey_actions', 'fkeys') AND schema_id = 2000;\n");
-
-	/* 90_strimps.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-					"CREATE FILTER FUNCTION sys.strimp_filter(strs STRING, q STRING) EXTERNAL NAME strimps.strimpfilter;\n"
-					"GRANT EXECUTE ON FILTER FUNCTION sys.strimp_filter TO PUBLIC;\n"
-					"CREATE PROCEDURE sys.strimp_create(sch string, tab string, col string)\n"
-					" EXTERNAL NAME sql.createstrimps;\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where system <> true and name = 'strimp_filter' and schema_id = 2000 and type = %d;\n"
-					"update sys.functions set system = true where system <> true and name = 'strimp_create' and schema_id = 2000 and type = %d;\n",
-					F_FILT, F_PROC);
 
 	/* recreate SQL functions that just need to be recompiled since the
 	 * MAL functions's "unsafe" property was changed */

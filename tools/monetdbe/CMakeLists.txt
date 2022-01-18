@@ -97,3 +97,10 @@ install(EXPORT monetdbeTargets
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT embeddeddev)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:monetdbe>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()

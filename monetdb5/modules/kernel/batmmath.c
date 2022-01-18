@@ -383,7 +383,6 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	BUN q = 0;
 	int *restrict vals;
-	str msg = MAL_SUCCEED;
 	struct canditer ci = {0};
 	bat *res = getArgReference_bat(stk, pci, 0);
 
@@ -391,12 +390,10 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *bid = getArgReference_bat(stk, pci, 1), *sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 		if (!(b = BBPquickdesc(*bid))) {
-			msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto bailout;
+			throw(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
-			msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto bailout;
+			throw(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		q = canditer_init(&ci, b, bs);
 		if (bs)
@@ -406,8 +403,7 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 	if (!(bn = COLnew(ci.hseq, TYPE_int, q, TRANSIENT))) {
-		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		throw(MAL, "batmmath.rand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	vals = Tloc(bn, 0);
@@ -421,18 +417,14 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	MT_lock_unset(&mmath_rse_lock);
 #endif
 
-bailout:
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = false;
-		bn->tnonil = true;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
-	return msg;
+	BATsetcount(bn, q);
+	bn->tnil = false;
+	bn->tnonil = true;
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	BBPkeepref(*res = bn->batCacheid);
+	return MAL_SUCCEED;
 }
 
 scienceImpl(acos)

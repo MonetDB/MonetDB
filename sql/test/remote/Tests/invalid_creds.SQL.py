@@ -121,16 +121,15 @@ with tempfile.TemporaryDirectory() as TMPDIR:
             try:
                 c.execute("SELECT COUNT(*) FROM ratings0")
                 sys.stderr.write("Exception expected")
-            except pymonetdb.OperationalError as e1:
-                if "invalid credentials for user 'invaliduser'" not in str(e1):
-                    sys.stderr.write("Exception: invalid credentials for user 'invaliduser' expected")
-
+            except pymonetdb.DatabaseError as e:
+                if 'Exception occurred in the remote server, please check the log there' not in str(e):
+                   print(str(e))
             try:
                 c.execute("SELECT COUNT(*) FROM ratings")
                 sys.stderr.write("Exception expected")
-            except pymonetdb.OperationalError as e2:
-                if "invalid credentials for user 'invaliduser'" not in str(e2):
-                    sys.stderr.write("Exception: invalid credentials for user 'invaliduser' expected")
+            except pymonetdb.DatabaseError as e:
+                if 'Exception occurred in the remote server, please check the log there' not in str(e):
+                   print(str(e))
             for wrec in workers:
                 wrec['proc'].communicate()
             supervisorproc.communicate()

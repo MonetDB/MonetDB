@@ -31,7 +31,6 @@
 #include "monetdb_config.h"
 #include "mstring.h"
 #include "gdk.h"
-#include "gdk_system.h"
 #include "gdk_system_private.h"
 
 #include <time.h>

@@ -26,33 +26,40 @@ if(LIBR_FOUND)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
-  target_link_libraries(rapi 
+  target_link_libraries(rapi
     PRIVATE
     monetdb_config_header
-    mutils 
+    mutils
     bat
     monetdb5
     sqlinclude
     LibR::LibR)
 
-  target_compile_definitions(rapi 
-    PRIVATE 
+  target_compile_definitions(rapi
+    PRIVATE
     LIBRAPI)
 
-  set_target_properties(rapi 
-    PROPERTIES 
-    OUTPUT_NAME 
+  set_target_properties(rapi
+    PROPERTIES
+    OUTPUT_NAME
     _rapi)
 
-  install(TARGETS 
-    rapi 
-    DESTINATION 
+  install(TARGETS
+    rapi
+    DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/monetdb5
     COMPONENT rapi)
 
-  install(FILES 
-    rapi.R 
-    DESTINATION 
+  install(FILES
+    rapi.R
+    DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/monetdb5
     COMPONENT rapi)
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:rapi>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      OPTIONAL)
+  endif()
 endif()

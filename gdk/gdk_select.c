@@ -143,9 +143,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash == NULL) {
 			GDKerror("Hash destroyed before we could use it\n");
-			BBPreclaim(bn);
-			MT_rwlock_rdunlock(&b->thashlock);
-			return NULL;
+			goto bailout;
 		}
 	}
 	switch (ATOMbasetype(b->ttype)) {
@@ -168,11 +166,8 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				dst = buninsfix(bn, dst, cnt, o,
 						maximum - BATcapacity(bn),
 						maximum);
-				if (dst == NULL) {
-					MT_rwlock_rdunlock(&b->thashlock);
-					BBPreclaim(bn);
-					return NULL;
-				}
+				if (dst == NULL)
+					goto bailout;
 				cnt++;
 			}
 		}
@@ -184,11 +179,8 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			dst = buninsfix(bn, dst, cnt, o,
 					maximum - BATcapacity(bn),
 					maximum);
-			if (dst == NULL) {
-				MT_rwlock_rdunlock(&b->thashlock);
-				BBPreclaim(bn);
-				return NULL;
-			}
+			if (dst == NULL)
+				goto bailout;
 			cnt++;
 		}
 	}
@@ -210,6 +202,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	return bn;
 
   bailout:
+	MT_rwlock_rdunlock(&b->thashlock);
 	BBPreclaim(bn);
 	return NULL;
 }

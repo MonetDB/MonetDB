@@ -141,3 +141,10 @@ install(EXPORT streamTargets
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT streamdev)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:stream>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()

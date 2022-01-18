@@ -71,6 +71,13 @@ if(GEOS_FOUND)
     PUBLIC_HEADER
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:geomodule>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      OPTIONAL)
+  endif()
 endif()
 
 # vim: set ts=2:sw=2:et

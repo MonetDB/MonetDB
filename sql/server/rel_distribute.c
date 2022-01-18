@@ -128,7 +128,8 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 				break;
 			}
 		}
-	} else { /* no match, find one without remote or use first */
+	}
+	if (!res) { /* no match, find one without remote or use first */
 		sql_table *pt = NULL;
 		int remote = 1;
 

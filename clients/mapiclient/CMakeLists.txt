@@ -95,4 +95,12 @@ install(FILES
   DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
   COMPONENT client)
 
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:mclient>
+    $<TARGET_PDB_FILE:msqldump>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    OPTIONAL)
+endif()
+
 # vim: set ts=2:sw=2:et

@@ -1,4 +1,7 @@
-create
+create1
+USER=voc&PASSWD=voc?create2
+create3
+USER=test&PASSWD=test?create4
 dump
 dump_with_voc
 dump_with_test

@@ -174,7 +174,7 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 			InstrPtr p = newFcnCall(mb, sqlRef, importColumnRef);
 			setReturnArgument(p, old->argv[idx]);
 			int new_count_var = newTmpVariable(mb, TYPE_oid);
-			pushReturn(mb, p, new_count_var);
+			p = pushReturn(mb, p, new_count_var);
 			p = pushStr(mb, p, method);
 			p = pushBit(mb, p, byteswap);
 			p = pushStr(mb, p, path);

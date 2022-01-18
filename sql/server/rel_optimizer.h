@@ -16,10 +16,7 @@ extern sql_rel *rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value
 
 extern int exp_joins_rels(sql_exp *e, list *rels);
 
-extern sql_column *name_find_column(sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt);
 /* WARNING exps_unique doesn't check for duplicate NULL values */
 extern int exps_unique(mvc *sql, sql_rel *rel, list *exps);
-
-extern sql_rel *rel_dce(mvc *sql, sql_rel *rel);
 
 #endif /*_REL_OPTIMIZER_H_*/

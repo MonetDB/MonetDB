@@ -116,7 +116,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 		getArg(q,0)= newTmpVariable(mb, TYPE_void);\
 		q= addArgument(mb,q,location[getArg(p,j)]);\
 		q= pushStr(mb,q, getVarName(mb,getArg(p,j)));\
-		(void) addArgument(mb,q,getArg(p,j));\
+		q= addArgument(mb,q,getArg(p,j));\
 		pushInstruction(mb,q);\
 	}
 
@@ -323,7 +323,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					getArg(q,0)= newTmpVariable(mb, TYPE_void);
 					q= addArgument(mb, q, remoteSite);
 					q= pushStr(mb,q, getVarName(mb,getArg(p,j)));
-					(void) addArgument(mb, q, getArg(p,j));
+					q= addArgument(mb, q, getArg(p,j));
 					pushInstruction(mb,q);
 				}
 				s= RQcall2str(mb, p);

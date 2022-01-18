@@ -81,4 +81,11 @@ install(EXPORT mapiTargets
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT clientdev)
 
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:mapi>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()
+
 # vim: set ts=2:sw=2:et

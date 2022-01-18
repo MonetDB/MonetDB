@@ -1295,15 +1295,11 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 	if ((temp != SQL_PERSIST && tt == tt_table && commit_action == CA_COMMIT) || temp == SQL_DECLARE)
 		commit_action = CA_DELETE;
 
-	if (temp != SQL_DECLARED_TABLE) {
-		if (temp != SQL_PERSIST && tt == tt_table) {
-			if (temp == SQL_LOCAL_TEMP || temp == SQL_GLOBAL_TEMP) {
-				if (sname && strcmp(sname, "tmp") != 0)
-					return sql_error(sql, 02, SQLSTATE(3F000) "%s TABLE: %s temporary tables should be stored in the 'tmp' schema",
-									 action, (temp == SQL_LOCAL_TEMP) ? "local" : "global");
-				s = mvc_bind_schema(sql, "tmp");
-			}
-		}
+	if (temp == SQL_LOCAL_TEMP || temp == SQL_GLOBAL_TEMP) {
+		if (sname && strcmp(sname, "tmp") != 0)
+			return sql_error(sql, 02, SQLSTATE(3F000) "%s TABLE: %s temporary tables should be stored in the 'tmp' schema",
+							 action, (temp == SQL_LOCAL_TEMP) ? "local" : "global");
+		s = tmp_schema(sql);
 	}
 
 	if (global && mvc_bind_table(sql, s, name)) {
@@ -1379,7 +1375,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		if (!sq)
 			return NULL;
 
-		if ((tt == tt_merge_table || tt == tt_remote || tt == tt_replica_table) && with_data)
+		if (tt != tt_table && with_data)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot create %s 'with data'", action,
 							 TABLE_TYPE_DESCRIPTION(tt, properties));
 

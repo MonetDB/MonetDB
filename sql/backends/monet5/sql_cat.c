@@ -745,6 +745,10 @@ IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void 
 		if (!(b = BATdescriptor(nb->batCacheid)))
 			throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
 	}
+
+	/* TODO: This should be removed when strimps are better integrated with imprints */
+	if (func == IMPSdestroy && b->ttype == TYPE_str)
+		func = STRMPdestroy;
 	func(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1278,7 +1282,15 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					if (!(b = BATdescriptor(nb->batCacheid)))
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
 				}
-				r = BATimprints(b);
+				if(b->ttype == TYPE_str) {
+					if (t->access != TABLE_READONLY)
+						throw(SQL, "sql.alter_TABLE", SQLSTATE(HY005) "Cannot create string imprint index %s on non read only table %s.%s", i->base.name, s->base.name, t->base.name);
+					r = STRMPcreate(b, NULL);
+				}
+				else {
+					r = BATimprints(b);
+				}
+
 				BBPunfix(b->batCacheid);
 				if (r != GDK_SUCCEED)
 					throw(SQL, "sql.alter_table", GDK_EXCEPTION);

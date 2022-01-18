@@ -1135,6 +1135,9 @@ fcnHeader(Client cntxt, int kind)
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
 	if(cntxt->curprg == NULL) {
+		/* reinstate curprg to have a place for the error */
+		cntxt->curprg = cntxt->backup;
+		cntxt->backup = NULL;
 		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return 0;
 	}

@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_system.h"
 
 /* Calculate a cross product between bats l and r with optional
  * candidate lists sl for l and sr for r.

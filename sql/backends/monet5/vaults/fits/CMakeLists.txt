@@ -35,18 +35,18 @@ if(HAVE_FITS)
     fits.h
     ${MONETDB_CURRENT_SQL_SOURCES})
 
-  set_target_properties(fits 
-    PROPERTIES 
+  set_target_properties(fits
+    PROPERTIES
     NO_SONAME ON
-    OUTPUT_NAME 
+    OUTPUT_NAME
     _fits)
 
-  target_compile_definitions(fits 
-    PRIVATE 
+  target_compile_definitions(fits
+    PRIVATE
     LIBFITS)
 
-  target_link_libraries(fits 
-    PRIVATE 
+  target_link_libraries(fits
+    PRIVATE
     monetdb_config_header
     mutils
     bat
@@ -54,8 +54,15 @@ if(HAVE_FITS)
     sqlinclude
     CFitsIO::CFitsIO)
 
-  install(TARGETS fits 
-    DESTINATION 
+  install(TARGETS fits
+    DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/monetdb5
     COMPONENT fits)
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:fits>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      OPTIONAL)
+  endif()
 endif()

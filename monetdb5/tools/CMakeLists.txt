@@ -70,4 +70,11 @@ install(EXPORT monetdb5Targets
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT serverdev)
 
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:monetdb5>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()
+
 # vim: set ts=2:sw=2:et
