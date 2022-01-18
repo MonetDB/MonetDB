@@ -8976,7 +8976,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 
 			if (list_empty(mt->members)) /* in DDL statement cases skip if mergetable is empty */
 				return rel;
-			if (sel) { /* prepare prunning information once */
+			if (sel && !list_empty(sel->exps)) { /* prepare prunning information once */
 				info = SA_NEW(v->sql->sa, merge_table_prune_info);
 				*info = (merge_table_prune_info) {
 					.cols = sa_list(v->sql->sa),
