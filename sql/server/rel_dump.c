@@ -1653,7 +1653,8 @@ rel_set_types(mvc *sql, sql_rel *rel)
 	for(n=iexps->h, m=rel->exps->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e = m->data;
 
-		e->tpe = *exp_subtype( n->data );
+		if (!e->tpe.type)
+			e->tpe = *exp_subtype( n->data );
 	}
 	return 0;
 }
@@ -2257,7 +2258,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(*pos)++;
 		skipWS(r, pos);
 
-		if (!(exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0, 1)))
+		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_setop(sql->sa, lrel, rrel, j);
 		rel_setop_set_exps(sql, rel, exps, false);
