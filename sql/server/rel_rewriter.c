@@ -343,6 +343,12 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 	case op_anti:
 		if (!c)
 			c = name_find_column( rel->l, rname, name, pnr, bt);
+		if (!c && !list_empty(rel->attr)) {
+			if (rname)
+				alias = exps_bind_column2(rel->attr, rname, name, NULL);
+			else
+				alias = exps_bind_column(rel->attr, name, NULL, NULL, 1);
+		}
 		return c;
 	case op_select:
 	case op_topn:
@@ -388,7 +394,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 	case op_merge:
 		break;
 	}
-	if (alias) { /* we found an expression with the correct name, but
+	if (alias && !is_join(rel->op)) { /* we found an expression with the correct name, but
 			we need sql_columns */
 		if (rel->l && alias->type == e_column) /* real alias */
 			return name_find_column(rel->l, alias->l, alias->r, pnr, bt);

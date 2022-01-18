@@ -1048,6 +1048,8 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 {
 	sql_exp *ne = NULL;
 
+	assert(is_project(f->op));
+
 	switch(e->type) {
 	case e_column:
 		if (e->l) {
