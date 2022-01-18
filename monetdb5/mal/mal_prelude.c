@@ -318,7 +318,7 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 }
 
 int
-melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ... )
+melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ... )
 {
 	int i, idx;
 	Module c;
