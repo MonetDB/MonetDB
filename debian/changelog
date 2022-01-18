@@ -1,3 +1,40 @@
+monetdb (11.43.5) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Jan 2022 10:05:33 +0100
+
+monetdb (11.43.5) unstable; urgency=low
+
+  * NT: We now build Windows binaries using Visual Studio 2022.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 13 Jan 2022 10:05:33 +0100
+
+monetdb (11.43.5) unstable; urgency=low
+
+  * gdk: Implement string imprints (strimps for short) a pre-filter structure
+    for strings in order to accelerate LIKE queries. If a strimp exists
+    for a specific string column the strings are pre-filtered, rejecting
+    strings that cannot possibly match, before the more expensive and
+    accurate matching algorithms run.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Wed, 12 Jan 2022 10:05:33 +0100
+
+monetdb (11.43.5) unstable; urgency=low
+
+  * sql: Add string imprints to the existing imprints index creation syntax. On
+    string column "col" of a table "tbl" marked read only ("ALTER TABLE tbl
+    SET READ ONLY") the user can create a string imprint using the syntax:
+    "CREATE IMPRINTS INDEX index_name ON tbl(col);".
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Wed, 12 Jan 2022 10:05:33 +0100
+
+monetdb (11.43.5) unstable; urgency=low
+
+  * MonetDB: A couple of concurrency issues have been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 12 Jan 2022 10:05:33 +0100
+
 monetdb (11.43.3) unstable; urgency=low
 
   * Rebuilt.
