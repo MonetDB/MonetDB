@@ -252,7 +252,6 @@ _ht_create( int type, int size, hash_table *p)
         if (bits >= GIDBITS)
                 bits = GIDBITS-1;
         h->size = (gid)1<<bits;
-		printf("size %d\n", (int)h->size);
         h->mask = h->size-1;
         h->type = type;
         h->width = ATOMsize(type);
@@ -725,9 +724,16 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 {
 	//Pipeline *p = (Pipeline*)*H;
 	(void)H;
-	assert(*uid && !is_bat_nil(*uid));
-	BAT *u = BATdescriptor(*uid);
-	BAT *b = BATdescriptor(*bid);
+	/* private or not */
+	bool private = (!*uid || is_bat_nil(*uid));
+
+	BAT *u, *b = BATdescriptor(*bid);
+	if (private && !*uid) { /* create but how big ??? */
+		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
+		u->T.ht = ht_create(b->ttype, 1, NULL);
+	} else {
+		u = BATdescriptor(*uid);
+	}
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
@@ -760,6 +766,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			/* pass max id */
 			g->T.maxval = last;
 			g->tkey = FALSE;
+			g->T.ht = h;
 			BBPkeepref(*uid = u->batCacheid);
 			BBPkeepref(*rid = g->batCacheid);
 		}
@@ -885,10 +892,15 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 {
 	//Pipeline *p = (Pipeline*)*H;
 	(void)H;
-	assert(*uid && !is_bat_nil(*uid));
-	BAT *u = BATdescriptor(*uid);
-	BAT *b = BATdescriptor(*bid);
+	bool private = (!*uid || is_bat_nil(*uid));
+	BAT *u, *b = BATdescriptor(*bid);
 	BAT *G = BATdescriptor(*Gid);
+	if (private && !*uid) { /* create but how big ??? */
+		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
+		u->T.ht = ht_create(b->ttype, 1, G->T.ht);
+	} else {
+		u = BATdescriptor(*uid);
+	}
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
@@ -962,10 +974,14 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	oid max = g->T.maxval;
 	int err = 0;
 
-	MT_lock_set(&p->l);
-		/* probably need bat resize and create hash */
-	if (*rid) {
+	/* probably need bat resize and create hash */
+	if (*rid)
 		r = BATdescriptor(*rid);
+	bool private = (!r || r->T.ht!=NULL);
+
+	if (!private)
+		MT_lock_set(&p->l);
+	if (r) {
 		if (r->ttype == TYPE_str && BATcount(r) == 0) {
 		   	if (r->twidth < b->twidth) {
 				int m = b->twidth / r->twidth;
@@ -981,7 +997,6 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			r->batDirtydesc = true;
 		}
 	} else {
-		assert(0);
 		if (b->ttype == TYPE_str) {
 			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
@@ -992,6 +1007,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		} else {
 			r = COLnew(0, b->ttype, max, TRANSIENT);
 		}
+		r->T.ht = (void*)1;
 	}
 	if (BATcapacity(r) < max) {
 		if (BATextend(r, max*2) != GDK_SUCCEED)
@@ -1025,7 +1041,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			BBPkeepref(*rid = r->batCacheid);
 		}
 	}
-	MT_lock_unset(&p->l);
+	if (!private)
+		MT_lock_unset(&p->l);
 	return MAL_SUCCEED;
 }
 
@@ -1037,14 +1054,20 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	BAT *r = NULL;
 	int err = 0;
 
-	MT_lock_set(&p->l);
+	if (*rid)
+		r = BATdescriptor(*rid);
+	bool private = (!r || r->T.ht!=NULL);
+
+	if (!private)
+		MT_lock_set(&p->l);
+
 	BAT *pg = BATdescriptor(*pid);
 	oid max = pg->T.maxval;
 	BBPunfix(pg->batCacheid);
-	if (*rid) {
-		r = BATdescriptor(*rid);
-	} else {
+
+	if (!r) {
 		r = COLnew(0, TYPE_lng, max, TRANSIENT);
+		r->T.ht = (void*)1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -1076,7 +1099,8 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 			BBPkeepref(*rid = r->batCacheid);
 		}
 	}
-	MT_lock_unset(&p->l);
+	if (!private)
+		MT_lock_unset(&p->l);
 	return MAL_SUCCEED;
 }
 
@@ -1097,23 +1121,36 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	}
 
 static str
-LALGsum(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+//LALGsum(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
+	(void)cntxt;
+	bat *rid = getArgReference_bat(stk, pci, 0);
+	bat *gid = getArgReference_bat(stk, pci, 1);
+	bat *bid = getArgReference_bat(stk, pci, 2);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 3); /* last arg should move to first argument .. */
+	bat *pid = getArgReference_bat(stk, pci, 4);
+
 	BAT *g = BATdescriptor(*gid);
 	BAT *b = BATdescriptor(*bid);
 	BAT *r = NULL;
 	int err = 0;
 
-	MT_lock_set(&p->l);
+	if (*rid)
+		r = BATdescriptor(*rid);
+	bool private = (!r || r->T.ht!=NULL);
+
+	if (!private)
+		MT_lock_set(&p->l);
+
 	BAT *pg = BATdescriptor(*pid);
 	oid max = pg->T.maxval;
 	BBPunfix(pg->batCacheid);
-	if (*rid) {
-		r = BATdescriptor(*rid);
-	} else {
-		assert(0); /* should exist! */
-		r = COLnew(b->hseqbase, b->ttype, max, TRANSIENT);
+
+	if (!r) {
+		int tt = getBatType(getArgType(mb, pci, 0));
+		r = COLnew(b->hseqbase, tt, max, TRANSIENT);
+		r->T.ht = (void*)1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -1158,7 +1195,8 @@ LALGsum(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			BBPkeepref(*rid = r->batCacheid);
 		}
 	}
-	MT_lock_unset(&p->l);
+	if (!private)
+		MT_lock_unset(&p->l);
 	return MAL_SUCCEED;
 }
 
@@ -1176,7 +1214,7 @@ static mel_func pipeline_init_funcs[] = {
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Project.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "count", LALGcountstar, false, "Project.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "sum", LALGsum, false, "Project.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "sum", LALGsum, false, "Project.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",int), batargany("p",2))),
  { .imp=NULL }

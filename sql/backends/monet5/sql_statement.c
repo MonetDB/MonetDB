@@ -193,6 +193,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
+	int tt = tail_type(s)->type->localtype;
 
 	if (s->nr < 0)
 		return NULL;
@@ -206,7 +207,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 		return NULL;
 
 	/* output variables extent and hist */
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 	//q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, be->pipeline);
 	if (grp)
@@ -236,27 +237,26 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 }
 
 stmt *
-stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done, stmt *pp)
+stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, stmt *pp)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
 	if (s->nr < 0)
 		return NULL;
-	if (grp && (grp->nr < 0 || ext->nr < 0 || cnt->nr < 0))
+	if (grp && (grp->nr < 0 || ext->nr < 0 || (cnt && cnt->nr < 0)))
 		return NULL;
 
-	q = newStmt(mb, putName("lockedgroup"), done ? grp ? subgroupdoneRef : groupdoneRef : grp ? subgroupRef : groupRef);
+	q = newStmt(mb, groupRef, groupRef);
 	if(!q)
 		return NULL;
 
-	/* output variables extent and hist */
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	/* output variables extent */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, getArg(pp->q, 2));
-	q = pushArgument(mb, q, s->nr);
 	if (grp)
 		q = pushArgument(mb, q, grp->nr);
+	q = pushArgument(mb, q, s->nr);
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_group);
 		if (ns == NULL) {
@@ -3705,11 +3705,12 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 		}
 	} else {
+		int nrargs = (op1->type != st_list ? 1 : list_length(op1->op4.lval));
 		q = newStmtArgs(mb, mod, aggrfunc, argc);
 		if (q == NULL)
 			return NULL;
 		if (complex_aggr) {
-			setVarType(mb, getArg(q, 0), restype);
+			setVarType(mb, getArg(q, 0), (grp|| nrargs>1)?newBatType(restype):restype);
 			if (avg) { /* for avg also return rest and count */
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));

@@ -3819,10 +3819,8 @@ rel_single_distinct(sql_rel *rel)
 
 /* initialize the result variable for the parallel execution */
 static stmt *
-rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
+rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
 {
-	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
-
 	if (!_2phases && list_empty(rel->r)) /* cannot handle global aggregation without 2 phases */
 		return NULL;
 
@@ -3857,7 +3855,7 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 				int tt = t->type->localtype;
 				//InstrPtr q = newStmt(be->mb, batRef, newRef);
 				InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-				int estimate = exp_getcard(be->mvc, rel, e);//rel_getcount(rel->l);
+				int estimate = exp_getcard(be->mvc, rel, e);
 				if (estimate<0) {
 					assert(0);
 					estimate = 85000000;
@@ -3874,6 +3872,13 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
 		int curhash = 0;
+		int estimate = rel_getcount(rel->l);
+		int card = 1;
+
+		if (estimate<0) {
+			assert(0);
+			estimate = 85000000;
+		}
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 		list *gbexps = rel->r;
 		*aggrresults = sa_list(be->mvc->sa);
@@ -3885,17 +3890,14 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 			/* ext */
 			//InstrPtr q = newStmt(be->mb, batRef, newRef);
 			InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-			int estimate = rel_getcount(rel->l);
-			if (estimate<0) {
-				assert(0);
-				estimate = 85000000;
-			}
+			if (_2phases)
+				card *= exp_getcard(be->mvc, rel, e);
 
 			if (q == NULL)
 				return NULL;
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
-			q = pushInt(be->mb, q, estimate);
+			q = pushInt(be->mb, q, _2phases?card:estimate);
 			if (curhash)
 				q = pushArgument(be->mb, q, curhash);
 			curhash = getArg(q,0);
@@ -3949,7 +3951,8 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel)
 }
 
 static stmt *
-rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp)
+rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp, bool
+		_2phases)
 {
 	list *sub = pp->op4.lval;
 	node *o = sub->h;
@@ -4004,8 +4007,10 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 			append(shared, s);
 		}
 	} else if (rel && !list_empty(rel->r)) {
-	(void)pp_end(be, pp);
-	return cursub;
+		if (!_2phases) {
+			(void)pp_end(be, pp);
+			return cursub;
+		}
 		list *sub = cursub->op4.lval;
 
 		/* phase 2 of grouping */
@@ -4015,13 +4020,13 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 			sql_exp *e = n->data;
 			stmt *gstmt = m->data;
 
-			stmt *groupby = stmt_group_locked(be, gstmt, grp, ext, cnt, !n->next, pp);
+			stmt *groupby = stmt_group_locked(be, gstmt, grp, ext, cnt, pp);
 			/* reuse extend ! */
 			getArg(groupby->q, 1) = *(int*)o->data;
 			groupby->q->inout = 1;
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
-			cnt = stmt_result(be, groupby, 2);
+			//cnt = stmt_result(be, groupby, 2);
 			gstmt = stmt_alias(be, gstmt, exp_find_rel_name(e), exp_name(e));
 			list_append(ngbstmts, gstmt);
 		}
@@ -4047,16 +4052,17 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 					assert(strcmp(sf->func->base.name, "count") == 0);
 					name = "sum";
 				}
-				q = newStmt(be->mb, getName("lockedaggr"), getName(name));
-				q = pushArgument(be->mb, q, getArg(pp->q, 2));
-				q = pushArgument(be->mb, q, i->nr);
+				q = newStmt(be->mb, getName("aggr"), getName(name));
 				q = pushArgument(be->mb, q, grp->nr);
-				q = pushArgument(be->mb, q, ext->nr);
-			} else {
-				q = newStmt(be->mb, getName("lockedalgebra"), projectionRef);
-				q = pushArgument(be->mb, q, getArg(pp->q, 2));
-				q = pushArgument(be->mb, q, ext->nr);
 				q = pushArgument(be->mb, q, i->nr);
+				q = pushArgument(be->mb, q, getArg(pp->q, 2));
+				q = pushArgument(be->mb, q, grp->nr);
+				//q = pushArgument(be->mb, q, ext->nr);
+			} else {
+				q = newStmt(be->mb, getName("algebra"), projectionRef);
+				q = pushArgument(be->mb, q, grp->nr);
+				q = pushArgument(be->mb, q, i->nr);
+				q = pushArgument(be->mb, q, getArg(pp->q, 2));
 			}
 			getArg(q, 0) = *v;
 			q->inout = 0;
@@ -4095,10 +4101,11 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	node *n, *en, *m = NULL;
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
+	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 
 	stmt *pp = NULL;
 	if (SQLrunning)
-		pp = rel_prepare_pp(&aggrresults, be, rel);
+		pp = rel_prepare_pp(&aggrresults, be, rel, _2phases);
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
 		sub = subrel_project(be, sub, refs, rel->l);
@@ -4142,9 +4149,10 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
 			groupby = stmt_group(be, gbcol, grp, grp /*ext*/, cnt, !en->next);
 
-			/* make sure we reuse the extend */
+			/* use global (shared (extend)) result */
 			if (groupby && m) {
-				getArg(groupby->q, 1) = *(int*)m->data;
+				if (!_2phases)
+					getArg(groupby->q, 1) = *(int*)m->data;
 				m = m->next;
 			}
 			if (groupby)
@@ -4156,6 +4164,21 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			cnt = NULL;
 			gbcol = stmt_alias(be, gbcol, exp_find_rel_name(e), exp_name(e));
 			list_append(gbexps, gbcol);
+		}
+		if (_2phases) { /* reproject group by exps */
+			list *ngbexps = sa_list(sql->sa);
+			for( en = gbexps->h; en; en = en->next ) {
+				stmt *gbcol = en->data;
+				if (gbcol && groupby) {
+					gbcol = stmt_project(be, grp /*ext*/, gbcol);
+					gbcol->q = pushArgument(be->mb, gbcol->q, be->pipeline);
+					gbcol->q->inout = 1;
+					if (list_length(gbexps) == 1)
+						gbcol->key = 1;
+				}
+				list_append(ngbexps, gbcol);
+			}
+			gbexps = ngbexps;
 		}
 	}
 	/* now aggregate */
@@ -4174,7 +4197,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			aggrstmt = list_find_column(be, l, aggrexp->l, aggrexp->r);
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column(be, gbexps, aggrexp->l, aggrexp->r);
-			if (aggrstmt && groupby) {
+			if (!_2phases && aggrstmt && groupby) {
 				aggrstmt = stmt_project(be, grp /*ext*/, aggrstmt);
 				aggrstmt->q = pushArgument(be->mb, aggrstmt->q, be->pipeline);
 				aggrstmt->q->inout = 1;
@@ -4200,8 +4223,10 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 
+		/* use global (shared) result */
 		if (aggrstmt && m) {
-			aggrstmt->nr = getArg(aggrstmt->q, 0) = *(int*)m->data;
+			if (!_2phases)
+				aggrstmt->nr = getArg(aggrstmt->q, 0) = *(int*)m->data;
 			m = m->next;
 		}
 		if (aggrstmt)
@@ -4215,7 +4240,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	}
 	stmt_set_nrcols(cursub);
 	if (pp)
-		return rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp);
+		return rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp, _2phases);
 	return cursub;
 }
 
