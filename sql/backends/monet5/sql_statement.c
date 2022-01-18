@@ -572,7 +572,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	q = pushArgument(mb, q, be->mvc_var);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
-	if (be->pp) {
+	if (partition && be->pp) {
 		q = pushArgument(mb, q, be->pp);
 		q = pushInt(mb, q, be->nrparts);
 	}
@@ -664,7 +664,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = pushArgument(mb, q, getStrConstant(mb,c->t->base.name));
 	q = pushArgument(mb, q, getStrConstant(mb,c->base.name));
 	q = pushArgument(mb, q, getIntConstant(mb,access));
-	if (be->pp) {
+	if (partition && be->pp) {
 		q = pushArgument(mb, q, be->pp);
 		q = pushInt(mb, q, be->nrparts);
 	}
@@ -722,7 +722,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	q = pushArgument(mb, q, getStrConstant(mb, i->t->base.name));
 	q = pushArgument(mb, q, getStrConstant(mb, i->base.name));
 	q = pushArgument(mb, q, getIntConstant(mb, access));
-	if (be->pp) {
+	if (partition && be->pp) {
 		q = pushArgument(mb, q, be->pp);
 		q = pushInt(mb, q, be->nrparts);
 	}
