@@ -1043,7 +1043,6 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	} else {
 		r = COLnew(0, TYPE_lng, max, TRANSIENT);
 	}
-	/* probably need bat resize and create hash */
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
@@ -1055,7 +1054,6 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 		memset(Tloc(r, 0), 0, sizeof(lng)*sz);
 	}
 
-	/* get max id from gid */
 	if (!err && max) {
 		BUN cnt = BATcount(g);
 
@@ -1087,6 +1085,68 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	return LALGcountstar(rid, gid, H, pid);
 }
 
+#define gsum(Type) \
+	if (tt == TYPE_##Type) { \
+			Type *in = Tloc(b, 0); \
+			Type *o  = Tloc(r, 0); \
+			for(BUN i = 0; i<cnt; i++) \
+				o[grp[i]] += in[i]; \
+	}
+
+static str
+LALGsum(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+{
+	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
+	BAT *g = BATdescriptor(*gid);
+	BAT *b = BATdescriptor(*bid);
+	BAT *r = NULL;
+	int err = 0;
+
+	MT_lock_set(&p->l);
+	BAT *pg = BATdescriptor(*pid);
+	oid max = pg->T.maxval;
+	BBPunfix(pg->batCacheid);
+	if (*rid) {
+		r = BATdescriptor(*rid);
+	} else {
+		r = COLnew(b->hseqbase, b->ttype, max, TRANSIENT);
+	}
+	BUN cnt = BATcount(r);
+	if (BATcapacity(r) < max) {
+		BUN sz = max*2;
+		if (BATextend(r, sz) != GDK_SUCCEED)
+			err = 1;
+		memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+	} else if (cnt == 0) {
+		BUN sz = BATcapacity(r);
+		memset(Tloc(r, 0), 0, r->twidth*sz);
+	}
+
+	if (!err && max) {
+		BUN cnt = BATcount(g);
+		int err = 0, tt = b->ttype;
+
+		if (!err) {
+			oid *grp = Tloc(g, 0);
+
+			gsum(bte);
+			gsum(sht);
+			gsum(int);
+			gsum(lng);
+			gsum(hge);
+		}
+		if (!err) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(g->batCacheid);
+			BATsetcount(r, max);
+			r->trevsorted = r->tsorted = FALSE;
+			r->tkey = FALSE;
+			BBPkeepref(*rid = r->batCacheid);
+		}
+	}
+	MT_lock_unset(&p->l);
+	return MAL_SUCCEED;
+}
 
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
@@ -1102,6 +1162,7 @@ static mel_func pipeline_init_funcs[] = {
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Project.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "count", LALGcountstar, false, "Project.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "sum", LALGsum, false, "Project.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",int), batargany("p",2))),
  { .imp=NULL }

@@ -1362,6 +1362,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					cnt = NULL;
 				}
 				append(l, stmt_project(be, u, a));
+			} else if (grp) {
+				if (grp) {
+					list_prepend(l, grp);
+					grp = NULL;
+					ext = NULL;
+					cnt = NULL;
+				}
 			}
 			as = stmt_list(be, l);
 		} else {
