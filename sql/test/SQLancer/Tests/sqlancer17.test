@@ -566,6 +566,19 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t2 (c0 VARCHAR(217))
+
+query I nosort
+SELECT 1 FROM t2 WHERE (SELECT tx.c0 = ANY(SELECT 'a' FROM t2) FROM t2 AS tx)
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "rt0" ("c0" REAL,"c1" DECIMAL(18,3))
 
 statement ok

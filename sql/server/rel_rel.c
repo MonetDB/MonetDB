@@ -336,6 +336,11 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 			if (e1 && e2 && !is_dependent(rel))
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 		}
+		if (!e1 && !e2 && !list_empty(rel->attr)) {
+			e1 = exps_bind_column(rel->attr, cname, &ambiguous, &multi, no_tname);
+			if (ambiguous || multi)
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+		}
 		res = e1 ? e1 : e2;
 		if (res)
 			set_not_unique(res);
@@ -416,6 +421,12 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 			e = rel_bind_column2(sql, rel->r, tname, cname, f);
 			if (e && (is_left(rel->op) || is_full(rel->op)))
 				set_has_nil(e);
+		}
+		if (!e && !list_empty(rel->attr)) {
+			e = exps_bind_column2(rel->attr, tname, cname, &multi);
+			if (multi)
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
+								 tname, cname);
 		}
 		if (e)
 			set_not_unique(e);
@@ -1088,6 +1099,12 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		found = rel_bind_path_(sql, rel->r, e, path);
 		if (!found)
 			found = rel_bind_path_(sql, rel->l, e, path);
+		if (!found && !list_empty(rel->attr)) {
+			if (e->l && exps_bind_column2(rel->attr, e->l, e->r, NULL))
+				found = 1;
+			if (!found && !e->l && exps_bind_column(rel->attr, e->r, NULL, NULL, 1))
+				found = 1;
+		}
 		break;
 	case op_semi:
 	case op_anti:
@@ -1487,20 +1504,27 @@ rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 	return _rel_add_identity(sql, rel, exp);
 }
 
-sql_exp *
-rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname )
+static sql_exp *
+rel_find_column_(sql_allocator *sa, list *exps, const char *tname, const char *cname)
 {
+	int ambiguous = 0, multi = 0;
+	sql_exp *e = exps_bind_column2(exps, tname, cname, &multi);
+	if (!e && cname[0] == '%' && !tname)
+		e = exps_bind_column(exps, cname, &ambiguous, &multi, 0);
+	if (e && !ambiguous && !multi)
+		return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
+	return NULL;
+}
+
+sql_exp *
+rel_find_column(sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname )
+{
+	sql_exp *e = NULL;
+
 	if (!rel)
 		return NULL;
-
-	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
-		int ambiguous = 0, multi = 0;
-		sql_exp *e = exps_bind_column2(rel->exps, tname, cname, &multi);
-		if (!e && cname[0] == '%' && !tname)
-			e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, 0);
-		if (e && !ambiguous && !multi)
-			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
-	}
+	if (rel->exps && (is_project(rel->op) || is_base(rel->op)) && (e = rel_find_column_(sa, rel->exps, tname, cname)))
+		return e;
 	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		if (!is_processed(rel))
 			return rel_find_column(sa, rel->l, tname, cname);
@@ -1508,7 +1532,7 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 		assert(is_processed(rel));
 		return NULL;
 	} else if (is_join(rel->op)) {
-		sql_exp *e = rel_find_column(sa, rel->l, tname, cname);
+		e = rel_find_column(sa, rel->l, tname, cname);
 
 		if (e && (is_right(rel->op) || is_full(rel->op)))
 			set_has_nil(e);
@@ -1517,6 +1541,8 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 			if (e && (is_left(rel->op) || is_full(rel->op)))
 				set_has_nil(e);
 		}
+		if (!e && !list_empty(rel->attr))
+			e = rel_find_column_(sa, rel->attr, tname, cname);
 		if (e)
 			set_not_unique(e);
 		return e;
