@@ -18,178 +18,15 @@
 #include "rel_propagate.h"
 #include "rel_distribute.h"
 #include "rel_rewriter.h"
+#include "rel_remote.h"
 #include "sql_mvc.h"
 #include "sql_privileges.h"
-
-typedef struct global_props {
-	int cnt[ddl_maxops];
-	uint8_t
-		instantiate:1,
-		needs_mergetable_rewrite:1,
-		needs_remote_replica_rewrite:1,
-		needs_distinct:1,
-		needs_setjoin_rewrite:1;
-} global_props;
-
-static int
-find_member_pos(list *l, sql_table *t)
-{
-	int i = 0;
-	if (l) {
-		for (node *n = l->h; n ; n = n->next, i++) {
-			sql_part *pt = n->data;
-			if (pt->member == t->base.id)
-				return i;
-		}
-	}
-	return -1;
-}
-
-/* The important task of the relational optimizer is to optimize the
-   join order.
-
-   The current implementation chooses the join order based on
-   select counts, ie if one of the join sides has been reduced using
-   a select this join is choosen over one without such selections.
- */
-
-/* currently we only find simple column expressions */
-sql_column *
-name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt )
-{
-	sql_exp *alias = NULL;
-	sql_column *c = NULL;
-
-	switch (rel->op) {
-	case op_basetable: {
-		sql_table *t = rel->l;
-
-		if (rel->exps) {
-			sql_exp *e;
-
-			if (rname)
-				e = exps_bind_column2(rel->exps, rname, name, NULL);
-			else
-				e = exps_bind_column(rel->exps, name, NULL, NULL, 0);
-			if (!e || e->type != e_column)
-				return NULL;
-			if (e->l)
-				rname = e->l;
-			name = e->r;
-		}
-		if (rname && strcmp(t->base.name, rname) != 0)
-			return NULL;
-		sql_table *mt = rel_base_get_mergetable(rel);
-		if (ol_length(t->columns)) {
-			for (node *cn = ol_first_node(t->columns); cn; cn = cn->next) {
-				sql_column *c = cn->data;
-				if (strcmp(c->base.name, name) == 0) {
-					*bt = rel;
-					if (pnr < 0 || (mt &&
-						find_member_pos(mt->members, c->t) == pnr))
-						return c;
-				}
-			}
-		}
-		if (name[0] == '%' && ol_length(t->idxs)) {
-			for (node *cn = ol_first_node(t->idxs); cn; cn = cn->next) {
-				sql_idx *i = cn->data;
-				if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
-					*bt = rel;
-					if (pnr < 0 || (mt &&
-						find_member_pos(mt->members, i->t) == pnr)) {
-						sql_kc *c = i->columns->h->data;
-						return c->c;
-					}
-				}
-			}
-		}
-		break;
-	}
-	case op_table:
-		/* table func */
-		return NULL;
-	case op_ddl:
-		if (is_updateble(rel))
-			return name_find_column( rel->l, rname, name, pnr, bt);
-		return NULL;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-		/* first right (possible subquery) */
-		c = name_find_column( rel->r, rname, name, pnr, bt);
-		/* fall through */
-	case op_semi:
-	case op_anti:
-		if (!c)
-			c = name_find_column( rel->l, rname, name, pnr, bt);
-		if (!c && !list_empty(rel->attr)) {
-			if (rname)
-				alias = exps_bind_column2(rel->attr, rname, name, NULL);
-			else
-				alias = exps_bind_column(rel->attr, name, NULL, NULL, 1);
-		}
-		return c;
-	case op_select:
-	case op_topn:
-	case op_sample:
-		return name_find_column( rel->l, rname, name, pnr, bt);
-	case op_union:
-	case op_inter:
-	case op_except:
-
-		if (pnr >= 0 || pnr == -2) {
-			/* first right (possible subquery) */
-			c = name_find_column( rel->r, rname, name, pnr, bt);
-			if (!c)
-				c = name_find_column( rel->l, rname, name, pnr, bt);
-			return c;
-		}
-		return NULL;
-
-	case op_project:
-	case op_groupby:
-		if (!rel->exps)
-			break;
-		if (rname)
-			alias = exps_bind_column2(rel->exps, rname, name, NULL);
-		else
-			alias = exps_bind_column(rel->exps, name, NULL, NULL, 1);
-		if (is_groupby(rel->op) && alias && alias->type == e_column && !list_empty(rel->r)) {
-			if (alias->l)
-				alias = exps_bind_column2(rel->r, alias->l, alias->r, NULL);
-			else
-				alias = exps_bind_column(rel->r, alias->r, NULL, NULL, 1);
-		}
-		if (is_groupby(rel->op) && !alias && rel->l) {
-			/* Group by column not found as alias in projection
-			 * list, fall back to check plain input columns */
-			return name_find_column( rel->l, rname, name, pnr, bt);
-		}
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-	case op_merge:
-		break;
-	}
-	if (alias && !is_join(rel->op)) { /* we found an expression with the correct name, but
-			we need sql_columns */
-		if (rel->l && alias->type == e_column) /* real alias */
-			return name_find_column(rel->l, alias->l, alias->r, pnr, bt);
-	}
-	return NULL;
-}
 
 static sql_column *
 exp_find_column( sql_rel *rel, sql_exp *exp, int pnr )
 {
-	if (exp->type == e_column) {
-		sql_rel *bt = NULL;
-		return name_find_column(rel, exp->l, exp->r, pnr, &bt);
-	}
+	if (exp->type == e_column)
+		return name_find_column(rel, exp->l, exp->r, pnr, NULL);
 	return NULL;
 }
 
@@ -7396,7 +7233,7 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-sql_rel *
+static sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
 	list *refs = sa_list(sql->sa);
