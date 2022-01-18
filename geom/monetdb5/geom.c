@@ -1480,17 +1480,15 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 	if (*out == NULL)
 		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
 
-	//Frees
-	bat_iterator_end(&bi);
-	if (unionGroup) {
-		for (BUN i = 0; i < count; i++)
-			if (unionGroup[i])
-				GEOSGeom_destroy(unionGroup[i]);
-		GDKfree(unionGroup);
-	}
-	//TODO This free is causing issues, is it not necessary?
-	//GEOSGeom_destroy(collection);
-	BBPunfix(b->batCacheid);
+    // Cleanup
+    // Data ownership has been transfered from unionGroup elements to 
+    // collection. Check libgeos GEOSGeom_createCollection() for more.
+    bat_iterator_end(&bi);
+    GEOSGeom_destroy(collection);
+    if (unionGroup)
+        GDKfree(unionGroup);
+    BBPunfix(b->batCacheid);
+
 	return msg;
 }
 
