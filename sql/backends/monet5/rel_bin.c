@@ -3723,6 +3723,8 @@ rel_getcount(sql_rel *rel)
 		return rel_getcount(rel->l);
 	if (rel && rel->l && rel->op == op_project)
 		return rel_getcount(rel->l);
+	if (rel && rel->l && rel->op == op_groupby)
+		return rel_getcount(rel->l);
 	return -1;
 }
 
@@ -3747,7 +3749,8 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 
 		if (c) {
 			int de = mvc_is_duplicate_eliminated(sql, c);
-			return de;
+			if (de)
+				return de;
 		}
 	}
 	/* for now only based on type info, later use propagated cardinality estimation */
@@ -3785,12 +3788,14 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 	}
 	if (card > 64*1024) /* TODO add tunable */
 		return false;
-	for( node *n = rel->exps->h; n; n = n->next ) {
+	for(node *n = rel->exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
 
 		if (is_aggr(e->type)) {
 			sql_subfunc *sf = e->f;
 
+			if (need_distinct(e))
+				return false;
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
 			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
 			    strcmp(sf->func->base.name, "prod") == 0)) {
@@ -3824,8 +3829,6 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
 	if (!_2phases && list_empty(rel->r)) /* cannot handle global aggregation without 2 phases */
 		return NULL;
 
-	if (rel_single_distinct(rel))
-		printf("#single distinct\n");
 	list *shared = NULL;
 	if (is_groupby(rel->op) && list_empty(rel->r) && !list_empty(rel->exps)) { /* global aggregation */
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
@@ -4103,6 +4106,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 
+	if (rel_single_distinct(rel))
+		printf("#single distinct\n");
+
 	stmt *pp = NULL;
 	if (SQLrunning)
 		pp = rel_prepare_pp(&aggrresults, be, rel, _2phases);
@@ -4229,7 +4235,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				aggrstmt->nr = getArg(aggrstmt->q, 0) = *(int*)m->data;
 			m = m->next;
 		}
-		if (aggrstmt)
+		if (aggrstmt && aggrexp->type == e_aggr)
 			aggrstmt->q->inout = 0;
 
 		if (!aggrstmt->nrcols && ext && ext->nrcols)

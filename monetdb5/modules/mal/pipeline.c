@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_time.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_pipelines.h"
@@ -28,6 +29,10 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define min(a,b) a<b?a:b
 #define max(a,b) a>b?a:b
 
+#define getArgReference_date(stk, pci, nr) (date*)getArgReference(stk, pci, nr)
+#define getArgReference_daytime(stk, pci, nr) (daytime*)getArgReference(stk, pci, nr)
+#define getArgReference_timestamp(stk, pci, nr) (timestamp*)getArgReference(stk, pci, nr)
+
 #define aggr(T,f)  \
 	if (type == TYPE_##T) {								\
 		T val = *getArgReference_##T(stk, pci, 2);		\
@@ -41,7 +46,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b->tnonil = true;							\
 		} else if (BATcount(b) == 0) {					\
 			if (BUNappend(b, &val, true) != GDK_SUCCEED)\
-				err = createException(SQL, "aggr.sum",	\
+				err = createException(SQL, "aggr.##f",	\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}												\
 	}
@@ -92,13 +97,17 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str err = NULL;
 
 	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
-			type != TYPE_flt && type != TYPE_dbl)
+		type != TYPE_flt && type != TYPE_dbl &&
+		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp)
 			return createException(SQL, "aggr.min",	"Wrong input type (%d)", type);
 
 	MT_lock_set(&p->l);
 	if (*res) {
 		BAT *b = BATdescriptor(*res);
 
+		aggr(date,min);
+		aggr(daytime,min);
+		aggr(timestamp,min);
 		aggr(hge,min);
 		aggr(lng,min);
 		aggr(int,min);
@@ -129,20 +138,24 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str err = NULL;
 
 	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
-			type != TYPE_flt && type != TYPE_dbl)
+		type != TYPE_flt && type != TYPE_dbl &&
+		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp)
 			return createException(SQL, "aggr.max",	"Wrong input type (%d)", type);
 
 	MT_lock_set(&p->l);
 	if (*res) {
 		BAT *b = BATdescriptor(*res);
 
+		aggr(date,max);
+		aggr(daytime,max);
+		aggr(timestamp,max);
 		aggr(hge,max);
 		aggr(lng,max);
 		aggr(int,max);
 		aggr(sht,max);
 		aggr(bte,max);
-		aggr(flt,min);
-		aggr(dbl,min);
+		aggr(flt,max);
+		aggr(dbl,max);
 		if (!err)
 			BBPkeepref(b->batCacheid);
 		else
@@ -418,6 +431,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			if (new) \
 			gp[r++] = b->hseqbase + i; \
 		} \
+		bat_iterator_end(&bi); \
 	}
 
 static str
@@ -557,6 +571,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			if (new) \
 			gp[r++] = b->hseqbase + i; \
 		} \
+		bat_iterator_end(&bi); \
 	}
 
 static str
@@ -716,6 +731,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			} \
 			gp[i] = g-1; \
 		} \
+		bat_iterator_end(&bi); \
 	}
 
 
@@ -884,6 +900,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			} \
 			gp[i] = g-1; \
 		} \
+		bat_iterator_end(&bi); \
 	}
 
 
@@ -944,7 +961,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 }
 
 #define project(Type) \
-	if (tt == TYPE_##Type) { \
+	if (ATOMstorage(tt) == TYPE_##Type) { \
 		Type *v = Tloc(b, 0); \
 		Type *o = Tloc(r, 0); \
 		for(BUN i = 0; i<cnt; i++) { \
@@ -953,7 +970,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 	}
 
 #define aproject(Type,w,Toff) \
-	if (tt == TYPE_##Type && b->twidth == w) { \
+	if (ATOMstorage(tt) == TYPE_##Type && b->twidth == w) { \
 		Toff *v = Tloc(b, 0); \
 		Toff *o = Tloc(r, 0); \
 		for(BUN i = 0; i<cnt; i++) { \
@@ -979,10 +996,11 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		r = BATdescriptor(*rid);
 	bool private = (!r || r->T.ht!=NULL);
 
+	/* probably want to use a per 'r' lock, but the r->theaplock is blocking this on BATextend and BATsetcount */
 	if (!private)
 		MT_lock_set(&p->l);
 	if (r) {
-		if (r->ttype == TYPE_str && BATcount(r) == 0) {
+		if (r->ttype == TYPE_str && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 		   	if (r->twidth < b->twidth) {
 				int m = b->twidth / r->twidth;
 				r->twidth = b->twidth;
@@ -1010,12 +1028,13 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		r->T.ht = (void*)1;
 	}
 	if (BATcapacity(r) < max) {
-		if (BATextend(r, max*2) != GDK_SUCCEED)
+		BUN sz = max*2;
+		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
 	}
 
 	/* get max id from gid */
-	if (!err && max) {
+	if (!err) {
 		BUN cnt = BATcount(b);
 
 		int err = 0, tt = b->ttype;
@@ -1041,6 +1060,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			BBPkeepref(*rid = r->batCacheid);
 		}
 	}
+	if (err)
+	printf(" error \n");
 	if (!private)
 		MT_lock_unset(&p->l);
 	return MAL_SUCCEED;
@@ -1080,7 +1101,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 		memset(Tloc(r, 0), 0, sizeof(lng)*sz);
 	}
 
-	if (!err && max) {
+	if (!err) {
 		BUN cnt = BATcount(g);
 
 		int err = 0;
@@ -1163,7 +1184,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		memset(Tloc(r, 0), 0, r->twidth*sz);
 	}
 
-	if (!err && max) {
+	if (!err) {
 		BUN cnt = BATcount(g);
 		int err = 0, tt = b->ttype, ot = r->ttype;
 
@@ -1185,6 +1206,9 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			gsum(hge,int);
 			gsum(hge,lng);
 			gsum(hge,hge);
+			gsum(flt,flt);
+			gsum(dbl,flt);
+			gsum(dbl,dbl);
 		}
 		if (!err) {
 			BBPunfix(b->batCacheid);
