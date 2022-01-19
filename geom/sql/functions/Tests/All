@@ -11,6 +11,7 @@ HAVE_GEOM?ST_GeomFromText
 HAVE_GEOM?dropTestWKT
 
 HAVE_GEOM?ST_MakePoint
+HAVE_GEOM?ST_Collect
 
 HAVE_GEOM?loadTestGeometries
 
