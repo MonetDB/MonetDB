@@ -1,0 +1,3 @@
+statement error 42000!INSERT INTO: insufficient privileges for user 'user_insert' to insert into table 'testtable'
+INSERT into testTable values (666, 666)
+

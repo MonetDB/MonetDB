@@ -1,9 +1,12 @@
-#create table cm_tmp(i int);
-#plan copy into cm_tmp from E'\\file1',E'\\file2';
-% .plan # table_name
-% rel # name
-% clob # type
-% 207 # length
+statement ok
+create table cm_tmp(i int)
+
+statement error
+plan copy into cm_tmp from '/file1','/file2'
+
+query T nosort
+plan copy into cm_tmp from E'\\file1',E'\\file2'
+----
 insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ]
 | union (
@@ -17,11 +20,10 @@ insert(
 | | ) [ "cm_tmp"."i" ]
 | ) [ int(32) NULL ]
 )
-#plan copy into cm_tmp from E'a:\\file1','Z:/file2';
-% .plan # table_name
-% rel # name
-% clob # type
-% 209 # length
+
+query T nosort
+plan copy into cm_tmp from E'a:\\file1','Z:/file2'
+----
 insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ]
 | union (
@@ -35,3 +37,7 @@ insert(
 | | ) [ "cm_tmp"."i" ]
 | ) [ int(32) NULL ]
 )
+
+statement ok
+drop table cm_tmp
+
