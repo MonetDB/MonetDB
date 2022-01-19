@@ -52,16 +52,16 @@ minimal_pipe
 0
 
 statement ok
-call setoptimizer(0, 'sequential_pipe')
+call setoptimizer('sequential_pipe')
 
 statement ok
-call setsessiontimeout(0, 1000)
+call setsessiontimeout(1000)
 
 statement ok
-call setquerytimeout(0, 60)
+call setquerytimeout(60)
 
 statement ok
-call setworkerlimit(0,8)
+call setworkerlimit(8)
 
 query TTIIII rowsort
 select s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
@@ -74,5 +74,5 @@ sequential_pipe
 0
 
 statement ok
-call setoptimizer(0, 'default_pipe')
+call setoptimizer('default_pipe')
 
