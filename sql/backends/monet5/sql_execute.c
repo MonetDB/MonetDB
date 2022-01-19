@@ -338,8 +338,10 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
 	if (!o) {
-		if (inited)
-			SQLresetClient(c);
+		if (inited) {
+			msg = SQLresetClient(c);
+			freeException(msg);
+		}
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*o = *m;
@@ -646,8 +648,10 @@ endofcompile:
 	m->frames = frames;
 	m->session->status = status;
 	m->session->auto_commit = ac;
-	if (inited)
-		SQLresetClient(c);
+	if (inited) {
+		str other = SQLresetClient(c);
+		freeException(other);
+	}
 	return msg;
 }
 
