@@ -1,0 +1,29 @@
+statement ok
+CREATE USER voc WITH PASSWORD 'voc' NAME 'VOC Explorer' SCHEMA sys
+
+query TTT rowsort
+SELECT users.name, users.fullname, schemas.name as schema
+FROM users, schemas
+WHERE users.default_schema = schemas.id
+AND users.name = 'voc'
+----
+voc
+VOC Explorer
+sys
+
+statement ok
+CREATE SCHEMA voc AUTHORIZATION voc
+
+statement ok
+ALTER USER voc SET SCHEMA voc
+
+query TTT rowsort
+SELECT users.name, users.fullname, schemas.name as schema
+FROM users, schemas
+WHERE users.default_schema = schemas.id
+AND users.name = 'voc'
+----
+voc
+VOC Explorer
+voc
+
