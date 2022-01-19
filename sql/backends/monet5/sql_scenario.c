@@ -229,12 +229,12 @@ SQLprepareClient(Client c, int login)
 		sql_allocator *sa = sa_create(NULL);
 		if (sa == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout2;
 		}
 		m = mvc_create(SQLstore, sa, c->idx, SQLdebug, c->fdin, c->fdout);
 		if (m == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout2;
 		}
 		if (c->scenario && strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
@@ -242,7 +242,7 @@ SQLprepareClient(Client c, int login)
 		if ( be == NULL) {
 			mvc_destroy(m);
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout2;
 		}
 	} else {
 		assert(0);
@@ -266,13 +266,13 @@ SQLprepareClient(Client c, int login)
 		switch (monet5_user_set_def_schema(m, c->user)) {
 			case -1:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				goto bailout1;
 			case -2:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
-				goto bailout;
+				goto bailout1;
 			case -3:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
-				goto bailout;
+				goto bailout1;
 			default:
 				break;
 		}
@@ -290,7 +290,7 @@ SQLprepareClient(Client c, int login)
 			} else if (sscanf(tok, "reply_size=%d", &value) == 1) {
 				if (value < -1) {
 					msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "Reply_size cannot be negative");
-					goto bailout;
+					goto bailout1;
 				}
 				m->reply_size = value;
 			} else if (sscanf(tok, "size_header=%d", &value) == 1) {
@@ -306,7 +306,7 @@ SQLprepareClient(Client c, int login)
 				sqlvar_set(var, &val);
 			} else {
 				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);
-				goto bailout;
+				goto bailout1;
 			}
 
 			tok = strtok_r(NULL, ",", &strtok_state);
@@ -314,8 +314,9 @@ SQLprepareClient(Client c, int login)
 	}
 
 
-bailout:
+bailout1:
 	MT_lock_set(&sql_contextLock);
+bailout2:
 	/* expect SQL text first */
 	if (be)
 		be->language = 'S';
