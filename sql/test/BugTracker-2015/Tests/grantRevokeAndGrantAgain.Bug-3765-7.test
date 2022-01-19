@@ -1,0 +1,3 @@
+statement error 42000!DELETE FROM: insufficient privileges for user 'user_delete' to delete from table 'testtable'
+DELETE from testTable where v2 = 666
+
