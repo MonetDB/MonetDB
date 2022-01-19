@@ -719,7 +719,9 @@ SQLexitClient(Client c)
 	MT_lock_unset(&sql_contextLock);
 	if (err != MAL_SUCCEED)
 		return err;
-	MALexitClient(c);
+	err = MALexitClient(c);
+	if (err != MAL_SUCCEED)
+		return err;
 	return MAL_SUCCEED;
 }
 
