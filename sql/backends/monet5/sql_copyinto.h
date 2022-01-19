@@ -12,7 +12,18 @@
 #include "mal_client.h"
 #include "sql_mvc.h"
 
-extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng nr, lng offset, int best, bool from_stdin, bool escape, bool append_directly);
+struct csv_parameters {
+	const char *tsep;
+	const char *rsep;
+	const char *ssep;
+	const char *ns;
+	lng nr;
+	lng offset;
+	int best;
+	bool escape;
+};
+
+extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, bool from_stdin, sql_table *t, struct csv_parameters *csv_parms, bool append_directly);
 
 mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

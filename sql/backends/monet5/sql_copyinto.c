@@ -2523,7 +2523,7 @@ _ASCIIadt_frStr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape, bool append_directly)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, bool from_stdin, sql_table *t, struct csv_parameters *csv_parms, bool append_directly)
 {
 	int i = 0, j;
 	node *n;
@@ -2553,20 +2553,20 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		directappend_destroy(directappend);
 		return msg;
 	}
-	if (offset < 0 || offset > (lng) BUN_MAX) {
+	if (csv_parms->offset < 0 || csv_parms->offset > (lng) BUN_MAX) {
 		directappend_destroy(directappend);
 		throw(IO, "sql.copy_from", SQLSTATE(42000) "Offset out of range");
 	}
 
-	if (offset > 0)
-		offset--;
+	if (csv_parms->offset > 0)
+		csv_parms->offset--;
 	if (ol_first_node(t->columns)) {
 		stream *out = m->scanner.ws;
 
 		as = (Tablet) {
 			.nr_attrs = ol_length(t->columns),
-			.nr = (sz < 1) ? BUN_NONE : (BUN) sz,
-			.offset = (BUN) offset,
+			.nr = (csv_parms->nr < 1) ? BUN_NONE : (BUN) csv_parms->nr,
+			.offset = (BUN) csv_parms->offset,
 			.error = NULL,
 			.tryall = 0,
 			.complaints = NULL,
@@ -2597,8 +2597,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 
 			fmt[i].name = col->base.name;
-			fmt[i].sep = (n->next) ? sep : rsep;
-			fmt[i].rsep = rsep;
+			fmt[i].sep = (n->next) ? csv_parms->tsep : csv_parms->rsep;
+			fmt[i].rsep = csv_parms->rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
 			fmt[i].type = sql_subtype_string(m->ta, &col->type);
 			fmt[i].adt = ATOMindex(col->type.type->impl);
@@ -2617,9 +2617,9 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
-			fmt[i].quote = ssep ? ssep[0] : 0;
-			fmt[i].nullstr = ns;
-			fmt[i].null_length = strlen(ns);
+			fmt[i].quote = csv_parms->ssep ? csv_parms->ssep[0] : 0;
+			fmt[i].nullstr = csv_parms->ns;
+			fmt[i].null_length = strlen(csv_parms->ns);
 			fmt[i].nildata = ATOMnilptr(fmt[i].adt);
 			fmt[i].nil_len = ATOMlen(fmt[i].adt, fmt[i].nildata);
 			fmt[i].skip = (col->base.name[0] == '%');
@@ -2635,16 +2635,16 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		// do .. while (false) allows us to use 'break' to drop out at any point
 		do {
 			if (!directappend) {
-				msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz));
+				msg = TABLETcreate_bats(&as, (BUN) (csv_parms->nr < 0 ? 1000 : csv_parms->nr));
 				if (msg != MAL_SUCCEED)
 					break;
 			}
 
-			if (sz != 0) {
-				BUN count = SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape, directappend);
+			if (csv_parms->nr != 0) {
+				BUN count = SQLload_file(cntxt, &as, bs, out, csv_parms->tsep, csv_parms->rsep, csv_parms->ssep ? csv_parms->ssep[0] : 0, csv_parms->offset, csv_parms->nr, csv_parms->best, from_stdin, t->base.name, csv_parms->escape, directappend);
 				if (count == BUN_NONE)
 					break;
-				if (as.error && !best)
+				if (as.error && !csv_parms->best)
 					break;
 			}
 
@@ -2674,7 +2674,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		} while (false);
 
 		if (as.error) {
-			if( !best) msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, getExceptionMessage(as.error));
+			if( !csv_parms->best) msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, getExceptionMessage(as.error));
 			freeException(as.error);
 			as.error = NULL;
 		}
