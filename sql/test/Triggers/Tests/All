@@ -4,7 +4,9 @@ referencing_clause_new
 referencing_clause_old
 KNOWNFAIL?trigger_action
 trigger_activation
-trigger_owner
+trigger_owner-1
+USER=user_test&PASSWD=pass?trigger_owner-2
+trigger_owner-3
 triggers_schema_operations
 trigger_insert
 trigger_projection
