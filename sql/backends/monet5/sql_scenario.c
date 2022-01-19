@@ -191,15 +191,15 @@ SQLexit(Client c)
 str
 SQLepilogue(void *ret)
 {
-	char *s = "sql", *m = "msql";
-	str res;
+	char *s = "sql", *m = "msql", *msg;
 
 	(void) ret;
-	(void) SQLexit(NULL);
+	msg = SQLexit(NULL);
+	freeException(msg);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
 	if (!GDKinmemory(0) && !GDKembedded()) {
-		res = msab_retreatScenario(m);
+		str res = msab_retreatScenario(m);
 		if (!res)
 			res = msab_retreatScenario(s);
 		if (res != NULL) {
