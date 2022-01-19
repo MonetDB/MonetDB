@@ -1,0 +1,12 @@
+statement ok
+GRANT DELETE on table schemaTest.testTable to user_delete
+
+statement ok
+GRANT INSERT on table schemaTest.testTable to user_insert
+
+statement ok
+GRANT UPDATE on table schemaTest.testTable to user_update
+
+statement ok
+GRANT SELECT on table schemaTest.testTable to user_select
+

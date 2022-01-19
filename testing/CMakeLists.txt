@@ -125,7 +125,7 @@ if(PYTHON3_LIBDIR)
     __init__.py
     ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
     exportutils.py
-    malcheck.py
+    melcheck.py
     sqllogictest.py
     explain.py
     mapicursor.py
