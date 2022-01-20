@@ -1000,6 +1000,8 @@ BATdelete(BAT *b)
 	OIDXdestroy(b);
 	PROPdestroy(b);
 	STRMPdestroy(b);
+	if (b->tsink && b->tsink->destroy)
+		b->tsink->destroy(b->tsink);
 	HEAPfree(b->theap, true);
 	if (b->tvheap)
 		HEAPfree(b->tvheap, true);

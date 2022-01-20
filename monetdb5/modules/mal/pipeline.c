@@ -219,6 +219,7 @@ str_hsh(str v)
 }
 
 typedef struct hash_table {
+		Sink s;
         int type;
         int width;
 		fcmp cmp;
@@ -245,16 +246,32 @@ log_base2(unsigned int n)
         return l ;
 }
 
+#define HASH_SINK 1
+
 static hash_table *
 _ht_init( hash_table *h )
 {
         if (h->gids == NULL) {
                 h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
                 h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
-				if (h->p)
+				if (h->p) {
+					assert(h->s.type == HASH_SINK);
 					h->pgids = (gid*)GDKzalloc(sizeof(gid)* h->size);
+				}
         }
         return h;
+}
+
+static void
+ht_destroy(hash_table *ht)
+{
+	if (ht->vals)
+		GDKfree(ht->vals);
+	if (ht->gids)
+		GDKfree((void*)ht->gids);
+	if (ht->pgids)
+		GDKfree(ht->pgids);
+	GDKfree(ht);
 }
 
 static hash_table *
@@ -263,6 +280,8 @@ _ht_create( int type, int size, hash_table *p)
         hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
         int bits = log_base2(size-1);
 
+		h->s.destroy = (sink_destroy)&ht_destroy;
+		h->s.type = HASH_SINK;
         if (bits >= GIDBITS)
                 bits = GIDBITS-1;
         h->size = (gid)1<<bits;
@@ -333,12 +352,12 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (p->argc == 4) {
 		bat pid = *getArgReference_bat(s, p, 3);
 		BAT *p = BATdescriptor(pid);
-		parent = (void*)p->T.ht;
+		parent = (hash_table*)p->T.sink;
 		BBPunfix(p->batCacheid);
 	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
-	b->T.ht = (void*)ht_create(tt, size*1.2*2.1, parent);
+	b->T.sink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
 	BBPkeepref(*res = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -446,8 +465,8 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
 
-	hash_table *h = (hash_table*)u->T.ht;
-	assert(h);
+	hash_table *h = (hash_table*)u->T.sink;
+	assert(h && h->s.type == HASH_SINK);
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
@@ -587,8 +606,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
 
-	hash_table *h = (hash_table*)u->T.ht;
-	assert(h);
+	hash_table *h = (hash_table*)u->T.sink;
+	assert(h && h->s.type == HASH_SINK);
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
@@ -747,15 +766,15 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	BAT *u, *b = BATdescriptor(*bid);
 	if (private && !*uid) { /* create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
-		u->T.ht = ht_create(b->ttype, 1, NULL);
+		u->T.sink = (Sink*)ht_create(b->ttype, 1, NULL);
 	} else {
 		u = BATdescriptor(*uid);
 	}
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
-	hash_table *h = (hash_table*)u->T.ht;
-	assert(h);
+	hash_table *h = (hash_table*)u->T.sink;
+	assert(h && h->s.type == HASH_SINK);
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
@@ -783,7 +802,10 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			/* pass max id */
 			g->T.maxval = last;
 			g->tkey = FALSE;
-			g->T.ht = h;
+			/* this will cause a double free */
+			/* TODO instead we should solve the max val propagation */
+			//h->s.destroy = NULL;
+			//g->T.sink = h;
 			BBPkeepref(*uid = u->batCacheid);
 			BBPkeepref(*rid = g->batCacheid);
 		}
@@ -915,15 +937,15 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 	BAT *G = BATdescriptor(*Gid);
 	if (private && !*uid) { /* create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
-		u->T.ht = ht_create(b->ttype, 1, G->T.ht);
+		u->T.sink = (Sink*)ht_create(b->ttype, 1, (hash_table*)G->T.sink);
 	} else {
 		u = BATdescriptor(*uid);
 	}
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
-	hash_table *h = (hash_table*)u->T.ht;
-	assert(h);
+	hash_table *h = (hash_table*)u->T.sink;
+	assert(h && h->s.type == HASH_SINK);
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
@@ -995,7 +1017,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	/* probably need bat resize and create hash */
 	if (*rid)
 		r = BATdescriptor(*rid);
-	bool private = (!r || r->T.ht!=NULL);
+	bool private = (!r || r->T.private_bat);
 
 	/* probably want to use a per 'r' lock, but the r->theaplock is blocking this on BATextend and BATsetcount */
 	if (!private)
@@ -1026,7 +1048,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		} else {
 			r = COLnew(0, b->ttype, max, TRANSIENT);
 		}
-		r->T.ht = (void*)1;
+		r->T.private_bat = 1;
 	}
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
@@ -1078,7 +1100,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 
 	if (*rid)
 		r = BATdescriptor(*rid);
-	bool private = (!r || r->T.ht!=NULL);
+	bool private = (!r || r->T.private_bat);
 
 	if (!private)
 		MT_lock_set(&p->l);
@@ -1089,7 +1111,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 
 	if (!r) {
 		r = COLnew(0, TYPE_lng, max, TRANSIENT);
-		r->T.ht = (void*)1;
+		r->T.private_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -1160,7 +1182,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (*rid)
 		r = BATdescriptor(*rid);
-	bool private = (!r || r->T.ht!=NULL);
+	bool private = (!r || r->T.private_bat);
 
 	if (!private)
 		MT_lock_set(&p->l);
@@ -1172,7 +1194,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!r) {
 		int tt = getBatType(getArgType(mb, pci, 0));
 		r = COLnew(b->hseqbase, tt, max, TRANSIENT);
-		r->T.ht = (void*)1;
+		r->T.private_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -1288,7 +1310,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 	if (*rid)
 		r = BATdescriptor(*rid);
-	bool private = (!r || r->T.ht!=NULL);
+	bool private = (!r || r->T.private_bat);
 
 	if (!private)
 		MT_lock_set(&p->l);
@@ -1325,7 +1347,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		} else {
 			r = COLnew(0, b->ttype, max, TRANSIENT);
 		}
-		r->T.ht = (void*)1;
+		r->T.private_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -1381,7 +1403,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 	if (*rid)
 		r = BATdescriptor(*rid);
-	bool private = (!r || r->T.ht!=NULL);
+	bool private = (!r || r->T.private_bat);
 
 	if (!private)
 		MT_lock_set(&p->l);
@@ -1418,7 +1440,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		} else {
 			r = COLnew(0, b->ttype, max, TRANSIENT);
 		}
-		r->T.ht = (void*)1;
+		r->T.private_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {

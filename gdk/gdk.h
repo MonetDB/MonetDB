@@ -720,6 +720,12 @@ gdk_export bool VALisnil(const ValRecord *v);
 
 typedef struct PROPrec PROPrec;
 
+typedef void (*sink_destroy)(void *sink);
+typedef struct Sink {
+	sink_destroy destroy;
+	int type;		/* sink/source type */
+} Sink;
+
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
@@ -733,7 +739,8 @@ typedef struct {
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
-		revsorted:1;	/* column is sorted in descending order */
+		revsorted:1,	/* column is sorted in descending order */
+		private_bat:1;	/* used by single worker thread only */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
@@ -749,9 +756,9 @@ typedef struct {
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
 	Strimps *strimps;	/* string imprint index  */
+	Sink *sink;
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
-	void *ht;
 } COLrec;
 
 #define ORDERIDXOFF		3
@@ -819,6 +826,7 @@ typedef struct BAT {
 #define tvheap		T.vheap
 #define thash		T.hash
 #define timprints	T.imprints
+#define tsink		T.sink
 #define tprops		T.props
 #define tstrimps	T.strimps
 

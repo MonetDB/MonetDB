@@ -1107,6 +1107,8 @@ fixhashashbat(BAT *b)
 	OIDXdestroy(b);
 	PROPdestroy(b);
 	STRMPdestroy(b);
+	if (b->tsink && b->tsink->destroy)
+		b->tsink->destroy(b->tsink);
 
 	/* make backup of heaps */
 	const char *t;
