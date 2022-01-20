@@ -593,3 +593,19 @@ SELECT 1 FROM vy, vx GROUP BY COALESCE('b', (SELECT 'c' FROM rt0)) HAVING max(1 
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create or replace view vx(vc0, vc1) as (values (blob 'aa', 2), (case 4 when 2 then (values (blob 'dd')) end, 0.5))
+
+statement ok
+create or replace view vy(vc0) as (select vz.vc0 <> all(select blob '' from (select 2) vw(x)) from vx as vz)
+
+query I nosort
+(SELECT 1 FROM vx) INTERSECT ALL (SELECT least(2, 3) FROM vx, vy)
+----
+
+statement ok
+ROLLBACK
