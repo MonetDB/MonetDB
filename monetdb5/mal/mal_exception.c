@@ -14,7 +14,7 @@
 #include "mal_exception.h"
 #include "mal_private.h"
 
-static char *exceptionNames[] = {
+static const char *exceptionNames[] = {
 /* 0 */	"MALException",
 /* 1 */	"IllegalArgumentException",
 /* 2 */	"OutOfBoundsException",
