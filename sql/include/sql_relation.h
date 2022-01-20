@@ -250,8 +250,8 @@ typedef enum operator_type {
 
 /* used for expressions and relations */
 #define need_distinct(er) 	((er)->distinct)
-#define set_distinct(er) 	(er)->distinct = 1;
-#define set_nodistinct(er)	(er)->distinct = 0;
+#define set_distinct(er) 	(er)->distinct = 1
+#define set_nodistinct(er)	(er)->distinct = 0
 
 #define is_processed(rel) 	((rel)->processed)
 #define set_processed(rel) 	(rel)->processed = 1
