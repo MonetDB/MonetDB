@@ -254,6 +254,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 
 	rel->p = prop_copy(sql->sa, i->p);
 	rel->exps = (!i->exps)?NULL:deep?exps_copy(sql, i->exps):list_dup(i->exps, (fdup)NULL);
+	rel->attr = (!i->attr)?NULL:deep?exps_copy(sql, i->attr):list_dup(i->attr, (fdup)NULL);
 	return rel;
 }
 
