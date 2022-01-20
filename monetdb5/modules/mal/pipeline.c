@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_atoms.h"
 #include "gdk_time.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
@@ -1186,7 +1187,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!err) {
 		BUN cnt = BATcount(g);
-		int err = 0, tt = b->ttype, ot = r->ttype;
+		int tt = b->ttype, ot = r->ttype;
 
 		if (!err) {
 			oid *grp = Tloc(g, 0);
@@ -1224,6 +1225,244 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#define gfunc(Type, f) \
+	if (ATOMstorage(tt) == TYPE_##Type) { \
+			Type *in = Tloc(b, 0); \
+			Type *o = Tloc(r, 0); \
+			for(BUN i = 0; i<cnt; i++) \
+				o[grp[i]] = f(o[grp[i]], in[i]); \
+	}
+
+/* fron now assume shared heap */
+#define vamin(cmp, o, opos, op, in, i, bp) \
+	if (!o[opos] || cmp(op+o[opos], bp+in[i]) > 0) \
+		o[opos] = in[i];
+#define vamax(cmp, o, opos, op, in, i, bp) \
+	if (!o[opos] || cmp(op+o[opos], bp+in[i]) < 0) \
+		o[opos] = in[i];
+
+#define gafunc(f) \
+	if (ATOMextern(tt) && ATOMvarsized(tt)) { \
+			BATiter bi = bat_iterator(b); \
+			BATiter ri = bat_iterator(r); \
+			char *bp = bi.vh->base; \
+			char *op = ri.vh->base; \
+		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			if (b->twidth == 1) { \
+				bp += GDK_VAROFFSET; \
+				op += GDK_VAROFFSET; \
+				uint8_t *in = Tloc(b, 0); \
+				uint8_t *o = Tloc(r, 0); \
+				for(BUN i = 0; i<cnt; i++) \
+					f(cmp, o, grp[i], op, in, i, bp); \
+			} else if (b->twidth == 2) { \
+				bp += GDK_VAROFFSET; \
+				op += GDK_VAROFFSET; \
+				uint16_t *in = Tloc(b, 0); \
+				uint16_t *o = Tloc(r, 0); \
+				for(BUN i = 0; i<cnt; i++) \
+					f(cmp, o, grp[i], op, in, i, bp); \
+			} else if (b->twidth == 4) { \
+				uint32_t *in = Tloc(b, 0); \
+				uint32_t *o = Tloc(r, 0); \
+				for(BUN i = 0; i<cnt; i++) \
+					f(cmp, o, grp[i], op, in, i, bp); \
+			} else if (b->twidth == 8) { \
+				var_t *in = Tloc(b, 0); \
+				var_t *o = Tloc(r, 0); \
+				for(BUN i = 0; i<cnt; i++) \
+					f(cmp, o, grp[i], op, in, i, bp); \
+			} \
+			bat_iterator_end(&bi); \
+			bat_iterator_end(&ri); \
+	}
+
+static str
+LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+{
+	Pipeline *p = (Pipeline*)H; /* last arg should move to first argument .. */
+	BAT *g = BATdescriptor(*gid);
+	BAT *b = BATdescriptor(*bid);
+	BAT *r = NULL;
+	int err = 0, tt = b->ttype;
+
+	if (*rid)
+		r = BATdescriptor(*rid);
+	bool private = (!r || r->T.ht!=NULL);
+
+	if (!private)
+		MT_lock_set(&p->l);
+
+	BAT *pg = BATdescriptor(*pid);
+	oid max = pg->T.maxval;
+	BBPunfix(pg->batCacheid);
+
+	if (r) {
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+		   	if (r->twidth < b->twidth) {
+				int m = b->twidth / r->twidth;
+				r->twidth = b->twidth;
+				r->tshift = b->tshift;
+				r->batCapacity /= m;
+			}
+
+			//int parentid = b->tvheap->parentid;
+			assert (VIEWvtparent(b));
+			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
+			HEAPincref(b->tvheap);
+			r->tvheap = b->tvheap;
+			BBPshare(b->tvheap->parentid);
+			r->batDirtydesc = true;
+		}
+	} else {
+		if (b->ttype == TYPE_str) {
+			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
+			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
+			HEAPincref(b->tvheap);
+			r->tvheap = b->tvheap;
+			BBPshare(b->tvheap->parentid);
+			r->batDirtydesc = true;
+		} else {
+			r = COLnew(0, b->ttype, max, TRANSIENT);
+		}
+		r->T.ht = (void*)1;
+	}
+	BUN cnt = BATcount(r);
+	if (BATcapacity(r) < max) {
+		BUN sz = max*2;
+		if (BATextend(r, sz) != GDK_SUCCEED)
+			err = 1;
+		/* todo correctly initialize */
+		memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+	} else if (cnt == 0) {
+		BUN sz = BATcapacity(r);
+		/* todo correctly initialize */
+		memset(Tloc(r, 0), 0, r->twidth*sz);
+	}
+	assert(b->twidth == r->twidth);
+
+	if (!err) {
+		BUN cnt = BATcount(g);
+
+		if (!err) {
+			oid *grp = Tloc(g, 0);
+
+			gfunc(bte,min);
+			gfunc(sht,min);
+			gfunc(int,min);
+			gfunc(lng,min);
+			gfunc(hge,min);
+			gfunc(flt,min);
+			gfunc(dbl,min);
+			gafunc(vamin);
+		}
+		if (!err) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(g->batCacheid);
+			BATsetcount(r, max);
+			r->trevsorted = r->tsorted = FALSE;
+			r->tkey = FALSE;
+			BBPkeepref(*rid = r->batCacheid);
+		}
+	}
+	if (!private)
+		MT_lock_unset(&p->l);
+	return MAL_SUCCEED;
+}
+
+static str
+LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+{
+	Pipeline *p = (Pipeline*)H; /* last arg should move to first argument .. */
+	BAT *g = BATdescriptor(*gid);
+	BAT *b = BATdescriptor(*bid);
+	BAT *r = NULL;
+	int err = 0, tt = b->ttype;
+
+	if (*rid)
+		r = BATdescriptor(*rid);
+	bool private = (!r || r->T.ht!=NULL);
+
+	if (!private)
+		MT_lock_set(&p->l);
+
+	BAT *pg = BATdescriptor(*pid);
+	oid max = pg->T.maxval;
+	BBPunfix(pg->batCacheid);
+
+	if (r) {
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+		   	if (r->twidth < b->twidth) {
+				int m = b->twidth / r->twidth;
+				r->twidth = b->twidth;
+				r->tshift = b->tshift;
+				r->batCapacity /= m;
+			}
+
+			printf("view parent %d\n", VIEWvtparent(b));
+			assert (VIEWvtparent(b));
+			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
+			HEAPincref(b->tvheap);
+			r->tvheap = b->tvheap;
+			BBPshare(b->tvheap->parentid);
+			r->batDirtydesc = true;
+		}
+	} else {
+		if (b->ttype == TYPE_str) {
+			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
+			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
+			HEAPincref(b->tvheap);
+			r->tvheap = b->tvheap;
+			BBPshare(b->tvheap->parentid);
+			r->batDirtydesc = true;
+		} else {
+			r = COLnew(0, b->ttype, max, TRANSIENT);
+		}
+		r->T.ht = (void*)1;
+	}
+	BUN cnt = BATcount(r);
+	if (BATcapacity(r) < max) {
+		BUN sz = max*2;
+		if (BATextend(r, sz) != GDK_SUCCEED)
+			err = 1;
+		/* todo correctly initialize */
+		memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+	} else if (cnt == 0) {
+		BUN sz = BATcapacity(r);
+		/* todo correctly initialize */
+		memset(Tloc(r, 0), 0, r->twidth*sz);
+	}
+	assert(b->twidth == r->twidth);
+
+	if (!err) {
+		BUN cnt = BATcount(g);
+
+		if (!err) {
+			oid *grp = Tloc(g, 0);
+
+			gfunc(bte,max);
+			gfunc(sht,max);
+			gfunc(int,max);
+			gfunc(lng,max);
+			gfunc(hge,max);
+			gfunc(flt,max);
+			gfunc(dbl,max);
+			gafunc(vamax);
+		}
+		if (!err) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(g->batCacheid);
+			BATsetcount(r, max);
+			r->trevsorted = r->tsorted = FALSE;
+			r->tkey = FALSE;
+			BBPkeepref(*rid = r->batCacheid);
+		}
+	}
+	if (!private)
+		MT_lock_unset(&p->l);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return next atomic number [0..n>", args(1,2, arg("", int), arg("pipeline", ptr))),
@@ -1237,8 +1476,10 @@ static mel_func pipeline_init_funcs[] = {
  command("group", "group", LALGderive, false, "Sub Group input.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batarg("pgid", oid), batargany("b",4))),
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Project.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "count", LALGcountstar, false, "Project.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
- pattern("aggr", "sum", LALGsum, false, "Project.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "sum", LALGsum, false, "sum per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "min", LALGmin, false, "Min per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "max", LALGmax, false, "Max per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",int), batargany("p",2))),
  { .imp=NULL }
