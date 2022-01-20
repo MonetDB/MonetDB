@@ -323,16 +323,12 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (e->type != e_atom && e->type != e_cmp && is_unique(e))
 		mnstr_printf(fout, " UNIQUE");
 	if (e->p && !(GDKdebug & FORCEMITOMASK)) {
-		prop *p = e->p;
-		char *pv;
-
-		for (; p; p = p->p) {
-			pv = propvalue2string(sql->ta, p);
-			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
-			/*
-			if (p->kind == PROP_MIN || p->kind == PROP_MAX)
-				mnstr_printf(fout, " %p", p->value);
-				*/
+		for (prop *p = e->p; p; p = p->p) {
+			/* don't show min/max on atoms */
+			if (e->type != e_atom || (p->kind != PROP_MIN && p->kind != PROP_MAX)) {
+				char *pv = propvalue2string(sql->ta, p);
+				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			}
 		}
 	}
 	if (exp_name(e) && alias) {
@@ -639,11 +635,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		assert(0);
 	}
 	if (rel->p) {
-		prop *p = rel->p;
-		char *pv;
-
-		for (; p; p = p->p) {
-			pv = propvalue2string(sql->ta, p);
+		for (prop *p = rel->p; p; p = p->p) {
+			char *pv = propvalue2string(sql->ta, p);
 			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 		}
 	}
