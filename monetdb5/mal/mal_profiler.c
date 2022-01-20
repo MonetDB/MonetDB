@@ -80,7 +80,7 @@ static void logjsonInternal(char *logbuffer, bool flush)
  * We use the `logadd` function to add data to our buffer (usually key-value pairs). This macro offers an interface similar
  * to printf.
  *
- * The first snprintf bellow happens in a statically allocated buffer that might be much smaller than logcap. We do not
+ * The first snprintf below happens in a statically allocated buffer that might be much smaller than logcap. We do not
  * care. We only need to perform this snprintf to get the actual length of the string that is to be produced.
  *
  * There are three cases:
@@ -889,7 +889,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ev = prepareProfilerEvent(cntxt, mb, stk, pci, 0);
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
- 	if (cntxt->profticks == NULL) {
+	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
 		GDKfree(stmt);
 		return;
