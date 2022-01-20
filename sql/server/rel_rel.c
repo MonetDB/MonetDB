@@ -2370,3 +2370,17 @@ exp_freevar_offset(mvc *sql, sql_exp *e)
 	/* freevar offset is passed via changes */
 	return (v.changes);
 }
+
+sql_exp *
+list_find_exp( list *exps, sql_exp *e)
+{
+	sql_exp *ne = NULL;
+
+	if (e->type != e_column)
+		return NULL;
+	if (( e->l && (ne=exps_bind_column2(exps, e->l, e->r, NULL)) != NULL) ||
+	   ((!e->l && (ne=exps_bind_column(exps, e->r, NULL, NULL, 1)) != NULL)))
+		return ne;
+	return NULL;
+}
+

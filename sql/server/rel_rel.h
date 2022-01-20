@@ -142,4 +142,6 @@ extern bool rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e);
 
 extern int exp_freevar_offset(mvc *sql, sql_exp *e);
 
+extern sql_exp * list_find_exp( list *exps, sql_exp *e);
+
 #endif /* _REL_REL_H_ */
