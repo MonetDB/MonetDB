@@ -3750,7 +3750,7 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 		if (c) {
 			int de = mvc_is_duplicate_eliminated(sql, c);
 			if (de)
-				return de;
+				cnt = de;
 		}
 	}
 	/* for now only based on type info, later use propagated cardinality estimation */
@@ -3760,7 +3760,7 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 		case TYPE_sht:
 			return MIN(64*1024,cnt);
 		default:
-			return cnt;
+			break;
 	}
 	return cnt;
 }
@@ -3773,6 +3773,7 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 {
 	lng card = 1;
 	lng cnt = rel_getcount(rel);
+	bool global = list_empty(rel->r);
 
 	if (!list_empty(rel->r)) {
 		list *l = rel->r;
@@ -3794,7 +3795,7 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 		if (is_aggr(e->type)) {
 			sql_subfunc *sf = e->f;
 
-			if (need_distinct(e))
+			if (need_distinct(e) && !global)
 				return false;
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
 			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
@@ -3806,6 +3807,7 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 	return true;
 }
 
+/*
 static bool
 rel_single_distinct(sql_rel *rel)
 {
@@ -3821,6 +3823,7 @@ rel_single_distinct(sql_rel *rel)
 		return true;
 	return false;
 }
+*/
 
 /* initialize the result variable for the parallel execution */
 static stmt *
@@ -3893,14 +3896,16 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
 			/* ext */
 			//InstrPtr q = newStmt(be->mb, batRef, newRef);
 			InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-			if (_2phases)
+			//if (_2phases)
 				card *= exp_getcard(be->mvc, rel, e);
+			if (card > estimate)
+				card = estimate;
 
 			if (q == NULL)
 				return NULL;
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
-			q = pushInt(be->mb, q, _2phases?card:estimate);
+			q = pushInt(be->mb, q, card);//_2phases?card:estimate);
 			if (curhash)
 				q = pushArgument(be->mb, q, curhash);
 			curhash = getArg(q,0);
@@ -4106,8 +4111,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 
-	if (rel_single_distinct(rel))
-		printf("#single distinct\n");
+//	if (rel_single_distinct(rel))
 
 	stmt *pp = NULL;
 	if (SQLrunning)
@@ -4235,7 +4239,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				aggrstmt->nr = getArg(aggrstmt->q, 0) = *(int*)m->data;
 			m = m->next;
 		}
-		if (aggrstmt && aggrexp->type == e_aggr)
+		if (aggrstmt)
 			aggrstmt->q->inout = 0;
 
 		if (!aggrstmt->nrcols && ext && ext->nrcols)
