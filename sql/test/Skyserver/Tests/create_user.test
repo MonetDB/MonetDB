@@ -1,0 +1,15 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE USER "skyserver" WITH PASSWORD 'skyserver' NAME 'SkyServer' SCHEMA "sys"
+
+statement ok
+CREATE SCHEMA "skyserver" AUTHORIZATION "skyserver"
+
+statement ok
+ALTER USER "skyserver" SET SCHEMA "skyserver"
+
+statement ok
+COMMIT
+

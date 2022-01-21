@@ -1,0 +1,258 @@
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE RC3
+
+statement ok
+DROP TABLE Stetson
+
+statement ok
+DROP TABLE QsoCatalogAll
+
+statement ok
+DROP TABLE QsoConcordance
+
+statement ok
+DROP TABLE Target
+
+statement ok
+DROP TABLE TilingRun
+
+statement ok
+DROP TABLE TargetParam
+
+statement ok
+DROP TABLE Rmatrix
+
+statement ok
+DROP TABLE Region
+
+statement ok
+DROP TABLE SiteDBs
+
+statement ok
+DROP TABLE QueryResults
+
+statement ok
+DROP TABLE RecentQueries
+
+statement ok
+DROP TABLE SiteConstants
+
+statement ok
+DROP TABLE Glossary
+
+statement ok
+DROP TABLE Algorithm
+
+statement ok
+DROP TABLE TableDesc
+
+statement ok
+DROP TABLE DBObjects
+
+statement ok
+DROP TABLE History
+
+statement ok
+DROP TABLE Dependency
+
+statement ok
+DROP TABLE PubHistory
+
+statement ok
+DROP TABLE LoadHistory
+
+statement ok
+DROP TABLE "Diagnostics"
+
+statement ok
+DROP TABLE SiteDiagnostics
+
+statement ok
+DROP TABLE Versions
+
+statement ok
+DROP TABLE PartitionMap
+
+statement ok
+DROP TABLE DataConstants
+
+statement ok
+DROP TABLE SDSSConstants
+
+statement ok
+DROP TABLE StripeDefs
+
+statement ok
+DROP TABLE RunShift
+
+statement ok
+DROP TABLE ProfileDefs
+
+statement ok
+DROP TABLE Mask
+
+statement ok
+DROP TABLE "Match"
+
+statement ok
+DROP TABLE SpecObjAll
+
+statement ok
+DROP TABLE HoleObj
+
+statement ok
+DROP TABLE SpecPhotoAll
+
+statement ok
+DROP TABLE QuasarCatalog
+
+statement ok
+DROP TABLE SpecLineIndex
+
+statement ok
+DROP TABLE SpecLineAll
+
+statement ok
+DROP TABLE XCRedshift
+
+statement ok
+DROP TABLE ELRedShift
+
+statement ok
+DROP TABLE TargetInfo
+
+statement ok
+DROP TABLE TiledTargetAll
+
+statement ok
+DROP TABLE PlateX
+
+statement ok
+DROP TABLE Sector2Tile
+
+statement ok
+DROP TABLE TilingInfo
+
+statement ok
+DROP TABLE TileAll
+
+statement ok
+DROP TABLE TilingNote
+
+statement ok
+DROP TABLE TilingGeometry
+
+statement ok
+DROP TABLE RegionConvex
+
+statement ok
+DROP TABLE Region2Box
+
+statement ok
+DROP TABLE RegionArcs
+
+statement ok
+DROP TABLE Sector
+
+statement ok
+DROP TABLE HalfSpace
+
+statement ok
+DROP TABLE Inventory
+
+statement ok
+DROP TABLE DBColumns
+
+statement ok
+DROP TABLE DBViewCols
+
+statement ok
+DROP TABLE IndexMap
+
+statement ok
+DROP TABLE BestTarget2Sector
+
+statement ok
+DROP TABLE Segment
+
+statement ok
+DROP TABLE Field
+
+statement ok
+DROP TABLE PhotoObjAll
+
+statement ok
+DROP TABLE PhotoTag
+
+statement ok
+DROP TABLE Frame
+
+statement ok
+DROP TABLE RunQA
+
+statement ok
+DROP TABLE FieldProfile
+
+statement ok
+DROP TABLE PhotoProfile
+
+statement ok
+DROP TABLE USNOB
+
+statement ok
+DROP TABLE USNO
+
+statement ok
+DROP TABLE PhotoAuxAll
+
+statement ok
+DROP TABLE Photoz
+
+statement ok
+DROP TABLE First
+
+statement ok
+DROP TABLE Rosat
+
+statement ok
+DROP TABLE ObjMask
+
+statement ok
+DROP TABLE MatchHead
+
+statement ok
+DROP TABLE MaskedObject
+
+statement ok
+DROP TABLE Neighbors
+
+statement ok
+DROP TABLE Zone
+
+statement ok
+DROP TABLE FileGroupMap
+
+statement ok
+DROP TABLE Chunk
+
+statement ok
+DROP TABLE sysobjects
+
+statement ok
+DROP TABLE sysusers
+
+statement ok
+DROP TABLE systypes
+
+statement ok
+DROP TABLE syscolumns
+
+statement ok
+DROP TABLE spt_datatype_info
+
+statement ok
+COMMIT
+

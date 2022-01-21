@@ -106,8 +106,7 @@ set(include_sql_files
   75_storagemodel
   76_dump
   80_statistics
-  81_tracer
-  90_strimps)
+  81_tracer)
 
 if(HAVE_HGE)
   list(APPEND include_sql_files
@@ -188,8 +187,8 @@ target_link_libraries(sql
 set_target_properties(sql
   PROPERTIES
   OUTPUT_NAME monetdbsql
-  VERSION ${MONETDB_VERSION}
-  SOVERSION ${MONETDB_VERSION_MAJOR}
+  VERSION ${SQL_VERSION}
+  SOVERSION ${SQL_VERSION_MAJOR}
   PUBLIC_HEADER "${sql_public_headers}")
 
 target_compile_definitions(sql
@@ -228,3 +227,10 @@ install(EXPORT sqlTargets
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:sql>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()

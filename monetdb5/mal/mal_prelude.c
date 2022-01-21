@@ -225,11 +225,13 @@ addFunctions(mel_func *fcn){
 		if ( s == NULL)
 			throw(LOADER, "addFunctions", "Can not create symbol for %s.%s missing", fcn->mod, fcn->fcn);
 		mb = s->def;
-		if( mb == NULL)
+		if( mb == NULL) {
+			freeSymbol(s);
 			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
+		}
 
 		if (fcn->cname && fcn->cname[0])
-			strcpy(mb->binding, fcn->cname);
+			strcpy_len(mb->binding, fcn->cname, sizeof(mb->binding));
 		/* keep the comment around, setting the static avoid freeing the string accidentally , saving on duplicate documentation in the code. */
 		mb->statichelp = mb->help = fcn->comment;
 
@@ -237,7 +239,7 @@ addFunctions(mel_func *fcn){
 		sig->retc = 0;
 		sig->argc = 0;
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
-		sig->fcn = (MALfcn)fcn->imp;
+		sig->fcn = fcn->imp;
 		if( fcn->unsafe)
 			mb->unsafeProp = 1;
 
@@ -316,7 +318,7 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 }
 
 int
-melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ... )
+melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ... )
 {
 	int i, idx;
 	Module c;
@@ -340,7 +342,7 @@ melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char
 	mb = s->def;
 	(void)comment;
 	if (fname)
-		strcpy(mb->binding, fname);
+		strcpy_len(mb->binding, fname, sizeof(mb->binding));
 	if (mb == NULL) {
 		freeSymbol(s);
 		return MEL_ERR;
@@ -349,7 +351,7 @@ melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char
 	sig->retc = 0;
 	sig->argc = 0;
 	sig->token = command ? COMMANDsymbol:PATTERNsymbol;
-	sig->fcn = (MALfcn)imp;
+	sig->fcn = imp;
 	if (unsafe)
 		mb->unsafeProp = 1;
 	/* add the return variables */
