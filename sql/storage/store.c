@@ -6173,29 +6173,11 @@ sql_trans_is_duplicate_eliminated( sql_trans *tr, sql_column *col )
 }
 
 int
-sql_trans_no_nil( sql_trans *tr, sql_column *col )
+sql_trans_col_stats( sql_trans *tr, sql_column *col, bool *nonil, ValPtr min, ValPtr max )
 {
 	sqlstore *store = tr->store;
-	if (col && isTable(col->t) && store->storage_api.nonil_col)
-		return store->storage_api.nonil_col(tr, col);
-	return 0;
-}
-
-int
-sql_trans_col_min_value( sql_trans *tr, sql_column *col, ValPtr res)
-{
-	sqlstore *store = tr->store;
-	if (col && isTable(col->t) && store->storage_api.col_min_value)
-		return store->storage_api.col_min_value(tr, col, res);
-	return 0;
-}
-
-int
-sql_trans_col_max_value( sql_trans *tr, sql_column *col, ValPtr res)
-{
-	sqlstore *store = tr->store;
-	if (col && isTable(col->t) && store->storage_api.col_max_value)
-		return store->storage_api.col_max_value(tr, col, res);
+	if (col && isTable(col->t) && store->storage_api.col_stats)
+		return store->storage_api.col_stats(tr, col, nonil, min, max);
 	return 0;
 }
 

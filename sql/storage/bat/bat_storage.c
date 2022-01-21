@@ -2705,90 +2705,40 @@ double_elim_col(sql_trans *tr, sql_column *col)
 }
 
 static int
-nonil_col(sql_trans *tr, sql_column *col)
-{
-	int nonil = 0;
-	BAT *b = NULL;
-	sql_delta *d = NULL;
-
-	assert(tr->active);
-	if (!col || !isTable(col->t) || !col->t->s)
-		return 0;
-
-	if ((d = ATOMIC_PTR_GET(&col->data)) && (b = quick_descriptor(d->cs.bid))) {
-		nonil = b->tnonil && !b->tnil;
-
-		if (nonil && d->cs.ucnt > 0) {
-			if (!(b = quick_descriptor(d->cs.uvbid)))
-				return 0;
-			nonil &= b->tnonil && !b->tnil;
-		}
-	}
-	return nonil;
-}
-
-static int
-col_min_value(sql_trans *tr, sql_column *c, ValPtr res)
+col_stats(sql_trans *tr, sql_column *c, bool *nonil, ValPtr min, ValPtr max)
 {
 	int ok = 0;
 	BAT *b = NULL;
 	sql_delta *d = NULL;
 
 	assert(tr->active);
+	*nonil = false;
 	if (!c || !isTable(c->t) || !c->t->s)
-		return 0;
-
-	if (c->storage_type) {
-		if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.st == ST_DICT && d->cs.ucnt == 0 &&
-			(b = temp_descriptor(d->cs.ebid))) {
-			BATiter bi = bat_iterator(b);
-			if (bi.minpos != BUN_NONE && VALinit(res, bi.type, BUNtail(bi, bi.minpos)))
-				ok = 1;
-			bat_iterator_end(&bi);
-			bat_destroy(b);
-		}
 		return ok;
-	}
-	if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.ucnt == 0 && (b = quick_descriptor(d->cs.bid)) &&
-		b->tminpos != BUN_NONE && (b = temp_descriptor(d->cs.bid))) {
-		BATiter bi = bat_iterator(b);
-		if (bi.minpos != BUN_NONE && VALinit(res, bi.type, BUNtail(bi, bi.minpos)))
-			ok = 1;
-		bat_iterator_end(&bi);
-		bat_destroy(b);
-	}
-	return ok;
-}
 
-static int
-col_max_value(sql_trans *tr, sql_column *c, ValPtr res)
-{
-	int ok = 0;
-	BAT *b = NULL;
-	sql_delta *d = NULL;
-
-	assert(tr->active);
-	if (!c || !isTable(c->t) || !c->t->s)
-		return 0;
-
-	if (c->storage_type) {
-		if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.st == ST_DICT && d->cs.ucnt == 0 &&
-			(b = temp_descriptor(d->cs.ebid))) {
-			BATiter bi = bat_iterator(b);
-			if (bi.maxpos != BUN_NONE && VALinit(res, bi.type, BUNtail(bi, bi.maxpos)))
-				ok = 1;
-			bat_iterator_end(&bi);
-			bat_destroy(b);
+	if ((d = ATOMIC_PTR_GET(&c->data))) {
+		if (d->cs.st == ST_FOR) {
+			*nonil = true; /* TODO for min/max. I will do it later */
+			return ok;
 		}
-		return ok;
-	}
-	if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.ucnt == 0 && (b = quick_descriptor(d->cs.bid)) &&
-		b->tmaxpos != BUN_NONE && (b = temp_descriptor(d->cs.bid))) {
-		BATiter bi = bat_iterator(b);
-		if (bi.maxpos != BUN_NONE && VALinit(res, bi.type, BUNtail(bi, bi.maxpos)))
-			ok = 1;
-		bat_iterator_end(&bi);
-		bat_destroy(b);
+		bat bid = d->cs.st == ST_DICT ? d->cs.ebid : d->cs.bid;
+		if ((b = quick_descriptor(bid))) {
+			*nonil = b->tnonil && !b->tnil;
+			int eclass = c->type.type->eclass;
+
+			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
+				d->cs.ucnt == 0 && (b->tminpos != BUN_NONE || b->tmaxpos != BUN_NONE) && (b = temp_descriptor(bid))) {
+				BATiter bi = bat_iterator(b);
+				if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
+					ok |= 1;
+				if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
+					ok |= 2;
+				bat_iterator_end(&bi);
+				bat_destroy(b);
+			}
+			if (*nonil && d->cs.ucnt > 0)
+				*nonil &= ((b = quick_descriptor(d->cs.uvbid)) != NULL) && b->tnonil && !b->tnil;
+		}
 	}
 	return ok;
 }
@@ -4840,9 +4790,7 @@ bat_storage_init( store_functions *sf)
 	sf->sorted_col = &sorted_col;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
-	sf->nonil_col = &nonil_col;
-	sf->col_min_value = &col_min_value;
-	sf->col_max_value = &col_max_value;
+	sf->col_stats = &col_stats;
 
 	sf->col_dup = &col_dup;
 	sf->idx_dup = &idx_dup;

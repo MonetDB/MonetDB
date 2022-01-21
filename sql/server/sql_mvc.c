@@ -1541,24 +1541,10 @@ mvc_is_duplicate_eliminated(mvc *m, sql_column *col)
 }
 
 int
-mvc_has_no_nil(mvc *m, sql_column *col)
+mvc_col_stats(mvc *m, sql_column *col, bool *nonil, ValPtr min, ValPtr max)
 {
-	TRC_DEBUG(SQL_TRANS, "Has no null values: %s\n", col->base.name);
-	return sql_trans_no_nil(m->session->tr, col);
-}
-
-int
-mvc_has_min_value(mvc *m, sql_column *col, ValPtr res)
-{
-	TRC_DEBUG(SQL_TRANS, "Has min value: %s\n", col->base.name);
-	return sql_trans_col_min_value(m->session->tr, col, res);
-}
-
-int
-mvc_has_max_value(mvc *m, sql_column *col, ValPtr res)
-{
-	TRC_DEBUG(SQL_TRANS, "Has max value: %s\n", col->base.name);
-	return sql_trans_col_max_value(m->session->tr, col, res);
+	TRC_DEBUG(SQL_TRANS, "Retrieving column stats for: %s\n", col->base.name);
+	return sql_trans_col_stats(m->session->tr, col, nonil, min, max);
 }
 
 int

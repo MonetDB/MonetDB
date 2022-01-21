@@ -204,26 +204,25 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	(void)depth;
 	if ((c = name_find_column(rel, exp_relname(e), exp_name(e), -2, NULL))) {
+		bool nonil = false;
 		ValRecord min, max;
+		int ok = mvc_col_stats(sql, c, &nonil, &min, &max);
 
-		if (has_nil(e) && mvc_has_no_nil(sql, c))
+		if (has_nil(e) && nonil)
 			set_has_no_nil(e);
-
-		if (EC_NUMBER(c->type.type->eclass) || EC_VARCHAR(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) {
-			if (mvc_has_max_value(sql, c, &max)) {
-				if (!VALisnil(&max)) {
-					prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
-					p->value = atom_from_valptr(sql->sa, &c->type, &max);
-				}
-				VALclear(&max);
+		if ((ok & 1) == 1) {
+			if (!VALisnil(&min)) {
+				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
+				p->value = atom_from_valptr(sql->sa, &c->type, &min);
 			}
-			if (mvc_has_min_value(sql, c, &min)) {
-				if (!VALisnil(&min)) {
-					prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-					p->value = atom_from_valptr(sql->sa, &c->type, &min);
-				}
-				VALclear(&min);
+			VALclear(&min);
+		}
+		if ((ok & 2) == 2) {
+			if (!VALisnil(&max)) {
+				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
+				p->value = atom_from_valptr(sql->sa, &c->type, &max);
 			}
+			VALclear(&max);
 		}
 	}
 	return e;

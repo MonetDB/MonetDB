@@ -218,9 +218,7 @@ extern int mvc_access(mvc *m, sql_table *t, sht access);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 extern int mvc_is_unique(mvc *m, sql_column *col);
 extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
-extern int mvc_has_no_nil(mvc *m, sql_column *col);
-extern int mvc_has_min_value(mvc *m, sql_column *col, ValPtr res);
-extern int mvc_has_max_value(mvc *m, sql_column *col, ValPtr res);
+extern int mvc_col_stats(mvc *m, sql_column *col, bool *nonil, ValPtr min, ValPtr max);
 
 extern int mvc_create_ukey(sql_key **kres, mvc *m, sql_table *t, const char *name, key_type kt);
 extern int mvc_create_fkey(sql_fkey **kres, mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update);
