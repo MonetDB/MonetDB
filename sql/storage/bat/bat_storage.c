@@ -2705,7 +2705,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 }
 
 static int
-col_stats(sql_trans *tr, sql_column *c, bool *nonil, ValPtr min, ValPtr max)
+col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, ValPtr min, ValPtr max)
 {
 	int ok = 0;
 	BAT *b = NULL;
@@ -2713,6 +2713,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, ValPtr min, ValPtr max)
 
 	assert(tr->active);
 	*nonil = false;
+	*unique = false;
 	if (!c || !isTable(c->t) || !c->t->s)
 		return ok;
 
@@ -2736,6 +2737,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, ValPtr min, ValPtr max)
 				bat_iterator_end(&bi);
 				bat_destroy(b);
 			}
+			*unique = d->cs.ucnt == 0 && (d->cs.st == ST_DICT ? (((b = quick_descriptor(d->cs.bid)) != NULL) && b->tkey) : b->tkey);
 			if (*nonil && d->cs.ucnt > 0)
 				*nonil &= ((b = quick_descriptor(d->cs.uvbid)) != NULL) && b->tnonil && !b->tnil;
 		}
