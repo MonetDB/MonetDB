@@ -238,7 +238,7 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 
 	/* for the intersection, if both expresssions don't overlap, it can be pruned */
 	if (is_inter(rel->op) && exp_is_not_null(le) && exp_is_not_null(re) &&
-		lval_min && rval_min && lval_max && rval_max && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0))
+		((rval_max && lval_min && atom_cmp(rval_max, lval_min) < 0) || (rval_min && lval_max && atom_cmp(rval_min, lval_max) > 0)))
 		return true;
 
 	if (lval_min && rval_min) {
@@ -557,11 +557,14 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 				exp_prop_alias(v->sql->sa, a, e);
 				n->data = a;
 			}
+			list_hash_clear(rel->exps);
 			sql_rel *l = rel_project(v->sql->sa, NULL, rel->exps);
 			l = rel_select(v->sql->sa, l, exp_atom_bool(v->sql->sa, 0));
 			rel->op = op_project;
 			rel->l = l;
 			rel->exps = rel_projections(v->sql, l, NULL, 1, 1);
+			set_nodistinct(rel); /* set relations may have distinct flag set */
+			v->changes++;
 		}
 	} break;
 	case op_join:
@@ -578,7 +581,7 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 		if (is_simple_project(rel->op) && !list_empty(rel->r))
 			rel->r = exps_exp_visitor_bottomup(v, rel, rel->r, 0, &rel_propagate_statistics, false);
 		/* The following optimizations can only be applied after propagating the statistics to rel->exps */
-		if ((is_join(rel->op) || is_select(rel->op)) && rel->exps) {
+		if ((is_join(rel->op) || is_select(rel->op)) && !list_empty(rel->exps)) {
 			int changes = v->changes;
 			rel->exps = rel_prune_predicates(v, rel);
 			if (v->changes > changes)
