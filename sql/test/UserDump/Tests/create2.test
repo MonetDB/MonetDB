@@ -1,0 +1,21 @@
+statement ok
+create table foo (
+    id int,
+    v int,
+    primary key (id)
+)
+
+statement ok
+create view bar as select * from foo
+
+statement ok
+create function b(i int) returns int begin return select v from bar where id = i; end
+
+statement ok
+create table a (
+    id int
+)
+
+statement ok
+create trigger a after insert on foo insert into a values (1)
+

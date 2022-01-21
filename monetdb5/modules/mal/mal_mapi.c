@@ -1051,6 +1051,9 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 
 	mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
 
+	if (mid == NULL)
+		throw(IO, "mapi.connect", MAL_MALLOC_FAIL);
+
 	if (mapi_error(mid)) {
 		const char *err = mapi_error_str(mid);
 		str ex;

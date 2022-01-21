@@ -129,8 +129,8 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						InstrPtr q = newInstructionArgs(mb, calcRef, minusRef, 3);
 						int tpe = getVarType(mb, getArg(p,3));
 						getArg(q, 0) = newTmpVariable(mb, tpe);
-						addArgument(mb, q, getArg(p, 3));
-						addArgument(mb, q, varforvalue[k]);
+						q = addArgument(mb, q, getArg(p, 3));
+						q = addArgument(mb, q, varforvalue[k]);
 						pushInstruction(mb,q);
 
 						InstrPtr r;
@@ -140,7 +140,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						else
 							r = newInstructionArgs(mb, calcRef, putName("sht"), 2);
 						getArg(r, 0) = newTmpVariable(mb, tpe);
-						addArgument(mb, r, getArg(q, 0));
+						r = addArgument(mb, r, getArg(q, 0));
 						pushInstruction(mb,r);
 
 						q = copyInstruction(p);
@@ -153,15 +153,15 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						InstrPtr r = newInstructionArgs(mb, dictRef, selectRef, 10);
 
 						getArg(r, 0) = getArg(p, 0);
-						addArgument(mb, r, varisdict[k]);
-						addArgument(mb, r, getArg(p, 2)); /* cand */
-						addArgument(mb, r, vardictvalue[k]);
-						addArgument(mb, r, getArg(p, 3)); /* l */
-						addArgument(mb, r, getArg(p, 4)); /* h */
-						addArgument(mb, r, getArg(p, 5)); /* li */
-						addArgument(mb, r, getArg(p, 6)); /* hi */
-						addArgument(mb, r, getArg(p, 7)); /* anti */
-						addArgument(mb, r, getArg(p, 8)); /* unknown */
+						r = addArgument(mb, r, varisdict[k]);
+						r = addArgument(mb, r, getArg(p, 2)); /* cand */
+						r = addArgument(mb, r, vardictvalue[k]);
+						r = addArgument(mb, r, getArg(p, 3)); /* l */
+						r = addArgument(mb, r, getArg(p, 4)); /* h */
+						r = addArgument(mb, r, getArg(p, 5)); /* li */
+						r = addArgument(mb, r, getArg(p, 6)); /* hi */
+						r = addArgument(mb, r, getArg(p, 7)); /* anti */
+						r = addArgument(mb, r, getArg(p, 8)); /* unknown */
 						pushInstruction(mb,r);
 					} else {
 						/* pos = select(col, cand, l, h, ...) with col = dict.decompress(o,u)
@@ -179,14 +179,14 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						int tpe = getVarType(mb, varisdict[k]);
 						InstrPtr s = newInstructionArgs(mb, dictRef, putName("convert"), 3);
 						getArg(s, 0) = newTmpVariable(mb, tpe);
-						addArgument(mb, s, getArg(r, 0));
+						s = addArgument(mb, s, getArg(r, 0));
 						pushInstruction(mb,s);
 
 						InstrPtr t = newInstructionArgs(mb, algebraRef, intersectRef, 9);
 						getArg(t, 0) = getArg(p, 0);
-						addArgument(mb, t, varisdict[k]);
-						addArgument(mb, t, getArg(s, 0));
-						addArgument(mb, t, cand);
+						t = addArgument(mb, t, varisdict[k]);
+						t = addArgument(mb, t, getArg(s, 0));
+						t = addArgument(mb, t, cand);
 						t = pushNil(mb, t, TYPE_bat);
 						t = pushBit(mb, t, TRUE);    /* nil matches */
 						t = pushBit(mb, t, TRUE);     /* max_one */
@@ -208,8 +208,8 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					int tpe = getBatType(getVarType(mb, getArg(p,0)));
 					getArg(r, 0) = newTmpVariable(mb, tpe);
 					int l = getArg(r, 0), m = getArg(p, 0);
-					addArgument(mb, r, getArg(p, 1));
-					addArgument(mb, r, getArg(p, 2));
+					r = addArgument(mb, r, getArg(p, 1));
+					r = addArgument(mb, r, getArg(p, 2));
 					getArg(r, j) = varforvalue[k];
 
 					/* new and old result are now min-values */
