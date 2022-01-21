@@ -2267,7 +2267,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							" and sqlname = 'queue' and type = %d;\n", (int) F_UNION);
 			pos += snprintf(buf + pos, bufsize - pos,
 							"update sys._tables set system = true where schema_id = 2000"
-							" and sqlname = 'queue';\n");
+							" and name = 'queue';\n");
 
 			/* fix up dependencies for function getproj4 (if it exists) */
 			pos += snprintf(buf + pos, bufsize - pos,
