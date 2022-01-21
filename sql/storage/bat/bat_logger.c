@@ -130,9 +130,9 @@ tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 					b = bn;
 				}
 				rc = BUNappend(b, cval, true);
-				bat_destroy(b);
 				if (rc != GDK_SUCCEED) {
 					va_end(va);
+					bat_destroy(b);
 					return rc;
 				}
 			}
@@ -3155,7 +3155,7 @@ bl_postversion(void *Store, void *Lg)
 
 		BAT* funcs_name_ordered = NULL;
 		BAT* funcs_type_ordered = NULL;
-		BAT* args_number_ordered = NULL;
+		BAT* args_number_aligned = NULL;
 		BAT* args_number_order = NULL;
 		BAT* args_inout_ordered = NULL;
 		BAT* args_type_ordered = NULL;
@@ -3193,15 +3193,26 @@ bl_postversion(void *Store, void *Lg)
 
 		if ((funcs_name_ordered = BATproject(funcs_cands, funcs_name)) == NULL || (funcs_type_ordered = BATproject(funcs_cands, funcs_type)) == NULL)
 			goto bailout;
+
+		args_number_aligned = BATproject(args_cands, args_number);
 			
-		if (BATsort(&args_number_ordered, &args_number_order, NULL, args_number, args_cands, funcs_cands, false, false, false) != GDK_SUCCEED)
+		if (BATsort(NULL, &args_number_order, NULL, args_number_aligned, NULL, funcs_cands, false, false, false) != GDK_SUCCEED)
 			goto bailout;
-			
+
+		{
+			BAT* args_number_order_ = NULL; 
+			if (!(args_number_order_ = BATproject(args_number_order, args_cands)))
+				goto bailout;
+
+			bat_destroy(args_number_order);
+			args_number_order = args_number_order_;
+		}
+
 		if (
-			(args_inout_ordered = BATproject(args_number_order, args_inout)) == NULL ||
-			(args_type_ordered = BATproject(args_number_order, args_type)) == NULL ||
-			(args_digits_ordered = BATproject(args_number_order, args_digits)) == NULL ||
-			(args_scale_ordered = BATproject(args_number_order, args_scale)) == NULL)
+			(args_inout_ordered		= BATproject(args_number_order, args_inout))	== NULL ||
+			(args_type_ordered		= BATproject(args_number_order, args_type))		== NULL ||
+			(args_digits_ordered	= BATproject(args_number_order, args_digits))	== NULL ||
+			(args_scale_ordered		= BATproject(args_number_order, args_scale))	== NULL)
 			goto bailout;
 
 		if ((funcs_name_mangled = COLnew(funcs_name->hseqbase, TYPE_str, funcs_name->batCapacity, TRANSIENT)) == NULL ||
@@ -3420,7 +3431,7 @@ bl_postversion(void *Store, void *Lg)
 
 		bat_destroy(funcs_name_ordered);
 		bat_destroy(funcs_type_ordered);
-		bat_destroy(args_number_ordered);
+		bat_destroy(args_number_aligned);
 		bat_destroy(args_number_order);
 		bat_destroy(args_inout_ordered);
 		bat_destroy(args_type_ordered);
@@ -3453,7 +3464,7 @@ bl_postversion(void *Store, void *Lg)
 
 			bat_destroy(funcs_name_ordered);
 			bat_destroy(funcs_type_ordered);
-			bat_destroy(args_number_ordered);
+			bat_destroy(args_number_aligned);
 			bat_destroy(args_number_order);
 			bat_destroy(args_inout_ordered);
 			bat_destroy(args_type_ordered);
