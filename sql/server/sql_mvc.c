@@ -1541,10 +1541,10 @@ mvc_is_duplicate_eliminated(mvc *m, sql_column *col)
 }
 
 int
-mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, ValPtr min, ValPtr max)
+mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
 {
 	TRC_DEBUG(SQL_TRANS, "Retrieving column stats for: %s\n", col->base.name);
-	return sql_trans_col_stats(m->session->tr, col, nonil, unique, min, max);
+	return sql_trans_col_stats(m->session->tr, col, nonil, unique, unique_est, min, max);
 }
 
 int

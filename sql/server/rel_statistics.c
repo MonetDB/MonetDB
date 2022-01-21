@@ -215,8 +215,9 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	(void)depth;
 	if ((c = name_find_column(rel, exp_relname(e), exp_name(e), -2, NULL))) {
 		bool nonil = false, unique = false;
+		double unique_est = 0;
 		ValRecord min, max;
-		int ok = mvc_col_stats(sql, c, &nonil, &unique, &min, &max);
+		int ok = mvc_col_stats(sql, c, &nonil, &unique, &unique_est, &min, &max);
 
 		if (has_nil(e) && nonil)
 			set_has_no_nil(e);

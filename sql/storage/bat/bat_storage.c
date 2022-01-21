@@ -2705,7 +2705,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 }
 
 static int
-col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, ValPtr min, ValPtr max)
+col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
 {
 	int ok = 0;
 	BAT *b = NULL;
@@ -2714,6 +2714,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, ValPtr min, V
 	assert(tr->active);
 	*nonil = false;
 	*unique = false;
+	*unique_est = 0;
 	if (!c || !isTable(c->t) || !c->t->s)
 		return ok;
 
@@ -2737,7 +2738,11 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, ValPtr min, V
 				bat_iterator_end(&bi);
 				bat_destroy(b);
 			}
-			*unique = d->cs.ucnt == 0 && (d->cs.st == ST_DICT ? (((b = quick_descriptor(d->cs.bid)) != NULL) && b->tkey) : b->tkey);
+			/* for dict, check the offsets bat for uniqueness */
+			if (d->cs.ucnt == 0 && (d->cs.st == ST_DEFAULT || (b = quick_descriptor(d->cs.bid)))) {
+				*unique = b->tkey;
+				*unique_est = b->tunique_est;
+			}
 			if (*nonil && d->cs.ucnt > 0)
 				*nonil &= ((b = quick_descriptor(d->cs.uvbid)) != NULL) && b->tnonil && !b->tnil;
 		}
