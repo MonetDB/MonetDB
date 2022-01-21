@@ -35,6 +35,7 @@ mal_export  const char *alter_typeRef;
 mal_export  const char *alter_userRef;
 mal_export  const char *alter_viewRef;
 mal_export  const char *andRef;
+mal_export  const char *append_fromRef;
 mal_export  const char *appendidxRef;
 mal_export  const char *appendBulkRef;
 mal_export  const char *appendRef;
