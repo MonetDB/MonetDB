@@ -2972,8 +2972,8 @@ bat2return(MalStkPtr stk, InstrPtr pci, BAT **b)
 	}
 }
 
-static char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
-static char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
+static const char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
+static const char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
 
 /* str mvc_import_table_wrap(int *res, sql_table **t, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *besteffort, str *fixed_width, int *onclient, int *escape); */
 str

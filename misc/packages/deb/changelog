@@ -54,8 +54,8 @@ monetdb (11.43.3) unstable; urgency=low
 monetdb (11.43.3) unstable; urgency=low
 
   * merovingian: Disabled logging into merovingian.log of next info message types:
-    - proxying client <host>:<port> for database '<dbname>' to <url>
-    - target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying
+    "proxying client <host>:<port> for database '<dbname>' to <url>" and
+    "target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying".
     These messages were written to the log file at each connection. In most
     cases this information is not used. The disabling reduces the log file size.
 
