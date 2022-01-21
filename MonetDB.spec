@@ -850,6 +850,28 @@ fi
 %endif
 
 %changelog
+* Tue Jan 18 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.5-20220118
+- Rebuilt.
+
+* Thu Jan 13 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.5-20220118
+- NT: We now build Windows binaries using Visual Studio 2022.
+
+* Wed Jan 12 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.43.5-20220118
+- gdk: Implement string imprints (strimps for short) a pre-filter structure
+  for strings in order to accelerate LIKE queries. If a strimp exists
+  for a specific string column the strings are pre-filtered, rejecting
+  strings that cannot possibly match, before the more expensive and
+  accurate matching algorithms run.
+
+* Wed Jan 12 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.43.5-20220118
+- sql: Add string imprints to the existing imprints index creation syntax. On
+  string column "col" of a table "tbl" marked read only ("ALTER TABLE tbl
+  SET READ ONLY") the user can create a string imprint using the syntax:
+  "CREATE IMPRINTS INDEX index_name ON tbl(col);".
+
+* Wed Jan 12 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.5-20220118
+- MonetDB: A couple of concurrency issues have been fixed.
+
 * Tue Jan 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.3-20220111
 - Rebuilt.
 - GH#7215: ODBC Driver SQLStatistics returns duplicate rows/rows for other

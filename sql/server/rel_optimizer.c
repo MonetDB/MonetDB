@@ -18,171 +18,15 @@
 #include "rel_propagate.h"
 #include "rel_distribute.h"
 #include "rel_rewriter.h"
+#include "rel_remote.h"
 #include "sql_mvc.h"
 #include "sql_privileges.h"
-
-typedef struct global_props {
-	int cnt[ddl_maxops];
-	uint8_t
-		instantiate:1,
-		needs_mergetable_rewrite:1,
-		needs_remote_replica_rewrite:1,
-		needs_distinct:1;
-} global_props;
-
-static int
-find_member_pos(list *l, sql_table *t)
-{
-	int i = 0;
-	if (l) {
-		for (node *n = l->h; n ; n = n->next, i++) {
-			sql_part *pt = n->data;
-			if (pt->member == t->base.id)
-				return i;
-		}
-	}
-	return -1;
-}
-
-/* The important task of the relational optimizer is to optimize the
-   join order.
-
-   The current implementation chooses the join order based on
-   select counts, ie if one of the join sides has been reduced using
-   a select this join is choosen over one without such selections.
- */
-
-/* currently we only find simple column expressions */
-sql_column *
-name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt )
-{
-	sql_exp *alias = NULL;
-	sql_column *c = NULL;
-
-	switch (rel->op) {
-	case op_basetable: {
-		sql_table *t = rel->l;
-
-		if (rel->exps) {
-			sql_exp *e;
-
-			if (rname)
-				e = exps_bind_column2(rel->exps, rname, name, NULL);
-			else
-				e = exps_bind_column(rel->exps, name, NULL, NULL, 0);
-			if (!e || e->type != e_column)
-				return NULL;
-			if (e->l)
-				rname = e->l;
-			name = e->r;
-		}
-		if (rname && strcmp(t->base.name, rname) != 0)
-			return NULL;
-		sql_table *mt = rel_base_get_mergetable(rel);
-		if (ol_length(t->columns)) {
-			for (node *cn = ol_first_node(t->columns); cn; cn = cn->next) {
-				sql_column *c = cn->data;
-				if (strcmp(c->base.name, name) == 0) {
-					*bt = rel;
-					if (pnr < 0 || (mt &&
-						find_member_pos(mt->members, c->t) == pnr))
-						return c;
-				}
-			}
-		}
-		if (name[0] == '%' && ol_length(t->idxs)) {
-			for (node *cn = ol_first_node(t->idxs); cn; cn = cn->next) {
-				sql_idx *i = cn->data;
-				if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
-					*bt = rel;
-					if (pnr < 0 || (mt &&
-						find_member_pos(mt->members, i->t) == pnr)) {
-						sql_kc *c = i->columns->h->data;
-						return c->c;
-					}
-				}
-			}
-		}
-		break;
-	}
-	case op_table:
-		/* table func */
-		return NULL;
-	case op_ddl:
-		if (is_updateble(rel))
-			return name_find_column( rel->l, rname, name, pnr, bt);
-		return NULL;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-		/* first right (possible subquery) */
-		c = name_find_column( rel->r, rname, name, pnr, bt);
-		/* fall through */
-	case op_semi:
-	case op_anti:
-		if (!c)
-			c = name_find_column( rel->l, rname, name, pnr, bt);
-		return c;
-	case op_select:
-	case op_topn:
-	case op_sample:
-		return name_find_column( rel->l, rname, name, pnr, bt);
-	case op_union:
-	case op_inter:
-	case op_except:
-
-		if (pnr >= 0 || pnr == -2) {
-			/* first right (possible subquery) */
-			c = name_find_column( rel->r, rname, name, pnr, bt);
-			if (!c)
-				c = name_find_column( rel->l, rname, name, pnr, bt);
-			return c;
-		}
-		return NULL;
-
-	case op_project:
-	case op_groupby:
-		if (!rel->exps)
-			break;
-		if (rname)
-			alias = exps_bind_column2(rel->exps, rname, name, NULL);
-		else
-			alias = exps_bind_column(rel->exps, name, NULL, NULL, 1);
-		if (is_groupby(rel->op) && alias && alias->type == e_column && !list_empty(rel->r)) {
-			if (alias->l)
-				alias = exps_bind_column2(rel->r, alias->l, alias->r, NULL);
-			else
-				alias = exps_bind_column(rel->r, alias->r, NULL, NULL, 1);
-		}
-		if (is_groupby(rel->op) && !alias && rel->l) {
-			/* Group by column not found as alias in projection
-			 * list, fall back to check plain input columns */
-			return name_find_column( rel->l, rname, name, pnr, bt);
-		}
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-	case op_merge:
-		break;
-	}
-	if (alias) { /* we found an expression with the correct name, but
-			we need sql_columns */
-		if (rel->l && alias->type == e_column) /* real alias */
-			return name_find_column(rel->l, alias->l, alias->r, pnr, bt);
-	}
-	return NULL;
-}
 
 static sql_column *
 exp_find_column( sql_rel *rel, sql_exp *exp, int pnr )
 {
-	if (exp->type == e_column) {
-		sql_rel *bt = NULL;
-		return name_find_column(rel, exp->l, exp->r, pnr, &bt);
-	}
+	if (exp->type == e_column)
+		return name_find_column(rel, exp->l, exp->r, pnr, NULL);
 	return NULL;
 }
 
@@ -244,6 +88,22 @@ rel_properties(visitor *v, sql_rel *rel)
 		/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
 		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
+	} else if (is_join(rel->op)) {
+		/* check for setjoin rewrite */
+		if (!list_empty(rel->attr)) {
+			gp->needs_setjoin_rewrite = 1;
+			return rel;
+		}
+		if (!list_empty(rel->exps)) {
+			for (node *n = rel->exps->h; n ; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
+					gp->needs_setjoin_rewrite = 1;
+					return rel;
+				}
+			}
+		}
 	}
 	return rel;
 }
@@ -1186,6 +1046,8 @@ static sql_exp *
 exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 {
 	sql_exp *ne = NULL;
+
+	assert(is_project(f->op));
 
 	switch(e->type) {
 	case e_column:
@@ -7371,7 +7233,7 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-sql_rel *
+static sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
 	list *refs = sa_list(sql->sa);
@@ -9129,7 +8991,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 
 			if (list_empty(mt->members)) /* in DDL statement cases skip if mergetable is empty */
 				return rel;
-			if (sel) { /* prepare prunning information once */
+			if (sel && !list_empty(sel->exps)) { /* prepare prunning information once */
 				info = SA_NEW(v->sql->sa, merge_table_prune_info);
 				*info = (merge_table_prune_info) {
 					.cols = sa_list(v->sql->sa),
@@ -9874,16 +9736,17 @@ need_optimization(mvc *sql, sql_rel *rel, int instantiate)
 static sql_rel *
 rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 {
-	if (rel && is_join(rel->op) && (rel->exps || rel->attr)) {
+	if (rel && is_join(rel->op) && (!list_empty(rel->exps) || !list_empty(rel->attr))) {
 		sql_exp *me = NULL;
-		int needed = 0;
-		if (rel->exps) {
-			for (node *n = rel->exps->h; n; n = n->next) {
+		bool needed = false;
+
+		if (!list_empty(rel->exps)) {
+			for (node *n = rel->exps->h; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 
 				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
 					me = e;
-					needed++;
+					needed = true;
 				}
 			}
 		}
@@ -9891,8 +9754,8 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 			rel->op = (me->flag == mark_in)?op_semi:op_anti;
 			return rel;
 		}
-		if (needed || rel->attr) {
-			assert(needed || rel->attr);
+		if (needed || !list_empty(rel->attr)) {
+			assert(needed || !list_empty(rel->attr));
 			sql_exp *nequal = NULL;
 			sql_exp *lid = NULL, *rid = NULL;
 			sql_rel *l = rel->l, *p = rel;
@@ -9924,7 +9787,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 			}
 
 			list *aexps = sa_list(v->sql->sa);
-			if (rel->exps) {
+			if (!list_empty(rel->exps)) {
 				for (node *n = rel->exps->h; n;) {
 					node *next = n->next;
 					sql_exp *e = n->data;
@@ -9947,7 +9810,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 				}
 			}
 
-			if (rel->attr) {
+			if (!list_empty(rel->attr)) {
 				sql_exp *a = rel->attr->h->data;
 
 				exp_setname(v->sql->sa, nequal, exp_find_rel_name(a), exp_name(a));
@@ -9991,11 +9854,14 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 #ifndef NDEBUG
 	assert(level < 20);
 #endif
-	/* Run the following optimizers only once at the end to avoid an infinite optimization loop */
+	/* Run rel_push_select_up only once at the end to avoid an infinite optimization loop */
 	if (opt == 2)
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
+	if (gp.needs_setjoin_rewrite)
+		rel = rel_visitor_bottomup(&v, rel, &rel_setjoins_2_joingroupby);
 
 	/* merge table rewrites may introduce remote or replica tables */
+	/* at the moment, make sure the remote table rewriters always run last*/
 	if (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite) {
 		v.data = NULL;
 		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_remote);
@@ -10004,6 +9870,5 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 		v.data = &level;
 		rel = rel_visitor_bottomup(&v, rel, &rel_remote_func);
 	}
-	rel = rel_visitor_bottomup(&v, rel, &rel_setjoins_2_joingroupby);
 	return rel;
 }

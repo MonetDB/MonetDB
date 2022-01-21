@@ -211,13 +211,11 @@ WLRprocessBatch(Client cntxt)
 	size_t sz;
 	MalBlkPtr mb;
 	InstrPtr q;
-	str other;
 	mvc *sql;
 	Symbol prev = NULL;
 	lng tag;
 	char tag_read[26];			// stop re-processing transactions when time limit is reached
-	str action= NULL;
-	str msg= MAL_SUCCEED, msg2= MAL_SUCCEED;
+	str action= NULL, msg= MAL_SUCCEED, msg2= MAL_SUCCEED, other;
 
 	msg = WLRgetConfig();
 	tag = wlr_tag;
@@ -260,13 +258,15 @@ WLRprocessBatch(Client cntxt)
 		return msg;
 	}
 	if ((msg = getSQLContext(c, mb, &sql, NULL))) {
-		SQLexitClient(c);
+		other = SQLexitClient(c);
+		freeException(other);
 		MCcloseClient(c);
 		freeSymbol(prev);
 		return msg;
 	}
 	if ((msg = checkSQLContext(c)) != NULL) {
-		SQLexitClient(c);
+		other = SQLexitClient(c);
+		freeException(other);
 		MCcloseClient(c);
 		freeSymbol(prev);
 		return msg;
@@ -423,7 +423,8 @@ WLRprocessBatch(Client cntxt)
 	}
 
 	close_stream(c->fdout);
-	SQLexitClient(c);
+	other = SQLexitClient(c);
+	freeException(other);
 	MCcloseClient(c);
 	if (prev)
 		freeSymbol(prev);

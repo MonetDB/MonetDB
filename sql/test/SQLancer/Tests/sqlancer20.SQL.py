@@ -93,6 +93,30 @@ with SQLTestCase() as cli:
     DROP TABLE rrmct21;
     COMMIT;""").assertSucceeded()
 
+    # remote tables with replica tables
+    cli.execute("""
+    START TRANSACTION;
+    CREATE TABLE rt0 (c0 INTEGER);
+    INSERT INTO rt0 VALUES (1),(2);
+    CREATE REMOTE TABLE rrt0 (c0 INTEGER) ON 'mapi:monetdb://localhost:%s/%s/sys/rt0';
+    CREATE TABLE rt2 (c0 TIMESTAMP);
+    INSERT INTO rt2 VALUES (TIMESTAMP '1980-06-11 14:05:31'),(TIMESTAMP '1970-01-09 22:12:27');
+    CREATE REPLICA TABLE rrt2 (c0 TIMESTAMP);
+    ALTER TABLE rrt2 ADD TABLE rt2;
+    COMMIT;""" % (port, db)).assertSucceeded()
+
+    cli.execute("SELECT rrt0.c0 FROM rrt2, rrt0 ORDER BY rrt0.c0;") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(2,),(2,),])
+
+    cli.execute("""
+    START TRANSACTION;
+    ALTER TABLE rrt2 DROP TABLE rt2;
+    DROP TABLE rrt2;
+    DROP TABLE rt2;
+    DROP TABLE rrt0;
+    DROP TABLE rt0;
+    COMMIT;""").assertSucceeded()
+
 # testing temporary tables
 with SQLTestCase() as mdb1:
     mdb1.connect(username="monetdb", password="monetdb")

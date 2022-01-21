@@ -73,3 +73,12 @@ set_target_properties(run_memo
 install(TARGETS run_memo
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   COMPONENT run_memo)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:run_adder>
+    $<TARGET_PDB_FILE:run_isolate>
+    $<TARGET_PDB_FILE:run_memo>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    OPTIONAL)
+endif()
