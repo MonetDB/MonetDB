@@ -2014,6 +2014,7 @@ bl_postversion(void *Store, void *Lg)
 			BBPretain(sem->batCacheid);
 			BBPretain(sem->batCacheid); /* yep, twice */
 			bat_destroy(sem);
+
 			if (tabins(lg, old_lg, tabins_first, -1, 0,
 					   2076, &(msk) {false},	/* sys._columns */
 					   /* 2162 is sys.functions.semantics */
@@ -3379,17 +3380,17 @@ bl_postversion(void *Store, void *Lg)
 				/* 2165 is sys.functions.sqlname */
 				BUNappend(lg->catalog_id, &(int) {2165}, false) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &funcs_sqlname->batCacheid, false) != GDK_SUCCEED ||
-				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
-				BUNappend(lg->catalog_cnt, &(lng){BATcount(funcs_sqlname)}, false) != GDK_SUCCEED) {
+				(lg->catalog_lid	&& BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED) ||
+				(old_lg				&& BUNappend(old_lg->add, &funcs_sqlname->batCacheid, false) != GDK_SUCCEED)) {
 				bat_destroy(funcs_sqlname);
 				goto bailout;
 			}
+			if (!old_lg) lg->cnt++;
 
 			BBPretain(funcs_sqlname->batCacheid);
 			BBPretain(funcs_sqlname->batCacheid); /* yep, twice */
 			bat_destroy(funcs_sqlname);
 		}
-
 
 		if (tabins(lg, old_lg, tabins_first, -1, 0,
 					2076, &(msk) {false},	/* sys._columns */
