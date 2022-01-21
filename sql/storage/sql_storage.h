@@ -154,7 +154,7 @@ typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
-typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, ValPtr min, ValPtr max);
+typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -396,7 +396,7 @@ extern int sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
-extern int sql_trans_col_stats(sql_trans *tr, sql_column *col, bool *nonil, bool *unique, ValPtr min, ValPtr max);
+extern int sql_trans_col_stats(sql_trans *tr, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, void **min, void **max);
 

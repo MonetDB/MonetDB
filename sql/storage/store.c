@@ -6173,11 +6173,11 @@ sql_trans_is_duplicate_eliminated( sql_trans *tr, sql_column *col )
 }
 
 int
-sql_trans_col_stats( sql_trans *tr, sql_column *col, bool *nonil, bool *unique, ValPtr min, ValPtr max )
+sql_trans_col_stats( sql_trans *tr, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max )
 {
 	sqlstore *store = tr->store;
 	if (col && isTable(col->t) && store->storage_api.col_stats)
-		return store->storage_api.col_stats(tr, col, nonil, unique, min, max);
+		return store->storage_api.col_stats(tr, col, nonil, unique, unique_est, min, max);
 	return 0;
 }
 
