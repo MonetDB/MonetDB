@@ -331,6 +331,16 @@
 #include <limits.h>		/* for *_MIN and *_MAX */
 #include <float.h>		/* for FLT_MAX and DBL_MAX */
 
+#ifdef WIN32
+#ifndef LIBGDK
+#define gdk_export extern __declspec(dllimport)
+#else
+#define gdk_export extern __declspec(dllexport)
+#endif
+#else
+#define gdk_export extern
+#endif
+
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 #include "gdk_system.h"
@@ -1688,7 +1698,7 @@ tfastins_nocheck(BAT *b, BUN p, const void *v)
 static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins(BAT *b, BUN p, const void *v)
 {
-	if (p > BATcapacity(b)) {
+	if (p >= BATcapacity(b)) {
 		if (p >= BUN_MAX) {
 			GDKerror("tfastins: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
 			return GDK_FAIL;
@@ -1779,6 +1789,12 @@ bunfastapp_nocheckVAR(BAT *b, const void *v)
 gdk_export gdk_return BATimprints(BAT *b);
 gdk_export void IMPSdestroy(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
+
+/* Strimps exported functions */
+gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
+gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
+gdk_export void STRMPdestroy(BAT *b);
+gdk_export bool BAThasstrimps(BAT *b);
 
 /* The ordered index structure */
 
@@ -2391,11 +2407,6 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 			CALLBACK;		\
 	} while (0)
 
-/*
- * String Imprints Development/Testing. TODO: remove the following.
- */
-
-#include "gdk_strimps.h"
 typedef struct gdk_callback {
 	char *name;
 	int argc;

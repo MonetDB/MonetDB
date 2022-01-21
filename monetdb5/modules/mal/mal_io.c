@@ -210,9 +210,9 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 
-static char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
-static char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
-static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
+static const char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
+static const char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
+static const char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 
 #define return_error(x)							\
 	do {										\
@@ -221,7 +221,7 @@ static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 		throw(MAL,"io.printf", x,argc);			\
 	} while (0)
 
-static char niltext[4] = "nil";
+static const char niltext[4] = "nil";
 
 static str
 IOprintf_(str *res, str format, ...)

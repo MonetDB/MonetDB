@@ -59,7 +59,7 @@ blobsize(size_t nitems)
 	return (var_t) (offsetof(blob, data) + nitems);
 }
 
-static char hexit[] = "0123456789ABCDEF";
+static const char hexit[] = "0123456789ABCDEF";
 
 /*
  * @- Wrapping section
@@ -247,17 +247,14 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 
-bailout:
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	BATsetcount(bn, q);
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	BBPkeepref(*res = bn->batCacheid);
+  bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (bs)

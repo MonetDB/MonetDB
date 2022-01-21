@@ -29,6 +29,8 @@
 #include <wchar.h>
 #include <wctype.h>
 
+#include "gdk_strimps.h"
+
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
 #ifndef PCRE_STUDY_JIT_COMPILE
@@ -226,7 +228,7 @@ mywstrncaseeq(const char *restrict s1, const uint32_t *restrict s2, size_t n2, b
 static inline int
 mystrcasecmp(const char *s1, const char *s2)
 {
-	uint32_t c1, c2;
+	uint32_t c1 = 0, c2 = 0;
 
 	for (;;) {
 		size_t nn1 = utfc8touc(&c1, s1);
@@ -254,7 +256,7 @@ mystrcasecmp(const char *s1, const char *s2)
 static inline int
 mywstrcasecmp(const char *restrict s1, const uint32_t *restrict s2)
 {
-	uint32_t c1;
+	uint32_t c1 = 0;
 
 	for (;;) {
 		size_t nn1 = utfc8touc(&c1, s1);
@@ -290,7 +292,7 @@ mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle, b
 		size_t h;
 		size_t step = 0;
 		for (i = h = 0; i < nlen; i++) {
-			uint32_t c;
+			uint32_t c = 0;
 			size_t j = utfc8touc(&c, haystack + h);
 			if (j == 0 || j == (size_t) -1)
 				return NULL;
@@ -1871,8 +1873,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
-	bool use_strimps = GDKgetenv_isyes("gdk_use_strimps"), with_strimps = false;
-	BUN strimp_creation_threshold = GDKgetenv_int("gdk_strimps_threshold", 1000000);
+	bool with_strimps = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1895,9 +1896,9 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	 * A better solution is to run the PCRElikeselect as a LIKE query with
 	 * strimps and return the complement of the result.
 	 */
-	if (!empty && use_strimps && BATcount(b) >= strimp_creation_threshold && !*anti) {
-		BAT *tmp_s = NULL;
-		if (STRMPcreate(b, NULL) == GDK_SUCCEED && (tmp_s = STRMPfilter(b, s, *pat))) {
+	if (!empty && BAThasstrimps(b) && !*anti) {
+		BAT *tmp_s = STRMPfilter(b, s, *pat);
+		if (tmp_s) {
 			if (s)
 				BBPunfix(s->batCacheid);
 			s = tmp_s;

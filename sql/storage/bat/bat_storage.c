@@ -925,28 +925,38 @@ bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
 static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
 {
+	lock_column(tr->store, c->base.id);
 	sql_delta *d = col_timestamp_delta(tr, c);
 	int type = c->type.type->localtype;
 
-	if (!d)
+	if (!d) {
+		unlock_column(tr->store, c->base.id);
 		return NULL;
+	}
 	if (d->cs.st == ST_DICT) {
 		BAT *b = quick_descriptor(d->cs.bid);
 
 		type = b->ttype;
 	}
-	return bind_ubat(tr, d, access, type, cnt);
+	BAT *bn = bind_ubat(tr, d, access, type, cnt);
+	unlock_column(tr->store, c->base.id);
+	return bn;
 }
 
 static BAT *
 bind_uidx(sql_trans *tr, sql_idx * i, int access, size_t cnt)
 {
+	lock_column(tr->store, i->base.id);
 	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
 	sql_delta *d = idx_timestamp_delta(tr, i);
 
-	if (!d)
+	if (!d) {
+		unlock_column(tr->store, i->base.id);
 		return NULL;
-	return bind_ubat(tr, d, access, type, cnt);
+	}
+	BAT *bn = bind_ubat(tr, d, access, type, cnt);
+	unlock_column(tr->store, i->base.id);
+	return bn;
 }
 
 static BAT *
@@ -1873,19 +1883,24 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 		return NULL;
 	}
 	assert(!isTempTable(c->t));
-	obat = timestamp_delta(tr, ATOMIC_PTR_GET(&c->data));
+	if (!(obat = timestamp_delta(tr, ATOMIC_PTR_GET(&c->data))))
+		return NULL;
 	sql_delta* bat = ZNEW(sql_delta);
-	if(!bat)
+	if (!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	if(dup_cs(tr, &obat->cs, &bat->cs, c->type.type->localtype, isTempTable(c->t)) != LOG_OK)
+	if (dup_cs(tr, &obat->cs, &bat->cs, c->type.type->localtype, isTempTable(c->t)) != LOG_OK) {
+		destroy_delta(bat, false);
 		return NULL;
+	}
 	bat->cs.ts = tr->tid;
 	/* only one writer else abort */
 	bat->next = obat;
 	if (!ATOMIC_PTR_CAS(&c->data, (void**)&bat->next, bat)) {
 		bat->next = NULL;
 		destroy_delta(bat, false);
+		if (update_conflict)
+			*update_conflict = true;
 		return NULL;
 	}
 	return bat;
@@ -1954,19 +1969,24 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict)
 		return NULL;
 	}
 	assert(!isTempTable(i->t));
-	obat = timestamp_delta(tr, ATOMIC_PTR_GET(&i->data));
+	if (!(obat = timestamp_delta(tr, ATOMIC_PTR_GET(&i->data))))
+		return NULL;
 	sql_delta* bat = ZNEW(sql_delta);
-	if(!bat)
+	if (!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	if(dup_cs(tr, &obat->cs, &bat->cs, (oid_index(i->type))?TYPE_oid:TYPE_lng, isTempTable(i->t)) != LOG_OK)
+	if (dup_cs(tr, &obat->cs, &bat->cs, (oid_index(i->type))?TYPE_oid:TYPE_lng, isTempTable(i->t)) != LOG_OK) {
+		destroy_delta(bat, false);
 		return NULL;
+	}
 	bat->cs.ts = tr->tid;
 	/* only one writer else abort */
 	bat->next = obat;
 	if (!ATOMIC_PTR_CAS(&i->data, (void**)&bat->next, bat)) {
 		bat->next = NULL;
 		destroy_delta(bat, false);
+		if (update_conflict)
+			*update_conflict = true;
 		return NULL;
 	}
 	return bat;
@@ -2483,18 +2503,24 @@ bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 	}
 
 	assert(!isTempTable(t));
-	obat = timestamp_storage(tr, ATOMIC_PTR_GET(&t->data));
+	if (!(obat = timestamp_storage(tr, ATOMIC_PTR_GET(&t->data))))
+		return NULL;
 	storage *bat = ZNEW(storage);
-	if(!bat)
+	if (!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	dup_storage(tr, obat, bat, clear || isTempTable(t) /* for clear and temp create empty storage */);
+	if (dup_storage(tr, obat, bat, clear || isTempTable(t) /* for clear and temp create empty storage */) != LOG_OK) {
+		destroy_storage(bat);
+		return NULL;
+	}
 	bat->cs.ts = tr->tid;
 	/* only one writer else abort */
 	bat->next = obat;
 	if (!ATOMIC_PTR_CAS(&t->data, (void**)&bat->next, bat)) {
 		bat->next = NULL;
 		destroy_storage(bat);
+		if (clear)
+			*clear = true;
 		return NULL;
 	}
 	return bat;
@@ -2781,9 +2807,9 @@ create_col(sql_trans *tr, sql_column *c)
 	if (!bat) {
 		new = 1;
 		bat = ZNEW(sql_delta);
-		ATOMIC_PTR_SET(&c->data, bat);
-		if(!bat)
+		if (!bat)
 			return LOG_ERR;
+		ATOMIC_PTR_SET(&c->data, bat);
 		bat->cs.refcnt = 1;
 	}
 
@@ -2919,9 +2945,9 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	if (!bat) {
 		new = 1;
 		bat = ZNEW(sql_delta);
-		ATOMIC_PTR_SET(&ni->data, bat);
-		if(!bat)
+		if (!bat)
 			return LOG_ERR;
+		ATOMIC_PTR_SET(&ni->data, bat);
 		bat->cs.refcnt = 1;
 	}
 
@@ -4494,9 +4520,10 @@ has_deletes_in_range( segment *s, sql_trans *tr, BUN start, BUN end)
 }
 
 static BAT *
-segments2cands(segment *s, sql_trans *tr, sql_table *t, size_t start, size_t end)
+segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end)
 {
 	lock_table(tr->store, t->base.id);
+	segment *s = S->segs->h;
 	/* step one no deletes -> dense range */
 	uint32_t cur = 0;
 	size_t dnr = has_deletes_in_range(s, tr, start, end), nr = end - start, pos = 0;
@@ -4597,7 +4624,7 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 	if (part_nr == (nr_of_parts-1))
 		end = nr;
 	assert(end <= nr);
-	return segments2cands(s->segs->h, tr, t, start, end);
+	return segments2cands(s, tr, t, start, end);
 }
 
 static void

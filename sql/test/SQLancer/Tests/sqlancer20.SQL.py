@@ -46,6 +46,77 @@ with SQLTestCase() as cli:
     DROP TABLE mt2;
     COMMIT;""").assertSucceeded()
 
+    # testing remote tables with transaction isolation
+    cli.execute("""
+    START TRANSACTION;
+    CREATE TABLE rt0(c0 INT);
+    CREATE REMOTE TABLE rrt0(c0 INT) on 'mapi:monetdb://localhost:%s/%s/sys/rt0';
+    COMMIT;""" % (port, db)).assertSucceeded()
+
+    cli.execute('SELECT "setmasklen"(INET \'9.49.240.200/13\', 48061431) FROM rrt0;') \
+        .assertFailed(err_message="Exception occurred in the remote server, please check the log there")
+    cli.execute('INSERT INTO rt0(c0) VALUES(1);') \
+        .assertSucceeded().assertRowCount(1)
+    cli.execute('ALTER TABLE rt0 ADD CONSTRAINT con3 UNIQUE(c0);') \
+        .assertSucceeded()
+
+    cli.execute("""
+    START TRANSACTION;
+    DROP TABLE rrt0;
+    DROP TABLE rt0;
+    COMMIT;""").assertSucceeded()
+
+    cli.execute("""
+    START TRANSACTION;
+    CREATE TABLE t0(c0 INT);
+    INSERT INTO t0 VALUES (1),(2),(3);
+    CREATE MERGE TABLE mt2 (c0 INT);
+    CREATE TABLE mct20 (c0 INT);
+    CREATE TABLE rmct21 (c0 INT);
+    CREATE REMOTE TABLE rrmct21 (c0 INT) ON 'mapi:monetdb://localhost:%s/%s/sys/rmct21';
+    ALTER TABLE mt2 ADD TABLE mct20;
+    ALTER TABLE mt2 ADD TABLE rrmct21;
+    COMMIT;""" % (port, db)).assertSucceeded()
+
+    cli.execute("""SELECT 1 FROM (SELECT 1 FROM t0, mt2) vx(vc0) LEFT OUTER JOIN
+        (SELECT 2 FROM t0) AS sub0(c0) ON CASE 5 WHEN 2 THEN sub0.c0 <> ALL(VALUES (3), (4)) END;""") \
+        .assertSucceeded().assertDataResultMatch([])
+
+    cli.execute("""
+    START TRANSACTION;
+    DROP TABLE t0;
+    ALTER TABLE mt2 DROP TABLE rrmct21;
+    ALTER TABLE mt2 DROP TABLE mct20;
+    DROP TABLE mt2;
+    DROP TABLE mct20;
+    DROP TABLE rmct21;
+    DROP TABLE rrmct21;
+    COMMIT;""").assertSucceeded()
+
+    # remote tables with replica tables
+    cli.execute("""
+    START TRANSACTION;
+    CREATE TABLE rt0 (c0 INTEGER);
+    INSERT INTO rt0 VALUES (1),(2);
+    CREATE REMOTE TABLE rrt0 (c0 INTEGER) ON 'mapi:monetdb://localhost:%s/%s/sys/rt0';
+    CREATE TABLE rt2 (c0 TIMESTAMP);
+    INSERT INTO rt2 VALUES (TIMESTAMP '1980-06-11 14:05:31'),(TIMESTAMP '1970-01-09 22:12:27');
+    CREATE REPLICA TABLE rrt2 (c0 TIMESTAMP);
+    ALTER TABLE rrt2 ADD TABLE rt2;
+    COMMIT;""" % (port, db)).assertSucceeded()
+
+    cli.execute("SELECT rrt0.c0 FROM rrt2, rrt0 ORDER BY rrt0.c0;") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(2,),(2,),])
+
+    cli.execute("""
+    START TRANSACTION;
+    ALTER TABLE rrt2 DROP TABLE rt2;
+    DROP TABLE rrt2;
+    DROP TABLE rt2;
+    DROP TABLE rrt0;
+    DROP TABLE rt0;
+    COMMIT;""").assertSucceeded()
+
 # testing temporary tables
 with SQLTestCase() as mdb1:
     mdb1.connect(username="monetdb", password="monetdb")

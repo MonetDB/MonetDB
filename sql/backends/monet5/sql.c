@@ -2969,8 +2969,8 @@ bat2return(MalStkPtr stk, InstrPtr pci, BAT **b)
 	}
 }
 
-static char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
-static char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
+static const char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
+static const char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
 
 static str
 setup_import_table_stream(Client cntxt, struct csv_parameters *csv_parms, bstream **bs, bool *from_stdin)
