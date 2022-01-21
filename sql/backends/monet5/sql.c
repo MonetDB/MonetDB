@@ -3141,6 +3141,45 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+
+str
+mvc_append_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg = MAL_SUCCEED;
+
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	(void)mb;
+	backend *be = cntxt->sqlcontext;
+
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
+	struct csv_parameters csv_parms = {
+		.tsep = *getArgReference_str(stk, pci, pci->retc + 1),
+		.rsep = *getArgReference_str(stk, pci, pci->retc + 2),
+		.ssep = *getArgReference_str(stk, pci, pci->retc + 3),
+		.ns = *getArgReference_str(stk, pci, pci->retc + 4),
+		.filename = *getArgReference_str(stk, pci, pci->retc + 5),
+		.nr = *getArgReference_lng(stk, pci, pci->retc + 6),
+		.offset = *getArgReference_lng(stk, pci, pci->retc + 7),
+		.best = *getArgReference_int(stk, pci, pci->retc + 8),
+		.fixed_widths = *getArgReference_str(stk, pci, pci->retc + 9),
+		.onclient = *getArgReference_int(stk, pci, pci->retc + 10),
+		.escape = *getArgReference_int(stk, pci, pci->retc + 11),
+	};
+
+	bstream *bs;
+	bool from_stdin;
+	BAT **b = NULL;
+	msg = setup_import_table_stream(cntxt, &csv_parms, &bs, &from_stdin);
+	msg = mvc_import_table(cntxt, &b, be->mvc, bs, from_stdin, t, &csv_parms, true);
+	teardown_import_table_stream(cntxt, &csv_parms, bs);
+
+	if (b && !msg)
+		bat2return(stk, pci, b);
+	GDKfree(b);
+	return msg;
+}
+
 str
 not_unique(bit *ret, const bat *bid)
 {
@@ -5285,6 +5324,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "exportOperation", mvc_export_operation_wrap, true, "Export result of schema/transaction queries", args(1,1, arg("",void))),
  pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
  pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,13, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
+ pattern("sql", "append_from", mvc_append_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and separators (sep/rsep)", args(1,13, batarg("",oid),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
  pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,6, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),arg("bswap",bit),vararg("fname",str))),
