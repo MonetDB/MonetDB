@@ -41,7 +41,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		case op_select:
 		case op_anti:
 		case op_semi: {
-			bool found_without_semantics = false, found_left = false, found_right = false;
+			bool found_without_semantics = false, found_left = false, found_right = false, still_unique = true;
 
 			if ((is_innerjoin(rel->op) || is_select(rel->op)) && list_length(rel->exps) == 1 && exp_is_false(rel->exps->h->data))
 				return NULL; /* nothing will pass, skip */
@@ -54,17 +54,18 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 
 			if (!found_left && !found_right)
 				return NULL;
+			still_unique = !list_empty(rel->exps); /* cartesian products */
 			if (!list_empty(rel->exps) && rel->op != op_anti) { /* if there's an or, the MIN and MAX get difficult to propagate */
 				for (node *n = rel->exps->h ; n ; n = n->next) {
 					sql_exp *comp = n->data, *le = comp->l, *lne = NULL, *re = comp->r, *rne = NULL, *fe = comp->f, *fne = NULL;
 
 					if (comp->type == e_cmp) {
-
 						if (is_theta_exp(comp->flag) && ((lne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e)) || (fe && (fne = comparison_find_column(fe, e))))) {
 							atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX),
 								 *rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 
 							found_without_semantics |= !comp->semantics;
+							still_unique &= comp->flag == cmp_equal && is_unique(le) && is_unique(re); /* unique if only equi-joins on unique columns are there */
 							if (is_full(rel->op) || (is_left(rel->op) && found_left) || (is_right(rel->op) && found_right)) /* on outer joins, min and max cannot be propagated on some cases */
 								continue;
 							/* if (end2 >= start1 && start2 <= end1) then the 2 intervals are intersected */
@@ -145,7 +146,11 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 									break;
 								}
 							}
+						} else {
+							still_unique = false;
 						}
+					} else {
+						still_unique = false;
 					}
 				}
 			}
@@ -153,6 +158,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 				set_has_nil(e);
 			if (!is_outerjoin(rel->op) && found_without_semantics) /* at an outer join, null values pass */
 				set_has_no_nil(e);
+			if (is_unique(e) && is_join(rel->op) && !still_unique)
+				set_not_unique(e);
 			return e;
 		}
 		case op_table:
@@ -171,6 +178,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 					set_property(sql, e, PROP_MIN, fval);
 				if (!has_nil(found))
 					set_has_no_nil(e);
+				if (is_unique(found) || (need_distinct(rel) && list_length(rel->exps) == 1) ||
+					(is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)))
+					set_unique(e);
 				return e;
 			}
 			return NULL;
@@ -204,12 +214,14 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	(void)depth;
 	if ((c = name_find_column(rel, exp_relname(e), exp_name(e), -2, NULL))) {
-		bool nonil = false;
+		bool nonil = false, unique = false;
 		ValRecord min, max;
-		int ok = mvc_col_stats(sql, c, &nonil, &min, &max);
+		int ok = mvc_col_stats(sql, c, &nonil, &unique, &min, &max);
 
 		if (has_nil(e) && nonil)
 			set_has_no_nil(e);
+		if (!is_unique(e) && unique)
+			set_unique(e);
 		if ((ok & 1) == 1) {
 			if (!VALisnil(&min)) {
 				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
@@ -260,13 +272,19 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 	if (is_union(rel->op)) {
 		if (!has_nil(le) && !has_nil(re))
 			set_has_no_nil(e);
+		if (need_distinct(rel) && list_length(rel->exps) == 1)
+			set_unique(e);
 	} else if (is_inter(rel->op)) {
 		if (!has_nil(le) || !has_nil(re))
 			set_has_no_nil(e);
+		if (is_unique(le) || (need_distinct(rel) && list_length(rel->exps) == 1))
+			set_unique(e);
 	} else {
 		assert(is_except(rel->op));
 		if (!has_nil(le))
 			set_has_no_nil(e);
+		if (is_unique(le) || (need_distinct(rel) && list_length(rel->exps) == 1))
+			set_unique(e);
 	}
 	return false;
 }
@@ -389,7 +407,7 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		}
 	} break;
 	case e_cmp:
-		/* propagating min and max of booleans is not very worth it */
+		/* TODO? propagating min/max/unique of booleans is not very worth it */
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if (!have_nil(e->l) && !have_nil(e->r))
 				set_has_no_nil(e);
