@@ -17,9 +17,12 @@ struct csv_parameters {
 	const char *rsep;
 	const char *ssep;
 	const char *ns;
+	const char *filename;
 	lng nr;
 	lng offset;
 	int best;
+	char *fixed_widths;
+	bool onclient;
 	bool escape;
 };
 
