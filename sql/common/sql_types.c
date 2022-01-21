@@ -1502,9 +1502,12 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", TRUE, SCALE_FIX, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", TRUE, SCALE_FIX, 0, INT, 5, *t, *t, INT, INT, INT);
 	}
+
 	/* copyfrom fname (arg 12) */
 	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", SCALE_FIX, 0, TABLE, 12, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT);
 	f->varres = 1;
+	/* appendfrom fname (arg 12), is not varres */
+	f = sql_create_union(sa, "appendfrom", "sql", "append_from", SCALE_FIX, 0, TABLE, 12, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT);
 
 	/* bincopyfrom */
 	f = sql_create_union(sa, "copyfrom", "sql", "importTable", SCALE_FIX, 0, TABLE, 3, STR, STR, INT);
