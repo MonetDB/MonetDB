@@ -423,6 +423,7 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		if (getFunctionId(p) == binddbatRef) return FALSE;
 		if (getFunctionId(p) == columnBindRef) return FALSE;
 		if (getFunctionId(p) == copy_fromRef) return FALSE;
+		if (getFunctionId(p) == append_fromRef) return FALSE;
 		/* assertions are the end-point of a flow path */
 		if (getFunctionId(p) == not_uniqueRef) return FALSE;
 		if (getFunctionId(p) == zero_or_oneRef) return FALSE;

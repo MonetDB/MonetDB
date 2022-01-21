@@ -4457,7 +4457,7 @@ rel2bin_directappend(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	}
 
 	// Then emit the call. Maybe there's a stmt_function for that..
-	InstrPtr append_instr = newFcnCallArgs(mb, sqlRef, copy_fromRef, 100);
+	InstrPtr append_instr = newFcnCallArgs(mb, sqlRef, append_fromRef, 100);
 	setDestType(mb, append_instr, newBatType(TYPE_oid));
 	for (node *n = l->h; n; n = n->next) {
 		stmt *s = n->data;
@@ -4499,17 +4499,6 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	// the temporary dedicated code generator
 	sql_exp *copyfrom = can_use_directappend(rel);
 	if (copyfrom != NULL) {
-		// later on we'll do this properly, passing an extra parameter,
-		// for now we adjust an existing parameter.
-		// Very ugly, sorry
-		list *args = copyfrom->l;
-		sql_exp* arg7 = args->h->next->next->next->next->next->next->next->next->data;
-		assert(arg7->type == e_atom);
-		atom *a = arg7->l;
-		assert(atom_type(a)->type->localtype == TYPE_int);
-		int *best_effort = &a->data.val.ival;
-		*best_effort += 100; // magic
-
 		return rel2bin_directappend(be, rel, refs, copyfrom);
 	}
 

@@ -39,6 +39,7 @@ const char *alter_typeRef;
 const char *alter_userRef;
 const char *alter_viewRef;
 const char *andRef;
+const char *append_fromRef;
 const char *appendidxRef;
 const char *appendBulkRef;
 const char *appendRef;
@@ -356,6 +357,7 @@ void optimizerInit(void)
 	alter_userRef = putName("alter_user");
 	alter_viewRef = putName("alter_view");
 	andRef = putName("and");
+	append_fromRef = putName("append_from");
 	appendidxRef = putName("append_idxbat");
 	appendBulkRef = putName("appendBulk");
 	appendRef = putName("append");
