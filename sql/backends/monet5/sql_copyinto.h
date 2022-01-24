@@ -28,7 +28,7 @@ struct csv_parameters {
 
 extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, bool from_stdin, sql_table *t, struct csv_parameters *csv_parms, bool append_directly);
 
-mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
