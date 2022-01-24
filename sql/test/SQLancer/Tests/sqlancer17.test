@@ -609,3 +609,22 @@ query I nosort
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE tz (c0 INT)
+
+statement ok
+create or replace view vy(vc0) as (values (1))
+
+statement ok
+create or replace view vx(vc0, vc1) as (select 2, 3 from vy)
+
+query I nosort
+SELECT 1 FROM tz, vx WHERE (vx.vc1 + tz.c0) <> ALL(VALUES (4)) AND vx.vc0 <> ALL(VALUES (5))
+----
+
+statement ok
+ROLLBACK
