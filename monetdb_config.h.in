@@ -453,7 +453,7 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #endif
 #else
 #define LIB_STARTUP_FUNC(f) \
-        static void f(void) __attribute__((constructor)); \
+        static void f(void) __attribute__((__constructor__)); \
         static void f(void)
 #endif
 
