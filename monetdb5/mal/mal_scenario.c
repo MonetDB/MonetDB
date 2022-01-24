@@ -391,8 +391,10 @@ resetScenario(Client c)
 		return;
 
 	scen = findScenario(c->scenario);
-	if (scen != NULL && scen->exitClientCmd)
-		(*scen->exitClientCmd) (c);
+	if (scen != NULL && scen->exitClientCmd) {
+		str msg = (*scen->exitClientCmd) (c);
+		freeException(msg);
+	}
 
 	c->scenario = c->oldscenario;
 	for (i = 0; i < SCENARIO_PROPERTIES; i++) {

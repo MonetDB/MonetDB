@@ -330,9 +330,9 @@ terminateMX:
  * The comparison multiplex operations with a constant head may be supported
  * by reverse of the operation.
  */
-static struct{
-	char *src, *dst;
-	int len;
+static const struct{
+	const char *src, *dst;
+	const int len;
 }OperatorMap[]={
 {"<", ">",1},
 {">", "<",1},

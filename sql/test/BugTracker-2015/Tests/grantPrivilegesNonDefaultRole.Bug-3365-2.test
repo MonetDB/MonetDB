@@ -1,0 +1,12 @@
+statement ok
+set role hr_role
+
+statement ok
+create table employees (id bigint,name varchar(20))
+
+statement error 01007!GRANT: Grantor 'blake' is not allowed to grant privileges for table 'employees'
+grant select on employees to clark
+
+statement ok
+grant select on employees to clark from current_role
+

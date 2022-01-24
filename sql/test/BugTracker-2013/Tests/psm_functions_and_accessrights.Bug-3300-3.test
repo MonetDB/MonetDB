@@ -1,0 +1,3 @@
+statement ok
+DROP USER "psm"
+

@@ -6273,6 +6273,20 @@ rel_remove_join(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static int
+exps_has_setjoin(list *exps)
+{
+	if (!exps)
+		return 0;
+	for(node *n=exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin))
+			return 1;
+	}
+	return 0;
+}
+
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier.
  */
@@ -6297,6 +6311,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		/* Don't rewrite refs, non projections or constant or
 		   order by projections  */
 		if (!l || rel_is_ref(l) || is_topn(l->op) || is_sample(l->op) ||
+		   (is_join(rel->op) && exps_has_setjoin(rel->exps)) ||
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statments left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
@@ -8982,7 +8997,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 
 			if (list_empty(mt->members)) /* in DDL statement cases skip if mergetable is empty */
 				return rel;
-			if (sel) { /* prepare prunning information once */
+			if (sel && !list_empty(sel->exps)) { /* prepare prunning information once */
 				info = SA_NEW(v->sql->sa, merge_table_prune_info);
 				*info = (merge_table_prune_info) {
 					.cols = sa_list(v->sql->sa),
@@ -9811,8 +9826,20 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 			}
 			list *lexps = rel_projections(v->sql, l, NULL, 1, 1);
 			aexps = list_merge(aexps, lexps, (fdup)NULL);
-			rel = rel_groupby(v->sql, rel, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)));
-			rel->exps = aexps;
+			if (rel_is_ref(rel)) {
+				sql_rel *l = rel_create(v->sql->sa);
+				if (!l)
+					return NULL;
+				*l = *rel;
+				/* properly increment the ref counts */
+				rel_dup(rel->l);
+				rel_dup(rel->r);
+				l->ref.refcnt = 1;
+				rel = rel_inplace_groupby(rel, l, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)), aexps);
+			} else {
+				rel = rel_groupby(v->sql, rel, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)));
+				rel->exps = aexps;
+			}
 		}
 	}
 	return rel;

@@ -2926,7 +2926,7 @@ struct privdata {
 #define READSIZE	(1 << 16)
 //#define READSIZE	(1 << 20)
 
-static char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+static const char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz";
 
 static char *
@@ -3136,7 +3136,7 @@ main(int argc, char **argv)
 	bool autocommit = true;	/* autocommit mode default on */
 	bool user_set_as_flag = false;
 	bool passwd_set_as_flag = false;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"autocommit", 0, 0, 'a'},
 		{"database", 1, 0, 'd'},
 		{"dump", 0, 0, 'D'},

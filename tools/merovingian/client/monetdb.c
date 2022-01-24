@@ -1420,7 +1420,7 @@ command_get(int argc, char *argv[])
 		} else {
 			/* check validity of properties before printing them */
 			if (stats == orig) {
-				char *sp;
+				char *sp = NULL;
 				snprintf(vbuf, sizeof(vbuf), "%s", property);
 				buf = vbuf;
 				while ((p = strtok_r(buf, ",", &sp)) != NULL) {

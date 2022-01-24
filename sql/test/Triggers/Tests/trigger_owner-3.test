@@ -1,0 +1,15 @@
+statement error CREATE TRIGGER: no such table 't_6_2'
+create trigger test_6_2 after insert on t_6_2 insert into t_6_1 values(12)
+
+statement error DROP TRIGGER: no such trigger 'test_6_1'
+drop trigger test_6_1
+
+statement error DROP TRIGGER: no such trigger 'test_6_2'
+drop trigger test_6_2
+
+statement ok
+drop table t_6_1
+
+statement error DROP TABLE: no such table 't_6_2'
+drop table t_6_2
+

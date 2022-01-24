@@ -1,0 +1,94 @@
+statement ok
+start transaction
+
+statement ok
+create table tbl_xy (x int, y int)
+
+statement ok
+insert into tbl_xy values (0,0)
+
+statement ok
+insert into tbl_xy values (1,1)
+
+statement ok
+commit
+
+statement ok
+start transaction
+
+statement ok
+insert into tbl_xy values (2,2)
+
+statement ok
+insert into tbl_xy values (3,3)
+
+statement ok
+insert into tbl_xy values (4,4)
+
+statement ok
+commit
+
+statement ok
+start transaction
+
+statement ok
+insert into tbl_xy values (5,5)
+
+statement ok
+insert into tbl_xy values (6,6)
+
+statement ok
+insert into tbl_xy values (7,7)
+
+statement ok
+commit
+
+statement ok
+insert into tbl_xy values (-1, -100)
+
+statement ok
+start transaction
+
+statement ok
+insert into tbl_xy values (8,8)
+
+statement ok
+insert into tbl_xy values (9,9)
+
+statement ok
+insert into tbl_xy values (10,10)
+
+statement ok
+commit
+
+query II rowsort
+select * from tbl_xy
+----
+-1
+-100
+0
+0
+1
+1
+10
+10
+2
+2
+3
+3
+4
+4
+5
+5
+6
+6
+7
+7
+8
+8
+9
+9
+
+statement ok
+drop table tbl_xy
+

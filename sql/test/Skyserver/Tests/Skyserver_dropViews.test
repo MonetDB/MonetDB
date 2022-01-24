@@ -1,0 +1,126 @@
+statement ok
+START TRANSACTION
+
+statement ok
+DROP VIEW SpecObj 
+
+statement ok
+DROP VIEW SpecLine 
+
+statement ok
+DROP VIEW SpecPhoto 
+
+statement ok
+DROP VIEW Tile 
+
+statement ok
+DROP VIEW TilingBoundary 
+
+statement ok
+DROP VIEW TilingMask 
+
+statement ok
+DROP VIEW TiledTarget 
+
+statement ok
+DROP VIEW Columns 
+
+statement ok
+DROP VIEW Run 
+
+statement ok
+DROP VIEW PhotoSecondary 
+
+statement ok
+DROP VIEW PhotoFamily 
+
+statement ok
+DROP VIEW PhotoObj 
+
+statement ok
+DROP VIEW PhotoAux 
+
+statement ok
+DROP VIEW PhotoStatus 
+
+statement ok
+DROP VIEW PrimTarget 
+
+statement ok
+DROP VIEW SecTarget 
+
+statement ok
+DROP VIEW InsideMask 
+
+statement ok
+DROP VIEW SpecZWarning 
+
+statement ok
+DROP VIEW ImageMask 
+
+statement ok
+DROP VIEW TiMask 
+
+statement ok
+DROP VIEW PhotoMode 
+
+statement ok
+DROP VIEW PhotoType 
+
+statement ok
+DROP VIEW MaskType 
+
+statement ok
+DROP VIEW FieldQuality 
+
+statement ok
+DROP VIEW PspStatus 
+
+statement ok
+DROP VIEW FramesStatus 
+
+statement ok
+DROP VIEW SpecClass 
+
+statement ok
+DROP VIEW SpecLineNames 
+
+statement ok
+DROP VIEW SpecZStatus 
+
+statement ok
+DROP VIEW HoleType 
+
+statement ok
+DROP VIEW ObjType 
+
+statement ok
+DROP VIEW ProgramType 
+
+statement ok
+DROP VIEW CoordType 
+
+statement ok
+DROP VIEW FieldMask 
+
+statement ok
+DROP VIEW PhotoFlags 
+
+statement ok
+DROP VIEW Star 
+
+statement ok
+DROP VIEW Galaxy 
+
+statement ok
+DROP VIEW Sky 
+
+statement ok
+DROP VIEW Unknown 
+
+statement ok
+DROP VIEW PhotoPrimary 
+
+statement ok
+COMMIT
+

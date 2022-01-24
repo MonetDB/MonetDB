@@ -239,7 +239,7 @@ addFunctions(mel_func *fcn){
 		sig->retc = 0;
 		sig->argc = 0;
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
-		sig->fcn = (MALfcn)fcn->imp;
+		sig->fcn = fcn->imp;
 		if( fcn->unsafe)
 			mb->unsafeProp = 1;
 
@@ -351,7 +351,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 	sig->retc = 0;
 	sig->argc = 0;
 	sig->token = command ? COMMANDsymbol:PATTERNsymbol;
-	sig->fcn = (MALfcn)imp;
+	sig->fcn = imp;
 	if (unsafe)
 		mb->unsafeProp = 1;
 	/* add the return variables */

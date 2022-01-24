@@ -1,0 +1,9 @@
+statement error
+explain select * from storagemodel()
+
+statement error
+select * from storagemodel()
+
+statement error
+select * from storagemodel()
+

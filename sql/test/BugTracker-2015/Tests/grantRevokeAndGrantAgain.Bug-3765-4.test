@@ -1,0 +1,12 @@
+statement ok
+INSERT into testTable values (3, 3)
+
+statement error 42000!SELECT: access denied for user_insert to table 'schematest.testtable'
+SELECT * FROM testTable
+
+statement error 42000!UPDATE: insufficient privileges for user 'user_insert' to update table 'testtable'
+UPDATE testTable set v1 = 2 where v2 = 7
+
+statement error 42000!DELETE FROM: insufficient privileges for user 'user_insert' to delete from table 'testtable'
+DELETE FROM testTable where v1 = 2
+

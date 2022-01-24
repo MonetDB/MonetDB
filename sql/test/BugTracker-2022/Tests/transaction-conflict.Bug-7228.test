@@ -1,0 +1,55 @@
+@connection(id=1, username=monetdb, password=monetdb)
+statement ok
+START TRANSACTION
+
+@connection(id=2, username=monetdb, password=monetdb)
+statement ok
+START TRANSACTION
+
+@connection(id=2)
+statement ok
+CREATE TABLE a(s string, i int, b1 bigint)
+
+@connection(id=2)
+statement ok
+COMMIT
+
+@connection(id=2)
+statement ok
+START TRANSACTION
+
+@connection(id=2)
+statement ok
+ALTER TABLE a ADD UNIQUE (s, b1)
+
+@connection(id=2)
+statement ok
+COMMIT
+
+@connection(id=2)
+statement ok
+START TRANSACTION
+
+@connection(id=2)
+statement ok
+CREATE TABLE b(i int)
+
+@connection(id=2)
+statement ok
+UPDATE a SET i = 1
+
+@connection(id=2)
+statement ok
+DROP TABLE b
+
+@connection(id=2)
+statement ok
+COMMIT
+
+@connection(id=2)
+statement ok
+DROP TABLE a
+
+@connection(id=1)
+statement ok
+ROLLBACK

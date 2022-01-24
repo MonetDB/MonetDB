@@ -1,0 +1,45 @@
+statement ok
+CREATE SCHEMA schemaTest
+
+statement ok
+CREATE USER user_delete with password 'delete' name 'user can only delete' schema schemaTest
+
+statement ok
+CREATE USER user_insert with password 'insert' name 'user can only insert' schema schemaTest
+
+statement ok
+CREATE USER user_update with password 'update' name 'user can only update' schema schemaTest
+
+statement ok
+CREATE USER user_select with password 'select' name 'user can only select' schema schemaTest
+
+statement ok
+CREATE table schemaTest.testTable (v1 int, v2 int)
+
+statement ok
+INSERT into schemaTest.testTable values(1, 1)
+
+statement ok
+INSERT into schemaTest.testTable values(2, 2)
+
+statement ok
+INSERT into schemaTest.testTable values(3, 3)
+
+statement ok
+GRANT DELETE on table schemaTest.testTable to user_delete
+
+statement ok
+GRANT INSERT on table schemaTest.testTable to user_insert
+
+statement ok
+GRANT UPDATE on table schemaTest.testTable to user_update
+
+statement ok
+GRANT SELECT on table schemaTest.testTable to user_delete
+
+statement ok
+GRANT SELECT on table schemaTest.testTable to user_update
+
+statement ok
+GRANT SELECT on table schemaTest.testTable to user_select
+

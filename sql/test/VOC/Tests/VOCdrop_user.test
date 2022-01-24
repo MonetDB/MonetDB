@@ -1,0 +1,15 @@
+statement ok
+START TRANSACTION
+
+statement ok
+ALTER USER "voc" SET SCHEMA "sys"
+
+statement ok
+DROP SCHEMA "voc"
+
+statement ok
+DROP USER "voc"
+
+statement ok
+commit
+

@@ -1,0 +1,30 @@
+statement ok
+START TRANSACTION
+
+statement ok
+drop table total cascade
+
+statement ok
+drop table soldiers cascade
+
+statement ok
+drop table seafarers cascade
+
+statement ok
+drop table passengers cascade
+
+statement ok
+drop table invoices cascade
+
+statement ok
+drop table impotenten cascade
+
+statement ok
+drop table craftsmen cascade
+
+statement ok
+drop table voyages cascade
+
+statement ok
+commit
+

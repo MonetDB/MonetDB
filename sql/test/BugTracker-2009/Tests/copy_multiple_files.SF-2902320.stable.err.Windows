@@ -1,4 +1,0 @@
-MAPI  = (monetdb) /var/tmp/mtest-10609/.s.monetdb.34310
-QUERY = plan copy into cm_tmp from '/file1','/file2';
-ERROR = !COPY INTO: filename must have absolute path: "/file1"
-CODE  = 42000
