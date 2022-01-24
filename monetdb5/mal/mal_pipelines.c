@@ -124,7 +124,7 @@ mal_pipelines_reset(void)
 }
 
 static MalStkPtr
-stack_copy(MalStkPtr stk)
+stack_copy(MalStkPtr stk, int start)
 {
 	MalStkPtr n = newGlobalStack(stk->stktop);
 	ValPtr lhs, rhs;
@@ -146,8 +146,12 @@ stack_copy(MalStkPtr stk)
 			}
 		} else {
 			rhs = &stk->stk[i];
-			if(VALcopy(lhs, rhs) == NULL)
-				break;
+			if ((getVarDeclared(stk->blk, i) <= start && getVarEolife(stk->blk, i) > start) || !rhs->vtype) {
+				if(VALcopy(lhs, rhs) == NULL)
+					break;
+			} else {
+				VALinit(lhs, rhs->vtype, ATOMnilptr(rhs->vtype));
+			}
 			if (rhs->vtype == TYPE_bat && rhs->val.bval)
 				BBPretain(rhs->val.bval);
 		}
@@ -175,7 +179,7 @@ PIPELINEworker(void *T)
 			break;
 		t->flag = RUNNING;
 
-		MalStkPtr stk = stack_copy(s->stk);
+		MalStkPtr stk = stack_copy(s->stk, s->start);
 
 		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = ATOMIC_INC(&s->counter);
 		str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);

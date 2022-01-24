@@ -1031,6 +1031,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 				r->batCapacity /= m;
 			}
 
+			assert (VIEWvtparent(b));
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);
 			r->tvheap = b->tvheap;
@@ -1354,12 +1355,24 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
-		/* todo correctly initialize */
-		memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+		if (ATOMextern(r->ttype)) {
+			memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+		} else {
+			char *d = Tloc(r, 0);
+			char *nil = ATOMnil(r->ttype);
+			for (BUN i=cnt; i<sz; i++)
+				memcpy(d+i, nil, r->twidth);
+		}
 	} else if (cnt == 0) {
 		BUN sz = BATcapacity(r);
-		/* todo correctly initialize */
-		memset(Tloc(r, 0), 0, r->twidth*sz);
+		if (ATOMextern(r->ttype)) {
+			memset(Tloc(r, 0), 0, r->twidth*sz);
+		} else {
+			char *d = Tloc(r, 0);
+			char *nil = ATOMnil(r->ttype);
+			for (BUN i=0; i<sz; i++)
+				memcpy(d+i, nil, r->twidth);
+		}
 	}
 	assert(b->twidth == r->twidth);
 
@@ -1447,12 +1460,24 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
-		/* todo correctly initialize */
-		memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+		if (ATOMextern(r->ttype)) {
+			memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+		} else {
+			char *d = Tloc(r, 0);
+			char *nil = ATOMnil(r->ttype);
+			for (BUN i=cnt; i<sz; i++)
+				memcpy(d+i, nil, r->twidth);
+		}
 	} else if (cnt == 0) {
 		BUN sz = BATcapacity(r);
-		/* todo correctly initialize */
-		memset(Tloc(r, 0), 0, r->twidth*sz);
+		if (ATOMextern(r->ttype)) {
+			memset(Tloc(r, 0), 0, r->twidth*sz);
+		} else {
+			char *d = Tloc(r, 0);
+			char *nil = ATOMnil(r->ttype);
+			for (BUN i=0; i<sz; i++)
+				memcpy(d+i, nil, r->twidth);
+		}
 	}
 	assert(b->twidth == r->twidth);
 
@@ -1494,16 +1519,16 @@ static mel_func pipeline_init_funcs[] = {
  command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",3), arg("pipeline", ptr), batarg("left",oid),batargany("right",3))),
  command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid))),
  command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid), batarg("gid",oid))),
- command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",4))),
- command("group", "group", LALGderive, false, "Sub Group input.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batarg("pgid", oid), batargany("b",4))),
+ command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",3), arg("pipeline", ptr), batargany("b",4))),
+ command("group", "group", LALGderive, false, "Sub Group input.", args(2,5, batarg("gid", oid), batargany("sink",3), arg("pipeline", ptr), batarg("pgid", oid), batargany("b",4))),
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Project.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("aggr", "sum", LALGsum, false, "sum per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "min", LALGmin, false, "Min per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "max", LALGmax, false, "Max per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
- pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",int), batargany("p",2))),
+ pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("sink",1),argany("tt",1),arg("size",int))),
+ pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("sink",1),argany("tt",1),arg("size",int), batargany("p",2))),
  { .imp=NULL }
 };
 #include "mal_import.h"
