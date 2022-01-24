@@ -2111,7 +2111,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			/* claim rows in the table while waiting for the workers to finish,  */
 			str msg = directappend_claim(directappend, task.top[task.cur], 0, NULL);
 			if (msg != MAL_SUCCEED) {
-				tablet_error(&task, BATcount(countbat), lng_nil, lng_nil, msg, "SQLload_file");
+				tablet_error(&task, BATcount(countbat), lng_nil, int_nil, msg, "SQLload_file");
 				res = -1;
 				for (j = 0; j < threads; j++)
 					MT_sema_down(&ptask[j].reply);
