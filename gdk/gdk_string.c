@@ -585,7 +585,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 			     (ssize_t) (cur - start));
 }
 
-size_t
+int
 strPrintWidth(const char *restrict s)
 {
 	int len = 0;

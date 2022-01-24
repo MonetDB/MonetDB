@@ -136,7 +136,7 @@ gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned cha
 gdk_export ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst, bool external);
 gdk_export size_t escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote);
 gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote);
-gdk_export size_t strPrintWidth(const char *restrict s);
+gdk_export int strPrintWidth(const char *restrict s);
 /*
  * @- nil values
  * All types have a single value designated as a NIL value. It
