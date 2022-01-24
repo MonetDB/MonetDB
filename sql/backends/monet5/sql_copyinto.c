@@ -322,7 +322,7 @@ directappend_append_one(struct directappend *state, size_t idx, const void *cons
 }
 
 static str
-directappend_append_batch(struct directappend *state, const void *const_data, BUN count, int width, void *col)
+directappend_append_batch(struct directappend *state, const void *const_data, BUN count, size_t width, void *col)
 {
 	sqlstore *store = state->mvc->session->tr->store;
 	sql_column *c = col;
