@@ -9668,15 +9668,15 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 	if (gp->cnt[op_union])
 		rel = rel_visitor_topdown(v, rel, &rel_optimize_unions_topdown);
 
+	/* Remove unused expressions */
+	if (level <= 0)
+		rel = rel_dce(v->sql, rel);
+
 	if (v->storage_based_opt && level <= 0) { /* storage statistics related optimizations */
 		/* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
 		if (!(is_modify(rel->op) && rel->flag&UPD_COMP))
 			rel = rel_visitor_bottomup(v, rel, &rel_get_statistics);
 	}
-
-	/* Remove unused expressions */
-	if (level <= 0)
-		rel = rel_dce(v->sql, rel);
 
 	if (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select])
 		rel = rel_visitor_topdown(v, rel, &rel_push_func_and_select_down);
