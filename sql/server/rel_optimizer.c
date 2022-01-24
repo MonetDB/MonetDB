@@ -1108,7 +1108,8 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 	case e_cmp: {
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
+		/* don't push down functions inside attribute joins */
+		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && (e->flag == mark_in || e->flag == mark_notin)))
 			return 0;
 		if (depth > 0) { /* for comparisons under the top ones, they become functions */
 			int lmust = 0;
@@ -1167,15 +1168,16 @@ exps_can_push_func(list *exps, sql_rel *rel)
 }
 
 static int
-exp_needs_push_down(sql_exp *e)
+exp_needs_push_down(sql_rel *rel, sql_exp *e)
 {
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
+		/* don't push down functions inside attribute joins */
+		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && (e->flag == mark_in || e->flag == mark_notin)))
 			return 0;
-		return exp_needs_push_down(e->l) || exp_needs_push_down(e->r) || (e->f && exp_needs_push_down(e->f));
+		return exp_needs_push_down(rel, e->l) || exp_needs_push_down(rel, e->r) || (e->f && exp_needs_push_down(rel, e->f));
 	case e_convert:
-		return exp_needs_push_down(e->l);
+		return exp_needs_push_down(rel, e->l);
 	case e_aggr:
 	case e_func:
 		if (!e->l || exps_are_atoms(e->l))
@@ -1192,10 +1194,10 @@ exp_needs_push_down(sql_exp *e)
 }
 
 static int
-exps_need_push_down( list *exps )
+exps_need_push_down(sql_rel *rel, list *exps )
 {
 	for(node *n = exps->h; n; n = n->next)
-		if (exp_needs_push_down(n->data))
+		if (exp_needs_push_down(rel, n->data))
 			return 1;
 	return 0;
 }
@@ -1292,7 +1294,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 		/* only push down when is useful */
 		if ((is_select(rel->op) && list_length(rel->exps) <= 1) || rel_is_ref(l) || (is_joinop(rel->op) && rel_is_ref(r)))
 			return rel;
-		if (exps_can_push_func(rel->exps, rel) && exps_need_push_down(rel->exps) && !exps_push_single_func_down(v, rel, l, r, rel->exps, 0))
+		if (exps_can_push_func(rel->exps, rel) && exps_need_push_down(rel, rel->exps) && !exps_push_single_func_down(v, rel, l, r, rel->exps, 0))
 			return NULL;
 		if (v->changes > changes) /* once we get a better join order, we can try to remove this projection */
 			return rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
