@@ -3162,7 +3162,7 @@ bl_postversion(void *Store, void *Lg)
 		BAT* args_type_ordered = NULL;
 		BAT* args_digits_ordered = NULL;
 		BAT* args_scale_ordered = NULL;
-	
+
 		BAT* funcs_name_mangled = NULL;
 		BAT* funcs_name_mangled_rid = NULL;
 
@@ -3182,26 +3182,26 @@ bl_postversion(void *Store, void *Lg)
 			args_scale == NULL ||
 			args_inout == NULL ||
 			args_number == NULL
-			) 
+			)
 			goto bailout;
 
 		if (BATleftjoin(
 						&funcs_cands,	&args_cands,
 						funcs_id,		args_func_id,
 						funcs_tid,		args_tid,
-						false, BATcount(args_tid) * BATcount(funcs_tid)) != GDK_SUCCEED) 
+						false, BATcount(args_tid) * BATcount(funcs_tid)) != GDK_SUCCEED)
 			goto bailout;
 
 		if ((funcs_name_ordered = BATproject(funcs_cands, funcs_name)) == NULL || (funcs_type_ordered = BATproject(funcs_cands, funcs_type)) == NULL)
 			goto bailout;
 
 		args_number_aligned = BATproject(args_cands, args_number);
-			
+
 		if (BATsort(NULL, &args_number_order, NULL, args_number_aligned, NULL, funcs_cands, false, false, false) != GDK_SUCCEED)
 			goto bailout;
 
 		{
-			BAT* args_number_order_ = NULL; 
+			BAT* args_number_order_ = NULL;
 			if (!(args_number_order_ = BATproject(args_number_order, args_cands)))
 				goto bailout;
 
@@ -3225,7 +3225,7 @@ bl_postversion(void *Store, void *Lg)
 			BATiter bi_funcs = bat_iterator(funcs_cands);
 			BATiter bi_funcs_name = bat_iterator(funcs_name_ordered);
 			BATiter bi_args_type = bat_iterator(args_type_ordered);
-			
+
 			oid func_rid = oid_nil;
 
 			char prefix[4098] = {0};
@@ -3248,7 +3248,7 @@ bl_postversion(void *Store, void *Lg)
 						postfix_pos = 0;
 
 						if (
-							BUNappend(funcs_name_mangled, mangled, false) != GDK_SUCCEED || 
+							BUNappend(funcs_name_mangled, mangled, false) != GDK_SUCCEED ||
 							BUNappend(funcs_name_mangled_rid, &func_rid, false) != GDK_SUCCEED) {
 								bat_iterator_end(&bi_funcs);
 								bat_iterator_end(&bi_funcs_name);
@@ -3290,7 +3290,7 @@ bl_postversion(void *Store, void *Lg)
 				bte inout = *(bte*) Tloc(args_inout_ordered, i);
 				argc++;
 				retc += (int) !inout;
-			
+
 				postfix_pos += snprintf(postfix + postfix_pos, 4098 - postfix_pos, "%%%s(%d,%d) ", type, digits, scale);
 				assert(postfix_pos < 4098);
 			}
@@ -3305,7 +3305,7 @@ bl_postversion(void *Store, void *Lg)
 			bat_iterator_end(&bi_args_type);
 
 			if	(BUNappend(funcs_name_mangled, mangled, false) != GDK_SUCCEED ||
-				 BUNappend(funcs_name_mangled_rid, &func_rid, false) != GDK_SUCCEED) 
+				 BUNappend(funcs_name_mangled_rid, &func_rid, false) != GDK_SUCCEED)
 					goto bailout;
 		}
 
@@ -3359,7 +3359,7 @@ bl_postversion(void *Store, void *Lg)
 
 				oid frid = *(oid*) BUNtail(bi_argless_tid, i);
 
-				if (BUNappend(funcs_name_mangled, mangled, false) != GDK_SUCCEED || 
+				if (BUNappend(funcs_name_mangled, mangled, false) != GDK_SUCCEED ||
 					BUNappend(funcs_name_mangled_rid, &frid, false) != GDK_SUCCEED
 					) {
 						bat_iterator_end(&bi_argless_tid);
@@ -3381,6 +3381,7 @@ bl_postversion(void *Store, void *Lg)
 				BUNappend(lg->catalog_id, &(int) {2165}, false) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &funcs_sqlname->batCacheid, false) != GDK_SUCCEED ||
 				(lg->catalog_lid	&& BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED) ||
+				(lg->catalog_cnt    && BUNappend(lg->catalog_cnt, &(lng){BATcount(funcs_sqlname)}, false) != GDK_SUCCEED) ||
 				(old_lg				&& BUNappend(old_lg->add, &funcs_sqlname->batCacheid, false) != GDK_SUCCEED)) {
 				bat_destroy(funcs_sqlname);
 				goto bailout;
