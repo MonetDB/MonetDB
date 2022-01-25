@@ -1,0 +1,136 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create procedure "sys"."dict_compress"(sname string, tname string, cname string) external name "dict"."compress"
+
+statement ok
+create procedure "sys"."dict_compress"(sname string, tname string, cname string, ordered_values bool) external name "dict"."compress"
+
+statement ok
+create procedure "sys"."for_compress"(sname string, tname string, cname string) external name "for"."compress"
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "rt2" ("c0" BOOLEAN)
+
+statement ok
+INSERT INTO "rt2" VALUES (true)
+
+statement ok
+CREATE TABLE x (x int)
+
+statement ok
+INSERT INTO x VALUES (1),(2),(3)
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CALL "sys"."dict_compress"('sys','rt2','c0', true)
+
+statement ok
+CALL "sys"."dict_compress"('sys','x','x', true)
+
+statement ok
+COMMIT
+
+query I nosort
+SELECT 1 FROM rt2 WHERE rt2.c0 <> false
+----
+1
+
+query I nosort
+SELECT 1 FROM rt2 WHERE rt2.c0 <> true
+----
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(rt2.c0 <> false AS INT) as count FROM rt2) as res
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(rt2.c0 <> true AS INT) as count FROM rt2) as res
+----
+0
+
+query I nosort
+SELECT 1 FROM rt2 WHERE rt2.c0 = false
+----
+
+query I nosort
+SELECT 1 FROM rt2 WHERE rt2.c0 = true
+----
+1
+
+query I nosort
+SELECT * FROM x WHERE x < 1
+----
+
+query I nosort
+SELECT * FROM x WHERE x < 2
+----
+1
+
+query I nosort
+SELECT * FROM x WHERE x <= 1
+----
+1
+
+query I rowsort
+SELECT * FROM x WHERE x <= 2
+----
+1
+2
+
+query I nosort
+SELECT * FROM x WHERE x > 2
+----
+3
+
+query I nosort
+SELECT * FROM x WHERE x > 3
+----
+
+query I rowsort
+SELECT * FROM x WHERE x >= 2
+----
+2
+3
+
+query I nosort
+SELECT * FROM x WHERE x >= 3
+----
+3
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE rt2
+
+statement ok
+DROP TABLE x
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP ALL PROCEDURE "sys"."dict_compress"
+
+statement ok
+DROP ALL PROCEDURE "sys"."for_compress"
+
+statement ok
+COMMIT
