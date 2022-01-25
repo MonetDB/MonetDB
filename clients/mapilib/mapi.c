@@ -1080,7 +1080,7 @@ static char nomem[] = "Memory allocation failed";
 
 static void
 mapi_clrError(Mapi mid)
-	__attribute__((__nonnull__));
+	__attribute__((__nonnull__(1)));
 
 static void
 mapi_clrError(Mapi mid)
@@ -1095,7 +1095,7 @@ mapi_clrError(Mapi mid)
 
 static MapiMsg
 mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
-	__attribute__((__nonnull__(2, 3)));
+	__attribute__((__nonnull__(2))) __attribute__((__nonnull__(3)));
 
 static MapiMsg
 mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
