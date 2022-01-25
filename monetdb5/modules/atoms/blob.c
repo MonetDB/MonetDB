@@ -59,7 +59,7 @@ blobsize(size_t nitems)
 	return (var_t) (offsetof(blob, data) + nitems);
 }
 
-static char hexit[] = "0123456789ABCDEF";
+static const char hexit[] = "0123456789ABCDEF";
 
 /*
  * @- Wrapping section

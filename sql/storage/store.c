@@ -3870,7 +3870,8 @@ transaction_check_dependencies_and_removals(sql_trans *tr)
 			for (; he && ok == LOG_OK; he = he->chain) {
 				sql_dependency_change *schange = (sql_dependency_change*) he->value;
 
-				if (lchange->objid == schange->objid && lchange->type == schange->type)
+				/* conflict only if transactions overlap */
+				if (schange->ts >= tr->ts && lchange->objid == schange->objid && lchange->type == schange->type)
 					ok = LOG_CONFLICT;
 			}
 		}
@@ -3884,7 +3885,8 @@ transaction_check_dependencies_and_removals(sql_trans *tr)
 			for (; he && ok == LOG_OK; he = he->chain) {
 				sql_dependency_change *schange = (sql_dependency_change*) he->value;
 
-				if (lchange->objid == schange->objid && lchange->type == schange->type)
+				/* conflict only if transactions overlap */
+				if (schange->ts >= tr->ts && lchange->objid == schange->objid && lchange->type == schange->type)
 					ok = LOG_CONFLICT;
 			}
 		}

@@ -204,7 +204,7 @@ comment_on(stream *toConsole, const char *object,
 	return 0;
 }
 
-static char *actions[] = {
+static const char *actions[] = {
 	0,
 	"CASCADE",
 	"RESTRICT",
