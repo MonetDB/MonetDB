@@ -9864,7 +9864,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 	assert(level < 20);
 #endif
 	/* Run rel_push_select_up only once at the end to avoid an infinite optimization loop */
-	if (opt == 2)
+	if (opt == 2 && gp.cnt[op_select] && (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]))
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
 	if (gp.needs_setjoin_rewrite)
 		rel = rel_visitor_bottomup(&v, rel, &rel_setjoins_2_joingroupby);
