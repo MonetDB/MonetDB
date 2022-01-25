@@ -184,7 +184,7 @@ directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
 	}
 
 	// Allocate room for this batch
-	BUN dummy_offset = 424242424242;
+	BUN dummy_offset = (BUN)424242424242;
 	state->offset = dummy_offset;
 	sql_trans *tr = state->mvc->session->tr;
 	sqlstore *store = tr->store;
