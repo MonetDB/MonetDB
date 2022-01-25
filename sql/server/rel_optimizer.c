@@ -3746,30 +3746,25 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 	return nexps;
 }
 
-static sql_exp *
-rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+static inline sql_exp *
+rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e)
 {
-	(void) depth;
-
 	if (is_simple_project(rel->op) && is_func(e->type) && e->l) {
 		list *fexps = e->l;
 		sql_subfunc *f = e->f;
 
 		/* is and function */
-		if (strcmp(f->func->base.name, "and") == 0 && list_length(fexps) == 2) {
-			sql_exp *l = list_fetch(fexps, 0);
-			sql_exp *r = list_fetch(fexps, 1);
+		if (!f->func->s && strcmp(f->func->base.name, "and") == 0 && list_length(fexps) == 2) {
+			sql_exp *l = list_fetch(fexps, 0), *r = list_fetch(fexps, 1);
 
 			/* check merge into single between */
 			if (is_func(l->type) && is_func(r->type)) {
-				list *lfexps = l->l;
-				list *rfexps = r->l;
-				sql_subfunc *lff = l->f;
-				sql_subfunc *rff = r->f;
+				list *lfexps = l->l, *rfexps = r->l;
+				sql_subfunc *lff = l->f, *rff = r->f;
 
 				if (((strcmp(lff->func->base.name, ">=") == 0 || strcmp(lff->func->base.name, ">") == 0) && list_length(lfexps) == 2) &&
-				    ((strcmp(rff->func->base.name, "<=") == 0 || strcmp(rff->func->base.name, "<") == 0) && list_length(rfexps) == 2)) {
-					sql_exp *le = list_fetch(lfexps,0), *lf = list_fetch(rfexps,0);
+					((strcmp(rff->func->base.name, "<=") == 0 || strcmp(rff->func->base.name, "<") == 0) && list_length(rfexps) == 2)) {
+					sql_exp *le = list_fetch(lfexps, 0), *lf = list_fetch(rfexps, 0);
 					int c_le = is_numeric_upcast(le), c_lf = is_numeric_upcast(lf);
 
 					if (exp_equal(c_le?le->l:le, c_lf?lf->l:lf) == 0) {
@@ -7477,10 +7472,9 @@ rel_select_order(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_exp *
-rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+static inline sql_exp *
+rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 {
-	(void)depth;
 	if (is_func(e->type) && list_length(e->l) == 3 && is_case_func((sql_subfunc*)e->f) /*is_ifthenelse_func((sql_subfunc*)e->f)*/) {
 		list *args = e->l;
 		sql_exp *ie = args->h->data;
@@ -7711,6 +7705,16 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			}
 		}
 	}
+	return e;
+}
+
+static sql_exp *
+rel_optimize_exps(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void) depth;
+	if (v->value_based_opt)
+		e = rel_simplify_predicates(v, rel, e);
+	e = rel_merge_project_rse(v, rel, e);
 	return e;
 }
 
@@ -9597,8 +9601,8 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 		}
 	}
 
-	if (level <= 1 && v->value_based_opt)
-		rel = rel_exp_visitor_bottomup(v, rel, &rel_simplify_predicates, false);
+	if (level <= 1 && (gp->cnt[op_project] || gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select]))
+		rel = rel_exp_visitor_bottomup(v, rel, &rel_optimize_exps, false);
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten
@@ -9623,9 +9627,6 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 
 	if ((gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full]) && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(v, rel, &rel_split_outerjoin);
-
-	if (level <= 1 && gp->cnt[op_project])
-		rel = rel_exp_visitor_bottomup(v, rel, &rel_merge_project_rse, false);
 
 	if (gp->cnt[op_groupby] || gp->cnt[op_project] || gp->cnt[op_union] || gp->cnt[op_inter] || gp->cnt[op_except])
 		rel = rel_visitor_topdown(v, rel, &rel_optimize_projections);
