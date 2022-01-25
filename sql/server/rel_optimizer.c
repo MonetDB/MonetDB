@@ -4569,7 +4569,7 @@ point_select_on_unique_column(sql_rel *rel)
  * A point select on an unique column reduces the number of rows to 1. If the same select is under a
  * join, the opposite side's select can be pushed above the join.
  */
-static sql_rel *
+static inline sql_rel *
 rel_push_select_up(visitor *v, sql_rel *rel)
 {
 	if ((is_join(rel->op) || is_semi(rel->op)) && !rel_is_ref(rel) && !is_single(rel)) {
@@ -9475,7 +9475,6 @@ rel_optimize_projections(visitor *v, sql_rel *rel)
 
 	rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
-	rel = rel_groupby_order(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
 	rel = rel_groupby_distinct(v, rel);
@@ -9527,8 +9526,6 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 	rel = rel_push_select_down(v, rel);
 	if (rel && rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
-
-	rel = rel_select_order(v, rel);
 	return rel;
 }
 
@@ -9608,7 +9605,7 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 
 	if (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) {
 		rel = rel_visitor_topdown(v, rel, &rel_optimize_joins);
-		if (!gp->cnt[op_update])
+		if (level <= 1 &&!gp->cnt[op_update])
 			rel = rel_join_order(v, rel);
 		/* Important -> Re-write semijoins after rel_join_order */
 		rel = rel_visitor_bottomup(v, rel, &rel_optimize_semi_and_anti);
@@ -9625,12 +9622,6 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 	/* Remove unused expressions */
 	if (level <= 0)
 		rel = rel_dce(v->sql, rel);
-
-	if (v->storage_based_opt && level <= 0) { /* storage statistics related optimizations */
-		/* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
-		if (!(is_modify(rel->op) && rel->flag&UPD_COMP))
-			rel = rel_visitor_bottomup(v, rel, &rel_get_statistics);
-	}
 
 	if (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select])
 		rel = rel_visitor_topdown(v, rel, &rel_push_func_and_select_down);
@@ -9817,6 +9808,22 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+/* This optimization loop contains optimizations that can potentially use statistics */
+static sql_rel *
+rel_final_optimization_loop(visitor *v, sql_rel *rel)
+{
+	/* Run rel_push_select_up only once at the end to avoid an infinite optimization loop */
+	rel = rel_push_select_up(v, rel);
+	rel = rel_select_order(v, rel);
+
+	/* TODO? Maybe later add rel_simplify_count, rel_join2semijoin, rel_simplify_fk_joins,
+		rel_distinct_project2groupby, rel_simplify_predicates, rel_simplify_math,
+		rel_distinct_aggregate_on_unique_values */
+
+	rel = rel_groupby_order(v, rel);
+	return rel;
+}
+
 /* 'instantiate' means to rewrite logical tables: (merge, remote, replica tables) */
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt)
@@ -9844,15 +9851,25 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 #ifndef NDEBUG
 	assert(level < 20);
 #endif
-	/* Run rel_push_select_up only once at the end to avoid an infinite optimization loop */
-	if (opt == 2 && gp.cnt[op_select] && (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]))
-		rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
-	if (gp.needs_setjoin_rewrite)
+	if (rel && gp.needs_setjoin_rewrite)
 		rel = rel_visitor_bottomup(&v, rel, &rel_setjoins_2_joingroupby);
+	if (rel && opt == 2) {
+		if (storage_based_opt && !(is_modify(rel->op) && rel->flag&UPD_COMP)) { /* storage statistics related optimizations */
+			/* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
+			rel = rel_visitor_bottomup(&v, rel, &rel_get_statistics);
+		}
+		/* Run join order one final time with statistics */
+		if (!gp.cnt[op_update] && (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]))
+			rel = rel_join_order(&v, rel);
+
+		if (gp.cnt[op_groupby] || gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_left] ||
+			gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
+			rel = rel_visitor_bottomup(&v, rel, &rel_final_optimization_loop);
+	}
 
 	/* merge table rewrites may introduce remote or replica tables */
 	/* at the moment, make sure the remote table rewriters always run last*/
-	if (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite) {
+	if (rel && (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite)) {
 		v.data = NULL;
 		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_remote);
 		v.data = NULL;
