@@ -41,7 +41,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		case op_select:
 		case op_anti:
 		case op_semi: {
-			bool found_without_semantics = false, found_left = false, found_right = false, still_unique = true;
+			bool found_without_semantics = false, found_left = false, found_right = false, still_unique = false;
 
 			if ((is_innerjoin(rel->op) || is_select(rel->op)) && list_length(rel->exps) == 1 && exp_is_false(rel->exps->h->data))
 				return NULL; /* nothing will pass, skip */
@@ -54,18 +54,18 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 
 			if (!found_left && !found_right)
 				return NULL;
-			still_unique = !list_empty(rel->exps); /* cartesian products */
 			if (!list_empty(rel->exps) && rel->op != op_anti) { /* if there's an or, the MIN and MAX get difficult to propagate */
 				for (node *n = rel->exps->h ; n ; n = n->next) {
 					sql_exp *comp = n->data, *le = comp->l, *lne = NULL, *re = comp->r, *rne = NULL, *fe = comp->f, *fne = NULL;
 
 					if (comp->type == e_cmp) {
+						still_unique |= comp->flag == cmp_equal && is_unique(le) && is_unique(re); /* unique if only equi-joins on unique columns are there */
 						if (is_theta_exp(comp->flag) && ((lne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e)) || (fe && (fne = comparison_find_column(fe, e))))) {
 							atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX),
 								 *rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 
-							found_without_semantics |= !is_semantics(comp);
-							still_unique &= comp->flag == cmp_equal && is_unique(le) && is_unique(re); /* unique if only equi-joins on unique columns are there */
+							/* not semantics found or if explicitly filtering not null values from the column */
+							found_without_semantics |= !is_semantics(comp) || (comp->flag == cmp_equal && lne && is_anti(comp) && exp_is_null(re));
 							if (is_full(rel->op) || (is_left(rel->op) && found_left) || (is_right(rel->op) && found_right)) /* on outer joins, min and max cannot be propagated on some cases */
 								continue;
 							/* if (end2 >= start1 && start2 <= end1) then the 2 intervals are intersected */
@@ -146,11 +146,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 									break;
 								}
 							}
-						} else {
-							still_unique = false;
 						}
-					} else {
-						still_unique = false;
 					}
 				}
 			}
