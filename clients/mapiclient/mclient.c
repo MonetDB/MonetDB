@@ -178,14 +178,18 @@ functions_has_sqlname(Mapi mid)
 {
 	bool ret;
 	MapiHdl hdl;
+	static int answer = -1;
 
-	if ((hdl = mapi_query(mid, 
+	if (answer >= 0)
+		return (bool) answer;
+
+	if ((hdl = mapi_query(mid,
 		"select c.name"
-		"	from columns c, tables t"
+		"	from sys.columns c, sys.tables t"
 		"	where"
 		"		c.table_id = t.id and"
 		"		t.name = 'functions' and"
-		"		t.schema_id = (select id from schemas where name = 'sys') and"
+		"		t.schema_id = (select id from sys.schemas where name = 'sys') and"
 		"		c.name = 'sqlname'")) == NULL
 		|| mapi_error(mid))
 		goto bailout;
@@ -197,6 +201,7 @@ functions_has_sqlname(Mapi mid)
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
+	answer = (int) ret;
 	return ret;
 
 bailout:
@@ -2566,7 +2571,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					} else {
 
 						const char* functions_sqlname = functions_has_sqlname(mid) ? "sqlname" : "name";
-							
+
 						size_t len = 5000 + 400 + strlen(line);
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
@@ -2576,7 +2581,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							continue;
 						}
 
-						/* get all object names in current schema 
+						/* get all object names in current schema
 						 * | LINE            | SCHEMA FILTER | NAME FILTER                   |
 						 * |-----------------+---------------+-------------------------------|
 						 * | ""              | yes           | -                             |
@@ -2586,7 +2591,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
-						q += snprintf(q, endq-q, 
+						q += snprintf(q, endq-q,
 										"with describe_all_objects AS (\n"
 											"  SELECT s.name AS sname,\n"
 											"      t.name,\n"
