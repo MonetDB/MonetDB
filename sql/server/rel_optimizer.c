@@ -6497,7 +6497,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* if local_proj is set: the current expression is from the same projection */
+/* if local_proj is >= -1, the current expression is from the same projection 
+   if local_proj is -1, then we don't care about self references (eg used to check for order by exps) */
 static int exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj);
 
 static int
@@ -6521,6 +6522,9 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 	switch(e->type) {
 	case e_column:
 		ne = rel_find_exp(subrel, e);
+		/* if looking in the same projection, make sure 'ne' is projected before the searched column */
+		if (ne && local_proj > -1 && list_position(subrel->exps, ne) > local_proj)
+			ne = NULL;
 		break;
 	case e_convert:
 		return exp_mark_used(subrel, e->l, local_proj);
@@ -6565,7 +6569,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 		break;
 	}
 	if (ne && e != ne) {
-		if (!local_proj || ne->type != e_column || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')) || (subrel->l && !rel_find_exp(subrel->l, e)))
+		if (local_proj == -2 || ne->type != e_column || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')) || (subrel->l && !rel_find_exp(subrel->l, e)))
 			ne->used = 1;
 		return ne->used;
 	}
@@ -6603,7 +6607,7 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 			sql_exp *e = n->data;
 
 			e->used = 1;
-			exp_mark_used(rel, e, 1);
+			exp_mark_used(rel, e, -1);
 		}
 	}
 
@@ -6626,8 +6630,8 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 
 			if (!is_project(rel->op) || e->used) {
 				if (is_project(rel->op))
-					nr += exp_mark_used(rel, e, 1);
-				nr += exp_mark_used(subrel, e, 0);
+					nr += exp_mark_used(rel, e, i);
+				nr += exp_mark_used(subrel, e, -2);
 			}
 		}
 	}
@@ -6646,7 +6650,7 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 
 			e->used = 1;
 			/* possibly project/groupby uses columns from the inner */
-			exp_mark_used(subrel, e, 0);
+			exp_mark_used(subrel, e, -2);
 		}
 	}
 }
@@ -6745,7 +6749,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		if (rel->l && rel->flag != TRIGGER_WRAPPER) {
 			rel_used(rel);
 			if (rel->r)
-				exp_mark_used(rel->l, rel->r, 0);
+				exp_mark_used(rel->l, rel->r, -2);
 			rel_mark_used(sql, rel->l, proj);
 		}
 		break;
