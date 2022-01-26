@@ -87,7 +87,7 @@ statement ok
 DROP LOADER myfunc3
 
 query ITTTIIIIIIII rowsort
-SELECT * FROM functions WHERE sqlname='myfunc'
+SELECT * FROM functions WHERE name='myfunc'
 ----
 
 statement ok

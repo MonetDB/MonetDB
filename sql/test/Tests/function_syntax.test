@@ -27,7 +27,7 @@ BEGIN
 END
 
 query T rowsort
-select sqlname from functions where sqlname = 'f1' or sqlname = 'f2' or sqlname = 'f3'
+select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
 ----
 f1
 f1
@@ -38,7 +38,7 @@ statement error
 DROP FUNCTION f1
 
 query T rowsort
-select sqlname from functions where sqlname = 'f1' or sqlname = 'f2' or sqlname = 'f3'
+select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
 ----
 f1
 f1
@@ -49,7 +49,7 @@ statement ok
 DROP FUNCTION f1()
 
 query T rowsort
-select sqlname from functions where sqlname = 'f1' or sqlname = 'f2' or sqlname = 'f3'
+select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
 ----
 f1
 f2
@@ -59,7 +59,7 @@ statement error
 DROP FUNCTION f2 (int, varchar(1024))
 
 query T rowsort
-select sqlname from functions where sqlname = 'f1' or sqlname = 'f2' or sqlname = 'f3'
+select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
 ----
 f1
 f2
@@ -69,7 +69,7 @@ statement ok
 DROP FUNCTION f2 (int)
 
 query T rowsort
-select sqlname from functions where sqlname = 'f1' or sqlname = 'f2' or sqlname = 'f3'
+select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
 ----
 f1
 f3
@@ -78,7 +78,7 @@ statement ok
 DROP FUNCTION f3 (int, varchar(1024))
 
 query T rowsort
-select sqlname from functions where sqlname = 'f1' or sqlname = 'f2' or sqlname = 'f3'
+select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
 ----
 f1
 
@@ -96,6 +96,6 @@ statement error
 DROP ALL FUNCTION f1 CASCADE
 
 query T rowsort
-select sqlname from functions where sqlname = 'f1' or sqlname = 'f2' or sqlname = 'f3'
+select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
 ----
 

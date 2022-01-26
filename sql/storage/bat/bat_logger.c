@@ -409,7 +409,7 @@ struct table {
 	{
 		.schema = "sys",
 		.table = "functions",
-		.column = "sqlname",
+		.column = "mangled_name",
 		.fullname = "sys_functions_sqlname",
 		.newid = 2165,
 	},
@@ -3152,6 +3152,8 @@ bl_postversion(void *Store, void *Lg)
 		BAT* funcs_name_argless= NULL;
 		BAT* funcs_type_argless= NULL;
 
+		bool error = false;
+
 		if (
 			funcs_id == NULL ||
 			funcs_name == NULL ||
@@ -3271,7 +3273,7 @@ bl_postversion(void *Store, void *Lg)
 				argc++;
 				retc += (int) !inout;
 
-				postfix_pos += snprintf(postfix + postfix_pos, 4098 - postfix_pos, "%%%s(%d,%d) ", type, digits, scale);
+				postfix_pos += snprintf(postfix + postfix_pos, 4098 - postfix_pos, "%%%s(%d,%d)", type, digits, scale);
 				assert(postfix_pos < 4098);
 			}
 
@@ -3352,53 +3354,46 @@ bl_postversion(void *Store, void *Lg)
 		}
 
 		{
-			/* new STRING column sys.functions.sqlname */
-			BAT *funcs_sqlname = COLcopy(funcs_name, funcs_name->ttype, true, PERSISTENT);
-			if (funcs_sqlname == NULL)
-				return GDK_FAIL;
-			if ((funcs_sqlname = BATsetaccess(funcs_sqlname, BAT_READ)) == NULL ||
-				/* 2165 is sys.functions.sqlname */
-				BUNappend(lg->catalog_id, &(int) {2165}, false) != GDK_SUCCEED ||
-				BUNappend(lg->catalog_bid, &funcs_sqlname->batCacheid, false) != GDK_SUCCEED ||
+			BAT *funcs_name_mangled_final_order = NULL;
+			if (
+				(funcs_name_mangled_final_order	= BATconstant(funcs_name->hseqbase, TYPE_str, &str_nil, BATcount(funcs_name), PERSISTENT)) == NULL ||
+				BATreplace(funcs_name_mangled_final_order, funcs_name_mangled_rid, funcs_name_mangled, false) != GDK_SUCCEED ||
+				(funcs_name_mangled_final_order = BATsetaccess(funcs_name_mangled_final_order, BAT_READ)) == NULL ||
+				BUNappend(lg->catalog_id, &(int) {2165}, false) != GDK_SUCCEED || // 2165 is sys.functions.mangled_name
+				BUNappend(lg->catalog_bid, &funcs_name_mangled_final_order->batCacheid, false) != GDK_SUCCEED ||
 				(lg->catalog_lid	&& BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED) ||
-				(lg->catalog_cnt    && BUNappend(lg->catalog_cnt, &(lng){BATcount(funcs_sqlname)}, false) != GDK_SUCCEED) ||
-				(old_lg				&& BUNappend(old_lg->add, &funcs_sqlname->batCacheid, false) != GDK_SUCCEED)) {
-				bat_destroy(funcs_sqlname);
+				(lg->catalog_cnt    && BUNappend(lg->catalog_cnt, &(lng){BATcount(funcs_name_mangled_final_order)}, false) != GDK_SUCCEED) ||
+				(old_lg				&& BUNappend(old_lg->add, &funcs_name_mangled_final_order->batCacheid, false) != GDK_SUCCEED)) {
+				bat_destroy(funcs_name_mangled_final_order);
 				goto bailout;
 			}
-			if (!old_lg) lg->cnt++;
 
-			BBPretain(funcs_sqlname->batCacheid);
-			BBPretain(funcs_sqlname->batCacheid); /* yep, twice */
-			bat_destroy(funcs_sqlname);
+			BBPretain(funcs_name_mangled_final_order->batCacheid);
+			BBPretain(funcs_name_mangled_final_order->batCacheid); /* yep, twice */
+			bat_destroy(funcs_name_mangled_final_order);
+
+			if (tabins(lg, old_lg, tabins_first, -1, 0,
+						2076, &(msk) {false},	/* sys._columns */
+						/* 2165 is sys.functions.mangled_name */
+						2077, &(int) {2165},		/* sys._columns.id */
+						2078, "mangled_name",			/* sys._columns.name */
+						2079, "varchar",			/* sys._columns.type */
+						2080, &(int) {4098},		/* sys._columns.type_digits */
+						2081, &(int) {0},		/* sys._columns.type_scale */
+						/* 2016 is sys.functions */
+						2082, &(int) {2016},		/* sys._columns.table_id */
+						2083, str_nil,			/* sys._columns.default */
+						2084, &(bit) {TRUE},		/* sys._columns.null */
+						2085, &(int) {12},		/* sys._columns.number */
+						2086, str_nil,			/* sys._columns.storage */
+						0) != GDK_SUCCEED)
+				goto bailout;
+			tabins_first = false;
 		}
 
-		if (tabins(lg, old_lg, tabins_first, -1, 0,
-					2076, &(msk) {false},	/* sys._columns */
-					/* 2165 is sys.functions.sqlname */
-					2077, &(int) {2165},		/* sys._columns.id */
-					2078, "sqlname",			/* sys._columns.name */
-					2079, "varchar",			/* sys._columns.type */
-					2080, &(int) {4098},		/* sys._columns.type_digits */
-					2081, &(int) {0},		/* sys._columns.type_scale */
-					/* 2016 is sys.functions */
-					2082, &(int) {2016},		/* sys._columns.table_id */
-					2083, str_nil,			/* sys._columns.default */
-					2084, &(bit) {TRUE},		/* sys._columns.null */
-					2085, &(int) {12},		/* sys._columns.number */
-					2086, str_nil,			/* sys._columns.storage */
-					0) != GDK_SUCCEED)
-			goto bailout;
-		tabins_first = false;
-
-		{
-			BAT *funcs_name_new = COLcopy(funcs_name, funcs_name->ttype, true, PERSISTENT);
-			if (!funcs_name_new ||
-				BATreplace(funcs_name_new, funcs_name_mangled_rid, funcs_name_mangled, false) != GDK_SUCCEED ||
-				replace_bat(old_lg, lg, 2018, funcs_name->batCacheid, funcs_name_new) != GDK_SUCCEED) {
-					bat_destroy(funcs_name_new);
-					goto bailout;
-			}
+		if (false) {
+			bailout:
+			error = true;
 		}
 
 		bat_destroy(funcs_tid);
@@ -3428,38 +3423,7 @@ bl_postversion(void *Store, void *Lg)
 		bat_destroy(funcs_name_argless);
 		bat_destroy(funcs_type_argless);
 
-		if (false) {
-			bailout:
-
-			bat_destroy(del_funcs);
-			bat_destroy(del_args);
-
-			bat_destroy(funcs_tid);
-			bat_destroy(funcs_name);
-			bat_destroy(funcs_type);
-			bat_destroy(args_func_id);
-			bat_destroy(args_type);
-			bat_destroy(args_digits);
-			bat_destroy(args_scale);
-			bat_destroy(args_inout);
-			bat_destroy(args_number);
-
-			bat_destroy(funcs_name_ordered);
-			bat_destroy(funcs_type_ordered);
-			bat_destroy(args_number_aligned);
-			bat_destroy(args_number_order);
-			bat_destroy(args_inout_ordered);
-			bat_destroy(args_type_ordered);
-			bat_destroy(args_digits_ordered);
-			bat_destroy(args_scale_ordered);
-			bat_destroy(funcs_name_mangled);
-			bat_destroy(funcs_name_mangled_rid);
-
-			bat_destroy(funcs_name_mirror);
-			bat_destroy(_funcs_name_argless);
-			bat_destroy(funcs_argless_tid);
-			bat_destroy(funcs_name_argless);
-			bat_destroy(funcs_type_argless);
+		if (error) {
 			return GDK_FAIL;
 		}
 	}

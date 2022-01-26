@@ -173,49 +173,6 @@ static char *nullstring = default_nullstring;
 #include <ctype.h>
 #include "mhelp.h"
 
-static bool
-functions_has_sqlname(Mapi mid)
-{
-	bool ret;
-	MapiHdl hdl;
-	static int answer = -1;
-
-	if (answer >= 0)
-		return (bool) answer;
-
-	if ((hdl = mapi_query(mid,
-		"select c.name"
-		"	from sys.columns c, sys.tables t"
-		"	where"
-		"		c.table_id = t.id and"
-		"		t.name = 'functions' and"
-		"		t.schema_id = (select id from sys.schemas where name = 'sys') and"
-		"		c.name = 'sqlname'")) == NULL
-		|| mapi_error(mid))
-		goto bailout;
-	ret = (int) mapi_get_row_count(hdl) == 1;
-	while ((mapi_fetch_row(hdl)) != 0) {
-		if (mapi_error(mid))
-			goto bailout;
-	}
-	if (mapi_error(mid))
-		goto bailout;
-	mapi_close_handle(hdl);
-	answer = (int) ret;
-	return ret;
-
-bailout:
-	if (hdl) {
-		if (mapi_result_error(hdl))
-			mapi_explain_result(hdl, stderr);
-		else
-			mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-	return 0;
-}
-
 static timertype
 gettime(void)
 {
@@ -2569,10 +2526,59 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						end_pager(saveFD);
 #endif
 					} else {
-
-						const char* functions_sqlname = functions_has_sqlname(mid) ? "sqlname" : "name";
-
-						size_t len = 5000 + 400 + strlen(line);
+						/* get all object names in current schema */
+						const char *with_clause =
+							"with describe_all_objects AS (\n"
+							"  SELECT s.name AS sname,\n"
+							"      t.name,\n"
+							"      s.name || '.' || t.name AS fullname,\n"
+							"      CAST(CASE t.type\n"
+							"      WHEN 1 THEN 2\n" /* ntype for views */
+							"      ELSE 1\n" /* ntype for tables */
+							"      END AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,\n"
+							"      t.system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys._tables t\n"
+							"    LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
+							"    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
+							"  UNION ALL\n"
+							"  SELECT s.name AS sname,\n"
+							"      sq.name,\n"
+							"      s.name || '.' || sq.name AS fullname,\n"
+							"      CAST(4 AS SMALLINT) AS ntype,\n"
+							"      'SEQUENCE' AS type,\n"
+							"      false AS system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.sequences sq\n"
+							"    LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
+							"  UNION ALL\n"
+							"  SELECT DISTINCT s.name AS sname,\n" /* DISTINCT is needed to filter out duplicate overloaded function/procedure names */
+							"      f.name,\n"
+							"      s.name || '.' || f.name AS fullname,\n"
+							"      CAST(8 AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN f.system THEN 'SYSTEM ' ELSE '' END) || function_type_keyword AS type,\n"
+							"      f.system AS system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.functions f\n"
+							"    LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
+							"    LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
+							"  UNION ALL\n"
+							"  SELECT NULL AS sname,\n"
+							"      s.name,\n"
+							"      s.name AS fullname,\n"
+							"      CAST(16 AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,\n"
+							"      s.system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.schemas s\n"
+							"    LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
+							"  ORDER BY system, name, sname, ntype)\n"
+							;
+						size_t len = strlen(with_clause) + 400 + strlen(line);
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
 
@@ -2591,59 +2597,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
-						q += snprintf(q, endq-q,
-										"with describe_all_objects AS (\n"
-											"  SELECT s.name AS sname,\n"
-											"      t.name,\n"
-											"      s.name || '.' || t.name AS fullname,\n"
-											"      CAST(CASE t.type\n"
-											"      WHEN 1 THEN 2\n" /* ntype for views */
-											"      ELSE 1\n" /* ntype for tables */
-											"      END AS SMALLINT) AS ntype,\n"
-											"      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,\n"
-											"      t.system,\n"
-											"      c.remark AS remark\n"
-											"    FROM sys._tables t\n"
-											"    LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
-											"    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
-											"    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
-											"  UNION ALL\n"
-											"  SELECT s.name AS sname,\n"
-											"      sq.name,\n"
-											"      s.name || '.' || sq.name AS fullname,\n"
-											"      CAST(4 AS SMALLINT) AS ntype,\n"
-											"      'SEQUENCE' AS type,\n"
-											"      false AS system,\n"
-											"      c.remark AS remark\n"
-											"    FROM sys.sequences sq\n"
-											"    LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
-											"    LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
-											"  UNION ALL\n"
-											"  SELECT DISTINCT s.name AS sname,\n" /* DISTINCT is needed to filter out duplicate overloaded function/procedure names */
-											"      f.%s,\n"
-											"      s.name || '.' || f.%s AS fullname,\n"
-											"      CAST(8 AS SMALLINT) AS ntype,\n"
-											"      (CASE WHEN f.system THEN 'SYSTEM ' ELSE '' END) || function_type_keyword AS type,\n"
-											"      f.system AS system,\n"
-											"      c.remark AS remark\n"
-											"    FROM sys.functions f\n"
-											"    LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
-											"    LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
-											"    LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
-											"  UNION ALL\n"
-											"  SELECT NULL AS sname,\n"
-											"      s.name,\n"
-											"      s.name AS fullname,\n"
-											"      CAST(16 AS SMALLINT) AS ntype,\n"
-											"      (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,\n"
-											"      s.system,\n"
-											"      c.remark AS remark\n"
-											"    FROM sys.schemas s\n"
-											"    LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
-											"  ORDER BY system, name, sname, ntype)\n"
-											, functions_sqlname, functions_sqlname);
-
-
+						q += snprintf(q, endq - q, "%s", with_clause);
 						q += snprintf(q, endq - q, " SELECT type, fullname, remark FROM describe_all_objects WHERE (ntype & %u) > 0", x);
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, " AND NOT system");

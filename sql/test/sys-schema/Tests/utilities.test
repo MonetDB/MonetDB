@@ -183,7 +183,7 @@ SELECT table_id('hsfdjkhksf does not exist')
 NULL
 
 query T rowsort
-select sqlname from sys.functions where not system
+select name from sys.functions where not system
 ----
 schema_id
 table_id
