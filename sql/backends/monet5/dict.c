@@ -708,7 +708,7 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (op[0] == '<') {
 			p = SORTfndfirst(lv, v);
 		} else if (op[0] == '>') {
-			p = SORTfndlast(lv, v);
+			p = SORTfndfirst(lv, v);
 		}
 		if (p != BUN_NONE) {
 			if (lo->ttype == TYPE_bte) {
