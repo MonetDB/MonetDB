@@ -218,14 +218,18 @@ functions_has_sqlname(Mapi mid)
 {
 	bool ret;
 	MapiHdl hdl;
+	static int answer = -1;
 
-	if ((hdl = mapi_query(mid, 
+	if (answer >= 0)
+		return (bool) answer;
+
+	if ((hdl = mapi_query(mid,
 		"select c.name"
-		"	from columns c, tables t"
+		"	from sys.columns c, sys.tables t"
 		"	where"
 		"		c.table_id = t.id and"
 		"		t.name = 'functions' and"
-		"		t.schema_id = (select id from schemas where name = 'sys') and"
+		"		t.schema_id = (select id from sys.schemas where name = 'sys') and"
 		"		c.name = 'sqlname'")) == NULL
 		|| mapi_error(mid))
 		goto bailout;
@@ -237,6 +241,7 @@ functions_has_sqlname(Mapi mid)
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
+	answer = (int) ret;
 	return ret;
 
 bailout:
@@ -2745,7 +2750,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			  "AND s.name <> 'tmp' "
 			"UNION ALL "
 			"SELECT s.name AS sname, " /* functions and procedures */
-			       "f.name AS name, "
+			       "f.%s AS name, "
 			       "f.id AS id, "
 			       "NULL AS query, "
 			       "NULL AS remark " /* emitted separately */
@@ -3119,7 +3124,9 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	hdl = NULL;
 
 	/* dump views, functions and triggers */
-	if ((hdl = mapi_query(mid, views_functions_triggers)) == NULL ||
+	char function_views[5120];
+	snprintf(function_views, sizeof(function_views), views_functions_triggers, functions_sqlname);
+	if ((hdl = mapi_query(mid, function_views)) == NULL ||
 		mapi_error(mid))
 		goto bailout;
 
