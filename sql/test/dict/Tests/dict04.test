@@ -127,6 +127,51 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE mt0(c1 int)
+
+statement ok
+CREATE TABLE t2(c1 int, c2 TIMESTAMP)
+
+statement ok
+CREATE VIEW v2(vc0) AS (SELECT 2 FROM mt0)
+
+statement ok
+INSERT INTO t2(c1) VALUES(32448)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','t2','c2',true)
+
+statement ok
+START TRANSACTION
+
+statement ok rowcount 0
+UPDATE t2 SET c2 = COALESCE(t2.c2 - INTERVAL '2' SECOND, t2.c2 - INTERVAL '4' MONTH) WHERE (SELECT TRUE FROM v2)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP VIEW v2
+
+statement ok
+DROP TABLE mt0
+
+statement ok
+DROP TABLE t2
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
 DROP ALL PROCEDURE "sys"."dict_compress"
 
 statement ok
