@@ -147,9 +147,9 @@ LAGGRsum3_lng(bat *retval, const ptr *h, const bat *bid, const bat *gid, const b
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
-	MT_lock_set(&p->l);
+	MT_lock_set(&p->p->l);
 	res = AGGRsum3_lng(retval, bid, gid, eid);
-	MT_lock_unset(&p->l);
+	MT_lock_unset(&p->p->l);
 	return res;
 }
 
@@ -168,9 +168,9 @@ LAGGRsum3_hge(bat *retval, const ptr *h, const bat *bid, const bat *gid, const b
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
-	MT_lock_set(&p->l);
+	MT_lock_set(&p->p->l);
 	res = AGGRsum3_hge(retval, bid, gid, eid);
-	MT_lock_unset(&p->l);
+	MT_lock_unset(&p->p->l);
 	return res;
 }
 

@@ -15,16 +15,114 @@
 #include "mal_pipelines.h"
 #include "algebra.h"
 
+typedef struct sql_allocator {
+    size_t size;
+    size_t nr;
+    char **blks;
+    size_t used;    /* memory used in last block */
+    size_t usedmem; /* used memory */
+} sql_allocator;
+
+#define SA_BLOCK 16*1024
+
+static void
+sa_destroy(sql_allocator* sa)
+{
+    for (size_t i = 0; i<sa->nr; i++) {
+        GDKfree(sa->blks[i]);
+    }
+    GDKfree(sa->blks);
+    GDKfree(sa);
+}
+
+static sql_allocator *
+sa_create(void)
+{
+    sql_allocator *sa = (sql_allocator*)GDKmalloc(sizeof(sql_allocator));
+    if (sa == NULL)
+        return NULL;
+    sa->size = 256;
+    sa->nr = 1;
+    sa->blks = (char**)GDKmalloc(sizeof(char*) * sa->size);
+    if (sa->blks == NULL) {
+        GDKfree(sa);
+        return NULL;
+    }
+    sa->blks[0] = (char*)GDKmalloc(SA_BLOCK);
+    sa->usedmem = SA_BLOCK;
+    if (sa->blks[0] == NULL) {
+        GDKfree(sa->blks);
+        GDKfree(sa);
+        return NULL;
+    }
+    sa->used = 0;
+    return sa;
+}
+
+static void *
+sa_alloc( sql_allocator *sa, size_t sz )
+{
+    char *r;
+    if (sz > (SA_BLOCK-sa->used)) {
+        r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
+        if (r == NULL)
+            return NULL;
+        if (sa->nr >= sa->size) {
+            char **tmp;
+            sa->size *=2;
+            tmp = (char**)GDKrealloc(sa->blks, sizeof(char*) * sa->size);
+			printf("many blocks\n");
+            if (tmp == NULL) {
+                sa->size /= 2; /* undo */
+                GDKfree(r);
+                return NULL;
+            }
+            sa->blks = tmp;
+        }
+        if (sz > SA_BLOCK) {
+			printf("large block\n");
+            sa->blks[sa->nr] = sa->blks[sa->nr-1];
+            sa->blks[sa->nr-1] = r;
+            sa->nr ++;
+            sa->usedmem += sz;
+        } else {
+            sa->blks[sa->nr] = r;
+            sa->nr ++;
+            sa->used = sz;
+            sa->usedmem += SA_BLOCK;
+        }
+    } else {
+        r = sa->blks[sa->nr-1] + sa->used;
+        sa->used += sz;
+    }
+    return r;
+}
+
+static char *
+sa_strdup( sql_allocator *sa, const char *s )
+{
+	int l = strlen(s);
+    char *r = sa_alloc(sa, l+1);
+
+    if (r)
+        memcpy(r, s, l+1);
+    return r;
+}
+
 static str
 PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = getArgReference_int(stk, pci, 0);
 	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 1);
 
-    *res = ATOMIC_INC(&p->counter);
+    *res = ATOMIC_INC(&p->p->counter);
 	(void)cntxt; (void)mb;
 	return MAL_SUCCEED;
 }
+
+
+#define pipeline_lock(p) MT_lock_set(&p->p->l)
+#define pipeline_unlock(p) MT_lock_unset(&p->p->l)
 
 #define sum(a,b) a+b
 #define min(a,b) a<b?a:b
@@ -64,7 +162,7 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			type != TYPE_flt && type != TYPE_dbl)
 			return createException(SQL, "aggr.sum",	"Wrong input type (%d)", type);
 
-	MT_lock_set(&p->l);
+	pipeline_lock(p);
 	if (*res) {
 		BAT *b = BATdescriptor(*res);
 
@@ -82,7 +180,7 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 			err = createException(SQL, "aggr.sum",	"Result is not initialized");
 	}
-	MT_lock_unset(&p->l);
+	pipeline_unlock(p);
 	if (err)
 		return err;
 	(void)cntxt;
@@ -102,7 +200,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp)
 			return createException(SQL, "aggr.min",	"Wrong input type (%d)", type);
 
-	MT_lock_set(&p->l);
+	pipeline_lock(p);
 	if (*res) {
 		BAT *b = BATdescriptor(*res);
 
@@ -123,7 +221,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 			err = createException(SQL, "aggr.min",	"Result is not initialized");
 	}
-	MT_lock_unset(&p->l);
+	pipeline_unlock(p);
 	if (err)
 		return err;
 	(void)cntxt;
@@ -143,7 +241,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp)
 			return createException(SQL, "aggr.max",	"Wrong input type (%d)", type);
 
-	MT_lock_set(&p->l);
+	pipeline_lock(p);
 	if (*res) {
 		BAT *b = BATdescriptor(*res);
 
@@ -164,7 +262,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 			err = createException(SQL, "aggr.max",	"Result is not initialized");
 	}
-	MT_lock_unset(&p->l);
+	pipeline_unlock(p);
 	if (err)
 		return err;
 	(void)cntxt;
@@ -177,9 +275,9 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
-	MT_lock_set(&p->l);
+	pipeline_lock(p);
 	res = ALGprojection(result, lid, rid);
-	MT_lock_unset(&p->l);
+	pipeline_unlock(p);
 	return res;
 }
 
@@ -233,6 +331,8 @@ typedef struct hash_table {
         size_t last;
         size_t size;
         gid mask;
+		sql_allocator **allocators;
+		int nr_allocators;
 } hash_table;
 
 static unsigned int
@@ -271,6 +371,10 @@ ht_destroy(hash_table *ht)
 		GDKfree((void*)ht->gids);
 	if (ht->pgids)
 		GDKfree(ht->pgids);
+	for(int i = 0; i<ht->nr_allocators; i++) {
+		if(ht->allocators[i])
+			sa_destroy(ht->allocators[i]);
+	}
 	GDKfree(ht);
 }
 
@@ -467,7 +571,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		MT_lock_set(&p->l);
+		pipeline_lock(p);
 		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 			printf("view parent %d\n", VIEWvtparent(b));
 			assert (VIEWvtparent(b));
@@ -477,7 +581,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			BBPshare(b->tvheap->parentid);
 			u->batDirtydesc = true;
 		}
-		MT_lock_unset(&p->l);
+		pipeline_unlock(p);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -620,7 +724,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		MT_lock_set(&p->l);
+		pipeline_lock(p);
 		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 			printf("view parent %d\n", VIEWvtparent(b));
 			assert (VIEWvtparent(b));
@@ -630,7 +734,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			BBPshare(b->tvheap->parentid);
 			u->batDirtydesc = true;
 		}
-		MT_lock_unset(&p->l);
+		pipeline_unlock(p);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -778,6 +882,44 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		bat_iterator_end(&bi); \
 	}
 
+#define agroup_(Type,P) \
+	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
+		BATiter bi = bat_iterator(b); \
+		Type *vals = h->vals; \
+		sql_allocator *sa = h->allocators[P->wid]; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool fnd = 0; \
+			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			gid k = (gid)str_hsh(bpi)&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && (vals[g] && h->cmp(vals[g], bpi) != 0);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = sa_strdup(sa, bpi); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+		bat_iterator_end(&bi); \
+	}
 
 static str
 LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
@@ -785,8 +927,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	Pipeline *p = (Pipeline*)*H;
 	/* private or not */
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
-
+	int err = 0;
 	BAT *u, *b = BATdescriptor(*bid);
+
 	if (private && !*uid) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
 		u->T.sink = (Sink*)ht_create(b->ttype, 1, NULL);
@@ -800,8 +943,22 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	assert(h && h->s.type == HASH_SINK);
 	if (!VIEWvtparent(b)) {
 		local_storage = true;
+		if (!h->allocators) {
+			pipeline_lock(p);
+			if (!h->allocators) {
+				h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
+				if (!h->allocators)
+					err = 1;
+			}
+			pipeline_unlock(p);
+		}
+		if (!h->allocators[p->wid]) {
+			h->allocators[p->wid] = sa_create();
+			if (!h->allocators[p->wid])
+				err = 1;
+		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		MT_lock_set(&p->l);
+		pipeline_lock(p);
 		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 			printf("view parent %d\n", VIEWvtparent(b));
 			assert (VIEWvtparent(b));
@@ -811,15 +968,13 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			BBPshare(b->tvheap->parentid);
 			u->batDirtydesc = true;
 		}
-		MT_lock_unset(&p->l);
+		pipeline_unlock(p);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
-
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
-
-		int err = 0, tt = b->ttype;
+		int tt = b->ttype;
 		oid *gp = Tloc(g, 0);
 
 		if (!err) {
@@ -831,7 +986,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			fgroup(flt, int)
 			fgroup(dbl, lng)
 			if (local_storage) {
-				agroup(str)
+				agroup_(str, p)
 			} else {
 				agroup(str)
 			}
@@ -968,12 +1123,13 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		bat_iterator_end(&bi); \
 	}
 
-#define aderive_(Type, P, u, private) \
+#define aderive_(Type, P) \
 	if (tt == TYPE_##Type) { \
 		int slots = 0; \
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
+		sql_allocator *sa = h->allocators[P->wid]; \
 		\
 		for(BUN i = 0; i<cnt && !msg; i++) { \
 			bool fnd = 0; \
@@ -995,11 +1151,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					} \
 					slots--; \
 					g = ++slot; \
-					int sz = ATOMlen(u->ttype, bpi); \
-					void *nbpi = GDKmalloc(sz); \
-					memcpy(nbpi, bpi, sz); \
-					bpi = nbpi; \
-					vals[g] = bpi; \
+					vals[g] = sa_strdup(sa, bpi); \
 					pgids[g] = gi[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
@@ -1018,8 +1170,10 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 	str msg = MAL_SUCCEED;
 	Pipeline *p = (Pipeline*)*H;
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
+	int err = 0;
 	BAT *u, *b = BATdescriptor(*bid);
 	BAT *G = BATdescriptor(*Gid);
+
 	if (private && !*uid) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
 		u->T.sink = (Sink*)ht_create(b->ttype, 1, (hash_table*)G->T.sink);
@@ -1033,10 +1187,23 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 	assert(h && h->s.type == HASH_SINK);
 	if (!VIEWvtparent(b)) {
 		local_storage = true;
+		if (!h->allocators) {
+			pipeline_lock(p);
+			if (!h->allocators) {
+				h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
+				if (!h->allocators)
+					err = 1;
+			}
+			pipeline_unlock(p);
+		}
+		if (!h->allocators[p->wid]) {
+			h->allocators[p->wid] = sa_create();
+			if (!h->allocators[p->wid])
+				err = 1;
+		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		MT_lock_set(&p->l);
+		pipeline_lock(p);
 		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-			printf("view parent %d\n", VIEWvtparent(b));
 			assert (VIEWvtparent(b));
 			HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
 			HEAPincref(b->tvheap);
@@ -1044,15 +1211,13 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 			BBPshare(b->tvheap->parentid);
 			u->batDirtydesc = true;
 		}
-		MT_lock_unset(&p->l);
+		pipeline_unlock(p);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
-
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
-
-		int err = 0, tt = b->ttype;
+		int tt = b->ttype;
 		oid *gp = Tloc(g, 0);
 		gid *gi = Tloc(G, 0);
 		gid *pgids = h->pgids;
@@ -1066,7 +1231,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 			fderive(flt, int)
 			fderive(dbl, lng)
 			if (local_storage) {
-				aderive_(str,p,u,private)
+				aderive_(str,p)
 			} else {
 				aderive(str)
 			}
@@ -1139,7 +1304,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 
 	/* probably want to use a per 'r' lock, but the r->theaplock is blocking this on BATextend and BATsetcount */
 	if (!private)
-		MT_lock_set(&p->l);
+		pipeline_lock(p);
 	if (r) {
 		if (r->ttype == TYPE_str && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 		   	if (r->twidth < b->twidth) {
@@ -1220,9 +1385,9 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		}
 	}
 	if (err)
-	printf(" error \n");
+		printf(" error \n");
 	if (!private)
-		MT_lock_unset(&p->l);
+		pipeline_unlock(p);
 	return MAL_SUCCEED;
 }
 
@@ -1239,7 +1404,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	bool private = (!r || r->T.private_bat);
 
 	if (!private)
-		MT_lock_set(&p->l);
+		pipeline_lock(p);
 
 	BAT *pg = BATdescriptor(*pid);
 	oid max = pg->T.maxval;
@@ -1280,7 +1445,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 		}
 	}
 	if (!private)
-		MT_lock_unset(&p->l);
+		pipeline_unlock(p);
 	return MAL_SUCCEED;
 }
 
@@ -1321,7 +1486,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool private = (!r || r->T.private_bat);
 
 	if (!private)
-		MT_lock_set(&p->l);
+		pipeline_lock(p);
 
 	BAT *pg = BATdescriptor(*pid);
 	oid max = pg->T.maxval;
@@ -1379,7 +1544,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (!private)
-		MT_lock_unset(&p->l);
+		pipeline_unlock(p);
 	return MAL_SUCCEED;
 }
 
@@ -1449,7 +1614,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	bool private = (!r || r->T.private_bat);
 
 	if (!private)
-		MT_lock_set(&p->l);
+		pipeline_lock(p);
 
 	BAT *pg = BATdescriptor(*pid);
 	oid max = pg->T.maxval;
@@ -1536,7 +1701,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		}
 	}
 	if (!private)
-		MT_lock_unset(&p->l);
+		pipeline_unlock(p);
 	return MAL_SUCCEED;
 }
 
@@ -1554,7 +1719,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	bool private = (!r || r->T.private_bat);
 
 	if (!private)
-		MT_lock_set(&p->l);
+		pipeline_lock(p);
 
 	BAT *pg = BATdescriptor(*pid);
 	oid max = pg->T.maxval;
@@ -1641,7 +1806,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		}
 	}
 	if (!private)
-		MT_lock_unset(&p->l);
+		pipeline_unlock(p);
 	return MAL_SUCCEED;
 }
 

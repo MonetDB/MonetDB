@@ -123,9 +123,9 @@ LGRPsubgroup2(bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid, con
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
-	MT_lock_set(&p->l);
+	MT_lock_set(&p->p->l);
 	res = GRPsubgroup2(ngid, next, nhis, bid, gid);
-	MT_lock_unset(&p->l);
+	MT_lock_unset(&p->p->l);
 	return res;
 }
 
@@ -147,9 +147,9 @@ LGRPgroup3(bat *ngid, bat *next, const ptr *h, const bat *bid)
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
-	MT_lock_set(&p->l);
+	MT_lock_set(&p->p->l);
 	res = GRPgroup3(ngid, next, bid);
-	MT_lock_unset(&p->l);
+	MT_lock_unset(&p->p->l);
 	return res;
 }
 
@@ -171,9 +171,9 @@ LGRPgroup1(bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid)
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
-	MT_lock_set(&p->l);
+	MT_lock_set(&p->p->l);
 	res = GRPgroup1(ngid, next, nhis, bid);
-	MT_lock_unset(&p->l);
+	MT_lock_unset(&p->p->l);
 	return res;
 }
 

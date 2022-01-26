@@ -12,7 +12,7 @@
 #include "mal.h"
 #include "mal_client.h"
 
-typedef struct Pipeline {
+typedef struct Pipelines {
 	Client cntxt;   /* for debugging and client resolution */
 	MalBlkPtr mb;   /* carry the context */
 	MalStkPtr stk;
@@ -22,7 +22,16 @@ typedef struct Pipeline {
 	MT_Lock l;
 	int maxparts;
 	int counter;
+	int nr_workers;
+	ATOMIC_TYPE workers;
+} Pipelines;
+
+typedef struct Pipeline {
+	Pipelines *p;	/* the shared pipelines */
+	int wid;	/* worker id [ 0 .. nr_workers ] */
+	void *wls;	/* worker local storage */
 } Pipeline;
+
 mal_export str runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, MalStkPtr stk);
 
 #endif /*  _MAL_PIPELINES_H*/

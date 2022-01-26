@@ -18,7 +18,7 @@
 typedef struct queue {
 	int size;	/* size of queue */
 	int last;	/* last element in the queue */
-	Pipeline **data;
+	Pipelines **data;
 	MT_Lock l;	/* it's a shared resource, ie we need locks */
 	MT_Sema s;	/* threads wait on empty queues */
 } Queue;
@@ -47,7 +47,7 @@ q_create(int sz, const char *name)
 	*q = (Queue) {
 		.size = ((sz << 1) >> 1), /* we want a multiple of 2 */
 	};
-	q->data = (Pipeline**) GDKmalloc(sizeof(Pipeline*) * q->size);
+	q->data = (Pipelines**) GDKmalloc(sizeof(Pipelines*) * q->size);
 	if (q->data == NULL) {
 		GDKfree(q);
 		return NULL;
@@ -69,18 +69,18 @@ q_destroy(Queue *q)
 }
 
 static void
-q_enqueue_(Queue *q, Pipeline *d)
+q_enqueue_(Queue *q, Pipelines *d)
 {
 	assert(q);
 	if (q->last == q->size) {
 		q->size <<= 1;
-		q->data = (Pipeline**) GDKrealloc(q->data, sizeof(Pipeline*) * q->size);
+		q->data = (Pipelines**) GDKrealloc(q->data, sizeof(Pipelines*) * q->size);
 		assert(q->data);
 	}
 	q->data[q->last++] = d;
 }
 static void
-q_enqueue(Queue *q, Pipeline *d)
+q_enqueue(Queue *q, Pipelines *d)
 {
 	assert(q);
 	MT_lock_set(&q->l);
@@ -89,10 +89,10 @@ q_enqueue(Queue *q, Pipeline *d)
 	MT_sema_up(&q->s);
 }
 
-static Pipeline *
+static Pipelines *
 q_dequeue(Queue *q)
 {
-	Pipeline * r = NULL;
+	Pipelines * r = NULL;
 
 	assert(q);
 	MT_sema_down(&q->s);
@@ -173,22 +173,22 @@ PIPELINEworker(void *T)
 
 	for (;;) {
 		/* wait until we are allowed to start working */
-		Pipeline *s = q_dequeue(t->q);
+		Pipelines *s = q_dequeue(t->q);
+		Pipeline *p = (Pipeline*)GDKmalloc(sizeof(Pipeline));
 
-		if (!s || GDKexiting() || ATOMIC_GET(&exiting))
+		if (!s || !p || GDKexiting() || ATOMIC_GET(&exiting))
 			break;
 		t->flag = RUNNING;
 
 		MalStkPtr stk = stack_copy(s->stk, s->start);
 
+		p->p = s;
+		p->wid = ATOMIC_INC(&s->workers);
+		p->wls = NULL;
 		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = ATOMIC_INC(&s->counter);
+		stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
+		/* the maxparts (arg 3) is generated ie constant value on the stack */
 		str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);
-		/* TODO
-		 *	pipeline object should be on the stack too
-		 *	used for
-		 *		- lock
-		 *		- end condition ?
-		 *		   */
 		if (error) {
 			void *null = NULL;
 			/* only collect one error (from one thread, needed for stable testing) */
@@ -197,6 +197,9 @@ PIPELINEworker(void *T)
 			GDKerrbuf[0] = 0;
 		}
 		freeStack(stk);
+		if (p->wls)
+			GDKfree(p->wls);
+		GDKfree(p);
 		MT_sema_up(&s->s);
 	}
 	GDKfree(GDKerrbuf);
@@ -252,7 +255,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 {
 	if (workers[1].self != 1)
 		PIPELINESinitialize();
-	Pipeline *s = GDKmalloc(sizeof(Pipeline));
+	Pipelines *s = GDKmalloc(sizeof(Pipelines));
 	if (!s)
 		throw(MAL, "pipelines", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	s->cntxt = cntxt;
@@ -262,7 +265,8 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->stk = stk;
 	s->maxparts = maxparts;
 	s->counter = -1;
-	stk->stk[mb->stmt[startpc]->argv[2]].val.pval = s;
+	s->nr_workers = GDKnr_threads;
+	ATOMIC_SET(&s->workers, 0);
 
 	/* fix endless call of runMALpipelines but use as loop for parts */
 	mb->stmt[startpc]->fcn = NULL;
@@ -275,7 +279,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	MT_sema_init(&s->s, 0, name);
 	MT_lock_init(&s->l, name);
 	/* somehow get number of workers from statement/barrier */
-	for (int i = 0; i < GDKnr_threads; i++)
+	for (int i = 0; i < s->nr_workers; i++)
 		q_enqueue(workers[i].q, s);
 
 	//stk->stk[mb->stmt[startpc]->argv[0]].val.btval = FALSE; /* end barrier */
