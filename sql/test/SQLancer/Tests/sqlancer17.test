@@ -665,3 +665,15 @@ least(3, sub0.c1) FROM vx JOIN (SELECT 4, vy.vc0 FROM vy) AS sub0(c1,c2) ON TRUE
 
 statement ok
 ROLLBACK
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 BETWEEN 1 AND min(2) FROM (values (3)) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 BETWEEN min(1) AND 2 FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 BETWEEN vx.vc0 AND min(2) FROM (values (3)) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN(1) BETWEEN vx.vc0 AND 2 FROM (SELECT 3) vx(vc0)
