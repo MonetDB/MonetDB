@@ -165,6 +165,19 @@ tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
+		if (rc == GDK_SUCCEED && old_lg == NULL) {
+			BATiter cii = bat_iterator_nolock(lg->catalog_id);
+			BUN p;
+			MT_rwlock_rdlock(&cii.b->thashlock);
+			rc = GDK_FAIL;		/* the BUNreplace should get executed */
+			HASHloop_int(cii, cii.b->thash, p, &cid) {
+				if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
+					rc = BUNreplace(lg->catalog_cnt, (oid) p, &(lng){BATcount(b)}, false);
+					break;
+				}
+			}
+			MT_rwlock_rdunlock(&cii.b->thashlock);
+		}
 		bat_destroy(b);
 		if (rc != GDK_SUCCEED) {
 			va_end(va);
