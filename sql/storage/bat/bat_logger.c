@@ -3372,7 +3372,7 @@ bl_postversion(void *Store, void *Lg)
 					2082, &(int) {2016},		/* sys._columns.table_id */
 					2083, str_nil,			/* sys._columns.default */
 					2084, &(bit) {TRUE},		/* sys._columns.null */
-					2085, &(int) {13},		/* sys._columns.number */
+					2085, &(int) {12},		/* sys._columns.number */
 					2086, str_nil,			/* sys._columns.storage */
 					0) != GDK_SUCCEED)
 			goto bailout;
