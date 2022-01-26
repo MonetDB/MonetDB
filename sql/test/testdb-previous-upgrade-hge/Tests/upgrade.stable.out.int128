@@ -5279,7 +5279,32 @@ Running database upgrade commands:
 set schema "sys";
 DROP FUNCTION sys.dump_database;
 DROP VIEW sys.dump_comments;
-CREATE OR REPLACE VIEW sys.describe_comments AS
+DROP VIEW sys.describe_comments;
+DROP VIEW sys.describe_privileges;
+DROP VIEW sys.fully_qualified_functions;
+CREATE VIEW sys.fully_qualified_functions AS
+WITH fqn(id, tpe, sig, num) AS
+(
+SELECT
+f.id,
+ft.function_type_keyword,
+CASE WHEN a.type IS NULL THEN
+sys.fqn(s.name, f.sqlname) || '()'
+ELSE
+sys.fqn(s.name, f.sqlname) || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
+END,
+a.number
+FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
+WHERE s.id= f.schema_id AND f.type = ft.function_type_id
+)
+SELECT
+fqn1.id id,
+fqn1.tpe tpe,
+fqn1.sig nme
+FROM
+fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
+ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
+CREATE VIEW sys.describe_comments AS
 SELECT
 o.id id,
 o.tpe tpe,
@@ -5298,34 +5323,11 @@ SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables
 UNION ALL
 SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
 UNION ALL
-SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.sqlname) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
+SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf WHERE f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
 ) AS o(id, tpe, nme)
 JOIN sys.comments c ON c.id = o.id;
 CREATE VIEW sys.dump_comments AS
 SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;
-DROP VIEW sys.describe_privileges;
-CREATE OR REPLACE VIEW sys.fully_qualified_functions AS
-WITH fqn(id, tpe, sig, num) AS
-(
-SELECT
-f.id,
-ft.function_type_keyword,
-CASE WHEN a.type IS NULL THEN
-s.name || '.' || f.sqlname || '()'
-ELSE
-s.name || '.' || f.sqlname || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
-END,
-a.number
-FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
-WHERE s.id= f.schema_id AND f.type = ft.function_type_id
-)
-SELECT
-fqn1.id id,
-fqn1.tpe tpe,
-fqn1.sig nme
-FROM
-fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
-ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
 CREATE VIEW sys.describe_privileges AS
 SELECT
 CASE
@@ -5360,7 +5362,8 @@ p.privileges = pc.privilege_code_id AND
 p.auth_id = a.id AND
 p.grantor = g.id;
 DROP VIEW dump_functions;
-CREATE OR REPLACE VIEW sys.describe_functions AS
+DROP VIEW sys.describe_functions;
+CREATE VIEW sys.describe_functions AS
 WITH func_args_all(func_id, number, max_number, func_arg) AS
 (
 SELECT
@@ -5428,7 +5431,8 @@ LEFT OUTER JOIN sys.comments c ON f.id = c.id
 WHERE f.sqlname=functionName AND s.name = schemaName;
 END;
 UPDATE sys.functions SET system = true WHERE system = false AND sqlname in ('describe_function') and schema_id = 2000;
-CREATE OR REPLACE VIEW sys.dump_function_grants AS
+DROP VIEW sys.dump_function_grants;
+CREATE VIEW sys.dump_function_grants AS
 WITH func_args_all(func_id, number, max_number, func_arg) AS
 (SELECT a.func_id,
 a.number,
@@ -5512,4 +5516,8 @@ UPDATE sys._tables SET system = true WHERE
 'dump_function_grants'
 );
 update sys.functions set system = true where system <> true and sqlname = 'dump_database' and schema_id = 2000;
+GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;
+GRANT SELECT ON sys.describe_comments TO PUBLIC;
+GRANT SELECT ON sys.describe_privileges TO PUBLIC;
+GRANT SELECT ON sys.describe_functions TO PUBLIC;
 
