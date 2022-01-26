@@ -587,8 +587,7 @@ BATclear(BAT *b, bool force)
 	OIDXdestroy(b);
 	STRMPdestroy(b);
 	PROPdestroy(b);
-	if (b->tsink && b->tsink->destroy)
-		b->tsink->destroy(b->tsink);
+	TSKdestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	MT_lock_set(&b->theaplock);
@@ -1280,8 +1279,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b); 	/* TODO: use STRMPappendBitstring */
-	if (b->tsink && b->tsink->destroy)
-		b->tsink->destroy(b->tsink);
 	return GDK_SUCCEED;
 }
 
@@ -1377,8 +1374,6 @@ BUNdelete(BAT *b, oid o)
 	}
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	if (b->tsink && b->tsink->destroy)
-		b->tsink->destroy(b->tsink);
 	return GDK_SUCCEED;
 }
 
@@ -1511,8 +1506,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		OIDXdestroy(b);
 		IMPSdestroy(b);
 		STRMPdestroy(b);
-		if (b->tsink && b->tsink->destroy)
-			b->tsink->destroy(b->tsink);
 
 		if (b->tvarsized && b->ttype) {
 			var_t _d;

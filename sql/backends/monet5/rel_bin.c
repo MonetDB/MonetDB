@@ -3896,15 +3896,16 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
 			/* ext */
 			//InstrPtr q = newStmt(be->mb, batRef, newRef);
 			InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-			//if (_2phases)
-				card *= exp_getcard(be->mvc, rel, e);
-			if (card > estimate)
+			int ncard = exp_getcard(be->mvc, rel, e);
+			card *= ncard;
+			if (card > estimate || ncard >= estimate)
 				card = estimate;
 
 			if (q == NULL)
 				return NULL;
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
+			assert(card);
 			q = pushInt(be->mb, q, card);//_2phases?card:estimate);
 			if (curhash)
 				q = pushArgument(be->mb, q, curhash);

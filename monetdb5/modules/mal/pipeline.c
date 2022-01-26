@@ -457,8 +457,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 static str
 LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 {
-	//Pipeline *p = (Pipeline*)*H;
-	(void)H;
+	Pipeline *p = (Pipeline*)*H;
 	assert(*uid && !is_bat_nil(*uid));
 	BAT *u = BATdescriptor(*uid);
 	BAT *b = BATdescriptor(*bid);
@@ -467,6 +466,19 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+		MT_lock_set(&p->l);
+		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+			printf("view parent %d\n", VIEWvtparent(b));
+			assert (VIEWvtparent(b));
+			HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
+			HEAPincref(b->tvheap);
+			u->tvheap = b->tvheap;
+			BBPshare(b->tvheap->parentid);
+			u->batDirtydesc = true;
+		}
+		MT_lock_unset(&p->l);
+	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
@@ -597,8 +609,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 static str
 LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 {
-	//Pipeline *p = (Pipeline*)*H;
-	(void)H;
+	Pipeline *p = (Pipeline*)*H;
 	assert(*uid && !is_bat_nil(*uid));
 	BAT *u = BATdescriptor(*uid);
 	BAT *G = BATdescriptor(*Gid);
@@ -608,6 +619,19 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+		MT_lock_set(&p->l);
+		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+			printf("view parent %d\n", VIEWvtparent(b));
+			assert (VIEWvtparent(b));
+			HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
+			HEAPincref(b->tvheap);
+			u->tvheap = b->tvheap;
+			BBPshare(b->tvheap->parentid);
+			u->batDirtydesc = true;
+		}
+		MT_lock_unset(&p->l);
+	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
@@ -758,13 +782,12 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 static str
 LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 {
-	//Pipeline *p = (Pipeline*)*H;
-	(void)H;
+	Pipeline *p = (Pipeline*)*H;
 	/* private or not */
-	bool private = (!*uid || is_bat_nil(*uid));
+	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
 
 	BAT *u, *b = BATdescriptor(*bid);
-	if (private && !*uid) { /* create but how big ??? */
+	if (private && !*uid) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
 		u->T.sink = (Sink*)ht_create(b->ttype, 1, NULL);
 	} else {
@@ -775,6 +798,21 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	if (!VIEWvtparent(b)) {
+		local_storage = true;
+	} else if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+		MT_lock_set(&p->l);
+		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+			printf("view parent %d\n", VIEWvtparent(b));
+			assert (VIEWvtparent(b));
+			HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
+			HEAPincref(b->tvheap);
+			u->tvheap = b->tvheap;
+			BBPshare(b->tvheap->parentid);
+			u->batDirtydesc = true;
+		}
+		MT_lock_unset(&p->l);
+	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
@@ -792,7 +830,11 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			group(hge)
 			fgroup(flt, int)
 			fgroup(dbl, lng)
-			agroup(str)
+			if (local_storage) {
+				agroup(str)
+			} else {
+				agroup(str)
+			}
 		}
 		if (!err) {
 			BBPunfix(b->batCacheid);
@@ -822,12 +864,12 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		\
 		for(BUN i = 0; i<cnt; i++) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(p[i], _hash_##Type(bp[i]))&h->mask; \
+			gid k = (gid)combine(gi[i], _hash_##Type(bp[i]))&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
 				g = ATOMIC_GET(h->gids+k); \
-				for(;g && (pgids[g] != p[i] || vals[g] != bp[i]);) { \
+				for(;g && (pgids[g] != gi[i] || vals[g] != bp[i]);) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
@@ -840,7 +882,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					slots--; \
 					g = ++slot; \
 					vals[g] = bp[i]; \
-					pgids[g] = p[i]; \
+					pgids[g] = gi[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
 				} \
@@ -859,12 +901,12 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		\
 		for(BUN i = 0; i<cnt; i++) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
+			gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
 				g = ATOMIC_GET(h->gids+k); \
-				for(;g && (pgids[g] != p[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]));) { \
+				for(;g && (pgids[g] != gi[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]));) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
@@ -877,7 +919,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					slots--; \
 					g = ++slot; \
 					vals[g] = bp[i]; \
-					pgids[g] = p[i]; \
+					pgids[g] = gi[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
 				} \
@@ -897,12 +939,12 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		for(BUN i = 0; i<cnt; i++) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)combine(p[i], str_hsh(bpi))&h->mask; \
+			gid k = (gid)combine(gi[i], str_hsh(bpi))&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
 				g = ATOMIC_GET(h->gids+k); \
-				for(;g && (pgids[g] != p[i] || (vals[g] && h->cmp(vals[g], bpi) != 0));) { \
+				for(;g && (pgids[g] != gi[i] || (vals[g] && h->cmp(vals[g], bpi) != 0));) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
@@ -915,7 +957,50 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					slots--; \
 					g = ++slot; \
 					vals[g] = bpi; \
-					pgids[g] = p[i]; \
+					pgids[g] = gi[i]; \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+		bat_iterator_end(&bi); \
+	}
+
+#define aderive_(Type, P, u, private) \
+	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
+		BATiter bi = bat_iterator(b); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt && !msg; i++) { \
+			bool fnd = 0; \
+			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			gid k = (gid)combine(gi[i], str_hsh(bpi))&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && (pgids[g] != gi[i] || (vals[g] && h->cmp(vals[g], bpi) != 0));) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+					} \
+					slots--; \
+					g = ++slot; \
+					int sz = ATOMlen(u->ttype, bpi); \
+					void *nbpi = GDKmalloc(sz); \
+					memcpy(nbpi, bpi, sz); \
+					bpi = nbpi; \
+					vals[g] = bpi; \
+					pgids[g] = gi[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
 				} \
@@ -930,12 +1015,12 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 static str
 LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 {
-	//Pipeline *p = (Pipeline*)*H;
-	(void)H;
-	bool private = (!*uid || is_bat_nil(*uid));
+	str msg = MAL_SUCCEED;
+	Pipeline *p = (Pipeline*)*H;
+	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
 	BAT *u, *b = BATdescriptor(*bid);
 	BAT *G = BATdescriptor(*Gid);
-	if (private && !*uid) { /* create but how big ??? */
+	if (private && !*uid) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
 		u->T.sink = (Sink*)ht_create(b->ttype, 1, (hash_table*)G->T.sink);
 	} else {
@@ -946,6 +1031,21 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	if (!VIEWvtparent(b)) {
+		local_storage = true;
+	} else if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+		MT_lock_set(&p->l);
+		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+			printf("view parent %d\n", VIEWvtparent(b));
+			assert (VIEWvtparent(b));
+			HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
+			HEAPincref(b->tvheap);
+			u->tvheap = b->tvheap;
+			BBPshare(b->tvheap->parentid);
+			u->batDirtydesc = true;
+		}
+		MT_lock_unset(&p->l);
+	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
@@ -954,7 +1054,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 
 		int err = 0, tt = b->ttype;
 		oid *gp = Tloc(g, 0);
-		gid *p = Tloc(G, 0);
+		gid *gi = Tloc(G, 0);
 		gid *pgids = h->pgids;
 
 		if (!err) {
@@ -965,9 +1065,13 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 			derive(hge)
 			fderive(flt, int)
 			fderive(dbl, lng)
-			aderive(str)
+			if (local_storage) {
+				aderive_(str,p,u,private)
+			} else {
+				aderive(str)
+			}
 		}
-		if (!err) {
+		if (!err && !msg) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(G->batCacheid);
 			BATsetcount(g, cnt);
@@ -980,7 +1084,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 			BBPkeepref(*rid = g->batCacheid);
 		}
 	}
-	return MAL_SUCCEED;
+	return msg;
 }
 
 #define project(Type) \
@@ -1001,6 +1105,20 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 		} \
 	}
 
+/* runs locked ie resizes should work */
+#define aproject_(Type,w,Toff) \
+	if (ATOMstorage(tt) == TYPE_##Type && b->twidth == w) { \
+		BATiter bi = bat_iterator(b); \
+		Toff *o = Tloc(r, 0); \
+		for(BUN i = 0; i<cnt && !err; i++) { \
+			if (o[gp[i]] == 0) { \
+				if (tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) \
+					err = 1; \
+			} \
+		} \
+		bat_iterator_end(&bi); \
+	}
+
 /* result := algebra.projections(groupid, input)  */
 /* this (possibly) overwrites the values, therefor for expensive (var) types we only write offsets (ie use the heap from
  * the parent) */
@@ -1017,7 +1135,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	/* probably need bat resize and create hash */
 	if (*rid)
 		r = BATdescriptor(*rid);
-	bool private = (!r || r->T.private_bat);
+	bool private = (!r || r->T.private_bat), local_storage = false;
 
 	/* probably want to use a per 'r' lock, but the r->theaplock is blocking this on BATextend and BATsetcount */
 	if (!private)
@@ -1030,8 +1148,11 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 				r->tshift = b->tshift;
 				r->batCapacity /= m;
 			}
+		}
 
-			assert (VIEWvtparent(b));
+		if (!VIEWvtparent(b)) {
+			local_storage = true;
+		} else if (r->ttype == TYPE_str && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);
 			r->tvheap = b->tvheap;
@@ -1051,10 +1172,17 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		}
 		r->T.private_bat = 1;
 	}
+	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
+		if (local_storage)
+			memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+	} else if (cnt == 0) {
+		BUN sz = BATcapacity(r);
+		if (local_storage)
+			memset(Tloc(r, 0), 0, r->twidth*sz);
 	}
 
 	/* get max id from gid */
@@ -1072,10 +1200,17 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			project(hge)
 			project(flt)
 			project(dbl)
-			aproject(str,1,bte)
-			aproject(str,2,sht)
-			aproject(str,4,int)
-			aproject(str,8,lng)
+			if (local_storage) {
+				aproject_(str,1,bte)
+				aproject_(str,2,sht)
+				aproject_(str,4,int)
+				aproject_(str,8,lng)
+			} else {
+				aproject(str,1,bte)
+				aproject(str,2,sht)
+				aproject(str,4,int)
+				aproject(str,8,lng)
+			}
 		}
 		if (!err) {
 			BBPunfix(b->batCacheid);
@@ -1329,7 +1464,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 				r->batCapacity /= m;
 			}
 
-			//int parentid = b->tvheap->parentid;
+			printf("view parent %d\n", VIEWvtparent(b));
 			assert (VIEWvtparent(b));
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);

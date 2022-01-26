@@ -830,6 +830,7 @@ typedef struct BAT {
 #define tprops		T.props
 #define tstrimps	T.strimps
 
+#define TSKdestroy(b) if (b->tsink && b->tsink->destroy) { b->tsink->destroy(b->tsink); b->tsink = NULL; }
 
 /* some access functions for the bitmask type */
 static inline void
