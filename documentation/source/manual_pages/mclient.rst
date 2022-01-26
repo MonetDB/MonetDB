@@ -129,21 +129,26 @@ General Options
 
 **--format=**\ *format* (**-f** *format*)
    Specify the output format. The possible values are **sql**,
-   **expanded**, **x**, **csv**, **tab**, **raw**, **xml**, **trash**,
-   and **rowcount**. **csv** is comma-separated values; **tab** is
-   tab-separated values; **raw** is no special formatting (data is
-   dumped the way the server sends it to the client); **sql** is a
-   pretty format which is meant for human consumption where columns are
-   clearly shown; **expanded** and **x** are synonyms and are another
-   pretty format meant for human consumption where column values are
-   printed in full and below each other; **xml** is a valid (in the XML
-   sense) document; **trash** does not render any output, enabling
-   performance measurements free of any output rendering/serialization
-   costs; and **rowcount** is a variation on **trash** where only the
-   number of affected rows is printed. In addition to plain **csv**, two
-   other forms are possible. **csv=**\ *c* uses *c* as column separator;
-   **csv+**\ *c* uses *c* as column separator and produces a single
-   header line in addition to the data.
+   **expanded**, **x**, **csv**, **csv-noquote**, **tab**, **raw**,
+   **xml**, **trash**, and **rowcount**. **csv** is comma-separated
+   values; **csv-noquote** is comma-separated values without escaping
+   any quotes; **tab** is tab-separated values; **raw** is no special
+   formatting (data is dumped the way the server sends it to the
+   client); **sql** is a pretty format which is meant for human
+   consumption where columns are clearly shown; **expanded** and **x**
+   are synonyms and are another pretty format meant for human
+   consumption where column values are printed in full and below each
+   other; **xml** is a valid (in the XML sense) document; **trash** does
+   not render any output, enabling performance measurements free of any
+   output rendering/serialization costs; and **rowcount** is a variation
+   on **trash** where only the number of affected rows is printed.
+   Normal **csv** and **tab** formatting will use double quotes around
+   any fields that contain double quotes, white space or the separator.
+   The **csv-noquote** format will prevent that and dump the contents of
+   the field without any interpretation. In addition to plain **csv**,
+   two other forms are possible. **csv=**\ *c* uses *c* as column
+   separator; **csv+**\ *c* uses *c* as column separator and produces a
+   single header line in addition to the data.
 
 **--echo** (**-e**)
    Echo the query. Note that using this option slows down processing.
@@ -335,7 +340,8 @@ query can also be a URL. It then has to have the form
 *schema*\ **://**\ *string*\ **,** *e*.\ *g*.,
 *https://www.example.org/dumpdata.csv*.
 
-See https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/
+See
+https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/
 for more information about the COPY INTO query.
 
 SEE ALSO

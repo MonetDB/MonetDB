@@ -1,0 +1,19 @@
+query T nosort
+select date '2021-03-29' - interval '1' month
+----
+2021-02-28
+
+query T nosort
+select date '2021-05-31' + interval '1' month
+----
+2021-06-30
+
+query T nosort
+select date '2020-03-29' - interval '1' year
+----
+2019-03-29
+
+query T nosort
+select date '2020-02-29' + interval '1' year
+----
+2021-02-28
