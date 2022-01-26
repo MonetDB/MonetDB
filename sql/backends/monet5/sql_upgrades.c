@@ -4640,7 +4640,7 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 				"external name sql.\"statistics\";\n"
 				"grant execute on function sys.\"statistics\"(varchar(1024),varchar(1024),varchar(1024)) to public;\n"
 				"update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'statistics';\n"
-				"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('analyze','statistics');\n");
+				"update sys.functions set system = true where system <> true and schema_id = 2000 and sqlname in ('analyze','statistics');\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -4852,7 +4852,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	 		"f.sch schema_name,\n"
 	 		"f.fun function_name\n"
     	"FROM sys.describe_functions f;\n"
-		"UPDATE sys.functions SET system = false WHERE system <> false AND sqlname in ('describe_function') and schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+		"UPDATE sys.functions SET system = false WHERE system <> false AND sqlname in ('describe_function') and schema_id = 2000;\n"
 		"DROP FUNCTION sys.describe_function;\n"
 		"CREATE FUNCTION sys.describe_function(schemaName string, functionName string)\n"
 			"RETURNS TABLE(id integer, name string, type string, language string, remark string)\n"
@@ -4865,7 +4865,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
 					"WHERE f.sqlname=functionName AND s.name = schemaName;\n"
 			"END;\n"
-		"UPDATE sys.functions SET system = true WHERE system = false AND sqlname in ('describe_function') and schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+		"UPDATE sys.functions SET system = true WHERE system = false AND sqlname in ('describe_function') and schema_id = 2000;\n"
 		"CREATE OR REPLACE VIEW sys.dump_function_grants AS\n"
 			"WITH func_args_all(func_id, number, max_number, func_arg) AS\n"
 			"(SELECT a.func_id,\n"
@@ -4938,20 +4938,20 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			 "END;\n"
 		"UPDATE sys._tables SET system = true WHERE\n"
 			" system <> true AND\n"
-			" schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') AND\n"
-			" name IN ('\n"
-				" dump_comments',\n"
+			" schema_id = 2000 AND\n"
+			" name IN (\n"
+				"'dump_comments',\n"
 				"'describe_comments',\n"
 				"'describe_privileges',\n"
 				"'storagemodelinput',\n"
 				"'fully_qualified_functions',\n"
-				"'dump_functions'\n"
-				"'describe_functions'\n"
+				"'dump_functions',\n"
+				"'describe_functions',\n"
 				"'dump_function_grants'\n"
 				");\n"
+		"update sys.functions set system = true where system <> true and sqlname = 'dump_database' and schema_id = 2000;\n"
 
 	);
-
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
