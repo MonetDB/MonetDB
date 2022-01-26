@@ -3436,7 +3436,7 @@ def main(argv) :
     nomito = opts.nomito
     global restart
     restart = opts.restart
-    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
+    if int(MonetDB_VERSION[1])%2 == 0 or opts.alltests:
         CONDITIONALS['KNOWNFAIL'] = 'execute'
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
