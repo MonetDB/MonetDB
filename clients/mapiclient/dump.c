@@ -213,49 +213,6 @@ static const char *actions[] = {
 };
 #define NR_ACTIONS	((int) (sizeof(actions) / sizeof(actions[0])))
 
-static bool
-functions_has_sqlname(Mapi mid)
-{
-	bool ret;
-	MapiHdl hdl;
-	static int answer = -1;
-
-	if (answer >= 0)
-		return (bool) answer;
-
-	if ((hdl = mapi_query(mid,
-		"select c.name"
-		"	from sys.columns c, sys.tables t"
-		"	where"
-		"		c.table_id = t.id and"
-		"		t.name = 'functions' and"
-		"		t.schema_id = (select id from sys.schemas where name = 'sys') and"
-		"		c.name = 'sqlname'")) == NULL
-		|| mapi_error(mid))
-		goto bailout;
-	ret = (int) mapi_get_row_count(hdl) == 1;
-	while ((mapi_fetch_row(hdl)) != 0) {
-		if (mapi_error(mid))
-			goto bailout;
-	}
-	if (mapi_error(mid))
-		goto bailout;
-	mapi_close_handle(hdl);
-	answer = (int) ret;
-	return ret;
-
-bailout:
-	if (hdl) {
-		if (mapi_result_error(hdl))
-			mapi_explain_result(hdl, stderr);
-		else
-			mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-	return 0;
-}
-
 static char *
 get_schema(Mapi mid)
 {
@@ -1186,8 +1143,6 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 	int ca = 0;
 	size_t maxquerylen;
 	bool hashge;
-	bool has_sqlname;
-	const char* functions_sqlname;
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -1268,9 +1223,6 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		goto bailout2;
 	}
 
-	has_sqlname = functions_has_sqlname(mid);
-	functions_sqlname = has_sqlname ? "sqlname" : "name";
-
 	if (type == 1) {
 		/* the table is actually a view */
 		mnstr_printf(toConsole, "%s\n", view);
@@ -1279,11 +1231,11 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		if (!databaseDump) { //if it is not a database dump the table might depend on UDFs that must be dumped first
 			assert(table_id);
 			snprintf(query, maxquerylen,
-					 "SELECT f.id, s.name, f.%s "
+					 "SELECT f.id, s.name, f.name "
 					 "FROM sys.schemas s, "
 					      "sys.functions f "
 					 "WHERE s.id = f.schema_id "
-					   "AND f.id IN (SELECT id FROM sys.dependencies WHERE depend_id = '%d')", functions_sqlname,
+					   "AND f.id IN (SELECT id FROM sys.dependencies WHERE depend_id = '%d')",
 					 table_id);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
@@ -2148,7 +2100,7 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 }
 
 static int
-dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge, const char* functions_sqlname)
+dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 {
 	MapiHdl hdl = NULL;
 	size_t query_size = 5120 + strlen(fid);
@@ -2169,7 +2121,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge, const c
 			     "f.language, "
 			     "f.type, "
 			     "s.name, "
-			     "f.%s, "
+			     "f.name, "
 			     "ft.function_type_keyword, "
 			     "fl.language_keyword, "
 		             "c.remark "
@@ -2179,7 +2131,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge, const c
 			   "LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id "
 			   "LEFT OUTER JOIN sys.comments c ON f.id = c.id "
 		      "WHERE f.id = %s",
-		      functions_sqlname, fid);
+		      fid);
 	assert(query_len < (int) query_size);
 	if (query_len < 0 || query_len >= (int) query_size ||
 	    (hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
@@ -2450,8 +2402,6 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	size_t query_size;
 	int query_len;
 	bool hashge;
-	bool has_sqlname;
-	const char* functions_sqlname = NULL;
 	char *to_free = NULL;
 	bool wantSystem;
 	long prev_sid;
@@ -2481,8 +2431,6 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	}
 
 	hashge = has_hugeint(mid);
-	has_sqlname = functions_has_sqlname(mid);
-	functions_sqlname = has_sqlname ? "sqlname" : "name";
 
 	query_size = 5120 + (sname ? strlen(sname) : 0) + (fname ? strlen(fname) : 0);
 	query = malloc(query_size);
@@ -2504,7 +2452,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 					      query_size - query_len,
 					      "AND s.name = '%s' ", sname);
 		if (fname)
-			query_len += snprintf(query + query_len, query_size - query_len, "AND f.%s = '%s' ", functions_sqlname, fname);
+			query_len += snprintf(query + query_len, query_size - query_len, "AND f.name = '%s' ", fname);
 		if (!wantSystem) {
 			query_len += snprintf(query + query_len, query_size - query_len, "AND NOT f.system ");
 		}
@@ -2532,7 +2480,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 				dquoted_print(toConsole, schema, ";\n");
 				prev_sid = sid;
 			}
-			dump_function(mid, toConsole, fid, hashge, functions_sqlname);
+			dump_function(mid, toConsole, fid, hashge);
 			free(fid);
 		} else {
 			goto bailout;
@@ -2643,8 +2591,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND p.grantor = g.id "
 		  "AND p.privileges = pc.privilege_code_id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
-	const char *function_grants_template =
-		"SELECT s.name, f.%s, a.name, "
+	const char *function_grants =
+		"SELECT s.name, f.name, a.name, "
 		       "pc.privilege_code_name, "
 		       "g.name, p.grantable, "
 		       "ft.function_type_keyword "
@@ -2659,7 +2607,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND p.privileges = pc.privilege_code_id "
 		  "AND f.type = ft.function_type_id "
 		  "AND NOT f.system "
-		"ORDER BY s.name, f.%s, a.name, g.name, p.grantable";
+		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
 	const char *schemas =
 		"SELECT s.name, a.name, rem.remark "
 		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
@@ -2750,7 +2698,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			  "AND s.name <> 'tmp' "
 			"UNION ALL "
 			"SELECT s.name AS sname, " /* functions and procedures */
-			       "f.%s AS name, "
+			       "f.name AS name, "
 			       "f.id AS id, "
 			       "NULL AS query, "
 			       "NULL AS remark " /* emitted separately */
@@ -2779,9 +2727,6 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 
 	/* start a transaction for the dump */
 	mnstr_printf(toConsole, "%s;\n", start_trx);
-
-	bool has_sqlname = functions_has_sqlname(mid);
-	const char* functions_sqlname = has_sqlname ? "sqlname" : "name";
 
 	if ((hdl = mapi_query(mid, start_trx)) == NULL || mapi_error(mid))
 		goto bailout;
@@ -3124,9 +3069,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	hdl = NULL;
 
 	/* dump views, functions and triggers */
-	char function_views[5120];
-	snprintf(function_views, sizeof(function_views), views_functions_triggers, functions_sqlname);
-	if ((hdl = mapi_query(mid, function_views)) == NULL ||
+	if ((hdl = mapi_query(mid, views_functions_triggers)) == NULL ||
 		mapi_error(mid))
 		goto bailout;
 
@@ -3326,10 +3269,6 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
-
-
-	char function_grants[5120];
-	snprintf(function_grants, sizeof(function_grants),function_grants_template, functions_sqlname, functions_sqlname);
 
 	if ((hdl = mapi_query(mid, function_grants)) == NULL ||
 	    mapi_error(mid))

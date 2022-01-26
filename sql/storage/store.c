@@ -897,10 +897,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	ptr cbat;
 
 	rid = store->table_api.column_find_row(tr, find_sql_column(funcs, "id"), &fid, NULL);
-	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "name"), rid, &cbat);
+	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "mangled_name"), rid, &cbat);
 	base_init(tr->sa, &t->base, fid, 0, v);
 	store->table_api.column_find_string_end(cbat);
-	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "sqlname"), rid, &cbat);
+	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "name"), rid, &cbat);
 	t->sql_name = SA_STRDUP(tr->sa, v);
 	update_env = strcmp(v, "env") == 0;
 	store->table_api.column_find_string_end(cbat);
@@ -1456,7 +1456,7 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 
-		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &f->side_effect, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics, &f->sql_name)))
+		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->sql_name, &f->imp, &f->mod, &flang, &ftype, &f->side_effect, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics, &f->base.name)))
 			return res;
 		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
 			return res;
@@ -1839,7 +1839,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 
 	functions = t = bootstrap_create_table(tr, s, "functions", 2016);
 	bootstrap_create_column(tr, t, "id", 2017, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2018, "varchar", 4098);
+	bootstrap_create_column(tr, t, "name", 2018, "varchar", 256);
 	bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196);
 	bootstrap_create_column(tr, t, "mod", 2020, "varchar", 8196);
 
@@ -1854,7 +1854,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "schema_id", 2026, "int", 32);
 	bootstrap_create_column(tr, t, "system", 2027, "boolean", 1);
 	bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1);
-	bootstrap_create_column(tr, t, "sqlname", 2165, "varchar", 256);
+	bootstrap_create_column(tr, t, "mangled_name", 2165, "varchar", 4098);
 
 	arguments = t = bootstrap_create_table(tr, s, "args", 2028);
 	bootstrap_create_column(tr, t, "id", 2029, "int", 32);
@@ -4871,8 +4871,8 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
-	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
-			&t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics, &t->sql_name)))
+	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->sql_name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
+			&t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics, &t->base.name)))
 		return res;
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;

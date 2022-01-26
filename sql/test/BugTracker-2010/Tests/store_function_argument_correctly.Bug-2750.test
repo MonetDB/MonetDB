@@ -5,7 +5,7 @@ statement ok
 create function f ( x varchar(20) ) returns varchar(10) begin return x; end
 
 query TTTI rowsort
-select f.sqlname, a.name, a."type", a.type_digits from functions f, args a where a.func_id = f.id and f.sqlname = 'f'
+select f.name, a.name, a."type", a.type_digits from functions f, args a where a.func_id = f.id and f.name = 'f'
 ----
 f
 result

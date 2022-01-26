@@ -343,7 +343,7 @@ SELECT '"sys"."functions"."mod"' as full_col_nm, 8196 as max_allowed_length, len
 ----
 
 query TIIT rowsort
-SELECT '"sys"."functions"."name"' as full_col_nm, 4098 as max_allowed_length, length("name") as data_length, t."sqlname" as data_value FROM "sys"."functions" t WHERE "sqlname" IS NOT NULL AND length("sqlname") > (select type_digits from sys._columns where name = 'sqlname' and table_id in (select id from tables where name = 'functions' and schema_id in (select id from sys.schemas where name = 'sys')))
+SELECT '"sys"."functions"."name"' as full_col_nm, 256 as max_allowed_length, length("name") as data_length, t."name" as data_value FROM "sys"."functions" t WHERE "name" IS NOT NULL AND length("name") > (select type_digits from sys._columns where name = 'name' and table_id in (select id from tables where name = 'functions' and schema_id in (select id from sys.schemas where name = 'sys')))
 ----
 
 query TIIT rowsort
