@@ -705,9 +705,7 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = *(ptr*)v;
 		if (op[0] == '=' || op[0] == '!') {
 			p =  BUNfnd(lv, v);
-		} else if (op[0] == '<') {
-			p = SORTfndfirst(lv, v);
-		} else if (op[0] == '>') {
+		} else if (op[0] == '<' || op[0] == '>') {
 			p = SORTfndfirst(lv, v);
 		}
 		if (p != BUN_NONE) {
