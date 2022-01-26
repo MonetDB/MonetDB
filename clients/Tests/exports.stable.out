@@ -902,7 +902,7 @@ const char *comment_onRef;
 const char *commitRef;
 str compileString(Symbol *fcn, Client c, str s);
 const char *compressRef;
-char *concatErrors(char *err1, const char *err2) __attribute__((__nonnull__(1, 2))) __attribute__((__returns_nonnull__));
+char *concatErrors(char *err1, const char *err2) __attribute__((__nonnull__(1))) __attribute__((__nonnull__(2))) __attribute__((__returns_nonnull__));
 const char *connectRef;
 const char *contextRef;
 str convertConstant(malType type, ValPtr vr);

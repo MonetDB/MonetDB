@@ -609,3 +609,59 @@ query I nosort
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE tz (c0 INT)
+
+statement ok
+create or replace view vy(vc0) as (values (1))
+
+statement ok
+create or replace view vx(vc0, vc1) as (select 2, 3 from vy)
+
+query I nosort
+SELECT 1 FROM tz, vx WHERE (vx.vc1 + tz.c0) <> ALL(VALUES (4)) AND vx.vc0 <> ALL(VALUES (5))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rt0 (c0 INT)
+
+statement ok
+create or replace view vx(vc0) as (select 'a')
+
+statement ok
+create or replace view vy(vc0) as (select 2)
+
+# make sure self-references are eliminated by rel_dce
+query T nosort
+PLAN SELECT 1 FROM rt0 CROSS JOIN (SELECT CASE sub0.c2 WHEN 4 THEN 'c' END,
+least(3, sub0.c1) FROM vx JOIN (SELECT 4, vy.vc0 FROM vy) AS sub0(c1,c2) ON TRUE) AS sub0(c0,c2)
+----
+project (
+| crossproduct (
+| | table("sys"."rt0") [ "rt0"."%TID%" NOT NULL UNIQUE ],
+| | project (
+| | | crossproduct (
+| | | |  [ boolean(1) "true" as "%1"."%1" ],
+| | | |  [ boolean(1) "true" as "%2"."%2" ]
+| | | ) [  ]
+| | ) [ "sys"."casewhen"(tinyint(2) "2", tinyint(3) "4", char(1) "c", char(1) NULL) as "sub0"."c0" ]
+| ) [  ]
+) [ tinyint(1) "1" ]
+
+query I nosort
+SELECT 1 FROM rt0 CROSS JOIN (SELECT CASE sub0.c2 WHEN 4 THEN 'c' END,
+least(3, sub0.c1) FROM vx JOIN (SELECT 4, vy.vc0 FROM vy) AS sub0(c1,c2) ON TRUE) AS sub0(c0,c2)
+----
+
+statement ok
+ROLLBACK
