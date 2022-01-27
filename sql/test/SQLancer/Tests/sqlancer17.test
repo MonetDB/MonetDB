@@ -665,3 +665,117 @@ least(3, sub0.c1) FROM vx JOIN (SELECT 4, vy.vc0 FROM vy) AS sub0(c1,c2) ON TRUE
 
 statement ok
 ROLLBACK
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 BETWEEN 1 AND min(2) FROM (values (3)) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 BETWEEN min(1) AND 2 FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 BETWEEN vx.vc0 AND min(2) FROM (values (3)) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN(1) BETWEEN vx.vc0 AND 2 FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (values (3)) vx(vc0) HAVING vx.vc0 BETWEEN 1 AND min(2)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 3) vx(vc0) HAVING vx.vc0 BETWEEN min(1) AND 2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (values (3)) vx(vc0) HAVING 1 BETWEEN vx.vc0 AND min(2)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 3) vx(vc0) HAVING MIN(1) BETWEEN vx.vc0 AND 2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 > min(1) FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT min(1) < vx.vc0 FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 3) vx(vc0) HAVING min(1) < vx.vc0
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > min(1)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 LIKE MIN('b') FROM (SELECT 'a') vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN('b') LIKE vx.vc0 FROM (SELECT 'a') vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 'a') vx(vc0) HAVING vx.vc0 LIKE MIN('b')
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 'a') vx(vc0) HAVING MIN('b') LIKE vx.vc0
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN(2) IS NULL FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT 3) vx(vc0) HAVING MIN(2) IS NULL
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 IN (MIN(2)) FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT 3) vx(vc0) HAVING 1 IN (MIN(2))
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN(2) > 2 FROM (SELECT TRUE) vx(vc0) HAVING vx.vc0
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT TRUE) vx(vc0) HAVING MIN(2) > 2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN(2) > 2, vx.vc0 FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0, MIN(2) > 2 FROM (SELECT 3) vx(vc0)
+
+# The subquery ones are doubtful
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT EXISTS (SELECT MIN(2)) FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT 3) vx(vc0) HAVING EXISTS (SELECT MIN(2))
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT EXISTS (SELECT MIN(2) FROM (SELECT 4) vy(vc0)) FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT 4) vx(vc0) HAVING EXISTS (SELECT MIN(2) FROM (SELECT 3) vy(vc0))
+
+# These are right, keep them here
+query I nosort
+SELECT MIN(2) > 2 FROM (SELECT 1) vx(vc0) HAVING 0
+----
+
+query I nosort
+SELECT 0 FROM (SELECT 1) vx(vc0) HAVING MIN(2) > 2
+----
+
+query II nosort
+SELECT MIN(2) > 2, 0 FROM (SELECT 1) vx(vc0) HAVING MIN(2) > 2
+----
+
+query II nosort
+SELECT 0, MIN(2) > 2 FROM (SELECT 1) vx(vc0) HAVING MIN(2) > 2
+----
+
+query II nosort
+SELECT MIN(2) > 2, 0 FROM (SELECT 1) vx(vc0)
+----
+0
+0
+
+query II nosort
+SELECT 0, MIN(2) > 2 FROM (SELECT 1) vx(vc0)
+----
+0
+0

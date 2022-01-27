@@ -6550,7 +6550,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 	case e_column:
 		ne = rel_find_exp(subrel, e);
 		/* if looking in the same projection, make sure 'ne' is projected before the searched column */
-		if (ne && local_proj > -1 && list_position(subrel->exps, ne) > local_proj)
+		if (ne && local_proj > -1 && list_position(subrel->exps, ne) >= local_proj)
 			ne = NULL;
 		break;
 	case e_convert:
