@@ -3982,6 +3982,8 @@ def main(argv) :
         env['DIST'] = os.environ['DIST']
         env['VERSION'] = os.environ['VERSION']
 
+        CONDITIONALS['ARCH_BITS32'] = (env['TST_BITS'] == '32bit')
+
         if procdebug:
             for k in sorted(os.environ):
                 print('{}={}'.format(k, os.environ[k]))

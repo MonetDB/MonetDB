@@ -705,6 +705,7 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_unique(ne);
 	if (is_basecol(oe))
 		set_basecol(ne);
+	ne->flag = oe->flag; /* needed if the referenced column is a parameter without type set yet */
 	ne->p = prop_copy(sa, oe->p);
 	return ne;
 }

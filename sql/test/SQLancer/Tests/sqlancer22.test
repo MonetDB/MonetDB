@@ -29,3 +29,26 @@ SELECT 1 FROM v2 WHERE (SELECT 'a' FROM v1) <> ALL((SELECT 'b' FROM t2) UNION (S
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0 (c0 INT)
+
+statement ok
+INSERT INTO t0 VALUES (1)
+
+statement ok
+CREATE TABLE t1 (c0 INT)
+
+statement ok
+INSERT INTO t1 VALUES (1)
+
+query I nosort
+SELECT 1 = ANY(SELECT 1 FROM t1 JOIN (SELECT count(*) GROUP BY t0.c0) AS x(x) ON TRUE) FROM t0
+----
+1
+
+statement ok
+ROLLBACK
