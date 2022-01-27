@@ -5666,14 +5666,13 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list *te = NULL;
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
 
-		if (ce && (exp_subtype(ce) || exp_is_rel(ce) || (ce->type == e_atom && !ce->l && !ce->f))) { /* Allow parameters and subqueries to be propagated */
+		if (ce) {
 			pexps = append(pexps, ce);
 			rel = inner;
 			continue;
-		} else if (!ce) {
+		} else {
 			te = rel_table_exp(query, &rel, n->data.sym, !list_length(pexps) && !n->next);
-		} else
-			ce = NULL;
+		}
 		if (!ce && !te) {
 			if (sql->errstr[0])
 				return NULL;
