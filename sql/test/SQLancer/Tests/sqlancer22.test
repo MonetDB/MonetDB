@@ -52,3 +52,22 @@ SELECT 1 = ANY(SELECT 1 FROM t1 JOIN (SELECT count(*) GROUP BY t0.c0) AS x(x) ON
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE VIEW v1(vc0, vc1, vc2) AS (WITH ctel0n0(ct0n0,ct0n1) AS (VALUES (4, 5)) SELECT 1, 2, 3 FROM ctel0n0)
+
+query III nosort
+SELECT * FROM v1
+----
+1
+2
+3
+
+statement error 42000!CREATE VIEW: LIMIT not supported
+CREATE VIEW v2(vc0, vc1, vc2) AS (WITH ctel0n0(ct0n0,ct0n1) AS (VALUES (4, 5)) SELECT 1, 2, 3 FROM ctel0n0 LIMIT 7)
+
+statement ok
+ROLLBACK
