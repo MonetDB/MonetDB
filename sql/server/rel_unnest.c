@@ -1661,8 +1661,11 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op, sql_rel 
 			set_single(d);
 	} else if (is_project(rel->op)){ /* projection -> op_left */
 		if (rel->l || single || op == op_left) {
-			if ((single || op == op_left) && !rel->l)
-				rel->l = rel_project(sql->sa, rel->l, append(sa_list(sql->sa), exp_atom_bool(sql->sa, 1)));
+			if ((single || op == op_left) && !rel->l) {
+				sql_exp *e = exp_atom_bool(sql->sa, 1);
+				exp_label(sql->sa, e, ++sql->label);
+				rel->l = rel_project(sql->sa, rel->l, list_append(sa_list(sql->sa), e));
+			}
 			d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op_left);
 			if (single)
 				set_single(d);
@@ -1696,7 +1699,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_rel *inner = exp_rel_get_rel(v->sql->sa, e);
 		if (is_single(inner)) {
 			/* use a dummy projection for the single join */
-			sql_rel *nrel = rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
+			sql_rel *nrel = rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
 
 			if (!rewrite_inner(v->sql, nrel, inner, depth?op_left:op_join, NULL))
 				return NULL;
@@ -1731,12 +1734,12 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static inline sql_rel *
 rewrite_empty_project(visitor *v, sql_rel *rel)
 {
-	if (is_simple_project(rel->op) && list_empty(rel->exps)) {
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && list_empty(rel->exps)) {
+		sql_exp *e = exp_atom_bool(v->sql->sa, 1);
+
+		exp_label(v->sql->sa, e, ++v->sql->label);
+		list_append(rel->exps, e);
 		v->changes++;
-		append(rel->exps, exp_atom_bool(v->sql->sa, 1));
-	} else if (is_groupby(rel->op) && list_empty(rel->exps)) {
-		v->changes++;
-		append(rel->exps, exp_atom_bool(v->sql->sa, 1));
 	}
 	return rel;
 }
@@ -2682,7 +2685,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					sql_rel *l = NULL, *rewrite = NULL;
 					if (rsq && lsq->card == CARD_ATOM && rsq->card == CARD_ATOM) { /* add project true */
 						lsq = rel_crossproduct(sql->sa, lsq, rsq, op_full);
-						lsq = rel_crossproduct(sql->sa, rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1)), lsq, op_left);
+						lsq = rel_crossproduct(sql->sa, rel_project_exp(sql, exp_atom_bool(sql->sa, 1)), lsq, op_left);
 						rsq = 0;
 					}
 					(void)rewrite_inner(sql, rel, lsq, rel->card <= CARD_ATOM?op_left:op_join, &rewrite);
@@ -3502,8 +3505,11 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					}
 					append(pexps, ne);
 				}
-				if (list_empty(exps))
-					append(exps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
+				if (list_empty(exps)) {
+					sql_exp *e = exp_atom_bool(v->sql->sa, 1);
+					exp_label(v->sql->sa, e, ++v->sql->label); /* protection against empty projections */
+					list_append(exps, e);
+				}
 				nrel->exps = exps;
 				if (!list_empty(rel->r) && !list_empty(nrel->r)) { /* aliases on grouping columns, ugh */
 					for (node *n = ((list*)nrel->r)->h ; n ; n = n->next) {
@@ -3518,8 +3524,11 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					list_hash_clear(nrel->r);
 				}
 				set_processed(nrel);
-				if (list_empty(pexps))
-					append(pexps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
+				if (list_empty(pexps)) {
+					sql_exp *e = exp_atom_bool(v->sql->sa, 1);
+					exp_label(v->sql->sa, e, ++v->sql->label); /* protection against empty projections */
+					list_append(pexps, e);
+				}
 				nrel = rel_project(v->sql->sa, nrel, pexps);
 				set_processed(nrel);
 
@@ -3566,13 +3575,19 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					}
 					append(pexps, ne);
 				}
-				if (list_empty(exps))
-					append(exps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
+				if (list_empty(exps)) {
+					sql_exp *e = exp_atom_bool(v->sql->sa, 1);
+					exp_label(v->sql->sa, e, ++v->sql->label); /* protection against empty projections */
+					list_append(exps, e);
+				}
 				nrel->exps = exps;
 				set_processed(nrel);
 				v->changes++;
-				if (list_empty(pexps))
-					append(pexps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
+				if (list_empty(pexps)) {
+					sql_exp *e = exp_atom_bool(v->sql->sa, 1);
+					exp_label(v->sql->sa, e, ++v->sql->label); /* protection against empty projections */
+					list_append(pexps, e);
+				}
 				nrel = rel_project(v->sql->sa, nrel, pexps);
 				set_processed(nrel);
 				return nrel;
