@@ -38,17 +38,24 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
 	be->mvc->errstr[0] = '\0';
 }
 
-static int
+static void
 add_to_rowcount_accumulator(backend *be, int nr)
 {
-	int prev = be->rowcount;
-	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
+	if (be->silent)
+		return;
 
-	getArg(q, 0) = be->rowcount = newTmpVariable(be->mb, TYPE_lng);
-	q = pushArgument(be->mb, q, prev);
+	if (be->rowcount == 0) {
+		be->rowcount = nr;
+		return;
+	}
+
+	int new_nr = newTmpVariable(be->mb, TYPE_lng);
+	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
+	getDestVar(q) = new_nr;
+	q = pushArgument(be->mb, q, be->rowcount);
 	q = pushArgument(be->mb, q, nr);
 
-	return getDestVar(q);
+	be->rowcount = new_nr;
 }
 
 static stmt *
@@ -4478,9 +4485,7 @@ rel2bin_directappend(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	s->op4.lval = l;
 
 	// Accumulate row counts.
-	be->rowcount = be->rowcount
-		? add_to_rowcount_accumulator(be, s->nr)
-		: s->nr;
+	add_to_rowcount_accumulator(be, s->nr);
 
 	// dump_code(-1);
 	return s;
@@ -4639,10 +4644,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return stmt_list(be, l);
 	} else {
 		ret = cnt;
-		if (!be->silent) {
-			/* if there are multiple update statements, update total count, otherwise use the the current count */
-			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
-		}
+		add_to_rowcount_accumulator(be, ret->nr);
 		return ret;
 	}
 }
@@ -5613,10 +5615,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		cnt = stmt_list(be, l);
 	} else {
 		cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-		if (!be->silent) {
-			/* if there are multiple update statements, update total count, otherwise use the the current count */
-			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
-		}
+		add_to_rowcount_accumulator(be, cnt->nr);
 	}
 
 	if (sql->cascade_action)
@@ -5860,10 +5859,8 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	if (!stdelete)
 		return NULL;
 
-	if (!be->silent) {
-		/* if there are multiple update statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, stdelete->nr) : stdelete->nr;
-	}
+	add_to_rowcount_accumulator(be, stdelete->nr);
+
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
@@ -6001,10 +5998,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			goto finalize;
 		}
 
-		if (!be->silent) {
-			/* if there are multiple update statements, update total count, otherwise use the the current count */
-			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, other->nr) : other->nr;
-		}
+		add_to_rowcount_accumulator(be, other->nr);
 	}
 
 finalize:
