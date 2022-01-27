@@ -668,7 +668,7 @@ plan select x as z, 2 from (select 1) as x(x) group by z, z
 project (
 | group by (
 | | project (
-| | |  [ boolean(1) "true" ]
+| | |  [ boolean(1) "true" as "%1"."%1" ]
 | | ) [ tinyint(1) "1" as "x"."x" ]
 | ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
 ) [ "z" NOT NULL, tinyint(2) "2" ]
