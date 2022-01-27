@@ -155,6 +155,7 @@ target_sources(sql
   opt_backend.h
   for.c for.h
   dict.c dict.h
+  copy.c
   ${MONETDB_CURRENT_SQL_SOURCES}
   PUBLIC
   ${sql_public_headers})
