@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 ALTER TABLE Ap7Mag  ADD  CONSTRAINT fk_Ap7Mag_objID_PhotoObjAll_objI FOREIGN KEY(objID)
 REFERENCES PhotoObjAll (objID)
 
@@ -262,3 +265,5 @@ statement ok
 ALTER TABLE Zone  ADD  CONSTRAINT fk_Zone_objID_PhotoObjAll_objID FOREIGN KEY(objID)
 REFERENCES PhotoObjAll (objID)
 
+statement ok
+COMMIT
