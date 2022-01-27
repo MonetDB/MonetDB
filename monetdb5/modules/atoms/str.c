@@ -4726,7 +4726,7 @@ STRspace(str *res, const int *ll)
 	if (is_int_nil(l) || l < 0) {
 		*res = GDKstrdup(str_nil);
 	} else {
-		char space[] = " ", *s= space;
+		const char space[] = " ", *s= space;
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
 		*res = NULL;
