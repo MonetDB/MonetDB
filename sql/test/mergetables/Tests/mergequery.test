@@ -185,7 +185,7 @@ PLAN SELECT * FROM complete where x > 1.0 AND x < 2.0
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%1"."%1" ]
 | ) [ boolean(1) "false" ]
 ) [ double(53) NULL as "complete"."x", double(53) NULL as "complete"."y", double(53) NULL as "complete"."z" ]
 
