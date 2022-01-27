@@ -3173,6 +3173,8 @@ mvc_append_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool from_stdin;
 	BAT **b = NULL;
 	msg = setup_import_table_stream(cntxt, &csv_parms, &bs, &from_stdin);
+	if (msg != MAL_SUCCEED)
+		return msg;
 	msg = mvc_import_table(cntxt, &b, be->mvc, bs, from_stdin, t, &csv_parms, true);
 	teardown_import_table_stream(cntxt, &csv_parms, bs);
 
