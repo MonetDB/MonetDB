@@ -56,7 +56,9 @@ MSERVER5 OPTIONS
 
 **--dbextra=**\ *path*
    Path where *mserver5* should store transient data. Default value is
-   the value of the **--dbpath** option.
+   the value of the **--dbpath** option. If the value of *path* is
+   **in-memory**, transient data is not stored on disk at all but kept
+   in memory at all times.
 
 **--dbtrace=**\ *path*
    File name for the trace log file for *mserver5*. Default value is the
@@ -77,6 +79,11 @@ MSERVER5 OPTIONS
    Set individual configuration option. For possible options, see
    *PARAMETERS* sections.
 
+**--loadmodule=**\ *module*
+   Load extra module in the form of a dynamic link library (.dll or .so
+   file) which should be located in the lib/monetdb5 directory. This
+   option can be repeated for different modules.
+
 **--help**
    Print list of options.
 
@@ -84,63 +91,87 @@ MSERVER5 OPTIONS
    Print version and compile configuration.
 
 **--in-memory**
-   Run *mserver5* in-memory. **No** data will be persisted.
+   Run *mserver5* in-memory. **No** data will be written to disk. The
+   name of the database that a client can connect to is **in-memory**.
 
 **--debug**\ [**=**\ *value*]
 
 **-d**\ [*value*]
-   Set debug level. This is mostly for debugging purposes. The value is
+   Set debug level. This is mostly for debugging purposes. The *value*
+   together with the **=** sign is optional. If not specified, it
+   defaults to **1**. In the short form **-d**, the value, if present,
+   must immediately (i.e. without space) follow the option. The values
+   of multiple instances of this flag are OR-ed together. The value is
    an integer, which can be (a bit-wise OR of):
 
-::
+   **1**
+      (THRDMASK) thread-specific debug output
 
-             1 = THRDMASK     = thread-specific debug output
-             2 = CHECKMASK    = property enforcing on new BATs
-             8 = PROPMASK     = property checking on all values:
-                                tells about wrongly set properties
-            16 = IOMASK       = major IO activity
-            32 = BATMASK      = BAT handling
-           128 = PARMASK      = Thread management
-           512 = TMMASK       = Transaction management
-          1024 = TEMMASK      = Locks and Triggers
-          4096 = PERFMASK     = BBP Performance (?)
-          8192 = DELTAMASK    = Delta debugging (?)
-         16384 = LOADMASK     = Module loading
-       1048576 = ACCELMASK    = Accelerator debugging
-       2097152 = ALGOMASK     = show low level algorithm chosen
-      16777216 = NOSYNCMASK   = disable forcefully synchronizing files
-                                to disk.  If this flag is set, there is
-                                no guarantee that the database remains
-                                consistent after a crash.  DO NOT USE
-                                (unless you really don't care about your
-                                data).
-      33554432 = DEADBEEFMASK = disable "cleaning" of freed memory
-                                in GDKfree() which only happens in a
-                                debug build (i.e. with assertions
-                                enabled) e.g., for performance
-                                measurements
-      67108864 = ALLOCMASK    = exhaustive GDK malloc & free tracing
-                                for debugging (GDK developers, only)
-     134217728 = OPTMASK      = trace the actions, decisions and
-                                effects of MAL optimizers
-     268435456 = HEAPMASK     = trace/debug HEAPextend;
-                                used only for development & debugging
-     536870912 = FORCEMITOMASK = forcefully activate mitosis even on
-                                 small tables, i.e., split small tables
-                                 in as many (tiny) pieces as there are
-                                 cores (threads) available;
-                                 this allows us to test mitosis
-                                 functionality without requiring large
-                                 data sets (— at the expense of a
-                                 potentially significant interpretation
-                                 overhead for unnecessarily large plans);
-                                 used only for development & testing;
-                                 set automatically by Mtest.py
+   **2**
+      (CHECKMASK) property enforcing on new BATs
 
-The *value* together with the **=** sign is optional. If not specified,
-it defaults to **1**. In the short form **-d**, the value, if present,
-must immediately (i.e. without space) follow the option. The values of
-multiple instances of this flag are OR-ed together.
+   **8**
+      (PROPMASK) property checking on all values: tells about wrongly
+      set properties
+
+   **16**
+      (IOMASK) major IO activity
+
+   **32**
+      (BATMASK) BAT handling
+
+   **128**
+      (PARMASK) Thread management
+
+   **512**
+      (TMMASK) Transaction management
+
+   **1024**
+      (TEMMASK) Locks and Triggers
+
+   **4096**
+      (PERFMASK) BBP Performance (?)
+
+   **8192**
+      (DELTAMASK) Delta debugging (?)
+
+   **16384**
+      (LOADMASK) Module loading
+
+   **1048576**
+      (ACCELMASK) Accelerator debugging
+
+   **2097152**
+      (ALGOMASK) show low level algorithm chosen
+
+   **16777216**
+      (NOSYNCMASK) disable forcefully synchronizing files to disk. If
+      this flag is set, there is no guarantee that the database remains
+      consistent after a crash. DO NOT USE (unless you really don't care
+      about your data).
+
+   **33554432**
+      (DEADBEEFMASK) disable "cleaning" of freed memory in GDKfree()
+      which only happens in a debug build (i.e. with assertions enabled)
+      e.g., for performance measurements
+
+   **67108864**
+      (ALLOCMASK) exhaustive GDK malloc & free tracing for debugging
+      (GDK developers, only)
+
+   **134217728**
+      (OPTMASK) trace the actions, decisions and effects of MAL
+      optimizers
+
+   **268435456**
+      (HEAPMASK) trace/debug HEAPextend; used only for development &
+      debugging **536870912** (FORCEMITOMASK) forcefully activate
+      mitosis even on small tables, i.e., split small tables in as many
+      (tiny) pieces as there are cores (threads) available; this allows
+      us to test mitosis functionality without requiring large data sets
+      (— at the expense of a potentially significant interpretation
+      overhead for unnecessarily large plans); used only for development
+      & testing; set automatically by Mtest.py
 
 **--algorithms**
    Equivalent to **--debug=**\ *(ALGOMASK)*.
@@ -214,7 +245,10 @@ distributed) plans. These parameters control behaviour on the MAL level.
 
 **mapi_usock**
    The name of the UNIX domain socket file on which the server will
-   listen for connections. Note, there is usually a severe
+   listen for connections. If the name contains the substring
+   **${PORT}**, that part will be replaced by the decimal representation
+   of the TCP/IP port (option **mapi_port**). This is especially useful
+   if the port was specified as **0**. Note, there is usually a severe
    system-imposed length limitation on the name of the file.
 
 **mapi_port**
@@ -286,21 +320,21 @@ has its own SQL-level specific settings.
    **default_pipe**
       The default pipeline contains the mitosis-mergetable-reorder
       optimizers, aimed at large tables and improved access locality.
-      default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,pushselect,aliases,mitosis,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
+      default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
 
    **no_mitosis_pipe**
       The no_mitosis pipeline is identical to the default pipeline,
       except that optimizer mitosis is omitted. It is used mainly to
       make some tests work deterministically, and to check/debug whether
       "unexpected" problems are related to mitosis (and/or mergetable).
-      no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
+      no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
 
    **sequential_pipe**
       The sequential pipeline is identical to the default pipeline,
       except that optimizers mitosis & dataflow are omitted. It is use
       mainly to make some tests work deterministically, i.e., avoid
       ambigious output, by avoiding parallelism.
-      sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
+      sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
 
 **embedded_py**
    Enable embedded Python. This means Python code can be called from
