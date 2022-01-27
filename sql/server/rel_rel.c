@@ -887,12 +887,12 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	return rel;
 }
 
-sql_rel*
-rel_project_exp(sql_allocator *sa, sql_exp *e)
+sql_rel *
+rel_project_exp(mvc *sql, sql_exp *e)
 {
-	sql_rel *rel = rel_project(sa, NULL, append(new_exp_list(sa), e));
-
-	return rel;
+	if (!exp_name(e))
+		exp_label(sql->sa, e, ++sql->label);
+	return rel_project(sql->sa, NULL, list_append(sa_list(sql->sa), e));
 }
 
 sql_rel *
