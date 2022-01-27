@@ -1638,7 +1638,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		set_anti(e);
 
 	if (!rel)
-		return rel_select(sql->sa, rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1)), e);
+		return rel_select(sql->sa, rel_project_exp(sql, exp_atom_bool(sql->sa, 1)), e);
 
 	/* atom or row => select */
 	if (ls->card > rel->card || rs->card > rel->card || (rs2 && rs2->card > rel->card)) {
@@ -5650,7 +5650,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the selection or from part is missing");
 
 	if (!rel)
-		rel = rel_project(sql->sa, NULL, append(new_exp_list(sql->sa), exp_atom_bool(sql->sa, 1)));
+		rel = rel_project_exp(sql, exp_atom_bool(sql->sa, 1));
 	rel = rel_where_groupby_nodes(query, rel, sn, &group_totals);
 	if (sql->session->status) /* rel might be NULL as input, so we have to check for the session status for errors */
 		return NULL;

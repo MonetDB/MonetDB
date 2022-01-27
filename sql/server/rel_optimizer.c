@@ -8927,7 +8927,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 	}
 	if (list_empty(tables)) { /* No table passed the predicates, generate dummy relation */
 		list *converted = sa_list(v->sql->sa);
-		nrel = rel_project(v->sql->sa, NULL, list_append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
+		nrel = rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
 		nrel = rel_select(v->sql->sa, nrel, exp_atom_bool(v->sql->sa, 0));
 
 		for (node *n = mt_rel->exps->h ; n ; n = n->next) {
@@ -9326,7 +9326,7 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 	if (left_zero_rows && right_zero_rows) {
 		/* generate dummy relation */
 		list *converted = sa_list(v->sql->sa);
-		sql_rel *nrel = rel_project(v->sql->sa, NULL, list_append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
+		sql_rel *nrel = rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
 		nrel = rel_select(v->sql->sa, nrel, exp_atom_bool(v->sql->sa, 0));
 
 		for (node *n = rel->exps->h ; n ; n = n->next) {
