@@ -4439,6 +4439,77 @@ can_use_directappend(sql_rel *rel)
 	return copy_from;
 }
 
+static stmt *
+rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
+{
+	(void)rel;
+	(void)refs;
+
+	InstrPtr q;
+	MalBlkPtr mb = be->mb;
+	// mvc *mvc = be->mvc;
+	// sql_allocator *sa = mvc->sa;
+
+	// Extract arguments
+	list *copyfrom_args = copyfrom->l;
+	node *fname_node = copyfrom_args->h->next->next->next->next->next;
+	sql_exp *fname_exp = fname_node->data;
+	atom *fname_atom = fname_exp->l;
+	const char *fname = fname_atom->data.val.sval;
+
+	int streams_type = ATOMindex("streams");
+
+	q = newStmtArgs(mb, "streams", "openRead", 1);
+	setDestType(mb, q, streams_type);
+	q = pushStr(mb, q, fname);
+	int var_s = getDestVar(q);
+
+	q = newStmtArgs(mb, "bat", "new", 3);
+	setDestType(mb, q, newBatType(TYPE_bte));
+	q = pushNil(mb, q, TYPE_bte);
+	q = pushLng(mb, q, 300);
+	q = pushBit(mb, q, false);
+	int var_block = getDestVar(q);
+
+	q = newStmtArgs(mb, "copy", "read", 3);
+	setDestType(mb, q, TYPE_lng);
+	q = pushArgument(mb, q, var_s);
+	q = pushLng(mb, q, 200);
+	q = pushArgument(mb, q, var_block);
+	int var_nread = getDestVar(q);
+
+
+
+
+	add_to_rowcount_accumulator(be, var_nread);
+
+	stmt *dummy_stmt = stmt_none(be);
+	// dummy_stmt->nr = getDestVar(q);
+
+	return dummy_stmt;
+
+
+
+	// sql_subtype *str_type = sql_bind_localtype("str");
+	// sql_subtype *streams_type = sql_bind_localtype("streams");
+
+	// //  batarg("",oid),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
+
+	// // Emit the filename
+	// node *fname_node = copyfrom_args->h->next->next->next->next->next;
+	// sql_exp *fname_exp = fname_node->data;
+	// atom *fname_atom = fname_exp->l;
+	// const char *fname = fname_atom->data.val.sval;
+	// stmt *fname_stmt = stmt_atom_string(be, sa_strdup(sa, fname));
+
+	// // sql_subfunc *f = sql_bind_func(mvc, "streams", "openRead", str_type, NULL, F_FUNC);
+	// sql_subfunc *f = sql_bind_func_result(mvc, "streams", "openRead", F_FUNC, streams_type, 1, str_type);
+	// stmt *openRead_stmt = stmt_unop(be, fname_stmt, NULL, f);
+
+	// snprintf(be->mvc->errstr, sizeof(be->mvc->errstr), "banana");
+	// return openRead_stmt;
+}
+
 // Temporarily emit the MAL to call to sql.copy_from and aggr.count directly
 // from rel2bin_insert. This needs to move to rel2bin_exp.
 static stmt *
@@ -4451,11 +4522,19 @@ rel2bin_directappend(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	mvc *mvc = be->mvc;
 	MalBlkPtr mb = be->mb;
 
+	list *args = copyfrom->l;
+	// X_27:bat[:oid] := sql.append_from(0x7f727c15e310:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/joeri":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int); |
+	node *fname_node = args->h->next->next->next->next->next;
+	sql_exp *fname_exp = fname_node->data;
+	atom *fname_atom = fname_exp->l;
+	const char *fname = fname_atom->data.val.sval;
+	if (strstr(fname, "banana") != NULL)
+		return rel2bin_copyparpipe(be, rel, refs, copyfrom);
+
 	// We're about to emit a custom sql.copy_from invocation.
 	// Temporarily, until we learn how to do that properly.
 
 	// First emit statements for all copyfrom's arguments.
-	list *args = copyfrom->l;
 	list *l = sa_list(mvc->sa);
 	for (node *n = args->h; n; n = n->next) {
 		sql_exp *arg = n->data;
