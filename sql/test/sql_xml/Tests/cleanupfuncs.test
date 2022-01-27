@@ -1,0 +1,31 @@
+statement error 42000!DROP TYPE: unable to drop type xml (there are database objects which depend on it)
+DROP TYPE xml
+
+statement ok
+DROP FUNCTION xml(STRING)
+
+statement ok
+DROP FUNCTION str(xml)
+
+statement ok
+DROP FUNCTION "comment"(STRING)
+
+
+-- quicker way to drop all functions which use xml datatype
+statement ok
+DROP TYPE xml CASCADE
+
+
+-- cleanup remainder of created functions which do not rely on xml datatype
+statement ok
+DROP FUNCTION parse (STRING, STRING, STRING)
+
+statement ok
+DROP FUNCTION pi (STRING, STRING)
+
+statement ok
+DROP FUNCTION attribute (STRING, STRING)
+
+statement ok
+DROP FUNCTION isdocument (STRING)
+
