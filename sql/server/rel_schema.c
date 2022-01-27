@@ -133,10 +133,6 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 
 	if (!r)
 		return 0;
-
-	if (is_topn(r->op) || is_sample(r->op))
-		r = sq->l;
-
 	if (column_spec) {
 		dnode *n = column_spec->h;
 		node *m = r->exps->h;
@@ -1374,6 +1370,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		sq = rel_selects(query, subquery);
 		if (!sq)
 			return NULL;
+		if (!is_project(sq->op)) /* make sure sq is a projection */
+			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 
 		if (tt != tt_table && with_data)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot create %s 'with data'", action,
@@ -1423,9 +1421,12 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 	if (ast) {
 		sql_rel *sq = NULL;
 		char *q = QUERY(sql->scanner);
+		symbol *sym = ast;
 
-		if (ast->token == SQL_SELECT) {
-			SelectNode *sn = (SelectNode *) ast;
+		if (sym->token == SQL_WITH)
+			sym = sym->data.lval->h->next->data.sym;
+		if (sym->token == SQL_SELECT) {
+			SelectNode *sn = (SelectNode *) sym;
 
 			if (sn->limit || sn->sample)
 				return sql_error(sql, 01, SQLSTATE(42000) "%s: %s not supported", base, sn->limit ? "LIMIT" : "SAMPLE");
@@ -1434,6 +1435,8 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 		sq = schema_selects(query, s, ast);
 		if (!sq)
 			return NULL;
+		if (!is_project(sq->op)) /* make sure sq is a projection */
+			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 
 		if (!create) {
 			if (column_spec) {
@@ -1469,7 +1472,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 		}
 		if (!persistent && column_spec)
 			sq = view_rename_columns(sql, name, sq, column_spec);
-		if (sq && sq->op == op_project && sq->l && sq->exps && sq->card == CARD_AGGR) {
+		if (sq && is_simple_project(sq->op) && sq->l && sq->exps && sq->card == CARD_AGGR) {
 			exps_setcard(sq->exps, CARD_MULTI);
 			sq->card = CARD_MULTI;
 		}
