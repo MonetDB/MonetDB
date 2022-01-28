@@ -113,3 +113,32 @@ update rt2v2 set c0 = (select rt2v2.c0 from rt0 where false) from rt0 where cast
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table t0 (c0 int)
+
+statement ok
+create or replace view vx(vc0, vc1, vc2) as (values (1,0,2))
+
+query I nosort
+SELECT 1 FROM (values (0)) vx(vc1) WHERE 1 > ALL(SELECT vx.vc1 FROM t0)
+----
+1
+
+query I nosort
+SELECT vx.vc2 FROM vx JOIN (VALUES (1)) AS x(x) ON TRUE WHERE vx.vc0 >= ALL(SELECT t0.c0 FROM t0) AND 1 >= ALL(SELECT vx.vc1 FROM t0)
+----
+2
+
+# this one is right
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(vx.vc0 >= ALL(SELECT t0.c0 FROM t0) AND 1 >= ALL(SELECT vx.vc1 FROM t0) AS INT)
+as count FROM vx JOIN (VALUES (1)) AS x(x) ON TRUE) as res
+----
+1
+
+statement ok
+ROLLBACK
