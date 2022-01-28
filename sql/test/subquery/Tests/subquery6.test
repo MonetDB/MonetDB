@@ -402,7 +402,7 @@ select (select (i1.i, i2.i) in (select i2.i, i1.i) from integers i2) from intege
 statement error 42000!MIN: aggregate function 'min' not allowed in GROUP BY clause
 select min(i) as myx from integers group by myx
 
-statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 'integers.i' in query results without an aggregate function
 select ntile(i) over (), count(*) from integers
 
 statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
