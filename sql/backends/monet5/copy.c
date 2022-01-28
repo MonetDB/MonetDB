@@ -92,7 +92,7 @@ end:
 }
 
 static str
-COPYparse_append(int *ret, int *mvc, str *s, str *t, str *c, bat *block, bat *fields)
+COPYparse_append(int *ret, int *mvc, str *s, str *t, str *c, oid *position, bat *positions, bat *block, bat *fields)
 {
 	str msg = MAL_SUCCEED;
 
@@ -101,6 +101,8 @@ COPYparse_append(int *ret, int *mvc, str *s, str *t, str *c, bat *block, bat *fi
 	(void)s;
 	(void)t;
 	(void)c;
+	(void)position;
+	(void)positions;
 	(void)block;
 	(void)fields;
 
@@ -128,9 +130,9 @@ static mel_func copy_init_funcs[] = {
  )),
 
  command("copy", "parse_append", COPYparse_append, true, "parse the fields and append them to the column",
- args(1, 7,
+ args(1, 9,
 	arg("", int),
-	arg("mvc", int), arg("s", str), arg("t", str), arg("c", str), batarg("block", bte), batarg("fields", int)
+	arg("mvc", int), arg("s", str), arg("t", str), arg("c", str), arg ("position", oid), batarg("positions", oid), batarg("block", bte), batarg("fields", int)
  )),
  { .imp=NULL }
 };

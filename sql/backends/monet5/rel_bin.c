@@ -4663,17 +4663,12 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		q = pushStr(mb, q, schema_name);
 		q = pushStr(mb, q, table_name);
 		q = pushStr(mb, q, column_name);
+		q = pushArgument(mb, q, var_position);
+		q = pushArgument(mb, q, var_positions);
 		q = pushArgument(mb, q, var_our_block);
 
 		q = pushArgument(mb, q, getArg(splitlines_instr, i++));
-
-		// COPYparse_append(int *mvc, str *s, str *t, str *c, bat *block, int *skip, bat *fields)
 	}
-
-
-	(void)var_position;
-	(void)var_positions;
-
 
 	q = newStmt(mb, "calc", "+");
 	setDestVar(q, var_total_row_count);
