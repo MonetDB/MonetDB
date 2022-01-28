@@ -71,3 +71,17 @@ CREATE VIEW v2(vc0, vc1, vc2) AS (WITH ctel0n0(ct0n0,ct0n1) AS (VALUES (4, 5)) S
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INT)
+
+query I nosort
+with x(x) as (select 4) select 2 > all(select 3 from t0 full outer join (values (x.x)) as y(y) on false) from x
+----
+0
+
+statement ok
+ROLLBACK

@@ -816,8 +816,10 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 {
 	sql_rel *r = rel->r;
 
+	assert(is_simple_project(r->op));
 	if (rel_is_ref(r)) {
-		sql_rel *nr = rel_project(sql->sa, rel_dup(r->l), exps_copy(sql, r->exps));
+		sql_rel *nr = rel_project(sql->sa, r->l ? rel_dup(r->l) : NULL, exps_copy(sql, r->exps));
+		nr->r = exps_copy(sql, r->r);
 		rel_destroy(r);
 		rel->r = r = nr;
 	}
