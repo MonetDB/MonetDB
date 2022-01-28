@@ -2077,7 +2077,12 @@ exps_rel_get_rel(sql_allocator *sa, list *exps )
 		if (exp_has_rel(e)) {
 			if (!(r = exp_rel_get_rel(sa, e)))
 				return NULL;
-			xp = xp ? rel_crossproduct(sa, xp, r, op_full) : r;
+			if (xp) {
+				xp = rel_crossproduct(sa, xp, r, op_full);
+				set_processed(xp);
+			} else {
+				xp = r;
+			}
 		}
 	}
 	return xp;
@@ -2125,7 +2130,12 @@ exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 			if (exps_have_rel_exp(e->r)) {
 				if (!(r = exps_rel_get_rel(sa, e->r)))
 					return NULL;
-				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+				if (xp) {
+					xp = rel_crossproduct(sa, xp, r, op_join);
+					set_processed(xp);
+				} else {
+					xp = r;
+				}
 			}
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if (exp_has_rel(e->l))
@@ -2133,7 +2143,12 @@ exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 			if (exps_have_rel_exp(e->r)) {
 				if (!(r = exps_rel_get_rel(sa, e->r)))
 					return NULL;
-				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+				if (xp) {
+					xp = rel_crossproduct(sa, xp, r, op_join);
+					set_processed(xp);
+				} else {
+					xp = r;
+				}
 			}
 		} else {
 			if (exp_has_rel(e->l))
@@ -2141,12 +2156,22 @@ exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 			if (exp_has_rel(e->r)) {
 				if (!(r = exp_rel_get_rel(sa, e->r)))
 					return NULL;
-				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+				if (xp) {
+					xp = rel_crossproduct(sa, xp, r, op_join);
+					set_processed(xp);
+				} else {
+					xp = r;
+				}
 			}
 			if (e->f && exp_has_rel(e->f)) {
 				if (!(r = exp_rel_get_rel(sa, e->f)))
 					return NULL;
-				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+				if (xp) {
+					xp = rel_crossproduct(sa, xp, r, op_join);
+					set_processed(xp);
+				} else {
+					xp = r;
+				}
 			}
 		}
 		return xp;

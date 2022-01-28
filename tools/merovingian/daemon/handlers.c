@@ -338,7 +338,7 @@ segvhandler(int sig) {
 	sigaction(SIGSEGV, &sa, NULL);
 
 	if (_mero_topdp != NULL) {
-		char errmsg[] = "\nSEGMENTATION FAULT OCCURRED\n"
+		const char errmsg[] = "\nSEGMENTATION FAULT OCCURRED\n"
 				"\nA fatal error has occurred which prevents monetdbd from operating."
 				"\nThis is likely a bug in monetdbd, please report it on https://github.com/MonetDB/MonetDB/issues/"
 				"\nand include the tail of this log in your bugreport with your explanation of "

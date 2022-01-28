@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 SET SCHEMA "skyserver"
 
 statement ok
@@ -237,3 +240,5 @@ COPY 1000 RECORDS INTO FileGroupMap FROM '$QTSTSRCDIR/../microsky/FileGroupMap.d
 statement ok
 COPY 1000 RECORDS INTO Chunk FROM '$QTSTSRCDIR/../microsky/Chunk.dat.bz2' USING DELIMITERS E'\t', E'\n', '"'
 
+statement ok
+COMMIT
