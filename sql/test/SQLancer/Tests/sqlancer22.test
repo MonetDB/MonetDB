@@ -141,4 +141,28 @@ as count FROM vx JOIN (VALUES (1)) AS x(x) ON TRUE) as res
 1
 
 statement ok
+create or replace view vx(x) AS (VALUES (184),(33),(3600))
+
+statement ok
+create or replace view vy(y) AS (VALUES (FALSE),(FALSE))
+
+query I nosort
+SELECT 1 FROM vy WHERE NOT EXISTS (SELECT 1 FROM vx WHERE vy.y)
+----
+1
+1
+
+query I nosort
+SELECT vy.y FROM vy WHERE CAST(NOT EXISTS (SELECT 1 FROM vx WHERE vy.y) AS BOOLEAN)
+----
+0
+0
+
+# this one is right
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(CAST(NOT EXISTS (SELECT 1 FROM vx WHERE vy.y) AS BOOLEAN) AS INT) as count FROM vy) as res
+----
+2
+
+statement ok
 ROLLBACK
