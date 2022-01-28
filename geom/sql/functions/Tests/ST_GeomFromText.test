@@ -298,8 +298,8 @@ insert into points_tbl values (st_geomfromtext('linestring(10 10, 20 20, 30 40)'
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT (10 10, 20 20)
-MULTIPOINT (30 30, 40 40)
+MULTIPOINT (20 20, 10 10)
+MULTIPOINT (40 40, 30 30)
 
 statement ok
 drop table points_tbl
@@ -322,7 +322,7 @@ insert into points_tbl values (st_geomfromtext('linestring(10 10, 20 20, 30 40)'
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT (20 20, 30 30)
+MULTIPOINT (30 30, 20 20)
 
 statement ok
 drop table points_tbl
@@ -345,8 +345,8 @@ insert into points_tbl values (st_geomfromtext('linestring(10 10 10, 20 20 20, 3
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT Z (10 10 10, 20 20 20)
-MULTIPOINT Z (30 30 30, 40 40 40)
+MULTIPOINT Z (20 20 20, 10 10 10)
+MULTIPOINT Z (40 40 40, 30 30 30)
 
 statement ok
 drop table points_tbl
@@ -369,7 +369,7 @@ insert into points_tbl values (st_geomfromtext('linestring(10 10 10, 20 20 20, 3
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT Z (20 20 20, 30 30 30)
+MULTIPOINT Z (30 30 30, 20 20 20)
 
 statement ok
 drop table points_tbl
@@ -392,8 +392,8 @@ insert into lines_tbl values (st_geomfromtext('point(0 0)'))
 query T rowsort
 select * from lines_tbl
 ----
-MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))
-MULTILINESTRING ((30 30, 40 40, 50 50), (60 60, 70 70, 80 80))
+MULTILINESTRING ((40 40, 50 50, 60 60), (10 10, 20 20, 30 30))
+MULTILINESTRING ((60 60, 70 70, 80 80), (30 30, 40 40, 50 50))
 
 statement ok
 drop table lines_tbl
@@ -416,7 +416,7 @@ insert into lines_tbl values (st_geomfromtext('point(0 0)', 4326))
 query T rowsort
 select * from lines_tbl
 ----
-MULTILINESTRING ((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))
+MULTILINESTRING ((50 50, 60 60, 70 70), (20 20, 30 30, 40 40))
 
 statement ok
 drop table lines_tbl
@@ -439,8 +439,8 @@ insert into lines_tbl values (st_geomfromtext('point(0 0)'))
 query T rowsort
 select * from lines_tbl
 ----
-MULTILINESTRING Z ((10 10 10, 20 20 20, 30 30 30), (40 40 40, 50 50 50, 60 60 60))
-MULTILINESTRING Z ((30 30 30, 40 40 40, 50 50 50), (60 60 60, 70 70 70, 80 80 80))
+MULTILINESTRING Z ((40 40 40, 50 50 50, 60 60 60), (10 10 10, 20 20 20, 30 30 30))
+MULTILINESTRING Z ((60 60 60, 70 70 70, 80 80 80), (30 30 30, 40 40 40, 50 50 50))
 
 statement ok
 drop table lines_tbl
@@ -463,7 +463,7 @@ insert into lines_tbl values (st_geomfromtext('point(0 0)', 4326))
 query T rowsort
 select * from lines_tbl
 ----
-MULTILINESTRING Z ((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))
+MULTILINESTRING Z ((50 50 50, 60 60 60, 70 70 70), (20 20 20, 30 30 30, 40 40 40))
 
 statement ok
 drop table lines_tbl
@@ -486,8 +486,8 @@ insert into polygons_tbl values (st_geomfromtext('linestring(10 10, 20 20, 30 40
 query T rowsort
 select * from polygons_tbl
 ----
-MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))
-MULTIPOLYGON (((30 30, 40 40, 50 50, 30 30), (300 300, 400 400, 500 500, 300 300)))
+MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 300 300, 200 200, 100 100)))
+MULTIPOLYGON (((30 30, 40 40, 50 50, 30 30), (300 300, 500 500, 400 400, 300 300)))
 
 statement ok
 drop table polygons_tbl
@@ -510,7 +510,7 @@ insert into polygons_tbl values (st_geomfromtext('linestring(10 10, 20 20, 30 40
 query T rowsort
 select * from polygons_tbl
 ----
-MULTIPOLYGON (((20 20, 30 30, 40 40, 20 20), (200 200, 300 300, 400 400, 200 200)))
+MULTIPOLYGON (((20 20, 30 30, 40 40, 20 20), (200 200, 400 400, 300 300, 200 200)))
 
 statement ok
 drop table polygons_tbl
@@ -533,8 +533,8 @@ insert into polygons_tbl values (st_geomfromtext('linestring(10 10, 20 20, 30 40
 query T rowsort
 select * from polygons_tbl
 ----
-MULTIPOLYGON Z (((10 10 10, 20 20 20, 30 30 30, 10 10 10), (100 100 100, 200 200 200, 300 300 300, 100 100 100)))
-MULTIPOLYGON Z (((30 30 30, 40 40 40, 50 50 50, 30 30 30), (300 300 300, 400 400 400, 500 500 500, 300 300 300)))
+MULTIPOLYGON Z (((10 10 10, 20 20 20, 30 30 30, 10 10 10), (100 100 100, 300 300 300, 200 200 200, 100 100 100)))
+MULTIPOLYGON Z (((30 30 30, 40 40 40, 50 50 50, 30 30 30), (300 300 300, 500 500 500, 400 400 400, 300 300 300)))
 
 statement ok
 drop table polygons_tbl
@@ -557,7 +557,7 @@ insert into polygons_tbl values (st_geomfromtext('linestring(10 10, 20 20, 30 40
 query T rowsort
 select * from polygons_tbl
 ----
-MULTIPOLYGON Z (((20 20 20, 30 30 30, 40 40 40, 20 20 20), (200 200 200, 300 300 300, 400 400 400, 200 200 200)))
+MULTIPOLYGON Z (((20 20 20, 30 30 30, 40 40 40, 20 20 20), (200 200 200, 400 400 400, 300 300 300, 200 200 200)))
 
 statement ok
 drop table polygons_tbl
@@ -565,11 +565,11 @@ drop table polygons_tbl
 query T rowsort
 select st_geomfromtext(geom) from geometriesTxt
 ----
-GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))
+GEOMETRYCOLLECTION (POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)), LINESTRING (10 20, 30 40), POINT (10 20))
 LINESTRING (10 20, 30 40, 50 60)
-MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))
-MULTIPOINT (10 20, 30 40)
-MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))
+MULTILINESTRING ((20 30, 50 60, 40 50, 20 30), (30 40, 40 50, 30 40))
+MULTIPOINT (30 40, 10 20)
+MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 40 30, 40 40, 30 40, 30 30)))
 MULTIPOLYGON EMPTY
 POINT (10 20)
 POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))

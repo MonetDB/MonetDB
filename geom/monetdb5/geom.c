@@ -5087,6 +5087,8 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 		GEOSWKTWriter *WKT_wr = GEOSWKTWriter_create();
 		//set the number of dimensions in the writer so that it can
 		//read correctly the geometry coordinates
+		if (GDKdebug & FORCEMITOMASK && GEOSNormalize(geosGeometry) != 0)
+			fprintf(stderr, "GEOSNormalize failed\n");
 		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
 		GEOSWKTWriter_setTrim(WKT_wr, 1);
 		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
