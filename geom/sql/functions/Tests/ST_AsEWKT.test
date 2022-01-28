@@ -61,47 +61,47 @@ SRID:0;POLYGON Z ((10 10 10, 20 20 20, 30 30 30, 10 10 10))
 query T rowsort
 select st_asEWKT(st_mpointfromtext('multipoint(10 10, 20 20)'))
 ----
-SRID:0;MULTIPOINT (20 20, 10 10)
+SRID:0;MULTIPOINT (10 10, 20 20)
 
 query T rowsort
 select st_asEWKT(st_mpointfromtext('multipoint(20 20, 30 30)', 4326))
 ----
-SRID:4326;MULTIPOINT (30 30, 20 20)
+SRID:4326;MULTIPOINT (20 20, 30 30)
 
 query T rowsort
 select st_asEWKT(st_mpointfromtext('multipoint(20 20 20, 30 30 30)', 4326))
 ----
-SRID:4326;MULTIPOINT Z (30 30 30, 20 20 20)
+SRID:4326;MULTIPOINT Z (20 20 20, 30 30 30)
 
 query T rowsort
 select st_asEWKT(st_mlinefromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'))
 ----
-SRID:0;MULTILINESTRING ((40 40, 50 50, 60 60), (10 10, 20 20, 30 30))
+SRID:0;MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))
 
 query T rowsort
 select st_asEWKT(st_mlinefromtext('multilinestring((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))', 4326))
 ----
-SRID:4326;MULTILINESTRING ((50 50, 60 60, 70 70), (20 20, 30 30, 40 40))
+SRID:4326;MULTILINESTRING ((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))
 
 query T rowsort
 select st_asEWKT(st_mlinefromtext('multilinestring((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))', 4326))
 ----
-SRID:4326;MULTILINESTRING Z ((50 50 50, 60 60 60, 70 70 70), (20 20 20, 30 30 30, 40 40 40))
+SRID:4326;MULTILINESTRING Z ((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))
 
 query T rowsort
 select st_asEWKT(st_mpolyfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'))
 ----
-SRID:0;MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 300 300, 200 200, 100 100)))
+SRID:0;MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))
 
 query T rowsort
 select st_asEWKT(st_mpolyfromtext('multipolygon(((20 20, 30 30, 40 40, 20 20),(200 200, 300 300, 400 400, 200 200)))', 4326))
 ----
-SRID:4326;MULTIPOLYGON (((20 20, 30 30, 40 40, 20 20), (200 200, 400 400, 300 300, 200 200)))
+SRID:4326;MULTIPOLYGON (((20 20, 30 30, 40 40, 20 20), (200 200, 300 300, 400 400, 200 200)))
 
 query T rowsort
 select st_asEWKT(st_mpolyfromtext('multipolygon(((10 10 10, 20 20 20, 30 30 30, 10 10 10),(100 100 100, 200 200 200, 300 300 300, 100 100 100)))'))
 ----
-SRID:0;MULTIPOLYGON Z (((10 10 10, 20 20 20, 30 30 30, 10 10 10), (100 100 100, 300 300 300, 200 200 200, 100 100 100)))
+SRID:0;MULTIPOLYGON Z (((10 10 10, 20 20 20, 30 30 30, 10 10 10), (100 100 100, 200 200 200, 300 300 300, 100 100 100)))
 
 query T rowsort
 select st_asEWKT(st_geomfromtext('point(10 10)'))
@@ -121,17 +121,17 @@ SRID:0;POLYGON ((10 10, 20 20, 30 30, 10 10))
 query T rowsort
 select st_asEWKT(st_geomfromtext('multipoint(10 10, 20 20)'))
 ----
-SRID:0;MULTIPOINT (20 20, 10 10)
+SRID:0;MULTIPOINT (10 10, 20 20)
 
 query T rowsort
 select st_asEWKT(st_geomfromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'))
 ----
-SRID:0;MULTILINESTRING ((40 40, 50 50, 60 60), (10 10, 20 20, 30 30))
+SRID:0;MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))
 
 query T rowsort
 select st_asEWKT(st_geomfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'))
 ----
-SRID:0;MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 300 300, 200 200, 100 100)))
+SRID:0;MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))
 
 statement ok
 create table points_tbl(g geometry(point))

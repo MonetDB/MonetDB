@@ -16,8 +16,8 @@ insert into lines_tbl values (st_mlinefromtext('point(0 0)'))
 query T rowsort
 select * from lines_tbl
 ----
-MULTILINESTRING ((40 40, 50 50, 60 60), (10 10, 20 20, 30 30))
-MULTILINESTRING ((60 60, 70 70, 80 80), (30 30, 40 40, 50 50))
+MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))
+MULTILINESTRING ((30 30, 40 40, 50 50), (60 60, 70 70, 80 80))
 
 statement ok
 drop table lines_tbl
@@ -40,7 +40,7 @@ insert into lines_tbl values (st_mlinefromtext('point(0 0)', 4326))
 query T rowsort
 select * from lines_tbl
 ----
-MULTILINESTRING ((50 50, 60 60, 70 70), (20 20, 30 30, 40 40))
+MULTILINESTRING ((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))
 
 statement ok
 drop table lines_tbl
@@ -63,8 +63,8 @@ insert into lines_tbl values (st_mlinefromtext('point(0 0)'))
 query T rowsort
 select * from lines_tbl
 ----
-MULTILINESTRING Z ((40 40 40, 50 50 50, 60 60 60), (10 10 10, 20 20 20, 30 30 30))
-MULTILINESTRING Z ((60 60 60, 70 70 70, 80 80 80), (30 30 30, 40 40 40, 50 50 50))
+MULTILINESTRING Z ((10 10 10, 20 20 20, 30 30 30), (40 40 40, 50 50 50, 60 60 60))
+MULTILINESTRING Z ((30 30 30, 40 40 40, 50 50 50), (60 60 60, 70 70 70, 80 80 80))
 
 statement ok
 drop table lines_tbl
@@ -87,7 +87,7 @@ insert into lines_tbl values (st_mlinefromtext('point(0 0)', 4326))
 query T rowsort
 select * from lines_tbl
 ----
-MULTILINESTRING Z ((50 50 50, 60 60 60, 70 70 70), (20 20 20, 30 30 30, 40 40 40))
+MULTILINESTRING Z ((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))
 
 statement ok
 drop table lines_tbl
@@ -107,7 +107,7 @@ select st_mlinefromtext(geom) from geometriesTxt WHERE id=4
 query T rowsort
 select st_mlinefromtext(geom) from geometriesTxt WHERE id=5
 ----
-MULTILINESTRING ((20 30, 50 60, 40 50, 20 30), (30 40, 40 50, 30 40))
+MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))
 
 statement error
 select st_mlinefromtext(geom) from geometriesTxt WHERE id=6
