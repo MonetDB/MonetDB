@@ -23,7 +23,7 @@ find_func( mvc *sql, char *name, list *exps )
 }
 
 static sql_exp *
-rel_find_aggr_exp(sql_allocator *sa, sql_rel *rel, list *exps, sql_exp *e, char *name)
+rel_find_aggr_exp(mvc *sql, sql_rel *rel, list *exps, sql_exp *e, char *name)
 {
  	list *ea = e->l;
 	sql_exp *a = NULL, *eae;
@@ -54,12 +54,61 @@ rel_find_aggr_exp(sql_allocator *sa, sql_rel *rel, list *exps, sql_exp *e, char 
 				    strcmp(aae->l, eae->l) == 0)) &&
 				    (aae->r && eae->r &&
 				    strcmp(aae->r, eae->r) == 0))
-					return exp_column(sa, exp_relname(a), exp_name(a), exp_subtype(a), a->card, has_nil(a), is_unique(a), is_intern(a));
+					return exp_ref(sql, a);
 			}
 		}
 	}
 	return NULL;
 }
+
+static sql_exp *
+find_aggr_exp(mvc *sql, list *exps, char *name)
+{
+        node *n;
+
+        for( n = exps->h; n; n = n->next) {
+                sql_exp *a = n->data;
+
+                if (a->type == e_aggr) {
+                        sql_subfunc *af = a->f;
+
+                        if (strcmp(af->func->base.name, name) == 0)
+                                return exp_ref(sql, a);
+                }
+        }
+        return NULL;
+}
+
+static sql_rel *
+rel_count_gt_zero(visitor *v, sql_rel *rel)
+{
+	mvc *sql = v->sql;
+	if (is_groupby(rel->op)) {
+		list *exps, *gbe;
+		sql_exp *e = NULL;
+
+		gbe = rel->r;
+		if (!gbe || list_empty(gbe))
+			return rel;
+		/* introduce select * from l where cnt > 0 */
+		/* find count */
+		exps = rel_projections(sql, rel, NULL, 1, 1);
+		e = find_aggr_exp(sql, rel->exps, "count");
+		if (!e) {
+			sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", NULL, F_AGGR);
+
+			e = exp_aggr(sql->sa, NULL, cf, 0, 0, CARD_AGGR, 0);
+			exp_label(sql->sa, e, ++sql->label);
+			append(rel->exps, e);
+			e = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
+		}
+		e = exp_compare(sql->sa, e, exp_atom_lng(sql->sa, 0), cmp_notequal);
+		rel = rel_select(sql->sa, rel, e);
+		rel = rel_project(sql->sa, rel, exps);
+	}
+	return rel;
+}
+
 
 /* TODO for count we need remove useless 'converts' etc */
 /* rewrite avg into sum/count */
@@ -99,8 +148,8 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 		for (m = avgs->h; m; m = m->next) {
 			list *args;
 			sql_exp *avg = m->data, *navg, *cond, *cnt_d;
-			sql_exp *cnt = rel_find_aggr_exp(sql->sa, rel, nexps, avg, "count");
-			sql_exp *sum = rel_find_aggr_exp(sql->sa, rel, nexps, avg, "sum");
+			sql_exp *cnt = rel_find_aggr_exp(sql, rel, nexps, avg, "count");
+			sql_exp *sum = rel_find_aggr_exp(sql, rel, nexps, avg, "sum");
 			sql_subfunc *div, *ifthen, *cmp;
 			sql_subtype *dbl_t;
 			const char *rname = NULL, *name = NULL;
@@ -214,6 +263,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
+	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero);
 	rel = rel_visitor_topdown(&v, rel, &rel_avg_rewrite);
 	return rel;
 }
