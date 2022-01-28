@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 CREATE FUNCTION fSkyVersion(ObjID bigint)
 RETURNS INT
 BEGIN
@@ -1945,3 +1948,5 @@ BEGIN
 	RETURN 	 link || runn || '/' || rerunn || '/objcs/'||camcoll||'/fpM-'||run6||'-'||filter||camcoll||'-'||fieldd||'.fit.gz';
 END
 
+statement ok
+COMMIT

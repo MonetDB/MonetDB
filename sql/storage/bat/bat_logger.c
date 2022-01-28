@@ -198,7 +198,7 @@ tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 }
 #endif
 
-struct table {
+const struct table {
 	const char *schema;
 	const char *table;
 	const char *column;
@@ -1364,7 +1364,7 @@ struct table {
 };
 
 /* more system tables with schema/table/column ids that need to be remapped */
-struct mapids {
+const struct mapids {
 	// const char *schema;			/* always "sys" */
 	const char *table;
 	const char *column;

@@ -4053,6 +4053,20 @@ sql_trans_commit(sql_trans *tr)
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
+static sql_table *
+find_table_by_columnid(sql_trans *tr, const char *schema, sqlid id)
+{
+	sqlstore *store = tr->store;
+	sql_table *syscolumn = find_sql_table(tr, find_sql_schema(tr, schema), "_columns");
+
+	oid rid = store->table_api.column_find_row(tr, find_sql_column(syscolumn, "id"), &id, NULL);
+	if (!is_oid_nil(rid)) {
+		sqlid tid = store->table_api.column_find_sqlid(tr, find_sql_column(syscolumn, "table_id"), rid);
+		return sql_trans_find_table(tr, tid);
+	}
+	return NULL;
+}
+
 static int
 sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 {
@@ -4086,7 +4100,9 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 				case COLUMN_DEPENDENCY: {
 					if ((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
 						sql_table *t = sql_trans_find_table(tr, dep_id);
-						if (t)
+						if (t && ol_length(t->columns) == 1) /* only column left, drop the table instead */
+							res = sql_trans_drop_table_id(tr, t->s, t->base.id, DROP_CASCADE);
+						else if (t)
 							res = sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
 					}
 					} break;
@@ -4109,11 +4125,24 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 				case PROC_DEPENDENCY:
 				case FUNC_DEPENDENCY: {
 					sql_func *f = sql_trans_find_func(tr, dep_id);
-					res = sql_trans_drop_func(tr, f->s, dep_id, DROP_CASCADE);
+					if (f)
+						res = sql_trans_drop_func(tr, f->s, dep_id, DROP_CASCADE);
 					} break;
 				case TYPE_DEPENDENCY: {
-					sql_type *t = sql_trans_find_type(tr, NULL, dep_id);
-					res = sql_trans_drop_type(tr, t->s, dep_id, DROP_CASCADE);
+					/* Unlike other dependencies, for type dependencies,
+					   the dependent object depends on the type, rather the other way around.
+					   At this moment, only functions or columns depend on types, so try both */
+					sql_table *t = NULL;
+					sql_func *f = sql_trans_find_func(tr, dep_id);
+					if (f) {
+						res = sql_trans_drop_func(tr, f->s, dep_id, DROP_CASCADE);
+					} else if ((t = find_table_by_columnid(tr, "sys", dep_id)) ||
+							   (t = find_table_by_columnid(tr, "tmp", dep_id))) {
+						if (ol_length(t->columns) == 1) /* only column left, drop the table instead */
+							res = sql_trans_drop_table_id(tr, t->s, t->base.id, DROP_CASCADE);
+						else
+							res = sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
+					}
 					} break;
 				case USER_DEPENDENCY:  /*TODO schema and users dependencies*/
 					break;
@@ -4431,7 +4460,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 
 	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, col->base.id, COLUMN_DEPENDENCY)))
 		return res;
-	if (col->type.type->s && (res = sql_trans_drop_dependency(tr, col->base.id, col->type.type->base.id, TYPE_DEPENDENCY)))
+	if (col->type.type->s && (res = sql_trans_drop_dependency(tr, col->type.type->base.id, col->base.id, TYPE_DEPENDENCY)))
 		return res;
 	return res;
 }
@@ -4695,6 +4724,22 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 
 	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY)))
 		return res;
+	if (!func->vararg && func->ops) {
+		for (node *n = func->ops->h; n; n = n->next) {
+			sql_arg *a = n->data;
+
+			if (a->type.type->s && (res = sql_trans_drop_dependency(tr, a->type.type->base.id, func->base.id, TYPE_DEPENDENCY)))
+				return res;
+		}
+	}
+	if (!func->varres && func->res) {
+		for (node *n = func->res->h; n; n = n->next) {
+			sql_arg *a = n->data;
+
+			if (a->type.type->s && (res = sql_trans_drop_dependency(tr, a->type.type->base.id, func->base.id, TYPE_DEPENDENCY)))
+				return res;
+		}
+	}
 	return res;
 }
 
