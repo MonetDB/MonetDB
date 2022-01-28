@@ -11,7 +11,7 @@
 #include "streams.h"
 #include "mal.h"
 #include "mal_errors.h"
-// #include "mal_client.h"
+#include "mal_client.h"
 // #include "mal_instruction.h"
 #include "mal_exception.h"
 // #include "mal_interpreter.h"
@@ -57,12 +57,80 @@ end:
 }
 
 
+static str
+COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left_skip_amount, bat *right_block, str *linesep_arg, str *quote_arg)
+{
+	str msg = MAL_SUCCEED;
+
+	(void)ret_linecount;
+	(void)ret_bytesmoved;
+	(void)left_block;
+	(void)left_skip_amount;
+	(void)right_block;
+	(void)linesep_arg;
+	(void)quote_arg;
+
+	bailout("copy.fixlines", "banana");
+end:
+	return msg;
+}
+
+
+static str
+COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg = MAL_SUCCEED;
+
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
+
+	bailout("copy.splitlines", "banana");
+end:
+	return msg;
+}
+
+static str
+COPYparse_append(int *ret, int *mvc, str *s, str *t, str *c, bat *block, bat *fields)
+{
+	str msg = MAL_SUCCEED;
+
+	(void)ret;
+	(void)mvc;
+	(void)s;
+	(void)t;
+	(void)c;
+	(void)block;
+	(void)fields;
+
+	bailout("copy.parse_append", "banana");
+end:
+	return msg;
+}
+
+
 #include "mel.h"
 static mel_func copy_init_funcs[] = {
  command("copy", "read", COPYread, true, "Clear the BAT and read 'block_size' bytes into it from 's'",
 	args(1, 4,
 		arg("",lng),
-		arg("stream", streams), arg("block_size", lng), batarg("block", bte)
+		arg("stream", streams), arg("block_size", int), batarg("block", bte)
+ )),
+ command("copy", "fixlines", COPYfixlines, true, "Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied",
+	args(2, 7,
+	arg("linecount", lng), arg("bytesmoved", int),
+	batarg("left",bte), arg("left_skip", int), batarg("right", bte), arg("linesep", str), arg("quote", str),
+ )),
+ pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1,8,
+	batvararg("", int),
+	batarg("block", bte), arg("skip", int), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), arg("escape", bit)
+ )),
+
+ command("copy", "parse_append", COPYparse_append, true, "parse the fields and append them to the column",
+ args(1, 7,
+	arg("", int),
+	arg("mvc", int), arg("s", str), arg("t", str), arg("c", str), batarg("block", bte), batarg("fields", int)
  )),
  { .imp=NULL }
 };
@@ -71,5 +139,7 @@ static mel_func copy_init_funcs[] = {
 #undef read
 #pragma section(".CRT$XCU",read)
 #endif
-LIB_STARTUP_FUNC(init_json_mal)
-{ mal_module("copy", NULL, copy_init_funcs); }
+LIB_STARTUP_FUNC(init_copy_mal)
+{
+	mal_module("copy", NULL, copy_init_funcs);
+}

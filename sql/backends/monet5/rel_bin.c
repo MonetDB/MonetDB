@@ -4439,6 +4439,39 @@ can_use_directappend(sql_rel *rel)
 	return copy_from;
 }
 
+static int
+extract_parameter(backend *be, list *stmts, sql_exp *copyfrom, int argno)
+{
+	list *args = copyfrom->l;
+	node *n = args->h;
+	for (int i = 0; i < argno; i++)
+		n = n->next;
+	sql_exp *exp = n->data;
+	stmt *st = exp_bin(be, exp, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+	list_append(stmts, st);
+	return st->nr;
+}
+
+static int
+emit_receive(MalBlkPtr mb, int var_channel, int tpe)
+{
+	InstrPtr q = newAssignment(mb);
+	q = pushReturn(mb, q, var_channel);
+	q = pushArgument(mb, q, var_channel);
+	q = pushNil(mb, q, tpe);
+	return getDestVar(q);
+}
+
+static void
+emit_send(MalBlkPtr mb, int var_channel, int tpe, int var_msg)
+{
+	InstrPtr q = newAssignment(mb);
+	setReturnArgument(q, var_channel);
+	q = pushReturn(mb, q, var_msg);
+	q = pushArgument(mb, q, var_msg);
+	q = pushNil(mb, q, tpe);
+}
+
 static stmt *
 rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
@@ -4447,67 +4480,220 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	InstrPtr q;
 	MalBlkPtr mb = be->mb;
-	// mvc *mvc = be->mvc;
-	// sql_allocator *sa = mvc->sa;
-
-	// Extract arguments
-	list *copyfrom_args = copyfrom->l;
-	node *fname_node = copyfrom_args->h->next->next->next->next->next;
-	sql_exp *fname_exp = fname_node->data;
-	atom *fname_atom = fname_exp->l;
-	const char *fname = fname_atom->data.val.sval;
+	mvc *mvc = be->mvc;
+	sql_allocator *sa = mvc->sa;
+	list *intermediate_stmts = sa_list(sa);
 
 	int streams_type = ATOMindex("streams");
+	int bte_bat_type = newBatType(TYPE_bte);
+	int int_bat_type = newBatType(TYPE_int);
 
-	q = newStmtArgs(mb, "streams", "openRead", 1);
-	setDestType(mb, q, streams_type);
-	q = pushStr(mb, q, fname);
-	int var_s = getDestVar(q);
+	// Extract table name
+	list *copyfrom_args = copyfrom->l;
+	node *n = copyfrom_args->h;
+	sql_exp *first_arg_exp = n->data;
+	if (first_arg_exp->type != e_atom)
+		return NULL;
+	atom *first_arg_atom = first_arg_exp->l;
+	sql_table *table = first_arg_atom->data.val.pval;
+	const char *table_name = table->base.name;
+	const char *schema_name = table->s->base.name;
+	int column_count = ol_length(table->columns);
 
-	q = newStmtArgs(mb, "bat", "new", 3);
-	setDestType(mb, q, newBatType(TYPE_bte));
+	// Extract other arguments
+	int var_col_sep = extract_parameter(be, intermediate_stmts, copyfrom, 1);
+	int var_line_sep = extract_parameter(be, intermediate_stmts, copyfrom, 2);
+	int var_quote_char = extract_parameter(be, intermediate_stmts, copyfrom, 3);
+	int var_null_representation = extract_parameter(be, intermediate_stmts, copyfrom, 4);
+	int var_fname = extract_parameter(be, intermediate_stmts, copyfrom, 5);
+	int var_num_rows = extract_parameter(be, intermediate_stmts, copyfrom, 6);
+	int var_offset = extract_parameter(be, intermediate_stmts, copyfrom, 7);
+	int var_best_effort = extract_parameter(be, intermediate_stmts, copyfrom, 8);
+	int var_fixed_width = extract_parameter(be, intermediate_stmts, copyfrom, 9);
+	int var_on_client = extract_parameter(be, intermediate_stmts, copyfrom, 10);
+	int var_escape = extract_parameter(be, intermediate_stmts, copyfrom, 11);
+
+	// TODO: Deal with the following
+	(void)var_num_rows;
+	(void)var_offset;
+	(void)var_best_effort;
+	(void)var_on_client;
+	(void)var_fixed_width;
+
+	q = newAssignment(mb);
+	q = pushLng(mb, q, 0);
+	int var_total_row_count = getDestVar(q);
+
+	q = newStmt(mb, "streams", "openRead");
+	q = pushArgument(mb, q, var_fname);
+	int var_stream_channel = getDestVar(q);
+
+	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
 	q = pushLng(mb, q, 300);
 	q = pushBit(mb, q, false);
-	int var_block = getDestVar(q);
+	int var_block_channel = getDestVar(q);
 
-	q = newStmtArgs(mb, "copy", "read", 3);
-	setDestType(mb, q, TYPE_lng);
+	q = newAssignment(mb);
+	q = pushInt(mb, q, 0);
+	int var_skip_amounts_channel = getDestVar(q);
+
+	q = newAssignment(mb);
+	q = pushNil(mb, q, TYPE_bit);
+	int var_claim_channel = getDestVar(q);
+
+
+	// START LOOP
+	q = newAssignment(mb);
+	q->barrier = BARRIERsymbol;
+	q = pushBit(mb, q, true);
+	int var_loop_barrier = getDestVar(q);
+
+	int var_s = emit_receive(mb, var_stream_channel, streams_type);
+
+	q = newStmt(mb, "bat", "new");
+	q = pushNil(mb, q, TYPE_bte);
+	q = pushLng(mb, q, 300);
+	q = pushBit(mb, q, false);
+	int var_next_block = getDestVar(q);
+
+	// START READ BLOCK
+	q = newStmt(mb, "calc", "isnotnil");
+	q->barrier = BARRIERsymbol;
 	q = pushArgument(mb, q, var_s);
-	q = pushLng(mb, q, 200);
-	q = pushArgument(mb, q, var_block);
+	int var_read_barrier = getDestVar(q);
+
+	q = newStmt(mb, "copy", "read");
+	q = pushArgument(mb, q, var_s);
+	q = pushInt(mb, q, 200);
+	q = pushArgument(mb, q, var_next_block);
 	int var_nread = getDestVar(q);
 
+	q = newStmt(mb, "calc", ">");
+	q->barrier = LEAVEsymbol;
+	setReturnArgument(q, var_read_barrier);
+	q = pushArgument(mb, q, var_nread);
+	q = pushLng(mb, q, 0);
+
+	q = newStmt(mb, "streams", "close");
+	q = pushArgument(mb, q, var_s);
+
+	q = newAssignment(mb);
+	setReturnArgument(q, var_s);
+	q = pushNil(mb, q, streams_type);
+
+	// END READ BLOCK
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	getDestVar(q) = var_read_barrier;
+
+	emit_send(mb, var_stream_channel, streams_type, var_s);
+
+	int var_our_block = emit_receive(mb, var_block_channel, bte_bat_type);
+	int var_our_skip_amount = emit_receive(mb, var_skip_amounts_channel, TYPE_int);
+
+	q = newStmt(mb, "aggr", "count");
+	q = pushArgument(mb, q, var_our_block);
+	int var_our_count = getDestVar(q);
+
+	q = newStmt(mb, "aggr", "count");
+	q = pushArgument(mb, q, var_next_block);
+	int var_next_count = getDestVar(q);
+
+	q = newStmt(mb, "calc", "+");
+	q = pushArgument(mb, q, var_our_count);
+	q = pushArgument(mb, q, var_next_count);
+	int var_total_count = getDestVar(q);
+
+	q = newStmt(mb, "calc", "==");
+	q->barrier = LEAVEsymbol;
+	setReturnArgument(q, var_loop_barrier);
+	q = pushArgument(mb, q, var_total_count);
+	q = pushLng(mb, q, 0);
+
+	q = newStmt(mb, "copy", "fixlines");
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
+	q = pushArgument(mb, q, var_our_block);
+	q = pushArgument(mb, q, var_our_skip_amount);
+	q = pushArgument(mb, q, var_next_block);
+	q = pushArgument(mb, q, var_line_sep);
+	q = pushArgument(mb, q, var_quote_char);
+	int var_our_line_count = getArg(q, 0);
+	int var_next_skip_amount = getArg(q, 1);
+
+	emit_send(mb, var_block_channel, bte_bat_type, var_next_block);
+	emit_send(mb, var_skip_amounts_channel, TYPE_int, var_next_skip_amount);
+
+	int var_claim_token = emit_receive(mb, var_claim_channel, TYPE_bit);
+
+	q = newStmt(mb, "sql", "claim");
+	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid)));
+	q = pushArgument(mb, q, be->mvc_var);
+	q = pushStr(mb, q, schema_name);
+	q = pushStr(mb, q, table_name);
+	q = pushArgument(mb, q, var_our_line_count);
+	int var_position = getArg(q, 0);
+	int var_positions = getArg(q, 1);
+
+	emit_send(mb, var_claim_channel, TYPE_bit, var_claim_token);
+
+	assert(column_count > 0);
+	q = newStmt(mb, "copy", "splitlines");
+	setDestType(mb, q, int_bat_type);
+	for (int i = 1; i < column_count; i++) {
+		int v = newTmpVariable(mb, int_bat_type);
+		q = pushReturn(mb, q, v);
+	}
+	q = pushArgument(mb, q, var_our_block);
+	q = pushArgument(mb, q, var_our_skip_amount);
+	q = pushArgument(mb, q, var_col_sep);
+	q = pushArgument(mb, q, var_line_sep);
+	q = pushArgument(mb, q, var_quote_char);
+	q = pushArgument(mb, q, var_null_representation);
+	q = pushBit(mb, q, var_escape);
+	InstrPtr splitlines_instr = q;
+
+	int i = 0;
+	for (node *n = table->columns->l->h; n != NULL; n = n->next) {
+		sql_column *col = n->data;
+		const char *column_name = col->base.name;
+
+		q = newStmt(mb, "copy", "parse_append");
+		q = pushArgument(mb, q, be->mvc_var);
+		q = pushStr(mb, q, schema_name);
+		q = pushStr(mb, q, table_name);
+		q = pushStr(mb, q, column_name);
+		q = pushArgument(mb, q, var_our_block);
+
+		q = pushArgument(mb, q, getArg(splitlines_instr, i++));
+
+		// COPYparse_append(int *mvc, str *s, str *t, str *c, bat *block, int *skip, bat *fields)
+	}
 
 
+	(void)var_position;
+	(void)var_positions;
 
-	add_to_rowcount_accumulator(be, var_nread);
 
+	q = newStmt(mb, "calc", "+");
+	setDestVar(q, var_total_row_count);
+	q = pushArgument(mb, q, var_total_row_count);
+	q = pushArgument(mb, q, var_our_line_count);
+
+	// END LOOP
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	getDestVar(q) = var_loop_barrier;
+
+	add_to_rowcount_accumulator(be, var_total_row_count);
+	dump_code(-1);
+
+
+	// I'm assuming that attaching the stmt list to op4.lval
+	// will make some else free the arg_stmt's we created here.
 	stmt *dummy_stmt = stmt_none(be);
-	// dummy_stmt->nr = getDestVar(q);
-
+	dummy_stmt->op4.lval = intermediate_stmts;
 	return dummy_stmt;
-
-
-
-	// sql_subtype *str_type = sql_bind_localtype("str");
-	// sql_subtype *streams_type = sql_bind_localtype("streams");
-
-	// //  batarg("",oid),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
-
-	// // Emit the filename
-	// node *fname_node = copyfrom_args->h->next->next->next->next->next;
-	// sql_exp *fname_exp = fname_node->data;
-	// atom *fname_atom = fname_exp->l;
-	// const char *fname = fname_atom->data.val.sval;
-	// stmt *fname_stmt = stmt_atom_string(be, sa_strdup(sa, fname));
-
-	// // sql_subfunc *f = sql_bind_func(mvc, "streams", "openRead", str_type, NULL, F_FUNC);
-	// sql_subfunc *f = sql_bind_func_result(mvc, "streams", "openRead", F_FUNC, streams_type, 1, str_type);
-	// stmt *openRead_stmt = stmt_unop(be, fname_stmt, NULL, f);
-
-	// snprintf(be->mvc->errstr, sizeof(be->mvc->errstr), "banana");
-	// return openRead_stmt;
 }
 
 // Temporarily emit the MAL to call to sql.copy_from and aggr.count directly
