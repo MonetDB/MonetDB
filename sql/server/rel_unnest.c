@@ -819,6 +819,12 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 	assert(is_simple_project(r->op));
 	if (rel_is_ref(r)) {
 		sql_rel *nr = rel_project(sql->sa, r->l ? rel_dup(r->l) : NULL, exps_copy(sql, r->exps));
+
+		if (is_single(r))
+			set_single(nr);
+		if (need_distinct(r))
+			set_distinct(nr);
+		nr->p = prop_copy(sql->sa, r->p);
 		nr->r = exps_copy(sql, r->r);
 		rel_destroy(r);
 		rel->r = r = nr;
