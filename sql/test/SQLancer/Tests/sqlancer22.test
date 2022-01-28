@@ -100,4 +100,16 @@ SELECT c0 FROM t0
 NULL
 
 statement ok
+CREATE TABLE rt0 (c0 INT)
+
+statement ok
+CREATE TABLE rt2v2 (c0 UUID)
+
+statement ok rowcount 1
+INSERT INTO rt2v2 VALUES (uuid 'dbC4da54-8C0B-4b83-E74E-30342dA0a5fF')
+
+statement ok rowcount 0
+update rt2v2 set c0 = (select rt2v2.c0 from rt0 where false) from rt0 where cast(2 in (select null where true) as boolean)
+
+statement ok
 ROLLBACK
