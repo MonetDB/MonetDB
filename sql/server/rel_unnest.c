@@ -858,7 +858,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				if (cexps) {
 					sql_rel *p = l->l = rel_project( sql->sa, l->l,
 						rel_projections(sql, l->l, NULL, 1, 1));
-					p->exps = list_merge(p->exps, cexps, (fdup)NULL);
+					p->exps = list_distinct(list_merge(p->exps, cexps, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
 					if (list_empty(nexps)) {
 						rel->r = l; /* remove empty project */
 					} else {
