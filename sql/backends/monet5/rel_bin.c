@@ -4202,10 +4202,6 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 			stmt *s = i;
 			char *msg = NULL;
 
-			/* foreach column add predicate */
-			if (add_column_predicate(be, c) != LOG_OK)
-				return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
 				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
