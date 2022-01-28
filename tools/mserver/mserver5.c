@@ -306,7 +306,7 @@ main(int argc, char **av)
 	char *dbtrace = NULL;
 	bool inmemory = false;
 	bool readpwdxit = false;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbextra", required_argument, NULL, 0 },
 		{ "dbpath", required_argument, NULL, 0 },

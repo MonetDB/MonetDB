@@ -2124,6 +2124,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return NULL;
 			rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 			rel->exps = exps;
+			set_processed(rel);
 		}
 		break;
 	case 'l':
@@ -2180,6 +2181,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
+		set_processed(rel);
 		break;
 	case 'u':
 		if (j == op_basetable) {

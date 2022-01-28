@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE Algorithm(
 	key varchar(128)  NOT NULL,
 	name varchar(128)  NOT NULL,
@@ -4154,3 +4157,5 @@ CREATE TABLE spt_datatype_info(
         "AUTO_INCREMENT" varchar(100)
 )
 
+statement ok
+COMMIT

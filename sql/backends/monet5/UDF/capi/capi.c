@@ -377,7 +377,7 @@ static daytime time_from_data(cudf_data_time *ptr);
 static void data_from_timestamp(timestamp d, cudf_data_timestamp *ptr);
 static timestamp timestamp_from_data(cudf_data_timestamp *ptr);
 
-static char valid_path_characters[] = "abcdefghijklmnopqrstuvwxyz";
+static const char valid_path_characters[] = "abcdefghijklmnopqrstuvwxyz";
 
 static str
 empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase)

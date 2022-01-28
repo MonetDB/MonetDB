@@ -1,0 +1,114 @@
+[ 1	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	3,	1,	0,	0,	0 # length
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ 1	]
+[ 2	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	3,	1,	0,	0,	0 # length
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ 4	]
+[ 8	]
+% sys.test,	sys.test,	sys.test # table_name
+% c1,	c2,	c3 # name
+% int,	varchar,	int # type
+% 2,	3,	2 # length
+[ 1,	"asd",	1	]
+[ 1,	"aa",	2	]
+[ 1,	"10",	9	]
+[ 1,	"10",	9	]
+[ 4,	"cc",	3	]
+[ 4,	"cc",	3	]
+[ 4,	"cc",	3	]
+[ 4,	"cc",	3	]
+[ 11,	"12",	13	]
+[ 11,	"12",	13	]
+[ 11,	"12",	13	]
+[ 11,	"12",	13	]
+[ 11,	"12",	13	]
+[ 11,	"12",	13	]
+[ 11,	"12",	13	]
+[ 11,	"12",	13	]
+[ 1	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	3,	1,	0,	0,	0 # length
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ 1	]
+[ 2	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	3,	1,	0,	0,	0 # length
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ 4	]
+[ 8	]
+% sys.test2,	sys.test2,	sys.test2 # table_name
+% c1,	c2,	c3 # name
+% int,	varchar,	varchar # type
+% 2,	3,	3 # length
+[ 1,	"asd",	"asd"	]
+[ 1,	"bb",	"aa"	]
+[ 1,	"14",	"15"	]
+[ 1,	"14",	"15"	]
+[ 5,	"ee",	"dd"	]
+[ 5,	"ee",	"dd"	]
+[ 5,	"ee",	"dd"	]
+[ 5,	"ee",	"dd"	]
+[ 16,	"17",	"18"	]
+[ 16,	"17",	"18"	]
+[ 16,	"17",	"18"	]
+[ 16,	"17",	"18"	]
+[ 16,	"17",	"18"	]
+[ 16,	"17",	"18"	]
+[ 16,	"17",	"18"	]
+[ 16,	"17",	"18"	]
+[ 1	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	3,	1,	0,	0,	0 # length
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ 1	]
+[ 2	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	3,	1,	0,	0,	0 # length
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ 4	]
+[ 8	]
+% sys.test3,	sys.test3,	sys.test3 # table_name
+% c1,	c2,	c3 # name
+% int,	varchar,	int # type
+% 2,	3,	2 # length
+[ 1,	"asd",	1	]
+[ 1,	"ff",	6	]
+[ 1,	"19",	20	]
+[ 1,	"19",	20	]
+[ 7,	"gg",	8	]
+[ 7,	"gg",	8	]
+[ 7,	"gg",	8	]
+[ 7,	"gg",	8	]
+[ 21,	"22",	23	]
+[ 21,	"22",	23	]
+[ 21,	"22",	23	]
+[ 21,	"22",	23	]
+[ 21,	"22",	23	]
+[ 21,	"22",	23	]
+[ 21,	"22",	23	]
+[ 21,	"22",	23	]

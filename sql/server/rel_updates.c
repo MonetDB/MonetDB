@@ -219,6 +219,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	rel_base_use_tid(sql, rt);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
+	set_processed(nnlls);
 
 	if (need_nulls) {
 		rel_destroy(ins);
@@ -849,6 +850,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	rel_base_use_tid(sql, rt);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
+	set_processed(nnlls);
 
 	if (need_nulls) {
 		rel_destroy(ups);
@@ -1033,6 +1035,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				}
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 				set_dependent(r);
+				set_processed(r);
 				if (single) {
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_unique(v), is_intern(v));
 					rel_val = NULL;
@@ -1158,15 +1161,18 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 
 				if (!fnd)
 					return NULL;
-				if (fnd && tables)
+				if (fnd && tables) {
 					tables = rel_crossproduct(sql->sa, tables, fnd, op_join);
-				else
+					set_processed(tables);
+				} else {
 					tables = fnd;
+				}
 			}
 			if (!tables)
 				return NULL;
 			res = rel_crossproduct(sql->sa, res, tables, op_join);
 			set_single(res);
+			set_processed(res);
 		}
 		if (opt_where) {
 			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))

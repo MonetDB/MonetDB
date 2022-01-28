@@ -40,3 +40,7 @@ MAPI  = (monetdb) /var/tmp/mtest-185783/.s.monetdb.32587
 QUERY = PREPARE SELECT 1 FROM idontexist(?,16); --error, function doesn't exist
 ERROR = !SELECT: no such table returning function 'idontexist'(?, tinyint)
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-185783/.s.monetdb.32587
+QUERY = PREPARE WITH x(a) AS (SELECT ?) SELECT x.a FROM x; --error, cannot define type for the parameter
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000

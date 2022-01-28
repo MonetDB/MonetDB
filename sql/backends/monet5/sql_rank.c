@@ -1501,7 +1501,7 @@ SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe = getArgType(mb, pci, 1), frame_type;
+	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg");
 	bat *res = NULL;
@@ -1561,7 +1561,7 @@ bailout:
 str
 SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe = getArgType(mb, pci, 1), frame_type;
+	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, "sql.avg");
 	bat *res = NULL;
@@ -1606,7 +1606,7 @@ static str
 do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
 					   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int))
 {
-	int tpe = getArgType(mb, pci, 1), frame_type;
+	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, op);
 	bat *res = NULL;

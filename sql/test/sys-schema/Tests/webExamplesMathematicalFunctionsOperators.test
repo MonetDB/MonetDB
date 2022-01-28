@@ -17,7 +17,7 @@ query T nosort
 plan select 2 ^ 3 
 ----
 project (
-|  [ boolean(1) "true" ]
+|  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query R rowsort
@@ -29,7 +29,7 @@ query T nosort
 plan select 2.0 ^ 3.0 
 ----
 project (
-|  [ boolean(1) "true" ]
+|  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(decimal(2,1) "20", decimal(2,1) "30") NOT NULL ]
 
 statement error
@@ -71,7 +71,7 @@ query T nosort
 plan select 17 ^ 5 
 ----
 project (
-|  [ boolean(1) "true" ]
+|  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(5) "17", tinyint(3) "5") NOT NULL ]
 
 query I rowsort
@@ -83,7 +83,7 @@ query T nosort
 plan select 2 ^ 3 
 ----
 project (
-|  [ boolean(1) "true" ]
+|  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query I rowsort
@@ -95,7 +95,7 @@ query T nosort
 plan select ~1 
 ----
 project (
-|  [ boolean(1) "true" ]
+|  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_not"(tinyint(1) "1") NOT NULL ]
 
 query I rowsort
@@ -107,7 +107,7 @@ query T nosort
 plan select 1 << 4 
 ----
 project (
-|  [ boolean(1) "true" ]
+|  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."left_shift"(tinyint(8) "1", int(32) "4") NOT NULL ]
 
 query I rowsort
@@ -124,7 +124,7 @@ query T nosort
 plan select 8 >> 2 
 ----
 project (
-|  [ boolean(1) "true" ]
+|  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."right_shift"(tinyint(8) "8", int(32) "2") NOT NULL ]
 
 query I rowsort
@@ -332,7 +332,7 @@ query T nosort
 plan select CAST(RAND() as float) / 2147483648
 ----
 project (
-|  [ boolean(1) "true" ]
+|  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."sql_div"(double(53)["sys"."rand"()], double(53) "2147483648") ]
 
 query I rowsort

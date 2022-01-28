@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 ALTER TABLE Ap7Mag  DROP  CONSTRAINT fk_Ap7Mag_objID_PhotoObjAll_objI 
 
 statement ok
@@ -196,3 +199,5 @@ ALTER TABLE XCRedshift  DROP  CONSTRAINT fk_XCRedshift_specObjID_SpecObjA
 statement ok
 ALTER TABLE Zone  DROP  CONSTRAINT fk_Zone_objID_PhotoObjAll_objID 
 
+statement ok
+COMMIT

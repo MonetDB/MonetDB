@@ -45,7 +45,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
     with server_start() as srv:
         with SQLTestCase() as tc:
             tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
-            tc.execute("DROP SCHEMA \"voc2\";").assertFailed(err_message='DROP SCHEMA: unable to drop schema \'voc2\' (there are database objects which depend on it)')
+            tc.execute("DROP SCHEMA \"voc2\";").assertFailed(err_message='DROP SCHEMA: unable to drop schema \'voc2\' (there are database users using it as session\'s default schema)')
             tc.execute("""
             ALTER user "voc2" SET SCHEMA "sys";
             DROP SCHEMA "voc2";

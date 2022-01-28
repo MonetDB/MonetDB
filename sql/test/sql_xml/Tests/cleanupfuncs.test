@@ -1,0 +1,107 @@
+# Also testing dependencies on types
+
+statement error 42000!DROP TYPE: unable to drop type xml (there are database objects which depend on it)
+DROP TYPE xml
+
+statement ok
+DROP FUNCTION xml(STRING)
+
+statement ok
+DROP FUNCTION str(xml)
+
+statement ok
+DROP FUNCTION "comment"(STRING)
+
+statement ok
+CREATE TABLE x (x XML)
+
+statement ok
+CREATE TABLE y (x XML, y XML)
+
+statement ok
+CREATE TABLE z (x XML, y XML, z INT)
+
+statement ok
+CREATE INDEX z1 ON z(x)
+
+statement ok
+CREATE INDEX z2 ON z(x,y)
+
+statement ok
+CREATE INDEX z3 ON z(y,z)
+
+statement ok
+CREATE INDEX z4 ON z(z)
+
+statement ok rowcount 1
+INSERT INTO z VALUES (NULL, NULL, 1)
+
+query T nosort
+SELECT "sqlname" FROM "types" WHERE "sqlname" = 'xml'
+----
+xml
+
+query T nosort
+SELECT "name" FROM "sys"."tables" WHERE "name" IN ('x', 'y', 'z')
+----
+x
+y
+z
+
+query TTI nosort
+SELECT * FROM z
+----
+NULL
+NULL
+1
+
+query T nosort
+SELECT "name" FROM "sys"."idxs" WHERE "name" IN ('z1', 'z2', 'z3', 'z4')
+----
+z1
+z2
+z3
+z4
+
+-- quicker way to drop all functions which use xml datatype
+statement ok
+DROP TYPE xml CASCADE
+
+query T nosort
+SELECT "sqlname" FROM "types" WHERE "sqlname" = 'xml'
+----
+
+query T nosort
+SELECT "name" FROM "sys"."tables" WHERE "name" IN ('x', 'y', 'z')
+----
+z
+
+query I nosort
+SELECT * FROM z
+----
+1
+
+query T nosort
+SELECT "name" FROM "sys"."idxs" WHERE "name" IN ('z1', 'z2', 'z3', 'z4')
+----
+z4
+
+statement ok
+DROP INDEX z4
+
+statement ok
+DROP TABLE z
+
+-- these functions return xml so they depend on it and were removed by the drop cascade statement
+statement error 42000!DROP FUNCTION: no such function 'parse' (clob, clob, clob)
+DROP FUNCTION parse (STRING, STRING, STRING)
+
+statement error 42000!DROP FUNCTION: no such function 'pi' (clob, clob)
+DROP FUNCTION pi (STRING, STRING)
+
+statement error 42000!DROP FUNCTION: no such function 'attribute' (clob, clob)
+DROP FUNCTION attribute (STRING, STRING)
+
+statement error 42000!DROP FUNCTION: no such function 'isdocument' (clob)
+DROP FUNCTION isdocument (STRING)
+

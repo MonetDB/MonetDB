@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 CREATE VIEW SpecObj 
 ---------------------------------------------------------------
 --/H A view of Spectro objects that just has the clean spectra.
@@ -491,3 +494,5 @@ SELECT *
     FROM PhotoPrimary
     WHERE type not in (3,6,8)
 
+statement ok
+COMMIT

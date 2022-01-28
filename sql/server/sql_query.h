@@ -25,6 +25,8 @@ typedef struct stacked_query {
 typedef struct sql_query {
 	mvc *sql;
 	sql_stack *outer;
+	sql_exp *last_exp;
+	int last_state;
 } sql_query;
 
 extern sql_query *query_create(mvc *sql);

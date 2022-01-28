@@ -319,7 +319,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 		if (e)
 			return exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
 	}
-	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
+	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column(sql, rel->l, cname, f, no_tname);
 	} else if (is_set(rel->op)) {
@@ -407,7 +407,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (e)
 			return exp_alias_or_copy(sql, tname, cname, rel, e);
 	}
-	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
+	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	} else if (is_set(rel->op)) {
@@ -887,12 +887,12 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	return rel;
 }
 
-sql_rel*
-rel_project_exp(sql_allocator *sa, sql_exp *e)
+sql_rel *
+rel_project_exp(mvc *sql, sql_exp *e)
 {
-	sql_rel *rel = rel_project(sa, NULL, append(new_exp_list(sa), e));
-
-	return rel;
+	if (!exp_name(e))
+		exp_label(sql->sa, e, ++sql->label);
+	return rel_project(sql->sa, NULL, list_append(sa_list(sql->sa), e));
 }
 
 sql_rel *

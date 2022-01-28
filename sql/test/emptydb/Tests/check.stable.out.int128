@@ -7058,8 +7058,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %171,	%170,	id # name
 % char,	bigint,	int # type
 % 17,	1,	1 # length
-% .%105,	.%73,	.var_values # table_name
-% %105,	%73,	var_name # name
+% .%105,	.%104,	.var_values # table_name
+% %105,	%104,	var_name # name
 % char,	bigint,	char # type
 % 24,	1,	16 # length
 % .%2,	sys.%1,	sys.table_partitions # table_name
@@ -8210,8 +8210,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	default_schema,	name,	fullname,	default_schema,	schema_path # name
 % char,	int,	varchar,	varchar,	int,	clob # type
 % 28,	1,	0,	0,	1,	0 # length
-% .%73,	.var_values,	.var_values,	.var_values # table_name
-% %73,	var_name,	var_name,	value # name
+% .%104,	.var_values,	.var_values,	.var_values # table_name
+% %104,	var_name,	var_name,	value # name
 % char,	char,	char,	varchar # type
 % 27,	16,	16,	0 # length
 % .%124,	.var_values,	.var_values,	.var_values # table_name

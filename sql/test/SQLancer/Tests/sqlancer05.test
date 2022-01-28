@@ -184,7 +184,7 @@ SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0
 ----
 0
 
-statement error 42S22!SELECT: no such column 'v0.c0'
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.c0' in query results without an aggregate function
 SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0 ORDER BY v0.c0 ASC NULLS LAST, v0.c0 DESC NULLS FIRST, v0.c0 DESC NULLS LAST
 
 statement ok

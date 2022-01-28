@@ -921,6 +921,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 				list_remove_data(exps, NULL, e);
 			}
 		}
+		set_processed(top);
 		return top;
 	} else {
 		return mi->data;

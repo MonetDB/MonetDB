@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 DROP VIEW CoordType
 
 statement ok
@@ -151,3 +154,5 @@ DROP VIEW PhotoPrimary
 statement ok
 DROP VIEW PhotoTag
 
+statement ok
+COMMIT

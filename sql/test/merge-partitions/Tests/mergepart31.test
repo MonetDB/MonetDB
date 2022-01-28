@@ -154,7 +154,7 @@ plan select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2000-02-01 00:00:
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%1"."%1" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -224,7 +224,7 @@ plan select 1 from splitted where stamp < TIMESTAMP '2000-01-01 00:00:00'
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%1"."%1" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -251,7 +251,7 @@ plan select 1 from splitted where stamp is null and stamp < TIMESTAMP '2008-01-0
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%1"."%1" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -319,7 +319,7 @@ plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and st
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%1"."%1" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -428,7 +428,7 @@ plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%1"."%1" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -506,7 +506,7 @@ plan select 1 from splitted2 where stamp is null and stamp in (3,4,5)
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%2"."%2" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -515,7 +515,7 @@ plan select 1 from splitted2 where stamp is null and stamp in (5,6)
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%2"."%2" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -524,7 +524,7 @@ plan select 1 from splitted2 where stamp = 10
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%1"."%1" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -573,7 +573,7 @@ plan select 1 from splitted2 where stamp in (1,2,3)
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%2"."%2" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -582,7 +582,7 @@ plan select 1 from splitted2 where stamp in (8,9)
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%2"."%2" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -703,7 +703,7 @@ plan select 1 from table1 where a not between 10 and 11
 ----
 project (
 | select (
-| |  [ boolean(1) "true" ]
+| |  [ boolean(1) "true" as "%1"."%1" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 

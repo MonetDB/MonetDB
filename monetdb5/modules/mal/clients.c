@@ -502,7 +502,8 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.queryTimeout","Session not active anymore");
 	else {
-		lng timeout_micro = (lng) qto * 1000000;
+		/* when testing (FORCEMITOMASK), reduce timeout of 1 sec to 1 msec */
+		lng timeout_micro = GDKdebug & FORCEMITOMASK && qto == 1 ? 1000 : (lng) qto * 1000000;
 		mal_clients[idx].querytimeout = timeout_micro;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx->querytimeout = timeout_micro;

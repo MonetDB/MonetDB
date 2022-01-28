@@ -125,7 +125,7 @@ single left outer join (
 | | | | crossproduct (
 | | | | | project (
 | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b3"."id", "bidder"."increase" NOT NULL as "b3"."increase", "bidder"."%TID%" NOT NULL UNIQUE as "b3"."%TID%" ]
-| | | | | ) [ "b3"."id" NOT NULL UNIQUE HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL UNIQUE, "b3"."id" NOT NULL HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL, "b3"."increase" NOT NULL as "%2"."%2" ],
+| | | | | ) [ "b3"."id" NOT NULL UNIQUE HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL UNIQUE, "b3"."increase" NOT NULL as "%2"."%2" ],
 | | | | | group by (
 | | | | | | join (
 | | | | | | | group by (
@@ -152,7 +152,7 @@ project (
 | | | | | | | crossproduct (
 | | | | | | | | project (
 | | | | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b2"."id", "bidder"."increase" NOT NULL as "b2"."increase" ]
-| | | | | | | | ) [ "b2"."id" NOT NULL HASHCOL , "b2"."increase" NOT NULL as "%4"."%4" ],
+| | | | | | | | ) [ "b2"."id" NOT NULL UNIQUE HASHCOL , "b2"."increase" NOT NULL as "%4"."%4" ],
 | | | | | | | | group by (
 | | | | | | | | | join (
 | | | | | | | | | | single group by (

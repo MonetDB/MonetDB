@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 CREATE VIEW CoordType
 AS
 SELECT name,
@@ -489,3 +492,5 @@ SELECT *
     FROM PhotoTag g
     WHERE type = 3 and mode=1
 
+statement ok
+COMMIT

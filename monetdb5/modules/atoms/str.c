@@ -3225,12 +3225,11 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 	const Hash *h = from->thash;
 	const int *restrict fromb = (const int *restrict) from->theap->base;
 	const int *restrict tob = (const int *restrict) to->theap->base;
-	size_t nextlen = len + 1;
 
 	/* the from and to bats are not views */
 	assert(from->tbaseoff == 0);
 	assert(to->tbaseoff == 0);
-	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, malfunc);
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, len + 1, malfunc);
 	dst = *buf;
 	while (src < end) {
 		int c;
@@ -3263,7 +3262,16 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 			size_t off = dst - *buf;
 			size_t nextlen = (len += 4 + (end - src)) + 1;
 
-			CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, malfunc);
+			/* Don't use CHECK_STR_BUFFER_LENGTH here, because it
+			 * does GDKmalloc instead of GDKrealloc and data could be lost */
+			if (nextlen > *buflen) {
+				size_t newlen = ((nextlen + 1023) & ~1023); /* align to a multiple of 1024 bytes */
+				str newbuf = GDKrealloc(*buf, newlen);
+				if (!newbuf)
+					throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				*buf = newbuf;
+				*buflen = newlen;
+			}
 			dst = *buf + off;
 		}
 		UTF8_PUTCHAR(c, dst);
@@ -4718,7 +4726,7 @@ STRspace(str *res, const int *ll)
 	if (is_int_nil(l) || l < 0) {
 		*res = GDKstrdup(str_nil);
 	} else {
-		char space[] = " ", *s= space;
+		const char space[] = " ", *s= space;
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
 		*res = NULL;
