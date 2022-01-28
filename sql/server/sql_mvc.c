@@ -1076,7 +1076,7 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 {
 	TRC_DEBUG(SQL_TRANS, "Drop type: %s %s\n", s->base.name, t->base.name);
 	if (t)
-		return sql_trans_drop_type(m->session->tr, s, t->base.id, drop_action);
+		return sql_trans_drop_type(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 	return 0;
 }
 
