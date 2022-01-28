@@ -1,4 +1,4 @@
-statement error 2BM37!DROP SCHEMA: unable to drop schema 'voc' (there are database objects which depend on it)
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'voc' (there are database users using it as session's default schema)
 DROP SCHEMA voc
 
 statement error M1M05!DROP USER: 'voc' owns a schema
