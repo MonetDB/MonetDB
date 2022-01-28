@@ -4701,6 +4701,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	t->system = 0;
 
 	pos += snprintf(buf + pos, bufsize - pos,
+				"UPDATE sys.functions SET system = false WHERE schema_id = 2000 AND name in ('dump_database', 'describe_function');"
+				"UPDATE sys._tables SET system = false WHERE schema_id = 2000 AND name in ('describe_privileges', 'dump_comments', 'describe_comments', 'fully_qualified_functions');"
 				"DROP VIEW sys.describe_privileges;\n"
 				"DROP FUNCTION sys.dump_database(BOOLEAN);\n"
 				"DROP VIEW sys.dump_comments;\n"
@@ -4773,14 +4775,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 				"		p.privileges = pc.privilege_code_id AND\n"
 				"		p.auth_id = a.id AND\n"
 				"		p.grantor = g.id;\n"
-				"UPDATE sys._tables SET system = true WHERE\n"
-				"		system <> true AND\n"
-				"		schema_id = 2000 AND\n"
-				"		type = (SELECT table_type_id FROM sys.table_types WHERE table_type_name = 'SYSTEM VIEW') AND\n"
-				"		name in (\n"
-				"			'describe_privileges',\n"
-				"			'fully_qualified_functions'\n"
-				"		);\n"
 				"CREATE VIEW sys.describe_comments AS\n"
 				"	SELECT\n"
 				"		o.id id,\n"
@@ -4812,7 +4806,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 				"  TRUNCATE sys.dump_statements;\n"
 				"\n"
 				"  INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');\n"
-				"  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA \"	sys\"	;');\n"
+				"  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA \"sys\";');\n"
 				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;\n"
 				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;\n"
 				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;\n"
@@ -4854,14 +4848,19 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 				"\n"
 				"  RETURN sys.dump_statements;\n"
 				"END;\n"
-				"UPDATE sys.functions SET system = TRUE WHERE system <> true AND schema_id = 2000 AND name = 'describe_function';\n"
 				"GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;\n"
 				"GRANT SELECT ON sys.describe_comments TO PUBLIC;\n"
-				"GRANT SELECT ON sys.dump_comments TO PUBLIC;\n"
 				"GRANT SELECT ON sys.describe_privileges TO PUBLIC;\n"
-				"GRANT EXECUTE ON FUNCTION sys.describe_function(STRING, STRING) TO PUBLIC;\n"
+				"UPDATE sys._tables SET system = true WHERE\n"
+				"		schema_id = 2000 AND\n"
+				"		name in (\n"
+				"			'describe_privileges',\n"
+				"			'fully_qualified_functions',\n"
+				"			'describe_comments',\n"
+				"			'dump_comments'\n"
+				"		);\n"
+				"UPDATE sys.functions SET system = TRUE WHERE schema_id = 2000 AND name in ('describe_function', 'dump_database');\n"
 	);
-
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
