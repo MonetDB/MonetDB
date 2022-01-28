@@ -176,8 +176,11 @@ PIPELINEworker(void *T)
 		Pipelines *s = q_dequeue(t->q);
 		Pipeline *p = (Pipeline*)GDKmalloc(sizeof(Pipeline));
 
-		if (!s || !p || GDKexiting() || ATOMIC_GET(&exiting))
+		if (!s || !p || GDKexiting() || ATOMIC_GET(&exiting)) {
+			if (p)
+				GDKfree(p);
 			break;
+		}
 		t->flag = RUNNING;
 
 		MalStkPtr stk = stack_copy(s->stk, s->start);
@@ -266,7 +269,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->maxparts = maxparts;
 	s->counter = -1;
 	s->nr_workers = GDKnr_threads;
-	ATOMIC_SET(&s->workers, 0);
+	ATOMIC_SET(&s->workers, -1);
 
 	/* fix endless call of runMALpipelines but use as loop for parts */
 	mb->stmt[startpc]->fcn = NULL;
@@ -284,7 +287,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 
 	//stk->stk[mb->stmt[startpc]->argv[0]].val.btval = FALSE; /* end barrier */
 	/* wait for result */
-	for (int i = 0; i < GDKnr_threads; i++)
+	for (int i = 0; i < s->nr_workers; i++)
 		MT_sema_down(&s->s);
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);

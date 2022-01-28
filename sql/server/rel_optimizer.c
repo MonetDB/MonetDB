@@ -2182,6 +2182,45 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static inline sql_rel *
+rel_remove_const_aggr(visitor *v, sql_rel *rel)
+{
+	sql_rel *l = rel->l;
+	if (rel->op == op_project && l && is_groupby(l->op) && list_length(rel->exps) > 1) {
+		int needed = 0;
+		for (node *n = l->exps->h; n && !needed; n = n->next) {
+			sql_exp *exp = (sql_exp*) n->data;
+
+			if (exp_is_atom(exp))
+				needed = 1;
+		}
+		if (needed) {
+			for (node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *exp = (sql_exp*) n->data;
+				if (exp->type == e_column) {
+					sql_exp *e = rel_find_exp(l, exp);
+
+					if (e && exp_is_atom(e)) {
+						sql_exp *ne = exp_copy(v->sql, e);
+						exp_setname(v->sql->sa, ne, exp_find_rel_name(exp), exp_name(exp));
+						n->data = ne;
+						v->changes++;
+					}
+				}
+			}
+			list *nl = sa_list(v->sql->sa);
+			for (node *n = l->exps->h; n; n = n->next) {
+				sql_exp *exp = (sql_exp*) n->data;
+
+				if (!exp_is_atom(exp))
+					append(nl, exp);
+			}
+			l->exps = nl;
+		}
+	}
+	return rel;
+}
+
 static bool
 has_no_selectivity(mvc *sql, sql_rel *rel)
 {
@@ -6515,7 +6554,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* if local_proj is >= -1, the current expression is from the same projection 
+/* if local_proj is >= -1, the current expression is from the same projection
    if local_proj is -1, then we don't care about self references (eg used to check for order by exps) */
 static int exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj);
 
@@ -9556,6 +9595,7 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 	if (gp->cnt[op_project] || gp->cnt[op_groupby] || gp->cnt[op_ddl]) {
 		rel = rel_visitor_bottomup(v, rel, &rel_push_project_down);
 		rel = rel_visitor_bottomup(v, rel, &rel_merge_projects);
+		rel = rel_visitor_bottomup(v, rel, &rel_remove_const_aggr);
 
 		/* push (simple renaming) projections up */
 		if (gp->cnt[op_project])

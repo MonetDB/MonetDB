@@ -928,20 +928,28 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	/* private or not */
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
 	int err = 0;
-	BAT *u, *b = BATdescriptor(*bid);
+	BAT *u, *b = NULL;
 
-	if (private && !*uid) { /* TODO ... create but how big ??? */
+   	b = BATdescriptor(*bid);
+	if (!b)
+		return createException(SQL, "group.group",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
 		u->T.sink = (Sink*)ht_create(b->ttype, 1, NULL);
 	} else {
 		u = BATdescriptor(*uid);
 	}
+	if (!u) {
+		BBPunfix(*bid);
+		return createException(SQL, "group.group",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
-	if (!VIEWvtparent(b)) {
+	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
 		local_storage = true;
 		if (!h->allocators) {
 			pipeline_lock(p);
@@ -952,6 +960,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			}
 			pipeline_unlock(p);
 		}
+		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = sa_create();
 			if (!h->allocators[p->wid])
@@ -1174,18 +1183,28 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 	BAT *u, *b = BATdescriptor(*bid);
 	BAT *G = BATdescriptor(*Gid);
 
-	if (private && !*uid) { /* TODO ... create but how big ??? */
+	if (!b || !G) {
+		if (b)
+			BBPunfix(*bid);
+		return createException(SQL, "group.group",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
 		u->T.sink = (Sink*)ht_create(b->ttype, 1, (hash_table*)G->T.sink);
 	} else {
 		u = BATdescriptor(*uid);
+	}
+	if (!u) {
+		BBPunfix(*Gid);
+		BBPunfix(*bid);
+		return createException(SQL, "group.group",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
-	if (!VIEWvtparent(b)) {
+	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
 		local_storage = true;
 		if (!h->allocators) {
 			pipeline_lock(p);
@@ -1196,6 +1215,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 			}
 			pipeline_unlock(p);
 		}
+		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = sa_create();
 			if (!h->allocators[p->wid])
@@ -1271,15 +1291,26 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *bid /*, bat *sid*/)
 	}
 
 /* runs locked ie resizes should work */
-#define aproject_(Type,w,Toff) \
-	if (ATOMstorage(tt) == TYPE_##Type && b->twidth == w) { \
+#define aproject_(Type) \
+	if (ATOMstorage(tt) == TYPE_##Type) { \
 		BATiter bi = bat_iterator(b); \
-		Toff *o = Tloc(r, 0); \
+		int ins = 0; \
 		for(BUN i = 0; i<cnt && !err; i++) { \
-			if (o[gp[i]] == 0) { \
-				if (tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) \
-					err = 1; \
+			if(r->twidth == 1) { \
+				uint8_t *o = Tloc(r, 0); \
+				ins = (o[gp[i]] == 0); \
+			} else if (r->twidth == 2) { \
+				uint16_t *o = Tloc(r, 0); \
+				ins = (o[gp[i]] == 0); \
+			} else if (r->twidth == 4) { \
+				uint32_t *o = Tloc(r, 0); \
+				ins = (o[gp[i]] == 0); \
+			} else { \
+				var_t *o = Tloc(r, 0); \
+				ins = (o[gp[i]] == 0); \
 			} \
+			if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) \
+				err = 1; \
 		} \
 		bat_iterator_end(&bi); \
 	}
@@ -1291,12 +1322,12 @@ static str
 LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
-	BAT *g = BATdescriptor(*gid);
-	BAT *b = BATdescriptor(*bid);
-	BAT *r = NULL;
-	oid max = g->T.maxval;
+	BAT *g, *b, *r = NULL;
 	int err = 0;
 
+	g = BATdescriptor(*gid);
+	b = BATdescriptor(*bid);
+	oid max = g->T.maxval;
 	/* probably need bat resize and create hash */
 	if (*rid)
 		r = BATdescriptor(*rid);
@@ -1305,8 +1336,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	/* probably want to use a per 'r' lock, but the r->theaplock is blocking this on BATextend and BATsetcount */
 	if (!private)
 		pipeline_lock(p);
-	if (r) {
-		if (r->ttype == TYPE_str && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+	if (r && BATcount(b)) {
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 		   	if (r->twidth < b->twidth) {
 				int m = b->twidth / r->twidth;
 				r->twidth = b->twidth;
@@ -1315,17 +1346,17 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			}
 		}
 
-		if (!VIEWvtparent(b)) {
+		if (ATOMvarsized(r->ttype) && (!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ)) {
 			local_storage = true;
-		} else if (r->ttype == TYPE_str && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);
 			r->tvheap = b->tvheap;
 			BBPshare(b->tvheap->parentid);
 			r->batDirtydesc = true;
 		}
-	} else {
-		if (b->ttype == TYPE_str) {
+	} else if (BATcount(b)) {
+		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);
@@ -1333,7 +1364,17 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			BBPshare(b->tvheap->parentid);
 			r->batDirtydesc = true;
 		} else {
+			local_storage = true;
 			r = COLnew(0, b->ttype, max, TRANSIENT);
+
+			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+				if (r->twidth < b->twidth) {
+					int m = b->twidth / r->twidth;
+					r->twidth = b->twidth;
+					r->tshift = b->tshift;
+					r->batCapacity /= m;
+				}
+			}
 		}
 		r->T.private_bat = 1;
 	}
@@ -1366,10 +1407,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			project(flt)
 			project(dbl)
 			if (local_storage) {
-				aproject_(str,1,bte)
-				aproject_(str,2,sht)
-				aproject_(str,4,int)
-				aproject_(str,8,lng)
+				aproject_(str)
 			} else {
 				aproject(str,1,bte)
 				aproject(str,2,sht)
@@ -1475,12 +1513,11 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *bid = getArgReference_bat(stk, pci, 2);
 	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 3); /* last arg should move to first argument .. */
 	bat *pid = getArgReference_bat(stk, pci, 4);
-
-	BAT *g = BATdescriptor(*gid);
-	BAT *b = BATdescriptor(*bid);
-	BAT *r = NULL;
+	BAT *b, *g, *r = NULL;
 	int err = 0;
 
+	g = BATdescriptor(*gid);
+	b = BATdescriptor(*bid);
 	if (*rid)
 		r = BATdescriptor(*rid);
 	bool private = (!r || r->T.private_bat);
@@ -1600,10 +1637,67 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat_iterator_end(&ri); \
 	}
 
+/* private (changing) heap */
+#define vamin_(cmp, opos, in, i, bp) \
+	if (!getoffset(r->theap->base, opos, r->twidth) || cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) > 0) \
+		if (tfastins_nocheckVAR( r, opos, BUNtvar(bi, i)) != GDK_SUCCEED) \
+			err = 1; \
+
+#define vamax_(cmp, opos, in, i, bp) \
+	if (!getoffset(r->theap->base, opos, r->twidth) || cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) < 0) \
+		if (tfastins_nocheckVAR( r, opos, BUNtvar(bi, i)) != GDK_SUCCEED) \
+			err = 1; \
+
+static inline size_t
+getoffset(const void *b, BUN p, int w)
+{
+        switch (w) {
+        case 1:
+                return (size_t) ((const uint8_t *) b)[p];
+        case 2:
+                return (size_t) ((const uint16_t *) b)[p];
+#if SIZEOF_VAR_T == 8
+        case 4:
+                return (size_t) ((const uint32_t *) b)[p];
+#endif
+        default:
+                return (size_t) ((const var_t *) b)[p];
+        }
+}
+
+#define gafunc_(f) \
+	if (ATOMextern(tt) && ATOMvarsized(tt)) { \
+			BATiter bi = bat_iterator(b); \
+			BATiter ri = bat_iterator(r); \
+			char *bp = bi.vh->base; \
+		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			if (b->twidth == 1) { \
+				bp += GDK_VAROFFSET; \
+				uint8_t *in = Tloc(b, 0); \
+				for(BUN i = 0; i<cnt; i++) \
+					f##_(cmp, grp[i], in, i, bp); \
+			} else if (b->twidth == 2) { \
+				bp += GDK_VAROFFSET; \
+				uint16_t *in = Tloc(b, 0); \
+				for(BUN i = 0; i<cnt; i++) \
+					f##_(cmp, grp[i], in, i, bp); \
+			} else if (b->twidth == 4) { \
+				uint32_t *in = Tloc(b, 0); \
+				for(BUN i = 0; i<cnt; i++) \
+					f##_(cmp, grp[i], in, i, bp); \
+			} else if (b->twidth == 8) { \
+				var_t *in = Tloc(b, 0); \
+				for(BUN i = 0; i<cnt; i++) \
+					f##_(cmp, grp[i], in, i, bp); \
+			} \
+			bat_iterator_end(&bi); \
+			bat_iterator_end(&ri); \
+	}
+
 static str
 LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 {
-	Pipeline *p = (Pipeline*)H; /* last arg should move to first argument .. */
+	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = BATdescriptor(*gid);
 	BAT *b = BATdescriptor(*bid);
 	BAT *r = NULL;
@@ -1611,7 +1705,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 	if (*rid)
 		r = BATdescriptor(*rid);
-	bool private = (!r || r->T.private_bat);
+	bool private = (!r || r->T.private_bat), local_storage = false;
 
 	if (!private)
 		pipeline_lock(p);
@@ -1620,7 +1714,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	oid max = pg->T.maxval;
 	BBPunfix(pg->batCacheid);
 
-	if (r) {
+	if (r && BATcount(b)) {
 		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 		   	if (r->twidth < b->twidth) {
 				int m = b->twidth / r->twidth;
@@ -1628,17 +1722,19 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 				r->tshift = b->tshift;
 				r->batCapacity /= m;
 			}
+		}
 
-			printf("view parent %d\n", VIEWvtparent(b));
-			assert (VIEWvtparent(b));
+		if (ATOMvarsized(r->ttype) && (!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ)) {
+			local_storage = true;
+		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);
 			r->tvheap = b->tvheap;
 			BBPshare(b->tvheap->parentid);
 			r->batDirtydesc = true;
 		}
-	} else {
-		if (b->ttype == TYPE_str) {
+	} else if (BATcount(b)) {
+		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);
@@ -1646,7 +1742,17 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			BBPshare(b->tvheap->parentid);
 			r->batDirtydesc = true;
 		} else {
+			local_storage = true;
 			r = COLnew(0, b->ttype, max, TRANSIENT);
+
+			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+				if (r->twidth < b->twidth) {
+					int m = b->twidth / r->twidth;
+					r->twidth = b->twidth;
+					r->tshift = b->tshift;
+					r->batCapacity /= m;
+				}
+			}
 		}
 		r->T.private_bat = 1;
 	}
@@ -1674,7 +1780,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 				memcpy(d+i, nil, r->twidth);
 		}
 	}
-	assert(b->twidth == r->twidth);
+	assert(b->twidth == r->twidth || local_storage || !BATcount(b));
 
 	if (!err) {
 		BUN cnt = BATcount(g);
@@ -1689,7 +1795,11 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			gfunc(hge,min);
 			gfunc(flt,min);
 			gfunc(dbl,min);
-			gafunc(vamin);
+			if (local_storage) {
+				gafunc_(vamin);
+			} else {
+				gafunc(vamin);
+			}
 		}
 		if (!err) {
 			BBPunfix(b->batCacheid);
@@ -1708,7 +1818,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 static str
 LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 {
-	Pipeline *p = (Pipeline*)H; /* last arg should move to first argument .. */
+	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = BATdescriptor(*gid);
 	BAT *b = BATdescriptor(*bid);
 	BAT *r = NULL;
@@ -1716,7 +1826,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 	if (*rid)
 		r = BATdescriptor(*rid);
-	bool private = (!r || r->T.private_bat);
+	bool private = (!r || r->T.private_bat), local_storage = false;
 
 	if (!private)
 		pipeline_lock(p);
@@ -1725,7 +1835,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	oid max = pg->T.maxval;
 	BBPunfix(pg->batCacheid);
 
-	if (r) {
+	if (r && BATcount(b)) {
 		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 		   	if (r->twidth < b->twidth) {
 				int m = b->twidth / r->twidth;
@@ -1733,17 +1843,19 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 				r->tshift = b->tshift;
 				r->batCapacity /= m;
 			}
+		}
 
-			printf("view parent %d\n", VIEWvtparent(b));
-			assert (VIEWvtparent(b));
+		if (ATOMvarsized(r->ttype) && (!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ)) {
+			local_storage = true;
+		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);
 			r->tvheap = b->tvheap;
 			BBPshare(b->tvheap->parentid);
 			r->batDirtydesc = true;
 		}
-	} else {
-		if (b->ttype == TYPE_str) {
+	} else if (BATcount(b)) {
+		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);
 			HEAPincref(b->tvheap);
@@ -1751,7 +1863,17 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			BBPshare(b->tvheap->parentid);
 			r->batDirtydesc = true;
 		} else {
+			local_storage = true;
 			r = COLnew(0, b->ttype, max, TRANSIENT);
+
+			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+				if (r->twidth < b->twidth) {
+					int m = b->twidth / r->twidth;
+					r->twidth = b->twidth;
+					r->tshift = b->tshift;
+					r->batCapacity /= m;
+				}
+			}
 		}
 		r->T.private_bat = 1;
 	}
@@ -1779,7 +1901,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 				memcpy(d+i, nil, r->twidth);
 		}
 	}
-	assert(b->twidth == r->twidth);
+	assert(b->twidth == r->twidth || local_storage || !BATcount(b));
 
 	if (!err) {
 		BUN cnt = BATcount(g);
@@ -1794,7 +1916,11 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			gfunc(hge,max);
 			gfunc(flt,max);
 			gfunc(dbl,max);
-			gafunc(vamax);
+			if (local_storage) {
+				gafunc_(vamax);
+			} else {
+				gafunc(vamax);
+			}
 		}
 		if (!err) {
 			BBPunfix(b->batCacheid);
