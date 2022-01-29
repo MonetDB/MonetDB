@@ -263,7 +263,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero);
-	rel = rel_visitor_topdown(&v, rel, &rel_avg_rewrite);
+	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
+	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero); /* the select > 0 should be done before using the values */
 	return rel;
 }

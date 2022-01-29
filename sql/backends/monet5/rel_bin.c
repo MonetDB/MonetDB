@@ -3902,7 +3902,7 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
 				card = estimate;
 
 			//if (card > 10000000)
-			//	card = 10000000;
+			//	  card = 10000000;
 
 			if (q == NULL)
 				return NULL;
