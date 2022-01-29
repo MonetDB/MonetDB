@@ -665,7 +665,6 @@ order_joins(visitor *v, list *rels, list *exps)
 		top = rel_crossproduct(v->sql->sa, l, r, op_join);
 		if (rsingle)
 			set_single(r);
-		set_processed(top);
 		rel_join_add_exp(v->sql->sa, top, cje);
 
 		/* all other join expressions on these 2 relations */
@@ -735,7 +734,6 @@ order_joins(visitor *v, list *rels, list *exps)
 				top = rel_crossproduct(v->sql->sa, top, r, op_join);
 				if (rsingle)
 					set_single(r);
-				set_processed(top);
 				rel_join_add_exp(v->sql->sa, top, cje);
 
 				/* all join expressions on these tables */
@@ -772,7 +770,6 @@ order_joins(visitor *v, list *rels, list *exps)
 				top = rel_crossproduct(v->sql->sa, top, nr, op_join);
 				if (rsingle)
 					set_single(nr);
-				set_processed(top);
 			} else
 				top = nr;
 		}
@@ -876,7 +873,6 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 					sql_rel *nr = rel_crossproduct(sql->sa, l, r, op_join);
 					if (rsingle)
 						set_single(r);
-					set_processed(nr);
 					rel_join_add_exp(sql->sa, nr, je);
 					list_append(rels, nr);
 					list_remove_data(rels, NULL, l);
