@@ -4675,12 +4675,17 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			BBPunfix(b->batCacheid);
 			/* nothing to do */
 			GDKfree(buf);
+			res_table_destroy(output);
 			return NULL;
 		}
 		BBPunfix(b->batCacheid);
 	}
-	else
+	else {
+		res_table_destroy(output);
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	res_table_destroy(output);
 
 	if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
 		return err;
