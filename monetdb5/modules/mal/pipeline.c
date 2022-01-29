@@ -71,7 +71,6 @@ sa_alloc( sql_allocator *sa, size_t sz )
             char **tmp;
             sa->size *=2;
             tmp = (char**)GDKrealloc(sa->blks, sizeof(char*) * sa->size);
-			printf("many blocks\n");
             if (tmp == NULL) {
                 sa->size /= 2; /* undo */
                 GDKfree(r);
@@ -80,7 +79,6 @@ sa_alloc( sql_allocator *sa, size_t sz )
             sa->blks = tmp;
         }
         if (sz > SA_BLOCK) {
-			printf("large block\n");
             sa->blks[sa->nr] = sa->blks[sa->nr-1];
             sa->blks[sa->nr-1] = r;
             sa->nr ++;
@@ -590,7 +588,6 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		pipeline_lock(p);
 		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-			printf("view parent %d\n", VIEWvtparent(b));
 			assert (VIEWvtparent(b));
 			HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
 			HEAPincref(b->tvheap);
@@ -744,7 +741,6 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		pipeline_lock(p);
 		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-			printf("view parent %d\n", VIEWvtparent(b));
 			assert (VIEWvtparent(b));
 			HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
 			HEAPincref(b->tvheap);
@@ -988,7 +984,6 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	} else if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		pipeline_lock(p);
 		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-			printf("view parent %d\n", VIEWvtparent(b));
 			assert (VIEWvtparent(b));
 			HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
 			HEAPincref(b->tvheap);
