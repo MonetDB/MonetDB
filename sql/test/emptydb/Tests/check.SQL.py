@@ -461,7 +461,7 @@ MAXARGS = 16
 # columns of the args table we're interested in
 args = ['name', 'type', 'type_digits', 'type_scale', 'inout']
 
-out += r"select 'sys.functions', s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name as func_type, f.side_effect, f.varres, f.vararg, f.semantics"
+out += r"select 'sys.functions', s.name, f.name, f.mangled_name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name as func_type, f.side_effect, f.varres, f.vararg, f.semantics"
 for i in range(0, MAXARGS):
     for a in args[:-1]:
         out += ", a%d.%s as %s%d" % (i, a, a, i)

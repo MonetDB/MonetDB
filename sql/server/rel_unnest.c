@@ -614,14 +614,14 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 	e->l = exps_rewrite(sql, rel, e->l, ad);
 	sf = e->f;
 	/* window functions need to be run per freevars */
-	if (sf->func->type == F_ANALYTIC && strcmp(sf->func->base.name, "window_bound") != 0 && strcmp(sf->func->base.name, "diff") != 0 && ad) {
+	if (sf->func->type == F_ANALYTIC && strcmp(sf->func->sql_name, "window_bound") != 0 && strcmp(sf->func->sql_name, "diff") != 0 && ad) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 		list *rankopargs = e->l, *gbe = ((list*)e->r)->h->data;
 		sql_exp *pe = list_empty(gbe) ? NULL : (sql_exp*)gbe->t->data, *last;
 		bool has_pe = pe != NULL;
 		int i = 0;
 
-		if (!pe || pe->type != e_func || strcmp(((sql_subfunc *)pe->f)->func->base.name, "diff") != 0)
+		if (!pe || pe->type != e_func || strcmp(((sql_subfunc *)pe->f)->func->sql_name, "diff") != 0)
 			pe = NULL;
 
 		for(node *d = ad->h; d; d=d->next) {
@@ -646,7 +646,7 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 			}
 		}
 		last = rankopargs->t->data; /* if the window function has bounds calls, update them */
-		if (last && last->type == e_func && !strcmp(((sql_subfunc *)last->f)->func->base.name, "window_bound")) {
+		if (last && last->type == e_func && !strcmp(((sql_subfunc *)last->f)->func->sql_name, "window_bound")) {
 			sql_exp *window1 = list_fetch(rankopargs, list_length(rankopargs) - 2), *window2 = list_fetch(rankopargs, list_length(rankopargs) - 1);
 			list *lw1 = window1->l, *lw2 = window2->l; /* the value functions require bound functions always */
 
@@ -1664,7 +1664,7 @@ exp_reset_props(sql_rel *rel, sql_exp *e, bool setnil)
 		sql_subfunc *a = e->f;
 
 		exps_reset_props(rel, e->l, setnil);
-		if (setnil && (a->func->s || strcmp(a->func->base.name, "count") != 0) && !a->func->semantics && !has_nil(e) && e->l && have_nil(e->l))
+		if (setnil && (a->func->s || strcmp(a->func->sql_name, "count") != 0) && !a->func->semantics && !has_nil(e) && e->l && have_nil(e->l))
 			set_has_nil(e);
 	} break;
 	case e_cmp: {
@@ -1800,9 +1800,9 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-#define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
-#define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
-#define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
+#define is_anyequal_func(sf) (strcmp((sf)->func->sql_name, "sql_anyequal") == 0 || strcmp((sf)->func->sql_name, "sql_not_anyequal") == 0)
+#define is_anyequal(sf) (strcmp((sf)->func->sql_name, "sql_anyequal") == 0)
+#define is_not_anyequal(sf) (strcmp((sf)->func->sql_name, "sql_not_anyequal") == 0)
 
 static int exps_have_not_anyequal(list *exps);
 
@@ -1871,8 +1871,8 @@ not_anyequal_helper(visitor *v, sql_rel *rel)
  *
  * TODO move the decimal scale handling to this function.
  */
-#define is_division(sf) (strcmp(sf->func->base.name, "sql_div") == 0)
-#define is_multiplication(sf) (strcmp(sf->func->base.name, "sql_mul") == 0)
+#define is_division(sf) (strcmp(sf->func->sql_name, "sql_div") == 0)
+#define is_multiplication(sf) (strcmp(sf->func->sql_name, "sql_mul") == 0)
 
 static inline sql_exp *
 exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
@@ -2296,11 +2296,11 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 static void /* replace diff arguments to avoid duplicate work. The arguments must be iterated in this order! */
 diff_replace_arguments(mvc *sql, sql_exp *e, list *ordering, int *pos, int *i)
 {
-	if (e->type == e_func && !strcmp(((sql_subfunc*)e->f)->func->base.name, "diff")) {
+	if (e->type == e_func && !strcmp(((sql_subfunc*)e->f)->func->sql_name, "diff")) {
 		list *args = (list*)e->l;
 		sql_exp *first = args->h->data, *second = list_length(args) == 2 ? args->h->next->data : NULL;
 
-		if (first->type == e_func && !strcmp(((sql_subfunc*)first->f)->func->base.name, "diff")) {
+		if (first->type == e_func && !strcmp(((sql_subfunc*)first->f)->func->sql_name, "diff")) {
 			diff_replace_arguments(sql, first, ordering, pos, i);
 		} else {
 			sql_exp *ne = args->h->data = exp_ref(sql, list_fetch(ordering, pos[*i]));
@@ -2308,7 +2308,7 @@ diff_replace_arguments(mvc *sql, sql_exp *e, list *ordering, int *pos, int *i)
 			set_nulls_first(ne);
 			*i = *i + 1;
 		}
-		if (second && second->type == e_func && !strcmp(((sql_subfunc*)second->f)->func->base.name, "diff")) {
+		if (second && second->type == e_func && !strcmp(((sql_subfunc*)second->f)->func->sql_name, "diff")) {
 			diff_replace_arguments(sql, second, ordering, pos, i);
 		} else if (second) {
 			sql_exp *ne = args->h->next->data = exp_ref(sql, list_fetch(ordering, pos[*i]));
@@ -2448,7 +2448,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		for (node *n = l->h; n ; n = n->next) { /* replace the updated arguments */
 			sql_exp *e = n->data;
 
-			if (e->type == e_func && !strcmp(((sql_subfunc*)e->f)->func->base.name, "window_bound"))
+			if (e->type == e_func && !strcmp(((sql_subfunc*)e->f)->func->sql_name, "window_bound"))
 				continue;
 			diff_replace_arguments(v->sql, e, ordering, pos, &i);
 		}
@@ -2456,7 +2456,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_exp *b1 = (sql_exp*) list_fetch(l, list_length(l) - 2); /* the 'window_bound' calls are added after the function arguments and frame type */
 		sql_exp *b2 = (sql_exp*) list_fetch(l, list_length(l) - 1);
 
-		if (b1 && b1->type == e_func && !strcmp(((sql_subfunc*)b1->f)->func->base.name, "window_bound")) {
+		if (b1 && b1->type == e_func && !strcmp(((sql_subfunc*)b1->f)->func->sql_name, "window_bound")) {
 			list *ll = b1->l;
 			rell = rel->l = rel_project(v->sql->sa, rell, rel_projections(v->sql, rell, NULL, 1, 1));
 
@@ -2830,7 +2830,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 		/* TODO handle range expressions */
 		if (list_length(l) == 2) { /* input is a set */
-			char *op = sf->func->base.name;
+			char *op = sf->func->sql_name;
 
 			sql_exp *ile = l->h->data, *le, *re = l->h->next->data, *rnull = NULL;
 			sql_rel *lsq = NULL, *rsq = NULL;
@@ -3098,8 +3098,8 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-#define is_exists_func(sf) (strcmp(sf->func->base.name, "sql_exists") == 0 || strcmp(sf->func->base.name, "sql_not_exists") == 0)
-#define is_exists(sf) (strcmp(sf->func->base.name, "sql_exists") == 0)
+#define is_exists_func(sf) (strcmp(sf->func->sql_name, "sql_exists") == 0 || strcmp(sf->func->sql_name, "sql_not_exists") == 0)
+#define is_exists(sf) (strcmp(sf->func->sql_name, "sql_exists") == 0)
 
 static sql_exp *
 exp_exist(mvc *sql, sql_exp *le, sql_exp *ne, int exists)
@@ -3469,7 +3469,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					sql_exp *e = (sql_exp*) m->data, *ne = NULL;
 					sql_subfunc *agr = (sql_subfunc*) e->f;
 
-					if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->base.name, "grouping")) {
+					if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->sql_name, "grouping")) {
 						/* replace grouping aggregate calls with constants */
 						sql_subtype tpe = ((sql_arg*) agr->func->res->h->data)->type;
 						list *groups = (list*) e->l;
@@ -3569,7 +3569,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				sql_exp *e = (sql_exp*) n->data;
 				sql_subfunc *agr = (sql_subfunc*) e->f;
 
-				if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->base.name, "grouping")) {
+				if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->sql_name, "grouping")) {
 					found_grouping = true;
 					break;
 				}
@@ -3584,7 +3584,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					sql_exp *e = (sql_exp*) n->data, *ne;
 					sql_subfunc *agr = (sql_subfunc*) e->f;
 
-					if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->base.name, "grouping")) {
+					if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->sql_name, "grouping")) {
 						ne = exp_atom(v->sql->sa, atom_int(v->sql->sa, bt, 0));
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);

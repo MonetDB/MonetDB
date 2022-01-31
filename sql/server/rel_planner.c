@@ -235,7 +235,7 @@ exp_getatom( mvc *sql, sql_exp *e, atom *m)
 		list *l = e->l;
 		/* handle date + x months */
 		/* TODO add scalar -> value, ie exp->stmt-tree->exec-tree+exec */
-		if (strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2) {
+		if (strcmp(f->func->sql_name, "sql_add") == 0 && list_length(l) == 2) {
 			atom *l1 = exp_getatom(sql, l->h->data, m);
 			atom *l2 = exp_getatom(sql, l->h->next->data, m);
 			/* data + months */

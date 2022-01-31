@@ -359,7 +359,7 @@ bind_func_(mvc *sql, char *sname, char *fname, list *ops, sql_ftype type, bool *
 {
 	sql_subfunc *sf = NULL;
 
-	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 &&
+	if (sql->forward && strcmp(fname, sql->forward->sql_name) == 0 &&
 	    list_cmp(sql->forward->ops, ops, (fcmp)&arg_subtype_cmp) == 0 &&
 	    execute_priv(sql, sql->forward) && type == sql->forward->type)
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
@@ -380,7 +380,7 @@ bind_func(mvc *sql, char *sname, char *fname, sql_subtype *t1, sql_subtype *t2, 
 		return NULL;
 	if (sql->forward) {
 		if (execute_priv(sql, sql->forward) &&
-		    strcmp(fname, sql->forward->base.name) == 0 &&
+		    strcmp(fname, sql->forward->sql_name) == 0 &&
 		   ((!t1 && list_length(sql->forward->ops) == 0) ||
 		    (!t2 && list_length(sql->forward->ops) == 1 && subtype_cmp(sql->forward->ops->h->data, t1) == 0) ||
 		    (list_length(sql->forward->ops) == 2 &&
@@ -402,7 +402,7 @@ bind_member_func(mvc *sql, char *sname, char *fname, sql_subtype *t, int nrargs,
 {
 	sql_subfunc *sf = NULL;
 
-	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && list_length(sql->forward->ops) == nrargs &&
+	if (sql->forward && strcmp(fname, sql->forward->sql_name) == 0 && list_length(sql->forward->ops) == nrargs &&
 		is_subtype(t, &((sql_arg *) sql->forward->ops->h->data)->type) && execute_priv(sql, sql->forward) && type == sql->forward->type)
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, t);
 	sf = sql_bind_member(sql, sname, fname, t, type, nrargs, prev);
@@ -418,7 +418,7 @@ find_func(mvc *sql, char *sname, char *fname, int len, sql_ftype type, sql_subfu
 {
 	sql_subfunc *sf = NULL;
 
-	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && list_length(sql->forward->ops) == len && execute_priv(sql, sql->forward) && type == sql->forward->type)
+	if (sql->forward && strcmp(fname, sql->forward->sql_name) == 0 && list_length(sql->forward->ops) == len && execute_priv(sql, sql->forward) && type == sql->forward->type)
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
 	sf = sql_find_func(sql, sname, fname, len, type, prev);
 	if (found)
@@ -505,7 +505,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 			if (sf->func->fix_scale == DIGITS_ADD) {
 				unsigned int nvalue = rdigits + tdigits;
 				if (nvalue < rdigits || nvalue >= (unsigned int) INT32_MAX)
-					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", sf->func->base.name);
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", sf->func->sql_name);
 				rdigits = nvalue;
 			} else if (sf->func->fix_scale == INOUT) {
 				if (n == exps->h)
