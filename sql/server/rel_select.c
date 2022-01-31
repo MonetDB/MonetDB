@@ -5110,7 +5110,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 	if (rel && *rel && (*rel)->card == CARD_AGGR) { /* group by expression case, handle it before */
 		sql_exp *exp = NULL;
-		if (!is_sql_aggr(f))
+		if (!is_sql_aggr(f) && !is_sql_window(f))
 			exp = frame_get_groupby_expression(sql, se);
 		if (sql->errstr[0] != '\0')
 			return NULL;
