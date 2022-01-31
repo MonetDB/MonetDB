@@ -29,3 +29,140 @@ SELECT 1 FROM v2 WHERE (SELECT 'a' FROM v1) <> ALL((SELECT 'b' FROM t2) UNION (S
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0 (c0 INT)
+
+statement ok
+INSERT INTO t0 VALUES (1)
+
+statement ok
+CREATE TABLE t1 (c0 INT)
+
+statement ok
+INSERT INTO t1 VALUES (1)
+
+query I nosort
+SELECT 1 = ANY(SELECT 1 FROM t1 JOIN (SELECT count(*) GROUP BY t0.c0) AS x(x) ON TRUE) FROM t0
+----
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE VIEW v1(vc0, vc1, vc2) AS (WITH ctel0n0(ct0n0,ct0n1) AS (VALUES (4, 5)) SELECT 1, 2, 3 FROM ctel0n0)
+
+query III nosort
+SELECT * FROM v1
+----
+1
+2
+3
+
+statement error 42000!CREATE VIEW: LIMIT not supported
+CREATE VIEW v2(vc0, vc1, vc2) AS (WITH ctel0n0(ct0n0,ct0n1) AS (VALUES (4, 5)) SELECT 1, 2, 3 FROM ctel0n0 LIMIT 7)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INT)
+
+query I nosort
+with x(x) as (select 4) select 2 > all(select 3 from t0 full outer join (values (x.x)) as y(y) on false) from x
+----
+0
+
+statement ok rowcount 0
+update t0 set c0 = (with x(x) as (select 3)
+select 79 from x join (select 1) as y(y) on v17.c0 <= -4 where x.x > 1) from t0 v17
+
+statement ok rowcount 1
+INSERT INTO t0 VALUES (1)
+
+statement ok rowcount 1
+update t0 set c0 = (with x(x) as (select 3)
+select 79 from x join (select 1) as y(y) on v17.c0 <= -4 where x.x > 1) from t0 v17
+
+query I nosort
+SELECT c0 FROM t0
+----
+NULL
+
+statement ok
+CREATE TABLE rt0 (c0 INT)
+
+statement ok
+CREATE TABLE rt2v2 (c0 UUID)
+
+statement ok rowcount 1
+INSERT INTO rt2v2 VALUES (uuid 'dbC4da54-8C0B-4b83-E74E-30342dA0a5fF')
+
+statement ok rowcount 0
+update rt2v2 set c0 = (select rt2v2.c0 from rt0 where false) from rt0 where cast(2 in (select null where true) as boolean)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table t0 (c0 int)
+
+statement ok
+create or replace view vx(vc0, vc1, vc2) as (values (1,0,2))
+
+query I nosort
+SELECT 1 FROM (values (0)) vx(vc1) WHERE 1 > ALL(SELECT vx.vc1 FROM t0)
+----
+1
+
+query I nosort
+SELECT vx.vc2 FROM vx JOIN (VALUES (1)) AS x(x) ON TRUE WHERE vx.vc0 >= ALL(SELECT t0.c0 FROM t0) AND 1 >= ALL(SELECT vx.vc1 FROM t0)
+----
+2
+
+# this one is right
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(vx.vc0 >= ALL(SELECT t0.c0 FROM t0) AND 1 >= ALL(SELECT vx.vc1 FROM t0) AS INT)
+as count FROM vx JOIN (VALUES (1)) AS x(x) ON TRUE) as res
+----
+1
+
+statement ok
+create or replace view vx(x) AS (VALUES (184),(33),(3600))
+
+statement ok
+create or replace view vy(y) AS (VALUES (FALSE),(FALSE))
+
+query I nosort
+SELECT 1 FROM vy WHERE NOT EXISTS (SELECT 1 FROM vx WHERE vy.y)
+----
+1
+1
+
+query I nosort
+SELECT vy.y FROM vy WHERE CAST(NOT EXISTS (SELECT 1 FROM vx WHERE vy.y) AS BOOLEAN)
+----
+0
+0
+
+# this one is right
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(CAST(NOT EXISTS (SELECT 1 FROM vx WHERE vy.y) AS BOOLEAN) AS INT) as count FROM vy) as res
+----
+2
+
+statement ok
+ROLLBACK

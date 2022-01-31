@@ -817,18 +817,19 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	GDKfree(url);
 	url = NULL;
 
-	q = newInstruction(mb, NULL, NULL);
-	q->barrier= RETURNsymbol;
-	q = pushReturn(mb, q, getArg(p, 0));
-
-	pushInstruction(mb, q);
-
 	if (p == NULL) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
 		c->curprg= NULL;
 		return -2;
 	}
+
+	q = newInstruction(mb, NULL, NULL);
+	q->barrier= RETURNsymbol;
+	q = pushReturn(mb, q, getArg(p, 0));
+
+	pushInstruction(mb, q);
+
 	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
 		freeSymbol(c->curprg);
 		c->curprg= NULL;
@@ -1425,18 +1426,21 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 
 	if (!prepare_id) {
 		struct callback_context* ccontext;
-		ccontext		= GDKzalloc(sizeof(struct callback_context));
-		ccontext->mdbe	= mdbe;
-		rcb->context	= ccontext;
-		rcb->call		= monetdbe_result_cb;
+		ccontext = GDKzalloc(sizeof(struct callback_context));
+		if (ccontext)
+			ccontext->mdbe = mdbe;
+		rcb->context = ccontext;
+		rcb->call = monetdbe_result_cb;
 	}
 	else {
 		struct prepare_callback_context* ccontext;
-		ccontext				= GDKzalloc(sizeof(struct prepare_callback_context));
-		ccontext->mdbe			= mdbe;
-		ccontext->prepare_id	= prepare_id;
-		rcb->context			= ccontext;
-		rcb->call				= monetdbe_prepare_cb;
+		ccontext = GDKzalloc(sizeof(struct prepare_callback_context));
+		if (ccontext) {
+			ccontext->mdbe = mdbe;
+			ccontext->prepare_id = prepare_id;
+		}
+		rcb->context = ccontext;
+		rcb->call = monetdbe_prepare_cb;
 	}
 	if (!rcb->context) {
 		GDKfree(rcb);
@@ -1809,15 +1813,13 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 		}
 
 	// cleanup
-	if  (result) {
-		char* msg = monetdbe_cleanup_result_internal(mdbe, (monetdbe_result_internal*) result);
+	char* msg = monetdbe_cleanup_result_internal(mdbe, (monetdbe_result_internal*) result);
 
-		if (msg && mdbe->msg) {
-			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", "multiple errors: %s; %s", mdbe->msg, msg));
-		}
-		else if (msg) {
-			mdbe->msg = msg;
-		}
+	if (msg && mdbe->msg) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", "multiple errors: %s; %s", mdbe->msg, msg));
+	}
+	else if (msg) {
+		mdbe->msg = msg;
 	}
 
 	if (mdbe->msg ) {
@@ -2029,11 +2031,15 @@ append_create_remote_append_mal_program(
 	for (size_t i = 0; i < ccount; i++) {
 		sql_column *col = NULL;
 		sql_type *tpe = SA_ZNEW(m->sa, sql_type);
+		sql_subtype *st = SA_ZNEW(m->sa, sql_subtype);
+		if (tpe == NULL || st == NULL) {
+			msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
 		tpe->base.name = sa_strdup(m->sa, columns[i].name);
 		tpe->localtype = monetdbe_2_gdk_type((monetdbe_types) columns[i].type);
 		tpe->digits = columns[i].sql_type.digits;
 		tpe->scale = columns[i].sql_type.scale;
-		sql_subtype *st = SA_ZNEW(m->sa, sql_subtype);
 		sql_init_subtype(st, tpe, columns[i].sql_type.digits, columns[i].sql_type.scale);
 
 		switch (mvc_create_column(&col, m, *t, columns[i].name, st)) {

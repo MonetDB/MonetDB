@@ -214,7 +214,7 @@ levenshteinbasic2_impl(int *result, str *s, str *t)
 #define SoundexKey "Z000"	/* default key for soundex code */
 
 /* set letter values */
-static int Code[] = { 0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0,
+static const int Code[] = { 0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0,
 	1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2
 };
 

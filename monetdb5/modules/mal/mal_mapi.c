@@ -88,7 +88,7 @@
 
 #define SERVERMAXUSERS 		5
 
-static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+static const char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
 	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
 	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -1050,6 +1050,9 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 	MT_lock_unset(&mal_contextLock);
 
 	mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
+
+	if (mid == NULL)
+		throw(IO, "mapi.connect", MAL_MALLOC_FAIL);
 
 	if (mapi_error(mid)) {
 		const char *err = mapi_error_str(mid);

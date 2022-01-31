@@ -1698,7 +1698,7 @@ tfastins_nocheck(BAT *b, BUN p, const void *v)
 static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins(BAT *b, BUN p, const void *v)
 {
-	if (p > BATcapacity(b)) {
+	if (p >= BATcapacity(b)) {
 		if (p >= BUN_MAX) {
 			GDKerror("tfastins: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
 			return GDK_FAIL;

@@ -27,6 +27,13 @@
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
 #define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
 
+static void
+query_processed(sql_query *query )
+{
+	query -> last_exp = NULL;
+	query -> last_state = 0;
+}
+
 /* return all expressions, with table name == tname */
 static list *
 rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
@@ -1133,9 +1140,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (!exp && inner)
 			if (!(exp = rel_bind_column(sql, inner, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
-		if (!exp && inner && is_sql_having(f) && is_select(inner->op))
-			inner = inner->l;
-		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
+		if (!exp && inner && is_sql_aggr(f) && is_groupby(inner->op))
 			if (!(exp = rel_bind_column(sql, inner->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		if (!exp && query && query_has_outer(query)) {
@@ -1203,6 +1208,11 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (!exp) /* If no column was found, try a variable or parameter */
 			exp = rel_exp_variable_on_scope(sql, NULL, name);
 
+		if (!exp) {
+			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column(sql, inner->l, name, f, 0)))
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
+		}
+
 		if (!exp)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
 		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR && (is_sql_sel(f) || is_sql_having(f)) && !is_sql_aggr(f))
@@ -1216,9 +1226,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (!exp && rel && inner)
 			if (!(exp = rel_bind_column2(sql, inner, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
-		if (!exp && inner && is_sql_having(f) && is_select(inner->op))
-			inner = inner->l;
-		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
+		if (!exp && inner && is_sql_aggr(f) && is_groupby(inner->op))
 			if (!(exp = rel_bind_column2(sql, inner->l, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		if (!exp && query && query_has_outer(query)) {
@@ -1294,6 +1302,10 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
 			}
 		}
+		if (!exp) {
+			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column2(sql, inner->l, tname, cname, f)))
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+		}
 
 		if (!exp)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "SELECT: no such column '%s.%s'", tname, cname);
@@ -1303,6 +1315,10 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			exp = rel_groupby_add_aggr(sql, inner, exp);
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, SQLSTATE(42000) "TODO: column names of level >= 3");
+	}
+	if (exp && !exp_is_atom(exp)) {
+		query->last_exp = exp;
+		query->last_state = f;
 	}
 	return exp;
 }
@@ -1638,7 +1654,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		set_anti(e);
 
 	if (!rel)
-		return rel_select(sql->sa, rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1)), e);
+		return rel_select(sql->sa, rel_project_exp(sql, exp_atom_bool(sql->sa, 1)), e);
 
 	/* atom or row => select */
 	if (ls->card > rel->card || rs->card > rel->card || (rs2 && rs2->card > rel->card)) {
@@ -1963,7 +1979,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			} else if (exp_is_rel(re)) {
 				sql_rel *r = exp_rel_get_rel(sql->sa, re);
 				add_select = 1;
-				if (rel && *rel)
+				if (rel && *rel && is_join((*rel)->op))
 					set_dependent((*rel));
 				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
 					re = r->exps->h->data;
@@ -3626,6 +3642,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	}
 
 	if (!subquery && groupby && groupby->op != op_groupby) { 		/* implicit groupby */
+		if (query->last_exp && !is_sql_aggr(query->last_state)) {
+			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(query->last_exp), exp_name(query->last_exp));
+		}
 		res = groupby = rel_groupby(sql, groupby, NULL);
 	}
 	if (subquery) {
@@ -5442,6 +5461,7 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *gro
 			return NULL;
 		}
 	}
+	query_processed(query);
 
 	if (rel && sn->groupby) {
 		list *gbe, *sets = NULL;
@@ -5468,6 +5488,7 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *gro
 		if (rel->op != op_groupby)
 			rel = rel_groupby(sql, rel, NULL);
 	}
+	query_processed(query);
 	return rel;
 }
 
@@ -5650,7 +5671,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the selection or from part is missing");
 
 	if (!rel)
-		rel = rel_project(sql->sa, NULL, append(new_exp_list(sql->sa), exp_atom_bool(sql->sa, 1)));
+		rel = rel_project_exp(sql, exp_atom_bool(sql->sa, 1));
 	rel = rel_where_groupby_nodes(query, rel, sn, &group_totals);
 	if (sql->session->status) /* rel might be NULL as input, so we have to check for the session status for errors */
 		return NULL;
@@ -5666,14 +5687,13 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list *te = NULL;
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
 
-		if (ce && (exp_subtype(ce) || exp_is_rel(ce) || (ce->type == e_atom && !ce->l && !ce->f))) { /* Allow parameters and subqueries to be propagated */
+		if (ce) {
 			pexps = append(pexps, ce);
 			rel = inner;
 			continue;
-		} else if (!ce) {
+		} else {
 			te = rel_table_exp(query, &rel, n->data.sym, !list_length(pexps) && !n->next);
-		} else
-			ce = NULL;
+		}
 		if (!ce && !te) {
 			if (sql->errstr[0])
 				return NULL;
@@ -6017,6 +6037,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	if (inner && is_outerjoin(inner->op))
 		set_processed(inner);
 	set_processed(rel);
+	query_processed(query);
 	return rel;
 }
 
@@ -6054,6 +6075,9 @@ sql_rel *
 rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek)
 {
 	mvc *sql = query->sql;
+	sql_exp *last_exp = query->last_exp;
+	int last_state = query->last_state;
+	query_processed(query);
 	int toplevel = 0;
 
 	if (!stack_push_frame(sql, NULL))
@@ -6065,7 +6089,8 @@ rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek)
 
 	rel = rel_query(query, rel, sq, toplevel, ek);
 	stack_pop_frame(sql);
-
+	query->last_exp = last_exp;
+	query->last_state = last_state;
 	if (rel && ek.type == type_relation && ek.card < card_set && rel->card >= CARD_AGGR)
 		return rel_zero_or_one(sql, rel, ek);
 	return rel;
