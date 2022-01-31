@@ -17,7 +17,7 @@
 /* simplify expressions, such as not(not(x)) */
 /* exp visitor */
 
-#define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
+#define is_not_anyequal(sf) (strcmp((sf)->func->sql_name, "sql_not_anyequal") == 0)
 
 static list *
 exps_simplify_exp(visitor *v, list *exps)
@@ -233,12 +233,12 @@ exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e)
 		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
 
 		/* TODO handle date + x months */
-		if (!f->func->s && strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+		if (!f->func->s && strcmp(f->func->sql_name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
 			atom *l1 = exp_flatten(sql, value_based_opt, l->h->data);
 			atom *l2 = exp_flatten(sql, value_based_opt, l->h->next->data);
 			if (l1 && l2)
 				return atom_add(sql->sa, l1, l2);
-		} else if (!f->func->s && strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+		} else if (!f->func->s && strcmp(f->func->sql_name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
 			atom *l1 = exp_flatten(sql, value_based_opt, l->h->data);
 			atom *l2 = exp_flatten(sql, value_based_opt, l->h->next->data);
 			if (l1 && l2)

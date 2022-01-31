@@ -1256,13 +1256,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		assert(!e->r);
 		if (strcmp(mod, "") == 0 && strcmp(fimp, "") == 0) {
-			if (strcmp(f->func->base.name, "star") == 0)
+			if (strcmp(f->func->sql_name, "star") == 0)
 				return left->op4.lval->h->data;
-			if (strcmp(f->func->base.name, "case") == 0)
+			if (strcmp(f->func->sql_name, "case") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
-			if (strcmp(f->func->base.name, "casewhen") == 0)
+			if (strcmp(f->func->sql_name, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, sel, depth);
-			if (strcmp(f->func->base.name, "coalesce") == 0)
+			if (strcmp(f->func->sql_name, "coalesce") == 0)
 				return exp2bin_coalesce(be, e, left, right, sel, depth);
 		}
 		if (!list_empty(exps)) {
@@ -1281,7 +1281,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				else if (f->func->type == F_ANALYTIC && es->nrcols == 0) {
 					if (en == exps->h && left->nrcols)
 						es = stmt_const(be, bin_find_smallest_column(be, left), es); /* ensure the first argument is a column */
-					if (!f->func->s && !strcmp(f->func->base.name, "window_bound")
+					if (!f->func->s && !strcmp(f->func->sql_name, "window_bound")
 						&& exps->h->next && list_length(f->func->ops) == 6 && en == exps->h->next && left->nrcols)
 						es = stmt_const(be, bin_find_smallest_column(be, left), es);
 				}

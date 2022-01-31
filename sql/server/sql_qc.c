@@ -162,7 +162,12 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	base_init(sa, &f->base, 0, true, NULL);
 	f->base.new = 1;
 	f->base.id = n->id;
-	f->base.name = f->imp = name;
+	f->imp = name;
+
+	// extern char* mangle_name(char* buf, const char *name, sql_ftype type, list *res, list *ops);
+	char buf[10000]; // TODO can be unsafe when there are many parameters
+	f->base.name = sa_strdup(sa, mangle_name(buf, name, f->type, f->res, f->ops));
+	f->sql_name = name;
 	f->instantiated = TRUE;
 	n->f = f;
 	return n;

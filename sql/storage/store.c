@@ -19,7 +19,7 @@
 #include "bat/bat_logger.h"
 
 /* version 05.23.01 of catalog */
-#define CATALOG_VERSION 52301	/* first in Jan2022 */
+#define CATALOG_VERSION 52302
 
 static int sys_drop_table(sql_trans *tr, sql_table *t, int drop_action);
 
@@ -67,7 +67,7 @@ store_oldest_pending(sqlstore *store)
 static inline bool
 instore(sqlid id)
 {
-	if (id >= 2000 && id <= 2164)
+	if (id >= 2000 && id <= 2165)
 		return true;
 	return false;
 }
@@ -123,6 +123,7 @@ func_destroy(sqlstore *store, sql_func *f)
 	_DELETE(f->mod);
 	_DELETE(f->query);
 	_DELETE(f->base.name);
+	_DELETE(f->sql_name);
 	_DELETE(f);
 }
 
@@ -896,9 +897,12 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	ptr cbat;
 
 	rid = store->table_api.column_find_row(tr, find_sql_column(funcs, "id"), &fid, NULL);
-	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "name"), rid, &cbat);
-	update_env = strcmp(v, "env") == 0;
+	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "mangled_name"), rid, &cbat);
 	base_init(tr->sa, &t->base, fid, 0, v);
+	store->table_api.column_find_string_end(cbat);
+	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "name"), rid, &cbat);
+	t->sql_name = SA_STRDUP(tr->sa, v);
+	update_env = strcmp(v, "env") == 0;
 	store->table_api.column_find_string_end(cbat);
 	v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "func"), rid, &cbat);
 	update_env = update_env && strstr(v, "EXTERNAL NAME sql.sql_environment") != NULL;
@@ -1072,7 +1076,7 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 
 		s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true, true, store);
 		s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true, true, store);
-		s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, false, false, store);
+		s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, true, false, store);
 		s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true, true, store);
 		s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true, true, store);
 		s->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, false, true, true, store);
@@ -1452,7 +1456,7 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 
-		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &f->side_effect, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics)))
+		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->sql_name, &f->imp, &f->mod, &flang, &ftype, &f->side_effect, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics, &f->base.name)))
 			return res;
 		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
 			return res;
@@ -1850,6 +1854,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "schema_id", 2026, "int", 32);
 	bootstrap_create_column(tr, t, "system", 2027, "boolean", 1);
 	bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1);
+	bootstrap_create_column(tr, t, "mangled_name", 2165, "varchar", 4098);
 
 	arguments = t = bootstrap_create_table(tr, s, "args", 2028);
 	bootstrap_create_column(tr, t, "id", 2029, "int", 32);
@@ -3194,6 +3199,7 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 	/* 'func_dup' is aimed at FUNC_LANG_SQL functions ONLY, so f->imp and f->instantiated won't be set */
 	base_init(sa, &f->base, of->base.id, 0, of->base.name);
 	f->mod = SA_STRDUP(sa, of->mod);
+	f->sql_name= SA_STRDUP(sa, of->sql_name);
 	f->type = of->type;
 	f->lang = of->lang;
 	f->semantics = of->semantics;
@@ -4869,8 +4875,12 @@ create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
-	base_init(sa, &t->base, next_oid(store), true, func);
+	char buf[1000];
+	const char* mangled = mangle_name(buf, func, type, res, args);
+
+	base_init(sa, &t->base, next_oid(store), true, mangled);
 	assert(mod);
+	t->sql_name = SA_STRDUP(sa, func);
 	t->imp = (impl)?SA_STRDUP(sa, impl):NULL;
 	t->mod = SA_STRDUP(sa, mod);
 	t->type = type;
@@ -4900,8 +4910,11 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	int number = 0, ftype = (int) type, flang = (int) lang, res = LOG_OK;
 
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
-	base_init(tr->sa, &t->base, next_oid(tr->store), true, func);
+	char buf[1000];
+	const char* mangled = mangle_name(buf, func, type, ffres, args);
+	base_init(tr->sa, &t->base, next_oid(tr->store), true, mangled);
 	assert(mod);
+	t->sql_name = SA_STRDUP(tr->sa, func);
 	t->imp = (impl)?SA_STRDUP(tr->sa, impl):NULL;
 	t->mod = SA_STRDUP(tr->sa, mod);
 	t->type = type;
@@ -4926,8 +4939,8 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
-	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
-			&t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics)))
+	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->sql_name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
+			&t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics, &t->base.name)))
 		return res;
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
@@ -5064,7 +5077,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->system = FALSE;
 	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, isTempSchema(s), true, true, store);
 	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, isTempSchema(s), true, true, store);
-	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, isTempSchema(s), false, false, store);
+	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, isTempSchema(s), true, false, store);
 	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, isTempSchema(s), true, true, store);
 	s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, isTempSchema(s), true, true, store);
 	s->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, isTempSchema(s), true, true, store);
