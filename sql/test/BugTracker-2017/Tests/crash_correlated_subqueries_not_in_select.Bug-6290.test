@@ -1,8 +1,17 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "myschemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN)
+
+statement ok rowcount 7
+INSERT INTO "myschemas" VALUES (2000, 'sys', 2, 3, true),(2114, 'tmp', 2, 3, true),(7446, 'json', 3, 3, true),(7542, 'profiler', 3, 3, true),(7738, 'wlc', 3, 3, true),(7757, 'wlr', 3, 3, true),(8270, 'logging', 3, 3, true)
+
 query TIII rowsort
 SELECT s.name AS schema_nm, s.system AS is_system_schema
 , (SELECT CAST(COUNT(*) as int) FROM sys.functions f WHERE f.schema_id = s.id AND f.type <> 2 AND f.id NOT IN (SELECT sf.id as function_id FROM sys.functions sf WHERE sf.system)) AS "user defined functions count"
 , (SELECT CAST(COUNT(*) as int) FROM sys.functions f WHERE f.schema_id = s.id AND f.type = 2 AND f.id NOT IN (SELECT sf.id as function_id FROM sys.functions sf WHERE sf.system)) AS "user defined procedures count"
- FROM sys.schemas AS s
+ FROM sys.myschemas AS s
 WHERE s.name IN ('json', 'profiler', 'sys')
 ----
 json
@@ -22,7 +31,7 @@ query TIII rowsort
 SELECT s.name AS schema_nm, s.system AS is_system_schema
 , (SELECT CAST(COUNT(*) as int) FROM sys.functions f WHERE f.schema_id = s.id AND f.type <> 2 AND NOT f.system) AS "user defined functions count"
 , (SELECT CAST(COUNT(*) as int) FROM sys.functions f WHERE f.schema_id = s.id AND f.type = 2 AND NOT f.system) AS "user defined procedures count"
- FROM sys.schemas AS s
+ FROM sys.myschemas AS s
 WHERE s.name IN ('json', 'profiler', 'sys')
 ----
 json
@@ -38,3 +47,27 @@ sys
 0
 0
 
+query I rowsort
+SELECT (SELECT 1 FROM functions f WHERE f.schema_id = s.id AND f.id IN (SELECT -1 FROM functions x)) FROM myschemas AS s
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query I rowsort
+SELECT (SELECT 1 FROM functions f WHERE f.schema_id = s.id AND f.id NOT IN (SELECT x.id FROM functions x)) FROM myschemas AS s
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+statement ok
+ROLLBACK
