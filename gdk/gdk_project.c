@@ -699,6 +699,14 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			bat_iterator_end(&r2i);
 			return bn;
 		}
+	} else if (ATOMvarsized(tpe) &&
+		   l->tnonil &&
+		   r2 == NULL &&
+		   (r1i.count == 0 ||
+		    lcount > (r1i.count >> 3) ||
+		    r1->batRestricted == BAT_READ)) {
+		tpe = r1i.width == 4 ? TYPE_int : TYPE_lng;
+		stringtrick = true;
 	} else if (tpe == TYPE_msk || mask_cand(r1)) {
 		r1 = BATunmask(r1);
 		if (r1 == NULL)
