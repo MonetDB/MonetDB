@@ -181,6 +181,16 @@ FROM another_T t1
 
 query I nosort
 SELECT
+    (SELECT RANK() OVER (PARTITION BY 2 ORDER BY 2) FROM tbl_ProductSales GROUP BY t1.col1)
+FROM another_T t1
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT
     (SELECT SUM(1) OVER (PARTITION BY 2 ORDER BY 2 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY t1.col1)
 FROM another_T t1
 ----
