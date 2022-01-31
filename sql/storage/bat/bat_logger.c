@@ -3354,13 +3354,17 @@ bl_postversion(void *Store, void *Lg)
 		}
 
 		{
-			BAT *funcs_name_mangled_final_order = NULL;
+			BAT *funcs_name_mangled_final_order;
 			if (
 				(funcs_name_mangled_final_order	= BATconstant(funcs_name->hseqbase, TYPE_str, &str_nil, BATcount(funcs_name), PERSISTENT)) == NULL ||
 				BATreplace(funcs_name_mangled_final_order, funcs_name_mangled_rid, funcs_name_mangled, false) != GDK_SUCCEED ||
 				(funcs_name_mangled_final_order = BATsetaccess(funcs_name_mangled_final_order, BAT_READ)) == NULL ||
 				BUNappend(lg->catalog_id, &(int) {2165}, false) != GDK_SUCCEED || // 2165 is sys.functions.mangled_name
-				BUNappend(lg->catalog_bid, &funcs_name_mangled_final_order->batCacheid, false) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_bid, &funcs_name_mangled_final_order->batCacheid, false) != GDK_SUCCEED) {
+				bat_destroy(funcs_name_mangled_final_order);
+				goto bailout;
+			}
+			if (
 				(lg->catalog_lid	&& BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED) ||
 				(lg->catalog_cnt    && BUNappend(lg->catalog_cnt, &(lng){BATcount(funcs_name_mangled_final_order)}, false) != GDK_SUCCEED) ||
 				(old_lg				&& BUNappend(old_lg->add, &funcs_name_mangled_final_order->batCacheid, false) != GDK_SUCCEED)) {
