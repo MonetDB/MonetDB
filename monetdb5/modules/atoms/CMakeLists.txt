@@ -16,7 +16,7 @@ target_sources(atoms
   str.c str.h
   strptime.c
   url.c
-  uuid.c uuid.h
+  uuid.c
   json.c
   mtime.c
   inet.c
