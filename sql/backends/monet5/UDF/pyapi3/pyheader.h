@@ -21,7 +21,6 @@
 #include "mal_stack.h"
 #include "mal_linker.h"
 #include "gdk.h"
-#include "blob.h"
 #include "sql_catalog.h"
 #include "sql_scenario.h"
 #include "sql_cast.h"

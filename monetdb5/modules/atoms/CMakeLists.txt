@@ -11,7 +11,7 @@ add_library(atoms OBJECT)
 target_sources(atoms
   PRIVATE
   streams.c streams.h
-  blob.c blob.h
+  blob.c
   color.c color.h
   str.c str.h
   strptime.c
