@@ -20,7 +20,6 @@
 #include "cheader.text.h"
 
 #include "gdk_time.h"
-#include "blob.h"
 #include "mutils.h"
 
 #include <setjmp.h>

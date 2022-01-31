@@ -33243,11 +33243,6 @@ command blob.nitems(X_0:blob):int
 BLOBnitems;
 get the number of bytes in this blob.
 blob
-prelude
-command blob.prelude():void 
-BLOBprelude;
-(empty)
-blob
 toblob
 command blob.toblob(X_0:str):blob 
 BLOBtoblob;
