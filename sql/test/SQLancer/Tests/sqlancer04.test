@@ -156,10 +156,9 @@ create view v1(c0, c1) as (select distinct (((t0.c0)=(((1357695262)^(-922564194)
 statement ok
 create view v2(c0) as (select distinct coalesce(abs(interval '-1976292283' month), cast(greatest('Dnwxjm4btQ9cp&\c''a_', '(y7,{q?][NHU,') as interval month)) from t1, t0 where ((upper(''))not ilike(lower('''wAg_ z ''PPxXßgrd⍮G'))))
 
-query T rowsort
+statement error 42000!SELECT: cannot use non GROUP BY column 'v2.c0' in query results without an aggregate function
 select all v2.c0 from v2 right outer join v1 on (('8*By1q)*Oc<n')like(substr('', 1151312829, 406714197)))
 where (case v1.c0 when v1.c0 then interval '104279220' second end) in (interval '2129103763' second) group by timestamp '1970-01-21 14:05:46'
-----
 
 statement ok
 ROLLBACK
@@ -394,10 +393,10 @@ COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.6184216877785851
 0.6479886625655562
 
-statement error 42S22!SELECT: no such column 't1.c1'
+statement error 42000!SELECT: cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
 select max(coalesce(interval '5' month, interval '2' month)) from t1 order by t1.c1 desc nulls last
 
-statement error 42S22!SELECT: no such column 't1.c1'
+statement error 42000!SELECT: cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
 select sum(coalesce(coalesce(interval '5' month, interval '3' month), interval '2' month, coalesce(abs(interval '5' month), interval '2' month,
 case timestamp '1970-01-15 22:17:17' when timestamp '1970-01-03 22:17:36' then interval '5' month else interval '5' month end, interval '3' month), interval '3' month)) from t1 order by t1.c1 desc nulls last
 
@@ -641,7 +640,7 @@ case 1108638173 when 1 then 'PS	' when 0.480478635864931780119491122604813426733
 statement ok
 create view v40(vc0) as (values ((true) not in (false, false)), ("isauuid"(case 8 when 4 then 'F&' when 0 then '&' end)))
 
-query I rowsort
+statement error 42000!SELECT: cannot use non GROUP BY column 'v20.vc0' in query results without an aggregate function
 select cast(sum(count) as bigint) from (select cast(greatest(false, true) as int) as count from v37 full outer join
 (select all ((((1074663557)%(0.8367095941704169)))%(scale_up(v20.vc0, 0.25281408194923194))), 0.573499282341099
 from v20 where ((((true)or(true)))or(true)) group by 2) as sub0 on
@@ -653,8 +652,6 @@ then 0.78255921469665923329017687137820757925510406494140625 end) is null, + (ca
 then 0.8350239383024128 when '6r' then 932574625 when '[]' then 9 when '' then 5 when 'LnP/Amb9' then 2 end)
 from v40, v3 where (0.4906208915598539999081140194903127849102020263671875) not in (1654919043, 6)) as sub1
 on ((trim(v37.vc0))>=(substr(v37.vc0, 9, 8)))) as res
-----
-8
 
 statement ok
 ROLLBACK

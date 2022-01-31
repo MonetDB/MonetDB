@@ -228,7 +228,7 @@ mywstrncaseeq(const char *restrict s1, const uint32_t *restrict s2, size_t n2, b
 static inline int
 mystrcasecmp(const char *s1, const char *s2)
 {
-	uint32_t c1, c2;
+	uint32_t c1 = 0, c2 = 0;
 
 	for (;;) {
 		size_t nn1 = utfc8touc(&c1, s1);
@@ -256,7 +256,7 @@ mystrcasecmp(const char *s1, const char *s2)
 static inline int
 mywstrcasecmp(const char *restrict s1, const uint32_t *restrict s2)
 {
-	uint32_t c1;
+	uint32_t c1 = 0;
 
 	for (;;) {
 		size_t nn1 = utfc8touc(&c1, s1);
@@ -292,7 +292,7 @@ mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle, b
 		size_t h;
 		size_t step = 0;
 		for (i = h = 0; i < nlen; i++) {
-			uint32_t c;
+			uint32_t c = 0;
 			size_t j = utfc8touc(&c, haystack + h);
 			if (j == 0 || j == (size_t) -1)
 				return NULL;
@@ -1572,7 +1572,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 	str msg = MAL_SUCCEED;
 	BAT *b = NULL, *pbn = NULL, *bn = NULL;
 	char *ppat = NULL;
-	const char *input;
+	const char *input = NULL;
 	bool use_re = false, use_strcmp = false, empty = false, isensitive = (bool) *isens, anti = (bool) *not, has_nil = false,
 		 input_is_a_bat = isaBatType(getArgType(mb, pci, 1)), pattern_is_a_bat = isaBatType(getArgType(mb, pci, 2));
 	bat *r = getArgReference_bat(stk, pci, 0);

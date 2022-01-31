@@ -674,12 +674,12 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	ppos = pos; /* later check if found updatable database objects */
 
 	os_iterator(&si, sql->session->tr->cat->schemas, sql->session->tr, NULL);
-	for (sql_base *b = oi_next(&si); b; oi_next(&si)) {
+	for (sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema*)b;
 
 		struct os_iter oi;
 		os_iterator(&oi, s->funcs, sql->session->tr, NULL);
-		for (sql_base *b = oi_next(&oi); b; oi_next(&oi)) {
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 
 			if (f->query && f->lang == FUNC_LANG_SQL) {
@@ -1950,6 +1950,12 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 					"grant execute on function \"sys\".\"var\" to public;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set system = true"
+					" where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys');\n"
+					"update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d);\n",
+					(int) F_UNION);
+
+			pos += snprintf(buf + pos, bufsize - pos,
 					"create procedure sys.hot_snapshot(tarfile string, onserver bool)\n"
 					"external name sql.hot_snapshot;\n"
 					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
@@ -1964,20 +1970,6 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 				"grant execute on procedure sys.hot_snapshot(string) to \".snapshot\";\n"
 				"grant execute on procedure sys.hot_snapshot(string, bool) to \".snapshot\";\n"
 			);
-
-			/* update system tables so that the content
-			 * looks more like what it would be if sys.var
-			 * had been defined by the C code in
-			 * sql_create_env() */
-			pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true,"
-					//" func = 'CREATE FUNCTION \"sys\".\"var\"() RETURNS TABLE(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) EXTERNAL NAME \"sql\".\"sql_variables\";',"
-					" language = 2, side_effect = false where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-					"update sys.args set type = 'char' where func_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d) and type = 'clob';\n"
-					"update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d);\n",
-					(int) F_UNION,
-					(int) F_UNION,
-					(int) F_UNION);
 
 			/* SQL functions without backend implementations */
 			pos += snprintf(buf + pos, bufsize - pos,
