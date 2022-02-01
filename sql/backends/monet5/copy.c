@@ -58,15 +58,17 @@ end:
 
 
 static str
-COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left_skip_amount, bat *right_block, str *linesep_arg, str *quote_arg)
+COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left_skip_amount, bat *right_block, str *linesep_arg, str *quote_arg, bit *escape)
 {
 	str msg = MAL_SUCCEED;
 	char linesep, quote;
+	bool handle_escapes;
 	BAT *left = NULL, *right = NULL;
 	int start, left_size, right_size;
 	char *left_data, *right_data;
 	int newline_count;
 	int latest_newline;
+	bool escape_pending;
 	bool quoted;
 	int borrow;
 
@@ -76,8 +78,10 @@ COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left
 	linesep = **linesep_arg;
 	quote = **quote_arg;
 
-	if (is_bat_nil(*left_block) || is_bat_nil(*right_block) || is_lng_nil(*left_skip_amount))
+	if (is_bat_nil(*left_block) || is_bat_nil(*right_block) || is_lng_nil(*left_skip_amount) || is_bit_nil(*escape))
 		bailout("copy.fixlines", "arguments must not be nil");
+	handle_escapes = *escape;
+
 	if ((left = BATdescriptor(*left_block)) == NULL || (right = BATdescriptor(*right_block)) == NULL)
 		bailout("copy.fixlines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (BATcount(left) > (BUN)INT_MAX || BATcount(right) > (BUN)INT_MAX)
@@ -90,12 +94,21 @@ COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left
 	// of the last occurrence.
 	start = (int)*left_skip_amount;
 	left_size = (int)BATcount(left);
+	escape_pending = false;
 	quoted = false;
 	left_data = Tloc(left, 0);
 	if (start < left_size) {
 		newline_count = 0;
 		latest_newline = start - 1;
 		for (int i = start; i < left_size; i++) {
+			if (escape_pending) {
+				escape_pending = false;
+				continue;
+			}
+			if (handle_escapes && left_data[i] == '\\') {
+				escape_pending = true;
+				continue;
+			}
 			bool is_quote = left_data[i] == quote;
 			quoted ^= is_quote;
 			if (!quoted && left_data[i] == linesep) {
@@ -111,7 +124,7 @@ COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left
 		goto end;
 	}
 
-	if (latest_newline == left_size - 1) {
+	if (!escape_pending && !quoted && latest_newline == left_size - 1) {
 		// Block ends in a newline, nothing more to do
 		*ret_linecount = newline_count;
 		*ret_bytesmoved = 0;
@@ -124,6 +137,14 @@ COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left
 	borrow = -1;
 	right_data = Tloc(right, 0);
 	for (int i = 0; i < right_size; i++) {
+		if (escape_pending) {
+			escape_pending = false;
+			continue;
+		}
+		if (handle_escapes && left_data[i] == '\\') {
+			escape_pending = true;
+			continue;
+		}
 		bool is_quote = right_data[i] == quote;
 		quoted ^= is_quote;
 		if (!quoted && right_data[i] == linesep) {
