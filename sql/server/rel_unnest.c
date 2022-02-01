@@ -2091,6 +2091,30 @@ aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list)
 	return aggrs;
 }
 
+/* make sure e_func expressions don't appear on groupby expression lists */
+static sql_rel *
+aggrs_split_funcs(mvc *sql, sql_rel *rel)
+{
+	if (!list_empty(rel->exps)) {
+		list *projs = NULL;
+		for (node *n = rel->exps->h; n;) {
+			node *next = n->next;
+			sql_exp *e = n->data;
+
+			if (e->type == e_func || exps_find_exp(projs, e)) {
+				if (!projs)
+					projs = sa_list(sql->sa);
+				list_append(projs, e);
+				list_remove_node(rel->exps, NULL, n);
+			}
+			n = next;
+		}
+		if (!list_empty(projs))
+			rel = rel_project(sql->sa, rel, list_merge(rel_projections(sql, rel, NULL, 1, 1), projs, NULL));
+	}
+	return rel;
+}
+
 static int
 exps_complex(list *exps)
 {
@@ -2113,8 +2137,8 @@ aggrs_complex(list *exps)
 	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->type == e_aggr && exps_complex(e->l))
-				return 1;
+		if (e->type == e_func || (e->type == e_aggr && exps_complex(e->l)))
+			return 1;
 	}
 	return 0;
 }
@@ -2130,6 +2154,7 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 		rel->r = aggrs_split_args(v->sql, rel->r, exps, 1);
 		rel->exps = aggrs_split_args(v->sql, rel->exps, exps, 0);
 		rel->l = rel_project(v->sql->sa, rel->l, exps);
+		rel = aggrs_split_funcs(v->sql, rel);
 		v->changes++;
 		return rel;
 	}
