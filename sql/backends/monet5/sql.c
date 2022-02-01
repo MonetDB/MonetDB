@@ -5773,6 +5773,9 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",dbl),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",dbl),arg("b",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",dbl),batarg("b",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ /* sql.sum for month intervals */
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",int),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",int),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",lng),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",lng),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),

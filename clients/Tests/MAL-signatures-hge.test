@@ -44844,6 +44844,11 @@ SQLsum;
 return the sum of groups
 batsql
 sum
+pattern batsql.sum(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:int] 
+SQLsum;
+return the sum of groups
+batsql
+sum
 pattern batsql.sum(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng] 
 SQLsum;
 return the sum of groups
@@ -63795,6 +63800,11 @@ return the sum of groups
 sql
 sum
 pattern sql.sum(X_0:int, X_1:bit, X_2:bit, X_3:int, X_4:oid, X_5:oid):hge 
+SQLsum;
+return the sum of groups
+sql
+sum
+pattern sql.sum(X_0:int, X_1:bit, X_2:bit, X_3:int, X_4:oid, X_5:oid):int 
 SQLsum;
 return the sum of groups
 sql
