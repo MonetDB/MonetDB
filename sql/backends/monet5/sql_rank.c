@@ -1364,6 +1364,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	(void) cntxt;
 	if (pci->argc != 7)
 		throw(SQL, op, ILLEGAL_ARGUMENT "%s requires exactly 7 arguments", op);
+	tp2 = getArgType(mb, pci, 0);
 	tp1 = getArgType(mb, pci, 1);
 	frame_type = *getArgReference_int(stk, pci, 4);
 	assert(frame_type >= 0 && frame_type <= 6);
@@ -1375,29 +1376,9 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			goto bailout;
 		}
 	}
-	switch (tp1) {
-		case TYPE_bte:
-		case TYPE_sht:
-		case TYPE_int:
-		case TYPE_lng:
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			tp2 = TYPE_hge;
-#else
-			tp2 = TYPE_lng;
-#endif
-			break;
-		case TYPE_flt:
-			tp2 = TYPE_flt;
-			break;
-		case TYPE_dbl:
-			tp2 = TYPE_dbl;
-			break;
-		default: {
-			msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
-			goto bailout;
-		}
-	}
+	if (isaBatType(tp2))
+		tp2 = getBatType(tp2);
+
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(r = COLnew(b->hseqbase, tp2, BATcount(b), TRANSIENT))) {
@@ -1437,8 +1418,68 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		ptr in = getArgReference(stk, pci, 1);
 		int scale = 0;
 
-		switch (tp1) {
+		switch (tp2) {
+		case TYPE_bte:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_bte((bte*)res, &scale, (bte*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_sht:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_sht((sht*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_sht((sht*)res, &scale, (sht*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_int:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_int((int*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_int((int*)res, &scale, (sht*)in);
+				break;
+			case TYPE_int:
+				msg = int_dec2_int((int*)res, &scale, (int*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_lng:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_lng((lng*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_lng((lng*)res, &scale, (sht*)in);
+				break;
+			case TYPE_int:
+				msg = int_dec2_lng((lng*)res, &scale, (int*)in);
+				break;
+			case TYPE_lng:
+				msg = lng_dec2_lng((lng*)res, &scale, (lng*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
 #ifdef HAVE_HGE
+		case TYPE_hge:{
+			switch (tp1) {
 			case TYPE_bte:
 				msg = bte_dec2_hge((hge*)res, &scale, (bte*)in);
 				break;
@@ -1452,22 +1493,26 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = lng_dec2_hge((hge*)res, &scale, (lng*)in);
 				break;
 			case TYPE_hge:
-				*(hge*)res = *((hge*)in);
+				msg = hge_dec2_hge((hge*)res, &scale, (hge*)in);
 				break;
-#else
-			case TYPE_bte:
-				msg = bte_dec2_lng((lng*)res, &scale, (bte*)in);
-				break;
-			case TYPE_sht:
-				msg = sht_dec2_lng((lng*)res, &scale, (sht*)in);
-				break;
-			case TYPE_int:
-				msg = int_dec2_lng((lng*)res, &scale, (int*)in);
-				break;
-			case TYPE_lng:
-				*(lng*)res = *((lng*)in);
-				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
 #endif
+		case TYPE_flt:{
+			switch (tp1) {
+			case TYPE_flt:
+				*(flt*)res = *((flt*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_dbl:{
+			switch (tp1) {
 			case TYPE_flt: {
 				flt fp = *((flt*)in);
 				*(dbl*)res = is_flt_nil(fp) ? dbl_nil : (dbl) fp;
@@ -1476,7 +1521,12 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				*(dbl*)res = *((dbl*)in);
 				break;
 			default:
-				msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		default:
+			msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 		}
 	}
 

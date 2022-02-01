@@ -1564,9 +1564,9 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 		}
 	}
-	if (!is_join(rel->op) && !is_select(rel->op))
+	if ((!is_join(rel->op) && !is_select(rel->op)) || exps_have_freevar(sql, l) || exps_have_freevar(sql, r))
 		return rel_select(sql->sa, rel, e);
-	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
+	if (exps_card(r) <= CARD_ATOM && exps_are_atoms(r)) {
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
@@ -1598,11 +1598,10 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *r1, sql_exp *r2, s
 static sql_rel *
 rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int f)
 {
-	if (!is_join(rel->op) && !is_select(rel->op))
+	if ((!is_join(rel->op) && !is_select(rel->op)) || exp_has_freevar(sql, ls) || exp_has_freevar(sql, rs) || (rs2 && exp_has_freevar(sql, rs2)))
 		return rel_select(sql->sa, rel, e);
-	if ((rs->card <= CARD_ATOM || (rs2 && ls->card <= CARD_ATOM)) &&
-		(exp_is_atom(rs) || (rs2 && exp_is_atom(ls)) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
-		(!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
+	if ((rs->card <= CARD_ATOM || (rs2 && ls->card <= CARD_ATOM)) && (exp_is_atom(rs) || (rs2 && exp_is_atom(ls))) &&
+		(!rs2 || (rs2->card <= CARD_ATOM && exp_is_atom(rs2)))) {
 		if (ls->card == rs->card || (rs2 && (ls->card == rs2->card || rs->card == rs2->card)) || rel->processed) /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
@@ -2073,7 +2072,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		int r_has_freevar = rlist ? exps_have_freevar(sql, e->r) : exp_has_freevar(sql, e->r);
 
 		if (rcard <= CARD_ATOM && (r_is_atoms || r_has_freevar || exp_has_freevar(sql, ls))) {
-			if ((exp_card(ls) == rcard) || rel->processed) /* bin compare op */
+			if (exp_has_freevar(sql, ls) || r_has_freevar || (exp_card(ls) == rcard) || rel->processed) /* bin compare op */
 				return rel_select(sql->sa, rel, e);
 
 			return push_select_exp(sql, rel, e, ls, f);

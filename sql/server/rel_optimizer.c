@@ -6537,7 +6537,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* if local_proj is >= -1, the current expression is from the same projection 
+/* if local_proj is >= -1, the current expression is from the same projection
    if local_proj is -1, then we don't care about self references (eg used to check for order by exps) */
 static int exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj);
 
