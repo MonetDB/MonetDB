@@ -339,6 +339,10 @@ with SQLTestCase() as cli:
     cli.execute("SELECT c1 FROM rt6;") \
         .assertSucceeded().assertDataResultMatch([("3",),("8ጮk|1*",),("27",),("Vrx^qA齀",),("J",),("18",),(">*4嘁pAP",),("+Jm*W0{",),(">V鷓",),
         ("BW5z",),(".#OJruk",),("lU1覃Nlm",),(None,),("968786590",)])
+    cli.execute("SELECT 3 >= ALL(SELECT vx.vc0 FROM storage((SELECT 'sys', 't3' FROM t3))) FROM (SELECT 0) vx(vc0);") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
+    cli.execute("SELECT 3 >= ALL(SELECT vx.vc0 FROM storage((SELECT 'sys', 't3' FROM rt3))) FROM (SELECT 0) vx(vc0);") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
