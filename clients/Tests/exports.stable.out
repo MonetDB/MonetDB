@@ -915,6 +915,7 @@ InstrPtr copyInstructionArgs(InstrPtr p, int args);
 MalBlkPtr copyMalBlk(MalBlkPtr mb);
 const char *copyRef;
 const char *copy_fromRef;
+const char *corrRef;
 const char *countRef;
 const char *count_no_nilRef;
 int cpyConstant(MalBlkPtr mb, VarPtr vr);
