@@ -80,6 +80,7 @@ mal_export  const char *connectRef;
 mal_export  const char *contextRef;
 mal_export  const char *copy_fromRef;
 mal_export  const char *copyRef;
+mal_export  const char *corrRef;
 mal_export  const char *count_no_nilRef;
 mal_export  const char *countRef;
 mal_export  const char *create_constraintRef;

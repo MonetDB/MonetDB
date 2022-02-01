@@ -84,6 +84,7 @@ const char *connectRef;
 const char *contextRef;
 const char *copy_fromRef;
 const char *copyRef;
+const char *corrRef;
 const char *count_no_nilRef;
 const char *countRef;
 const char *create_constraintRef;
@@ -401,6 +402,7 @@ void optimizerInit(void)
 	contextRef = putName("context");
 	copy_fromRef = putName("copy_from");
 	copyRef = putName("copy");
+	corrRef = putName("corr");
 	count_no_nilRef = putName("count_no_nil");
 	countRef = putName("count");
 	create_constraintRef = putName("create_constraint");
