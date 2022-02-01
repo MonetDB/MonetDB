@@ -841,7 +841,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			list *cexps = NULL;
 			sql_rel *l = r->l;
 
-			if (l && (is_select(l->op) || l->op == op_join) && !rel_is_ref(l)) {
+			if (l && (is_select(l->op) || l->op == op_join || is_semi(l->op)) && !rel_is_ref(l)) {
 				for(n=r->exps->h; n; n=n->next) {
 					sql_exp *e = n->data;
 
