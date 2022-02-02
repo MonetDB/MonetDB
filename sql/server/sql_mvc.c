@@ -630,7 +630,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
-		if (!tr) {
+		if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
 			msg = createException(SQL, "sql.rollback", SQLSTATE(42000) "ROLLBACK TO SAVEPOINT: no such savepoint: '%s'", name);
 			m->session->status = -1;
 			return msg;
@@ -644,10 +644,6 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		}
 		m->session->tr = tr;	/* restart at savepoint */
 		m->session->status = tr->status;
-		if (tr->name) {
-			_DELETE(tr->name);
-			tr->name = NULL;
-		}
 		if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
 			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found on the current transaction");
 			m->session->status = -1;
@@ -691,12 +687,10 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 str
 mvc_release(mvc *m, const char *name)
 {
-	int ok = SQL_OK;
 	sql_trans *tr = m->session->tr;
 	str msg = MAL_SUCCEED;
 
-	assert(tr);
-	assert(m->session->tr->active);	/* only release active transactions */
+	assert(tr && tr->active);	/* only release active transactions */
 
 	TRC_DEBUG(SQL_TRANS, "Release: %s\n", (name) ? name : "");
 
@@ -708,20 +702,21 @@ mvc_release(mvc *m, const char *name)
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
 	if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
-		msg = createException(SQL, "sql.release", SQLSTATE(42000) "Release savepoint %s doesn't exist", name);
+		msg = createException(SQL, "sql.release", SQLSTATE(42000) "RELEASE: no such savepoint: '%s'", name);
 		m->session->status = -1;
 		return msg;
 	}
 	tr = m->session->tr;
-	while (ok == SQL_OK && (!tr->name || strcmp(tr->name, name) != 0)) {
+	while (!tr->name || strcmp(tr->name, name) != 0) {
 		/* commit all intermediate savepoints */
 		if (sql_trans_commit(tr) != SQL_OK)
 			GDKfatal("release savepoints should not fail");
 		tr = sql_trans_destroy(tr);
 	}
-	_DELETE(tr->name);
+	_DELETE(tr->name); /* name will no longer be used */
 	tr->name = NULL;
 	m->session->tr = tr;
+	m->session->status = tr->status;
 	if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
 		msg = createException(SQL, "sql.release", SQLSTATE(40000) "RELEASE: finished successfully, but the session's schema could not be found on the current transaction");
 		m->session->status = -1;
