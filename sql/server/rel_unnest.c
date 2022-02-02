@@ -24,9 +24,11 @@
 /* some unnesting steps use the 'used' flag to avoid further rewrites. List them here, so only one reset flag iteration will be used */
 #define rewrite_fix_count_used (1 << 0)
 #define rewrite_values_used    (1 << 1)
+#define rewrite_outer_used     (1 << 2)
 
 #define is_rewrite_fix_count_used(X) ((X & rewrite_fix_count_used) == rewrite_fix_count_used)
 #define is_rewrite_values_used(X)    ((X & rewrite_values_used) == rewrite_values_used)
+#define is_rewrite_outer_used(X)     ((X & rewrite_outer_used) == rewrite_outer_used)
 
 static void
 exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
@@ -3652,7 +3654,7 @@ include_tid(sql_rel *r)
 static inline sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((is_left(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
+	if (is_outerjoin(rel->op) && !is_rewrite_outer_used(rel->used) && !list_empty(rel->exps) && (((is_left(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
 		((is_right(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) || exps_have_rel_exp(rel->exps))) {
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
 		int nrcols = rel->nrcols;
@@ -3669,6 +3671,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			set_processed(except);
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			set_processed(nrel);
+			nrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, nrel, f);
 			rel->op = op_join;
 			nrel = rel_setop(v->sql->sa,
@@ -3688,6 +3691,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			set_processed(except);
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			set_processed(nrel);
+			nrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, nrel, f);
 			rel->op = op_join;
 			nrel = rel_setop(v->sql->sa,
@@ -3707,6 +3711,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			set_processed(except);
 			sql_rel *lrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			set_processed(lrel);
+			lrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, lrel, f);
 
 			except = rel_setop(v->sql->sa,
@@ -3716,6 +3721,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			set_processed(except);
 			sql_rel *rrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			set_processed(rrel);
+			rrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, rrel, f);
 			lrel = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, lrel,  rel_projections(v->sql, lrel, NULL, 1, 1)),
@@ -3841,7 +3847,8 @@ rel_unnest_simplify(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_unnest_projects(visitor *v, sql_rel *rel)
 {
-	/* both rewrite_values and rewrite_fix_count use 'used' property from sql_rel, reset it, so make sure rewrite_reset_used is called first */
+	/* The rewriters 'rewrite_values', 'rewrite_fix_count' and 'rewrite_outer2inner_union' use
+	   'used' property from sql_rel, reset it, so make sure rewrite_reset_used is called first */
 	if (rel)
 		rel = rewrite_reset_used(v, rel);
 	if (rel)
