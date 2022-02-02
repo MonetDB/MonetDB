@@ -642,10 +642,15 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 				tr->status = 1;
 			tr = sql_trans_destroy(tr);
 		}
-		m->session->tr = tr;	/* restart at savepoint */
-		m->session->status = tr->status;
-		if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
-			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found on the current transaction");
+		/* start a new transaction after rolling back */
+		if (!(m->session->tr = tr = sql_trans_create(m->store, tr, name))) {
+			msg = createException(SQL, "sql.rollback", SQLSTATE(HY013) "ROLLBACK TO SAVEPOINT: allocation failure while restarting savepoint");
+			m->session->status = -1;
+			return msg;
+		}
+		m->session->status = tr->parent->status;
+		if (!(m->session->schema = find_sql_schema(tr, m->session->schema_name))) {
+			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK TO SAVEPOINT: finished successfully, but the session's schema could not be found on the current transaction");
 			m->session->status = -1;
 			return msg;
 		}
@@ -714,7 +719,6 @@ mvc_release(mvc *m, const char *name)
 		tr = sql_trans_destroy(tr);
 	}
 	_DELETE(tr->name); /* name will no longer be used */
-	tr->name = NULL;
 	m->session->tr = tr;
 	m->session->status = tr->status;
 	if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
