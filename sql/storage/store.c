@@ -3697,10 +3697,7 @@ sql_trans_destroy(sql_trans *tr)
 	sql_trans *res = tr->parent;
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", tr);
-	if (tr->name) {
-		_DELETE(tr->name);
-		tr->name = NULL;
-	}
+	_DELETE(tr->name);
 	if (!list_empty(tr->changes))
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
@@ -3734,7 +3731,8 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 			sql_trans_destroy(tr);
 			return NULL;
 		}
-		parent->name = SA_STRDUP(parent->sa, name);
+		_DELETE(parent->name);
+		parent->name = _STRDUP(name);
 	}
 
 	store_lock(store);
@@ -7007,9 +7005,9 @@ sql_trans_begin(sql_session *s)
 	(void) ATOMIC_INC(&store->nr_active);
 	list_append(store->active, s);
 
-	s->status = 0;
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	store_unlock(store);
+	s->status = tr->status = 0;
 	return 0;
 }
 
@@ -7024,6 +7022,7 @@ sql_trans_end(sql_session *s, int ok)
 	}
 	assert(s->tr->active);
 	s->tr->active = 0;
+	s->tr->status = 0;
 	s->auto_commit = s->ac_on_commit;
 	sqlstore *store = s->tr->store;
 	store_lock(store);
