@@ -2974,7 +2974,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 				if (rsq) {
 					sql_rel *rewrite = NULL;
-					operator_type op = ((!quantifier && depth > 0)||is_cnt)?op_left:op_join;
+					operator_type op = ((!quantifier && depth > 0)||is_cnt||quantifier)?op_left:op_join;
 					(void)rewrite_inner(v->sql, rel, rsq, op, &rewrite);
 					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
