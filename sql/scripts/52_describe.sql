@@ -345,18 +345,29 @@ CREATE VIEW sys.describe_comments AS
 			c.remark rem
 		FROM (
 			SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas
+
 			UNION ALL
+
 			SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
 			FROM sys.schemas s JOIN sys.tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
 			WHERE s.name <> 'tmp'
+
 			UNION ALL
+
 			SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id
+
 			UNION ALL
+
 			SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id
+
 			UNION ALL
+
 			SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
+
 			UNION ALL
+
 			SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf WHERE f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
+
 			) AS o(id, tpe, nme)
 			JOIN sys.comments c ON c.id = o.id;
 

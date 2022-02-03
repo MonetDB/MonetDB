@@ -487,7 +487,6 @@ typedef struct sql_func {
 		Note that functions other than SQL and MAL, don't require instantiation and 'imp' is always set.
 		*/
 	sql_ftype type;
-	char* sql_name; /*Mangled name of function*/
 	list *ops;	/* param list */
 	list *res;	/* list of results */
 	sql_flang lang;

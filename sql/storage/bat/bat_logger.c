@@ -19,7 +19,6 @@
 #define CATALOG_JUN2020_MMT 52206	/* only in Jun2020-mmt */
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
-#define CATALOG_JAN2022 52301	/* first in Jan2022 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -72,64 +71,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 	}
 #endif
 
-#ifdef CATALOG_JAN2022
-	if (oldversion == CATALOG_JAN2022) {
-		/* upgrade to default releases */
-		store->catalog_version = oldversion;
-		return GDK_SUCCEED;
-	}
-#endif
-
 	return GDK_FAIL;
 }
 
-#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020 || defined CATALOG_JUL2021 || defined CATALOG_JAN2022
-/* replace a column in a system table with a new column
- * colid is the SQL id for the column, oldcolid is the BAT id of the
- * to-be-replaced BAT */
-static gdk_return
-replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol)
-{
-	gdk_return rc;
-	newcol = BATsetaccess(newcol, BAT_READ);
-	if (old_lg != NULL) {
-		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
-			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&
-			(rc = BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &colid), &newcol->batCacheid, false)) == GDK_SUCCEED) {
-			BBPretain(newcol->batCacheid);
-			BBPretain(newcol->batCacheid);
-		}
-	} else {
-		if ((rc = BAThash(lg->catalog_id)) == GDK_SUCCEED) {
-			BATiter cii = bat_iterator_nolock(lg->catalog_id);
-			BUN p;
-			MT_rwlock_rdlock(&cii.b->thashlock);
-			HASHloop_int(cii, cii.b->thash, p, &colid) {
-				if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
-					if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED ||
-						BUNreplace(lg->catalog_lid, (oid) p, &(lng){0}, false) != GDK_SUCCEED) {
-						MT_rwlock_rdunlock(&cii.b->thashlock);
-						return GDK_FAIL;
-					}
-					lg->deleted++;
-					break;
-				}
-			}
-			MT_rwlock_rdunlock(&cii.b->thashlock);
-			if ((rc = BUNappend(lg->catalog_id, &colid, false)) == GDK_SUCCEED &&
-				(rc = BUNappend(lg->catalog_bid, &newcol->batCacheid, false)) == GDK_SUCCEED &&
-				(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
-				(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(newcol)}, false)) == GDK_SUCCEED) {
-				BBPretain(newcol->batCacheid);
-			}
-			lg->cnt++;
-		}
-	}
-	return GDK_SUCCEED;
-}
-#endif
+#define N(schema, table, column)	schema "_" table "_" column
 
-#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020 || defined CATALOG_JAN2022
+#define D(schema, table)	"D_" schema "_" table
+
+#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020
 static gdk_return
 tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 {
@@ -146,38 +95,30 @@ tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 			va_end(va);
 			return GDK_FAIL;
 		}
-		if (first &&
-			(old_lg == NULL || BUNfnd(old_lg->add, &b->batCacheid) == BUN_NONE)) {
+		if (first && BUNfnd(old_lg->add, &b->batCacheid) == BUN_NONE) {
 			BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
-			if (bn == NULL) {
-				va_end(va);
-				bat_destroy(b);
-				return GDK_FAIL;
-			}
-			if (replace_bat(old_lg, lg, cid, b->batCacheid, bn) != GDK_SUCCEED) {
+			if (bn == NULL ||
+				BUNappend(old_lg->add, &bn->batCacheid, false) != GDK_SUCCEED ||
+				BUNappend(old_lg->del, &b->batCacheid, false) != GDK_SUCCEED) {
 				va_end(va);
 				bat_destroy(b);
 				bat_destroy(bn);
 				return GDK_FAIL;
 			}
+			BBPretain(bn->batCacheid);
 			/* logical refs of b stay the same: it is moved from catalog_bid to del */
 			bat_destroy(b);
+			BUN p = BUNfnd(lg->catalog_id, &cid);
+			assert(p != BUN_NONE);
+			if (BUNreplace(lg->catalog_bid, p, &bn->batCacheid, false) != GDK_SUCCEED) {
+				va_end(va);
+				bat_destroy(bn);
+				return GDK_FAIL;
+			}
+			BBPretain(bn->batCacheid);
 			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
-		if (rc == GDK_SUCCEED && old_lg == NULL) {
-			BATiter cii = bat_iterator_nolock(lg->catalog_id);
-			BUN p;
-			MT_rwlock_rdlock(&cii.b->thashlock);
-			rc = GDK_FAIL;		/* the BUNreplace should get executed */
-			HASHloop_int(cii, cii.b->thash, p, &cid) {
-				if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
-					rc = BUNreplace(lg->catalog_cnt, (oid) p, &(lng){BATcount(b)}, false);
-					break;
-				}
-			}
-			MT_rwlock_rdunlock(&cii.b->thashlock);
-		}
 		bat_destroy(b);
 		if (rc != GDK_SUCCEED) {
 			va_end(va);
@@ -405,13 +346,6 @@ const struct table {
 		.column = "semantics",
 		.fullname = "sys_functions_semantics",
 		.newid = 2162,
-	},
-	{
-		.schema = "sys",
-		.table = "functions",
-		.column = "mangled_name",
-		.fullname = "sys_functions_sqlname",
-		.newid = 2165,
 	},
 	{
 		.schema = "sys",
@@ -1893,6 +1827,50 @@ upgrade(old_logger *lg)
 	return rc;
 }
 
+/* replace a column in a system table with a new column
+ * colid is the SQL id for the column, oldcolid is the BAT id of the
+ * to-be-replaced BAT */
+static gdk_return
+replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol)
+{
+	gdk_return rc;
+	newcol = BATsetaccess(newcol, BAT_READ);
+	if (old_lg != NULL) {
+		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
+			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&
+			(rc = BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &colid), &newcol->batCacheid, false)) == GDK_SUCCEED) {
+			BBPretain(newcol->batCacheid);
+			BBPretain(newcol->batCacheid);
+		}
+	} else {
+		if ((rc = BAThash(lg->catalog_id)) == GDK_SUCCEED) {
+			BATiter cii = bat_iterator_nolock(lg->catalog_id);
+			BUN p;
+			MT_rwlock_rdlock(&cii.b->thashlock);
+			HASHloop_int(cii, cii.b->thash, p, &colid) {
+				if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
+					if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED ||
+						BUNreplace(lg->catalog_lid, (oid) p, &(lng){0}, false) != GDK_SUCCEED) {
+						MT_rwlock_rdunlock(&cii.b->thashlock);
+						return GDK_FAIL;
+					}
+					lg->deleted++;
+					break;
+				}
+			}
+			MT_rwlock_rdunlock(&cii.b->thashlock);
+			if ((rc = BUNappend(lg->catalog_id, &colid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_bid, &newcol->batCacheid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(newcol)}, false)) == GDK_SUCCEED) {
+				BBPretain(newcol->batCacheid);
+			}
+			lg->cnt++;
+		}
+	}
+	return GDK_SUCCEED;
+}
+
 static gdk_return
 bl_postversion(void *Store, void *Lg)
 {
@@ -1994,7 +1972,6 @@ bl_postversion(void *Store, void *Lg)
 			BBPretain(sem->batCacheid);
 			BBPretain(sem->batCacheid); /* yep, twice */
 			bat_destroy(sem);
-
 			if (tabins(lg, old_lg, tabins_first, -1, 0,
 					   2076, &(msk) {false},	/* sys._columns */
 					   /* 2162 is sys.functions.semantics */
@@ -3089,350 +3066,6 @@ bl_postversion(void *Store, void *Lg)
 		bat_destroy(seq_min);
 		bat_destroy(cands);
 	}
-#endif
-
-#ifdef CATALOG_JAN2022
-
-	if (store->catalog_version <= CATALOG_JAN2022) {
-
-		/* sys.functions i.e. deleted rows */
-		BAT *del_funcs	= temp_descriptor(logger_find_bat(lg, 2016));	// deletes sys.functions
-		BAT *del_args	= temp_descriptor(logger_find_bat(lg, 2028));	// deletes sys.args
-
-		if (del_funcs == NULL || del_args == NULL) {
-			bat_destroy(del_funcs);
-			bat_destroy(del_args);
-			return GDK_FAIL;
-		}
-
-		BAT *funcs_tid = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
-		BAT *args_tid = BATmaskedcands(0, BATcount(del_args), del_args, false);
-
-		if (funcs_tid == NULL || args_tid == NULL) {
-			bat_destroy(del_funcs);
-			bat_destroy(del_args);
-
-			bat_destroy(funcs_tid);
-			bat_destroy(args_tid);
-			return GDK_FAIL;
-		}
-
-		bat_destroy(del_funcs);
-		bat_destroy(del_args);
-
-		BAT *funcs_id = temp_descriptor(logger_find_bat(lg, 2017));		// sys.functions.id
-		BAT *funcs_name = temp_descriptor(logger_find_bat(lg, 2018));	// sys.functions.name
-		BAT *funcs_type = temp_descriptor(logger_find_bat(lg, 2022));	// sys.functions.type
-
-		BAT *args_func_id = temp_descriptor(logger_find_bat(lg, 2030));	// sys.args.func_id
-		BAT *args_type = temp_descriptor(logger_find_bat(lg, 2032));	// sys.args.type
-		BAT *args_digits = temp_descriptor(logger_find_bat(lg, 2033));	// sys.args.digits
-		BAT *args_scale = temp_descriptor(logger_find_bat(lg, 2034));	// sys.args.scale
-		BAT *args_inout = temp_descriptor(logger_find_bat(lg, 2035));	// sys.args.inout: 1 is input 0 is output
-		BAT *args_number = temp_descriptor(logger_find_bat(lg, 2036));	// sys.args.number: inputs first outputs are last
-
-		BAT* args_cands = NULL;
-		BAT* funcs_cands = NULL;
-
-		BAT* funcs_name_ordered = NULL;
-		BAT* funcs_type_ordered = NULL;
-		BAT* args_number_aligned = NULL;
-		BAT* args_number_order = NULL;
-		BAT* args_inout_ordered = NULL;
-		BAT* args_type_ordered = NULL;
-		BAT* args_digits_ordered = NULL;
-		BAT* args_scale_ordered = NULL;
-
-		BAT* funcs_name_mangled = NULL;
-		BAT* funcs_name_mangled_rid = NULL;
-
-		BAT* funcs_name_mirror = NULL;
-		BAT* _funcs_name_argless = NULL;
-		BAT* funcs_argless_tid = NULL;
-		BAT* funcs_name_argless= NULL;
-		BAT* funcs_type_argless= NULL;
-
-		bool error = false;
-
-		if (
-			funcs_id == NULL ||
-			funcs_name == NULL ||
-			funcs_type == NULL ||
-			args_func_id == NULL ||
-			args_type == NULL ||
-			args_digits == NULL ||
-			args_scale == NULL ||
-			args_inout == NULL ||
-			args_number == NULL
-			)
-			goto bailout;
-
-		if (BATleftjoin(
-						&funcs_cands,	&args_cands,
-						funcs_id,		args_func_id,
-						funcs_tid,		args_tid,
-						false, BATcount(args_tid) * BATcount(funcs_tid)) != GDK_SUCCEED)
-			goto bailout;
-
-		if ((funcs_name_ordered = BATproject(funcs_cands, funcs_name)) == NULL || (funcs_type_ordered = BATproject(funcs_cands, funcs_type)) == NULL)
-			goto bailout;
-
-		args_number_aligned = BATproject(args_cands, args_number);
-
-		if (BATsort(NULL, &args_number_order, NULL, args_number_aligned, NULL, funcs_cands, false, false, false) != GDK_SUCCEED)
-			goto bailout;
-
-		{
-			BAT* args_number_order_ = NULL;
-			if (!(args_number_order_ = BATproject(args_number_order, args_cands)))
-				goto bailout;
-
-			bat_destroy(args_number_order);
-			args_number_order = args_number_order_;
-		}
-
-		if (
-			(args_inout_ordered		= BATproject(args_number_order, args_inout))	== NULL ||
-			(args_type_ordered		= BATproject(args_number_order, args_type))		== NULL ||
-			(args_digits_ordered	= BATproject(args_number_order, args_digits))	== NULL ||
-			(args_scale_ordered		= BATproject(args_number_order, args_scale))	== NULL)
-			goto bailout;
-
-		if ((funcs_name_mangled = COLnew(funcs_name->hseqbase, TYPE_str, funcs_name->batCapacity, TRANSIENT)) == NULL ||
-			(funcs_name_mangled_rid = COLnew(funcs_name->hseqbase, TYPE_oid, funcs_name->batCapacity, TRANSIENT)) == NULL)
-			goto bailout;
-
-
-		{
-			BATiter bi_funcs = bat_iterator(funcs_cands);
-			BATiter bi_funcs_name = bat_iterator(funcs_name_ordered);
-			BATiter bi_args_type = bat_iterator(args_type_ordered);
-
-			oid func_rid = oid_nil;
-
-			char prefix[4098] = {0};
-			char postfix[4098] = {0};
-			size_t postfix_pos = 0;
-			int argc = 0;
-			int retc = 0;
-			char mangled[2*4098] = {0};
-
-			for (size_t i = 0; i < BATcount(funcs_cands); i ++ ) {
-				oid frid = *(oid*) BUNtail(bi_funcs, i);
-
-				if (func_rid != frid) {
-					if (func_rid != oid_nil) {
-						size_t pos = snprintf(mangled, 2*4098, "%s(%d,%d)%s", prefix, retc, argc, postfix);
-						(void) pos;
-						assert (pos < 2*4098);
-						retc = 0;
-						argc = 0;
-						postfix_pos = 0;
-
-						if (
-							BUNappend(funcs_name_mangled, mangled, false) != GDK_SUCCEED ||
-							BUNappend(funcs_name_mangled_rid, &func_rid, false) != GDK_SUCCEED) {
-								bat_iterator_end(&bi_funcs);
-								bat_iterator_end(&bi_funcs_name);
-								bat_iterator_end(&bi_args_type);
-								goto bailout;
-						}
-					}
-
-					func_rid = frid;
-					str name = (str) BUNtvar(bi_funcs_name, i);
-					int type = *(int*) Tloc(funcs_type_ordered, i);
-
-					size_t pos = 0;
-
-					switch (type) {
-					case F_FUNC:
-					case F_AGGR:
-					case F_FILT:
-						pos = snprintf(prefix, 4098, "faf%%%s", name);break;
-					case F_ANALYTIC:
-						pos = snprintf(prefix, 4098, "win%%%s", name);break;
-					case F_UNION:
-						pos = snprintf(prefix, 4098, "trf%%%s", name);break;
-					case F_PROC:
-						pos = snprintf(prefix, 4098, "prc%%%s", name);break;
-					case F_LOADER:
-						pos = snprintf(prefix, 4098, "ldr%%%s", name);break;
-					default:
-						assert(0); // Should not happen.
-					}
-					(void) pos;
-					assert(pos < 4098);
-				}
-
-				str type = (str) BUNtvar(bi_args_type, i);
-				int digits = *(int*) Tloc(args_digits_ordered, i);
-				int scale = *(int*) Tloc(args_scale_ordered, i);
-
-				bte inout = *(bte*) Tloc(args_inout_ordered, i);
-				argc++;
-				retc += (int) !inout;
-
-				postfix_pos += snprintf(postfix + postfix_pos, 4098 - postfix_pos, "%%%s(%d,%d)", type, digits, scale);
-				assert(postfix_pos < 4098);
-			}
-
-			// flush the last name
-			size_t pos = snprintf(mangled, 2*4098, "%s(%d,%d)%s", prefix, retc, argc, postfix);
-			(void) pos;
-			assert (pos < 2*4098);
-
-			bat_iterator_end(&bi_funcs);
-			bat_iterator_end(&bi_funcs_name);
-			bat_iterator_end(&bi_args_type);
-
-			if	(BUNappend(funcs_name_mangled, mangled, false) != GDK_SUCCEED ||
-				 BUNappend(funcs_name_mangled_rid, &func_rid, false) != GDK_SUCCEED)
-					goto bailout;
-		}
-
-		if ((funcs_name_mirror = BATdense(funcs_name->hseqbase, funcs_name->hseqbase, BATcount(funcs_name))) == NULL)
-			goto bailout;
-
-		if ((_funcs_name_argless = BATdiff(
-									funcs_name_mirror, funcs_name_mangled_rid, funcs_tid,
-									NULL, false, false, BATcount(funcs_name)-BATcount(funcs_name_mangled_rid))) == NULL)
-			goto bailout;
-
-		if ((funcs_argless_tid = BATproject(_funcs_name_argless, funcs_name_mirror)) == NULL)
-			goto bailout;
-
-		if ((funcs_name_argless= BATproject(funcs_argless_tid, funcs_name)) == NULL)
-			goto bailout;
-
-		if ((funcs_type_argless= BATproject(funcs_argless_tid, funcs_type)) == NULL)
-			goto bailout;
-
-		{
-			char mangled[2*4098] = {0};
-			BATiter bi_argless_tid	= bat_iterator(funcs_argless_tid);
-			BATiter bi_name_argless	= bat_iterator(funcs_name_argless);
-
-			for (size_t i = 0; i < BATcount(funcs_argless_tid); i ++ ) {
-
-				str name = (str) BUNtvar(bi_name_argless, i);
-				int type = *(int*) Tloc(funcs_type_argless, i);
-
-				size_t pos = 0;
-
-				switch (type) {
-				case F_FUNC:
-				case F_AGGR:
-				case F_FILT:
-					pos = snprintf(mangled, 4098, "faf%%%s(0,0)", name);break;
-				case F_ANALYTIC:
-					pos = snprintf(mangled, 4098, "win%%%s(0,0)", name);break;
-				case F_UNION:
-					pos = snprintf(mangled, 4098, "trf%%%s(0,0)", name);break;
-				case F_PROC:
-					pos = snprintf(mangled, 4098, "prc%%%s(0,0)", name);break;
-				case F_LOADER:
-					pos = snprintf(mangled, 4098, "ldr%%%s(0,0)", name);break;
-				default:
-					assert(0); // Should not happen.
-				}
-				(void) pos;
-				assert(pos < 4098);
-
-				oid frid = *(oid*) BUNtail(bi_argless_tid, i);
-
-				if (BUNappend(funcs_name_mangled, mangled, false) != GDK_SUCCEED ||
-					BUNappend(funcs_name_mangled_rid, &frid, false) != GDK_SUCCEED
-					) {
-						bat_iterator_end(&bi_argless_tid);
-						bat_iterator_end(&bi_name_argless);
-						goto bailout;
-				}
-			}
-			bat_iterator_end(&bi_argless_tid);
-			bat_iterator_end(&bi_name_argless);
-		}
-
-		{
-			BAT *funcs_name_mangled_final_order;
-			if (
-				(funcs_name_mangled_final_order	= BATconstant(funcs_name->hseqbase, TYPE_str, &str_nil, BATcount(funcs_name), PERSISTENT)) == NULL ||
-				BATreplace(funcs_name_mangled_final_order, funcs_name_mangled_rid, funcs_name_mangled, false) != GDK_SUCCEED ||
-				(funcs_name_mangled_final_order = BATsetaccess(funcs_name_mangled_final_order, BAT_READ)) == NULL ||
-				BUNappend(lg->catalog_id, &(int) {2165}, false) != GDK_SUCCEED || // 2165 is sys.functions.mangled_name
-				BUNappend(lg->catalog_bid, &funcs_name_mangled_final_order->batCacheid, false) != GDK_SUCCEED) {
-				bat_destroy(funcs_name_mangled_final_order);
-				goto bailout;
-			}
-			if (
-				(lg->catalog_lid	&& BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED) ||
-				(lg->catalog_cnt    && BUNappend(lg->catalog_cnt, &(lng){BATcount(funcs_name_mangled_final_order)}, false) != GDK_SUCCEED) ||
-				(old_lg				&& BUNappend(old_lg->add, &funcs_name_mangled_final_order->batCacheid, false) != GDK_SUCCEED)) {
-				bat_destroy(funcs_name_mangled_final_order);
-				goto bailout;
-			}
-
-			BBPretain(funcs_name_mangled_final_order->batCacheid);
-			BBPretain(funcs_name_mangled_final_order->batCacheid); /* yep, twice */
-			bat_destroy(funcs_name_mangled_final_order);
-
-			if (tabins(lg, old_lg, tabins_first, -1, 0,
-						2076, &(msk) {false},	/* sys._columns */
-						/* 2165 is sys.functions.mangled_name */
-						2077, &(int) {2165},		/* sys._columns.id */
-						2078, "mangled_name",			/* sys._columns.name */
-						2079, "varchar",			/* sys._columns.type */
-						2080, &(int) {4098},		/* sys._columns.type_digits */
-						2081, &(int) {0},		/* sys._columns.type_scale */
-						/* 2016 is sys.functions */
-						2082, &(int) {2016},		/* sys._columns.table_id */
-						2083, str_nil,			/* sys._columns.default */
-						2084, &(bit) {TRUE},		/* sys._columns.null */
-						2085, &(int) {12},		/* sys._columns.number */
-						2086, str_nil,			/* sys._columns.storage */
-						0) != GDK_SUCCEED)
-				goto bailout;
-			tabins_first = false;
-		}
-
-		if (false) {
-			bailout:
-			error = true;
-		}
-
-		bat_destroy(funcs_tid);
-		bat_destroy(funcs_name);
-		bat_destroy(funcs_type);
-		bat_destroy(args_func_id);
-		bat_destroy(args_type);
-		bat_destroy(args_digits);
-		bat_destroy(args_scale);
-		bat_destroy(args_inout);
-		bat_destroy(args_number);
-
-		bat_destroy(funcs_name_ordered);
-		bat_destroy(funcs_type_ordered);
-		bat_destroy(args_number_aligned);
-		bat_destroy(args_number_order);
-		bat_destroy(args_inout_ordered);
-		bat_destroy(args_type_ordered);
-		bat_destroy(args_digits_ordered);
-		bat_destroy(args_scale_ordered);
-		bat_destroy(funcs_name_mangled);
-		bat_destroy(funcs_name_mangled_rid);
-
-		bat_destroy(funcs_name_mirror);
-		bat_destroy(_funcs_name_argless);
-		bat_destroy(funcs_argless_tid);
-		bat_destroy(funcs_name_argless);
-		bat_destroy(funcs_type_argless);
-
-		if (error) {
-			return GDK_FAIL;
-		}
-	}
-
-
 #endif
 
 	return GDK_SUCCEED;

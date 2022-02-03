@@ -214,7 +214,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		sql_subfunc *f = e->f;
 		mnstr_printf(fout, "\"%s\".\"%s\"",
 				f->func->s?dump_escape_ident(sql->ta, f->func->s->base.name):"sys",
-				dump_escape_ident(sql->ta, f->func->sql_name));
+				dump_escape_ident(sql->ta, f->func->base.name));
 		exps_print(sql, fout, e->l, depth, refs, 0, 1);
 		if (e->r) { /* list of optional lists */
 			list *l = e->r;
@@ -228,7 +228,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		sql_subfunc *a = e->f;
 		mnstr_printf(fout, "\"%s\".\"%s\"",
 				a->func->s?dump_escape_ident(sql->ta, a->func->s->base.name):"sys",
-				dump_escape_ident(sql->ta, a->func->sql_name));
+				dump_escape_ident(sql->ta, a->func->base.name));
 		if (need_distinct(e))
 			mnstr_printf(fout, " unique ");
 		if (need_no_nil(e))
@@ -276,7 +276,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			mnstr_printf(fout, " FILTER \"%s\".\"%s\"",
 					f->func->s?dump_escape_ident(sql->ta, f->func->s->base.name):"sys",
-					dump_escape_ident(sql->ta, f->func->sql_name));
+					dump_escape_ident(sql->ta, f->func->base.name));
 			exps_print(sql, fout, e->r, depth, refs, 0, 1);
 		} else if (e->f) {
 			mnstr_printf(fout, "(");

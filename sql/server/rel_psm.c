@@ -769,7 +769,7 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f, int repla
 
 	append(exps, exp_atom_clob(sa, sname));
 	if (f)
-		append(exps, exp_atom_clob(sa, f->sql_name));
+		append(exps, exp_atom_clob(sa, f->base.name));
 	append(exps, exp_atom_ptr(sa, f));
 	append(exps, exp_atom_int(sa, replace));
 	rel->l = NULL;
