@@ -262,5 +262,13 @@ query I nosort
 SELECT vx.vc1 <> ALL(SELECT x.x FROM t0) FROM vx JOIN (SELECT 1) AS x(x) ON vx.vc1 <> ALL(SELECT vx.vc1 FROM t0) AND (SELECT FALSE FROM t0)
 ----
 
+query I nosort
+SELECT 1 FROM vx JOIN (SELECT 1) AS x(x) ON vx.vc1 <> ALL(SELECT vx.vc1 FROM t0) AND (SELECT FALSE FROM t0)
+----
+
+query I nosort
+SELECT 1 FROM vx WHERE vx.vc1 <> ALL(SELECT vx.vc1 FROM t0) AND (SELECT FALSE FROM t0)
+----
+
 statement ok
 ROLLBACK
