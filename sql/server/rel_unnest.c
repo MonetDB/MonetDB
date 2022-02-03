@@ -1127,7 +1127,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 				if (exp_has_freevar(sql, e))
 					rel_bind_var(sql, rel->l, e);
 			}
-			r->exps = list_merge(r->exps, a, (fdup)NULL);
+			r->exps = list_distinct(list_merge(r->exps, a, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
 			if (!r->r) {
 				if (id)
 					r->r = list_append(sa_list(sql->sa), exp_ref(sql, id));
