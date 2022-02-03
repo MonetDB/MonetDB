@@ -241,4 +241,15 @@ FULL OUTER JOIN (SELECT 1 FROM t0 AS w RIGHT OUTER JOIN (SELECT 1) AS z(z) ON EX
 ON y.y = y.y) AS x(x) ON TRUE WHEN NOT MATCHED THEN INSERT (c0) VALUES (1)
 
 statement ok
+CREATE TABLE rt0 (c0 INT)
+
+query I nosort
+SELECT 1 FROM rt0 WHERE 5 <= ALL(SELECT 2 FROM generate_series((SELECT 3, rt0.c0, 4 FROM rt0 x)))
+----
+
+query I nosort
+SELECT 1 FROM t0 WHERE 5 <= ALL(SELECT 2 FROM generate_series((SELECT 3, t0.c0, 4 FROM t0 x)))
+----
+
+statement ok
 ROLLBACK
