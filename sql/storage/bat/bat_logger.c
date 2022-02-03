@@ -19,6 +19,7 @@
 #define CATALOG_JUN2020_MMT 52206	/* only in Jun2020-mmt */
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
+#define CATALOG_JAN2022 52301	/* first in Jan2022 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -71,14 +72,64 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_JAN2022
+	if (oldversion == CATALOG_JAN2022) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
-#define N(schema, table, column)	schema "_" table "_" column
+#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020 || defined CATALOG_JUL2021 || defined CATALOG_JAN2022
+/* replace a column in a system table with a new column
+ * colid is the SQL id for the column, oldcolid is the BAT id of the
+ * to-be-replaced BAT */
+static gdk_return
+replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol)
+{
+	gdk_return rc;
+	newcol = BATsetaccess(newcol, BAT_READ);
+	if (old_lg != NULL) {
+		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
+			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&
+			(rc = BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &colid), &newcol->batCacheid, false)) == GDK_SUCCEED) {
+			BBPretain(newcol->batCacheid);
+			BBPretain(newcol->batCacheid);
+		}
+	} else {
+		if ((rc = BAThash(lg->catalog_id)) == GDK_SUCCEED) {
+			BATiter cii = bat_iterator_nolock(lg->catalog_id);
+			BUN p;
+			MT_rwlock_rdlock(&cii.b->thashlock);
+			HASHloop_int(cii, cii.b->thash, p, &colid) {
+				if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
+					if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED ||
+						BUNreplace(lg->catalog_lid, (oid) p, &(lng){0}, false) != GDK_SUCCEED) {
+						MT_rwlock_rdunlock(&cii.b->thashlock);
+						return GDK_FAIL;
+					}
+					lg->deleted++;
+					break;
+				}
+			}
+			MT_rwlock_rdunlock(&cii.b->thashlock);
+			if ((rc = BUNappend(lg->catalog_id, &colid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_bid, &newcol->batCacheid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(newcol)}, false)) == GDK_SUCCEED) {
+				BBPretain(newcol->batCacheid);
+			}
+			lg->cnt++;
+		}
+	}
+	return GDK_SUCCEED;
+}
+#endif
 
-#define D(schema, table)	"D_" schema "_" table
-
-#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020
+#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020 || defined CATALOG_JAN2022
 static gdk_return
 tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 {
@@ -95,27 +146,22 @@ tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 			va_end(va);
 			return GDK_FAIL;
 		}
-		if (first && BUNfnd(old_lg->add, &b->batCacheid) == BUN_NONE) {
+		if (first &&
+			(old_lg == NULL || BUNfnd(old_lg->add, &b->batCacheid) == BUN_NONE)) {
 			BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
-			if (bn == NULL ||
-				BUNappend(old_lg->add, &bn->batCacheid, false) != GDK_SUCCEED ||
-				BUNappend(old_lg->del, &b->batCacheid, false) != GDK_SUCCEED) {
+			if (bn == NULL) {
+				va_end(va);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+			if (replace_bat(old_lg, lg, cid, b->batCacheid, bn) != GDK_SUCCEED) {
 				va_end(va);
 				bat_destroy(b);
 				bat_destroy(bn);
 				return GDK_FAIL;
 			}
-			BBPretain(bn->batCacheid);
 			/* logical refs of b stay the same: it is moved from catalog_bid to del */
 			bat_destroy(b);
-			BUN p = BUNfnd(lg->catalog_id, &cid);
-			assert(p != BUN_NONE);
-			if (BUNreplace(lg->catalog_bid, p, &bn->batCacheid, false) != GDK_SUCCEED) {
-				va_end(va);
-				bat_destroy(bn);
-				return GDK_FAIL;
-			}
-			BBPretain(bn->batCacheid);
 			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
@@ -1827,50 +1873,6 @@ upgrade(old_logger *lg)
 	return rc;
 }
 
-/* replace a column in a system table with a new column
- * colid is the SQL id for the column, oldcolid is the BAT id of the
- * to-be-replaced BAT */
-static gdk_return
-replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol)
-{
-	gdk_return rc;
-	newcol = BATsetaccess(newcol, BAT_READ);
-	if (old_lg != NULL) {
-		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
-			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&
-			(rc = BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &colid), &newcol->batCacheid, false)) == GDK_SUCCEED) {
-			BBPretain(newcol->batCacheid);
-			BBPretain(newcol->batCacheid);
-		}
-	} else {
-		if ((rc = BAThash(lg->catalog_id)) == GDK_SUCCEED) {
-			BATiter cii = bat_iterator_nolock(lg->catalog_id);
-			BUN p;
-			MT_rwlock_rdlock(&cii.b->thashlock);
-			HASHloop_int(cii, cii.b->thash, p, &colid) {
-				if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
-					if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED ||
-						BUNreplace(lg->catalog_lid, (oid) p, &(lng){0}, false) != GDK_SUCCEED) {
-						MT_rwlock_rdunlock(&cii.b->thashlock);
-						return GDK_FAIL;
-					}
-					lg->deleted++;
-					break;
-				}
-			}
-			MT_rwlock_rdunlock(&cii.b->thashlock);
-			if ((rc = BUNappend(lg->catalog_id, &colid, false)) == GDK_SUCCEED &&
-				(rc = BUNappend(lg->catalog_bid, &newcol->batCacheid, false)) == GDK_SUCCEED &&
-				(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
-				(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(newcol)}, false)) == GDK_SUCCEED) {
-				BBPretain(newcol->batCacheid);
-			}
-			lg->cnt++;
-		}
-	}
-	return GDK_SUCCEED;
-}
-
 static gdk_return
 bl_postversion(void *Store, void *Lg)
 {
@@ -1972,6 +1974,7 @@ bl_postversion(void *Store, void *Lg)
 			BBPretain(sem->batCacheid);
 			BBPretain(sem->batCacheid); /* yep, twice */
 			bat_destroy(sem);
+
 			if (tabins(lg, old_lg, tabins_first, -1, 0,
 					   2076, &(msk) {false},	/* sys._columns */
 					   /* 2162 is sys.functions.semantics */
