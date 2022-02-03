@@ -277,6 +277,7 @@ mal_export  const char *set_protocolRef;
 mal_export  const char *singleRef;
 mal_export  const char *sinkRef;
 mal_export  const char *sliceRef;
+mal_export  const char *slicerRef;
 mal_export  const char *sortRef;
 mal_export  const char *sortReverseRef;
 mal_export  const char *sqlcatalogRef;

@@ -279,6 +279,7 @@ const char *set_protocolRef;
 const char *singleRef;
 const char *sinkRef;
 const char *sliceRef;
+const char *slicerRef;
 const char *sortRef;
 const char *sqlcatalogRef;
 const char *sqlRef;
@@ -596,6 +597,7 @@ void optimizerInit(void)
 	singleRef = putName("single");
 	sinkRef = putName("sink");
 	sliceRef = putName("slice");
+	slicerRef = putName("slicer");
 	sortRef = putName("sort");
 	sqlcatalogRef = putName("sqlcatalog");
 	sqlRef = putName("sql");

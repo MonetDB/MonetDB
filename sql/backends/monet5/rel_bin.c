@@ -3765,6 +3765,32 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 	return cnt;
 }
 
+static void
+set_need_pipeline(backend *be)
+{
+	if(be->need_pipeline)
+		assert(0);
+	be->need_pipeline = 1;
+}
+
+static bool
+get_need_pipeline(backend *be)
+{
+	return be->need_pipeline;
+}
+
+static void
+set_pipeline(backend *be, stmt *pp)
+{
+	be->ppstmt = pp;
+}
+
+static stmt *
+get_pipeline(backend *be)
+{
+	return be->ppstmt;
+}
+
 /* return true iff groupby can (ie only simple aggregation, which allows for 2 phases)
  *					and cardinality estimation is low enough for extra resources for aggregation per thread.
  */
@@ -3827,7 +3853,7 @@ rel_single_distinct(sql_rel *rel)
 
 /* initialize the result variable for the parallel execution */
 static stmt *
-rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
+rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
 {
 	if (!_2phases && list_empty(rel->r)) /* cannot handle global aggregation without 2 phases */
 		return NULL;
@@ -3926,6 +3952,7 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
 				return NULL;
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
+			q = pushInt(be->mb, q, estimate*1.1);
 			append(shared, q->argv);
 			append(*aggrresults, q->argv);
 
@@ -3961,6 +3988,26 @@ rel_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
 	pp -> op4.lval = shared;
 	return pp;
 }
+
+static stmt *
+rel2bin_slicer(backend *be, stmt *sub, int slicer)
+{
+	if (slicer == 1) {
+		list *newl = sa_list(be->mvc->sa);
+		for (node *n = sub->op4.lval->h; n; n = n->next) {
+			stmt *sc = n->data;
+			const char *cname = column_name(be->mvc->sa, sc);
+			const char *tname = table_name(be->mvc->sa, sc);
+
+			sc = column(be, sc);
+			sc = stmt_slicer(be, sc, slicer);
+			list_append(newl, stmt_alias(be, sc, tname, cname));
+		}
+		sub = stmt_list(be, newl);
+	}
+	return sub;
+}
+
 
 static stmt *
 rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp, bool
@@ -4118,8 +4165,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 //	if (rel_single_distinct(rel))
 
 	stmt *pp = NULL;
+	int neededpp = get_need_pipeline(be);
 	if (SQLrunning)
-		pp = rel_prepare_pp(&aggrresults, be, rel, _2phases);
+		pp = rel_groupby_prepare_pp(&aggrresults, be, rel, _2phases);
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
 		sub = subrel_project(be, sub, refs, rel->l);
@@ -4253,9 +4301,80 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		list_append(l, aggrstmt);
 	}
 	stmt_set_nrcols(cursub);
-	if (pp)
-		return rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp, _2phases);
+	if (pp) {
+		cursub = rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp, _2phases);
+		if (neededpp) {
+			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+			return rel2bin_slicer(be, cursub, 1);
+		}
+	}
 	return cursub;
+}
+
+static bool
+rel_topn_2_phases(sql_rel *rel)
+{
+	if (rel->l) {
+		sql_rel *l = rel->l;
+		/* for now no support for concurrent heap based topn */
+		if (is_project(l->op) && l->r)
+			return false;
+	}
+//	return true;
+			return false;
+}
+
+static list *
+rel_topn_prepare_pp(backend *be, sql_rel *rel)
+{
+	sql_rel *l = rel->l;
+
+	if (l && is_project(l->op) && !list_empty(l->exps)) {
+		list *projectresults = sa_list(be->mvc->sa);
+		for( node *n = l->exps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			sql_subtype *t = exp_subtype(e);
+			int tt = t->type->localtype;
+			InstrPtr q = newStmt(be->mb, batRef, newRef);
+
+			if (q == NULL)
+				return NULL;
+			setVarType(be->mb, getArg(q, 0), newBatType(tt));
+			q = pushType(be->mb, q, tt);
+			append(projectresults, q->argv);
+		}
+		set_need_pipeline(be);
+		return projectresults;
+	}
+	return NULL;
+}
+
+static stmt *
+rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stmt *l)
+{
+	(void)pp_jump(be, pp, be->nrparts);
+
+	list *newl = sa_list(be->mvc->sa);
+	list *cols = sub->op4.lval;
+	if (list_length(cols) != list_length(projectresults))
+		return NULL;
+	for (node *n = cols->h, *m = projectresults->h; n && m; n = n->next, m = m->next) {
+		stmt *sc = n->data;
+		int resid = *(int*)m->data;
+		const char *cname = column_name(be->mvc->sa, sc);
+		const char *tname = table_name(be->mvc->sa, sc);
+
+		sc = column(be, sc);
+		/* todo locked slice */
+		(void)o;
+		sc = stmt_slice(be, sc, l); /* sum o+l */
+		sc->nr = sc->q->argv[0] = resid; /* use shared result */
+		list_append(newl, stmt_alias(be, sc, tname, cname));
+	}
+	sub = stmt_list(be, newl);
+
+	(void)pp_end(be, pp);
+	return sub;
 }
 
 static stmt *
@@ -4265,7 +4384,11 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	sql_exp *oe = NULL, *le = NULL;
 	stmt *sub = NULL, *l = NULL, *o = NULL;
 	node *n;
+	int _2phases = rel_topn_2_phases(rel);
+    list *projectresults = NULL;
 
+	if (SQLrunning && _2phases)
+		projectresults = rel_topn_prepare_pp(be, rel);
 	if (rel->l) { /* first construct the sub relation */
 		sql_rel *rl = rel->l;
 
@@ -4278,6 +4401,12 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	}
 	if (!sub)
 		return NULL;
+
+	stmt *pp = NULL;
+	if (projectresults)
+		pp = get_pipeline(be);
+	if (projectresults && !pp)
+		assert(0);
 
 	le = topn_limit(rel);
 	oe = topn_offset(rel);
@@ -4310,18 +4439,33 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 
 		sc = column(be, sc);
-		limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, o, l, 0,0,0,0,0);
+		if (!pp) {
+			limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, o, l, 0,0,0,0,0);
 
-		for ( ; n; n = n->next) {
-			stmt *sc = n->data;
-			const char *cname = column_name(sql->sa, sc);
-			const char *tname = table_name(sql->sa, sc);
+			for ( ; n; n = n->next) {
+				stmt *sc = n->data;
+				const char *cname = column_name(sql->sa, sc);
+				const char *tname = table_name(sql->sa, sc);
 
-			sc = column(be, sc);
-			sc = stmt_project(be, limit, sc);
-			list_append(newl, stmt_alias(be, sc, tname, cname));
+				sc = column(be, sc);
+				sc = stmt_project(be, limit, sc);
+				list_append(newl, stmt_alias(be, sc, tname, cname));
+			}
+			sub = stmt_list(be, newl);
+		} else {
+			for ( ; n; n = n->next) {
+				stmt *sc = n->data;
+				const char *cname = column_name(sql->sa, sc);
+				const char *tname = table_name(sql->sa, sc);
+
+				sc = column(be, sc);
+				sc = stmt_slice(be, sc, l); /* sum o+l */
+				list_append(newl, stmt_alias(be, sc, tname, cname));
+			}
+			sub = stmt_list(be, newl);
+			/* */
+			sub = rel_pp_topn(be, projectresults, sub, pp, o, l);
 		}
-		sub = stmt_list(be, newl);
 	}
 	return sub;
 }

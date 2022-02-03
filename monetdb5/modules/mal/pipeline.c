@@ -1410,13 +1410,9 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
-		if (ATOMvarsized(r->ttype))
-			memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
-	} else if (cnt == 0) {
-		BUN sz = BATcapacity(r);
-		if (ATOMvarsized(r->ttype))
-			memset(Tloc(r, 0), 0, r->twidth*sz);
 	}
+	if (cnt < max && ATOMvarsized(r->ttype))
+		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
 
 	/* get max id from gid */
 	if (!err) {
@@ -1489,13 +1485,12 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
+		printf("count extend %ld\n", sz);
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
-		memset(Tloc(r, cnt), 0, sizeof(lng)*(sz-cnt));
-	} else if (cnt == 0) {
-		BUN sz = BATcapacity(r);
-		memset(Tloc(r, 0), 0, sizeof(lng)*sz);
 	}
+	if (cnt < max)
+		memset(Tloc(r, cnt), 0, sizeof(lng)*(max-cnt));
 
 	if (!err) {
 		BUN cnt = BATcount(g);
@@ -1573,13 +1568,12 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
+		printf("sum extend %ld\n", sz);
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
-		memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
-	} else if (cnt == 0) {
-		BUN sz = BATcapacity(r);
-		memset(Tloc(r, 0), 0, r->twidth*sz);
 	}
+	if (cnt < max)
+		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
 
 	if (!err) {
 		BUN cnt = BATcount(g);
@@ -1801,22 +1795,14 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
+	}
+	if (cnt < max) {
 		if (ATOMextern(r->ttype)) {
-			memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+			memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
 		} else {
 			char *d = Tloc(r, 0);
 			char *nil = ATOMnil(r->ttype);
-			for (BUN i=cnt; i<sz; i++)
-				memcpy(d+i, nil, r->twidth);
-		}
-	} else if (cnt == 0) {
-		BUN sz = BATcapacity(r);
-		if (ATOMextern(r->ttype)) {
-			memset(Tloc(r, 0), 0, r->twidth*sz);
-		} else {
-			char *d = Tloc(r, 0);
-			char *nil = ATOMnil(r->ttype);
-			for (BUN i=0; i<sz; i++)
+			for (BUN i=cnt; i<max; i++)
 				memcpy(d+i, nil, r->twidth);
 		}
 	}
@@ -1926,22 +1912,14 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
+	}
+	if (cnt < max) {
 		if (ATOMextern(r->ttype)) {
-			memset(Tloc(r, cnt), 0, r->twidth*(sz-cnt));
+			memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
 		} else {
 			char *d = Tloc(r, 0);
 			char *nil = ATOMnil(r->ttype);
-			for (BUN i=cnt; i<sz; i++)
-				memcpy(d+i, nil, r->twidth);
-		}
-	} else if (cnt == 0) {
-		BUN sz = BATcapacity(r);
-		if (ATOMextern(r->ttype)) {
-			memset(Tloc(r, 0), 0, r->twidth*sz);
-		} else {
-			char *d = Tloc(r, 0);
-			char *nil = ATOMnil(r->ttype);
-			for (BUN i=0; i<sz; i++)
+			for (BUN i=cnt; i<max; i++)
 				memcpy(d+i, nil, r->twidth);
 		}
 	}
@@ -1981,6 +1959,36 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	return MAL_SUCCEED;
 }
 
+#define SLICE_SIZE 100000
+static str
+SLICERslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	/* return the nth slice of SLICE_SIZE rows from the input bat */
+	(void)cntxt;
+	(void)mb;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	int nr  = *getArgReference_int(stk, pci, 2);
+
+	BUN s = SLICE_SIZE*nr;
+	BAT *b = BATdescriptor(*bid);
+	if (!b)
+		return createException(SQL, "slicer.slice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	BAT *r = NULL;
+	if (BATcount(b) < s) {
+		r = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
+	} else {
+		r = BATslice(b, s, s+SLICE_SIZE);
+	}
+	if (!r)
+		return createException(SQL, "slicer.slice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	BBPkeepref(*bid = b->batCacheid);
+	BBPkeepref(*res = r->batCacheid);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return next atomic number [0..n>", args(1,2, arg("", int), arg("pipeline", ptr))),
@@ -2000,6 +2008,7 @@ static mel_func pipeline_init_funcs[] = {
  command("aggr", "max", LALGmax, false, "Max per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("sink",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("sink",1),argany("tt",1),arg("size",int), batargany("p",2))),
+ pattern("slicer", "slice", SLICERslice, false, "", args(2,3, batargany("slice",1), batargany("b",1), arg("nr",int))),
  { .imp=NULL }
 };
 #include "mal_import.h"

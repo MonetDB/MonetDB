@@ -54,13 +54,15 @@ typedef struct backend {
 
 	bool sizeheader:1,	/* print size header in result set */
 		 no_mitosis:1,	/* run query without mitosis */
+		 need_pipeline:1,	/* flag to indicate we need to start a pipeline */
 		 console:1,
 		 silent:1; /* on some occasions we don't want to output the result set or the number of affected rows */
 	cq 	*q;		/* pointer to the cached query */
 
-	int pp;
-	int nrparts;
-	int pipeline;
+	int pp;			/* pipeline counter of the language.pipeline barrier */
+	int nrparts;	/* nrparts of the .. */
+	int pipeline;	/* pipeline ptr argument of the language.pipeline barrier */
+	void *ppstmt;
 
 	int result_id;
 	res_table *results;

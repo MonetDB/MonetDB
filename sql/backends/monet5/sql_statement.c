@@ -1111,7 +1111,6 @@ stmt_result(backend *be, stmt *s, int nr)
 	return ns;
 }
 
-
 /* limit maybe atom nil */
 stmt *
 stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order)
@@ -4428,6 +4427,69 @@ pp_create(backend *be, int nrparts)
 	return NULL;
 }
 
+stmt *
+stmt_slicer(backend *be, stmt *col, int slicer)
+{
+	sql_subtype *tp = tail_type(col);
+	int tt = tp->type->localtype;
+	if (slicer != 1)
+		return col;
+
+	InstrPtr q = NULL;
+	q = newStmt(be->mb, slicerRef, sliceRef);
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	//q = pushArgument(be->mb, q, col->nr);
+	q = pushReturn(be->mb, q, col->nr);
+	q->inout = 1;
+	q = pushArgument(be->mb, q, be->pp);
+
+	stmt *ns = stmt_create(be->mvc->sa, st_temp);
+	if (ns == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
+
+	ns->op1 = col;
+	ns->nrcols = col->nrcols;
+	ns->key = col->key;
+	ns->aggr = col->aggr;
+	ns->q = q;
+	ns->nr = getArg(q, 0);
+	ns->op4.typeval = *tp;
+	return ns;
+}
+
+stmt *
+stmt_slice(backend *be, stmt *col, stmt *limit)
+{
+	sql_subtype *tp = tail_type(col);
+	int tt = tp->type->localtype;
+
+	InstrPtr q = NULL;
+	q = newStmt(be->mb, algebraRef, sliceRef);
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushArgument(be->mb, q, col->nr);
+	q = pushLng(be->mb, q, 0);
+	q = pushArgument(be->mb, q, limit->nr);
+
+	stmt *ns = stmt_create(be->mvc->sa, st_temp);
+	if (ns == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
+
+	ns->op1 = col;
+	ns->op2 = limit;
+	ns->nrcols = col->nrcols;
+	ns->key = col->key;
+	ns->aggr = col->aggr;
+	ns->q = q;
+	ns->nr = getArg(q, 0);
+	ns->op4.typeval = *tp;
+	return ns;
+}
+
+
 int
 pp_jump(backend *be, stmt *label, int nrparts)
 {
@@ -4452,6 +4514,7 @@ pp_jump(backend *be, stmt *label, int nrparts)
 int
 pp_end(backend *be, stmt *label)
 {
+	be->pp = be->nrparts = 0;
 	InstrPtr q = newAssignmentArgs(be->mb, 2);
 	if (q == NULL)
 		return -1;
