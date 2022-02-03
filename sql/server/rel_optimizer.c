@@ -9774,9 +9774,11 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 			if (p && p->r == pp)
 				pp = NULL;
 
-			rel->l = l = rel_add_identity(v->sql, l, &lid);
+			if (!(rel->l = l = rel_add_identity(v->sql, l, &lid)))
+				return NULL;
 			if (rel->op == op_left) {
-				p->r = rel_add_identity(v->sql, p->r, &rid);
+				if (!(p->r = rel_add_identity(v->sql, p->r, &rid)))
+					return NULL;
 				if (pp)
 					list_append(pp->exps, exp_ref(v->sql, rid));
 			}
