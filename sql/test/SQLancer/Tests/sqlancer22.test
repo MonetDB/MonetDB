@@ -270,5 +270,9 @@ query I nosort
 SELECT 1 FROM vx WHERE vx.vc1 <> ALL(SELECT vx.vc1 FROM t0) AND (SELECT FALSE FROM t0)
 ----
 
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT c0 FROM rt0) vt(vc1) WHERE (1) IN (SELECT 2 FROM rt0 GROUP BY rt0.c0, vt.vc1)
+----
+
 statement ok
 ROLLBACK
