@@ -602,7 +602,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 
 	opt *set = NULL;
 	int setlen;
-	bool with_mapi_server = false;
+	bool with_mapi_server;
 	int workers, memory;
 	gdk_return gdk_res;
 
@@ -616,6 +616,8 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "GDKfatal() with unspecified error");
 		goto cleanup;
 	}
+
+	 with_mapi_server = false;
 
 	if (monetdbe_embedded_initialized) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "MonetDBe is already initialized"));
