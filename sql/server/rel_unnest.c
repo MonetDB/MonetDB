@@ -1162,7 +1162,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 				if (exp_has_freevar(sql, e))
 					rel_bind_var(sql, rel->l, e);
 			}
-			r->exps = list_merge(r->exps, a, (fdup)NULL);
+			r->exps = list_distinct(list_merge(r->exps, a, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
 			if (!r->r) {
 				if (id)
 					r->r = list_append(sa_list(sql->sa), exp_ref(sql, id));
@@ -2974,7 +2974,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 				if (rsq) {
 					sql_rel *rewrite = NULL;
-					operator_type op = ((!quantifier && depth > 0)||is_cnt)?op_left:op_join;
+					operator_type op = ((!quantifier && depth > 0)||is_cnt||quantifier)?op_left:op_join;
 					(void)rewrite_inner(v->sql, rel, rsq, op, &rewrite);
 					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}

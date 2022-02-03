@@ -252,4 +252,27 @@ SELECT 1 FROM t0 WHERE 5 <= ALL(SELECT 2 FROM generate_series((SELECT 3, t0.c0, 
 ----
 
 statement ok
+create or replace view vx(vc0, vc1) as (select 10, 2)
+
+query I nosort
+SELECT vx.vc1 <> ALL(SELECT x.x) FROM vx JOIN (SELECT 1) AS x(x) ON vx.vc1 <> ALL(SELECT vx.vc1 FROM t0) AND (SELECT FALSE FROM t0)
+----
+
+query I nosort
+SELECT vx.vc1 <> ALL(SELECT x.x FROM t0) FROM vx JOIN (SELECT 1) AS x(x) ON vx.vc1 <> ALL(SELECT vx.vc1 FROM t0) AND (SELECT FALSE FROM t0)
+----
+
+query I nosort
+SELECT 1 FROM vx JOIN (SELECT 1) AS x(x) ON vx.vc1 <> ALL(SELECT vx.vc1 FROM t0) AND (SELECT FALSE FROM t0)
+----
+
+query I nosort
+SELECT 1 FROM vx WHERE vx.vc1 <> ALL(SELECT vx.vc1 FROM t0) AND (SELECT FALSE FROM t0)
+----
+
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT c0 FROM rt0) vt(vc1) WHERE (1) IN (SELECT 2 FROM rt0 GROUP BY rt0.c0, vt.vc1)
+----
+
+statement ok
 ROLLBACK

@@ -19,7 +19,6 @@
 #define CATALOG_JUN2020_MMT 52206	/* only in Jun2020-mmt */
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
-#define CATALOG_JAN2022 52301	/* first in Jan2022 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -72,18 +71,10 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 	}
 #endif
 
-#ifdef CATALOG_JAN2022
-	if (oldversion == CATALOG_JAN2022) {
-		/* upgrade to default releases */
-		store->catalog_version = oldversion;
-		return GDK_SUCCEED;
-	}
-#endif
-
 	return GDK_FAIL;
 }
 
-#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020 || defined CATALOG_JUL2021 || defined CATALOG_JAN2022
+#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020 || defined CATALOG_JUL2021
 /* replace a column in a system table with a new column
  * colid is the SQL id for the column, oldcolid is the BAT id of the
  * to-be-replaced BAT */
@@ -129,7 +120,7 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 }
 #endif
 
-#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020 || defined CATALOG_JAN2022
+#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020
 static gdk_return
 tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 {
@@ -165,6 +156,19 @@ tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
+		if (rc == GDK_SUCCEED && old_lg == NULL) {
+			BATiter cii = bat_iterator_nolock(lg->catalog_id);
+			BUN p;
+			MT_rwlock_rdlock(&cii.b->thashlock);
+			rc = GDK_FAIL;          /* the BUNreplace should get executed */
+			HASHloop_int(cii, cii.b->thash, p, &cid) {
+				if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
+					rc = BUNreplace(lg->catalog_cnt, (oid) p, &(lng){BATcount(b)}, false);
+					break;
+				}
+			}
+			MT_rwlock_rdunlock(&cii.b->thashlock);
+		}
 		bat_destroy(b);
 		if (rc != GDK_SUCCEED) {
 			va_end(va);
