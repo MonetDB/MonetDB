@@ -1,3 +1,23 @@
+monetdb (11.43.7) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7228: COMMIT: transaction is aborted because of concurrency
+    conflicts, will ROLLBACK instead
+  * GH#7230: Prepared statement of INSERT with SELECT fails when types difer
+  * GH#7232: False conflicts when inserting in a not null field
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 03 Feb 2022 09:58:19 +0100
+
+monetdb (11.43.7) unstable; urgency=low
+
+  * sql: [This feature was already released in Jan2022 (11.43), but the ChangeLog was missing]
+    Added SQL procedures sys.vacuum(sname string, tname string, cname string),
+    sys.vacuum(sname string, tname string, cname string, interval int),
+    sys.stop_vacuum(sname string, tname string, cname string).
+    These can be used to vacuum string columns.
+
+ -- svetlin <svetlin.stalinov@monetdbsolutions.com>  Mon, 24 Jan 2022 09:58:19 +0100
+
 monetdb (11.43.5) unstable; urgency=low
 
   * Rebuilt.
