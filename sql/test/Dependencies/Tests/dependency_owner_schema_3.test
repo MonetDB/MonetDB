@@ -126,7 +126,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-2280 values hashing to b2c3c01501ba3f13f733f29bb870f1fd
+2277 values hashing to be0394cfd4bbe2f3fb9af9fb43087e76
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
@@ -193,7 +193,7 @@ SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c,  sys.objects as kc, sy
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-273 values hashing to 585daadc2da91c70e70b39e28f619f63
+270 values hashing to cffffcc5c307d9fbc2f33b06858b20fa
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name

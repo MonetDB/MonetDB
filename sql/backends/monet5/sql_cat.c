@@ -930,7 +930,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 			sql_func *func = (sql_func*)b;
 
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
-				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->sql_name);
+				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
 			res = mvc_drop_func(sql, s, func, action);
 		}
 	} else if (fid == -2) { /* if exists option */
@@ -944,7 +944,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 
 				if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
 					list_destroy(list_func);
-					throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->sql_name);
+					throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
 				}
 			}
 		res = mvc_drop_all_func(sql, s, list_func, action);
@@ -1003,7 +1003,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			sql_func *sff = sf->func;
 
 			if (!sff->s || sff->system)
-				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->sql_name);
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->base.name);
 
 			/* if all function parameters are the same, return */
 			if (sff->lang == f->lang && sff->type == f->type &&
@@ -1014,7 +1014,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 				return MAL_SUCCEED;
 
 			if (mvc_check_dependency(sql, sff->base.id, !IS_PROC(sff) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
-				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: there are database objects dependent on %s %s;", base, F, fn, sff->sql_name);
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: there are database objects dependent on %s %s;", base, F, fn, sff->base.name);
 			switch (mvc_drop_func(sql, s, sff, 0)) {
 				case -1:
 					throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1029,7 +1029,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			sql->errstr[0] = '\0';
 		}
 	}
-	switch (mvc_create_func(&nf, sql, NULL, s, f->sql_name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect)) {
+	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect)) {
 		case -1:
 			throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:

@@ -2587,7 +2587,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							continue;
 						}
 
-						/* get all object names in current schema
+						/*
 						 * | LINE            | SCHEMA FILTER | NAME FILTER                   |
 						 * |-----------------+---------------+-------------------------------|
 						 * | ""              | yes           | -                             |

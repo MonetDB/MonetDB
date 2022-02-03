@@ -77,8 +77,8 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 		pos += snprintf(buf + pos, bufsize - pos,
 				"insert into sys.functions values"
 				" (%d, '%s', '%s', '%s',"
-				" %d, %d, %s, %s, %s, %d, %s, %s, '%s');\n",
-				func->base.id, func->sql_name,
+				" %d, %d, %s, %s, %s, %d, %s, %s);\n",
+				func->base.id, func->base.name,
 				sql_func_imp(func), sql_func_mod(func), (int) FUNC_LANG_INT,
 				(int) func->type,
 				boolnames[func->side_effect],
@@ -86,8 +86,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 				boolnames[func->vararg],
 				func->s ? func->s->base.id : s->base.id,
 				boolnames[func->system],
-				boolnames[func->semantics],
-				func->base.name);
+				boolnames[func->semantics]);
 		if (func->res) {
 			for (m = func->res->h; m; m = m->next, number++) {
 				arg = m->data;
@@ -4650,230 +4649,6 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	return err;		/* usually MAL_SUCCEED */
 }
 
-static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
-{
-	size_t bufsize = 65536, pos = 0;
-	char *buf = NULL, *err = NULL;
-	res_table *output;
-
-	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"select c.id from schemas s, tables t, columns c, functions f, dependencies d \n"
-			"where s.id = t.schema_id and t.id = c.table_id and d.id = c.id and d.depend_id = f.id and f.name = 'describe_function' and s.name = 'sys' and t.name = 'functions' and c.name = 'mangled_name';\n");
-	err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
-	if (err) {
-		GDKfree(buf);
-		return err;
-	}
-	BAT* b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b)) {
-			assert(BATcount(b) == 1);
-			BBPunfix(b->batCacheid);
-			/* nothing to do */
-			GDKfree(buf);
-			res_table_destroy(output);
-			return NULL;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	else {
-		res_table_destroy(output);
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	res_table_destroy(output);
-
-	if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
-		return err;
-	*systabfixed = true;
-
-	pos = snprintf(buf, bufsize, "SET SCHEMA \"sys\";\n");
-
-	sql_schema *s = mvc_bind_schema(sql, "sys");
-	sql_table* t = NULL;
-
-	t = mvc_bind_table(sql, s, "describe_privileges");
-	t->system = 0;
-	t = mvc_bind_table(sql, s, "dump_comments");
-	t->system = 0;
-	t = mvc_bind_table(sql, s, "describe_comments");
-	t->system = 0;
-	t = mvc_bind_table(sql, s, "fully_qualified_functions");
-	t->system = 0;
-
-	pos += snprintf(buf + pos, bufsize - pos,
-				"UPDATE sys.functions SET system = false WHERE schema_id = 2000 AND name in ('dump_database', 'describe_function');"
-				"UPDATE sys._tables SET system = false WHERE schema_id = 2000 AND name in ('describe_privileges', 'dump_comments', 'describe_comments', 'fully_qualified_functions');"
-				"DROP VIEW sys.describe_privileges;\n"
-				"DROP FUNCTION sys.dump_database(BOOLEAN);\n"
-				"DROP VIEW sys.dump_comments;\n"
-				"DROP VIEW sys.describe_comments;\n"
-				"DROP VIEW sys.fully_qualified_functions;\n"
-				"DROP FUNCTION sys.describe_function(STRING, STRING);\n"
-				"CREATE FUNCTION sys.describe_function(schemaName string, functionName string)\n"
-				"	RETURNS TABLE(id integer, name string, type string, language string, remark string)\n"
-				"BEGIN\n"
-				"	RETURN SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark\n"
-				"		FROM sys.functions f\n"
-				"		JOIN sys.schemas s ON f.schema_id = s.id\n"
-				"		JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
-				"		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id\n"
-				"		LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
-				"		WHERE f.name=functionName AND s.name = schemaName;\n"
-				"END;\n"
-				"CREATE VIEW sys.fully_qualified_functions AS\n"
-				"	WITH fqn(id, tpe, sig, num) AS\n"
-				"	(\n"
-				"		SELECT\n"
-				"			f.id,\n"
-				"			ft.function_type_keyword,\n"
-				"			CASE WHEN a.type IS NULL THEN\n"
-				"				sys.fqn(s.name, f.name) || '()'\n"
-				"			ELSE\n"
-				"				sys.fqn(s.name, f.name) || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'\n"
-				"			END,\n"
-				"			a.number\n"
-				"		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id\n"
-				"		WHERE s.id= f.schema_id AND f.type = ft.function_type_id\n"
-				"	)\n"
-				"	SELECT\n"
-				"		fqn1.id id,\n"
-				"		fqn1.tpe tpe,\n"
-				"		fqn1.sig nme\n"
-				"	FROM\n"
-				"		fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)\n"
-				"		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);\n"
-				"	CREATE VIEW sys.describe_privileges AS\n"
-				"	SELECT\n"
-				"		CASE\n"
-				"			WHEN o.tpe IS NULL AND pc.privilege_code_name = 'SELECT' THEN --GLOBAL privileges: SELECT maps to COPY FROM\n"
-				"				'COPY FROM'\n"
-				"			WHEN o.tpe IS NULL AND pc.privilege_code_name = 'UPDATE' THEN --GLOBAL privileges: UPDATE maps to COPY INTO\n"
-				"				'COPY INTO'\n"
-				"			ELSE\n"
-				"				o.nme\n"
-				"		END o_nme,\n"
-				"		coalesce(o.tpe, 'GLOBAL') o_tpe,\n"
-				"		pc.privilege_code_name p_nme,\n"
-				"		a.name a_nme,\n"
-				"		g.name g_nme,\n"
-				"		p.grantable grantable\n"
-				"	FROM\n"
-				"		sys.privileges p LEFT JOIN\n"
-				"		(\n"
-				"		SELECT t.id, s.name || '.' || t.name , 'TABLE'\n"
-				"			from sys.schemas s, sys.tables t where s.id = t.schema_id\n"
-				"		UNION ALL\n"
-				"			SELECT c.id, s.name || '.' || t.name || '.' || c.name, 'COLUMN'\n"
-				"			FROM sys.schemas s, sys.tables t, sys.columns c where s.id = t.schema_id AND t.id = c.table_id\n"
-				"		UNION ALL\n"
-				"			SELECT f.id, f.nme, f.tpe\n"
-				"			FROM sys.fully_qualified_functions f\n"
-				"		) o(id, nme, tpe) ON o.id = p.obj_id,\n"
-				"		sys.privilege_codes pc,\n"
-				"		auths a, auths g\n"
-				"	WHERE\n"
-				"		p.privileges = pc.privilege_code_id AND\n"
-				"		p.auth_id = a.id AND\n"
-				"		p.grantor = g.id;\n"
-				"CREATE VIEW sys.describe_comments AS\n"
-				"	SELECT\n"
-				"		o.id id,\n"
-				"		o.tpe tpe,\n"
-				"		o.nme fqn,\n"
-				"		c.remark rem\n"
-				"	FROM (\n"
-				"		SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas\n"
-				"		UNION ALL\n"
-				"		SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)\n"
-				"		FROM sys.schemas s JOIN sys.tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id\n"
-				"		WHERE s.name <> 'tmp'\n"
-				"		UNION ALL\n"
-				"		SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id\n"
-				"		UNION ALL\n"
-				"		SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id\n"
-				"		UNION ALL\n"
-				"		SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id\n"
-				"		UNION ALL\n"
-				"		SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf WHERE f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id\n"
-				"		) AS o(id, tpe, nme)\n"
-				"		JOIN sys.comments c ON c.id = o.id;\n"
-				"CREATE VIEW sys.dump_comments AS\n"
-  				"	SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;\n"
-				"CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)\n"
-				"BEGIN\n"
-				"\n"
-				"  SET SCHEMA sys;\n"
-				"  TRUNCATE sys.dump_statements;\n"
-				"\n"
-				"  INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');\n"
-				"  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA \"sys\";');\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;\n"
-				"\n"
-				"  --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s\n"
-				"				    FROM (\n"
-				"				      SELECT f.o, f.stmt FROM sys.dump_functions f\n"
-				"				       UNION\n"
-				"				      SELECT t.o, t.stmt FROM sys.dump_tables t\n"
-				"				    ) AS stmts(o, s);\n"
-				"\n"
-				"  -- dump table data before adding constraints and fixing sequences\n"
-				"  IF NOT DESCRIBE THEN\n"
-				"    CALL sys.dump_table_data();\n"
-				"  END IF;\n"
-				"\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;\n"
-				"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;\n"
-				"\n"
-				"  --TODO Improve performance of dump_table_data.\n"
-				"  --TODO loaders ,procedures, window and filter sys.functions.\n"
-				"  --TODO look into order dependent group_concat\n"
-				"\n"
-				"  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');\n"
-				"\n"
-				"  RETURN sys.dump_statements;\n"
-				"END;\n"
-				"GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;\n"
-				"GRANT SELECT ON sys.describe_comments TO PUBLIC;\n"
-				"GRANT SELECT ON sys.describe_privileges TO PUBLIC;\n"
-				"UPDATE sys._tables SET system = true WHERE\n"
-				"		schema_id = 2000 AND\n"
-				"		name in (\n"
-				"			'describe_privileges',\n"
-				"			'fully_qualified_functions',\n"
-				"			'describe_comments',\n"
-				"			'dump_comments'\n"
-				"		);\n"
-				"UPDATE sys.functions SET system = TRUE WHERE schema_id = 2000 AND name in ('describe_function', 'dump_database');\n"
-	);
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -5073,13 +4848,6 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jan2022(c, m, prev_schema, &systabfixed)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-		freeException(err);
-		GDKfree(prev_schema);
-		return -1;
-	}
-
-	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
