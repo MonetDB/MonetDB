@@ -540,6 +540,194 @@ select avg(bb) over (order by bb groups 2 preceding),
 3
 4
 
+query TTTT nosort
+select sum(aa) over (partition by bb),
+       sum(aa) over (partition by bb order by bb asc),
+       sum(aa) over (partition by bb order by bb desc),
+       sum(aa) over (order by bb desc) from analytics
+----
+NULL
+NULL
+NULL
+NULL
+0:00:26
+0:00:26
+0:00:26
+0:00:26
+0:00:26
+0:00:26
+0:00:26
+0:00:26
+0:00:26
+0:00:26
+0:00:26
+0:00:26
+0:00:11
+0:00:11
+0:00:11
+0:00:37
+0:00:11
+0:00:11
+0:00:11
+0:00:37
+0:00:11
+0:00:11
+0:00:11
+0:00:37
+0:00:09
+0:00:09
+0:00:09
+0:00:46
+0:00:09
+0:00:09
+0:00:09
+0:00:46
+0:00:09
+0:00:09
+0:00:09
+0:00:46
+
+query TTTT nosort
+select sum(bb) over (partition by aa),
+       sum(bb) over (partition by aa order by aa asc),
+       sum(bb) over (partition by aa order by aa desc),
+       sum(bb) over (order by aa desc) from analytics
+----
+3
+3
+3
+3
+2
+2
+2
+5
+3
+3
+3
+8
+3
+3
+3
+11
+1
+1
+1
+12
+3
+3
+3
+15
+3
+3
+3
+15
+1
+1
+1
+16
+6
+6
+6
+22
+6
+6
+6
+22
+
+query TTTT nosort
+select min(aa) over (partition by bb),
+       min(aa) over (partition by bb order by bb asc),
+       min(aa) over (partition by bb order by bb desc),
+       min(aa) over (order by bb desc) from analytics
+----
+NULL
+NULL
+NULL
+NULL
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:02
+0:00:02
+0:00:02
+0:00:02
+0:00:02
+0:00:02
+0:00:02
+0:00:02
+0:00:02
+0:00:02
+0:00:02
+0:00:02
+
+query TTTT nosort
+select max(bb) over (partition by aa),
+       max(bb) over (partition by aa order by aa asc),
+       max(bb) over (partition by aa order by aa desc),
+       max(bb) over (order by aa desc) from analytics
+----
+3
+3
+3
+3
+2
+2
+2
+3
+3
+3
+3
+3
+3
+3
+3
+3
+1
+1
+1
+3
+2
+2
+2
+3
+2
+2
+2
+3
+1
+1
+1
+3
+4
+4
+4
+4
+4
+4
+4
+4
+
 statement ok
 rollback
 

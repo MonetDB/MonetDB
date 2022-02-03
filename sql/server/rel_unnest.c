@@ -24,9 +24,11 @@
 /* some unnesting steps use the 'used' flag to avoid further rewrites. List them here, so only one reset flag iteration will be used */
 #define rewrite_fix_count_used (1 << 0)
 #define rewrite_values_used    (1 << 1)
+#define rewrite_outer_used     (1 << 2)
 
 #define is_rewrite_fix_count_used(X) ((X & rewrite_fix_count_used) == rewrite_fix_count_used)
 #define is_rewrite_values_used(X)    ((X & rewrite_values_used) == rewrite_values_used)
+#define is_rewrite_outer_used(X)     ((X & rewrite_outer_used) == rewrite_outer_used)
 
 static void
 exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
@@ -859,7 +861,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				break;
 			}
 
-			if (l && (is_select(l->op) || l->op == op_join) && !rel_is_ref(l)) {
+			if (l && (is_select(l->op) || l->op == op_join || is_semi(l->op)) && !rel_is_ref(l)) {
 				for(n=r->exps->h; n; n=n->next) {
 					sql_exp *e = n->data;
 
@@ -1125,7 +1127,8 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 			/* move groupby up, ie add attributes of left + the old expression list */
 
 			if (l && list_length(a) > 1 && !need_distinct(l)) { /* add identity call only if there's more than one column in the groupby */
-				rel->l = rel_add_identity(sql, l, &id); /* add identity call for group by */
+				if (!(rel->l = rel_add_identity(sql, l, &id))) /* add identity call for group by */
+					return NULL;
 				assert(id);
 			}
 
@@ -1468,7 +1471,8 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 				if (l->l) {
 					sql_exp *tfe = tf->r;
 					list *ops = tfe->l;
-					rel->l = d = rel_add_identity(sql, d, &id);
+					if (!(rel->l = d = rel_add_identity(sql, d, &id)))
+						return NULL;
 					id = exp_ref(sql, id);
 					l = tf->l = rel_crossproduct(sql->sa, rel_dup(d), l, op_join);
 					set_dependent(l);
@@ -2139,6 +2143,30 @@ aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list)
 	return aggrs;
 }
 
+/* make sure e_func expressions don't appear on groupby expression lists */
+static sql_rel *
+aggrs_split_funcs(mvc *sql, sql_rel *rel)
+{
+	if (!list_empty(rel->exps)) {
+		list *projs = NULL;
+		for (node *n = rel->exps->h; n;) {
+			node *next = n->next;
+			sql_exp *e = n->data;
+
+			if (e->type == e_func || exps_find_exp(projs, e)) {
+				if (!projs)
+					projs = sa_list(sql->sa);
+				list_append(projs, e);
+				list_remove_node(rel->exps, NULL, n);
+			}
+			n = next;
+		}
+		if (!list_empty(projs))
+			rel = rel_project(sql->sa, rel, list_merge(rel_projections(sql, rel, NULL, 1, 1), projs, NULL));
+	}
+	return rel;
+}
+
 static int
 exps_complex(list *exps)
 {
@@ -2161,8 +2189,8 @@ aggrs_complex(list *exps)
 	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->type == e_aggr && exps_complex(e->l))
-				return 1;
+		if (e->type == e_func || (e->type == e_aggr && exps_complex(e->l)))
+			return 1;
 	}
 	return 0;
 }
@@ -2178,6 +2206,7 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 		rel->r = aggrs_split_args(v->sql, rel->r, exps, 1);
 		rel->exps = aggrs_split_args(v->sql, rel->exps, exps, 0);
 		rel->l = rel_project(v->sql->sa, rel->l, exps);
+		rel = aggrs_split_funcs(v->sql, rel);
 		v->changes++;
 		return rel;
 	}
@@ -2206,7 +2235,8 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						rel_destroy(rel);
 						rel = l;
 					}
-					rel = rel_add_identity(v->sql, rel, &id); /* identity function needed */
+					if (!(rel = rel_add_identity(v->sql, rel, &id))) /* identity function needed */
+						return NULL;
 					const char *idrname = exp_relname(id), *idname = exp_name(id);
 					list *tids = NULL, *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 
@@ -3627,7 +3657,7 @@ include_tid(sql_rel *r)
 static inline sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((is_left(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
+	if (is_outerjoin(rel->op) && !is_rewrite_outer_used(rel->used) && !list_empty(rel->exps) && (((is_left(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
 		((is_right(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) || exps_have_rel_exp(rel->exps))) {
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
 		int nrcols = rel->nrcols;
@@ -3644,6 +3674,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			set_processed(except);
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			set_processed(nrel);
+			nrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, nrel, f);
 			rel->op = op_join;
 			nrel = rel_setop(v->sql->sa,
@@ -3663,6 +3694,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			set_processed(except);
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			set_processed(nrel);
+			nrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, nrel, f);
 			rel->op = op_join;
 			nrel = rel_setop(v->sql->sa,
@@ -3682,6 +3714,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			set_processed(except);
 			sql_rel *lrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			set_processed(lrel);
+			lrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, lrel, f);
 
 			except = rel_setop(v->sql->sa,
@@ -3691,6 +3724,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			set_processed(except);
 			sql_rel *rrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			set_processed(rrel);
+			rrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, rrel, f);
 			lrel = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, lrel,  rel_projections(v->sql, lrel, NULL, 1, 1)),
@@ -3816,7 +3850,8 @@ rel_unnest_simplify(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_unnest_projects(visitor *v, sql_rel *rel)
 {
-	/* both rewrite_values and rewrite_fix_count use 'used' property from sql_rel, reset it, so make sure rewrite_reset_used is called first */
+	/* The rewriters 'rewrite_values', 'rewrite_fix_count' and 'rewrite_outer2inner_union' use
+	   'used' property from sql_rel, reset it, so make sure rewrite_reset_used is called first */
 	if (rel)
 		rel = rewrite_reset_used(v, rel);
 	if (rel)

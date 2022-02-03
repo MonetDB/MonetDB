@@ -81,7 +81,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jan2022/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jan2022-SP1/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -850,6 +850,20 @@ fi
 %endif
 
 %changelog
+* Thu Feb 03 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.7-20220203
+- Rebuilt.
+- GH#7228: COMMIT: transaction is aborted because of concurrency
+  conflicts, will ROLLBACK instead
+- GH#7230: Prepared statement of INSERT with SELECT fails when types difer
+- GH#7232: False conflicts when inserting in a not null field
+
+* Mon Jan 24 2022 svetlin <svetlin.stalinov@monetdbsolutions.com> - 11.43.7-20220203
+- sql: [This feature was already released in Jan2022 (11.43), but the ChangeLog was missing]
+  Added SQL procedures sys.vacuum(sname string, tname string, cname string),
+  sys.vacuum(sname string, tname string, cname string, interval int),
+  sys.stop_vacuum(sname string, tname string, cname string).
+  These can be used to vacuum string columns.
+
 * Tue Jan 18 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.5-20220118
 - Rebuilt.
 

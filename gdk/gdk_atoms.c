@@ -1390,6 +1390,252 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 	return UUID_STRLEN;
 }
 
+static const blob blob_nil = {
+	~(size_t) 0
+};
+
+size_t
+blobsize(size_t nitems)
+{
+	if (nitems == ~(size_t) 0)
+		nitems = 0;
+	assert(offsetof(blob, data) + nitems <= VAR_MAX);
+	return (size_t) (offsetof(blob, data) + nitems);
+}
+
+static int
+BLOBcmp(const void *L, const void *R)
+{
+	const blob *l = L, *r = R;
+	int c;
+	if (is_blob_nil(r))
+		return !is_blob_nil(l);
+	if (is_blob_nil(l))
+		return -1;
+	if (l->nitems < r->nitems) {
+		c = memcmp(l->data, r->data, l->nitems);
+		if (c == 0)
+			return -1;
+	} else {
+		c = memcmp(l->data, r->data, r->nitems);
+		if (c == 0)
+			return l->nitems > r->nitems;
+	}
+	return c;
+}
+
+static void
+BLOBdel(Heap *h, var_t *idx)
+{
+	HEAP_free(h, *idx);
+}
+
+static BUN
+BLOBhash(const void *B)
+{
+	const blob *b = B;
+	return (BUN) b->nitems;
+}
+
+static void *
+BLOBread(void *A, size_t *dstlen, stream *s, size_t cnt)
+{
+	blob *a = A;
+	int len;
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (mnstr_readInt(s, &len) != 1 || len < 0)
+		return NULL;
+	if (a == NULL || *dstlen < (size_t) len) {
+		if ((a = GDKrealloc(a, (size_t) len)) == NULL)
+			return NULL;
+		*dstlen = (size_t) len;
+	}
+	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
+		GDKfree(a);
+		return NULL;
+	}
+	return a;
+}
+
+static gdk_return
+BLOBwrite(const void *A, stream *s, size_t cnt)
+{
+	const blob *a = A;
+	size_t len = blobsize(a->nitems);
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
+		mnstr_write(s, a, len, 1) < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+static size_t
+BLOBlength(const void *P)
+{
+	const blob *p = P;
+	size_t l = blobsize(p->nitems); /* 64bit: check for overflow */
+	assert(l <= (size_t) GDK_int_max);
+	return l;
+}
+
+static gdk_return
+BLOBheap(Heap *heap, size_t capacity)
+{
+	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+}
+
+static var_t
+BLOBput(BAT *b, var_t *bun, const void *VAL)
+{
+	const blob *val = VAL;
+	char *base = NULL;
+
+	*bun = HEAP_malloc(b, blobsize(val->nitems));
+ 	base = b->tvheap->base;
+	if (*bun != (var_t) -1) {
+		memcpy(&base[*bun], val, blobsize(val->nitems));
+		b->tvheap->dirty = true;
+	}
+	return *bun;
+}
+
+static ssize_t
+BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
+{
+	static const char hexit[] = "0123456789ABCDEF";
+	const blob *p = P;
+	char *s;
+	size_t i;
+	size_t expectedlen;
+
+	if (is_blob_nil(p))
+		expectedlen = external ? 4 : 2;
+	else
+		expectedlen = p->nitems * 2 + 1;
+	if (*l < expectedlen || *tostr == NULL) {
+		GDKfree(*tostr);
+		*tostr = GDKmalloc(expectedlen);
+		if (*tostr == NULL)
+			return -1;
+		*l = expectedlen;
+	}
+	if (is_blob_nil(p)) {
+		if (external) {
+			strcpy(*tostr, "nil");
+			return 3;
+		}
+		strcpy(*tostr, str_nil);
+		return 1;
+	}
+
+	s = *tostr;
+
+	for (i = 0; i < p->nitems; i++) {
+		int val = (p->data[i] >> 4) & 15;
+
+		*s++ = hexit[val];
+		val = p->data[i] & 15;
+		*s++ = hexit[val];
+	}
+	*s = '\0';
+	return (ssize_t) (s - *tostr);
+}
+
+static ssize_t
+BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
+{
+	blob **val = (blob **) VAL;
+	size_t i;
+	size_t nitems;
+	size_t nbytes;
+	blob *result;
+	const char *s = instr;
+
+	if (strNil(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
+		nbytes = blobsize(0);
+		if (*l < nbytes || *val == NULL) {
+			GDKfree(*val);
+			if ((*val = GDKmalloc(nbytes)) == NULL)
+				return -1;
+		}
+		**val = blob_nil;
+		return strNil(instr) ? 1 : 3;
+	}
+
+	/* count hexits and check for hexits/space */
+	for (i = nitems = 0; instr[i]; i++) {
+		if (isxdigit((unsigned char) instr[i]))
+			nitems++;
+		else if (!isspace((unsigned char) instr[i])) {
+			GDKerror("Illegal char (not a hexadecimal digit) in blob\n");
+			return -1;
+		}
+	}
+	if (nitems % 2 != 0) {
+		GDKerror("Illegal blob length '%zu' (should be even)\n", nitems);
+		return -1;
+	}
+	nitems /= 2;
+	nbytes = blobsize(nitems);
+
+	if (*l < nbytes || *val == NULL) {
+		GDKfree(*val);
+		*val = GDKmalloc(nbytes);
+		if( *val == NULL)
+			return -1;
+		*l = nbytes;
+	}
+	result = *val;
+	result->nitems = nitems;
+
+	/*
+	   // Read the values of the blob.
+	 */
+	for (i = 0; i < nitems; ++i) {
+		char res = 0;
+
+		for (;;) {
+			if (isdigit((unsigned char) *s)) {
+				res = *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res = 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res = 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
+		}
+		s++;
+		res <<= 4;
+		for (;;) {
+			if (isdigit((unsigned char) *s)) {
+				res += *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res += 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res += 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
+		}
+		s++;
+
+		result->data[i] = res;
+	}
+
+	return (ssize_t) (s - instr);
+}
+
 atomDesc BATatoms[MAXATOMS] = {
 	[TYPE_void] = {
 		.name = "void",
@@ -1649,9 +1895,26 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomLen = (size_t (*)(const void *)) strLen,
 		.atomHeap = strHeap,
 	},
+	[TYPE_blob] = {
+		.name = "blob",
+		.storage = TYPE_blob,
+		.linear = true,
+		.size = sizeof(var_t),
+		.atomNull = (void *) &blob_nil,
+		.atomFromStr = BLOBfromstr,
+		.atomToStr = BLOBtostr,
+		.atomRead = BLOBread,
+		.atomWrite = BLOBwrite,
+		.atomCmp = BLOBcmp,
+		.atomHash = BLOBhash,
+		.atomPut = BLOBput,
+		.atomDel = BLOBdel,
+		.atomLen = BLOBlength,
+		.atomHeap = BLOBheap,
+	},
 };
 
-int GDKatomcnt = TYPE_str + 1;
+int GDKatomcnt = TYPE_blob + 1;
 
 /*
  * Sometimes a bat descriptor is loaded before the dynamic module

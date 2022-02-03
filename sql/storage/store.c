@@ -3691,10 +3691,7 @@ sql_trans_destroy(sql_trans *tr)
 	sql_trans *res = tr->parent;
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", tr);
-	if (tr->name) {
-		_DELETE(tr->name);
-		tr->name = NULL;
-	}
+	_DELETE(tr->name);
 	if (!list_empty(tr->changes))
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
@@ -3707,6 +3704,8 @@ sql_trans_destroy(sql_trans *tr)
 	}
 	store_unlock(store);
 	MT_lock_destroy(&tr->lock);
+	if (!list_empty(tr->dropped))
+		list_destroy(tr->dropped);
 	_DELETE(tr);
 	return res;
 }
@@ -3726,7 +3725,8 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 			sql_trans_destroy(tr);
 			return NULL;
 		}
-		parent->name = SA_STRDUP(parent->sa, name);
+		_DELETE(parent->name);
+		parent->name = _STRDUP(name);
 	}
 
 	store_lock(store);
@@ -4833,10 +4833,31 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	sql_type *t = sql_trans_find_type(tr, s, id);
 	int res = LOG_OK;
 
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		sqlid* local_id = MNEW(sqlid);
+		if (!local_id)
+			return -1;
+
+		if (!tr->dropped) {
+			tr->dropped = list_create((fdestroy) &id_destroy);
+			if (!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
+		*local_id = t->base.id;
+		list_append(tr->dropped, local_id);
+	}
+
 	if ((res = sys_drop_type(tr, t, drop_action)))
 		return res;
 	if ((res = os_del(s->types, tr, t->base.name, dup_base(&t->base))))
 		return res;
+
+	if (drop_action == DROP_CASCADE_START && tr->dropped) {
+		list_destroy(tr->dropped);
+		tr->dropped = NULL;
+	}
 	return res;
 }
 
@@ -4979,22 +5000,17 @@ build_drop_func_list_item(sql_trans *tr, sql_schema *s, sqlid id)
 int
 sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action)
 {
-	node *n = NULL;
-	sql_func *func = NULL;
-	list* to_drop = NULL;
+	list *to_drop = NULL;
 	int res = LOG_OK;
 
 	(void) drop_action;
+	if (!tr->dropped && !(tr->dropped = list_create((fdestroy) &id_destroy)))
+		return -1;
 
-	if (!tr->dropped) {
-		tr->dropped = list_create((fdestroy) &id_destroy);
-		if (!tr->dropped)
-			return -1;
-	}
-	for (n = list_func->h; n ; n = n->next ) {
-		func = (sql_func *) n->data;
+	for (node *n = list_func->h; n ; n = n->next ) {
+		sql_func *func = (sql_func *) n->data;
 
-		if (! list_find_id(tr->dropped, func->base.id)){
+		if (!list_find_id(tr->dropped, func->base.id)) {
 			sqlid *local_id = MNEW(sqlid);
 			if (!local_id) {
 				list_destroy(tr->dropped);
@@ -5003,33 +5019,32 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_
 					list_destroy(to_drop);
 				return -1;
 			}
-			if (!to_drop) {
-				to_drop = list_create(NULL);
-				if (!to_drop) {
-					list_destroy(tr->dropped);
-					return -1;
-				}
+			if (!to_drop && !(to_drop = list_create(NULL))) {
+				list_destroy(tr->dropped);
+				tr->dropped = NULL;
+				return -1;
 			}
 			*local_id = func->base.id;
 			list_append(tr->dropped, local_id);
 			list_append(to_drop, func);
-			//sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
 		}
 	}
 
 	if (to_drop) {
-		for (n = to_drop->h; n ; n = n->next ) {
-			func = (sql_func *) n->data;
-			if ((res = build_drop_func_list_item(tr, s, func->base.id)))
+		for (node *n = to_drop->h; n ; n = n->next ) {
+			sql_func *func = (sql_func *) n->data;
+			if ((res = build_drop_func_list_item(tr, s, func->base.id))) {
+				list_destroy(tr->dropped);
+				tr->dropped = NULL;
+				list_destroy(to_drop);
 				return res;
+			}
 		}
 		list_destroy(to_drop);
 	}
 
-	if ( tr->dropped) {
-		list_destroy(tr->dropped);
-		tr->dropped = NULL;
-	}
+	list_destroy(tr->dropped);
+	tr->dropped = NULL;
 	return res;
 }
 
@@ -6806,10 +6821,31 @@ sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int dro
 {
 	int res = LOG_OK;
 
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		sqlid* local_id = MNEW(sqlid);
+		if (!local_id)
+			return -1;
+
+		if (!tr->dropped) {
+			tr->dropped = list_create((fdestroy) &id_destroy);
+			if (!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
+		*local_id = seq->base.id;
+		list_append(tr->dropped, local_id);
+	}
+
 	if ((res = sys_drop_sequence(tr, seq, drop_action)))
 		return res;
 	if ((res = os_del(s->seqs, tr, seq->base.name, dup_base(&seq->base))))
 		return res;
+
+	if (drop_action == DROP_CASCADE_START && tr->dropped) {
+		list_destroy(tr->dropped);
+		tr->dropped = NULL;
+	}
 	return res;
 }
 
@@ -6956,9 +6992,9 @@ sql_trans_begin(sql_session *s)
 	(void) ATOMIC_INC(&store->nr_active);
 	list_append(store->active, s);
 
-	s->status = 0;
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	store_unlock(store);
+	s->status = tr->status = 0;
 	return 0;
 }
 
@@ -6973,6 +7009,7 @@ sql_trans_end(sql_session *s, int ok)
 	}
 	assert(s->tr->active);
 	s->tr->active = 0;
+	s->tr->status = 0;
 	s->auto_commit = s->ac_on_commit;
 	sqlstore *store = s->tr->store;
 	store_lock(store);

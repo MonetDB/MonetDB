@@ -179,6 +179,56 @@ FROM another_T t1
 2.500
 2.500
 
+query I nosort
+SELECT
+    (SELECT RANK() OVER (PARTITION BY 2 ORDER BY 2) FROM tbl_ProductSales GROUP BY t1.col1)
+FROM another_T t1
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT
+    (SELECT SUM(1) OVER (PARTITION BY 2 ORDER BY 2 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY t1.col1)
+FROM another_T t1
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT
+    (SELECT SUM(1) OVER (PARTITION BY MAX(ColID) * col4) FROM tbl_ProductSales)
+FROM another_T t1
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT
+    (SELECT SUM(1) OVER (ORDER BY MAX(ColID) * col4) FROM tbl_ProductSales)
+FROM another_T t1
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT
+    (SELECT SUM(1) OVER (PARTITION BY MAX(ColID) * col4 ORDER BY MIN(TotalSales) * col5) FROM tbl_ProductSales)
+FROM another_T t1
+----
+1
+1
+1
+1
+
 query R nosort
 SELECT
     (SELECT SUM(AVG(ColID + col1)) OVER (PARTITION BY SUM(ColID + col3) ORDER BY MAX(ColID) * col4 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY t1.col1)

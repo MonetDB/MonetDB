@@ -12,7 +12,6 @@
 #include "pytypes.h"
 #include "type_conversion.h"
 #include "unicode.h"
-#include "blob.h"
 #include "gdk_interprocess.h"
 
 //! Wrapper to get eclass of SQL type

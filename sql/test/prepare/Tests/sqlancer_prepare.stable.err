@@ -40,3 +40,7 @@ MAPI  = (monetdb) /var/tmp/mtest-185783/.s.monetdb.32587
 QUERY = PREPARE WITH x(a) AS (SELECT ?) SELECT x.a FROM x; --error, cannot define type for the parameter
 ERROR = !Could not determine type for argument number 1
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-185783/.s.monetdb.32587
+QUERY = PREPARE WITH x(x) AS (SELECT ?) SELECT 1 FROM x WHERE COALESCE(FALSE, TRUE) OR (SELECT TRUE FROM t0); --error
+ERROR = !Query projection must have at least one parameter with known SQL type
+CODE  = 42000

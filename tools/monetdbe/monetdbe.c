@@ -16,7 +16,6 @@
 #include "mal_backend.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
-#include "blob.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_gencode.h"
@@ -603,7 +602,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 
 	opt *set = NULL;
 	int setlen;
-	bool with_mapi_server;
+	bool with_mapi_server = false;
 	int workers, memory;
 	gdk_return gdk_res;
 
@@ -617,8 +616,6 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "GDKfatal() with unspecified error");
 		goto cleanup;
 	}
-
-	 with_mapi_server = false;
 
 	if (monetdbe_embedded_initialized) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "MonetDBe is already initialized"));
@@ -2414,7 +2411,7 @@ remote_cleanup:
 					d[j] = (blob*)nil;
 				} else {
 					size_t len = be[j].size;
-					var_t nlen = blobsize(len);
+					size_t nlen = blobsize(len);
 					blob *b = (blob*)GDKmalloc(nlen);
 					if (!b) {
 						set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));

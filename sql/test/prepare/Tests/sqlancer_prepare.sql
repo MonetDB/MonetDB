@@ -73,3 +73,9 @@ PREPARE SELECT 1 FROM idontexist(?,16); --error, function doesn't exist
 PREPARE WITH x(a) AS (SELECT ?) SELECT x.a FROM x; --error, cannot define type for the parameter
 PREPARE WITH x(a) AS (SELECT ?) SELECT CAST(x.a AS INT) FROM x;
 EXEC **(1);
+
+START TRANSACTION;
+CREATE TABLE t0 (c0 INT);
+-- In order to compute the OR, an identity function call is needed, but the projection only contains parameters
+PREPARE WITH x(x) AS (SELECT ?) SELECT 1 FROM x WHERE COALESCE(FALSE, TRUE) OR (SELECT TRUE FROM t0); --error
+ROLLBACK;

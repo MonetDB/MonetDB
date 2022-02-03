@@ -2095,6 +2095,20 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
+		if (match > 0 && getModuleId(p) == algebraRef && getFunctionId(p) == crossRef &&
+			p->argc == 5 && p->retc == 2 && bats == 2) {
+			int max_one = (isVarConstant(mb,getArg(p,4)) && getVarConstant(mb,getArg(p,4)).val.btval);
+			if (!max_one) {
+				m = is_a_mat(getArg(p,p->retc), &ml);
+				n = is_a_mat(getArg(p,p->retc+1), &ml);
+				if(mat_join2(mb, p, &ml, m, n, -1, -1)) {
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto cleanup;
+				}
+				actions++;
+				continue;
+			}
+		}
 		/*
 		 * Aggregate handling is a prime target for optimization.
 		 * The simple cases are dealt with first.
