@@ -1127,7 +1127,8 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 			/* move groupby up, ie add attributes of left + the old expression list */
 
 			if (l && list_length(a) > 1 && !need_distinct(l)) { /* add identity call only if there's more than one column in the groupby */
-				rel->l = rel_add_identity(sql, l, &id); /* add identity call for group by */
+				if (!(rel->l = rel_add_identity(sql, l, &id))) /* add identity call for group by */
+					return NULL;
 				assert(id);
 			}
 
@@ -1470,7 +1471,8 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 				if (l->l) {
 					sql_exp *tfe = tf->r;
 					list *ops = tfe->l;
-					rel->l = d = rel_add_identity(sql, d, &id);
+					if (!(rel->l = d = rel_add_identity(sql, d, &id)))
+						return NULL;
 					id = exp_ref(sql, id);
 					l = tf->l = rel_crossproduct(sql->sa, rel_dup(d), l, op_join);
 					set_dependent(l);
@@ -2233,7 +2235,8 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						rel_destroy(rel);
 						rel = l;
 					}
-					rel = rel_add_identity(v->sql, rel, &id); /* identity function needed */
+					if (!(rel = rel_add_identity(v->sql, rel, &id))) /* identity function needed */
+						return NULL;
 					const char *idrname = exp_relname(id), *idname = exp_name(id);
 					list *tids = NULL, *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 
