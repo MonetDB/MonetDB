@@ -141,11 +141,20 @@ tmp_schema(mvc *sql)
 			return sql_error(sql, ERR_NOTFOUND, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
 	} while (0)
 
+#define bind_table_call \
+	do { \
+		res = mvc_bind_table(sql, next, name); \
+		if (res && sql->objid && sql->objid == res->base.id) /* when recreating a view, the view itself can't be found */ \
+			res = NULL; \
+	} while (0)
+
 #define table_extra \
 	do { \
 		if (s) { \
 			next = s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
 			res = mvc_bind_table(sql, next, name); \
+			if (res && sql->objid && sql->objid == res->base.id) /* when recreating a view, the view itself can't be found */ \
+				res = NULL; \
 		} \
 		if (!res && strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, name))) /* for tables, first try a declared table from the stack */ \
 			return res; \
@@ -157,7 +166,7 @@ find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const ch
 	const char *objstr = isView ? "view" : "table";
 	sql_table *res = NULL;
 
-	search_object_on_path(res = mvc_bind_table(sql, next, name), DO_NOTHING, table_extra, SQLSTATE(42S02));
+	search_object_on_path(bind_table_call, DO_NOTHING, table_extra, SQLSTATE(42S02));
 	return res;
 }
 
