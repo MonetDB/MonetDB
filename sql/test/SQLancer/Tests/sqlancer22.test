@@ -322,5 +322,9 @@ SELECT i IN (SELECT i1.i FROM generate_series(1, 3, 1) tbl(i) LEFT JOIN (SELECT 
 NULL
 NULL
 
+query I nosort
+SELECT 1 FROM rt0 JOIN LATERAL ((SELECT 2) EXCEPT (SELECT 3)) AS x(x) ON TRUE
+----
+
 statement ok
 ROLLBACK
