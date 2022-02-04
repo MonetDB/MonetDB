@@ -3926,8 +3926,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
 				/* foreach column add predicate */
-				if (add_column_predicate(be, c->c) != LOG_OK)
-					return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				(void) stmt_column_predicate(be, c->c);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				if ((k->type == ukey) && stmt_has_null(col)) {
@@ -3949,8 +3948,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
 				/* foreach column add predicate */
-				if (add_column_predicate(be, c->c) != LOG_OK)
-					return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				(void) stmt_column_predicate(be, c->c);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				list_append(lje, col);
@@ -4013,8 +4011,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		stmt *s = list_fetch(inserts, c->c->colnr), *h = s;
 
 		/* add predicate for this column */
-		if (add_column_predicate(be, c->c) != LOG_OK)
-			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		(void) stmt_column_predicate(be, c->c);
 
 		s = stmt_col(be, c->c, dels, dels->partition);
 		if ((k->type == ukey) && stmt_has_null(s)) {
@@ -4085,8 +4082,7 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 		sql_kc *c = m->data;
 
 		/* foreach column add predicate */
-		if (add_column_predicate(be, c->c) != LOG_OK)
-			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		(void) stmt_column_predicate(be, c->c);
 	}
 
 	if (pin && list_length(pin->op4.lval))

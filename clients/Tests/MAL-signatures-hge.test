@@ -63423,6 +63423,11 @@ pattern sql.percent_rank(X_0:any_1, X_1:bit, X_2:bit):dbl
 SQLpercent_rank;
 return the percentage into the total number of groups for each row
 sql
+predicate
+unsafe pattern sql.predicate(X_0:str, X_1:str, X_2:str):void 
+mvc_add_column_predicate;
+Add predicate on current transaction for a table column.
+sql
 prelude
 pattern sql.prelude():void 
 SQLprelude;
