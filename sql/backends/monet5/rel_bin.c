@@ -4565,7 +4565,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	q = newStmt(mb, "copy", "read");
 	q = pushArgument(mb, q, var_s);
-	q = pushInt(mb, q, 200);
+	q = pushLng(mb, q, 200);
 	q = pushArgument(mb, q, var_next_block);
 	int var_nread = getDestVar(q);
 
@@ -4646,6 +4646,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	}
 	q = pushArgument(mb, q, var_our_block);
 	q = pushArgument(mb, q, var_our_skip_amount);
+	q = pushArgument(mb, q, var_our_line_count);
 	q = pushArgument(mb, q, var_col_sep);
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
@@ -4675,13 +4676,20 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushArgument(mb, q, var_total_row_count);
 	q = pushArgument(mb, q, var_our_line_count);
 
+
 	// END LOOP
+	q = newAssignment(mb);
+	q->barrier = REDOsymbol;
+	pushBit(mb, q, true);
+	getDestVar(q) = var_loop_barrier;
+
+
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
 	getDestVar(q) = var_loop_barrier;
 
 	add_to_rowcount_accumulator(be, var_total_row_count);
-	dump_code(-1);
+	// dump_code(-1);
 
 
 	// I'm assuming that attaching the stmt list to op4.lval
