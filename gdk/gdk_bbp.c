@@ -2513,7 +2513,6 @@ incref(bat i, bool logical, bool lock)
 	int refs;
 	bat tp = i, tvp = i;
 	BAT *b, *pb = NULL, *pvb = NULL;
-	bool load = false;
 
 	if (!BBPcheck(i))
 		return 0;
@@ -2573,40 +2572,12 @@ incref(bat i, bool logical, bool lock)
 	} else {
 		assert(tp >= 0);
 		refs = ++BBP_refs(i);
-		unsigned flag = BBPHOT;
-		if (refs == 1 && (tp != i || tvp != i)) {
-			/* If this is a view, we must load the parent
-			 * BATs, but we must do that outside of the
-			 * lock.  Set the BBPLOADING flag so that
-			 * other threads will wait until we're
-			 * done. */
-			flag |= BBPLOADING;
-			load = true;
-		}
-		BBP_status_on(i, flag);
+		BBP_status_on(i, BBPHOT);
 	}
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
 
-	if (load) {
-		/* load the parent BATs */
-		assert(!logical);
-		if (tp != i) {
-			assert(pb != NULL);
-			/* load being set implies there is no other
-			 * thread that has access to this bat, but the
-			 * parent is a different matter */
-			MT_lock_set(&pb->theaplock);
-			if (b->theap != pb->theap) {
-				HEAPincref(pb->theap);
-				HEAPdecref(b->theap, false);
-				b->theap = pb->theap;
-			}
-			MT_lock_unset(&pb->theaplock);
-		}
-		/* done loading, release descriptor */
-		BBP_status_off(i, BBPLOADING);
-	} else if (!logical) {
+	if (!logical && refs > 1) {
 		/* this wasn't the first physical reference, so undo
 		 * the fixes on the parent bats */
 		if (pb)
@@ -2773,8 +2744,12 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	      ? (!BATdirty(b) &&
 		 !(BBP_status(i) & chkflag) &&
 		 (BBP_status(i) & BBPPERSISTENT) &&
+		 /* cannot unload in-memory data */
 		 !GDKinmemory(farmid) &&
-		 b->batSharecnt == 0)
+		 /* do not unload views or parents of views */
+		 b->batSharecnt == 0 &&
+		 b->batCacheid == b->theap->parentid &&
+		 (b->tvheap == NULL || b->batCacheid == b->tvheap->parentid))
 	      : (BBP_status(i) & BBPTMP)))) {
 		/* bat will be unloaded now. set the UNLOADING bit
 		 * while locked so no other thread thinks it's
