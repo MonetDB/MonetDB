@@ -671,32 +671,61 @@ end:
 }
 
 static str
-COPYparse_append(int *ret, int *mvc, str *s, str *t, str *c, oid *position, bat *positions, bat *block, bat *fields)
+COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void)cntxt;
 	str msg = MAL_SUCCEED;
-	BAT *indices_bat = BATdescriptor(*fields);
+	BAT *ret = NULL;
+	BAT *block = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+	int tpe = getArgGDKType(mb, pci, 3);
+	int n;
 
-	if (indices_bat == NULL)
-		bailout("copy.parse_append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (block == NULL || indices == NULL)
+		bailout("copy.parse_generic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	n = BATcount(indices);
 
-	(void)ret;
-	(void)mvc;
-	(void)s;
-	(void)t;
-	(void)c;
-	(void)position;
-	(void)positions;
-	(void)block;
-	(void)fields;
+	ret = COLnew(0, tpe, n, TRANSIENT);
+	if (!ret)
+		bailout("copy.parse_generic",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (BATcount(indices_bat) > 0)
-		bailout("copy.parse_append", SQLSTATE(42000) "banana");
+	const void *nil_ptr; nil_ptr = ATOMnilptr(tpe);
+	size_t nil_len; nil_len = ATOMlen(tpe, ATOMnilptr(tpe));
+
+	void *buffer; buffer = NULL;
+	size_t buffer_len; buffer_len = 0;
+	for (int i = 0; i < n; i++) {
+		int offset = *(int*)Tloc(indices, i);
+		const char *src = Tloc(block, offset);
+		const void *p;
+		ssize_t len;
+		if (is_int_nil(offset)) {
+			p = nil_ptr;
+			len = nil_len;
+		} else {
+			len = BATatoms[tpe].atomFromStr(src, &buffer_len, &buffer, false);
+			p = buffer;
+			if (len < 0)
+				bailout("copy.parse_generic", SQLSTATE(42000)"Conversion failed for value '%s'", src);
+		}
+		if (bunfastapp(ret, p) != GDK_SUCCEED)
+			bailout("copy.parse_generic", GDK_EXCEPTION);
+	}
+	GDKfree(buffer);
+	BATsetcount(ret, n);
 end:
-	if (indices_bat)
-		BBPunfix(indices_bat->batCacheid);
+	if (ret) {
+		if (msg == MAL_SUCCEED)
+			BBPkeepref(ret->batCacheid);
+		else
+			BBPunfix(ret->batCacheid);
+	}
+	if (block)
+		BBPunfix(block->batCacheid);
+	if (indices)
+		BBPunfix(indices->batCacheid);
 	return msg;
 }
-
 
 static mel_func copy_init_funcs[] = {
  command("copy", "read", COPYread, true, "Clear the BAT and read 'block_size' bytes into it from 's'",
@@ -714,11 +743,12 @@ static mel_func copy_init_funcs[] = {
 	batarg("block", bte), arg("skip", int), arg("linecount", lng), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), arg("escape", bit)
  )),
 
- command("copy", "parse_append", COPYparse_append, true, "parse the fields and append them to the column",
- args(1, 9,
-	arg("", int),
-	arg("mvc", int), arg("s", str), arg("t", str), arg("c", str), arg ("position", oid), batarg("positions", oid), batarg("block", bte), batarg("fields", int)
+ pattern("copy", "parse_generic", COPYparse_generic, false, "Parse as an integer", args(1, 4,
+     batargany("", 1),
+	 batarg("block", bte), batarg("offsets", int), argany("type", 1)
  )),
+
+
  { .imp=NULL }
 };
 #include "mal_import.h"

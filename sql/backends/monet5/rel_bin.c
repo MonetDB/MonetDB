@@ -4637,6 +4637,13 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	emit_send(mb, var_claim_channel, TYPE_bit, var_claim_token);
 
+	//
+	q = newStmt(mb, "calc", "==");
+	q->barrier = REDOsymbol;
+	getDestVar(q) = var_loop_barrier;
+	q = pushArgument(mb, q, var_our_line_count);
+	q = pushLng(mb, q, 0);
+
 	assert(column_count > 0);
 	q = newStmt(mb, "copy", "splitlines");
 	setDestType(mb, q, int_bat_type);
@@ -4656,19 +4663,37 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	int i = 0;
 	for (node *n = table->columns->l->h; n != NULL; n = n->next) {
+		int var_indices = getArg(splitlines_instr, i++);
+
 		sql_column *col = n->data;
+		sql_type *type = col->type.type;
 		const char *column_name = col->base.name;
 
-		q = newStmt(mb, "copy", "parse_append");
+		switch (type->eclass) {
+			case EC_DEC:
+				q = newStmt(mb, "copy", "parse_decimal");
+				q = pushArgument(mb, q, var_our_block);
+				q = pushArgument(mb, q, var_indices);
+				q = pushInt(mb, q, col->type.digits);
+				q = pushInt(mb, q, col->type.scale);
+				break;
+			default:
+				q = newStmt(mb, "copy", "parse_generic");
+				q = pushArgument(mb, q, var_our_block);
+				q = pushArgument(mb, q, var_indices);
+				q = pushNil(mb, q, col->type.type->localtype);
+				break;
+		}
+		int var_converted = getDestVar(q);
+
+		q = newStmt(mb, "sql", "append");
 		q = pushArgument(mb, q, be->mvc_var);
 		q = pushStr(mb, q, schema_name);
 		q = pushStr(mb, q, table_name);
 		q = pushStr(mb, q, column_name);
 		q = pushArgument(mb, q, var_position);
 		q = pushArgument(mb, q, var_positions);
-		q = pushArgument(mb, q, var_our_block);
-
-		q = pushArgument(mb, q, getArg(splitlines_instr, i++));
+		q = pushArgument(mb, q, var_converted);
 	}
 
 	q = newStmt(mb, "calc", "+");
