@@ -10,7 +10,6 @@
 #include "sql_atom.h"
 #include "sql_string.h"
 #include "sql_decimal.h"
-#include "blob.h"
 #include "gdk_time.h"
 
 void
@@ -434,7 +433,7 @@ atom2sql(sql_allocator *sa, atom *a, int timezone)
 
 		if ((res = SA_NEW_ARRAY(sa, char, blobstr_size + 8))) {
 			char *tail = stpcpy(res, "blob '");
-			ssize_t blobstr_offset = BLOBtostr(&tail, &blobstr_size, b, true);
+			ssize_t blobstr_offset = BATatoms[TYPE_blob].atomToStr(&tail, &blobstr_size, b, true);
 			strcpy(res + blobstr_offset + 6, "'");
 		}
 		return res;

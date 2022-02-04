@@ -38,7 +38,6 @@
 
 #include "tablet.h"
 #include "gdk_time.h"
-#include "blob.h"
 #include "str.h"
 #include "sql_privileges.h"
 #include "sql_decimal.h"
@@ -61,6 +60,8 @@ extern str SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 extern str mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str mvc_add_dependency_change(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str mvc_add_column_predicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins);
 
@@ -279,15 +280,6 @@ extern str timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 extern str date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-extern str STRindex_int(int *res, const str *src, const bit *u);
-extern str BATSTRindex_int(bat *res, const bat *src, const bit *u);
-extern str STRindex_sht(sht *res, const str *src, const bit *u);
-extern str BATSTRindex_sht(bat *res, const bat *src, const bit *u);
-extern str STRindex_bte(bte *res, const str *src, const bit *u);
-extern str BATSTRindex_bte(bat *res, const bat *src, const bit *u);
-extern str STRstrings(str *res, const str *src);
-extern str BATSTRstrings(bat *res, const bat *src);
 
 extern str SQLflush_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

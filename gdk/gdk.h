@@ -457,6 +457,7 @@ enum {
 	TYPE_timestamp,
 	TYPE_uuid,
 	TYPE_str,
+	TYPE_blob,
 	TYPE_any = 255,		/* limit types to <255! */
 };
 
@@ -502,6 +503,12 @@ typedef union {
 	uint8_t u[UUID_SIZE];
 #endif
 } uuid;
+
+typedef struct {
+	size_t nitems;
+	char data[FLEXIBLE_ARRAY_MEMBER] __attribute__((__nonstring__));
+} blob;
+gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
 #define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)

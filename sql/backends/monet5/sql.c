@@ -521,6 +521,64 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+mvc_add_dependency_change(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg;
+	mvc *m = NULL;
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *tname = *getArgReference_str(stk, pci, 2);
+	lng cnt = *(lng*)getArgReference_lng(stk, pci, 3);
+	sql_schema *s;
+	sql_table *t;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	if ((s = mvc_bind_schema(m, sname)) == NULL)
+		throw(SQL, "sql.dependency_change", SQLSTATE(3F000) "Schema missing %s", sname);
+	if ((t = mvc_bind_table(m, s, tname)) == NULL)
+		throw(SQL, "sql.dependency_change", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+	if (!isTable(t))
+		throw(SQL, "sql.dependency_change", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (cnt > 0 && !isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(m->session->tr, t->base.id, dml) != LOG_OK)
+		throw(SQL, "sql.dependency_change", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
+}
+
+str
+mvc_add_column_predicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg;
+	mvc *m = NULL;
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *tname = *getArgReference_str(stk, pci, 2);
+	const char *cname = *getArgReference_str(stk, pci, 3);
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	if ((s = mvc_bind_schema(m, sname)) == NULL)
+		throw(SQL, "sql.column_predicate", SQLSTATE(3F000) "Schema missing %s", sname);
+	if ((t = mvc_bind_table(m, s, tname)) == NULL)
+		throw(SQL, "sql.column_predicate", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+	if ((c = mvc_bind_column(m, t, cname)) == NULL)
+		throw(SQL, "sql.column_predicate", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+
+	if ((m->session->level & tr_snapshot) == tr_snapshot || isNew(c) || !isGlobal(c->t) || isGlobalTemp(c->t))
+		return MAL_SUCCEED;
+	if (sql_trans_add_predicate(m->session->tr, c, 0, NULL, NULL, false, false) != LOG_OK)
+		throw(SQL, "sql.column_predicate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
+}
+
+str
 create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
 	size_t i;
@@ -644,6 +702,9 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		}
 	}
 	bat_destroy(pos);
+	if (BATcount(columns[0].b) > 0 && !isNew(t) && isGlobal(t) && !isGlobalTemp(t) &&
+		sql_trans_add_dependency_change(sql->session->tr, t->base.id, dml) != LOG_OK)
+		throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -4180,227 +4241,6 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
 }
 
 str
-STRindex_int(int *i, const str *src, const bit *u)
-{
-	(void)src; (void)u;
-	*i = 0;
-	return MAL_SUCCEED;
-}
-
-str
-BATSTRindex_int(bat *res, const bat *src, const bit *u)
-{
-	BAT *s, *r;
-
-	if ((s = BATdescriptor(*src)) == NULL)
-		throw(SQL, "calc.index", SQLSTATE(HY005) "Cannot access column descriptor");
-
-	if (*u) {
-		Heap *h = s->tvheap;
-		size_t pad, pos;
-		int v;
-
-		r = COLnew(0, TYPE_int, 1024, TRANSIENT);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		pos = GDK_STRHASHSIZE;
-		while (pos < h->free) {
-			const char *p;
-
-			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
-				pad += GDK_VARALIGN;
-			pos += pad;
-			p = h->base + pos;
-			v = (int) (pos - GDK_STRHASHSIZE);
-			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
-				BBPreclaim(r);
-				BBPunfix(s->batCacheid);
-				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			pos += strLen(p);
-		}
-	} else {
-		r = VIEWcreate(s->hseqbase, s);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		r->ttype = TYPE_int;
-		r->tvarsized = false;
-		HEAPdecref(r->tvheap, false);
-		r->tvheap = NULL;
-	}
-	BBPunfix(s->batCacheid);
-	BBPkeepref((*res = r->batCacheid));
-	return MAL_SUCCEED;
-}
-
-str
-STRindex_sht(sht *i, const str *src, const bit *u)
-{
-	(void)src; (void)u;
-	*i = 0;
-	return MAL_SUCCEED;
-}
-
-str
-BATSTRindex_sht(bat *res, const bat *src, const bit *u)
-{
-	BAT *s, *r;
-
-	if ((s = BATdescriptor(*src)) == NULL)
-		throw(SQL, "calc.index", SQLSTATE(HY005) "Cannot access column descriptor");
-
-	if (*u) {
-		Heap *h = s->tvheap;
-		size_t pad, pos;
-		sht v;
-
-		r = COLnew(0, TYPE_sht, 1024, TRANSIENT);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		pos = GDK_STRHASHSIZE;
-		while (pos < h->free) {
-			const char *s;
-
-			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
-				pad += GDK_VARALIGN;
-			pos += pad;
-			s = h->base + pos;
-			v = (sht) (pos - GDK_STRHASHSIZE);
-			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
-				BBPreclaim(r);
-				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			pos += strLen(s);
-		}
-	} else {
-		r = VIEWcreate(s->hseqbase, s);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		r->ttype = TYPE_sht;
-		r->tvarsized = false;
-		HEAPdecref(r->tvheap, false);
-		r->tvheap = NULL;
-	}
-	BBPunfix(s->batCacheid);
-	BBPkeepref((*res = r->batCacheid));
-	return MAL_SUCCEED;
-}
-
-str
-STRindex_bte(bte *i, const str *src, const bit *u)
-{
-	(void)src; (void)u;
-	*i = 0;
-	return MAL_SUCCEED;
-}
-
-str
-BATSTRindex_bte(bat *res, const bat *src, const bit *u)
-{
-	BAT *s, *r;
-
-	if ((s = BATdescriptor(*src)) == NULL)
-		throw(SQL, "calc.index", SQLSTATE(HY005) "Cannot access column descriptor");
-
-	if (*u) {
-		Heap *h = s->tvheap;
-		size_t pad, pos;
-		bte v;
-
-		r = COLnew(0, TYPE_bte, 64, TRANSIENT);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		pos = GDK_STRHASHSIZE;
-		while (pos < h->free) {
-			const char *p;
-
-			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
-				pad += GDK_VARALIGN;
-			pos += pad;
-			p = h->base + pos;
-			v = (bte) (pos - GDK_STRHASHSIZE);
-			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
-				BBPreclaim(r);
-				BBPunfix(s->batCacheid);
-				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			pos += strLen(p);
-		}
-	} else {
-		r = VIEWcreate(s->hseqbase, s);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		r->ttype = TYPE_bte;
-		r->tvarsized = false;
-		HEAPdecref(r->tvheap, false);
-		r->tvheap = NULL;
-	}
-	BBPunfix(s->batCacheid);
-	BBPkeepref((*res = r->batCacheid));
-	return MAL_SUCCEED;
-}
-
-str
-STRstrings(str *i, const str *src)
-{
-	(void)src;
-	*i = 0;
-	return MAL_SUCCEED;
-}
-
-str
-BATSTRstrings(bat *res, const bat *src)
-{
-	BAT *s, *r;
-	Heap *h;
-	size_t pad, pos;
-
-	if ((s = BATdescriptor(*src)) == NULL)
-		throw(SQL, "calc.strings", SQLSTATE(HY005) "Cannot access column descriptor");
-
-	h = s->tvheap;
-	r = COLnew(0, TYPE_str, 1024, TRANSIENT);
-	if (r == NULL) {
-		BBPunfix(s->batCacheid);
-		throw(SQL, "calc.strings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	pos = GDK_STRHASHSIZE;
-	while (pos < h->free) {
-		const char *p;
-
-		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-		if (pad < sizeof(stridx_t))
-			pad += GDK_VARALIGN;
-		pos += pad;
-		p = h->base + pos;
-		if (BUNappend(r, p, false) != GDK_SUCCEED) {
-			BBPreclaim(r);
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.strings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		pos += strLen(p);
-	}
-	BBPunfix(s->batCacheid);
-	BBPkeepref((*res = r->batCacheid));
-	return MAL_SUCCEED;
-}
-
-str
 SQLresume_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *mvc;
@@ -5241,6 +5081,8 @@ static mel_func sql_init_funcs[] = {
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
  pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
  pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,6, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
+ pattern("sql", "depend", mvc_add_dependency_change, true, "Set dml dependency on current transaction for a table.", args(0,3, arg("sname",str),arg("tname",str),arg("cnt",lng))),
+ pattern("sql", "predicate", mvc_add_column_predicate, true, "Add predicate on current transaction for a table column.", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0))),
  pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
  pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,4, arg("",lng),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
@@ -5489,14 +5331,6 @@ static mel_func sql_init_funcs[] = {
  pattern("batcalc", "daytime", timestamp_2_daytime, false, "cast timestamp to a daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",timestamp),batarg("s",oid),arg("d",int))),
  pattern("calc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",date),arg("d",int))),
  pattern("batcalc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",date),batarg("s",oid),arg("d",int))),
- command("sql", "index", STRindex_bte, false, "Return the offsets as an index bat", args(1,3, arg("",bte),arg("v",str),arg("u",bit))), /* TODO add candidate list support? */
- command("batsql", "index", BATSTRindex_bte, false, "Return the offsets as an index bat", args(1,3, batarg("",bte),batarg("v",str),arg("u",bit))),
- command("sql", "index", STRindex_sht, false, "Return the offsets as an index bat", args(1,3, arg("",sht),arg("v",str),arg("u",bit))),
- command("batsql", "index", BATSTRindex_sht, false, "Return the offsets as an index bat", args(1,3, batarg("",sht),batarg("v",str),arg("u",bit))),
- command("sql", "index", STRindex_int, false, "Return the offsets as an index bat", args(1,3, arg("",int),arg("v",str),arg("u",bit))),
- command("batsql", "index", BATSTRindex_int, false, "Return the offsets as an index bat", args(1,3, batarg("",int),batarg("v",str),arg("u",bit))),
- command("sql", "strings", STRstrings, false, "Return the strings", args(1,2, arg("",str),arg("v",str))), /* TODO add candidate list support? */
- command("batsql", "strings", BATSTRstrings, false, "Return the strings", args(1,2, batarg("",str),batarg("v",str))),
  pattern("sql", "update_tables", SYSupdate_tables, true, "Procedure triggered on update of the sys._tables table", args(1,1, arg("",void))),
  pattern("sql", "update_schemas", SYSupdate_schemas, true, "Procedure triggered on update of the sys.schemas table", args(1,1, arg("",void))),
  pattern("sql", "unionfunc", SQLunionfunc, false, "", args(1,4, varargany("",0),arg("mod",str),arg("fcn",str),varargany("",0))),
@@ -5777,6 +5611,9 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",dbl),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",dbl),arg("b",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",dbl),batarg("b",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ /* sql.sum for month intervals */
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",int),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",int),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",lng),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",lng),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),

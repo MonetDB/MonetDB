@@ -1974,8 +1974,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				if (list_length(outputs) != list_length(sf->func->res))
 					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: the number of output parameters don't match the table ones relation outputs: %d != function outputs: %d\n",
 									 list_length(outputs), list_length(sf->func->res));
-				if (!list_empty(outputs) && !(outputs = check_arguments_and_find_largest_any_type(sql, lrel, outputs, sf, 0)))
-					return NULL;
 				rel = rel_table_func(sql->sa, lrel, tudf, outputs, TABLE_FROM_RELATION);
 			} else {
 				if (r[*pos] != ')')
@@ -2154,6 +2152,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return NULL;
 			rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 			rel->exps = exps;
+			set_processed(rel);
 		}
 		break;
 	case 'l':
@@ -2210,6 +2209,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
+		set_processed(rel);
 		break;
 	case 'u':
 		if (j == op_basetable) {

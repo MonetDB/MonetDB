@@ -16,7 +16,6 @@
 #include "mal_backend.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
-#include "blob.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_gencode.h"
@@ -2414,7 +2413,7 @@ remote_cleanup:
 					d[j] = (blob*)nil;
 				} else {
 					size_t len = be[j].size;
-					var_t nlen = blobsize(len);
+					size_t nlen = blobsize(len);
 					blob *b = (blob*)GDKmalloc(nlen);
 					if (!b) {
 						set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));

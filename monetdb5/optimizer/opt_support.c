@@ -351,7 +351,9 @@ isUpdateInstruction(InstrPtr p){
 		getFunctionId(p) == claimRef ||
 		getFunctionId(p) == growRef ||
 		getFunctionId(p) == clear_tableRef ||
-		getFunctionId(p) == setVariableRef))
+		getFunctionId(p) == setVariableRef ||
+		getFunctionId(p) == dependRef ||
+		getFunctionId(p) == predicateRef))
 			return TRUE;
 	if ( getModuleId(p) == batRef &&
 	   ( getFunctionId(p) == appendRef ||
@@ -519,7 +521,7 @@ isOrderDepenent(InstrPtr p)
 {
 	if( getModuleId(p) != batsqlRef)
 		return 0;
-	if ( getFunctionId(p) == differenceRef ||
+	if (getFunctionId(p) == differenceRef ||
 		getFunctionId(p) == window_boundRef ||
 		getFunctionId(p) == row_numberRef ||
 		getFunctionId(p) == rankRef ||
@@ -531,7 +533,8 @@ isOrderDepenent(InstrPtr p)
 		getFunctionId(p) == last_valueRef ||
 		getFunctionId(p) == nth_valueRef ||
 		getFunctionId(p) == lagRef ||
-		getFunctionId(p) == leadRef)
+		getFunctionId(p) == leadRef ||
+		getFunctionId(p) == corrRef)
 		return 1;
 	return 0;
 }

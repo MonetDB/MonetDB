@@ -319,7 +319,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 		if (e)
 			return exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
 	}
-	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
+	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column(sql, rel->l, cname, f, no_tname);
 	} else if (is_set(rel->op)) {
@@ -407,7 +407,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (e)
 			return exp_alias_or_copy(sql, tname, cname, rel, e);
 	}
-	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
+	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	} else if (is_set(rel->op)) {
@@ -887,12 +887,12 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	return rel;
 }
 
-sql_rel*
-rel_project_exp(sql_allocator *sa, sql_exp *e)
+sql_rel *
+rel_project_exp(mvc *sql, sql_exp *e)
 {
-	sql_rel *rel = rel_project(sa, NULL, append(new_exp_list(sa), e));
-
-	return rel;
+	if (!exp_name(e))
+		exp_label(sql->sa, e, ++sql->label);
+	return rel_project(sql->sa, NULL, list_append(sa_list(sql->sa), e));
 }
 
 sql_rel *
@@ -1448,7 +1448,7 @@ static sql_rel *
 _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
 	list *exps = rel_projections(sql, rel, NULL, 1, 1);
-	sql_exp *e;
+	sql_exp *e = NULL;
 
 	if (list_empty(exps)) {
 		*exp = NULL;
@@ -1456,7 +1456,16 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	}
 	if (!is_simple_project(rel->op) || need_distinct(rel) || !list_empty(rel->r) || rel_is_ref(rel))
 		rel = rel_project(sql->sa, rel, exps);
-	e = rel->exps->h->data;
+	/* filter parameters out */
+	for (node *n = rel->exps->h ; n && !e ; n = n->next) {
+		sql_exp *re = n->data;
+
+		if (exp_subtype(re))
+			e = re;
+	}
+	if (!e)
+		return sql_error(sql, 10, SQLSTATE(42000) "Query projection must have at least one parameter with known SQL type");
+
 	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_unique(e), is_intern(e));
 	e = exp_unop(sql->sa, e, sql_bind_func(sql, "sys", "identity", exp_subtype(e), NULL, F_FUNC));
 	set_intern(e);
@@ -1491,7 +1500,8 @@ rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 		sql_rel *o = rel;
 		sql_exp *id;
 
-		p->l = _rel_add_identity(sql, l, exp);
+		if (!(p->l = _rel_add_identity(sql, l, exp)))
+			return NULL;
 		l = p->l;
 		id = exp_ref(sql, *exp);
 		while (o && o != l) {
