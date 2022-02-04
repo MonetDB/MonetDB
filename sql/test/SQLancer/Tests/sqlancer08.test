@@ -272,18 +272,6 @@ COPY 5 RECORDS INTO "sys"."salesmart" FROM stdin USING DELIMITERS E'\t',E'\n','"
 ""
 "\015"
 
-query I rowsort
-SELECT 1 FROM salesmart WHERE CAST(1 AS BOOLEAN) OR "index"(salesmart.city, true)
-----
-1
-1
-1
-1
-1
-
-statement ok rowcount 5
-DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = TRUE)OR(CAST("index"(substr(salesmart.city, 1058445329, 887361238), (-528898388) IS NOT NULL) AS BOOLEAN)))
-
 statement ok
 ROLLBACK
 
