@@ -1,0 +1,45 @@
+@connection(id=1, username=monetdb, password=monetdb)
+statement ok
+CREATE TABLE test(k int NOT NULL)
+
+@connection(id=1)
+statement ok
+START TRANSACTION
+
+@connection(id=2, username=monetdb, password=monetdb)
+statement ok
+START TRANSACTION
+
+@connection(id=1)
+statement ok
+INSERT INTO test VALUES (1)
+
+@connection(id=2)
+statement ok
+INSERT INTO test VALUES (2)
+
+@connection(id=1)
+statement ok
+COMMIT
+
+@connection(id=2)
+statement ok
+COMMIT
+
+@connection(id=1)
+query T
+SELECT k FROM test
+----
+1
+2
+
+@connection(id=2)
+query T
+SELECT k FROM test
+----
+1
+2
+
+@connection(id=1)
+statement ok
+DROP TABLE test

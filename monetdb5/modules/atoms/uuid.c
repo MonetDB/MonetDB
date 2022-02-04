@@ -121,8 +121,7 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
 		if (!(b = BBPquickdesc(*bid))) {
-			msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto bailout;
+			throw(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		n = BATcount(b);
 	} else {
@@ -130,8 +129,7 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 
 	if ((bn = COLnew(b ? b->hseqbase : 0, TYPE_uuid, n, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		throw(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bnt = Tloc(bn, 0);
 	for (BUN i = 0 ; i < n ; i++)
@@ -142,12 +140,7 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bn->tsorted = n <= 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = n <= 1;
-
-bailout:
-	if (msg && bn)
-		BBPreclaim(bn);
-	else if (bn)
-		BBPkeepref(*ret = bn->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
 	return msg;
 }
 

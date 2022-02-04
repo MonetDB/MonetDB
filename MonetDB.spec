@@ -81,7 +81,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jan2022/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jan2022-SP1/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -850,6 +850,42 @@ fi
 %endif
 
 %changelog
+* Thu Feb 03 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.7-20220203
+- Rebuilt.
+- GH#7228: COMMIT: transaction is aborted because of concurrency
+  conflicts, will ROLLBACK instead
+- GH#7230: Prepared statement of INSERT with SELECT fails when types difer
+- GH#7232: False conflicts when inserting in a not null field
+
+* Mon Jan 24 2022 svetlin <svetlin.stalinov@monetdbsolutions.com> - 11.43.7-20220203
+- sql: [This feature was already released in Jan2022 (11.43), but the ChangeLog was missing]
+  Added SQL procedures sys.vacuum(sname string, tname string, cname string),
+  sys.vacuum(sname string, tname string, cname string, interval int),
+  sys.stop_vacuum(sname string, tname string, cname string).
+  These can be used to vacuum string columns.
+
+* Tue Jan 18 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.5-20220118
+- Rebuilt.
+
+* Thu Jan 13 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.5-20220118
+- NT: We now build Windows binaries using Visual Studio 2022.
+
+* Wed Jan 12 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.43.5-20220118
+- gdk: Implement string imprints (strimps for short) a pre-filter structure
+  for strings in order to accelerate LIKE queries. If a strimp exists
+  for a specific string column the strings are pre-filtered, rejecting
+  strings that cannot possibly match, before the more expensive and
+  accurate matching algorithms run.
+
+* Wed Jan 12 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.43.5-20220118
+- sql: Add string imprints to the existing imprints index creation syntax. On
+  string column "col" of a table "tbl" marked read only ("ALTER TABLE tbl
+  SET READ ONLY") the user can create a string imprint using the syntax:
+  "CREATE IMPRINTS INDEX index_name ON tbl(col);".
+
+* Wed Jan 12 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.5-20220118
+- MonetDB: A couple of concurrency issues have been fixed.
+
 * Tue Jan 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.3-20220111
 - Rebuilt.
 - GH#7215: ODBC Driver SQLStatistics returns duplicate rows/rows for other
@@ -862,8 +898,8 @@ fi
 
 * Thu Jan  6 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.43.3-20220111
 - merovingian: Disabled logging into merovingian.log of next info message types:
-  - proxying client <host>:<port> for database '<dbname>' to <url>
-  - target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying
+  "proxying client <host>:<port> for database '<dbname>' to <url>" and
+  "target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying".
   These messages were written to the log file at each connection. In most
   cases this information is not used. The disabling reduces the log file size.
 

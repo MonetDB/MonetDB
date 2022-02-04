@@ -3974,8 +3974,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
 				/* foreach column add predicate */
-				if (add_column_predicate(be, c->c) != LOG_OK)
-					return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				(void) stmt_column_predicate(be, c->c);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				if ((k->type == ukey) && stmt_has_null(col)) {
@@ -3997,8 +3996,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
 				/* foreach column add predicate */
-				if (add_column_predicate(be, c->c) != LOG_OK)
-					return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				(void) stmt_column_predicate(be, c->c);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				list_append(lje, col);
@@ -4061,8 +4059,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		stmt *s = list_fetch(inserts, c->c->colnr), *h = s;
 
 		/* add predicate for this column */
-		if (add_column_predicate(be, c->c) != LOG_OK)
-			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		(void) stmt_column_predicate(be, c->c);
 
 		s = stmt_col(be, c->c, dels, dels->partition);
 		if ((k->type == ukey) && stmt_has_null(s)) {
@@ -4133,8 +4130,7 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, rel
 		sql_kc *c = m->data;
 
 		/* foreach column add predicate */
-		if (add_column_predicate(be, c->c) != LOG_OK)
-			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		(void) stmt_column_predicate(be, c->c);
 	}
 
 	if (pin && list_length(pin->cols))
@@ -4249,10 +4245,6 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 		if (!c->null) {
 			stmt *s = i;
 			char *msg = NULL;
-
-			/* foreach column add predicate */
-			if (add_column_predicate(be, c) != LOG_OK)
-				return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
@@ -4387,15 +4379,17 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+
 	/* update predicate list */
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
-	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	if (!ddl && !be->silent) {
-		/* if there are multiple update statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
+	if (!ddl) {
+		if (!be->silent) {
+			/* if there are multiple update statements, update total count, otherwise use the the current count */
+			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
+		}
+		if (t->s && isGlobal(t) && !isGlobalTemp(t))
+			(void) stmt_dependency_change(be, t, ret);
 	}
 
 	return create_rel_bin_stmt(sql->sa, rel, sa_list(sql->sa), NULL);
@@ -5216,6 +5210,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	list *idx_updates = NULL;
 	int i, nr_cols = ol_length(t->columns);
 	node *n;
+	stmt *cnt = NULL;
 
 	sql_update_check_null(be, t, updates);
 
@@ -5244,6 +5239,14 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	if (!sql_update_triggers(be, t, rows, updates, 1))
 		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
+	if (!be->silent || (t->s && isGlobal(t) && !isGlobalTemp(t)))
+		cnt = stmt_aggr(be, rows, NULL, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+	if (!be->silent) {
+		/* if there are multiple update statements, update total count, otherwise use the the current count */
+		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
+	}
+	if (t->s && isGlobal(t) && !isGlobalTemp(t))
+		(void) stmt_dependency_change(be, t, cnt);
 /* cascade ?? */
 	return idx_updates; /* return something to show it succeeded */
 }
@@ -5358,13 +5361,14 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
-	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	if (!ddl && !be->silent) {
+	if (!ddl && (!be->silent || (t->s && isGlobal(t) && !isGlobalTemp(t)))) {
 		stmt *ret = stmt_aggr(be, tids, NULL, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-		/* if there are multiple update statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
+		if (!be->silent) {
+			/* if there are multiple update statements, update total count, otherwise use the the current count */
+			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
+		}
+		if (t->s && isGlobal(t) && !isGlobalTemp(t))
+			(void) stmt_dependency_change(be, t, ret);
 	}
 
 	return create_rel_bin_stmt(sql->sa, rel, sa_list(sql->sa), NULL);
@@ -5561,7 +5565,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 
 	if (rows) {
 		s = stmt_delete(be, t, rows);
-		if (!be->silent)
+		if (!be->silent || (t->s && isGlobal(t) && !isGlobalTemp(t)))
 			s = stmt_aggr(be, rows, NULL, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	} else { /* delete all */
 		s = stmt_table_clear(be, t, 0); /* first column */
@@ -5570,6 +5574,13 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 /* after */
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 1, 1, 3))
 		return sql_error(sql, 10, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
+
+	if (!be->silent) {
+		/* if there are multiple update statements, update total count, otherwise use the the current count */
+		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, s->nr) : s->nr;
+	}
+	if (t->s && isGlobal(t) && !isGlobalTemp(t))
+		(void) stmt_dependency_change(be, t, s);
 	return s;
 }
 
@@ -5598,14 +5609,8 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	if (!stdelete)
 		return NULL;
 
-	if (!be->silent) {
-		/* if there are multiple update statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, stdelete->nr) : stdelete->nr;
-	}
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
-	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	return create_rel_bin_stmt(sql->sa, rel, sa_list(sql->sa), NULL);
 }
@@ -5740,6 +5745,8 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			/* if there are multiple update statements, update total count, otherwise use the the current count */
 			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, other->nr) : other->nr;
 		}
+		if (next->s && isGlobal(next) && !isGlobalTemp(next))
+			(void) stmt_dependency_change(be, next, other);
 	}
 
 finalize:
@@ -5768,10 +5775,6 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	n = rel->exps->h;
 	restart_sequences = E_ATOM_INT(n->data);
 	cascade = E_ATOM_INT(n->next->data);
-
-	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
-		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
 	truncate = sql_truncate(be, t, restart_sequences, cascade);
 	sql->cascade_action = NULL;
 	if (!truncate)

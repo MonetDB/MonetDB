@@ -219,6 +219,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	rel_base_use_tid(sql, rt);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
+	set_processed(nnlls);
 
 	if (need_nulls) {
 		rel_destroy(ins);
@@ -849,6 +850,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	rel_base_use_tid(sql, rt);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
+	set_processed(nnlls);
 
 	if (need_nulls) {
 		rel_destroy(ups);
@@ -1158,10 +1160,11 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 
 				if (!fnd)
 					return NULL;
-				if (fnd && tables)
+				if (fnd && tables) {
 					tables = rel_crossproduct(sql->sa, tables, fnd, op_join);
-				else
+				} else {
 					tables = fnd;
+				}
 			}
 			if (!tables)
 				return NULL;
@@ -1338,7 +1341,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
-					set_processed(join_rel);
 				}
 
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, join_rel, NULL, 1, 1));
@@ -1352,7 +1354,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
-					set_processed(join_rel);
 				}
 
 				extra_project = rel_project(sql->sa, join_rel, list_append(new_exp_list(sql->sa), exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1)));
@@ -1376,7 +1377,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 					return NULL;
-				set_processed(join_rel);
 			}
 
 			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));

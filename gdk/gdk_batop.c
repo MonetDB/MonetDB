@@ -2182,7 +2182,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	if (g != NULL &&
 	    (ATOMtype(g->ttype) != TYPE_oid || /* oid tail */
 	     !g->tsorted ||		       /* sorted */
-	     BATcount(o) != BATcount(b) ||     /* same size as b */
+	     BATcount(g) != BATcount(b) ||     /* same size as b */
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(g) != 0 &&
 	      is_oid_nil(g->tseqbase)))) {
