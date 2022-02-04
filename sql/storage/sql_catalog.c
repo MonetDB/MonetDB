@@ -551,8 +551,11 @@ atom_copy(sql_allocator *sa, atom *a)
 	if (!r)
 		return NULL;
 
-	*r = *a;
-	r->tpe = a->tpe;
+	*r = (atom) {
+		.isnull = a->isnull,
+		.tpe = a->tpe,
+		.data = (ValRecord) {.vtype = TYPE_void,},
+	};
 	if (!a->isnull)
 		SA_VALcopy(sa, &r->data, &a->data);
 	return r;

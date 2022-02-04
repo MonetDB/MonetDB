@@ -1,3 +1,11 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Mon Jan 31 2022 Sjoerd Mullender <sjoerd@acm.org>
+- The BLOB type has been moved into the GDK layer.
+
+* Tue Jan 25 2022 Sjoerd Mullender <sjoerd@acm.org>
+- When adding or subtracting months from a date or timestamp value,
+  clamp the result to the calculated month instead of wrapping to the
+  beginning of the next month.  See bug 7227.
+

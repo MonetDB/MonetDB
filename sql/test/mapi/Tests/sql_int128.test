@@ -18,6 +18,8 @@ querylog.define
 1
 sql.affectedRows
 1
+sql.depend
+1
 sql.mvc
 1
 sql.tid
@@ -37,6 +39,8 @@ algebra.project
 querylog.define
 1
 sql.affectedRows
+1
+sql.depend
 1
 sql.mvc
 1
@@ -58,6 +62,8 @@ sql.affectedRows
 1
 sql.bind
 2
+sql.depend
+1
 sql.mvc
 1
 sql.tid
@@ -78,6 +84,8 @@ sql.affectedRows
 1
 sql.bind
 2
+sql.depend
+1
 sql.mvc
 1
 sql.tid
@@ -135,6 +143,8 @@ sql.affectedRows
 sql.append
 1
 sql.claim
+1
+sql.depend
 1
 sql.mvc
 1

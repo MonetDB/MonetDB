@@ -61,8 +61,8 @@ if(HAVE_LIBPY3)
     LIBPYAPI3)
 
   set_target_properties(pyapi3
-    PROPERTIES 
-    OUTPUT_NAME 
+    PROPERTIES
+    OUTPUT_NAME
     _pyapi3)
 
   install(TARGETS
@@ -80,7 +80,10 @@ if(HAVE_LIBPY3)
     configure_file(pyapi_locatepython3.bat.in
       ${CMAKE_CURRENT_BINARY_DIR}/pyapi_locatepython3.bat @ONLY)
 
-    install(FILES $<TARGET_PDB_FILE:pyapi3> DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5 OPTIONAL)
+    install(FILES
+      $<TARGET_PDB_FILE:pyapi3>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      OPTIONAL)
     install(FILES
       ${CMAKE_CURRENT_BINARY_DIR}/pyapi_locatepython3.bat
       DESTINATION "."

@@ -3439,7 +3439,7 @@ def main(argv) :
     nomito = opts.nomito
     global restart
     restart = opts.restart
-    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
+    if int(MonetDB_VERSION[1])%2 == 0 or opts.alltests:
         CONDITIONALS['KNOWNFAIL'] = 'execute'
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
@@ -3981,6 +3981,8 @@ def main(argv) :
         env['RELEASE'] = os.environ['RELEASE']
         env['DIST'] = os.environ['DIST']
         env['VERSION'] = os.environ['VERSION']
+
+        CONDITIONALS['ARCH_BITS32'] = (env['TST_BITS'] == '32bit')
 
         if procdebug:
             for k in sorted(os.environ):

@@ -371,8 +371,6 @@
 \dSf sys."str_to_date"
 \dSf sys."str_to_time"
 \dSf sys."str_to_timestamp"
-\dSf sys."strimp_create"
-\dSf sys."strimp_filter"
 \dSf sys."suspend_log_flushing"
 \dSf sys."text"
 \dSf sys."time_to_str"
@@ -923,8 +921,6 @@ SYSTEM PROCEDURE        sys.storagemodelinit
 SYSTEM FUNCTION         sys.str_to_date
 SYSTEM FUNCTION         sys.str_to_time
 SYSTEM FUNCTION         sys.str_to_timestamp
-SYSTEM PROCEDURE        sys.strimp_create
-SYSTEM FILTER FUNCTION  sys.strimp_filter
 SYSTEM FUNCTION         sys.strings
 SYSTEM FUNCTION         sys.substr
 SYSTEM FUNCTION         sys.substring
@@ -1003,7 +999,9 @@ CREATE TABLE "sys"."range_partitions" ("table_id" INTEGER, "partition_id" INTEGE
 CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
 CREATE TABLE "sys"."sequences" ("id" INTEGER, "schema_id" INTEGER, "name" VARCHAR(256), "start" BIGINT, "minvalue" BIGINT, "maxvalue" BIGINT, "increment" BIGINT, "cacheinc" BIGINT, "cycle" BOOLEAN);
 CREATE TABLE "sys"."spatial_ref_sys" ("srid" INTEGER NOT NULL, "auth_name" VARCHAR(256), "auth_srid" INTEGER, "srtext" VARCHAR(2048), "proj4text" VARCHAR(2048), CONSTRAINT "spatial_ref_sys_srid_pkey" PRIMARY KEY ("srid"));
-CREATE TABLE "sys"."storagemodelinput" ("schema" VARCHAR(1024) NOT NULL, "table" VARCHAR(1024) NOT NULL, "column" VARCHAR(1024) NOT NULL, "type" VARCHAR(1024) NOT NULL, "typewidth" INTEGER NOT NULL, "count" BIGINT NOT NULL, "distinct" BIGINT NOT NULL, "atomwidth" INTEGER NOT NULL, "reference" BOOLEAN NOT NULL DEFAULT false, "sorted" BOOLEAN, "unique" BOOLEAN, "isacolumn" BOOLEAN NOT NULL DEFAULT true);
+CREATE TABLE "sys"."storagemodelinput" ("schema" VARCHAR(1024) NOT NULL, "table" VARCHAR(1024) NOT NULL, "column" VARCHAR(1024) NOT NULL, "type" VARCHAR(1024) NOT NULL, "typewidth" INTEGER NOT NULL, "count" BIGINT NOT NULL, "distinct" BIGINT NOT NULL, "atomwidth" INTEGER NOT NULL, "reference" BOOLEAN NOT NULL, "sorted" BOOLEAN, "unique" BOOLEAN, "isacolumn" BOOLEAN NOT NULL);
+ALTER TABLE "sys"."storagemodelinput" ALTER COLUMN "reference" SET DEFAULT false;
+ALTER TABLE "sys"."storagemodelinput" ALTER COLUMN "isacolumn" SET DEFAULT true;
 CREATE TABLE "sys"."table_partitions" ("id" INTEGER, "table_id" INTEGER, "column_id" INTEGER, "expression" VARCHAR(2048), "type" TINYINT);
 CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
 ALTER TABLE "sys"."table_types" SET READ ONLY;
@@ -1011,12 +1009,12 @@ CREATE TABLE "sys"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" IN
 CREATE TABLE "sys"."types" ("id" INTEGER, "systemname" VARCHAR(256), "sqlname" VARCHAR(1024), "digits" INTEGER, "scale" INTEGER, "radix" INTEGER, "eclass" INTEGER, "schema_id" INTEGER);
 CREATE TABLE "sys"."user_role" ("login_id" INTEGER, "role_id" INTEGER);
 CREATE TABLE "sys"."value_partitions" ("table_id" INTEGER, "partition_id" INTEGER, "value" VARCHAR(2048));
-CREATE TABLE "tmp"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048));
-CREATE TABLE "tmp"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(1048576), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
-CREATE TABLE "tmp"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024));
-CREATE TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER);
-CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER, "sub" INTEGER);
-CREATE TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
+CREATE GLOBAL TEMPORARY TABLE "tmp"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048)) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(1048576), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024)) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER, "sub" INTEGER) ON COMMIT PRESERVE ROWS;
+CREATE GLOBAL TEMPORARY TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048)) ON COMMIT PRESERVE ROWS;
 create view logging.compinfo as select * from logging.compinfo();
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
 create view sys.dependencies_vw as select d.id, i1.obj_type, i1.name, d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name, d.depend_type, dt.dependency_type_name from sys.dependencies d join sys.ids i1 on d.id = i1.id join sys.ids i2 on d.depend_id = i2.id join sys.dependency_types dt on d.depend_type = dt.dependency_type_id order by id, depend_id;
@@ -1489,8 +1487,6 @@ create procedure sys.storagemodelinit() begin delete from sys.storagemodelinput;
 create function str_to_date(s string, format string) returns date external name mtime."str_to_date";
 create function str_to_time(s string, format string) returns time with time zone external name mtime."str_to_time";
 create function str_to_timestamp(s string, format string) returns timestamp with time zone external name mtime."str_to_timestamp";
-create procedure sys.strimp_create(sch string, tab string, col string) external name sql.createstrimps;
-create filter function sys.strimp_filter(strs string, q string) external name strimps.strimpfilter;
 create procedure sys.suspend_log_flushing() external name sql.suspend_log_flushing;
 create function "text" (p inet) returns clob external name inet."text";
 create function time_to_str(d time with time zone, format string) returns string external name mtime."time_to_str";
@@ -4109,8 +4105,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.functions",	"sys",	"str_to_date",	"SYSTEM",	"create function str_to_date(s string, format string) returns date external name mtime.\"str_to_date\";",	"mtime",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"date",	0,	0,	"out",	"s",	"clob",	0,	0,	"in",	"format",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"str_to_time",	"SYSTEM",	"create function str_to_time(s string, format string) returns time with time zone external name mtime.\"str_to_time\";",	"mtime",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"timetz",	1,	0,	"out",	"s",	"clob",	0,	0,	"in",	"format",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"str_to_timestamp",	"SYSTEM",	"create function str_to_timestamp(s string, format string) returns timestamp with time zone external name mtime.\"str_to_timestamp\";",	"mtime",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"timestamptz",	7,	0,	"out",	"s",	"clob",	0,	0,	"in",	"format",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"strimp_create",	"SYSTEM",	"create procedure sys.strimp_create(sch string, tab string, col string) external name sql.createstrimps;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"sch",	"clob",	0,	0,	"in",	"tab",	"clob",	0,	0,	"in",	"col",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"strimp_filter",	"SYSTEM",	"create filter function sys.strimp_filter(strs string, q string) external name strimps.strimpfilter;",	"strimps",	"MAL",	"Filter function",	false,	false,	false,	true,	"strs",	"clob",	0,	0,	"in",	"q",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"strings",	"SYSTEM",	"strings",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"char",	0,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"strings",	"SYSTEM",	"strings",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"strings",	"SYSTEM",	"strings",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -6191,7 +6185,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "grant on function",	"sys",	"str_to_date",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"str_to_time",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"str_to_timestamp",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "grant on function",	"sys",	"strimp_filter",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"text",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"time_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"timestamp_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -6853,8 +6846,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %171,	%170,	id # name
 % char,	bigint,	int # type
 % 17,	1,	1 # length
-% .%105,	.%73,	.var_values # table_name
-% %105,	%73,	var_name # name
+% .%105,	.%104,	.var_values # table_name
+% %105,	%104,	var_name # name
 % char,	bigint,	char # type
 % 24,	1,	16 # length
 % .%2,	sys.%1,	sys.table_partitions # table_name
@@ -8005,8 +7998,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	default_schema,	name,	fullname,	default_schema,	schema_path # name
 % char,	int,	varchar,	varchar,	int,	clob # type
 % 28,	1,	0,	0,	1,	0 # length
-% .%73,	.var_values,	.var_values,	.var_values # table_name
-% %73,	var_name,	var_name,	value # name
+% .%104,	.var_values,	.var_values,	.var_values # table_name
+% %104,	var_name,	var_name,	value # name
 % char,	char,	char,	varchar # type
 % 27,	16,	16,	0 # length
 % .%124,	.var_values,	.var_values,	.var_values # table_name

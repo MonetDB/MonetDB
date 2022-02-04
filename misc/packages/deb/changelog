@@ -1,3 +1,60 @@
+monetdb (11.43.7) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7228: COMMIT: transaction is aborted because of concurrency
+    conflicts, will ROLLBACK instead
+  * GH#7230: Prepared statement of INSERT with SELECT fails when types difer
+  * GH#7232: False conflicts when inserting in a not null field
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 03 Feb 2022 09:58:19 +0100
+
+monetdb (11.43.7) unstable; urgency=low
+
+  * sql: [This feature was already released in Jan2022 (11.43), but the ChangeLog was missing]
+    Added SQL procedures sys.vacuum(sname string, tname string, cname string),
+    sys.vacuum(sname string, tname string, cname string, interval int),
+    sys.stop_vacuum(sname string, tname string, cname string).
+    These can be used to vacuum string columns.
+
+ -- svetlin <svetlin.stalinov@monetdbsolutions.com>  Mon, 24 Jan 2022 09:58:19 +0100
+
+monetdb (11.43.5) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Jan 2022 10:05:33 +0100
+
+monetdb (11.43.5) unstable; urgency=low
+
+  * NT: We now build Windows binaries using Visual Studio 2022.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 13 Jan 2022 10:05:33 +0100
+
+monetdb (11.43.5) unstable; urgency=low
+
+  * gdk: Implement string imprints (strimps for short) a pre-filter structure
+    for strings in order to accelerate LIKE queries. If a strimp exists
+    for a specific string column the strings are pre-filtered, rejecting
+    strings that cannot possibly match, before the more expensive and
+    accurate matching algorithms run.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Wed, 12 Jan 2022 10:05:33 +0100
+
+monetdb (11.43.5) unstable; urgency=low
+
+  * sql: Add string imprints to the existing imprints index creation syntax. On
+    string column "col" of a table "tbl" marked read only ("ALTER TABLE tbl
+    SET READ ONLY") the user can create a string imprint using the syntax:
+    "CREATE IMPRINTS INDEX index_name ON tbl(col);".
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Wed, 12 Jan 2022 10:05:33 +0100
+
+monetdb (11.43.5) unstable; urgency=low
+
+  * MonetDB: A couple of concurrency issues have been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 12 Jan 2022 10:05:33 +0100
+
 monetdb (11.43.3) unstable; urgency=low
 
   * Rebuilt.
@@ -17,8 +74,8 @@ monetdb (11.43.3) unstable; urgency=low
 monetdb (11.43.3) unstable; urgency=low
 
   * merovingian: Disabled logging into merovingian.log of next info message types:
-    - proxying client <host>:<port> for database '<dbname>' to <url>
-    - target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying
+    "proxying client <host>:<port> for database '<dbname>' to <url>" and
+    "target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying".
     These messages were written to the log file at each connection. In most
     cases this information is not used. The disabling reduces the log file size.
 

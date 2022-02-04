@@ -1,0 +1,336 @@
+statement ok
+START TRANSACTION
+
+statement ok
+DROP FUNCTION fDocColumnsWithRank
+
+statement ok
+DROP FUNCTION fDocColumns
+
+statement ok
+DROP FUNCTION fDocFunctionParams
+
+statement ok
+ 
+DROP FUNCTION fPhotoDescription
+
+statement ok
+DROP FUNCTION fStripeOfRun
+
+statement ok
+DROP FUNCTION fStripOfRun
+
+statement ok
+DROP FUNCTION fGetDiagChecksum
+
+statement ok
+DROP FUNCTION fSpecDescription
+
+statement ok
+DROP FUNCTION fFirstFieldBit()
+
+statement ok
+DROP FUNCTION fRegionFuzz
+
+statement ok
+DROP FUNCTION fFootprintEq
+
+statement ok
+DROP FUNCTION fRegionsContainingPointEq
+
+statement ok
+DROP FUNCTION fRegionsContainingPointXYZ
+
+statement ok
+DROP FUNCTION fGetUrlFitsCFrame
+
+statement ok
+DROP FUNCTION fGetUrlFitsMask
+
+statement ok
+DROP FUNCTION fSDSS
+
+statement ok
+DROP FUNCTION fSkyVersion
+
+statement ok
+DROP FUNCTION fRerun
+
+statement ok
+DROP FUNCTION fRun
+
+statement ok
+DROP FUNCTION fCamcol
+
+statement ok
+DROP FUNCTION fField
+
+statement ok
+DROP FUNCTION fObj
+
+statement ok
+DROP FUNCTION fObjidFromSDSS
+
+statement ok
+DROP FUNCTION fObjidFromSDSSWithFF
+
+statement ok
+DROP FUNCTION fSpecidFromSDSS
+
+statement ok
+DROP FUNCTION fPlate
+
+statement ok
+DROP FUNCTION fMJD
+
+statement ok
+DROP FUNCTION fFiber
+
+statement ok
+DROP FUNCTION fPhotoStatus
+
+statement ok
+DROP FUNCTION fPrimTargetN
+
+statement ok
+DROP FUNCTION fPrimTarget
+
+statement ok
+DROP FUNCTION fSecTarget
+
+statement ok
+DROP FUNCTION fSecTargetN
+
+statement ok
+DROP FUNCTION fInsideMask
+
+statement ok
+DROP FUNCTION fInsideMaskN
+
+statement ok
+DROP FUNCTION fSpecZWarning
+
+statement ok
+DROP FUNCTION fSpecZWarningN
+
+statement ok
+DROP FUNCTION fImageMask
+
+statement ok
+DROP FUNCTION fImageMaskN
+
+statement ok
+DROP FUNCTION fTiMask
+
+statement ok
+DROP FUNCTION fTiMaskN
+
+statement ok
+DROP FUNCTION fPhotoModeN
+
+statement ok
+DROP FUNCTION fPhotoMode
+
+statement ok
+DROP FUNCTION fPhotoTypeN
+
+statement ok
+DROP FUNCTION fPhotoType
+
+statement ok
+DROP FUNCTION fMaskTypeN
+
+statement ok
+DROP FUNCTION fMaskType
+
+statement ok
+DROP FUNCTION fFieldQualityN
+
+statement ok
+DROP FUNCTION fFieldQuality
+
+statement ok
+DROP FUNCTION fPspStatus
+
+statement ok
+DROP FUNCTION fPspStatusN
+
+statement ok
+DROP FUNCTION fFramesStatus
+
+statement ok
+DROP FUNCTION fFramesStatusN
+
+statement ok
+DROP FUNCTION fSpecClass
+
+statement ok
+DROP FUNCTION fSpecClassN
+
+statement ok
+DROP FUNCTION fSpecLineNames
+
+statement ok
+DROP FUNCTION fSpecLineNamesN
+
+statement ok
+DROP FUNCTION fSpecZStatusN
+
+statement ok
+DROP FUNCTION fSpecZStatus
+
+statement ok
+DROP FUNCTION fHoleType
+
+statement ok
+DROP FUNCTION fHoleTypeN
+
+statement ok
+DROP FUNCTION fObjType
+
+statement ok
+DROP FUNCTION fObjTypeN
+
+statement ok
+DROP FUNCTION fProgramType
+
+statement ok
+DROP FUNCTION fProgramTypeN
+
+statement ok
+DROP FUNCTION fCoordType
+
+statement ok
+DROP FUNCTION fCoordTypeN
+
+statement ok
+DROP FUNCTION fFieldMask
+
+statement ok
+DROP FUNCTION fFieldMaskN
+
+statement ok
+DROP FUNCTION fMJDToGMT
+
+statement ok
+DROP FUNCTION fDistanceArcMinXYZ
+
+statement ok
+DROP FUNCTION fDistanceArcMinEq
+
+statement ok
+DROP FUNCTION fIAUFromEq
+
+statement ok
+DROP FUNCTION fDMS
+
+statement ok
+DROP FUNCTION fHMS
+
+statement ok
+DROP FUNCTION fDMSbase
+
+statement ok
+DROP FUNCTION fHMSbase
+
+statement ok
+DROP FUNCTION fMagToFluxErr
+
+statement ok
+DROP FUNCTION fMagToFlux
+
+statement ok
+DROP FUNCTION fEtaToNormal
+
+statement ok
+DROP FUNCTION fStripeToNormal
+
+statement ok
+DROP FUNCTION fGetLat
+
+statement ok
+DROP FUNCTION fGetLon
+
+statement ok
+DROP FUNCTION fGetLonLat
+
+statement ok
+DROP FUNCTION fEqFromMuNu
+
+statement ok
+DROP FUNCTION fCoordsFromEq
+
+statement ok
+DROP FUNCTION fMuFromEq
+
+statement ok
+DROP FUNCTION fNuFromEq
+
+statement ok
+DROP FUNCTION fEtaFromEq
+
+statement ok
+DROP FUNCTION fLambdaFromEq
+
+statement ok
+DROP FUNCTION fMuNuFromEq
+
+statement ok
+DROP FUNCTION fWedgeV3
+
+statement ok
+DROP FUNCTION fRotateV3
+
+statement ok
+DROP FUNCTION fTokenStringToTable
+
+statement ok
+DROP FUNCTION fNormalizeString
+
+statement ok
+DROP FUNCTION fTokenAdvance
+
+statement ok
+DROP FUNCTION fTokenNext
+
+statement ok
+DROP FUNCTION fReplace
+
+statement ok
+DROP FUNCTION fIsNumbers
+
+statement ok
+DROP FUNCTION fHtmToString
+
+statement ok
+DROP FUNCTION fHtmXyz
+
+statement ok
+DROP FUNCTION fHtmEq
+
+statement ok
+DROP FUNCTION fHtmLookupEq
+
+statement ok
+DROP FUNCTION fHtmLookupXyz
+
+statement ok
+DROP FUNCTION fHtmLookup
+
+statement ok
+DROP FUNCTION fPhotoStatusN
+
+statement ok
+DROP FUNCTION fPhotoFlagsN
+
+statement ok
+DROP FUNCTION fPhotoFlags
+
+statement ok
+DROP FUNCTION fIndexName
+
+statement ok
+DROP FUNCTION fTileFileName
+
+statement ok
+COMMIT
