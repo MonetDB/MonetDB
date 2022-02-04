@@ -669,6 +669,9 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		}
 	}
 	bat_destroy(pos);
+	if (BATcount(columns[0].b) > 0 && !isNew(t) && isGlobal(t) && !isGlobalTemp(t) &&
+		sql_trans_add_dependency_change(sql->session->tr, t->base.id, dml) != LOG_OK)
+		throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }
 
