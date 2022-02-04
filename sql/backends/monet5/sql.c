@@ -4191,43 +4191,33 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 	if ((s = BATdescriptor(*src)) == NULL)
 		throw(SQL, "calc.index", SQLSTATE(HY005) "Cannot access column descriptor");
 
-	if (*u) {
-		Heap *h = s->tvheap;
-		size_t pad, pos;
-		int v;
+	(void) u;
 
-		r = COLnew(0, TYPE_int, 1024, TRANSIENT);
-		if (r == NULL) {
+	Heap *h = s->tvheap;
+	size_t pad, pos;
+	int v;
+
+	r = COLnew(0, TYPE_int, 1024, TRANSIENT);
+	if (r == NULL) {
+		BBPunfix(s->batCacheid);
+		throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	pos = GDK_STRHASHSIZE;
+	while (pos < h->free) {
+		const char *p;
+
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pad < sizeof(stridx_t))
+			pad += GDK_VARALIGN;
+		pos += pad;
+		p = h->base + pos;
+		v = (int) (pos - GDK_STRHASHSIZE);
+		if (BUNappend(r, &v, false) != GDK_SUCCEED) {
+			BBPreclaim(r);
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		pos = GDK_STRHASHSIZE;
-		while (pos < h->free) {
-			const char *p;
-
-			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
-				pad += GDK_VARALIGN;
-			pos += pad;
-			p = h->base + pos;
-			v = (int) (pos - GDK_STRHASHSIZE);
-			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
-				BBPreclaim(r);
-				BBPunfix(s->batCacheid);
-				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			pos += strLen(p);
-		}
-	} else {
-		r = VIEWcreate(s->hseqbase, s);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		r->ttype = TYPE_int;
-		r->tvarsized = false;
-		HEAPdecref(r->tvheap, false);
-		r->tvheap = NULL;
+		pos += strLen(p);
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
@@ -4250,42 +4240,32 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 	if ((s = BATdescriptor(*src)) == NULL)
 		throw(SQL, "calc.index", SQLSTATE(HY005) "Cannot access column descriptor");
 
-	if (*u) {
-		Heap *h = s->tvheap;
-		size_t pad, pos;
-		sht v;
+	(void) u;
 
-		r = COLnew(0, TYPE_sht, 1024, TRANSIENT);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
+	Heap *h = s->tvheap;
+	size_t pad, pos;
+	sht v;
+
+	r = COLnew(0, TYPE_sht, 1024, TRANSIENT);
+	if (r == NULL) {
+		BBPunfix(s->batCacheid);
+		throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	pos = GDK_STRHASHSIZE;
+	while (pos < h->free) {
+		const char *s;
+
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pad < sizeof(stridx_t))
+			pad += GDK_VARALIGN;
+		pos += pad;
+		s = h->base + pos;
+		v = (sht) (pos - GDK_STRHASHSIZE);
+		if (BUNappend(r, &v, false) != GDK_SUCCEED) {
+			BBPreclaim(r);
 			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		pos = GDK_STRHASHSIZE;
-		while (pos < h->free) {
-			const char *s;
-
-			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
-				pad += GDK_VARALIGN;
-			pos += pad;
-			s = h->base + pos;
-			v = (sht) (pos - GDK_STRHASHSIZE);
-			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
-				BBPreclaim(r);
-				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			pos += strLen(s);
-		}
-	} else {
-		r = VIEWcreate(s->hseqbase, s);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		r->ttype = TYPE_sht;
-		r->tvarsized = false;
-		HEAPdecref(r->tvheap, false);
-		r->tvheap = NULL;
+		pos += strLen(s);
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
@@ -4308,43 +4288,33 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 	if ((s = BATdescriptor(*src)) == NULL)
 		throw(SQL, "calc.index", SQLSTATE(HY005) "Cannot access column descriptor");
 
-	if (*u) {
-		Heap *h = s->tvheap;
-		size_t pad, pos;
-		bte v;
+	(void) u;
 
-		r = COLnew(0, TYPE_bte, 64, TRANSIENT);
-		if (r == NULL) {
+	Heap *h = s->tvheap;
+	size_t pad, pos;
+	bte v;
+
+	r = COLnew(0, TYPE_bte, 64, TRANSIENT);
+	if (r == NULL) {
+		BBPunfix(s->batCacheid);
+		throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	pos = GDK_STRHASHSIZE;
+	while (pos < h->free) {
+		const char *p;
+
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pad < sizeof(stridx_t))
+			pad += GDK_VARALIGN;
+		pos += pad;
+		p = h->base + pos;
+		v = (bte) (pos - GDK_STRHASHSIZE);
+		if (BUNappend(r, &v, false) != GDK_SUCCEED) {
+			BBPreclaim(r);
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		pos = GDK_STRHASHSIZE;
-		while (pos < h->free) {
-			const char *p;
-
-			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
-				pad += GDK_VARALIGN;
-			pos += pad;
-			p = h->base + pos;
-			v = (bte) (pos - GDK_STRHASHSIZE);
-			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
-				BBPreclaim(r);
-				BBPunfix(s->batCacheid);
-				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			pos += strLen(p);
-		}
-	} else {
-		r = VIEWcreate(s->hseqbase, s);
-		if (r == NULL) {
-			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		r->ttype = TYPE_bte;
-		r->tvarsized = false;
-		HEAPdecref(r->tvheap, false);
-		r->tvheap = NULL;
+		pos += strLen(p);
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
