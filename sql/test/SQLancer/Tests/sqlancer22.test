@@ -275,4 +275,56 @@ SELECT 1 FROM (SELECT DISTINCT c0 FROM rt0) vt(vc1) WHERE (1) IN (SELECT 2 FROM 
 ----
 
 statement ok
+CREATE TABLE integers(i INTEGER)
+
+statement ok rowcount 4
+INSERT INTO integers VALUES (1), (2), (3), (NULL)
+
+# These are right
+query I rowsort
+SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 JOIN generate_series(1, 3, 1) tbl(i) ON i1.i=tbl.i) FROM integers
+----
+0
+0
+1
+1
+
+query I
+SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 LEFT JOIN generate_series(1, 3, 1) tbl(i) ON i1.i=tbl.i) FROM integers
+----
+1
+1
+1
+0
+
+query I
+SELECT i IN (SELECT i1.i FROM generate_series(1, 3, 1) tbl(i) RIGHT JOIN (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 ON i1.i=tbl.i) FROM integers
+----
+1
+1
+1
+0
+
+# These are wrong
+query I
+SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 RIGHT JOIN generate_series(1, 3, 1) tbl(i) ON i1.i=tbl.i) FROM integers
+----
+1
+1
+NULL
+NULL
+
+query I
+SELECT i IN (SELECT i1.i FROM generate_series(1, 3, 1) tbl(i) LEFT JOIN (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 ON i1.i=tbl.i) FROM integers
+----
+1
+1
+NULL
+NULL
+
+query I nosort
+SELECT 1 FROM rt0 JOIN LATERAL ((SELECT 2) EXCEPT (SELECT 3)) AS x(x) ON TRUE
+----
+
+statement ok
 ROLLBACK
