@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 DROP TABLE Algorithm
 
 statement ok
@@ -268,3 +271,5 @@ DROP TABLE XCRedshift
 statement ok
 DROP TABLE Zone
 
+statement ok
+COMMIT

@@ -30,3 +30,4 @@ prepare_commit_execute.SF-2606020
 prepare_decimal_bug.SF-2831994
 prepare-view
 prepare-mergetable
+insert-prepare.Bug-7230

@@ -339,6 +339,10 @@ with SQLTestCase() as cli:
     cli.execute("SELECT c1 FROM rt6;") \
         .assertSucceeded().assertDataResultMatch([("3",),("8ጮk|1*",),("27",),("Vrx^qA齀",),("J",),("18",),(">*4嘁pAP",),("+Jm*W0{",),(">V鷓",),
         ("BW5z",),(".#OJruk",),("lU1覃Nlm",),(None,),("968786590",)])
+    cli.execute("SELECT 3 >= ALL(SELECT vx.vc0 FROM storage((SELECT 'sys', 't3' FROM t3))) FROM (SELECT 0) vx(vc0);") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
+    cli.execute("SELECT 3 >= ALL(SELECT vx.vc0 FROM storage((SELECT 'sys', 't3' FROM rt3))) FROM (SELECT 0) vx(vc0);") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
     cli.execute("(SELECT greatest(JSON '\"5mTevdOzH5brfkMv\"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM t3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM t3);") \
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("(SELECT greatest(JSON '\"5mTevdOzH5brfkMv\"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM rt3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM rt3);") \

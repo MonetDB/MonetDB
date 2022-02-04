@@ -44458,21 +44458,6 @@ pattern batsql.get_value(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:o
 mvc_get_value_bulk;
 return the current value of the sequence (ie the next to be used value)
 batsql
-index
-command batsql.index(X_0:bat[:str], X_1:bit):bat[:bte] 
-BATSTRindex_bte;
-Return the offsets as an index bat
-batsql
-index
-command batsql.index(X_0:bat[:str], X_1:bit):bat[:int] 
-BATSTRindex_int;
-Return the offsets as an index bat
-batsql
-index
-command batsql.index(X_0:bat[:str], X_1:bit):bat[:sht] 
-BATSTRindex_sht;
-Return the offsets as an index bat
-batsql
 lag
 pattern batsql.lag(X_0:any_1, X_1:any, X_2:bat[:any_1], X_3:any_2, X_4:any_3):bat[:any_1] 
 SQLlag;
@@ -44803,11 +44788,6 @@ pattern batsql.str_group_concat(X_0:str, X_1:bat[:str], X_2:any, X_3:any, X_4:in
 SQLstrgroup_concat;
 return the string concatenation of groups with a custom separator
 batsql
-strings
-command batsql.strings(X_0:bat[:str]):bat[:str] 
-BATSTRstrings;
-Return the strings
-batsql
 sum
 pattern batsql.sum(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge] 
 SQLsum;
@@ -44840,6 +44820,11 @@ return the sum of groups
 batsql
 sum
 pattern batsql.sum(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge] 
+SQLsum;
+return the sum of groups
+batsql
+sum
+pattern batsql.sum(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:int] 
 SQLsum;
 return the sum of groups
 batsql
@@ -46037,11 +46022,6 @@ nitems
 command blob.nitems(X_0:blob):int 
 BLOBnitems;
 get the number of bytes in this blob.
-blob
-prelude
-command blob.prelude():void 
-BLOBprelude;
-(empty)
 blob
 toblob
 command blob.toblob(X_0:str):blob 
@@ -63113,6 +63093,11 @@ pattern sql.dense_rank(X_0:any_1, X_1:bit, X_2:bit):int
 SQLdense_rank;
 return the densely ranked groups
 sql
+depend
+unsafe pattern sql.depend(X_0:str, X_1:str, X_2:lng):void 
+mvc_add_dependency_change;
+Set dml dependency on current transaction for a table.
+sql
 deregister
 unsafe pattern sql.deregister():int 
 RAstatementEnd;
@@ -63298,21 +63283,6 @@ unsafe pattern sql.include(X_0:str):void
 SQLinclude;
 Compile and execute a sql statements on the file
 sql
-index
-command sql.index(X_0:str, X_1:bit):bte 
-STRindex_bte;
-Return the offsets as an index bat
-sql
-index
-command sql.index(X_0:str, X_1:bit):int 
-STRindex_int;
-Return the offsets as an index bat
-sql
-index
-command sql.index(X_0:str, X_1:bit):sht 
-STRindex_sht;
-Return the offsets as an index bat
-sql
 lag
 pattern sql.lag(X_0:any_1, X_1:any, X_2:any_1, X_3:bit, X_4:bit):any_1 
 SQLlag;
@@ -63412,6 +63382,11 @@ percent_rank
 pattern sql.percent_rank(X_0:any_1, X_1:bit, X_2:bit):dbl 
 SQLpercent_rank;
 return the percentage into the total number of groups for each row
+sql
+predicate
+unsafe pattern sql.predicate(X_0:str, X_1:str, X_2:str):void 
+mvc_add_column_predicate;
+Add predicate on current transaction for a table column.
 sql
 prelude
 pattern sql.prelude():void 
@@ -63753,11 +63728,6 @@ pattern sql.str_group_concat(X_0:str, X_1:str, X_2:bit, X_3:bit, X_4:int, X_5:oi
 SQLstrgroup_concat;
 return the string concatenation of groups with a custom separator
 sql
-strings
-command sql.strings(X_0:str):str 
-STRstrings;
-Return the strings
-sql
 subdelta
 command sql.subdelta(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:oid]):bat[:oid] 
 DELTAsub;
@@ -63795,6 +63765,11 @@ return the sum of groups
 sql
 sum
 pattern sql.sum(X_0:int, X_1:bit, X_2:bit, X_3:int, X_4:oid, X_5:oid):hge 
+SQLsum;
+return the sum of groups
+sql
+sum
+pattern sql.sum(X_0:int, X_1:bit, X_2:bit, X_3:int, X_4:oid, X_5:oid):int 
 SQLsum;
 return the sum of groups
 sql

@@ -234,6 +234,8 @@ gdk_export const uuid uuid_nil;
 #endif
 #endif
 
+#define is_blob_nil(x)	((x)->nitems == ~(size_t)0)
+
 /*
  * @- Derived types
  * In all algorithms across GDK, you will find switches on the types
