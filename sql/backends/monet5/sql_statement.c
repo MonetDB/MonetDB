@@ -3013,6 +3013,59 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 }
 
 stmt *
+stmt_dependency_change(backend *be, sql_table *t, stmt *cnt)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (!t || cnt->nr < 0)
+		return NULL;
+	q = newStmtArgs(mb, sqlRef, putName("depend"), 3);
+	q = pushSchema(mb, q, t);
+	q = pushStr(mb, q, t->base.name);
+	q = pushArgument(mb, q, cnt->nr);
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_depend);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->op1 = cnt;
+		s->op4.tval = t;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
+stmt_column_predicate(backend *be, sql_column *c)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (!c)
+		return NULL;
+	q = newStmtArgs(mb, sqlRef, putName("predicate"), 3);
+	q = pushSchema(mb, q, c->t);
+	q = pushStr(mb, q, c->t->base.name);
+	q = pushStr(mb, q, c->base.name);
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_predicate);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->op4.cval = c;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
 stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 {
 	MalBlkPtr mb = be->mb;
