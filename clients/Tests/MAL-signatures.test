@@ -46593,6 +46593,11 @@ pattern sql.dense_rank(X_0:any_1, X_1:bit, X_2:bit):int
 SQLdense_rank;
 return the densely ranked groups
 sql
+depend
+unsafe pattern sql.depend(X_0:str, X_1:str, X_2:lng):void 
+mvc_add_dependency_change;
+Set dml dependency on current transaction for a table.
+sql
 deregister
 unsafe pattern sql.deregister():int 
 RAstatementEnd;

@@ -517,6 +517,35 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+mvc_add_dependency_change(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg;
+	mvc *m = NULL;
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *tname = *getArgReference_str(stk, pci, 2);
+	lng cnt = *(lng*)getArgReference_lng(stk, pci, 3);
+	sql_schema *s;
+	sql_table *t;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		throw(SQL, "sql.dependency_change", SQLSTATE(3F000) "Schema missing %s", sname);
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		throw(SQL, "sql.dependency_change", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+	if (!isTable(t))
+		throw(SQL, "sql.dependency_change", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (cnt > 0 && !isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(m->session->tr, t->base.id, dml) != LOG_OK)
+		throw(SQL, "sql.dependency_change", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
+}
+
+str
 create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
 	size_t i;
@@ -548,14 +577,14 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
-		str atoname = ATOMname(b->ttype);
+		const char *atomname = ATOMname(b->ttype);
 		sql_subtype tpe;
 		sql_column *col = NULL;
 
-		if (!strcmp(atoname, "str"))
+		if (!strcmp(atomname, "str"))
 			sql_find_subtype(&tpe, "clob", 0, 0);
 		else {
-			sql_subtype *t = sql_bind_localtype(atoname);
+			sql_subtype *t = sql_bind_localtype(atomname);
 			if (!t)
 				throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
 			tpe = *t;
@@ -5207,6 +5236,7 @@ static mel_func sql_init_funcs[] = {
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
  pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
  pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,6, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
+ pattern("sql", "depend", mvc_add_dependency_change, true, "Set dml dependency on current transaction for a table.", args(0,3, arg("sname",str),arg("tname",str),arg("cnt",lng))),
  pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0))),
  pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
  pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,4, arg("",lng),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
