@@ -379,8 +379,32 @@ SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL (VALUES (rt0.c0), (4)) AS x(x)
 NULL
 NULL
 
-statement error SELECT: relation name "rt0" specified more than once
-SELECT 1 FROM rt0 JOIN ((SELECT 1) UNION ALL (SELECT 2)) rt0(c0) ON TRUE
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM rt0 JOIN ((SELECT 1) UNION ALL (SELECT 2)) AS rt0(c0) ON TRUE
 
 statement ok
 ROLLBACK
+
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM (SELECT 1) rt0(c0) JOIN ((SELECT 1) UNION ALL (SELECT 2)) AS rt0(c0) ON TRUE
+
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM (SELECT 1) rt0(c0) JOIN LATERAL ((SELECT 1) UNION ALL (SELECT 2)) AS rt0(c0) ON TRUE
+
+statement error 42000!SELECT: identifier 'c0' ambiguous
+SELECT c0 FROM (SELECT 1) rt1(c0) JOIN ((SELECT 1) EXCEPT (SELECT 2)) AS rt0(c0) ON TRUE
+
+statement error 42000!SELECT: identifier 'c0' ambiguous
+SELECT c0 FROM (SELECT 1) rt1(c0) JOIN LATERAL ((SELECT 1) EXCEPT (SELECT 2)) AS rt0(c0) ON TRUE
+
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM (SELECT 1) rt0(c0) CROSS JOIN (WITH x(x) AS (SELECT 2) SELECT 3 FROM x) AS rt0(c1)
+
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM (SELECT 1) rt0(c0) CROSS JOIN LATERAL (WITH x(x) AS (SELECT 2) SELECT 3 FROM x) AS rt0(c1)
+
+statement error 42000!SELECT: identifier 'c0' ambiguous
+SELECT c0 FROM (SELECT 1) rt1(c0) CROSS JOIN (WITH x(x) AS (SELECT 2) SELECT 3) AS rt0(c0)
+
+statement error 42000!SELECT: identifier 'c0' ambiguous
+SELECT c0 FROM (SELECT 1) rt1(c0) CROSS JOIN LATERAL (WITH x(x) AS (SELECT 2) SELECT 3) AS rt0(c0)
