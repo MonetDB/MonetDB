@@ -321,17 +321,6 @@ query_exp_optname(sql_query *query, sql_rel *r, symbol *q, list *refs)
 			return rel_table_optname(sql, tq, q->data.lval->t->data.sym, refs);
 		return tq;
 	}
-	case SQL_UNION:
-	case SQL_EXCEPT:
-	case SQL_INTERSECT:
-	{
-		/* subqueries will be called, ie no need to test for duplicate references */
-		sql_rel *tq = rel_setquery(query, q);
-
-		if (!tq)
-			return NULL;
-		return rel_table_optname(sql, tq, q->data.lval->t->data.sym, NULL);
-	}
 	case SQL_JOIN:
 	{
 		sql_rel *tq = rel_joinquery(query, r, q, refs);
@@ -843,18 +832,15 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = NULL;
-	dlist *rowlist = tableref->data.lval;
-	symbol *optname = rowlist->t->data.sym;
+	dlist *rowlist = tableref->data.lval->h->data.lval;
+	symbol *optname = dlist_length(tableref->data.lval) == 3 ? /* look for lateral joins */
+		tableref->data.lval->h->next->data.sym : tableref->data.lval->t->data.sym;
 	node *m;
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
 
 	for (dnode *o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
-
-		/* When performing sub-queries, the relation name appears under a SQL_NAME symbol at the end of the list */
-		if (o->type == type_symbol && o->data.sym->token == SQL_NAME)
-			break;
 
 		if (!list_empty(exps) && list_length(exps) != dlist_length(values)) {
 			return sql_error(sql, 02, SQLSTATE(42000) "VALUES: number of columns doesn't match between rows");
@@ -900,15 +886,23 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 static int
 check_is_lateral(symbol *tableref)
 {
-	if (tableref->token == SQL_NAME || tableref->token == SQL_TABLE) {
+	if (tableref->token == SQL_NAME || tableref->token == SQL_TABLE ||
+		tableref->token == SQL_VALUES) {
 		if (dlist_length(tableref->data.lval) == 3)
 			return tableref->data.lval->h->next->next->data.i_val;
 		return 0;
-	} else if (tableref->token == SQL_VALUES) {
+	} else if (tableref->token == SQL_WITH) {
+		if (dlist_length(tableref->data.lval) == 4)
+			return tableref->data.lval->h->next->next->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *) tableref;
 		return sn->lateral;
+	} else if (tableref->token == SQL_EXCEPT || tableref->token == SQL_INTERSECT ||
+			   tableref->token == SQL_UNION) {
+		if (dlist_length(tableref->data.lval) == 6)
+			return tableref->data.lval->h->next->next->next->next->next->data.i_val;
+		return 0;
 	} else {
 		return 0;
 	}
@@ -1003,6 +997,9 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				if (!allowed)
 					rel_base_disallow(rel);
 			} else {
+				/* when recreating a view, the view itself can't be found */
+				if (sql->objid && sql->objid == t->base.id)
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: attempting to recursively bind view '%s'.'%s'", t->s->base.name, tname);
 				rel = rel_parse(sql, t->s, t->query, m_instantiate);
 				if (rel)
 					rel = rel_unnest(sql, rel);
@@ -1053,6 +1050,16 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		return rel_named_table_function(query, rel, tableref, lateral, refs);
 	} else if (tableref->token == SQL_SELECT) {
 		return rel_subquery_optname(query, rel, tableref, refs);
+	} else if (tableref->token == SQL_UNION || tableref->token == SQL_EXCEPT || tableref->token == SQL_INTERSECT) {
+		/* subqueries will be called, ie no need to test for duplicate references */
+		sql_rel *tq = rel_setquery(query, tableref);
+
+		if (!tq)
+			return NULL;
+		/* look for lateral joins */
+		symbol *optname = dlist_length(tableref->data.lval) == 6 ?
+			tableref->data.lval->h->next->next->next->data.sym : tableref->data.lval->t->data.sym;
+		return rel_table_optname(sql, tq, optname, refs);
 	} else {
 		return query_exp_optname(query, rel, tableref, refs);
 	}
@@ -6062,13 +6069,36 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
 	mvc *sql = query->sql;
 	dnode *n = q->data.lval->h;
 	symbol *tab1 = n->data.sym, *tab2 = n->next->data.sym;
-	sql_rel *t1 = table_ref(query, rel, tab1, 0, refs), *t2 = NULL;
+	sql_rel *t1 = NULL, *t2 = NULL;
+	int lateral = check_is_lateral(tab2);
 
-	if (t1)
-		t2 = table_ref(query, rel, tab2, 0, refs);
+	t1 = table_ref(query, NULL, tab1, 0, refs);
+	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = 0;
+		t1 = table_ref(query, NULL, tab1, 0, refs);
+	}
+	if (t1) {
+		t2 = table_ref(query, NULL, tab2, 0, refs);
+		if (lateral && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = 0;
+
+			query_push_outer(query, t1, sql_from);
+			t2 = table_ref(query, NULL, tab2, 0, refs);
+			t1 = query_pop_outer(query);
+		}
+	}
 	if (!t1 || !t2)
 		return NULL;
-	return rel_crossproduct(sql->sa, t1, t2, op_join);
+	if (rel)
+		rel_destroy(rel);
+	rel = rel_crossproduct(sql->sa, t1, t2, op_join);
+	if (lateral)
+		set_dependent(rel);
+	return rel;
 }
 
 sql_rel *
