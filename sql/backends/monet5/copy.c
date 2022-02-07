@@ -592,15 +592,15 @@ scan_field(unsigned char *start, unsigned char *end, int col_sep, int line_sep, 
 // If a field contains the null_repr, replace its index with int_nil.
 static int
 scan_fields(
-	char *start, int len,
+	char *data_start, int skip_amount, char *data_end,
 	int col_sep, int line_sep, int quote, bool backslash_escapes, char *null_repr,
 	int ncols, int nrows, int **columns)
 {
 	if (ncols < 0 || nrows < 0)
 		return -1;
 
-	unsigned char *p = (unsigned char*)start;
-	unsigned char *end = p + len;
+	unsigned char *p = (unsigned char*)&data_start[skip_amount];
+	unsigned char *end = (unsigned char*)data_end;
 	int row = 0;
 	int col = 0;
 	while (p < end && row < nrows) {
@@ -615,7 +615,7 @@ scan_fields(
 		if (sep != expected_sep)
 			return -2;
 		bool is_null = (null_repr && strcasecmp((char*)p, null_repr) == 0);
-		int field = is_null ? int_nil : ((char*)p - start);
+		int field = is_null ? int_nil : ((char*)p - data_start);
 		columns[col][row] = field;
 		p += n;
 		if (last_col) {
@@ -649,8 +649,6 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int **return_indices = NULL;
 	int ncols = pci->retc;
 	int line_sep, col_sep, quote;
-	char *data;
-	int len;
 
 	bat block_bat_id = *getArgReference_bat(stk, pci, pci->retc + 0);
 	int skip_amount = *getArgReference_int(stk, pci, pci->retc + 1);
@@ -694,16 +692,14 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// dump_block("splitlines", block_bat, skip_amount);
-	data = Tloc(block_bat, skip_amount);
-	len = (int)BATcount(block_bat) - skip_amount;
 	int ret;
 	ret = scan_fields(
-		data, len,
+		Tloc(block_bat, 0), skip_amount, Tloc(block_bat, BATcount(block_bat)),
 		col_sep, line_sep, quote, backslash_escapes, null_repr,
 		ncols, line_count,
 		return_indices);
 	if (ret < 0)
-		bailout("copy.splitlines", "field splitting failed");
+		bailout("copy.splitlines", "field splitting failed: %d", ret);
 
 end:
 	if (block_bat)
