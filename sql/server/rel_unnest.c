@@ -3089,13 +3089,15 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 			return try_remove_empty_select(v, rel);
 		if (!j->exps)
 			j->exps = sa_list(v->sql->sa);
+		list *sexps = sa_list(v->sql->sa);
 		for (node *n = rel->exps->h; n; ) {
 			node *next = n->next;
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 
-			/* If the left relation cannot hold the comparison it cannot be pushed to the semi(anti)-join
-			   For now I guess only comparisons or anyequal func can appear here */
+			/* Any compare expression based only on the left side will be split into a
+			 * select under the anti join.
+			 */
 			assert((is_func(e->type) && is_anyequal_func(sf)) || e->type == e_cmp);
 			if ((is_func(e->type) && is_anyequal_func(sf)) || !rel_rebind_exp(v->sql, j->l, e)) {
 				if (e->type == e_cmp) {
@@ -3122,10 +3124,18 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 					}
 				}
 				list_remove_node(rel->exps, NULL, n);
+			} else if (!rel_rebind_exp(v->sql, j->r, e) && j->op == op_anti) {
+				append(sexps, e);
+				list_remove_node(rel->exps, NULL, n);
 			}
 			n = next;
 		}
 		v->changes++;
+		if (list_length(sexps)) {
+			j->l = rel_select(v->sql->sa, j->l, NULL);
+			j = j->l;
+			j->exps = sexps;
+		}
 		rel = try_remove_empty_select(v, rel);
 	}
 	return rel;
