@@ -665,8 +665,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		return NULL;
 	rel = sq;
 
-	if (ast->data.lval->h->next->data.sym)
-		tname = ast->data.lval->h->next->data.sym->data.lval->h->data.sval;
+	if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym)
+		tname = ast->data.lval->t->data.sym->data.lval->h->data.sval;
 	else
 		tname = make_label(sql->sa, ++sql->label);
 
@@ -694,8 +694,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		append(exps, e);
 	}
 	rel = rel_table_func(sql->sa, rel, e, exps, (sq)?TABLE_FROM_RELATION:TABLE_PROD_FUNC);
-	if (ast->data.lval->h->next->data.sym && ast->data.lval->h->next->data.sym->data.lval->h->next->data.lval) {
-		rel = rel_table_optname(sql, rel, ast->data.lval->h->next->data.sym, refs);
+	if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym && ast->data.lval->t->data.sym->data.lval->h->next->data.lval) {
+		rel = rel_table_optname(sql, rel, ast->data.lval->t->data.sym, refs);
 	} else if (refs) { /* if this relation is under a FROM clause, check for duplicate names */
 		if (list_find(refs, tname, (fcmp) &strcmp))
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", tname);
@@ -833,8 +833,7 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 	mvc *sql = query->sql;
 	sql_rel *r = NULL;
 	dlist *rowlist = tableref->data.lval->h->data.lval;
-	symbol *optname = dlist_length(tableref->data.lval) == 3 ? /* look for lateral joins */
-		tableref->data.lval->h->next->data.sym : tableref->data.lval->t->data.sym;
+	symbol *optname = tableref->data.lval->t->type == type_symbol ? tableref->data.lval->t->data.sym : NULL;
 	node *m;
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
@@ -901,7 +900,7 @@ check_is_lateral(symbol *tableref)
 	} else if (tableref->token == SQL_EXCEPT || tableref->token == SQL_INTERSECT ||
 			   tableref->token == SQL_UNION) {
 		if (dlist_length(tableref->data.lval) == 6)
-			return tableref->data.lval->h->next->next->next->next->next->data.i_val;
+			return tableref->data.lval->h->next->next->next->next->data.i_val;
 		return 0;
 	} else {
 		return 0;
@@ -955,8 +954,8 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		if (!temp_table && !table_privs(sql, t, PRIV_SELECT))
 			allowed = 0;
 
-		if (tableref->data.lval->h->next->data.sym)	/* AS */
-			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
+		if (tableref->data.lval->t->type == type_symbol && tableref->data.lval->t->data.sym) /* AS */
+			tname = tableref->data.lval->t->data.sym->data.lval->h->data.sval;
 		if (temp_table && !t) {
 			node *n;
 			int needed = !is_simple_project(temp_table->op);
@@ -1036,8 +1035,8 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 			if (rel_base_has_column_privileges(sql, res) == 0)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to %s '%s.%s'", get_string_global_var(sql, "current_user"), isView(t) ? "view" : "table", t->s->base.name, tname);
 		}
-		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) { /* AS with column aliases */
-			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym, refs);
+		if (tableref->data.lval->t->type == type_symbol && tableref->data.lval->t->data.sym) { /* AS with column aliases */
+			res = rel_table_optname(sql, res, tableref->data.lval->t->data.sym, refs);
 		} else if (refs) { /* if this relation is under a FROM clause, check for duplicate names */
 			if (list_find(refs, tname, (fcmp) &strcmp))
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", tname);
