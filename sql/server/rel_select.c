@@ -1056,8 +1056,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		if (!tq)
 			return NULL;
 		/* look for lateral joins */
-		symbol *optname = dlist_length(tableref->data.lval) == 6 ?
-			tableref->data.lval->h->next->next->next->data.sym : tableref->data.lval->t->data.sym;
+		symbol *optname = tableref->data.lval->t->type == type_symbol ? tableref->data.lval->t->data.sym : NULL;
 		return rel_table_optname(sql, tq, optname, refs);
 	} else {
 		return query_exp_optname(query, rel, tableref, refs);
