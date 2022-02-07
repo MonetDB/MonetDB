@@ -892,7 +892,7 @@ check_is_lateral(symbol *tableref)
 		return 0;
 	} else if (tableref->token == SQL_WITH) {
 		if (dlist_length(tableref->data.lval) == 4)
-			return tableref->data.lval->h->next->next->next->data.i_val;
+			return tableref->data.lval->h->next->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *) tableref;
