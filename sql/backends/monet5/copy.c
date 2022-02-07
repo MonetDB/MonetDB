@@ -736,9 +736,9 @@ static mel_func copy_init_funcs[] = {
 		arg("stream", streams), arg("block_size", lng), batarg("block", bte)
  )),
  command("copy", "fixlines", COPYfixlines, true, "Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied",
-	args(2, 7,
+	args(2, 8,
 	arg("linecount", lng), arg("bytesmoved", int),
-	batarg("left",bte), arg("left_skip", int), batarg("right", bte), arg("linesep", str), arg("quote", str),
+	batarg("left",bte), arg("left_skip", int), batarg("right", bte), arg("linesep", str), arg("quote", str), arg("escape", bit)
  )),
  pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1, 9,
 	batvararg("", int),

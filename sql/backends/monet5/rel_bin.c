@@ -4513,6 +4513,13 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	int var_on_client = extract_parameter(be, intermediate_stmts, copyfrom, 10);
 	int var_escape = extract_parameter(be, intermediate_stmts, copyfrom, 11);
 
+	// coerce var_escape to bit
+	q = newStmt(mb, "calc", "!=");
+	q = pushArgument(mb, q, var_escape);
+	q = pushInt(mb, q, 0);
+	var_escape = getDestVar(q);
+
+
 	// TODO: Deal with the following
 	(void)var_num_rows;
 	(void)var_offset;
@@ -4616,6 +4623,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushArgument(mb, q, var_next_block);
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
+	q = pushArgument(mb, q, var_escape);
 	int var_our_line_count = getArg(q, 0);
 	int var_next_skip_amount = getArg(q, 1);
 
@@ -4656,7 +4664,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushArgument(mb, q, var_null_representation);
-	q = pushBit(mb, q, var_escape);
+	q = pushArgument(mb, q, var_escape);
 	InstrPtr splitlines_instr = q;
 
 	int i = 0;
