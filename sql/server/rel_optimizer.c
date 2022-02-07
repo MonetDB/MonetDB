@@ -4506,7 +4506,7 @@ rel_push_join_exps_down(visitor *v, sql_rel *rel)
 {
 	/* push select exps part of join expressions down */
 	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
-		int left = is_innerjoin(rel->op) || is_right(rel->op) || is_semi(rel->op);
+		int left = is_innerjoin(rel->op) || is_right(rel->op) || /*is_semi(rel->op)*/ rel->op == op_semi;
 		int right = is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op);
 
 		for (node *n = rel->exps->h; n;) {
