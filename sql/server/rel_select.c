@@ -887,9 +887,13 @@ static int
 check_is_lateral(symbol *tableref)
 {
 	if (tableref->token == SQL_NAME || tableref->token == SQL_TABLE ||
-		tableref->token == SQL_VALUES || tableref->token == SQL_WITH) {
+		tableref->token == SQL_VALUES) {
 		if (dlist_length(tableref->data.lval) == 3)
 			return tableref->data.lval->h->next->next->data.i_val;
+		return 0;
+	} else if (tableref->token == SQL_WITH) {
+		if (dlist_length(tableref->data.lval) == 4)
+			return tableref->data.lval->h->next->next->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *) tableref;
@@ -6065,13 +6069,36 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
 	mvc *sql = query->sql;
 	dnode *n = q->data.lval->h;
 	symbol *tab1 = n->data.sym, *tab2 = n->next->data.sym;
-	sql_rel *t1 = table_ref(query, rel, tab1, 0, refs), *t2 = NULL;
+	sql_rel *t1 = NULL, *t2 = NULL;
+	int lateral = check_is_lateral(tab2);
 
-	if (t1)
-		t2 = table_ref(query, rel, tab2, 0, refs);
+	t1 = table_ref(query, NULL, tab1, 0, refs);
+	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = 0;
+		t1 = table_ref(query, NULL, tab1, 0, refs);
+	}
+	if (t1) {
+		t2 = table_ref(query, NULL, tab2, 0, refs);
+		if (lateral && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = 0;
+
+			query_push_outer(query, t1, sql_from);
+			t2 = table_ref(query, NULL, tab2, 0, refs);
+			t1 = query_pop_outer(query);
+		}
+	}
 	if (!t1 || !t2)
 		return NULL;
-	return rel_crossproduct(sql->sa, t1, t2, op_join);
+	if (rel)
+		rel_destroy(rel);
+	rel = rel_crossproduct(sql->sa, t1, t2, op_join);
+	if (lateral)
+		set_dependent(rel);
+	return rel;
 }
 
 sql_rel *

@@ -342,6 +342,30 @@ query I nosort
 SELECT 1 FROM rt0 JOIN LATERAL (with x(x) as (select rt0.c0) (select x from x)) AS x(x) ON TRUE
 ----
 
+statement ok rowcount 4
+INSERT INTO rt0 VALUES (1), (2), (3), (NULL)
+
+query I nosort
+SELECT rt0.c0 FROM rt0 JOIN LATERAL (with x(x) as (select rt0.c0) (select rt0.c0 + x.x from x)) AS x(x) ON TRUE
+----
+1
+2
+3
+NULL
+
+query I nosort
+SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL (with x(x) as (select rt0.c0) (select rt0.c0 + x.x from x)) AS x(x)
+----
+1
+2
+3
+NULL
+
+query I nosort
+SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL ((SELECT rt0.c0 + 2) INTERSECT (SELECT rt0.c0 - 2)) AS x(x)
+----
+NULL
+
 statement error SELECT: relation name "rt0" specified more than once
 SELECT 1 FROM rt0 JOIN ((SELECT 1) UNION ALL (SELECT 2)) rt0(c0) ON TRUE
 
