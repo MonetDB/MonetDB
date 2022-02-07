@@ -3358,19 +3358,20 @@ table_ref_commalist:
 table_ref:
     qname opt_table_name 	{ dlist *l = L();
 		  		  append_list(l, $1);
+		  	  	  append_int(l, 0);
 		  	  	  append_symbol(l, $2);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
  |  func_ref opt_table_name
 	 		        { dlist *l = L();
 		  		  append_symbol(l, $1);
-		  	  	  append_symbol(l, $2);
 		  	  	  append_int(l, 0);
+		  	  	  append_symbol(l, $2);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
  |  LATERAL func_ref opt_table_name
 	 		        { dlist *l = L();
 		  		  append_symbol(l, $2);
-		  	  	  append_symbol(l, $3);
 		  	  	  append_int(l, 1);
+		  	  	  append_symbol(l, $3);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
  |  subquery_with_orderby table_name
 				{
@@ -3379,6 +3380,7 @@ table_ref:
 				  	SelectNode *sn = (SelectNode*)$1;
 				  	sn->name = $2;
 				  } else {
+	  				append_int($2->data.lval, 0);
 				  	append_symbol($1->data.lval, $2);
 				  }
 				}
@@ -3390,8 +3392,8 @@ table_ref:
 				  	sn->name = $3;
 					sn->lateral = 1;
 				  } else {
-				  	append_symbol($2->data.lval, $3);
 	  				append_int($2->data.lval, 1);
+				  	append_symbol($2->data.lval, $3);
 				  }
 				}
  |  subquery_with_orderby
