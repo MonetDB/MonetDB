@@ -1133,7 +1133,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 			}
 
 			assert(rel->op != op_anti);
-			if (rel->op == op_semi && !need_distinct(l))
+			if (rel->op == op_semi)
 				rel->op = op_join;
 
 			for (n = r->exps->h; n; n = n->next ) {
@@ -1294,7 +1294,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 		}
 	}
 
-	/* input rel is dependent join with on the right a project */
+	/* input rel is dependent join */
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		sql_rel *d = rel->l, *j = rel->r;
 
@@ -1474,10 +1474,14 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 					if (!(rel->l = d = rel_add_identity(sql, d, &id)))
 						return NULL;
 					id = exp_ref(sql, id);
+					list *exps = rel_projections(sql, l, NULL, 1, 1);
+					list_append(exps, id);
 					l = tf->l = rel_crossproduct(sql->sa, rel_dup(d), l, op_join);
 					set_dependent(l);
 					set_processed(l);
 					tf->l = rel_unnest_dependent(sql, l);
+					tf->l = rel_project(sql->sa, tf->l, exps);
+					id = exp_ref(sql, id);
 					list_append(ops, id);
 					id = exp_ref(sql, id);
 				} else {
