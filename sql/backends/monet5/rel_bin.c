@@ -4477,6 +4477,8 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
 	(void)rel;
 	(void)refs;
+	const int block_size = 1024 * 1024;
+	const int margin = 8 * 1024;
 
 	InstrPtr q;
 	MalBlkPtr mb = be->mb;
@@ -4537,7 +4539,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
-	q = pushLng(mb, q, 300);
+	q = pushLng(mb, q, block_size + margin);
 	int var_block_channel = getDestVar(q);
 
 	q = newAssignment(mb);
@@ -4570,7 +4572,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	q = newStmt(mb, "copy", "read");
 	q = pushArgument(mb, q, var_s);
-	q = pushLng(mb, q, 200);
+	q = pushLng(mb, q, block_size);
 	q = pushArgument(mb, q, var_next_block);
 	int var_nread = getDestVar(q);
 
