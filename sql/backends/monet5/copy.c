@@ -666,7 +666,7 @@ end:
 		}
 		GDKfree(return_bats);
 	}
-	free(return_indices);
+	GDKfree(return_indices);
 	return msg;
 }
 
