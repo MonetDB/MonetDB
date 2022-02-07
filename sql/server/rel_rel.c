@@ -2350,6 +2350,8 @@ rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 			return exps_rebind_exp(sql, rel, e->l) && exps_rebind_exp(sql, rel, e->r);
 		return rel_rebind_exp(sql, rel, e->l) && rel_rebind_exp(sql, rel, e->r) && (!e->f || rel_rebind_exp(sql, rel, e->f));
 	case e_column:
+		if (e->freevar)
+			return true;
 		return rel_find_exp(rel, e) != NULL;
 	case e_atom:
 		return exps_rebind_exp(sql, rel, e->f);
