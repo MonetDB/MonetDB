@@ -888,7 +888,7 @@ check_is_lateral(symbol *tableref)
 	if (tableref->token == SQL_NAME || tableref->token == SQL_TABLE ||
 		tableref->token == SQL_VALUES) {
 		if (dlist_length(tableref->data.lval) == 3)
-			return tableref->data.lval->h->next->next->data.i_val;
+			return tableref->data.lval->h->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_WITH) {
 		if (dlist_length(tableref->data.lval) == 4)
