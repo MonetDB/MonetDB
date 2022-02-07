@@ -3500,6 +3500,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 			list *sets = (list*) found->value;
 			sql_rel *unions = NULL;
 
+			rel->p = prop_remove(rel->p, found); /* remove property */
 			for (node *n = sets->h ; n ; n = n->next) {
 				sql_rel *nrel;
 				list *l = (list*) n->data, *exps = sa_list(v->sql->sa), *pexps = sa_list(v->sql->sa);
