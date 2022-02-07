@@ -4531,7 +4531,6 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
 	q = pushLng(mb, q, 300);
-	q = pushBit(mb, q, false);
 	int var_block_channel = getDestVar(q);
 
 	q = newAssignment(mb);
@@ -4554,7 +4553,6 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
 	q = pushLng(mb, q, 300);
-	q = pushBit(mb, q, false);
 	int var_next_block = getDestVar(q);
 
 	// START READ BLOCK
