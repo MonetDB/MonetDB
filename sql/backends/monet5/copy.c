@@ -715,8 +715,10 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(ret, n);
 end:
 	if (ret) {
-		if (msg == MAL_SUCCEED)
+		if (msg == MAL_SUCCEED) {
+			*getArgReference_bat(stk, pci, 0) = ret->batCacheid;
 			BBPkeepref(ret->batCacheid);
+		}
 		else
 			BBPunfix(ret->batCacheid);
 	}
