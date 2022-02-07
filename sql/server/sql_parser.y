@@ -3022,9 +3022,13 @@ insert_stmt:
 
 values_or_query_spec:
 /* empty values list */
-		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
+	{ dlist *l = L();
+	  append_list(l, L());
+	  $$ = _symbol_create_list(SQL_VALUES, l); }
  |   DEFAULT VALUES
-		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
+	{ dlist *l = L();
+	  append_list(l, L());
+	  $$ = _symbol_create_list(SQL_VALUES, l); }
  |  query_expression
  ;
 
@@ -3286,7 +3290,11 @@ select_no_parens:
 	  append_list(l, $4);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_INTERSECT, l); }
- |  VALUES row_commalist     { $$ = _symbol_create_list( SQL_VALUES, $2); }
+ |  VALUES row_commalist
+
+	{ dlist *l = L();
+	  append_list(l, $2);
+	  $$ = _symbol_create_list(SQL_VALUES, l); }
  |  '(' select_no_parens ')' { $$ = $2; }
  |   simple_select
  ;
