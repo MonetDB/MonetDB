@@ -3603,8 +3603,19 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				if (!unions)
 					return unions;
 			}
+			/* always do relation inplace, so it will be fine when the input group has more than 1 reference */
+			rel_dup(rel->l);
+			if (is_union(unions->op)) {
+				rel = rel_inplace_setop(v->sql, rel, unions->l, unions->r, op_union, unions->exps);
+			} else {
+				assert(is_simple_project(unions->op));
+				rel = rel_inplace_project(v->sql->sa, rel, unions->l, unions->exps);
+				rel->card = exps_card(unions->exps);
+			}
+			unions->l = unions->r = NULL;
+			rel_destroy(unions);
 			v->changes++;
-			return unions;
+			return rel;
 		} else {
 			bool found_grouping = false;
 			for (node *n = rel->exps->h ; n ; n = n->next) {
@@ -3643,15 +3654,17 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				}
 				nrel->exps = exps;
 				set_processed(nrel);
-				v->changes++;
 				if (list_empty(pexps)) {
 					sql_exp *e = exp_atom_bool(v->sql->sa, 1);
 					exp_label(v->sql->sa, e, ++v->sql->label); /* protection against empty projections */
 					list_append(pexps, e);
 				}
-				nrel = rel_project(v->sql->sa, nrel, pexps);
-				set_processed(nrel);
-				return nrel;
+				/* always do relation inplace, so it will be fine when the input group has more than 1 reference */
+				rel_dup(rel->l);
+				rel = rel_inplace_project(v->sql->sa, rel, nrel, pexps);
+				rel->card = exps_card(pexps);
+				v->changes++;
+				return rel;
 			}
 		}
 	}
