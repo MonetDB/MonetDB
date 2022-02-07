@@ -1804,7 +1804,6 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-#define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
 #define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
 #define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
 
@@ -3128,7 +3127,6 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-#define is_exists_func(sf) (strcmp(sf->func->base.name, "sql_exists") == 0 || strcmp(sf->func->base.name, "sql_not_exists") == 0)
 #define is_exists(sf) (strcmp(sf->func->base.name, "sql_exists") == 0)
 
 static sql_exp *
