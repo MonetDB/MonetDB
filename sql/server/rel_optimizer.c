@@ -9760,7 +9760,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 				/* find parent of join involving the right hand side of the mark expression */
 				sql_rel *c = p->r;
 				while (c) {
-					if (is_join(c->op) && rel_find_exp(c->r, me->r)) {
+					if (is_join(c->op) && !is_processed(c) && rel_find_exp(c->r, me->r)) {
 						p = c;
 						c = p->r;
 					} if (!pp && is_project(c->op) && c->l && rel_find_exp(c->l, me->r)) {
