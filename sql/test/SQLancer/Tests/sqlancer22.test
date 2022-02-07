@@ -323,8 +323,27 @@ NULL
 NULL
 
 query I nosort
+SELECT 1 FROM rt0 JOIN ((SELECT 2) EXCEPT (SELECT 3)) AS x(x) ON TRUE
+----
+
+query I nosort
+SELECT 1 FROM rt0 JOIN (VALUES (1),(2),(3)) AS x(x) ON TRUE
+----
+
+query I nosort
 SELECT 1 FROM rt0 JOIN LATERAL ((SELECT 2) EXCEPT (SELECT 3)) AS x(x) ON TRUE
 ----
+
+query I nosort
+SELECT 1 FROM rt0 JOIN LATERAL (VALUES (1),(2),(3)) AS x(x) ON TRUE
+----
+
+query I nosort
+SELECT 1 FROM rt0 JOIN LATERAL (with x(x) as (select rt0.c0) (select x from x)) AS x(x) ON TRUE
+----
+
+statement error SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM rt0 JOIN ((SELECT 1) UNION ALL (SELECT 2)) rt0(c0) ON TRUE
 
 statement ok
 ROLLBACK
