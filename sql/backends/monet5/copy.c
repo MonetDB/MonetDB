@@ -680,6 +680,10 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 	int tpe = getArgGDKType(mb, pci, 3);
 	int n;
+	void *buffer;
+	size_t buffer_len;
+	const void *nil_ptr;
+	size_t nil_len;
 
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_generic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -689,11 +693,11 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!ret)
 		bailout("copy.parse_generic",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	const void *nil_ptr; nil_ptr = ATOMnilptr(tpe);
-	size_t nil_len; nil_len = ATOMlen(tpe, ATOMnilptr(tpe));
+	nil_ptr = ATOMnilptr(tpe);
+	nil_len = ATOMlen(tpe, ATOMnilptr(tpe));
 
-	void *buffer; buffer = NULL;
-	size_t buffer_len; buffer_len = 0;
+	buffer = NULL;
+	buffer_len = 0;
 	for (int i = 0; i < n; i++) {
 		int offset = *(int*)Tloc(indices, i);
 		const char *src = Tloc(block, offset);
@@ -711,9 +715,9 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (bunfastapp(ret, p) != GDK_SUCCEED)
 			bailout("copy.parse_generic", GDK_EXCEPTION);
 	}
-	GDKfree(buffer);
 	BATsetcount(ret, n);
 end:
+	GDKfree(buffer);
 	if (ret) {
 		if (msg == MAL_SUCCEED) {
 			*getArgReference_bat(stk, pci, 0) = ret->batCacheid;
