@@ -366,6 +366,18 @@ SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL ((SELECT rt0.c0 + 2) INTERSECT (SELECT
 ----
 NULL
 
+query I nosort
+SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL (VALUES (rt0.c0), (4)) AS x(x)
+----
+1
+1
+2
+2
+3
+3
+NULL
+NULL
+
 statement error SELECT: relation name "rt0" specified more than once
 SELECT 1 FROM rt0 JOIN ((SELECT 1) UNION ALL (SELECT 2)) rt0(c0) ON TRUE
 
