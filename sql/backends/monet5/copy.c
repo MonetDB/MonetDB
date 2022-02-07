@@ -24,6 +24,54 @@
 	} while (0)
 
 
+static void
+dump_char(int c)
+{
+	if (c == '\n')
+		fprintf(stderr, "⏎");
+	else if (isspace(c))
+		fprintf(stderr, "·");
+	else if (isprint(c)) {
+		fprintf(stderr, "%c", c);
+	} else {
+		fprintf(stderr, "░");
+	}
+}
+
+static void
+dump_data(const char *msg, const char *data, int count)
+{
+	fprintf(stderr, "%s: %d bytes", msg, count);
+	if (count == 0) {
+		fprintf(stderr, ".\n");
+		return;
+	}
+
+	int n = 10;
+	fprintf(stderr, ": ");
+	if (count <= 2 * n) {
+		for (int i = 0; i < count; i++)
+			dump_char(data[i]);
+	} else {
+		for (int i = 0; i < n; i++)
+			dump_char(data[i]);
+		fprintf(stderr, " . . . ");
+		for (int i = count - n; i < count; i++)
+			dump_char(data[i]);
+	}
+	fprintf(stderr, "\n");
+}
+
+static inline void
+dump_block(const char *msg, BAT *b, lng skip_amount)
+{
+	int start = (int)skip_amount;
+	int end = (int)BATcount(b);
+	int len = end - start;
+	fprintf(stderr, "%s: bat id %d, range is %d..%d (%d bytes)\n", msg, b->batCacheid, start, end, len);
+	dump_data("    ", Tloc(b, start), len);
+}
+
 static str
 COPYread(lng *ret_nread, Stream *stream_arg, lng *block_size_arg, bat *block_bat_arg)
 {
@@ -51,6 +99,7 @@ COPYread(lng *ret_nread, Stream *stream_arg, lng *block_size_arg, bat *block_bat
 
 	BATsetcount(bat, nread);
 	*ret_nread = nread;
+	// dump_block("just read", bat, 0);
 end:
 	if (bat != NULL)
 		BBPunfix(bat->batCacheid);
@@ -113,7 +162,7 @@ COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left
 	int latest_newline;
 	bool escape_pending;
 	bool quoted;
-	int borrow;
+	int borrow = 0;
 
 	backslash_escapes = *escape;
 	linesep = get_sep_char(*linesep_arg, backslash_escapes);
@@ -134,6 +183,9 @@ COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left
 		bailout("copy.fixlines", SQLSTATE(42000) "block size too large");
 	if (BATcount(left) < (BUN)*left_skip_amount || *left_skip_amount > (lng)INT_MAX)
 		bailout("copy.fixlines", SQLSTATE(42000) "skip amount out of bounds");
+
+	// dump_block("fixlines incoming left", left, *left_skip_amount);
+	// dump_block("fixlines incoming right", right, 0);
 
 	// Scan 'left' for unquoted newlines. Determine both the count and the position
 	// of the last occurrence.
@@ -214,6 +266,12 @@ COPYfixlines(lng *ret_linecount, lng *ret_bytesmoved, bat *left_block, lng *left
 	msg = MAL_SUCCEED;
 
 end:
+	// if (left)
+	// 	dump_block("fixlines outgoing left", left, *left_skip_amount);
+	// if (right)
+	// 	dump_block("fixlines outgoing right", right, borrow);
+	// if (left || right)
+	// 	fprintf(stderr, "\n");
 	if (left != NULL)
 		BBPunfix(left->batCacheid);
 	if (right != NULL)
@@ -635,6 +693,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return_indices[i] = Tloc(b, 0);
 	}
 
+	// dump_block("splitlines", block_bat, skip_amount);
 	data = Tloc(block_bat, skip_amount);
 	len = (int)BATcount(block_bat) - skip_amount;
 	int ret;
