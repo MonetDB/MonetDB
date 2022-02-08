@@ -558,6 +558,9 @@ rel_base_get_mergetable(sql_rel *rel)
 sql_rel *
 rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
 {
+	/* in order to not expose 'rel_destroy_', add a reference increment,
+	   so 'rel' references stay the same */
+	rel_dup(rel);
 	rel_destroy(rel);
 	assert(is_basetable(bt->op));
 
