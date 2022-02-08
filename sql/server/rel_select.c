@@ -5918,7 +5918,8 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		break;
 	}
 
-	lateral = check_is_lateral(tab2);
+	/* a dependent join cannot depend on the right side, so disable lateral check for right and full joins */
+	lateral = (op == op_join || op == op_left) && check_is_lateral(tab2);
 	t1 = table_ref(query, NULL, tab1, 0, refs);
 	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
 		/* reset error */

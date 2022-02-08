@@ -470,7 +470,10 @@ CREATE TABLE rt2 ("c0" INTERVAL DAY)
 statement ok rowcount 2
 INSERT INTO rt2 VALUES (INTERVAL '0' SECOND),(INTERVAL '0' SECOND)
 
-query I nosort
+statement ok
+SAVEPOINT sp2
+
+statement error
 SELECT TRUE FROM rt2 AS x RIGHT OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
 ----
 1
@@ -478,7 +481,10 @@ SELECT TRUE FROM rt2 AS x RIGHT OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) 
 1
 1
 
-query I nosort
+statement ok
+ROLLBACK TO SAVEPOINT sp2
+
+statement error
 SELECT TRUE FROM rt2 AS x FULL OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
 ----
 1
@@ -486,7 +492,9 @@ SELECT TRUE FROM rt2 AS x FULL OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) A
 1
 1
 
-# these are right
+statement ok
+ROLLBACK TO SAVEPOINT sp2
+
 query I nosort
 SELECT TRUE FROM rt2 AS x JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
 ----
