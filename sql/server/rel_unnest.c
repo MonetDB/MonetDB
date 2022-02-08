@@ -1355,11 +1355,13 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 
 					le = exp_ref(sql, e);
 					re = exp_ref(sql, e);
+
 					if (labelleft) {
 						sql_exp *f = NULL;
 						if ((f=rel_find_exp(nl, le)) != NULL)
 							le = f;
-						le = exp_label(sql->sa, le, ++sql->label);
+						if (!has_label(le))
+							le = exp_label(sql->sa, le, ++sql->label);
 						if (!f)
 							append(nl->exps, le);
 						le = exp_ref(sql, le);
@@ -1373,6 +1375,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 					set_semantics(je);
 					append(n->exps, je);
 				}
+				list_hash_clear(nl->exps);
 				n->attr = attr;
 				set_processed(n);
 				return n;
