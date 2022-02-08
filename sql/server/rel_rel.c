@@ -462,6 +462,7 @@ rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type 
 	rel_destroy_(rel);
 	rel->l = l;
 	rel->r = r;
+	rel->attr = NULL;
 	rel->op = setop;
 	rel->card = CARD_MULTI;
 	rel->flag = 0;
@@ -487,6 +488,7 @@ rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 
 	rel->l = l;
 	rel->r = NULL;
+	rel->attr = NULL;
 	rel->op = op_project;
 	rel->exps = e;
 	rel->card = CARD_MULTI;
@@ -494,6 +496,28 @@ rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 	if (l) {
 		rel->nrcols = l->nrcols;
 		assert (exps_card(rel->exps) <= rel->card);
+	}
+	return rel;
+}
+
+sql_rel *
+rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps)
+{
+	rel_destroy_(rel);
+	set_processed(rel);
+	rel->l = l;
+	rel->r = NULL;
+	rel->attr = NULL;
+	rel->op = op_select;
+	rel->exps = exps;
+	rel->card = exps_card(exps);
+	rel->flag = 0;
+	rel->card = CARD_ATOM; /* no relation */
+	if (l) {
+		rel->card = l->card;
+		rel->nrcols = l->nrcols;
+		if (is_single(l))
+			set_single(rel);
 	}
 	return rel;
 }
@@ -507,6 +531,7 @@ rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 		rel->card = CARD_AGGR;
 	rel->l = l;
 	rel->r = groupbyexps;
+	rel->attr = NULL;
 	rel->exps = exps;
 	rel->nrcols = l->nrcols;
 	rel->op = op_groupby;

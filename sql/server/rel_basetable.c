@@ -554,3 +554,21 @@ rel_base_get_mergetable(sql_rel *rel)
 
 	return ba ? ba->mt : NULL;
 }
+
+sql_rel *
+rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
+{
+	rel_destroy(rel);
+	assert(is_basetable(bt->op));
+
+	set_processed(rel);
+	rel->l = bt->l;
+	rel->r = bt->r;
+	rel->attr = NULL;
+	rel->op = op_basetable;
+	rel->exps = bt->exps;
+	rel->card = CARD_MULTI;
+	rel->flag = 0;
+	rel->nrcols = bt->nrcols;
+	return rel;
+}
