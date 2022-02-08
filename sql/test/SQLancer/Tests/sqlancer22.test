@@ -408,3 +408,20 @@ SELECT c0 FROM (SELECT 1) rt1(c0) CROSS JOIN (WITH x(x) AS (SELECT 2) SELECT 3) 
 
 statement error 42000!SELECT: identifier 'c0' ambiguous
 SELECT c0 FROM (SELECT 1) rt1(c0) CROSS JOIN LATERAL (WITH x(x) AS (SELECT 2) SELECT 3) AS rt0(c0)
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rt1 (c0 VARCHAR(32))
+
+statement ok rowcount 1
+INSERT INTO rt1 VALUES ('abc')
+
+query I nosort
+SELECT 'c' <> ANY(VALUES (rt1.c0), ('b')) FROM rt1
+----
+1
+
+statement ok
+ROLLBACK
