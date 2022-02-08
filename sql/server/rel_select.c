@@ -161,7 +161,6 @@ rel_orderby(mvc *sql, sql_rel *l)
 /* forward refs */
 static sql_rel * rel_setquery(sql_query *query, symbol *sq);
 static sql_rel * rel_joinquery(sql_query *query, sql_rel *rel, symbol *sq, list *refs);
-static sql_rel * rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs);
 
 static sql_rel *
 rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname, list *refs)
@@ -324,14 +323,6 @@ query_exp_optname(sql_query *query, sql_rel *r, symbol *q, list *refs)
 	case SQL_JOIN:
 	{
 		sql_rel *tq = rel_joinquery(query, r, q, refs);
-
-		if (!tq)
-			return NULL;
-		return rel_table_optname(sql, tq, q->data.lval->t->data.sym, NULL);
-	}
-	case SQL_CROSS:
-	{
-		sql_rel *tq = rel_crossquery(query, r, q, refs);
 
 		if (!tq)
 			return NULL;
@@ -5912,7 +5903,8 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 
 	assert(!rel);
 	switch(jointype) {
-	case jt_inner: op = op_join;
+	case jt_inner:
+	case jt_cross: op = op_join;
 		break;
 	case jt_left: op = op_left;
 		r_nil = 1;
@@ -5956,9 +5948,10 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	if (lateral)
 		set_dependent(inner);
 
+	assert(jointype != jt_cross || (!natural && !js)); /* there are no natural cross joins, or cross joins with conditions */
 	if (js && natural)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot have a NATURAL JOIN with a join specification (ON or USING)");
-	if (!js && !natural)
+	if (jointype != jt_cross && !js && !natural)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: must have NATURAL JOIN or a JOIN with a join specification (ON or USING)");
 
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
@@ -6035,7 +6028,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 			}
 		}
 		rel = rel_project(sql->sa, rel, outexps);
-	} else {		/* ! js -> natural join */
+	} else if (jointype != jt_cross) {		/* ! js -> natural join */
 		rel = join_on_column_name(query, rel, t1, t2, op, l_nil, r_nil);
 	}
 	if (!rel)
@@ -6060,44 +6053,6 @@ rel_joinquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
 	assert(n->next->type == type_int);
 	assert(n->next->next->type == type_int);
 	return rel_joinquery_(query, rel, tab_ref1, natural, jointype, tab_ref2, joinspec, refs);
-}
-
-static sql_rel *
-rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
-{
-	mvc *sql = query->sql;
-	dnode *n = q->data.lval->h;
-	symbol *tab1 = n->data.sym, *tab2 = n->next->data.sym;
-	sql_rel *t1 = NULL, *t2 = NULL;
-	int lateral = check_is_lateral(tab2);
-
-	t1 = table_ref(query, NULL, tab1, 0, refs);
-	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = 0;
-		t1 = table_ref(query, NULL, tab1, 0, refs);
-	}
-	if (t1) {
-		t2 = table_ref(query, NULL, tab2, 0, refs);
-		if (lateral && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
-			/* reset error */
-			sql->session->status = 0;
-			sql->errstr[0] = 0;
-
-			query_push_outer(query, t1, sql_from);
-			t2 = table_ref(query, NULL, tab2, 0, refs);
-			t1 = query_pop_outer(query);
-		}
-	}
-	if (!t1 || !t2)
-		return NULL;
-	if (rel)
-		rel_destroy(rel);
-	rel = rel_crossproduct(sql->sa, t1, t2, op_join);
-	if (lateral)
-		set_dependent(rel);
-	return rel;
 }
 
 sql_rel *
@@ -6154,10 +6109,6 @@ rel_selects(sql_query *query, symbol *s)
 	}	break;
 	case SQL_JOIN:
 		ret = rel_joinquery(query, NULL, s, NULL);
-		sql->type = Q_TABLE;
-		break;
-	case SQL_CROSS:
-		ret = rel_crossquery(query, NULL, s, NULL);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_UNION:
