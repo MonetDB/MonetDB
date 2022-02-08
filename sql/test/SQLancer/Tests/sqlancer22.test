@@ -433,22 +433,22 @@ query I nosort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('true') FROM t2)
 = 'true' as int)) > 0) = FALSE AS INT) as count FROM t2) as res
 ----
-1
+0
 
 query I nosort
 SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(t2.c0) > 0) FROM t2
 ----
-0
+1
 
 query I nosort
 SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 as int)) > 0) FROM t2
 ----
-0
+1
 
 query I nosort
 SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('true') FROM t2) = 'true' as int)) > 0) FROM t2
 ----
-0
+1
 
 #this one is right
 query I nosort
