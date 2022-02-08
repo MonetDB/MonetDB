@@ -1431,22 +1431,29 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 
 		/* left of rel should be a set */
 		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
-			sql_rel *sl = s->l, *sr = s->r, *n;
+			sql_rel *sl = s->l, *sr = s->r, *ns;
 
-			sl = rel_project(sql->sa, sl, rel_projections(sql, sl, NULL, 1, 1));
+			sl = rel_project(sql->sa, rel_dup(sl), rel_projections(sql, sl, NULL, 1, 1));
 			for (node *n = sl->exps->h, *m = s->exps->h; n && m; n = n->next, m = m->next)
 				exp_prop_alias(sql->sa, n->data, m->data);
-			sr = rel_project(sql->sa, sr, rel_projections(sql, sr, NULL, 1, 1));
+			sr = rel_project(sql->sa, rel_dup(sr), rel_projections(sql, sr, NULL, 1, 1));
 			for (node *n = sr->exps->h, *m = s->exps->h; n && m; n = n->next, m = m->next)
 				exp_prop_alias(sql->sa, n->data, m->data);
 			/* D djoin (sl setop sr) -> (D djoin sl) setop (D djoin sr) */
-			rel->r = sl;
-			n = rel_crossproduct(sql->sa, rel_dup(d), sr, rel->op);
-			n->exps = exps_copy(sql, rel->exps);
-			set_dependent(n);
-			set_processed(n);
-			s->l = rel;
-			s->r = n;
+			sl = rel_crossproduct(sql->sa, rel_dup(d), sl, rel->op);
+			sl->exps = exps_copy(sql, rel->exps);
+			set_dependent(sl);
+			set_processed(sl);
+			sr = rel_crossproduct(sql->sa, rel_dup(d), sr, rel->op);
+			sr->exps = exps_copy(sql, rel->exps);
+			set_dependent(sr);
+			set_processed(sr);
+			ns = rel_setop(sql->sa, sl, sr, s->op);
+			ns->exps = exps_copy(sql, s->exps);
+			if (is_single(s))
+				set_single(ns);
+			if (need_distinct(s))
+				set_distinct(ns);
 
 			if (is_join(rel->op)) {
 				list *sexps = sa_list(sql->sa), *dexps = rel_projections(sql, d, NULL, 1, 1);
@@ -1455,14 +1462,15 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 
 					list_append(sexps, exp_ref(sql, e));
 				}
-				s->exps = list_merge(sexps, s->exps, (fdup)NULL);
+				ns->exps = list_merge(sexps, ns->exps, (fdup)NULL);
 			}
 			/* add/remove projections to inner parts of the union (as we push a join or semijoin down) */
-			s->l = rel_project(sql->sa, s->l, rel_projections(sql, s->l, NULL, 1, 1));
-			s->r = rel_project(sql->sa, s->r, rel_projections(sql, s->r, NULL, 1, 1));
+			ns->l = rel_project(sql->sa, ns->l, rel_projections(sql, ns->l, NULL, 1, 1));
+			ns->r = rel_project(sql->sa, ns->r, rel_projections(sql, ns->r, NULL, 1, 1));
 			if (is_semi(rel->op))
-				s->exps = rel_projections(sql, s->r, NULL, 1, 1);
-			return s;
+				ns->exps = rel_projections(sql, ns->r, NULL, 1, 1);
+			rel_destroy(rel);
+			return ns;
 		}
 	}
 	return rel;
