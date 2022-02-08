@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 if(LIBR_FOUND)
@@ -26,33 +26,40 @@ if(LIBR_FOUND)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
-  target_link_libraries(rapi 
+  target_link_libraries(rapi
     PRIVATE
     monetdb_config_header
-    mutils 
+    mutils
     bat
     monetdb5
     sqlinclude
     LibR::LibR)
 
-  target_compile_definitions(rapi 
-    PRIVATE 
+  target_compile_definitions(rapi
+    PRIVATE
     LIBRAPI)
 
-  set_target_properties(rapi 
-    PROPERTIES 
-    OUTPUT_NAME 
+  set_target_properties(rapi
+    PROPERTIES
+    OUTPUT_NAME
     _rapi)
 
-  install(TARGETS 
-    rapi 
-    DESTINATION 
+  install(TARGETS
+    rapi
+    DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/monetdb5
     COMPONENT rapi)
 
-  install(FILES 
-    rapi.R 
-    DESTINATION 
+  install(FILES
+    rapi.R
+    DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/monetdb5
     COMPONENT rapi)
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:rapi>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      OPTIONAL)
+  endif()
 endif()

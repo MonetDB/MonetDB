@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /**
@@ -31,14 +31,12 @@ static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"optpipe",     NULL, 0, STR},
 	{"readonly",    NULL, 0, BOOLEAN},
 	{"embedr",      NULL, 0, BOOLEAN},
-	{"embedpy",     NULL, 0, BOOLEAN},
 	{"embedpy3",    NULL, 0, BOOLEAN},
 	{"embedc",      NULL, 0, BOOLEAN},
 	{"listenaddr",  NULL, 0, LADDR},
 	{"nclients",    NULL, 0, INT},
 	{"mfunnel",     NULL, 0, STR},
 	{"dbextra",     NULL, 0, STR},
-	{"dbtrace",     NULL, 0, STR},
 	{"memmaxsize",  NULL, 0, INT},
 	{"vmmaxsize",   NULL, 0, INT},
 	{"raw_strings", NULL, 0, BOOLEAN},

@@ -1,0 +1,42 @@
+statement ok
+create table t7238 (name varchar(22) NOT NULL)
+
+statement ok
+INSERT INTO t7238 VALUES ('sys'),('tmp'),('json'),('profiler')
+
+query TI nosort
+select name, length(name) as nm_len from t7238 order by nm_len
+----
+sys
+3
+tmp
+3
+json
+4
+profiler
+8
+
+query TI nosort
+select name, "index"(name, true) nm_idx from t7238 order by nm_idx
+----
+sys
+8
+tmp
+24
+json
+40
+profiler
+56
+
+query TI nosort
+select name, "index"(name, false) nm_idx from t7238 order by nm_idx
+----
+sys
+8
+tmp
+24
+json
+40
+profiler
+56
+

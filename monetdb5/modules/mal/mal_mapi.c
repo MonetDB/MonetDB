@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -88,7 +88,7 @@
 
 #define SERVERMAXUSERS 		5
 
-static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+static const char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
 	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
 	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -446,7 +446,12 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());
-  error:
+  error:;
+#ifdef HAVE_SYS_UN_H
+	const char *usockfile = GDKgetenv("mapi_usock");
+	if (usockfile && MT_remove(usockfile) == -1 && errno != ENOENT)
+		perror(usockfile);
+#endif
 	(void) ATOMIC_DEC(&nlistener);
 	for (i = 0; i < 3; i++)
 		if (socks[i] != INVALID_SOCKET)
@@ -1045,6 +1050,9 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 	MT_lock_unset(&mal_contextLock);
 
 	mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
+
+	if (mid == NULL)
+		throw(IO, "mapi.connect", MAL_MALLOC_FAIL);
 
 	if (mapi_error(mid)) {
 		const char *err = mapi_error_str(mid);
@@ -1695,13 +1703,11 @@ static int SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 		break;
 	case TYPE_str:
 		if(fld==0 || strcmp(fld,"nil")==0){
-			if((v->val.sval= GDKstrdup(str_nil)) == NULL)
+			if (VALinit(v, TYPE_str, str_nil) == NULL)
 				return -1;
-			v->len = strlen(v->val.sval);
 		} else {
-			if((v->val.sval= GDKstrdup(fld)) == NULL)
+			if (VALinit(v, TYPE_str, fld) == NULL)
 				return -1;
-			v->len = strlen(fld);
 		}
 		break;
 	}

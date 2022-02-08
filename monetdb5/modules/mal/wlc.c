@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -1014,6 +1014,7 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = newStmt(cntxt->wlc, "wlr","clear_table");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+	p = pushInt(cntxt->wlc, p, getVarConstant(mb, getArg(pci,3)).val.ival);
 	if( cntxt->wlc_kind < WLC_UPDATE)
 		cntxt->wlc_kind = WLC_UPDATE;
 
@@ -1070,11 +1071,11 @@ WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 mel_func wlc_init_funcs[] = {
  pattern("wlc", "init", WLCinitCmd, false, "Test for running as master", noargs),
  command("wlc", "epilogue", WLCepilogue, false, "release the resources held by the wlc module", args(1,1, arg("",void))),
- pattern("wlc", "master", WLCmaster, false, "Activate the workload-capture-replay process", noargs),
- pattern("wlc", "master", WLCmaster, false, "Activate the workload-capture-replay process. Use a different location for the logs.", args(0,1, arg("path",str))),
- pattern("wlc", "stop", WLCstop, false, "Stop capturing the logs", noargs),
- pattern("wlc", "flush", WLCflush, false, "Flush current log buffer", noargs),
- pattern("wlc", "setbeat", WLCsetbeat, false, "Maximal delay for transaction log flushing", args(0,1, arg("duration",int))),
+ pattern("wlc", "master", WLCmaster, true, "Activate the workload-capture-replay process", noargs),
+ pattern("wlc", "master", WLCmaster, true, "Activate the workload-capture-replay process. Use a different location for the logs.", args(0,1, arg("path",str))),
+ pattern("wlc", "stop", WLCstop, true, "Stop capturing the logs", noargs),
+ pattern("wlc", "flush", WLCflush, true, "Flush current log buffer", noargs),
+ pattern("wlc", "setbeat", WLCsetbeat, true, "Maximal delay for transaction log flushing", args(0,1, arg("duration",int))),
  pattern("wlc", "getbeat", WLCgetbeat, false, "Maximal delay for transaction log flushing", args(1,2, arg("",str),arg("duration",int))),
  pattern("wlc", "getclock", WLCgetclock, false, "Timestamp of last update transaction", args(1,1, arg("",str))),
  pattern("wlc", "gettick", WLCgettick, false, "Transaction identifier of the last committed transaction", args(1,1, arg("",lng))),
@@ -1086,7 +1087,7 @@ mel_func wlc_init_funcs[] = {
  pattern("wlc", "append", WLCappend, false, "Keep the insertions in the workload-capture-replay list", args(1,5, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
  pattern("wlc", "update", WLCupdate, false, "Keep the update in the workload-capture-replay list", args(1,6, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("tid",0),argany("val",0))),
  pattern("wlc", "delete", WLCdelete, false, "Keep the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),argany("b",0))),
- pattern("wlc", "clear_table", WLCclear_table, false, "Keep the deletions in the workload-capture-replay list", args(1,3, arg("",int),arg("sname",str),arg("tname",str))),
+ pattern("wlc", "clear_table", WLCclear_table, false, "Keep the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
  pattern("wlc", "commit", WLCcommitCmd, false, "Commit the workload-capture-replay record", noargs),
  pattern("wlc", "rollback", WLCcommitCmd, false, "Rollback the workload-capture-replay record", noargs),
  pattern("wlc", "create_seq", WLCgeneric, false, "Catalog operation create_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("action",int))),

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -41,8 +41,8 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	}
 
 	ncand = canditer_init(&ci, b, s);
-	off = ci.hseq;
-	bn = COLnew(off, b->ttype, ncand, TRANSIENT);
+	off = b->hseqbase;
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL || ncand == 0) {
 		BBPunfix(b->batCacheid);
 		if (s)
@@ -183,27 +183,27 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	if (b2)
 		canditer_init(&ci2, b2, s2);
 	ncand = b1 ? ci1.ncand : ci2.ncand;
-	off1 = ci1.hseq;
-	off2 = ci2.hseq;
+	off1 = b1 ? b1->hseqbase : 0;
+	off2 = b2 ? b2->hseqbase : 0;
 
 	if (b1 == NULL &&
 		(tp1 == TYPE_flt ?
 		 is_flt_nil(stk->stk[getArg(pci, 1)].val.fval) :
 		 is_dbl_nil(stk->stk[getArg(pci, 1)].val.dval))) {
-		bn = BATconstant(off2, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
+		bn = BATconstant(ci2.hseq, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
 		goto doreturn;
 	}
 	if (b2 == NULL &&
 		(tp1 == TYPE_flt ?
 		 is_flt_nil(stk->stk[getArg(pci, 2)].val.fval) :
 		 is_dbl_nil(stk->stk[getArg(pci, 2)].val.dval))) {
-		bn = BATconstant(off1, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
+		bn = BATconstant(ci1.hseq, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
 		goto doreturn;
 	}
 	if (b1)
-		bn = COLnew(off1, tp1, ncand, TRANSIENT);
+		bn = COLnew(ci1.hseq, tp1, ncand, TRANSIENT);
 	else
-		bn = COLnew(off2, tp1, ncand, TRANSIENT);
+		bn = COLnew(ci2.hseq, tp1, ncand, TRANSIENT);
 	if (bn == NULL || ncand == 0)
 		goto doreturn;
 
@@ -383,25 +383,27 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	BUN q = 0;
 	int *restrict vals;
-	str msg = MAL_SUCCEED;
 	struct canditer ci = {0};
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
-		*sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+	bat *res = getArgReference_bat(stk, pci, 0);
 
 	(void) cntxt;
-	(void) mb;
-	if (!(b = BBPquickdesc(*bid))) {
-		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *bid = getArgReference_bat(stk, pci, 1), *sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+		if (!(b = BBPquickdesc(*bid))) {
+			throw(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
+			throw(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		q = canditer_init(&ci, b, bs);
+		if (bs)
+			BBPunfix(bs->batCacheid);
+	} else {
+		q = (BUN) *getArgReference_lng(stk, pci, 1);
 	}
-	if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
-		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	q = canditer_init(&ci, b, bs);
+
 	if (!(bn = COLnew(ci.hseq, TYPE_int, q, TRANSIENT))) {
-		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		throw(MAL, "batmmath.rand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	vals = Tloc(bn, 0);
@@ -415,20 +417,14 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	MT_lock_unset(&mmath_rse_lock);
 #endif
 
-bailout:
-	if (bs)
-		BBPunfix(bs->batCacheid);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = false;
-		bn->tnonil = true;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
-	return msg;
+	BATsetcount(bn, q);
+	bn->tnil = false;
+	bn->tnonil = true;
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	BBPkeepref(*res = bn->batCacheid);
+	return MAL_SUCCEED;
 }
 
 scienceImpl(acos)
@@ -581,6 +577,7 @@ mel_func batmmath_init_funcs[] = {
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid))),
  pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,2, batarg("",int),batarg("v",int))),
  pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,3, batarg("",int),batarg("v",int),batarg("s",oid))),
+ pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,2, batarg("",int),arg("card",lng))), /* version with cardinality input */
  { .imp=NULL }
 };
 #include "mal_import.h"

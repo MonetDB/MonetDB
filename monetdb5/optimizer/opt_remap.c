@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -27,8 +27,9 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 
 	(void) cntxt;
 	(void) stk;
-	mod = VALget(&getVar(mb, getArg(pci, retc+0))->value);
-	fcn = VALget(&getVar(mb, getArg(pci, retc+1))->value);
+	int plus_one = getArgType(mb, pci, pci->retc) == TYPE_lng ? 1 : 0;
+	mod = VALget(&getVar(mb, getArg(pci, retc+0+plus_one))->value);
+	fcn = VALget(&getVar(mb, getArg(pci, retc+1+plus_one))->value);
 
 	if(strncmp(mod,"bat",3)==0)
 		mod+=3;
@@ -48,7 +49,14 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 		else
 			p = pushReturn(mb, p, getArg(pci,i));
 	p->retc= p->argc= pci->retc;
-	for(i= pci->retc+2; i<pci->argc; i++)
+
+
+
+	if (plus_one) {
+		p = addArgument(mb,p,getArg(pci,pci->retc)); // cardinality argument
+	}
+
+	for(i= pci->retc+2+plus_one; i<pci->argc; i++)
 		p= addArgument(mb,p,getArg(pci,i));
 	if (p->retc == 1 &&
 		((bufName == batcalcRef &&
@@ -322,9 +330,9 @@ terminateMX:
  * The comparison multiplex operations with a constant head may be supported
  * by reverse of the operation.
  */
-static struct{
-	char *src, *dst;
-	int len;
+static const struct{
+	const char *src, *dst;
+	const int len;
 }OperatorMap[]={
 {"<", ">",1},
 {">", "<",1},
@@ -341,7 +349,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int id
 	(void) stk;
 	(void) scope;
 
-	if( !isMultiplex(pci) &&
+	if( !isMultiplex(pci) && getArgType(mb, pci, pci->retc) != TYPE_lng &&
 		!isVarConstant(mb,getArg(pci,1)) &&
 		!isVarConstant(mb,getArg(pci,2)) &&
 		!isVarConstant(mb,getArg(pci,4)) &&
@@ -401,8 +409,9 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 * such as the calculator functions. It is particularly
 			 * geared at handling the PSM code.
 			 */
-			str mod = VALget(&getVar(mb, getArg(p, p->retc+0))->value);
-			str fcn = VALget(&getVar(mb, getArg(p, p->retc+1))->value);
+			int plus_one = getArgType(mb, p, p->retc) == TYPE_lng ? 1 : 0;
+			str mod = VALget(&getVar(mb, getArg(p, p->retc+0+plus_one))->value);
+			str fcn = VALget(&getVar(mb, getArg(p, p->retc+1+plus_one))->value);
 			//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
 			Symbol s = findSymbolInModule(getModule(putName(mod)),putName(fcn));
 

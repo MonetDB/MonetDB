@@ -2,31 +2,29 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 import re
 import os
 
-# macro definition
-macrore = re.compile(r'\s*#\s*define\s+'            # #define
-                     r'(?P<name>\w+)'               # name being defined
-                     r'(?:\((?P<args>[^)]*)\))?\s*' # optional arguments
-                     r'(?P<repl>.*)')               # replacement
-# include file
-inclre = re.compile(r'\s*#\s*include\s+"(?P<file>[^"]*)"')
+macrore = r'^[ \t]*#[ \t]*define[ \t]+(?P<name>\w+)(?:\((?P<args>[^()]*)\))?[ \t]*(?P<repl>.*)'
+includere = r'^[ \t]*#[ \t]*include[ \t]+"(?P<file>[^"]*)".*'
+ifre = r'^[ \t]*#[ \t]*if(def)?.*\b'
+elifre = r'^[ \t]*#[ \t]*elif\b.*'
+elsere = r'^[ \t]*#[ \t]*else\b.*'
+endifre = r'^[ \t]*#[ \t]*endif\b.*'
+undefre = r'^[ \t]*#[ \t]*undef[ \t]+(?P<uname>\w+).*'
+linere = r'^[^()\n]*(?:\([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*\)[^()\n]*)*$'
+
+searchre = re.compile(r'(?P<define>'+macrore+r')|(?P<include>'+includere+r')|(?P<if>'+ifre+r')|(?P<elif>'+elifre+r')|(?P<else>'+elsere+r')|(?P<endif>'+endifre+r')|(?P<undef>'+undefre+')|(?P<line>'+linere+r')', re.M)
+
 # comments (/* ... */ where ... is as short as possible)
-cmtre = re.compile(r'/\*[^*]*(\*(?=[^/])[^*]*)*\*/|//.*')
+commentre = re.compile(r'/\*[^*]*(\*(?=[^/])[^*]*)*\*/|//.*')
 # horizontal white space
 horspcre = re.compile(r'[ \t]+')
+
 # identifier
 identre = re.compile(r'\b(?P<ident>[a-zA-Z_]\w*)\b')
-# undef
-undefre = re.compile(r'\s*#\s*undef\s+(?P<name>\w+)')
-ifre = re.compile(r'\s*#\s*if') # #if or #ifdef
-elifre = re.compile(r'\s*#\s*elif')
-elsere = re.compile(r'\s*#\s*else')
-endifre = re.compile(r'\s*#\s*endif')
-
 nested = r'' # r'(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*'
 
 def process(line, funmac, macros, infunmac=False):
@@ -82,10 +80,9 @@ def process(line, funmac, macros, infunmac=False):
 def readfile(f, funmac=None, macros=None, files=None, printdef=False, include=False):
     data = open(f).read()
     dirname, f = os.path.split(f)
-    data = cmtre.sub(' ', data)
+    data = commentre.sub(' ', data)
     data = data.replace('\\\n', '')
     data = horspcre.sub(' ', data)
-    data = data.splitlines()
     if funmac is None:
         funmac = {}
     if macros is None:
@@ -95,30 +92,27 @@ def readfile(f, funmac=None, macros=None, files=None, printdef=False, include=Fa
     files.add(f)
     ndata = []
     skip = []
-    for line in data:
-        if endifre.match(line) is not None:
+    res = searchre.search(data, 0)
+    while res is not None and res.start(0) < len(data):
+        line = res.group()
+        if res.group('endif'):
             if printdef:
                 ndata.append(line)
             if skip:
                 del skip[-1]
-            continue
-        if ifre.match(line) is not None:
+        elif res.group('if'):
             if printdef:
                 ndata.append(line)
             skip.append(False)
-            continue
-        if elifre.match(line) or elsere.match(line):
+        elif res.group('elif') or res.group('else'):
             if printdef:
                 ndata.append(line)
             if include and skip:
                 skip[-1] = True
-            continue
-        if skip and skip[-1]:
+        elif skip and skip[-1]:
             if printdef:
                 ndata.append(line)
-            continue
-        res = macrore.match(line)
-        if res is not None:
+        elif res.group('define'):
             if printdef:
                 ndata.append(line)
             name = res.group('name')
@@ -129,29 +123,25 @@ def readfile(f, funmac=None, macros=None, files=None, printdef=False, include=Fa
                 if len(args) == 1 and args[0] == '':
                     args = ()   # empty argument list
                 funmac[name] = (args, repl)
-                continue
-            if include:
+            elif include:
                 macros[name] = repl
-            continue
-        res = inclre.match(line)
-        if res is not None:
+        elif res.group('include'):
             fn = res.group('file')
             if include and '/' not in fn and os.path.exists(os.path.join(dirname, fn)) and fn not in files:
                 incdata = readfile(os.path.join(dirname, fn), funmac, macros, files, printdef, include)
                 ndata.extend(incdata)
-                continue
-            ndata.append(line)
-            continue
-        res = undefre.match(line)
-        if res is not None:
-            name = res.group('name')
+            else:
+                ndata.append(line)
+        elif res.group('undef'):
+            name = res.group('uname')
             if name in macros:
                 del macros[name]
             if name in funmac:
                 del funmac[name]
-            continue
-        line = process(line, funmac, macros)
-        ndata.append(line)
+        elif res.group('line'):
+            line = process(line, funmac, macros)
+            ndata.append(line)
+        res = searchre.search(data, res.end(0) + 1)
     files.remove(f)
     return ndata
 

@@ -4,7 +4,7 @@ SELECT f.id AS fid,
        s.name AS schema,
        f.name AS fname,
        f.type AS category,
-       sf.function_id IS NOT NULL AS system,
+       f.system AS system,
        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,
        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,
        p.type, p.type_digits, p.type_scale,
@@ -12,8 +12,8 @@ SELECT f.id AS fid,
   FROM sys.functions f
   JOIN sys.comments c ON f.id = c.id
   JOIN sys.schemas s ON f.schema_id = s.id
-  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
   LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1
+ WHERE f.system
  ORDER BY line
 
 query ITTIITTTIII rowsort
@@ -33,26 +33,23 @@ project (
 | | | | | | | project (
 | | | | | | | | project (
 | | | | | | | | | left outer join (
-| | | | | | | | | | left outer join (
-| | | | | | | | | | | join (
-| | | | | | | | | | | | join (
-| | | | | | | | | | | | | table("sys"."functions") [ "functions"."id" as "f"."id", "functions"."schema_id" as "f"."schema_id" ] COUNT ,
-| | | | | | | | | | | | | table("sys"."comments") [ "comments"."id" NOT NULL HASHCOL  as "c"."id" ] COUNT 
-| | | | | | | | | | | | ) [ "f"."id" = "c"."id" NOT NULL HASHCOL  ],
-| | | | | | | | | | | | table("sys"."schemas") [ "schemas"."id" as "s"."id" ] COUNT 
-| | | | | | | | | | | ) [ "f"."schema_id" = "s"."id" ],
-| | | | | | | | | | | select (
-| | | | | | | | | | | | table("sys"."functions") [ "functions"."id", "functions"."system" ] COUNT 
-| | | | | | | | | | | ) [ "functions"."system" = boolean "true" ]
-| | | | | | | | | | ) [ "f"."id" = "functions"."id" ],
+| | | | | | | | | | join (
+| | | | | | | | | | | semijoin (
+| | | | | | | | | | | | select (
+| | | | | | | | | | | | | table("sys"."functions") [ "functions"."id" as "f"."id", "functions"."schema_id" as "f"."schema_id", "functions"."system" as "f"."system" ]
+| | | | | | | | | | | | ) [ ("f"."system") = (boolean(1) "true") ],
+| | | | | | | | | | | | table("sys"."comments") [ "comments"."id" NOT NULL UNIQUE HASHCOL  as "c"."id" ]
+| | | | | | | | | | | ) [ ("f"."id") = ("c"."id" NOT NULL HASHCOL ) ],
+| | | | | | | | | | | table("sys"."schemas") [ "schemas"."id" as "s"."id" ]
+| | | | | | | | | | ) [ ("f"."schema_id") = ("s"."id") ],
 | | | | | | | | | | select (
-| | | | | | | | | | | table("sys"."args") [ "args"."func_id" as "p"."func_id", "args"."inout" as "p"."inout", "args"."number" as "p"."number" ] COUNT 
-| | | | | | | | | | ) [ "p"."inout" = tinyint "1" ]
-| | | | | | | | | ) [ "f"."id" = "p"."func_id" ]
+| | | | | | | | | | | table("sys"."args") [ "args"."func_id" as "p"."func_id", "args"."inout" as "p"."inout", "args"."number" as "p"."number" ]
+| | | | | | | | | | ) [ ("p"."inout") = (tinyint(1) "1") ]
+| | | | | | | | | ) [ ("f"."id") = ("p"."func_id") ]
 | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" NULLS LAST ]
 | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
-| | | | | ) [ "f"."id", "sys"."row_number"("sys"."star"(), boolean "false", "sys"."diff"("sys"."diff"("f"."id"), "p"."number")) as "line" ]
+| | | | | ) [ "f"."id", "sys"."row_number"("sys"."star"(), boolean(1) "false", "sys"."diff"("sys"."diff"("f"."id"), "p"."number")) as "line" ]
 | | | | ) [ "f"."id" as "fid", "line" ]
 | | | ) [ "fid" ] [ "line" ASC ]
 | | ) [ "fid" as "commented_function_signatures_6542"."fid" ]

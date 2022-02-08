@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 if(NETCDF_FOUND)
@@ -21,7 +21,7 @@ if(NETCDF_FOUND)
 
   target_sources(netcdff
     PRIVATE
-    netcdf.c 
+    netcdf.c
     netcdf_vault.h
     ${MONETDB_CURRENT_SQL_SOURCES})
 
@@ -37,8 +37,8 @@ if(NETCDF_FOUND)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
-  target_link_libraries(netcdff 
-    PRIVATE 
+  target_link_libraries(netcdff
+    PRIVATE
     monetdb_config_header
     mutils
     bat
@@ -46,17 +46,24 @@ if(NETCDF_FOUND)
     sqlinclude
     NetCDF::NetCDF)
 
-  set_target_properties(netcdff 
-    PROPERTIES 
-    OUTPUT_NAME 
+  set_target_properties(netcdff
+    PROPERTIES
+    OUTPUT_NAME
     _netcdf)
 
-  target_compile_definitions(netcdff 
-    PRIVATE 
+  target_compile_definitions(netcdff
+    PRIVATE
     LIBNCDF)
 
-  install(TARGETS 
-    netcdff 
+  install(TARGETS
+    netcdff
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
     COMPONENT server)
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:netcdff>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      OPTIONAL)
+  endif()
 endif()

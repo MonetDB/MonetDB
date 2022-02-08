@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -16,18 +16,17 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	BAT *b;
 	BUN c;
 	size_t _s;
+	BATiter bi = {0};
 	const void *p = NULL;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
-	}
 	c = BATcount(b);
 	if (c == 0) {
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1 || (c > 1 && *err == false)) {
-		BATiter bi = bat_iterator(b);
+		bi = bat_iterator(b);
 		p = BUNtail(bi, 0);
-		bat_iterator_end(&bi);
 	} else {
 		p = NULL;
 		BBPunfix(b->batCacheid);
@@ -40,6 +39,8 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		*(ptr *) ret = GDKmalloc(_s);
 		if (*(ptr *) ret == NULL) {
+			if (bi.b)
+				bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.zero_or_one", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -47,6 +48,8 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		if ((*(BAT **) ret = BATdescriptor(bid)) == NULL){
+			if (bi.b)
+				bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
 		}
@@ -65,6 +68,8 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	} else {
 		memcpy(ret, p, _s);
 	}
+	if (bi.b)
+		bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -203,6 +208,7 @@ SQLall(ptr ret, const bat *bid)
 			if (ATOMextern(b->ttype)) {
 				*(ptr *) ret = GDKmalloc(s);
 				if (*(ptr *) ret == NULL) {
+					bat_iterator_end(&bi);
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.all", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
@@ -952,14 +958,11 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
-			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
 			for (BUN q = 0; q < o; q++) {
 				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
 				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) != 0;
 			}
-			bat_iterator_end(&li);
-			bat_iterator_end(&ri);
 		}
 		}
 

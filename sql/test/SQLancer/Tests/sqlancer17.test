@@ -21,10 +21,10 @@ SELECT t2.c0 FROM t2 JOIN (SELECT DISTINCT TIME '01:00:00', greatest(t1.c0, 0.3)
 ----
 377 values hashing to 3fcc20c12d29f4847a2af7e1c9e3c51b
 
-query T rowsort
+query I rowsort
 SELECT '' NOT ILIKE 'x' FROM t2 JOIN (SELECT DISTINCT TIME '01:00:00', greatest(t1.c0, 0.3)%asin(0.7) FROM t1) AS sub0(c0,c1) ON sub0.c1 <= t2.c0
 ----
-377 values hashing to 19d4c8a836908c70817468cb9b9d7405
+377 values hashing to ef89b4852ebacfce3c2e98d7838b9254
 
 statement ok
 ROLLBACK
@@ -71,18 +71,18 @@ project (
 | | | intersect (
 | | | | project (
 | | | | | select (
-| | | | | |  [ boolean "true" ]
-| | | | | ) [ tinyint "2" ! <= tinyint "1" ! <= tinyint "2" BETWEEN , tinyint "3" <= tinyint "2" <= tinyint "5" BETWEEN  ]
-| | | | ) [ tinyint "2" as "v0"."vc0" ],
+| | | | | |  [ boolean(1) "true" as "%1"."%1" ]
+| | | | | ) [ (tinyint(2) "2") ! <= (tinyint(2) "1") ! <= (tinyint(2) "2"), (tinyint(3) "3") <= (tinyint(2) "2") <= (tinyint(2) "5") ]
+| | | | ) [ tinyint(2) "2" as "v0"."vc0" ],
 | | | | project (
 | | | | | select (
-| | | | | |  [ boolean "true" ]
-| | | | | ) [ tinyint "4" ! <= tinyint "1" ! <= tinyint "4" BETWEEN , tinyint "3" <= tinyint "4" <= tinyint "5" BETWEEN  ]
-| | | | ) [ tinyint "4" as "v0"."vc0" ]
+| | | | | |  [ boolean(1) "true" as "%2"."%2" ]
+| | | | | ) [ (tinyint(3) "4") ! <= (tinyint(2) "1") ! <= (tinyint(3) "4"), (tinyint(3) "3") <= (tinyint(3) "4") <= (tinyint(2) "5") ]
+| | | | ) [ tinyint(3) "4" as "v0"."vc0" ]
 | | | ) [ "v0"."vc0" NOT NULL ]
-| | ) [ "sys"."sql_max"(tinyint "1", tinyint "1") NOT NULL as "v20"."vc0" ]
-| ) [ tinyint "7" > "v20"."vc0" NOT NULL ]
-) [ tinyint "1" ]
+| | ) [ "sys"."sql_max"(tinyint(1) "1", tinyint(1) "1") NOT NULL as "v20"."vc0" ]
+| ) [ (tinyint(3) "7") > ("v20"."vc0" NOT NULL) ]
+) [ tinyint(1) "1" ]
 
 statement ok
 ROLLBACK
@@ -138,15 +138,15 @@ COPY 7 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 861414840	NULL
 
 statement ok
-create view v4(vc0) as (values ("insert"(r'2', ((5)|(1571515754)), nullif(68, 0.681765350302749428834658829146064817905426025390625), r' ') not ilike
+create view v4(vc0) as (values ("insert"('2', ((5)|(1571515754)), nullif(68, 0.681765350302749428834658829146064817905426025390625), ' ') not ilike
 nullif(case (select interval '1807439388' month from t1 as tt1l4n0, t2 as tt2l4n1) when sql_sub(interval '16' month, interval '169164132' month) then
-(select r'0.9840143051690606' from t1 as tt1l4n0 where false) when sql_sub(interval '2140361559' month, interval '1731030991' month) then least(r'yh', r'')
+(select '0.9840143051690606' from t1 as tt1l4n0 where false) when sql_sub(interval '2140361559' month, interval '1731030991' month) then least('yh', '')
 when sql_add(interval '323468641' month, interval '484732283' month) then cast(interval '340353783' second as string(241)) when sql_min(null, interval '351381849' month)
-then "right"(r'0.6603113972580116', 1409573249) when abs(interval '41293241' month) then cast(1654332323 as string(452)) else nullif(r'', r'i') end, r'EI')))
+then "right"('0.6603113972580116', 1409573249) when abs(interval '41293241' month) then cast(1654332323 as string(452)) else nullif('', 'i') end, 'EI')))
 
 statement error GDK reported error: BATsubcross: more than one match
 UPDATE t1 SET c2 = 1 FROM v4 WHERE ((((((((INTERVAL '1' MONTH NOT IN ((SELECT INTERVAL '3' MONTH FROM v4)))AND(sys.md5(t1.c2) <> ANY(SELECT '1'))))
-AND (CASE WHEN (r'1810575798') BETWEEN '1' AND ((SELECT r'' WHERE TRUE)) THEN false ELSE true END))))))
+AND (CASE WHEN ('1810575798') BETWEEN '1' AND ((SELECT '' WHERE TRUE)) THEN false ELSE true END))))))
 
 statement ok
 ROLLBACK
@@ -173,10 +173,10 @@ select json.text(null, '23131')
 ----
 NULL
 
-query T nosort
+query I nosort
 select json.isvalid(json.tojsonarray(x)) from (values ('a"'),('"b'),('c"')) x(x)
 ----
-True
+1
 
 statement ok
 START TRANSACTION
@@ -359,13 +359,423 @@ SELECT json.tojsonarray('<') FROM t1, t2 GROUP BY t1.c0
 [ "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<", "<" ]
 
 statement ok
-create or replace view v30(vc0) as (select null)
+create or replace view v30(vc0) as (select cast(null as clob))
 
-query T nosort
+query I nosort
 select json."isvalid"(CAST(v30.vc0 AS JSON)) FROM v30
 ----
-True
+1
 
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" DECIMAL(18,3))
+
+statement ok
+COPY 10 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.609
+0.000
+0.706
+0.159
+0.374
+0.484
+0.368
+3.000
+0.990
+0.785
+
+statement ok
+CREATE TABLE "t2" ("c0" DECIMAL(18,3))
+
+statement ok
+COPY 10 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.744
+0.392
+0.870
+0.120
+0.452
+1241972446.000
+0.801
+NULL
+NULL
+0.071
+
+statement ok
+ALTER TABLE t0 ADD COLUMN c2 UUID
+
+statement error GDK reported error: BATsubcross: more than one match
+UPDATE t2 SET c0 = 1 FROM t0 WHERE (least(TRUE, FALSE) AND 0.63 = t2.c0) OR (0.23 <= 0.1)
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t1(c0 boolean)
+
+statement ok
+SET "optimizer"='default_fast'
+
+statement ok rowcount 0
+DELETE FROM t1
+
+statement ok
+SET "optimizer"='default_pipe'
+
+statement ok
+DROP TABLE t1
+
+statement ok
+SET "optimizer"='default_pipe'
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t1(c1 int, c2 FLOAT)
+
+statement ok rowcount 0
+UPDATE t1 SET c1 = 1 FROM (SELECT t1.c2 FROM t1) v1(vc0) WHERE ((SELECT NULL WHERE FALSE)) IN (levenshtein('', '', t1.c1, t1.c1, t1.c1), 4)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table tx(c0 VARCHAR(32), c1 BOOLEAN)
+
+statement ok
+create table ty(c0 BOOLEAN)
+
+statement ok rowcount 2
+insert into tx values ('a', true), ('b', false)
+
+statement ok rowcount 2
+insert into ty values (true), (false)
+
+query I nosort
+SELECT 1 FROM tx, ty WHERE CASE tx.c0 = ANY(SELECT 'c') WHEN (SELECT ty.c0 WHERE tx.c1) THEN true END
+----
+1
+
+query I nosort
+SELECT 1 FROM tx, ty WHERE CASE tx.c0 = ANY(SELECT 'c') WHEN (SELECT ty.c0 WHERE true) THEN true END
+----
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t2(c0 INTERVAL DAY)
+
+statement ok rowcount 1
+INSERT INTO t2(c0) VALUES(INTERVAL '3' DAY)
+
+statement ok rowcount 1
+DELETE FROM t2 WHERE TRUE
+
+statement error types tinyint(1,0) and day_interval(4,0) are not equal
+INSERT INTO t2(c0) VALUES(1)
+
+statement ok rowcount 2
+INSERT INTO t2(c0) VALUES(INTERVAL '2' DAY), (INTERVAL '1' DAY)
+
+query T rowsort
+SELECT c0 FROM t2
+----
+1
+2
+
+statement ok
+DROP TABLE t2
+
+query T nosort
+VALUES (CASE WHEN 5 = ANY(SELECT -1) THEN 2 END)
+----
+NULL
+
+query I nosort
+SELECT 1 FROM (SELECT 1, TRUE) vx(vc0, vc2) INNER JOIN (SELECT 1) AS sub0(c0)
+ON vx.vc0 <= ALL(SELECT 1) OR vx.vc2 WHERE 0.5 < ALL(SELECT 0.6 WHERE vx.vc2)
+----
+1
+
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t3(c0 bigserial) ON COMMIT PRESERVE ROWS
+
+statement ok rowcount 1
+INSERT INTO t3
+
+query I nosort
+SELECT c0 FROM t3
+----
+1
+
+statement ok rowcount 1
+TRUNCATE tmp.t3 RESTART IDENTITY
+
+query I nosort
+SELECT c0 FROM t3
+----
+
+statement ok rowcount 1
+INSERT INTO t3
+
+query I nosort
+SELECT c0 FROM t3
+----
+1
+
+statement ok
+DROP TABLE t3
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rt0 ("c0" INET, "c1" TINYINT)
+
+statement ok
+CREATE TABLE tz(c1 BLOB)
+
+statement ok
+create or replace view va(vc0) as ((select 4 from tz) union all (select 2 from rt0))
+
+statement ok
+create or replace view vb(vc0) as (select (select 4 from rt0) from rt0)
+
+statement ok
+create or replace view vx(vc0) as (select 9 = vb.vc0 from vb, rt0, va order by rt0.c0)
+
+statement ok rowcount 1
+INSERT INTO tz(c1) VALUES(CASE WHEN EXISTS (SELECT DISTINCT 3, vc0 FROM vx WHERE vc0) THEN BLOB 'AD' END)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t2 (c0 VARCHAR(217))
+
+query I nosort
+SELECT 1 FROM t2 WHERE (SELECT tx.c0 = ANY(SELECT 'a' FROM t2) FROM t2 AS tx)
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "rt0" ("c0" REAL,"c1" DECIMAL(18,3))
+
+statement ok
+create view vx(vc0, vc1) as (values (inet '229.210.31.233', 1), (greatest((select inet '187.205.97.37/28'), (select inet '136.216.53.173/0')), 1))
+
+statement ok
+create view vy(vc0, vc1) as (select distinct 208, 49 from sys.vx as tv5l0n1)
+
+query I nosort
+SELECT 1 FROM vy, vx GROUP BY COALESCE('b', (SELECT 'c' FROM rt0)) HAVING max(1 IN ((SELECT 2 FROM rt0), 3))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create or replace view vx(vc0, vc1) as (values (blob 'aa', 2), (case 4 when 2 then (values (blob 'dd')) end, 0.5))
+
+statement ok
+create or replace view vy(vc0) as (select vz.vc0 <> all(select blob '' from (select 2) vw(x)) from vx as vz)
+
+query I nosort
+(SELECT 1 FROM vx) INTERSECT ALL (SELECT least(2, 3) FROM vx, vy)
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE tz (c0 INT)
+
+statement ok
+create or replace view vy(vc0) as (values (1))
+
+statement ok
+create or replace view vx(vc0, vc1) as (select 2, 3 from vy)
+
+query I nosort
+SELECT 1 FROM tz, vx WHERE (vx.vc1 + tz.c0) <> ALL(VALUES (4)) AND vx.vc0 <> ALL(VALUES (5))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rt0 (c0 INT)
+
+statement ok
+create or replace view vx(vc0) as (select 'a')
+
+statement ok
+create or replace view vy(vc0) as (select 2)
+
+# make sure self-references are eliminated by rel_dce
+query T nosort
+PLAN SELECT 1 FROM rt0 CROSS JOIN (SELECT CASE sub0.c2 WHEN 4 THEN 'c' END,
+least(3, sub0.c1) FROM vx JOIN (SELECT 4, vy.vc0 FROM vy) AS sub0(c1,c2) ON TRUE) AS sub0(c0,c2)
+----
+project (
+| crossproduct (
+| | table("sys"."rt0") [ "rt0"."%TID%" NOT NULL UNIQUE ],
+| | project (
+| | | crossproduct (
+| | | |  [ boolean(1) "true" as "%1"."%1" ],
+| | | |  [ boolean(1) "true" as "%2"."%2" ]
+| | | ) [  ]
+| | ) [ "sys"."casewhen"(tinyint(2) "2", tinyint(3) "4", char(1) "c", char(1) NULL) as "sub0"."c0" ]
+| ) [  ]
+) [ tinyint(1) "1" ]
+
+query I nosort
+SELECT 1 FROM rt0 CROSS JOIN (SELECT CASE sub0.c2 WHEN 4 THEN 'c' END,
+least(3, sub0.c1) FROM vx JOIN (SELECT 4, vy.vc0 FROM vy) AS sub0(c1,c2) ON TRUE) AS sub0(c0,c2)
+----
+
+statement ok
+ROLLBACK
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 BETWEEN 1 AND min(2) FROM (values (3)) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 BETWEEN min(1) AND 2 FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 BETWEEN vx.vc0 AND min(2) FROM (values (3)) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN(1) BETWEEN vx.vc0 AND 2 FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (values (3)) vx(vc0) HAVING vx.vc0 BETWEEN 1 AND min(2)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 3) vx(vc0) HAVING vx.vc0 BETWEEN min(1) AND 2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (values (3)) vx(vc0) HAVING 1 BETWEEN vx.vc0 AND min(2)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 3) vx(vc0) HAVING MIN(1) BETWEEN vx.vc0 AND 2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 > min(1) FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT min(1) < vx.vc0 FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 3) vx(vc0) HAVING min(1) < vx.vc0
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > min(1)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 LIKE MIN('b') FROM (SELECT 'a') vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN('b') LIKE vx.vc0 FROM (SELECT 'a') vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 'a') vx(vc0) HAVING vx.vc0 LIKE MIN('b')
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 FROM (SELECT 'a') vx(vc0) HAVING MIN('b') LIKE vx.vc0
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN(2) IS NULL FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT 3) vx(vc0) HAVING MIN(2) IS NULL
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT 1 IN (MIN(2)) FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT 3) vx(vc0) HAVING 1 IN (MIN(2))
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN(2) > 2 FROM (SELECT TRUE) vx(vc0) HAVING vx.vc0
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT TRUE) vx(vc0) HAVING MIN(2) > 2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT MIN(2) > 2, vx.vc0 FROM (SELECT 3) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0, MIN(2) > 2 FROM (SELECT 3) vx(vc0)
+
+# The subquery ones are doubtful
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT EXISTS (SELECT MIN(2)) FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT 3) vx(vc0) HAVING EXISTS (SELECT MIN(2))
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT EXISTS (SELECT MIN(2) FROM (SELECT 4) vy(vc0)) FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 FROM (SELECT 4) vx(vc0) HAVING EXISTS (SELECT MIN(2) FROM (SELECT 3) vy(vc0))
+
+# These are right, keep them here
+query I nosort
+SELECT MIN(2) > 2 FROM (SELECT 1) vx(vc0) HAVING 0
+----
+
+query I nosort
+SELECT 0 FROM (SELECT 1) vx(vc0) HAVING MIN(2) > 2
+----
+
+query II nosort
+SELECT MIN(2) > 2, 0 FROM (SELECT 1) vx(vc0) HAVING MIN(2) > 2
+----
+
+query II nosort
+SELECT 0, MIN(2) > 2 FROM (SELECT 1) vx(vc0) HAVING MIN(2) > 2
+----
+
+query II nosort
+SELECT MIN(2) > 2, 0 FROM (SELECT 1) vx(vc0)
+----
+0
+0
+
+query II nosort
+SELECT 0, MIN(2) > 2 FROM (SELECT 1) vx(vc0)
+----
+0
+0

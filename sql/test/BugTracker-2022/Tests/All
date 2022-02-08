@@ -1,0 +1,4 @@
+transaction-conflict.Bug-7228
+insert-not-null.Bug-7232
+!ARCH_BITS32?index-function-query.Bug-7238
+recreate-view.Bug-7241

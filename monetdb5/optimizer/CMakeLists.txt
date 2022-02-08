@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 add_library(optimizer OBJECT)
@@ -19,6 +19,8 @@ target_sources(optimizer
   opt_constants.c opt_constants.h
   opt_costModel.c opt_costModel.h
   opt_dataflow.c opt_dataflow.h
+  opt_dict.c opt_dict.h
+  opt_for.c opt_for.h
   opt_deadcode.c opt_deadcode.h
   opt_emptybind.c opt_emptybind.h
   opt_evaluate.c opt_evaluate.h
@@ -35,7 +37,6 @@ target_sources(optimizer
   opt_mergetable.c opt_mergetable.h
   opt_mitosis.c opt_mitosis.h
   opt_multiplex.c opt_multiplex.h
-  opt_oltp.c opt_oltp.h
   opt_wlc.c opt_wlc.h
   opt_pipes.c
   opt_prelude.c opt_prelude.h
@@ -49,6 +50,7 @@ target_sources(optimizer
   opt_postfix.c opt_postfix.h
   opt_volcano.c opt_volcano.h
   opt_fastpath.c opt_fastpath.h
+  opt_strimps.c opt_strimps.h
   opt_wrapper.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/opt_pipes.h)

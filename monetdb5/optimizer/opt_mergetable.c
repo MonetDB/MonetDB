@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -2095,6 +2095,20 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
+		if (match > 0 && getModuleId(p) == algebraRef && getFunctionId(p) == crossRef &&
+			p->argc == 5 && p->retc == 2 && bats == 2) {
+			int max_one = (isVarConstant(mb,getArg(p,4)) && getVarConstant(mb,getArg(p,4)).val.btval);
+			if (!max_one) {
+				m = is_a_mat(getArg(p,p->retc), &ml);
+				n = is_a_mat(getArg(p,p->retc+1), &ml);
+				if(mat_join2(mb, p, &ml, m, n, -1, -1)) {
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto cleanup;
+				}
+				actions++;
+				continue;
+			}
+		}
 		/*
 		 * Aggregate handling is a prime target for optimization.
 		 * The simple cases are dealt with first.
@@ -2246,8 +2260,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* Handle projection */
-		if (match > 0 && getModuleId(p) == algebraRef &&
-			getFunctionId(p) == projectionRef &&
+		if (match > 0 &&
+				((getModuleId(p) == algebraRef &&
+			getFunctionId(p) == projectionRef) ||
+				((getModuleId(p) == dictRef || getModuleId(p) == forRef) &&
+			getFunctionId(p) == decompressRef)) &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) {
 		   	n=is_a_mat(getArg(p,2), &ml);
 			if(mat_projection(mb, p, &ml, m, n)) {
@@ -2349,6 +2366,25 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			isaBatType(getArgType(mb,p,2)) && isVarConstant(mb,getArg(p,2)) &&
 			is_bat_nil(getVarConstant(mb,getArg(p,2)).val.bval)) {
 			if (mat_apply1(mb, p, &ml, m, fm)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+
+		/* handle dict select */
+		if ((match == 1 || match == bats-1) && p->retc == 1 && isSelect(p) && getModuleId(p) == dictRef) {
+			if(mat_apply(mb, p, &ml, match)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+		/* handle dict renumber */
+		if (match == 1 && match == bats-1 && p->retc == 1 && getFunctionId(p) == renumberRef && getModuleId(p) == dictRef) {
+			if(mat_apply(mb, p, &ml, match)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}

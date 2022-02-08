@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* (c): M. L. Kersten
@@ -422,13 +422,8 @@ cstToken(Client cntxt, ValPtr cst)
 		/* JSON Literal */
 		break;
 	case '"':
-		cst->vtype = TYPE_str;
 		i = stringLength(cntxt);
-		cst->val.sval = strCopy(cntxt, i);
-		if (cst->val.sval)
-			cst->len = strlen(cst->val.sval);
-		else
-			cst->len = 0;
+		VALset(cst, TYPE_str, strCopy(cntxt, i));
 		return i;
 	case '-':
 		i++;
@@ -969,7 +964,7 @@ parseAtom(Client cntxt)
 		tpe = parseTypeId(cntxt, TYPE_int);
 	if( ATOMindex(modnme) < 0) {
 		if(cntxt->curprg->def->errors)
-			GDKfree(cntxt->curprg->def->errors);
+			freeException(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
 	}
 	if( strcmp(modnme,"user"))
@@ -1140,6 +1135,9 @@ fcnHeader(Client cntxt, int kind)
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
 	if(cntxt->curprg == NULL) {
+		/* reinstate curprg to have a place for the error */
+		cntxt->curprg = cntxt->backup;
+		cntxt->backup = NULL;
 		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return 0;
 	}
@@ -1301,7 +1299,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		if( msg && ! cntxt->curprg->def->errors)
 			cntxt->curprg->def->errors = msg;
 		if(cntxt->curprg->def->errors)
-			GDKfree(cntxt->curprg->def->errors);
+			freeException(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = cntxt->backup->def->errors;
 		cntxt->backup->def->errors = 0;
 		cntxt->curprg = cntxt->backup;
@@ -1823,9 +1821,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 				}
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
-				cst.vtype = TYPE_str;
-				cst.len = strlen(start);
-				if((cst.val.sval = GDKstrdup(start)) == NULL) {
+				if (VALinit(&cst, TYPE_str, start) == NULL) {
 					parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					freeInstruction(curInstr);
 					continue;

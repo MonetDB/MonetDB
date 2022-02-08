@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -26,7 +26,6 @@
 sql_rel *
 rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 {
-	mvc o = *m;
 	sql_rel *rel = NULL;
 	buffer *b;
 	bstream *bs;
@@ -36,17 +35,11 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	sql_schema *c = cur_schema(m);
 	sql_query *qc = NULL;
 
-	m->qc = NULL;
-
-	m->emode = emode;
-	if (s)
-		m->session->schema = s;
-
 	if ((b = malloc(sizeof(buffer))) == NULL)
 		return NULL;
 	if ((n = malloc(len + 1 + 1)) == NULL) {
 		free(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(n, len + 2, "%s\n", query);
 	len++;
@@ -54,20 +47,26 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
 		buffer_destroy(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bs = bstream_create(buf, b->len);
 	if(bs == NULL) {
 		buffer_destroy(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	mvc o = *m;
 	scanner_init( &m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
+	m->qc = NULL;
+	m->emode = emode;
+	if (s)
+		m->session->schema = s;
 	m->params = NULL;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
+	m->session->status = 0;
 	/* via views we give access to protected objects */
 	assert(emode == m_instantiate || emode == m_deps);
 	m->user_id = USER_MONETDB;

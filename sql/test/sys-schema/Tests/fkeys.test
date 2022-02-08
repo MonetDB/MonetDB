@@ -1,0 +1,84 @@
+query IT nosort
+select * from sys.fkey_actions order by 1
+----
+0
+NO ACTION
+1
+CASCADE
+2
+RESTRICT
+3
+SET NULL
+4
+SET DEFAULT
+
+statement ok
+Create table p (id int unique, name varchar(20))
+
+statement ok
+Create table c (cid int references p(id), name varchar(20), x int)
+
+statement ok
+Create table d (did int references p(id) ON UPDATE NO ACTION, name varchar(20), x int)
+
+statement ok
+Create table e (eid int references p(id) ON UPDATE CASCADE ON DELETE SET NULL, name varchar(20), x int)
+
+statement ok
+Create table f (fid int references p(id) ON DELETE SET DEFAULT  ON UPDATE NO ACTION, name varchar(20), x int)
+
+statement ok
+Create table g (gid int references p(id) ON DELETE CASCADE, name varchar(20), x int)
+
+query ITITIT nosort
+select type, name, update_action_id, update_action, delete_action_id, delete_action from fkeys order by name
+----
+2
+c_cid_fkey
+2
+RESTRICT
+2
+RESTRICT
+2
+d_did_fkey
+0
+NO ACTION
+0
+NO ACTION
+2
+e_eid_fkey
+1
+CASCADE
+3
+SET NULL
+2
+f_fid_fkey
+0
+NO ACTION
+4
+SET DEFAULT
+2
+g_gid_fkey
+0
+NO ACTION
+1
+CASCADE
+
+statement ok
+drop table g
+
+statement ok
+drop table f
+
+statement ok
+drop table e
+
+statement ok
+drop table d
+
+statement ok
+drop table c
+
+statement ok
+drop table p
+

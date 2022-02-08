@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 add_library(udf MODULE)
@@ -49,12 +49,12 @@ target_link_libraries(udf
   monetdb_config_header)
 
 target_compile_definitions(udf
-  PRIVATE 
+  PRIVATE
   LIBUDF)
 
 set_target_properties(udf
-  PROPERTIES 
-  OUTPUT_NAME 
+  PROPERTIES
+  OUTPUT_NAME
   _udf)
 
 install(TARGETS
@@ -67,3 +67,10 @@ install(TARGETS
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:udf>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    OPTIONAL)
+endif()

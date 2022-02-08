@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -162,7 +162,7 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
 	} \
 	if (q != BUN_NONE) { \
 		BATiter bi = bat_iterator(b); \
-		res = *(TPE*)BUNtail(bi, q); \
+		res = *(TPE*)BUNtloc(bi, q); \
 		bat_iterator_end(&bi); \
 	} \
 	bat_destroy(b); \
@@ -174,12 +174,12 @@ column_find_tpe(bte)
 column_find_tpe(int)
 column_find_tpe(lng)
 
-static str
+static const char *
 column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
 {
 	BUN q = BUN_NONE;
 	BAT **b = (BAT**) cbat;
-	str res = NULL;
+	const char *res = NULL;
 
 	*b = full_column(tr, c);
 	if (*b) {
@@ -190,7 +190,7 @@ column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
 	}
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(*b);
-		res = (str) BUNtvar(bi, q);
+		res = BUNtvar(bi, q);
 		bat_iterator_end(&bi);
 	}
 	return res;
@@ -608,6 +608,33 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	return l;
 }
 
+static rids *
+rids_semijoin(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
+{
+	BAT *lcb, *rcb, *s = NULL;
+	gdk_return ret;
+
+	lcb = full_column(tr, lc);
+	rcb = full_column(tr, rc);
+	if (!lcb || !rcb) {
+		bat_destroy(l->data);
+		l->data = NULL;
+		bat_destroy(lcb);
+		bat_destroy(rcb);
+		return NULL;
+	}
+	ret = BATsemijoin(&s, NULL, lcb, rcb, l->data, r->data, false, false, BATcount(lcb));
+	bat_destroy(l->data);
+	if (ret != GDK_SUCCEED) {
+		l->data = NULL;
+	} else {
+		l->data = s;
+	}
+	bat_destroy(lcb);
+	bat_destroy(rcb);
+	return l;
+}
+
 static subrids *
 subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_column *obc)
 {
@@ -802,6 +829,7 @@ bat_table_init( table_functions *tf )
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;
 	tf->rids_join = rids_join;
+	tf->rids_semijoin = rids_semijoin;
 	tf->rids_next = rids_next;
 	tf->rids_destroy = rids_destroy;
 	tf->rids_empty = rids_empty;

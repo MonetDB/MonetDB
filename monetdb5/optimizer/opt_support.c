@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -445,8 +445,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 
 	if ( getModuleId(p) == sqlcatalogRef)
 		return TRUE;
-	if ( getModuleId(p) == oltpRef)
-		return TRUE;
 	if ( getModuleId(p) == wlrRef)
 		return TRUE;
 	if ( getModuleId(p) == wlcRef)
@@ -521,7 +519,7 @@ isOrderDepenent(InstrPtr p)
 {
 	if( getModuleId(p) != batsqlRef)
 		return 0;
-	if ( getFunctionId(p) == differenceRef ||
+	if (getFunctionId(p) == differenceRef ||
 		getFunctionId(p) == window_boundRef ||
 		getFunctionId(p) == row_numberRef ||
 		getFunctionId(p) == rankRef ||
@@ -533,7 +531,8 @@ isOrderDepenent(InstrPtr p)
 		getFunctionId(p) == last_valueRef ||
 		getFunctionId(p) == nth_valueRef ||
 		getFunctionId(p) == lagRef ||
-		getFunctionId(p) == leadRef)
+		getFunctionId(p) == leadRef ||
+		getFunctionId(p) == corrRef)
 		return 1;
 	return 0;
 }
@@ -674,4 +673,3 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== mirrorRef
 			));
 }
-

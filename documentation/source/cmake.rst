@@ -2,7 +2,7 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 =====
 CMake
@@ -13,7 +13,7 @@ CMake
 
 ``Packaging``
 =============
-The source packages are located at https://www.monetdb.org/downloads/sources/Apr2019-SP1/
+The source packages are located at https://www.monetdb.org/downloads/sources/
 
 RPM
 ===
@@ -28,7 +28,7 @@ The source packages are located in https://www.monetdb.org/downloads/deb/dists/s
 MSI
 ===
 
-The windows packages are located at https://www.monetdb.org/downloads/Windows/Apr2019-SP1/
+The windows packages are located at https://www.monetdb.org/downloads/Windows/
 
 Mac OS X
 ========

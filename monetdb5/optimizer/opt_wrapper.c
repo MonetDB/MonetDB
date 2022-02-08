@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*  author M.L. Kersten
@@ -38,9 +38,10 @@
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
-#include "opt_oltp.h"
 #include "opt_postfix.h"
 #include "opt_mask.h"
+#include "opt_for.h"
+#include "opt_dict.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
@@ -53,6 +54,7 @@
 #include "opt_reorder.h"
 #include "opt_volcano.h"
 #include "opt_fastpath.h"
+#include "opt_strimps.h"
 #include "opt_wlc.h"
 #include "optimizer_private.h"
 
@@ -81,12 +83,13 @@ struct{
 	{"jit", &OPTjitImplementation,0,0},
 	{"json", &OPTjsonImplementation,0,0},
 	{"mask", &OPTmaskImplementation,0,0},
+	{"for", &OPTforImplementation,0,0},
+	{"dict", &OPTdictImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},
 	{"mergetable", &OPTmergetableImplementation,0,0},
 	{"minimalfast", &OPTminimalfastImplementation,0,0},
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"multiplex", &OPTmultiplexImplementation,0,0},
-	{"oltp", &OPToltpImplementation,0,0},
 	{"postfix", &OPTpostfixImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},
@@ -96,6 +99,7 @@ struct{
 	{"remap", &OPTremapImplementation,0,0},
 	{"remoteQueries", &OPTremoteQueriesImplementation,0,0},
 	{"reorder", &OPTreorderImplementation,0,0},
+	{"strimps", &OPTstrimpsImplementation,0,0},
 	{"volcano", &OPTvolcanoImplementation,0,0},
 	{"wlc", &OPTwlcImplementation,0,0},
 	{0,0,0,0}
@@ -106,7 +110,7 @@ static
 void fillcodehash(void)
 {
 	int i, idx;
-		
+
 	for( i=0;  i< 256; i++)
 		codehash[i] = -1;
 	for (i=0; codes[i].nme; i++){

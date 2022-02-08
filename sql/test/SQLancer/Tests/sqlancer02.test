@@ -12,28 +12,28 @@ NULL	1.89755202e+09
 NULL	0.8514002985569765
 NULL	0.8565135463082767
 
-query T rowsort
+query I rowsort
 SELECT ALL t0.c0 FROM t0 WHERE (((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0))
 ----
 NULL
 NULL
 NULL
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE 1 BETWEEN SYMMETRIC t0.c1 AND 0
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE 1 BETWEEN t0.c1 AND 0
 ----
 
-query T rowsort
+query I rowsort
 SELECT ALL t0.c0 FROM t0 WHERE (((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0)) UNION ALL
 SELECT ALL t0.c0 FROM t0 WHERE NOT ((((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0))) UNION ALL
 SELECT t0.c0 FROM t0 WHERE ((((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0))) IS NULL
 ----
-False
+0
 NULL
 NULL
 NULL
@@ -50,13 +50,13 @@ CREATE TABLE integers(i INTEGER)
 statement ok rowcount 4
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-query T rowsort
+query I rowsort
 select i between symmetric cast(1 as decimal) and cast(2 as double) from integers
 ----
-False
+0
+1
+1
 NULL
-True
-True
 
 statement ok
 ROLLBACK
@@ -93,7 +93,7 @@ COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 
 statement error 22012!division by zero.
 SELECT AVG(ALL ((((CAST(((+ (-12))/(sql_min(-12, -67))) AS INT))+(abs(((13)*(10))))))*(((((greatest(12, -11))/(((((34-15)))/(CAST(t0.c0 AS INT))))))*(- (+ (((-29)*(6))))))))), 0.777 FROM t0 WHERE (0.06) NOT  BETWEEN ASYMMETRIC (t0.c0) AND (t0.c0)
-GROUP BY 0.1, 0.7, 0.2, + (+ (- (length(r'q')))), greatest(upper(upper(r'623865997')), trim(replace(r'vAd(Lup}Z', r'-1774953973', r'0.4235712099498189'), substr(r'', -19)))
+GROUP BY 0.1, 0.7, 0.2, + (+ (- (length('q')))), greatest(upper(upper('623865997')), trim(replace('vAd(Lup}Z', '-1774953973', '0.4235712099498189'), substr('', -19)))
 
 statement ok
 ROLLBACK
@@ -150,11 +150,11 @@ COPY 41 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.819
 
 query R rowsort
-select t0.c0 from t0 where ((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest(r'0.29269552476776495', r'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
+select t0.c0 from t0 where ((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest('0.29269552476776495', 'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
 between asymmetric (t0.c0) and (t0.c0))) union all
-select all t0.c0 from t0 where not (((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest(r'0.29269552476776495', r'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
+select all t0.c0 from t0 where not (((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest('0.29269552476776495', 'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
 between asymmetric (t0.c0) and (t0.c0)))) union all
-select all t0.c0 from t0 where (((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest(r'0.29269552476776495', r'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
+select all t0.c0 from t0 where (((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest('0.29269552476776495', 'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
 between asymmetric (t0.c0) and (t0.c0)))) is null
 ----
 0.027
@@ -200,7 +200,7 @@ between asymmetric (t0.c0) and (t0.c0)))) is null
 0.939
 
 query RRI rowsort
-SELECT ALL CAST((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length(r'>])'))))) as decimal(10,3)), CAST(0.5186927954967 as decimal(14,13)), CAST("locate"(lower(r'[]'), rtrim(r'..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT)
+SELECT ALL CAST((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length('>])'))))) as decimal(10,3)), CAST(0.5186927954967 as decimal(14,13)), CAST("locate"(lower('[]'), rtrim('..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT)
 FROM t0 WHERE FALSE GROUP BY 1.2807753E7 HAVING MAX(ALL ((t0.c0)>=(NULL)))
 ----
 
@@ -228,7 +228,7 @@ NULL	0.36945874012955704	NULL
 "M"	0.7309075439656509	NULL
 
 statement ok rowcount 2
-UPDATE t0 SET c2 = r'' WHERE (((length(r'-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(2 AS INT)))))) NOT IN (0.2, t0.c1, t0.c1, ((CAST(((-1)*(2)) AS INT))/(2)))
+UPDATE t0 SET c2 = '' WHERE (((length('-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(2 AS INT)))))) NOT IN (0.2, t0.c1, t0.c1, ((CAST(((-1)*(2)) AS INT))/(2)))
 
 statement ok
 ROLLBACK
@@ -367,14 +367,14 @@ NULL	1970-01-23
 "1970-01-08 05:11:41.000000"	1970-01-14
 
 statement ok
-create view v0(c0) as (select t0.c2 from t0 where (t0.c2) not between asymmetric (date '1970-01-23') and (case when r'true' then t0.c2 when case true when (true) = true then substr(r' x+㶴9rr7긬X0陷?F5{W>gg0N*#Sꖿs', 1) end then nullif(t0.c2, t0.c2) end))
+create view v0(c0) as (select t0.c2 from t0 where (t0.c2) not between asymmetric (date '1970-01-23') and (case when 'true' then t0.c2 when case true when (true) = true then substr(' x+㶴9rr7긬X0陷?F5{W>gg0N*#Sꖿs', 1) end then nullif(t0.c2, t0.c2) end))
 
 query I rowsort
 SELECT 1 FROM v0 JOIN t0 ON '4321901' LIKE CAST(COALESCE(TIME '21:08:38', TIME '14:42:56') AS STRING)
 ----
 
 query TT rowsort
-SELECT ALL t0.c0, v0.c0 FROM v0 JOIN t0 ON ((upper(COALESCE(r'', r'4321901')))ILIKE(CAST(COALESCE(sql_max(TIME '05:11:41', TIME '21:08:38'), COALESCE(TIME '05:10:13', TIME '14:42:56'), sql_min(TIME '16:14:39', TIME '03:01:13')) AS STRING(586))))
+SELECT ALL t0.c0, v0.c0 FROM v0 JOIN t0 ON ((upper(COALESCE('', '4321901')))ILIKE(CAST(COALESCE(sql_max(TIME '05:11:41', TIME '21:08:38'), COALESCE(TIME '05:10:13', TIME '14:42:56'), sql_min(TIME '16:14:39', TIME '03:01:13')) AS STRING(586))))
 ----
 
 statement ok
@@ -402,8 +402,8 @@ COPY 10 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
 create view v0(c0, c1, c2, c3) as (
-select distinct cast(case time '03:52:21' when time '05:04:36' then r'0.2' end as date),
-coalesce (t0.c0, length(coalesce (r't%QB', replace(r' ,yO_5G刵i稶bDßᶏ''', r'0.8', r'-1e500')))), 1, timestamp '1970-01-16 13:47:20' from t0) with check option
+select distinct cast(case time '03:52:21' when time '05:04:36' then '0.2' end as date),
+coalesce (t0.c0, length(coalesce ('t%QB', replace(' ,yO_5G刵i稶bDßᶏ''', '0.8', '-1e500')))), 1, timestamp '1970-01-16 13:47:20' from t0) with check option
 
 query I rowsort
 SELECT COUNT(*) FROM v0 LEFT OUTER JOIN t0 ON COALESCE(v0.c1, v0.c2) BETWEEN v0.c2 AND t0.c0
@@ -494,18 +494,18 @@ COPY 16 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.38681017904242443	NULL	NULL
 -4.411138449465319	NULL	NULL
 
-query T rowsort
+query I rowsort
 SELECT ALL t1.c0 FROM t1, t2 CROSS JOIN ((SELECT "isauuid"(COALESCE(t2.c1, t2.c1)) FROM t2 WHERE ((((((((((TRUE)AND(TRUE)))OR
 (TRUE)))OR(TRUE)))OR(FALSE)))AND(TRUE))) EXCEPT ALL (SELECT ALL ((CASE 0.54967607103225102349597364082001149654388427734375
 WHEN 0.05049592582495154857724628527648746967315673828125 THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2
 RIGHT OUTER JOIN (SELECT ALL l1t1.c0, CASE WHEN l1t1.c0 THEN l1t1.c0 WHEN l1t1.c0 THEN l1t1.c0 WHEN l1t1.c0
 THEN l1t1.c0 END FROM t2 AS l1t2, t1 AS l1t1 WHERE l1t1.c0) AS sub0 ON ((FALSE)OR(TRUE))
-CROSS JOIN (VALUES (r'-|cQ5', least(6, 4), CASE 0.13214429 WHEN 0.92287980834693872367324729566462337970733642578125
-THEN r'Bv*氅.x' END), (r'', 0.7763767959438655, "insert"(r'RR6Mw+', 5, -65604773, r'1225096844'))) AS sub1)) AS sub0
+CROSS JOIN (VALUES ('-|cQ5', least(6, 4), CASE 0.13214429 WHEN 0.92287980834693872367324729566462337970733642578125
+THEN 'Bv*氅.x' END), ('', 0.7763767959438655, "insert"('RR6Mw+', 5, -65604773, '1225096844'))) AS sub1)) AS sub0
 CROSS JOIN (VALUES (2, ((0.53827864)>>("day"(DATE '1969-12-27'))), CAST(((2)+(-1758578278)) AS REAL))) AS sub1
 WHERE (3.0) IS NOT NULL
 ----
-896 values hashing to d306becf2331385a704244961b752859
+896 values hashing to 25c86efc7cd2ecb484be80b79f18927b
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((3.0) IS NOT NULL AS INT) as count FROM t1, t2 CROSS JOIN
@@ -513,8 +513,8 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((3.0) IS NOT NULL AS INT
 EXCEPT ALL (SELECT ALL ((CASE 0.54967607103225102349597364082001149654388427734375 WHEN 0.05049592582495154857724628527648746967315673828125
 THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2 RIGHT OUTER JOIN (SELECT l1t1.c0, CASE WHEN l1t1.c0 THEN l1t1.c0
 WHEN l1t1.c0 THEN l1t1.c0 WHEN l1t1.c0 THEN l1t1.c0 END FROM t2 AS l1t2, t1 AS l1t1 WHERE l1t1.c0) AS sub0 ON ((FALSE)OR(TRUE))
-CROSS JOIN (VALUES (r'-|cQ5', least(6, 4), CASE 0.13214429 WHEN 0.92287980834693872367324729566462337970733642578125
-THEN r'Bv*氅.x' END), (r'', 0.7763767959438655, "insert"(r'RR6Mw+', 5, -65604773, r'1225096844'))) AS sub1)) AS sub0
+CROSS JOIN (VALUES ('-|cQ5', least(6, 4), CASE 0.13214429 WHEN 0.92287980834693872367324729566462337970733642578125
+THEN 'Bv*氅.x' END), ('', 0.7763767959438655, "insert"('RR6Mw+', 5, -65604773, '1225096844'))) AS sub1)) AS sub0
 CROSS JOIN (VALUES (2, ((0.53827864)>>("day"(DATE '1969-12-27'))), CAST(((2)+(-1758578278)) AS REAL))) AS sub1) as res
 ----
 896
@@ -536,10 +536,10 @@ INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies
 statement ok
 CREATE TABLE t0(c0 int AUTO_INCREMENT,c1 STRING)
 
-query T rowsort
+query I rowsort
 SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies
 ----
-True
+1
 
 statement ok
 ALTER TABLE t0 DROP c0 CASCADE
@@ -564,10 +564,10 @@ CREATE FUNCTION myfunc() returns int return 1
 statement ok
 CREATE TABLE t0(c0 int default myfunc(),c1 STRING)
 
-query T rowsort
+query I rowsort
 SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies
 ----
-True
+1
 
 statement ok
 ALTER TABLE t0 DROP c0 CASCADE
@@ -736,7 +736,7 @@ statement ok
 create view v85(vc0, vc1) as ((select -9.397294E8, ifthenelse(l0v22.vc2, 7, -5) from v22 as l0v22
 where l0v22.vc0 < l0v22.vc0) intersect (select 1, 8))
 
-query TII rowsort
+query III rowsort
 select true, 3, 1 from v14 as l0v14 join ((select 1) except all (select 3 from v85 as l1v85)) as
 sub0 on case l0v14.vc2 when l0v14.vc1 then false end
 ----

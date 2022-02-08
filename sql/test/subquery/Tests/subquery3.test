@@ -16,16 +16,16 @@ CREATE TABLE integers(i INTEGER)
 statement ok rowcount 4
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-query T rowsort
+query I rowsort
 SELECT
     NOT MAX(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID))
 FROM another_T t1
 GROUP BY t1.col6, t1.col7
 ----
-False
-False
-False
-True
+0
+0
+0
+1
 
 query IRI nosort
 SELECT
@@ -64,7 +64,7 @@ GROUP BY col1, col2, col5
 1
 0
 
-query TTTTTT rowsort
+query IIIIII rowsort
 SELECT
 	EXISTS (SELECT col1 WHERE TRUE),
 	EXISTS (SELECT col1 WHERE FALSE),
@@ -74,32 +74,32 @@ SELECT
 	NOT EXISTS (SELECT col1 WHERE NULL)
 FROM another_T t1
 ----
-True
-False
-False
-False
-True
-True
-True
-False
-False
-False
-True
-True
-True
-False
-False
-False
-True
-True
-True
-False
-False
-False
-True
-True
+1
+0
+0
+0
+1
+1
+1
+0
+0
+0
+1
+1
+1
+0
+0
+0
+1
+1
+1
+0
+0
+0
+1
+1
 
-query TTTTTT rowsort
+query IIIIII rowsort
 SELECT
 	EXISTS (SELECT AVG(col1) WHERE TRUE),
 	EXISTS (SELECT AVG(col1) WHERE FALSE),
@@ -109,19 +109,19 @@ SELECT
 	NOT EXISTS (SELECT AVG(col1) WHERE NULL)
 FROM another_T t1
 ----
-True
-False
-False
-False
-True
-True
+1
+0
+0
+0
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT
 	EXISTS (SELECT RANK() OVER (PARTITION BY SUM(DISTINCT col5)))
 FROM another_T t1
 ----
-True
+1
 
 statement error GDK reported error: mergejoin: more than one match
 SELECT
@@ -179,6 +179,56 @@ FROM another_T t1
 2.500
 2.500
 
+query I nosort
+SELECT
+    (SELECT RANK() OVER (PARTITION BY 2 ORDER BY 2) FROM tbl_ProductSales GROUP BY t1.col1)
+FROM another_T t1
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT
+    (SELECT SUM(1) OVER (PARTITION BY 2 ORDER BY 2 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY t1.col1)
+FROM another_T t1
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT
+    (SELECT SUM(1) OVER (PARTITION BY MAX(ColID) * col4) FROM tbl_ProductSales)
+FROM another_T t1
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT
+    (SELECT SUM(1) OVER (ORDER BY MAX(ColID) * col4) FROM tbl_ProductSales)
+FROM another_T t1
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT
+    (SELECT SUM(1) OVER (PARTITION BY MAX(ColID) * col4 ORDER BY MIN(TotalSales) * col5) FROM tbl_ProductSales)
+FROM another_T t1
+----
+1
+1
+1
+1
+
 query R nosort
 SELECT
     (SELECT SUM(AVG(ColID + col1)) OVER (PARTITION BY SUM(ColID + col3) ORDER BY MAX(ColID) * col4 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY t1.col1)
@@ -231,28 +281,28 @@ GROUP BY col1
 2468
 2468
 
-query T nosort
+query I nosort
 SELECT
     NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a1
 FROM another_T
 GROUP BY col1, col2, col5
 ORDER BY a1 NULLS FIRST
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT
     NOT SUM(t1.col2) * MIN(t1.col6 + t1.col6 - t1.col6 * t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 + MIN(t2.col8) < MAX(t2.col7 - t1.col6))
 FROM another_T t1
 GROUP BY t1.col7, t1.col6
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 query II rowsort
 SELECT
@@ -270,16 +320,16 @@ GROUP BY t1.col1, t1.col2
 2
 2
 
-query T rowsort
+query I rowsort
 SELECT
     SUM(t1.col6) <> ANY (SELECT t1.col7 INTERSECT SELECT t1.col6)
 FROM another_T t1
 GROUP BY t1.col7, t1.col6
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 query I rowsort
 SELECT
@@ -318,7 +368,7 @@ HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) <
 1
 1
 
-query IIT rowsort
+query III rowsort
 SELECT
     col6,
     col7,
@@ -328,18 +378,18 @@ GROUP BY t1.col7, t1.col6
 ----
 6
 7
-False
+0
 66
 77
-False
+0
 666
 777
-False
+0
 6666
 7777
-False
+0
 
-query IIT rowsort
+query III rowsort
 SELECT
     col6,
     col7,
@@ -349,16 +399,16 @@ GROUP BY t1.col7, t1.col6
 ----
 6
 7
-False
+0
 66
 77
-False
+0
 666
 777
-False
+0
 6666
 7777
-False
+0
 
 query I rowsort
 SELECT
@@ -520,15 +570,15 @@ SELECT
     (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
 FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (1) IN (1)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (1) IN (SELECT 1)
 ----
-True
+1
 
 query I rowsort
 SELECT col1 FROM another_T WHERE 1 IN (SELECT 1)
@@ -788,5 +838,4 @@ DROP TABLE another_T
 
 statement ok
 DROP TABLE integers
-
 

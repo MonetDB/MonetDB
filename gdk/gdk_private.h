@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -18,6 +18,9 @@
 /* persist order index heaps for persistent BATs */
 #define PERSISTENTIDX 1
 
+/* persist strimp heaps for persistent BATs */
+#define PERSISTENTSTRIMP 1
+
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -25,7 +28,8 @@ enum heaptype {
 	varheap,
 	hashheap,
 	imprintsheap,
-	orderidxheap
+	orderidxheap,
+	strimpheap
 };
 
 gdk_return ATOMheap(int id, Heap *hp, size_t cap)
@@ -83,7 +87,7 @@ void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATsave_locked(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
-void BATsetdims(BAT *b)
+void BATsetdims(BAT *b, uint16_t width)
 	__attribute__((__visibility__("hidden")));
 ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
@@ -124,9 +128,6 @@ BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict val
 BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
-	__attribute__((__visibility__("hidden")));
-BAT *COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
-	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
@@ -228,6 +229,12 @@ void IMPSincref(Imprints *imprints)
 void IMPSprint(BAT *b)		/* never called: for debugging only */
 	__attribute__((__cold__));
 #endif
+void STRMPincref(Strimps *strimps)
+	__attribute__((__visibility__("hidden")));
+void STRMPdecref(Strimps *strimps, bool remove)
+	__attribute__((__visibility__("hidden")));
+void STRMPfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
 void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 void *MT_mmap(const char *path, int mode, size_t len)
@@ -354,12 +361,13 @@ ilog2(BUN x)
 }
 
 /* some macros to help print info about BATs when using ALGODEBUG */
-#define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s]%s%s%s%s%s%s%s%s%s"
+#define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s%s]%s%s%s%s%s%s%s%s%s"
 #define ALGOBATPAR(b)							\
 	BATgetId(b),							\
 	BATcount(b),							\
 	b->hseqbase,							\
 	ATOMname(b->ttype),						\
+	b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"", \
 	!b->batTransient ? "P" : b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
 	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
@@ -370,7 +378,7 @@ ilog2(BUN x)
 	b->torderidx ? "O" : "",					\
 	b->timprints ? "I" : b->theap->parentid && BBP_cache(b->theap->parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
-#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
+#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
 	b ? BATgetId(b) : "",						\
 	b ? "#" : "",							\
@@ -379,6 +387,7 @@ ilog2(BUN x)
 	b ? b->hseqbase : 0,						\
 	b ? "[" : "",							\
 	b ? ATOMname(b->ttype) : "",					\
+	b ? b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"" : "", \
 	b ? "]" : "",							\
 	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
 	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
@@ -407,6 +416,17 @@ struct Imprints {
 	void *dict;		/* pointer into imprints heap (dictionary)    */
 	BUN impcnt;		/* counter for imprints                       */
 	BUN dictcnt;		/* counter for cache dictionary               */
+};
+
+struct Strimps {
+	Heap strimps;
+	uint8_t *sizes_base;	/* pointer into strimps heap (pair sizes)  */
+	uint8_t *pairs_base;	/* pointer into strimps heap (pairs start)   */
+	void *bitstrings_base;	/* pointer into strimps heap (bitstrings start) */
+	size_t rec_cnt;		/* reconstruction counter: how many
+				   bitstrings were added after header
+				   construction */
+	/* bitstrings_base is a pointer to uint64_t */
 };
 
 typedef struct {

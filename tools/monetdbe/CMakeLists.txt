@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -34,7 +34,7 @@ target_include_directories(monetdbe
   $<TARGET_PROPERTY:sqlserver,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>  
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
   ${CMAKE_SOURCE_DIR}/clients/mapiclient
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -97,3 +97,10 @@ install(EXPORT monetdbeTargets
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT serverdev)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:monetdbe>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()

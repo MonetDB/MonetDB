@@ -84,7 +84,7 @@ NULL	0.9641209077369987
 
 statement ok
 create view v0(vc0) as (with cte0(c0) as (with cte0(c0,c1) as (values (interval '2' day, ((null)%(0.3)))),
-cte1(c0,c1,c2,c3,c4) as (select all least(r'', r'2'), date '1970-01-13', ((r'')ilike(r'OF먉_')),
+cte1(c0,c1,c2,c3,c4) as (select all least('', '2'), date '1970-01-13', (('')ilike('OF먉_')),
 ((-2)+(-3)), cast(true as string(105)) where false) select distinct cast(case 1.1 when 0.2 then
 l1cte1.c1 when 0.4 then l1cte1.c1 when 1.03728474E9 then l1cte1.c1 when 0.2 then l1cte1.c1 else l1cte1.c1 end as string)
 from t0 as l1t0, t1 as l1t1,cte0 as l1cte0,cte1 as l1cte1 where not (l1cte1.c2)) select distinct least(-1, l0t0.c1)
@@ -94,7 +94,7 @@ statement ok rowcount 0
 merge into t0 using (select * from v0) as v0 on true when not matched then insert (c1, c0) values ((select 1 from t1), timestamp '1970-01-20 08:57:27')
 
 statement ok rowcount 0
-merge into t0 using (select * from v0) as v0 on ((r'>\nAH')not like(cast(scale_up(99, 0.1) as string(278))))
+merge into t0 using (select * from v0) as v0 on (('>\nAH')not like(cast(scale_up(99, 0.1) as string(278))))
 when not matched then insert (c1, c0) values (((((abs(-5))%((select -3 from t1 as l3t1, t2 as l3t2 where true))))
 >>((((values (1), (1)))>>((select distinct 2 from t1 as l3t1 where false))))), ifthenelse(abs(0.3) =
 all(values ((select all 0.1 where true)), (case -1 when -3 then 0.1
@@ -119,13 +119,13 @@ COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 -1340211666
 
 statement ok
-create view v0(vc0, vc1, vc2) as (values (uuid '39FcCcEE-5033-0d81-42Eb-Ac6fFaA9EF2d', ((case when true then lower(r'e') end)ilike(cast(sql_sub(interval '1600798007' month, interval '854525416' month) as string(583)))),
+create view v0(vc0, vc1, vc2) as (values (uuid '39FcCcEE-5033-0d81-42Eb-Ac6fFaA9EF2d', ((case when true then lower('e') end)ilike(cast(sql_sub(interval '1600798007' month, interval '854525416' month) as string(583)))),
 cast((greatest(time '12:29:42', time '00:13:46')) not between asymmetric (sql_min(time '01:00:00', time '08:31:00')) and (greatest(time '00:12:32', time '11:40:56')) as bigint)))
 
 statement ok rowcount 4
 MERGE INTO t1 USING (SELECT * FROM v0) AS v0 ON (((COALESCE(24656, 0.42848459531531180033425698638893663883209228515625, 1153747454, 0.04253046482486677604128999519161880016326904296875, 417897684))%(((-4.65033856E8)/(98)))))
 NOT BETWEEN SYMMETRIC (+ (NULLIF(-1338511329, 12))) AND (CASE WHEN CASE TIME '06:02:29' WHEN TIME '22:17:20' THEN TRUE ELSE TRUE END THEN "second"(INTERVAL '1243665924' DAY) WHEN (FALSE) = TRUE THEN CASE WHEN FALSE THEN -116446524
-WHEN TRUE THEN 1702709680 WHEN r'TRUE' THEN 1255285064 END
+WHEN TRUE THEN 1702709680 WHEN 'TRUE' THEN 1255285064 END
 WHEN (UUID 'baF49A5B-1862-19aa-E6F8-b3C5A7F4b1FF') BETWEEN SYMMETRIC (UUID '63A9aBBe-87b1-683a-2c68-eCd5cC7FE7E9')
 AND (UUID '82eb84EF-dF3D-a45e-f92b-E42BdfFEB1B9') THEN - (1129823324) END) WHEN MATCHED THEN DELETE
 
@@ -150,10 +150,10 @@ statement ok
 CREATE TABLE "sys"."t2" ("c0" BOOLEAN NOT NULL DEFAULT false, CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"))
 
 statement ok rowcount 2
-INSERT INTO t2(c0) VALUES((((((((least(r' ]', r'3''')) IS NULL)OR((((TIMESTAMP '1969-12-20 19:22:32') BETWEEN SYMMETRIC (TIMESTAMP '1969-12-29 05:03:02') AND (TIMESTAMP '1970-01-14 15:38:43'))OR
+INSERT INTO t2(c0) VALUES((((((((least(' ]', '3''')) IS NULL)OR((((TIMESTAMP '1969-12-20 19:22:32') BETWEEN SYMMETRIC (TIMESTAMP '1969-12-29 05:03:02') AND (TIMESTAMP '1970-01-14 15:38:43'))OR
 (CASE FALSE WHEN FALSE THEN TRUE WHEN TRUE THEN TRUE WHEN FALSE THEN FALSE WHEN FALSE THEN TRUE ELSE TRUE END)))))OR
 (COALESCE((TIMESTAMP '1969-12-11 14:58:21') BETWEEN SYMMETRIC (TIMESTAMP '1970-01-09 21:56:14') AND (TIMESTAMP '1970-01-01 01:00:14'),
-((0.26488915)>(1.345373227E9)), sql_min(FALSE, TRUE)))))AND("isauuid"(r'45456452')))), (TRUE)
+((0.26488915)>(1.345373227E9)), sql_min(FALSE, TRUE)))))AND("isauuid"('45456452')))), (TRUE)
 
 statement error 40002!INSERT INTO: PRIMARY KEY constraint 't2.t2_c0_pkey' violated
 INSERT INTO t2 VALUES (COALESCE(1 BETWEEN 2 AND 3, 1))
@@ -183,7 +183,7 @@ COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
 create view v0(vc0, vc1, vc2) as (values (+ (((0.55)*(2))),
-case when ((r'ꠔJ''6H*')=(r'\_fhsQh1?')) then case when true then -32 else 77 end else + (-1) end, (least(33.0,
+case when (('ꠔJ''6H*')=('\_fhsQh1?')) then case when true then -32 else 77 end else + (-1) end, (least(33.0,
 0.34670544)) not between symmetric (cast(-2 as smallint)) and (((0.33)/(48)))))
 
 statement ok
@@ -191,26 +191,26 @@ create view v2(vc0) as (select scale_down(- (-1.2), greatest(0.54, 5)) where (((
 and(false)))and(false)))
 
 statement ok
-create view v5(vc0, vc1) as (select distinct ifthenelse(case when false then false when false then false end, r'YK隆', r'᳖g# .&'),
-round(+ (-5), scale_down(0.4, 5)) where "isauuid"(r'')) with check option
+create view v5(vc0, vc1) as (select distinct ifthenelse(case when false then false when false then false end, 'YK隆', '᳖g# .&'),
+round(+ (-5), scale_down(0.4, 5)) where "isauuid"('')) with check option
 
 statement ok
 create view v6(vc0) as (values (- (((61)-(2))))) with check option
 
 statement ok
 create view v7(vc0) as (values (case when case when true then true when true then false when true then false else false end
-then lower(r'mEqP') when (1549) is null then upper(r'o]hUWA쪬') end))
+then lower('mEqP') when (1549) is null then upper('o]hUWA쪬') end))
 
 query I rowsort
 select cast(sum(count) as bigint) from (select all cast(((case when v0.vc2 then v0.vc2 end)or((v7.vc0) not between
 symmetric (v7.vc0) and (v7.vc0))) as int) as count from v2, v7 right outer join v0 on
 ((nullif(v7.vc0, v7.vc0))not ilike(cast(v0.vc0 as string(804)))) join
-(values (greatest(110, -2)), (((least(2, 9942))%(cast(r'1' as int)))),
-(case true when "isauuid"(r'H}m0YfN') then 0.3 else sign(0.4) end))
+(values (greatest(110, -2)), (((least(2, 9942))%(cast('1' as int)))),
+(case true when "isauuid"('H}m0YfN') then 0.3 else sign(0.4) end))
 as sub0 on v0.vc2 full outer join (select scale_up(least(0.4, -3),
 scale_down(v2.vc0, 0.4)), 0.4, 0.4
 from v2, v5, v6 where greatest(true, true)) as sub1 on true right outer join
-(select r'-1216996046' from t1 where (true) is null) as sub2 on (v0.vc2) not in (v0.vc2, v0.vc2, false, v0.vc2)) as res
+(select '-1216996046' from t1 where (true) is null) as sub2 on (v0.vc2) not in (v0.vc2, v0.vc2, false, v0.vc2)) as res
 ----
 NULL
 
@@ -242,8 +242,8 @@ then null when 0.6990680751827474 then -1489648984 else 12740 end)+(((-137719348
 
 statement ok
 create view v75(vc0, vc1) as (values ((((((((((0.49780716224667365121803186411852948367595672607421875)
-not between asymmetric (-1556197959) and (0.940909957253724282821849556057713925838470458984375))or(true)))or((r'1') = false)))
-or(((r'')not ilike(r'RL8h')))))and(((r'EB')not ilike(r'1160721162')))), "isauuid"(r'0.0')))
+not between asymmetric (-1556197959) and (0.940909957253724282821849556057713925838470458984375))or(true)))or(('1') = false)))
+or((('')not ilike('RL8h')))))and((('EB')not ilike('1160721162')))), "isauuid"('0.0')))
 
 query I rowsort
 select 1 from v21 left outer join
@@ -260,7 +260,7 @@ select cast(sum(count) as bigint) from (select all cast(least((25994) is null, (
 (select distinct cast(cast(25062.0 as real) as bigint), 1464375587 from v59, v73, v75 full outer join
 (select all nullif(1052664530, 828978012), greatest(-1.83663834E9, 0.5279449), cast(-1806633613 as bigint),
 ((((true)and(false)))or(false)), ((481046022)-(740726948)) where true) as sub0 on least(false, v75.vc1)
-where "isauuid"(r'V[')) as sub0 on case when "isauuid"(r'sXq') then (121) in (v21.vc0, 1157448792) when
+where "isauuid"('V[')) as sub0 on case when "isauuid"('sXq') then (121) in (v21.vc0, 1157448792) when
 least(true, false) then least(true, true) else ((true)and(false)) end) as res
 ----
 0
@@ -312,7 +312,7 @@ create view v2(vc0, vc1, vc2) as (values (((((+ (0.51506835))&(-2)))<<(scale_dow
 ((- (((44257622)-(0.6))))>=(least(-3, -4))), case - (sql_min(0.632858,
 0.3)) when ((((0.5)^(0.4)))+(((0.4)/(5))))
 then sql_max(cast(5293 as decimal), ((0.5)-
-(0.5))) end),(charindex(r'934079707', r'35305325'), not (false),
+(0.5))) end),(charindex('934079707', '35305325'), not (false),
 sql_max(((+ (102))|(case 0.028362095 when 458003921 then 28118 end)), cast(least(0.3,
 0.79115176) as double))), (least(((((0.5)%(0.40122834)))||(2)),
 0.5667308), false, 45))
@@ -330,10 +330,10 @@ select 1 from v2, v3
 query I rowsort
 select cast(sum(count) as bigint) from (select cast((cast(sin(3) as double)) is null as int) as count from
 t2 cross join v3 full outer join (select distinct sql_max(case when cast(v2.vc1 as boolean) then cast(-3 as string)
-when case when v2.vc1 then v2.vc1 when v2.vc1 then v2.vc1 end then sql_max(r'()', r'1574131922') end,
-coalesce(cast(t2.c2 as string), case 2 when v3.vc0 then r'0.8941967611205319' end, case when v2.vc1 then r''
-when v2.vc1 then r'-1402390265' else r't࿕}rj}&' end, greatest(r'1', r'I'''))) from t2, v2, v3) as sub0 on
-greatest("isauuid"(r'-209719663'), ((((((false)or(true)))or(false)))or(false)))) as res
+when case when v2.vc1 then v2.vc1 when v2.vc1 then v2.vc1 end then sql_max('()', '1574131922') end,
+coalesce(cast(t2.c2 as string), case 2 when v3.vc0 then '0.8941967611205319' end, case when v2.vc1 then ''
+when v2.vc1 then '-1402390265' else 't࿕}rj}&' end, greatest('1', 'I'''))) from t2, v2, v3) as sub0 on
+greatest("isauuid"('-209719663'), ((((((false)or(true)))or(false)))or(false)))) as res
 ----
 0
 
@@ -349,15 +349,15 @@ nullif(0.322, 4.3)), 0.31),
 (abs(6363), -34)) with check option
 
 statement ok
-create view v32(vc0, vc1) as (select distinct cast(((-4)*(-4)) as tinyint), coalesce(nullif(r'p', r'E]T'),
-sql_max(r'f)6_', r'.u'), cast(true as string(679)), case -3 when -5 then r'94' end)
-group by substr(r'FALSE', 2))
+create view v32(vc0, vc1) as (select distinct cast(((-4)*(-4)) as tinyint), coalesce(nullif('p', 'E]T'),
+sql_max('f)6_', '.u'), cast(true as string(679)), case -3 when -5 then '94' end)
+group by substr('FALSE', 2))
 
 query T rowsort
 select sum(all abs(interval '-27135172' second)) from v27 full outer join (select all scale_up(0.131, 12375.0)
 from v32 cross join (values (round(0.23, 10))) as sub0
 where ((v32.vc0)=(0.32))) as sub0 on case 3 when
-case 21 when 12524 then -3 when r'1092027064' then 3692 else 18 end then case when true then true else true end
+case 21 when 12524 then -3 when '1092027064' then 3692 else 18 end then case when true then true else true end
 when case when true then 0.33 end then (6363) not in (3,
 -3, v27.vc0, -3) end
 ----
@@ -400,17 +400,17 @@ abs(round(0.014417256786389054, 1390068457)))) with check option
 
 statement ok
 create or replace view v84(vc0, vc1) as (values (cast(not (least(false, false)) as int), case when nullif(((-763905586)=(0.8063365267447331)),
-"isauuid"(r'87')) then case ((-1573098947)%(0.22336472349933323)) when nullif(7159, 26015) then ((-1216247830)*(-580027885))
+"isauuid"('87')) then case ((-1573098947)%(0.22336472349933323)) when nullif(7159, 26015) then ((-1216247830)*(-580027885))
 when - (0.17724898013816237) then -1847868202 else - (-7.96515311E8) end else 0.854441498295166 end), (cast(not (false) as int),
 greatest(scale_up(+ (48), 0.9562314161003085), ((- (85))+(- (-1290129393)))))) with check option
 
 statement error 22003!overflow in calculation 1XOR-9223372036854775807.
 select all count(all least(((null)*(v74.vc1)), cast(0.7407841 as bigint))) from v74 cross join v84 join (values
-(cast(cast(((-1660927937)+(-1322418229)) as bigint) as string)), (cast(case upper(r'#+6') when least(r'', r'l9O+,s5?')
-then r'0.8101890506861533' when greatest(r'', r'B+') then sql_max(r'?''', r'E|!H4p') else cast(0.6526341396196464 as string(381))
+(cast(cast(((-1660927937)+(-1322418229)) as bigint) as string)), (cast(case upper('#+6') when least('', 'l9O+,s5?')
+then '0.8101890506861533' when greatest('', 'B+') then sql_max('?''', 'E|!H4p') else cast(0.6526341396196464 as string(381))
 end as string)), (case ((+ (0.07023401))/(- (1190953480))) when ((((-1138638151)>>(31055)))*(least(-1433171609, 0.67441124)))
-then r'n%y]' when cast(case 599601669 when 993501855 then 934684161 when 1426216310 then -46477174
-when 0.326376321343257114193647794309072196483612060546875 then 1762363571 else 1836924027 end as int) then ltrim(r'<>?')
+then 'n%y]' when cast(case 599601669 when 993501855 then 934684161 when 1426216310 then -46477174
+when 0.326376321343257114193647794309072196483612060546875 then 1762363571 else 1836924027 end as int) then ltrim('<>?')
 else splitpart(cast(126 as string), cast(1768691589 as string), 21) end)) as sub0 on (((((v84.vc0)^(-9223372036854775807)))
 is not null)and(cast(true as boolean)))
 
@@ -534,7 +534,7 @@ statement ok
 START TRANSACTION
 
 statement ok
-create view v18(vc0) as (values (cast(((r'-W<~>頃')not like(r'8')) as bigint)), (case when least(((0.4)>(0.4)), case when true
+create view v18(vc0) as (values (cast((('-W<~>頃')not like('8')) as bigint)), (case when least(((0.4)>(0.4)), case when true
 then true when false then true when false then false when true then true else true end) then ((least(0.5,
 343))/(abs(2.017526512E9))) else cast(greatest(-23, 33) as decimal) end)) with check option
 
@@ -548,10 +548,10 @@ statement error 42000!Argument 2 to round function cannot be null
 select ((sum(all least(((((0.32)-(0.33))) -(0.43)), -(cast(3 as bigint)))))>>(least(cast(26 as bigint),
 cast(-507871984 as bigint)))), 1 from v21
 join v18 on ((scale_down(v18.vc0, null))>(cast(((0.33)
--(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim(r'便竼E*P'),
-"concat"(r'?X', r'沈pJqd')), replace(r'w', r'95', r'580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24)
+-(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim('便竼E*P'),
+"concat"('?X', '沈pJqd')), replace('w', '95', '580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24)
 as sub0 on ((least(342, v18.vc0))<>(1))
-group by greatest(-432, ((24)|(32))), least(((((r'RJᦈ4[[h\340\272\246')like(r'9804')))and(not (false))),
+group by greatest(-432, ((24)|(32))), least((((('RJᦈ4[[h\340\272\246')like('9804')))and(not (false))),
 "isauuid"(cast(v18.vc0 as string(979))))
 
 statement ok
@@ -669,28 +669,28 @@ statement ok
 START TRANSACTION
 
 statement ok
-create or replace view v11(vc0, vc1) as (values (cast(r'<' as string), ((((356910743)||(324718164)))<<(sql_max(962062904, -1226062612)))),
-(r'e]+)Nik', ((cast(-1267863719 as tinyint))&(- (340796877)))), (case when ((r'24060')not like(r'f')) then r'vyA,R' else r'68' end,
+create or replace view v11(vc0, vc1) as (values (cast('<' as string), ((((356910743)||(324718164)))<<(sql_max(962062904, -1226062612)))),
+('e]+)Nik', ((cast(-1267863719 as tinyint))&(- (340796877)))), (case when (('24060')not like('f')) then 'vyA,R' else '68' end,
 + (greatest(113, 0.61746233049203114173764106453745625913143157958984375))))
 
 statement ok
 create or replace view v13(vc0, vc1) as (values (((0.9896616954779023)<(greatest(-1982788333, 0.76584341990855342441335551484371535480022430419921875)))
-, cast(1938193505 as boolean)), (greatest(false, false), cast(cast(r'rHIVNz' as int) as boolean))) with check option
+, cast(1938193505 as boolean)), (greatest(false, false), cast(cast('rHIVNz' as int) as boolean))) with check option
 
 statement ok
 create or replace view v23(vc0, vc1) as (values (case when ((false)and(true)) then ((25922)*(697298603)) when not (false) then - (2909) end,
-cast(case r'17841' when r'155' then 2909 when r'116' then 17275 end as int)))
+cast(case '17841' when '155' then 2909 when '116' then 17275 end as int)))
 
 query I rowsort
 SELECT CAST(SUM(agg0) as BIGINT) FROM (
 	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
-	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE ((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299))))
+	NULLIF(0.6018914, 0.947574)), "isauuid"(''))) AS sub0 WHERE ((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST('' AS STRING(299))))
 	UNION ALL
 	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
-	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE NOT (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299)))))
+	NULLIF(0.6018914, 0.947574)), "isauuid"(''))) AS sub0 WHERE NOT (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST('' AS STRING(299)))))
 	UNION ALL
 	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
-	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299))))) IS NULL
+	NULLIF(0.6018914, 0.947574)), "isauuid"(''))) AS sub0 WHERE (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST('' AS STRING(299))))) IS NULL
 	) as asdf
 ----
 6
@@ -718,26 +718,37 @@ create or replace view v0(vc0, vc1, vc2) as (values (3, true, 0.3))
 statement ok
 create or replace view v1(vc0, vc1) as (select 0.80, 'a')
 
-query I rowsort
+statement ok
+create or replace view v0(vc0, vc1, vc2) as (values (nullif(cast(220424338 as smallint), case 0.04487378302689426501359548637992702424526214599609375 when 126710153 then 0.6929207132873739 when 26968 then 26968.0 when 1679982115 then 29 else 0.8204445662571608 end), cast(sql_min('', '#Ts9.H') as boolean), 0.45182237213592768565462165497592650353908538818359375))
+
+statement ok
+create or replace view v1(vc0, vc1) as (select round(0.80863825841427316998277774473535828292369842529296875, 0.6571010204254646), '䝀i8jPo' where not (false))
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.vc0' in query results without an aggregate function
+select all v0.vc2, greatest(min(all least(-266013300, 864326131)), -1183805674), greatest(-544857133, + (v0.vc2)) from v0, v1
+inner join (values (+ (88)), (greatest(0.8732546822607857, greatest(1933292715, -525885982))), (case when (-1466474216) in
+(-1504372996, 417052418, 94) then least(28288, 1447812316) when cast('' as boolean) then "second"(time '14:18:59') else
+((-730700220)-(929722313)) end)) as sub0 on true natural join (select distinct v0.vc0 from v1, v0 where ((((v0.vc1)and(v0.vc1)))
+or(v0.vc1)) group by v0.vc1) as sub1 where (v0.vc0) in (0.06683239) group by least(-1913343924, 10622),
+((v1.vc1)not ilike(least(v1.vc1, v1.vc1)))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create or replace view v0(vc0, vc1, vc2) as (values (3, true, 0.3))
+
+statement ok
+create or replace view v1(vc0, vc1) as (select 0.80, 'a')
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.vc0' in query results without an aggregate function
 select 1 from v0, v1
 inner join (values (88), (3), (59)) as sub0 on true natural join
 (select distinct v0.vc0 from v1, v0 group by v0.vc1) as sub1
 where v0.vc0 = 0.06683239
-----
-
-statement ok
-create or replace view v0(vc0, vc1, vc2) as (values (nullif(cast(220424338 as smallint), case 0.04487378302689426501359548637992702424526214599609375 when 126710153 then 0.6929207132873739 when 26968 then 26968.0 when 1679982115 then 29 else 0.8204445662571608 end), cast(sql_min(r'', r'#Ts9.H') as boolean), 0.45182237213592768565462165497592650353908538818359375))
-
-statement ok
-create or replace view v1(vc0, vc1) as (select round(0.80863825841427316998277774473535828292369842529296875, 0.6571010204254646), r'䝀i8jPo' where not (false))
-
-statement error 22003!overflow in conversion of 220424338 to sht.
-select all v0.vc2, greatest(min(all least(-266013300, 864326131)), -1183805674), greatest(-544857133, + (v0.vc2)) from v0, v1
-inner join (values (+ (88)), (greatest(0.8732546822607857, greatest(1933292715, -525885982))), (case when (-1466474216) in
-(-1504372996, 417052418, 94) then least(28288, 1447812316) when cast(r'' as boolean) then "second"(time '14:18:59') else
-((-730700220)-(929722313)) end)) as sub0 on true natural join (select distinct v0.vc0 from v1, v0 where ((((v0.vc1)and(v0.vc1)))
-or(v0.vc1)) group by v0.vc1) as sub1 where (v0.vc0) in (0.06683239) group by least(-1913343924, 10622),
-((v1.vc1)not ilike(least(v1.vc1, v1.vc1)))
 
 statement ok
 ROLLBACK

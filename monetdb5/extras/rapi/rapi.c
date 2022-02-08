@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -598,8 +598,6 @@ bailout:
 
 static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = NULL;
-	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
-
 	SEXP x, env, retval;
 	SEXP varname = R_NilValue;
 	SEXP varvalue = R_NilValue;
@@ -621,6 +619,19 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 
 	rapiClient = cntxt;
 
+	// If the first input argument is of type lng, this is a cardinality-only bulk operation.
+	int has_card_arg = 0;
+	lng card; // cardinality of non-bat inputs
+	if (getArgType(mb, pci, pci->retc) == TYPE_lng) {
+		has_card_arg=1;
+		card = *getArgReference_lng(stk, pci, pci->retc);
+	}
+	else {
+		has_card_arg=0;
+		card = 1;
+	}
+	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1 + has_card_arg);
+
 	if (!RAPIEnabled()) {
 		throw(MAL, "rapi.eval",
 			  "Embedded R has not been enabled. Start server with --set %s=true",
@@ -632,10 +643,10 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 	}
 
 	if (!grouped) {
-		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc));
-		if (sqlmorefun) sqlfun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc))->func;
+		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc+has_card_arg));
+		if (sqlmorefun) sqlfun = sqlmorefun->func;
 	} else {
-		sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
+		sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc+has_card_arg);
 	}
 
 	args = (str*) GDKzalloc(sizeof(str) * pci->argc);
@@ -653,7 +664,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 	// NEW macro temporarily renamed to MNEW to allow including sql_catalog.h
 
 	if (sqlfun != NULL && sqlfun->ops->cnt > 0) {
-		int carg = pci->retc + 2;
+		int carg = pci->retc + 2 + has_card_arg;
 		argnode = sqlfun->ops->h;
 		while (argnode) {
 			char* argname = ((sql_arg*) argnode->data)->name;
@@ -664,7 +675,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 	}
 	// the first unknown argument is the group, we don't really care for the rest.
 	argnameslen = 2;
-	for (i = pci->retc + 2; i < pci->argc; i++) {
+	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
 		if (args[i] == NULL) {
 			if (!seengrp && grouped) {
 				args[i] = GDKstrdup("aggr_group");
@@ -679,29 +690,15 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 
 	// install the MAL variables into the R environment
 	// we can basically map values to int ("INTEGER") or double ("REAL")
-	for (i = pci->retc + 2; i < pci->argc; i++) {
+	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
 		int bat_type = getBatType(getArgType(mb,pci,i));
 		// check for BAT or scalar first, keep code left
 		if (!isaBatType(getArgType(mb,pci,i))) {
-			b = COLnew(0, getArgType(mb, pci, i), 0, TRANSIENT);
+			const ValRecord *v = &stk->stk[getArg(pci, i)];
+			b = BATconstant(0, v->vtype, VALptr(v), card, TRANSIENT);
 			if (b == NULL) {
 				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
-			}
-			if ( getArgType(mb,pci,i) == TYPE_str) {
-				if (BUNappend(b, *getArgReference_str(stk, pci, i), false) != GDK_SUCCEED) {
-					BBPreclaim(b);
-					b = NULL;
-					msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto wrapup;
-				}
-			} else {
-				if (BUNappend(b, getArgReference(stk, pci, i), false) != GDK_SUCCEED) {
-					BBPreclaim(b);
-					b = NULL;
-					msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto wrapup;
-				}
 			}
 		} else {
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
@@ -751,7 +748,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 		goto wrapup;
 	}
 	argnames[0] = '\0';
-	for (i = pci->retc + 2; i < pci->argc; i++) {
+	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
 		pos += snprintf(argnames + pos, argnameslen - pos, "%s%s",
 						args[i], i < pci->argc - 1 ? ", " : "");
 	}
@@ -824,6 +821,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 								  "Failed to convert column %i", i);
 			goto wrapup;
 		}
+
 		// bat return
 		if (isaBatType(getArgType(mb,pci,i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
@@ -940,6 +938,7 @@ static mel_func rapi_init_funcs[] = {
  pattern("rapi", "eval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  command("rapi", "prelude", RAPIprelude, false, "", args(1,1, arg("",void))),
  pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batrapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batrapi", "eval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  { .imp=NULL }

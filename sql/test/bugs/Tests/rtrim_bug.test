@@ -46,16 +46,16 @@ project (
 | semijoin (
 | | project (
 | | | select (
-| | | | table("sys"."t1") [ "t1"."m" NOT NULL ] COUNT 
-| | | ) [ "sys"."length"("t1"."m" NOT NULL) NOT NULL > int "1" ]
+| | | | table("sys"."t1") [ "t1"."m" NOT NULL ]
+| | | ) [ ("sys"."length"("t1"."m" NOT NULL) NOT NULL) > (int(32) "1") ]
 | | ) [ "t1"."m" NOT NULL, "sys"."rtrim"("t1"."m" NOT NULL) NOT NULL as "%5"."%5" ],
 | | project (
 | | | project (
-| | | | table("sys"."t1") [ "t1"."m" NOT NULL ] COUNT 
+| | | | table("sys"."t1") [ "t1"."m" NOT NULL ]
 | | | ) [ "sys"."rtrim"("t1"."m" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "%1"."%1" NOT NULL as "%4"."%4" ]
-| ) [ "%5"."%5" NOT NULL any = "%4"."%4" NOT NULL ]
-) [ "sys"."length"("t1"."m" NOT NULL as "v2"."m") NOT NULL as "data_length", "t1"."m" NOT NULL as "data_value" ]
+| ) [ ("%5"."%5" NOT NULL) any = ("%4"."%4" NOT NULL) ]
+) [ "sys"."length"("t1"."m" NOT NULL) NOT NULL as "data_length", "t1"."m" NOT NULL as "data_value" ]
 
 statement ok
 set optimizer = 'sequential_pipe'

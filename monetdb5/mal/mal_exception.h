@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _MAL_EXCEPTION_H
@@ -51,7 +51,7 @@ mal_export str createMalException(MalBlkPtr , int , enum malexception ,
 	__attribute__((__format__(__printf__, 4, 5)))
 	__attribute__((__returns_nonnull__));
 mal_export char *concatErrors(char *err1, const char *err2)
-	__attribute__((__nonnull__(1, 2)))
+	__attribute__((__nonnull__(1))) __attribute__((__nonnull__(2)))
 	__attribute__((__returns_nonnull__));
 mal_export bool isExceptionVariable(const char *nme);
 

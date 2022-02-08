@@ -1,0 +1,51 @@
+statement ok
+create table x (a int)
+
+statement ok rowcount 2
+insert into x values (1),(2)
+
+statement ok
+create procedure myproc() begin insert into x values (3); end
+
+query I rowsort
+select a from x
+----
+1
+2
+
+statement ok
+call myproc()
+
+query I rowsort
+select a from x
+----
+1
+2
+3
+
+statement ok
+alter table x add constraint mycon primary key(a)
+
+query I rowsort
+select a from x
+----
+1
+2
+3
+
+statement error 40002!INSERT INTO: PRIMARY KEY constraint 'x.mycon' violated
+call myproc()
+
+query I rowsort
+select a from x
+----
+1
+2
+3
+
+statement ok
+drop procedure myproc
+
+statement ok
+drop table x
+

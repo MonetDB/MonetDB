@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -195,7 +195,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		data = PyArray_DATA((PyArrayObject *)vararray);
 		BATloop(b, p, q)
 		{
-			blob *t = (blob *)BUNtvar(li, p);
+			const blob *t = (const blob *)BUNtvar(li, p);
 			if (t->nitems == ~(size_t)0) {
 				data[p] = Py_None;
 				Py_INCREF(Py_None);
@@ -250,7 +250,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				BATloop(b, p, q)
 				{
-					char *t = (char *)BUNtvar(li, p);
+					const char *t = (const char *)BUNtvar(li, p);
 					for (; *t != 0; t++) {
 						if (*t & 0x80) {
 							unicode = true;
@@ -311,7 +311,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtvar(li, p);
+								const char *t = (const char *)BUNtvar(li, p);
 								if (strNil(t)) {
 									// str_nil isn't a valid UTF-8 character
 									// (it's 0x80), so we can't decode it as
@@ -361,7 +361,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtvar(li, p);
+								const char *t = (const char *)BUNtvar(li, p);
 								obj = PyString_FromString(t);
 								if (obj == NULL) {
 									bat_iterator_end(&li);
@@ -612,6 +612,8 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			if (PyType_IsNumpyArray(data)) {
 				if (PyArray_NDIM((PyArrayObject *)data) != 1) {
 					IsSingleArray = FALSE;
+				} else if (PyArray_SIZE((PyArrayObject *)data) == 0) {
+					IsSingleArray = TRUE;
 				} else {
 					pColO = PyArray_GETITEM(
 						(PyArrayObject *)data,
@@ -619,8 +621,12 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 					IsSingleArray = PyType_IsPyScalar(pColO);
 				}
 			} else if (PyList_Check(data)) {
-				pColO = PyList_GetItem(data, 0);
-				IsSingleArray = PyType_IsPyScalar(pColO);
+				if (PyList_Size(data) == 0) {
+					IsSingleArray = TRUE;
+				} else {
+					pColO = PyList_GetItem(data, 0);
+					IsSingleArray = PyType_IsPyScalar(pColO);
+				}
 			} else if (!PyType_IsNumpyMaskedArray(data)) {
 				// it is neither a python array, numpy array or numpy masked
 				// array, thus the result is unsupported! Throw an exception!
@@ -1100,7 +1106,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		BATiter li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			void *element = (void *)BUNtail(li, p);
+			const void *element = (const void*)BUNtail(li, p);
 			if (strConversion(&result, &length, element, false) < 0) {
 				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);

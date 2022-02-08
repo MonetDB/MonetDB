@@ -109,8 +109,8 @@ PLAN SELECT * FROM complete where x = 0.0
 ----
 project (
 | select (
-| | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ] COUNT 
-| ) [ "complete"."x" = double(53,1) "0" ]
+| | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
+| ) [ ("complete"."x") = (double(53,1) "0") ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
 query RRR rowsort
@@ -128,8 +128,8 @@ PLAN SELECT * FROM complete where x = 3.0
 ----
 project (
 | select (
-| | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ] COUNT 
-| ) [ "complete"."x" = double(53,1) "3" ]
+| | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
+| ) [ ("complete"."x") = (double(53,1) "3") ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
 query RRR rowsort
@@ -147,8 +147,8 @@ PLAN SELECT * FROM complete where x >= 1.0 AND x < 2.0
 ----
 project (
 | select (
-| | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ] COUNT 
-| ) [ double "1" <= "complete"."x" < double "2" BETWEEN  ]
+| | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
+| ) [ (double(53) "1") <= ("complete"."x") < (double(53) "2") ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
 query RRR rowsort
@@ -166,8 +166,8 @@ PLAN SELECT * FROM complete where x > 1.0 AND x <= 2.0
 ----
 project (
 | select (
-| | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ] COUNT 
-| ) [ double "1" < "complete"."x" <= double "2" BETWEEN  ]
+| | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
+| ) [ (double(53) "1") < ("complete"."x") <= (double(53) "2") ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
 query RRR rowsort
@@ -185,9 +185,9 @@ PLAN SELECT * FROM complete where x > 1.0 AND x < 2.0
 ----
 project (
 | select (
-| |  [ boolean "true" ]
-| ) [ boolean "false" ]
-) [ double "NULL" as "complete"."x", double "NULL" as "complete"."y", double "NULL" as "complete"."z" ]
+| |  [ boolean(1) "true" as "%1"."%1" ]
+| ) [ boolean(1) "false" ]
+) [ double(53) NULL as "complete"."x", double(53) NULL as "complete"."y", double(53) NULL as "complete"."z" ]
 
 query RRR rowsort
 SELECT * FROM complete where x > 1.0 AND x < 2.0
@@ -199,13 +199,13 @@ PLAN SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 union (
 | project (
 | | select (
-| | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ] COUNT 
-| | ) [ double "1" <= "complete"."x" <= double "2" BETWEEN  ]
+| | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
+| | ) [ (double(53) "1") <= ("complete"."x") <= (double(53) "2") ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ],
 | project (
 | | select (
-| | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ] COUNT 
-| | ) [ double "1" <= "complete"."x" <= double "2" BETWEEN  ]
+| | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
+| | ) [ (double(53) "1") <= ("complete"."x") <= (double(53) "2") ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
@@ -231,13 +231,13 @@ PLAN SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
 union (
 | project (
 | | select (
-| | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ] COUNT 
-| | ) [ double "0" <= "complete"."x" <= double "2" BETWEEN , double "0" <= "complete"."y" <= double "2" BETWEEN  ]
+| | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
+| | ) [ (double(53) "0") <= ("complete"."y") <= (double(53) "2"), (double(53) "0") <= ("complete"."x") <= (double(53) "2") ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ],
 | project (
 | | select (
-| | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ] COUNT 
-| | ) [ double "0" <= "complete"."x" <= double "2" BETWEEN , double "0" <= "complete"."y" <= double "2" BETWEEN  ]
+| | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
+| | ) [ (double(53) "0") <= ("complete"."y") <= (double(53) "2"), (double(53) "0") <= ("complete"."x") <= (double(53) "2") ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 

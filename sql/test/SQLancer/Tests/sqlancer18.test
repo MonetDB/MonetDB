@@ -24,13 +24,13 @@ CREATE TABLE "t1" ("c2" BIGINT NOT NULL, CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c
 statement ok rowcount 4
 INSERT INTO "t1" VALUES (69), (-12), (9), (0)
 
-query T rowsort
+query I rowsort
 SELECT -3 < least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) FROM t1
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
 query I rowsort
 SELECT t1.c2 FROM t1 WHERE -3 < least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 GROUP BY DATE '1970-01-11'))
@@ -40,13 +40,13 @@ SELECT t1.c2 FROM t1 WHERE -3 < least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 
 69
 9
 
-query T rowsort
+query I rowsort
 SELECT least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) > -3 FROM t1
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
 query I rowsort
 SELECT t1.c2 FROM t1 WHERE least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 GROUP BY DATE '1970-01-11')) > -3
@@ -69,10 +69,10 @@ statement ok rowcount 9
 INSERT INTO "t0" VALUES (INTERVAL '6' SECOND),(INTERVAL '9' SECOND),(INTERVAL '1' SECOND),
 (INTERVAL '0' SECOND),(INTERVAL '9' SECOND),(INTERVAL '4' SECOND),(INTERVAL '6' SECOND),(INTERVAL '1' SECOND),(NULL)
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE)
 ----
-False
+0
 
 query T rowsort
 SELECT t0.c3 FROM t0 WHERE ifthenelse((SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE), 2, 1)
@@ -253,7 +253,6 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT 1 as count FROM t2 JOIN
 ----
 135
 
-# the hash is not right, it's a reminder it has to return 135 rows
 query R rowsort
 SELECT sub0.c2 FROM t2 JOIN (SELECT DISTINCT t2.c2, 3 FROM t2) AS sub0(c2,c3) on t2.c2 = sub0.c2
 ----
@@ -283,3 +282,400 @@ UPDATE t1 SET c1 = t1.c1
 statement ok
 DROP TABLE t1
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c0" TINYINT,"c1" DATE)
+
+statement ok rowcount 8
+INSERT INTO "t2" VALUES (1, DATE '1970-01-01'),(0, DATE '1970-01-01'),(3, DATE '1970-01-01'),(9, NULL),
+(NULL, DATE '1970-01-01'),(NULL, DATE '1970-01-01'),(NULL, DATE '1970-01-01'),(1, NULL)
+
+statement ok
+create view vx(vc0) as (select distinct t2.c1 from t2)
+
+query I rowsort
+SELECT vx.vc0 <> ALL(SELECT vx.vc0 FROM vx) FROM vx
+----
+0
+NULL
+
+query I rowsort
+SELECT vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> vx.vc0) FROM vx
+----
+1
+1
+
+query T rowsort
+SELECT vx.vc0 FROM vx WHERE vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> vx.vc0)
+----
+1970-01-01
+NULL
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT max((SELECT (SELECT rt2.c1 FROM t2) FROM t2 as rt2))
+
+statement ok
+ROLLBACK
+
+statement ok
+create table t1 (c0 int)
+
+statement ok rowcount 4
+insert into t1 values (1),(2),(3),(NULL)
+
+query I rowsort
+SELECT 1 FROM (select 4) v100(vc0) WHERE (3) NOT IN (COALESCE((SELECT 1 WHERE FALSE), v100.vc0))
+----
+1
+
+statement error GDK reported error: mergejoin: more than one match
+select 1 from t1 where exists (select min((select t2.c0 from t1)) from t1 as t2)
+
+query I rowsort
+with v100(vc0) as (select max(2) group by 0.2)
+select 1 from v100 as vx where vx.vc0 = any(select vx.vc0 from v100)
+----
+1
+
+statement ok
+create view vy(vc0) as (select distinct (select 4 from t1))
+
+statement error GDK reported error: BATsubcross: more than one match
+select greatest(1, (select (select vy.vc0 from t1) from vy))
+
+statement ok
+DROP VIEW vy
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vz.c0' in query results without an aggregate function
+SELECT 1 FROM (select 0,1) vz(c0,c1) GROUP BY c1 HAVING sum(1) < ANY(SELECT vz.c0 FROM t1)
+
+statement ok
+DROP TABLE t1
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" INTERVAL MONTH)
+
+statement ok rowcount 128
+COPY 128 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+13
+3
+7
+9
+1
+NULL
+3
+5
+1
+8
+5
+0
+6
+5
+1
+7
+3
+1
+4
+4
+13
+NULL
+9
+NULL
+7
+6
+0
+5
+3
+0
+8
+9
+0
+5
+4
+NULL
+9
+2
+6
+1
+7
+6
+9
+2
+5
+0
+1
+5
+-4
+3
+9
+6
+-4
+3
+5
+7
+8
+7
+1
+-13
+-3
+-7
+-9
+-1
+NULL
+-3
+-5
+-1
+-8
+-5
+0
+-6
+-5
+-1
+-7
+-3
+-1
+-4
+-4
+-13
+NULL
+-9
+NULL
+-7
+-6
+0
+-5
+-3
+0
+-8
+-9
+0
+-5
+-4
+NULL
+-9
+-2
+-6
+-1
+-7
+-6
+-9
+-2
+-5
+0
+-1
+-5
+4
+-3
+-9
+-6
+4
+-3
+-5
+-7
+-8
+-7
+-1
+3
+8
+5
+1
+5
+0
+5
+7
+0
+3
+
+query I nosort
+SELECT SUM(1) FROM t1, t1 as t2
+----
+16384
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE "t0" ("c0" BIGINT,"c1" BOOLEAN)
+
+statement ok rowcount 16
+INSERT INTO "t0" VALUES (NULL, true),(1, true),(4, true),(NULL, true),(NULL, true),(NULL, false),(9, true),(-217, true),
+(2, true),(4, false),(3, true),(7, true),(3, NULL),(-24, true),(2, true),(9, false)
+
+statement error GDK reported error: BATsubcross: more than one match
+SELECT 6 = ANY(SELECT 1 FROM t0 GROUP BY (SELECT t0.c0)), CASE WHEN 'a' = (SELECT 'b' FROM t0) THEN (VALUES (1)) END
+
+statement error GDK reported error: BATsubcross: more than one match
+SELECT 6 = ANY(SELECT 1 FROM t0 GROUP BY (SELECT t0.c0)), CASE WHEN 'a' LIKE (SELECT 'b' FROM t0) THEN (VALUES (1)) END
+
+statement ok
+DROP TABLE t0
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" INTERVAL DAY, "c1" BIGINT, "c2" DOUBLE PRECISION)
+
+statement ok rowcount 10
+INSERT INTO "t0" VALUES (INTERVAL '86400' SECOND, 5, 0.6077910886691952),
+(INTERVAL '259200' SECOND, NULL, NULL),(INTERVAL '691200' SECOND, NULL, 0.6933931143731273),
+(INTERVAL '172800' SECOND, NULL, NULL),(NULL, NULL, 0.6456379173577576),(NULL, NULL, 0.025213044370619664),
+(NULL, NULL, 0.11141332470963072),(NULL, NULL, 0.6456379173577576),(NULL, NULL, 62351393),(NULL, 5, NULL)
+
+statement ok
+create view v100(vc0) as (select 1.000 from t0)
+
+query I nosort
+SELECT EXISTS (SELECT vc0 = ANY(SELECT vc0) FROM v100 WHERE FALSE)
+----
+0
+
+query I nosort
+SELECT EXISTS (SELECT vc0 = ANY(SELECT vc0) FROM v100 WHERE FALSE) FROM t0
+----
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+
+query T nosort
+SELECT t0.c0 FROM t0 WHERE EXISTS (SELECT tv0l1n0.vc0 < ANY(SELECT tv0l1n0.vc0 FROM v100 WHERE FALSE) FROM v100 AS tv0l1n0
+WHERE 1 NOT BETWEEN SYMMETRIC 6 AND 0)
+----
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT tv0l1n0.vc0 < ANY(SELECT tv0l1n0.vc0 FROM v100 WHERE FALSE)
+FROM v100 AS tv0l1n0 WHERE 1 NOT BETWEEN SYMMETRIC 6 AND 0) AS INT) as count FROM t0) as res
+----
+0
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE "t0" ("c0" TIME,"c1" DOUBLE PRECISION)
+
+statement ok
+CREATE TABLE "t1" ("c0" INT)
+
+statement ok rowcount 17
+INSERT INTO "t1" VALUES (1),(10),(7),(9),(NULL),(1),(7),(7),(0),(8),(0),(9),(NULL),(5),(3),(8),(0)
+
+query I rowsort
+select (FALSE) in (TRUE, (select time '13:35:07' from t1) between t0.c0 and t0.c0) from t0
+----
+
+query I rowsort
+select (FALSE) in (FALSE, (select time '13:35:07' from t1) between t0.c0 and t0.c0) from t0
+----
+
+statement ok rowcount 1
+INSERT INTO "t0" VALUES (NULL, 1)
+
+query I rowsort
+select (FALSE) in (FALSE, (select time '13:35:07' from t1) between t0.c0 and t0.c0) from t0
+----
+1
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+query I nosort
+select (case when false then v100.vc1 when true then (values (2)) end) in (3) from (values (1),(2)) v100(vc1)
+----
+0
+0
+
+query I nosort
+SELECT ((SELECT 5) INTERSECT (SELECT 9)) = ALL(SELECT 4) >= TRUE
+----
+NULL
+
+query I nosort
+SELECT 1 = ANY(WITH x(x) AS (SELECT 1) SELECT x FROM x)
+----
+1
+
+query I nosort
+SELECT 1 IN (WITH x(x) AS (SELECT 1) SELECT x FROM x)
+----
+1
+
+query I nosort
+SELECT EXISTS (WITH x(x) AS (SELECT 1) SELECT x FROM x)
+----
+1
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "tx" ("c0" INT)
+
+statement ok
+create or replace view v100(vc0) as (select distinct cast('1' as int) from tx)
+
+statement ok
+create or replace view v104(vc0) as (select tx.c0 from tx)
+
+statement ok
+create or replace view v101(vc0) as (select 1 from v104)
+
+statement ok
+create or replace view v102(vc0) as (select 1 from v101)
+
+statement ok
+commit
+
+statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
+SELECT 1 FROM v100 AS vx WHERE vx.vc0 = ANY(SELECT 1 FROM v100 HAVING count(vx.vc0 = vx.vc0 AND (SELECT TRUE FROM v102)))
+
+statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
+SELECT 1 FROM v100 WHERE (SELECT 1 HAVING count(v100.vc0 + (SELECT 1 FROM v104)))
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT vx.vc0 < ANY(SELECT sum(vx.vc0) FROM tx) FROM (select 240 FROM tx) vx(vc0)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+SELECT sum(vx.vc0) < ANY(SELECT vx.vc0 FROM tx) FROM (select 240 FROM tx) vx(vc0)
+
+#these are right
+query I nosort
+SELECT sum(vx.vc0) < ANY(SELECT sum(vx.vc0) FROM tx) FROM (select 240 FROM tx) vx(vc0)
+----
+0
+
+query I nosort
+SELECT vx.vc0 < ANY(SELECT vx.vc0 FROM tx) FROM (select 240 FROM tx) vx(vc0)
+----
+
+statement ok
+DROP TABLE "tx" CASCADE
+
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t2(c0 INT) ON COMMIT DELETE ROWS
+
+statement ok rowcount 1
+INSERT INTO tmp.t2(c0) VALUES(3)
+
+query I nosort
+SELECT c0 FROM tmp.t2
+----
+
+statement ok
+DROP TABLE t2

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -499,7 +499,17 @@ nested_mergetable(sql_trans *tr, sql_table *mt, const char *sname, const char *t
 	return 0;
 }
 
-static ValPtr /* TODO remove this duplicated code */
+bool
+is_column_unique(sql_column *c)
+{
+	/* is it a primary key column itself? */
+	if (c->t->pkey && list_length(c->t->pkey->k.columns) == 1 && ((sql_kc*)c->t->pkey->k.columns->h->data)->c->base.id == c->base.id)
+		return true;
+	/* is it a unique key itself */
+	return c->unique == 2;
+}
+
+ValPtr
 SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 {
 	if (sa == NULL)
@@ -507,19 +517,23 @@ SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == 0) {
-		d->val.pval = ATOMnil(s->vtype);
+		const void *p = ATOMnilptr(s->vtype);
+		d->vtype = s->vtype;
+		d->len = ATOMlen(d->vtype, p);
+		d->val.pval = sa_alloc(sa, d->len);
 		if (d->val.pval == NULL)
 			return NULL;
-		d->vtype = s->vtype;
+		memcpy(d->val.pval, p, d->len);
 	} else if (s->vtype == TYPE_str) {
+		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
-		d->val.sval = sa_strdup(sa, s->val.sval);
+		d->len = strLen(p);
+		d->val.sval = sa_alloc(sa, d->len);
 		if (d->val.sval == NULL)
 			return NULL;
-		d->len = strLen(d->val.sval);
+		memcpy(d->val.sval, p, d->len);
 	} else {
-		ptr p = s->val.pval;
-
+		const void *p = s->val.pval;
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
 		d->val.pval = sa_alloc(sa, d->len);
@@ -531,14 +545,17 @@ SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 }
 
 atom *
-atom_dup(sql_allocator *sa, atom *a)
+atom_copy(sql_allocator *sa, atom *a)
 {
 	atom *r = sa ?SA_NEW(sa, atom):MNEW(atom);
 	if (!r)
 		return NULL;
 
-	*r = *a;
-	r->tpe = a->tpe;
+	*r = (atom) {
+		.isnull = a->isnull,
+		.tpe = a->tpe,
+		.data = (ValRecord) {.vtype = TYPE_void,},
+	};
 	if (!a->isnull)
 		SA_VALcopy(sa, &r->data, &a->data);
 	return r;

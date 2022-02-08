@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _MEL_H_
@@ -69,7 +69,7 @@ typedef struct __attribute__((__designated_init__)) mel_arg {
 } mel_arg;
 
 typedef struct __attribute__((__designated_init__)) mel_func {
-	char mod[14];
+	char mod[16];
 	char fcn[30];
 	const char *cname;
 	uint16_t command:1,

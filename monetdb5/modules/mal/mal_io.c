@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -120,8 +120,8 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	if (hd)
 		mnstr_printf(fp, "%s", hd);
 
-	if (ATOMvarsized(tpe))
-		ATOMprint(tpe, *(str *) val, fp);
+	if (ATOMextern(tpe))
+		ATOMprint(tpe, *(ptr *) val, fp);
 	else
 		ATOMprint(tpe, val, fp);
 
@@ -210,9 +210,9 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 
-static char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
-static char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
-static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
+static const char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
+static const char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
+static const char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 
 #define return_error(x)							\
 	do {										\
@@ -221,7 +221,7 @@ static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 		throw(MAL,"io.printf", x,argc);			\
 	} while (0)
 
-static char niltext[4] = "nil";
+static const char niltext[4] = "nil";
 
 static str
 IOprintf_(str *res, str format, ...)

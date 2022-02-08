@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -156,15 +156,15 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #include "mel.h"
 mel_func tracer_init_funcs[] = {
- command("logging", "flush", TRACERflush_buffer, false, "Flush the buffer", args(1,1, arg("",void))),
- command("logging", "setcomplevel", TRACERset_component_level, false, "Sets the log level for a specific component", args(1,3, arg("",void),arg("comp",str),arg("lvl",str))),
- command("logging", "resetcomplevel", TRACERreset_component_level, false, "Resets the log level for a specific component back to the default", args(1,2, arg("",void),arg("comp",str))),
- command("logging", "setlayerlevel", TRACERset_layer_level, false, "Sets the log level for a specific layer", args(1,3, arg("",void),arg("layer",str),arg("lvl",str))),
- command("logging", "resetlayerlevel", TRACERreset_layer_level, false, "Resets the log level for a specific layer back to the default", args(1,2, arg("",void),arg("layer",str))),
- command("logging", "setflushlevel", TRACERset_flush_level, false, "Sets the flush level", args(1,2, arg("",void),arg("lvl",str))),
- command("logging", "resetflushlevel", TRACERreset_flush_level, false, "Resets the flush level back to the default", args(1,1, arg("",void))),
- command("logging", "setadapter", TRACERset_adapter, false, "Sets the adapter", args(1,2, arg("",void),arg("adapter",str))),
- command("logging", "resetadapter", TRACERreset_adapter, false, "Resets the adapter back to the default", args(1,1, arg("",void))),
+ command("logging", "flush", TRACERflush_buffer, true, "Flush the buffer", args(1,1, arg("",void))),
+ command("logging", "setcomplevel", TRACERset_component_level, true, "Sets the log level for a specific component", args(1,3, arg("",void),arg("comp",str),arg("lvl",str))),
+ command("logging", "resetcomplevel", TRACERreset_component_level, true, "Resets the log level for a specific component back to the default", args(1,2, arg("",void),arg("comp",str))),
+ command("logging", "setlayerlevel", TRACERset_layer_level, true, "Sets the log level for a specific layer", args(1,3, arg("",void),arg("layer",str),arg("lvl",str))),
+ command("logging", "resetlayerlevel", TRACERreset_layer_level, true, "Resets the log level for a specific layer back to the default", args(1,2, arg("",void),arg("layer",str))),
+ command("logging", "setflushlevel", TRACERset_flush_level, true, "Sets the flush level", args(1,2, arg("",void),arg("lvl",str))),
+ command("logging", "resetflushlevel", TRACERreset_flush_level, true, "Resets the flush level back to the default", args(1,1, arg("",void))),
+ command("logging", "setadapter", TRACERset_adapter, true, "Sets the adapter", args(1,2, arg("",void),arg("adapter",str))),
+ command("logging", "resetadapter", TRACERreset_adapter, true, "Resets the adapter back to the default", args(1,1, arg("",void))),
  pattern("logging", "compinfo", TRACERcomp_info, false, "Returns in the form of a SQL result-set all the components along with their ID\nand the their current logging level being set", args(3,3, batarg("id",int),batarg("component",str),batarg("log_level",str))),
  { .imp=NULL }
 };

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -1230,6 +1230,9 @@ static str
 JSONfilterArrayDefault(json *ret, json *js, lng index, str other)
 {
 	char expr[BUFSIZ], *s = expr;
+
+	if (index < 0)
+		throw(MAL,"json.filter", SQLSTATE(42000) "Filter index cannot be negative");
 	snprintf(expr, BUFSIZ, "[" LLFMT "]", index);
 	return JSONfilterInternal(ret, js, &s, other);
 }
@@ -1237,48 +1240,88 @@ JSONfilterArrayDefault(json *ret, json *js, lng index, str other)
 static str
 JSONfilterArray_bte(json *ret, json *js, bte *index)
 {
+	if (strNil(*js) || is_bte_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
 static str
 JSONfilterArrayDefault_bte(json *ret, json *js, bte *index, str *other)
 {
+	if (strNil(*js) || is_bte_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
 static str
 JSONfilterArray_sht(json *ret, json *js, sht *index)
 {
+	if (strNil(*js) || is_sht_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
 static str
 JSONfilterArrayDefault_sht(json *ret, json *js, sht *index, str *other)
 {
+	if (strNil(*js) || is_sht_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
 static str
 JSONfilterArray_int(json *ret, json *js, int *index)
 {
+	if (strNil(*js) || is_int_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
 static str
 JSONfilterArrayDefault_int(json *ret, json *js, int *index, str *other)
 {
+	if (strNil(*js) || is_int_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
 static str
 JSONfilterArray_lng(json *ret, json *js, lng *index)
 {
+	if (strNil(*js) || is_lng_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
 static str
 JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
 {
+	if (strNil(*js) || is_lng_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
@@ -1286,6 +1329,11 @@ JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
 static str
 JSONfilterArray_hge(json *ret, json *js, hge *index)
 {
+	if (strNil(*js) || is_hge_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
 		throw(MAL, "json.filter", "index out of range");
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
@@ -1294,6 +1342,11 @@ JSONfilterArray_hge(json *ret, json *js, hge *index)
 static str
 JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
 {
+	if (strNil(*js) || is_hge_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
 		throw(MAL, "json.filter", "index out of range");
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
@@ -1303,6 +1356,11 @@ JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
 static str
 JSONfilter(json *ret, json *js, str *expr)
 {
+	if (strNil(*js) || strNil(*expr)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterInternal(ret, js, expr, 0);
 }
 
@@ -1980,14 +2038,15 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 	len = 1;
 	for (i = pci->retc; i < pci->argc; i += 2) {
 		name = stk->stk[getArg(pci, i)].val.sval;
+		tpe = getBatType(getArgType(mb, pci, i + 1));
 		bi = bat_iterator(bl[i + 1]);
 		p = BUNtail(bi, idx);
-		bat_iterator_end(&bi);
-		tpe = getBatType(getArgType(mb, pci, i + 1));
 		if ((val = ATOMformat(tpe, p)) == NULL) {
+			bat_iterator_end(&bi);
 			GDKfree(row);
 			return NULL;
 		}
+		bat_iterator_end(&bi);
 		if (strncmp(val, "nil", 3) == 0) {
 			GDKfree(val);
 			val = NULL;
@@ -2096,13 +2155,14 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	row[1] = 0;
 	len = 1;
 	for (i = pci->retc; i < pci->argc; i++) {
+		tpe = getBatType(getArgType(mb, pci, i));
 		bi = bat_iterator(bl[i]);
 		p = BUNtail(bi, idx);
-		bat_iterator_end(&bi);
-		tpe = getBatType(getArgType(mb, pci, i));
 		if ((val = ATOMformat(tpe, p)) == NULL) {
+			bat_iterator_end(&bi);
 			goto memfail;
 		}
+		bat_iterator_end(&bi);
 		if (strcmp(val, "nil") == 0) {
 			GDKfree(val);
 			val = NULL;

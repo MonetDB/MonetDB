@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -76,16 +76,6 @@ static sql_store SQLstore = NULL;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
-
-static void
-monet5_freecode(int clientid, const char *name)
-{
-	str msg;
-
-	msg = SQLCacheRemove(MCgetClient(clientid), name);
-	if (msg)
-		freeException(msg);	/* do something with error? */
-}
 
 static str SQLinit(Client c);
 
@@ -201,19 +191,19 @@ SQLexit(Client c)
 str
 SQLepilogue(void *ret)
 {
-	char *s = "sql", *m = "msql";
-	str res;
+	char *s = "sql", *m = "msql", *msg;
 
 	(void) ret;
-	(void) SQLexit(NULL);
+	msg = SQLexit(NULL);
+	freeException(msg);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
 	if (!GDKinmemory(0) && !GDKembedded()) {
-		res = msab_retreatScenario(m);
+		str res = msab_retreatScenario(m);
 		if (!res)
 			res = msab_retreatScenario(s);
 		if (res != NULL) {
-			char *err = createException(MAL, "sql.start", "%s", res);
+			char *err = createException(MAL, "sql.epilogue", "%s", res);
 			free(res);
 			return err;
 		}
@@ -239,12 +229,12 @@ SQLprepareClient(Client c, int login)
 		sql_allocator *sa = sa_create(NULL);
 		if (sa == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout2;
 		}
 		m = mvc_create(SQLstore, sa, c->idx, SQLdebug, c->fdin, c->fdout);
 		if (m == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout2;
 		}
 		if (c->scenario && strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
@@ -252,7 +242,7 @@ SQLprepareClient(Client c, int login)
 		if ( be == NULL) {
 			mvc_destroy(m);
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout2;
 		}
 	} else {
 		assert(0);
@@ -276,13 +266,13 @@ SQLprepareClient(Client c, int login)
 		switch (monet5_user_set_def_schema(m, c->user)) {
 			case -1:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				goto bailout1;
 			case -2:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
-				goto bailout;
+				goto bailout1;
 			case -3:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
-				goto bailout;
+				goto bailout1;
 			default:
 				break;
 		}
@@ -300,7 +290,7 @@ SQLprepareClient(Client c, int login)
 			} else if (sscanf(tok, "reply_size=%d", &value) == 1) {
 				if (value < -1) {
 					msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "Reply_size cannot be negative");
-					goto bailout;
+					goto bailout1;
 				}
 				m->reply_size = value;
 			} else if (sscanf(tok, "size_header=%d", &value) == 1) {
@@ -316,7 +306,7 @@ SQLprepareClient(Client c, int login)
 				sqlvar_set(var, &val);
 			} else {
 				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);
-				goto bailout;
+				goto bailout1;
 			}
 
 			tok = strtok_r(NULL, ",", &strtok_state);
@@ -324,8 +314,9 @@ SQLprepareClient(Client c, int login)
 	}
 
 
-bailout:
+bailout1:
 	MT_lock_set(&sql_contextLock);
+bailout2:
 	/* expect SQL text first */
 	if (be)
 		be->language = 'S';
@@ -470,13 +461,13 @@ SQLinit(Client c)
 	/* initialize the database with predefined SQL functions */
 	sqlstore *store = SQLstore;
 	if (store->first == 0) {
-		/* check whether table sys.systemfunctions exists: if
-		 * it doesn't, this is probably a restart of the
+		/* check whether last created object trigger sys.system_update_tables (from 99_system.sql) exists.
+		 * if it doesn't, this is probably a restart of the
 		 * server after an incomplete initialization */
 		if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
-			sql_schema *s = mvc_bind_schema(m, "sys");
-			sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
-			if (t == NULL)
+			/* TODO there's a going issue with loading triggers due to system tables,
+			   so at the moment check for existence of 'json' schema from 40_json.sql */
+			if (!mvc_bind_schema(m, "json"))
 				store->first = 1;
 			msg = mvc_rollback(m, 0, NULL, false);
 		}
@@ -500,17 +491,19 @@ SQLinit(Client c)
 		}
 		/* 99_system.sql */
 		if (!msg) {
-			const char *createdb_inline = " \
-				create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); \
-				create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); \
-				update sys.functions set system = true; \
-				create view sys.systemfunctions as select id as function_id from sys.functions where system; \
-				grant select on sys.systemfunctions to public; \
-				update sys._tables set system = true; \
-				update sys.schemas set system = true; \
-				UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
-				UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
-				";
+			const char *createdb_inline =
+				"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
+				"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n"
+				/* only system functions until now */
+				"update sys.functions set system = true;\n"
+				/* only system tables until now */
+				"update sys._tables set system = true;\n"
+				/* only system schemas until now */
+				"update sys.schemas set system = true;\n"
+				/* correct invalid FK schema ids, set them to schema id 2000
+				 * (the "sys" schema) */
+				"update sys.types set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n"
+				"update sys.functions set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n";
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
@@ -726,7 +719,9 @@ SQLexitClient(Client c)
 	MT_lock_unset(&sql_contextLock);
 	if (err != MAL_SUCCEED)
 		return err;
-	MALexitClient(c);
+	err = MALexitClient(c);
+	if (err != MAL_SUCCEED)
+		return err;
 	return MAL_SUCCEED;
 }
 
@@ -1319,18 +1314,6 @@ SQLengine(Client c)
 	if (be && be->subbackend)
 		be->subbackend->reset(be->subbackend);
 	return SQLengineIntern(c, be);
-}
-
-str
-SQLCacheRemove(Client c, const char *nme)
-{
-	Symbol s;
-
-	s = findSymbolInModule(c->usermodule, nme);
-	if (s == NULL)
-		throw(MAL, "cache.remove", SQLSTATE(42000) "internal error, symbol missing\n");
-	deleteSymbol(c->usermodule, s);
-	return MAL_SUCCEED;
 }
 
 str

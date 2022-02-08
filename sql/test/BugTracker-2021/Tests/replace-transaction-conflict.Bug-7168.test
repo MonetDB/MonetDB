@@ -1,0 +1,56 @@
+@connection(id=1, username=monetdb, password=monetdb)
+statement ok
+CREATE OR REPLACE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
+
+@connection(id=1)
+statement ok
+start transaction
+
+@connection(id=2, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=1)
+statement ok
+PLAN CREATE OR REPLACE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
+
+@connection(id=2)
+statement ok
+PLAN CREATE OR REPLACE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
+
+@connection(id=1)
+statement ok
+commit
+
+@connection(id=2)
+statement ok
+commit
+
+@connection(id=1)
+statement ok
+start transaction
+
+@connection(id=2, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=1)
+statement ok
+CREATE OR REPLACE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
+
+@connection(id=2)
+statement ok
+CREATE OR REPLACE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
+
+@connection(id=1)
+statement ok
+commit
+
+@connection(id=2)
+statement ok
+commit
+
+@connection(id=1)
+statement ok
+DROP FUNCTION mybooludf(bool)
+

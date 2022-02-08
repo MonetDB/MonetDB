@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -375,15 +375,15 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #include "mel.h"
 mel_func sysmon_init_funcs[] = {
- pattern("sysmon", "pause", SYSMONpause, false, "Suspend a running query", args(0,1, arg("id",sht))),
- pattern("sysmon", "pause", SYSMONpause, false, "Suspend a running query", args(0,1, arg("id",int))),
- pattern("sysmon", "pause", SYSMONpause, false, "Suspend a running query", args(0,1, arg("id",lng))),
- pattern("sysmon", "resume", SYSMONresume, false, "Resume processing of a query ", args(0,1, arg("id",sht))),
- pattern("sysmon", "resume", SYSMONresume, false, "Resume processing of a query ", args(0,1, arg("id",int))),
- pattern("sysmon", "resume", SYSMONresume, false, "Resume processing of a query ", args(0,1, arg("id",lng))),
- pattern("sysmon", "stop", SYSMONstop, false, "Stop a single query a.s.a.p.", args(0,1, arg("id",sht))),
- pattern("sysmon", "stop", SYSMONstop, false, "Stop a single query a.s.a.p.", args(0,1, arg("id",int))),
- pattern("sysmon", "stop", SYSMONstop, false, "Stop a single query a.s.a.p.", args(0,1, arg("id",lng))),
+ pattern("sysmon", "pause", SYSMONpause, true, "Suspend a running query", args(0,1, arg("id",sht))),
+ pattern("sysmon", "pause", SYSMONpause, true, "Suspend a running query", args(0,1, arg("id",int))),
+ pattern("sysmon", "pause", SYSMONpause, true, "Suspend a running query", args(0,1, arg("id",lng))),
+ pattern("sysmon", "resume", SYSMONresume, true, "Resume processing of a query ", args(0,1, arg("id",sht))),
+ pattern("sysmon", "resume", SYSMONresume, true, "Resume processing of a query ", args(0,1, arg("id",int))),
+ pattern("sysmon", "resume", SYSMONresume, true, "Resume processing of a query ", args(0,1, arg("id",lng))),
+ pattern("sysmon", "stop", SYSMONstop, true, "Stop a single query a.s.a.p.", args(0,1, arg("id",sht))),
+ pattern("sysmon", "stop", SYSMONstop, true, "Stop a single query a.s.a.p.", args(0,1, arg("id",int))),
+ pattern("sysmon", "stop", SYSMONstop, true, "Stop a single query a.s.a.p.", args(0,1, arg("id",lng))),
  pattern("sysmon", "queue", SYSMONqueue, false, "A queue of queries that are currently being executed or recently finished", args(9,9, batarg("tag",lng),batarg("sessionid",int),batarg("user",str),batarg("started",timestamp),batarg("status",str),batarg("query",str),batarg("finished",timestamp),batarg("workers",int),batarg("memory",int))),
  pattern("sysmon", "user_statistics", SYSMONstatistics, false, "", args(7,7, batarg("user",str),batarg("querycount",lng),batarg("totalticks",lng),batarg("started",timestamp),batarg("finished",timestamp),batarg("maxticks",lng),batarg("maxquery",str))),
  { .imp=NULL }

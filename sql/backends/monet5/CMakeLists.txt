@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 set(sql_public_headers
@@ -144,6 +144,7 @@ target_sources(sql
   sql_round_impl.h
   sql_fround.c sql_fround_impl.h
   sql_orderidx.c sql_orderidx.h
+  sql_strimps.c sql_strimps.h
   sql_time.c
   sql_bincopyfrom.c
   wlr.c wlr.h
@@ -151,6 +152,8 @@ target_sources(sql
   sql_rank.c sql_rank.h
   sql_subquery.c sql_subquery.h
   opt_backend.h
+  for.c for.h
+  dict.c dict.h
   ${MONETDB_CURRENT_SQL_SOURCES}
   PUBLIC
   ${sql_public_headers})
@@ -183,8 +186,8 @@ target_link_libraries(sql
 set_target_properties(sql
   PROPERTIES
   OUTPUT_NAME monetdbsql
-  VERSION ${MONETDB_VERSION}
-  SOVERSION ${MONETDB_VERSION_MAJOR}
+  VERSION ${SQL_VERSION}
+  SOVERSION ${SQL_VERSION_MAJOR}
   PUBLIC_HEADER "${sql_public_headers}")
 
 target_compile_definitions(sql
@@ -223,3 +226,10 @@ install(EXPORT sqlTargets
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:sql>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()

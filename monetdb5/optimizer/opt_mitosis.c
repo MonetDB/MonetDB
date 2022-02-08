@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -21,7 +21,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p, q, *old, target = 0;
 	size_t argsize = 6 * sizeof(lng), m = 0, memclaim;
 	/*	 estimate size per operator estimate:   4 args + 2 res*/
-	int threads = GDKnr_threads ? GDKnr_threads : 1;
+	int threads = GDKnr_threads ? GDKnr_threads : 1, maxslices = MAXSLICES;
 	str msg = MAL_SUCCEED;
 
 	/* if the user has associated limitation on the number of threads, respect it in the
@@ -47,6 +47,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 
 		/* mitosis/mergetable bailout conditions */
+		/* Crude protection against self join explosion */
+		if (p->retc == 2 && isMatJoinOp(p))
+			maxslices = threads;
 
 		if (p->argc > 2 && getModuleId(p) == aggrRef &&
 				getFunctionId(p) != subcountRef &&
@@ -152,8 +155,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		 * Determine the memory available for this client
 		 */
 
-		/* respect the memory limit size set for the user 
-		* and determine the column slice size 
+		/* respect the memory limit size set for the user
+		* and determine the column slice size
 		*/
 		if( cntxt->memorylimit)
 			m = (((size_t) cntxt->memorylimit) * 1048576) / argsize;
@@ -175,7 +178,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			 * i.e., (rowcnt/pieces <= m/threads),
 			 * i.e., (pieces => rowcnt/(m/threads))
 			 * (assuming that (m > threads*MINPARTCNT)) */
-			/* the number of pieces affects SF-100, going beyond 8x increases 
+			/* the number of pieces affects SF-100, going beyond 8x increases
 			 * the optimizer costs beyond the execution time
 			 */
 			pieces = 4 * (int) ceil((double)rowcnt / m / threads);
@@ -192,8 +195,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if (pieces < threads)
 		pieces = (int) MIN((BUN) threads, rowcnt);
 	/* prevent plan explosion */
-	if (pieces > MAXSLICES)
-		pieces = MAXSLICES;
+	if (pieces > maxslices)
+		pieces = maxslices;
 	/* to enable experimentation we introduce the option to set
 	 * the number of parts required and/or the size of each chunk (in K)
 	 */

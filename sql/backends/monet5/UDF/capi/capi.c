@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -377,7 +377,7 @@ static daytime time_from_data(cudf_data_time *ptr);
 static void data_from_timestamp(timestamp d, cudf_data_timestamp *ptr);
 static timestamp timestamp_from_data(cudf_data_timestamp *ptr);
 
-static char valid_path_characters[] = "abcdefghijklmnopqrstuvwxyz";
+static const char valid_path_characters[] = "abcdefghijklmnopqrstuvwxyz";
 
 static str
 empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase)

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -1857,7 +1857,7 @@ GDKvm_cursize(void)
 #endif
 
 static void *
-GDKmalloc_internal(size_t size)
+GDKmalloc_internal(size_t size, bool clear)
 {
 	void *s;
 	size_t nsize;
@@ -1886,7 +1886,11 @@ GDKmalloc_internal(size_t size)
 	 * write real size in front; when debugging, also allocate
 	 * extra space for check bytes */
 	nsize = (size + 7) & ~7;
-	if ((s = malloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE)) == NULL) {
+	if (clear)
+		s = calloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE, 1);
+	else
+		s = malloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+	if (s == NULL) {
 		GDKsyserror("malloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
 		return NULL;
 	}
@@ -1912,7 +1916,7 @@ GDKmalloc(size_t size)
 {
 	void *s;
 
-	if ((s = GDKmalloc_internal(size)) == NULL)
+	if ((s = GDKmalloc_internal(size, false)) == NULL)
 		return NULL;
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	/* write a pattern to help make sure all data is properly
@@ -1926,12 +1930,7 @@ GDKmalloc(size_t size)
 void *
 GDKzalloc(size_t size)
 {
-	void *s;
-
-	if ((s = GDKmalloc_internal(size)) == NULL)
-		return NULL;
-	memset(s, 0, size);
-	return s;
+	return GDKmalloc_internal(size, true);
 }
 
 #undef GDKstrdup
@@ -1945,7 +1944,7 @@ GDKstrdup(const char *s)
 		return NULL;
 	size = strlen(s) + 1;
 
-	if ((p = GDKmalloc_internal(size)) == NULL)
+	if ((p = GDKmalloc_internal(size, false)) == NULL)
 		return NULL;
 	memcpy(p, s, size);	/* including terminating NULL byte */
 	return p;
@@ -1959,7 +1958,7 @@ GDKstrndup(const char *s, size_t size)
 
 	if (s == NULL)
 		return NULL;
-	if ((p = GDKmalloc_internal(size + 1)) == NULL)
+	if ((p = GDKmalloc_internal(size + 1, false)) == NULL)
 		return NULL;
 	if (size > 0)
 		memcpy(p, s, size);
@@ -1987,9 +1986,7 @@ GDKfree(void *s)
 			assert(((char *) s)[i] == '\xBD');
 	}
 	((size_t *) s)[-1] |= 2; /* indicate area is freed */
-#endif
 
-#if !defined(NDEBUG) && !defined(SANITIZER)
 	/* overwrite memory that is to be freed with a pattern that
 	 * will help us recognize access to already freed memory in
 	 * the debugger */

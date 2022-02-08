@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -647,9 +647,9 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	b->twidth = width;
 	if (cap > BATcapacity(b))
 		BATsetcapacity(b, cap);
-	HEAPdecref(old, strcmp(old->filename, new->filename) != 0);
 	b->theap = new;
 	MT_lock_unset(&b->theaplock);
+	HEAPdecref(old, strcmp(old->filename, new->filename) != 0);
 	return GDK_SUCCEED;
 }
 
@@ -813,6 +813,12 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		h->base = GDKmalloc(h->size);
 		h->wasempty = true;
 	} else {
+		if (h->free == 0) {
+			int fd = GDKfdlocate(h->farmid, nme, "wb", ext);
+			if (fd >= 0)
+				close(fd);
+			h->wasempty = true;
+		}
 		h->base = GDKload(h->farmid, nme, ext, h->free, &h->size, h->storage);
 	}
 	if (h->base == NULL)

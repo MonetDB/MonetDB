@@ -7,10 +7,10 @@ create table rt (x real)
 statement ok
 insert into rt values (2.1)
 
-query T rowsort
+query R rowsort
 select x*x from rt
 ----
-4.4099994
+4.410
 
 statement ok
 rollback

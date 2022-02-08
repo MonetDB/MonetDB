@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /**
@@ -411,8 +411,6 @@ main(int argc, char *argv[])
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedr");
 	kv->val = strdup("no");
-	kv = findConfKey(_mero_db_props, "embedpy");
-	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedpy3");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedc");
@@ -482,7 +480,7 @@ main(int argc, char *argv[])
 				if (len > 0 && (size_t)len >= sizeof(dbfarm)) {
 					Mfprintf(stderr, "fatal: dbfarm exceeds allocated " \
 							"path length, please file a bug at " \
-							"http://bugs.monetdb.org/\n");
+							"https://github.com/MonetDB/MonetDB/issues/\n");
 					exit(1);
 				}
 			} else {
@@ -607,7 +605,7 @@ main(int argc, char *argv[])
 		if (getcwd(dbfarm, sizeof(dbfarm)) == NULL) {
 			if (errno == ERANGE) {
 				Mfprintf(stderr, "current path exceeds allocated path length" \
-						"please file a bug at http://bugs.monetdb.org\n");
+						"please file a bug at https://github.com/MonetDB/MonetDB/issues/\n");
 			} else {
 				Mfprintf(stderr, "could not get dbfarm working directory: %s\n",
 						strerror(errno));
@@ -784,6 +782,12 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 #endif
 	/* before it is too late, save original stderr */
+	// the duplications is happening so we can write err messages both
+	// to the console stderr, through `oerr` FILE*, and through the
+	// logging thread to the merovingian logfile. the latter is
+	// happening through replacing the standartd fd for stderr (namely
+	// fd=2) with a writting end of a pipe which reading end goes to the
+	// logging thread
 #ifdef F_DUPFD_CLOEXEC
 	if ((ret = fcntl(2, F_DUPFD_CLOEXEC, 3)) < 0) {
 		Mfprintf(stderr, "unable to dup stderr\n");
@@ -1038,6 +1042,21 @@ main(int argc, char *argv[])
 		 * start running, so flag the parent we will have fun. */
 		MERO_EXIT(0);
 
+		// if *not* on merodontfork mode and after notifying the parent
+		// that it can terminate make sure that we close and we do not
+		// use the original stderr (oerr).  The reason for this is
+		// because there is a chance that this is not a pty but a pipe
+		// instead. e.g. a Python script might have called the `monetdbd
+		// start` command and waits for an EOF at its reading pipes
+		if (!merodontfork) {
+			if ((ret = fclose(oerr)) != 0) {
+				// remember stderr is send to the log through the logger
+				Mfprintf(stderr, "unable to close stderr: %s\n", strerror(ret));
+			}
+			// in any casy oerr is either closed or EBADF
+			oerr = NULL;
+		}
+
 		/* handle external connections main loop */
 		e = acceptConnections(socks);
 
@@ -1059,7 +1078,8 @@ main(int argc, char *argv[])
 
 	if (e != NO_ERR) {
 		/* console */
-		Mfprintf(oerr, "%s: %s\n", argv[0], e);
+		if (oerr)
+			Mfprintf(oerr, "%s: %s\n", argv[0], e);
 		/* logfile */
 		Mfprintf(stderr, "%s\n", e);
 		MERO_EXIT(1);
@@ -1115,8 +1135,11 @@ shutdown:
 
 	_mero_keep_logging = 0;
 	if (tid != 0 && (argp = pthread_join(tid, NULL)) != 0) {
-		Mfprintf(oerr, "failed to wait for logging thread: %s\n",
-				strerror(argp));
+		// if we are still connecting to the stderr we can print that.
+		// it does not make sense to go to the logging thread since it
+		// is almost sure gone if we fail to join it.
+		if (oerr)
+			Mfprintf(oerr, "failed to wait for logging thread: %s\n", strerror(argp));
 	}
 
 	if (_mero_topdp != NULL) {

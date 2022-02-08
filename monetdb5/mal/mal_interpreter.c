@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -959,9 +959,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				v = &stk->stk[exceptionVar];
 				if (v->val.sval)
 					freeException(v->val.sval);    /* old exception*/
-				v->vtype = TYPE_str;
-				v->val.sval = ret;
-				v->len = strlen(v->val.sval);
+				VALset(v, TYPE_str, ret);
 				ret = MAL_SUCCEED;
 				MT_lock_unset(&mal_contextLock);
 			} else {
@@ -1187,9 +1185,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 				break;
 			}
-			if (stkpc == mb->stop)
-				ret = mb->errors = createMalException(mb, stkpc, TYPE,
-					"Exception raised\n");
 			break;
 		case YIELDsymbol:     /* to be defined */
 			if( startedProfileQueue)
@@ -1240,7 +1235,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	MT_thread_set_qry_ctx(qry_ctx_save);
 
 	/* if we could not find the exception variable, cascade a new one */
-	if (exceptionVar >= 0) {
+	/* don't add 'exception not caught' extra message for MAL sequences besides main function calls */
+	if (exceptionVar >= 0 && (ret == MAL_SUCCEED || !pcicaller)) {
 		char nme[256];
 		snprintf(nme,256,"%s.%s[%d]", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)), stkpc);
 		if (ret != MAL_SUCCEED) {

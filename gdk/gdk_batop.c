@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -693,6 +693,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
+	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
 	MT_lock_set(&b->theaplock);
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
 		if (ni.maxpos != BUN_NONE) {
@@ -906,6 +907,7 @@ BATdel(BAT *b, BAT *d)
 	OIDXdestroy(b);
 	HASHdestroy(b);
 	PROPdestroy(b);
+	STRMPdestroy(b);
 	if (BATtdense(d)) {
 		oid o = d->tseqbase;
 		BUN c = BATcount(d);
@@ -1107,12 +1109,11 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 	OIDXdestroy(b);
 	IMPSdestroy(b);
+	STRMPdestroy(b);
 	MT_lock_set(&b->theaplock);
 	if (ni.count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
 		b->tunique_est = 0;
 	}
-	BUN minpos = b->tminpos;
-	BUN maxpos = b->tmaxpos;
 	MT_lock_unset(&b->theaplock);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
@@ -1157,6 +1158,13 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					MT_rwlock_wrunlock(&b->thashlock);
 					locked = false;
 				}
+				if (b->tminpos != bi.minpos ||
+				    b->tmaxpos != bi.maxpos) {
+					MT_lock_set(&b->theaplock);
+					b->tminpos = bi.minpos;
+					b->tmaxpos = bi.maxpos;
+					MT_lock_unset(&b->theaplock);
+				}
 				if (BATcount(b) < updid &&
 				    BUNappendmulti(b, NULL, (BUN) (updid - BATcount(b)), force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
@@ -1191,36 +1199,36 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			b->tnonil &= !isnil;
 			b->tnil |= isnil;
-			if (maxpos != BUN_NONE) {
+			if (bi.maxpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtvar(bi, maxpos), new) < 0) {
+				    atomcmp(BUNtvar(bi, bi.maxpos), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
-					maxpos = updid;
-				} else if (atomcmp(BUNtvar(bi, maxpos), old) == 0 &&
+					bi.maxpos = updid;
+				} else if (atomcmp(BUNtvar(bi, bi.maxpos), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * largest and new value is
 					 * smaller, so we don't know
 					 * anymore which is the
 					 * largest */
-					maxpos = BUN_NONE;
+					bi.maxpos = BUN_NONE;
 				}
 			}
-			if (minpos != BUN_NONE) {
+			if (bi.minpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtvar(bi, minpos), new) > 0) {
+				    atomcmp(BUNtvar(bi, bi.minpos), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
-					minpos = updid;
-				} else if (atomcmp(BUNtvar(bi, minpos), old) == 0 &&
+					bi.minpos = updid;
+				} else if (atomcmp(BUNtvar(bi, bi.minpos), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * smallest and new value is
 					 * larger, so we don't know
 					 * anymore which is the
 					 * smallest */
-					minpos = BUN_NONE;
+					bi.minpos = BUN_NONE;
 				}
 			}
 			if (!locked) {
@@ -1259,7 +1267,14 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			/* in case ATOMreplaceVAR and/or
 			 * GDKupgradevarheap replaces a heap, we need to
 			 * reinitialize the iterator */
-			bi = bat_iterator_nolock(b);
+			{
+				/* save and restore minpos/maxpos */
+				BUN minpos = bi.minpos;
+				BUN maxpos = bi.maxpos;
+				bi = bat_iterator_nolock(b);
+				bi.minpos = minpos;
+				bi.maxpos = maxpos;
+			}
 			switch (b->twidth) {
 			case 1:
 				((uint8_t *) b->theap->base)[updid] = (uint8_t) (d - GDK_VAROFFSET);
@@ -1373,8 +1388,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			if (is_oid_nil(ni.tseq)) {
 				/* we may or may not overwrite the old
 				 * min/max values */
-				minpos = BUN_NONE;
-				maxpos = BUN_NONE;
+				bi.minpos = BUN_NONE;
+				bi.maxpos = BUN_NONE;
 				for (BUN i = 0, j = ni.count; i < j; i++)
 					o[i] = oid_nil;
 				b->tnil = true;
@@ -1383,17 +1398,17 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				/* we know min/max of n, so we know
 				 * the new min/max of b if those of n
 				 * are smaller/larger than the old */
-				if (minpos != BUN_NONE) {
-					if (v <= BUNtoid(b, minpos))
-						minpos = pos;
-					else if (pos <= minpos && minpos < pos + ni.count)
-						minpos = BUN_NONE;
+				if (bi.minpos != BUN_NONE) {
+					if (v <= BUNtoid(b, bi.minpos))
+						bi.minpos = pos;
+					else if (pos <= bi.minpos && bi.minpos < pos + ni.count)
+						bi.minpos = BUN_NONE;
 				}
-				if (maxpos != BUN_NONE) {
-					if (v + ni.count - 1 >= BUNtoid(b, maxpos))
-						maxpos = pos + ni.count - 1;
-					else if (pos <= maxpos && maxpos < pos + ni.count)
-						maxpos = BUN_NONE;
+				if (bi.maxpos != BUN_NONE) {
+					if (v + ni.count - 1 >= BUNtoid(b, bi.maxpos))
+						bi.maxpos = pos + ni.count - 1;
+					else if (pos <= bi.maxpos && bi.maxpos < pos + ni.count)
+						bi.maxpos = BUN_NONE;
 				}
 				for (BUN i = 0, j = ni.count; i < j; i++)
 					o[i] = v++;
@@ -1403,17 +1418,17 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * extreme as those of b, we can replace b's
 			 * min/max, else we don't know what b's new
 			 * min/max are*/
-			if (minpos != BUN_NONE && n->tminpos != BUN_NONE &&
-			    atomcmp(BUNtloc(bi, minpos), BUNtail(ni, n->tminpos)) >= 0) {
-				minpos = pos + n->tminpos;
+			if (bi.minpos != BUN_NONE && n->tminpos != BUN_NONE &&
+			    atomcmp(BUNtloc(bi, bi.minpos), BUNtail(ni, n->tminpos)) >= 0) {
+				bi.minpos = pos + n->tminpos;
 			} else {
-				minpos = BUN_NONE;
+				bi.minpos = BUN_NONE;
 			}
-			if (maxpos != BUN_NONE && n->tmaxpos != BUN_NONE &&
-			    atomcmp(BUNtloc(bi, maxpos), BUNtail(ni, n->tmaxpos)) <= 0) {
-				maxpos = pos + n->tmaxpos;
+			if (bi.maxpos != BUN_NONE && n->tmaxpos != BUN_NONE &&
+			    atomcmp(BUNtloc(bi, bi.maxpos), BUNtail(ni, n->tmaxpos)) <= 0) {
+				bi.maxpos = pos + n->tmaxpos;
 			} else {
-				maxpos = BUN_NONE;
+				bi.maxpos = BUN_NONE;
 			}
 			memcpy(Tloc(b, pos), ni.base,
 			       ni.count << b->tshift);
@@ -1432,15 +1447,15 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			/* if we replaced all values of b by values
 			 * from n, we can also copy the min/max
 			 * properties */
-			minpos = n->tminpos;
-			maxpos = n->tmaxpos;
+			bi.minpos = n->tminpos;
+			bi.maxpos = n->tmaxpos;
 			if (BATtdense(n)) {
 				/* replaced all of b with a dense sequence */
 				BATtseqbase(b, ni.tseq);
 			}
 		}
 	} else {
-		for (BUN i = 0, j = ni.count; i < j; i++) {
+		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
 			if (positions) {
 				/* assert(!autoincr) */
@@ -1460,13 +1475,20 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				goto bailout;
 			}
 
-			const void *new = BUNtail(ni, i);
+			const void *new = BUNtloc(ni, i);
 
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
 				if (locked) {
 					MT_rwlock_wrunlock(&b->thashlock);
 					locked = false;
+				}
+				if (b->tminpos != bi.minpos ||
+				    b->tmaxpos != bi.maxpos) {
+					MT_lock_set(&b->theaplock);
+					b->tminpos = bi.minpos;
+					b->tmaxpos = bi.maxpos;
+					MT_lock_unset(&b->theaplock);
 				}
 				if (BATcount(b) < updid &&
 				    BUNappendmulti(b, NULL, (BUN) (updid - BATcount(b)), force) != GDK_SUCCEED) {
@@ -1494,36 +1516,36 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			b->tnonil &= !isnil;
 			b->tnil |= isnil;
-			if (maxpos != BUN_NONE) {
+			if (bi.maxpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtloc(bi, maxpos), new) < 0) {
+				    atomcmp(BUNtloc(bi, bi.maxpos), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
-					maxpos = updid;
-				} else if (atomcmp(BUNtloc(bi, maxpos), old) == 0 &&
+					bi.maxpos = updid;
+				} else if (atomcmp(BUNtloc(bi, bi.maxpos), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * largest and new value is
 					 * smaller, so we don't know
 					 * anymore which is the
 					 * largest */
-					maxpos = BUN_NONE;
+					bi.maxpos = BUN_NONE;
 				}
 			}
-			if (minpos != BUN_NONE) {
+			if (bi.minpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtloc(bi, minpos), new) > 0) {
+				    atomcmp(BUNtloc(bi, bi.minpos), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
-					minpos = updid;
-				} else if (atomcmp(BUNtloc(bi, minpos), old) == 0 &&
+					bi.minpos = updid;
+				} else if (atomcmp(BUNtloc(bi, bi.minpos), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * smallest and new value is
 					 * larger, so we don't know
 					 * anymore which is the
 					 * smallest */
-					minpos = BUN_NONE;
+					bi.minpos = BUN_NONE;
 				}
 			}
 
@@ -1565,8 +1587,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	}
 	bat_iterator_end(&ni);
 	MT_lock_set(&b->theaplock);
-	b->tminpos = minpos;
-	b->tmaxpos = maxpos;
+	b->tminpos = bi.minpos;
+	b->tmaxpos = bi.maxpos;
 	b->theap->dirty = true;
 	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG(ALGO,
@@ -2160,7 +2182,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	if (g != NULL &&
 	    (ATOMtype(g->ttype) != TYPE_oid || /* oid tail */
 	     !g->tsorted ||		       /* sorted */
-	     BATcount(o) != BATcount(b) ||     /* same size as b */
+	     BATcount(g) != BATcount(b) ||     /* same size as b */
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(g) != 0 &&
 	      is_oid_nil(g->tseqbase)))) {
@@ -2816,7 +2838,6 @@ BATrmprop(BAT *b, enum prop_t idx)
 	MT_lock_unset(&b->theaplock);
 }
 
-
 /*
  * The BATcount_no_nil function counts all BUN in a BAT that have a
  * non-nil tail value.
@@ -2921,11 +2942,30 @@ BATcount_no_nil(BAT *b, BAT *s)
 		}
 		break;
 	}
-	if (cnt == BATcount(b)) {
-		/* we learned something */
-		b->tnonil = true;
-		assert(!b->tnil);
-		b->tnil = false;
+	if (cnt == bi.count) {
+		MT_lock_set(&b->theaplock);
+		if (cnt == BATcount(b) && bi.h == b->theap) {
+			/* we learned something */
+			b->batDirtydesc = true;
+			b->tnonil = true;
+			assert(!b->tnil);
+			b->tnil = false;
+		}
+		MT_lock_unset(&b->theaplock);
+		bat pbid = VIEWtparent(b);
+		if (pbid) {
+			BAT *pb = BBP_cache(pbid);
+			MT_lock_set(&pb->theaplock);
+			if (cnt == BATcount(pb) &&
+			    bi.h == pb->theap &&
+			    !pb->tnonil) {
+				pb->batDirtydesc = true;
+				pb->tnonil = true;
+				assert(!pb->tnil);
+				pb->tnil = false;
+			}
+			MT_lock_unset(&pb->theaplock);
+		}
 	}
 	bat_iterator_end(&bi);
 	return cnt;

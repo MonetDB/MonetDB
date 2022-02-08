@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -16,8 +16,6 @@
 #include "rel_schema.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_dump.h"
 #include "rel_psm.h"
 #include "sql_symbol.h"
@@ -33,7 +31,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		if (c->def) {
 			sql_exp *e = rel_parse_val(sql, c->t->s, c->def, &c->type, sql->emode, NULL);
 			if (!e || (e = exp_check_type(sql, &c->type, r ? *r : NULL, e, type_equal)) == NULL)
-				return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
+				return NULL;
 			return e;
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
@@ -95,7 +93,7 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	sql_rel *ins = inserts->r;
 
 	assert(is_project(ins->op) || ins->op == op_table);
-	if (list_length(i->columns) <= 1 || i->type == no_idx) {
+	if (list_length(i->columns) <= 1 || non_updatable_index(i->type)) {
 		/* dummy append */
 		inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
 		list_append(ins->exps, exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
@@ -175,7 +173,8 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 			/* TODO add access error */
 			return NULL;
 		}
-		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
+		int unique = list_length(i->columns) == 1 && list_length(rk->columns) == 1 && is_column_unique(rc->c);
+		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, unique, 0);
 
 		_is = exp_ref(sql, _is);
 		lnl = exp_unop(sql->sa, _is, isnil);
@@ -216,7 +215,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 	rel_base_use_tid(sql, rt);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
@@ -244,7 +243,7 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 	for (node *n = ol_first_node(t->idxs); n; n = n->next) {
 		sql_idx *i = n->data;
 
-		if (hash_index(i->type) || i->type == no_idx) {
+		if (hash_index(i->type) || non_updatable_index(i->type)) {
 			rel_insert_hash_idx(sql, alias, i, inserts);
 		} else if (i->type == join_idx) {
 			rel_insert_join_idx(sql, alias, i, inserts);
@@ -360,7 +359,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				if (c->def) {
 					e = rel_parse_val(sql, t->s, c->def, &c->type, sql->emode, NULL);
 					if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
-						return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
+						return NULL;
 				} else {
 					atom *a = atom_general(sql->sa, &c->type, NULL);
 					e = exp_atom(sql->sa, a);
@@ -502,7 +501,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 		return NULL;
 
 	if (val_or_q->token == SQL_VALUES) {
-		dlist *rowlist = val_or_q->data.lval;
+		dlist *rowlist = val_or_q->data.lval->h->data.lval;
 		list *exps = new_exp_list(sql->sa);
 
 		if (!rowlist->h) {
@@ -598,7 +597,7 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 
 	if (val_or_q->token == SQL_VALUES) {
 		list *exps = new_exp_list(sql->sa);
-		dlist *rowlist = val_or_q->data.lval;
+		dlist *rowlist = val_or_q->data.lval->h->data.lval;
 
 		if (!rowlist->h) {
 			res = rel_project(sql->sa, NULL, NULL);
@@ -692,7 +691,7 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	sql_rel *ups = updates->r;
 
 	assert(is_project(ups->op) || ups->op == op_table);
-	if (list_length(i->columns) <= 1 || i->type == no_idx) {
+	if (list_length(i->columns) <= 1 || non_updatable_index(i->type)) {
 		h = exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label);
 	} else {
 		it = sql_bind_localtype("int");
@@ -734,7 +733,7 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, alias, iname, lng, CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, alias, iname, lng, CARD_MULTI, 0, 0, 0));
 	return updates;
 }
 
@@ -800,7 +799,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 			/* TODO add access error */
 			return NULL;
 		}
-		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
+		int unique = list_length(i->columns) == 1 && list_length(rk->columns) == 1 && is_column_unique(rc->c);
+		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, unique, 0);
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
@@ -845,7 +845,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	nnlls->flag |= LEFT_JOIN;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 	rel_base_use_tid(sql, rt);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
@@ -860,7 +860,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	}
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, alias, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, alias, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0, 0));
 	return updates;
 }
 
@@ -889,7 +889,7 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		 * Ie todo check for new indices.
 		 */
 
-		if (hash_index(i->type) || i->type == no_idx) {
+		if (hash_index(i->type) || non_updatable_index(i->type)) {
 			rel_update_hash_idx(sql, alias, i, relup);
 		} else if (i->type == join_idx) {
 			rel_update_join_idx(sql, alias, i, relup);
@@ -930,7 +930,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 			if (!v && rel_base_use(sql, bt, c->colnr) < 0) /* not allowed */
 				continue;
 			if (ol_length(tab->idxs) && !v)
-				v = exp_column(sql->sa, alias, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+				v = exp_column(sql->sa, alias, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 			if (v)
 				v = rel_project_add_exp(sql, uprel, v);
 		}
@@ -984,7 +984,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 	}
 
 	/* first create the project */
-	exps = list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	exps = list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
 
 	for (n = assignmentlist->h; n; n = n->next) {
 		symbol *a = NULL;
@@ -1034,7 +1034,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 				set_dependent(r);
 				if (single) {
-					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_unique(v), is_intern(v));
 					rel_val = NULL;
 				}
 			}
@@ -1083,7 +1083,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 				if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 					return NULL;
-				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
+				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));
 				exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 				updates[c->colnr] = v;
 				rel_base_use(sql, bt, c->colnr);
@@ -1116,13 +1116,13 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 			if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 				return NULL;
-			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
+			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));
 			exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 			updates[c->colnr] = v;
 			rel_base_use(sql, bt, c->colnr);
 		}
 	}
-	r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
+	r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1)));
 	reset_single(r); /* don't let single joins get propagated */
 	r = rel_update(sql, bt, r, updates, exps);
 	return r;
@@ -1238,7 +1238,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 			rel_base_use_tid(sql, r);
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
-			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
 			r = rel_delete(sql->sa, rel_basetable(sql, t, alias ? alias : tname), r);
 		} else {	/* delete all */
@@ -1355,7 +1355,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					set_processed(join_rel);
 				}
 
-				extra_project = rel_project(sql->sa, join_rel, list_append(new_exp_list(sql->sa), exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
+				extra_project = rel_project(sql->sa, join_rel, list_append(new_exp_list(sql->sa), exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1)));
 				upd_del = rel_delete(sql->sa, rel_basetable(sql, t, bt_name), extra_project);
 			} else {
 				assert(0);
@@ -1492,7 +1492,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		if (c->base.name[0] != '%')
-			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
 	return res;
@@ -1761,7 +1761,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	exps = new_exp_list(sql->sa);
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
-		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
 	res = rel_insert_table(query, t, t->base.name, res);
@@ -1882,7 +1882,6 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 sql_exp *
 rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 {
-	mvc o = *m;
 	sql_exp *e = NULL;
 	buffer *b;
 	char *n;
@@ -1891,19 +1890,13 @@ rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode
 	stream *s;
 	bstream *bs;
 
-	m->qc = NULL;
-
-	if (sch)
-		m->session->schema = sch;
-
-	m->emode = emode;
 	b = malloc(sizeof(buffer));
 	len += 8; /* add 'select ;' */
 	n = malloc(len + 1 + 1);
 	if(!b || !n) {
 		free(b);
 		free(n);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(n, len + 2, "select %s;\n", query);
 	len++;
@@ -1911,20 +1904,26 @@ rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode
 	s = buffer_rastream(b, "sqlstatement");
 	if(!s) {
 		buffer_destroy(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bs = bstream_create(s, b->len);
 	if(bs == NULL) {
 		buffer_destroy(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	mvc o = *m;
 	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
+	m->qc = NULL;
+	if (sch)
+		m->session->schema = sch;
+	m->emode = emode;
 	m->params = NULL;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
+	m->session->status = 0;
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 
