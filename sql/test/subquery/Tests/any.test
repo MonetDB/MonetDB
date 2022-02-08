@@ -17,7 +17,7 @@ SELECT i FROM integers WHERE i > ANY(SELECT i FROM integers)
 2
 3
 
-query IT nosort
+query II nosort
 SELECT i, i > ANY(SELECT i FROM integers) FROM integers ORDER BY i
 ----
 NULL
@@ -25,23 +25,23 @@ NULL
 1
 NULL
 2
-True
+1
 3
-True
+1
 
-query IT nosort
+query II nosort
 SELECT i, i > ANY(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers ORDER BY i
 ----
 NULL
 NULL
 1
-False
+0
 2
-True
+1
 3
-True
+1
 
-query IT nosort
+query II nosort
 SELECT i, NULL > ANY(SELECT i FROM integers) FROM integers ORDER BY i
 ----
 NULL
@@ -53,7 +53,7 @@ NULL
 3
 NULL
 
-query IT nosort
+query II nosort
 SELECT i, NULL > ANY(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers ORDER BY i
 ----
 NULL
@@ -72,19 +72,19 @@ SELECT i FROM integers WHERE i = ANY(SELECT i FROM integers)
 2
 3
 
-query IT nosort
+query II nosort
 SELECT i, i = ANY(SELECT i FROM integers WHERE i>2) FROM integers ORDER BY i
 ----
 NULL
 NULL
 1
-False
+0
 2
-False
+0
 3
-True
+1
 
-query IT nosort
+query II nosort
 SELECT i, i = ANY(SELECT i FROM integers WHERE i>2 OR i IS NULL) FROM integers ORDER BY i
 ----
 NULL
@@ -94,67 +94,67 @@ NULL
 2
 NULL
 3
-True
+1
 
-query IT nosort
+query II nosort
 SELECT i, i <> ANY(SELECT i FROM integers WHERE i>2) FROM integers ORDER BY i
 ----
 NULL
 NULL
 1
-True
+1
 2
-True
+1
 3
-False
+0
 
-query IT nosort
+query II nosort
 SELECT i, i <> ANY(SELECT i FROM integers WHERE i>2 OR i IS NULL) FROM integers ORDER BY i
 ----
 NULL
 NULL
 1
-True
+1
 2
-True
+1
 3
 NULL
 
-query IT nosort
+query II nosort
 SELECT i, i = ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL) FROM integers ORDER BY i
 ----
 NULL
 NULL
 1
-True
+1
 2
-True
+1
 3
-True
+1
 
-query IT nosort
+query II nosort
 SELECT i, i = ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL AND i1.i <> 2) FROM integers ORDER BY i
 ----
 NULL
 NULL
 1
-True
+1
 2
-False
+0
 3
-True
+1
 
-query IT nosort
+query II nosort
 SELECT i, i >= ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL) FROM integers ORDER BY i
 ----
 NULL
 NULL
 1
-True
+1
 2
-True
+1
 3
-True
+1
 
 statement error
 SELECT i, i >= ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL AND i1.i <> 1 LIMIT 1) FROM integers ORDER BY i
@@ -164,5 +164,4 @@ SELECT 1 >= ANY(SELECT 2, 3)
 
 statement ok
 drop table integers
-
 

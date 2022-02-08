@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _MONETDBE_LIB_
@@ -66,7 +66,14 @@ typedef enum  {
 } monetdbe_types;
 
 typedef struct {
+	char* name;
+	unsigned int scale;
+	unsigned int digits;
+} monetdbe_sql_type;
+
+typedef struct {
 	monetdbe_types type;
+	monetdbe_sql_type sql_type;
 	void *data;
 	size_t count;
 	char* name;
@@ -114,6 +121,7 @@ typedef struct {
 	typedef struct                                     \
 	{                                                  \
 		monetdbe_types type;                        \
+		monetdbe_sql_type sql_type;                \
 		ctype *data;                               \
 		size_t count;                              \
 		char *name;				   \
@@ -167,7 +175,7 @@ monetdbe_export char* monetdbe_cleanup_statement(monetdbe_database dbhdl, monetd
 monetdbe_export char* monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count);
 monetdbe_export const void* monetdbe_null(monetdbe_database dbhdl, monetdbe_types t);
 
-monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
+monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, monetdbe_column **columns);
 
 monetdbe_export char* monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);
 monetdbe_export char* monetdbe_dump_table(monetdbe_database dbhdl, const char *schema_name, const char *table_name, const char *backupfile);

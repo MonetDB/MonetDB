@@ -40,7 +40,7 @@ create table copyintest ( str VARCHAR(20), str2 VARCHAR(20))
 statement ok
 copy into copyintest from E'$QTSTTRGDIR/x.dat' delimiters '[]', E'\n', '"'
 
-query I
+query I nosort
 select count(*) from copyintest
 ----
 4

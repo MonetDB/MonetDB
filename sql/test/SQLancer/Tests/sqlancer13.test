@@ -217,7 +217,7 @@ SELECT 1 FROM t2 JOIN (SELECT 2) AS sub0 (c0) ON (CASE WHEN CAST(2 AS BOOLEAN) T
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(NOT ((CASE WHEN TRUE THEN FALSE END) = TRUE) AS INT) as count FROM t2 JOIN
 ((SELECT ((1)/(round(0.84, 0.7281314))) FROM t0, t2 WHERE CAST(abs(t2.c7) AS BOOLEAN)) EXCEPT ALL (SELECT least("epoch_ms"(TIME '21:17:08'),
-CASE WHEN TRUE THEN ((-23)/(t2.c7)) WHEN ((r'1e500')LIKE(r'H')) THEN sql_max(2, 2) WHEN least(TRUE, FALSE) THEN ((t0.c2)%(4)) END) FROM t0, t2 WHERE FALSE)) AS sub0 ON ((CASE WHEN CAST(2 AS BOOLEAN) THEN NULL END)<>(t2.c6))) as res
+CASE WHEN TRUE THEN ((-23)/(t2.c7)) WHEN (('1e500')LIKE('H')) THEN sql_max(2, 2) WHEN least(TRUE, FALSE) THEN ((t0.c2)%(4)) END) FROM t0, t2 WHERE FALSE)) AS sub0 ON ((CASE WHEN CAST(2 AS BOOLEAN) THEN NULL END)<>(t2.c6))) as res
 ----
 NULL
 
@@ -261,7 +261,7 @@ statement ok
 MERGE INTO t2 USING (SELECT * FROM t1) AS t1 ON TRUE WHEN MATCHED THEN UPDATE SET c2 = mystringudf('1', '2')
 
 statement ok
-MERGE INTO t2 USING (SELECT * FROM t1) AS t1 ON NOT (greatest(FALSE, TRUE)) WHEN MATCHED THEN UPDATE SET c0 = r'', c2 = (ifthenelse(((-1.2422299E8)<=(6)), CAST(6 AS STRING), mystringudf(r'', r'833481730')))
+MERGE INTO t2 USING (SELECT * FROM t1) AS t1 ON NOT (greatest(FALSE, TRUE)) WHEN MATCHED THEN UPDATE SET c0 = '', c2 = (ifthenelse(((-1.2422299E8)<=(6)), CAST(6 AS STRING), mystringudf('', '833481730')))
 
 statement ok
 ROLLBACK
@@ -340,7 +340,7 @@ insert into t0(c4) values(power(1770290607, case when greatest(false, true) then
 
 statement error 25005!Current transaction is aborted (please ROLLBACK)
 INSERT INTO t0(c4) VALUES(power(1770290607, CASE WHEN (UUID 'aE792C3f-21e0-323f-1C8A-DfBD3aB655CF') IN (UUID 'b30E22a2-3d7A-1003-BEB6-F9dE845bEAd1',
-UUID '6E391a40-3Fc6-F594-036D-737eCaDC937c') THEN CAST(r'jV㋕<2H' AS REAL) WHEN greatest(FALSE, TRUE) THEN CAST(5 AS REAL) WHEN NOT (TRUE)
+UUID '6E391a40-3Fc6-F594-036D-737eCaDC937c') THEN CAST('jV㋕<2H' AS REAL) WHEN greatest(FALSE, TRUE) THEN CAST(5 AS REAL) WHEN NOT (TRUE)
 THEN + (3) WHEN NOT (TRUE) THEN least(5, 0.5809714) WHEN NOT (TRUE) THEN ((0.022229422)*(1666367947)) END)), (-1.722544153E9)
 
 statement ok
@@ -538,7 +538,7 @@ COPY 25 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 "\tyT"	0.6758237	-0.366
 
 query I rowsort
-select cast(sum(count) as bigint) from (select cast((("concat"(t0.c1, t0.c1))not ilike(nullif(r'O', substr(t0.c1, 3, 1807556376)))) as int) as count from t1, t0) as res
+select cast(sum(count) as bigint) from (select cast((("concat"(t0.c1, t0.c1))not ilike(nullif('O', substr(t0.c1, 3, 1807556376)))) as int) as count from t1, t0) as res
 ----
 50
 

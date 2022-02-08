@@ -199,18 +199,22 @@ using the **set** command. The following properties can be set:
    reachable databases.
 
 **exittimeout**
-   if *monetdbd* stops a running mserver, for example in response to a
+   If *monetdbd* stops a running mserver, for example in response to a
    *monetdb stop* command or when *monetdbd* itself is shutting down, it
    first sends the mserver a SIGTERM signal to trigger a graceful
    shutdown. If that takes more than **exittimeout** seconds, SIGKILL is
-   sent as a last resort. This may cause (partial) data loss. A time-out
-   value of 0 means no mservers will be shut down, and hence they will
-   continue to run after *monetdbd* has shut down. Note that this
-   particular configuration is extremely inconvenient. The default
-   time-out is 60 seconds. If your databases are rather large and you
-   find your databases consistently being killed by *monetdbd* upon
-   shutdown, you may want to increase this time-out. Changing this
-   property takes effect immediately at runtime.
+   sent as a last resort. This may cause (partial) data loss in that
+   transactions may not be able to complete (all completed transactions,
+   whether reported back or not, should be save). A negative time-out
+   value value means the second signal (SIGKILL) will not be sent, but
+   instead all mserver processes will be waited for. A time-out value of
+   0 means no mservers will be shut down, and hence they will continue
+   to run after *monetdbd* has shut down. Note that this particular
+   configuration is extremely inconvenient. The default time-out is 60
+   seconds. If your databases are rather large and you find your
+   databases consistently being killed by *monetdbd* upon shutdown, you
+   may want to increase this time-out. Changing this property takes
+   effect immediately at runtime.
 
 **forward**
    *monetdbd* has two ways in which it can "attach" a connecting client
@@ -263,44 +267,45 @@ instance the following three databases with their tag:
 
    dbX/master/tableQ
 
-      dbY/slave/tableQ
+..
 
-         dbZ/slave/tableQ
+   dbY/slave/tableQ
 
-         A default match has implicit \`/*' added to the search, making
-         more generic search strings match more specific ones. Hence, a
-         connect with database *dbX* is the same as *dbX/\** and hence
-         matches *dbX/master/tableQ*. Similar, a database connect for
-         *\*/master* matches the same database as before. Note that the
-         implicit \`/*' is not added if that would cause no matches,
-         such as for *\*/master/tableQ* which would return all masters
-         for *tableQ*, which in our hypothetical example is only *dbX*.
-         In contrast, a database connect for *\*/slave/tableQ* matches
-         with either *dbY* or *dbZ*. *Monetdbd* returns the two options
-         to the client in a round-robin fashion, such that subsequent
-         connects for the same pattern result in a load-balanced connect
-         to either of both databases.
+   dbZ/slave/tableQ
 
-         With tags in use, one can possibly make distinction between
-         databases, if setup like that. The previous example could hence
-         also be setup like this:
+A default match has implicit \`/*' added to the search, making more
+generic search strings match more specific ones. Hence, a connect with
+database *dbX* is the same as *dbX/\** and hence matches
+*dbX/master/tableQ*. Similar, a database connect for *\*/master* matches
+the same database as before. Note that the implicit \`/*' is not added
+if that would cause no matches, such as for *\*/master/tableQ* which
+would return all masters for *tableQ*, which in our hypothetical example
+is only *dbX*. In contrast, a database connect for *\*/slave/tableQ*
+matches with either *dbY* or *dbZ*. *Monetdbd* returns the two options
+to the client in a round-robin fashion, such that subsequent connects
+for the same pattern result in a load-balanced connect to either of both
+databases.
 
-            tableQ/master
+With tags in use, one can possibly make distinction between databases,
+if setup like that. The previous example could hence also be setup like
+this:
 
-               tableQ/slave
+   tableQ/master
 
-                  tableQ/slave
+..
 
-                  Connecting to *tableQ/slave* would now return either
-                  of both databases even though they are not unique
-                  (apart from the host they are located on, which is not
-                  shown in the example). While being confusing for
-                  humans, for *monetdbd* it is the same situation as in
-                  the previous example. However, because globbing allows
-                  to make things easier to understand, tags for both
-                  slaves could be changed to *slaveX* or *slave/X* and
-                  use the necessary pattern to match them. It is up to
-                  the user to decide how to use the tags.
+   tableQ/slave
+
+   tableQ/slave
+
+Connecting to *tableQ/slave* would now return either of both databases
+even though they are not unique (apart from the host they are located
+on, which is not shown in the example). While being confusing for
+humans, for *monetdbd* it is the same situation as in the previous
+example. However, because globbing allows to make things easier to
+understand, tags for both slaves could be changed to *slaveX* or
+*slave/X* and use the necessary pattern to match them. It is up to the
+user to decide how to use the tags.
 
 MULTIPLEX-FUNNELS
 =================

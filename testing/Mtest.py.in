@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 #TODO:
 #=====
@@ -383,6 +383,7 @@ CONDITIONALS = {
     'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
+    'NOT_ASSERT'           : "@NOT_ASSERT_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
     'KNOWNFAIL'            : False, # skip on release branch when not in testweb
@@ -1345,67 +1346,69 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
         alllinks = []
         pSrvr = None
         try:
-            try:
-                for TST,COND in testlist:
-                    if oneserver and (pSrvr is None or pSrvr.poll() is not None):
-                        # restart server
-                        inmem = single_in_memory
-                        for o in options:
-                            if o.startswith('embedded'):
-                                inmem = False
-                                break
-                        if inmem:
-                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--set', 'gdk_dbname=%s' % TSTDB, '--in-memory'] + mserver5_opts + options
-                            pollfile = None
-                        else:
-                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts + options
-                            pollfile = os.path.join(LogDBdir, '.started')
-                        if env.get('MULTIFARM'):
-                            cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                            shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
-                                          ignore_errors = True)
-                            os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                        elif env.get('TRANS_INMEM'):
-                            cmd.append('--dbextra=in-memory')
-                        pSrvr = ServerClass(cmd,
-                                            openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
-                                            openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
-                                            0,
-                                            pollfile)
-                        os.chdir(TSTTRGDIR)
-                        pSrvr.LaunchIt()
-                        if pSrvr.port is None:
-                            print('\nFailed to start server.\n')
+            for TST,COND in testlist:
+                if oneserver and (pSrvr is None or pSrvr.poll() is not None):
+                    # restart server
+                    inmem = single_in_memory
+                    for o in options:
+                        if o.startswith('embedded'):
+                            inmem = False
                             break
-                        os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
-                        SetExecEnv(env['exe'],pSrvr.port,verbose)
-                    if global_timeout and start_time + global_timeout < time.time():
-                        if not testweb:
-                            print('\nGlobal testing timeout reached\n')
-                            break
-                        tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
+                    if inmem:
+                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--set', 'gdk_dbname=%s' % TSTDB, '--in-memory'] + mserver5_opts + options
+                        pollfile = None
+                        cmd.append('--set')
+                        cmd.append('gdk_dbtrace={}'.format(os.path.join(LogDBdir, 'mdbtrace.log')))
                     else:
-                        os.environ['TST'] = TST
-                        tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, all_tests, pSrvr)
-                        alllinks.extend(links)
-                    if tt:
-                        t = "%7.3f" % tt
+                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts + options
+                        pollfile = os.path.join(LogDBdir, '.started')
+                    if env.get('MULTIFARM'):
+                        cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                        shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                                      ignore_errors = True)
+                        os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                    elif env.get('TRANS_INMEM'):
+                        cmd.append('--dbextra=in-memory')
+                    pSrvr = ServerClass(cmd,
+                                        openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
+                                        openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
+                                        0,
+                                        pollfile,
+                                        inmem)
+                    os.chdir(TSTTRGDIR)
+                    pSrvr.LaunchIt()
+                    if pSrvr.port is None:
+                        print('\nFailed to start server.\n')
+                        break
+                    os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
+                    SetExecEnv(env['exe'],pSrvr.port,verbose)
+                if global_timeout and start_time + global_timeout < time.time():
+                    if not testweb:
+                        print('\nGlobal testing timeout reached\n')
+                        break
+                    tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
+                else:
+                    os.environ['TST'] = TST
+                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, all_tests, pSrvr)
+                    alllinks.extend(links)
+                if tt:
+                    t = "%7.3f" % tt
+                else:
+                    t = '-.---'
+                TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
+                td += tt
+                FdOut = max(FdOut,FtOut)
+                FdErr = max(FdErr,FtErr)
+                if bodyline is not None:
+                    if FtOut <= F_OK and FtErr <= F_OK:
+                        body_good.append(bodyline)
                     else:
-                        t = '-.---'
-                    TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
-                    td += tt
-                    FdOut = max(FdOut,FtOut)
-                    FdErr = max(FdErr,FtErr)
-                    if bodyline is not None:
-                        if FtOut <= F_OK and FtErr <= F_OK:
-                            body_good.append(bodyline)
-                        else:
-                            body_bad.append(bodyline)
-                    if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
-                        oktests.append(TST)
-            except KeyboardInterrupt:
-                print('\nInterrupted')
-                interrupted = True
+                        body_bad.append(bodyline)
+                if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
+                    oktests.append(TST)
+        except KeyboardInterrupt:
+            print('\nInterrupted')
+            interrupted = True
         finally:
             if pSrvr is not None:
                 pSrvr.terminate()
@@ -1630,16 +1633,9 @@ def GetBitsAndModsAndThreads(env) :
         pass
     cmd.append('--dbpath=%s' % dbpath)
     os.environ['TSTDB'] = TSTPREF
-    if env.get('MULTIFARM'):
-        cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-        shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
-                      ignore_errors = True)
-        os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-    elif env.get('TRANS_INMEM'):
-        cmd.append('--dbextra=in-memory')
+    cmd.extend(mserver5_opts)
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
-    cmd.extend(mserver5_opts)
     setpgrp = True
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
                        stderr=process.PIPE, text=True) as proc:
@@ -2492,7 +2488,7 @@ def killProc(proc, outfile = None, cmd = None):
         killchildren(proc.pid)
 
 class ServerClass:
-    def __init__(self, cmd, TestOut, TestErr, TimeOut, pollfile):
+    def __init__(self, cmd, TestOut, TestErr, TimeOut, pollfile, inmem=False):
         self.proc = None
         self.timer = None
         self.outfile = TestOut
@@ -2502,6 +2498,7 @@ class ServerClass:
         self.cmd = cmd
         self.timeout = TimeOut
         self.pollfile = pollfile
+        self.inmem = inmem
 
     def poll(self):
         return self.proc.poll()
@@ -2517,6 +2514,8 @@ class ServerClass:
         self.proc.wait()
         t.cancel()
         self.code = returnCode(self.proc, self.errfile)
+        if self.pollfile is None:
+            self.outfile.write(self.proc.stdout.read())
         self.outfile.close()
         self.errfile.close()
 
@@ -2529,22 +2528,25 @@ class ServerClass:
         if procdebug:
             print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(self.cmd))
         setpgrp = True
-        if self.pollfile:
+        outfile = self.outfile
+        if self.inmem:
+            outfile = process.PIPE
+        elif self.pollfile:
             try:
                 os.unlink(self.pollfile)
             except OSError:
                 pass
         else:
-            self.outfile = process.PIPE
+            outfile = process.PIPE
         if os.name == "nt":
-            proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=self.outfile,
+            proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=outfile,
                                  stderr=self.errfile, text=True,
                                  creationflags=process.CREATE_NEW_PROCESS_GROUP)
         else:
-            proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=self.outfile,
+            proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=outfile,
                                  stderr=self.errfile, text=True)
         # maybe buffer output as it comes to avoid deadlock
-        if self.outfile == process.PIPE:
+        if outfile == process.PIPE:
             proc.stdout = process._BufferedPipe(proc.stdout)
         if self.errfile == process.PIPE:
             proc.stderr = process._BufferedPipe(proc.stderr)
@@ -2577,6 +2579,7 @@ class ServerClass:
                 line = proc.stdout.readline()
                 if not line:
                     break
+                self.outfile.write(line)
                 if 'MonetDB/SQL module loaded' in line:
                     break
                 res = mapiportre.search(line)
@@ -3154,20 +3157,20 @@ else:
         return os.listdir(os.path.abspath(d))
 
 HOST = 'localhost'
-if 'HOST' in os.environ:
-    HOST = os.environ['HOST']
-#else:
-#    HOST = ''
-elif os.name != "nt":
-    HOST = os.uname()[1]
-elif 'COMPUTERNAME' in os.environ:
-    HOST = os.environ['COMPUTERNAME']
-##else:
-##    HOST = "WIN2000"
-if 'DOMAIN' in os.environ:
-    HOST = HOST.replace('.'+os.environ('DOMAIN'),'')
-else:
-    HOST = HOST.split('.', 1)[0]
+# if 'HOST' in os.environ:
+#     HOST = os.environ['HOST']
+# #else:
+# #    HOST = ''
+# elif os.name != "nt":
+#     HOST = os.uname()[1]
+# elif 'COMPUTERNAME' in os.environ:
+#     HOST = os.environ['COMPUTERNAME']
+# ##else:
+# ##    HOST = "WIN2000"
+# if 'DOMAIN' in os.environ:
+#     HOST = HOST.replace('.'+os.environ('DOMAIN'),'')
+# else:
+#     HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 os.environ['MAPIHOST'] = HOST
 
@@ -3436,7 +3439,7 @@ def main(argv) :
     nomito = opts.nomito
     global restart
     restart = opts.restart
-    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
+    if int(MonetDB_VERSION[1])%2 == 0 or opts.alltests:
         CONDITIONALS['KNOWNFAIL'] = 'execute'
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
@@ -3978,6 +3981,8 @@ def main(argv) :
         env['RELEASE'] = os.environ['RELEASE']
         env['DIST'] = os.environ['DIST']
         env['VERSION'] = os.environ['VERSION']
+
+        CONDITIONALS['ARCH_BITS32'] = (env['TST_BITS'] == '32bit')
 
         if procdebug:
             for k in sorted(os.environ):

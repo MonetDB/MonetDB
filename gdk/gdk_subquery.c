@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -162,9 +162,9 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 				uint16_t width = res->twidth;
 				for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
 					BUN noid = oids[i];
-					void *next;
+					const void *next;
 					if (noid == BUN_NONE) {
-						next = (void*) nilp;
+						next = nilp;
 						hasnil = 1;
 					} else {
 						next = BUNtloc(li, noid);

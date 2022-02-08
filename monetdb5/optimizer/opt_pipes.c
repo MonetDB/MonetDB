@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -46,14 +46,34 @@ static struct PIPELINES {
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.bincopyfrom();"
+	 "optimizer.emptybind();"
 	 "optimizer.deadcode();"
+	 "optimizer.for();"
+	 "optimizer.dict();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();" 
 	 //"optimizer.candidates();" only for decoration in explain
 	 //"optimizer.mask();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
+#ifdef USE_STRIMPS_OPTIMIZERS
+	{"minimal_strimps_pipe",
+	 "optimizer.inline();"
+	 "optimizer.remap();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
+	 "optimizer.deadcode();"
+	 "optimizer.multiplex();"
+	 "optimizer.strimps();"
+	 "optimizer.generator();"
+	 //"optimizer.candidates();" only for decoration in explain
+	 //"optimizer.mask();"
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
+	 "stable", NULL, 1},
+#endif  // USE_STRIMPS_OPTIMIZERS
 	{"minimal_fast",
 	 "optimizer.minimalfast()",
 	 "stable", NULL, 1},
@@ -77,6 +97,8 @@ static struct PIPELINES {
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
+	 "optimizer.for();"
+	 "optimizer.dict();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
@@ -91,28 +113,22 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
-	{"default_fast",
-	 "optimizer.defaultfast()",
-	 "stable", NULL, 1},
-/*
- * Optimistic concurreny control in general leads to more transaction failures
- * in an OLTP setting. The partial solution provided is to give out
- * advisory locks and delay updates until they are released or timeout.
- */
-	{"oltp_pipe",
+#ifdef USE_STRIMPS_OPTIMIZERS
+	{"strimps_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
+	 "optimizer.aliases();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
@@ -131,16 +147,20 @@ static struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
+	 "optimizer.strimps();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.oltp();"
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
+	 "stable", NULL, 1},
+#endif  // USE_STRIMPS_OPTIMIZERS
+	{"default_fast",
+	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},
 /*
  * Volcano style execution produces a sequence of blocks from the source relation
@@ -171,14 +191,14 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.volcano();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
@@ -214,14 +234,14 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
 /* The sequential pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
@@ -244,6 +264,8 @@ static struct PIPELINES {
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
+	 "optimizer.for();"
+	 "optimizer.dict();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"
@@ -256,14 +278,14 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production

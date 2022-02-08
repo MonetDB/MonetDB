@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -309,7 +309,7 @@ monetdbe_mapi_dump_table(monetdbe_database dbhdl, const char *sname, const char 
 	/* open file stream */
 	stream *fd = open_wastream(filename);
 	if (fd) {
-		if (dump_table(&mid, sname, tname, fd, 0, 0, 0, 0, false)) {
+		if (dump_table(&mid, sname, tname, fd, false, false, false, false, false)) {
 			if (mid.msg)
 				msg = mid.msg;
 		}

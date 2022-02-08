@@ -1,0 +1,12 @@
+statement ok
+CREATE USER owner with password 'ThisIsAS3m1S3cur3P4ssw0rd' name 'user gets monetdb rights' schema sys
+
+statement ok
+CREATE SCHEMA schemaForOwner AUTHORIZATION owner
+
+statement ok
+CREATE table schemaForOwner.testTable(v1 int, v2 int)
+
+statement ok
+GRANT sysadmin to owner
+

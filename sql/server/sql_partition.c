@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -15,8 +15,6 @@
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_updates.h"
 #include "mal_exception.h"
 
@@ -106,7 +104,7 @@ static void exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *col
 static void
 rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
@@ -174,7 +172,7 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 static void
 exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
@@ -299,7 +297,7 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 		r->l = NULL; /* omit table from list of dependencies */
 		(void) rel_project_add_exp(sql, r, exp);
 
-		nr = sql_processrelation(sql, nr, 0, 0);
+		nr = sql_processrelation(sql, nr, 0, 0, 0);
 		if (nr) {
 			list *blist = rel_dependencies(sql, nr);
 			if (mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY))

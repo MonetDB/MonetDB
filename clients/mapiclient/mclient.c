@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -2515,7 +2515,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						start_pager(&saveFD);
 #endif
 						if (x & MD_TABLE || x & MD_VIEW)
-							describe_table(mid, NULL, line, toConsole, 1, false);
+							dump_table(mid, NULL, line, toConsole, true, true, false, false, false);
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
@@ -2668,7 +2668,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false, false);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
-						dump_database(mid, toConsole, 0, useinserts, false);
+						dump_database(mid, toConsole, false, useinserts, false);
 #ifdef HAVE_POPEN
 					end_pager(saveFD);
 #endif
@@ -2926,7 +2926,7 @@ struct privdata {
 #define READSIZE	(1 << 16)
 //#define READSIZE	(1 << 20)
 
-static char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+static const char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz";
 
 static char *
@@ -3136,7 +3136,7 @@ main(int argc, char **argv)
 	bool autocommit = true;	/* autocommit mode default on */
 	bool user_set_as_flag = false;
 	bool passwd_set_as_flag = false;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"autocommit", 0, 0, 'a'},
 		{"database", 1, 0, 'd'},
 		{"dump", 0, 0, 'D'},
@@ -3519,7 +3519,7 @@ main(int argc, char **argv)
 	}
 	if (dump) {
 		if (mode == SQL) {
-			exit(dump_database(mid, toConsole, 0, useinserts, false));
+			exit(dump_database(mid, toConsole, false, useinserts, false));
 		} else {
 			mnstr_printf(stderr_stream, "Dump only supported for SQL\n");
 			exit(1);

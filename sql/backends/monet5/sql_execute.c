@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -26,10 +26,6 @@
 #include "sql_user.h"
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_partition.h"
-#include "rel_distribute.h"
 #include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -342,8 +338,10 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
 	if (!o) {
-		if (inited)
-			SQLresetClient(c);
+		if (inited) {
+			msg = SQLresetClient(c);
+			freeException(msg);
+		}
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*o = *m;
@@ -650,8 +648,10 @@ endofcompile:
 	m->frames = frames;
 	m->session->status = status;
 	m->session->auto_commit = ac;
-	if (inited)
-		SQLresetClient(c);
+	if (inited) {
+		str other = SQLresetClient(c);
+		freeException(other);
+	}
 	return msg;
 }
 
@@ -774,20 +774,16 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return RAcommit_statement(be, createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
+	if (*opt && rel)
+		rel = sql_processrelation(m, rel, 0, 0, 0);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement", "%s", m->errstr);
 		else
 			msg = createException(SQL, "RAstatement", SQLSTATE(42000) "%s", m->errstr);
 	} else {
-
-		if (*opt && rel)
-			rel = sql_processrelation(m, rel, 1, 1);
-
-		if ((msg = MSinitClientPrg(c, sql_private_module_name, "test")) != MAL_SUCCEED) {
-			rel_destroy(rel);
+		if ((msg = MSinitClientPrg(c, sql_private_module_name, "test")) != MAL_SUCCEED)
 			return RAcommit_statement(be, msg);
-		}
 
 		/* generate MAL code, ignoring any code generation error */
 		setVarType(c->curprg->def, 0, 0);
@@ -796,30 +792,60 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			SQLaddQueryToCache(c);
 			msg = SQLoptimizeFunction(c,c->curprg->def);
+			if( msg == MAL_SUCCEED)
+				msg = SQLrun(c,m);
+			resetMalBlk(c->curprg->def);
+			SQLremoveQueryFromCache(c);
 		}
 		rel_destroy(rel);
-		if( msg == MAL_SUCCEED)
-			msg = SQLrun(c,m);
-		resetMalBlk(c->curprg->def);
 	}
 	return RAcommit_statement(be, msg);
 }
 
-static int
-is_a_number(char *v)
+static char *
+parseIdent(char *in, char *out)
 {
-	while(*v) {
-		if (!isdigit((unsigned char) *v))
-			return 0;
-		v++;
+	while (*in && *in != '"') {
+		if (*in == '\\' && (*(in + 1) == '\\' || *(in + 1) == '"')) {
+			*out++ = *(in + 1);
+			in+=2;
+		} else {
+			*out++ = *in++;
+		}
 	}
-	return 1;
+	*out++ = '\0';
+	return in;
+}
+
+struct local_var_entry {
+	char *vname;
+	sql_subtype tpe;
+} local_var_entry;
+
+struct global_var_entry {
+	char *vname;
+	sql_schema *s;
+} global_var_entry;
+
+static str
+RAstatement2_return(backend *be, mvc *m, int nlevels, struct global_var_entry *gvars, int gentries, str msg)
+{
+	while (nlevels) { /* clean added frames */
+		stack_pop_frame(m);
+		nlevels--;
+	}
+	for (int i = 0 ; i < gentries ; i++) { /* clean any added global variables */
+		struct global_var_entry gv = gvars[i];
+		(void) remove_global_var(m, gv.s, gv.vname);
+	}
+	sa_reset(m->ta);
+	return RAcommit_statement(be, msg);
 }
 
 str
 RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int pos = 0;
+	int pos = 0, nlevels = 0, *lkeys = NULL, lcap = 0, lentries = 0, gcap = 0, gentries = 0;
 	str mod = *getArgReference_str(stk, pci, 1);
 	str nme = *getArgReference_str(stk, pci, 2);
 	str expr = *getArgReference_str(stk, pci, 3);
@@ -830,7 +856,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	sql_rel *rel;
 	list *refs, *ops;
-	char buf[BUFSIZ];
+	struct local_var_entry *lvars = NULL;
+	struct global_var_entry *gvars = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, &be)) != NULL)
 		return msg;
@@ -841,64 +868,111 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!m->sa)
 		m->sa = sa_create(m->pa);
 	if (!m->sa)
-		return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+		return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 
-	/* keep copy of signature and relational expression */
-	snprintf(buf, BUFSIZ, "%s %s", sig, expr);
-
-	if (!stack_push_frame(m, NULL))
-		return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	ops = sa_list(m->sa);
-	while (sig && *sig && !isspace((unsigned char) *sig)) {
-		char *vnme = sig, *tnme;
-		char *p = strchr(++sig, (int)' ');
-		int d,s,nr = -1;
-		sql_subtype t;
-		//atom *a;
+	while (sig && *sig) {
+		sql_schema *sh = NULL;
+		sql_type *t = NULL;
+		sql_subtype tpe;
+		char *p, *vtype = NULL, *sch = NULL, *var = NULL;
+		int d, s, level = strtol(sig, &p, 10);
 
-		assert(0);
+		var = p+1;
+		assert(*p == '"');
+		p = parseIdent(p+1, var);
+		p++;
+		if (*p == '"') { /* global variable, parse schema and name */
+			sch = var;
+			var = p+1;
+			p = parseIdent(p+1, var);
+			p++;
+		}
 
-		*p++ = 0;
-		/* vnme can be name or number */
-		if (is_a_number(vnme+1))
-			nr = strtol(vnme+1, NULL, 10);
-		tnme = p;
-		p = strchr(p, (int)'(');
-		*p++ = 0;
-		tnme = sa_strdup(m->sa, tnme);
-		if (!tnme)
-			return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+		assert(*p == ' ');
+		p++; /* skip space and get type */
+		vtype = p;
+		p = strchr(p, '(');
+		*p++ = '\0';
+
+		/* get digits and scale */
 		d = strtol(p, &p, 10);
 		p++; /* skip , */
 		s = strtol(p, &p, 10);
+		p+=2; /* skip ) and , or ' ' */
+		sig = p;
 
-		sql_find_subtype(&t, tnme, d, s);
-		//a = atom_general(m->sa, &t, NULL);
-		//a->isnull = 0; // disable NULL value optimizations ugh
-		/* the argument list may have holes and maybe out of order, ie
-		 * don't use sql_add_arg, but special numbered version
-		 * sql_set_arg(m, a, nr);
-		 * */
-		if (nr >= 0) {
-			append(ops, exp_atom_ref(m->sa, nr, &t));
-			//if (!sql_set_arg(m, nr, a)) {
-			//	sqlcleanup(be, 0);
-			//	return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			//}
-		} else {
-			if (!push_global_var(m, "sys", vnme+1, &t))
-				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
-			append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, vnme+1), &t, 0));
+		if (!sql_find_subtype(&tpe, vtype, d, s)) {
+			if (!(t = mvc_bind_type(m, vtype))) /* try an external type */
+				return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", vtype, d, s));
+			sql_init_subtype(&tpe, t, d, s);
 		}
-		sig = strchr(p, (int)',');
-		if (sig)
-			sig++;
+
+		if (sch) {
+			assert(level == 0);
+			if (!(sh = mvc_bind_schema(m, sch)))
+				return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(3F000) "No such schema '%s'", sch));
+			if (!find_global_var(m, sh, var)) { /* don't add the same global variable again */
+				if (!push_global_var(m, sch, var, &tpe)) /* if doesn't exist, add it, then remove it before returning */
+					return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+				if (gentries == gcap) {
+					if (gcap == 0) {
+						gcap = 8;
+						gvars = SA_NEW_ARRAY(m->ta, struct global_var_entry, gcap);
+					} else {
+						int ngcap = gcap * 4;
+						gvars = SA_RENEW_ARRAY(m->ta, struct global_var_entry, gvars, ngcap, gcap);
+						gcap = ngcap;
+					}
+					gvars[gentries++] = (struct global_var_entry) {.s = sh, .vname = var,};
+				}
+			}
+			list_append(ops, exp_var(m->sa, sa_strdup(m->sa, sch), sa_strdup(m->sa, var), &tpe, 0));
+		} else {
+			char opname[BUFSIZ];
+
+			if (lentries == lcap) {
+				if (lcap == 0) {
+					lcap = 8;
+					lkeys = SA_NEW_ARRAY(m->ta, int, lcap);
+					lvars = SA_NEW_ARRAY(m->ta, struct local_var_entry, lcap);
+				} else {
+					int nlcap = lcap * 4;
+					lkeys = SA_RENEW_ARRAY(m->ta, int, lkeys, nlcap, lcap);
+					lvars = SA_RENEW_ARRAY(m->ta, struct local_var_entry, lvars, nlcap, lcap);
+					lcap = nlcap;
+				}
+			}
+			lkeys[lentries] = level;
+			lvars[lentries] = (struct local_var_entry) {.tpe = tpe, .vname = var,};
+			lentries++;
+
+			snprintf(opname, BUFSIZ, "%d%%%s", level, var); /* engineering trick */
+			list_append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, opname), &tpe, level));
+		}
 	}
+	if (lentries) {
+		GDKqsort(lkeys, lvars, NULL, lentries, sizeof(int), sizeof(struct local_var_entry), TYPE_int, false, false);
+
+		for (int i = 0 ; i < lentries ; i++) {
+			int next_level = lkeys[i];
+			struct local_var_entry next_val = lvars[i];
+
+			assert(next_level != 0); /* no global variables here */
+			while (nlevels < next_level) { /* add gap levels */
+				if (!stack_push_frame(m, NULL))
+					return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+				nlevels++;
+			}
+			if (!frame_push_var(m, next_val.vname, &next_val.tpe))
+				return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+		}
+	}
+
 	refs = sa_list(m->sa);
 	rel = rel_read(m, expr, &pos, refs);
-	stack_pop_frame(m);
 	if (rel)
-		rel = sql_processrelation(m, rel, 1, 1);
+		rel = sql_processrelation(m, rel, 0, 0, 0);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement2", "%s", m->errstr);
@@ -932,7 +1006,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!msg && monet5_create_relational_function(m, mod, nme, rel, NULL, ops, 0) < 0)
 		msg = createException(SQL, "RAstatement2", "%s", m->errstr);
 	rel_destroy(rel);
-	return RAcommit_statement(be, msg);
+	return RAstatement2_return(be, m, nlevels, gvars, gentries, msg);
 }
 
 str

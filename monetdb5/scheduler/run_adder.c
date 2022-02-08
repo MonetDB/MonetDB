@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -49,12 +49,6 @@
 #include "mal_linker.h"
 #include "mal_client.h"
 
-#ifndef WIN32
-#define __declspec(x)
-#endif
-
-extern __declspec(dllexport) str RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
 /*
  * @-
  * THe choice operator first searches the next one to identify
@@ -62,7 +56,9 @@ extern __declspec(dllexport) str RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr 
  * without the need to declare them upfront.
  */
 /* helper routine that at runtime propagates values to the stack */
-static void adder_addval(MalBlkPtr mb, MalStkPtr stk, int i) {
+static void
+adder_addval(MalBlkPtr mb, MalStkPtr stk, int i)
+{
 	ValPtr rhs, lhs = &stk->stk[i];
 	if (isVarConstant(mb,i) > 0 ){
 		rhs = &getVarConstant(mb,i);
@@ -74,7 +70,7 @@ static void adder_addval(MalBlkPtr mb, MalStkPtr stk, int i) {
 	}
 }
 
-str
+static str
 RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int total;
@@ -137,3 +133,16 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(old);
 	return msg;
 }
+
+#include "mel.h"
+mel_func run_adder_init_funcs[] = {
+ pattern("run_adder", "generate", RUNadder, false, "Generate some statements to add more integers", args(1,3, arg("",int),arg("target",int),arg("batch",int))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_run_adder_mal)
+{ mal_module("run_adder", NULL, run_adder_init_funcs); }

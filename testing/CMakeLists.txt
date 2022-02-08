@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 set(PYTHON "${Python_EXECUTABLE}")
@@ -86,6 +86,9 @@ endif(HAVE_SHP)
 if (NOT WIN32)
   set(NOT_WIN32_FALSE "#")
 endif()
+if(NOT ASSERT)
+  set(NOT_ASSERT_FALSE "#")
+endif()
 
 configure_file(Mtest.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
@@ -122,7 +125,7 @@ if(PYTHON3_LIBDIR)
     __init__.py
     ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
     exportutils.py
-    malcheck.py
+    melcheck.py
     sqllogictest.py
     explain.py
     mapicursor.py

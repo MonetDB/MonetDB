@@ -12,7 +12,7 @@ statement ok rowcount 2
 INSERT INTO t1(c0) VALUES(INTERVAL '1427502482' SECOND), (INTERVAL '-1598854979' SECOND)
 
 statement ok rowcount 2
-DELETE FROM t1 WHERE CASE r'FALSE' WHEN r'879628043' THEN TRUE ELSE ((((t1.c0)>=(t1.c0)))OR(((TRUE)OR(TRUE)))) END
+DELETE FROM t1 WHERE CASE 'FALSE' WHEN '879628043' THEN TRUE ELSE ((((t1.c0)>=(t1.c0)))OR(((TRUE)OR(TRUE)))) END
 
 statement ok rowcount 1
 INSERT INTO t1(c0) VALUES(INTERVAL '236620278' SECOND)
@@ -112,7 +112,7 @@ create view v0(c0, c1) as (select all time '12:43:09', interval '1251003346' sec
 
 query I rowsort
 SELECT count(ALL - (CAST(NULL AS INT))) FROM v0 RIGHT OUTER JOIN (SELECT INTERVAL '1380374779' SECOND FROM t0) AS sub0 ON
-COALESCE(TRUE, (TIME '07:04:19') BETWEEN SYMMETRIC (CASE r'漈' WHEN r'T㊆ßwU.H' THEN v0.c0 ELSE v0.c0 END) AND (v0.c0))
+COALESCE(TRUE, (TIME '07:04:19') BETWEEN SYMMETRIC (CASE '漈' WHEN 'T㊆ßwU.H' THEN v0.c0 ELSE v0.c0 END) AND (v0.c0))
 ----
 0
 
@@ -184,7 +184,7 @@ SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0
 ----
 0
 
-statement error 42S22!SELECT: no such column 'v0.c0'
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.c0' in query results without an aggregate function
 SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0 ORDER BY v0.c0 ASC NULLS LAST, v0.c0 DESC NULLS FIRST, v0.c0 DESC NULLS LAST
 
 statement ok
@@ -448,23 +448,23 @@ query T rowsort
 SELECT t1.c0 FROM t1 WHERE t1.c0 NOT ILIKE t1.c0
 ----
 
-query T rowsort
+query I rowsort
 SELECT t1.c0 NOT ILIKE t1.c0 FROM t1
 ----
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
 
 statement ok
 ROLLBACK
@@ -589,7 +589,7 @@ COPY 26 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 1970-01-02
 1970-01-23
 
-query T rowsort
+query I rowsort
 SELECT t1.c1 FROM t1, t2 NATURAL JOIN t0 WHERE (CAST((TIME '15:03:17') NOT IN (TIME '11:36:59', TIME '21:14:10',
 TIME '01:03:49') AS INT)) BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0)
 ----
@@ -674,7 +674,7 @@ NULL	4D3ABFB0
 1233829956	0C
 
 statement ok
-create view v0(vc0, vc1, vc2) as (values (length(r'-165227345'), greatest(interval '773370894' second, interval '-320486280' second),
+create view v0(vc0, vc1, vc2) as (values (length('-165227345'), greatest(interval '773370894' second, interval '-320486280' second),
 sql_add(cast(date '1970-01-06' as timestamp), case 0.34182486343556306440660819134791381657123565673828125 when 20419
 then interval '-359816023' second else interval '413001394' second end))) with check option
 
@@ -689,10 +689,10 @@ NULL
 NULL
 
 query T rowsort
-select t2.c1 from v0, t2 right outer join (values (least(ifthenelse(false, r'', r'47940718'), sql_max(r'栩', r'U*>Kz0')),
-case cast(interval '-165227345' month as string) when "insert"(r'f3', 0.57506007, -1550051844, r'0.06527867754732408')
-then r'u' when r'2033856974' then case when true then r'' when false then r'-1543387917' when true then r'0.4055556886118663'
-when false then r'c' else r'E\n' end end)) as sub0 on nullif(not (false), (t2.c1) not between asymmetric (t2.c1) and (t2.c1))
+select t2.c1 from v0, t2 right outer join (values (least(ifthenelse(false, '', '47940718'), sql_max('栩', 'U*>Kz0')),
+case cast(interval '-165227345' month as string) when "insert"('f3', 0.57506007, -1550051844, '0.06527867754732408')
+then 'u' when '2033856974' then case when true then '' when false then '-1543387917' when true then '0.4055556886118663'
+when false then 'c' else 'E\n' end end)) as sub0 on nullif(not (false), (t2.c1) not between asymmetric (t2.c1) and (t2.c1))
 where case ((50)*(1836147184)) when least(5110, 1303739364) then (false) = false when scale_down(0.07871449894764926,
 0.26471586054989171277185278086108155548572540283203125) then least(true, true) when
 cast(0.92609287116711858089956876938231289386749267578125 as double) then greatest(true, false) end

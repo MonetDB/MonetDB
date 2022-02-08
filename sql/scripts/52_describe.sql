@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 CREATE FUNCTION sys.describe_type(ctype string, digits integer, tscale integer)
   RETURNS string
@@ -147,8 +147,7 @@ END;
 
 CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;
 CREATE FUNCTION sys.DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"'; END; --TODO: Figure out why this breaks with the space
-CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN sys.DQ(s) || '.' || sys.DQ(t); END;
-CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || sys.FQN(s, t); END;
+CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"."' || sys.replace(t,'"','""') || '"'; END;
 
 --We need pcre to implement a header guard which means adding the schema of an object explicitely to its identifier.
 CREATE FUNCTION sys.replace_first(ori STRING, pat STRING, rep STRING, flg STRING) RETURNS STRING EXTERNAL NAME "pcre"."replace_first";
@@ -315,6 +314,29 @@ CREATE VIEW sys.describe_triggers AS
 		FROM sys.schemas s, sys.tables t, sys.triggers tr
 		WHERE s.id = t.schema_id AND t.id = tr.table_id AND NOT t.system;
 
+CREATE VIEW sys.fully_qualified_functions AS
+	WITH fqn(id, tpe, sig, num) AS
+	(
+		SELECT
+			f.id,
+			ft.function_type_keyword,
+			CASE WHEN a.type IS NULL THEN
+				sys.fqn(s.name, f.name) || '()'
+			ELSE
+				sys.fqn(s.name, f.name) || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
+			END,
+			a.number
+		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
+		WHERE s.id= f.schema_id AND f.type = ft.function_type_id
+	)
+	SELECT
+		fqn1.id id,
+		fqn1.tpe tpe,
+		fqn1.sig nme
+	FROM
+		fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
+		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
+
 CREATE VIEW sys.describe_comments AS
 		SELECT
 			o.id id,
@@ -344,33 +366,10 @@ CREATE VIEW sys.describe_comments AS
 
 			UNION ALL
 
-			SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.name) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
+			SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf WHERE f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
 
 			) AS o(id, tpe, nme)
 			JOIN sys.comments c ON c.id = o.id;
-
-CREATE VIEW sys.fully_qualified_functions AS
-	WITH fqn(id, tpe, sig, num) AS
-	(
-		SELECT
-			f.id,
-			ft.function_type_keyword,
-			CASE WHEN a.type IS NULL THEN
-				s.name || '.' || f.name || '()'
-			ELSE
-				s.name || '.' || f.name || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
-			END,
-			a.number
-		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
-		WHERE s.id= f.schema_id AND f.type = ft.function_type_id
-	)
-	SELECT
-		fqn1.id id,
-		fqn1.tpe tpe,
-		fqn1.sig nme
-	FROM
-		fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
-		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
 
 CREATE VIEW sys.describe_privileges AS
 	SELECT
@@ -489,15 +488,35 @@ CREATE VIEW sys.describe_partition_tables AS
 
 CREATE VIEW sys.describe_sequences AS
 	SELECT
-		s.name as sch,
-		seq.name as seq,
+		s.name sch,
+		seq.name seq,
 		seq."start" s,
-		get_value_for(s.name, seq.name) AS rs,
+		get_value_for(s.name, seq.name) rs,
 		seq."minvalue" mi,
 		seq."maxvalue" ma,
 		seq."increment" inc,
 		seq."cacheinc" cache,
-		seq."cycle" cycle
+		seq."cycle" cycle,
+		CASE WHEN seq."minvalue" = -9223372036854775807 AND seq."increment" > 0 AND seq."start" =  1 THEN TRUE ELSE FALSE END nomin,
+		CASE WHEN seq."maxvalue" =  9223372036854775807 AND seq."increment" < 0 AND seq."start" = -1 THEN TRUE ELSE FALSE END nomax,
+		CASE
+			WHEN seq."minvalue" = 0 AND seq."increment" > 0 THEN NULL
+			WHEN seq."minvalue" <> -9223372036854775807 THEN seq."minvalue"
+			ELSE
+				CASE
+					WHEN seq."increment" < 0  THEN NULL
+					ELSE CASE WHEN seq."start" = 1 THEN NULL ELSE seq."maxvalue" END
+				END
+		END rmi,
+		CASE
+			WHEN seq."maxvalue" = 0 AND seq."increment" < 0 THEN NULL
+			WHEN seq."maxvalue" <> 9223372036854775807 THEN seq."maxvalue"
+			ELSE
+				CASE
+					WHEN seq."increment" > 0  THEN NULL
+					ELSE CASE WHEN seq."start" = -1 THEN NULL ELSE seq."maxvalue" END
+				END
+		END rma
 	FROM sys.sequences seq, sys.schemas s
 	WHERE s.id = seq.schema_id
 	AND s.name <> 'tmp'
@@ -577,3 +596,17 @@ BEGIN
 		LEFT OUTER JOIN sys.comments c ON f.id = c.id
 		WHERE f.name=functionName AND s.name = schemaName;
 END;
+
+GRANT SELECT ON sys.describe_constraints TO PUBLIC;
+GRANT SELECT ON sys.describe_indices TO PUBLIC;
+GRANT SELECT ON sys.describe_column_defaults TO PUBLIC;
+GRANT SELECT ON sys.describe_foreign_keys TO PUBLIC;
+GRANT SELECT ON sys.describe_tables TO PUBLIC;
+GRANT SELECT ON sys.describe_triggers TO PUBLIC;
+GRANT SELECT ON sys.describe_comments TO PUBLIC;
+GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;
+GRANT SELECT ON sys.describe_privileges TO PUBLIC;
+GRANT SELECT ON sys.describe_user_defined_types TO PUBLIC;
+GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;
+GRANT SELECT ON sys.describe_sequences TO PUBLIC;
+GRANT SELECT ON sys.describe_functions TO PUBLIC;

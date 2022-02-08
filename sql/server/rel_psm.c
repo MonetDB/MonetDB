@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -512,7 +512,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		for (n = ol_first_node(t->columns), m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_arg *ce = m->data;
-			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			e = exp_check_type(sql, &ce->type, rel, e, type_equal);
 			if (!e)
@@ -619,7 +619,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 
 	assert(!restype || !restypelist);
 
- 	if (THRhighwater())
+ 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (blk->h)
@@ -897,7 +897,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: failed to get restype", F);
 
 	if (body && LANG_EXT(lang)) {
-		const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown";
+		const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown", *imp = "Unknown";
 		switch (lang) {
 		case FUNC_LANG_R:
 			mod = "rapi";
@@ -916,23 +916,27 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			slang = "Javascript";
 			break;
 		case FUNC_LANG_PY:
-			mod = "pyapi";
-			slang = "Python";
-			break;
-		case FUNC_LANG_MAP_PY:
-			mod = "pyapimap";
-			slang = "Python";
-			break;
 		case FUNC_LANG_PY3:
 			mod = "pyapi3";
 			slang = "Python";
 			break;
+		case FUNC_LANG_MAP_PY:
 		case FUNC_LANG_MAP_PY3:
 			mod = "pyapi3map";
 			slang = "Python";
 			break;
 		default:
-			assert(0);
+			return sql_error(sql, 01, SQLSTATE(42000) "Function language without a MAL backend");
+		}
+		switch(type) {
+		case F_AGGR:
+			imp = "eval_aggr";
+			break;
+		case F_LOADER:
+			imp = "eval_loader";
+			break;
+		default: /* for every other function type at the moment */
+			imp = "eval";
 		}
 
 		if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY3))
@@ -940,7 +944,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		sql->params = NULL;
 		if (create) {
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE)) {
+			bit side_effect = (list_empty(restype) || list_empty(l)); /* TODO make this more precise? */
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, side_effect)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -958,8 +963,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql_schema *os = cur_schema(sql);
 
 		if (create) { /* needed for recursive functions */
+			bit side_effect = list_empty(restype) == 1; /* TODO make this more precise? */
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, q, q, FALSE, vararg, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE, side_effect)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -989,16 +995,20 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (instantiate || deps)
 			return rel_psm_block(sql->sa, b);
 	} else { /* MAL implementation */
+		int clientid = sql->clientid;
 		char *fmod = qname_module(ext_name);
 		char *fnme = qname_schema_object(ext_name);
-		int clientid = sql->clientid;
 
 		if (!fmod || !fnme)
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: MAL module or function name missing", F);
+		if (strlen(fmod) >= IDLENGTH)
+			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: MAL module name '%s' too large for the backend", F, fmod);
+		if (strlen(fnme) >= IDLENGTH)
+			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: MAL function name '%s' too large for the backend", F, fnme);
 		sql->params = NULL;
 		if (create) {
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE, FALSE)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -1007,27 +1017,16 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				default:
 					break;
 			}
+			/* instantiate MAL functions while being created. This also sets the side-effects flag */
+			if (!backend_resolve_function(&clientid, f, fnme, &(f->side_effect)))
+				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
+			f->instantiated = TRUE;
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
-		} else {
-			sql_func *f = sf->func;
-			if (!f->mod || strcmp(f->mod, fmod)) {
-				_DELETE(f->mod);
-				f->mod = _STRDUP(fmod);
-			}
-			if (!f->imp || strcmp(f->imp, fnme)) {
-				_DELETE(f->imp);
-				f->imp = _STRDUP(fnme);
-			}
-			if (!f->mod || !f->imp)
-				return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s: could not allocate space", F);
-			f->sql = 0; /* native */
 		}
 		if (!f)
 			f = sf->func;
 		assert(f);
-		if (!backend_resolve_function(&clientid, f))
-			return sql_error(sql, 01, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 	}
 	return rel_create_function(sql->sa, s->base.name, f, replace);
 }
@@ -1406,29 +1405,16 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 }
 
 static sql_rel *
-psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, symbol *sample, int minmax )
+psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 {
 	mvc *sql = query->sql;
-	exp_kind ek = {type_value, card_value, FALSE};
-	sql_exp *sample_exp = NULL, *call, *mm_exp = NULL;
 	const char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
-	list *tl = sa_list(sql->sa);
-	list *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
+	list *tl = sa_list(sql->sa), *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
+	sql_subtype tpe;
 
-	append(exps, mm_exp = exp_atom_int(sql->sa, minmax));
-	append(tl, exp_subtype(mm_exp));
-	if (sample) {
-		sql_rel *rel = NULL;
-		sample_exp = rel_value_exp(query, &rel, sample, sql_sel | sql_psm, ek);
-		psm_zero_or_one(sample_exp);
-		if (!sample_exp || !(sample_exp = exp_check_type(sql, sql_bind_localtype("lng"), NULL, sample_exp, type_cast)))
-			return NULL;
-	} else {
-		sample_exp = exp_atom_lng(sql->sa, 0);
-	}
-	append(exps, sample_exp);
-	append(tl, exp_subtype(sample_exp));
+	if (!sql_find_subtype(&tpe, "varchar", 1024, 0))
+		return sql_error(sql, 02, SQLSTATE(HY013) "varchar type missing?");
 
 	if (sname && tname) {
 		sql_table *t = NULL;
@@ -1439,41 +1425,43 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 			return sql_error(sql, 02, SQLSTATE(42000) "Cannot analyze a declared table");
 		sname = t->s->base.name;
 	}
-	/* call analyze( [schema, [ table ]], opt_sample_size, opt_minmax ) */
+	/* call analyze( [schema, [ table ]] ) */
 	if (sname) {
-		sql_exp *sname_exp = exp_atom_clob(sql->sa, sname);
+		sql_exp *sname_exp = exp_atom_str(sql->sa, sname, &tpe);
 
-		append(exps, sname_exp);
-		append(tl, exp_subtype(sname_exp));
+		list_append(exps, sname_exp);
+		list_append(tl, exp_subtype(sname_exp));
 	}
 	if (tname) {
-		sql_exp *tname_exp = exp_atom_clob(sql->sa, tname);
+		sql_exp *tname_exp = exp_atom_str(sql->sa, tname, &tpe);
 
-		append(exps, tname_exp);
-		append(tl, exp_subtype(tname_exp));
+		list_append(exps, tname_exp);
+		list_append(tl, exp_subtype(tname_exp));
 
 		if (columns)
-			append(tl, exp_subtype(tname_exp));
+			list_append(tl, exp_subtype(tname_exp));
 	}
 	if (!columns) {
-		if (!(f = sql_bind_func_(sql, "sys", analyzeType, tl, F_PROC)))
+		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
-		call = exp_op(sql->sa, exps, f);
-		append(analyze_calls, call);
+		if (!execute_priv(sql, f->func))
+			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
+		list_append(analyze_calls, exp_op(sql->sa, exps, f));
 	} else {
 		if (!sname || !tname)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze schema or table name missing");
-		if (!(f = sql_bind_func_(sql, "sys", analyzeType, tl, F_PROC)))
+		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
+		if (!execute_priv(sql, f->func))
+			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
 		for(dnode *n = columns->h; n; n = n->next) {
 			const char *cname = n->data.sval;
 			list *nexps = list_dup(exps, NULL);
-			sql_exp *cname_exp = exp_atom_clob(sql->sa, cname);
+			sql_exp *cname_exp = exp_atom_str(sql->sa, cname, &tpe);
 
-			append(nexps, cname_exp);
+			list_append(nexps, cname_exp);
 			/* call analyze( opt_minmax, opt_sample_size, sname, tname, cname) */
-			call = exp_op(sql->sa, nexps, f);
-			append(analyze_calls, call);
+			list_append(analyze_calls, exp_op(sql->sa, nexps, f));
 		}
 	}
 	return rel_psm_block(sql->sa, analyze_calls);
@@ -1586,7 +1574,8 @@ rel_psm(sql_query *query, symbol *s)
 	case SQL_ANALYZE: {
 		dlist *l = s->data.lval;
 
-		ret = psm_analyze(query, "analyze", l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */, l->h->next->next->data.sym /* opt_sample_size */, l->h->next->next->next->data.i_val);
+		/* Jan2022 update: The 'sample' and 'minmax' parameters are now ignored because they are no longer used in the backend */
+		ret = psm_analyze(query, l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */);
 		sql->type = Q_UPDATE;
 	} 	break;
 	default:

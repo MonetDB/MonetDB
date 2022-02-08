@@ -32,4 +32,3 @@ DROP TABLE mysensor
 statement ok
 DROP TABLE mysensor_ac
 
-

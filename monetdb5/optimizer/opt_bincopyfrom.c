@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* author Joeri van Ruth
@@ -43,7 +43,7 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	old_mb_stmt = mb->stmt;
 	old_ssize = mb->ssize;
 	old_stop = mb->stop;
-	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0) 
+	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0)
 		throw(MAL, "optimizer.bincopyfrom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (size_t i = 0; i < old_stop; i++) {
@@ -174,7 +174,7 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 			InstrPtr p = newFcnCall(mb, sqlRef, importColumnRef);
 			setReturnArgument(p, old->argv[idx]);
 			int new_count_var = newTmpVariable(mb, TYPE_oid);
-			pushReturn(mb, p, new_count_var);
+			p = pushReturn(mb, p, new_count_var);
 			p = pushStr(mb, p, method);
 			p = pushBit(mb, p, byteswap);
 			p = pushStr(mb, p, path);

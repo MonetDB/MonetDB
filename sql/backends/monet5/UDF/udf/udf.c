@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* monetdb_config.h must be the first include in each .c file */
@@ -141,7 +141,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	li = bat_iterator(src);
 	/* the core of the algorithm */
 	for (p = 0; p < q ; p++) {
-		str x = (str) BUNtvar(li, p);
+		const char *x = BUNtvar(li, p);
 
 		if (strNil(x)) {
 			/* if the input string is null, then append directly */

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _REL_REL_H_
@@ -91,7 +91,7 @@ extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
 sql_export sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
-extern sql_rel *rel_project_exp(sql_allocator *sa, sql_exp *e);
+extern sql_rel *rel_project_exp(mvc *sql, sql_exp *e);
 extern sql_rel *rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps);
 
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
@@ -106,7 +106,7 @@ extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oex
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
-extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
+extern sql_exp *rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
 extern sql_rel *rel_parent(sql_rel *rel);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -959,9 +959,9 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 static mel_func netcdf_init_funcs[] = {
  command("netcdf", "test", NCDFtest, false, "Returns number of variables in a given NetCDF dataset (file)", args(1,2, arg("",int),arg("filename",str))),
- pattern("netcdf", "attach", NCDFattach, false, "Register a NetCDF file in the vault", args(1,2, arg("",void),arg("filename",str))),
- command("netcdf", "importvar", NCDFimportVarStmt, false, "Import variable: compose create array string", args(1,3, arg("",str),arg("filename",str),arg("varid",int))),
- pattern("netcdf", "importvariable", NCDFimportVariable, false, "Import variable: create array and load data from variable varname of file fileid", args(1,3, arg("",void),arg("fileid",int),arg("varname",str))),
+ pattern("netcdf", "attach", NCDFattach, true, "Register a NetCDF file in the vault", args(1,2, arg("",void),arg("filename",str))),
+ command("netcdf", "importvar", NCDFimportVarStmt, true, "Import variable: compose create array string", args(1,3, arg("",str),arg("filename",str),arg("varid",int))),
+ pattern("netcdf", "importvariable", NCDFimportVariable, true, "Import variable: create array and load data from variable varname of file fileid", args(1,3, arg("",void),arg("fileid",int),arg("varname",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

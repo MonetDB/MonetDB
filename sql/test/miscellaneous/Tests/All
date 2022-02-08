@@ -17,5 +17,11 @@ deallocate
 table_udf_missing_var
 create_func_temp
 simple_plans
+unique_keys
 vessels
 prepare
+rel_push_count_down
+NOT_ASSERT?sqlfuncnames
+sequences
+analyze_test
+blobs

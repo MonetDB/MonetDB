@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -375,6 +375,8 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 #define PERFMASK	(1<<12)
 #define DELTAMASK	(1<<13)
 #define LOADMASK	(1<<14)
+#define PUSHCANDMASK	(1<<15)	/* used in opt_pushselect.c */
+#define TAILCHKMASK	(1<<16)	/* check .tail file size during commit */
 #define ACCELMASK	(1<<20)
 #define ALGOMASK	(1<<21)
 
@@ -568,6 +570,7 @@ typedef struct {
 
 typedef struct Hash Hash;
 typedef struct Imprints Imprints;
+typedef struct Strimps Strimps;
 
 /*
  * @+ Binary Association Tables
@@ -734,6 +737,7 @@ typedef struct {
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
+	Strimps *strimps;	/* string imprint index  */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -804,6 +808,7 @@ typedef struct BAT {
 #define thash		T.hash
 #define timprints	T.imprints
 #define tprops		T.props
+#define tstrimps	T.strimps
 
 
 /* some access functions for the bitmask type */
@@ -874,6 +879,10 @@ gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 
+#define isVIEW(x)							\
+	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
+	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
+
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
  * A BAT iterator has to be used with caution, but it does have to be
@@ -937,6 +946,7 @@ bat_iterator_nolock(BAT *b)
 {
 	/* does not get matched by bat_iterator_end */
 	if (b) {
+		bool isview = isVIEW(b);
 		return (BATiter) {
 			.b = b,
 			.h = b->theap,
@@ -947,10 +957,15 @@ bat_iterator_nolock(BAT *b)
 			.shift = b->tshift,
 			.type = b->ttype,
 			.tseq = b->tseqbase,
-			.hfree = b->theap->free,
+			/* don't use b->theap->free in case b is a slice */
+			.hfree = b->ttype ?
+				  b->ttype == TYPE_msk ?
+				   (((size_t) b->batCount + 31) / 32) * 4 :
+				  (size_t) b->batCount << b->tshift :
+				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
-			.minpos = b->tminpos,
-			.maxpos = b->tmaxpos,
+			.minpos = isview ? BUN_NONE : b->tminpos,
+			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
 #ifndef NDEBUG
 			.locked = false,
@@ -1059,6 +1074,8 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  * properties inherited from its argument.
  */
 gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role)
+	__attribute__((__warn_unused_result__));
+gdk_export BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((__warn_unused_result__));
@@ -1252,7 +1269,6 @@ gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
 	__attribute__((__warn_unused_result__));
-
 /*
  * @- BAT Input/Output
  * @multitable @columnfractions 0.08 0.7
@@ -1671,7 +1687,7 @@ tfastins_nocheck(BAT *b, BUN p, const void *v)
 static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins(BAT *b, BUN p, const void *v)
 {
-	if (p > BATcapacity(b)) {
+	if (p >= BATcapacity(b)) {
 		if (p >= BUN_MAX) {
 			GDKerror("tfastins: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
 			return GDK_FAIL;
@@ -1762,6 +1778,12 @@ bunfastapp_nocheckVAR(BAT *b, const void *v)
 gdk_export gdk_return BATimprints(BAT *b);
 gdk_export void IMPSdestroy(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
+
+/* Strimps exported functions */
+gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
+gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
+gdk_export void STRMPdestroy(BAT *b);
+gdk_export bool BAThasstrimps(BAT *b);
 
 /* The ordered index structure */
 
@@ -2141,13 +2163,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 		}							\
 	} while (false)
 
-/* the parentid in a VIEW is correct for the normal view. We must
- * correct for the reversed view.
- */
-#define isVIEW(x)							\
-	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
-	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
-
 #define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
 
@@ -2351,19 +2366,19 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
  * on each iteration */
 #define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_MASK) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
 #define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_MASK) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
 #define TIMEOUT_LOOP(REPEATS, TIMEOFFSET)				\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_MASK) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
 		for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
 
 /* break out of the loop (cannot use do/while trick here) */
@@ -2380,5 +2395,21 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 		if (TIMEOFFSET == -1)		\
 			CALLBACK;		\
 	} while (0)
+
+typedef struct gdk_callback {
+	char *name;
+	int argc;
+	int interval;  // units sec
+	lng last_called; // timestamp GDKusec
+	gdk_return (*func)(int argc, void *argv[]);
+	struct gdk_callback *next;
+	void *argv[FLEXIBLE_ARRAY_MEMBER];
+} gdk_callback;
+
+typedef gdk_return gdk_callback_func(int argc, void *argv[]);
+
+gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void
+		*argv[], int interval);
+gdk_export gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
 
 #endif /* _GDK_H_ */

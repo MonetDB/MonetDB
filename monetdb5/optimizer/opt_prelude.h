@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef MAL_PRELUDE
@@ -75,10 +75,12 @@ mal_export  const char *columnBindRef;
 mal_export  const char *columnRef;
 mal_export  const char *comment_onRef;
 mal_export  const char *commitRef;
+mal_export  const char *compressRef;
 mal_export  const char *connectRef;
 mal_export  const char *contextRef;
 mal_export  const char *copy_fromRef;
 mal_export  const char *copyRef;
+mal_export  const char *corrRef;
 mal_export  const char *count_no_nilRef;
 mal_export  const char *countRef;
 mal_export  const char *create_constraintRef;
@@ -103,6 +105,9 @@ mal_export  const char *deleteRef;
 mal_export  const char *deltaRef;
 mal_export  const char *dense_rankRef;
 mal_export  const char *deregisterRef;
+mal_export  const char *forRef;
+mal_export  const char *dictRef;
+mal_export  const char *decompressRef;
 mal_export  const char *diffcandRef;
 mal_export  const char *differenceRef;
 mal_export  const char *diffRef;
@@ -188,6 +193,7 @@ mal_export  const char *minusRef;
 mal_export  const char *mirrorRef;
 mal_export  const char *mitosisRef;
 mal_export  const char *mkeyRef;
+mal_export  const char *mkstrimpsRef;
 mal_export  const char *mmathRef;
 mal_export  const char *modRef;
 mal_export  const char *mtimeRef;
@@ -203,7 +209,6 @@ mal_export  const char *not_uniqueRef;
 mal_export  const char *nth_valueRef;
 mal_export  const char *ntileRef;
 mal_export  const char *oidRef;
-mal_export  const char *oltpRef;
 mal_export  const char *openRef;
 mal_export  const char *optimizerRef;
 mal_export  const char *orRef;
@@ -247,6 +252,7 @@ mal_export  const char *rename_columnRef;
 mal_export  const char *rename_schemaRef;
 mal_export  const char *rename_tableRef;
 mal_export  const char *rename_userRef;
+mal_export  const char *renumberRef;
 mal_export  const char *replaceRef;
 mal_export  const char *replicatorRef;
 mal_export  const char *resultSetRef;
@@ -280,6 +286,8 @@ mal_export  const char *startRef;
 mal_export  const char *starttraceRef;
 mal_export  const char *stoptraceRef;
 mal_export  const char *streamsRef;
+mal_export  const char *strimpFilterSelectRef;
+mal_export  const char *strimpsRef;
 mal_export  const char *strRef;
 mal_export  const char *subavgRef;
 mal_export  const char *subcountRef;

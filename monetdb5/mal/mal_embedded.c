@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -67,6 +67,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 					GDKgetenv("monet_vault_key"), strerror(errno));
 			}
 			len = fread(secret, 1, sizeof(secret), secretf);
+			fclose(secretf);
 			secret[len] = '\0';
 			len = strlen(secret); /* secret can contain null-bytes */
 			if (len == 0) {
@@ -76,7 +77,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 					"#warning: your vault key is too short "
 					"(%zu), enlarge your vault key!\n", len);
 			}
-			fclose(secretf);
 		}
 		if ((msg = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */

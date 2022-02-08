@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 # This function should only run find functions. The resulting
@@ -303,7 +303,7 @@ macro(monetdb_configure_misc)
   endif()
 
   # Used for installing testing python module (don't pass a location, else we need to strip this again)
-  execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,''))"
+  execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': ''})[1:])"
     RESULT_VARIABLE PY3_LIBDIR_CODE
     OUTPUT_VARIABLE PYTHON3_SITEDIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)

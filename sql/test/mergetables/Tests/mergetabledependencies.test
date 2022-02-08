@@ -1,0 +1,264 @@
+statement ok
+start transaction
+
+statement ok
+CREATE MERGE TABLE parent(a int)
+
+statement ok
+CREATE TABLE child1(a int)
+
+statement ok rowcount 2
+INSERT INTO child1 VALUES (1),(2)
+
+statement ok
+CREATE TABLE child2(a int)
+
+statement ok rowcount 2
+INSERT INTO child2 VALUES (3),(4)
+
+statement ok
+CREATE TABLE child3(a int)
+
+statement ok rowcount 2
+INSERT INTO child3 VALUES (5),(6)
+
+statement ok
+alter table parent add table child1
+
+statement ok
+alter table parent add table child2
+
+statement ok
+alter table parent add table child3
+
+statement ok
+create table "depend_count" ("a" bigint)
+
+statement ok
+insert into "depend_count" values ((select count(*) from dependencies))
+
+statement ok
+create function myfunc() returns table(a int) begin return select a from parent; end
+
+# only dependencies on table 'parent' should be created
+query I nosort
+select count(*) - (select "a" from "depend_count") from dependencies
+----
+2
+
+query I rowsort
+SELECT a from myfunc()
+----
+1
+2
+3
+4
+5
+6
+
+statement ok
+alter table parent drop table child1
+
+query I rowsort
+SELECT a from myfunc()
+----
+3
+4
+5
+6
+
+statement ok
+drop table child1
+
+query I rowsort
+SELECT a from myfunc()
+----
+3
+4
+5
+6
+
+statement ok
+CREATE TABLE child4(a int)
+
+statement ok rowcount 2
+INSERT INTO child4 VALUES (7),(8)
+
+statement ok
+alter table parent add table child4
+
+query I rowsort
+SELECT a from myfunc()
+----
+3
+4
+5
+6
+7
+8
+
+statement ok
+alter table parent drop table child2
+
+statement ok
+alter table parent drop table child3
+
+statement ok
+drop table child2
+
+query I rowsort
+SELECT a from myfunc()
+----
+7
+8
+
+statement ok
+alter table parent drop table child4
+
+statement ok
+savepoint sp1
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+SELECT a from myfunc()
+
+statement ok
+rollback to savepoint sp1
+
+statement ok
+alter table parent add table child4
+
+query I rowsort
+SELECT a from myfunc()
+----
+7
+8
+
+statement ok
+alter table parent add table child3
+
+statement ok
+truncate "depend_count"
+
+statement ok
+insert into "depend_count" values ((select count(*) from dependencies))
+
+statement ok
+create view myview as (select a from parent)
+
+# only dependencies on table 'parent' should be created
+query I nosort
+select count(*) - (select "a" from "depend_count") from dependencies
+----
+2
+
+query I rowsort
+SELECT a from myview
+----
+5
+6
+7
+8
+
+statement ok
+alter table parent drop table child3
+
+statement ok
+alter table parent drop table child4
+
+statement ok
+savepoint sp2
+
+query I nosort
+select count(*) - (select "a" from "depend_count") from dependencies
+----
+0
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+SELECT a from myview
+
+statement ok
+rollback to savepoint sp2
+
+statement ok
+alter table parent add table child4
+
+query I rowsort
+SELECT a from myview
+----
+7
+8
+
+query I nosort
+select count(*) - (select "a" from "depend_count") from dependencies
+----
+1
+
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
+CREATE MERGE TABLE parent1(a int)
+
+statement ok
+CREATE MERGE TABLE parent2(a int)
+
+statement ok
+CREATE TABLE child1(a int)
+
+statement ok rowcount 2
+INSERT INTO child1 VALUES (1),(2)
+
+statement ok
+CREATE TABLE child2(a int)
+
+statement ok rowcount 2
+INSERT INTO child2 VALUES (3),(4)
+
+statement ok
+CREATE TABLE child3(a int)
+
+statement ok rowcount 2
+INSERT INTO child3 VALUES (5),(6)
+
+statement ok
+ALTER TABLE parent1 ADD table child1
+
+statement ok
+ALTER TABLE parent1 ADD table parent2
+
+statement ok
+ALTER TABLE parent2 ADD table child2
+
+statement ok
+ALTER TABLE parent2 ADD table child3
+
+statement ok
+create function myfunc() returns table(a int) begin return select a from parent1; end
+
+query I rowsort
+SELECT a from myfunc()
+----
+1
+2
+3
+4
+5
+6
+
+statement ok
+ALTER TABLE parent2 DROP table child2
+
+query I rowsort
+SELECT a from myfunc()
+----
+1
+2
+5
+6
+
+statement ok
+rollback
+

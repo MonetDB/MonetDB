@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -116,7 +116,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 		getArg(q,0)= newTmpVariable(mb, TYPE_void);\
 		q= addArgument(mb,q,location[getArg(p,j)]);\
 		q= pushStr(mb,q, getVarName(mb,getArg(p,j)));\
-		(void) addArgument(mb,q,getArg(p,j));\
+		q= addArgument(mb,q,getArg(p,j));\
 		pushInstruction(mb,q);\
 	}
 
@@ -323,7 +323,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					getArg(q,0)= newTmpVariable(mb, TYPE_void);
 					q= addArgument(mb, q, remoteSite);
 					q= pushStr(mb,q, getVarName(mb,getArg(p,j)));
-					(void) addArgument(mb, q, getArg(p,j));
+					q= addArgument(mb, q, getArg(p,j));
 					pushInstruction(mb,q);
 				}
 				s= RQcall2str(mb, p);

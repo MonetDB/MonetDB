@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -710,7 +710,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		r1i = bat_iterator(r1);
 		r2i = bat_iterator(r2);
 	}
-	bn = COLnew_intern(l->hseqbase, ATOMtype(r1->ttype), lcount, TRANSIENT, stringtrick ? r1i.width : 0);
+	bn = COLnew2(l->hseqbase, ATOMtype(r1->ttype), lcount, TRANSIENT, stringtrick ? r1i.width : 0);
 	if (bn == NULL) {
 		goto doreturn;
 	}
@@ -776,7 +776,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	/* handle string trick */
 	if (stringtrick) {
 		assert(r1i.vh);
-		if (r1->batRestricted == BAT_READ) {
+		if (r1->batRestricted == BAT_READ || VIEWvtparent(r1)) {
 			/* really share string heap */
 			assert(r1i.vh->parentid > 0);
 			BBPshare(r1i.vh->parentid);
@@ -965,7 +965,7 @@ BATprojectchain(BAT **bats)
 	bi = bat_iterator(b);
 	if (nonil && ATOMstorage(tpe) == TYPE_str && b->batRestricted == BAT_READ) {
 		stringtrick = true;
-		bn = COLnew_intern(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT, bi.width);
+		bn = COLnew2(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT, bi.width);
 		if (bn && bn->tvheap) {
 			/* no need to remove any files since they were
 			 * never created for this bat */

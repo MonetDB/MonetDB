@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1096,10 +1096,10 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 {
 	int tp1, tp2, tp3, base = 2;
 	BUN l_value = 1;
-	const void *restrict default_value;
+	void *restrict default_value;
 	gdk_return (*gdk_call)(BAT *, BAT *, BAT *, BUN, const void* restrict, int) = func;
 	BAT *b = NULL, *l = NULL, *d = NULL, *p = NULL, *r = NULL;
-	bool tp2_is_a_bat;
+	bool tp2_is_a_bat, free_default_value = false;
 	str msg = MAL_SUCCEED;
 	bat *res = NULL;
 
@@ -1143,6 +1143,8 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		tp3 = getArgType(mb, pci, 3);
 		if (isaBatType(tp3)) {
 			BATiter bpi;
+			size_t default_size;
+			const void *p;
 
 			tp3 = getBatType(tp3);
 			if (!(d = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
@@ -1150,8 +1152,17 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 				goto bailout;
 			}
 			bpi = bat_iterator(d);
-			default_value = BUNtail(bpi, 0);
+			p = BUNtail(bpi, 0);
+			default_size = ATOMlen(tp3, p);
+			default_value = GDKmalloc(default_size);
+			if (default_value)
+				memcpy(default_value, p, default_size);
 			bat_iterator_end(&bpi);
+			if (!default_value) {
+				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			free_default_value = true;
 		} else {
 			ValRecord *in = &(stk)->stk[(pci)->argv[3]];
 			default_value = VALget(in);
@@ -1161,7 +1172,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		int tpe = tp1;
 		if (isaBatType(tpe))
 			tpe = getBatType(tp1);
-		default_value = ATOMnilptr(tpe);
+		default_value = (void *)ATOMnilptr(tpe);
 	}
 
 	assert(default_value); //default value must be set
@@ -1208,6 +1219,8 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 	}
 
 bailout:
+	if (free_default_value)
+		GDKfree(default_value);
 	unfix_inputs(4, b, p, l, d);
 	finalize_output(res, r, msg);
 	return msg;
@@ -1351,6 +1364,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	(void) cntxt;
 	if (pci->argc != 7)
 		throw(SQL, op, ILLEGAL_ARGUMENT "%s requires exactly 7 arguments", op);
+	tp2 = getArgType(mb, pci, 0);
 	tp1 = getArgType(mb, pci, 1);
 	frame_type = *getArgReference_int(stk, pci, 4);
 	assert(frame_type >= 0 && frame_type <= 6);
@@ -1362,29 +1376,9 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			goto bailout;
 		}
 	}
-	switch (tp1) {
-		case TYPE_bte:
-		case TYPE_sht:
-		case TYPE_int:
-		case TYPE_lng:
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			tp2 = TYPE_hge;
-#else
-			tp2 = TYPE_lng;
-#endif
-			break;
-		case TYPE_flt:
-			tp2 = TYPE_flt;
-			break;
-		case TYPE_dbl:
-			tp2 = TYPE_dbl;
-			break;
-		default: {
-			msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
-			goto bailout;
-		}
-	}
+	if (isaBatType(tp2))
+		tp2 = getBatType(tp2);
+
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(r = COLnew(b->hseqbase, tp2, BATcount(b), TRANSIENT))) {
@@ -1424,8 +1418,68 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		ptr in = getArgReference(stk, pci, 1);
 		int scale = 0;
 
-		switch (tp1) {
+		switch (tp2) {
+		case TYPE_bte:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_bte((bte*)res, &scale, (bte*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_sht:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_sht((sht*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_sht((sht*)res, &scale, (sht*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_int:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_int((int*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_int((int*)res, &scale, (sht*)in);
+				break;
+			case TYPE_int:
+				msg = int_dec2_int((int*)res, &scale, (int*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_lng:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_lng((lng*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_lng((lng*)res, &scale, (sht*)in);
+				break;
+			case TYPE_int:
+				msg = int_dec2_lng((lng*)res, &scale, (int*)in);
+				break;
+			case TYPE_lng:
+				msg = lng_dec2_lng((lng*)res, &scale, (lng*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
 #ifdef HAVE_HGE
+		case TYPE_hge:{
+			switch (tp1) {
 			case TYPE_bte:
 				msg = bte_dec2_hge((hge*)res, &scale, (bte*)in);
 				break;
@@ -1439,22 +1493,26 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = lng_dec2_hge((hge*)res, &scale, (lng*)in);
 				break;
 			case TYPE_hge:
-				*(hge*)res = *((hge*)in);
+				msg = hge_dec2_hge((hge*)res, &scale, (hge*)in);
 				break;
-#else
-			case TYPE_bte:
-				msg = bte_dec2_lng((lng*)res, &scale, (bte*)in);
-				break;
-			case TYPE_sht:
-				msg = sht_dec2_lng((lng*)res, &scale, (sht*)in);
-				break;
-			case TYPE_int:
-				msg = int_dec2_lng((lng*)res, &scale, (int*)in);
-				break;
-			case TYPE_lng:
-				*(lng*)res = *((lng*)in);
-				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
 #endif
+		case TYPE_flt:{
+			switch (tp1) {
+			case TYPE_flt:
+				*(flt*)res = *((flt*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_dbl:{
+			switch (tp1) {
 			case TYPE_flt: {
 				flt fp = *((flt*)in);
 				*(dbl*)res = is_flt_nil(fp) ? dbl_nil : (dbl) fp;
@@ -1463,7 +1521,12 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				*(dbl*)res = *((dbl*)in);
 				break;
 			default:
-				msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		default:
+			msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 		}
 	}
 
@@ -1488,7 +1551,7 @@ SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe = getArgType(mb, pci, 1), frame_type;
+	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg");
 	bat *res = NULL;
@@ -1548,7 +1611,7 @@ bailout:
 str
 SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe = getArgType(mb, pci, 1), frame_type;
+	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, "sql.avg");
 	bat *res = NULL;
@@ -1593,7 +1656,7 @@ static str
 do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
 					   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int))
 {
-	int tpe = getArgType(mb, pci, 1), frame_type;
+	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, op);
 	bat *res = NULL;

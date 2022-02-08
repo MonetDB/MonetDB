@@ -43,10 +43,6 @@ SELECT COUNT(*) AS duplicates, id FROM sys.functions GROUP BY id HAVING COUNT(*)
 ----
 
 query II rowsort
-SELECT COUNT(*) AS duplicates, function_id FROM sys.systemfunctions GROUP BY function_id HAVING COUNT(*) > 1
-----
-
-query II rowsort
 SELECT COUNT(*) AS duplicates, id FROM sys.args GROUP BY id HAVING COUNT(*) > 1
 ----
 
@@ -171,7 +167,7 @@ SELECT COUNT(*) AS duplicates, "username", login FROM sys.sessions GROUP BY "use
 ----
 
 query II rowsort
-SELECT COUNT(*) AS duplicates, column_id FROM sys.statistics GROUP BY column_id HAVING COUNT(*) > 1
+SELECT COUNT(*) AS duplicates, "column_id" FROM sys.statistics GROUP BY "column_id" HAVING COUNT(*) > 1
 ----
 
 query II rowsort

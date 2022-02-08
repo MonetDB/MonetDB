@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _REL_BASETABLE_H_
@@ -40,6 +40,7 @@ extern list *rel_base_projection( mvc *sql, sql_rel *rel, int intern);
 extern list *rel_base_project_all( mvc *sql, sql_rel *rel, char *tname); /* select * from t */
 extern sql_rel *rel_base_add_columns( mvc *sql, sql_rel *r);
 extern sql_rel *rewrite_basetable(mvc *sql, sql_rel *rel);
+extern sql_rel *rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias);
 
 extern void rel_base_dump_exps( stream *fout, sql_rel *rel);
 extern int rel_base_has_column_privileges( mvc *sql, sql_rel *rel);

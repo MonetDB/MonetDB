@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -611,6 +611,25 @@ BKCgetSize(lng *tot, const bat *bid){
 	return MAL_SUCCEED;
 }
 
+static str
+BKCgetVHeapSize(lng *tot, const bat *bid){
+	BAT *b;
+	lng size = 0;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.getVHeapSize", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (ATOMvarsized(b->ttype)) {
+		MT_lock_set(&b->theaplock);
+		if (b->tvheap)
+			size += b->tvheap->size;
+		MT_lock_unset(&b->theaplock);
+	}
+
+	*tot = size;
+	BBPunfix(*bid);
+	return MAL_SUCCEED;
+}
+
 /*
  * Synced BATs
  */
@@ -894,18 +913,18 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		}
 		}
 	}
+	bool btnonil = b->tnonil, btkey = b->tkey;
 	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bs->batCacheid);
 
 	BATsetcount(bn, cnt);
 	bn->tsorted = false;
 	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
-	bn->tkey = b->tkey;
-	bn->tnonil = b->tnonil;
+	bn->tkey = btkey;
+	bn->tnonil = btnonil;
 	bn->tnil = false;		/* can't be sure if values deleted */
-
-	BBPunfix(b->batCacheid);
-	BBPunfix(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1234,11 +1253,12 @@ mel_func bat5_init_funcs[] = {
  command("bat", "densebat", BKCdensebat, false, "Creates a new [void,void] BAT of size 'sz'.", args(1,2, batarg("",oid),arg("sz",lng))),
  command("bat", "info", BKCinfo, false, "Produce a table containing information about a BAT in [attribute,value] format. \nIt contains all properties of the BAT record. ", args(2,3, batarg("",str),batarg("",str),batargany("b",1))),
  command("bat", "getSize", BKCgetSize, false, "Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes\nrounded to the memory page size (see bbp.getPageSize()).", args(1,2, arg("",lng),batargany("b",1))),
+ command("bat", "getVHeapSize", BKCgetVHeapSize, false, "Calculate the vheap size for varsized bats", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getCapacity", BKCgetCapacity, false, "Returns the current allocation size (in max number of elements) of a BAT.", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getColumnType", BKCgetColumnType, false, "Returns the type of the tail column of a BAT, as an integer type number.", args(1,2, arg("",str),batargany("b",1))),
  command("bat", "getRole", BKCgetRole, false, "Returns the rolename of the head column of a BAT.", args(1,2, arg("",str),batargany("bid",1))),
  command("bat", "isaKey", BKCgetKey, false, "Return whether the column tail values are unique (key).", args(1,2, arg("",bit),batargany("b",1))),
- command("bat", "setAccess", BKCsetAccess, false, "Try to change the update access priviliges \nto this BAT. Mode:\nr[ead-only]      - allow only read access.\na[append-only]   - allow reads and update.\nw[riteable]      - allow all operations.\nBATs are updatable by default. On making a BAT read-only, \nall subsequent updates fail with an error message.\nReturns the BAT itself.", args(1,3, batargany("",1),batargany("b",1),arg("mode",str))),
+ command("bat", "setAccess", BKCsetAccess, false, "Try to change the update access privileges \nto this BAT. Mode:\nr[ead-only]      - allow only read access.\na[append-only]   - allow reads and update.\nw[riteable]      - allow all operations.\nBATs are updatable by default. On making a BAT read-only, \nall subsequent updates fail with an error message.\nReturns the BAT itself.", args(1,3, batargany("",1),batargany("b",1),arg("mode",str))),
  command("bat", "getAccess", BKCgetAccess, false, "Return the access mode attached to this BAT as a character.", args(1,2, arg("",str),batargany("b",1))),
  command("bat", "getSequenceBase", BKCgetSequenceBase, false, "Get the sequence base for the void column of a BAT.", args(1,2, arg("",oid),batargany("b",1))),
  command("bat", "isSorted", BKCisSorted, false, "Returns true if BAT values are ordered.", args(1,2, arg("",bit),batargany("b",1))),

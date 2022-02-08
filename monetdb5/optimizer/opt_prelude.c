@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -79,10 +79,12 @@ const char *columnBindRef;
 const char *columnRef;
 const char *comment_onRef;
 const char *commitRef;
+const char *compressRef;
 const char *connectRef;
 const char *contextRef;
 const char *copy_fromRef;
 const char *copyRef;
+const char *corrRef;
 const char *count_no_nilRef;
 const char *countRef;
 const char *create_constraintRef;
@@ -107,6 +109,9 @@ const char *deleteRef;
 const char *deltaRef;
 const char *dense_rankRef;
 const char *deregisterRef;
+const char *forRef;
+const char *dictRef;
+const char *decompressRef;
 const char *diffcandRef;
 const char *differenceRef;
 const char *disconnectRef;
@@ -190,6 +195,7 @@ const char *minusRef;
 const char *mirrorRef;
 const char *mitosisRef;
 const char *mkeyRef;
+const char *mkstrimpsRef;
 const char *mmathRef;
 const char *modRef;
 const char *mtimeRef;
@@ -205,7 +211,6 @@ const char *not_uniqueRef;
 const char *nth_valueRef;
 const char *ntileRef;
 const char *oidRef;
-const char *oltpRef;
 const char *openRef;
 const char *optimizerRef;
 const char *orRef;
@@ -249,6 +254,7 @@ const char *rename_columnRef;
 const char *rename_schemaRef;
 const char *rename_tableRef;
 const char *rename_userRef;
+const char *renumberRef;
 const char *replaceRef;
 const char *replicatorRef;
 const char *resultSetRef;
@@ -281,6 +287,8 @@ const char *startRef;
 const char *starttraceRef;
 const char *stoptraceRef;
 const char *streamsRef;
+const char *strimpFilterSelectRef;
+const char *strimpsRef;
 const char *strRef;
 const char *subavgRef;
 const char *subcountRef;
@@ -389,10 +397,12 @@ void optimizerInit(void)
 	columnRef = putName("column");
 	comment_onRef = putName("comment_on");
 	commitRef = putName("commit");
+	compressRef = putName("compress");
 	connectRef = putName("connect");
 	contextRef = putName("context");
 	copy_fromRef = putName("copy_from");
 	copyRef = putName("copy");
+	corrRef = putName("corr");
 	count_no_nilRef = putName("count_no_nil");
 	countRef = putName("count");
 	create_constraintRef = putName("create_constraint");
@@ -417,6 +427,9 @@ void optimizerInit(void)
 	deltaRef = putName("delta");
 	dense_rankRef = putName("dense_rank");
 	deregisterRef = putName("deregister");
+	forRef = putName("for");
+	dictRef = putName("dict");
+	decompressRef = putName("decompress");
 	diffcandRef= putName("diffcand");
 	differenceRef = putName("difference");
 	disconnectRef= putName("disconnect");
@@ -500,6 +513,7 @@ void optimizerInit(void)
 	mirrorRef = putName("mirror");
 	mitosisRef = putName("mitosis");
 	mkeyRef = putName("mkey");
+	mkstrimpsRef = putName("mkstrimp");
 	mmathRef = putName("mmath");
 	modRef = putName("%");
 	mtimeRef = putName("mtime");
@@ -515,7 +529,6 @@ void optimizerInit(void)
 	nth_valueRef = putName("nth_value");
 	ntileRef = putName("ntile");
 	oidRef = putName("oid");
-	oltpRef = putName("oltp");
 	openRef = putName("open");
 	optimizerRef = putName("optimizer");
 	orRef = putName("or");
@@ -559,6 +572,7 @@ void optimizerInit(void)
 	rename_schemaRef = putName("rename_schema");
 	rename_tableRef = putName("rename_table");
 	rename_userRef = putName("rename_user");
+	renumberRef = putName("renumber");
 	replaceRef = putName("replace");
 	replicatorRef = putName("replicator");
 	resultSetRef = putName("resultSet");
@@ -591,6 +605,8 @@ void optimizerInit(void)
 	starttraceRef = putName("starttrace");
 	stoptraceRef = putName("stoptrace");
 	streamsRef = putName("streams");
+	strimpsRef = putName("strimps");
+	strimpFilterSelectRef = putName("strimpfilterselect");
 	strRef = putName("str");
 	subavgRef = putName("subavg");
 	subcountRef = putName("subcount");

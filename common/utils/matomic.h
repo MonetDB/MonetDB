@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* This file provides interfaces to perform certain atomic operations
@@ -57,7 +57,6 @@
 /* #define NO_ATOMIC_INSTRUCTIONS */
 
 /* the atomic type we export is always a 64 bit unsigned integer */
-typedef uint64_t ATOMIC_BASE_TYPE;
 
 /* ignore __STDC_NO_ATOMICS__ if compiling using Intel compiler on
  * Windows since otherwise we can't compile this at all in C99 mode */
@@ -67,8 +66,10 @@ typedef uint64_t ATOMIC_BASE_TYPE;
 
 #if SIZEOF_LONG_LONG == 8
 typedef volatile atomic_ullong ATOMIC_TYPE;
+typedef unsigned long long ATOMIC_BASE_TYPE;
 #elif SIZEOF_LONG == 8
 typedef volatile atomic_ulong ATOMIC_TYPE;
+typedef unsigned long ATOMIC_BASE_TYPE;
 #else
 #error "we need a 64 bit atomic type"
 #endif
@@ -105,6 +106,8 @@ typedef volatile atomic_flag ATOMIC_FLAG;
 #define ATOMIC_TAS(var)		atomic_flag_test_and_set(var)
 
 #elif defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
+
+typedef uint64_t ATOMIC_BASE_TYPE;
 
 #include <intrin.h>
 
@@ -227,6 +230,7 @@ typedef volatile int ATOMIC_FLAG;
 /* the new way of doing this according to GCC (the old way, using
  * __sync_* primitives is not supported) */
 
+typedef uint64_t ATOMIC_BASE_TYPE;
 typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE;
 
 #define ATOMIC_VAR_INIT(val)	(val)
@@ -261,6 +265,8 @@ typedef volatile char ATOMIC_FLAG;
 #else
 
 /* emulate using mutexes */
+
+typedef uint64_t ATOMIC_BASE_TYPE;
 
 #include <pthread.h> /* required for pthread_mutex_t */
 

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 # python mksqlwxs.py VERSION BITS PREFIX > PREFIX/MonetDB5-SQL-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB5-SQL-Installer.wxs
@@ -52,7 +52,9 @@ def main():
         if vsdir is not None:
             vcdir = os.path.join(vsdir, 'VC')
     if vcdir is None:
-        if os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
+        if os.path.exists(r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'):
+            vcdir = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'
+        elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
             vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'
         elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'):
             vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'
@@ -84,7 +86,7 @@ def main():
     print(r'    </Property>')
     print(r'    <Property Id="DEBUGEXISTS">')
     print(r'      <DirectorySearch Id="CheckFileDir1" Path="[INSTALLDIR]\bin" Depth="0">')
-    print(r'        <FileSearch Id="CheckFile1" Name="libbat.pdb"/>')
+    print(r'        <FileSearch Id="CheckFile1" Name="mserver5.pdb"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     print(r'    <Property Id="INCLUDEEXISTS">')
@@ -159,14 +161,14 @@ def main():
                vcpkg.format(r'bin\lzma.dll'),
                vcpkg.format(r'bin\pcre.dll'),
                vcpkg.format(r'bin\zlib1.dll')])
-    # id = comp(debug, id, 14,
-    #           [r'bin\mclient.pdb',
-    #            r'bin\mserver5.pdb',
-    #            r'bin\msqldump.pdb',
-    #            r'lib\libbat.pdb',
-    #            r'lib\libmapi.pdb',
-    #            r'lib\libmonetdb5.pdb',
-    #            r'lib\libstream.pdb'])
+    id = comp(debug, id, 14,
+              [r'bin\mclient.pdb',
+               r'bin\mserver5.pdb',
+               r'bin\msqldump.pdb',
+               r'lib\bat.pdb',
+               r'lib\mapi.pdb',
+               r'lib\monetdb5.pdb',
+               r'lib\stream.pdb'])
     id = comp(geom, id, 14,
               [vcpkg.format(r'bin\geos_c.dll'),
                vcpkg.format(r'bin\geos.dll')])
@@ -177,7 +179,7 @@ def main():
     print(r'            <Directory Id="include" Name="include">')
     print(r'              <Directory Id="monetdb" Name="monetdb">')
     id = comp(extend, id, 16,
-              sorted([r'include\monetdb\{}'.format(x) for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal') or x.startswith('sql')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
+              sorted([r'include\monetdb\{}'.format(x) for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal') or x.startswith('sql') or x.startswith('rel') or x.startswith('store') or x.startswith('exception') or x.startswith('opt_backend')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
                      [r'include\monetdb\copybinary.h',
                       r'include\monetdb\mapi.h',
                       r'include\monetdb\matomic.h',

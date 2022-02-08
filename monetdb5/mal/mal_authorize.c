@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -456,10 +456,12 @@ AUTHcheckCredentials(
 	/* find the corresponding password to the user */
 	passi = bat_iterator(pass);
 	tmp = (str)BUNtvar(passi, p);
-	bat_iterator_end(&passi);
 	assert (tmp != NULL);
 	/* decypher the password (we lose the original tmp here) */
-	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, tmp));
+	tmp = AUTHdecypherValue(&pwd, tmp);
+	bat_iterator_end(&passi);
+	if (tmp)
+		return tmp;
 
 	/* generate the hash as the client should have done */
 	hash = mcrypt_hashPassword(algo, pwd, challenge);
@@ -651,10 +653,10 @@ AUTHchangePassword(Client cntxt, const char *oldpass, const char *passwd)
 	assert(p != BUN_NONE);
 	passi = bat_iterator(pass);
 	tmp = BUNtvar(passi, p);
-	bat_iterator_end(&passi);
 	assert (tmp != NULL);
 	/* decypher the password */
 	msg = AUTHdecypherValue(&hash, tmp);
+	bat_iterator_end(&passi);
 	if (msg)
 		return msg;
 	if (strcmp(hash, oldpass) != 0){
@@ -710,19 +712,25 @@ AUTHsetPassword(Client cntxt, const char *username, const char *passwd)
 	assert (p != BUN_NONE);
 	useri = bat_iterator(user);
 	tmp = BUNtvar(useri, p);
-	bat_iterator_end(&useri);
 	assert (tmp != NULL);
-	if (strcmp(tmp, username) == 0)
+	if (strcmp(tmp, username) == 0) {
+		bat_iterator_end(&useri);
 		throw(INVCRED, "setPassword", "The administrator cannot set its own password, use changePassword instead");
+	}
 
 	/* see if the user is valid */
 	p = AUTHfindUser(username);
-	if (p == BUN_NONE)
+	if (p == BUN_NONE) {
+		bat_iterator_end(&useri);
 		throw(MAL, "setPassword", "no such user '%s'", username);
+	}
 	id = p;
 
 	/* cypher the password */
-	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
+	tmp = AUTHcypherValue(&hash, passwd);
+	bat_iterator_end(&useri);
+	if (tmp)
+		return tmp;
 	/* ok, just overwrite the password field for this user */
 	assert (p != BUN_NONE);
 	assert(id == p);
@@ -841,10 +849,12 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 		throw(MAL, "getPasswordHash", "user '%s' does not exist", username);
 	i = bat_iterator(pass);
 	tmp = BUNtvar(i, p);
-	bat_iterator_end(&i);
 	assert (tmp != NULL);
 	/* decypher the password */
-	rethrow("changePassword", tmp, AUTHdecypherValue(&passwd, tmp));
+	tmp = AUTHdecypherValue(&passwd, tmp);
+	bat_iterator_end(&i);
+	if (tmp)
+		return tmp;
 
 	*ret = passwd;
 	return(NULL);
@@ -1039,12 +1049,14 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 {
 	BUN p;
 	BATiter i;
-	str tmp;
-	str pwhash;
+	str tmp, pwhash;
 
-	if (strNil(local_table)) {
+	*uri = NULL;
+	*username = NULL;
+	*password = NULL;
+
+	if (strNil(local_table))
 		throw(ILLARG, "getRemoteTableCredentials", "local table should not be nil");
-	}
 
 	p = lookupRemoteTableKey(local_table);
 	if (p == BUN_NONE) {
@@ -1059,17 +1071,32 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 
 	assert(p != BUN_NONE);
 	i = bat_iterator(rt_uri);
-	*uri = BUNtvar(i, p);
+	*uri = GDKstrdup(BUNtvar(i, p));
 	bat_iterator_end(&i);
 
 	i = bat_iterator(rt_remoteuser);
-	*username = BUNtvar(i, p);
+	*username = GDKstrdup(BUNtvar(i, p));
 	bat_iterator_end(&i);
+
+	if (!*uri || !*username) {
+		GDKfree(*uri);
+		GDKfree(*username);
+		*uri = NULL;
+		*username = NULL;
+		throw(MAL, "getRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	i = bat_iterator(rt_hashedpwd);
 	tmp = BUNtvar(i, p);
+	tmp = AUTHdecypherValue(&pwhash, tmp);
 	bat_iterator_end(&i);
-	rethrow("getRemoteTableCredentials", tmp, AUTHdecypherValue(&pwhash, tmp));
+	if (tmp) {
+		GDKfree(*uri);
+		GDKfree(*username);
+		*uri = NULL;
+		*username = NULL;
+		return tmp;
+	}
 
 	*password = pwhash;
 

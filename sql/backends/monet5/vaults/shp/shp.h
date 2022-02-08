@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _SHP_
@@ -81,5 +81,6 @@ void GDALWClose(GDALWConnection *);
 
 str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions);
 str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info);
+str SHPloadSchema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif

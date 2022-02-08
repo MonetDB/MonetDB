@@ -195,7 +195,7 @@ SELECT c0 from t2
 false
 
 statement error 22018!conversion of string '' to type bit failed.
-INSERT INTO t2(c0) VALUES(CAST((CASE WHEN r'' THEN TIME '06:29:46' WHEN r'b_P' THEN TIME '20:39:07' END) BETWEEN ASYMMETRIC (COALESCE(TIME '11:09:56', TIME '12:05:55')) AND (COALESCE(TIME '18:59:07', TIME '04:20:04', TIME '19:01:06')) AS STRING(638)))
+INSERT INTO t2(c0) VALUES(CAST((CASE WHEN '' THEN TIME '06:29:46' WHEN 'b_P' THEN TIME '20:39:07' END) BETWEEN ASYMMETRIC (COALESCE(TIME '11:09:56', TIME '12:05:55')) AND (COALESCE(TIME '18:59:07', TIME '04:20:04', TIME '19:01:06')) AS STRING(638)))
 
 statement ok
 ROLLBACK
@@ -218,7 +218,7 @@ CREATE ORDERED INDEX "i2" ON "sys"."t1" ("c0")
 statement ok
 create view v0(c0) as (select 1 from t0,t1 where ((t0.c0)>=(t1.c0)))
 
-query T rowsort
+query I rowsort
 select '12' like 'i' from t0, t1 right outer join v0 on exists (select 'a' from t0, t1)
 ----
 
@@ -406,11 +406,11 @@ CREATE TABLE "sys"."t1" ("c0" BOOLEAN)
 statement ok rowcount 2
 INSERT INTO t1(c0) VALUES(TRUE), ((EXISTS (SELECT DATE '1970-01-06' FROM t1)) BETWEEN (TRUE) AND ((1) IN (1)))
 
-query T rowsort
+query I rowsort
 SELECT c0 from t1
 ----
-False
-True
+0
+1
 
 statement ok
 ROLLBACK
@@ -474,7 +474,7 @@ statement ok
 CREATE TABLE t1(c0 TIME  DEFAULT (TIME '23:27:06'), c1 CHAR(317))
 
 statement ok rowcount 2
-INSERT INTO t1(c1, c0) VALUES(r'V', TIME '14:09:48'), (r'c', TIME '01:06:46')
+INSERT INTO t1(c1, c0) VALUES('V', TIME '14:09:48'), ('c', TIME '01:06:46')
 
 statement ok rowcount 2
 DELETE FROM t1 WHERE NOT (CAST(((854517748)/(-1764883455)) AS BOOLEAN))
@@ -888,10 +888,10 @@ CREATE TABLE "t2"("c0" INTERVAL SECOND NOT NULL)
 statement ok rowcount 1
 INSERT INTO "t2" VALUES (INTERVAL '1253074618' SECOND)
 
-query T rowsort
+query I rowsort
 SELECT t1.c0 > COALESCE((SELECT INTERVAL '1' SECOND FROM t2), (SELECT t1.c0 FROM t1)) FROM t1
 ----
-True
+1
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((t1.c0) NOT BETWEEN ASYMMETRIC (COALESCE((SELECT DISTINCT INTERVAL '1584712456' SECOND FROM t2), (SELECT t1.c0 FROM t2, t1, t0))) AND (t1.c0) AS INT) as count FROM t1) as res
@@ -986,15 +986,15 @@ INSERT INTO "t2" VALUES (0.9896628791758083, 0.017)
 statement ok rowcount 1
 INSERT INTO "t2" VALUES (-808084788, 0.922)
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE (t0.c0 <> ALL(SELECT TRUE FROM t0, t1) AND t0.c0) = FALSE
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE (((((((t0.c0 <> ALL(SELECT ALL t0.c0 FROM t0, t2, t1))OR(t0.c0)))AND(t0.c0)))OR(t0.c0))) = FALSE
 ----
-False
+0
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((((((t0.c0 <> ALL(SELECT t0.c0 FROM t0, t2, t1))OR(t0.c0)))AND(t0.c0)))OR(t0.c0))) = FALSE AS INT) as count FROM t0) as res

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _GDK_SYSTEM_H_
@@ -24,7 +24,8 @@
  * specific attributes that we use are known */
 #ifndef __has_attribute
 #ifndef __GNUC__
-#define __has_attribute(attr)	0
+/* we can define __has_attribute as 1 since we define __attribute__ as empty */
+#define __has_attribute(attr)	1
 #ifndef __attribute__
 #define __attribute__(attr)	/* empty */
 #endif
@@ -33,50 +34,60 @@
  * attributes that we use are known */
 #define __has_attribute__alloc_size__ 1
 #define __has_attribute__cold__ 1
-#define __has_attribute__format__ 1
+#define __has_attribute__const__ 1
+#define __has_attribute__constructor__ 1
 #define __has_attribute__designated_init__ 0
+#define __has_attribute__format__ 1
 #define __has_attribute__malloc__ 1
+#define __has_attribute__nonnull__ 1
 #define __has_attribute__nonstring__ 0
-#define __has_attribute__noreturn__ 1
-#define __has_attribute__pure__ 0
+#define __has_attribute__pure__ 1
 #define __has_attribute__returns_nonnull__ 0
 #define __has_attribute__visibility__ 1
 #define __has_attribute__warn_unused_result__ 1
 #define __has_attribute(attr)	__has_attribute##attr
 #endif
 #endif
-#if !__has_attribute(__warn_unused_result__)
-#define __warn_unused_result__
-#endif
-#if !__has_attribute(__malloc__)
-#define __malloc__
-#endif
 #if !__has_attribute(__alloc_size__)
 #define __alloc_size__(a)
 #endif
-#if !__has_attribute(__format__)
-#define __format__(a,b,c)
+#if !__has_attribute(__cold__)
+#define __cold__
 #endif
-#if !__has_attribute(__nonstring__)
-#define __nonstring__
+#if !__has_attribute(__const__)
+#define __const__
 #endif
-#if !__has_attribute(__noreturn__)
-#define __noreturn__
-#endif
-#if !__has_attribute(__pure__)
-#define __pure__
+#if !__has_attribute(__constructor__)
+#define __constructor__
 #endif
 #if !__has_attribute(__designated_init__)
 #define __designated_init__
 #endif
-/* these are used in some *private.h files */
+#if !__has_attribute(__format__)
+#define __format__(a,b,c)
+#endif
+#if !__has_attribute(__malloc__)
+#define __malloc__
+#endif
+#if !__has_attribute(__nonnull__)
+#define __nonnull__(a)
+#endif
+#if !__has_attribute(__nonstring__)
+#define __nonstring__
+#endif
+#if !__has_attribute(__pure__)
+#define __pure__
+#endif
+#if !__has_attribute(__returns_nonnull__)
+#define __returns_nonnull__
+#endif
 #if !__has_attribute(__visibility__)
 #define __visibility__(a)
 #elif defined(__CYGWIN__)
 #define __visibility__(a)
 #endif
-#if !__has_attribute(__cold__)
-#define __cold__
+#if !__has_attribute(__warn_unused_result__)
+#define __warn_unused_result__
 #endif
 
 /* also see gdk.h for these */

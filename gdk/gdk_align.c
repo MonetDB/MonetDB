@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -100,17 +100,15 @@ VIEWcreate(oid seq, BAT *b)
 	 * because in case of a mark, we are going to override a
 	 * column with a void. Take care to zero the accelerator data,
 	 * though. */
+	MT_lock_set(&b->theaplock);
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
-	MT_lock_set(&b->theaplock);
 	bn->T = b->T;
 	tp = VIEWtparent(b);
 	if (tp == 0 && b->ttype != TYPE_void)
 		tp = b->batCacheid;
 	assert(b->ttype != TYPE_void || !tp);
-	/* copy again now we have the correct lock */
-	bn->theap = b->theap;
 	HEAPincref(b->theap);
 	if (b->tvheap)
 		HEAPincref(b->tvheap);
@@ -133,6 +131,8 @@ VIEWcreate(oid seq, BAT *b)
 	bn->timprints = NULL;
 	/* Order OID index */
 	bn->torderidx = NULL;
+	/* Only the parent should have a pointer to the strimp */
+	bn->tstrimps = NULL;
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp) {
 			BBPunshare(tp);
@@ -255,7 +255,7 @@ BATmaterialize(BAT *b)
 	b->tunique_est = is_oid_nil(t) ? 1.0 : (double) b->batCount;
 	MT_lock_unset(&b->theaplock);
 	b->ttype = TYPE_oid;
-	BATsetdims(b);
+	BATsetdims(b, 0);
 	b->batDirtydesc = true;
 	BATsetcount(b, b->batCount);
 
@@ -377,6 +377,7 @@ VIEWdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
+	STRMPdestroy(b);
 	PROPdestroy(b);
 	VIEWunlink(b);
 
