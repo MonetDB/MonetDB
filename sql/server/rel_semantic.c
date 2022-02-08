@@ -221,7 +221,6 @@ rel_semantic(sql_query *query, symbol *s)
 
 	case SQL_SELECT:
 	case SQL_JOIN:
-	case SQL_CROSS:
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
