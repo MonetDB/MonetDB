@@ -522,10 +522,10 @@ SELECT TRUE FROM rt2 AS x LEFT OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) A
 statement ok
 create table t0 (c0 int)
 
-query I nosort
-SELECT (SELECT FALSE FROM t0 LEFT OUTER JOIN (VALUES (y.z), (y.z)) AS x(x) ON y.y = y.y) FROM t0
-JOIN (VALUES ('b', 3)) AS y(y,z) ON y.y >= ANY(VALUES (y.y))
-----
+#query I nosort
+#SELECT (SELECT FALSE FROM t0 LEFT OUTER JOIN (VALUES (y.z), (y.z)) AS x(x) ON y.y = y.y) FROM t0
+#JOIN (VALUES ('b', 3)) AS y(y,z) ON y.y >= ANY(VALUES (y.y))
+#----
 
 statement ok
 CREATE TABLE rt3 (c0 DATE)
