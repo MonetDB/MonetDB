@@ -424,4 +424,39 @@ SELECT 'c' <> ANY(VALUES (rt1.c0), ('b')) FROM rt1
 1
 
 statement ok
+CREATE TABLE t2 (c0 INT)
+
+statement ok rowcount 2
+INSERT INTO t2 VALUES (1), (2)
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('true') FROM t2)
+= 'true' as int)) > 0) = FALSE AS INT) as count FROM t2) as res
+----
+1
+
+query I nosort
+SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(t2.c0) > 0) FROM t2
+----
+0
+
+query I nosort
+SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 as int)) > 0) FROM t2
+----
+0
+
+query I nosort
+SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('true') FROM t2) = 'true' as int)) > 0) FROM t2
+----
+0
+
+#this one is right
+query I nosort
+SELECT t2.c0 FROM t2 WHERE EXISTS (SELECT 1 WHERE FALSE HAVING max((SELECT min(1) FROM t2)) > 0)
+----
+
+statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
+SELECT t2.c0 FROM t2 WHERE EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('true') FROM t2) = 'true' as int)) > 0)
+
+statement ok
 ROLLBACK
