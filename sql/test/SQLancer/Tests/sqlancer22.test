@@ -467,7 +467,7 @@ ROLLBACK TO SAVEPOINT sp1
 statement ok
 CREATE TABLE rt2 ("c0" INTERVAL DAY)
 
-statement ok rowcount 7
+statement ok rowcount 2
 INSERT INTO rt2 VALUES (INTERVAL '0' SECOND),(INTERVAL '0' SECOND)
 
 query I nosort
