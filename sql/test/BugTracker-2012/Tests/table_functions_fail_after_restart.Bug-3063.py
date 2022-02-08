@@ -1,28 +1,18 @@
-import os, socket, sys, tempfile, pymonetdb
+import os, sys, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
 except ImportError:
     import process
 
-
-# Find a free network port
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db'))
-    dport = freeport()
 
-    with process.server(mapiport=dport, dbname='db',
+    with process.server(mapiport='0', dbname='db',
                         dbfarm=os.path.join(farm_dir, 'db'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as dproc:
-        client1 = pymonetdb.connect(database='db', port=dport, autocommit=True)
+        client1 = pymonetdb.connect(database='db', port=dproc.dbport, autocommit=True)
         cur1 = client1.cursor()
         cur1.execute("""
         CREATE schema ft;
@@ -36,11 +26,11 @@ with tempfile.TemporaryDirectory() as farm_dir:
 
         dproc.communicate()
 
-    with process.server(mapiport=dport, dbname='db',
+    with process.server(mapiport='0', dbname='db',
                         dbfarm=os.path.join(farm_dir, 'db'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as dproc:
-        client1 = pymonetdb.connect(database='db', port=dport, autocommit=True)
+        client1 = pymonetdb.connect(database='db', port=dproc.dbport, autocommit=True)
         cur1 = client1.cursor()
         cur1.execute("select * from ft.func() as ftf;")
         if cur1.fetchall() != [('1',)]:
