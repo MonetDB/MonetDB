@@ -8978,7 +8978,6 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			}
 		}
 	}
-	rel_destroy(mt_rel);
 	return nrel;
 }
 
@@ -8990,7 +8989,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 		sql_query *query = query_create(v->sql);
 		return rel_propagate(query, rel, &v->changes);
 	} else {
-		sql_rel *bt = rel, *sel = NULL;
+		sql_rel *bt = rel, *sel = NULL, *nrel = NULL;
 
 		if (is_select(rel->op)) {
 			sel = rel;
@@ -9062,12 +9061,22 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 					}
 				}
 			}
-			if (!(rel = merge_table_prune_and_unionize(v, bt, info)))
+			if (!(nrel = merge_table_prune_and_unionize(v, bt, info)))
 				return NULL;
-			if (sel) {
-				sel->l = NULL; /* The mt relation has already been destroyed */
-				rel_destroy(sel);
+			/* Always do relation inplace. If the mt relation has more than 1 reference, this is required */
+			if (is_union(nrel->op)) {
+				rel = rel_inplace_setop(v->sql, rel, nrel->l, nrel->r, op_union, nrel->exps);
+			} else if (is_select(nrel->op)) {
+				rel = rel_inplace_select(rel, nrel->l, nrel->exps);
+			} else if (is_basetable(nrel->op)) {
+				rel = rel_inplace_basetable(rel, nrel);
+			} else {
+				assert(is_simple_project(nrel->op));
+				rel = rel_inplace_project(v->sql->sa, rel, nrel->l, nrel->exps);
+				rel->card = exps_card(nrel->exps);
 			}
+			nrel->l = nrel->r = NULL;
+			rel_destroy(nrel);
 			v->changes++;
 		}
 	}

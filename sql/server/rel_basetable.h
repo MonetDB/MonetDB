@@ -47,5 +47,6 @@ extern int rel_base_has_column_privileges( mvc *sql, sql_rel *rel);
 
 extern void rel_base_set_mergetable( sql_rel *rel, sql_table *mt); /* keep parent merge table */
 extern sql_table *rel_base_get_mergetable( sql_rel *rel);
+extern sql_rel *rel_inplace_basetable(sql_rel *rel, sql_rel *bt);
 
 #endif /* _REL_BASETABLE_H_ */
