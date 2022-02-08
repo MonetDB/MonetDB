@@ -528,4 +528,31 @@ JOIN (VALUES ('b', 3)) AS y(y,z) ON y.y >= ANY(VALUES (y.y))
 ----
 
 statement ok
+CREATE TABLE rt3 (c0 DATE)
+
+statement ok rowcount 4
+INSERT INTO rt3 VALUES (DATE '4153-10-28'),(DATE '2471-08-17'),(DATE '2022-02-08'),(DATE '1970-01-20')
+
+query T nosort
+SELECT (SELECT DATE '2011-10-01' FROM rt3 y RIGHT OUTER JOIN (VALUES (DATE '2010-10-01'), (z.c0)) AS x(x) ON 
+length('a') > 0 WHERE rt3.c0 = DATE '2012-10-01') FROM rt3, rt3 z
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+statement ok
 ROLLBACK
