@@ -168,7 +168,7 @@ GDALWSpatialInfo GDALWGetSpatialInfo(GDALWConnection conn)
 str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions)
 {
 	unsigned int size = BUFSIZ;
-	char *buf = GDKmalloc(BUFSIZ * sizeof(char)), *temp_buf = GDKmalloc(BUFSIZ * sizeof(char));
+	char *buf = NULL, *temp_buf = GDKmalloc(BUFSIZ * sizeof(char));
 	char *nameToLowerCase = NULL;
 	str msg = MAL_SUCCEED;
 
@@ -187,7 +187,6 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 		if (size <= (11 + strlen(field_definitions[i].fieldName) + strlen(temp_buf)))
 		{
 			size = 2 * size;
-			buf = GDKrealloc(buf, size);
 			temp_buf = GDKrealloc(temp_buf, size);
 		}
 		nameToLowerCase = toLower(field_definitions[i].fieldName);
@@ -213,7 +212,8 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 	snprintf(schemaTable, schemaTableSize - 1, "%s.%s", schemaname, tablename);
 
 	//Build the CREATE TABLE command
-	snprintf(buf, size, CRTTBL, schemaTable, temp_buf);
+	buf = GDKmalloc((size + schemaTableSize) * sizeof(char));
+	snprintf(buf, size + schemaTableSize, CRTTBL, schemaTable, temp_buf);
 	//And execute it
 	msg = SQLstatementIntern(cntxt, buf, "shp.load", TRUE, FALSE, NULL);
 
@@ -256,7 +256,7 @@ str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWCo
 		}
 	}
 
-	/* bind the columns of the data file that was just created
+	/* bind the columns of the data table that was just created
 	* and create a BAT for each of the columns */
 	if (!(data_table = mvc_bind_table(m, sch, tablename)))
 	{
@@ -440,6 +440,7 @@ str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	sql_schema *sch = NULL;
 
+	//TODO Allow the user to only specify the table and use sys schema?
 	/* Shapefile name (argument 1) */
 	str filename = *(str *)getArgReference(stk, pci, 1);
 	/* Output schema name (argument 2) */
@@ -496,6 +497,7 @@ str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 
+	//TODO If createSHPtable works and loadSHPtable doesn't, we have to clean the created table
 	/* Load shapefile data into table */
 	msg = loadSHPtable(m, sch, schemaname, tablename, shp_conn, field_definitions, spatial_info);
 
