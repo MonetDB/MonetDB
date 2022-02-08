@@ -2562,6 +2562,8 @@ exps_share_expensive_exp(list *exps, list *shared )
 
 	if (!exps || !shared)
 		return false;
+	if (list_length(shared) > 64)
+		return true;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
