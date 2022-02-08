@@ -617,7 +617,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 		goto cleanup;
 	}
 
-	 with_mapi_server = false;
+	with_mapi_server = false;
 
 	if (monetdbe_embedded_initialized) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "MonetDBe is already initialized"));
