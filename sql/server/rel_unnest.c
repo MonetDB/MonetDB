@@ -1307,6 +1307,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			 *
 			 * */
 			list *rd = NULL, *ld = NULL;
+			int labelleft = j->op == op_right;
 
 			if (is_semi(j->op) && is_select(jl->op) && rel_has_freevar(sql, jl) && !rel_is_ref(jl)) {
 				rel->r = j = push_up_select_l(sql, j);
@@ -1317,7 +1318,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 
 			if (ld && rd) {
 				node *m;
-				sql_rel *n, *nr, *nj;
+				sql_rel *n, *nr, *nj, *nl;
 				list *inner_exps = exps_copy(sql, j->exps);
 				list *outer_exps = exps_copy(sql, rel->exps);
 				list *attr = j->attr;
@@ -1342,7 +1343,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 					j->op = op_left;
 					rel->op = op_left;
 				}
-				n->l = rel_project(sql->sa, n->l, rel_projections(sql, n->l, NULL, 1, 1));
+				nl = n->l = rel_project(sql->sa, n->l, rel_projections(sql, n->l, NULL, 1, 1));
 				nr = n->r;
 				nr = n->r = rel_project(sql->sa, n->r, is_semi(nr->op)?sa_list(sql->sa):rel_projections(sql, nr->r, NULL, 1, 1));
 				/* add nr->l exps with labels */
@@ -1350,14 +1351,25 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				if (!n->exps)
 					n->exps = sa_list(sql->sa);
 				for (m = d->exps->h; m; m = m->next) {
-					sql_exp *e = m->data, *pe, *je;
+					sql_exp *e = m->data, *le, *re, *je;
 
-					pe = exp_ref(sql, e);
-					pe = exp_label(sql->sa, pe, ++sql->label);
-					append(nr->exps, pe);
-					pe = exp_ref(sql, pe);
-					e = exp_ref(sql, e);
-					je = exp_compare(sql->sa, e, pe, cmp_equal);
+					le = exp_ref(sql, e);
+					re = exp_ref(sql, e);
+					if (labelleft) {
+						sql_exp *f = NULL;
+						if ((f=rel_find_exp(nl, le)) != NULL)
+							le = f;
+						le = exp_label(sql->sa, le, ++sql->label);
+						if (!f)
+							append(nl->exps, le);
+						le = exp_ref(sql, le);
+					}
+
+					if (!labelleft)
+						re = exp_label(sql->sa, re, ++sql->label);
+					append(nr->exps, re);
+					re = exp_ref(sql, re);
+					je = exp_compare(sql->sa, le, re, cmp_equal);
 					set_semantics(je);
 					append(n->exps, je);
 				}
