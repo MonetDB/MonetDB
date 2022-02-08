@@ -455,8 +455,61 @@ query I nosort
 SELECT t2.c0 FROM t2 WHERE EXISTS (SELECT 1 WHERE FALSE HAVING max((SELECT min(1) FROM t2)) > 0)
 ----
 
+statement ok
+SAVEPOINT sp1
+
 statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
 SELECT t2.c0 FROM t2 WHERE EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('true') FROM t2) = 'true' as int)) > 0)
+
+statement ok
+ROLLBACK TO SAVEPOINT sp1
+
+statement ok
+CREATE TABLE rt2 ("c0" INTERVAL DAY)
+
+statement ok rowcount 7
+INSERT INTO rt2 VALUES (INTERVAL '0' SECOND),(INTERVAL '0' SECOND)
+
+query I nosort
+SELECT TRUE FROM rt2 AS x RIGHT OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT TRUE FROM rt2 AS x FULL OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
+----
+1
+1
+1
+1
+
+# these are right
+query I nosort
+SELECT TRUE FROM rt2 AS x JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT TRUE FROM rt2 AS x CROSS JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z)
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT TRUE FROM rt2 AS x LEFT OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
+----
+1
+1
+1
+1
 
 statement ok
 ROLLBACK
