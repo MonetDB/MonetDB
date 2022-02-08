@@ -277,7 +277,8 @@ rel_only_freevar(sql_query *query, sql_rel *rel, bool *arguments_correlated, boo
 	} else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
 		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->r)
 			exps_only_freevar(query, rel->r, arguments_correlated, found_one_freevar, ungrouped_cols);
-		exps_only_freevar(query, rel->exps, arguments_correlated, found_one_freevar, ungrouped_cols);
+		if (rel->card > CARD_ATOM)
+			exps_only_freevar(query, rel->exps, arguments_correlated, found_one_freevar, ungrouped_cols);
 		if (rel->l)
 			rel_only_freevar(query, rel->l, arguments_correlated, found_one_freevar, ungrouped_cols);
 	} else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
