@@ -589,5 +589,9 @@ query I nosort
 SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (VALUES (t0.c0)) AS x(x) ON t0.c0 < ALL(SELECT 1)
 ----
 
+query I nosort
+SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (SELECT 2, (VALUES (3), (t0.c0))) AS x(x,y) ON x.x IN (SELECT x.x)
+----
+
 statement ok
 ROLLBACK
