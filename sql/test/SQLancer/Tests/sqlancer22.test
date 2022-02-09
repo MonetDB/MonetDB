@@ -554,4 +554,23 @@ NULL
 NULL
 
 statement ok
+CREATE TABLE rt4 (c0 INT NOT NULL, CONSTRAINT rt4_c0_unique UNIQUE (c0))
+
+statement ok rowcount 1
+INSERT INTO rt4 VALUES (1)
+
+statement ok
+CREATE TABLE t1 (c0 INT)
+
+query I nosort
+SELECT rt4.c0 FROM rt4 WHERE NOT EXISTS ((SELECT rt4.c0 FROM t1) INTERSECT (SELECT rt4.c0))
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT EXISTS ((SELECT rt4.c0 FROM t1) INTERSECT (SELECT rt4.c0)) AS INT) as count FROM rt4) as res
+----
+1
+
+statement ok
 ROLLBACK
