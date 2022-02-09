@@ -59,7 +59,7 @@ START TRANSACTION
 statement ok
 CREATE VIEW v1(vc0, vc1, vc2) AS (WITH ctel0n0(ct0n0,ct0n1) AS (VALUES (4, 5)) SELECT 1, 2, 3 FROM ctel0n0)
 
-query III nosort
+query III rowsort
 SELECT * FROM v1
 ----
 1
@@ -291,23 +291,23 @@ SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) 
 1
 1
 
-query I
+query I rowsort
 SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 LEFT JOIN generate_series(1, 3, 1) tbl(i) ON i1.i=tbl.i) FROM integers
 ----
-1
-1
-1
 0
+1
+1
+1
 
-query I
+query I rowsort
 SELECT i IN (SELECT i1.i FROM generate_series(1, 3, 1) tbl(i) RIGHT JOIN (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 ON i1.i=tbl.i) FROM integers
 ----
-1
-1
-1
 0
+1
+1
+1
 
-query I
+query I rowsort
 SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 RIGHT JOIN generate_series(1, 3, 1) tbl(i) ON i1.i=tbl.i) FROM integers
 ----
 1
@@ -315,7 +315,7 @@ SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) 
 NULL
 NULL
 
-query I
+query I rowsort
 SELECT i IN (SELECT i1.i FROM generate_series(1, 3, 1) tbl(i) LEFT JOIN (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 ON i1.i=tbl.i) FROM integers
 ----
 1
@@ -346,7 +346,7 @@ SELECT 1 FROM rt0 JOIN LATERAL (with x(x) as (select rt0.c0) (select x from x)) 
 statement ok rowcount 4
 INSERT INTO rt0 VALUES (1), (2), (3), (NULL)
 
-query I nosort
+query I rowsort
 SELECT rt0.c0 FROM rt0 JOIN LATERAL (with x(x) as (select rt0.c0) (select rt0.c0 + x.x from x)) AS x(x) ON TRUE
 ----
 1
@@ -354,7 +354,7 @@ SELECT rt0.c0 FROM rt0 JOIN LATERAL (with x(x) as (select rt0.c0) (select rt0.c0
 3
 NULL
 
-query I nosort
+query I rowsort
 SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL (with x(x) as (select rt0.c0) (select rt0.c0 + x.x from x)) AS x(x)
 ----
 1
@@ -367,7 +367,7 @@ SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL ((SELECT rt0.c0 + 2) INTERSECT (SELECT
 ----
 NULL
 
-query I nosort
+query I rowsort
 SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL (VALUES (rt0.c0), (4)) AS x(x)
 ----
 1
@@ -450,7 +450,6 @@ SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('tr
 ----
 1
 
-#this one is right
 query I nosort
 SELECT t2.c0 FROM t2 WHERE EXISTS (SELECT 1 WHERE FALSE HAVING max((SELECT min(1) FROM t2)) > 0)
 ----
