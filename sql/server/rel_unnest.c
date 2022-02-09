@@ -2584,6 +2584,12 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
+static bool
+exp_is_values(sql_exp *e)
+{
+	return is_atom(e->type) && e->f;
+}
+
 static sql_rel *
 rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 {
@@ -2620,7 +2626,8 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		} else {
 			sq->nrcols = list_length(sq->exps);
 			/* union a project[(values(a),..,(b),(c)]  with freevars */
-			if (sq->card > CARD_ATOM && rel_has_freevar(sql, sq) && is_project(sq->op) && !sq->l && sq->nrcols==1) {
+			if (sq->card > CARD_ATOM && rel_has_freevar(sql, sq) && is_project(sq->op) &&
+				!sq->l && sq->nrcols == 1 && exp_is_values(sq->exps->h->data)) {
 				/* needs check on projection */
 				sql_exp *vals = sq->exps->h->data;
 				if (!(sq = rel_union_exps(sql, l, exp_get_values(vals), is_tuple)))
