@@ -1035,6 +1035,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				}
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 				set_dependent(r);
+				set_processed(r);
 				if (single) {
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_unique(v), is_intern(v));
 					rel_val = NULL;
@@ -1341,6 +1342,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
+					set_processed(join_rel);
 				}
 
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, join_rel, NULL, 1, 1));
@@ -1354,6 +1356,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
+					set_processed(join_rel);
 				}
 
 				extra_project = rel_project(sql->sa, join_rel, list_append(new_exp_list(sql->sa), exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1)));
@@ -1377,6 +1380,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 					return NULL;
+				set_processed(join_rel);
 			}
 
 			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
