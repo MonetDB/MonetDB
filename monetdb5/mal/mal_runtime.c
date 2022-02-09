@@ -36,14 +36,7 @@ size_t usrstatscnt = 0;
 static void
 clearUSRstats(size_t idx)
 {
-	USRstats[idx].user= 0;
-	USRstats[idx].username = 0;
-	USRstats[idx].querycount = 0;
-	USRstats[idx].totalticks = 0;
-	USRstats[idx].started = 0;
-	USRstats[idx].finished = 0;
-	USRstats[idx].maxticks = 0;
-	USRstats[idx].maxquery = 0;
+	USRstats[idx] = (struct USERSTAT){0};
 }
 
 /*
@@ -118,6 +111,7 @@ dropUSRstats(void)
 	}
 	GDKfree(USRstats);
 	USRstats = NULL;
+	usrstatscnt = 0;
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -145,17 +139,7 @@ isaSQLquery(MalBlkPtr mb){
 static void
 clearQRYqueue(size_t idx)
 {
-		QRYqueue[idx].query = 0;
-		QRYqueue[idx].cntxt = 0;
-		QRYqueue[idx].username = 0;
-		QRYqueue[idx].idx = 0;
-		QRYqueue[idx].memory = 0;
-		QRYqueue[idx].tag = 0;
-		QRYqueue[idx].status =0;
-		QRYqueue[idx].finished = 0;
-		QRYqueue[idx].start = 0;
-		QRYqueue[idx].stk =0;
-		QRYqueue[idx].mb =0;
+	QRYqueue[idx] = (struct QRYQUEUE){0};
 }
 
 static void
@@ -198,6 +182,10 @@ dropQRYqueue(void)
 	}
 	GDKfree(QRYqueue);
 	QRYqueue = NULL;
+	qsize = 0;
+	qtag = 1;
+	qhead = 0;
+	qtail = 0;
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -309,6 +297,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 				// recursive call
 				QRYqueue[i].stk = stk->up;
 				mb->tag = stk->tag;
+				found = true;
 				break;
 			}
 			QRYqueue[i].status = "finished";
@@ -361,13 +350,7 @@ void
 mal_runtime_reset(void)
 {
 	dropQRYqueue();
-	qsize = 0;
-	qtag= 1;
-	qhead = 0;
-	qtail = 0;
-
 	dropUSRstats();
-	usrstatscnt = 0;
 }
 
 /*
@@ -421,16 +404,10 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		tid--;
 		if( malProfileMode) {
 			MT_lock_set(&mal_profileLock);
-			workingset[tid].cntxt = 0;
-			workingset[tid].mb = 0;
-			workingset[tid].stk = 0;
-			workingset[tid].pci = 0;
+			workingset[tid] = (struct WORKINGSET) {0};
 			MT_lock_unset(&mal_profileLock);
 		} else{
-			workingset[tid].cntxt = 0;
-			workingset[tid].mb = 0;
-			workingset[tid].stk = 0;
-			workingset[tid].pci = 0;
+			workingset[tid] = (struct WORKINGSET) {0};
 		}
 	}
 
