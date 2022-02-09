@@ -309,6 +309,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 				// recursive call
 				QRYqueue[i].stk = stk->up;
 				mb->tag = stk->tag;
+				found = true;
 				break;
 			}
 			QRYqueue[i].status = "finished";
