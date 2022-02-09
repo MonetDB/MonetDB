@@ -1450,6 +1450,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			set_processed(sr);
 			ns = rel_setop(sql->sa, sl, sr, s->op);
 			ns->exps = exps_copy(sql, s->exps);
+			set_processed(ns);
 			if (is_single(s))
 				set_single(ns);
 			if (need_distinct(s))
