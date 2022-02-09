@@ -57,7 +57,7 @@ isatty = os.isatty(sys.stdout.fileno())
 
 mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9]+:(?P<port>\d+)/')
 
-geos_version = '@GEOS_VERSION@'
+geos_version = '@GEOS_VERSION@'.split('.')
 
 # default is no color (these three functions may get redefined)
 def prred(str, write = sys.stdout.write):
@@ -1109,27 +1109,26 @@ def RunTest(env, test, oktests, pSrvr):
                     break
                 passwd = cond[7:]
             elif cond.startswith('GEOS_VERSION>='):
-                if not geos_version:
+                if not geos_version or not geos_version[0]:
                     reason = "no geos version information available"
                     break
                 req_vers = cond[14:].split('.')
-                act_vers = geos_version.split('.')
                 if not negate:
-                    for i in range(len(act_vers)):
+                    for i in range(len(geos_version)):
                         if i >= len(req_vers):
                             break
-                        if int(act_vers[i]) > int(req_vers[i]):
+                        if int(geos_version[i]) > int(req_vers[i]):
                             break
-                        if int(act_vers[i]) < int(req_vers[i]):
+                        if int(geos_version[i]) < int(req_vers[i]):
                             reason = "geos version too low"
                             break
                 else:
-                    for i in range(len(act_vers)):
+                    for i in range(len(geos_version)):
                         if i >= len(req_vers):
                             break
-                        if int(act_vers[i]) < int(req_vers[i]):
+                        if int(geos_version[i]) < int(req_vers[i]):
                             break
-                        if int(act_vers[i]) > int(req_vers[i]):
+                        if int(geos_version[i]) > int(req_vers[i]):
                             reason = "geos version too high"
                             break
                 if reason is not None:
