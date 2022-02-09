@@ -639,6 +639,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 				if (lateral && outer) {
 					sq = rel_crossproduct(sql->sa, sq, outer, op_join);
 					set_dependent(sq);
+					set_processed(sq);
 				}
 			}
 		}
@@ -2774,6 +2775,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 		} else {
 			sq = rel_crossproduct(sql->sa, rel, sq, (f==sql_sel || is_single(sq))?op_left:op_join);
+			set_processed(sq);
 		}
 		return sq;
 	}
