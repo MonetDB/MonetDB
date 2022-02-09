@@ -554,6 +554,13 @@ NULL
 NULL
 
 statement ok
+CREATE TABLE t3 (c0 BOOLEAN)
+
+query I nosort
+SELECT EXISTS (SELECT 1 FROM t0 FULL OUTER JOIN (SELECT 3) AS x(x) ON t3.c0 CROSS JOIN (SELECT t3.c0) AS y(y) WHERE y.y) FROM t3
+----
+
+statement ok
 CREATE TABLE rt4 (c0 INT NOT NULL, CONSTRAINT rt4_c0_unique UNIQUE (c0))
 
 statement ok rowcount 1
