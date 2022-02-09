@@ -554,10 +554,17 @@ NULL
 NULL
 
 statement ok
+CREATE TABLE t1 (c0 INT)
+
+statement ok
 CREATE TABLE t3 (c0 BOOLEAN)
 
 query I nosort
 SELECT EXISTS (SELECT 1 FROM t0 FULL OUTER JOIN (SELECT 3) AS x(x) ON t3.c0 CROSS JOIN (SELECT t3.c0) AS y(y) WHERE y.y) FROM t3
+----
+
+query I nosort
+SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT 1 FROM t1 WHERE (SELECT t1.c0 FROM t1) NOT IN (COALESCE(t1.c0, t0.c0))) AS x(x)
 ----
 
 statement ok
@@ -565,9 +572,6 @@ CREATE TABLE rt4 (c0 INT NOT NULL, CONSTRAINT rt4_c0_unique UNIQUE (c0))
 
 statement ok rowcount 1
 INSERT INTO rt4 VALUES (1)
-
-statement ok
-CREATE TABLE t1 (c0 INT)
 
 query I nosort
 SELECT rt4.c0 FROM rt4 WHERE NOT EXISTS ((SELECT rt4.c0 FROM t1) INTERSECT (SELECT rt4.c0))
