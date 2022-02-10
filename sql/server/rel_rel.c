@@ -457,6 +457,24 @@ rel_first_column(mvc *sql, sql_rel *r)
 }
 
 sql_rel *
+rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
+{
+	assert(is_basetable(bt->op));
+
+	rel_destroy_(rel);
+	set_processed(rel);
+	rel->l = bt->l;
+	rel->r = bt->r;
+	rel->attr = NULL;
+	rel->op = op_basetable;
+	rel->exps = bt->exps;
+	rel->card = CARD_MULTI;
+	rel->flag = 0;
+	rel->nrcols = bt->nrcols;
+	return rel;
+}
+
+sql_rel *
 rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
 {
 	rel_destroy_(rel);

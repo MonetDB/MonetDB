@@ -3538,7 +3538,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				list *l = (list*) n->data, *exps = sa_list(v->sql->sa), *pexps = sa_list(v->sql->sa);
 
 				l = list_flaten(l);
-				nrel = rel_groupby(v->sql, unions ? rel_dup(rel->l) : rel->l, l);
+				nrel = rel_groupby(v->sql, rel_dup(rel->l), l);
 
 				for (node *m = rel->exps->h ; m ; m = m->next) {
 					sql_exp *e = (sql_exp*) m->data, *ne = NULL;
@@ -3637,7 +3637,6 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					return unions;
 			}
 			/* always do relation inplace, so it will be fine when the input group has more than 1 reference */
-			rel_dup(rel->l);
 			if (is_union(unions->op)) {
 				rel = rel_inplace_setop(v->sql, rel, unions->l, unions->r, op_union, unions->exps);
 			} else {
@@ -3662,7 +3661,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 			}
 			if (found_grouping) {
 				/* replace grouping calls with constants of value 0 */
-				sql_rel *nrel = rel_groupby(v->sql, rel->l, rel->r);
+				sql_rel *nrel = rel_groupby(v->sql, rel_dup(rel->l), rel->r);
 				list *exps = sa_list(v->sql->sa), *pexps = sa_list(v->sql->sa);
 				sql_subtype *bt = sql_bind_localtype("bte");
 
@@ -3693,7 +3692,6 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					list_append(pexps, e);
 				}
 				/* always do relation inplace, so it will be fine when the input group has more than 1 reference */
-				rel_dup(rel->l);
 				rel = rel_inplace_project(v->sql->sa, rel, nrel, pexps);
 				rel->card = exps_card(pexps);
 				v->changes++;
