@@ -751,8 +751,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				nstk->stkdepth = nstk->stksize + stk->stkdepth;
 				nstk->calldepth = stk->calldepth + 1;
 				nstk->up = stk;
-				/* inherit tag, because it will be used when doing profiling */
-				nstk->tag = stk->tag;
 				if (nstk->calldepth > 256) {
 					ret= createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
 					GDKfree(nstk);
