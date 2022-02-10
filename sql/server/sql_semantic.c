@@ -297,7 +297,6 @@ sql_find_func_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_ft
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
 	if (ff) {
-		MT_lock_set(&ff->ht_lock);
 		if (ff->ht) {
 			sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)];
 			if (prev) {
@@ -311,13 +310,10 @@ sql_find_func_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_ft
 				if (f->type != type && f->type != filt)
 					continue;
 				if ((res = func_cmp(sql->sa, f, fname, nrargs)) != NULL) {
-					MT_lock_unset(&ff->ht_lock);
 					return res;
 				}
 			}
-			MT_lock_unset(&ff->ht_lock);
 		} else {
-			MT_lock_unset(&ff->ht_lock);
 			node *n = ff->h;
 			if (prev) {
 				for (; n && !found; n = n->next)
@@ -397,7 +393,7 @@ is_subtypeof(sql_subtype *sub, sql_subtype *super)
 	if (super->digits > 0 && sub->digits > super->digits)
 		return 0;
 	/* while binding a function, 'char' types match each other */
-	if (super->digits == 0 && 
+	if (super->digits == 0 &&
 		((super->type->eclass == EC_STRING && EC_VARCHAR(sub->type->eclass)) ||
 		 (super->type->eclass == EC_CHAR && sub->type->eclass == EC_CHAR)))
 		return 1;
@@ -834,7 +830,6 @@ sql_find_funcs_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_f
 	list *res = NULL;
 
 	if (ff) {
-		MT_lock_set(&ff->ht_lock);
 		if (ff->ht) {
 			for (sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)]; he; he = he->chain) {
 				sql_func *f = he->value;
@@ -861,7 +856,6 @@ sql_find_funcs_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_f
 				}
 			}
 		}
-		MT_lock_unset(&ff->ht_lock);
 	}
 	return res;
 }
@@ -918,7 +912,6 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 	list *res = NULL;
 
 	if (ff) {
-		MT_lock_set(&ff->ht_lock);
 		if (ff->ht) {
 			for (sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)]; he; he = he->chain) {
 				sql_func *f = he->value;
@@ -945,7 +938,6 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 				}
 			}
 		}
-		MT_lock_unset(&ff->ht_lock);
 	}
 	return res;
 }

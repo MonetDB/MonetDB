@@ -5544,8 +5544,13 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	if ((res = table_dup(tr, t, t->s, new_name, &dup)))
 		return res;
 	t = dup;
-	if (!isGlobal(t))
+	if (!isGlobal(t)) {
+		if (tr->localtmps.set == NULL)
+			tr->localtmps.set = list_new(tr->localtmps.sa, tr->localtmps.destroy);
+		if (tr->localtmps.set->ht == NULL || tr->localtmps.set->ht->size * 16 < list_length(tr->localtmps.set))
+			tr->localtmps.set->ht = hash_new(tr->localtmps.sa, 16, (fkeyvalue)&base_key);
 		cs_add(&tr->localtmps, t, true);
+	}
 	return res;
 }
 
@@ -5628,8 +5633,13 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 	if (isGlobal(t)) {
 		if ((res = os_add(s->tables, tr, t->base.name, &t->base)))
 			return res;
-	} else
+	} else {
+		if (tr->localtmps.set == NULL)
+			tr->localtmps.set = list_new(tr->localtmps.sa, tr->localtmps.destroy);
+		if (tr->localtmps.sa && (tr->localtmps.set->ht == NULL || tr->localtmps.set->ht->size * 16 < list_length(tr->localtmps.set)))
+			tr->localtmps.set->ht = hash_new(tr->localtmps.sa, 16, (fkeyvalue)&base_key);
 		cs_add(&tr->localtmps, t, true);
+	}
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 

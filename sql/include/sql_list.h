@@ -24,7 +24,6 @@ typedef void (*fdestroy) (void *gdata, void *ndata); /* gdata is passed to the l
 typedef struct list {
 	sql_allocator *sa;
 	sql_hash *ht;
-	MT_Lock ht_lock;	/* latch protecting ht */
 	fdestroy destroy;
 	node *h;
 	node *t;
