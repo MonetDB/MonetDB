@@ -323,6 +323,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 	sql_exp **inserts = insert_exp_array(sql, t, &len);
 	list *exps = NULL;
 	node *n, *m;
+	bool has_rel = false, all_values = true;
 
 	if (r->exps) {
 		if (!copy) {
@@ -334,6 +335,8 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
 				if (!(inserts[c->colnr] = exp_check_type(sql, &c->type, r, e, type_equal)))
 					return NULL;
+				has_rel = (has_rel || exp_has_rel(e));
+				all_values &= is_values(e);
 			}
 		} else {
 			for (m = collist->h; m; m = m->next) {
@@ -345,6 +348,8 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 					if (inserts[c->colnr])
 						return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
 					inserts[c->colnr] = exp_ref(sql, e);
+					has_rel = has_rel || exp_has_rel(e);
+					all_values &= is_values(e);
 				}
 			}
 		}
@@ -385,10 +390,32 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 			assert(inserts[c->colnr]);
 		}
 	}
-	/* now rewrite project exps in proper table order */
-	exps = new_exp_list(sql->sa);
-	for (i = 0; i<len; i++)
-		list_append(exps, inserts[i]);
+	/* rewrite into unions */
+	if (has_rel && rowcount && all_values) {
+		sql_rel *c = NULL;
+		for (size_t j = 0; j < rowcount; j++) {
+			sql_rel *p = rel_project(sql->sa, NULL, sa_list(sql->sa));
+			for (m = ol_first_node(t->columns); m; m = m->next) {
+				sql_column *c = m->data;
+				sql_exp *e = inserts[c->colnr];
+				assert(is_values(e));
+				list *vals = e->f;
+				append(p->exps, list_fetch(vals, j));
+			}
+			if (c) {
+				c = rel_setop(sql->sa, c, p, op_union);
+				rel_setop_set_exps(sql, c, rel_projections(sql, c->l, NULL, 1, 1), false);
+			} else
+				c = p;
+		}
+		r->l = c;
+		exps = rel_projections(sql, r->l, NULL, 1, 1);
+	} else {
+		/* now rewrite project exps in proper table order */
+		exps = new_exp_list(sql->sa);
+		for (i = 0; i<len; i++)
+			list_append(exps, inserts[i]);
+	}
 	return exps;
 }
 
