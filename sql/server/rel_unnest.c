@@ -1018,6 +1018,7 @@ push_up_topn_and_sample(mvc *sql, sql_rel *rel)
 			sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
 			rel->r = rel_dup(r->l);
 			rel = func(sql->sa, rel, r->exps);
+			set_processed(rel);
 			rel_destroy(r);
 			return rel;
 		}
@@ -2349,6 +2350,7 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 				n = nxt;
 				i++;
 			}
+			set_processed(nsel);
 			v->changes++;
 		}
 	}

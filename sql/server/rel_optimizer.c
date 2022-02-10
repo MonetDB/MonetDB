@@ -1816,6 +1816,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				x = x->l;
 			if (x && x->op != rel->op) { /* only push topn once */
 				ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
+				set_processed(ul);
 				u->l = ul;
 				changed = true;
 			}
@@ -1825,6 +1826,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				x = x->l;
 			if (x && x->op != rel->op) { /* only push topn once */
 				ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
+				set_processed(ur);
 				u->r = ur;
 				changed = true;
 			}
@@ -1878,6 +1880,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(v->sql, r->r);
 			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
+			set_processed(ul);
 
 			ur = rel_project(v->sql->sa, ur, NULL);
 			ur->exps = exps_copy(v->sql, r->exps);
@@ -1886,6 +1889,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(v->sql, r->r);
 			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
+			set_processed(ur);
 
 			u = rel_setop(v->sql->sa, ul, ur, op_union);
 			u->exps = exps_alias(v->sql, r->exps);
@@ -2323,8 +2327,10 @@ rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    exps_card(rel->exps) <= CARD_ATOM) {
 		set_nodistinct(rel);
-		if (rel->card > CARD_ATOM) /* if the projection just contains constants, then no topN is needed */
-			rel->l = rel_topn(v->sql->sa, rel->l, append(sa_list(v->sql->sa), exp_atom_lng(v->sql->sa, 1)));
+		if (rel->card > CARD_ATOM) { /* if the projection just contains constants, then no topN is needed */
+			sql_rel *nl = rel->l = rel_topn(v->sql->sa, rel->l, append(sa_list(v->sql->sa), exp_atom_lng(v->sql->sa, 1)));
+			set_processed(nl);
+		}
 		v->changes++;
 	}
 
@@ -5515,8 +5521,10 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 	/* first remove distinct if already unique */
 	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(v->sql, rel, rel->exps) && !have_nil(rel->exps)) {
 		set_nodistinct(rel);
-		if (exps_card(rel->exps) <= CARD_ATOM && rel->card > CARD_ATOM) /* if the projection just contains constants, then no topN is needed */
-			rel->l = rel_topn(v->sql->sa, rel->l, append(sa_list(v->sql->sa), exp_atom_lng(v->sql->sa, 1)));
+		if (exps_card(rel->exps) <= CARD_ATOM && rel->card > CARD_ATOM) { /* if the projection just contains constants, then no topN is needed */
+			sql_rel *nl = rel->l = rel_topn(v->sql->sa, rel->l, append(sa_list(v->sql->sa), exp_atom_lng(v->sql->sa, 1)));
+			set_processed(nl);
+		}
 		v->changes++;
 	}
 
