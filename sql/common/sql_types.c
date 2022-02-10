@@ -1518,8 +1518,6 @@ types_init(sql_allocator *sa)
 	types = sa_list(sa);
 	localtypes = sa_list(sa);
 	funcs = sa_list(sa);
-	MT_lock_set(&funcs->ht_lock);
 	funcs->ht = hash_new(sa, 1024, (fkeyvalue)&base_key);
-	MT_lock_unset(&funcs->ht_lock);
 	sqltypeinit( sa );
 }
