@@ -3945,7 +3945,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
 				/* foreach column add predicate */
-				(void) stmt_column_predicate(be, c->c);
+				stmt_add_column_predicate(be, c->c);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				if ((k->type == ukey) && stmt_has_null(col)) {
@@ -3967,7 +3967,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
 				/* foreach column add predicate */
-				(void) stmt_column_predicate(be, c->c);
+				stmt_add_column_predicate(be, c->c);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				list_append(lje, col);
@@ -4030,7 +4030,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		stmt *s = list_fetch(inserts, c->c->colnr), *h = s;
 
 		/* add predicate for this column */
-		(void) stmt_column_predicate(be, c->c);
+		stmt_add_column_predicate(be, c->c);
 
 		s = stmt_col(be, c->c, dels, dels->partition);
 		if ((k->type == ukey) && stmt_has_null(s)) {
@@ -4101,7 +4101,7 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 		sql_kc *c = m->data;
 
 		/* foreach column add predicate */
-		(void) stmt_column_predicate(be, c->c);
+		stmt_add_column_predicate(be, c->c);
 	}
 
 	if (pin && list_length(pin->op4.lval))
@@ -4372,7 +4372,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
 		}
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
-			(void) stmt_dependency_change(be, t, ret);
+			stmt_add_dependency_change(be, t, ret);
 		return ret;
 	}
 }
@@ -5233,7 +5233,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
 	}
 	if (t->s && isGlobal(t) && !isGlobalTemp(t))
-		(void) stmt_dependency_change(be, t, cnt);
+		stmt_add_dependency_change(be, t, cnt);
 /* cascade ?? */
 	return l;
 }
@@ -5357,7 +5357,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
 		}
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
-			(void) stmt_dependency_change(be, t, cnt);
+			stmt_add_dependency_change(be, t, cnt);
 	}
 
 	if (sql->cascade_action)
@@ -5575,7 +5575,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, s->nr) : s->nr;
 	}
 	if (t->s && isGlobal(t) && !isGlobalTemp(t))
-		(void) stmt_dependency_change(be, t, s);
+		stmt_add_dependency_change(be, t, s);
 	return s;
 }
 
@@ -5745,7 +5745,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, other->nr) : other->nr;
 		}
 		if (next->s && isGlobal(next) && !isGlobalTemp(next))
-			(void) stmt_dependency_change(be, next, other);
+			stmt_add_dependency_change(be, next, other);
 	}
 
 finalize:
