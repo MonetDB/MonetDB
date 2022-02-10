@@ -3009,7 +3009,7 @@ stmt_dependency_change(backend *be, sql_table *t, stmt *cnt)
 
 	if (!t || cnt->nr < 0)
 		return NULL;
-	q = newStmtArgs(mb, sqlRef, putName("depend"), 3);
+	q = newStmtArgs(mb, sqlRef, putName("depend"), 4);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
 	q = pushArgument(mb, q, cnt->nr);
@@ -3036,7 +3036,7 @@ stmt_column_predicate(backend *be, sql_column *c)
 
 	if (!c)
 		return NULL;
-	q = newStmtArgs(mb, sqlRef, putName("predicate"), 3);
+	q = newStmtArgs(mb, sqlRef, putName("predicate"), 4);
 	q = pushSchema(mb, q, c->t);
 	q = pushStr(mb, q, c->t->base.name);
 	q = pushStr(mb, q, c->base.name);
