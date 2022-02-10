@@ -456,20 +456,27 @@ rel_first_column(mvc *sql, sql_rel *r)
 	return NULL;
 }
 
+static void
+rel_inplace_reset_props(sql_rel *rel)
+{
+	rel->flag = 0;
+	rel->attr = NULL;
+	reset_dependent(rel);
+	set_processed(rel);
+}
+
 sql_rel *
 rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
 {
 	assert(is_basetable(bt->op));
 
 	rel_destroy_(rel);
-	set_processed(rel);
+	rel_inplace_reset_props(rel);
 	rel->l = bt->l;
 	rel->r = bt->r;
-	rel->attr = NULL;
 	rel->op = op_basetable;
 	rel->exps = bt->exps;
 	rel->card = CARD_MULTI;
-	rel->flag = 0;
 	rel->nrcols = bt->nrcols;
 	return rel;
 }
@@ -478,14 +485,12 @@ sql_rel *
 rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
 {
 	rel_destroy_(rel);
+	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = r;
-	rel->attr = NULL;
 	rel->op = setop;
 	rel->card = CARD_MULTI;
-	rel->flag = 0;
 	rel_setop_set_exps(sql, rel, exps, false);
-	set_processed(rel);
 	return rel;
 }
 
@@ -502,15 +507,12 @@ rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 	} else {
 		rel_destroy_(rel);
 	}
-	set_processed(rel);
-
+	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = NULL;
-	rel->attr = NULL;
 	rel->op = op_project;
 	rel->exps = e;
 	rel->card = CARD_MULTI;
-	rel->flag = 0;
 	if (l) {
 		rel->nrcols = l->nrcols;
 		assert (exps_card(rel->exps) <= rel->card);
@@ -522,14 +524,12 @@ sql_rel *
 rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps)
 {
 	rel_destroy_(rel);
-	set_processed(rel);
+	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = NULL;
-	rel->attr = NULL;
 	rel->op = op_select;
 	rel->exps = exps;
 	rel->card = exps_card(exps);
-	rel->flag = 0;
 	rel->card = CARD_ATOM; /* no relation */
 	if (l) {
 		rel->card = l->card;
@@ -544,17 +544,15 @@ sql_rel *
 rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 {
 	rel_destroy_(rel);
+	rel_inplace_reset_props(rel);
 	rel->card = CARD_ATOM;
 	if (groupbyexps)
 		rel->card = CARD_AGGR;
 	rel->l = l;
 	rel->r = groupbyexps;
-	rel->attr = NULL;
 	rel->exps = exps;
 	rel->nrcols = l->nrcols;
 	rel->op = op_groupby;
-	rel->flag = 0;
-	set_processed(rel);
 	return rel;
 }
 
