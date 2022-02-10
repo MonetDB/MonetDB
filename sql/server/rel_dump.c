@@ -1945,6 +1945,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: the number of output parameters don't match the table ones relation outputs: %d != function outputs: %d\n",
 									 list_length(outputs), list_length(sf->func->res));
 				rel = rel_table_func(sql->sa, lrel, tudf, outputs, TABLE_FROM_RELATION);
+				set_processed(rel);
 			} else {
 				if (r[*pos] != ')')
 					sql_error(sql, -1, SQLSTATE(42000) "Table: missing ')'\n");
@@ -1994,6 +1995,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 				return NULL;
 			rel = rel_topn(sql->sa, nrel, exps);
+			set_processed(rel);
 		}
 		break;
 	case 'p':
@@ -2015,12 +2017,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_project(sql->sa, nrel, exps);
+		set_processed(rel);
 		/* order by ? */
-		if (r[*pos] == '[') {
-			/* first projected expressions, then left relation projections */
-			if (!(rel->r = read_exps(sql, rel, nrel, NULL, r, pos, '[', 0, 1)))
-				return NULL;
-		}
+		/* first projected expressions, then left relation projections */
+		if (r[*pos] == '[' && !(rel->r = read_exps(sql, rel, nrel, NULL, r, pos, '[', 0, 1)))
+			return NULL;
 		break;
 	case 'g':
 		*pos += (int) strlen("group by");
@@ -2068,6 +2069,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 				return NULL;
 			rel = rel_sample(sql->sa, nrel, exps);
+			set_processed(rel);
 		} else if (r[*pos+2] == 'l') {
 			*pos += (int) strlen("select");
 			skipWS(r, pos);
@@ -2086,6 +2088,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 				return NULL;
 			rel = rel_select_copy(sql->sa, nrel, exps);
+			set_processed(rel);
 			/* semijoin or antijoin */
 		} else if (r[*pos+1] == 'e' || r[*pos+1] == 'n') {
 			if (r[*pos+1] == 'n') {
@@ -2234,9 +2237,9 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		rel = rel_project(sql->sa, NULL, exps);
 		/* order by ? */
-		if (r[*pos] == '[')
-			if (!(rel->r = read_exps(sql, NULL, rel, NULL, r, pos, '[', 0, 1)))
-				return NULL;
+		if (r[*pos] == '[' && !(rel->r = read_exps(sql, NULL, rel, NULL, r, pos, '[', 0, 1)))
+			return NULL;
+		set_processed(rel);
 		break;
 	case 'd':
 		/* 'ddl' not supported */
