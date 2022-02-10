@@ -222,7 +222,9 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	if (stk->up) {
 		i = qtail;
 		while (i != qhead) {
-			if (QRYqueue[i].tag == stk->tag) {
+			if (QRYqueue[i].mb && QRYqueue[i].stk == stk->up) {
+				QRYqueue[i].stk = stk;
+				mb->tag = stk->tag = qtag++;
 				MT_lock_unset(&mal_delayLock);
 				return;
 			}
@@ -288,9 +290,11 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_set(&mal_delayLock);
 	i=qtail;
 	while (i != qhead){
-		if (QRYqueue[i].tag == stk->tag) {
+		if (QRYqueue[i].stk == stk){
 			if (stk->up){
-				// recursive call, just return
+				// recursive call
+				QRYqueue[i].stk = stk->up;
+				mb->tag = stk->tag;
 				MT_lock_unset(&mal_delayLock);
 				return;
 			}
