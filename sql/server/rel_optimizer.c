@@ -9074,10 +9074,6 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 			if (!(nrel = merge_table_prune_and_unionize(v, bt, info)))
 				return NULL;
 			/* Always do relation inplace. If the mt relation has more than 1 reference, this is required */
-			if (is_select(rel->op)) { /* for the selection case, increment the reference count of the table */
-				assert(rel->l == bt && sel->l == bt);
-				rel_dup(bt);
-			}
 			if (is_union(nrel->op)) {
 				rel = rel_inplace_setop(v->sql, rel, nrel->l, nrel->r, op_union, nrel->exps);
 			} else if (is_select(nrel->op)) {
