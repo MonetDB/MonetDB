@@ -405,6 +405,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 			if (c) {
 				c = rel_setop(sql->sa, c, p, op_union);
 				rel_setop_set_exps(sql, c, rel_projections(sql, c->l, NULL, 1, 1), false);
+				set_processed(c);
 			} else
 				c = p;
 		}

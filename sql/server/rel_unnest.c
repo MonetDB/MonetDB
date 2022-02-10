@@ -2192,8 +2192,15 @@ aggrs_split_funcs(mvc *sql, sql_rel *rel)
 		}
 		if (!list_empty(projs)) {
 			/* the grouping relation may have more than 1 reference, a replacement is needed */
-			list *nexps = list_merge(rel_projections(sql, rel, NULL, 1, 1), projs, NULL);
-			rel = rel_inplace_project(sql->sa, rel, rel_dup(rel->l), nexps);
+			sql_rel *l = rel_create(sql->sa);
+			if (!l)
+				return NULL;
+			*l = *rel;
+			/* increment the refcount of the left relation */
+			rel_dup(rel->l);
+			l->ref.refcnt = 1;
+			list *nexps = list_merge(rel_projections(sql, l, NULL, 1, 1), projs, NULL);
+			rel = rel_inplace_project(sql->sa, rel, l, nexps);
 			rel->card = exps_card(nexps);
 		}
 	}
