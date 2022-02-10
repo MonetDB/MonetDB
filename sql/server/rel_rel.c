@@ -1664,6 +1664,7 @@ rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 			(void)rel_groupby_add_aggr(sql, rel, e);
 		}
+		set_processed(rel);
 	}
 	return rel;
 }

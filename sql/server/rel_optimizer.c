@@ -4016,6 +4016,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		ul->card = g->card;
 		ul->exps = exps_copy(v->sql, g->exps);
 		ul->nrcols = list_length(ul->exps);
+		set_processed(ul);
 
 		ur = rel_groupby(v->sql, ur, NULL);
 		ur->r = rgbe;
@@ -4023,6 +4024,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		ur->card = g->card;
 		ur->exps = exps_copy(v->sql, g->exps);
 		ur->nrcols = list_length(ur->exps);
+		set_processed(ur);
 
 		/* group by on primary keys which define the partioning scheme
 		 * don't need a finalizing group by */
@@ -9849,6 +9851,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 			} else {
 				rel = rel_groupby(v->sql, rel, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)));
 				rel->exps = aexps;
+				set_processed(rel);
 			}
 		}
 	}
