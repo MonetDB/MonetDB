@@ -9839,14 +9839,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 			list *lexps = rel_projections(v->sql, l, NULL, 1, 1);
 			aexps = list_merge(aexps, lexps, (fdup)NULL);
 			if (rel_is_ref(rel)) {
-				sql_rel *l = rel_create(v->sql->sa);
-				if (!l)
-					return NULL;
-				*l = *rel;
-				/* properly increment the ref counts */
-				rel_dup(rel->l);
-				rel_dup(rel->r);
-				l->ref.refcnt = 1;
+				sql_rel *l = rel_dup_copy(v->sql->sa, rel);
 				rel = rel_inplace_groupby(rel, l, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)), aexps);
 			} else {
 				rel = rel_groupby(v->sql, rel, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)));

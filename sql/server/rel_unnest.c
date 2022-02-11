@@ -2192,13 +2192,7 @@ aggrs_split_funcs(mvc *sql, sql_rel *rel)
 		}
 		if (!list_empty(projs)) {
 			/* the grouping relation may have more than 1 reference, a replacement is needed */
-			sql_rel *l = rel_create(sql->sa);
-			if (!l)
-				return NULL;
-			*l = *rel;
-			/* increment the refcount of the left relation */
-			rel_dup(rel->l);
-			l->ref.refcnt = 1;
+			sql_rel *l = rel_dup_copy(sql->sa, rel);
 			list *nexps = list_merge(rel_projections(sql, l, NULL, 1, 1), projs, NULL);
 			rel = rel_inplace_project(sql->sa, rel, l, nexps);
 			rel->card = exps_card(nexps);
@@ -3722,70 +3716,68 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
 	if (is_outerjoin(rel->op) && !is_rewrite_outer_used(rel->used) && !list_empty(rel->exps) && (((/*is_left(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
 		((/*is_right(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) || exps_have_rel_exp(rel->exps))) {
+		/* the join relation may have more than 1 reference, a replacement is needed */
+		sql_rel *nr = rel_dup_copy(v->sql->sa, rel);
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
-		int nrcols = rel->nrcols;
+		int nrcols = nr->nrcols;
 
-		nrcols = include_tid(rel->l);
-		nrcols += include_tid(rel->r);
-		rel->nrcols = nrcols;
+		nrcols = include_tid(nr->l);
+		nrcols += include_tid(nr->r);
+		nr->nrcols = nrcols;
 		if (is_left(rel->op)) {
-			sql_rel *prel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
+			sql_rel *prel = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
 			sql_rel *except = rel_setop(v->sql->sa,
-					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
-					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
+					rel_project(v->sql->sa, rel_dup(nr->l), rel_projections(v->sql, nr->l, NULL, 1, 1)),
+					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, nr->l, NULL, 1, 1)), op_except);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, nr->l, NULL, 1, 1), false);
 			set_processed(except);
-			sql_rel *nrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
+			sql_rel *nrel = rel_crossproduct(v->sql->sa, except, rel_dup(nr->r),  op_left);
 			set_processed(nrel);
 			nrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, nrel, f);
-			rel->op = op_join;
-			nrel = rel_setop(v->sql->sa,
-					prel,
-					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
-					op_union);
-			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
-			set_processed(nrel);
+			nr->op = op_join;
+			rel = rel_inplace_setop(v->sql, rel,
+				prel,
+				rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
+				op_union, rel_projections(v->sql, nr, NULL, 1, 1));
 			v->changes++;
-			return nrel;
+			return rel;
 		} else if (is_right(rel->op)) {
-			sql_rel *prel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
+			sql_rel *prel = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
 			sql_rel *except = rel_setop(v->sql->sa,
-					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
-					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
+					rel_project(v->sql->sa, rel_dup(nr->r), rel_projections(v->sql, nr->r, NULL, 1, 1)),
+					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, nr->r, NULL, 1, 1)), op_except);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, nr->r, NULL, 1, 1), false);
 			set_processed(except);
-			sql_rel *nrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
+			sql_rel *nrel = rel_crossproduct(v->sql->sa, rel_dup(nr->l), except, op_right);
 			set_processed(nrel);
 			nrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, nrel, f);
-			rel->op = op_join;
-			nrel = rel_setop(v->sql->sa,
-					prel,
-					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
-					op_union);
-			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
-			set_processed(nrel);
+			nr->op = op_join;
+			rel = rel_inplace_setop(v->sql, rel,
+				prel,
+				rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
+				op_union, rel_projections(v->sql, nr, NULL, 1, 1));
 			v->changes++;
-			return nrel;
+			return rel;
 		} else if (is_full(rel->op)) {
-			sql_rel *prel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
+			sql_rel *prel = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
 			sql_rel *except = rel_setop(v->sql->sa,
-					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
-					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
+					rel_project(v->sql->sa, rel_dup(nr->l), rel_projections(v->sql, nr->l, NULL, 1, 1)),
+					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, nr->l, NULL, 1, 1)), op_except);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, nr->l, NULL, 1, 1), false);
 			set_processed(except);
-			sql_rel *lrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
+			sql_rel *lrel = rel_crossproduct(v->sql->sa, except, rel_dup(nr->r),  op_left);
 			set_processed(lrel);
 			lrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, lrel, f);
 
 			except = rel_setop(v->sql->sa,
-					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
-					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
+					rel_project(v->sql->sa, rel_dup(nr->r), rel_projections(v->sql, nr->r, NULL, 1, 1)),
+					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, nr->r, NULL, 1, 1)), op_except);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, nr->r, NULL, 1, 1), false);
 			set_processed(except);
-			sql_rel *rrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
+			sql_rel *rrel = rel_crossproduct(v->sql->sa, rel_dup(nr->l), except, op_right);
 			set_processed(rrel);
 			rrel->used |= rewrite_outer_used;
 			rel_join_add_exp(v->sql->sa, rrel, f);
@@ -3793,17 +3785,17 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					rel_project(v->sql->sa, lrel,  rel_projections(v->sql, lrel, NULL, 1, 1)),
 					rel_project(v->sql->sa, rrel, rel_projections(v->sql, rrel, NULL, 1, 1)),
 					op_union);
-			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
+			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, nr, NULL, 1, 1), false);
 			set_processed(lrel);
-			rel->op = op_join;
-			lrel = rel_setop(v->sql->sa,
-					rel_project(v->sql->sa, prel,  rel_projections(v->sql, rel, NULL, 1, 1)),
-					rel_project(v->sql->sa, lrel, rel_projections(v->sql, lrel, NULL, 1, 1)),
-					op_union);
-			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
-			set_processed(lrel);
+			nr->op = op_join;
+			rel = rel_inplace_setop(v->sql, rel,
+				rel_project(v->sql->sa, prel, rel_projections(v->sql, nr, NULL, 1, 1)),
+				rel_project(v->sql->sa, lrel, rel_projections(v->sql, lrel, NULL, 1, 1)),
+				op_union, rel_projections(v->sql, nr, NULL, 1, 1));
 			v->changes++;
-			return lrel;
+			return rel;
+		} else {
+			assert(0);
 		}
 	}
 	return rel;
