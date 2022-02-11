@@ -400,7 +400,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				sql_exp *e = inserts[c->colnr];
 				assert(is_values(e));
 				list *vals = e->f;
-				append(p->exps, list_fetch(vals, j));
+				append(p->exps, list_fetch(vals, (int) j));
 			}
 			if (c) {
 				c = rel_setop(sql->sa, c, p, op_union);
