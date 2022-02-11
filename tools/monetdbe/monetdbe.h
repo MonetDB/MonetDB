@@ -103,6 +103,7 @@ typedef struct {
 } monetdbe_remote;
 
 typedef struct {
+	const char *host;
 	const char* port;
 	const char* usock;
 } monetdbe_mapi_server;
