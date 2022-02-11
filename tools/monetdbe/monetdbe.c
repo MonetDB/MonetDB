@@ -2842,3 +2842,8 @@ timestamp_from_data(monetdbe_data_timestamp *ptr)
 		date_create(ptr->date.year, ptr->date.month, ptr->date.day),
 		daytime_create(ptr->time.hours, ptr->time.minutes, ptr->time.seconds, ptr->time.ms * 1000));
 }
+
+const char*
+monetdbe_get_mapi_port(void) {
+	return GDKgetenv("mapi_port");
+}
