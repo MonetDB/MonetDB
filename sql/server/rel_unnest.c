@@ -2778,22 +2778,22 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				set_processed(rsq);
 			}
 
-			if (is_project(rel->op) || (is_select(rel->op) && depth > 0)) {
+			if (is_project(rel->op) || ((is_select(rel->op) || is_outerjoin(rel->op)) && depth > 0)) {
 				/* we introduced extra selects */
-				assert(is_project(rel->op) || is_select(rel->op));
+				assert(is_project(rel->op) || is_select(rel->op) || is_outerjoin(rel->op));
 
 				sql_rel *join = NULL;
 				if (lsq) {
 					sql_rel *rewrite = NULL;
 					(void)rewrite_inner(sql, rel, lsq, op_left, &rewrite);
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
-					join = rel->l;
+					join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
 				}
 				if (rsq) {
 					sql_rel *rewrite = NULL;
 					(void)rewrite_inner(sql, rel, rsq, op_left, &rewrite);
 					exp_reset_props(rewrite, re, is_left(rewrite->op));
-					join = rel->l;
+					join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
 				}
 				assert(join && is_join(join->op));
 				if (join && !join->exps)
