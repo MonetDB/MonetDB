@@ -728,7 +728,7 @@ move_join_exps(mvc *sql, sql_rel *j, sql_rel *rel)
 	for(n = exps->h; n; n = n->next){
 		sql_exp *e = n->data;
 
-		if (rel_find_exp(rel, e)) {
+		if (rel_rebind_exp(sql, rel, e)) {
 			if (exp_has_freevar(sql, e))
 				rel_bind_var(sql, rel->l, e);
 			append(rel->exps, e);
@@ -1380,10 +1380,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				set_processed(nj);
 				rel_destroy(j);
 				j = nj;
-				if (is_semi(rel->op)) {
-				//assert(!is_semi(rel->op));
+				if (is_semi(rel->op))
 					rel->op = op_left;
-				}
 				move_join_exps(sql, j, rel);
 				return j;
 			}
@@ -1397,10 +1395,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				set_processed(nj);
 				rel_destroy(j);
 				j = nj;
-				if (is_semi(rel->op)) {
-				//assert(!is_semi(rel->op));
+				if (is_semi(rel->op))
 					rel->op = op_left;
-				}
 				move_join_exps(sql, j, rel);
 				return j;
 			}
@@ -1835,10 +1831,12 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 #define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
 #define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
 
-static int exps_have_not_anyequal(list *exps);
+#define ANYEQUAL 1
+#define NOT_ANYEQUAL 2
+static int exps_have_anyequal(list *exps, int any_or_not_anyequal);
 
 static int
-exp_has_not_anyequal(sql_exp *e)
+exp_has_anyequal(sql_exp *e, int any_or_not_anyequal)
 {
 	if (!e)
 		return 0;
@@ -1848,20 +1846,23 @@ exp_has_not_anyequal(sql_exp *e)
 		list *args = e->l;
 		sql_subfunc *f = e->f;
 
-		if (f && f->func && is_not_anyequal(f) && exps_have_rel_exp(args))
+		if (f && f->func && (any_or_not_anyequal&NOT_ANYEQUAL) && is_not_anyequal(f) && exps_have_rel_exp(args))
 			return 1;
-		return exps_have_not_anyequal(e->l);
+		if (f && f->func && (any_or_not_anyequal&ANYEQUAL) && is_anyequal(f) && exps_have_rel_exp(args))
+			return 1;
+		return exps_have_anyequal(e->l, any_or_not_anyequal);
 	}
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter)
-			return (exps_have_not_anyequal(e->l) || exps_have_not_anyequal(e->r));
+			return (exps_have_anyequal(e->l, any_or_not_anyequal) || exps_have_anyequal(e->r, any_or_not_anyequal));
 		if (e->flag == cmp_in || e->flag == cmp_notin)
-			return (exp_has_not_anyequal(e->l) || exps_have_not_anyequal(e->r));
-		return (exp_has_not_anyequal(e->l) || exp_has_not_anyequal(e->r) || (e->f && exp_has_not_anyequal(e->f)));
+			return (exp_has_anyequal(e->l, any_or_not_anyequal) || exps_have_anyequal(e->r, any_or_not_anyequal));
+		return (exp_has_anyequal(e->l, any_or_not_anyequal) || exp_has_anyequal(e->r, any_or_not_anyequal) ||
+				(e->f && exp_has_anyequal(e->f, any_or_not_anyequal)));
 	case e_convert:
-		return exp_has_not_anyequal(e->l);
+		return exp_has_anyequal(e->l, any_or_not_anyequal);
 	case e_atom:
-		return (e->f && exp_has_not_anyequal(e->f));
+		return (e->f && exp_has_anyequal(e->f, any_or_not_anyequal));
 	case e_psm:
 	case e_column:
 		return 0;
@@ -1870,14 +1871,14 @@ exp_has_not_anyequal(sql_exp *e)
 }
 
 static int
-exps_have_not_anyequal(list *exps)
+exps_have_anyequal(list *exps, int any_or_not_anyequal)
 {
 	if (list_empty(exps))
 		return 0;
 	for(node *n=exps->h; n; n=n->next) {
 		sql_exp *e = n->data;
 
-		if (exp_has_not_anyequal(e))
+		if (exp_has_anyequal(e, any_or_not_anyequal))
 			return 1;
 	}
 	return 0;
@@ -1887,7 +1888,7 @@ exps_have_not_anyequal(list *exps)
 static sql_rel *
 not_anyequal_helper(visitor *v, sql_rel *rel)
 {
-	if (is_innerjoin(rel->op) && exps_have_not_anyequal(rel->exps)) {
+	if (is_innerjoin(rel->op) && exps_have_anyequal(rel->exps, NOT_ANYEQUAL)) {
 		sql_rel *nrel = rel_select(v->sql->sa, rel, NULL);
 		nrel->exps = rel->exps;
 		rel->exps = NULL;
@@ -2243,6 +2244,24 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 		return rel;
 	}
 	return rel;
+}
+
+static sql_exp*
+has_or(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel;
+	(void)depth;
+	if(!v->data && e && is_compare(e->type) && e->flag == cmp_or)
+		v->data = e;
+	return e;
+}
+
+static bool
+exps_has_or_exp(mvc *sql, list *exps)
+{
+	visitor v = { .sql = sql, .data = NULL };
+	exps_exp_visitor_topdown(&v, NULL, exps, 0, &has_or, true);
+	return v.data != NULL;
 }
 
 /* remove or expressions with subqueries */
@@ -3709,11 +3728,10 @@ include_tid(sql_rel *r)
 	return r->nrcols;
 }
 
-static inline sql_rel *
-rewrite_outer2inner_union(visitor *v, sql_rel *rel)
+static sql_rel *
+rewrite_outer2inner_union_(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !is_rewrite_outer_used(rel->used) && rel->flag != MERGE_LEFT && !list_empty(rel->exps) && (((/*is_left(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
-		((/*is_right(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) || exps_have_rel_exp(rel->exps))) {
+	if (is_outerjoin(rel->op) && !is_rewrite_outer_used(rel->used) && rel->flag != MERGE_LEFT) {
 		/* the join relation may have more than 1 reference, a replacement is needed */
 		sql_rel *nr = rel_dup_copy(v->sql->sa, rel);
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
@@ -3796,6 +3814,17 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			assert(0);
 		}
 	}
+	return rel;
+}
+
+static sql_rel *
+rewrite_outer2inner_union(visitor *v, sql_rel *rel)
+{
+	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (exps_have_anyequal(rel->exps, ANYEQUAL|NOT_ANYEQUAL) || (exps_have_rel_exp(rel->exps) && exps_has_or_exp(v->sql, rel->exps))))
+		return rewrite_outer2inner_union_(v, rel);
+	if (!is_dependent(rel) && is_outerjoin(rel->op) && rel->flag != MERGE_LEFT && !list_empty(rel->exps) && (((/*is_left(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
+		((/*is_right(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps)))
+		return rewrite_outer2inner_union_(v, rel);
 	return rel;
 }
 
