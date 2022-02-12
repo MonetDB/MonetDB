@@ -992,7 +992,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				if (sql->objid && sql->objid == t->base.id)
 					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: attempting to recursively bind view '%s'.'%s'", t->s->base.name, tname);
 				rel = rel_parse(sql, t->s, t->query, m_instantiate);
-				if (rel)
+				if (rel && sql->emode == m_deps)
 					rel = rel_unnest(sql, rel);
 			}
 
