@@ -385,7 +385,7 @@ list_remove_list(list *l, void *gdata, list *data)
 		list_remove_data(l, gdata, n->data);
 }
 
-void
+list *
 list_move_data(list *s, list *d, void *data)
 {
 	node *n = NULL;
@@ -401,10 +401,10 @@ list_move_data(list *s, list *d, void *data)
 		}
 	}
 	if (!n) {
-		list_append(d, data);
+		return list_append(d, data);
 	} else {
 		n->next = NULL;
-		list_append_node(d, n);
+		return list_append_node(d, n);
 	}
 }
 
