@@ -3654,7 +3654,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (tr->localtmps.nelm) {
 			for(node *n=tr->localtmps.nelm; n; ) {
 				node *next = n->next;
-				cs_del(&tr->localtmps, store, n, true);
+				(void) cs_del(&tr->localtmps, store, n, true);
 				n = next;
 			}
 			tr->localtmps.nelm = NULL;
