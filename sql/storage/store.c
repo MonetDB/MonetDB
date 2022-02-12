@@ -3593,7 +3593,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		for(node *n=tr->localtmps.dset->h; n; ) {
 			node *next = n->next;
 			sql_table *tt = n->data;
-			if (!isNew(tt))
+			if (!isNew(tt)) /* TODO this is prepending without re-hashing? */
 				list_prepend(tr->localtmps.set, dup_base(&tt->base));
 			n = next;
 		}
@@ -3654,7 +3654,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (tr->localtmps.nelm) {
 			for(node *n=tr->localtmps.nelm; n; ) {
 				node *next = n->next;
-				list_remove_node(tr->localtmps.set, store, n);
+				cs_del(&tr->localtmps, store, n, true);
 				n = next;
 			}
 			tr->localtmps.nelm = NULL;
@@ -3717,7 +3717,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 
 	if (!tr)
 		return NULL;
-	cs_new(&tr->localtmps, tr->sa, (fdestroy) &table_destroy);
+	cs_new(&tr->localtmps, NULL, (fdestroy) &table_destroy, (fkeyvalue)&base_key);
 	MT_lock_init(&tr->lock, "trans_lock");
 	tr->parent = parent;
 	if (name) {
@@ -5537,20 +5537,15 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 			return res;
 	} else {
 		node *n = cs_find_id(&tr->localtmps, t->base.id);
-		if (n)
-			cs_del(&tr->localtmps, tr->store, n, t->base.new);
+		if (n && !cs_del(&tr->localtmps, tr->store, n, t->base.new))
+			return -1;
 	}
 
 	if ((res = table_dup(tr, t, t->s, new_name, &dup)))
 		return res;
 	t = dup;
-	if (!isGlobal(t)) {
-		if (tr->localtmps.set == NULL)
-			tr->localtmps.set = list_new(tr->localtmps.sa, tr->localtmps.destroy);
-		if (tr->localtmps.set->ht == NULL || tr->localtmps.set->ht->size * 16 < list_length(tr->localtmps.set))
-			tr->localtmps.set->ht = hash_new(tr->localtmps.sa, 16, (fkeyvalue)&base_key);
-		cs_add(&tr->localtmps, t, true);
-	}
+	if (!isGlobal(t) && !cs_add(&tr->localtmps, t, true))
+		return -1;
 	return res;
 }
 
@@ -5633,12 +5628,8 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 	if (isGlobal(t)) {
 		if ((res = os_add(s->tables, tr, t->base.name, &t->base)))
 			return res;
-	} else {
-		if (tr->localtmps.set == NULL)
-			tr->localtmps.set = list_new(tr->localtmps.sa, tr->localtmps.destroy);
-		if (tr->localtmps.sa && (tr->localtmps.set->ht == NULL || tr->localtmps.set->ht->size * 16 < list_length(tr->localtmps.set)))
-			tr->localtmps.set->ht = hash_new(tr->localtmps.sa, 16, (fkeyvalue)&base_key);
-		cs_add(&tr->localtmps, t, true);
+	} else if (!cs_add(&tr->localtmps, t, true)) {
+		return -1;
 	}
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
@@ -5866,8 +5857,8 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 	if (is_global) {
 		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
 			return res;
-	} else if (n)
-		cs_del(&tr->localtmps, tr->store, n, 0);
+	} else if (n && !cs_del(&tr->localtmps, tr->store, n, 0))
+		return -1;
 
 	sqlstore *store = tr->store;
 	if (isTable(t) && !isNew(t))
