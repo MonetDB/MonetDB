@@ -82,13 +82,11 @@ exps_set_freevar(mvc *sql, list *exps, sql_rel *r)
 		exp_set_freevar(sql, n->data, r);
 }
 
-/* check if the set is distinct for the set of free variables */
+/* check if the set is distinct (ie we did a domain reduction for the general unnest) for the set of free variables */
 static int
 is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
 {
 	int distinct = 0;
-	if (ad && exps_unique(sql, rel, ad) && !have_nil(ad))
-		return 1;
 	if (ad && is_groupby(rel->op) && exp_match_list(rel->r, ad))
 		return 1;
 	distinct = need_distinct(rel);
@@ -1285,17 +1283,6 @@ bind_join_vars(mvc *sql, sql_rel *rel)
 static sql_rel *
 push_up_join(mvc *sql, sql_rel *rel, list *ad)
 {
-	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
-		sql_rel *j = rel->r;
-
-		if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps) {
-			rel->exps =	rel->exps?list_merge(rel->exps, j->exps, (fdup)NULL):j->exps;
-			j->exps = NULL;
-			bind_join_vars(sql, rel);
-			return rel;
-		}
-	}
-
 	/* input rel is dependent join */
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		sql_rel *d = rel->l, *j = rel->r;
@@ -1592,6 +1579,17 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 					r->l = NULL;
 					rel_destroy(r);
 					rel->r = l;
+					return rel_unnest_dependent(sql, rel);
+				}
+			}
+
+			if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
+				sql_rel *j = rel->r;
+
+				if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps) {
+					rel->exps =	rel->exps?list_merge(rel->exps, j->exps, (fdup)NULL):j->exps;
+					j->exps = NULL;
+					bind_join_vars(sql, rel);
 					return rel_unnest_dependent(sql, rel);
 				}
 			}
@@ -3714,7 +3712,7 @@ include_tid(sql_rel *r)
 static inline sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !is_rewrite_outer_used(rel->used) && !list_empty(rel->exps) && (((/*is_left(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
+	if (is_outerjoin(rel->op) && !is_rewrite_outer_used(rel->used) && rel->flag != MERGE_LEFT && !list_empty(rel->exps) && (((/*is_left(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
 		((/*is_right(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) || exps_have_rel_exp(rel->exps))) {
 		/* the join relation may have more than 1 reference, a replacement is needed */
 		sql_rel *nr = rel_dup_copy(v->sql->sa, rel);
