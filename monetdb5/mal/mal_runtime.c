@@ -321,7 +321,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	// finished query is not found, we want to print some informational
 	// messages for debugging.
 	if (!found) {
-		assert(0);
+		//assert(0);
 		TRC_INFO_IF(MAL_SERVER) {
 			TRC_INFO_ENDIF(MAL_SERVER, "runtimeProfilerFinish: stk (%p) not found in QRYqueue", stk);
 			i = qtail;

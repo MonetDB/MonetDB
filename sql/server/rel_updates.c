@@ -1062,6 +1062,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					reset_processed(rel_val);
 				}
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
+				r->flag |= MERGE_LEFT;
 				set_dependent(r);
 				set_processed(r);
 				if (single) {
