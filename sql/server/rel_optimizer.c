@@ -114,6 +114,7 @@ static void
 get_relations(visitor *v, sql_rel *rel, list *rels)
 {
 	if (!rel_is_ref(rel) && rel->op == op_join && rel->exps == NULL) {
+		assert(list_empty(rel->attr));
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 
@@ -1019,8 +1020,7 @@ rel_join_order(visitor *v, sql_rel *rel)
 		break;
 	}
 	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
-		if (rel && !rel_is_ref(rel))
-			rel = reorder_join(v, rel);
+		rel = reorder_join(v, rel);
 	} else if (is_join(rel->op)) {
 		rel->l = rel_join_order(v, rel->l);
 		rel->r = rel_join_order(v, rel->r);
@@ -1476,13 +1476,10 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 	/* if the foreign key column doesn't have NULL values, then return it */
 	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op))) {
 		if (fk_left) {
-			nr = r->l;
-			r->l = NULL;
+			nr = rel_dup(r->l);
 		} else {
-			nr = r->r;
-			r->r = NULL;
+			nr = rel_dup(r->r);
 		}
-		rel_destroy(r);
 		return nr;
 	}
 
@@ -1492,13 +1489,10 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 	set_has_no_nil(nje);
 	set_semantics(nje);
 	if (fk_left) {
-		nr = r->l;
-		r->l = NULL;
+		nr = rel_dup(r->l);
 	} else {
-		nr = r->r;
-		r->r = NULL;
+		nr = rel_dup(r->r);
 	}
-	rel_destroy(r);
 	return rel_select(sql->sa, nr, nje);
 }
 
@@ -1533,12 +1527,14 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 		return r;
 
 	if (fk_left && is_join(rl->op) && !rel_is_ref(rl)) {
-		rl = rel_simplify_count_fk_join(sql, rl, gexps, gcols, changes);
-		r->l = rl;
+		r->l = rel_simplify_count_fk_join(sql, rl, gexps, gcols, changes);
+		if (rl != r->l)
+			rel_destroy(rl);
 	}
 	if (!fk_left && is_join(rr->op) && !rel_is_ref(rr)) {
-		rr = rel_simplify_count_fk_join(sql, rr, gexps, gcols, changes);
-		r->r = rr;
+		r->r = rel_simplify_count_fk_join(sql, rr, gexps, gcols, changes);
+		if (rr != r->r)
+			rel_destroy(rr);
 	}
 
 	if (!check_projection_on_foreignside(r, gcols, fk_left))
@@ -1555,13 +1551,10 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 	/* if the foreign key column doesn't have NULL values, then return it */
 	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op))) {
 		if (fk_left) {
-			nr = r->l;
-			r->l = NULL;
+			nr = rel_dup(r->l);
 		} else {
-			nr = r->r;
-			r->r = NULL;
+			nr = rel_dup(r->r);
 		}
-		rel_destroy(r);
 		return nr;
 	}
 
@@ -1571,13 +1564,10 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 	set_has_no_nil(nje);
 	set_semantics(nje);
 	if (fk_left) {
-		nr = r->l;
-		r->l = NULL;
+		nr = rel_dup(r->l);
 	} else {
-		nr = r->r;
-		r->r = NULL;
+		nr = rel_dup(r->r);
 	}
-	rel_destroy(r);
 	return rel_select(sql->sa, nr, nje);
 }
 
@@ -1601,6 +1591,7 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 		r = rel_simplify_project_fk_join(v->sql, r, rel->exps, rel->r, &v->changes);
 		if (r == or)
 			return rel;
+		rel_destroy(rel->l);
 		rel->l = r;
 	}
 
@@ -1619,6 +1610,7 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 		r = rel_simplify_count_fk_join(v->sql, r, rel->exps, rel->r, &v->changes);
 		if (r == or)
 			return rel;
+		rel_destroy(rel->l);
 		rel->l = r;
 	}
 	return rel;
@@ -9766,7 +9758,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 				}
 			}
 		}
-		if (needed && rel->op == op_join) {
+		if (needed && rel->op == op_join && list_empty(rel->attr)) {
 			rel->op = (me->flag == mark_in)?op_semi:op_anti;
 			return rel;
 		}
