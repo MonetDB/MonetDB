@@ -4452,7 +4452,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, 0)) {
 			/* introduce selects under the project (if needed) */
 			set_processed(pl);
-			if (pl && (is_select(pl->op) || is_join(pl->op)) && !pl->exps)
+			if (pl && (is_select(pl->op) || is_join(pl->op) || is_semi(pl->op)) && !pl->exps)
 				pl->exps = sa_list(v->sql->sa);
 			for (n = exps->h; n;) {
 				node *next = n->next;
@@ -4463,7 +4463,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 					/* can we move it down */
 					if (ne && ne != e && pl->exps) {
-						if (!(is_select(pl->op) && is_join(pl->op)) || rel_is_ref(pl))
+						if (!(is_select(pl->op) && is_join(pl->op) && is_semi(pl->op)) || rel_is_ref(pl))
 							r->l = pl = rel_select(v->sql->sa, pl, NULL);
 						rel_select_add_exp(v->sql->sa, pl, ne);
 						list_remove_node(exps, NULL, n);
