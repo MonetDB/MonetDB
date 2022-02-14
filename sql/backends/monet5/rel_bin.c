@@ -5769,7 +5769,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	const char *tsep, *rsep, *ssep, *ns, *fn = NULL;
 	atom *tatom, *ratom, *satom, *natom;
 	int onclient = 0;
-	stmt *s = NULL, *fns = NULL;
+	stmt *s = NULL, *fns = NULL, *res = NULL;
 	list *slist = sa_list(sql->sa);
 
 	if (rel->l)  /* first construct the sub relation */
@@ -5797,11 +5797,15 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	}
 	list_append(slist, stmt_export(be, s, tsep, rsep, ssep, ns, onclient, fns));
 	if (s->type == st_list && ((stmt*)s->op4.lval->h->data)->nrcols != 0) {
-		stmt *cnt = stmt_aggr(be, s->op4.lval->h->data, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-		return cnt;
+		res = stmt_aggr(be, s->op4.lval->h->data, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	} else {
-		return stmt_atom_lng(be, 1);
+		res = stmt_atom_lng(be, 1);
 	}
+	if (!be->silent) {
+		/* if there are multiple output statements, update total count, otherwise use the the current count */
+		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, res->nr) : res->nr;
+	}
+	return res;
 }
 
 static list *
