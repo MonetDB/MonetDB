@@ -1,4 +1,4 @@
-import os, sys, socket, glob, pymonetdb, threading, time, codecs, tempfile
+import os, sys, glob, pymonetdb, threading, time, codecs, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -78,13 +78,6 @@ P_TYPE string,
 P_SIZE int,
 P_CONTAINER string);
 """
-
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
 
 # load data (in parallel)
 def worker_load(workerrec):
@@ -607,13 +600,12 @@ class SSBMClient(threading.Thread):
         client1.close()
 
 
-masterport = freeport()
 masterproc = None
 workers = []
 with tempfile.TemporaryDirectory() as tmpdir:
     os.mkdir(os.path.join(tmpdir, 'master'))
-    with process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE, stderr=process.PIPE) as masterproc:
-        masterconn = pymonetdb.connect(database='', port=masterport, autocommit=True)
+    with process.server(mapiport='0', dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE, stderr=process.PIPE) as masterproc:
+        masterconn = pymonetdb.connect(database='', port=masterproc.dbport, autocommit=True)
 
         # split lineorder table into one file for each worker
         # this is as portable as an anvil
@@ -642,21 +634,20 @@ with tempfile.TemporaryDirectory() as tmpdir:
         # setup and start workers
         try:
             for i in range(nworkers):
-                workerport = freeport()
                 workerdbname = 'worker_%d' % i
                 workerrec = {
                     'no'       : i,
-                    'port'     : workerport,
                     'dbname'   : workerdbname,
                     'dbfarm'   : os.path.join(tmpdir, workerdbname),
-                    'mapi'     : 'mapi:monetdb://localhost:%d/%s' % (workerport, workerdbname),
                     'split'    : loadsplits[i],
                     'repldata' : os.path.join(ssbmdatapath, 'date.tbl'),
                     'tpf'      : '_%d' % i
                 }
                 workers.append(workerrec)
                 os.mkdir(workerrec['dbfarm'])
-                workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE, stderr=process.PIPE)
+                workerrec['proc'] = process.server(mapiport='0', dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE, stderr=process.PIPE)
+                workerrec['port'] = workerrec['proc'].dbport
+                workerrec['mapi'] = 'mapi:monetdb://localhost:{}/{}'.format(workerrec['port'], workerdbname)
                 workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
                 t = threading.Thread(target=worker_load, args = [workerrec])
                 t.start()
@@ -714,7 +705,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
             clients = []
             i = 1
             for q in queries:
-                onethread = SSBMClient(masterport, q, i)
+                onethread = SSBMClient(masterproc.dbport, q, i)
                 onethread.start()
                 clients.append(onethread)
                 i += 1

@@ -10,11 +10,12 @@
 #include "sql_catalog.h"
 
 void
-cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy)
+cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy, fkeyvalue hfunc)
 {
 	*cs = (changeset) {
 		.sa = sa,
 		.destroy = destroy,
+		.fkeyvalue = hfunc,
 	};
 }
 
@@ -31,28 +32,49 @@ cs_destroy(changeset * cs, void *data)
 	}
 }
 
-void
+changeset *
 cs_add(changeset * cs, void *elm, bool isnew)
 {
-	if (!cs->set)
-		cs->set = list_new(cs->sa, cs->destroy);
-	list_append(cs->set, elm);
+	if (!cs->set && !(cs->set = list_new(cs->sa, cs->destroy)))
+		return NULL;
+
+	int sz = list_length(cs->set);
+	/* re-hash or create hash table before inserting */
+	if ((!cs->set->ht || cs->set->ht->size * 16 < sz) && sz > HASH_MIN_SIZE) {
+		hash_destroy(cs->set->ht);
+		if (!(cs->set->ht = hash_new(cs->sa, MAX(sz, 1) * 16, cs->fkeyvalue)))
+			return NULL;
+		for (node *n = cs->set->h; n; n = n->next) {
+			if (!hash_add(cs->set->ht, cs->set->ht->key(n->data), n->data))
+				return NULL;
+		}
+	}
+	if (!list_append(cs->set, elm))
+		return NULL;
 	if (isnew && !cs->nelm)
 		cs->nelm = cs->set->t;
+	return cs;
 }
 
-void
-cs_del(changeset * cs, void *gdata, node *elm, bool isnew)
+changeset *
+cs_del(changeset * cs, void *gdata, node *n, bool force)
 {
-	if (cs->nelm == elm)
-		cs->nelm = elm->next;
-	if (isnew) {	/* remove just added */
-		list_remove_node(cs->set, gdata, elm);
+	if (!force && !cs->dset && !(cs->dset = list_new(cs->sa, cs->destroy)))
+		return NULL;
+
+	if (cs->nelm == n) /* update nelm pointer */
+		cs->nelm = n->next;
+	if (cs->set->ht) /* delete hashed value */
+		hash_del(cs->set->ht, cs->set->ht->key(n->data), n->data);
+
+	if (force) { /* remove just added */
+		if (!list_remove_node(cs->set, gdata, n))
+			return NULL;
 	} else {
-		if (!cs->dset)
-			cs->dset = list_new(cs->sa, cs->destroy);
-		list_move_data(cs->set, cs->dset, elm->data);
+		if (!list_move_data(cs->set, cs->dset, n->data))
+			return NULL;
 	}
+	return cs;
 }
 
 int

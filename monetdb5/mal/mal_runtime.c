@@ -36,14 +36,7 @@ size_t usrstatscnt = 0;
 static void
 clearUSRstats(size_t idx)
 {
-	USRstats[idx].user= 0;
-	USRstats[idx].username = 0;
-	USRstats[idx].querycount = 0;
-	USRstats[idx].totalticks = 0;
-	USRstats[idx].started = 0;
-	USRstats[idx].finished = 0;
-	USRstats[idx].maxticks = 0;
-	USRstats[idx].maxquery = 0;
+	USRstats[idx] = (struct USERSTAT){0};
 }
 
 /*
@@ -118,6 +111,7 @@ dropUSRstats(void)
 	}
 	GDKfree(USRstats);
 	USRstats = NULL;
+	usrstatscnt = 0;
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -145,17 +139,7 @@ isaSQLquery(MalBlkPtr mb){
 static void
 clearQRYqueue(size_t idx)
 {
-		QRYqueue[idx].query = 0;
-		QRYqueue[idx].cntxt = 0;
-		QRYqueue[idx].username = 0;
-		QRYqueue[idx].idx = 0;
-		QRYqueue[idx].memory = 0;
-		QRYqueue[idx].tag = 0;
-		QRYqueue[idx].status =0;
-		QRYqueue[idx].finished = 0;
-		QRYqueue[idx].start = 0;
-		QRYqueue[idx].stk =0;
-		QRYqueue[idx].mb =0;
+	QRYqueue[idx] = (struct QRYQUEUE){0};
 }
 
 static void
@@ -198,6 +182,10 @@ dropQRYqueue(void)
 	}
 	GDKfree(QRYqueue);
 	QRYqueue = NULL;
+	qsize = 0;
+	qtag = 1;
+	qhead = 0;
+	qtail = 0;
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -243,7 +231,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			if (++i >= qsize)
 				i = 0;
 		}
-//		assert(0);
 	}
 	i=qtail;
 	while (i != qhead){
@@ -269,7 +256,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	// add new invocation
 	cntxt->idle = 0;
 	QRYqueue[qhead].mb = mb;
-	QRYqueue[qhead].tag = qtag++;
+	QRYqueue[qhead].tag = stk->tag = mb->tag = qtag++;
 	QRYqueue[qhead].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
 	QRYqueue[qhead].finished = 0;
 	QRYqueue[qhead].start = time(0);
@@ -285,7 +272,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].status = "running";
 	QRYqueue[qhead].cntxt = cntxt;
 	QRYqueue[qhead].ticks = GDKusec();
-	stk->tag = mb->tag = QRYqueue[qhead].tag;
 	advanceQRYqueue();
 	MT_lock_unset(&mal_delayLock);
 }
@@ -304,12 +290,13 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_set(&mal_delayLock);
 	i=qtail;
 	while (i != qhead){
-		if ( QRYqueue[i].stk == stk){
-			if( stk->up){
+		if (QRYqueue[i].stk == stk){
+			if (stk->up){
 				// recursive call
 				QRYqueue[i].stk = stk->up;
 				mb->tag = stk->tag;
-				break;
+				MT_lock_unset(&mal_delayLock);
+				return;
 			}
 			QRYqueue[i].status = "finished";
 			QRYqueue[i].finished = time(0);
@@ -326,8 +313,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			found = true;
 			break;
 		}
-		i++;
-		if ( i >= qsize)
+		if (++i >= qsize)
 			i = 0;
 	}
 
@@ -335,6 +321,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	// finished query is not found, we want to print some informational
 	// messages for debugging.
 	if (!found) {
+		assert(0);
 		TRC_INFO_IF(MAL_SERVER) {
 			TRC_INFO_ENDIF(MAL_SERVER, "runtimeProfilerFinish: stk (%p) not found in QRYqueue", stk);
 			i = qtail;
@@ -346,8 +333,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 								   QRYqueue[i].username, QRYqueue[i].start,
 								   QRYqueue[i].status, QRYqueue[i].query);
 				}
-				i++;
-				if ( i >= qsize)
+				if (++i >= qsize)
 					i = 0;
 			}
 		}
@@ -361,13 +347,7 @@ void
 mal_runtime_reset(void)
 {
 	dropQRYqueue();
-	qsize = 0;
-	qtag= 1;
-	qhead = 0;
-	qtail = 0;
-
 	dropUSRstats();
-	usrstatscnt = 0;
 }
 
 /*
@@ -421,16 +401,10 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		tid--;
 		if( malProfileMode) {
 			MT_lock_set(&mal_profileLock);
-			workingset[tid].cntxt = 0;
-			workingset[tid].mb = 0;
-			workingset[tid].stk = 0;
-			workingset[tid].pci = 0;
+			workingset[tid] = (struct WORKINGSET) {0};
 			MT_lock_unset(&mal_profileLock);
 		} else{
-			workingset[tid].cntxt = 0;
-			workingset[tid].mb = 0;
-			workingset[tid].stk = 0;
-			workingset[tid].pci = 0;
+			workingset[tid] = (struct WORKINGSET) {0};
 		}
 	}
 

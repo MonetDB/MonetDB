@@ -215,3 +215,23 @@ with SQLTestCase() as mdb1:
         mdb1.execute('select c0 from t0;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
         mdb2.execute('select c0 from t0;').assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
         mdb1.execute('drop table t0;').assertSucceeded()
+
+        # Test predicates are executed when called from functions/procedures
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('create table x (x int primary key);').assertSucceeded()
+        mdb1.execute('create procedure ups() begin insert into x values (1); end;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        # make sure 'ups' procedure is compiled and kept on cache for each session
+        mdb1.execute('CALL ups();').assertSucceeded()
+        mdb2.execute('CALL ups();').assertFailed(err_code="40002", err_message="INSERT INTO: PRIMARY KEY constraint 'x.x_x_pkey' violated")
+        mdb1.execute('TRUNCATE x;').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('CALL ups();').assertSucceeded()
+        mdb2.execute('CALL ups();').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40001", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('drop procedure ups;').assertSucceeded()
+        mdb1.execute('drop table x;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()

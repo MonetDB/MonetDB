@@ -3022,9 +3022,13 @@ insert_stmt:
 
 values_or_query_spec:
 /* empty values list */
-		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
+	{ dlist *l = L();
+	  append_list(l, L());
+	  $$ = _symbol_create_list(SQL_VALUES, l); }
  |   DEFAULT VALUES
-		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
+	{ dlist *l = L();
+	  append_list(l, L());
+	  $$ = _symbol_create_list(SQL_VALUES, l); }
  |  query_expression
  ;
 
@@ -3099,8 +3103,11 @@ joined_table:
  |  table_ref CROSS JOIN table_ref
 	{ dlist *l = L();
 	  append_symbol(l, $1);
+	  append_int(l, 0);
+	  append_int(l, 4);
 	  append_symbol(l, $4);
-	  $$ = _symbol_create_list( SQL_CROSS, l); }
+	  append_symbol(l, NULL);
+	  $$ = _symbol_create_list( SQL_JOIN, l); }
  |  table_ref join_type JOIN table_ref join_spec
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -3286,7 +3293,11 @@ select_no_parens:
 	  append_list(l, $4);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_INTERSECT, l); }
- |  VALUES row_commalist     { $$ = _symbol_create_list( SQL_VALUES, $2); }
+ |  VALUES row_commalist
+
+	{ dlist *l = L();
+	  append_list(l, $2);
+	  $$ = _symbol_create_list(SQL_VALUES, l); }
  |  '(' select_no_parens ')' { $$ = $2; }
  |   simple_select
  ;
@@ -3350,19 +3361,20 @@ table_ref_commalist:
 table_ref:
     qname opt_table_name 	{ dlist *l = L();
 		  		  append_list(l, $1);
+		  	  	  append_int(l, 0);
 		  	  	  append_symbol(l, $2);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
  |  func_ref opt_table_name
 	 		        { dlist *l = L();
 		  		  append_symbol(l, $1);
-		  	  	  append_symbol(l, $2);
 		  	  	  append_int(l, 0);
+		  	  	  append_symbol(l, $2);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
  |  LATERAL func_ref opt_table_name
 	 		        { dlist *l = L();
 		  		  append_symbol(l, $2);
-		  	  	  append_symbol(l, $3);
 		  	  	  append_int(l, 1);
+		  	  	  append_symbol(l, $3);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
  |  subquery_with_orderby table_name
 				{
@@ -3371,6 +3383,7 @@ table_ref:
 				  	SelectNode *sn = (SelectNode*)$1;
 				  	sn->name = $2;
 				  } else {
+	  				append_int($2->data.lval, 0);
 				  	append_symbol($1->data.lval, $2);
 				  }
 				}
@@ -3382,8 +3395,8 @@ table_ref:
 				  	sn->name = $3;
 					sn->lateral = 1;
 				  } else {
-				  	append_symbol($2->data.lval, $3);
 	  				append_int($2->data.lval, 1);
+				  	append_symbol($2->data.lval, $3);
 				  }
 				}
  |  subquery_with_orderby
@@ -6247,7 +6260,6 @@ char *token2string(tokens token)
 	SQL(CREATE_TYPE);
 	SQL(CREATE_USER);
 	SQL(CREATE_VIEW);
-	SQL(CROSS);
 	SQL(CUBE);
 	SQL(CURRENT_ROW);
 	SQL(CYCLE);

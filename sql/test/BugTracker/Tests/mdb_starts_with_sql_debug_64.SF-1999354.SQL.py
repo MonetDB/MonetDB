@@ -1,31 +1,23 @@
 from MonetDBtesting.sqltest import SQLTestCase
-import os, socket, sys, tempfile
+import os, sys, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
     import process
 
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
 class server_start(process.server):
     def __init__(self, args):
-        super().__init__(mapiport=myport, dbname='db1',
+        super().__init__(mapiport='0', dbname='db1',
                          dbfarm=os.path.join(farm_dir, 'db1'),
                          stdin=process.PIPE, stdout=process.PIPE,
                          stderr=process.PIPE)
 
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
-    myport = freeport()
 
     with server_start(["--set", "sql_debug=64"]) as srv:
         with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
+            tc.connect(username="monetdb", password="monetdb", port=srv.dbport, database='db1')
             tc.execute("create table t1999354a(ra float, \"dec\" int);").assertSucceeded()
             tc.execute("""
                 CREATE FUNCTION f2(deg float, truncat int , precision int)

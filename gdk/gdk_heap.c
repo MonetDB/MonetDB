@@ -647,9 +647,9 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	b->twidth = width;
 	if (cap > BATcapacity(b))
 		BATsetcapacity(b, cap);
-	HEAPdecref(old, strcmp(old->filename, new->filename) != 0);
 	b->theap = new;
 	MT_lock_unset(&b->theaplock);
+	HEAPdecref(old, strcmp(old->filename, new->filename) != 0);
 	return GDK_SUCCEED;
 }
 

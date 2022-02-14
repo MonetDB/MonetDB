@@ -1,0 +1,52 @@
+statement ok
+CREATE TABLE IF NOT EXISTS t7240 (val INTEGER)
+
+statement ok rowcount 3
+INSERT INTO t7240(val) VALUES (1), (2), (3)
+
+query I rowsort
+SELECT * FROM t7240
+-----
+1
+2
+3
+
+statement ok
+CREATE OR REPLACE VIEW v7240 AS (SELECT * FROM t7240)
+
+query I rowsort
+SELECT * FROM v7240
+-----
+1
+2
+3
+
+#replace the view now with a query on itself
+statement error 42000!SELECT: attempting to recursively bind view 'sys'.'v7240'
+CREATE OR REPLACE VIEW v7240 AS (SELECT * FROM v7240)
+
+query I rowsort
+SELECT * FROM v7240
+-----
+1
+2
+3
+
+statement ok
+CREATE OR REPLACE VIEW v7240 AS (SELECT * FROM t7240)
+
+statement ok
+CREATE OR REPLACE VIEW v7240ugh AS (SELECT * FROM v7240)
+
+# in the future if we allow views with dependencies to be replaced, we have to look at these recursive cases
+statement error 42000!CREATE OR REPLACE VIEW: cannot replace VIEW 'v7240', there are database objects which depend on it
+CREATE OR REPLACE VIEW v7240 AS (SELECT * FROM v7240ugh)
+
+statement ok
+DROP VIEW v7240ugh
+
+statement ok
+DROP VIEW v7240
+
+statement ok
+DROP TABLE t7240

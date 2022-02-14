@@ -1,4 +1,4 @@
-import os, socket, tempfile
+import os, tempfile
 
 from MonetDBtesting.sqltest import SQLTestCase
 try:
@@ -6,18 +6,9 @@ try:
 except ImportError:
     import process
 
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
-myport = freeport()
-
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
-    with process.server(mapiport=myport, dbname='db1',
+    with process.server(mapiport='0', dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         args=["--set", "gdk_nr_threads=2", "--forcemito",
                               "--loadmodule", "udf"],
@@ -25,7 +16,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdout=process.PIPE,
                         stderr=process.PIPE) as s:
         with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
+            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
             tc.execute("create table tab1 (group_by_col int, index_col int, f float);").assertSucceeded()
             tc.execute("create table tab2 (index_col int, f float);").assertSucceeded()
             tc.execute("insert into tab1 values (1,1,1),(1,2,2),(2,1,3),(2,2,4),(3,1,5),(3,2,6);").assertSucceeded().assertRowCount(6)

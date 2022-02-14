@@ -717,8 +717,31 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bn =  BATthetaselect(lo, lc, &val, op);
 			} else
 				assert(0);
+		} else if (op[0] == '!') {
+			if (!lv->tnonil || lv->tnil) { /* find a possible NULL value */
+				const void *nilp = ATOMnilptr(lv->ttype);
+				p = BUNfnd(lv, nilp);
+			} else {
+				p = BUN_NONE;
+			}
+
+			if (p != BUN_NONE) { /* filter the NULL value out */
+				if (lo->ttype == TYPE_bte) {
+					bte val = (bte)p;
+					bn =  BATthetaselect(lo, lc, &val, op);
+				} else if (lo->ttype == TYPE_sht) {
+					sht val = (sht)p;
+					bn =  BATthetaselect(lo, lc, &val, op);
+				} else
+					assert(0);
+			} else if (lc) { /* all rows pass, use input candidate list */
+				bn = lc;
+				BBPfix(lc->batCacheid); /* give one extra physical reference to keep the count in the end */
+			} else { /* otherwise return all rows */
+				bn = BATdense(0, 0, BATcount(lo));
+			}
 		} else {
-			bn = BATdense(0, 0, op[0] == '!' ? BATcount(lo) : 0); /* for '!' if it didn't find, then all are different */
+			bn = BATdense(0, 0, 0);
 		}
 	} else { /* select + intersect */
 		if (ATOMextern(lv->ttype))

@@ -4649,6 +4649,29 @@ sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	res_table *output = NULL;
+	char *err = NULL;
+	/* we need to maybe update sys.functions because sys.index and
+	 * sys.strings were dropped;
+	 * NOTE, if more needs to be done during an upgrade, this is not the
+	 * right check */
+	if (!*systabfixed && (err = SQLstatementIntern(c, "select id from sys.functions where name = 'index' and schema_id = 2000;\n", "update", true, false, &output)) == NULL) {
+		BAT *b;
+		if ((b = BATdescriptor(output->cols[0].b)) != NULL) {
+			if (BATcount(b) > 0) {
+				if ((err = sql_fix_system_tables(c, sql, prev_schema)) == NULL)
+					*systabfixed = true;
+			}
+			BBPunfix(b->batCacheid);
+		}
+		res_table_destroy(output);
+	}
+	return err;
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -4848,6 +4871,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jan2022(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
+
+	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

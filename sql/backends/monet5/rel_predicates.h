@@ -14,6 +14,5 @@
 #include "mal_backend.h"
 
 extern sql_rel *rel_predicates(backend *be, sql_rel *rel);
-extern int add_column_predicate(backend *be, sql_column *c);
 
 #endif /*_REL_PREDICATES_H_*/

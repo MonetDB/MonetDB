@@ -32,20 +32,20 @@ pushInstruction(mb,P);
 			p->argc = p->retc;\
 			q= newInstruction(0,calcRef, TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
-			addArgument(mb,q,getArg(series[k],1));\
+			q = addArgument(mb,q,getArg(series[k],1));\
 			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
 			p = addArgument(mb,p, getArg(q,0));\
 			pushInstruction(mb,q);\
 			q= newInstruction(0,calcRef,TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
-			addArgument(mb,q,getArg(series[k],2));\
+			q = addArgument(mb,q,getArg(series[k],2));\
 			pushInstruction(mb,q);\
 			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
 			p = addArgument(mb,p, getArg(q,0));\
 			if( p->argc == 4){\
 				q= newInstruction(0,calcRef,TPE##Ref);\
 				setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
-				addArgument(mb,q,getArg(series[k],3));\
+				q = addArgument(mb,q,getArg(series[k],3));\
 				typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
 				p = addArgument(mb,p, getArg(q,0));\
 				pushInstruction(mb,q);\

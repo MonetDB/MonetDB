@@ -80,11 +80,13 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if( getModuleId(p) == sqlRef){
 			if ( getFunctionId(p) == bindRef ||
 				getFunctionId(p) == bindidxRef ||
-				getFunctionId(p)== tidRef ||
-				getFunctionId(p)== appendRef ||
-				getFunctionId(p)== updateRef ||
-				getFunctionId(p)== claimRef ||
-				getFunctionId(p)== deleteRef
+				getFunctionId(p) == tidRef ||
+				getFunctionId(p) == appendRef ||
+				getFunctionId(p) == updateRef ||
+				getFunctionId(p) == claimRef ||
+				getFunctionId(p) == dependRef ||
+				getFunctionId(p) == predicateRef ||
+				getFunctionId(p) == deleteRef
 			){
 				setArg(p,p->retc,mvcvar);
 			}

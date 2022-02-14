@@ -132,11 +132,3 @@ rel_predicates(backend *be, sql_rel *rel)
 	rel = rel_visitor_topdown(&v, rel, &rel_find_predicates);
 	return rel;
 }
-
-int
-add_column_predicate(backend *be, sql_column *c)
-{
-	if ((be->mvc->session->level & tr_snapshot) == tr_snapshot || isNew(c) || !isGlobal(c->t) || isGlobalTemp(c->t))
-		return LOG_OK;
-	return sql_trans_add_predicate(be->mvc->session->tr, c, 0, NULL, NULL, false, false);
-}

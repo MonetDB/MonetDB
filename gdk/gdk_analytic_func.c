@@ -40,6 +40,8 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree,
 
 	*nlevels = next_levels; /* set the logical size of levels before the physical one */
 	next_tree_size *= data_size;
+	/* round up to multiple of sizeof(oid) */
+	next_tree_size = ((next_tree_size + SIZEOF_OID - 1) / SIZEOF_OID) * SIZEOF_OID;
 	total_size = next_tree_size + next_levels * sizeof(oid);
 
 	if (total_size > BATcount(st)) {

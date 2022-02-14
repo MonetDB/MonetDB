@@ -207,6 +207,7 @@ extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, con
 typedef struct changeset {
 	sql_allocator *sa;
 	fdestroy destroy;
+	fkeyvalue fkeyvalue;
 	struct list *set;
 	struct list *dset;
 	node *nelm;
@@ -266,10 +267,10 @@ extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
 #define ol_last_node(ol) (ol->l->t)
 #define ol_fetch(ol,nr) (list_fetch(ol->l, nr))
 
-extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
+extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy, fkeyvalue hfunc);
 extern void cs_destroy(changeset * cs, void *data);
-extern void cs_add(changeset * cs, void *elm, bool isnew);
-extern void cs_del(changeset * cs, void *gdata, node *elm, bool isnew);
+extern changeset *cs_add(changeset * cs, void *elm, bool isnew);
+extern changeset *cs_del(changeset * cs, void *gdata, node *n, bool force);
 extern int cs_size(changeset * cs);
 extern node *cs_find_id(changeset * cs, sqlid id);
 

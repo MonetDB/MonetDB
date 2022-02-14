@@ -58,6 +58,8 @@ isatty = os.isatty(sys.stdout.fileno())
 
 mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9]+:(?P<port>\d+)/')
 
+geos_version = '@GEOS_VERSION@'.split('.')
+
 # default is no color (these three functions may get redefined)
 def prred(str, write = sys.stdout.write):
     write(str)
@@ -1108,6 +1110,31 @@ def RunTest(env, test, oktests, pSrvr):
                     reason = "impossible combination of PASSWD= and negation"
                     break
                 passwd = cond[7:]
+            elif cond.startswith('GEOS_VERSION>='):
+                if not geos_version or not geos_version[0]:
+                    reason = "no geos version information available"
+                    break
+                req_vers = cond[14:].split('.')
+                if not negate:
+                    for i in range(len(geos_version)):
+                        if i >= len(req_vers):
+                            break
+                        if int(geos_version[i]) > int(req_vers[i]):
+                            break
+                        if int(geos_version[i]) < int(req_vers[i]):
+                            reason = "geos version too low"
+                            break
+                else:
+                    for i in range(len(geos_version)):
+                        if i >= len(req_vers):
+                            break
+                        if int(geos_version[i]) < int(req_vers[i]):
+                            break
+                        if int(geos_version[i]) > int(req_vers[i]):
+                            reason = "geos version too high"
+                            break
+                if reason is not None:
+                    break
             elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
                 break

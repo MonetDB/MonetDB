@@ -217,6 +217,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	anti_rel = rel_groupby(sql, anti_rel, NULL);
 	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
 	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+	set_processed(anti_rel);
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	/* generate the exception */
@@ -259,6 +260,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	anti_rel = rel_groupby(sql, anti_rel, NULL);
 	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
 	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+	set_processed(anti_rel);
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	/* generate the exception */
@@ -866,6 +868,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		anti_rel = rel_groupby(sql, anti_rel, NULL);
 		aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
 		(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+		set_processed(anti_rel);
 		exp_label(sql->sa, aggr, ++sql->label);
 
 		aggr = exp_ref(sql, aggr);
@@ -1041,6 +1044,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_dup->card, 0);
 		(void) rel_groupby_add_aggr(sql, anti_dup, aggr);
 		exp_label(sql->sa, aggr, ++sql->label);
+		set_processed(anti_dup);
 
 		/* generate the exception */
 		aggr = exp_ref(sql, aggr);

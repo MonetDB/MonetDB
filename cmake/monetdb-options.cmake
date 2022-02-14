@@ -69,6 +69,10 @@ option(SANITIZER
   "Enable support for the GCC address sanitizer (default=OFF)"
   OFF)
 
+option(UNDEFINED
+  "Enable support for the GCC undefined sanitizer (default=OFF)"
+  OFF)
+
 option(STRICT
   "Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)"
   "${DEVELOPMENT}")

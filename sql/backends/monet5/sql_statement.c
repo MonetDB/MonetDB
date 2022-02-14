@@ -3077,6 +3077,34 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	return NULL;
 }
 
+void
+stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (!t || cnt->nr < 0)
+		return ;
+	q = newStmtArgs(mb, sqlRef, dependRef, 4);
+	q = pushSchema(mb, q, t);
+	q = pushStr(mb, q, t->base.name);
+	q = pushArgument(mb, q, cnt->nr);
+}
+
+void
+stmt_add_column_predicate(backend *be, sql_column *c)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (!c)
+		return ;
+	q = newStmtArgs(mb, sqlRef, predicateRef, 4);
+	q = pushSchema(mb, q, c->t);
+	q = pushStr(mb, q, c->t->base.name);
+	q = pushStr(mb, q, c->base.name);
+}
+
 stmt *
 stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 {
