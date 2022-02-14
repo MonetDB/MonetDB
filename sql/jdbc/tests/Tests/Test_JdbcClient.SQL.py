@@ -91,7 +91,7 @@ if __name__ == '__main__':
         if perr != "Error on line 12: [22000] Missing file name\nError on line 30: [22000] Requested file compression format .bz2 is not supported. Use .gz instead.\nError on line 32: [22000] Requested file compression format .lz4 is not supported. Use .gz instead.\nError on line 34: [22000] Requested file compression format .xz is not supported. Use .gz instead.\nError on line 36: [22000] Requested file compression format .zip is not supported. Use .gz instead.\n":
             print(perr)
             print("OnClientDownloadData err difference detected")
-        if pout != "":
+        if pout != "121 affected rows\n122 affected rows\n123 affected rows\n124 affected rows\n120 affected rows\n":
             print(pout)
             print("OnClientDownloadData out difference detected")
 
