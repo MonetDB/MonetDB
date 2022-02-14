@@ -211,7 +211,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			break;
 #endif
 		default:
-			assert(0);
+			MT_UNREACHABLE();
 		}
 		MT_thread_setalgorithm("copy offset values");
 		r = b->batCount;
@@ -1239,7 +1239,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 			var_t d;
 			switch (b->twidth) {
-			default: /* only three or four cases possible */
+			case 1:
 				d = (var_t) ((uint8_t *) b->theap->base)[updid] + GDK_VAROFFSET;
 				break;
 			case 2:
@@ -1253,6 +1253,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				d = (var_t) ((uint64_t *) b->theap->base)[updid];
 				break;
 #endif
+			default:
+				MT_UNREACHABLE();
 			}
 			if (ATOMreplaceVAR(b, &d, new) != GDK_SUCCEED) {
 				goto bailout;
@@ -1290,6 +1292,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				((uint64_t *) b->theap->base)[updid] = (uint64_t) d;
 				break;
 #endif
+			default:
+				MT_UNREACHABLE();
 			}
 			HASHinsert_locked(b, updid, new);
 
@@ -2909,16 +2913,16 @@ BATcount_no_nil(BAT *b, BAT *s)
 		switch (bi.width) {
 		case 1:
 			for (i = 0; i < n; i++)
-				cnt += base[(var_t) ((const unsigned char *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
+				cnt += base[(var_t) ((const uint8_t *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
 			break;
 		case 2:
 			for (i = 0; i < n; i++)
-				cnt += base[(var_t) ((const unsigned short *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
+				cnt += base[(var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
 			break;
 #if SIZEOF_VAR_T != SIZEOF_INT
 		case 4:
 			for (i = 0; i < n; i++)
-				cnt += base[(var_t) ((const unsigned int *) p)[canditer_next(&ci) - hseq]] != '\200';
+				cnt += base[(var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq]] != '\200';
 			break;
 #endif
 		default:

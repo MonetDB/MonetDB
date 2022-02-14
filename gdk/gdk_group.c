@@ -906,7 +906,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 #endif
 		default:
-			assert(0);
+			MT_UNREACHABLE();
 		}
 	}
 

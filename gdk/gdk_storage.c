@@ -777,8 +777,10 @@ gettailnamebi(const BATiter *bi)
 	case 4:
 		return "tail4";
 #endif
-	default:
+	case 8:
 		return "tail";
+	default:
+		MT_UNREACHABLE();
 	}
 }
 
