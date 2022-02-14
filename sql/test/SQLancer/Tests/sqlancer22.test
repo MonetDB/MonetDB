@@ -21,7 +21,6 @@ as count FROM v2) as res
 ----
 1
 
-# this one is right
 query I nosort
 SELECT 1 FROM v2 WHERE (SELECT 'a' FROM v1) <> ALL((SELECT 'b' FROM t2) UNION (SELECT 'c' FROM v1))
 ----
@@ -80,7 +79,6 @@ select 1 from mct20 inner join (select x.x from (values (true)) x(x)) as nort0(n
 on true and greatest(((select nort0.norc0) intersect (select true)), true)
 ----
 
-# these are right
 query I nosort
 select rank() over (order by ((select mct20.c0) union all (select interval '1' day))) from mct20
 ----
@@ -195,7 +193,6 @@ SELECT vx.vc2 FROM vx JOIN (VALUES (1)) AS x(x) ON TRUE WHERE vx.vc0 >= ALL(SELE
 ----
 2
 
-# this one is right
 query I nosort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(vx.vc0 >= ALL(SELECT t0.c0 FROM t0) AND 1 >= ALL(SELECT vx.vc1 FROM t0) AS INT)
 as count FROM vx JOIN (VALUES (1)) AS x(x) ON TRUE) as res
@@ -220,7 +217,6 @@ SELECT vy.y FROM vy WHERE CAST(NOT EXISTS (SELECT 1 FROM vx WHERE vy.y) AS BOOLE
 0
 0
 
-# this one is right
 query I nosort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(CAST(NOT EXISTS (SELECT 1 FROM vx WHERE vy.y) AS BOOLEAN) AS INT) as count FROM vy) as res
 ----
@@ -474,22 +470,12 @@ SAVEPOINT sp2
 
 statement error
 SELECT TRUE FROM rt2 AS x RIGHT OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
-----
-1
-1
-1
-1
 
 statement ok
 ROLLBACK TO SAVEPOINT sp2
 
 statement error
 SELECT TRUE FROM rt2 AS x FULL OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
-----
-1
-1
-1
-1
 
 statement ok
 ROLLBACK TO SAVEPOINT sp2
@@ -602,6 +588,11 @@ SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (VALUES (t0.c0)) AS x(x) ON t0.c0 < ALL
 
 query I nosort
 SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (SELECT 2, (VALUES (3), (t0.c0))) AS x(x,y) ON x.x IN (SELECT x.x)
+----
+
+query I nosort
+SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (SELECT DISTINCT 3 FROM t1 AS tx JOIN (SELECT 1) AS y(y)
+ON tx.c0 > 2 OR t0.c0 > 3) AS x(x) ON (SELECT TRUE FROM t1) OR FALSE
 ----
 
 statement ok
