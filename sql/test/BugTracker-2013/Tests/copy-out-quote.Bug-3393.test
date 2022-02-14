@@ -4,13 +4,13 @@ start transaction
 statement ok
 create table table3393 (a clob, b clob)
 
-statement ok
+statement ok rowcount 1
 insert into table3393 values ('one|two', 'three"four')
 
-statement ok
+statement ok rowcount 1
 insert into table3393 values (E'five\tsix', E'seven\neight')
 
-statement ok
+statement ok rowcount 1
 insert into table3393 values ('nine,ten', E'eleven\\twelve')
 
 query TT rowsort
@@ -23,13 +23,13 @@ eleven\twelve
 one|two
 three"four
 
-statement ok
+statement ok rowcount 3
 copy select * from table3393 into stdout delimiters ',', E'\n', '|'
 
-statement ok
+statement ok rowcount 3
 copy select * from table3393 into stdout delimiters '|', E'\n', ','
 
-statement ok
+statement ok rowcount 3
 copy select * from table3393 into stdout
 
 statement ok
