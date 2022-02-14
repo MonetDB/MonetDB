@@ -397,7 +397,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 				break;                                                         \
 			case NPY_UNICODE:                                                  \
 				NP_COL_BAT_LOOP_FUNC(bat, mtpe, unicode_to_##mtpe,             \
-									 PythonUnicodeType, index);                \
+									 Py_UNICODE, index);                       \
 				break;                                                         \
 			case NPY_OBJECT:                                                   \
 				NP_COL_BAT_LOOP_FUNC(bat, mtpe, pyobject_to_##mtpe,            \

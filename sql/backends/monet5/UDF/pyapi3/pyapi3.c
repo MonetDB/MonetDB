@@ -682,7 +682,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			goto wrapup;
 		}
 		if (code_object == NULL) {
-			PyObject *arg_type = PyString_FromString(
+			PyObject *arg_type = PyUnicode_FromString(
 				BatType_Format(pyinput_values[i - (pci->retc + 2 + has_card_arg)].bat_type));
 			PyDict_SetItemString(pColumns, args[i], result_array);
 			PyDict_SetItemString(pColumnTypes, args[i], arg_type);
@@ -1028,7 +1028,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				retnames = GDKzalloc(sizeof(char *) * retcols);
 				for (i = 0; i < retcols; i++) {
 					PyObject *colname = PyList_GetItem(keys, i);
-					if (!PyString_CheckExact(colname)) {
+					if (!PyUnicode_CheckExact(colname)) {
 						msg = createException(MAL, "pyapi3.eval",
 											  SQLSTATE(PY000) "Expected a string key in the "
 											  "dictionary, but received an "
@@ -1397,7 +1397,7 @@ PYAPI3PyAPIprelude(void *ret) {
 		}
 		_pytypes_init();
 		_loader_init();
-		tmp = PyString_FromString("marshal");
+		tmp = PyUnicode_FromString("marshal");
 		marshal_module = PyImport_Import(tmp);
 		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
@@ -1441,7 +1441,7 @@ char *PyError_CreateException(char *error_text, char *pycall)
 								 &py_error_traceback);
 		error = PyObject_Str(py_error_value);
 
-		py_error_string = PyString_AS_STRING(error);
+		py_error_string = PyUnicode_AsUTF8(error);
 		Py_XDECREF(error);
 		if (pycall != NULL && strlen(pycall) > 0) {
 			if (py_error_traceback == NULL) {
