@@ -1160,6 +1160,30 @@ scanselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		/* in the case where equi==true, the check is x == *tl */ \
 	} while (false)
 
+#if SIZEOF_BUN == SIZEOF_INT
+#define CALC_ESTIMATE(TPE)						\
+	do {								\
+		if (*(TPE*)tl < 1) {					\
+			if ((int) BUN_MAX + *(TPE*)tl >= *(TPE*)th)	\
+				estimate = (BUN) ((int) *(TPE*)th - *(TPE*)tl); \
+		} else {						\
+			if (-(int) BUN_MAX + *(TPE*)tl <= *(TPE*)th)	\
+				estimate = (BUN) ((int) *(TPE*)th - *(TPE*)tl); \
+		}							\
+	} while (0)
+#else
+#define CALC_ESTIMATE(TPE)						\
+	do {								\
+		if (*(TPE*)tl < 1) {					\
+			if ((lng) BUN_MAX + *(TPE*)tl >= *(TPE*)th)	\
+				estimate = (BUN) ((lng) *(TPE*)th - *(TPE*)tl); \
+		} else {						\
+			if (-(lng) BUN_MAX + *(TPE*)tl <= *(TPE*)th)	\
+				estimate = (BUN) ((lng) *(TPE*)th - *(TPE*)tl); \
+		}							\
+	} while (0)
+#endif
+
 /* generic range select
  *
  * Return a BAT with the OID values of b for qualifying tuples.  The
@@ -1874,19 +1898,18 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				estimate = (BUN) (*(sht *) th - *(sht *) tl);
 				break;
 			case TYPE_int:
-				estimate = (BUN) (*(int *) th - *(int *) tl);
+				CALC_ESTIMATE(int);
 				break;
 			case TYPE_lng:
-				estimate = (BUN) (*(lng *) th - *(lng *) tl);
+				CALC_ESTIMATE(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				if (*(hge *) th - *(hge *) tl < (hge) BUN_MAX)
-					estimate = (BUN) (*(hge *) th - *(hge *) tl);
+				CALC_ESTIMATE(hge);
 				break;
 #endif
 			}
-			if (estimate != BUN_NONE)
+			if (estimate == BUN_NONE)
 				estimate += li + hi - 1;
 		}
 	}

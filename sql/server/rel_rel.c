@@ -456,18 +456,41 @@ rel_first_column(mvc *sql, sql_rel *r)
 	return NULL;
 }
 
+static void
+rel_inplace_reset_props(sql_rel *rel)
+{
+	rel->flag = 0;
+	rel->attr = NULL;
+	reset_dependent(rel);
+	set_processed(rel);
+}
+
+sql_rel *
+rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
+{
+	assert(is_basetable(bt->op));
+
+	rel_destroy_(rel);
+	rel_inplace_reset_props(rel);
+	rel->l = bt->l;
+	rel->r = bt->r;
+	rel->op = op_basetable;
+	rel->exps = bt->exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = bt->nrcols;
+	return rel;
+}
+
 sql_rel *
 rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
 {
 	rel_destroy_(rel);
+	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = r;
-	rel->attr = NULL;
 	rel->op = setop;
 	rel->card = CARD_MULTI;
-	rel->flag = 0;
 	rel_setop_set_exps(sql, rel, exps, false);
-	set_processed(rel);
 	return rel;
 }
 
@@ -484,15 +507,12 @@ rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 	} else {
 		rel_destroy_(rel);
 	}
-	set_processed(rel);
-
+	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = NULL;
-	rel->attr = NULL;
 	rel->op = op_project;
 	rel->exps = e;
 	rel->card = CARD_MULTI;
-	rel->flag = 0;
 	if (l) {
 		rel->nrcols = l->nrcols;
 		assert (exps_card(rel->exps) <= rel->card);
@@ -504,14 +524,12 @@ sql_rel *
 rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps)
 {
 	rel_destroy_(rel);
-	set_processed(rel);
+	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = NULL;
-	rel->attr = NULL;
 	rel->op = op_select;
 	rel->exps = exps;
 	rel->card = exps_card(exps);
-	rel->flag = 0;
 	rel->card = CARD_ATOM; /* no relation */
 	if (l) {
 		rel->card = l->card;
@@ -526,18 +544,65 @@ sql_rel *
 rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 {
 	rel_destroy_(rel);
+	rel_inplace_reset_props(rel);
 	rel->card = CARD_ATOM;
 	if (groupbyexps)
 		rel->card = CARD_AGGR;
 	rel->l = l;
 	rel->r = groupbyexps;
-	rel->attr = NULL;
 	rel->exps = exps;
 	rel->nrcols = l->nrcols;
 	rel->op = op_groupby;
-	rel->flag = 0;
-	set_processed(rel);
 	return rel;
+}
+
+/* this function is to be used with the above rel_inplace_* functions */
+sql_rel *
+rel_dup_copy(sql_allocator *sa, sql_rel *rel)
+{
+	sql_rel *nrel = rel_create(sa);
+
+	if (!nrel)
+		return NULL;
+	*nrel = *rel;
+	nrel->ref.refcnt = 1;
+	switch(nrel->op){
+	case op_basetable:
+	case op_ddl:
+		break;
+	case op_table:
+		if ((IS_TABLE_PROD_FUNC(nrel->flag) || nrel->flag == TABLE_FROM_RELATION) && nrel->l)
+			rel_dup(nrel->l);
+		break;
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_semi:
+	case op_anti:
+	case op_union:
+	case op_inter:
+	case op_except:
+	case op_insert:
+	case op_update:
+	case op_delete:
+	case op_merge:
+		if (nrel->l)
+			rel_dup(nrel->l);
+		if (nrel->r)
+			rel_dup(nrel->r);
+		break;
+	case op_project:
+	case op_groupby:
+	case op_select:
+	case op_topn:
+	case op_sample:
+	case op_truncate:
+		if (nrel->l)
+			rel_dup(nrel->l);
+		break;
+	}
+	return nrel;
 }
 
 sql_rel *
@@ -1646,6 +1711,7 @@ rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 			(void)rel_groupby_add_aggr(sql, rel, e);
 		}
+		set_processed(rel);
 	}
 	return rel;
 }
