@@ -1422,9 +1422,11 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			sl = rel_project(sql->sa, rel_dup(sl), rel_projections(sql, sl, NULL, 1, 1));
 			for (node *n = sl->exps->h, *m = s->exps->h; n && m; n = n->next, m = m->next)
 				exp_prop_alias(sql->sa, n->data, m->data);
+			list_hash_clear(sl->exps);
 			sr = rel_project(sql->sa, rel_dup(sr), rel_projections(sql, sr, NULL, 1, 1));
 			for (node *n = sr->exps->h, *m = s->exps->h; n && m; n = n->next, m = m->next)
 				exp_prop_alias(sql->sa, n->data, m->data);
+			list_hash_clear(sr->exps);
 			/* D djoin (sl setop sr) -> (D djoin sl) setop (D djoin sr) */
 			sl = rel_crossproduct(sql->sa, rel_dup(d), sl, rel->op);
 			sl->exps = exps_copy(sql, rel->exps);
