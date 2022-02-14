@@ -348,13 +348,18 @@ with SQLTestCase() as cli:
         UNION ALL (SELECT 1 FROM t3 RIGHT OUTER JOIN (SELECT 4) AS sub1n0(subc1n0) ON TRUE
         CROSS JOIN (SELECT FALSE FROM t3) AS sub1n1(subc1n0))) FROM t3;
     """).assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,)])
-    # this query triggers a lot MAL user function calls at the moment. It allows to test concurrency issues with the query queue
     cli.execute("""
         SELECT 5 <> ALL((SELECT 2 FROM rt3 FULL OUTER JOIN (SELECT 1) AS sub1n0(subc1n0) ON 2 < ANY(SELECT 1))
         UNION ALL (SELECT 1 FROM rt3 RIGHT OUTER JOIN (SELECT 4) AS sub1n0(subc1n0) ON TRUE
         CROSS JOIN (SELECT FALSE FROM rt3) AS sub1n1(subc1n0))) FROM rt3;
     """).assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,)])
     cli.execute("ROLLBACK;")
+
+    cli.execute("SELECT CASE 1 WHEN 5 THEN ((SELECT t3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (t3.c0), (1)) END FROM t3;") \
+        .assertFailed() # GDK reported error: hashjoin: more than one match
+    # this query triggers a lot MAL user function calls at the moment. It allows to test concurrency issues with the query queue
+    cli.execute("SELECT CASE 1 WHEN 5 THEN ((SELECT rt3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (rt3.c0), (1)) END FROM rt3;") \
+        .assertFailed() # GDK reported error: hashjoin: more than one match
 
     cli.execute("""
     START TRANSACTION;
