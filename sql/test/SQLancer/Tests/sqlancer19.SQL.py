@@ -343,11 +343,27 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(True,)])
     cli.execute("SELECT 3 >= ALL(SELECT vx.vc0 FROM storage((SELECT 'sys', 't3' FROM rt3))) FROM (SELECT 0) vx(vc0);") \
         .assertSucceeded().assertDataResultMatch([(True,)])
+    cli.execute("""
+        SELECT 5 <> ALL((SELECT 2 FROM t3 FULL OUTER JOIN (SELECT 1) AS sub1n0(subc1n0) ON 2 < ANY(SELECT 1))
+        UNION ALL (SELECT 1 FROM t3 RIGHT OUTER JOIN (SELECT 4) AS sub1n0(subc1n0) ON TRUE
+        CROSS JOIN (SELECT FALSE FROM t3) AS sub1n1(subc1n0))) FROM t3;
+    """).assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,)])
+    cli.execute("""
+        SELECT 5 <> ALL((SELECT 2 FROM rt3 FULL OUTER JOIN (SELECT 1) AS sub1n0(subc1n0) ON 2 < ANY(SELECT 1))
+        UNION ALL (SELECT 1 FROM rt3 RIGHT OUTER JOIN (SELECT 4) AS sub1n0(subc1n0) ON TRUE
+        CROSS JOIN (SELECT FALSE FROM rt3) AS sub1n1(subc1n0))) FROM rt3;
+    """).assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,)])
     cli.execute("(SELECT greatest(JSON '\"5mTevdOzH5brfkMv\"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM t3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM t3);") \
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("(SELECT greatest(JSON '\"5mTevdOzH5brfkMv\"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM rt3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM rt3);") \
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("ROLLBACK;")
+
+    cli.execute("SELECT CASE 1 WHEN 5 THEN ((SELECT t3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (t3.c0), (1)) END FROM t3;") \
+        .assertFailed() # GDK reported error: hashjoin: more than one match
+    # this query triggers a lot MAL user function calls at the moment. It allows to test concurrency issues with the query queue
+    cli.execute("SELECT CASE 1 WHEN 5 THEN ((SELECT rt3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (rt3.c0), (1)) END FROM rt3;") \
+        .assertFailed() # GDK reported error: hashjoin: more than one match
 
     cli.execute("""
     START TRANSACTION;

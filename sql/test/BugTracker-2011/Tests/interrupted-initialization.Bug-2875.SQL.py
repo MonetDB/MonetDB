@@ -1,30 +1,21 @@
-import os, socket, sys, tempfile, pymonetdb
+import os, sys, tempfile, pymonetdb
 try:
     from MonetDBtesting import process
 except ImportError:
     import process
 
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
-myport = freeport()
-
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
-    with process.server(mapiport=myport, dbname='db1',
+    with process.server(mapiport='0', dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
         s.communicate()
-    with process.server(mapiport=myport, dbname='db1',
+    with process.server(mapiport='0', dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        client = pymonetdb.connect(database='db1', port=myport, autocommit=True)
+        client = pymonetdb.connect(database='db1', port=s.dbport, autocommit=True)
         cursor = client.cursor()
         cursor.execute("""
         with describe_all_objects as (

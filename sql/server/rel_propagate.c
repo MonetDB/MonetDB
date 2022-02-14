@@ -38,6 +38,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
 		if (!(res = rel_parse_val(sql, mt->s, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
+		set_processed(*anti_rel);
 	} else {
 		assert(0);
 	}
@@ -214,9 +215,11 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	}
 
 	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
+	set_processed(anti_rel);
 	anti_rel = rel_groupby(sql, anti_rel, NULL);
 	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
 	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+	set_processed(anti_rel);
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	/* generate the exception */
@@ -256,9 +259,11 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	}
 
 	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
+	set_processed(anti_rel);
 	anti_rel = rel_groupby(sql, anti_rel, NULL);
 	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
 	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+	set_processed(anti_rel);
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	/* generate the exception */
@@ -779,8 +784,10 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			} else if (range) {
 				accum = exp_copy(sql, range);
 			}
-			if (full_range)
+			if (full_range) {
 				dup = rel_select(sql->sa, dup, full_range);
+				set_processed(dup);
+			}
 		} else if (isListPartitionTable(t)) {
 			sql_exp *ein = NULL;
 
@@ -810,6 +817,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				found_nils = 1;
 			}
 			dup = rel_select(sql->sa, dup, ein);
+			set_processed(dup);
 		} else {
 			assert(0);
 		}
@@ -863,9 +871,11 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		}
 		/* generate a count aggregation for the values not present in any of the partitions */
 		anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
+		set_processed(anti_rel);
 		anti_rel = rel_groupby(sql, anti_rel, NULL);
 		aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
 		(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+		set_processed(anti_rel);
 		exp_label(sql->sa, aggr, ++sql->label);
 
 		aggr = exp_ref(sql, aggr);
@@ -1037,10 +1047,12 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	if (!found_all_range_values || !found_nils) {
 		/* generate a count aggregation for the values not present in any of the partitions */
 		anti_dup = rel_select(sql->sa, anti_dup, anti_exp);
+		set_processed(anti_dup);
 		anti_dup = rel_groupby(sql, anti_dup, NULL);
 		aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_dup->card, 0);
 		(void) rel_groupby_add_aggr(sql, anti_dup, aggr);
 		exp_label(sql->sa, aggr, ++sql->label);
+		set_processed(anti_dup);
 
 		/* generate the exception */
 		aggr = exp_ref(sql, aggr);

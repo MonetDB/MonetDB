@@ -200,8 +200,10 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	if (need_nulls) {
 		_nlls = rel_select( sql->sa, rel_dup(ins),
 				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
+		set_processed(_nlls);
 		nnlls = rel_select( sql->sa, rel_dup(ins),
 				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
+		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
@@ -324,6 +326,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 	sql_exp **inserts = insert_exp_array(sql, t, &len);
 	list *exps = NULL;
 	node *n, *m;
+	bool has_rel = false, all_values = true;
 
 	if (r->exps) {
 		if (!copy) {
@@ -335,6 +338,8 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
 				if (!(inserts[c->colnr] = exp_check_type(sql, &c->type, r, e, type_equal)))
 					return NULL;
+				has_rel = (has_rel || exp_has_rel(e));
+				all_values &= is_values(e);
 			}
 		} else {
 			for (m = collist->h; m; m = m->next) {
@@ -346,6 +351,8 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 					if (inserts[c->colnr])
 						return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
 					inserts[c->colnr] = exp_ref(sql, e);
+					has_rel = has_rel || exp_has_rel(e);
+					all_values &= is_values(e);
 				}
 			}
 		}
@@ -386,10 +393,33 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 			assert(inserts[c->colnr]);
 		}
 	}
-	/* now rewrite project exps in proper table order */
-	exps = new_exp_list(sql->sa);
-	for (i = 0; i<len; i++)
-		list_append(exps, inserts[i]);
+	/* rewrite into unions */
+	if (has_rel && rowcount && all_values) {
+		sql_rel *c = NULL;
+		for (size_t j = 0; j < rowcount; j++) {
+			sql_rel *p = rel_project(sql->sa, NULL, sa_list(sql->sa));
+			for (m = ol_first_node(t->columns); m; m = m->next) {
+				sql_column *c = m->data;
+				sql_exp *e = inserts[c->colnr];
+				assert(is_values(e));
+				list *vals = e->f;
+				append(p->exps, list_fetch(vals, (int) j));
+			}
+			if (c) {
+				c = rel_setop(sql->sa, c, p, op_union);
+				rel_setop_set_exps(sql, c, rel_projections(sql, c->l, NULL, 1, 1), false);
+				set_processed(c);
+			} else
+				c = p;
+		}
+		r->l = c;
+		exps = rel_projections(sql, r->l, NULL, 1, 1);
+	} else {
+		/* now rewrite project exps in proper table order */
+		exps = new_exp_list(sql->sa);
+		for (i = 0; i<len; i++)
+			list_append(exps, inserts[i]);
+	}
 	return exps;
 }
 
@@ -503,7 +533,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 		return NULL;
 
 	if (val_or_q->token == SQL_VALUES) {
-		dlist *rowlist = val_or_q->data.lval;
+		dlist *rowlist = val_or_q->data.lval->h->data.lval;
 		list *exps = new_exp_list(sql->sa);
 
 		if (!rowlist->h) {
@@ -599,7 +629,7 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 
 	if (val_or_q->token == SQL_VALUES) {
 		list *exps = new_exp_list(sql->sa);
-		dlist *rowlist = val_or_q->data.lval;
+		dlist *rowlist = val_or_q->data.lval->h->data.lval;
 
 		if (!rowlist->h) {
 			res = rel_project(sql->sa, NULL, NULL);
@@ -830,8 +860,10 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	if (need_nulls) {
 		_nlls = rel_select( sql->sa, rel_dup(ups),
 				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
+		set_processed(_nlls);
 		nnlls = rel_select( sql->sa, rel_dup(ups),
 				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
+		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
@@ -1035,7 +1067,9 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					reset_processed(rel_val);
 				}
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
+				r->flag |= MERGE_LEFT;
 				set_dependent(r);
+				set_processed(r);
 				if (single) {
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_unique(v), is_intern(v));
 					rel_val = NULL;
@@ -1342,6 +1376,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
+					set_processed(join_rel);
 				}
 
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, join_rel, NULL, 1, 1));
@@ -1355,6 +1390,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
+					set_processed(join_rel);
 				}
 
 				extra_project = rel_project(sql->sa, join_rel, list_append(new_exp_list(sql->sa), exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1)));
@@ -1378,6 +1414,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 					return NULL;
+				set_processed(join_rel);
 			}
 
 			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));

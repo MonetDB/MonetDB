@@ -120,24 +120,20 @@ REF 2 (2)
 single left outer join (
 | & REF 1 ,
 | project (
-| | select (
+| | join (
 | | | project (
-| | | | crossproduct (
-| | | | | project (
-| | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b3"."id", "bidder"."increase" NOT NULL as "b3"."increase", "bidder"."%TID%" NOT NULL UNIQUE as "b3"."%TID%" ]
-| | | | | ) [ "b3"."id" NOT NULL UNIQUE HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL UNIQUE, "b3"."increase" NOT NULL as "%2"."%2" ],
+| | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b3"."id", "bidder"."increase" NOT NULL as "b3"."increase", "bidder"."%TID%" NOT NULL UNIQUE as "b3"."%TID%" ]
+| | | ) [ "b3"."id" NOT NULL UNIQUE HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL UNIQUE, "b3"."increase" NOT NULL as "%2"."%2" ],
+| | | group by (
+| | | | join (
 | | | | | group by (
-| | | | | | join (
-| | | | | | | group by (
-| | | | | | | | project (
-| | | | | | | | | & REF 1 
-| | | | | | | | ) [ "o"."open_auction_id" NOT NULL ]
-| | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ],
-| | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id", "bidder"."%TID%" NOT NULL UNIQUE as "b3a"."%TID%" ]
-| | | | | | ) [ ("b3a"."open_auction_id" NOT NULL) = ("o"."open_auction_id" NOT NULL) ]
-| | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."min" no nil ("b3a"."id" NOT NULL UNIQUE HASHCOL ) as "%1"."%1", "o"."open_auction_id" NOT NULL ]
-| | | | ) [  ]
-| | | ) [ "o"."open_auction_id" NOT NULL, "%1"."%1", "b3"."id" NOT NULL HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL, "%2"."%2" NOT NULL ]
+| | | | | | project (
+| | | | | | | & REF 1 
+| | | | | | ) [ "o"."open_auction_id" NOT NULL ]
+| | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ],
+| | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id", "bidder"."%TID%" NOT NULL UNIQUE as "b3a"."%TID%" ]
+| | | | ) [ ("b3a"."open_auction_id" NOT NULL) = ("o"."open_auction_id" NOT NULL) ]
+| | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."min" no nil ("b3a"."id" NOT NULL UNIQUE HASHCOL ) as "%1"."%1", "o"."open_auction_id" NOT NULL ]
 | | ) [ ("b3"."id" NOT NULL UNIQUE HASHCOL ) = ("%1"."%1") ]
 | ) [ "b3"."id" NOT NULL HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL, "%1"."%1", "%2"."%2" NOT NULL, "o"."open_auction_id" NOT NULL as "%5"."%5" ]
 ) [ ("o"."open_auction_id" NOT NULL) * = ("%5"."%5" NOT NULL) ]
@@ -147,24 +143,20 @@ project (
 | | | single left outer join (
 | | | | & REF 2 ,
 | | | | project (
-| | | | | select (
+| | | | | join (
 | | | | | | project (
-| | | | | | | crossproduct (
-| | | | | | | | project (
-| | | | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b2"."id", "bidder"."increase" NOT NULL as "b2"."increase" ]
-| | | | | | | | ) [ "b2"."id" NOT NULL UNIQUE HASHCOL , "b2"."increase" NOT NULL as "%4"."%4" ],
-| | | | | | | | group by (
-| | | | | | | | | join (
-| | | | | | | | | | single group by (
-| | | | | | | | | | | single project (
-| | | | | | | | | | | | & REF 2 
-| | | | | | | | | | | ) [ "o"."open_auction_id" NOT NULL ]
-| | | | | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ],
-| | | | | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b2a"."id", "bidder"."open_auction_id" NOT NULL as "b2a"."open_auction_id" ]
-| | | | | | | | | ) [ ("b2a"."open_auction_id" NOT NULL) = ("o"."open_auction_id" NOT NULL) ]
-| | | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."max" no nil ("b2a"."id" NOT NULL UNIQUE HASHCOL ) as "%3"."%3", "o"."open_auction_id" NOT NULL ]
-| | | | | | | ) [  ]
-| | | | | | ) [ "o"."open_auction_id" NOT NULL, "%3"."%3", "b2"."id" NOT NULL HASHCOL , "%4"."%4" NOT NULL ]
+| | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b2"."id", "bidder"."increase" NOT NULL as "b2"."increase" ]
+| | | | | | ) [ "b2"."id" NOT NULL UNIQUE HASHCOL , "b2"."increase" NOT NULL as "%4"."%4" ],
+| | | | | | group by (
+| | | | | | | join (
+| | | | | | | | single group by (
+| | | | | | | | | single project (
+| | | | | | | | | | & REF 2 
+| | | | | | | | | ) [ "o"."open_auction_id" NOT NULL ]
+| | | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ],
+| | | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b2a"."id", "bidder"."open_auction_id" NOT NULL as "b2a"."open_auction_id" ]
+| | | | | | | ) [ ("b2a"."open_auction_id" NOT NULL) = ("o"."open_auction_id" NOT NULL) ]
+| | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."max" no nil ("b2a"."id" NOT NULL UNIQUE HASHCOL ) as "%3"."%3", "o"."open_auction_id" NOT NULL ]
 | | | | | ) [ ("b2"."id" NOT NULL UNIQUE HASHCOL ) = ("%3"."%3") ]
 | | | | ) [ "%4"."%4" NOT NULL, "o"."open_auction_id" NOT NULL as "%6"."%6" ]
 | | | ) [ ("o"."open_auction_id" NOT NULL) * = ("%6"."%6" NOT NULL) ]

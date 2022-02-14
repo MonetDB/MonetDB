@@ -3750,6 +3750,7 @@ BBPbackup(BAT *b, bool subcommit)
 	long_str nme;
 	const char *s = BBP_physical(b->batCacheid);
 	size_t slen;
+	bool locked = false;
 
 	if (BBPprepare(subcommit) != GDK_SUCCEED) {
 		return GDK_FAIL;
@@ -3770,6 +3771,8 @@ BBPbackup(BAT *b, bool subcommit)
 	memcpy(nme, s, slen + 1);
 	srcdir[s - srcdir] = 0;
 
+	MT_lock_set(&b->theaplock);
+	locked = true;
 	if (b->ttype != TYPE_void &&
 	    do_backup(srcdir, nme, gettailname(b), b->theap,
 		      b->batDirtydesc || b->theap->dirty,
@@ -3780,9 +3783,12 @@ BBPbackup(BAT *b, bool subcommit)
 		      b->batDirtydesc || b->tvheap->dirty,
 		      subcommit) != GDK_SUCCEED)
 		goto fail;
+	MT_lock_unset(&b->theaplock);
 	GDKfree(srcdir);
 	return GDK_SUCCEED;
   fail:
+	if (locked)
+		MT_lock_unset(&b->theaplock);
 	if(srcdir)
 		GDKfree(srcdir);
 	return GDK_FAIL;
