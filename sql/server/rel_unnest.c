@@ -1077,6 +1077,7 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 		rel->r = rel_dup(r->l);
 		rel = rel_select(sql->sa, rel, NULL);
 		rel->exps = !cp?exps:exps_copy(sql, exps);
+		set_processed(rel);
 		rel_destroy(r);
 	}
 	return rel;
@@ -1242,6 +1243,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 			if (list_length(sexps)) {
 				r = rel_select(sql->sa, r, NULL);
 				r->exps = sexps;
+				set_processed(r);
 			}
 			return r;
 		}
@@ -1891,6 +1893,7 @@ not_anyequal_helper(visitor *v, sql_rel *rel)
 	if (is_innerjoin(rel->op) && exps_have_anyequal(rel->exps, NOT_ANYEQUAL)) {
 		sql_rel *nrel = rel_select(v->sql->sa, rel, NULL);
 		nrel->exps = rel->exps;
+		set_processed(nrel);
 		rel->exps = NULL;
 		rel = nrel;
 		v->changes++;
@@ -2308,10 +2311,12 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 					set_processed(rel);
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
+					set_processed(l);
 					if (!(l = rewrite_or_exp(v, l)))
 						return NULL;
 					r = rel_select(v->sql->sa, r, NULL);
 					r->exps = e->r;
+					set_processed(r);
 					if (!(r = rewrite_or_exp(v, r)))
 						return NULL;
 					if (!(rel = rel_setop_check_types(v->sql, l, r, exps_copy(v->sql, exps), exps_copy(v->sql, exps), op_union)))
@@ -3105,7 +3110,7 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
-		sql_rel *j = rel->l;
+		sql_rel *j = rel->l, *jl = j->l, *ojl = jl;
 		int needed = 0, changed = 0;
 
 		if (!j || (!is_join(j->op) && !is_semi(j->op)) || !list_empty(j->exps))
@@ -3117,13 +3122,10 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 			sql_subfunc *sf = e->f;
 
 			if (is_func(e->type) && is_anyequal_func(sf)) {
-				if (exp_card(e) > CARD_ATOM && rel_has_all_exps(j->l, e->l)) {
-					sql_rel *l = j->l;
-					if (!is_select(l->op) || rel_is_ref(l)) {
-						set_processed(l);
-						j->l = l = rel_select(v->sql->sa, j->l, NULL);
-					}
-					rel_select_add_exp(v->sql->sa, l, e);
+				if (exp_card(e) > CARD_ATOM && rel_has_all_exps(jl, e->l)) {
+					if (!is_select(jl->op) || rel_is_ref(jl))
+						j->l = jl = rel_select(v->sql->sa, jl, NULL);
+					rel_select_add_exp(v->sql->sa, jl, e);
 					list_remove_node(rel->exps, NULL, n);
 					changed = 1;
 					v->changes++;
@@ -3133,6 +3135,8 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 			}
 			n = next;
 		}
+		if (ojl != jl)
+			set_processed(jl);
 		if (changed && !(j->l = rewrite_join2semi(v, j->l)))
 			return NULL;
 		if (!needed)
@@ -3182,9 +3186,9 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 		}
 		v->changes++;
 		if (list_length(sexps)) {
-			j->l = rel_select(v->sql->sa, j->l, NULL);
-			j = j->l;
-			j->exps = sexps;
+			sql_rel *jl = j->l = rel_select(v->sql->sa, j->l, NULL);
+			set_processed(jl);
+			jl->exps = sexps;
 		}
 		rel = try_remove_empty_select(v, rel);
 	}
@@ -3366,6 +3370,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			exp_set_freevar(v->sql, cond, lsq);
 			set_processed(lsq);
 			lsq = rel_select(v->sql->sa, lsq, exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 1), cmp_equal));
+			set_processed(lsq);
 			if (exp_has_rel(else_exp)) {
 				rsq = exp_rel_get_rel(v->sql->sa, else_exp);
 				else_exp = exp_rel_update_exp(v->sql, else_exp);
@@ -3380,16 +3385,9 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			//not_cond = exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 0), cmp_equal);
 			not_cond = exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 1), cmp_notequal);
 			set_semantics(not_cond); /* also compare nulls */
-
-			/*
-			cond = exp_copy(v->sql, cond);
-			cond_is_null = exp_compare(v->sql->sa, cond, exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(cond), NULL)), cmp_equal);
-			set_has_no_nil(cond_is_null);
-			set_semantics(cond_is_null);
-			*/
 			set_processed(rsq);
-			//rsq = rel_select(v->sql->sa, rsq, exp_or(v->sql->sa, list_append(new_exp_list(v->sql->sa), not_cond), list_append(new_exp_list(v->sql->sa), cond_is_null), 0));
 			rsq = rel_select(v->sql->sa, rsq, not_cond);
+			set_processed(rsq);
 			usq = rel_setop(v->sql->sa, lsq, rsq, op_union);
 			rel_setop_set_exps(v->sql, usq, append(sa_list(v->sql->sa), exp_ref(v->sql, e)), false);
 			if (single)
