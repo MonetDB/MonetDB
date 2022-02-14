@@ -80,6 +80,19 @@
 #define __warn_unused_result__
 #endif
 
+/* unreachable code */
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#elif defined(__clang__) || defined(__INTEL_COMPILER)
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#elif defined(_MSC_VER)
+#define MT_UNREACHABLE()	do { assert(0); __assume(0); } while (0)
+#else
+/* we don't know how to tell the compiler, so call a function that
+ * doesn't return */
+#define MT_UNREACHABLE()	do { assert(0); GDKfatal("Unreachable C code path reached"); } while (0)
+#endif
+
 /* also see gdk.h for these */
 #define THRDMASK	(1)
 #define TEMMASK		(1<<10)

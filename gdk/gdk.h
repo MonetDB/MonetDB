@@ -1626,10 +1626,6 @@ gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log
 
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
-	/*
-gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-	*/
 gdk_export void GDKclrerr(void);
 
 
@@ -1675,6 +1671,8 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 		((uint64_t *) b->theap->base)[p] = (uint64_t) d;
 		break;
 #endif
+	default:
+		MT_UNREACHABLE();
 	}
 	return GDK_SUCCEED;
 }

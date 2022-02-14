@@ -1511,7 +1511,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			ptr _ptr;
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
-			default:	/* only three or four cases possible */
+			case 1:
 				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
 				break;
 			case 2:
@@ -1525,6 +1525,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				_d = (var_t) * (uint64_t *) _ptr;
 				break;
 #endif
+			default:
+				MT_UNREACHABLE();
 			}
 			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED) {
 				MT_rwlock_wrunlock(&b->thashlock);
@@ -1549,7 +1551,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
-			default:	/* only three or four cases possible */
+			case 1:
 				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
 				break;
 			case 2:
@@ -1563,6 +1565,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				* (uint64_t *) _ptr = (uint64_t) _d;
 				break;
 #endif
+			default:
+				MT_UNREACHABLE();
 			}
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			mskSetVal(b, p, * (msk *) t);
