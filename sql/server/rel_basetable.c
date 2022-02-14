@@ -15,14 +15,14 @@
 #include "sql_privileges.h"
 
 #define USED_LEN(nr) ((nr+31)/32)
-#define rel_base_set_used(b,nr) b->used[(nr)/32] |= (1<<((nr)%32))
-#define rel_base_is_used(b,nr) ((b->used[(nr)/32]&(1<<((nr)%32))) != 0)
+#define rel_base_set_used(b,nr) b->used[(nr)/32] |= (1U<<((nr)%32))
+#define rel_base_is_used(b,nr) ((b->used[(nr)/32]&(1U<<((nr)%32))) != 0)
 
 typedef struct rel_base_t {
 	sql_table *mt;
 	char *name;
 	int disallowed;	/* ie check per column */
-	int used[FLEXIBLE_ARRAY_MEMBER];
+	uint32_t used[FLEXIBLE_ARRAY_MEMBER];
 } rel_base_t;
 
 void
@@ -90,7 +90,7 @@ rel_base_use_all( mvc *sql, sql_rel *rel)
 	} else {
 		int len = USED_LEN(ol_length(t->columns) + 1 + ol_length(t->idxs));
 		for (int i = 0; i < len; i++)
-			ba->used[i] = ~0;
+			ba->used[i] = ~0U;
 	}
 }
 
@@ -127,7 +127,7 @@ rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out)
 
 	assert(is_basetable(in->op) && is_basetable(out->op));
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
-	size_t bsize = sizeof(rel_base_t) + sizeof(int)*USED_LEN(end);
+	size_t bsize = sizeof(rel_base_t) + sizeof(uint32_t)*USED_LEN(end);
 	rel_base_t *nba = (rel_base_t*)sa_alloc(sa, bsize);
 
 	memcpy(nba, ba, bsize);
@@ -553,25 +553,4 @@ rel_base_get_mergetable(sql_rel *rel)
 	rel_base_t *ba = rel->r;
 
 	return ba ? ba->mt : NULL;
-}
-
-sql_rel *
-rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
-{
-	/* in order to not expose 'rel_destroy_', add a reference increment,
-	   so 'rel' references stay the same */
-	rel_dup(rel);
-	rel_destroy(rel);
-	assert(is_basetable(bt->op));
-
-	set_processed(rel);
-	rel->l = bt->l;
-	rel->r = bt->r;
-	rel->attr = NULL;
-	rel->op = op_basetable;
-	rel->exps = bt->exps;
-	rel->card = CARD_MULTI;
-	rel->flag = 0;
-	rel->nrcols = bt->nrcols;
-	return rel;
 }

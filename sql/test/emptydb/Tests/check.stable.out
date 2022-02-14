@@ -6205,8 +6205,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	name,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 13,	0,	0,	1,	1,	1,	1,	1,	5 # length
-% .%21 # table_name
-% %21 # name
+% .%20 # table_name
+% %20 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -6780,8 +6780,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	name # name
 % char,	bigint,	varchar # type
 % 26,	1,	0 # length
-% .%24,	.%21,	.statistics # table_name
-% %24,	%21,	column_id # name
+% .%24,	.%20,	.statistics # table_name
+% %24,	%20,	column_id # name
 % char,	bigint,	int # type
 % 24,	1,	1 # length
 % .%3,	.%2,	.%1,	.%1,	.%1 # table_name

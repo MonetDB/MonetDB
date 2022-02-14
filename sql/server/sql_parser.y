@@ -3103,8 +3103,11 @@ joined_table:
  |  table_ref CROSS JOIN table_ref
 	{ dlist *l = L();
 	  append_symbol(l, $1);
+	  append_int(l, 0);
+	  append_int(l, 4);
 	  append_symbol(l, $4);
-	  $$ = _symbol_create_list( SQL_CROSS, l); }
+	  append_symbol(l, NULL);
+	  $$ = _symbol_create_list( SQL_JOIN, l); }
  |  table_ref join_type JOIN table_ref join_spec
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -6257,7 +6260,6 @@ char *token2string(tokens token)
 	SQL(CREATE_TYPE);
 	SQL(CREATE_USER);
 	SQL(CREATE_VIEW);
-	SQL(CROSS);
 	SQL(CUBE);
 	SQL(CURRENT_ROW);
 	SQL(CYCLE);
