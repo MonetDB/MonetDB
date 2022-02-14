@@ -48,7 +48,7 @@ PyObject *PyCodeObject_ParseString(char *string, char **msg)
 	}
 	code_copy[j] = '\0';
 	tuple = PyTuple_New(1);
-	mystr = PyString_FromStringAndSize(
+	mystr = PyUnicode_FromStringAndSize(
 		code_copy,
 		j); // use FromStringAndSize because the string is not null-terminated
 	PyTuple_SetItem(tuple, 0, mystr);
