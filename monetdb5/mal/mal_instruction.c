@@ -1265,10 +1265,10 @@ addArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	if (p->argc == p->maxarg) {
 		pn = extendInstruction(mb, p);
 #ifndef NDEBUG
-               if (p != pn) {
-                       for (int i = mb->stop - 1; i >= 0; i--)
-                               assert(mb->stmt[i] != p);
-	       }
+		if (p != pn) {
+			for (int i = mb->stop - 1; i >= 0; i--)
+				assert(mb->stmt[i] != p);
+		}
 #endif
 		p = pn;
 		if (mb->errors)

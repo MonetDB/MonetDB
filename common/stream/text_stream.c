@@ -166,7 +166,8 @@ text_pump_out(inner_state_t *ist, pump_action action)
 	size_t dst_count = ist->dst_win.count;
 	size_t ncopy = src_count < dst_count ? src_count : dst_count;
 
-	memcpy(ist->dst_win.start, ist->src_win.start, ncopy);
+	if (ncopy > 0)
+		memcpy(ist->dst_win.start, ist->src_win.start, ncopy);
 	ist->dst_win.start += ncopy;
 	ist->dst_win.count -= ncopy;
 	ist->src_win.start += ncopy;

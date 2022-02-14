@@ -172,6 +172,37 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE rt3 (c0 DATE)
+
+statement ok rowcount 3
+INSERT INTO rt3 VALUES (NULL),(NULL),(NULL)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','rt3','c0',false)
+
+query I nosort
+SELECT 1 FROM rt3 WHERE rt3.c0 <> DATE '2000-12-14'
+----
+
+query I nosort
+SELECT 1 FROM rt3 WHERE DATE '2000-12-14' <> (SELECT rt3.c0 FROM (SELECT 1) vx(x))
+----
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(DATE '2000-12-14' <> (SELECT rt3.c0 FROM (SELECT 1) vx(x)) AS INT) as count FROM rt3) as res
+----
+NULL
+
+statement ok
+DROP TABLE rt3
+
+statement ok
+START TRANSACTION
+
+statement ok
 DROP ALL PROCEDURE "sys"."dict_compress"
 
 statement ok

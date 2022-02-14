@@ -21,7 +21,6 @@ as count FROM v2) as res
 ----
 1
 
-# this one is right
 query I nosort
 SELECT 1 FROM v2 WHERE (SELECT 'a' FROM v1) <> ALL((SELECT 'b' FROM t2) UNION (SELECT 'c' FROM v1))
 ----
@@ -59,7 +58,7 @@ START TRANSACTION
 statement ok
 CREATE VIEW v1(vc0, vc1, vc2) AS (WITH ctel0n0(ct0n0,ct0n1) AS (VALUES (4, 5)) SELECT 1, 2, 3 FROM ctel0n0)
 
-query III nosort
+query III rowsort
 SELECT * FROM v1
 ----
 1
@@ -80,7 +79,6 @@ select 1 from mct20 inner join (select x.x from (values (true)) x(x)) as nort0(n
 on true and greatest(((select nort0.norc0) intersect (select true)), true)
 ----
 
-# these are right
 query I nosort
 select rank() over (order by ((select mct20.c0) union all (select interval '1' day))) from mct20
 ----
@@ -195,7 +193,6 @@ SELECT vx.vc2 FROM vx JOIN (VALUES (1)) AS x(x) ON TRUE WHERE vx.vc0 >= ALL(SELE
 ----
 2
 
-# this one is right
 query I nosort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(vx.vc0 >= ALL(SELECT t0.c0 FROM t0) AND 1 >= ALL(SELECT vx.vc1 FROM t0) AS INT)
 as count FROM vx JOIN (VALUES (1)) AS x(x) ON TRUE) as res
@@ -220,7 +217,6 @@ SELECT vy.y FROM vy WHERE CAST(NOT EXISTS (SELECT 1 FROM vx WHERE vy.y) AS BOOLE
 0
 0
 
-# this one is right
 query I nosort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(CAST(NOT EXISTS (SELECT 1 FROM vx WHERE vy.y) AS BOOLEAN) AS INT) as count FROM vy) as res
 ----
@@ -239,6 +235,9 @@ statement ok rowcount 1
 MERGE INTO t0 USING (SELECT 1 FROM t0
 FULL OUTER JOIN (SELECT 1 FROM t0 AS w RIGHT OUTER JOIN (SELECT 1) AS z(z) ON EXISTS (SELECT 1 WHERE w.c0 > 0)) AS y(y)
 ON y.y = y.y) AS x(x) ON TRUE WHEN NOT MATCHED THEN INSERT (c0) VALUES (1)
+
+statement ok rowcount 1
+TRUNCATE t0
 
 statement ok
 CREATE TABLE rt0 (c0 INT)
@@ -272,6 +271,332 @@ SELECT 1 FROM vx WHERE vx.vc1 <> ALL(SELECT vx.vc1 FROM t0) AND (SELECT FALSE FR
 
 query I nosort
 SELECT 1 FROM (SELECT DISTINCT c0 FROM rt0) vt(vc1) WHERE (1) IN (SELECT 2 FROM rt0 GROUP BY rt0.c0, vt.vc1)
+----
+
+statement ok
+CREATE TABLE integers(i INTEGER)
+
+statement ok rowcount 4
+INSERT INTO integers VALUES (1), (2), (3), (NULL)
+
+query I rowsort
+SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 JOIN generate_series(1, 3, 1) tbl(i) ON i1.i=tbl.i) FROM integers
+----
+0
+0
+1
+1
+
+query I rowsort
+SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 LEFT JOIN generate_series(1, 3, 1) tbl(i) ON i1.i=tbl.i) FROM integers
+----
+0
+1
+1
+1
+
+query I rowsort
+SELECT i IN (SELECT i1.i FROM generate_series(1, 3, 1) tbl(i) RIGHT JOIN (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 ON i1.i=tbl.i) FROM integers
+----
+0
+1
+1
+1
+
+query I rowsort
+SELECT i IN (SELECT i1.i FROM (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 RIGHT JOIN generate_series(1, 3, 1) tbl(i) ON i1.i=tbl.i) FROM integers
+----
+1
+1
+NULL
+NULL
+
+query I rowsort
+SELECT i IN (SELECT i1.i FROM generate_series(1, 3, 1) tbl(i) LEFT JOIN (SELECT * FROM integers i1 WHERE i1.i=integers.i) i1 ON i1.i=tbl.i) FROM integers
+----
+1
+1
+NULL
+NULL
+
+query I nosort
+SELECT 1 FROM rt0 JOIN ((SELECT 2) EXCEPT (SELECT 3)) AS x(x) ON TRUE
+----
+
+query I nosort
+SELECT 1 FROM rt0 JOIN (VALUES (1),(2),(3)) AS x(x) ON TRUE
+----
+
+query I nosort
+SELECT 1 FROM rt0 JOIN LATERAL ((SELECT 2) EXCEPT (SELECT 3)) AS x(x) ON TRUE
+----
+
+query I nosort
+SELECT 1 FROM rt0 JOIN LATERAL (VALUES (1),(2),(3)) AS x(x) ON TRUE
+----
+
+query I nosort
+SELECT 1 FROM rt0 JOIN LATERAL (with x(x) as (select rt0.c0) (select x from x)) AS x(x) ON TRUE
+----
+
+statement ok rowcount 4
+INSERT INTO rt0 VALUES (1), (2), (3), (NULL)
+
+query I rowsort
+SELECT rt0.c0 FROM rt0 JOIN LATERAL (with x(x) as (select rt0.c0) (select rt0.c0 + x.x from x)) AS x(x) ON TRUE
+----
+1
+2
+3
+NULL
+
+query I rowsort
+SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL (with x(x) as (select rt0.c0) (select rt0.c0 + x.x from x)) AS x(x)
+----
+1
+2
+3
+NULL
+
+query I nosort
+SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL ((SELECT rt0.c0 + 2) INTERSECT (SELECT rt0.c0 - 2)) AS x(x)
+----
+NULL
+
+query I rowsort
+SELECT rt0.c0 FROM rt0 CROSS JOIN LATERAL (VALUES (rt0.c0), (4)) AS x(x)
+----
+1
+1
+2
+2
+3
+3
+NULL
+NULL
+
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM rt0 JOIN ((SELECT 1) UNION ALL (SELECT 2)) AS rt0(c0) ON TRUE
+
+statement ok
+ROLLBACK
+
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM (SELECT 1) rt0(c0) JOIN ((SELECT 1) UNION ALL (SELECT 2)) AS rt0(c0) ON TRUE
+
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM (SELECT 1) rt0(c0) JOIN LATERAL ((SELECT 1) UNION ALL (SELECT 2)) AS rt0(c0) ON TRUE
+
+statement error 42000!SELECT: identifier 'c0' ambiguous
+SELECT c0 FROM (SELECT 1) rt1(c0) JOIN ((SELECT 1) EXCEPT (SELECT 2)) AS rt0(c0) ON TRUE
+
+statement error 42000!SELECT: identifier 'c0' ambiguous
+SELECT c0 FROM (SELECT 1) rt1(c0) JOIN LATERAL ((SELECT 1) EXCEPT (SELECT 2)) AS rt0(c0) ON TRUE
+
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM (SELECT 1) rt0(c0) CROSS JOIN (WITH x(x) AS (SELECT 2) SELECT 3 FROM x) AS rt0(c1)
+
+statement error 42000!SELECT: relation name "rt0" specified more than once
+SELECT 1 FROM (SELECT 1) rt0(c0) CROSS JOIN LATERAL (WITH x(x) AS (SELECT 2) SELECT 3 FROM x) AS rt0(c1)
+
+statement error 42000!SELECT: identifier 'c0' ambiguous
+SELECT c0 FROM (SELECT 1) rt1(c0) CROSS JOIN (WITH x(x) AS (SELECT 2) SELECT 3) AS rt0(c0)
+
+statement error 42000!SELECT: identifier 'c0' ambiguous
+SELECT c0 FROM (SELECT 1) rt1(c0) CROSS JOIN LATERAL (WITH x(x) AS (SELECT 2) SELECT 3) AS rt0(c0)
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rt1 (c0 VARCHAR(32))
+
+statement ok rowcount 1
+INSERT INTO rt1 VALUES ('abc')
+
+query I nosort
+SELECT 'c' <> ANY(VALUES (rt1.c0), ('b')) FROM rt1
+----
+1
+
+statement ok
+CREATE TABLE t2 (c0 INT)
+
+statement ok rowcount 2
+INSERT INTO t2 VALUES (1), (2)
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('true') FROM t2)
+= 'true' as int)) > 0) = FALSE AS INT) as count FROM t2) as res
+----
+0
+
+query I nosort
+SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(t2.c0) > 0) FROM t2
+----
+1
+
+query I nosort
+SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 as int)) > 0) FROM t2
+----
+1
+
+query I nosort
+SELECT EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('true') FROM t2) = 'true' as int)) > 0) FROM t2
+----
+1
+
+query I nosort
+SELECT t2.c0 FROM t2 WHERE EXISTS (SELECT 1 WHERE FALSE HAVING max((SELECT min(1) FROM t2)) > 0)
+----
+
+statement ok
+SAVEPOINT sp1
+
+statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
+SELECT t2.c0 FROM t2 WHERE EXISTS (SELECT 1 WHERE FALSE HAVING max(cast(3 > t2.c0 OR (SELECT min('true') FROM t2) = 'true' as int)) > 0)
+
+statement ok
+ROLLBACK TO SAVEPOINT sp1
+
+statement ok
+CREATE TABLE rt2 ("c0" INTERVAL DAY)
+
+statement ok rowcount 2
+INSERT INTO rt2 VALUES (INTERVAL '0' SECOND),(INTERVAL '0' SECOND)
+
+statement ok
+SAVEPOINT sp2
+
+statement error
+SELECT TRUE FROM rt2 AS x RIGHT OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
+
+statement ok
+ROLLBACK TO SAVEPOINT sp2
+
+statement error
+SELECT TRUE FROM rt2 AS x FULL OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
+
+statement ok
+ROLLBACK TO SAVEPOINT sp2
+
+query I nosort
+SELECT TRUE FROM rt2 AS x JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT TRUE FROM rt2 AS x CROSS JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z)
+----
+1
+1
+1
+1
+
+query I nosort
+SELECT TRUE FROM rt2 AS x LEFT OUTER JOIN LATERAL (SELECT x.c0, TRUE FROM rt2) AS y(y,z) ON y.z
+----
+1
+1
+1
+1
+
+statement ok
+create table t0 (c0 int)
+
+query I nosort
+SELECT (SELECT FALSE FROM t0 LEFT OUTER JOIN (VALUES (y.z), (y.z)) AS x(x) ON y.y = y.y) FROM t0
+JOIN (VALUES ('b', 3)) AS y(y,z) ON y.y >= ANY(VALUES (y.y))
+----
+
+statement ok
+CREATE TABLE rt3 (c0 DATE)
+
+statement ok rowcount 4
+INSERT INTO rt3 VALUES (DATE '4153-10-28'),(DATE '2471-08-17'),(DATE '2022-02-08'),(DATE '1970-01-20')
+
+query T nosort
+SELECT (SELECT DATE '2011-10-01' FROM rt3 y RIGHT OUTER JOIN (VALUES (DATE '2010-10-01'), (z.c0)) AS x(x) ON 
+length('a') > 0 WHERE rt3.c0 = DATE '2012-10-01') FROM rt3, rt3 z
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+statement ok
+CREATE TABLE t1 (c0 INT)
+
+statement ok
+CREATE TABLE t3 (c0 BOOLEAN)
+
+query I nosort
+SELECT EXISTS (SELECT 1 FROM t0 FULL OUTER JOIN (SELECT 3) AS x(x) ON t3.c0 CROSS JOIN (SELECT t3.c0) AS y(y) WHERE y.y) FROM t3
+----
+
+query I nosort
+SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT 1 FROM t1 WHERE (SELECT t1.c0 FROM t1) NOT IN (COALESCE(t1.c0, t0.c0))) AS x(x)
+----
+
+statement ok
+CREATE TABLE rt4 (c0 INT NOT NULL, CONSTRAINT rt4_c0_unique UNIQUE (c0))
+
+statement ok rowcount 1
+INSERT INTO rt4 VALUES (1)
+
+query I nosort
+SELECT rt4.c0 FROM rt4 WHERE NOT EXISTS ((SELECT rt4.c0 FROM t1) INTERSECT (SELECT rt4.c0))
+----
+1
+
+query I nosort
+SELECT rt4.c0 FROM rt4 WHERE NOT EXISTS ((SELECT rt4.c0 FROM t1) INTERSECT ALL (SELECT rt4.c0))
+----
+1
+
+query I nosort
+SELECT rt4.c0 FROM rt4 WHERE NOT EXISTS ((SELECT rt4.c0) INTERSECT (SELECT rt4.c0))
+----
+
+query I nosort
+SELECT rt4.c0 FROM rt4 WHERE NOT EXISTS ((SELECT rt4.c0) INTERSECT ALL (SELECT rt4.c0))
+----
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT EXISTS ((SELECT rt4.c0 FROM t1) INTERSECT (SELECT rt4.c0)) AS INT) as count FROM rt4) as res
+----
+1
+
+query I nosort
+SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (VALUES (t0.c0)) AS x(x) ON t0.c0 < ALL(SELECT 1)
+----
+
+query I nosort
+SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (SELECT 2, (VALUES (3), (t0.c0))) AS x(x,y) ON x.x IN (SELECT x.x)
+----
+
+query I nosort
+SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (SELECT DISTINCT 3 FROM t1 AS tx JOIN (SELECT 1) AS y(y)
+ON tx.c0 > 2 OR t0.c0 > 3) AS x(x) ON (SELECT TRUE FROM t1) OR FALSE
+----
+
+query I nosort
+SELECT 1 FROM (SELECT TRUE) AS vx(x), t3 WHERE vx.x AND greatest(t3.c0, EXISTS (SELECT 1 WHERE vx.x))
 ----
 
 statement ok
