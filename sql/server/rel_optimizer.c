@@ -1875,6 +1875,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ul->exps = list_distinct(list_merge(ul->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
 			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(v->sql, r->r);
+			set_processed(ul);
 			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
 			set_processed(ul);
 
@@ -1884,6 +1885,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ur->exps = list_distinct(list_merge(ur->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
 			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(v->sql, r->r);
+			set_processed(ur);
 			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
 			set_processed(ur);
 
@@ -3995,9 +3997,11 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			ul = rel_project(v->sql->sa, ul, NULL);
 			ul->exps = exps_copy(v->sql, ou->exps);
 			rel_rename_exps(v->sql, ou->exps, ul->exps);
+			set_processed(ul);
 			ur = rel_project(v->sql->sa, ur, NULL);
 			ur->exps = exps_copy(v->sql, ou->exps);
 			rel_rename_exps(v->sql, ou->exps, ur->exps);
+			set_processed(ur);
 		}
 
 		if (g->r && list_length(g->r) > 0) {
@@ -4948,8 +4952,10 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			if (l != ol) {
 				ll = rel_project(v->sql->sa, ll, NULL);
 				ll->exps = exps_copy(v->sql, ol->exps);
+				set_processed(ll);
 				lr = rel_project(v->sql->sa, lr, NULL);
 				lr->exps = exps_copy(v->sql, ol->exps);
+				set_processed(lr);
 			}
 			nl = rel_crossproduct(v->sql->sa, ll, rel_dup(or), rel->op);
 			nr = rel_crossproduct(v->sql->sa, lr, rel_dup(or), rel->op);
@@ -4979,8 +4985,10 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			if (l != ol) {
 				ll = rel_project(v->sql->sa, ll, NULL);
 				ll->exps = exps_copy(v->sql, ol->exps);
+				set_processed(ll);
 				lr = rel_project(v->sql->sa, lr, NULL);
 				lr->exps = exps_copy(v->sql, ol->exps);
+				set_processed(lr);
 			}
 			if (!is_project(rl->op))
 				rl = rel_project(v->sql->sa, rl,
@@ -4993,8 +5001,10 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			if (r != or) {
 				rl = rel_project(v->sql->sa, rl, NULL);
 				rl->exps = exps_copy(v->sql, or->exps);
+				set_processed(rl);
 				rr = rel_project(v->sql->sa, rr, NULL);
 				rr->exps = exps_copy(v->sql, or->exps);
+				set_processed(rr);
 			}
 			nl = rel_crossproduct(v->sql->sa, ll, rl, rel->op);
 			nr = rel_crossproduct(v->sql->sa, lr, rr, rel->op);
@@ -5024,8 +5034,10 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			if (r != or) {
 				rl = rel_project(v->sql->sa, rl, NULL);
 				rl->exps = exps_copy(v->sql, or->exps);
+				set_processed(rl);
 				rr = rel_project(v->sql->sa, rr, NULL);
 				rr->exps = exps_copy(v->sql, or->exps);
+				set_processed(rr);
 			}
 			nl = rel_crossproduct(v->sql->sa, rel_dup(ol), rl, rel->op);
 			nr = rel_crossproduct(v->sql->sa, rel_dup(ol), rr, rel->op);
@@ -5075,6 +5087,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 				if (r != or) {
 					rl = rel_project(v->sql->sa, rl, NULL);
 					rl->exps = exps_copy(v->sql, or->exps);
+					set_processed(rl);
 				}
 				nl = rel_crossproduct(v->sql->sa, rel_dup(ol), rl, rel->op);
 				nl->exps = exps_copy(v->sql, exps);
@@ -5094,6 +5107,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 				if (r != or) {
 					rr = rel_project(v->sql->sa, rr, NULL);
 					rr->exps = exps_copy(v->sql, or->exps);
+					set_processed(rr);
 				}
 				nl = rel_crossproduct(v->sql->sa, rel_dup(ol), rr, rel->op);
 				nl->exps = exps_copy(v->sql, exps);
@@ -5570,7 +5584,9 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 			set_distinct(ur);
 
 		ul->exps = exps_copy(v->sql, p->exps);
+		set_processed(ul);
 		ur->exps = exps_copy(v->sql, p->exps);
+		set_processed(ur);
 
 		rel = rel_inplace_setop(v->sql, rel, ul, ur, op_union,
 			rel_projections(v->sql, rel, NULL, 1, 1));
@@ -8024,6 +8040,7 @@ rel_split_project(visitor *v, sql_rel *rel, int top)
 			sql_rel *l = rel_project(v->sql->sa, rel->l, NULL);
 			rel->l = l;
 			l->exps = rel->exps;
+			set_processed(l);
 			rel->exps = exps;
 		}
 	}
@@ -8142,6 +8159,7 @@ rel_split_select(visitor *v, sql_rel *rel, int top)
 			sql_rel *l = rel_project(v->sql->sa, rel->l, NULL);
 			rel->l = l;
 			l->exps = rel->exps;
+			set_processed(l);
 			rel->exps = exps;
 		}
 	}
