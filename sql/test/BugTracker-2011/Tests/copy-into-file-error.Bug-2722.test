@@ -1,19 +1,19 @@
 statement ok
 create table bug2722 (time timestamp, val int, fk int)
 
-statement ok
+statement ok rowcount 1
 insert into bug2722 values (current_timestamp(), 1, 1)
 
-statement ok
+statement ok rowcount 1
 insert into bug2722 values (current_timestamp(), 2, 2)
 
-statement ok
+statement ok rowcount 1
 insert into bug2722 values (current_timestamp(), 3, 1)
 
-statement ok
+statement ok rowcount 1
 insert into bug2722 values (current_timestamp(), 4, 2)
 
-statement ok
+statement ok rowcount 2
 copy select val from bug2722 where fk=2 order by time into stdout using delimiters ' ' , E'\n'
 
 statement ok
