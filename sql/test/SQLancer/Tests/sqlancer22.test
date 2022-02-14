@@ -595,5 +595,9 @@ SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (SELECT DISTINCT 3 FROM t1 AS tx JOIN (
 ON tx.c0 > 2 OR t0.c0 > 3) AS x(x) ON (SELECT TRUE FROM t1) OR FALSE
 ----
 
+query I nosort
+SELECT 1 FROM (SELECT TRUE) AS vx(x), t3 WHERE vx.x AND greatest(t3.c0, EXISTS (SELECT 1 WHERE vx.x))
+----
+
 statement ok
 ROLLBACK
