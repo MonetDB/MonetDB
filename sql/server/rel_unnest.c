@@ -2260,82 +2260,11 @@ has_or(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 }
 
 static bool
-exps_has_or_exp(mvc *sql, list *exps)
+exps_have_or_exp(mvc *sql, list *exps)
 {
 	visitor v = { .sql = sql, .data = NULL };
 	exps_exp_visitor_topdown(&v, NULL, exps, 0, &has_or, true);
 	return v.data != NULL;
-}
-
-/* remove or expressions with subqueries */
-static sql_rel *
-rewrite_or_exp(visitor *v, sql_rel *rel)
-{
-	if (mvc_highwater(v->sql))
-		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-
-	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
-		for(node *n=rel->exps->h; n; n=n->next) {
-			sql_exp *e = n->data, *id;
-
-			if (is_compare(e->type) && e->flag == cmp_or) {
-				/* check for exp_is_rel */
-				if (exps_have_rel_exp(e->l) || exps_have_rel_exp(e->r)) {
-					/* rewrite into setop */
-					list_remove_node(rel->exps, NULL, n); /* remove or expression */
-					if (is_select(rel->op) && list_empty(rel->exps) && !(rel_is_ref(rel))) { /* remove empty select if that's the case */
-						sql_rel *l = rel->l;
-						rel->l = NULL;
-						rel_destroy(rel);
-						rel = l;
-					}
-					if (!(rel = rel_add_identity(v->sql, rel, &id))) /* identity function needed */
-						return NULL;
-					const char *idrname = exp_relname(id), *idname = exp_name(id);
-					list *tids = NULL, *exps = rel_projections(v->sql, rel, NULL, 1, 1);
-
-					for( node *n = exps->h ; n ; ) {
-						node *next = n->next;
-						sql_exp *e = n->data;
-
-						if (strcmp(exp_name(e), TID) == 0) { /* remove TID references and later restore them with identity function references */
-							if (!tids)
-								tids = sa_list(v->sql->sa);
-							list_append(tids, exp_alias(v->sql->sa, exp_relname(e), TID, idrname, idname, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
-							list_remove_node(exps, NULL, n);
-						}
-						n = next;
-					}
-
-					sql_rel *l = rel, *r = rel_dup(rel);
-					set_processed(rel);
-					l = rel_select(v->sql->sa, l, NULL);
-					l->exps = e->l;
-					set_processed(l);
-					if (!(l = rewrite_or_exp(v, l)))
-						return NULL;
-					r = rel_select(v->sql->sa, r, NULL);
-					r->exps = e->r;
-					set_processed(r);
-					if (!(r = rewrite_or_exp(v, r)))
-						return NULL;
-					if (!(rel = rel_setop_check_types(v->sql, l, r, exps_copy(v->sql, exps), exps_copy(v->sql, exps), op_union)))
-						return NULL;
-					rel_setop_set_exps(v->sql, rel, exps, false);
-					set_processed(rel);
-					rel = rel_distinct(rel);
-					if (tids) /* restore TIDs with identity function references */
-						rel = rel_project(v->sql->sa, rel, list_merge(rel_projections(v->sql, rel, NULL, 1, 1), tids, NULL));
-					v->changes++;
-					return rel;
-				}
-			}
-		}
-		if (is_join(rel->op) && list_empty(rel->exps))
-			rel->exps = NULL; /* crossproduct */
-		return try_remove_empty_select(v, rel);
-	}
-	return rel;
 }
 
 static inline sql_rel *
@@ -3818,7 +3747,7 @@ rewrite_outer2inner_union_(visitor *v, sql_rel *rel)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (exps_have_anyequal(rel->exps, ANYEQUAL|NOT_ANYEQUAL) || (exps_have_rel_exp(rel->exps) && exps_has_or_exp(v->sql, rel->exps))))
+	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (exps_have_anyequal(rel->exps, ANYEQUAL|NOT_ANYEQUAL) || (exps_have_freevar(v->sql, rel->exps) && exps_have_rel_exp(rel->exps) && exps_have_or_exp(v->sql, rel->exps))))
 		return rewrite_outer2inner_union_(v, rel);
 	if (!is_dependent(rel) && is_outerjoin(rel->op) && rel->flag != MERGE_LEFT && !list_empty(rel->exps) && (((/*is_left(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
 		((/*is_right(rel->op) ||*/ is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps)))
@@ -3917,9 +3846,7 @@ rel_unnest_simplify(visitor *v, sql_rel *rel)
 	if (rel)
 		rel = rewrite_split_select_exps(v, rel); /* has to run before rewrite_complex */
 	if (rel)
-		rel = rewrite_outer2inner_union(v, rel); /* has to run before rewrite_or_exp */
-	if (rel)
-		rel = rewrite_or_exp(v, rel);
+		rel = rewrite_outer2inner_union(v, rel);
 	if (rel)
 		rel = rewrite_aggregates(v, rel);
 	if (rel)
