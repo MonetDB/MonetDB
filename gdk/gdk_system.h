@@ -84,6 +84,9 @@
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
 #define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
 #elif defined(__clang__) || defined(__INTEL_COMPILER)
+#ifdef WIN32
+#define __builtin_unreachable()	GDKfatal("Unreachable C code path reached");
+#endif
 #define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
 #elif defined(_MSC_VER)
 #define MT_UNREACHABLE()	do { assert(0); __assume(0); } while (0)

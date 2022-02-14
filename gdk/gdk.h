@@ -343,6 +343,9 @@
 
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
+gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
@@ -1624,8 +1627,6 @@ gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log
 		      format, ##__VA_ARGS__)
 #define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
 
-gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
 gdk_export void GDKclrerr(void);
 
 
