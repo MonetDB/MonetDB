@@ -113,8 +113,7 @@ static sql_rel * rel_join_order(visitor *v, sql_rel *rel) ;
 static void
 get_relations(visitor *v, sql_rel *rel, list *rels)
 {
-	if (!rel_is_ref(rel) && rel->op == op_join && rel->exps == NULL) {
-		assert(list_empty(rel->attr));
+	if (list_empty(rel->attr) && !rel_is_ref(rel) && rel->op == op_join && rel->exps == NULL) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 
@@ -4523,7 +4522,7 @@ rel_push_join_exps_down(visitor *v, sql_rel *rel)
 	/* push select exps part of join expressions down */
 	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		int left = is_innerjoin(rel->op) || is_right(rel->op) || /*is_semi(rel->op)*/ rel->op == op_semi;
-		int right = is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op);
+		int right = is_innerjoin(rel->op) || is_left(rel->op) || /*is_semi(rel->op)*/ rel->op == op_semi;
 		sql_rel *jl = rel->l, *ojl = jl, *jr = rel->r, *ojr = jr;
 
 		set_processed(jl);
@@ -4532,14 +4531,13 @@ rel_push_join_exps_down(visitor *v, sql_rel *rel)
 			node *next = n->next;
 			sql_exp *e = n->data;
 
-			if (left && rel_rebind_exp(v->sql, jl, e)) { /* select expressions on left */
+			if (left && rel_rebind_exp(v->sql, jl, e) && e->flag != mark_notin && e->flag != mark_in) { /* select expressions on left */
 				if (!is_select(jl->op) || rel_is_ref(jl))
 					rel->l = jl = rel_select(v->sql->sa, jl, NULL);
 				rel_select_add_exp(v->sql->sa, jl, e);
 				list_remove_node(rel->exps, NULL, n);
 				v->changes++;
-			} else if (right && ((rel->op != op_anti && rel->op != op_left) || (e->flag != mark_notin && e->flag != mark_in)) &&
-					   rel_rebind_exp(v->sql, jr, e)) { /* select expressions on right */
+			} else if (right && rel_rebind_exp(v->sql, jr, e) && e->flag != mark_notin && e->flag != mark_in) { /* select expressions on right */
 				if (!is_select(jr->op) || rel_is_ref(jr))
 					rel->r = jr = rel_select(v->sql->sa, jr, NULL);
 				rel_select_add_exp(v->sql->sa, jr, e);
@@ -5355,7 +5353,7 @@ find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
 	/* generalize possibility : we need the visitor 'step' here */
 	if (rel_is_ref(rel)) /* if the join has multiple references, it's dangerous to convert it into a semijoin */
 		return NULL;
-	if (rel->op == op_join && !list_empty(rel->exps)) {
+	if (rel->op == op_join && !list_empty(rel->exps) && list_empty(rel->attr)) {
 		sql_rel *l = rel->l, *r = rel->r;
 		int foundr = NO_PROJECTION_FOUND, foundl = NO_PROJECTION_FOUND, found = NO_PROJECTION_FOUND;
 		bool ok = false;
@@ -5389,7 +5387,8 @@ find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
 
 		if ((c=find_candidate_join2semi(v, rel->l, swap)) != NULL ||
 		    (c=find_candidate_join2semi(v, rel->r, swap)) != NULL)
-			return c;
+			if (list_empty(c->attr))
+				return c;
 	}
 	if (is_topn(rel->op) || is_sample(rel->op))
 		return find_candidate_join2semi(v, rel->l, swap);
