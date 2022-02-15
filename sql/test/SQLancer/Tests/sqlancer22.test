@@ -641,6 +641,12 @@ query I nosort
 SELECT 1 FROM (values (1, 4), (3, 2)) x(x,y) WHERE greatest(FALSE, FALSE)
 ----
 
+query I nosort
+SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT TRUE) AS z(z) ON 1 = ANY(SELECT t0.c0 FROM (SELECT 3) x(x))
+AND (SELECT TRUE FROM (SELECT 4) x(x) FULL OUTER JOIN (SELECT 5) AS y(y) ON z.z)
+----
+1
+
 statement ok
 ROLLBACK
 
