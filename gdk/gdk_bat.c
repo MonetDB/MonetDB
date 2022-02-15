@@ -180,6 +180,28 @@ BATsetdims(BAT *b, uint16_t width)
 }
 
 const char *
+gettailnamebi(const BATiter *bi)
+{
+	if (bi->type == TYPE_str) {
+		switch (bi->width) {
+		case 1:
+			return "tail1";
+		case 2:
+			return "tail2";
+#if SIZEOF_VAR_T == 8
+		case 4:
+			return "tail4";
+#endif
+		case 8:
+			break;
+		default:
+			MT_UNREACHABLE();
+		}
+	}
+	return "tail";
+}
+
+const char *
 gettailname(const BAT *b)
 {
 	if (b->ttype == TYPE_str) {
@@ -192,8 +214,10 @@ gettailname(const BAT *b)
 		case 4:
 			return "tail4";
 #endif
-		default:
+		case 8:
 			break;
+		default:
+			MT_UNREACHABLE();
 		}
 	}
 	return "tail";
@@ -222,8 +246,10 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
 				      ".tail4", NULL);
 			return;
 #endif
-		default:
+		case 8:
 			break;
+		default:
+			MT_UNREACHABLE();
 		}
 	}
 	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
