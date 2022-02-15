@@ -599,5 +599,9 @@ query I nosort
 SELECT 1 FROM (SELECT TRUE) AS vx(x), t3 WHERE vx.x AND greatest(t3.c0, EXISTS (SELECT 1 WHERE vx.x))
 ----
 
+query I nosort
+SELECT (SELECT 1 FROM (VALUES (1),(2),(3)) z(z) FULL OUTER JOIN (VALUES (2, 3), (4, t0.c0)) AS x(x,y) ON z.z) FROM t0
+----
+
 statement ok
 ROLLBACK
