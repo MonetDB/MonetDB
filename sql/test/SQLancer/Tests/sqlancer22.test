@@ -623,6 +623,19 @@ select 1 where (2,3) in ((values (2, 3), (4, 5)))
 ----
 1
 
+query I nosort
+SELECT 1 FROM (values (1, 4), (3, (select 2))) x(x,y) WHERE greatest(FALSE, FALSE)
+----
+
+query I nosort
+SELECT 1 FROM (values (1, 4), (3, (select 2 where true))) x(x,y) WHERE greatest(FALSE, FALSE)
+----
+
+# this one is right
+query I nosort
+SELECT 1 FROM (values (1, 4), (3, 2)) x(x,y) WHERE greatest(FALSE, FALSE)
+----
+
 statement ok
 ROLLBACK
 
