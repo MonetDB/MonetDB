@@ -1119,6 +1119,15 @@ is_groupby_col(sql_rel *gb, sql_exp *e)
 	return 0;
 }
 
+static void
+set_dependent_( sql_rel *r)
+{
+	if (is_select(r->op))
+		r = r->l;
+	if (r && is_join(r->op))
+		set_dependent(r);
+}
+
 static sql_exp *
 rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 {
@@ -1183,8 +1192,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
-			if (exp && outer && is_join(outer->op))
-				set_dependent(outer);
+			if (exp && outer && (is_select(outer->op) || is_join(outer->op)))
+				set_dependent_(outer);
 		}
 
 		/* some views are just in the stack, like before and after updates views */
@@ -1269,8 +1278,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
-			if (exp && outer && is_join(outer->op))
-				set_dependent(outer);
+			if (exp && outer && (is_select(outer->op) || is_join(outer->op)))
+				set_dependent_(outer);
 		}
 
 		/* some views are just in the stack, like before and after updates views */
