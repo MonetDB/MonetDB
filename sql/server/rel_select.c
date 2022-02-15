@@ -2485,9 +2485,11 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			*rel = query_pop_outer(query);
 		if (!sq)
 			return NULL;
-		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
+		if (ek.type == type_value && ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (ek.card < card_set && sq->card >= CARD_AGGR && (is_sql_sel(f) | is_sql_having(f) | is_sql_farg(f) |
+		if (ek.type == type_relation && is_project(sq->op) && list_length(sq->exps) != ek.type)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery has too %s columns", list_length(sq->exps) < ek.type ? "few" : "many");
+		if (ek.type == type_value && ek.card < card_set && sq->card >= CARD_AGGR && (is_sql_sel(f) | is_sql_having(f) | is_sql_farg(f) |
 			( is_sql_where(f) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op) || is_joinop((*rel)->op)))))
 			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
@@ -2767,6 +2769,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			rel = query_pop_outer(query);
 		if (!sq)
 			return NULL;
+		assert(ek.type == type_value); /* I don't expect IN tuple matching calls to land here */
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
  			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (!rel)
@@ -5182,7 +5185,9 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			return NULL;
 		if (ek.type == type_value && ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (list_length(r->exps) == 1 && !is_sql_psm(f)) /* for now don't rename multi attribute results */
+		if (ek.type == type_relation && is_project(r->op) && list_length(r->exps) != ek.type)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery has too %s columns", list_length(r->exps) < ek.type ? "few" : "many");
+		if (ek.type == type_value && list_length(r->exps) == 1 && !is_sql_psm(f)) /* for now don't rename multi attribute results */
 			r = rel_zero_or_one(sql, r, ek);
 		return exp_rel(sql, r);
 	}
