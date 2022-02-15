@@ -267,7 +267,7 @@ BEGIN
 	RETURN n;
 END
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error 21000!Cardinality violation, scalar value expected
 SELECT debugme4()
 
 statement ok
@@ -304,6 +304,20 @@ NULL
 
 statement ok
 DROP FUNCTION debugme6
+
+statement ok
+CREATE FUNCTION debugme7() RETURNS INT
+BEGIN
+	DECLARE res INT;
+	SET res = 1 > (select 9 union all select 10);
+	RETURN res;
+END
+
+statement error 21000!Cardinality violation, scalar value expected
+SELECT debugme7()
+
+statement ok
+DROP FUNCTION debugme7
 
 query II rowsort
 select rank() over (), min(TotalSales) from tbl_ProductSales
