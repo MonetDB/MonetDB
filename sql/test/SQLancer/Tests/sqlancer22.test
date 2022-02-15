@@ -625,3 +625,12 @@ select 1 where (2,3) in ((values (2, 3), (4, 5)))
 
 statement ok
 ROLLBACK
+
+statement error Subquery has too many columns
+select 1 where (2,3) in (select x,y,2 from (values (2, 3), (4, 5)) x(x,y))
+
+statement error Subquery has too few columns
+select 1 where (2,3) in (select 2 union all select 3)
+
+statement error SELECT: subquery must return only one column
+select 1 where (2) in (with x(x,y) as (select 2,3) select x,y from x)
