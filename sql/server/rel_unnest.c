@@ -1783,20 +1783,7 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op, sql_rel 
 static sql_exp *
 rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	if (exp_is_rel(e) && is_ddl(rel->op) && rel->flag == ddl_psm) {
-		sql_rel *inner = exp_rel_get_rel(v->sql->sa, e);
-		if (is_single(inner)) {
-			/* use a dummy projection for the single join */
-			sql_rel *nrel = rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
-
-			if (!rewrite_inner(v->sql, nrel, inner, depth?op_left:op_join, NULL))
-				return NULL;
-			/* has to apply recursively */
-			if (!(e->l = rel_exp_visitor_bottomup(v, nrel, &rewrite_exp_rel, true)))
-				return NULL;
-			v->changes++;
-		}
-	} else if (exp_has_rel(e) && !is_ddl(rel->op)) {
+	if (exp_has_rel(e) && !is_ddl(rel->op)) {
 		sql_rel *rewrite = NULL;
 		sql_exp *ne = rewrite_inner(v->sql, rel, exp_rel_get_rel(v->sql->sa, e), depth?op_left:op_join, &rewrite);
 
