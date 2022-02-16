@@ -788,6 +788,42 @@ end:
 	return msg;
 }
 
+static str
+COPYpair_assign(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+
+	int tpe = getArgGDKType(mb, pci, 2);
+	stk->stk[pci->argv[0]] = stk->stk[pci->argv[2]];
+	stk->stk[pci->argv[1]] = stk->stk[pci->argv[3]];
+
+	(void)tpe;
+	return MAL_SUCCEED;
+}
+
+static inline str
+COPYpair_assign_bats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
+
+	bat left = *getArgReference_bat(stk, pci, 2);
+	bat right = *getArgReference_bat(stk, pci, 3);
+
+	if (!is_bat_nil(left))
+		BBPretain(left);
+	if (!is_bat_nil(right))
+		BBPretain(right);
+
+	*getArgReference_bat(stk, pci, 0) = left;
+	*getArgReference_bat(stk, pci, 1) = right;
+
+	return MAL_SUCCEED;
+}
+
 static mel_func copy_init_funcs[] = {
  command("copy", "read", COPYread, true, "Clear the BAT and read 'block_size' bytes into it from 's'",
 	args(1, 4,
@@ -809,6 +845,23 @@ static mel_func copy_init_funcs[] = {
 	batarg("block", bte), batarg("offsets", int), argany("type", 1)
  )),
 
+ // temporary
+ pattern("copy", "send", COPYpair_assign, false, "dummy", args(2, 4,
+	argany("", 1), argany("", 1),
+	argany("chan_val", 1), argany("nil_val", 1)
+ )),
+ pattern("copy", "recv", COPYpair_assign, false, "dummy", args(2, 4,
+	argany("", 1), argany("", 1),
+	argany("chan_val", 1), argany("nil_val", 1)
+ )),
+ pattern("copy", "send", COPYpair_assign_bats, false, "dummy", args(2, 4,
+	batargany("", 1), batargany("", 1),
+	batargany("chan_val", 1), batargany("nil_val", 1)
+ )),
+ pattern("copy", "recv", COPYpair_assign_bats, false, "dummy", args(2, 4,
+	batargany("", 1), batargany("", 1),
+	batargany("chan_val", 1), batargany("nil_val", 1)
+ )),
 
  { .imp=NULL }
 };

@@ -30,7 +30,7 @@ extract_parameter(backend *be, list *stmts, sql_exp *copyfrom, int argno)
 static int
 emit_receive(MalBlkPtr mb, int var_channel, int tpe)
 {
-	InstrPtr q = newAssignment(mb);
+	InstrPtr q = newStmt(mb, "copy", "recv");
 	q = pushReturn(mb, q, var_channel);
 	q = pushArgument(mb, q, var_channel);
 	q = pushNil(mb, q, tpe);
@@ -40,7 +40,7 @@ emit_receive(MalBlkPtr mb, int var_channel, int tpe)
 static void
 emit_send(MalBlkPtr mb, int var_channel, int tpe, int var_msg)
 {
-	InstrPtr q = newAssignment(mb);
+	InstrPtr q = newStmt(mb, "copy", "send");
 	setReturnArgument(q, var_channel);
 	q = pushReturn(mb, q, var_msg);
 	q = pushArgument(mb, q, var_msg);
