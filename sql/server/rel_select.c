@@ -1948,15 +1948,14 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		le = rel_value_exp(query, rel, lo, f|sql_farg, ek);
 		if (!le)
 			return NULL;
-		ek.card = card_set;
 		append(ll, le);
 	}
 	if (list_length(ll) == 1) {
 		le = ll->h->data;
+		ek.card = card_set;
 	} else {
 		le = exp_values(sql->sa, ll);
 		exp_label(sql->sa, le, ++sql->label);
-		ek.card = card_column;
 		ek.type = list_length(ll);
 		is_tuple = 1;
 	}
