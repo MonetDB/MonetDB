@@ -1003,7 +1003,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			for (; k < i;) {				\
 				j = k;					\
 				do {					\
-					const void *next = BUNtvar(bi, k);	\
+					const void *next = BUNtvar(bi, k); \
 					if (atomcmp(next, nil) != 0) {	\
 						if (atomcmp(curval, nil) == 0) \
 							curval = next;	\
@@ -1021,7 +1021,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			for (; k < i;) {				\
 				j = k;					\
 				do {					\
-					const void *next = BUNtloc(bi, k);	\
+					const void *next = BUNtloc(bi, k); \
 					if (atomcmp(next, nil) != 0) {	\
 						if (atomcmp(curval, nil) == 0) \
 							curval = next;	\
@@ -1045,7 +1045,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		l = i - 1;						\
 		if (ATOMvarsized(tpe)) {				\
 			for (j = l; ; j--) {				\
-				const void *next = BUNtvar(bi, j);		\
+				const void *next = BUNtvar(bi, j);	\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1067,7 +1067,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			}						\
 		} else {						\
 			for (j = l; ; j--) {				\
-				const void *next = BUNtloc(bi, j);		\
+				const void *next = BUNtloc(bi, j);	\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1094,10 +1094,10 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 #define ANALYTICAL_MIN_MAX_CALC_OTHERS_ALL_ROWS(GT_LT)			\
 	do {								\
-		const void *curval = (void*) nil;				\
+		const void *curval = (void*) nil;			\
 		if (ATOMvarsized(tpe)) {				\
 			for (j = k; j < i; j++) {			\
-				const void *next = BUNtvar(bi, j);		\
+				const void *next = BUNtvar(bi, j);	\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1110,7 +1110,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 					goto cleanup;			\
 		} else {						\
 			for (j = k; j < i; j++) {			\
-				const void *next = BUNtloc(bi, j);		\
+				const void *next = BUNtloc(bi, j);	\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1130,14 +1130,14 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	do {								\
 		if (ATOMvarsized(tpe)) {				\
 			for (; k < i; k++) {				\
-				const void *next = BUNtvar(bi, k);		\
+				const void *next = BUNtvar(bi, k);	\
 				if ((res = tfastins_nocheckVAR(r, k, next)) != GDK_SUCCEED) \
 					goto cleanup;			\
 				has_nils |= atomcmp(next, nil) == 0;	\
 			}						\
 		} else {						\
 			for (; k < i; k++) {				\
-				const void *next = BUNtloc(bi, k);		\
+				const void *next = BUNtloc(bi, k);	\
 				memcpy(rcast, next, width);		\
 				rcast += width;				\
 				has_nils |= atomcmp(next, nil) == 0;	\
@@ -1266,7 +1266,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	BATiter ei = bat_iterator(e);					\
 	bool has_nils = false, last = false;				\
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base, \
-		*levels_offset = NULL, nlevels = 0;	\
+		*levels_offset = NULL, nlevels = 0;			\
 	bit *np = pi.base, *op = oi.base;				\
 	const void *nil = ATOMnilptr(tpe);				\
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);	\
@@ -1274,7 +1274,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	gdk_return res = GDK_SUCCEED;					\
 	uint16_t width = r->twidth;					\
 	uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);		\
-	BAT *st = NULL;	\
+	BAT *st = NULL;							\
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
@@ -1292,9 +1292,9 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 		} break;						\
 		default: {						\
 			if (!(st = GDKinitialize_segment_tree())) {	\
-				res = GDK_FAIL;	\
-				goto cleanup;	\
-			}	\
+				res = GDK_FAIL;				\
+				goto cleanup;				\
+			}						\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, OTHERS); \
 		}							\
 		}							\
@@ -1309,7 +1309,7 @@ cleanup:								\
 	bat_iterator_end(&bi);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);						\
+	BBPreclaim(st);							\
 	return res;							\
 }
 
@@ -3424,13 +3424,13 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 	BATiter ei = bat_iterator(e);					\
 	bool has_nils = false, last = false;				\
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base, \
-		*levels_offset = NULL, nlevels = 0;	\
+		*levels_offset = NULL, nlevels = 0;			\
 	lng n = 0;							\
 	bit *np = pi.base, *op = oi.base;				\
 	dbl *rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta;		\
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
-	BAT *st = NULL;	\
+	BAT *st = NULL;							\
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
@@ -3448,9 +3448,9 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 		} break;						\
 		default: {						\
 			if (!(st = GDKinitialize_segment_tree())) {	\
-				res = GDK_FAIL;	\
-				goto cleanup;	\
-			}	\
+				res = GDK_FAIL;				\
+				goto cleanup;				\
+			}						\
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_OTHERS, SAMPLE, OP); \
 		}							\
 		}							\
@@ -3469,7 +3469,7 @@ cleanup:								\
 	bat_iterator_end(&bi);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);	\
+	BBPreclaim(st);							\
 	return res;							\
 nosupport:								\
 	GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
@@ -3647,13 +3647,13 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 	BATiter ei = bat_iterator(e);					\
 	bool has_nils = false, last = false;				\
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = si.base, *restrict end = ei.base,	\
-		*levels_offset = NULL, nlevels = 0;	\
+		*levels_offset = NULL, nlevels = 0;			\
 	lng n = 0;							\
 	bit *np = pi.base, *op = oi.base;				\
 	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
-	BAT *st = NULL;	\
+	BAT *st = NULL;							\
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
@@ -3671,9 +3671,9 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 		} break;						\
 		default: {						\
 			if (!(st = GDKinitialize_segment_tree())) {	\
-				res = GDK_FAIL;	\
-				goto cleanup;	\
-			}	\
+				res = GDK_FAIL;				\
+				goto cleanup;				\
+			}						\
 			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_OTHERS, SAMPLE, OP); \
 		}							\
 		}							\
@@ -3693,7 +3693,7 @@ cleanup:								\
 	bat_iterator_end(&b2i);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);	\
+	BBPreclaim(st);							\
 	return res;							\
 nosupport:								\
 	GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
