@@ -1332,7 +1332,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
-				if (BUNappend(b, Tmsk(&ni, i), force) != GDK_SUCCEED) {
+				if (BUNappend(b, BUNtmsk(ni, i), force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
