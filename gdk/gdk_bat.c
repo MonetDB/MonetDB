@@ -1438,6 +1438,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			} else {
 				val = BUNtpos(bi, p);
 			}
+		} else if (bi.type == TYPE_msk) {
+			val = BUNtmsk(bi, p);
 		} else {
 			val = BUNtloc(bi, p);
 		}
