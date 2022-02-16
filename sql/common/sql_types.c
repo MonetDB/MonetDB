@@ -966,29 +966,13 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, LargestDEC, 1, *(t));
 #endif
 
-	/* prod for numerical and decimals */
+	/* prod for numericals only, for decimals it introduces errors in the output scales */
 	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, BTE);
 	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, SHT);
 	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, INT);
 	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, LNG);
 #ifdef HAVE_HGE
 	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, HGE);
-#endif
-
-#if 0
-	/* prod for decimals introduce errors in the output scales */
-	t = decimals; /* BTE */
-	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
-	t++; /* SHT */
-	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
-	t++; /* INT */
-	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
-	t++; /* LNG */
-	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
-#ifdef HAVE_HGE
-	t++; /* HGE */
-	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
-#endif
 #endif
 
 	for (t = numerical; t < dates; t++) {
@@ -1129,29 +1113,13 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
 #endif
 
-	/* analytical product for numerical and decimals */
+	/* analytical prod for numericals only, for decimals it introduces errors in the output scales */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, BTE);
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, SHT);
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, INT);
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, LNG);
 #ifdef HAVE_HGE
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, HGE);
-#endif
-
-#if 0
-	/* prod for decimals introduce errors in the output scales */
-	t = decimals; /* BTE */
-	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; /* SHT */
-	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; /* INT */
-	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; /* LNG */
-	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-#ifdef HAVE_HGE
-	t++; /* HGE */
-	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-#endif
 #endif
 
 	for (t = floats; t < dates; t++) {
