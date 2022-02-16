@@ -805,8 +805,8 @@ static mel_func copy_init_funcs[] = {
  )),
 
  pattern("copy", "parse_generic", COPYparse_generic, false, "Parse as an integer", args(1, 4,
-     batargany("", 1),
-	 batarg("block", bte), batarg("offsets", int), argany("type", 1)
+	batargany("", 1),
+	batarg("block", bte), batarg("offsets", int), argany("type", 1)
  )),
 
 
