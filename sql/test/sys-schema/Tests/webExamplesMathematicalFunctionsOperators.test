@@ -1,4 +1,4 @@
-query IIIIRI rowsort
+query IIIIRI nosort
 select 2 + 3 as add23, 2 - 3 as sub23, 2 * 3 as mul23, 5 / 2 as div52, 5.0 / 2 as div502, 5 % 4 as mod54
 ----
 5
@@ -8,7 +8,7 @@ select 2 + 3 as add23, 2 - 3 as sub23, 2 * 3 as mul23, 5 / 2 as div52, 5.0 / 2 a
 2.500
 1
 
-query I rowsort
+query I nosort
 select 2 ^ 3 
 ----
 1
@@ -20,7 +20,7 @@ project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
-query R rowsort
+query R nosort
 select 2.0 ^ 3.0 
 ----
 1.000
@@ -30,7 +30,7 @@ plan select 2.0 ^ 3.0
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."bit_xor"(decimal(2,1) "20", decimal(2,1) "30") NOT NULL ]
+) [ "sys"."bit_xor"(hugeint(128)[decimal(2,1) "20"] NOT NULL, hugeint(128)[decimal(2,1) "30"] NOT NULL) NOT NULL ]
 
 statement error
 select |/ 25.0 
@@ -47,22 +47,22 @@ select !! 5
 statement error
 select @ -5.0 
 
-query I rowsort
+query I nosort
 select 91 & 15 
 ----
 11
 
-query I rowsort
+query I nosort
 select 32 | 3 
 ----
 35
 
-query I rowsort
+query I nosort
 select 17 # 5 
 ----
 17
 
-query I rowsort
+query I nosort
 select 17 ^ 5 
 ----
 20
@@ -74,7 +74,7 @@ project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(5) "17", tinyint(3) "5") NOT NULL ]
 
-query I rowsort
+query I nosort
 select 2 ^ 3 
 ----
 1
@@ -86,7 +86,7 @@ project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
-query I rowsort
+query I nosort
 select ~1 
 ----
 -2
@@ -98,7 +98,7 @@ project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_not"(tinyint(1) "1") NOT NULL ]
 
-query I rowsort
+query I nosort
 select 1 << 4 
 ----
 16
@@ -110,12 +110,12 @@ project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."left_shift"(tinyint(8) "1", int(32) "4") NOT NULL ]
 
-query I rowsort
+query I nosort
 select left_shift(1, 4) 
 ----
 16
 
-query I rowsort
+query I nosort
 select 8 >> 2 
 ----
 2
@@ -127,7 +127,7 @@ project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."right_shift"(tinyint(8) "8", int(32) "2") NOT NULL ]
 
-query I rowsort
+query I nosort
 select right_shift(16, 2) 
 ----
 4
@@ -135,12 +135,12 @@ select right_shift(16, 2)
 statement error
 SELECT 10 DIV 5
 
-query R rowsort
+query R nosort
 select abs(-17.4)
 ----
 17.400
 
-query IIII rowsort
+query IIII nosort
 select bit_and(91, 15), bit_not(1), bit_or(32, 3), bit_xor(17, 5)
 ----
 11
@@ -148,22 +148,22 @@ select bit_and(91, 15), bit_not(1), bit_or(32, 3), bit_xor(17, 5)
 35
 20
 
-query R rowsort
+query R nosort
 select cbrt(2.0)
 ----
 1.260
 
-query R rowsort
+query R nosort
 select sys.cbrt(2.0)
 ----
 1.260
 
-query R rowsort
+query R nosort
 select cbrt(27)
 ----
 3.000
 
-query RRRR rowsort
+query RRRR nosort
 select ceil(-42.8), ceiling(-95.3), ceil(-42), ceiling(-95)
 ----
 -42.000
@@ -171,7 +171,7 @@ select ceil(-42.8), ceiling(-95.3), ceil(-42), ceiling(-95)
 -42.000
 -95.000
 
-query RRRR rowsort
+query RRRR nosort
 select ceil(42.8), ceiling(95.3), ceil(42), ceiling(95)
 ----
 43.000
@@ -179,7 +179,7 @@ select ceil(42.8), ceiling(95.3), ceil(42), ceiling(95)
 42.000
 95.000
 
-query RRRR rowsort
+query RRRR nosort
 select floor(-42.8), floor(-95.3), floor(-42), floor(-95)
 ----
 -43.000
@@ -187,7 +187,7 @@ select floor(-42.8), floor(-95.3), floor(-42), floor(-95)
 -42.000
 -95.000
 
-query RRRR rowsort
+query RRRR nosort
 select floor(42.8), floor(95.3), floor(42), floor(95)
 ----
 42.000
@@ -210,57 +210,57 @@ select sys.div(9,4)
 statement error
 select sys.div(9.0,4.0)
 
-query R rowsort
+query R nosort
 select degrees(0.5)
 ----
 28.648
 
-query R rowsort
+query R nosort
 select sys.degrees(0.5)
 ----
 28.648
 
-query R rowsort
+query R nosort
 select degrees(2)
 ----
 114.592
 
-query R rowsort
+query R nosort
 select sys.degrees(2)
 ----
 114.592
 
-query R rowsort
+query R nosort
 select degrees(pi())
 ----
 180.000
 
-query R rowsort
+query R nosort
 select radians(45.0)
 ----
 0.785
 
-query R rowsort
+query R nosort
 select sys.radians(45.0)
 ----
 0.785
 
-query R rowsort
+query R nosort
 select radians(180)
 ----
 3.142
 
-query R rowsort
+query R nosort
 select sys.degrees(sys.radians(45))
 ----
 45.000
 
-query R rowsort
+query R nosort
 select sys.radians(sys.degrees(2))
 ----
 2.000
 
-query RRRR rowsort
+query RRRR nosort
 select exp(1), exp(10), exp(1.00), exp(10.00)
 ----
 2.718
@@ -268,12 +268,12 @@ select exp(1), exp(10), exp(1.00), exp(10.00)
 2.718
 22026.466
 
-query I rowsort
+query I nosort
 select right_shift(8, 2)
 ----
 2
 
-query RRRR rowsort
+query RRRR nosort
 select sql_min(1.2, 5), least(1.2, 5), sql_max(1.2, 5), greatest(1.2, 5)
 ----
 1.200
@@ -281,7 +281,7 @@ select sql_min(1.2, 5), least(1.2, 5), sql_max(1.2, 5), greatest(1.2, 5)
 5.000
 5.000
 
-query RRRRRR rowsort
+query RRRRRR nosort
 select log(2.0), ln(2), log(64.0, 2), log(2, 64.0), log10(100.0), log2(64.0)
 ----
 0.693
@@ -291,39 +291,39 @@ select log(2.0), ln(2), log(64.0, 2), log(2, 64.0), log10(100.0), log2(64.0)
 2.000
 6.000
 
-query R rowsort
+query R nosort
 select mod(5.0, 2.1)
 ----
 0.800
 
-query R rowsort
+query R nosort
 select pi()
 ----
 3.142
 
-query RR rowsort
+query RR nosort
 select power(2, 5), power(2, 31)
 ----
 32.000
 2147483648.000
 
-query RR rowsort
+query RR nosort
 -- select rand()
 ----
 32.000
 2147483648.000
 
-query I rowsort
+query I nosort
 select 2144156907 / 2147483648
 ----
 0
 
-query I rowsort
+query I nosort
 -- select rand() / 2147483648
 ----
 0
 
-query I rowsort
+query I nosort
 -- select cast(rand() as float) / 2147483648
 ----
 0
@@ -335,22 +335,22 @@ project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."sql_div"(double(53)["sys"."rand"()], double(53) "2147483648") ]
 
-query I rowsort
+query I nosort
 select rand(0)
 ----
 1868859049
 
-query I rowsort
+query I nosort
 select rand(1)
 ----
 847553797
 
-query I rowsort
+query I nosort
 select rand(2)
 ----
 543032001
 
-query I rowsort
+query I nosort
 select rand(-5)
 ----
 1345532277
@@ -358,27 +358,27 @@ select rand(-5)
 statement error
 select random()
 
-query IRR rowsort
+query III nosort
 select right_shift(16, 2), right_shift(8.0, 2), right_shift(8.2, 2)
 ----
 4
-0.200
-0.200
+2
+2
 
 statement error
 select round(41.538)
 
-query R rowsort
+query R nosort
 select round(41.538, 2)
 ----
 41.540
 
-query R rowsort
+query R nosort
 select round(42.4382e0, 2)
 ----
 42.440
 
-query IRIR rowsort
+query IRIR nosort
 select scale_down(100, 3), scale_down(100.0, 3), scale_down(100, 6), scale_down(100.0, 6)
 ----
 33
@@ -386,12 +386,12 @@ select scale_down(100, 3), scale_down(100.0, 3), scale_down(100, 6), scale_down(
 17
 1.700
 
-query I rowsort
+query I nosort
 select scale_up(13, 3)
 ----
 39
 
-query R rowsort
+query R nosort
 select scale_up(13.0, 3)
 ----
 390.000
@@ -399,7 +399,7 @@ select scale_up(13.0, 3)
 statement error
 select scale_up(13, 3.0)
 
-query IIII rowsort
+query IIII nosort
 select sign(-8.4), sign(-0), sign(+0), sign(+8.4)
 ----
 -1
@@ -407,82 +407,82 @@ select sign(-8.4), sign(-0), sign(+0), sign(+8.4)
 0
 1
 
-query RI rowsort
+query RI nosort
 select sql_add(2, 3.4), sql_sub(5, 7)
 ----
 5.400
 -2
 
-query RR rowsort
+query RR nosort
 select sql_div(3.4, 2), sql_mul(1.2, 5)
 ----
 1.700
 6.000
 
-query RR rowsort
+query RR nosort
 select sql_max(1.2, 5), sql_min(1.2, 5)
 ----
 5.000
 1.200
 
-query R rowsort
+query R nosort
 select sql_max(1.2, sql_max(3.3, 5))
 ----
 5.000
 
-query R rowsort
+query R nosort
 select sql_min(1.2, sql_min(3.3, 5))
 ----
 1.200
 
-query RR rowsort
+query RR nosort
 select sql_neg(-2.5), sql_neg(2.5)
 ----
 2.500
 -2.500
 
-query R rowsort
+query R nosort
 select sqrt(2.0)
 ----
 1.414
 
-query R rowsort
+query R nosort
 select sqrt(64)
 ----
 8.000
 
-query R rowsort
+query R nosort
 select sys.alpha(5.0, 1.2)
 ----
 1.205
 
-query R rowsort
+query R nosort
 select sys.ms_round(1.2359, 2, 0)
 ----
 1.240
 
-query R rowsort
+query R nosort
 select sys.ms_trunc(1.2359, 0)
 ----
 1.000
 
-query R rowsort
+query R nosort
 select sys.ms_trunc(1.2359, 2)
 ----
 1.230
 
-query R rowsort
+query R nosort
 select sys.ms_trunc(1.2359, 3)
 ----
 1.235
 
-query RR rowsort
+query RR nosort
 select acos(0.54), acos(0.25)
 ----
 1.000
 1.318
 
-query RRRR rowsort
+query RRRR nosort
 select asin(1.0), atan(1), atan(0.5), atan(1.0, 2.0)
 ----
 1.571
@@ -493,25 +493,25 @@ select asin(1.0), atan(1), atan(0.5), atan(1.0, 2.0)
 statement error
 select atan2(1.0, 2.0)
 
-query RRR rowsort
+query RRR nosort
 select cos(12.2), cosh(3.0), cot(16.0)
 ----
 0.934
 10.068
 3.326
 
-query RR rowsort
+query RR nosort
 select degrees(0.5), radians(45)
 ----
 28.648
 0.785
 
-query R rowsort
+query R nosort
 select pi()
 ----
 3.142
 
-query RRRR rowsort
+query RRRR nosort
 select sin(1.4), sin(2), sinh(0), sinh(1.4)
 ----
 0.985
@@ -519,7 +519,7 @@ select sin(1.4), sin(2), sinh(0), sinh(1.4)
 0.000
 1.904
 
-query RRRR rowsort
+query RRRR nosort
 select tan(1.4), tan(2), tanh(0), tanh(1.4)
 ----
 5.798
@@ -530,17 +530,17 @@ select tan(1.4), tan(2), tanh(0), tanh(1.4)
 statement ok
 create sequence tst20210325
 
-query I rowsort
+query I nosort
 select get_value_for('sys', 'tst20210325')
 ----
 1
 
-query I rowsort
+query I nosort
 select next_value_for('sys', 'tst20210325')
 ----
 1
 
-query I rowsort
+query I nosort
 select get_value_for('sys', 'tst20210325')
 ----
 2

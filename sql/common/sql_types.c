@@ -1251,7 +1251,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_mul", "calc", "*", FALSE, SCALE_MUL, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_div", "calc", "/", FALSE, SCALE_DIV, 0, *t, 2, *t, *t);
-		if (t < floats) {
+		if (t < decimals) {
 			sql_create_func(sa, "bit_and", "calc", "and", FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 			sql_create_func(sa, "bit_or", "calc", "or", FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 			sql_create_func(sa, "bit_xor", "calc", "xor", FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
