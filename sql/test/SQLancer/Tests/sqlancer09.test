@@ -132,11 +132,11 @@ AND (UUID '82eb84EF-dF3D-a45e-f92b-E42BdfFEB1B9') THEN - (1129823324) END) WHEN 
 statement ok
 create or replace view v0(vc0) as (values (1 between 1 and 2))
 
-query I rowsort
+query I nosort
 SELECT 1 FROM (SELECT 1 FROM v0) AS v0(v0) inner join t1 ON 1 BETWEEN 2 AND 1
 ----
 
-query I rowsort
+query I nosort
 SELECT 1 FROM (SELECT 1 FROM v0) AS v0(v0) inner join t1 ON 1 BETWEEN 2 AND (CASE WHEN 1 BETWEEN 2 AND 3 THEN 2 END)
 ----
 
@@ -201,7 +201,7 @@ statement ok
 create view v7(vc0) as (values (case when case when true then true when true then false when true then false else false end
 then lower('mEqP') when (1549) is null then upper('o]hUWA쪬') end))
 
-query I rowsort
+query I nosort
 select cast(sum(count) as bigint) from (select all cast(((case when v0.vc2 then v0.vc2 end)or((v7.vc0) not between
 symmetric (v7.vc0) and (v7.vc0))) as int) as count from v2, v7 right outer join v0 on
 ((nullif(v7.vc0, v7.vc0))not ilike(cast(v0.vc0 as string(804)))) join
@@ -223,7 +223,7 @@ START TRANSACTION
 statement ok
 create or replace view v21(vc0) as (select case false when false then -1.3 else 0.72 end)
 
-query I rowsort
+query I nosort
 select 1 from v21 left outer join (select 2) as sub0 on case when false then (121) in (v21.vc0) when false then true end
 ----
 1
@@ -245,7 +245,7 @@ create view v75(vc0, vc1) as (values ((((((((((0.4978071622466736512180318641185
 not between asymmetric (-1556197959) and (0.940909957253724282821849556057713925838470458984375))or(true)))or(('1') = false)))
 or((('')not ilike('RL8h')))))and((('EB')not ilike('1160721162')))), "isauuid"('0.0')))
 
-query I rowsort
+query I nosort
 select 1 from v21 left outer join
 (select distinct cast(cast(25062.0 as real) as bigint), 4 from v75 full outer join
 (select 1, 0.4, -3, false, 0 where true) as sub0 on least(false, v75.vc1)
@@ -254,7 +254,7 @@ least(true, false) then least(true, true) end
 ----
 1
 
-query I rowsort
+query I nosort
 select cast(sum(count) as bigint) from (select all cast(least((25994) is null, (2032937942) not in
 (0.752756998581524339186898941989056766033172607421875)) as int) as count from v21 left outer join
 (select distinct cast(cast(25062.0 as real) as bigint), 1464375587 from v59, v73, v75 full outer join
@@ -307,10 +307,10 @@ NULL	1	0.07074437
 239480113	NULL	NULL
 
 statement ok
-create view v2(vc0, vc1, vc2) as (values (((((+ (0.51506835))&(-2)))<<(scale_down(least(31552,
+create view v2(vc0, vc1, vc2) as (values (((((+ (2))&(-2)))+(scale_down(least(31552,
 0.3), cast(1500294098 as int)))),
 ((- (((44257622)-(0.6))))>=(least(-3, -4))), case - (sql_min(0.632858,
-0.3)) when ((((0.5)^(0.4)))+(((0.4)/(5))))
+0.3)) when ((((5)^(4)))+(((0.4)/(5))))
 then sql_max(cast(5293 as decimal), ((0.5)-
 (0.5))) end),(charindex('934079707', '35305325'), not (false),
 sql_max(((+ (102))|(case 0.028362095 when 458003921 then 28118 end)), cast(least(0.3,
@@ -318,16 +318,16 @@ sql_max(((+ (102))|(case 0.028362095 when 458003921 then 28118 end)), cast(least
 0.5667308), false, 45))
 
 statement ok
-create view v3(vc0) as (values (least(least(cast(0.3 as bigint), 0.9), 0.5)))
+create view v3(vc0) as (values (least(least(0.3, 0.9), 0.5)))
 
-query I rowsort
+query I nosort
 select 1 from v2, v3
 ----
 1
 1
 1
 
-query I rowsort
+query I nosort
 select cast(sum(count) as bigint) from (select cast((cast(sin(3) as double)) is null as int) as count from
 t2 cross join v3 full outer join (select distinct sql_max(case when cast(v2.vc1 as boolean) then cast(-3 as string)
 when case when v2.vc1 then v2.vc1 when v2.vc1 then v2.vc1 end then sql_max('()', '1574131922') end,
@@ -353,7 +353,7 @@ create view v32(vc0, vc1) as (select distinct cast(((-4)*(-4)) as tinyint), coal
 sql_max('f)6_', '.u'), cast(true as string(679)), case -3 when -5 then '94' end)
 group by substr('FALSE', 2))
 
-query T rowsort
+query T nosort
 select sum(all abs(interval '-27135172' second)) from v27 full outer join (select all scale_up(0.131, 12375.0)
 from v32 cross join (values (round(0.23, 10))) as sub0
 where ((v32.vc0)=(0.32))) as sub0 on case 3 when
@@ -366,7 +366,7 @@ when case when true then 0.33 end then (6363) not in (3,
 statement ok
 create or replace view v27(vc0) as (values (4.3), (63))
 
-query I rowsort
+query I nosort
 select 1 from v27 full outer join (select 1) as sub0 on case 3 when 0.33 then (2) in (v27.vc0, 9) end
 ----
 1
@@ -448,7 +448,7 @@ NULL	"3128"
 0.968	"1403896159"
 0.565	"0.8224972062481081"
 
-query I rowsort
+query I nosort
 SELECT 1 FROM t2 WHERE CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END
 ----
 1
@@ -459,7 +459,7 @@ SELECT 1 FROM t2 WHERE CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END
 1
 1
 
-query I rowsort
+query I nosort
 SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END
 ----
 1
@@ -512,7 +512,7 @@ SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) EN
 1
 1
 
-query RT rowsort
+query RT nosort
 SELECT ALL t2.c0, t2.c1 FROM t2 LEFT OUTER JOIN t1 ON CASE ((t2.c1)NOT LIKE(t2.c1)) WHEN (t1.c1) NOT BETWEEN SYMMETRIC
 (t1.c1) AND (t1.c1) THEN ((FALSE)OR(FALSE)) WHEN ((t2.c1)LIKE(t1.c1)) THEN ifthenelse(FALSE, TRUE, TRUE) WHEN
 ((((FALSE)OR(TRUE)))OR(TRUE)) THEN ((t2.c1)<>(t1.c1)) ELSE (t2.c0) IN (102830492) END RIGHT OUTER JOIN
@@ -646,7 +646,7 @@ create or replace view v64(vc0, vc1, vc2, vc3) as (select -34, 'A',
 statement ok
 create or replace view v110(vc0) as (values ('a'), ('8'), ('g'), (null)) with check option
 
-query I rowsort
+query I nosort
 select 1 from v64, t1, v110 where t1.c0 > v64.vc2
 ----
 1
@@ -681,7 +681,7 @@ statement ok
 create or replace view v23(vc0, vc1) as (values (case when ((false)and(true)) then ((25922)*(697298603)) when not (false) then - (2909) end,
 cast(case '17841' when '155' then 2909 when '116' then 17275 end as int)))
 
-query I rowsort
+query I nosort
 SELECT CAST(SUM(agg0) as BIGINT) FROM (
 	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
 	NULLIF(0.6018914, 0.947574)), "isauuid"(''))) AS sub0 WHERE ((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST('' AS STRING(299))))
@@ -698,14 +698,14 @@ SELECT CAST(SUM(agg0) as BIGINT) FROM (
 statement ok
 create or replace view v11(vc0) as (values ('<'), ('a'))
 
-query I rowsort
+query I nosort
 SELECT 1 FROM v11 WHERE v11.vc0 LIKE '' IS NULL
 ----
 
 statement ok
 ROLLBACK
 
-query I rowsort
+query I nosort
 SELECT 1 HAVING group_concat('') NOT LIKE '3' IS NULL
 ----
 
