@@ -489,7 +489,7 @@ typedef struct MT_RWLock {
 	char name[MT_NAME_LEN];
 } MT_RWLock;
 
-#define MT_RWLOCK_INITIALIZER(n)				\
+#define MT_RWLOCK_INITIALIZER(n)					\
 	{ .lock = PTHREAD_MUTEX_INITIALIZER, .readers = ATOMIC_VAR_INIT(0), .name = #n, }
 
 #define MT_rwlock_init(l, n)					\

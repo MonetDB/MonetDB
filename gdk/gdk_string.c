@@ -1178,7 +1178,7 @@ done:
 #define compute_next_single_str(START, END)				\
 	do {								\
 		for (oid m = START; m < END; m++) {			\
-			const char *sb = BUNtvar(bi, m);				\
+			const char *sb = BUNtvar(bi, m);		\
 									\
 			if (separator) {				\
 				if (!strNil(sb)) {			\
@@ -1189,7 +1189,7 @@ done:
 				}					\
 			} else { /* sep case */				\
 				assert(sep != NULL);			\
-				const char *sl = BUNtvar(sepi, m);			\
+				const char *sl = BUNtvar(sepi, m);	\
 									\
 				if (!strNil(sb)) {			\
 					next_group_length += strlen(sb); \
@@ -1226,7 +1226,7 @@ done:
 			}						\
 									\
 			for (oid m = START; m < END; m++) {		\
-				const char *sb = BUNtvar(bi, m);			\
+				const char *sb = BUNtvar(bi, m);	\
 									\
 				if (separator) {			\
 					if (strNil(sb))			\
@@ -1241,7 +1241,7 @@ done:
 					empty = false;			\
 				} else { /* sep case */			\
 					assert(sep != NULL);		\
-					const char *sl = BUNtvar(sepi, m);		\
+					const char *sl = BUNtvar(sepi, m); \
 									\
 					if (strNil(sb))			\
 						continue;		\
@@ -1269,14 +1269,14 @@ done:
 		compute_next_single_str(k, i); /* compute the entire string then slice it starting from the beginning */ \
 		empty = true;						\
 		for (; k < i;) {					\
-			const char *nsep;					\
+			const char *nsep;				\
 			oid m = k;					\
 			j = k;						\
 			do {						\
 				k++;					\
 			} while (k < i && !op[k]);			\
 			for (; j < k; j++) {				\
-				const char *nstr = BUNtvar(bi, j);			\
+				const char *nstr = BUNtvar(bi, j);	\
 				if (!strNil(nstr)) {			\
 					slice_length += strlen(nstr);	\
 					if (!empty) {			\
@@ -1321,7 +1321,7 @@ done:
 #define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW				\
 	do {								\
 		for (; k < i; k++) {					\
-			const char *next = BUNtvar(bi, k);			\
+			const char *next = BUNtvar(bi, k);		\
 			if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED) \
 				goto allocation_error;			\
 			has_nils |= strNil(next);			\

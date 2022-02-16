@@ -2934,7 +2934,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			n++;						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 		/* the sum fit, so now we can calculate the average */	\
 		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
 		if (0) {						\
@@ -2981,20 +2981,20 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 #define AVERAGE_TYPE(TYPE) AVERAGE_TYPE_LNG_HGE(TYPE,lng)
 #endif
 
-#define AVERAGE_FLOATTYPE(TYPE)					\
-	do {							\
-		double a = 0;					\
-		TYPE x;						\
-		TIMEOUT_LOOP(ncand, timeoffset) {		\
-			i = canditer_next(&ci) - b->hseqbase;	\
-			x = ((const TYPE *) src)[i];		\
-			if (is_##TYPE##_nil(x))			\
-				continue;			\
-			AVERAGE_ITER_FLOAT(TYPE, x, a, n);	\
-		}						\
-		TIMEOUT_CHECK(timeoffset,			\
+#define AVERAGE_FLOATTYPE(TYPE)						\
+	do {								\
+		double a = 0;						\
+		TYPE x;							\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
+			i = canditer_next(&ci) - b->hseqbase;		\
+			x = ((const TYPE *) src)[i];			\
+			if (is_##TYPE##_nil(x))				\
+				continue;				\
+			AVERAGE_ITER_FLOAT(TYPE, x, a, n);		\
+		}							\
+		TIMEOUT_CHECK(timeoffset,				\
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
-		*avg = n > 0 ? a : dbl_nil;			\
+		*avg = n > 0 ? a : dbl_nil;				\
 	} while (0)
 
 gdk_return
@@ -4671,7 +4671,7 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 				goto overflow;				\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 dbl
