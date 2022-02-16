@@ -188,11 +188,11 @@ gettailnamebi(const BATiter *bi)
 			return "tail1";
 		case 2:
 			return "tail2";
-#if SIZEOF_VAR_T == 8
 		case 4:
+#if SIZEOF_VAR_T == 8
 			return "tail4";
-#endif
 		case 8:
+#endif
 			break;
 		default:
 			MT_UNREACHABLE();
@@ -210,11 +210,11 @@ gettailname(const BAT *b)
 			return "tail1";
 		case 2:
 			return "tail2";
-#if SIZEOF_VAR_T == 8
 		case 4:
+#if SIZEOF_VAR_T == 8
 			return "tail4";
-#endif
 		case 8:
+#endif
 			break;
 		default:
 			MT_UNREACHABLE();
@@ -239,14 +239,14 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
 				      sizeof(tail->filename), physnme,
 				      ".tail2", NULL);
 			return;
-#if SIZEOF_VAR_T == 8
 		case 4:
+#if SIZEOF_VAR_T == 8
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
 				      ".tail4", NULL);
 			return;
-#endif
 		case 8:
+#endif
 			break;
 		default:
 			MT_UNREACHABLE();
