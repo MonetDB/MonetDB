@@ -974,22 +974,14 @@ exp_label(sql_allocator *sa, sql_exp *e, int nr)
 	return e;
 }
 
-sql_exp*
-exp_label_table(sql_allocator *sa, sql_exp *e, int nr)
-{
-	e->alias.rname = make_label(sa, nr);
-	return e;
-}
-
 list*
 exps_label(sql_allocator *sa, list *exps, int nr)
 {
-	node *n;
-
 	if (!exps)
 		return NULL;
-	for (n = exps->h; n; n = n->next)
+	for (node *n = exps->h; n; n = n->next)
 		n->data = exp_label(sa, n->data, nr++);
+	list_hash_clear(exps);
 	return exps;
 }
 

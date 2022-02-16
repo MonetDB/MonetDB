@@ -1671,13 +1671,12 @@ topn_sample_save_exps( list *exps )
 static void
 rel_no_rename_exps( list *exps )
 {
-	node *n;
-
-	for (n = exps->h; n; n = n->next) {
+	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
 		exp_setalias(e, e->l, e->r);
 	}
+	list_hash_clear(exps);
 }
 
 static void
