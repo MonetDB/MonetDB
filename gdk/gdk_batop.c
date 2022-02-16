@@ -63,12 +63,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	size_t toff = ~(size_t) 0;	/* tail offset */
 	BUN p, r;		/* loop variables */
 	const void *tp = NULL;	/* tail value pointer */
-	unsigned char tbv;	/* tail value-as-bte */
-	unsigned short tsv;	/* tail value-as-sht */
-#if SIZEOF_VAR_T == 8
-	unsigned int tiv;	/* tail value-as-int */
-#endif
-	var_t v;		/* value */
+	var_t v;
 	size_t off;		/* offset within n's string heap */
 	BUN cnt = ci->ncand;
 	BUN oldcnt = BATcount(b);
@@ -184,35 +179,13 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		 * only one of them will actually be used, hence we
 		 * still obey the rule for restrict-qualified
 		 * pointers */
-		const unsigned char *restrict tbp = (const unsigned char *) ni.base;
-		const unsigned short *restrict tsp = (const unsigned short *) ni.base;
+		const uint8_t *restrict tbp = (const uint8_t *) ni.base;
+		const uint16_t *restrict tsp = (const uint16_t *) ni.base;
+		const uint32_t *restrict tip = (const uint32_t *) ni.base;
 #if SIZEOF_VAR_T == 8
-		const unsigned int *restrict tip = (const unsigned int *) ni.base;
+		const uint64_t *restrict tlp = (const uint64_t *) ni.base;
 #endif
-		const var_t *restrict tvp = (const var_t *) ni.base;
 
-		switch (b->twidth) {
-		case 1:
-			tp = &tbv;
-			break;
-		case 2:
-			tp = &tsv;
-			break;
-#if SIZEOF_VAR_T == 8
-		case 4:
-			tp = &tiv;
-			break;
-		case 8:
-			tp = &v;
-			break;
-#else
-		case 4:
-			tp = &v;
-			break;
-#endif
-		default:
-			MT_UNREACHABLE();
-		}
 		MT_thread_setalgorithm("copy offset values");
 		r = b->batCount;
 		while (cnt > 0) {
@@ -225,14 +198,16 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			case 2:
 				v = (var_t) tsp[p] + GDK_VAROFFSET;
 				break;
-#if SIZEOF_VAR_T == 8
 			case 4:
 				v = (var_t) tip[p];
 				break;
+#if SIZEOF_VAR_T == 8
+			case 8:
+				v = (var_t) tlp[p];
+				break;
 #endif
 			default:
-				v = tvp[p];
-				break;
+				MT_UNREACHABLE();
 			}
 			v = (var_t) ((size_t) v + toff);
 			assert(v >= GDK_VAROFFSET);
@@ -246,15 +221,19 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
 				((uint16_t *) b->theap->base)[r++] = (uint16_t) (v - GDK_VAROFFSET);
 				break;
-#if SIZEOF_VAR_T == 8
 			case 4:
+#if SIZEOF_VAR_T == 8
 				assert(v < ((var_t) 1 << 32));
+#endif
 				((uint32_t *) b->theap->base)[r++] = (uint32_t) v;
+				break;
+#if SIZEOF_VAR_T == 8
+			case 8:
+				((uint64_t *) b->theap->base)[r++] = (uint64_t) v;
 				break;
 #endif
 			default:
-				((var_t *) b->theap->base)[r++] = v;
-				break;
+				MT_UNREACHABLE();
 			}
 		}
 	} else if (b->tvheap->free < ni.vhfree / 2 ||
@@ -302,21 +281,25 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				switch (b->twidth) {
 				case 1:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-					((uint8_t *) b->theap->base)[r] = (unsigned char) (v - GDK_VAROFFSET);
+					((uint8_t *) b->theap->base)[r] = (uint8_t) (v - GDK_VAROFFSET);
 					break;
 				case 2:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-					((uint16_t *) b->theap->base)[r] = (unsigned short) (v - GDK_VAROFFSET);
+					((uint16_t *) b->theap->base)[r] = (uint16_t) (v - GDK_VAROFFSET);
+					break;
+				case 4:
+#if SIZEOF_VAR_T == 8
+					assert(v < ((var_t) 1 << 32));
+#endif
+					((uint32_t *) b->theap->base)[r] = (uint32_t) v;
 					break;
 #if SIZEOF_VAR_T == 8
-				case 4:
-					assert(v < ((var_t) 1 << 32));
-					((uint32_t *) b->theap->base)[r] = (unsigned int) v;
+				case 8:
+					((uint64_t *) b->theap->base)[r] = (uint64_t) v;
 					break;
 #endif
 				default:
-					((var_t *) b->theap->base)[r] = v;
-					break;
+					MT_UNREACHABLE();
 				}
 			} else {
 				if (tfastins_nocheckVAR(b, r, tp) != GDK_SUCCEED) {
@@ -2919,16 +2902,18 @@ BATcount_no_nil(BAT *b, BAT *s)
 			for (i = 0; i < n; i++)
 				cnt += base[(var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
 			break;
-#if SIZEOF_VAR_T != SIZEOF_INT
 		case 4:
 			for (i = 0; i < n; i++)
 				cnt += base[(var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq]] != '\200';
 			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			for (i = 0; i < n; i++)
+				cnt += base[(var_t) ((const uint64_t *) p)[canditer_next(&ci) - hseq]] != '\200';
+			break;
 #endif
 		default:
-			for (i = 0; i < n; i++)
-				cnt += base[((const var_t *) p)[canditer_next(&ci) - hseq]] != '\200';
-			break;
+			MT_UNREACHABLE();
 		}
 		break;
 	default:
