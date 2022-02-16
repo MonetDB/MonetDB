@@ -1090,10 +1090,10 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
+					e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e);
 					if (!settname) /* noname use alias */
 						exp_setrelname(sql->sa, e, label);
-
+					append(exps, e);
 				}
 			}
 			return exps;
@@ -1120,10 +1120,10 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
+					e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e);
 					if (!settname) /* noname use alias */
 						exp_setrelname(sql->sa, e, label);
-
+					append(exps, e);
 				}
 			}
 			return exps;
@@ -1145,6 +1145,8 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (!settname) /* noname use alias */
 					exp_setrelname(sql->sa, e, label);
 			}
+			if (!settname)
+				list_hash_clear(lexps);
 		}
 		return lexps;
 	case op_ddl:
