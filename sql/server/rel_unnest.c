@@ -2769,7 +2769,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					exp_setname(sql->sa, a, exp_relname(e), exp_name(e));
 					re = exp_ref(sql, a);
 					set_has_nil(re); /* outerjoins could have introduced nils */
-					re->card = 3; /* mark as multi value, the real attribute is introduced later */
+					re->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
 					append(join->attr, a);
 					assert(is_project(rel->op) || depth);
 					if ((is_project(rel->op) || depth))

@@ -133,8 +133,8 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	}
 	/* append inserts to hash */
 	inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
-	list_append(ins->exps, h);
 	exp_setname(sql->sa, h, alias, iname);
+	list_append(ins->exps, h);
 	return inserts;
 }
 
@@ -759,8 +759,8 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	}
 	/* append hash to updates */
 	updates->r = ups = rel_project(sql->sa, ups, rel_projections(sql, ups, NULL, 1, 1));
-	list_append(ups->exps, h);
 	exp_setname(sql->sa, h, alias, iname);
+	list_append(ups->exps, h);
 
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);

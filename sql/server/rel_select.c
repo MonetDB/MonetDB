@@ -198,6 +198,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname, list *refs)
 		}
 		if (!columnrefs && sq->exps) {
 			ne = sq->exps->h;
+			list_hash_clear(sq->exps);
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
 				char *name = NULL;
@@ -298,6 +299,7 @@ rel_with_query(sql_query *query, symbol *q )
 					set_basecol(e);
 				}
 			}
+			list_hash_clear(nrel->exps);
 		}
 	}
 	rel = rel_semantic(query, next);
@@ -973,6 +975,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 						noninternexp_setname(sql->sa, e, tname, NULL);
 						set_basecol(e);
 					}
+					list_hash_clear(exps);
 				}
 			}
 			if (allowed)
@@ -1014,6 +1017,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 					exp_setname(sql->sa, e, tname, c->base.name);
 					set_basecol(e);
 				}
+				list_hash_clear(rel->exps);
 			}
 			if (rel && !allowed && t->query && (rel = rel_reduce_on_column_privileges(sql, rel, t)) == NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
