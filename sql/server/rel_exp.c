@@ -2316,11 +2316,8 @@ exp_rel_update_exp(mvc *sql, sql_exp *e)
 sql_exp *
 exp_rel_label(mvc *sql, sql_exp *e)
 {
-	if (exp_is_rel(e)) {
-		sql_rel *r = e->l;
-
-		e->l = r = rel_label(sql, r, 1);
-	}
+	if (exp_is_rel(e))
+		e->l = rel_label(sql, e->l, 1);
 	return e;
 }
 
