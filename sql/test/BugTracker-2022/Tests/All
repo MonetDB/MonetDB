@@ -2,3 +2,4 @@ date-calculations.Bug-7227
 transaction-conflict.Bug-7228
 insert-not-null.Bug-7232
 recreate-view.Bug-7241
+HAVE_LIBPY3?python-udf-inside-udf.Bug-7252
