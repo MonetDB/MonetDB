@@ -29,6 +29,8 @@ mapping = {
     'none': no_convert,
     'void': py_oid,
     'str': strip,
+    'bte': int,
+    'sht': int,
     'int': int,
     'lng': int,
     'hge': int,
