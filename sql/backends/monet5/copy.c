@@ -860,6 +860,65 @@ COPYget_parallel(bit *parallel)
 	return MAL_SUCCEED;
 }
 
+static str
+COPYstr2buf(bat *bat_id, str *s)
+{
+	str msg = MAL_SUCCEED;
+	str content = *s;
+	size_t content_len = strlen(content);
+	BAT *b = NULL;
+
+	b = COLnew(0, TYPE_bte, content_len, TRANSIENT);
+	if (!b)
+			bailout("copy.str2buf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	memcpy(Tloc(b, 0), content, content_len);
+	BATsetcount(b, content_len);
+
+end:
+	if (b) {
+		if (msg == MAL_SUCCEED) {
+			*bat_id = b->batCacheid;
+			BBPkeepref(*bat_id);
+		} else {
+			BBPunfix(b->batCacheid);
+		}
+	}
+	return msg;
+}
+
+static str
+COPYbuf2str(str *ret, bat *bat_id)
+{
+	str msg = MAL_SUCCEED;
+	char *s = NULL;
+	BUN len;
+
+	BAT *b = BATdescriptor(*bat_id);
+	if (!b)
+		bailout("copy.buf2str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	len = BATcount(b);
+
+	for (BUN i = 0; i < len; i++) {
+		if (*(char*)Tloc(b, i) == '\0')
+			bailout("copy.buf2str", "BAT contains a 0 at index %ld", (long)i);
+	}
+
+	s = GDKmalloc(len + 1);
+	if (!s)
+		bailout("copy.str2buf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	s[len] = '\0';
+	memcpy(s, Tloc(b, 0), len);
+
+	*ret = s;
+end:
+	if (b)
+		BBPunfix(b->batCacheid);
+	return msg;
+}
+
+
 static mel_func copy_init_funcs[] = {
  command("copy", "read", COPYread, true, "Clear the BAT and read 'block_size' bytes into it from 's'",
 	args(1, 4,
@@ -911,6 +970,16 @@ static mel_func copy_init_funcs[] = {
  pattern("copy", "recv", COPYpair_assign_bats, false, "dummy", args(2, 4,
 	batargany("", 1), batargany("", 1),
 	batargany("chan_val", 1), batargany("nil_val", 1)
+ )),
+
+ // for testing
+ command("copy", "str2buf", COPYstr2buf, false, "turn str into bat[:bte]", args(1, 2,
+	batarg("buf", bte),
+	arg("", str),
+ )),
+ command("copy", "buf2str", COPYbuf2str, false, "turn bat[:bte] into str", args(1, 2,
+	arg("str", str),
+	batarg("", bte),
  )),
 
  { .imp=NULL }

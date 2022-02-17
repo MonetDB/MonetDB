@@ -1,0 +1,24 @@
+statement ok
+b := copy.str2buf("MONET");
+
+query II rowsort
+io.print(b);
+----
+0
+77
+1
+79
+2
+78
+3
+69
+4
+84
+
+statement ok
+s := copy.buf2str(b);
+
+query T nosort
+io.print(s);
+----
+"MONET"
