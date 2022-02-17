@@ -94,6 +94,7 @@ set(include_sql_files
   25_debug
   26_sysmon
   27_rejects
+  28_copy
   39_analytics
   40_json
   42_md5sum
