@@ -3784,15 +3784,51 @@ rewrite_complex(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
+static sql_rel *
+flatten_values(mvc *sql, sql_rel *rel)
+{
+	list *exps = sa_list(sql->sa);
+	sql_exp *e = rel->exps->h->data;
+	sql_rel *cur = NULL;
+	list *vals = exp_get_values(e);
+	if (vals) {
+		for(int i = 0; i<list_length(vals); i++) {
+			sql_rel *nrel = rel_project(sql->sa, NULL, sa_list(sql->sa));
+			set_processed(nrel);
+			for(node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				list *vals = exp_get_values(e);
+
+				if (vals) {
+					if (i == 0)
+						append(exps, exp_ref(sql, e));
+					sql_exp *v = list_fetch(vals, i);
+					append(nrel->exps, v);
+					rel_set_exps(nrel, nrel->exps);
+				}
+			}
+			if (cur) {
+				nrel = rel_setop(sql->sa, cur, nrel, op_union);
+				rel_setop_set_exps(sql, nrel, exps, false);
+				set_processed(nrel);
+			}
+			cur = nrel;
+		}
+		rel_destroy(rel);
+		rel = cur;
+	}
+	return rel;
+}
+
 /* rewrite project [ [multi values], [multi values2] , .. [] ] -> union ) */
 static inline sql_rel *
 rewrite_values(visitor *v, sql_rel *rel)
 {
 	int single = is_single(rel);
-	if (!is_simple_project(rel->op) || list_empty(rel->exps))
+	if (!is_simple_project(rel->op) || list_empty(rel->exps) || is_rewrite_values_used(rel->used))
 		return rel;
 
-	if (rel_is_ref(rel) && !is_rewrite_values_used(rel->used)) { /* need extra project */
+	if (rel_is_ref(rel)) { /* need extra project */
 		rel->l = rel_project(v->sql->sa, rel->l, rel->exps);
 		rel->exps = rel_projections(v->sql, rel->l, NULL, 1, 1);
 		((sql_rel*)rel->l)->r = rel->r; /* propagate order by exps */
@@ -3802,6 +3838,9 @@ rewrite_values(visitor *v, sql_rel *rel)
 		return rel;
 	}
 	sql_exp *e = rel->exps->h->data;
+
+	if (is_values(e) && list_length(rel->exps) > 1 && exps_have_rel_exp(rel->exps))
+		return flatten_values(v->sql, rel);
 
 	if (!is_values(e) || list_length(exp_get_values(e))<=1 || (!exp_has_freevar(v->sql, e) && !exp_has_rel(e)))
 		return rel;
@@ -3834,6 +3873,7 @@ rewrite_values(visitor *v, sql_rel *rel)
 		}
 		rel_destroy(rel);
 		rel = cur;
+		rel->used |= rewrite_values_used;
 		if (single)
 			set_single(rel);
 	}
