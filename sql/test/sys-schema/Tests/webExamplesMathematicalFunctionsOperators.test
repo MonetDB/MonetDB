@@ -25,13 +25,6 @@ select 2.0 ^ 3.0
 ----
 1.000
 
-query T nosort
-plan select 2.0 ^ 3.0 
-----
-project (
-|  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."bit_xor"(hugeint(128)[decimal(2,1) "20"] NOT NULL, hugeint(128)[decimal(2,1) "30"] NOT NULL) NOT NULL ]
-
 statement error
 select |/ 25.0 
 
