@@ -623,6 +623,32 @@ select 1 where (2,3) in ((values (2, 3), (4, 5)))
 ----
 1
 
+statement ok
+create table t4 (c0 int, c1 int)
+
+statement ok rowcount 3
+insert into t4 values (1,1),(2,2),(3,3)
+
+query I nosort
+select c1 from t4 where (c0,3) in (select 2,3 union all select 3,4)
+----
+2
+
+query I nosort
+select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 2,3 union all select 6,7))
+----
+2
+
+query I rowsort
+select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 3,3 union all select 5,4))
+----
+2
+3
+
+query I nosort
+select c1 from t4 where (c0,3) in (select 2,3 where false)
+----
+
 query I nosort
 SELECT 1 FROM (values (1, 4), (3, (select 2))) x(x,y) WHERE greatest(FALSE, FALSE)
 ----

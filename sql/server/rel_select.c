@@ -1966,7 +1966,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	/* list of values or subqueries */
 	if (n->type == type_list) {
 		sql_exp *values;
-		list *vals = sa_list(sql->sa), *nvalues;
+		list *vals = sa_list(sql->sa);
 
 		n = dl->h->next;
 		n = n->data.lval->h;
@@ -2004,9 +2004,8 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		if (is_tuple) {
 			if (!(values = exp_tuples_set_supertype(sql, exp_get_values(le), values)))
 				return NULL;
-			if (!(nvalues = tuples_check_types(sql, exp_get_values(le), values)))
+			if (!(le->f = tuples_check_types(sql, exp_get_values(le), values)))
 				return NULL;
-			le->f = nvalues;
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
 			sql_subtype super, *le_tpe = exp_subtype(le), *values_tpe = NULL;
 

@@ -635,7 +635,7 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 		sql_exp *le = n->data;
 		sql_exp *re = m->data;
 
-		if ((rel_convert_types(sql, l, r, &le, &re, 1, type_set) < 0))
+		if (rel_convert_types(sql, l, r, &le, &re, 1, type_set) < 0)
 			return NULL;
 		append(nls, le);
 		append(nrs, re);
@@ -755,15 +755,11 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	char cname[16], *cnme = NULL;
 
 	tnme = number2name(tname, sizeof(tname), nr);
-	if (!is_project(r->op)) {
+	if (!is_simple_project(r->op))
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-		set_processed(r);
-	}
-	if (is_project(r->op) && r->exps) {
-		node *ne = r->exps->h;
-
+	if (!list_empty(r->exps)) {
 		list_hash_clear(r->exps);
-		for (; ne; ne = ne->next) {
+		for (node *ne = r->exps->h; ne; ne = ne->next) {
 			sql_exp *e = ne->data;
 
 			if (!is_freevar(e)) {
@@ -776,12 +772,8 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		}
 	}
 	/* op_projects can have a order by list */
-	if (r->op == op_project && r->r) {
-		list *exps = r->r;
-		node *ne = exps->h;
-
-		list_hash_clear(exps);
-		for (; ne; ne = ne->next) {
+	if (!list_empty(r->r)) {
+		for (node *ne = ((list*)r->r)->h; ne; ne = ne->next) {
 			if (all) {
 				nr = ++sql->label;
 				cnme = number2name(cname, sizeof(cname), nr);
