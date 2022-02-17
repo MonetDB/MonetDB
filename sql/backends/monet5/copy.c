@@ -17,6 +17,8 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
+#include "rel_copy.h"
+
 
 #define bailout(f, ...) do { \
 		msg = createException(SQL, f,  __VA_ARGS__); \
@@ -802,7 +804,7 @@ COPYpair_assign(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static inline str
+static str
 COPYpair_assign_bats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
@@ -821,6 +823,40 @@ COPYpair_assign_bats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*getArgReference_bat(stk, pci, 0) = left;
 	*getArgReference_bat(stk, pci, 1) = right;
 
+	return MAL_SUCCEED;
+}
+
+static str
+COPYset_blocksize(int *dummy, int *blocksize)
+{
+	(void)dummy;
+	char buffer[128];
+	sprintf(buffer, "%d", *blocksize);
+	GDKsetenv(COPY_BLOCKSIZE_SETTING, buffer);
+	return MAL_SUCCEED;
+}
+
+static str
+COPYget_blocksize(int *blocksize)
+{
+	int size = GDKgetenv_int(COPY_BLOCKSIZE_SETTING, -1);
+	*blocksize = size > 0 ? size : DEFAULT_COPY_BLOCKSIZE;
+	return MAL_SUCCEED;
+}
+
+static str
+COPYset_parallel(bit *dummy, bit *parallel)
+{
+	(void)dummy;
+	char *value = *parallel ? "true" : "false";
+	GDKsetenv(COPY_PARALLEL_SETTING, value);
+	return MAL_SUCCEED;
+}
+
+static str
+COPYget_parallel(bit *parallel)
+{
+	*parallel = GDKgetenv_istrue(COPY_PARALLEL_SETTING);
 	return MAL_SUCCEED;
 }
 
@@ -843,6 +879,20 @@ static mel_func copy_init_funcs[] = {
  pattern("copy", "parse_generic", COPYparse_generic, false, "Parse as an integer", args(1, 4,
 	batargany("", 1),
 	batarg("block", bte), batarg("offsets", int), argany("type", 1)
+ )),
+
+ command("copy", "set_blocksize", COPYset_blocksize, true, "set the COPY block size", args(1, 2,
+	arg("blocksize", int)
+ )),
+ command("copy", "get_blocksize", COPYget_blocksize, true, "set the COPY block size", args(1, 1,
+	arg("", int)
+ )),
+
+ command("copy", "set_parallel", COPYset_parallel, true, "set the COPY block size", args(1, 2,
+	arg("blocksize", bit)
+ )),
+ command("copy", "get_parallel", COPYget_parallel, true, "set the COPY block size", args(1, 1,
+	arg("", bit)
  )),
 
  // temporary

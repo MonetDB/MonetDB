@@ -13,6 +13,14 @@
 #include "sql_statement.h"
 #include "mal_backend.h"
 
+#define COPY_BLOCKSIZE_SETTING "copy_blocksize"
+#define COPY_PARALLEL_SETTING "copy_parallel"
+
+#define DEFAULT_COPY_BLOCKSIZE (1024 * 1024)
+
+
 extern stmt *rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom);
+extern bool parallel_copy_enabled(void);
+
 
 #endif /*_REL_COPY_H_*/

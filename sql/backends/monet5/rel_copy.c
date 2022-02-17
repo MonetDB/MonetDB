@@ -14,6 +14,35 @@
 #include "opt_prelude.h"
 
 
+bool
+parallel_copy_enabled(void)
+{
+	return GDKgetenv_istrue(COPY_PARALLEL_SETTING);
+}
+
+static int
+get_copy_blocksize(void) {
+	int size = GDKgetenv_int(COPY_BLOCKSIZE_SETTING, -1);
+	return size > 0 ? size : DEFAULT_COPY_BLOCKSIZE;
+}
+
+static int
+allocation_size(int blocksize)
+{
+	int alt;
+	int size;
+
+	size = blocksize + blocksize / 8;
+
+	alt = blocksize + 4096;
+	size = size < alt ? alt : size;
+
+	alt = 8192;
+	size = size < alt ? alt : size;
+
+	return size;
+}
+
 static int
 extract_parameter(backend *be, list *stmts, sql_exp *copyfrom, int argno)
 {
@@ -58,13 +87,13 @@ struct loop_vars {
 static void
 emit_onserver(
 	MalBlkPtr mb, struct loop_vars *loop_vars,
-	int var_fname, int block_size, int margin,
+	int var_fname, int block_size,
 	int var_line_sep, int var_quote_char, int var_escape)
 {
 	InstrPtr q;
-
 	int streams_type = ATOMindex("streams");
 	int bte_bat_type = newBatType(TYPE_bte);
+	int alloc = allocation_size(block_size);
 
 	q = newStmt(mb, "streams", "openRead");
 	q = pushArgument(mb, q, var_fname);
@@ -72,7 +101,7 @@ emit_onserver(
 
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
-	q = pushLng(mb, q, block_size + margin);
+	q = pushLng(mb, q, alloc);
 	int var_block_channel = getDestVar(q);
 
 	q = newAssignment(mb);
@@ -90,7 +119,7 @@ emit_onserver(
 
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
-	q = pushLng(mb, q, 300);
+	q = pushLng(mb, q, alloc);
 	int var_next_block = getDestVar(q);
 
 	// START READ BLOCK
@@ -168,8 +197,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
 	(void)rel;
 	(void)refs;
-	const int block_size = 1024 * 1024;
-	const int margin = 8 * 1024;
+	const int block_size = get_copy_blocksize();
 
 	struct loop_vars loop_vars;
 	InstrPtr q;
@@ -228,7 +256,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	int var_claim_channel = getDestVar(q);
 
 
-	emit_onserver(mb, &loop_vars, var_fname, block_size, margin, var_line_sep, var_quote_char, var_escape);
+	emit_onserver(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape);
 
 	int var_claim_token = emit_receive(mb, var_claim_channel, TYPE_bit);
 

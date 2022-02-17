@@ -4451,19 +4451,15 @@ rel2bin_directappend(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	mvc *mvc = be->mvc;
 	MalBlkPtr mb = be->mb;
 
-	list *args = copyfrom->l;
-	// X_27:bat[:oid] := sql.append_from(0x7f727c15e310:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/joeri":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int); |
-	node *fname_node = args->h->next->next->next->next->next;
-	sql_exp *fname_exp = fname_node->data;
-	atom *fname_atom = fname_exp->l;
-	const char *fname = fname_atom->data.val.sval;
-	if (strstr(fname, "banana") != NULL)
+
+	if (parallel_copy_enabled())
 		return rel2bin_copyparpipe(be, rel, refs, copyfrom);
 
 	// We're about to emit a custom sql.copy_from invocation.
 	// Temporarily, until we learn how to do that properly.
 
 	// First emit statements for all copyfrom's arguments.
+	list *args = copyfrom->l;
 	list *l = sa_list(mvc->sa);
 	for (node *n = args->h; n; n = n->next) {
 		sql_exp *arg = n->data;
