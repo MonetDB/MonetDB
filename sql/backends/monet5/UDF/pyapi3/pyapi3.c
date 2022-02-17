@@ -213,15 +213,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		card = 1;
 	}
 
-	if (!grouped) {
-		sql_subfunc *sqlmorefun =
-			(*(sql_subfunc **)getArgReference(stk, pci, pci->retc + has_card_arg));
-		if (sqlmorefun) {
-			sqlfun = sqlmorefun->func;
-		}
-	} else {
-		sqlfun = *(sql_func **)getArgReference(stk, pci, pci->retc + has_card_arg);
-	}
+	sqlfun = *(sql_func **)getArgReference(stk, pci, pci->retc + has_card_arg);
 	exprStr = *getArgReference_str(stk, pci, pci->retc + 1 + has_card_arg);
 	varres = sqlfun ? sqlfun->varres : 0;
 	retcols = !varres ? pci->retc : -1;

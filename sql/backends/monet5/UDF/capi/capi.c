@@ -529,16 +529,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
-	if (!grouped) {
-		sql_subfunc *sqlmorefun =
-			(*(sql_subfunc **)getArgReference_ptr(stk, pci, pci->retc));
-		if (sqlmorefun)
-			sqlfun =
-				(*(sql_subfunc **)getArgReference_ptr(stk, pci, pci->retc))->func;
-	} else {
-		sqlfun = *(sql_func **)getArgReference_ptr(stk, pci, pci->retc);
-	}
-
+	sqlfun = *(sql_func **)getArgReference_ptr(stk, pci, pci->retc);
 	funcname = sqlfun ? sqlfun->base.name : "yet_another_c_function";
 
 	args = (str *)GDKzalloc(sizeof(str) * pci->argc);
