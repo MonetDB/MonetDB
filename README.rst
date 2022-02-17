@@ -109,8 +109,7 @@ The following packages are optional:
 ``unixODBC-devel``, ``valgrind-devel``.
 
 On Ubuntu and Debian the following packages are required:
-``bison``, ``cmake``, ``gcc``, ``libssl-dev``, ``pkg-config``,
-``python3``.
+``bison``, ``cmake``, ``gcc``, ``pkg-config``, ``python3``.
 
 The following packages are optional but recommended:
 ``libbz2-dev``, ``uuid-dev``, ``libpcre3-dev``, ``libreadline-dev``,
