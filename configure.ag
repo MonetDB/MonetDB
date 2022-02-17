@@ -1885,7 +1885,7 @@ AC_ARG_WITH([proj],
 		[include proj support (default=auto)])],
 	[have_proj="$withval"])
 AS_VAR_IF([have_proj], [no], [], [
-	PKG_CHECK_MODULES([proj], [proj],
+	PKG_CHECK_MODULES([proj], [proj < 8.0.0],
 		[AC_DEFINE([HAVE_PROJ], 1, [Define if the proj library exists])
 		 have_proj=yes],
 		[AS_VAR_IF([have_proj], [auto], [],
