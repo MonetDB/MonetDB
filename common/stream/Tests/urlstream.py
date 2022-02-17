@@ -72,10 +72,13 @@ url = f'http://localhost:{port}'
 def streamcat(suffix):
     u = url + suffix
     cmd = ['streamcat', 'read', u, 'urlstream']
-    print(f'FETCHING {suffix}', end="", file=OUTPUT)
+    print(f'FETCHING {suffix}', file=OUTPUT)
     PIPE = subprocess.PIPE
     p = subprocess.run(cmd, check=False, stdout=PIPE, stderr=PIPE, timeout=10)
     print(f' yielded return code {p.returncode}', file=OUTPUT)
+    print(f' wrote {len(p.stdout)} bytes to stdout', file=OUTPUT)
+    if p.stderr:
+        print(f' stderr={p.stderr!r}', file=OUTPUT)
     return (p.returncode, p.stdout, p.stderr)
 
 def run_tests():
@@ -101,5 +104,5 @@ try:
 except Exception as e:
     output = OUTPUT.getvalue()
     if output:
-        print(output)
+        print(output, file=sys.stderr)
     raise e
