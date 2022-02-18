@@ -1018,8 +1018,10 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 					break;
 			}
 			/* instantiate MAL functions while being created. This also sets the side-effects flag */
-			if (!backend_resolve_function(&clientid, f, fnme, &(f->side_effect)))
+			bool se = f->side_effect;
+			if (!backend_resolve_function(&clientid, f, fnme, &se))
 				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
+			f->side_effect = se;
 			f->instantiated = TRUE;
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
