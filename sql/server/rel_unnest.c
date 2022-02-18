@@ -3831,10 +3831,13 @@ rewrite_values(visitor *v, sql_rel *rel)
 	}
 	sql_exp *e = rel->exps->h->data;
 
+	if (!is_values(e) || list_length(exp_get_values(e))<=1)
+		return rel;
+
 	if (is_values(e) && list_length(rel->exps) > 1 && exps_have_rel_exp(rel->exps))
 		return flatten_values(v->sql, rel);
 
-	if (!is_values(e) || list_length(exp_get_values(e))<=1 || (!exp_has_freevar(v->sql, e) && !exp_has_rel(e)))
+	if (!exp_has_freevar(v->sql, e) && !exp_has_rel(e))
 		return rel;
 
 	list *exps = sa_list(v->sql->sa);
