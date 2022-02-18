@@ -1282,6 +1282,8 @@ bind_join_vars(mvc *sql, sql_rel *rel)
 	}
 }
 
+static sql_rel * rewrite_outer2inner_union_(visitor *v, sql_rel *rel);
+
 static sql_rel *
 push_up_join(mvc *sql, sql_rel *rel, list *ad)
 {
@@ -1306,6 +1308,12 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			}
 			rd = (j->op != op_full && j->op != op_right)?rel_dependent_var(sql, d, jr):(list*)1;
 			ld = ((j->op == op_join || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
+
+			if (is_outerjoin(j->op) && j->exps && !list_empty(rel->attr)) {
+				visitor v = { .sql = sql };
+				rel->r = j = rewrite_outer2inner_union_(&v, j);
+				return rel;
+			}
 
 			if (ld && rd) {
 				node *m;
@@ -3733,28 +3741,10 @@ rewrite_outer2inner_union_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static bool
-vars_depends_on(mvc *sql, sql_rel *rel, list *vars)
-{
-	if (!vars)
-		return false;
-	for(node *n = vars->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (exp_has_freevar(sql, e) && rel_rebind_exp(sql, rel, e))
-			return true;
-	}
-	return false;
-}
-
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
 	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (exps_have_anyequal(rel->exps, ANYEQUAL|NOT_ANYEQUAL) || (exps_have_freevar(v->sql, rel->exps) && exps_have_rel_exp(rel->exps) && exps_have_or_exp(v->sql, rel->exps))))
-		return rewrite_outer2inner_union_(v, rel);
-	if (!is_dependent(rel) && is_outerjoin(rel->op) && rel->flag != MERGE_LEFT && !list_empty(rel->exps) && (
-				((is_left(rel->op) || is_full(rel->op)) && (exps_have_freevar(v->sql, rel->exps) && vars_depends_on(v->sql, rel->l, rel->exps))) ||
-				((is_right(rel->op) || is_full(rel->op)) && (exps_have_freevar(v->sql, rel->exps) && vars_depends_on(v->sql, rel->r, rel->exps)))))
 		return rewrite_outer2inner_union_(v, rel);
 	if (is_full(rel->op) && rel_has_freevar(v->sql, rel->r)) { /* swap */
 		sql_rel *s = rel->r;
