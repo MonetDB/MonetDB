@@ -498,7 +498,8 @@ typedef struct sql_func {
 	varres:1,	/* variable output result */
 	vararg:1,	/* variable input arguments */
 	system:1,	/* system function */
-	instantiated:1; /* if the function is instantiated */
+	instantiated:1,	/* if the function is instantiated */
+	private:1;	/* certain functions cannot be bound from user queries */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing
