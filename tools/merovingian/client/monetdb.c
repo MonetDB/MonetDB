@@ -1474,7 +1474,7 @@ command_get(int argc, char *argv[])
 					char *y = NULL;
 					kv = findConfKey(defprops, p);
 					source = "default";
-					y = kv != NULL && kv->val != NULL ? kv->val : "<unknown>";
+					y = kv != NULL && kv->val != NULL ? kv->val : "<unset>";
 					if (twidth > 0) {
 						abbreviateString(value, y, twidth);
 					} else {

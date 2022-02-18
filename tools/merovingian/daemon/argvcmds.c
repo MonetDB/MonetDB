@@ -316,7 +316,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				continue;
 			}
 			if (kv->val == NULL) {
-				value = "<unknown>";
+				value = "<unset>";
 			} else {
 				value = kv->val;
 			}
