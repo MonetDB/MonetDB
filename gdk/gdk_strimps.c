@@ -492,14 +492,14 @@ BATcheckstrimps(BAT *b)
 	return ret;
 }
 
-#define STRMPfilterloop(next) \
-	do { \
-		for (i = 0; i < ncand; i++) { \
-			x = next(&ci); \
-			if ((bitstring_array[x] & qbmask) == qbmask) { \
-				rvals[j++] = x; \
-			} \
-		} \
+#define STRMPfilterloop(next)						\
+	do {								\
+		for (i = 0; i < ncand; i++) {				\
+			x = next(&ci);					\
+			if ((bitstring_array[x] & qbmask) == qbmask) {	\
+				rvals[j++] = x;				\
+			}						\
+		}							\
 	} while (0)
 
 /* Filter a BAT b using a string q. Return the result as a candidate

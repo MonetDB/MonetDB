@@ -67,7 +67,7 @@ HASHput(Hash *h, BUN i, BUN v)
 		((BUN2type *) h->Bckt)[i] = (BUN2type) v;
 		break;
 #endif
-	default:		/* BUN4 */
+	case BUN4:
 		((BUN4type *) h->Bckt)[i] = (BUN4type) v;
 		break;
 #ifdef BUN8
@@ -75,6 +75,8 @@ HASHput(Hash *h, BUN i, BUN v)
 		((BUN8type *) h->Bckt)[i] = (BUN8type) v;
 		break;
 #endif
+	default:
+		MT_UNREACHABLE();
 	}
 }
 
@@ -90,7 +92,7 @@ HASHputlink(Hash *h, BUN i, BUN v)
 		((BUN2type *) h->Link)[i] = (BUN2type) v;
 		break;
 #endif
-	default:		/* BUN4 */
+	case BUN4:
 		assert(v == BUN_NONE || v == BUN4_NONE || v < i);
 		((BUN4type *) h->Link)[i] = (BUN4type) v;
 		break;
@@ -100,6 +102,8 @@ HASHputlink(Hash *h, BUN i, BUN v)
 		((BUN8type *) h->Link)[i] = (BUN8type) v;
 		break;
 #endif
+	default:
+		MT_UNREACHABLE();
 	}
 }
 
@@ -112,7 +116,7 @@ HASHget(const Hash *h, BUN i)
 		i = (BUN) ((BUN2type *) h->Bckt)[i];
 		return i == BUN2_NONE ? BUN_NONE : i;
 #endif
-	default:		/* BUN4 */
+	case BUN4:
 		i = (BUN) ((BUN4type *) h->Bckt)[i];
 		return i == BUN4_NONE ? BUN_NONE : i;
 #ifdef BUN8
@@ -120,6 +124,8 @@ HASHget(const Hash *h, BUN i)
 		i = (BUN) ((BUN8type *) h->Bckt)[i];
 		return i == BUN8_NONE ? BUN_NONE : i;
 #endif
+	default:
+		MT_UNREACHABLE();
 	}
 }
 
@@ -132,7 +138,7 @@ HASHgetlink(const Hash *h, BUN i)
 		i = (BUN) ((BUN2type *) h->Link)[i];
 		return i == BUN2_NONE ? BUN_NONE : i;
 #endif
-	default:		/* BUN4 */
+	case BUN4:
 		i = (BUN) ((BUN4type *) h->Link)[i];
 		return i == BUN4_NONE ? BUN_NONE : i;
 #ifdef BUN8
@@ -140,6 +146,8 @@ HASHgetlink(const Hash *h, BUN i)
 		i = (BUN) ((BUN8type *) h->Link)[i];
 		return i == BUN8_NONE ? BUN_NONE : i;
 #endif
+	default:
+		MT_UNREACHABLE();
 	}
 }
 

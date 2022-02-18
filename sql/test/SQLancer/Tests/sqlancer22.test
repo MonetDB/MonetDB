@@ -595,5 +595,98 @@ SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (SELECT DISTINCT 3 FROM t1 AS tx JOIN (
 ON tx.c0 > 2 OR t0.c0 > 3) AS x(x) ON (SELECT TRUE FROM t1) OR FALSE
 ----
 
+query I nosort
+SELECT 1 FROM (SELECT TRUE) AS vx(x), t3 WHERE vx.x AND greatest(t3.c0, EXISTS (SELECT 1 WHERE vx.x))
+----
+
+query I nosort
+SELECT (SELECT 1 FROM (VALUES (1),(2),(3)) z(z) FULL OUTER JOIN (VALUES (2, 3), (4, t0.c0)) AS x(x,y) ON z.z) FROM t0
+----
+
+query I nosort
+select 1 where (2,3) in (select x,y from (values (2, 3), (4, 5)) x(x,y))
+----
+1
+
+query I nosort
+select 1 where (2,3) in (select 2,3 union all select 3,4)
+----
+1
+
+query I nosort
+select 1 where (2,3) in (with x(x,y) as (select 2,3) select x,y from x)
+----
+1
+
+query I nosort
+select 1 where (2,3) in ((values (2, 3), (4, 5)))
+----
+1
+
+statement ok
+create table t4 (c0 int, c1 int)
+
+statement ok rowcount 3
+insert into t4 values (1,1),(2,2),(3,3)
+
+query I nosort
+select c1 from t4 where (c0,3) in (select 2,3 union all select 3,4)
+----
+2
+
+query I nosort
+select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 2,3 union all select 6,7))
+----
+2
+
+query I rowsort
+select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 3,3 union all select 5,4))
+----
+2
+3
+
+query I nosort
+select c1 from t4 where (c0,3) in (select 2,3 where false)
+----
+
+query I nosort
+SELECT 1 FROM (values (1, 4), (3, (select 2))) x(x,y) WHERE greatest(FALSE, FALSE)
+----
+
+query I nosort
+SELECT 1 FROM (values (1, 4), (3, (select 2 where true))) x(x,y) WHERE greatest(FALSE, FALSE)
+----
+
+query I nosort
+SELECT EXISTS (VALUES (1, FALSE), (2, 1 < ALL(SELECT x.x))) FROM (SELECT 1) x(x)
+----
+1
+
+# this one is right
+query I nosort
+SELECT 1 FROM (values (1, 4), (3, 2)) x(x,y) WHERE greatest(FALSE, FALSE)
+----
+
+query I nosort
+SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT TRUE) AS z(z) ON 1 = ANY(SELECT t0.c0 FROM (SELECT 3) x(x))
+AND (SELECT TRUE FROM (SELECT 4) x(x) FULL OUTER JOIN (SELECT 5) AS y(y) ON z.z)
+----
+1
+
 statement ok
 ROLLBACK
+
+statement error Subquery has too many columns
+select 1 where (2,3) in (select x,y,2 from (values (2, 3), (4, 5)) x(x,y))
+
+statement error Subquery has too few columns
+select 1 where (2,3) in (select 2 union all select 3)
+
+statement error SELECT: subquery must return only one column
+select 1 where (2) in (with x(x,y) as (select 2,3) select x,y from x)
+
+statement error GDK reported error: BATsubcross: more than one match
+select x FROM (VALUES (1),(2),(3)) x(x) where ((select 3 union all select 3)) in (select 3)
+
+statement error GDK reported error: BATsubcross: more than one match
+select x FROM (VALUES (1),(2),(3)) x(x) where (2, (select 3 union all select 3)) in (select 2,3)

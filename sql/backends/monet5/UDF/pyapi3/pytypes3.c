@@ -223,7 +223,7 @@ int BatType_ToPyType(int type)
 bool PyType_IsPandasDataFrame(PyObject *object)
 {
 	PyObject *str = PyObject_Str(PyObject_Type(object));
-	bool ret = strcmp(PyString_AsString(str),
+	bool ret = strcmp(PyUnicode_AsUTF8(str),
 					  "<class 'pandas.core.frame.DataFrame'>") == 0;
 	Py_DECREF(str);
 	return ret;
@@ -232,7 +232,7 @@ bool PyType_IsPandasDataFrame(PyObject *object)
 bool PyType_IsNumpyMaskedArray(PyObject *object)
 {
 	PyObject *str = PyObject_Str(PyObject_Type(object));
-	bool ret = strcmp(PyString_AsString(str),
+	bool ret = strcmp(PyUnicode_AsUTF8(str),
 					  "<class 'numpy.ma.core.MaskedArray'>") == 0;
 	Py_DECREF(str);
 	return ret;
@@ -241,7 +241,7 @@ bool PyType_IsNumpyMaskedArray(PyObject *object)
 bool PyType_IsLazyArray(PyObject *object)
 {
 	PyObject *str = PyObject_Str(PyObject_Type(object));
-	bool ret = strcmp(PyString_AsString(str), "<class 'lazyarray'>") == 0;
+	bool ret = strcmp(PyUnicode_AsUTF8(str), "<class 'lazyarray'>") == 0;
 	Py_DECREF(str);
 	return ret;
 }
@@ -271,11 +271,10 @@ bool PyType_IsPyScalar(PyObject *object)
 {
 	if (object == NULL)
 		return false;
-	return (PyArray_CheckScalar(object) || PyInt_Check(object) ||
-			PyFloat_Check(object) || PyLong_Check(object) ||
-			PyString_Check(object) || PyBool_Check(object) ||
-			PyUnicode_Check(object) || PyByteArray_Check(object)
-			|| PyBytes_Check(object));
+	return (PyArray_CheckScalar(object) || PyLong_Check(object) ||
+			PyFloat_Check(object) || PyUnicode_Check(object) ||
+			PyBool_Check(object) || PyByteArray_Check(object) ||
+			PyBytes_Check(object));
 }
 
 void _pytypes_init(void) { _import_array(); }

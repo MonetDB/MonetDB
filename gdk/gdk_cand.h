@@ -163,12 +163,10 @@ canditer_next(struct canditer *ci)
 	case cand_except:
 		return canditer_next_except(ci);
 	case cand_mask:
-		/* work around compiler error: control reaches end of
-		 * non-void function */
-		break;
+		return canditer_next_mask(ci);
+	default:
+		MT_UNREACHABLE();
 	}
-	assert(ci->tpe == cand_mask);
-	return canditer_next_mask(ci);
 }
 
 #define canditer_search_dense(ci, o, next) ((o) < (ci)->seq ? next ? 0 : BUN_NONE : (o) >= (ci)->seq + (ci)->ncand ? next ? (ci)->ncand : BUN_NONE : (o) - (ci)->seq)

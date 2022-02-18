@@ -273,20 +273,23 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		return;
 	} else {
 		str err;
-		oid uid;
+		oid uid = 0;
 		sabdb *stats = NULL;
 
-		/* access control: verify the credentials supplied by the user,
-		 * no need to check for database stuff, because that is done per
-		 * database itself (one gets a redirect) */
-		err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
-		if (err != MAL_SUCCEED) {
-			mnstr_printf(fout, "!%s\n", err);
-			exit_streams(fin, fout);
-			freeException(err);
-			GDKfree(command);
-			return;
+		if (!GDKembedded()) {
+			/* access control: verify the credentials supplied by the user,
+			* no need to check for database stuff, because that is done per
+			* database itself (one gets a redirect) */
+			err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
+			if (err != MAL_SUCCEED) {
+				mnstr_printf(fout, "!%s\n", err);
+				exit_streams(fin, fout);
+				freeException(err);
+				GDKfree(command);
+				return;
+			}
 		}
+
 
 		if (!GDKinmemory(0) && !GDKembedded()) {
 			err = msab_getMyStatus(&stats);

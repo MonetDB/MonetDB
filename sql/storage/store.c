@@ -810,6 +810,8 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	for ( ; rt_triggers->cur_row < rt_triggers->nr_rows; rt_triggers->cur_row++) {
 		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "table_id"));
 
+		if (ntid < t->base.id && instore(ntid)) /* skip triggers on system tables ugh */
+			continue;
 		if (ntid != t->base.id)
 			break;
 		sql_trigger *k = load_trigger(tr, t, rt_triggers, rt_triggercols);

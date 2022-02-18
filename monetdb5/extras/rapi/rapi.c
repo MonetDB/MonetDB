@@ -642,13 +642,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 			  "Embedded R initialization has failed");
 	}
 
-	if (!grouped) {
-		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc+has_card_arg));
-		if (sqlmorefun) sqlfun = sqlmorefun->func;
-	} else {
-		sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc+has_card_arg);
-	}
-
+	sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc+has_card_arg);
 	args = (str*) GDKzalloc(sizeof(str) * pci->argc);
 	if (args == NULL) {
 		throw(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);

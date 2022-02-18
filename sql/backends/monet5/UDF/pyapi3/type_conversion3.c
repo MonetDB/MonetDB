@@ -12,9 +12,6 @@
 
 #include <longintrepr.h>
 
-#define PyInt_Check PyLong_Check
-#define PyString_CheckExact PyUnicode_CheckExact
-
 bool pyapi3_string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode)
 {
 	size_t i;
@@ -150,8 +147,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 						  "object.\n");
 			goto wrapup;
 		}
-	} else if (PyBool_Check(obj) || PyLong_Check(obj) || PyInt_Check(obj) ||
-			   PyFloat_Check(obj)) {
+	} else if (PyBool_Check(obj) || PyLong_Check(obj) || PyFloat_Check(obj)) {
 #ifdef HAVE_HGE
 		hge h;
 		pyobject_to_hge(&obj, 0, &h);

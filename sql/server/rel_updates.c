@@ -133,8 +133,8 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	}
 	/* append inserts to hash */
 	inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
-	list_append(ins->exps, h);
 	exp_setname(sql->sa, h, alias, iname);
+	list_append(ins->exps, h);
 	return inserts;
 }
 
@@ -199,8 +199,10 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	if (need_nulls) {
 		_nlls = rel_select( sql->sa, rel_dup(ins),
 				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
+		set_processed(_nlls);
 		nnlls = rel_select( sql->sa, rel_dup(ins),
 				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
+		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
@@ -757,8 +759,8 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	}
 	/* append hash to updates */
 	updates->r = ups = rel_project(sql->sa, ups, rel_projections(sql, ups, NULL, 1, 1));
-	list_append(ups->exps, h);
 	exp_setname(sql->sa, h, alias, iname);
+	list_append(ups->exps, h);
 
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
@@ -857,8 +859,10 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	if (need_nulls) {
 		_nlls = rel_select( sql->sa, rel_dup(ups),
 				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
+		set_processed(_nlls);
 		nnlls = rel_select( sql->sa, rel_dup(ups),
 				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
+		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));

@@ -3591,7 +3591,6 @@ mapi_param_store(MapiHdl hdl)
 						free(val);
 						return;
 					}
-					hdl->query = q;
 				}
 				snprintf(hdl->query + k, lim - k, "'%s'", val);
 				free(val);
@@ -3608,7 +3607,6 @@ mapi_param_store(MapiHdl hdl)
 						free(val);
 						return;
 					}
-					hdl->query = q;
 				}
 				snprintf(hdl->query + k, lim - k, "'%s'", val);
 				free(val);

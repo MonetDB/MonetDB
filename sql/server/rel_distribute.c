@@ -98,6 +98,7 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 
 		exp_prop_alias(sql->sa, ne, e);
 	}
+	list_hash_clear(r->exps); /* the child table may have different column names, so clear the hash */
 
 	/* set_remote() */
 	if (remote_prop && p && isRemote(p)) {

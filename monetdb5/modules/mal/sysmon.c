@@ -190,12 +190,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	MT_lock_set(&mal_delayLock);
-	for (size_t i = qtail; i != qhead; i++){
-		if ( i == qsize){
-			i = 0;
-			if( i == qhead)
-				break;
-		}
+	size_t i = qtail;
+	while (i != qhead){
 		if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN ||
 					strcmp(cntxt->username, QRYqueue[i].username) == 0) ){
 			qtag = (lng) QRYqueue[i].tag;
@@ -247,6 +243,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				 BUNappend(memory, &mem, false) != GDK_SUCCEED)
 				goto bailout;
 		}
+		if (++i >= qsize)
+			i = 0;
 	}
 	MT_lock_unset(&mal_delayLock);
 	BBPkeepref( *t =tag->batCacheid);
@@ -290,18 +288,23 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (tag < 1)
 		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Tag must be positive");
+	if (cntxt->user != MAL_ADMIN)
+		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Administrator rights required");
+
+	oid ctag = (oid) tag;
 	MT_lock_set(&mal_delayLock);
-	for (size_t i = qtail; i != qhead; i++){
-		if( i == qsize){
+	size_t i = qtail;
+	while (i != qhead) {
+		if (QRYqueue[i].tag == ctag) {
+			if (QRYqueue[i].stk) {
+				QRYqueue[i].stk->status = 'p';
+				QRYqueue[i].status = "paused";
+				set = true;
+			}
+			break; /* the tag was found, but the query could have already finished */
+		}
+		if (++i >= qsize)
 			i = 0;
-			if( i == qhead)
-				break;
-		}
-		if( (lng) QRYqueue[i].tag == tag && cntxt->user == MAL_ADMIN && QRYqueue[i].stk){
-			QRYqueue[i].stk->status = 'p';
-			QRYqueue[i].status = "paused";
-			set = true;
-		}
 	}
 	MT_lock_unset(&mal_delayLock);
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONpause", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
@@ -323,18 +326,23 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (tag < 1)
 		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Tag must be positive");
+	if (cntxt->user != MAL_ADMIN)
+		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Administrator rights required");
+
+	oid ctag = (oid) tag;
 	MT_lock_set(&mal_delayLock);
-	for (size_t i = qtail; i == qhead; i++){
-		if( i == qsize){
+	size_t i = qtail;
+	while (i != qhead) {
+		if (QRYqueue[i].tag == ctag) {
+			if (QRYqueue[i].stk) {
+				QRYqueue[i].stk->status = 0;
+				QRYqueue[i].status = "running";
+				set = true;
+			}
+			break; /* the tag was found, but the query could have already finished */
+		}
+		if (++i >= qsize)
 			i = 0;
-			if ( i== qhead)
-				break;
-		}
-		if( (lng)QRYqueue[i].tag == tag && cntxt->user == MAL_ADMIN && QRYqueue[i].stk){
-			QRYqueue[i].stk->status = 0;
-			QRYqueue[i].status = "running";
-			set = true;
-		}
 	}
 	MT_lock_unset(&mal_delayLock);
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONresume", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
@@ -356,18 +364,23 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (tag < 1)
 		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Tag must be positive");
+	if (cntxt->user != MAL_ADMIN)
+		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Administrator rights required");
+
+	oid ctag = (oid) tag;
 	MT_lock_set(&mal_delayLock);
-	for (size_t i = qtail; i != qhead; i++){
-		if( i == qsize){
+	size_t i = qtail;
+	while (i != qhead) {
+		if (QRYqueue[i].tag == ctag) {
+			if (QRYqueue[i].stk) {
+				QRYqueue[i].stk->status = 'q';
+				QRYqueue[i].status = "stopping";
+				set = true;
+			}
+			break; /* the tag was found, but the query could have already finished */
+		}
+		if (++i >= qsize)
 			i = 0;
-			if( i == qhead)
-				break;
-		}
-		if( (lng) QRYqueue[i].tag == tag && cntxt->user == MAL_ADMIN && QRYqueue[i].stk){
-			QRYqueue[i].stk->status = 'q';
-			QRYqueue[i].status = "stopping";
-			set = true;
-		}
 	}
 	MT_lock_unset(&mal_delayLock);
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONstop", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);

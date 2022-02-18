@@ -65,16 +65,6 @@
 #define pyapi_export extern
 #endif
 
-#define PyString_FromString PyUnicode_FromString
-#define PyString_Check PyUnicode_Check
-#define PyString_CheckExact PyUnicode_CheckExact
-#define PyString_AsString PyUnicode_AsUTF8
-#define PyString_AS_STRING PyUnicode_AsUTF8
-#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_Check PyLong_Check
-#define PythonUnicodeType Py_UNICODE
-
 #define utf8string_minlength 256
 
 #endif /* _PYHEADER_H_ */
