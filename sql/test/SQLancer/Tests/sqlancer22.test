@@ -662,7 +662,6 @@ SELECT EXISTS (VALUES (1, FALSE), (2, 1 < ALL(SELECT x.x))) FROM (SELECT 1) x(x)
 ----
 1
 
-# this one is right
 query I nosort
 SELECT 1 FROM (values (1, 4), (3, 2)) x(x,y) WHERE greatest(FALSE, FALSE)
 ----
@@ -672,6 +671,10 @@ SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT TRUE) AS z(z) ON 1 = ANY(SELECT t0.c0 
 AND (SELECT TRUE FROM (SELECT 4) x(x) FULL OUTER JOIN (SELECT 5) AS y(y) ON z.z)
 ----
 1
+
+query I nosort
+SELECT 1 FROM t0 JOIN (VALUES (3, (SELECT 4))) AS x(x,y) ON x.x
+----
 
 statement ok
 ROLLBACK
