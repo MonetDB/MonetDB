@@ -198,6 +198,11 @@ Defaults to 50000.
 .B listenaddr
 This property specifies an address that is allowed to connect to the
 server.
+This property is ignored if the property
+.B forward
+is set to
+.B proxy
+(the default).
 The following possibilities exist:
 .RS
 .TP

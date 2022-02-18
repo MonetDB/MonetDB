@@ -202,12 +202,6 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	char pipeline[512];
 	char memmaxsize[64];
 	char vmmaxsize[64];
-	char *readonly = NULL;
-	char *embeddedr = NULL;
-	char *embeddedpy = NULL;
-	char *embeddedc = NULL;
-	char *raw_strings = NULL;
-	bool ipv6 = false;
 	char *dbextra = NULL;
 	char *dbtrace = NULL;
 	char *mserver5_extra = NULL;
@@ -217,7 +211,6 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	int c = 0;
 	int freec = 0;				/* from where to free entries in argv */
 	unsigned int mport;
-	char *set = "--set";
 
 	/* Find or allocate a dpair entry for this database */
 	pthread_mutex_lock(&_mero_topdp_lock);
@@ -448,71 +441,6 @@ forkMserver(const char *database, sabdb** stats, bool force)
 
 	mydoproxy = strcmp(getConfVal(_mero_props, "forward"), "proxy") == 0;
 
-	kv = findConfKey(ckv, "nthreads");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_db_props, "nthreads");
-	if (kv->val != NULL) {
-		snprintf(nthreads, sizeof(nthreads), "gdk_nr_threads=%s", kv->val);
-	} else {
-		nthreads[0] = '\0';
-	}
-
-	kv = findConfKey(ckv, "nclients");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_db_props, "nclients");
-	if (kv->val != NULL) {
-		snprintf(nclients, sizeof(nclients), "max_clients=%s", kv->val);
-	} else {
-		nclients[0] = '\0';
-	}
-
-	kv = findConfKey(ckv, "optpipe");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_db_props, "optpipe");
-	if (kv->val != NULL) {
-		snprintf(pipeline, sizeof(pipeline), "sql_optimizer=%s", kv->val);
-	} else {
-		pipeline[0] = '\0';
-	}
-
-	kv = findConfKey(ckv, "memmaxsize");
-	if (kv->val != NULL) {
-		snprintf(memmaxsize, sizeof(memmaxsize), "gdk_mem_maxsize=%s", kv->val);
-	} else {
-		memmaxsize[0] = '\0';
-	}
-
-	kv = findConfKey(ckv, "vmmaxsize");
-	if (kv->val != NULL) {
-		snprintf(vmmaxsize, sizeof(vmmaxsize), "gdk_vm_maxsize=%s", kv->val);
-	} else {
-		vmmaxsize[0] = '\0';
-	}
-
-	kv = findConfKey(ckv, "readonly");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
-		readonly = "--readonly";
-
-	kv = findConfKey(ckv, "embedr");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
-		embeddedr = "embedded_r=true";
-
-	kv = findConfKey(ckv, "embedpy3");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		if (embeddedpy) {
-			// only one python version can be active at a time
-			msab_freeStatus(stats);
-			freeConfFile(ckv);
-			free(ckv);
-			pthread_mutex_unlock(&dp->fork_lock);
-			free(sabdbfarm);
-			return newErr("attempting to start mserver with both embedded python2 and embedded python3; only one python version can be active at a time\n");
-		}
-		embeddedpy = "embedded_py=3";
-	}
-	kv = findConfKey(ckv, "embedc");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
-		embeddedc = "embedded_c=true";
 	kv = findConfKey(ckv, "dbextra");
 	if (kv != NULL && kv->val != NULL) {
 		dbextra = kv->val;
@@ -523,25 +451,12 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		dbtrace = kv->val;
 
 	kv = findConfKey(ckv, "listenaddr");
-	if (kv->val != NULL) {
-		if (mydoproxy) {
-			// listenaddr is only available on forwarding method
-			msab_freeStatus(stats);
-			freeConfFile(ckv);
-			free(ckv);
-			pthread_mutex_unlock(&dp->fork_lock);
-			free(sabdbfarm);
-			return newErr("attempting to start mserver with listening address while being proxied by monetdbd; this option is only possible on forward method\n");
-		}
-		snprintf(listenaddr, sizeof(listenaddr), "mapi_listenaddr=%s", kv->val);
+	if (!mydoproxy && kv->val != NULL) {
+		snprintf(listenaddr, sizeof(listenaddr), "--set=mapi_listenaddr=%s", kv->val);
 	} else {
 		listenaddr[0] = '\0';
 	}
 
-	kv = findConfKey(ckv, "raw_strings");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		raw_strings="raw_strings=true";
-	}
 	mport = (unsigned int)getConfNum(_mero_props, "port");
 
 	/* ok, now exec that mserver we want */
@@ -549,13 +464,13 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			 "--dbpath=%s/%s", sabdbfarm, database);
 	free(sabdbfarm);
 	snprintf(vaultkey, sizeof(vaultkey),
-			 "monet_vault_key=%s/.vaultkey", (*stats)->path);
+			 "--set=monet_vault_key=%s/.vaultkey", (*stats)->path);
 	snprintf(muri, sizeof(muri),
-			 "merovingian_uri=mapi:monetdb://%s:%u/%s",
+			 "--set=merovingian_uri=mapi:monetdb://%s:%u/%s",
 			 _mero_hostname, mport, database);
 	argv[c++] = _mero_mserver;
 	argv[c++] = dbpath;
-	argv[c++] = set; argv[c++] = muri;
+	argv[c++] = muri;
 	if (dbextra != NULL) {
 		snprintf(dbextra_path, sizeof(dbextra_path),
 				 "--dbextra=%s", dbextra);
@@ -568,84 +483,107 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		argv[c++] = dbtrace_path;
 	}
 
-	if (strncmp(listenaddr, "127.0.0.1", strlen("127.0.0.1")) == 0 ||
-		strncmp(listenaddr, "0.0.0.0", strlen("0.0.0.0")) == 0) {
-		ipv6 = false;
-	} else {
-		ipv6 = true;
-	}
-
 	if (mydoproxy) {
 		/* we "proxy", so we can just solely use UNIX domain sockets
 		 * internally.  Before we hit our head, check if we can
 		 * actually use a UNIX socket (due to pathlength) */
 		if (strlen((*stats)->path) + 11 < sizeof(((struct sockaddr_un *) 0)->sun_path)) {
-			argv[c++] = set; argv[c++] = "mapi_listenaddr=none";
-			snprintf(usock, sizeof(usock), "mapi_usock=%s/.mapi.sock",
+			argv[c++] = "--set=mapi_listenaddr=none";
+			snprintf(usock, sizeof(usock), "--set=mapi_usock=%s/.mapi.sock",
 					 (*stats)->path);
-			argv[c++] = set; argv[c++] = usock;
+			argv[c++] = usock;
 		} else {
 			/* for logic here, see comment below */
-			argv[c++] = set; argv[c++] = "mapi_port=0";
-			argv[c++] = set; argv[c++] = ipv6 ? "mapi_listenaddr=localhost" : "mapi_listenaddr=127.0.0.1";
-			snprintf(usock, sizeof(usock), "mapi_usock=");
-			argv[c++] = set; argv[c++] = usock;
+			argv[c++] = "--set=mapi_port=0";
+			argv[c++] = "--set=mapi_listenaddr=localhost";
+			snprintf(usock, sizeof(usock), "--set=mapi_usock=");
+			argv[c++] = usock;
 		}
 	} else {
 		if (listenaddr[0] != '\0') {
-			argv[c++] = set; argv[c++] = listenaddr;
+			argv[c++] = listenaddr;
 		} else {
-			argv[c++] = set; argv[c++] = ipv6 ? "mapi_listenaddr=all" : "mapi_listenaddr=0.0.0.0";
+			argv[c++] = "--set=mapi_listenaddr=localhost";
 		}
-		argv[c++] = set; argv[c++] = "mapi_port=0";
+		argv[c++] = "--set=mapi_port=0";
 		/* avoid this mserver binding to the same port as merovingian
 		 * but on another interface, (INADDR_ANY ... sigh) causing
 		 * endless redirects since 0.0.0.0 is not a valid address to
 		 * connect to, and hence the hostname is advertised instead */
-		snprintf(usock, sizeof(usock), "mapi_usock=");
-		argv[c++] = set; argv[c++] = usock;
+		snprintf(usock, sizeof(usock), "--set=mapi_usock=");
+		argv[c++] = usock;
 	}
-	argv[c++] = set; argv[c++] = vaultkey;
-	if (nthreads[0] != '\0') {
-		argv[c++] = set; argv[c++] = nthreads;
+	argv[c++] = vaultkey;
+
+	kv = findConfKey(ckv, "nthreads");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "nthreads");
+	if (kv->val != NULL) {
+		snprintf(nthreads, sizeof(nthreads), "--set=gdk_nr_threads=%s", kv->val);
+		argv[c++] = nthreads;
 	}
-	if (nclients[0] != '\0') {
-		argv[c++] = set; argv[c++] = nclients;
+
+	kv = findConfKey(ckv, "nclients");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "nclients");
+	if (kv->val != NULL) {
+		snprintf(nclients, sizeof(nclients), "--set=max_clients=%s", kv->val);
+		argv[c++] = nclients;
 	}
-	if (pipeline[0] != '\0') {
-		argv[c++] = set; argv[c++] = pipeline;
+
+	kv = findConfKey(ckv, "optpipe");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "optpipe");
+	if (kv->val != NULL) {
+		snprintf(pipeline, sizeof(pipeline), "--set=sql_optimizer=%s", kv->val);
+		argv[c++] = pipeline;
 	}
-	if (memmaxsize[0] != '\0') {
-		argv[c++] = set; argv[c++] = memmaxsize;
+
+	kv = findConfKey(ckv, "memmaxsize");
+	if (kv->val != NULL) {
+		snprintf(memmaxsize, sizeof(memmaxsize), "--set=gdk_mem_maxsize=%s", kv->val);
+		argv[c++] = memmaxsize;
 	}
-	if (vmmaxsize[0] != '\0') {
-		argv[c++] = set; argv[c++] = vmmaxsize;
+
+	kv = findConfKey(ckv, "vmmaxsize");
+	if (kv->val != NULL) {
+		snprintf(vmmaxsize, sizeof(vmmaxsize), "--set=gdk_vm_maxsize=%s", kv->val);
+		argv[c++] = vmmaxsize;
 	}
-	if (embeddedr != NULL) {
-		argv[c++] = set; argv[c++] = embeddedr;
+
+	kv = findConfKey(ckv, "embedr");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+		argv[c++] = "--set=embedded_r=true";
 	}
-	if (embeddedpy != NULL) {
-		argv[c++] = set; argv[c++] = embeddedpy;
+
+	kv = findConfKey(ckv, "embedpy3");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+		argv[c++] = "--set=embedded_py=3";
 	}
-	if (embeddedc != NULL) {
-		argv[c++] = set; argv[c++] = embeddedc;
+
+	kv = findConfKey(ckv, "embedc");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+		argv[c++] = "--set=embedded_c=true";
 	}
-	if (readonly != NULL) {
-		argv[c++] = readonly;
+
+	kv = findConfKey(ckv, "readonly");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+		argv[c++] = "--readonly";
+
+	kv = findConfKey(ckv, "raw_strings");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+		argv[c++] = "--set=raw_strings=true";
 	}
-	if (raw_strings != NULL) {
-		argv[c++] = set; argv[c++] = raw_strings;
-	}
+
 	/* get the rest (non-default) mserver props set in the conf file */
 	list = ckv;
-	freec = c;					/* following entries to be freed if != set */
+	freec = c;					/* following entries to be freed */
 	while (list->key != NULL) {
 		if (list->val != NULL && !defaultProperty(list->key)) {
 			if (strcmp(list->key, "gdk_debug") == 0) {
 				snprintf(property_other, sizeof(property_other), "-d%s", list->val);
 			} else {
-				argv[c++] = set;
-				snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
+				snprintf(property_other, sizeof(property_other), "--set=%s=%s", list->key, list->val);
 			}
 			argv[c++] = strdup(property_other);
 		}
@@ -725,9 +663,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		while (argv[freec] != NULL) {
-			if (argv[freec] != set)
-				free(argv[freec]);
-			freec++;
+			free(argv[freec++]);
 		}
 
 		/* wait for the child to finish starting, at some point we
