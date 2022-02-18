@@ -1744,7 +1744,13 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op, sql_rel 
 		op = op_left;
 
 	if (is_join(rel->op)){
-		if (is_right(rel->op))
+		if (rel_has_freevar(sql, inner)) {
+			list *lv = rel_dependent_var(sql, rel->l, inner);
+			if (!list_empty(lv))
+				d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
+			else
+				d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
+		} else if (is_right(rel->op))
 			d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
 		else
 			d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
@@ -2246,24 +2252,6 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_exp*
-has_or(visitor *v, sql_rel *rel, sql_exp *e, int depth)
-{
-	(void)rel;
-	(void)depth;
-	if(!v->data && e && is_compare(e->type) && e->flag == cmp_or)
-		v->data = e;
-	return e;
-}
-
-static bool
-exps_have_or_exp(mvc *sql, list *exps)
-{
-	visitor v = { .sql = sql, .data = NULL };
-	exps_exp_visitor_topdown(&v, NULL, exps, 0, &has_or, true);
-	return v.data != NULL;
-}
-
 static inline sql_rel *
 rewrite_split_select_exps(visitor *v, sql_rel *rel)
 {
@@ -2740,10 +2728,8 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
 				}
 				if (rsq) {
-					sql_rel *rewrite = NULL;
-					(void)rewrite_inner(sql, rel, rsq, op_left, &rewrite);
-					exp_reset_props(rewrite, re, is_left(rewrite->op));
-					join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
+					(void)rewrite_inner(sql, rel, rsq, op_left, &join);
+					exp_reset_props(join, re, is_left(join->op));
 				}
 				assert(join && is_join(join->op));
 				if (join && !join->exps)
@@ -3744,10 +3730,6 @@ rewrite_outer2inner_union_(visitor *v, sql_rel *rel)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) &&
-			(exps_have_freevar(v->sql, rel->exps) && exps_have_rel_exp(rel->exps) &&
-				(exps_have_anyequal(rel->exps, ANYEQUAL|NOT_ANYEQUAL) || exps_have_or_exp(v->sql, rel->exps))))
-		return rewrite_outer2inner_union_(v, rel);
 	if (is_full(rel->op) && rel_has_freevar(v->sql, rel->r)) { /* swap */
 		sql_rel *s = rel->r;
 		rel->r = rel->l;
