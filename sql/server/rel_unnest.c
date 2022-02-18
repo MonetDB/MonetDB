@@ -3744,7 +3744,9 @@ rewrite_outer2inner_union_(visitor *v, sql_rel *rel)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (exps_have_anyequal(rel->exps, ANYEQUAL|NOT_ANYEQUAL) || (exps_have_freevar(v->sql, rel->exps) && exps_have_rel_exp(rel->exps) && exps_have_or_exp(v->sql, rel->exps))))
+	if (is_outerjoin(rel->op) && !list_empty(rel->exps) &&
+			(exps_have_freevar(v->sql, rel->exps) && exps_have_rel_exp(rel->exps) &&
+				(exps_have_anyequal(rel->exps, ANYEQUAL|NOT_ANYEQUAL) || exps_have_or_exp(v->sql, rel->exps))))
 		return rewrite_outer2inner_union_(v, rel);
 	if (is_full(rel->op) && rel_has_freevar(v->sql, rel->r)) { /* swap */
 		sql_rel *s = rel->r;
