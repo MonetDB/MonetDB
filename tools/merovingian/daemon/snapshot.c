@@ -89,7 +89,12 @@ snapshot_database_stream(char *dbname, stream *s)
 	}
 
 	if (stats->secret == NULL) {
-		e = newErr("Cannot find secret for database '%s'", dbname);
+		e = newErr(
+			"Cannot find secret for database '%s'"
+#if !defined(HAVE_GETENTROPY)
+			", maybe this platform is too old to support secure secrets"
+#endif
+			, dbname);
 		goto bailout;
 	}
 
@@ -156,7 +161,12 @@ snapshot_database_to(char *dbname, char *dest)
 	}
 
 	if (stats->secret == NULL) {
-		e = newErr("Cannot find secret for database '%s'", dbname);
+		e = newErr(
+			"Cannot find secret for database '%s'"
+#if !defined(HAVE_GETENTROPY)
+			", maybe this platform is too old to support secure secrets"
+#endif
+			, dbname);
 		goto bailout;
 	}
 
