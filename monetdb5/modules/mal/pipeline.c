@@ -371,7 +371,7 @@ _ht_init( hash_table *h )
                 h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
 				if (h->p) {
 					assert(h->s.type == HASH_SINK);
-					h->pgids = (gid*)GDKzalloc(sizeof(gid)* h->size);
+					h->pgids = (gid*)GDKmalloc(sizeof(gid)* h->size);
 				}
         }
         return h;
