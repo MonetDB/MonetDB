@@ -578,6 +578,23 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	/* get the rest (non-default) mserver props set in the conf file */
 	list = ckv;
 	freec = c;					/* following entries to be freed */
+
+	kv = findConfKey(ckv, "loadmodules");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "loadmodules");
+	if (kv->val != NULL) {
+		size_t modlen;
+		for (const char *val = kv->val; *val; val += modlen) {
+			modlen = strcspn(val, ", \t");
+			if (modlen > 0) {
+				char *arg = malloc(modlen + 14);
+				snprintf(arg, modlen + 14, "--loadmodule=%.*s", (int) modlen, val);
+				argv[c++] = arg;
+			}
+			modlen += strspn(val + modlen, ", \t");
+		}
+	}
+
 	while (list->key != NULL) {
 		if (list->val != NULL && !defaultProperty(list->key)) {
 			if (strcmp(list->key, "gdk_debug") == 0) {
