@@ -1455,6 +1455,8 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 		bit se = f->side_effect, vares = f->varres, varg = f->vararg, system = f->system, sem = f->semantics;
 
+		if (f->private) /* don't serialize private functions because they cannot be seen by users */
+			continue;
 		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &vares, &varg, &next_schema, &system, &sem)))
 			return res;
 		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
@@ -3205,6 +3207,7 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 	f->vararg = of->vararg;
 	f->fix_scale = of->fix_scale;
 	f->system = of->system;
+	f->private = of->private;
 	f->query = (of->query)?SA_STRDUP(sa, of->query):NULL;
 	f->s = s;
 	f->sa = sa;
