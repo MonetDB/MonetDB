@@ -676,6 +676,12 @@ query I nosort
 SELECT 1 FROM t0 JOIN (VALUES (3, (SELECT 4))) AS x(x,y) ON x.x
 ----
 
+query I nosort
+select x from (select 2) as x(x) left outer join lateral (select distinct 3 from t1 where x.x > 0) as z(z)
+on 4 > all(select x.x) and (x.x > 0 or x.x > 0)
+----
+2
+
 statement ok
 ROLLBACK
 
