@@ -285,6 +285,12 @@ setConfVal(confkeyval *ckv, const char *val) {
 				return(strdup(buf));
 			}
 		}; break;
+		case MODS:
+			for (size_t i = 0; val[i]; i++) {
+				if (val[i] < ' ' || val[i] == '\\' || val[i] == '/' || val[i] >= 0177)
+					return strdup("only printable ASCII character other than \\ and / allowed");
+			}
+			/* fall through */
 		case STR:
 		case OTHER:
 			/* leave as is, not much to check */
