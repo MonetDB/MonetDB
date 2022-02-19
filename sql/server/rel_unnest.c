@@ -1559,6 +1559,13 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 					rel->r = l;
 					rel->op = op_left;
 					return rel_unnest_dependent(sql, rel);
+				} else if (rel->op == op_left && !rel_has_freevar(sql, rel->r) && rel_dependent_var(sql, rel->r, rel->l)) {
+					sql_rel *l = rel->l;
+
+					rel->l = rel->r;
+					rel->r = l;
+					rel->op = op_right;
+					return rel_unnest_dependent(sql, rel);
 				}
 			}
 		}
@@ -1745,11 +1752,11 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op, sql_rel 
 
 	if (is_join(rel->op)){
 		if (rel_has_freevar(sql, inner)) {
-			list *lv = rel_dependent_var(sql, rel->l, inner);
-			if (!list_empty(lv))
-				d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
-			else
+			list *rv = rel_dependent_var(sql, rel->r, inner);
+			if (!list_empty(rv))
 				d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
+			else
+				d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
 		} else if (is_right(rel->op))
 			d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
 		else
@@ -3167,16 +3174,18 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (!is_project(sq->op) || (is_set(sq->op) && list_length(sq->exps) > 1) || (is_simple_project(sq->op) && !list_empty(sq->r)))
 				sq = rel_project(v->sql->sa, sq, rel_projections(v->sql, sq, NULL, 1, 1));
 			le = rel_reduce2one_exp(v->sql, sq);
-			le = exp_ref(v->sql, le);
-			if (is_project(rel->op) && is_freevar(le)) {
+			if (is_project(sq->op) && is_freevar(le)) {
 				sql_exp *re, *jc, *null;
 
 				re = rel_bound_exp(v->sql, sq);
+				sq->exps = sa_list(v->sql->sa);
 				re = rel_project_add_exp(v->sql, sq, re);
 				jc = rel_unop_(v->sql, NULL, re, "sys", "isnull", card_value);
 				set_has_no_nil(jc);
 				null = exp_null(v->sql->sa, exp_subtype(le));
 				le = rel_nop_(v->sql, NULL, jc, null, le, NULL, "sys", "ifthenelse", card_value);
+			} else {
+				le = exp_ref(v->sql, le);
 			}
 
 			if (is_project(rel->op) || depth > 0 || is_outerjoin(rel->op)) {
