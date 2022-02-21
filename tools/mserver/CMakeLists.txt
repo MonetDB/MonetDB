@@ -80,6 +80,7 @@ target_link_libraries(shutdowntest
   bat
   stream
   monetdb5
+  $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   Threads::Threads)
 
