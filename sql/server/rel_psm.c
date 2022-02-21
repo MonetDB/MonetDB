@@ -861,6 +861,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		} else if (!replace) {
 			list_destroy(type_list);
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' already in use", F, fname);
+		} else if (replace && !sf->func->s) {
+			list_destroy(type_list);
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: cannot replace system function '%s'", F, fname);
 		}
 	} else {
 		sql->session->status = 0; /* if the function was not found clean the error */
@@ -871,6 +874,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql_subfunc *found = NULL;
 		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC, true))) {
 			list_destroy(type_list);
+			if (found->func->private) /* cannot create a function using a private name or replace a existing one */
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
 							 IS_AGGR(found->func) ? "an aggregate" : IS_FILT(found->func) ? "a filter function" : "a function", fname);
 		}
