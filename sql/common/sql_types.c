@@ -938,7 +938,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "sql_max", "calc", "max", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "least", "calc", "min_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "greatest", "calc", "max_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
-	sql_create_func(sa, "ifthenelse", "calc", "ifthenelse", TRUE, TRUE, SCALE_FIX, 0, ANY, 3, BIT, ANY, ANY);
+	sql_create_func(sa, "ifthenelse", "calc", "ifthenelse", TRUE, FALSE, SCALE_FIX, 0, ANY, 3, BIT, ANY, ANY);
 	/* nullif, coalesce, casewhen and case don't have a backend implementation */
 	sql_create_func(sa, "nullif", "", "", TRUE, TRUE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "coalesce", "", "", TRUE, TRUE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
@@ -1271,8 +1271,8 @@ sqltypeinit( sql_allocator *sa)
 			if (*u == OID || *u == FLT || *u == DBL)
 				continue;
 			if ((*t)->localtype > (*u)->localtype) {
-				sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *u);
-				sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *u, *t);
+				sql_create_func(sa, "scale_up", "calc", "*", FALSE, TRUE, SCALE_NONE, 0, *t, 2, *t, *u);
+				sql_create_func(sa, "scale_up", "calc", "*", FALSE, TRUE, SCALE_NONE, 0, *t, 2, *u, *t);
 			}
 		}
 	}

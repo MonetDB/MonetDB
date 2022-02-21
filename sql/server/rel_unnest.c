@@ -630,10 +630,10 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 			sql_exp *de = d->data;
 			list *args = sa_list(sql->sa);
 			if (pe) {
-				df = sql_bind_func(sql, NULL, "diff", bt, exp_subtype(de), F_ANALYTIC);
+				df = sql_bind_func(sql, NULL, "diff", bt, exp_subtype(de), F_ANALYTIC, true);
 				append(args, pe);
 			} else {
-				df = sql_bind_func(sql, NULL, "diff", exp_subtype(de), NULL, F_ANALYTIC);
+				df = sql_bind_func(sql, NULL, "diff", exp_subtype(de), NULL, F_ANALYTIC, true);
 			}
 			assert(df);
 			append(args, de);
@@ -1150,7 +1150,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					col = p->exps->t->data;
 					if (strcmp(exp_name(col), TID) != 0) {
 						col = exp_ref(sql, col);
-						col = exp_unop(sql->sa, col, sql_bind_func(sql, "sys", "identity", exp_subtype(col), NULL, F_FUNC));
+						col = exp_unop(sql->sa, col, sql_bind_func(sql, "sys", "identity", exp_subtype(col), NULL, F_FUNC, true));
 						set_has_no_nil(col);
 						set_unique(col);
 						col = exp_label(sql->sa, col, ++sql->label);
@@ -1942,7 +1942,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (rt->type->eclass == EC_DEC && rt->scale) {
 					int scale = (int) rt->scale; /* shift with scale */
 					sql_subtype *it = sql_bind_localtype(lt->type->impl);
-					sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", lt, it, F_FUNC);
+					sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", lt, it, F_FUNC, true);
 
 					if (!c) {
 						TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->impl);
@@ -1975,7 +1975,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 					if (lt->type->eclass == EC_SEC) {
 						sql_subtype *it = sql_bind_localtype(lt->type->impl);
-						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_up", lt, it, F_FUNC);
+						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_up", lt, it, F_FUNC, true);
 
 						if (!c) {
 							TRC_CRITICAL(SQL_PARSER, "scale_up missing (%s)\n", lt->type->impl);
@@ -1985,7 +1985,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
 					} else { /* EC_MONTH */
 						sql_subtype *it = sql_bind_localtype(rt->type->impl);
-						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", rt, it, F_FUNC);
+						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", rt, it, F_FUNC, true);
 
 						if (!c) {
 							TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->impl);
@@ -2938,18 +2938,18 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					sql_subfunc *a;
 
 					rsq = rel_groupby(v->sql, rsq, NULL);
-					a = sql_bind_func(v->sql, "sys", "null", exp_subtype(re), NULL, F_AGGR);
+					a = sql_bind_func(v->sql, "sys", "null", exp_subtype(re), NULL, F_AGGR, true);
 					rnull = exp_aggr1(v->sql->sa, re, a, 0, 1, CARD_AGGR, has_nil(re));
 					rnull = rel_groupby_add_aggr(v->sql, rsq, rnull);
 
 					if (is_notequal_func(sf))
 						op = "=";
 					if (op[0] == '<') {
-						a = sql_bind_func(v->sql, "sys", (quantifier==1)?"max":"min", exp_subtype(re), NULL, F_AGGR);
+						a = sql_bind_func(v->sql, "sys", (quantifier==1)?"max":"min", exp_subtype(re), NULL, F_AGGR, true);
 					} else if (op[0] == '>') {
-						a = sql_bind_func(v->sql, "sys", (quantifier==1)?"min":"max", exp_subtype(re), NULL, F_AGGR);
+						a = sql_bind_func(v->sql, "sys", (quantifier==1)?"min":"max", exp_subtype(re), NULL, F_AGGR, true);
 					} else /* (op[0] == '=')*/ /* only = ALL */ {
-						a = sql_bind_func(v->sql, "sys", "all", exp_subtype(re), NULL, F_AGGR);
+						a = sql_bind_func(v->sql, "sys", "all", exp_subtype(re), NULL, F_AGGR, true);
 						is_cnt = 1;
 					}
 					re = exp_aggr1(v->sql->sa, re, a, 0, 1, CARD_AGGR, has_nil(re));
@@ -2969,7 +2969,8 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					sql_exp *lnull = rel_unop_(v->sql, rel, le, "sys", "isnull", card_value);
 					set_has_no_nil(lnull);
 					le = exp_compare_func(v->sql, le, re, op, 0);
-					le = rel_nop_(v->sql, rel, le, lnull, rnull, NULL, "sys", (quantifier==1)?"any":"all", card_value);
+					sql_subfunc *f = sql_bind_func3(v->sql, "sys", (quantifier==1)?"any":"all", exp_subtype(le), exp_subtype(lnull), exp_subtype(rnull), F_FUNC, true);
+					le = exp_op3(v->sql->sa, le, lnull, rnull, f);
 					if (is_select(rel->op) && depth == 0) {
 						le = exp_compare(v->sql->sa, le, exp_atom_bool(v->sql->sa, is_notequal_func(sf) ? 0 : 1), cmp_equal);
 					} else if (is_notequal_func(sf)) {
@@ -3128,13 +3129,8 @@ exp_exist(mvc *sql, sql_exp *le, sql_exp *ne, int exists)
 {
 	sql_subfunc *exists_func = NULL;
 
-	if (exists)
-		exists_func = sql_bind_func(sql, "sys", "sql_exists", exp_subtype(le), NULL, F_FUNC);
-	else
-		exists_func = sql_bind_func(sql, "sys", "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
-
-	if (!exists_func)
-		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le)->type->base.name);
+	if (!(exists_func = sql_bind_func(sql, "sys", exists ? "sql_exists" : "sql_not_exists", exp_subtype(le), NULL, F_FUNC, true)))
+		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le) ? exp_subtype(le)->type->base.name : "unknown");
 	if (ne) { /* correlated case */
 		if (exists)
 			le = rel_nop_(sql, NULL, ne, exp_atom_bool(sql->sa, exists), exp_atom_bool(sql->sa, !exists), NULL, "sys", "ifthenelse", card_value);
@@ -3199,7 +3195,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				if (exp_is_rel(ie))
 					ie->l = sq;
-				ea = sql_bind_func(v->sql, "sys", is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR);
+				ea = sql_bind_func(v->sql, "sys", is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR, true);
 				le = exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, 0);
 				le = rel_groupby_add_aggr(v->sql, sq, le);
 				if (rel_has_freevar(v->sql, sq))
@@ -3431,7 +3427,7 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 				if (exp_is_count(e, r)) {
 					/* rewrite count in subquery */
 					list *args, *targs;
-					sql_subfunc *isnil = sql_bind_func(v->sql, "sys", "isnull", exp_subtype(e), NULL, F_FUNC), *ifthen;
+					sql_subfunc *isnil = sql_bind_func(v->sql, "sys", "isnull", exp_subtype(e), NULL, F_FUNC, true), *ifthen;
 
 					rel_changes = 1;
 					ne = exp_unop(v->sql->sa, e, isnil);
@@ -3440,7 +3436,7 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					append(targs, sql_bind_localtype("bit"));
 					append(targs, exp_subtype(e));
 					append(targs, exp_subtype(e));
-					ifthen = sql_bind_func_(v->sql, "sys", "ifthenelse", targs, F_FUNC);
+					ifthen = sql_bind_func_(v->sql, "sys", "ifthenelse", targs, F_FUNC, true);
 					args = sa_list(v->sql->sa);
 					append(args, ne);
 					append(args, exp_atom(v->sql->sa, atom_zero_value(v->sql->sa, exp_subtype(e))));
