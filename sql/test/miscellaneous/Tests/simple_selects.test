@@ -238,15 +238,13 @@ NULL
 NULL
 NULL
 
-query RTIIIIII rowsort
+query RTIIIII rowsort
 select avg(10), avg(NULL),
-       patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL),
-       "hash"(null)
+       patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL)
 ----
 10.000
 NULL
 2
-NULL
 NULL
 NULL
 NULL
