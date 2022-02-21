@@ -4,13 +4,13 @@ start transaction
 statement ok
 create table t(i int)
 
-statement ok
+statement ok rowcount 1
 insert into t values(1123)
 
-statement ok
+statement ok rowcount 1
 copy select * from t into stdout using delimiters ',', E'\n'
 
-statement ok
+statement ok rowcount 1
 copy select count(*) from t into stdout using delimiters ',', E'\n'
 
 statement ok

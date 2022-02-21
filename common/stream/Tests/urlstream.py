@@ -18,6 +18,22 @@ def pickport():
         s.close()
         return port
 
+
+def wait_for_server(port, timeout):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.1)
+        try:
+            s.connect(('localhost', port))
+            break
+        except ConnectionRefusedError:
+            time.sleep(0.1)
+        finally:
+            s.close()
+    print(f'Warning: waited {timeout} seconds for the server to start but could still not connect', file=OUTPUT)
+
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         # add a # at the beginning of the line to not mess up Mtest diffs
@@ -66,16 +82,20 @@ def runserver(port):
 port = pickport()
 t = threading.Thread(target=lambda: runserver(port), daemon=True)
 t.start()
-time.sleep(0.5)
+wait_for_server(port, 5.0)
+
 url = f'http://localhost:{port}'
 
 def streamcat(suffix):
     u = url + suffix
     cmd = ['streamcat', 'read', u, 'urlstream']
-    print(f'FETCHING {suffix}', end="", file=OUTPUT)
+    print(f'FETCHING {suffix}', file=OUTPUT)
     PIPE = subprocess.PIPE
     p = subprocess.run(cmd, check=False, stdout=PIPE, stderr=PIPE, timeout=10)
     print(f' yielded return code {p.returncode}', file=OUTPUT)
+    print(f' wrote {len(p.stdout)} bytes to stdout', file=OUTPUT)
+    if p.stderr:
+        print(f' stderr={p.stderr!r}', file=OUTPUT)
     return (p.returncode, p.stdout, p.stderr)
 
 def run_tests():
@@ -101,5 +121,5 @@ try:
 except Exception as e:
     output = OUTPUT.getvalue()
     if output:
-        print(output)
+        print(output, file=sys.stderr)
     raise e

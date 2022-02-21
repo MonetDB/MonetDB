@@ -520,7 +520,7 @@ rel_base_dump_exps( stream *fout, sql_rel *rel)
 			comma = 1;
 		}
 	}
-	mnstr_printf(fout, " ]\n");
+	mnstr_printf(fout, " ]");
 }
 
 int

@@ -404,6 +404,7 @@ CONDITIONALS = {
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
+    'HAVE_GETENTROPY'      : "@HAVE_GETENTROPY_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
     'NOT_ASSERT'           : "@NOT_ASSERT_FALSE@",

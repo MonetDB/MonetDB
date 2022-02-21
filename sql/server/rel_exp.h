@@ -111,7 +111,6 @@ extern void exp_prop_alias(sql_allocator *sa, sql_exp *e, sql_exp *oe);
 extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name );
 extern char* make_label(sql_allocator *sa, int nr);
 extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
-extern sql_exp* exp_label_table(sql_allocator *sa, sql_exp *e, int nr);
 extern list* exps_label(sql_allocator *sa, list *exps, int nr);
 
 extern sql_exp * exp_copy( mvc *sql, sql_exp *e);

@@ -215,7 +215,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		const oid e = (oid) (i+limit-pr_off+hseq);		\
 		if (im[icnt] & mask) {					\
 			if ((im[icnt] & ~innermask) == 0) {		\
-				while (p < ncand && o < e) {	\
+				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
 						BBPreclaim(bn);		\
@@ -226,7 +226,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 					o = canditer_next(ci);		\
 				}					\
 			} else {					\
-				while (p < ncand && o < e) {	\
+				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
 						BBPreclaim(bn);		\
@@ -238,7 +238,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				}					\
 			}						\
 		} else {						\
-			while (p < ncand && o < e) {		\
+			while (p < ncand && o < e) {			\
 				p++;					\
 				o = canditer_next(ci);			\
 			}						\
@@ -251,7 +251,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		const oid e = (oid) (i+limit-pr_off+hseq);		\
 		if (im[icnt] & mask) {					\
 			if ((im[icnt] & ~innermask) == 0) {		\
-				while (p < ncand && o < e) {	\
+				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
 						BBPreclaim(bn);		\
@@ -262,7 +262,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 					o = canditer_next_dense(ci);	\
 				}					\
 			} else {					\
-				while (p < ncand && o < e) {	\
+				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
 						BBPreclaim(bn);		\
@@ -274,7 +274,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				}					\
 			}						\
 		} else {						\
-			BUN skip_sz = MIN(ncand - p, e - o);	\
+			BUN skip_sz = MIN(ncand - p, e - o);		\
 			p += skip_sz;					\
 			o += skip_sz;					\
 			ci->next += skip_sz;				\
@@ -399,7 +399,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 /* choose number of bits */
 #define bitswitch(ISDENSE, TEST, TYPE)					\
 	do {								\
-		BUN ncand = ci->ncand;	\
+		BUN ncand = ci->ncand;					\
 		assert(imprints);					\
 		*algo = parent ? "parent imprints select " #TEST " (canditer_next" #ISDENSE ")" : "imprints select " #TEST " (canditer_next" #ISDENSE ")"; \
 		switch (imprints->bits) {				\
@@ -428,7 +428,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 /* core scan select loop with & without candidates */
 #define scanloop(NAME,canditer_next,TEST)				\
 	do {								\
-		BUN ncand = ci->ncand;	\
+		BUN ncand = ci->ncand;					\
 		*algo = "select: " #NAME " " #TEST " (" #canditer_next ")"; \
 		if (BATcapacity(bn) < maximum) {			\
 			TIMEOUT_LOOP_IDX(p, ncand, timeoffset) {	\

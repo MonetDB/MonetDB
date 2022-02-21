@@ -635,7 +635,7 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 		sql_exp *le = n->data;
 		sql_exp *re = m->data;
 
-		if ((rel_convert_types(sql, l, r, &le, &re, 1, type_set) < 0))
+		if (rel_convert_types(sql, l, r, &le, &re, 1, type_set) < 0)
 			return NULL;
 		append(nls, le);
 		append(nrs, re);
@@ -755,15 +755,11 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	char cname[16], *cnme = NULL;
 
 	tnme = number2name(tname, sizeof(tname), nr);
-	if (!is_project(r->op)) {
+	if (!is_simple_project(r->op))
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-		set_processed(r);
-	}
-	if (is_project(r->op) && r->exps) {
-		node *ne = r->exps->h;
-
+	if (!list_empty(r->exps)) {
 		list_hash_clear(r->exps);
-		for (; ne; ne = ne->next) {
+		for (node *ne = r->exps->h; ne; ne = ne->next) {
 			sql_exp *e = ne->data;
 
 			if (!is_freevar(e)) {
@@ -776,12 +772,8 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		}
 	}
 	/* op_projects can have a order by list */
-	if (r->op == op_project && r->r) {
-		list *exps = r->r;
-		node *ne = exps->h;
-
-		list_hash_clear(exps);
-		for (; ne; ne = ne->next) {
+	if (!list_empty(r->r)) {
+		for (node *ne = ((list*)r->r)->h; ne; ne = ne->next) {
 			if (all) {
 				nr = ++sql->label;
 				cnme = number2name(cname, sizeof(cname), nr);
@@ -1090,10 +1082,10 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
+					e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e);
 					if (!settname) /* noname use alias */
 						exp_setrelname(sql->sa, e, label);
-
+					append(exps, e);
 				}
 			}
 			return exps;
@@ -1120,10 +1112,10 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
+					e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e);
 					if (!settname) /* noname use alias */
 						exp_setrelname(sql->sa, e, label);
-
+					append(exps, e);
 				}
 			}
 			return exps;
@@ -1145,6 +1137,8 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (!settname) /* noname use alias */
 					exp_setrelname(sql->sa, e, label);
 			}
+			if (!settname)
+				list_hash_clear(lexps);
 		}
 		return lexps;
 	case op_ddl:
@@ -1570,7 +1564,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 sql_rel *
 rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
-	if (rel && is_project(rel->op) && !need_distinct(rel) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
+	if (rel && is_simple_project(rel->op) && !need_distinct(rel) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
 		return rel;
 	return _rel_add_identity(sql, rel, exp);
 }
@@ -1580,7 +1574,7 @@ rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
 	sql_rel *l = rel, *p = rel;
 
-	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
+	if (rel && is_simple_project(rel->op) && !need_distinct(rel) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
 		return rel;
 	while(l && !is_set(l->op) && rel_has_freevar(sql, l) && l->l) {
 		p = l;

@@ -3746,52 +3746,37 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 static gdk_return
 BBPbackup(BAT *b, bool subcommit)
 {
-	char *srcdir;
-	long_str nme;
-	const char *s = BBP_physical(b->batCacheid);
-	size_t slen;
-	bool locked = false;
+	gdk_return rc;
 
-	if (BBPprepare(subcommit) != GDK_SUCCEED) {
-		return GDK_FAIL;
+	if ((rc = BBPprepare(subcommit)) != GDK_SUCCEED) {
+		return rc;
 	}
 	if (!b->batCopiedtodisk || b->batTransient) {
 		return GDK_SUCCEED;
 	}
 	/* determine location dir and physical suffix */
-	if (!(srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL)))
-		goto fail;
-	s = strrchr(srcdir, DIR_SEP);
-	if (!s)
-		goto fail;
+	char *srcdir;
+	if ((srcdir = GDKfilepath(NOFARM, BATDIR, BBP_physical(b->batCacheid), NULL)) != NULL) {
+		char *nme = strrchr(srcdir, DIR_SEP);
+		assert(nme != NULL);
+		*nme++ = '\0';	/* split into directory and file name */
 
-	slen = strlen(++s);
-	if (slen >= sizeof(nme))
-		goto fail;
-	memcpy(nme, s, slen + 1);
-	srcdir[s - srcdir] = 0;
-
-	MT_lock_set(&b->theaplock);
-	locked = true;
-	if (b->ttype != TYPE_void &&
-	    do_backup(srcdir, nme, gettailname(b), b->theap,
-		      b->batDirtydesc || b->theap->dirty,
-		      subcommit) != GDK_SUCCEED)
-		goto fail;
-	if (b->tvheap &&
-	    do_backup(srcdir, nme, "theap", b->tvheap,
-		      b->batDirtydesc || b->tvheap->dirty,
-		      subcommit) != GDK_SUCCEED)
-		goto fail;
-	MT_lock_unset(&b->theaplock);
+		BATiter bi = bat_iterator(b);
+		if (bi.type != TYPE_void) {
+			rc = do_backup(srcdir, nme, gettailnamebi(&bi), bi.h,
+				       b->batDirtydesc || bi.h->dirty,
+				       subcommit);
+			if (rc == GDK_SUCCEED && bi.vh != NULL)
+				rc = do_backup(srcdir, nme, "theap", bi.vh,
+					       b->batDirtydesc || bi.vh->dirty,
+					       subcommit);
+		}
+		bat_iterator_end(&bi);
+	} else {
+		rc = GDK_FAIL;
+	}
 	GDKfree(srcdir);
-	return GDK_SUCCEED;
-  fail:
-	if (locked)
-		MT_lock_unset(&b->theaplock);
-	if(srcdir)
-		GDKfree(srcdir);
-	return GDK_FAIL;
+	return rc;
 }
 
 /*

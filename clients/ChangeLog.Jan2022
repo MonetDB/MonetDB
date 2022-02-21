@@ -1,3 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Feb 16 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Improved the handling of the \r command in mclient.  It now properly
+  counts the header of table, and when a (very) long table is being
+  printed and aborted part way in the built-in pager, not all data is
+  transferred to the client (and then discarded).  Instead at most 1000
+  rows are transferred.
+

@@ -103,6 +103,7 @@ typedef struct {
 } monetdbe_remote;
 
 typedef struct {
+	const char *host;
 	const char* port;
 	const char* usock;
 } monetdbe_mapi_server;
@@ -179,6 +180,7 @@ monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* 
 
 monetdbe_export char* monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);
 monetdbe_export char* monetdbe_dump_table(monetdbe_database dbhdl, const char *schema_name, const char *table_name, const char *backupfile);
+monetdbe_export const char* monetdbe_get_mapi_port(void);
 
 #ifdef __cplusplus
 }

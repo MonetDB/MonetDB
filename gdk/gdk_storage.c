@@ -763,25 +763,6 @@ BATmsync(BAT *b)
 #endif	/* DISABLE_MSYNC */
 }
 
-static inline const char *
-gettailnamebi(const BATiter *bi)
-{
-	if (bi->type != TYPE_str)
-		return "tail";
-	switch (bi->width) {
-	case 1:
-		return "tail1";
-	case 2:
-		return "tail2";
-#if SIZEOF_VAR_T == 8
-	case 4:
-		return "tail4";
-#endif
-	default:
-		return "tail";
-	}
-}
-
 gdk_return
 BATsave_locked(BAT *b, BATiter *bi, BUN size)
 {
