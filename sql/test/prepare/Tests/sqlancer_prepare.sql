@@ -31,16 +31,16 @@ PREPARE SELECT ?, CASE 'weHtU' WHEN (values (?)) THEN 'G' END;
 PREPARE SELECT DISTINCT ?, CAST(CASE least(?, r'weHtU') WHEN ? THEN ? WHEN ? THEN ? WHEN (VALUES (?)) THEN r'G' ELSE ? END AS DATE) WHERE (?) IS NOT NULL LIMIT 519007555986016405;
 	-- cannot have a parameter for IS NOT NULL operator
 
-PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS l0t0(c0);
+PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * 2 FROM (select 1) AS l0t0(c0);
 
-PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
+PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(3)) FROM (select 1) AS l0t0(c0);
 
 PREPARE SELECT round(-'b', ?);
 PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
 PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second); -- error, cast integer to interval
 
 PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(' THEN NULL WHEN r')''CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
-WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);
+WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (12) IS NULL);
 
 PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
 
