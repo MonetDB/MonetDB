@@ -713,6 +713,9 @@ statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query resu
 SELECT 1 BETWEEN y.y AND max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y BETWEEN 1 AND max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
 SELECT y.y LIKE max(x.x) FROM (SELECT '1') x(x), (SELECT '1') y(y)
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
@@ -723,6 +726,30 @@ SELECT [y.y] "like" [max(x.x), '', false] FROM (SELECT '1') x(x), (SELECT '1') y
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
 SELECT [max(y.y)] "like" [x.x, '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y IN (max(x.x)) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y AND max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y OR max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y + max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT case y.y when max(x.x) then 1 end FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT case 2 when x.x then min(y.y) end FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT case x.x when 2 then min(y.y) end FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT case 1 when 2 then x.x when max(y.y) then 3 end FROM (SELECT 1) x(x), (SELECT 1) y(y)
 
 query I nosort
 SELECT ['1'] "like" [max(x.x), '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
