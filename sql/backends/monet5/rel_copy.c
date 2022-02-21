@@ -79,7 +79,6 @@ emit_send(MalBlkPtr mb, int var_channel, int tpe, int var_msg)
 struct loop_vars {
 	int loop_barrier;
 	int our_block;
-	int our_skip_amount;
 	int our_line_count;
 };
 
@@ -103,10 +102,6 @@ emit_onserver(
 	q = pushNil(mb, q, TYPE_bte);
 	q = pushLng(mb, q, alloc);
 	int var_block_channel = getDestVar(q);
-
-	q = newAssignment(mb);
-	q = pushInt(mb, q, 0);
-	int var_skip_amounts_channel = getDestVar(q);
 
 
 	// START LOOP
@@ -155,7 +150,6 @@ emit_onserver(
 	emit_send(mb, var_stream_channel, streams_type, var_s);
 
 	loop_vars->our_block = emit_receive(mb, var_block_channel, bte_bat_type);
-	loop_vars->our_skip_amount = emit_receive(mb, var_skip_amounts_channel, TYPE_int);
 
 	q = newStmt(mb, "aggr", "count");
 	q = pushArgument(mb, q, loop_vars->our_block);
@@ -177,18 +171,20 @@ emit_onserver(
 	q = pushLng(mb, q, 0);
 
 	q = newStmt(mb, "copy", "fixlines");
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
+	setArgType(mb, q, 0, bte_bat_type);
+	q = pushReturn(mb, q, newTmpVariable(mb, bte_bat_type));
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 	q = pushArgument(mb, q, loop_vars->our_block);
-	q = pushArgument(mb, q, loop_vars->our_skip_amount);
 	q = pushArgument(mb, q, var_next_block);
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushArgument(mb, q, var_escape);
-	loop_vars->our_line_count = getArg(q, 0);
-	int var_next_skip_amount = getArg(q, 1);
+	// use the variables defined by fixlines from now on:
+	loop_vars->our_block = getArg(q, 0);
+	var_next_block = getArg(q, 1);
+	loop_vars->our_line_count = getArg(q, 2);
 
 	emit_send(mb, var_block_channel, bte_bat_type, var_next_block);
-	emit_send(mb, var_skip_amounts_channel, TYPE_int, var_next_skip_amount);
 }
 
 
@@ -285,7 +281,6 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		q = pushReturn(mb, q, v);
 	}
 	q = pushArgument(mb, q, loop_vars.our_block);
-	q = pushArgument(mb, q, loop_vars.our_skip_amount);
 	q = pushArgument(mb, q, loop_vars.our_line_count);
 	q = pushArgument(mb, q, var_col_sep);
 	q = pushArgument(mb, q, var_line_sep);
