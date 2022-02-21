@@ -30,8 +30,9 @@ with Runner(False) as run:
 
         header('CHECK SNAPDIR NOT SET')
         output = m.run_monetdbd('get', 'snapshotdir', output=True)
-        assert '<unknown>' in output
-        note("""'<unknown>' in output""")
+        run.print(' -->', repr(output))
+        assert '<unset>' in output
+        note("""'<unset>' in output as expected""")
 
         header('TRY TO CREATE')
         try:
