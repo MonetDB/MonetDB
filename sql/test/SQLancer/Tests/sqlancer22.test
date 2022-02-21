@@ -691,12 +691,23 @@ SELECT 1 FROM t0 LEFT JOIN (SELECT 2) AS x(x) ON (SELECT t0.c0 UNION ALL SELECT 
 ----
 
 query I nosort
+SELECT min((SELECT t0.c0 + t0.c0)) FROM t0
+----
+NULL
+
+query I nosort
 SELECT min((SELECT CASE t0.c0 WHEN t0.c0 THEN t0.c0 END)) FROM t0
 ----
 NULL
 
 statement ok
 ROLLBACK
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y BETWEEN 1 AND max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y BETWEEN max(x.x) AND 1 FROM (SELECT 1) x(x), (SELECT 1) y(y)
 
 statement error Subquery has too many columns
 select 1 where (2,3) in (select x,y,2 from (values (2, 3), (4, 5)) x(x,y))
