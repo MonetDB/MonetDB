@@ -751,6 +751,12 @@ SELECT case x.x when 2 then min(y.y) end FROM (SELECT 1) x(x), (SELECT 1) y(y)
 statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
 SELECT case 1 when 2 then x.x when max(y.y) then 3 end FROM (SELECT 1) x(x), (SELECT 1) y(y)
 
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y FROM (SELECT 1) x(x), (SELECT 1) y(y) order by min(x.x)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT ntile(y.y) over () FROM (SELECT 1) x(x), (SELECT 1) y(y) order by min(x.x)
+
 query I nosort
 SELECT ['1'] "like" [max(x.x), '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
 ----
