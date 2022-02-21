@@ -690,6 +690,11 @@ query I nosort
 SELECT 1 FROM t0 LEFT JOIN (SELECT 2) AS x(x) ON (SELECT t0.c0 UNION ALL SELECT x.x) > 0
 ----
 
+query I nosort
+SELECT min((SELECT CASE t0.c0 WHEN t0.c0 THEN t0.c0 END)) FROM t0
+----
+NULL
+
 statement ok
 ROLLBACK
 
