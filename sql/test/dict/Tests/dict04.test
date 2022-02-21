@@ -203,6 +203,36 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t4 (c0 INT, c1 INT)
+
+statement ok rowcount 3
+insert into t4 values (1,1),(2,2),(3,3)
+
+statement ok
+CREATE TABLE t5 (c0 INT)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','t5','c0',false)
+
+query I nosort
+SELECT 1 FROM t4 CROSS JOIN (SELECT (VALUES (z.z)) FROM t5 CROSS JOIN LATERAL (
+SELECT 2 FROM (SELECT 3) x(x) JOIN (VALUES (4, t5.c0), (5, t5.c0)) AS y(y,r) ON TRUE
+) AS z(z)) AS w(w)
+----
+
+statement ok
+DROP TABLE t4
+
+statement ok
+DROP TABLE t5
+
+statement ok
+START TRANSACTION
+
+statement ok
 DROP ALL PROCEDURE "sys"."dict_compress"
 
 statement ok

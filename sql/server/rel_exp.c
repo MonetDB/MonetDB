@@ -976,22 +976,14 @@ exp_label(sql_allocator *sa, sql_exp *e, int nr)
 	return e;
 }
 
-sql_exp*
-exp_label_table(sql_allocator *sa, sql_exp *e, int nr)
-{
-	e->alias.rname = make_label(sa, nr);
-	return e;
-}
-
 list*
 exps_label(sql_allocator *sa, list *exps, int nr)
 {
-	node *n;
-
 	if (!exps)
 		return NULL;
-	for (n = exps->h; n; n = n->next)
+	for (node *n = exps->h; n; n = n->next)
 		n->data = exp_label(sa, n->data, nr++);
+	list_hash_clear(exps);
 	return exps;
 }
 
@@ -2326,11 +2318,8 @@ exp_rel_update_exp(mvc *sql, sql_exp *e)
 sql_exp *
 exp_rel_label(mvc *sql, sql_exp *e)
 {
-	if (exp_is_rel(e)) {
-		sql_rel *r = e->l;
-
-		e->l = r = rel_label(sql, r, 1);
-	}
+	if (exp_is_rel(e))
+		e->l = rel_label(sql, e->l, 1);
 	return e;
 }
 

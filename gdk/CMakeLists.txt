@@ -89,6 +89,7 @@ target_sources(bat
 
 target_include_directories(bat
   PUBLIC
+  $<$<BOOL:${UUID_FOUND}>:$<TARGET_PROPERTY:UUID::UUID,INTERFACE_INCLUDE_DIRECTORIES>>
   $<TARGET_PROPERTY:stream,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:matomic,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mstring,INTERFACE_INCLUDE_DIRECTORIES>
@@ -105,6 +106,7 @@ target_link_libraries(bat
   mutils
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:ws2_32>
+  $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
   $<$<BOOL:${KVM_FOUND}>:KVM::KVM>
   ${CMAKE_DL_LIBS}
   Threads::Threads)

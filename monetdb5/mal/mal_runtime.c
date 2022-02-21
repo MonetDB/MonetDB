@@ -196,6 +196,10 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	size_t i, paused = 0;
 	str q;
 
+	/* Recursive calls don't change the query queue, but later we have to check
+	   how to stop/pause/resume queries doing recursive calls from multiple workers */
+	if (stk->up)
+		return;
 	MT_lock_set(&mal_delayLock);
 
 	if(USRstats == NULL){
@@ -218,20 +222,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		}
 	}
 	assert(qhead < qsize);
-	// check for recursive call, which does not change the number of workers
-	if (stk->up) {
-		i = qtail;
-		while (i != qhead) {
-			if (QRYqueue[i].mb && QRYqueue[i].stk == stk->up) {
-				QRYqueue[i].stk = stk;
-				mb->tag = stk->tag = qtag++;
-				MT_lock_unset(&mal_delayLock);
-				return;
-			}
-			if (++i >= qsize)
-				i = 0;
-		}
-	}
 	i=qtail;
 	while (i != qhead){
 		paused += QRYqueue[i].status && (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
@@ -287,17 +277,14 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	size_t i;
 	bool found = false;
 
+	/* Recursive calls don't change the query queue, but later we have to check
+	   how to stop/pause/resume queries doing recursive calls from multiple workers */
+	if (stk->up)
+		return;
 	MT_lock_set(&mal_delayLock);
 	i=qtail;
 	while (i != qhead){
 		if (QRYqueue[i].stk == stk){
-			if (stk->up){
-				// recursive call
-				QRYqueue[i].stk = stk->up;
-				mb->tag = stk->tag;
-				MT_lock_unset(&mal_delayLock);
-				return;
-			}
 			QRYqueue[i].status = "finished";
 			QRYqueue[i].finished = time(0);
 			QRYqueue[i].workers = mb->workers;

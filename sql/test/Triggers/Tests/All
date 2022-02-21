@@ -11,3 +11,4 @@ triggers_schema_operations
 trigger_insert
 trigger_projection
 trigger_schema
+trigger-restart

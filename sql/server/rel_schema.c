@@ -122,6 +122,7 @@ view_rename_columns(mvc *sql, const char *name, sql_rel *sq, dlist *column_spec)
 		p->next = 0;
 	if (n || m)
 		return sql_error(sql, 02, SQLSTATE(M0M03) "Column lists do not match");
+	list_hash_clear(sq->exps);
 	set_processed(sq);
 	return sq;
 }

@@ -1381,7 +1381,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		// push pointer to the SQL structure into the MAL call
 		// allows getting argument names for example
 		if (LANG_EXT(f->func->lang))
-			q = pushPtr(mb, q, f); // nothing to see here, please move along
+			q = pushPtr(mb, q, f->func); // nothing to see here, please move along
 		// f->query contains the R code to be run
 		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
 			q = pushStr(mb, q, f->func->query);
@@ -3446,8 +3446,15 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 				setVarType(mb, getArg(q, 0), res->type->localtype);
 			}
 		}
-		if (LANG_EXT(f->func->lang))
-			q = pushPtr(mb, q, f);
+		if (LANG_EXT(f->func->lang)) {
+			/* TODO LOADER functions still use information in sql_subfunc struct
+			   that won't be visible to other sessions if another function uses them.
+			   It has to be cleaned up */
+			if (f->func->type == F_LOADER)
+				q = pushPtr(mb, q, f);
+			else
+				q = pushPtr(mb, q, f->func);
+		}
 		if (f->func->lang == FUNC_LANG_C) {
 			q = pushBit(mb, q, 0);
 		} else if (f->func->lang == FUNC_LANG_CPP) {

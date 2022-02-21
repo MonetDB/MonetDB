@@ -343,6 +343,9 @@
 
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
+gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
@@ -1170,10 +1173,11 @@ typedef var_t stridx_t;
 
 #define BUNtvaroff(bi,p) VarHeapVal((bi).base, (p), (bi).width)
 
-#define BUNtloc(bi,p)	(ATOMstorage((bi).type) == TYPE_msk ? Tmsk(&(bi), p) : (void *) ((char *) (bi).base + ((p) << (bi).shift)))
+#define BUNtmsk(bi,p)	Tmsk(&(bi), (p))
+#define BUNtloc(bi,p)	(assert((bi).type != TYPE_msk), ((void *) ((char *) (bi).base + ((p) << (bi).shift))))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
 #define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
-#define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
+#define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 #define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
@@ -1624,12 +1628,6 @@ gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log
 		      format, ##__VA_ARGS__)
 #define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
 
-gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-	/*
-gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-	*/
 gdk_export void GDKclrerr(void);
 
 
@@ -1675,6 +1673,8 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 		((uint64_t *) b->theap->base)[p] = (uint64_t) d;
 		break;
 #endif
+	default:
+		MT_UNREACHABLE();
 	}
 	return GDK_SUCCEED;
 }
@@ -1983,6 +1983,7 @@ Tpos(BATiter *bi, BUN p)
 static inline bool
 Tmskval(BATiter *bi, BUN p)
 {
+	assert(ATOMstorage(bi->type) == TYPE_msk);
 	return ((uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
 }
 

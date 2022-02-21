@@ -353,6 +353,14 @@ with SQLTestCase() as cli:
         UNION ALL (SELECT 1 FROM rt3 RIGHT OUTER JOIN (SELECT 4) AS sub1n0(subc1n0) ON TRUE
         CROSS JOIN (SELECT FALSE FROM rt3) AS sub1n1(subc1n0))) FROM rt3;
     """).assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,)])
+    cli.execute("""
+        select (values (t3.c0)) from t3, (select 2 from t3 where
+        ((select t3.c0) intersect (select 3)) > 0) vx(vc0) where (values (t3.c0)) > 0;
+    """).assertSucceeded().assertDataResultMatch([])
+    cli.execute("""
+        select (values (rt3.c0)) from rt3, (select 2 from rt3 where
+        ((select rt3.c0) intersect (select 3)) > 0) vx(vc0) where (values (rt3.c0)) > 0;
+    """).assertSucceeded().assertDataResultMatch([])
     cli.execute("(SELECT greatest(JSON '\"5mTevdOzH5brfkMv\"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM t3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM t3);") \
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("(SELECT greatest(JSON '\"5mTevdOzH5brfkMv\"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM rt3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM rt3);") \

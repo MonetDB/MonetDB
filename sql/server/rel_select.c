@@ -198,6 +198,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname, list *refs)
 		}
 		if (!columnrefs && sq->exps) {
 			ne = sq->exps->h;
+			list_hash_clear(sq->exps);
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
 				char *name = NULL;
@@ -298,6 +299,7 @@ rel_with_query(sql_query *query, symbol *q )
 					set_basecol(e);
 				}
 			}
+			list_hash_clear(nrel->exps);
 		}
 	}
 	rel = rel_semantic(query, next);
@@ -973,6 +975,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 						noninternexp_setname(sql->sa, e, tname, NULL);
 						set_basecol(e);
 					}
+					list_hash_clear(exps);
 				}
 			}
 			if (allowed)
@@ -1014,6 +1017,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 					exp_setname(sql->sa, e, tname, c->base.name);
 					set_basecol(e);
 				}
+				list_hash_clear(rel->exps);
 			}
 			if (rel && !allowed && t->query && (rel = rel_reduce_on_column_privileges(sql, rel, t)) == NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
@@ -1119,6 +1123,15 @@ is_groupby_col(sql_rel *gb, sql_exp *e)
 	return 0;
 }
 
+static void
+set_dependent_( sql_rel *r)
+{
+	if (is_select(r->op))
+		r = r->l;
+	if (r && is_join(r->op))
+		set_dependent(r);
+}
+
 static sql_exp *
 rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 {
@@ -1183,8 +1196,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
-			if (exp && outer && is_join(outer->op))
-				set_dependent(outer);
+			if (exp && outer && (is_select(outer->op) || is_join(outer->op)))
+				set_dependent_(outer);
 		}
 
 		/* some views are just in the stack, like before and after updates views */
@@ -1269,8 +1282,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
-			if (exp && outer && is_join(outer->op))
-				set_dependent(outer);
+			if (exp && outer && (is_select(outer->op) || is_join(outer->op)))
+				set_dependent_(outer);
 		}
 
 		/* some views are just in the stack, like before and after updates views */
@@ -1939,22 +1952,21 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		le = rel_value_exp(query, rel, lo, f|sql_farg, ek);
 		if (!le)
 			return NULL;
-		ek.card = card_set;
 		append(ll, le);
 	}
 	if (list_length(ll) == 1) {
 		le = ll->h->data;
+		ek.card = card_set;
 	} else {
 		le = exp_values(sql->sa, ll);
 		exp_label(sql->sa, le, ++sql->label);
-		ek.card = card_column;
 		ek.type = list_length(ll);
 		is_tuple = 1;
 	}
 	/* list of values or subqueries */
 	if (n->type == type_list) {
 		sql_exp *values;
-		list *vals = sa_list(sql->sa), *nvalues;
+		list *vals = sa_list(sql->sa);
 
 		n = dl->h->next;
 		n = n->data.lval->h;
@@ -1992,9 +2004,8 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		if (is_tuple) {
 			if (!(values = exp_tuples_set_supertype(sql, exp_get_values(le), values)))
 				return NULL;
-			if (!(nvalues = tuples_check_types(sql, exp_get_values(le), values)))
+			if (!(le->f = tuples_check_types(sql, exp_get_values(le), values)))
 				return NULL;
-			le->f = nvalues;
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
 			sql_subtype super, *le_tpe = exp_subtype(le), *values_tpe = NULL;
 
@@ -2476,9 +2487,11 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			*rel = query_pop_outer(query);
 		if (!sq)
 			return NULL;
-		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
+		if (ek.type == type_value && ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (ek.card < card_set && sq->card >= CARD_AGGR && (is_sql_sel(f) | is_sql_having(f) | is_sql_farg(f) |
+		if (ek.type == type_relation && is_project(sq->op) && list_length(sq->exps) != ek.type)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery has too %s columns", list_length(sq->exps) < ek.type ? "few" : "many");
+		if (ek.type == type_value && ek.card < card_set && sq->card >= CARD_AGGR && (is_sql_sel(f) | is_sql_having(f) | is_sql_farg(f) |
 			( is_sql_where(f) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op) || is_joinop((*rel)->op)))))
 			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
@@ -2758,6 +2771,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			rel = query_pop_outer(query);
 		if (!sq)
 			return NULL;
+		assert(ek.type == type_value); /* I don't expect IN tuple matching calls to land here */
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
  			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (!rel)
@@ -5173,7 +5187,9 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			return NULL;
 		if (ek.type == type_value && ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (list_length(r->exps) == 1 && !is_sql_psm(f)) /* for now don't rename multi attribute results */
+		if (ek.type == type_relation && is_project(r->op) && list_length(r->exps) != ek.type)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery has too %s columns", list_length(r->exps) < ek.type ? "few" : "many");
+		if (ek.type == type_value && list_length(r->exps) == 1 && !is_sql_psm(f)) /* for now don't rename multi attribute results */
 			r = rel_zero_or_one(sql, r, ek);
 		return exp_rel(sql, r);
 	}

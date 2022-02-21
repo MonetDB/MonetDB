@@ -599,5 +599,197 @@ query I nosort
 SELECT 1 FROM (SELECT TRUE) AS vx(x), t3 WHERE vx.x AND greatest(t3.c0, EXISTS (SELECT 1 WHERE vx.x))
 ----
 
+query I nosort
+SELECT (SELECT 1 FROM (VALUES (1),(2),(3)) z(z) FULL OUTER JOIN (VALUES (2, 3), (4, t0.c0)) AS x(x,y) ON z.z) FROM t0
+----
+
+query I nosort
+select 1 where (2,3) in (select x,y from (values (2, 3), (4, 5)) x(x,y))
+----
+1
+
+query I nosort
+select 1 where (2,3) in (select 2,3 union all select 3,4)
+----
+1
+
+query I nosort
+select 1 where (2,3) in (with x(x,y) as (select 2,3) select x,y from x)
+----
+1
+
+query I nosort
+select 1 where (2,3) in ((values (2, 3), (4, 5)))
+----
+1
+
+statement ok
+create table t4 (c0 int, c1 int)
+
+statement ok rowcount 3
+insert into t4 values (1,1),(2,2),(3,3)
+
+query I nosort
+select c1 from t4 where (c0,3) in (select 2,3 union all select 3,4)
+----
+2
+
+query I nosort
+select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 2,3 union all select 6,7))
+----
+2
+
+query I rowsort
+select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 3,3 union all select 5,4))
+----
+2
+3
+
+query I nosort
+select c1 from t4 where (c0,3) in (select 2,3 where false)
+----
+
+query I nosort
+SELECT 1 FROM (values (1, 4), (3, (select 2))) x(x,y) WHERE greatest(FALSE, FALSE)
+----
+
+query I nosort
+SELECT 1 FROM (values (1, 4), (3, (select 2 where true))) x(x,y) WHERE greatest(FALSE, FALSE)
+----
+
+query I nosort
+SELECT EXISTS (VALUES (1, FALSE), (2, 1 < ALL(SELECT x.x))) FROM (SELECT 1) x(x)
+----
+1
+
+query I nosort
+SELECT 1 FROM (values (1, 4), (3, 2)) x(x,y) WHERE greatest(FALSE, FALSE)
+----
+
+query I nosort
+SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT TRUE) AS z(z) ON 1 = ANY(SELECT t0.c0 FROM (SELECT 3) x(x))
+AND (SELECT TRUE FROM (SELECT 4) x(x) FULL OUTER JOIN (SELECT 5) AS y(y) ON z.z)
+----
+1
+
+query I nosort
+SELECT 1 FROM t0 JOIN (VALUES (3, (SELECT 4))) AS x(x,y) ON x.x
+----
+
+query I nosort
+select x from (select 2) as x(x) left outer join lateral (select distinct 3 from t1 where x.x > 0) as z(z)
+on 4 > all(select x.x) and (x.x > 0 or x.x > 0)
+----
+2
+
+query I nosort
+SELECT 1 FROM t0 LEFT JOIN (SELECT 2) AS x(x) ON (VALUES (t0.c0), (x.x))
+----
+
+query I nosort
+SELECT 1 FROM t0 LEFT JOIN (SELECT 2) AS x(x) ON (SELECT t0.c0 UNION ALL SELECT x.x) > 0
+----
+
+query I nosort
+SELECT min((SELECT t0.c0 + t0.c0)) FROM t0
+----
+NULL
+
+query I nosort
+SELECT min((SELECT CASE t0.c0 WHEN t0.c0 THEN t0.c0 END)) FROM t0
+----
+NULL
+
 statement ok
 ROLLBACK
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y BETWEEN 1 AND max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y BETWEEN max(x.x) AND 1 FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT 1 BETWEEN y.y AND max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y BETWEEN 1 AND max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y LIKE max(x.x) FROM (SELECT '1') x(x), (SELECT '1') y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT max(y.y) LIKE x.x FROM (SELECT '1') x(x), (SELECT '1') y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT [y.y] "like" [max(x.x), '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT [max(y.y)] "like" [x.x, '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y IN (max(x.x)) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y AND max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y OR max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y + max(x.x) FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT case y.y when max(x.x) then 1 end FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT case 2 when x.x then min(y.y) end FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT case x.x when 2 then min(y.y) end FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT case 1 when 2 then x.x when max(y.y) then 3 end FROM (SELECT 1) x(x), (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT y.y FROM (SELECT 1) x(x), (SELECT 1) y(y) order by min(x.x)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
+SELECT ntile(y.y) over () FROM (SELECT 1) x(x), (SELECT 1) y(y) order by min(x.x)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.y' in query results without an aggregate function
+SELECT x.y, EXISTS (SELECT MIN(x.x)) FROM (SELECT 1, 2) x(x,y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.y' in query results without an aggregate function
+SELECT x.y, (SELECT MIN(x.x)) FROM (SELECT 1, 2) x(x,y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.y' in query results without an aggregate function
+SELECT (SELECT MIN(x.x)) FROM (SELECT 1, 2) x(x,y) ORDER BY x.y
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.y' in query results without an aggregate function
+SELECT x.y, MIN(x.x + x.y) FROM (SELECT 1, 2) x(x,y)
+
+query I nosort
+SELECT ['1'] "like" [max(x.x), '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
+----
+1
+
+query I nosort
+SELECT [max(y.y)] "like" ['1', '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
+----
+1
+
+statement error Subquery has too many columns
+select 1 where (2,3) in (select x,y,2 from (values (2, 3), (4, 5)) x(x,y))
+
+statement error Subquery has too few columns
+select 1 where (2,3) in (select 2 union all select 3)
+
+statement error SELECT: subquery must return only one column
+select 1 where (2) in (with x(x,y) as (select 2,3) select x,y from x)
+
+statement error GDK reported error: BATsubcross: more than one match
+select x FROM (VALUES (1),(2),(3)) x(x) where ((select 3 union all select 3)) in (select 3)
+
+statement error GDK reported error: BATsubcross: more than one match
+select x FROM (VALUES (1),(2),(3)) x(x) where (2, (select 3 union all select 3)) in (select 2,3)
