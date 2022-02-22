@@ -20,10 +20,6 @@ with SQLTestCase() as cli:
     COMMIT;""" % (port, db)).assertSucceeded()
 
     # Issues related to scale propagation in the sql layer
-    cli.execute("SELECT CAST(2 AS DECIMAL) & CAST(3 AS DOUBLE) FROM t1 where t1.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([(Decimal('0.002'),)])
-    cli.execute("SELECT CAST(2 AS DECIMAL) & CAST(3 AS DOUBLE) FROM rt1 where rt1.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([(Decimal('0.002'),)])
     cli.execute("SELECT scale_down(146.0, 1) FROM t1 where t1.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('14.6'),)])
     cli.execute("SELECT scale_down(146.0, 1) FROM rt1 where rt1.c0 = 1;") \
