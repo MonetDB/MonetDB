@@ -26,7 +26,6 @@ the command make rpm.
 | checkpolicy		# optional, required to create RPMs (make rpm)
 | geos-devel		# optional: required for geom module
 | libcurl-devel		# optional: read remote files with sys.getcontent(url)
-| libuuid-devel		# optional
 | pcre-devel		# optional: use PCRE library, enable some functions
 | python3-devel		# optional, needed for Python 3 integration
 | python3-numpy		# optional, needed for Python 3 integration

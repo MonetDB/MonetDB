@@ -663,11 +663,7 @@ BAThashsync(void *arg)
 #ifdef HAVE_HGE
 #define EQuuid(a, b)	((a).h == (b).h)
 #else
-#ifdef HAVE_UUID
-#define EQuuid(a, b)	(uuid_compare((a).u, (b).u) == 0)
-#else
 #define EQuuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#endif
 #endif
 
 #define starthash(TYPE)							\
