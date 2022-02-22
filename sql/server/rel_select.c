@@ -2840,24 +2840,19 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 
 	/* handle param's early */
 	if (!t) {
-		if (!(f = find_func(sql, sname, fname, 1, type, NULL, &found))) {
-			sql->session->status = 0; /* if the function was not found clean the error */
-			sql->errstr[0] = '\0';
-			f = find_func(sql, sname, fname, 1, F_AGGR, NULL, &found);
-		}
-		if (f) {
+		if ((f = find_func(sql, sname, fname, 1, type, NULL, &found))) {
 			sql_arg *a = f->func->ops->h->data;
 
 			t = &a->type;
 			if (rel_set_type_param(sql, t, rel, e, f->func->fix_scale != INOUT && !UDF_LANG(f->func->lang)) < 0)
 				return NULL;
-		}
-	 } else {
-		if (!(f = bind_func(sql, sname, fname, t, NULL, type, &found))) {
+		} else {
 			sql->session->status = 0; /* if the function was not found clean the error */
 			sql->errstr[0] = '\0';
-			f = bind_func(sql, sname, fname, t, NULL, F_AGGR, &found);
 		}
+	} else if (!(f = bind_func(sql, sname, fname, t, NULL, type, &found))) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
 
 	if (f && type_has_tz(t) && f->func->fix_scale == SCALE_FIX) {
@@ -2875,8 +2870,6 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 	 * the value to the type needed by this function!
 	 */
 	if (!f) {
-		sql->session->status = 0; /* if the function was not found clean the error */
-		sql->errstr[0] = '\0';
 		while ((f = find_func(sql, sname, fname, 1, type, f, &found)) != NULL) {
 			list *args = list_append(sa_list(sql->sa), e);
 
