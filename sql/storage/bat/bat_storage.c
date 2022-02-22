@@ -297,18 +297,22 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				if (used) {
 					if (lnr < (32-used))
 						end = used + lnr;
-					for(size_t j=used; j < end; j++, lnr--)
-						cur |= 1U<<j;
+					assert(end > used);
+					cur |= ((1U << (end - used)) - 1) << used;
+					lnr -= end - used;
 					*dst++ |= cur;
 					cur = 0;
 				}
 				size_t full = lnr/32;
 				size_t rest = lnr%32;
-				for(size_t i = 0; i<full; i++, lnr-=32)
-					*dst++ = ~0;
-				if (rest) {
-					for(size_t j=0; j < rest; j++, lnr--)
-						cur |= 1U<<j;
+				if (full > 0) {
+					memset(dst, ~0, full * sizeof(*dst));
+					dst += full;
+					lnr -= full * 32;
+				}
+				if (rest > 0) {
+					cur |= (1U << rest) - 1;
+					lnr -= rest;
 					*dst |= cur;
 				}
 				assert(lnr==0);
@@ -324,18 +328,22 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				if (used) {
 					if (lnr < (32-used))
 						end = used + lnr;
-					for(size_t j=used; j < end; j++, lnr--)
-						cur |= 1U<<j;
+					assert(end > used);
+					cur |= ((1U << (end - used)) - 1) << used;
+					lnr -= end - used;
 					*dst++ |= cur;
 					cur = 0;
 				}
 				size_t full = lnr/32;
 				size_t rest = lnr%32;
-				for(size_t i = 0; i<full; i++, lnr-=32)
-					*dst++ = ~0;
-				if (rest) {
-					for(size_t j=0; j < rest; j++, lnr--)
-						cur |= 1U<<j;
+				if (full > 0) {
+					memset(dst, ~0, full * sizeof(*dst));
+					dst += full;
+					lnr -= full * 32;
+				}
+				if (rest > 0) {
+					cur |= (1U << rest) - 1;
+					lnr -= rest;
 					*dst |= cur;
 				}
 				assert(lnr==0);
@@ -344,18 +352,22 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				if (used) {
 					if (lnr < (32-used))
 						end = used + lnr;
-					for(size_t j=used; j < end; j++, lnr--)
-						cur |= 1U<<j;
+					assert(end > used);
+					cur |= ((1U << (end - used)) - 1) << used;
+					lnr -= end - used;
 					*dst++ &= ~cur;
 					cur = 0;
 				}
 				size_t full = lnr/32;
 				size_t rest = lnr%32;
-				for(size_t i = 0; i<full; i++, lnr-=32)
-					*dst++ = 0;
-				if (rest) {
-					for(size_t j=0; j < rest; j++, lnr--)
-						cur |= 1U<<j;
+				if (full > 0) {
+					memset(dst, 0, full * sizeof(*dst));
+					dst += full;
+					lnr -= full * 32;
+				}
+				if (rest > 0) {
+					cur |= (1U << rest) - 1;
+					lnr -= rest;
 					*dst &= ~cur;
 				}
 				assert(lnr==0);
@@ -4547,8 +4559,10 @@ segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end
 			if (used) {
 				if (lnr < (32-used))
 					end = used + lnr;
-				for(size_t j=used; j < end; j++, pos++, lnr--)
-					cur |= 1U<<j;
+				assert(end > used);
+				cur |= ((1U << (end - used)) - 1) << used;
+				lnr -= end - used;
+				pos += end - used;
 				if (end == 32) {
 					*dst++ = cur;
 					cur = 0;
@@ -4556,10 +4570,17 @@ segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end
 			}
 			size_t full = lnr/32;
 			size_t rest = lnr%32;
-			for(size_t i = 0; i<full; i++, pos+=32, lnr-=32)
-				*dst++ = ~0;
-			for(size_t j=0; j < rest; j++, pos++, lnr--)
-				cur |= 1U<<j;
+			if (full > 0) {
+				memset(dst, ~0, full * sizeof(*dst));
+				dst += full;
+				lnr -= full * 32;
+				pos += full * 32;
+			}
+			if (rest > 0) {
+				cur |= (1U << rest) - 1;
+				lnr -= rest;
+				pos += rest;
+			}
 			assert(lnr==0);
 		} else {
 			size_t used = pos&31, end = 32;
@@ -4576,8 +4597,10 @@ segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end
 			}
 			size_t full = lnr/32;
 			size_t rest = lnr%32;
-			for(size_t i = 0; i<full; i++, pos+=32, lnr-=32)
-				*dst++ = 0;
+			memset(dst, 0, full * sizeof(*dst));
+			dst += full;
+			lnr -= full * 32;
+			pos += full * 32;
 			pos+= rest;
 			lnr-= rest;
 			assert(lnr==0);
