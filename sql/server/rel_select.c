@@ -1367,6 +1367,8 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 
 				res->scale = (et->scale + scale_diff);
 				return exp_binop(sql->sa, swapped ? atom_exp : e, swapped ? e : atom_exp, c);
+			} else {
+				TRC_CRITICAL(SQL_PARSER, "scale_down/up missing (%s)\n", et->type->base.name);
 			}
 		}
 	} else if (always && et->scale) {	/* scale down */
