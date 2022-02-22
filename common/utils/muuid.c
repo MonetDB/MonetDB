@@ -12,6 +12,7 @@
 #include "monetdb_config.h"
 #include "muuid.h"
 #include <string.h> /* strdup */
+#include <unistd.h>	/* for getentropy on FreeBSD */
 #if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
 #include <sys/random.h>
 #endif
