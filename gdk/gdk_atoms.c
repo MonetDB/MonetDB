@@ -1258,11 +1258,7 @@ UUIDcompare(const void *L, const void *R)
 		return !is_uuid_nil(*l);
 	if (is_uuid_nil(*l))
 		return -1;
-#ifdef HAVE_UUID
-	return uuid_compare(l->u, r->u);
-#else
 	return memcmp(l->u, r->u, UUID_SIZE);
-#endif
 }
 
 static ssize_t
@@ -1375,9 +1371,6 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 		strcpy(*retval, str_nil);
 		return 1;
 	}
-#ifdef HAVE_UUID
-	uuid_unparse_lower(value->u, *retval);
-#else
 	snprintf(*retval, *len,
 			 "%02x%02x%02x%02x-%02x%02x-%02x%02x"
 			 "-%02x%02x-%02x%02x%02x%02x%02x%02x",
@@ -1385,7 +1378,6 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 			 value->u[4], value->u[5], value->u[6], value->u[7],
 			 value->u[8], value->u[9], value->u[10], value->u[11],
 			 value->u[12], value->u[13], value->u[14], value->u[15]);
-#endif
 	assert(strlen(*retval) == UUID_STRLEN);
 	return UUID_STRLEN;
 }

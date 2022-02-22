@@ -529,7 +529,6 @@ rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps)
 	rel->r = NULL;
 	rel->op = op_select;
 	rel->exps = exps;
-	rel->card = exps_card(exps);
 	rel->card = CARD_ATOM; /* no relation */
 	if (l) {
 		rel->card = l->card;

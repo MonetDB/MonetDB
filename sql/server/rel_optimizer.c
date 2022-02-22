@@ -4584,7 +4584,7 @@ point_select_on_unique_column(sql_rel *rel)
 static sql_rel *
 rel_push_select_up(visitor *v, sql_rel *rel)
 {
-	if ((is_join(rel->op) || is_semi(rel->op)) && !rel_is_ref(rel) && !is_single(rel)) {
+	if ((is_join(rel->op) || is_semi(rel->op)) && !is_single(rel)) {
 		sql_rel *l = rel->l, *r = rel->r;
 		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l) && !is_single(l),
 			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_single(r) && !is_semi(rel->op);
@@ -4597,17 +4597,15 @@ rel_push_select_up(visitor *v, sql_rel *rel)
 
 			/* if both selects retrieve one row each, it's not worth it to push both up */
 			if (can_pushup_left && !can_pushup_right) {
-				sql_rel *ll = l->l;
-				rel->l = ll;
-				l->l = rel;
-				rel = l;
+				sql_rel *nrel = rel_dup_copy(v->sql->sa, rel);
+				nrel->l = l->l;
+				rel = rel_inplace_select(rel, nrel, l->exps);
 				assert(is_select(rel->op));
 				v->changes++;
 			} else if (!can_pushup_left && can_pushup_right) {
-				sql_rel *rl = r->l;
-				rel->r = rl;
-				r->l = rel;
-				rel = r;
+				sql_rel *nrel = rel_dup_copy(v->sql->sa, rel);
+				nrel->r = r->l;
+				rel = rel_inplace_select(rel, nrel, r->exps);
 				assert(is_select(rel->op));
 				v->changes++;
 			}

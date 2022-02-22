@@ -92,7 +92,6 @@ target_include_directories(msabaoth
 
 target_link_libraries(msabaoth
   PRIVATE
-  $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
   mutils
   monetdb_config_header)
 
