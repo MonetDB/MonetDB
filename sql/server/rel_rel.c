@@ -1563,6 +1563,10 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 sql_rel *
 rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
+	if (rel && is_basetable(rel->op)) { /* for base table relations just use TID column as identity */
+		*exp = basetable_get_tid_or_add_it(sql, rel);
+		return rel;
+	}
 	if (rel && is_simple_project(rel->op) && !need_distinct(rel) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
 		return rel;
 	return _rel_add_identity(sql, rel, exp);
@@ -1573,6 +1577,10 @@ rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
 	sql_rel *l = rel, *p = rel;
 
+	if (rel && is_basetable(rel->op)) { /* for base table relations just use TID column as identity */
+		*exp = basetable_get_tid_or_add_it(sql, rel);
+		return rel;
+	}
 	if (rel && is_simple_project(rel->op) && !need_distinct(rel) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
 		return rel;
 	while(l && !is_set(l->op) && rel_has_freevar(sql, l) && l->l) {

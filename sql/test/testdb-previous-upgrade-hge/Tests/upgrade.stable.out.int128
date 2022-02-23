@@ -1,5 +1,4 @@
 Running database upgrade commands:
-set schema "sys";
 delete from sys.dependencies where id < 2000;
 delete from sys.types where id < 2000;
 insert into sys.types values (1, 'void', 'any', 0, 0, 0, 0, 2000);
@@ -3979,10 +3978,8 @@ insert into sys.args values (11479, 1054, 'arg_2', 'clob', 0, 0, 1, 2);
 insert into sys.args values (11480, 1054, 'arg_3', 'int', 32, 0, 1, 3);
 insert into sys.functions values (1055, 'sys_update_schemas', 'update_schemas', 'sql', 0, 2, true, false, false, 2000, true, true);
 insert into sys.functions values (1056, 'sys_update_tables', 'update_tables', 'sql', 0, 2, true, false, false, 2000, true, true);
-set schema "sys";
 
 Running database upgrade commands:
-set schema "sys";
 update sys.args set type = 'decimal', type_digits = 18, type_scale = 3 where func_id in (select id from sys.functions where name = 'epoch_ms' and schema_id = 2000) and number = 0 and type = 'bigint';
 drop view sys.tracelog;
 drop function sys.tracelog();
@@ -4001,7 +3998,6 @@ create function sys.epoch(sec DECIMAL(18,3)) returns TIMESTAMP WITH TIME ZONE
 external name mtime.epoch;
 grant execute on function sys.epoch (DECIMAL(18,3)) to public;
 update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = 1;
-set schema "sys";
 drop function sys.malfunctions();
 create function sys.malfunctions()
  returns table("module" string, "function" string, "signature" string, "address" string, "comment" string)

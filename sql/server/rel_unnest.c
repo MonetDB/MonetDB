@@ -916,14 +916,14 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 					rel_projections(sql, rel->l, NULL, 1, 1));
 
 			/* only pass bound variables */
-			if (is_left(rel->op) && exps_have_freevar(sql, r->exps)) {
+			if (list_empty(rel->attr) && is_left(rel->op) && exps_have_freevar(sql, r->exps)) {
 				id = rel_bound_exp(sql, r);
 				id = rel_project_add_exp(sql, n, id);
 			}
-			if (is_left(rel->op) && rel->attr) {
+			if (is_left(rel->op) && !list_empty(rel->attr)) {
 				rel_project_add_exp(sql, n, exp_ref(sql, rel->attr->h->data));
 			}
-			if (!rel->attr)
+			if (list_empty(rel->attr))
 			for (m=r->exps->h; m; m = m->next) {
 				sql_exp *e = m->data;
 
