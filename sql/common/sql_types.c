@@ -20,7 +20,6 @@
 #include "monetdb_config.h"
 #include "sql_types.h"
 #include "sql_keyword.h"	/* for keyword_exists(), keywords_insert(), init_keywords(), exit_keywords() */
-#include "gdk_geomlogger.h"	/* for geomcatalogfix_get */
 
 list *aliases = NULL;
 list *types = NULL;
