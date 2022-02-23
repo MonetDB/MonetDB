@@ -665,6 +665,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 		bool se = t->side_effect;
 		int res = backend_resolve_function(&(int){0}, t, t->imp, &se); /* backend_resolve_function sets 'side_effect' flag */
 		t->side_effect = se;
+		(void) res;
 		assert(res);
 	}
 	return t;
