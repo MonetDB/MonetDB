@@ -1,36 +1,19 @@
 
-#ifndef INSIDE_COPY_CONVERT
 
-#include "monetdb_config.h"
-#include "gdk.h"
-#include "mal.h"
-#include "mal_exception.h"
-#include "mal_interpreter.h"
-
-#include "copy.h"
-
+#if !defined(TMPL_TYPE) || !defined(TMPL_SUFFIXED)
+#error "This file is a template, it cannot be included standalone"
 #endif
 
-#define TPE int
-#define STRINGIFY(S) #S
-#define GDK_TYPIFY(S) TYPE_##S
-#define TMPL_TYPE int;
-
-struct decimal_parms {
-	int digits;
-	int scale;
-};
 
 
-
-static int
-parse_one_decimal_int(struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *s)
+static TMPL_TYPE
+TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *s)
 {
 	int digits = parms->digits;
 	int scale = parms->scale;
 	int integer_digits = digits - scale;
 	bool neg = false;
-	TPE res = 0;
+	TMPL_TYPE res = 0;
 
 	while(isspace((unsigned char) *s))
 		s++;
@@ -76,10 +59,10 @@ parse_one_decimal_int(struct error_handling *errors, struct decimal_parms *parms
 
 
 static str
-parse_many_decimal_int(struct error_handling *errors, void *parms_, int count, void *dest_, char *data, int *offsets)
+TMPL_SUFFIXED(parse_many_decimal) (struct error_handling *errors, void *parms_, int count, void *dest_, char *data, int *offsets)
 {
 	struct decimal_parms *parms = parms_;
-	int *dest = dest_;
+	TMPL_TYPE *dest = dest_;
 
 	for (int i = 0; i < count; i++) {
 		int offset = offsets[i];
@@ -87,7 +70,7 @@ parse_many_decimal_int(struct error_handling *errors, void *parms_, int count, v
 			dest[i] = int_nil;
 			continue;
 		}
-		dest[i] = parse_one_decimal_int(errors, parms, i, data + offset);
+		dest[i] = TMPL_SUFFIXED(parse_one_decimal)(errors, parms, i, data + offset);
 	}
 
 	return MAL_SUCCEED;
@@ -95,7 +78,7 @@ parse_many_decimal_int(struct error_handling *errors, void *parms_, int count, v
 
 
 str
-COPYparse_decimal_int(
+TMPL_SUFFIXED(COPYparse_decimal) (
 	bat *parsed_bat_id,
 	bat *block_bat_id, bat *offsets_bat_id,
 	int *digits, int *scale,
@@ -105,5 +88,12 @@ COPYparse_decimal_int(
 		.digits = *digits,
 		.scale = *scale,
 	};
-	return parse_fixed_width_column(parsed_bat_id, "copy.parse_decimal_int", *block_bat_id, *offsets_bat_id, TYPE_int, parse_many_decimal_int, &myparms);
+	return parse_fixed_width_column(
+		parsed_bat_id, "copy.parse_decimal",
+		*block_bat_id, *offsets_bat_id,
+		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_decimal), &myparms);
 }
+
+
+#undef TMPL_TYPE
+#undef TMPL_SUFFIXED

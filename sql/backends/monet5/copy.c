@@ -946,11 +946,28 @@ static mel_func copy_init_funcs[] = {
 	batarg("block", bte), batarg("offsets", int), argany("type", 1)
  )),
 
+ command("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 6,
+	 batarg("", bte),
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte)
+ )),
+ command("copy", "parse_decimal", COPYparse_decimal_sht, false, "Parse as a decimal", args(1, 6,
+	 batarg("", sht),
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", sht)
+ )),
  command("copy", "parse_decimal", COPYparse_decimal_int, false, "Parse as a decimal", args(1, 6,
 	 batarg("", int),
 	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int)
  )),
-
+ command("copy", "parse_decimal", COPYparse_decimal_lng, false, "Parse as a decimal", args(1, 6,
+	 batarg("", lng),
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", lng)
+ )),
+ #ifdef HAVE_HGE
+ command("copy", "parse_decimal", COPYparse_decimal_hge, false, "Parse as a decimal", args(1, 6,
+	 batarg("", hge),
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge)
+ )),
+#endif
  command("copy", "set_blocksize", COPYset_blocksize, true, "set the COPY block size", args(1, 2,
 	arg("blocksize", int)
  )),

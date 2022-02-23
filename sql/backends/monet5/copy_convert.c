@@ -131,5 +131,24 @@ end:
 	return msg;
 }
 
-
+#define TMPL_TYPE bte
+#define TMPL_SUFFIXED(s) s##_bte
 #include "copy_convert_num.h"
+
+#define TMPL_TYPE sht
+#define TMPL_SUFFIXED(s) s##_sht
+#include "copy_convert_num.h"
+
+#define TMPL_TYPE int
+#define TMPL_SUFFIXED(s) s##_int
+#include "copy_convert_num.h"
+
+#define TMPL_TYPE lng
+#define TMPL_SUFFIXED(s) s##_lng
+#include "copy_convert_num.h"
+
+#ifdef HAVE_HGE
+#define TMPL_TYPE hge
+#define TMPL_SUFFIXED(s) s##_hge
+#include "copy_convert_num.h"
+#endif
