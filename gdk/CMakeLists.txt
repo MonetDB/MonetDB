@@ -81,6 +81,7 @@ target_sources(bat
   gdk_firstn.c
   gdk_subquery.c gdk_subquery.h
   gdk_analytic_bounds.c
+  gdk_analytic_statistics.c
   gdk_analytic_func.c
   gdk_analytic.h
   gdk_tracer.c gdk_tracer.h
