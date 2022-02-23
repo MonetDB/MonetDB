@@ -968,6 +968,30 @@ static mel_func copy_init_funcs[] = {
 	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge)
  )),
 #endif
+
+ command("copy", "parse_integer", COPYparse_integer_bte, false, "Parse as an integer", args(1, 4,
+	 batarg("", bte),
+	 batarg("block", bte), batarg("offsets", int), arg("type", bte)
+ )),
+ command("copy", "parse_integer", COPYparse_integer_sht, false, "Parse as an integer", args(1, 4,
+	 batarg("", sht),
+	 batarg("block", bte), batarg("offsets", int), arg("type", sht)
+ )),
+ command("copy", "parse_integer", COPYparse_integer_int, false, "Parse as an integer", args(1, 4,
+	 batarg("", int),
+	 batarg("block", bte), batarg("offsets", int), arg("type", int)
+ )),
+ command("copy", "parse_integer", COPYparse_integer_lng, false, "Parse as an integer", args(1, 4,
+	 batarg("", lng),
+	 batarg("block", bte), batarg("offsets", int), arg("type", lng)
+ )),
+ #ifdef HAVE_HGE
+ command("copy", "parse_integer", COPYparse_integer_hge, false, "Parse as an integer", args(1, 4,
+	 batarg("", hge),
+	 batarg("block", bte), batarg("offsets", int), arg("type", hge)
+ )),
+#endif
+
  command("copy", "set_blocksize", COPYset_blocksize, true, "set the COPY block size", args(1, 2,
 	arg("blocksize", int)
  )),
