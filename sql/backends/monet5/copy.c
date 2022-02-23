@@ -772,6 +772,30 @@ end:
 	return msg;
 }
 
+
+
+void
+copy_report_error(struct error_handling *restrict admin, int rel_row, _In_z_ _Printf_format_string_ const char *restrict format, ...)
+{
+	admin->count++;
+	if (admin->rel_row >= 0)
+		return;
+
+	admin->rel_row = rel_row;
+
+	char *buf = admin->message;
+	size_t buf_size = sizeof(admin->message);
+	va_list ap;
+	va_start(ap, format);
+	int ret = vsnprintf(buf, buf_size, format, ap);
+	va_end(ap);
+	if (ret < 0) {
+		snprintf(buf, buf_size, "an error [%d] occurred during error reporting", ret);
+	}
+}
+
+
+
 static str
 COPYpair_assign(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -917,9 +941,14 @@ static mel_func copy_init_funcs[] = {
 	batarg("block", bte), arg("linecount", lng), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), arg("escape", bit)
  )),
 
- pattern("copy", "parse_generic", COPYparse_generic, false, "Parse as an integer", args(1, 4,
+ pattern("copy", "parse_generic", COPYparse_generic, false, "Parse using GDK's atomFromStr", args(1, 4,
 	batargany("", 1),
 	batarg("block", bte), batarg("offsets", int), argany("type", 1)
+ )),
+
+ command("copy", "parse_decimal", COPYparse_decimal_int, false, "Parse as a decimal", args(1, 6,
+	 batarg("", int),
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int)
  )),
 
  command("copy", "set_blocksize", COPYset_blocksize, true, "set the COPY block size", args(1, 2,

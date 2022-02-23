@@ -304,6 +304,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, var_indices);
 				q = pushInt(mb, q, col->type.digits);
 				q = pushInt(mb, q, col->type.scale);
+				q = pushNil(mb, q, col->type.type->localtype);
 				break;
 			default:
 				q = newStmt(mb, "copy", "parse_generic");

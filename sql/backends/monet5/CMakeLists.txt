@@ -158,7 +158,7 @@ target_sources(sql
   for.c for.h
   dict.c dict.h
   copy.c copy.h
-  copy_convert.c
+  copy_convert.c copy_convert_num.h
   ${MONETDB_CURRENT_SQL_SOURCES}
   PUBLIC
   ${sql_public_headers})
