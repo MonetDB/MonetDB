@@ -298,6 +298,12 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		const char *column_name = col->base.name;
 
 		switch (type->eclass) {
+			case EC_NUM:
+				q = newStmt(mb, "copy", "parse_integer");
+				q = pushArgument(mb, q, loop_vars.our_block);
+				q = pushArgument(mb, q, var_indices);
+				q = pushNil(mb, q, col->type.type->localtype);
+				break;
 			case EC_DEC:
 				q = newStmt(mb, "copy", "parse_decimal");
 				q = pushArgument(mb, q, loop_vars.our_block);
