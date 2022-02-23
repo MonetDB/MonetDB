@@ -3980,6 +3980,12 @@ insert into sys.functions values (1055, 'sys_update_schemas', 'update_schemas', 
 insert into sys.functions values (1056, 'sys_update_tables', 'update_tables', 'sql', 0, 2, true, false, false, 2000, true, true);
 
 Running database upgrade commands:
+create procedure SHPattach(fname string) external name shp.attach;
+create procedure SHPload(fid integer) external name shp.import;
+create procedure SHPload(fid integer, filter geometry) external name shp.import;
+update sys.functions set system = true where schema_id = 2000 and name in ('shpattach', 'shpload');
+
+Running database upgrade commands:
 update sys.args set type = 'decimal', type_digits = 18, type_scale = 3 where func_id in (select id from sys.functions where name = 'epoch_ms' and schema_id = 2000) and number = 0 and type = 'bigint';
 drop view sys.tracelog;
 drop function sys.tracelog();
