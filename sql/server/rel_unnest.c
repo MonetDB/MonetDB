@@ -1896,21 +1896,6 @@ exps_have_anyequal(list *exps, int any_or_not_anyequal)
 	return 0;
 }
 
-/* introduce extra selects for (not) anyequal + subquery */
-static sql_rel *
-not_anyequal_helper(visitor *v, sql_rel *rel)
-{
-	if (is_innerjoin(rel->op) && exps_have_anyequal(rel->exps, NOT_ANYEQUAL)) {
-		sql_rel *nrel = rel_select(v->sql->sa, rel, NULL);
-		nrel->exps = rel->exps;
-		set_processed(nrel);
-		rel->exps = NULL;
-		rel = nrel;
-		v->changes++;
-	}
-	return rel;
-}
-
 /*
  * For decimals and intervals we need to adjust the scale for some operations.
  *
@@ -3936,7 +3921,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_exp_and_rank, false);
 	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_simplify);
-	rel = rel_visitor_bottomup(&v, rel, &not_anyequal_helper);
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
