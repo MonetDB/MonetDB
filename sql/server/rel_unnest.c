@@ -1841,75 +1841,6 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 }
 
 #define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
-#define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
-
-#define ANYEQUAL 1
-#define NOT_ANYEQUAL 2
-static int exps_have_anyequal(list *exps, int any_or_not_anyequal);
-
-static int
-exp_has_anyequal(sql_exp *e, int any_or_not_anyequal)
-{
-	if (!e)
-		return 0;
-	switch(e->type){
-	case e_func:
-	case e_aggr: {
-		list *args = e->l;
-		sql_subfunc *f = e->f;
-
-		if (f && f->func && (any_or_not_anyequal&NOT_ANYEQUAL) && is_not_anyequal(f) && exps_have_rel_exp(args))
-			return 1;
-		if (f && f->func && (any_or_not_anyequal&ANYEQUAL) && is_anyequal(f) && exps_have_rel_exp(args))
-			return 1;
-		return exps_have_anyequal(e->l, any_or_not_anyequal);
-	}
-	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter)
-			return (exps_have_anyequal(e->l, any_or_not_anyequal) || exps_have_anyequal(e->r, any_or_not_anyequal));
-		if (e->flag == cmp_in || e->flag == cmp_notin)
-			return (exp_has_anyequal(e->l, any_or_not_anyequal) || exps_have_anyequal(e->r, any_or_not_anyequal));
-		return (exp_has_anyequal(e->l, any_or_not_anyequal) || exp_has_anyequal(e->r, any_or_not_anyequal) ||
-				(e->f && exp_has_anyequal(e->f, any_or_not_anyequal)));
-	case e_convert:
-		return exp_has_anyequal(e->l, any_or_not_anyequal);
-	case e_atom:
-		return (e->f && exp_has_anyequal(e->f, any_or_not_anyequal));
-	case e_psm:
-	case e_column:
-		return 0;
-	}
-	return 0;
-}
-
-static int
-exps_have_anyequal(list *exps, int any_or_not_anyequal)
-{
-	if (list_empty(exps))
-		return 0;
-	for(node *n=exps->h; n; n=n->next) {
-		sql_exp *e = n->data;
-
-		if (exp_has_anyequal(e, any_or_not_anyequal))
-			return 1;
-	}
-	return 0;
-}
-
-/* introduce extra selects for (not) anyequal + subquery */
-static sql_rel *
-not_anyequal_helper(visitor *v, sql_rel *rel)
-{
-	if (is_innerjoin(rel->op) && exps_have_anyequal(rel->exps, NOT_ANYEQUAL)) {
-		sql_rel *nrel = rel_select(v->sql->sa, rel, NULL);
-		nrel->exps = rel->exps;
-		set_processed(nrel);
-		rel->exps = NULL;
-		rel = nrel;
-		v->changes++;
-	}
-	return rel;
-}
 
 /*
  * For decimals and intervals we need to adjust the scale for some operations.
@@ -3932,7 +3863,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_exp_and_rank, false);
 	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_simplify);
-	rel = rel_visitor_bottomup(&v, rel, &not_anyequal_helper);
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */

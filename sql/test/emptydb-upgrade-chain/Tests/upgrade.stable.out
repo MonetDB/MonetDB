@@ -3407,3 +3407,9 @@ insert into sys.args values (45292, 909, 'arg_3', 'int', 32, 0, 1, 3);
 insert into sys.functions values (910, 'sys_update_schemas', 'update_schemas', 'sql', 0, 2, true, false, false, 2000, true, true);
 insert into sys.functions values (911, 'sys_update_tables', 'update_tables', 'sql', 0, 2, true, false, false, 2000, true, true);
 
+Running database upgrade commands:
+create procedure SHPattach(fname string) external name shp.attach;
+create procedure SHPload(fid integer) external name shp.import;
+create procedure SHPload(fid integer, filter geometry) external name shp.import;
+update sys.functions set system = true where schema_id = 2000 and name in ('shpattach', 'shpload');
+

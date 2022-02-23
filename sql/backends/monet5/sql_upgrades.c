@@ -298,6 +298,24 @@ sql_update_hugeint(Client c, mvc *sql)
 }
 #endif
 
+#ifdef HAVE_SHP
+static str
+sql_update_shp(Client c)
+{
+	const char *query = "create procedure SHPattach(fname string) external name shp.attach;\ncreate procedure SHPload(fid integer) external name shp.import;\ncreate procedure SHPload(fid integer, filter geometry) external name shp.import;\nupdate sys.functions set system = true where schema_id = 2000 and name in ('shpattach', 'shpload');\n";
+	printf("Running database upgrade commands:\n%s\n", query);
+	return SQLstatementIntern(c, query, "update", true, false, NULL);
+}
+#endif
+
+static str
+sql_update_generator(Client c)
+{
+	const char *query = "update sys.args set name = 'limit' where name = 'last' and func_id in (select id from sys.functions where schema_id = 2000 and name = 'generate_series' and func like '% last %');\n"
+		"update sys.functions set func = replace(func, ' last ', ' \"limit\" ') where schema_id = 2000 and name = 'generate_series' and func like '% last %';\n";
+	return SQLstatementIntern(c, query, "update", true, false, NULL);
+}
+
 static str
 sql_drop_functions_dependencies_Xs_on_Ys(Client c)
 {
@@ -4596,6 +4614,27 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 #endif
+
+#ifdef HAVE_SHP
+	if (backend_has_module(&(int){0}, "shp")) {
+		sql_find_subtype(&tp, "varchar", 0, 0);
+		if (!sql_bind_func(m, s->base.name, "shpattach", &tp, NULL, F_PROC, true)) {
+			m->session->status = 0; /* if the function was not found clean the error */
+			m->errstr[0] = '\0';
+			if ((err = sql_update_shp(c)) != NULL) {
+				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+				freeException(err);
+				return -1;
+			}
+		}
+	}
+#endif
+
+	if ((err = sql_update_generator(c)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
+	}
 
 	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION, true);
 	m->session->status = 0; /* if the function was not found clean the error */
