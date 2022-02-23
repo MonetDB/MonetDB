@@ -158,13 +158,6 @@ typedef struct logformat_t {
 
 typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 
-#include "gdk_geomlogger.h"
-
-/* When reading an old format database, we may need to read the geom
- * Well-known Binary (WKB) type differently.  This variable is used to
- * indicate that to the function wkbREAD during reading of the log. */
-static bool geomisoldversion;
-
 static gdk_return tr_grow(trans *tr);
 
 static BUN
@@ -1608,9 +1601,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		goto error;
 	BBPretain(lg->lg->dcatalog->batCacheid);
 
-	/* done reading the log, revert to "normal" behavior */
-	geomisoldversion = false;
-
 	return GDK_SUCCEED;
   error:
 	if (fp)
@@ -1982,43 +1972,4 @@ logger_del_bat(old_logger *lg, log_bid bid)
 	pos = (oid) p;
 	return BUNappend(lg->dcatalog, &pos, false);
 /*assert(BBP_lrefs(bid) == 0);*/
-}
-
-static geomcatalogfix_fptr geomcatalogfix = NULL;
-static geomsqlfix_fptr geomsqlfix = NULL;
-
-void
-geomcatalogfix_set(geomcatalogfix_fptr f)
-{
-	geomcatalogfix = f;
-}
-
-geomcatalogfix_fptr
-geomcatalogfix_get(void)
-{
-	return geomcatalogfix;
-}
-
-void
-geomsqlfix_set(geomsqlfix_fptr f)
-{
-	geomsqlfix = f;
-}
-
-geomsqlfix_fptr
-geomsqlfix_get(void)
-{
-	return geomsqlfix;
-}
-
-void
-geomversion_set(void)
-{
-	geomisoldversion = true;
-}
-
-bool
-geomversion_get(void)
-{
-	return geomisoldversion;
 }

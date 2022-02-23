@@ -1,5 +1,4 @@
 Running database upgrade commands:
-set schema "sys";
 delete from sys.dependencies where id < 2000;
 delete from sys.types where id < 2000;
 insert into sys.types values (1, 'void', 'any', 0, 0, 0, 0, 2000);
@@ -3979,10 +3978,8 @@ insert into sys.args values (11046, 1054, 'arg_2', 'clob', 0, 0, 1, 2);
 insert into sys.args values (11047, 1054, 'arg_3', 'int', 32, 0, 1, 3);
 insert into sys.functions values (1055, 'sys_update_schemas', 'update_schemas', 'sql', 0, 2, true, false, false, 2000, true, true);
 insert into sys.functions values (1056, 'sys_update_tables', 'update_tables', 'sql', 0, 2, true, false, false, 2000, true, true);
-set schema "sys";
 
 Running database upgrade commands:
-set schema "sys";
 create function sys.generate_series(first hugeint, "limit" hugeint)
 returns table (value hugeint)
 external name generator.series;
@@ -4050,5 +4047,4 @@ update sys.functions set system = true where system <> true and name in ('genera
 update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 3;
 update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 6;
 update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = 1;
-set schema "sys";
 

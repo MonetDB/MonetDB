@@ -2615,6 +2615,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						}
 						q += snprintf(q, endq - q, " ORDER BY fullname, type, remark");
 
+						stream *saveFD;
+						start_pager(&saveFD);
+
 						hdl = mapi_query(mid, query);
 						free(query);
 						CHECK_RESULT(mid, hdl, buf, fp);
@@ -2647,6 +2650,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
+						end_pager(saveFD);
 					}
 					continue;
 				}
@@ -2742,8 +2746,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					continue;
 #ifdef HAVE_POPEN
 				case '|':
-					if (pager)
-						free(pager);
+					free(pager);
 					pager = NULL;
 					setWidth();	/* reset to system default */
 
