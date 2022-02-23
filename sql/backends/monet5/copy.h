@@ -17,7 +17,25 @@
 		goto end; \
 	} while (0)
 
+
+struct error_handling {
+	int rel_row;
+	int count;
+	char message[512];
+};
+
+void copy_report_error(struct error_handling *restrict admin, int rel_row, _In_z_ _Printf_format_string_ const char *restrict format, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+
+typedef str (*bulk_converter)(struct error_handling*, void *parms, int count, void *dest, char *data, int *offsets);
+
+str parse_fixed_width_column(bat *ret, const char *fname, bat block_bat_id, bat offsets_bat_id, int tpe, bulk_converter f, void *parms);
+
+
 extern str COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+
+extern str COPYparse_decimal_int(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, int *dummy);
 
 
 #endif /*_COPY_H_*/

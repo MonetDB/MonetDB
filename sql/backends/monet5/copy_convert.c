@@ -15,6 +15,7 @@
 
 #include "copy.h"
 
+#define INSIDE_COPY_CONVERT 1
 
 str
 COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -78,3 +79,57 @@ end:
 		BBPunfix(indices->batCacheid);
 	return msg;
 }
+
+str
+parse_fixed_width_column(
+	bat *ret,
+	const char *fname,
+	bat block_bat_id, bat offsets_bat_id,
+	int tpe,
+	str (*f)(struct error_handling*, void*, int, void*, char*, int*),
+	void *fx)
+{
+	str msg = MAL_SUCCEED;
+	BAT *block_bat;
+	BAT *offsets_bat;
+	BAT *parsed_bat;
+	struct error_handling errors = {
+		.rel_row = -1,
+	};
+
+	block_bat = BATdescriptor(block_bat_id);
+	offsets_bat = BATdescriptor(offsets_bat_id);
+	if (!block_bat || !offsets_bat)
+		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	parsed_bat = COLnew(0, tpe, BATcount(offsets_bat), TRANSIENT);
+	if (!parsed_bat)
+		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	msg = f(&errors, fx, BATcount(offsets_bat), Tloc(parsed_bat, 0), Tloc(block_bat, 0), Tloc(offsets_bat, 0));
+	if (msg != MAL_SUCCEED)
+		goto end;
+
+	BATsetcount(parsed_bat, BATcount(offsets_bat));
+
+	if (errors.count > 0)
+		bailout(fname, "At least %d conversion errors, example: %s", errors.count, errors.message);
+
+end:
+	if (parsed_bat) {
+		if (msg == MAL_SUCCEED) {
+			*ret = parsed_bat->batCacheid;
+			BBPkeepref(parsed_bat->batCacheid);
+		} else {
+			BBPunfix(parsed_bat->batCacheid);
+		}
+	}
+	if (block_bat)
+		BBPunfix(block_bat->batCacheid);
+	if (offsets_bat)
+		BBPunfix(offsets_bat->batCacheid);
+	return msg;
+}
+
+
+#include "copy_convert_num.h"
