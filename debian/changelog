@@ -1,3 +1,18 @@
+monetdb (11.41.15) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7225: Invalid memory access when extending a BAT during appends
+  * GH#7228: COMMIT: transaction is aborted because of concurrency conflicts,
+    will ROLLBACK instead
+  * sql: Add number of rows affected by output statements into the total
+    rowcount
+  * gdk: Fixed race condition during backup if BATs.
+  * gdk: Fixed append to BATs of type msk (bit mask).
+  * sql: Fix to MAL code generation.
+  * gdk: Fix to WAL logger when a BAT gets replaced within a transaction.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 24 Feb 2022 09:50:03 +0100
+
 monetdb (11.41.13) unstable; urgency=low
 
   * Rebuilt.
