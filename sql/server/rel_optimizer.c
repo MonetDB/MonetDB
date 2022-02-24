@@ -1959,7 +1959,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
 		if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 			return NULL;
-		while (ne && has_label(ne) && f->op == op_project && ne->type == e_column) {
+		while (ne && has_label(ne) && is_simple_project(f->op) && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
 
 			e = ne;
@@ -4456,7 +4456,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		}
 	}
 
-	if (is_select(rel->op) && r && r->op == op_project && !rel_is_ref(r) && !is_single(r)){
+	if (is_select(rel->op) && r && (is_simple_project(r->op) || (is_groupby(r->op) && !list_empty(r->r))) && !rel_is_ref(r) && !is_single(r)){
 		sql_rel *pl = r->l, *opl = pl;
 		/* we cannot push through window functions (for safety I disabled projects over DDL too) */
 		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, 0)) {
