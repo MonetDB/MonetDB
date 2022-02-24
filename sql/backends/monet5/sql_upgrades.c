@@ -3782,7 +3782,7 @@ sql_update_jan2022(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = %d;\n", F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
-				"update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'fully_qualified_functions', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_sequences', 'describe_functions') AND schema_id = 2000;\n");
+					"update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'fully_qualified_functions', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_sequences', 'describe_functions') AND schema_id = 2000;\n");
 
 	/* 76_dump.sql (most everything already dropped) */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -4588,6 +4588,179 @@ sql_update_jan2022(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default(Client c, mvc *sql)
+{
+	size_t bufsize = 8192, pos = 0;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+	res_table *output;
+	BAT *b;
+
+	if (buf == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* if 'describe_partition_tables' system view doesn't use 'vals' CTE, re-create it */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"select 1 from tables where schema_id = (select \"id\" from sys.schemas where \"name\" = 'sys') and \"name\" = 'describe_partition_tables' and \"query\" not like '%%vals%%';\n");
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output))) {
+		GDKfree(buf);
+		return err;
+	}
+
+	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
+		/* 52_describe.sql; but we need to drop dependencies from 76_dump.sql first */
+		sql_schema *s = mvc_bind_schema(sql, "sys");
+		sql_table *t = mvc_bind_table(sql, s, "describe_partition_tables");
+		t->system = 0;
+		t = mvc_bind_table(sql, s, "dump_partition_tables");
+		t->system = 0;
+
+		pos = 0;
+		pos += snprintf(buf + pos, bufsize - pos,
+			/* drop dependent stuff from 76_dump.sql */
+			"drop function sys.dump_database(boolean);\n"
+			"drop view sys.dump_partition_tables;\n"
+			"drop view sys.describe_partition_tables;\n");
+
+		pos += snprintf(buf + pos, bufsize - pos,
+			"CREATE VIEW sys.describe_partition_tables AS\n"
+			"	SELECT \n"
+			"		m_sch,\n"
+			"		m_tbl,\n"
+			"		p_sch,\n"
+			"		p_tbl,\n"
+			"		CASE \n"
+			"			WHEN p_raw_type IS NULL THEN 'READ ONLY'\n"
+			"			WHEN (p_raw_type = 'VALUES' AND pvalues IS NULL) OR (p_raw_type = 'RANGE' AND minimum IS NULL AND maximum IS NULL AND with_nulls) THEN 'FOR NULLS'\n"
+			"			ELSE p_raw_type \n"
+			"		END AS tpe,\n"
+			"		pvalues,\n"
+			"		minimum,\n"
+			"		maximum,\n"
+			"		with_nulls \n"
+			"	FROM\n"
+			"	(WITH\n"
+			"		tp(\"type\", table_id) AS \n"
+			"		(SELECT ifthenelse((table_partitions.\"type\" & 2) = 2, 'VALUES', 'RANGE'), table_partitions.table_id FROM sys.table_partitions),\n"
+			"		subq(m_tid, p_mid, \"type\", m_sch, m_tbl, p_sch, p_tbl) AS \n"
+			"		(SELECT m_t.id, p_m.id, m_t.\"type\", m_s.name, m_t.name, p_s.name, p_m.name \n"
+			"		FROM sys.schemas m_s, sys._tables m_t, sys.dependencies d, sys.schemas p_s, sys._tables p_m \n"
+			"		WHERE m_t.\"type\" IN (3, 6)\n"
+			"			AND m_t.schema_id = m_s.id \n"
+			"			AND m_s.name <> 'tmp'\n"
+			"			AND m_t.system = FALSE \n"
+			"			AND m_t.id = d.depend_id \n"
+			"			AND d.id = p_m.id \n"
+			"			AND p_m.schema_id = p_s.id \n"
+			"		ORDER BY m_t.id, p_m.id),\n"
+			"		vals(id,vals) as \n"
+			"		(SELECT vp.table_id, GROUP_CONCAT(vp.value, ',') FROM sys.value_partitions vp GROUP BY vp.table_id)\n"
+			"	SELECT\n"
+			"		subq.m_sch,\n"
+			"		subq.m_tbl,\n"
+			"		subq.p_sch,\n"
+			"		subq.p_tbl,\n"
+			"		tp.\"type\" AS p_raw_type,\n"
+			"		CASE WHEN tp.\"type\" = 'VALUES'\n"
+			"			THEN (SELECT vals.vals FROM vals WHERE vals.id = subq.p_mid)\n"
+			"			ELSE NULL \n"
+			"		END AS pvalues,\n"
+			"		CASE WHEN tp.\"type\" = 'RANGE'\n"
+			"			THEN (SELECT minimum FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)\n"
+			"			ELSE NULL \n"
+			"		END AS minimum,\n"
+			"		CASE WHEN tp.\"type\" = 'RANGE'\n"
+			"			THEN (SELECT maximum FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)\n"
+			"			ELSE NULL \n"
+			"		END AS maximum,\n"
+			"		CASE WHEN tp.\"type\" = 'VALUES'\n"
+			"			THEN EXISTS(SELECT vp.value FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid AND vp.value IS NULL)\n"
+			"			ELSE (SELECT rp.with_nulls FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)\n"
+			"		END AS with_nulls\n"
+			"	FROM\n"
+			"		subq LEFT OUTER JOIN tp \n"
+			"		ON subq.m_tid = tp.table_id) AS tmp_pi;\n"
+			"GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;\n"
+			"CREATE VIEW sys.dump_partition_tables AS\n"
+			"SELECT\n"
+			"	'ALTER TABLE ' || sys.FQN(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||\n"
+			"	CASE \n"
+			"	WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'\n"
+			"	WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')\n"
+			"	WHEN tpe = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'\n"
+			"	ELSE '' --'READ ONLY'\n"
+			"	END ||\n"
+			"	CASE WHEN tpe in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||\n"
+			"	';' stmt,\n"
+			"	m_sch merge_schema_name,\n"
+			"	m_tbl merge_table_name,\n"
+			"	p_sch partition_schema_name,\n"
+			"	p_tbl partition_table_name\n"
+			"	FROM sys.describe_partition_tables;\n"
+			"CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)\n"
+			"BEGIN\n"
+			"\n"
+			"SET SCHEMA sys;\n"
+			"TRUNCATE sys.dump_statements;\n"
+			"\n"
+			"INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');\n"
+			"INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA \"sys\";');\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;\n"
+			"\n"
+			"--functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s\n"
+			"					FROM (\n"
+			"					SELECT f.o, f.stmt FROM sys.dump_functions f\n"
+			"					UNION\n"
+			"					SELECT t.o, t.stmt FROM sys.dump_tables t\n"
+			"					) AS stmts(o, s);\n"
+			"\n"
+			"-- dump table data before adding constraints and fixing sequences\n"
+			"IF NOT DESCRIBE THEN\n"
+			"	CALL sys.dump_table_data();\n"
+			"END IF;\n"
+			"\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;\n"
+			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;\n"
+			"\n"
+			"--TODO Improve performance of dump_table_data.\n"
+			"--TODO loaders ,procedures, window and filter sys.functions.\n"
+			"--TODO look into order dependent group_concat\n"
+			"\n"
+			"INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');\n"
+			"\n"
+			"RETURN sys.dump_statements;\n"
+			"END;\n");
+
+		pos += snprintf(buf + pos, bufsize - pos,
+			"update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables') AND schema_id = 2000;\n");
+		pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = %d;\n", F_UNION);
+
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+	}
+	res_table_destroy(output);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -4778,6 +4951,12 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jan2022(c, m)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
+	}
+
+	if ((err = sql_update_default(c, m)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;
