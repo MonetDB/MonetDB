@@ -655,8 +655,22 @@ scan_fields(
 			return n;
 		}
 		bool last_col = col == ncols - 1;
-		int expected_sep = last_col ? line_sep : col_sep;
-		if (sep != expected_sep)
+		bool ok;
+		if (!last_col) {
+			// must be col_sep
+			ok = (sep == col_sep);
+		} else {
+			// either col_sep or col_sep followed by line_sep
+			if (sep == line_sep) {
+				ok = true;
+			} else if (sep == col_sep && p + n < end && p[n] == line_sep) {
+				n += 1;
+				ok = true;
+			} else {
+				ok = false;
+			}
+		}
+		if (!ok)
 			return -2;
 		bool is_null = (null_repr && strcasecmp((char*)p, null_repr) == 0);
 		int field = is_null ? int_nil : ((char*)p - data_start);
