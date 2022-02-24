@@ -700,6 +700,11 @@ SELECT min((SELECT CASE t0.c0 WHEN t0.c0 THEN t0.c0 END)) FROM t0
 ----
 NULL
 
+query I nosort
+SELECT 1 FROM (SELECT 2) AS x(x) LEFT OUTER JOIN (SELECT 3) y(y) ON (SELECT TRUE) OR (SELECT TRUE)
+----
+1
+
 statement ok
 ROLLBACK
 
