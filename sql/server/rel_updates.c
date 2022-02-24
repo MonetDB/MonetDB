@@ -1050,8 +1050,11 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (r)
 					query_push_outer(query, r, sql_sel | sql_update_set);
 				rel_val = rel_subquery(query, NULL, a, ek);
-				if (r)
+				if (r) {
 					r = query_pop_outer(query);
+					if (r && is_groupby(r->op))
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses");
+				}
 				outer = 1;
 			}
 			if ((single && !v) || (!single && !rel_val))
@@ -2102,5 +2105,6 @@ rel_updates(sql_query *query, symbol *s)
 	default:
 		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(%p)->token = %s", s, token2string(s->token));
 	}
+	query_processed(query);
 	return ret;
 }

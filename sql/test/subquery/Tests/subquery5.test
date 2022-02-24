@@ -341,13 +341,13 @@ SELECT 1 FROM integers i1 RIGHT OUTER JOIN integers i2 ON NOT EXISTS(SELECT 1)
 1
 1
 
-statement error 42000!SELECT: subquery uses ungrouped column from outer query
+statement error 42000!SELECT: subquery uses ungrouped column "i1.i" from outer query
 SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON i1.i = 1) = (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1
 
-statement error 42000!SELECT: subquery uses ungrouped column from outer query
+statement error 42000!SELECT: subquery uses ungrouped column "i1.i" from outer query
 SELECT (SELECT i1.i) = (SELECT SUM(i1.i)) FROM integers i1
 
-statement error 42000!SELECT: subquery uses ungrouped column from outer query
+statement error 42000!SELECT: subquery uses ungrouped column "another_t.col1" from outer query
 SELECT (VALUES(col1)), (VALUES(MAX(col2))) FROM another_t
 
 statement error 42000!SELECT: aggregate function calls cannot be nested

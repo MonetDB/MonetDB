@@ -299,7 +299,7 @@ SELECT i1.i FROM integers i1 INNER JOIN integers i ON SUM(i1.i) = SUM(i.i)
 statement error 42000!RANK: window function 'rank' not allowed in JOIN conditions
 SELECT i1.i FROM integers i1 INNER JOIN integers i ON RANK() OVER ()
 
-statement error 42000!SELECT: aggregate function calls cannot be nested
+statement error 42000!SUM: aggregate functions cannot be nested
 SELECT SUM((SELECT SUM(i))) FROM integers
 
 query II nosort
@@ -488,7 +488,7 @@ NULL
 3
 18
 
-statement error 42000!SELECT: aggregate function calls cannot be nested
+statement error 42000!SUM: aggregate functions cannot be nested
 SELECT i, SUM((SELECT SUM(i)*SUM(i1.i) FROM integers)) AS k FROM integers i1 GROUP BY i ORDER BY i
 
 query I rowsort

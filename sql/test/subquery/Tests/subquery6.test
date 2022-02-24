@@ -56,7 +56,7 @@ SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t
 ----
 0
 
-statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 'another_t.col4' in query results without an aggregate function
 SELECT 1 IN (col4, MIN(col2)) FROM another_t
 
 statement error 22018!conversion of string 'not a number' to type int failed.
@@ -401,10 +401,10 @@ oth
 bug
 500
 
-statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 'tbl_productsales.colid' in query results without an aggregate function
 select 1 = any(ColID), max(totalsales) from tbl_ProductSales
 
-statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 'tbl_productsales.colid' in query results without an aggregate function
 select 1 in (ColID), max(totalsales) from tbl_ProductSales
 
 statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
