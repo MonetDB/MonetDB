@@ -3985,3 +3985,133 @@ create procedure SHPload(fid integer) external name shp.import;
 create procedure SHPload(fid integer, filter geometry) external name shp.import;
 update sys.functions set system = true where schema_id = 2000 and name in ('shpattach', 'shpload');
 
+Running database upgrade commands:
+drop function sys.dump_database(boolean);
+drop view sys.dump_partition_tables;
+drop view sys.describe_partition_tables;
+CREATE VIEW sys.describe_partition_tables AS
+	SELECT
+		m_sch,
+		m_tbl,
+		p_sch,
+		p_tbl,
+		CASE
+			WHEN p_raw_type IS NULL THEN 'READ ONLY'
+			WHEN (p_raw_type = 'VALUES' AND pvalues IS NULL) OR (p_raw_type = 'RANGE' AND minimum IS NULL AND maximum IS NULL AND with_nulls) THEN 'FOR NULLS'
+			ELSE p_raw_type
+		END AS tpe,
+		pvalues,
+		minimum,
+		maximum,
+		with_nulls
+	FROM
+	(WITH
+		tp("type", table_id) AS
+		(SELECT ifthenelse((table_partitions."type" & 2) = 2, 'VALUES', 'RANGE'), table_partitions.table_id FROM sys.table_partitions),
+		subq(m_tid, p_mid, "type", m_sch, m_tbl, p_sch, p_tbl) AS
+		(SELECT m_t.id, p_m.id, m_t."type", m_s.name, m_t.name, p_s.name, p_m.name
+		FROM sys.schemas m_s, sys._tables m_t, sys.dependencies d, sys.schemas p_s, sys._tables p_m
+		WHERE m_t."type" IN (3, 6)
+			AND m_t.schema_id = m_s.id
+			AND m_s.name <> 'tmp'
+			AND m_t.system = FALSE
+			AND m_t.id = d.depend_id
+			AND d.id = p_m.id
+			AND p_m.schema_id = p_s.id
+		ORDER BY m_t.id, p_m.id),
+		vals(id,vals) as
+		(SELECT vp.table_id, GROUP_CONCAT(vp.value, ',') FROM sys.value_partitions vp GROUP BY vp.table_id)
+	SELECT
+		subq.m_sch,
+		subq.m_tbl,
+		subq.p_sch,
+		subq.p_tbl,
+		tp."type" AS p_raw_type,
+		CASE WHEN tp."type" = 'VALUES'
+			THEN (SELECT vals.vals FROM vals WHERE vals.id = subq.p_mid)
+			ELSE NULL
+		END AS pvalues,
+		CASE WHEN tp."type" = 'RANGE'
+			THEN (SELECT minimum FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
+			ELSE NULL
+		END AS minimum,
+		CASE WHEN tp."type" = 'RANGE'
+			THEN (SELECT maximum FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
+			ELSE NULL
+		END AS maximum,
+		CASE WHEN tp."type" = 'VALUES'
+			THEN EXISTS(SELECT vp.value FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid AND vp.value IS NULL)
+			ELSE (SELECT rp.with_nulls FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
+		END AS with_nulls
+	FROM
+		subq LEFT OUTER JOIN tp
+		ON subq.m_tid = tp.table_id) AS tmp_pi;
+GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;
+CREATE VIEW sys.dump_partition_tables AS
+SELECT
+	'ALTER TABLE ' || sys.FQN(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
+	CASE
+	WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
+	WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')
+	WHEN tpe = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'
+	ELSE '' --'READ ONLY'
+	END ||
+	CASE WHEN tpe in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||
+	';' stmt,
+	m_sch merge_schema_name,
+	m_tbl merge_table_name,
+	p_sch partition_schema_name,
+	p_tbl partition_table_name
+	FROM sys.describe_partition_tables;
+CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
+BEGIN
+
+SET SCHEMA sys;
+TRUNCATE sys.dump_statements;
+
+INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
+INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA "sys";');
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
+
+--functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
+					FROM (
+					SELECT f.o, f.stmt FROM sys.dump_functions f
+					UNION
+					SELECT t.o, t.stmt FROM sys.dump_tables t
+					) AS stmts(o, s);
+
+-- dump table data before adding constraints and fixing sequences
+IF NOT DESCRIBE THEN
+	CALL sys.dump_table_data();
+END IF;
+
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;
+INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
+
+--TODO Improve performance of dump_table_data.
+--TODO loaders ,procedures, window and filter sys.functions.
+--TODO look into order dependent group_concat
+
+INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
+
+RETURN sys.dump_statements;
+END;
+update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables') AND schema_id = 2000;
+update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = 5;
+

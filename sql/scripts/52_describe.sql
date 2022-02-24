@@ -431,7 +431,7 @@ CREATE VIEW sys.describe_user_defined_types AS
 		);
 
 CREATE VIEW sys.describe_partition_tables AS
-	SELECT 
+	SELECT
 		m_sch,
 		m_tbl,
 		p_sch,
@@ -445,8 +445,8 @@ CREATE VIEW sys.describe_partition_tables AS
 		minimum,
 		maximum,
 		with_nulls
-	FROM 
-    (WITH
+	FROM
+	(WITH
 		tp("type", table_id) AS
 		(SELECT ifthenelse((table_partitions."type" & 2) = 2, 'VALUES', 'RANGE'), table_partitions.table_id FROM sys.table_partitions),
 		subq(m_tid, p_mid, "type", m_sch, m_tbl, p_sch, p_tbl) AS
@@ -459,7 +459,9 @@ CREATE VIEW sys.describe_partition_tables AS
 			AND m_t.id = d.depend_id
 			AND d.id = p_m.id
 			AND p_m.schema_id = p_s.id
-		ORDER BY m_t.id, p_m.id)
+		ORDER BY m_t.id, p_m.id),
+		vals(id,vals) as
+		(SELECT vp.table_id, GROUP_CONCAT(vp.value, ',') FROM sys.value_partitions vp GROUP BY vp.table_id)
 	SELECT
 		subq.m_sch,
 		subq.m_tbl,
@@ -467,7 +469,7 @@ CREATE VIEW sys.describe_partition_tables AS
 		subq.p_tbl,
 		tp."type" AS p_raw_type,
 		CASE WHEN tp."type" = 'VALUES'
-			THEN (SELECT GROUP_CONCAT(vp.value, ',') FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid)
+			THEN (SELECT vals.vals FROM vals WHERE vals.id = subq.p_mid)
 			ELSE NULL
 		END AS pvalues,
 		CASE WHEN tp."type" = 'RANGE'
@@ -482,7 +484,7 @@ CREATE VIEW sys.describe_partition_tables AS
 			THEN EXISTS(SELECT vp.value FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid AND vp.value IS NULL)
 			ELSE (SELECT rp.with_nulls FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
 		END AS with_nulls
-	FROM 
+	FROM
 		subq LEFT OUTER JOIN tp
 		ON subq.m_tid = tp.table_id) AS tmp_pi;
 
