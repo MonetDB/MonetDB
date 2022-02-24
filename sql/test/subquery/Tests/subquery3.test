@@ -163,7 +163,7 @@ SELECT
 FROM another_T t1
 GROUP BY col1
 
-statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 't2.col1' in query results without an aggregate function
 SELECT
     (SELECT t2.col1 * SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T t2)
 FROM another_T t1
@@ -663,7 +663,7 @@ SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2,3))
 statement error 42000!SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
 SELECT * FROM integers i1 ORDER BY SUM(i)
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 SELECT i FROM integers i1 ORDER BY SUM(i)
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function

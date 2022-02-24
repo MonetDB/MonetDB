@@ -165,7 +165,7 @@ CREATE VIEW sys.dump_foreign_keys AS
 CREATE VIEW sys.dump_partition_tables AS
   SELECT
     'ALTER TABLE ' || sys.FQN(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
-      CASE 
+      CASE
       WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
       WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')
       WHEN tpe = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'

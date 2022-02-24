@@ -88,7 +88,7 @@ psm_set_exp(sql_query *query, dnode *n)
 		res = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), e, level);
 	} else { /* multi assignment */
 		exp_kind ek = {type_relation, card_value, FALSE};
-		sql_rel *rel_val = rel_subquery(query, NULL, val, ek);
+		sql_rel *rel_val = rel_subquery(query, val, ek);
 		dlist *vars = n->data.lval;
 		dnode *m;
 		node *n;
@@ -543,7 +543,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 
 	/* SELECT ... INTO var_list */
 	sn->into = NULL;
-	r = rel_subquery(query, NULL, sq, ek);
+	r = rel_subquery(query, sq, ek);
 	if (!r)
 		return NULL;
 	if (!is_project(r->op))
@@ -833,7 +833,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 	if (create && !mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: insufficient privileges for user '%s' in schema '%s'", F,
-						 get_string_global_var(sql, "current_user"), s->base.name); 
+						 get_string_global_var(sql, "current_user"), s->base.name);
 
 	type_list = create_type_list(sql, params, 1);
 

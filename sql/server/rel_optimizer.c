@@ -1959,7 +1959,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
 		if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 			return NULL;
-		while (ne && has_label(ne) && f->op == op_project && ne->type == e_column) {
+		while (ne && has_label(ne) && is_simple_project(f->op) && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
 
 			e = ne;
@@ -4456,7 +4456,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		}
 	}
 
-	if (is_select(rel->op) && r && r->op == op_project && !rel_is_ref(r) && !is_single(r)){
+	if (is_select(rel->op) && r && (is_simple_project(r->op) || (is_groupby(r->op) && !list_empty(r->r))) && !rel_is_ref(r) && !is_single(r)){
 		sql_rel *pl = r->l, *opl = pl;
 		/* we cannot push through window functions (for safety I disabled projects over DDL too) */
 		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, 0)) {
@@ -9832,15 +9832,16 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 					sql_exp *e = n->data;
 
 					if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
-						sql_exp *le = e->l;
-						sql_exp *re = e->r;
-						sql_subfunc *ea = sql_bind_func(v->sql, "sys", e->flag==mark_in?"anyequal":"allnotequal", exp_subtype(re), NULL, F_AGGR, true);
+						sql_exp *le = e->l, *re = e->r, *ne = NULL;
+						sql_subfunc *ea = sql_bind_func3(v->sql, "sys", e->flag==mark_in?"anyequal":"allnotequal",
+														 exp_subtype(le), exp_subtype(re), rid ? exp_subtype(rid) : NULL, F_AGGR, true);
 
-						sql_exp *ne = exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
-						append(ne->l, re);
-						if (rid)
-							list_append(ne->l, exp_ref(v->sql, rid));
-
+						if (rid) {
+							sql_exp *rid_ref = exp_ref(v->sql, rid);
+							ne = exp_aggr3(v->sql->sa, le, re, rid_ref, ea, 0, 0, CARD_AGGR, has_nil(le));
+						} else {
+							ne = exp_aggr2(v->sql->sa, le, re, ea, 0, 0, CARD_AGGR, has_nil(le));
+						}
 						append(aexps, ne);
 						nequal = ne;
 						list_remove_node(rel->exps, NULL, n);

@@ -1,3 +1,4 @@
+hash-threshold 200
 statement ok
 SET TIME ZONE INTERVAL '02:00' HOUR TO MINUTE
 
@@ -263,25 +264,10 @@ statement ok
 COMMENT ON WINDOW "sys"."stddev" IS  'This is a comment on a window function.'
 
 statement ok
-TRUNCATE sys.privileges
+GRANT SELECT ON TABLE "sys"."foo" TO "voc"
 
 statement ok
-INSERT INTO sys.privileges VALUES ((SELECT t.id FROM sys.schemas s, tables t WHERE s.id = t.schema_id AND s.name || '.' || t.name = 'sys.foo' ),(SELECT id FROM auths a WHERE a.name =  'voc' ),(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name =  'SELECT' ),(SELECT id FROM auths g WHERE g.name =  'monetdb' ),0)
-
-statement ok
-INSERT INTO sys.privileges VALUES ((SELECT c.id FROM sys.schemas s, tables t, columns c WHERE s.id = t.schema_id AND t.id = c.table_id AND s.name || '.' || t.name || '.' || c.name = 'sys.foo.i' ),(SELECT id FROM auths a WHERE a.name =  'voc' ),(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name =  'UPDATE' ),(SELECT id FROM auths g WHERE g.name =  'monetdb' ),0)
-
-statement ok
-INSERT INTO sys.privileges VALUES ((SELECT fqn.id FROM fully_qualified_functions fqn WHERE fqn.nme =  'sys.f1(INTEGER)'  AND fqn.tpe =  'FUNCTION' ),(SELECT id FROM auths a WHERE a.name =  'voc' ),(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name =  'EXECUTE' ),(SELECT id FROM auths g WHERE g.name =  'monetdb' ),0)
-
-statement ok
-INSERT INTO sys.privileges VALUES ((SELECT fqn.id FROM fully_qualified_functions fqn WHERE fqn.nme =  'sys.f1(INTEGER)'  AND fqn.tpe =  'PROCEDURE' ),(SELECT id FROM auths a WHERE a.name =  'voc' ),(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name =  'EXECUTE' ),(SELECT id FROM auths g WHERE g.name =  'monetdb' ),0)
-
-statement ok
-INSERT INTO sys.privileges VALUES ((SELECT fqn.id FROM fully_qualified_functions fqn WHERE fqn.nme =  'sys.f1()'  AND fqn.tpe =  'PROCEDURE' ),(SELECT id FROM auths a WHERE a.name =  'voc' ),(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name =  'EXECUTE' ),(SELECT id FROM auths g WHERE g.name =  'monetdb' ),1)
-
-statement ok
-INSERT INTO sys.privileges VALUES (0,(SELECT id FROM auths a WHERE a.name =  'voc' ),(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name =  'UPDATE' ),(SELECT id FROM auths g WHERE g.name =  'monetdb' ),0)
+GRANT UPDATE("i") ON TABLE "sys"."foo" TO "voc"
 
 statement ok
 COPY 3 RECORDS INTO "sys"."tbl_with_data"("c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c18", "c19", "c20", "c21", "c22", "c23", "c24", "c25", "c26", "c27", "c28", "c29", "c30", "c31", "c32", "c33") FROM STDIN USING DELIMITERS '|',E'\n','"'

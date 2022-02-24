@@ -361,6 +361,10 @@ with SQLTestCase() as cli:
         select (values (rt3.c0)) from rt3, (select 2 from rt3 where
         ((select rt3.c0) intersect (select 3)) > 0) vx(vc0) where (values (rt3.c0)) > 0;
     """).assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT CASE WHEN t3.c0 = 3 THEN (1) IN (SELECT 2 FROM t3) END FROM t3;") \
+        .assertSucceeded().assertDataResultMatch([(None,),(None,),(None,),(None,),(None,),(None,)])
+    cli.execute("SELECT CASE WHEN rt3.c0 = 3 THEN (1) IN (SELECT 2 FROM rt3) END FROM rt3;") \
+        .assertSucceeded().assertDataResultMatch([(None,),(None,),(None,),(None,),(None,),(None,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("SELECT CASE 1 WHEN 5 THEN ((SELECT t3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (t3.c0), (1)) END FROM t3;") \

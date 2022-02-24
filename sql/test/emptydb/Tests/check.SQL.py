@@ -373,60 +373,6 @@ sys_notnull = [
     ('value_partitions', 'value'),
 ]
 
-with process.client('sql', format='csv', echo=False,
-                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
-
-    for c in 'ntvsf':
-        clt.stdin.write("select E'\\\\d%s';\n" % c)
-
-    for c in 'ntvsf':
-        clt.stdin.write("select E'\\\\dS%s';\n" % c)
-
-    clt.stdin.write("select E'\\\\dn ' || name from sys.schemas order by name;\n")
-
-    clt.stdin.write("select E'\\\\dSt ' || s.name || '.' || t.name from sys._tables t, sys.schemas s where t.schema_id = s.id and t.query is null order by s.name, t.name;\n")
-
-    out, err = clt.communicate()
-    out = re.sub('^"(.*)"$', r'\1', out, flags=re.MULTILINE).replace('"\n', '\n').replace('\n"', '\n').replace('""', '"').replace(r'\\', '\\')
-
-    output.append(out)
-    sys.stderr.write(err)
-    if err:
-        xit = 1
-
-with process.client('sql', interactive=True,
-                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
-
-    out, err = clt.communicate(out)
-
-    # do some normalization of the output:
-    # remove SQL comments and empty lines
-    out = re.sub('^[ \t]*(?:--.*)?\n', '', out, flags=re.MULTILINE)
-    out = re.sub('[\t ]*--.*', '', out)
-    out = re.sub(r'/\*.*?\*/[\n\t ]*', '', out, flags=re.DOTALL)
-
-    wsre = re.compile('[\n\t ]+')
-    pos = 0
-    nout = ''
-    for res in re.finditer(r'\bbegin\b.*?\bend\b[\n\t ]*;', out, flags=re.DOTALL | re.IGNORECASE):
-        nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
-        pos = res.end(0)
-    nout += out[pos:]
-    out = nout
-
-    pos = 0
-    nout = ''
-    for res in re.finditer(r"(?<=\n)(?:create|select)\b[^';]*(?:'[^\']*(?:\\.[^\']*)*'[^';]*)*;", out, flags=re.DOTALL | re.IGNORECASE):
-        nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
-        pos = res.end(0)
-    nout += out[pos:]
-    out = nout
-
-    output.append(out)
-    sys.stderr.write(err)
-    if err:
-        xit = 1
-
 # add queries to dump the system tables, but avoid dumping IDs since
 # they are too volatile, and if it makes sense, dump an identifier
 # from a referenced table
@@ -434,11 +380,11 @@ out = r'''
 -- helper function
 create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
 -- schemas
-select 'sys.schemas', s.name, a1.name as authorization, a2.name as owner, system from sys.schemas s left outer join sys.auths a1 on s.authorization = a1.id left outer join sys.auths a2 on s.owner = a2.id order by s.name;
+select 'sys.schemas', s.name, a1.name as authorization, a2.name as owner, system, c.remark as comment from sys.schemas s left outer join sys.auths a1 on s.authorization = a1.id left outer join sys.auths a2 on s.owner = a2.id left outer join sys.comments c on c.id = s.id order by s.name;
 -- _tables
-select 'sys._tables', s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, E'--.*\n*', '', ''), E'[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
+select 'sys._tables', s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, E'--.*\n*', '', ''), E'[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access, c.remark as comment from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id left outer join sys.comments c on c.id = t.id order by s.name, t.name;
 -- _columns
-select 'sys._columns', t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
+select 'sys._columns', t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage, r.remark as comment from sys._tables t, sys._columns c left outer join sys.comments r on r.id = c.id where t.id = c.table_id order by t.name, c.number;
 -- partitioned tables (these three should be empty)
 select 'sys.table_partitions', t.name, c.name, p.expression from sys.table_partitions p left outer join sys._tables t on p.table_id = t.id left outer join sys._columns c on p.column_id = c.id;
 select 'sys.range_partitions', t.name, p.expression, r.minimum, r.maximum, r.with_nulls from sys.range_partitions r left outer join sys._tables t on t.id = r.table_id left outer join sys.table_partitions p on r.partition_id = p.id;
@@ -457,7 +403,7 @@ MAXARGS = 16
 # columns of the args table we're interested in
 args = ['name', 'type', 'type_digits', 'type_scale', 'inout']
 
-out += r"select 'sys.functions', s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name as func_type, f.side_effect, f.varres, f.vararg, f.semantics"
+out += r"select 'sys.functions', s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name as func_type, f.side_effect, f.varres, f.vararg, f.semantics, c.remark as comment"
 for i in range(0, MAXARGS):
     for a in args[:-1]:
         out += ", a%d.%s as %s%d" % (i, a, a, i)
@@ -466,6 +412,7 @@ out += " from sys.functions f"
 out += " left outer join sys.schemas s on f.schema_id = s.id"
 out += " left outer join sys.function_types as ft on f.type = ft.function_type_id"
 out += " left outer join sys.function_languages fl on f.language = fl.language_id"
+out += " left outer join sys.comments c on c.id = f.id"
 for i in range(0, MAXARGS):
     out += " left outer join sys.args a%d on a%d.func_id = f.id and a%d.number = %d" % (i, i, i, i)
 out += " order by s.name, f.name, query, func_type"
@@ -477,13 +424,6 @@ out += ";"
 out += '''
 -- auths
 select 'sys.auths', name, grantor from sys.auths;
--- comments
-select 'schema comments', s.name, c.remark from sys.comments c, sys.schemas s where s.id = c.id order by s.name;
-select 'table comments', s.name, t.name, c.remark from sys.schemas s, sys._tables t, sys.comments c where s.id = t.schema_id and t.id = c.id order by s.name, t.name;
-select 'column comments', s.name, t.name, col.name, c.remark from sys.schemas s, sys._tables t, sys._columns col, sys.comments c where s.id = t.schema_id and t.id = col.table_id and col.id = c.id order by s.name, t.name, col.name;
-select 'index comments', s.name, t.name, i.name, c.remark from sys.schemas s, sys._tables t, sys.idxs i, sys.comments c where s.id = t.schema_id and t.id = i.table_id and i.id = c.id order by s.name, t.name, i.name;
-select 'sequence comments', s.name, q.name, c.remark from sys.schemas s, sys.sequences q, sys.comments c where s.id = q.schema_id and q.id = c.id order by s.name, q.name;
-select 'function comments', s.name, f.name, c.remark from sys.schemas s, sys.functions f, sys.comments c where s.id = f.schema_id and f.id = c.id order by s.name, f.name;
 -- db_user_info
 select 'sys.db_user_info', u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
 -- dependencies
@@ -497,7 +437,7 @@ select 'column used by key', s1.name, t1.name, c1.name, s2.name, t2.name, k2.nam
 select 'column used by index', s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys._tables t1, sys._tables t2, sys.schemas s1, sys.schemas s2, sys._columns c1, sys.idxs i2 where d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
 select 'type used by function', t.systemname, t.sqlname, s.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys.types t, sys.functions f, sys.schemas s where d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
 -- idxs
-select 'sys.idxs', t.name, i.name, it.index_type_name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join sys.index_types as it on i.type = it.index_type_id order by t.name, i.name;
+select 'sys.idxs', t.name, i.name, it.index_type_name, c.remark as comment from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join sys.index_types as it on i.type = it.index_type_id left outer join sys.comments c on c.id = i.id order by t.name, i.name;
 -- keys
 select 'sys.keys', t.name, k.name, kt.key_type_name, k2.name, k.action from sys.keys k left outer join sys.keys k2 on k.rkey = k2.id left outer join sys._tables t on k.table_id = t.id left outer join sys.key_types kt on k.type = kt.key_type_id order by t.name, k.name;
 -- objects
@@ -512,7 +452,7 @@ select 'grant on column', t.name, c.name, a.name, pc.privilege_code_name, g.name
 --  functions
 select 'grant on function', s.name, f.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys.functions f left outer join sys.schemas s on f.schema_id = s.id, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where f.id = p.obj_id and p.auth_id = a.id order by s.name, f.name, a.name;
 -- sequences
-select 'sys.sequences', s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc, q.cycle from sys.sequences q left outer join sys.schemas s on q.schema_id = s.id order by s.name, q.name;
+select 'sys.sequences', s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc, q.cycle, c.remark as comment from sys.sequences q left outer join sys.schemas s on q.schema_id = s.id left outer join sys.comments c on c.id = s.id order by s.name, q.name;
 -- statistics (expect empty)
 select count(*) from sys.statistics;
 -- storagemodelinput (expect empty)

@@ -595,7 +595,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 	} else {
 		exp_kind ek = {type_value, card_relation, TRUE};
 
-		r = rel_subquery(query, NULL, val_or_q, ek);
+		r = rel_subquery(query, val_or_q, ek);
 		rowcount++;
 		is_subquery = true;
 	}
@@ -1049,9 +1049,12 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			} else {
 				if (r)
 					query_push_outer(query, r, sql_sel | sql_update_set);
-				rel_val = rel_subquery(query, NULL, a, ek);
-				if (r)
+				rel_val = rel_subquery(query, a, ek);
+				if (r) {
 					r = query_pop_outer(query);
+					if (r && is_groupby(r->op))
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses");
+				}
 				outer = 1;
 			}
 			if ((single && !v) || (!single && !rel_val))
@@ -1190,7 +1193,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			sql_rel *tables = NULL;
 
 			for (dnode *n = fl->h; n && res; n = n->next) {
-				sql_rel *fnd = table_ref(query, NULL, n->data.sym, 0, refs);
+				sql_rel *fnd = table_ref(query, n->data.sym, 0, refs);
 
 				if (!fnd)
 					return NULL;
@@ -1339,7 +1342,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table %s%s%s'%s'",
 							 get_string_global_var(sql, "current_user"), t->s ? "'":"", t->s ? t->s->base.name : "", t->s ? "'.":"", tname);
 	}
-	joined = table_ref(query, NULL, tref, 0, NULL);
+	joined = table_ref(query, tref, 0, NULL);
 	if (!bt || !joined)
 		return NULL;
 
@@ -1884,7 +1887,7 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 	const char *ns = (null_string)?null_string:"null";
 	sql_exp *tsep_e, *rsep_e, *ssep_e, *ns_e, *fname_e, *oncl_e;
 	exp_kind ek = {type_value, card_relation, TRUE};
-	sql_rel *r = rel_subquery(query, NULL, sq, ek);
+	sql_rel *r = rel_subquery(query, sq, ek);
 
 	if (!r)
 		return NULL;
@@ -2102,5 +2105,6 @@ rel_updates(sql_query *query, symbol *s)
 	default:
 		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(%p)->token = %s", s, token2string(s->token));
 	}
+	query_processed(query);
 	return ret;
 }
