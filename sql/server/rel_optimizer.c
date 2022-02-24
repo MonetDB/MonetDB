@@ -9831,15 +9831,16 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 					sql_exp *e = n->data;
 
 					if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
-						sql_exp *le = e->l;
-						sql_exp *re = e->r;
-						sql_subfunc *ea = sql_bind_func(v->sql, "sys", e->flag==mark_in?"anyequal":"allnotequal", exp_subtype(re), NULL, F_AGGR);
+						sql_exp *le = e->l, *re = e->r, *ne = NULL;
+						sql_subfunc *ea = sql_bind_func3(v->sql, "sys", e->flag==mark_in?"anyequal":"allnotequal",
+														 exp_subtype(le), exp_subtype(re), rid ? exp_subtype(rid) : NULL, F_AGGR);
 
-						sql_exp *ne = exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
-						append(ne->l, re);
-						if (rid)
-							list_append(ne->l, exp_ref(v->sql, rid));
-
+						if (rid) {
+							sql_exp *rid_ref = exp_ref(v->sql, rid);
+							ne = exp_aggr3(v->sql->sa, le, re, rid_ref, ea, 0, 0, CARD_AGGR, has_nil(le));
+						} else {
+							ne = exp_aggr2(v->sql->sa, le, re, ea, 0, 0, CARD_AGGR, has_nil(le));
+						}
 						append(aexps, ne);
 						nequal = ne;
 						list_remove_node(rel->exps, NULL, n);
