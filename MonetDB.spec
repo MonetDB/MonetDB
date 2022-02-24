@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP3/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -846,6 +846,18 @@ else
 fi
 
 %changelog
+* Thu Feb 24 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.15-20220224
+- Rebuilt.
+- GH#7225: Invalid memory access when extending a BAT during appends
+- GH#7228: COMMIT: transaction is aborted because of concurrency conflicts,
+  will ROLLBACK instead
+- sql: Add number of rows affected by output statements into the total
+  rowcount
+- gdk: Fixed race condition during backup if BATs.
+- gdk: Fixed append to BATs of type msk (bit mask).
+- sql: Fix to MAL code generation.
+- gdk: Fix to WAL logger when a BAT gets replaced within a transaction.
+
 * Mon Dec 13 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.13-20211213
 - Rebuilt.
 - GH#7163: Multiple sql.mvc() invocations in the same query
