@@ -90,9 +90,9 @@ parse_fixed_width_column(
 	void *fx)
 {
 	str msg = MAL_SUCCEED;
-	BAT *block_bat;
-	BAT *offsets_bat;
-	BAT *parsed_bat;
+	BAT *block_bat = NULL;
+	BAT *offsets_bat = NULL;
+	BAT *parsed_bat = NULL;
 	struct error_handling errors = {
 		.rel_row = -1,
 	};
