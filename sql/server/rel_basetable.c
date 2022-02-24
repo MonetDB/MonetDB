@@ -433,6 +433,8 @@ basetable_get_tid_or_add_it(mvc *sql, sql_rel *rel)
 		const char *tname = t->base.name;
 		const char *atname = ba->name?ba->name:tname;
 
+		if (isRemote(t))
+			tname = mapiuri_table(t->query, sql->sa, tname);
 		if (!rel->exps) { /* no exps yet, just set TID */
 			rel_base_use_tid(sql, rel);
 			res = exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
