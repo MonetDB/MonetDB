@@ -853,7 +853,7 @@ fi
   will ROLLBACK instead
 - sql: Add number of rows affected by output statements into the total
   rowcount
-- gdk: Fixed race condition during backup if BATs.
+- gdk: Fixed race condition during backup of BATs.
 - gdk: Fixed append to BATs of type msk (bit mask).
 - sql: Fix to MAL code generation.
 - gdk: Fix to WAL logger when a BAT gets replaced within a transaction.
