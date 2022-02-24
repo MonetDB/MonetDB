@@ -2545,6 +2545,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			lr = rel_logical_exp(query, lr, lo, f | sql_or);
 			if (!lr)
 				return NULL;
+			query_processed(query);
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(query, rr, ro, f | sql_or);
 			if (!rr)
