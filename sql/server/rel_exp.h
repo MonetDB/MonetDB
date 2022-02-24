@@ -60,6 +60,10 @@ extern sql_exp *exp_rank_op(sql_allocator *sa, list *largs, list *gbe, list *obe
 extern sql_exp *exp_aggr(sql_allocator *sa, list *l, sql_subfunc *a, int distinct, int no_nils, unsigned int card, int has_nil );
 #define exp_aggr1(sa, e, a, d, n, c, hn) \
 	exp_aggr(sa, append(new_exp_list(sa), e), a, d, n, c, hn)
+#define exp_aggr2(sa, e1, e2, a, d, n, c, hn) \
+	exp_aggr(sa, append(append(new_exp_list(sa),e1),e2), a, d, n, c, hn)
+#define exp_aggr3(sa, e1, e2, e3, a, d, n, c, hn) \
+	exp_aggr(sa, append(append(append(new_exp_list(sa),e1),e2),e3), a, d, n, c, hn)
 extern sql_exp * exp_atom(sql_allocator *sa, atom *a);
 extern sql_exp * exp_atom_max(sql_allocator *sa, sql_subtype *tpe);
 extern sql_exp * exp_atom_bool(sql_allocator *sa, int b);
