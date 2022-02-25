@@ -1,0 +1,13 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0 (c0 INT)
+
+query I nosort
+SELECT 1 FROM (SELECT 1 FROM t0 JOIN (SELECT EXISTS (SELECT 1)) x(x) ON x.x = (VALUES (x.x))) vx(vx)
+JOIN (VALUES (1, 2)) x(x,y) ON vx = ANY(SELECT vx)
+----
+
+statement ok
+ROLLBACK
