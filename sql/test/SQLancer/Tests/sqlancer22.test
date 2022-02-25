@@ -784,8 +784,8 @@ SELECT (SELECT MIN(x.x)) FROM (SELECT 1, 2) x(x,y) ORDER BY x.y
 statement error 42000!SELECT: cannot use non GROUP BY column 'x.y' in query results without an aggregate function
 SELECT x.y, MIN(x.x + x.y) FROM (SELECT 1, 2) x(x,y)
 
-statement error 42000!SELECT: no such unary operator 'idontexist'(tinyint)
-SELECT MAX(x), idontexist(x) FROM (SELECT 1) x(x)
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT MAX(x), idontexist(x.x) FROM (SELECT 1) x(x)
 
 query I nosort
 SELECT ['1'] "like" [max(x.x), '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
