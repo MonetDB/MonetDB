@@ -641,6 +641,7 @@ class SQLLogic:
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
                 self.writeline(line)
+                self.writeline()
             elif words[0] == 'statement':
                 expected_err_code = None
                 expected_err_msg = None
