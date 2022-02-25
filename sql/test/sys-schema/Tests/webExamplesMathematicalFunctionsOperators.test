@@ -371,27 +371,6 @@ select round(42.4382e0, 2)
 ----
 42.440
 
-query IRIR nosort
-select scale_down(100, 3), scale_down(100.0, 3), scale_down(100, 6), scale_down(100.0, 6)
-----
-33
-3.300
-17
-1.700
-
-query I nosort
-select scale_up(13, 3)
-----
-39
-
-query R nosort
-select scale_up(13.0, 3)
-----
-390.000
-
-statement error
-select scale_up(13, 3.0)
-
 query IIII nosort
 select sign(-8.4), sign(-0), sign(+0), sign(+8.4)
 ----

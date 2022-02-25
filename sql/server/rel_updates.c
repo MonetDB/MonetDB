@@ -109,7 +109,7 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 
 		if (h && i->type == hash_idx)  {
 			list *exps = new_exp_list(sql->sa);
-			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, lng, 3, lng, it, &c->c->type);
+			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, true, lng, 3, lng, it, &c->c->type);
 
 			append(exps, h);
 			append(exps, exp_atom_int(sql->sa, bits));
@@ -117,15 +117,15 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 			h = exp_op(sql->sa, exps, xor);
 		} else if (h)  { /* order preserving hash */
 			sql_exp *h2;
-			sql_subfunc *lsh = sql_bind_func_result(sql, "sys", "left_shift", F_FUNC, lng, 2, lng, it);
-			sql_subfunc *lor = sql_bind_func_result(sql, "sys", "bit_or", F_FUNC, lng, 2, lng, lng);
-			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, &c->c->type);
+			sql_subfunc *lsh = sql_bind_func_result(sql, "sys", "left_shift", F_FUNC, true, lng, 2, lng, it);
+			sql_subfunc *lor = sql_bind_func_result(sql, "sys", "bit_or", F_FUNC, true, lng, 2, lng, lng);
+			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, true, lng, 1, &c->c->type);
 
 			h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh);
 			h2 = exp_unop(sql->sa, e, hf);
 			h = exp_binop(sql->sa, h, h2, lor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, &c->c->type);
+			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, true, lng, 1, &c->c->type);
 			h = exp_unop(sql->sa, e, hf);
 			if (i->type == oph_idx)
 				break;
@@ -149,7 +149,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name);
 
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, bt, 2, bt, bt);
+	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
 
 	sql_rel *_nlls = NULL, *nnlls, *ins = inserts->r;
 	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
@@ -167,7 +167,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
 			/* TODO add access error */
@@ -734,7 +734,7 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 			if (h && i->type == hash_idx)  {
 				list *exps = new_exp_list(sql->sa);
-				sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, lng, 3, lng, it, &c->c->type);
+				sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, true, lng, 3, lng, it, &c->c->type);
 
 				append(exps, h);
 				append(exps, exp_atom_int(sql->sa, bits));
@@ -742,15 +742,15 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 				h = exp_op(sql->sa, exps, xor);
 			} else if (h)  { /* order preserving hash */
 				sql_exp *h2;
-				sql_subfunc *lsh = sql_bind_func_result(sql, "sys", "left_shift", F_FUNC, lng, 2, lng, it);
-				sql_subfunc *lor = sql_bind_func_result(sql, "sys", "bit_or", F_FUNC, lng, 2, lng, lng);
-				sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, &c->c->type);
+				sql_subfunc *lsh = sql_bind_func_result(sql, "sys", "left_shift", F_FUNC, true, lng, 2, lng, it);
+				sql_subfunc *lor = sql_bind_func_result(sql, "sys", "bit_or", F_FUNC, true, lng, 2, lng, lng);
+				sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, true, lng, 1, &c->c->type);
 
 				h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh);
 				h2 = exp_unop(sql->sa, e, hf);
 				h = exp_binop(sql->sa, h, h2, lor);
 			} else {
-				sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, &c->c->type);
+				sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, true, lng, 1, &c->c->type);
 				h = exp_unop(sql->sa, e, hf);
 				if (i->type == oph_idx)
 					break;
@@ -808,7 +808,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	sql_rel *rt = rel_basetable(sql, rk->t, sa_strdup(sql->sa, nme));
 
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, bt, 2, bt, bt);
+	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
 
 	sql_rel *_nlls = NULL, *nnlls, *ups = updates->r;
 	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
@@ -824,7 +824,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
 		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
 			/* TODO add access error */
@@ -1484,7 +1484,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	node *n;
 	sql_subtype tpe;
 	sql_exp *import;
-	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 12, F_UNION, NULL);
+	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 12, F_UNION, true, NULL);
 	char *fwf_string = NULL;
 
 	assert(f); /* we do expect copyfrom to be there */
@@ -1693,7 +1693,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 
 				snprintf(fname, l+8, "str_to_%s", strcmp(cs->type.type->base.name, "timestamptz") == 0 ? "timestamp" : cs->type.type->base.name);
 				sql_find_subtype(&st, "clob", 0, 0);
-				if (!(f = sql_bind_func_result(sql, "sys", fname, F_FUNC, &cs->type, 2, &st, &st)))
+				if (!(f = sql_bind_func_result(sql, "sys", fname, F_FUNC, true, &cs->type, 2, &st, &st)))
 					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: '%s' missing for type %s", fname, cs->type.type->base.name);
 				append(args, e);
 				append(args, exp_atom_clob(sql->sa, format));
@@ -1741,7 +1741,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	list *exps, *args;
 	sql_subtype strtpe;
 	sql_exp *import;
-	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 3, F_UNION, NULL);
+	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 3, F_UNION, true, NULL);
 	list *collist;
 	int i;
 

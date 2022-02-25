@@ -66,11 +66,11 @@ sql_unop_(backend *be, const char *fname, stmt *rs)
 	sql_subfunc *f = NULL;
 
 	rt = tail_type(rs);
-	f = sql_bind_func(sql, "sys", fname, rt, NULL, F_FUNC);
+	f = sql_bind_func(sql, "sys", fname, rt, NULL, F_FUNC, true);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(sql, "sys", fname, 1, F_FUNC, NULL)) != NULL) {
+	if (!f && (f = sql_find_func(sql, "sys", fname, 1, F_FUNC, true, NULL)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		sql->session->status = 0;
@@ -439,10 +439,10 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	if (c->nrcols == 0 || depth || !reduce) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 		sql_subfunc *cmp = (in)
-			?sql_bind_func(sql, "sys", "=", tail_type(c), tail_type(c), F_FUNC)
-			:sql_bind_func(sql, "sys", "<>", tail_type(c), tail_type(c), F_FUNC);
-		sql_subfunc *a = (in)?sql_bind_func(sql, "sys", "or", bt, bt, F_FUNC)
-				     :sql_bind_func(sql, "sys", "and", bt, bt, F_FUNC);
+			?sql_bind_func(sql, "sys", "=", tail_type(c), tail_type(c), F_FUNC, true)
+			:sql_bind_func(sql, "sys", "<>", tail_type(c), tail_type(c), F_FUNC, true);
+		sql_subfunc *a = (in)?sql_bind_func(sql, "sys", "or", bt, bt, F_FUNC, true)
+				     :sql_bind_func(sql, "sys", "and", bt, bt, F_FUNC, true);
 
 		for( n = nl->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -610,7 +610,7 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 			return s;
 
 		if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC);
+			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true);
 			assert(f);
 			s = stmt_binop(be, sel1, s, sin, f);
 		} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
@@ -637,7 +637,7 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 			return s;
 
 		if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC);
+			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true);
 			assert(f);
 			s = stmt_binop(be, sel2, s, sin, f);
 		} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
@@ -652,7 +652,7 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 		sel2 = s;
 	}
 	if (sel1->nrcols == 0 && sel2->nrcols == 0) {
-		sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC);
+		sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true);
 		assert(f);
 		return stmt_binop(be, sel1, sel2, NULL, f);
 	}
@@ -680,9 +680,9 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 	int next_cond = 1, single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
-	sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC);
-	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC);
+	sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
+	sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true);
+	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC, true);
 
 	if (single_value) {
 		/* var_x = nil; */
@@ -787,7 +787,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 				if (en->next) {
 					cond = stmt_unop(be, cond, nsel, not);
 
-					sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC);
+					sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true);
 					cond = stmt_binop(be, cond, stmt_unop(be, cond, nsel, isnull), nsel, or);
 					if (ocond)
 						cond = stmt_binop(be, ocond, cond, nsel, and);
@@ -815,9 +815,9 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	int next_cond = 1, single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
-	sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC);
-	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC);
+	sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
+	sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true);
+	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC, true);
 	sql_subfunc *cmp;
 
 	if (single_value) {
@@ -834,7 +834,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	stmt *case_when = exp_bin(be, e, left, right, NULL, NULL, NULL, nsel, depth+1, 0, 1);
 	if (!case_when)
 		return NULL;
-   	cmp = sql_bind_func(be->mvc, "sys", "=", exp_subtype(e), exp_subtype(e), F_FUNC);
+   	cmp = sql_bind_func(be->mvc, "sys", "=", exp_subtype(e), exp_subtype(e), F_FUNC, true);
 	if (!cmp)
 		return NULL;
 	if (!single_value && !case_when->nrcols) {
@@ -968,7 +968,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				if (en->next) {
 					cond = stmt_unop(be, cond, nsel, not);
 
-					sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC);
+					sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true);
 					cond = stmt_binop(be, cond, stmt_unop(be, cond, nsel, isnull), nsel, or);
 					if (ocond)
 						cond = stmt_binop(be, ocond, cond, nsel, and);
@@ -996,8 +996,8 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	int single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC);
-	sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
+	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC, true);
+	sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
 
 	if (single_value) {
 		/* var_x = nil; */
@@ -1036,7 +1036,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				stmt *pos = rsel;
 
 				if (en->next) {
-					sql_subfunc *a = sql_bind_func(be->mvc, "sys", "isnotnull", tail_type(es), NULL, F_FUNC);
+					sql_subfunc *a = sql_bind_func(be->mvc, "sys", "isnotnull", tail_type(es), NULL, F_FUNC, true);
 					ncond = stmt_unop(be, es, NULL, a);
 					if (ncond->nrcols == 0) {
 						stmt *l = bin_find_smallest_column(be, left);
@@ -1076,7 +1076,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 		} else {
 			stmt *cond = ocond;
 			if (en->next) {
-				sql_subfunc *a = sql_bind_func(be->mvc, "sys", "isnotnull", tail_type(es), NULL, F_FUNC);
+				sql_subfunc *a = sql_bind_func(be->mvc, "sys", "isnotnull", tail_type(es), NULL, F_FUNC, true);
 				ncond = stmt_unop(be, es, nsel, a);
 
 				if (ocond)
@@ -1516,7 +1516,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					int in_flag = e->flag==mark_in?1:0;
 					if (is_anti(e))
 						in_flag = !in_flag;
-					sql_subfunc *f = sql_bind_func(sql, "sys", in_flag?"=":"<>", tail_type(l), tail_type(l), F_FUNC);
+					sql_subfunc *f = sql_bind_func(sql, "sys", in_flag?"=":"<>", tail_type(l), tail_type(l), F_FUNC, true);
 					assert(f);
 					s = stmt_binop(be, l, r, sel, f);
 					if (l->cand)
@@ -1525,7 +1525,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						s->cand = r->cand;
 				} else if (!reduce || (l->nrcols == 0 && r->nrcols == 0)) {
 					sql_subfunc *f = sql_bind_func(sql, "sys", compare_func((comp_type)e->flag, is_anti(e)),
-												   tail_type(l), tail_type(l), F_FUNC);
+												   tail_type(l), tail_type(l), F_FUNC, true);
 					assert(f);
 					if (is_semantics(e)) {
 						if (exp_is_null(e->l) && exp_is_null(e->r)) {
@@ -1676,7 +1676,7 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 		list_append(tl, tail_type(a4));
 	}
 
-	if ((f = sql_bind_func_(sql, "sys", fname, tl, F_FUNC)))
+	if ((f = sql_bind_func_(sql, "sys", fname, tl, F_FUNC, true)))
 		return stmt_Nop(be, stmt_list(be, sl), NULL, f, NULL);
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 }
@@ -2274,13 +2274,13 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 		if (!s)
 			return NULL;
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, lng, 3, lng, it, tail_type(s));
+			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, true, lng, 3, lng, it, tail_type(s));
 
 			h = stmt_Nop(be, stmt_list(be, list_append( list_append(
 				list_append(sa_list(sql->sa), h), bits), s)), NULL, xor, NULL);
 			semantics = 1;
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, tail_type(s));
+			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, true, lng, 1, tail_type(s));
 
 			h = stmt_unop(be, s, NULL, hf);
 		}
@@ -2311,11 +2311,11 @@ join_hash_key( backend *be, list *l )
 		stmt *s = m->data;
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, lng, 3, lng, it, tail_type(s));
+			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, true, lng, 3, lng, it, tail_type(s));
 
 			h = stmt_Nop(be, stmt_list(be, list_append( list_append( list_append(sa_list(sql->sa), h), bits), s )), NULL, xor, NULL);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, tail_type(s));
+			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, true, lng, 1, tail_type(s));
 			h = stmt_unop(be, s, NULL, hf);
 		}
 	}
@@ -2708,12 +2708,12 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		stmt *last = l->t->data;
 		sql_subtype *tp = tail_type(last);
 
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", tp, NULL, F_FUNC);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", tp, NULL, F_FUNC, true);
 
 		stmt *s = stmt_unop(be, last, NULL, isnil);
 
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
+		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
 
 		s = stmt_unop(be, s, NULL, not);
 		s = stmt_alias(be, s, rnme, nme);
@@ -3100,7 +3100,7 @@ rel2bin_single(backend *be, stmt *s)
 		stmt *t = n->data;
 		const char *rnme = table_name(sql->sa, t);
 		const char *nme = column_name(sql->sa, t);
-		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", tail_type(t), NULL, F_AGGR);
+		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", tail_type(t), NULL, F_AGGR, true);
 
 		t = stmt_aggr(be, t, NULL, NULL, zero_or_one, 1, 0, 1);
 		t = stmt_alias(be, t, rnme, nme);
@@ -3265,7 +3265,7 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	lcnt = stmt_append(be, lcnt, ncnt);
 	rcnt = stmt_append(be, rcnt, zero);
 
- 	min = sql_bind_func(sql, "sys", "sql_sub", lng, lng, F_FUNC);
+ 	min = sql_bind_func(sql, "sys", "sql_sub", lng, lng, F_FUNC, true);
 	s = stmt_binop(be, lcnt, rcnt, NULL, min); /* use count */
 
 	/* now we have gid,cnt, blowup to full groupsizes */
@@ -3363,7 +3363,7 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	lcnt = stmt_project(be, lm, lcnt);
 	rcnt = stmt_project(be, rm, rcnt);
 
- 	min = sql_bind_func(sql, "sys", "sql_min", lng, lng, F_FUNC);
+ 	min = sql_bind_func(sql, "sys", "sql_min", lng, lng, F_FUNC, true);
 	s = stmt_binop(be, lcnt, rcnt, NULL, min);
 
 	/* now we have gid,cnt, blowup to full groupsizes */
@@ -3449,7 +3449,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				return NULL;
 			if (oe) {
 				sql_subtype *lng = sql_bind_localtype("lng");
-				sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, lng, 2, lng, lng);
+				sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
 				stmt *o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 				if(!o)
 					return NULL;
@@ -3922,10 +3922,10 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 	stmt *res;
 
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	stmt *dels = stmt_tid(be, k->t, 0);
-	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
+	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
 
 	if (list_length(k->columns) > 1) {
 		node *m;
@@ -3980,7 +3980,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 
 		/* 2nd stage: find out if inserted are unique */
 		if ((!idx_inserts && ins->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
-			sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, bt, 2, bt, bt);
+			sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
 			stmt *orderby_ids = NULL, *orderby_grp = NULL;
 			stmt *sel = NULL;
 
@@ -4013,7 +4013,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			if (!orderby_grp || !orderby_ids)
 				return NULL;
 
-			sum = sql_bind_func(sql, "sys", "not_unique", tail_type(orderby_grp), NULL, F_AGGR);
+			sum = sql_bind_func(sql, "sys", "not_unique", tail_type(orderby_grp), NULL, F_AGGR, true);
 			ssum = stmt_aggr(be, orderby_grp, NULL, NULL, sum, 1, 0, 1);
 			/* combine results */
 			s = stmt_binop(be, s, ssum, NULL, or);
@@ -4054,7 +4054,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		if (h->nrcols) {	/* insert multiple atoms */
 			sql_subfunc *sum;
 			stmt *count_sum = NULL;
-			sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, bt, 2, bt, bt);
+			sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
 			stmt *ssum, *ss;
 
 			stmt *g = list_fetch(inserts, c->c->colnr), *ins = g;
@@ -4068,7 +4068,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			g = stmt_group(be, ins, NULL, NULL, NULL, 1);
 			ss = stmt_result(be, g, 2); /* use count */
 			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR);
+			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR, true);
 			ssum = stmt_aggr(be, ss, NULL, NULL, sum, 1, 0, 1);
 			ssum = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", ssum), stmt_atom_lng(be, 0), ssum, NULL);
 			count_sum = stmt_binop(be, check_types(be, tail_type(ssum), stmt_aggr(be, ss, NULL, NULL, cnt, 1, 0, 1), type_equal), ssum, NULL, ne);
@@ -4093,9 +4093,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	char *msg = NULL;
 	stmt *cs = list_fetch(inserts, 0), *s = cs;
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
+	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
 
 	for (node *m = k->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
@@ -4206,7 +4206,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 {
 	mvc *sql = be->mvc;
 	node *m, *n;
-	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 
 	for (n = ol_first_node(t->columns), m = inserts->h; n && m;
 		n = n->next, m = m->next) {
@@ -4221,7 +4221,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 				s = stmt_selectnil(be, column(be, i));
 				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 			} else {
-				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC);
+				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC, true);
 
 				s = stmt_unop(be, i, NULL, isnil);
 			}
@@ -4299,7 +4299,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (insert->nrcols == 0) {
 		cnt = stmt_atom_lng(be, 1);
 	} else {
-		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 	}
 	insert = NULL;
 
@@ -4414,11 +4414,11 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 	stmt *res = NULL;
 
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne;
 
-	ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
+	ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
 	if (list_length(k->columns) > 1) {
 		stmt *dels = stmt_tid(be, k->t, 0);
 		node *m;
@@ -4463,7 +4463,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 			stmt *g = NULL, *grp = NULL, *ext = NULL, *Cnt = NULL;
 			stmt *cand = NULL;
 			stmt *ss;
-			sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, bt, 2, bt, bt);
+			sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
 
 			/* also take the hopefully unique hash keys, to reduce
 			   (re)group costs */
@@ -4518,7 +4518,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 			}
 			ss = Cnt; /* use count */
 			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR);
+			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR, true);
 			ssum = stmt_aggr(be, ss, NULL, NULL, sum, 1, 0, 1);
 			ssum = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", ssum), stmt_atom_lng(be, 0), ssum, NULL);
 			count_sum = stmt_binop(be, stmt_aggr(be, ss, NULL, NULL, cnt, 1, 0, 1), check_types(be, lng, ssum, type_equal), NULL, ne);
@@ -4557,7 +4557,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 		if (!h || h->nrcols) {	/* update columns not atoms */
 			sql_subfunc *sum;
 			stmt *count_sum = NULL;
-			sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, bt, 2, bt, bt);
+			sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
 			stmt *ssum, *ss;
 			stmt *upd;
 			stmt *g;
@@ -4578,7 +4578,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 			ss = stmt_result(be, g, 2); /* use count */
 
 			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR);
+			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR, true);
 			ssum = stmt_aggr(be, ss, NULL, NULL, sum, 1, 0, 1);
 			ssum = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", ssum), stmt_atom_lng(be, 0), ssum, NULL);
 			count_sum = stmt_binop(be, check_types(be, tail_type(ssum), stmt_aggr(be, ss, NULL, NULL, cnt, 1, 0, 1), type_equal), ssum, NULL, ne);
@@ -4634,9 +4634,9 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 	char *msg = NULL;
 	stmt *s, *cur, *null = NULL, *cntnulls;
 	sql_subtype *lng = sql_bind_localtype("lng"), *bt = sql_bind_localtype("bit");
-	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
-	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
-	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, bt, 2, bt, bt);
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
+	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
 	node *m;
 
 	if (!idx_updates)
@@ -4700,8 +4700,8 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 	stmt *null = NULL, *rows;
 	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
-	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
@@ -4741,7 +4741,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 	/* add missing nulls */
 	cnteqjoin = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 	if (nulls) {
-		sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, lng, 2, lng, lng);
+		sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
 		cnteqjoin = stmt_binop(be, cnteqjoin, stmt_aggr(be, null, NULL, NULL, cnt, 1, 0, 1), NULL, add);
 	}
 
@@ -4945,7 +4945,7 @@ hash_update(backend *be, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 		}
 
 		if (h && i->type == hash_idx)  {
-			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, lng, 3, lng, it, &c->c->type);
+			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, true, lng, 3, lng, it, &c->c->type);
 
 			h = stmt_Nop(be, stmt_list( be, list_append( list_append(
 				list_append(sa_list(sql->sa), h),
@@ -4953,15 +4953,15 @@ hash_update(backend *be, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 				xor, NULL);
 		} else if (h)  {
 			stmt *h2;
-			sql_subfunc *lsh = sql_bind_func_result(sql, "sys", "left_shift", F_FUNC, lng, 2, lng, it);
-			sql_subfunc *lor = sql_bind_func_result(sql, "sys", "bit_or", F_FUNC, lng, 2, lng, lng);
-			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, &c->c->type);
+			sql_subfunc *lsh = sql_bind_func_result(sql, "sys", "left_shift", F_FUNC, true, lng, 2, lng, it);
+			sql_subfunc *lor = sql_bind_func_result(sql, "sys", "bit_or", F_FUNC, true, lng, 2, lng, lng);
+			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, true, lng, 1, &c->c->type);
 
 			h = stmt_binop(be, h, stmt_atom_int(be, bits), NULL, lsh);
 			h2 = stmt_unop(be, upd, NULL, hf);
 			h = stmt_binop(be, h, h2, NULL, lor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, &c->c->type);
+			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, true, lng, 1, &c->c->type);
 			h = stmt_unop(be, upd, NULL, hf);
 			if (i->type == oph_idx)
 				break;
@@ -5165,7 +5165,7 @@ sql_update_check_null(backend *be, sql_table *t, stmt **updates)
 {
 	mvc *sql = be->mvc;
 	node *n;
-	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
@@ -5178,7 +5178,7 @@ sql_update_check_null(backend *be, sql_table *t, stmt **updates)
 				s = stmt_selectnil(be, updates[c->colnr]);
 				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 			} else {
-				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC);
+				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC, true);
 
 				s = stmt_unop(be, updates[c->colnr], NULL, isnil);
 			}
@@ -5227,7 +5227,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 	if (!be->silent || (t->s && isGlobal(t) && !isGlobalTemp(t)))
-		cnt = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		cnt = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 	if (!be->silent) {
 		/* if there are multiple update statements, update total count, otherwise use the the current count */
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
@@ -5351,7 +5351,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		list_prepend(l, ddl);
 		cnt = stmt_list(be, l);
 	} else {
-		cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 		if (!be->silent) {
 			/* if there are multiple update statements, update total count, otherwise use the the current count */
 			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
@@ -5457,8 +5457,8 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 			if (fk->type != fkey || rk->rkey != k->base.id)
 				continue;
 			char *msg = NULL;
-			sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
-			sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
+			sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+			sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
 			stmt *s, *tids;
 
 			tids = stmt_tid(be, fk->idx->t, 0);
@@ -5561,7 +5561,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (rows) {
 		s = stmt_delete(be, t, rows);
 		if (!be->silent || (t->s && isGlobal(t) && !isGlobalTemp(t)))
-			s = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+			s = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 	} else { /* delete all */
 		s = stmt_table_clear(be, t, 0); /* first column */
 	}
@@ -5816,7 +5816,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	}
 	list_append(slist, stmt_export(be, s, tsep, rsep, ssep, ns, onclient, fns));
 	if (s->type == st_list && ((stmt*)s->op4.lval->h->data)->nrcols != 0) {
-		res = stmt_aggr(be, s->op4.lval->h->data, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		res = stmt_aggr(be, s->op4.lval->h->data, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 	} else {
 		res = stmt_atom_lng(be, 1);
 	}
@@ -5863,12 +5863,12 @@ validate_merge_delete_update(backend *be, bool delete, stmt *bt_stmt, sql_rel *b
 	str msg;
 	sql_table *t = bt->l;
 	char *alias = (char *) rel_name(bt);
-	stmt *cnt1 = stmt_aggr(be, jl, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-	stmt *cnt2 = stmt_aggr(be, ld, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-	sql_subfunc *add = sql_bind_func(sql, "sys", "sql_add", tail_type(cnt1), tail_type(cnt2), F_FUNC);
+	stmt *cnt1 = stmt_aggr(be, jl, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
+	stmt *cnt2 = stmt_aggr(be, ld, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
+	sql_subfunc *add = sql_bind_func(sql, "sys", "sql_add", tail_type(cnt1), tail_type(cnt2), F_FUNC, true);
 	stmt *s1 = stmt_binop(be, cnt1, cnt2, NULL, add);
-	stmt *cnt3 = stmt_aggr(be, bin_find_smallest_column(be, bt_stmt), NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-	sql_subfunc *bf = sql_bind_func(sql, "sys", ">", tail_type(s1), tail_type(cnt3), F_FUNC);
+	stmt *cnt3 = stmt_aggr(be, bin_find_smallest_column(be, bt_stmt), NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
+	sql_subfunc *bf = sql_bind_func(sql, "sys", ">", tail_type(s1), tail_type(cnt3), F_FUNC, true);
 	stmt *s2 = stmt_binop(be, s1, cnt3, NULL, bf);
 
 	if (alias && strcmp(alias, t->base.name) == 0) /* detect if alias is present */

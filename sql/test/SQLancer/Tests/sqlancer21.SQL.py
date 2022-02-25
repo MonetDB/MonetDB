@@ -1,5 +1,4 @@
 import os
-from decimal import Decimal
 
 from MonetDBtesting.sqltest import SQLTestCase
 
@@ -20,10 +19,6 @@ with SQLTestCase() as cli:
     COMMIT;""" % (port, db)).assertSucceeded()
 
     # Issues related to scale propagation in the sql layer
-    cli.execute("SELECT scale_down(146.0, 1) FROM t1 where t1.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([(Decimal('14.6'),)])
-    cli.execute("SELECT scale_down(146.0, 1) FROM rt1 where rt1.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([(Decimal('14.6'),)])
     cli.execute("SELECT greatest(\"lower\"('D4Idf '), 'x x') FROM t1 where t1.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([("x x",)])
     cli.execute("SELECT greatest(\"lower\"('D4Idf '), 'x x') FROM rt1 where rt1.c0 = 1;") \
