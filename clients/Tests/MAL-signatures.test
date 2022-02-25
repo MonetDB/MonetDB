@@ -1,4 +1,5 @@
 hash-threshold 100000
+
 query TTTTT nosort
 select * from sys.malfunctions() order by module, "function", address, signature, comment
 ----
