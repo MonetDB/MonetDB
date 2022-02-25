@@ -181,31 +181,19 @@ CREATE VIEW sys.dump_partition_tables AS
 
 CREATE VIEW sys.dump_sequences AS
   SELECT
-    'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||
-    CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
-    CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
-    CASE
-      WHEN nomin THEN ' NO MINVALUE'
-      WHEN rmi IS NOT NULL THEN ' MINVALUE ' || rmi
-      ELSE ''
-    END ||
-    CASE
-      WHEN nomax THEN ' NO MAXVALUE'
-      WHEN rma IS NOT NULL THEN ' MAXVALUE ' || rma
-      ELSE ''
-    END ||
-    CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
-    CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END ||
-    ';' stmt,
+    'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT;' stmt,
     sch schema_name,
     seq seqname
     FROM sys.describe_sequences;
 
 CREATE VIEW sys.dump_start_sequences AS
-  SELECT
-    'UPDATE sys.sequences seq SET start = ' || s ||
-      ' WHERE name = ' || sys.SQ(seq) ||
-      ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sys.SQ(sch) || ');' stmt,
+  SELECT 'ALTER SEQUENCE ' || sys.FQN(sch, seq) ||
+	   CASE WHEN s = 0 THEN '' ELSE ' RESTART WITH ' || rs END ||
+	   CASE WHEN inc = 1 THEN '' ELSE ' INCREMENT BY ' || inc END ||
+	   CASE WHEN nomin THEN ' NO MINVALUE' WHEN rmi IS NULL THEN '' ELSE ' MINVALUE ' || rmi END ||
+	   CASE WHEN nomax THEN ' NO MAXVALUE' WHEN rma IS NULL THEN '' ELSE ' MAXVALUE ' || rma END ||
+	   CASE WHEN "cache" = 1 THEN '' ELSE ' CACHE ' || "cache" END ||
+	   CASE WHEN "cycle" THEN '' ELSE ' NO' END || ' CYCLE;' stmt,
     sch schema_name,
     seq sequence_name
     FROM sys.describe_sequences;
