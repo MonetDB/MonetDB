@@ -419,10 +419,10 @@ select min(i) as myx from integers group by myx
 statement error 42000!SELECT: cannot use non GROUP BY column 'integers.i' in query results without an aggregate function
 select ntile(i) over (), count(*) from integers
 
-statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 'i2.i' in query results without an aggregate function
 select (select i2.i in (select sum(i1.i + i2.i)) from integers i2) from integers i1
 
-statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 'i2.i' in query results without an aggregate function
 select (select i2.i in (select sum(i1.i + i2.i)) from integers i2) from integers i1 group by i1.i
 
 statement error GDK reported error: mergejoin: more than one match
