@@ -154,8 +154,8 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 		return NULL;
 	n->prev = NULL;
 
-	n->oldts = 0;
 	if (o->ts == tr->tid) {
+		n->oldts = 0;
 		n->ts = 1;
 		n->deleted = true;
 	} else {
@@ -3069,12 +3069,13 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 			BATiter bi = bat_iterator(b);
 			oid *o = bi.base, n = o[0]+1;
 			size_t lcnt = 1;
+			segment *seg = s->segs->h;
 			for (size_t i=1; i<icnt; i++) {
 				if (o[i] == n) {
 					lcnt++;
 					n++;
 				} else {
-					if ((ok = delete_range(tr, t, s, n-lcnt, lcnt)) != LOG_OK)
+					if ((ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt)) != LOG_OK)
 						break;
 					lcnt = 0;
 				}
