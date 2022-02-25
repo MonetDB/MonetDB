@@ -1672,7 +1672,7 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_r
 				ne = e;
 		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op))) ||
 					(!list_empty(rel->attr) && is_join(rel->op))) {
-			list *l = rel->attr ? rel->attr : rel->exps; 
+			list *l = rel->attr ? rel->attr : rel->exps;
 			if (e->l) {
 				ne = exps_bind_column2(l, e->l, e->r, NULL);
 			} else {

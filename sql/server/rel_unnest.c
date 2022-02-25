@@ -2795,8 +2795,17 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 			if (exp_has_rel(re))
 				rsq = exp_rel_get_rel(v->sql->sa, re); /* get subquery */
-			if (rsq)
-				re = exp_rel_update_exp(v->sql, re);
+			if (rsq) {
+				if (!lsq && is_simple_project(rsq->op) && !rsq->l) {
+					sql_exp *ire = rsq->exps->h->data;
+					if (is_values(ire) && list_length(ire->f) == 1) {
+						rsq = NULL;
+						re = ire;
+					}
+				}
+				if (rsq)
+					re = exp_rel_update_exp(v->sql, re);
+			}
 
 			if (is_values(le)) /* exp_values */
 				is_tuple = 1;
@@ -2820,7 +2829,6 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (!is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
 				list *vals = re->f;
 
-				assert(0);
 				if (depth == 0 && is_select(rel->op)) {
 					v->changes++;
 					return exp_in_compare(v->sql, &le, vals, is_anyequal(sf));
