@@ -5961,6 +5961,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		if (!lateral)
 			t2 = table_ref(query, tab2, 0, refs);
 		else if (lateral && !t2) {
+			query_processed(query);
 			query_push_outer(query, t1, sql_from);
 			t2 = table_ref(query, tab2, 0, refs);
 			t1 = query_pop_outer(query);
