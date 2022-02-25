@@ -282,11 +282,11 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tnokey[1] = 0;
 
 	uint32_t *restrict dst;
+	BUN cnt = BATcount(b);
 	for (; s ; s=s->next) {
 		if (s->start >= nr)
 			break;
 		if (s->ts == tr->tid && s->end != s->start) {
-			BUN cnt = BATcount(b);
 			if (cnt < s->start) { /* first mark as deleted ! */
 				size_t lnr = s->start-cnt;
 				size_t pos = cnt;
@@ -372,6 +372,8 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				}
 				assert(lnr==0);
 			}
+			if (cnt < s->end)
+				cnt = s->end;
 		}
 	}
 	if (nr > BATcount(b))
