@@ -2294,12 +2294,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		symbol *lo = n->data.sym;
 		symbol *ro = n->next->next->data.sym;
 		char *compare_op = n->next->data.sval;
-		int quantifier = 0;
-		int grouped = 0;
-
+		int quantifier = 0, need_not = 0;
 		sql_exp *rs = NULL, *ls;
 		comp_type cmp_type = compare_str2type(compare_op);
-		int need_not = 0;
 
 		/*
 		 * = ANY -> IN, <> ALL -> NOT( = ANY) -> NOT IN
@@ -2329,7 +2326,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			compare_op = "=";
 		}
 
-		grouped = (rel && (*rel) && is_groupby((*rel)->op));
 		ls = rel_value_exp(query, rel, lo, f|sql_farg, ek);
 		if (!ls)
 			return NULL;
@@ -2339,13 +2335,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		rs = rel_value_exp(query, rel, ro, f|sql_farg, ek);
 		if (!rs)
 			return NULL;
-
-		if (!grouped && rel && (*rel) && is_groupby((*rel)->op) && !rel_find_exp(*rel, ls) && !is_freevar(ls) && (!exp_has_rel(ls))) {
-			if (exp_name(ls) && exp_relname(ls))
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
-			else
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery uses ungrouped column");
-		}
 
 		if (!exp_is_rel(ls) && !exp_is_rel(rs) && ls->card < rs->card) {
 			sql_exp *swap = ls; /* has to swap parameters like in the rel_logical_exp case */
