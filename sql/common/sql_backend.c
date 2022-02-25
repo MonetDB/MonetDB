@@ -99,7 +99,7 @@ backend_schema_user_dependencies(ptr trans, sqlid schema_id)
 }
 
 int
-backend_resolve_function(ptr M, sql_func *f, const char *fimp, bit *side_effect)
+backend_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 {
 	if (be_funcs.fresolve_function != NULL)
 		return be_funcs.fresolve_function(M, f, fimp, side_effect);

@@ -1369,7 +1369,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 
 		srel = r->l;
 		{
-			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 			sql_exp *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
@@ -1381,7 +1381,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 
 		srel = r->r;
 		{
-			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 			sql_exp *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
@@ -2818,7 +2818,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				/* pow */
 				list *l;
 				sql_exp *ne;
-				sql_subfunc *pow = sql_bind_func(sql, "sys", "power", exp_subtype(le), exp_subtype(re), F_FUNC);
+				sql_subfunc *pow = sql_bind_func(sql, "sys", "power", exp_subtype(le), exp_subtype(re), F_FUNC, true);
 				assert(pow);
 				if (exp_subtype(le)->type->localtype == TYPE_flt)
 					re = exp_atom_flt(sql->sa, 2);
@@ -4077,7 +4077,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			if (oa->type == e_aggr) {
 				sql_subfunc *f = oa->f;
 				int cnt = exp_aggr_is_count(oa);
-				sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
+				sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR, true);
 
 				assert(a);
 				/* union of aggr result may have nils
@@ -5936,7 +5936,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			sql_exp *v;
 			sql_subfunc *f = e->f;
 			int cnt = exp_aggr_is_count(e);
-			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
+			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR, true);
 
 			append(aggrs, e);
 			if (!exp_name(e))
@@ -7668,6 +7668,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 							atom *a = ce->l;
 							int anti = is_anti(e);
 							sql_exp *arg1, *arg2;
+							sql_subfunc *f;
 #ifdef HAVE_HGE
 							hge val = 1;
 #else
@@ -7693,8 +7694,8 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 #else
 							arg2 = exp_atom_lng(v->sql->sa, val);
 #endif
-							if ((nre = rel_binop_(v->sql, NULL, arg1, arg2, "sys", "scale_down", card_value))) {
-								e = exp_compare(v->sql->sa, le->l, nre, e->flag);
+							if ((f = sql_bind_func(v->sql, "sys", "scale_down", exp_subtype(arg1), exp_subtype(arg2), F_FUNC, true))) {
+								e = exp_compare(v->sql->sa, le->l, exp_binop(v->sql->sa, arg1, arg2, f), e->flag);
 								if (anti) set_anti(e);
 								v->changes++;
 							} else {
@@ -9465,7 +9466,7 @@ rel_basecount(visitor *v, sql_rel *rel)
 			/* I need to get the declared table's frame number to make this work correctly for those */
 			if (!isTable(t) || isDeclaredTable(t))
 				return rel;
-			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "cnt", sql_bind_localtype("str"), sql_bind_localtype("str"), F_FUNC);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "cnt", sql_bind_localtype("str"), sql_bind_localtype("str"), F_FUNC, true);
 			list *exps = sa_list(v->sql->sa);
 			append(exps, exp_atom_str(v->sql->sa, t->s->base.name, sql_bind_localtype("str")));
 			append(exps, exp_atom_str(v->sql->sa, t->base.name, sql_bind_localtype("str")));
@@ -9496,7 +9497,7 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 				if (list_length(e->l) == 0) {
 					ncountstar++;
 				} else if (list_length(e->l) == 1 && exp_is_not_null((sql_exp*)((list*)e->l)->h->data)) {
-					sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+					sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 					sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
 					if (exp_name(e))
 						exp_prop_alias(sql->sa, ne, e);
@@ -9833,7 +9834,7 @@ rel_setjoins_2_joingroupby(visitor *v, sql_rel *rel)
 					if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
 						sql_exp *le = e->l, *re = e->r, *ne = NULL;
 						sql_subfunc *ea = sql_bind_func3(v->sql, "sys", e->flag==mark_in?"anyequal":"allnotequal",
-														 exp_subtype(le), exp_subtype(re), rid ? exp_subtype(rid) : NULL, F_AGGR);
+														 exp_subtype(le), exp_subtype(re), rid ? exp_subtype(rid) : NULL, F_AGGR, true);
 
 						if (rid) {
 							sql_exp *rid_ref = exp_ref(v->sql, rid);
