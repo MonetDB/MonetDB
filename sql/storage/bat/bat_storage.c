@@ -154,8 +154,8 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 		return NULL;
 	n->prev = NULL;
 
-	n->oldts = 0;
 	if (o->ts == tr->tid) {
+		n->oldts = 0;
 		n->ts = 1;
 		n->deleted = true;
 	} else {
@@ -282,11 +282,11 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tnokey[1] = 0;
 
 	uint32_t *restrict dst;
+	BUN cnt = BATcount(b);
 	for (; s ; s=s->next) {
 		if (s->start >= nr)
 			break;
 		if (s->ts == tr->tid && s->end != s->start) {
-			BUN cnt = BATcount(b);
 			if (cnt < s->start) { /* first mark as deleted ! */
 				size_t lnr = s->start-cnt;
 				size_t pos = cnt;
@@ -372,6 +372,8 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				}
 				assert(lnr==0);
 			}
+			if (cnt < s->end)
+				cnt = s->end;
 		}
 	}
 	if (nr > BATcount(b))
@@ -3069,12 +3071,13 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 			BATiter bi = bat_iterator(b);
 			oid *o = bi.base, n = o[0]+1;
 			size_t lcnt = 1;
+			segment *seg = s->segs->h;
 			for (size_t i=1; i<icnt; i++) {
 				if (o[i] == n) {
 					lcnt++;
 					n++;
 				} else {
-					if ((ok = delete_range(tr, t, s, n-lcnt, lcnt)) != LOG_OK)
+					if ((ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt)) != LOG_OK)
 						break;
 					lcnt = 0;
 				}
