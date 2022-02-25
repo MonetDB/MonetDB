@@ -4599,7 +4599,9 @@ sql_update_default(Client c, mvc *sql)
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	/* if 'describe_partition_tables' system view doesn't use 'vals' CTE, re-create it */
+	/* if 'describe_partition_tables' system view doesn't use 'vals'
+	 * CTE, re-create it; while we're at it, also update the sequence
+	 * dumping code */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select 1 from tables where schema_id = (select \"id\" from sys.schemas where \"name\" = 'sys') and \"name\" = 'describe_partition_tables' and \"query\" not like '%%vals%%';\n");
 	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output))) {
@@ -4614,13 +4616,19 @@ sql_update_default(Client c, mvc *sql)
 		t->system = 0;
 		t = mvc_bind_table(sql, s, "dump_partition_tables");
 		t->system = 0;
+		t = mvc_bind_table(sql, s, "dump_sequences");
+		t->system = 0;
+		t = mvc_bind_table(sql, s, "dump_start_sequences");
+		t->system = 0;
 
 		pos = 0;
 		pos += snprintf(buf + pos, bufsize - pos,
 			/* drop dependent stuff from 76_dump.sql */
 			"drop function sys.dump_database(boolean);\n"
 			"drop view sys.dump_partition_tables;\n"
-			"drop view sys.describe_partition_tables;\n");
+			"drop view sys.describe_partition_tables;\n"
+			"drop view sys.dump_sequences;\n"
+			"drop view sys.dump_start_sequences;\n");
 
 		pos += snprintf(buf + pos, bufsize - pos,
 			"CREATE VIEW sys.describe_partition_tables AS\n"
@@ -4697,6 +4705,23 @@ sql_update_default(Client c, mvc *sql)
 			"	p_sch partition_schema_name,\n"
 			"	p_tbl partition_table_name\n"
 			"	FROM sys.describe_partition_tables;\n"
+			"CREATE VIEW sys.dump_sequences AS\n"
+			"  SELECT\n"
+			"    'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT;' stmt,\n"
+			"    sch schema_name,\n"
+			"    seq seqname\n"
+			"    FROM sys.describe_sequences;\n"
+			"CREATE VIEW sys.dump_start_sequences AS\n"
+			"  SELECT 'ALTER SEQUENCE ' || sys.FQN(sch, seq) ||\n"
+			"	   CASE WHEN s = 0 THEN '' ELSE ' RESTART WITH ' || rs END ||\n"
+			"	   CASE WHEN inc = 1 THEN '' ELSE ' INCREMENT BY ' || inc END ||\n"
+			"	   CASE WHEN nomin THEN ' NO MINVALUE' WHEN rmi IS NULL THEN '' ELSE ' MINVALUE ' || rmi END ||\n"
+			"	   CASE WHEN nomax THEN ' NO MAXVALUE' WHEN rma IS NULL THEN '' ELSE ' MAXVALUE ' || rma END ||\n"
+			"	   CASE WHEN \"cache\" = 1 THEN '' ELSE ' CACHE ' || \"cache\" END ||\n"
+			"	   CASE WHEN \"cycle\" THEN '' ELSE ' NO' END || ' CYCLE;' stmt,\n"
+			"    sch schema_name,\n"
+			"    seq sequence_name\n"
+			"    FROM sys.describe_sequences;\n"
 			"CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)\n"
 			"BEGIN\n"
 			"\n"
@@ -4748,7 +4773,7 @@ sql_update_default(Client c, mvc *sql)
 			"END;\n");
 
 		pos += snprintf(buf + pos, bufsize - pos,
-			"update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables') AND schema_id = 2000;\n");
+			"update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences') AND schema_id = 2000;\n");
 		pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = %d;\n", F_UNION);
 

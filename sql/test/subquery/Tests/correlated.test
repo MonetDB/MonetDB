@@ -258,10 +258,10 @@ SELECT MIN(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1
 1
 6
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 SELECT i, (SELECT SUM(i1.i)) FROM integers i1
 
-statement error 42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 SELECT i+1, (SELECT SUM(i1.i)) FROM integers i1
 
 query II rowsort

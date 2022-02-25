@@ -3392,12 +3392,12 @@ exp_valid(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				ai->err = SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query";
 			}
 		}
-	} else if (!v->changes && vf && vf == ai->groupby) {
+	} else if (!v->changes && vf && vf == ai->groupby) { /* check if input is allready aggregated */
 		sql_rel *sq = query_fetch_outer(ai->query, vf-1);
+		sql_exp *a = NULL;
 
-		/* problem freevar have cardinality CARD_ATOM */
 		if (sq->card <= CARD_AGGR && is_alias(e->type)) {
-			if (exps_bind_column(sq->exps, e->l, e->r, NULL, 0)) { /* aggregate */
+			if ((a = exps_bind_column(sq->exps, e->l, e->r, NULL, 0)) && is_aggr(a->type)) { /* aggregate */
 				v->changes = 1;
 				ai->err = SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested";
 			}
@@ -3489,10 +3489,6 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				else
 					groupby = subquery = gl;
 			}
-			/*
-			if (!subquery && exp_has_rel(e))
-				subquery = gl;
-				*/
 			if (!exp_subtype(e)) { /* we also do not expect parameters here */
 				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions", toUpperCopy(uaname, aname));
@@ -3575,6 +3571,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			card = query_outer_used_card(query, all_freevar-1);
 			/* given groupby validate all input expressions */
 			char *err;
+			if (groupby && !is_groupby(groupby->op)) {
+				sql_exp *p = query_outer_last_used(query, all_freevar-1);
+				if (p && !is_aggr(p->type) && !is_groupby_col(groupby, p)) {
+					if (p->type == e_column)
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", (char*)p->l, (char*)p->r);
+					if (exp_name(p) && exp_relname(p) && !has_label(p))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(p), exp_name(p));
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				}
+			}
 			if ((err = exps_valid(query, exps, all_freevar)) != NULL) {
 				strcpy(sql->errstr, err);
 				sql->session->status = -ERR_GROUPBY;
@@ -5949,9 +5955,10 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 	lateral = (op == op_join || op == op_left) && check_is_lateral(tab2);
 	t1 = table_ref(query, tab1, 0, refs);
 	if (t1) {
-		if (!lateral)
+		if (!lateral) {
 			t2 = table_ref(query, tab2, 0, refs);
-		else if (lateral && !t2) {
+		} else {
+			query_processed(query);
 			query_push_outer(query, t1, sql_from);
 			t2 = table_ref(query, tab2, 0, refs);
 			t1 = query_pop_outer(query);
@@ -5961,10 +5968,9 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		return NULL;
 
 	query_processed(query);
-	inner = rel = rel_crossproduct(sql->sa, t1, t2, op_join);
+	inner = rel = rel_crossproduct(sql->sa, t1, t2, op);
 	if (!rel)
 		return NULL;
-	rel->op = op;
 	if (lateral)
 		set_dependent(rel);
 
