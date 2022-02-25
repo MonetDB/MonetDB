@@ -1202,6 +1202,10 @@ GDKreset(int status)
 
 	assert(GDKexiting());
 
+	if (GDKembedded())
+		// In the case of a restarted embedded database, GDKstopped has to be reset as well.
+		ATOMIC_SET(&GDKstopped, 0);
+
 	if (GDKkey) {
 		BBPunfix(GDKkey->batCacheid);
 		GDKkey = NULL;
