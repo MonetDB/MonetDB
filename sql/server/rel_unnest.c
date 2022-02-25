@@ -996,6 +996,12 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = NULL;
 				rel_destroy(r);
 				rel->op = op_select;
+				for(m=rel->exps->h; m; m = m->next) {
+					sql_exp *e = m->data;
+
+					if (is_compare(e->type) && (e->flag == mark_in || e->flag == mark_notin))
+						e->flag = (e->flag==mark_in)?cmp_equal:cmp_notequal;
+				}
 				return rel;
 			}
 			r->exps = nexps;
