@@ -5958,9 +5958,9 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 	lateral = (op == op_join || op == op_left) && check_is_lateral(tab2);
 	t1 = table_ref(query, tab1, 0, refs);
 	if (t1) {
-		if (!lateral)
+		if (!lateral) {
 			t2 = table_ref(query, tab2, 0, refs);
-		else if (lateral) {
+		} else {
 			query_processed(query);
 			query_push_outer(query, t1, sql_from);
 			t2 = table_ref(query, tab2, 0, refs);
@@ -5971,10 +5971,9 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		return NULL;
 
 	query_processed(query);
-	inner = rel = rel_crossproduct(sql->sa, t1, t2, op_join);
+	inner = rel = rel_crossproduct(sql->sa, t1, t2, op);
 	if (!rel)
 		return NULL;
-	rel->op = op;
 	if (lateral)
 		set_dependent(rel);
 
