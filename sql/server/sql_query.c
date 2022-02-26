@@ -53,7 +53,6 @@ query_push_outer(sql_query *q, sql_rel *r, int sql_state)
 	if (!q->last_rel)
 		q->last_rel = r;
 	if (r != q->last_rel) {
-		assert((q->last_rel->l == r && (is_groupby(q->last_rel->op) || is_select(q->last_rel->op))) || (r->l == q->last_rel && (is_select(r->op) || is_join(r->op))));
 		r->grouped = is_groupby(q->last_rel->op);
 		q->last_rel = r;
 		q->last_exp = q->prev = NULL;
