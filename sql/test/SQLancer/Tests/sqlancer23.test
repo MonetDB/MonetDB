@@ -9,5 +9,9 @@ SELECT 1 FROM (SELECT 1 FROM t0 JOIN (SELECT EXISTS (SELECT 1)) x(x) ON x.x = (V
 JOIN (VALUES (1, 2)) x(x,y) ON vx = ANY(SELECT vx)
 ----
 
+query I nosort
+SELECT 1 FROM t0 WHERE (TRUE AND (SELECT TRUE)) OR (TRUE AND (SELECT TRUE))
+----
+
 statement ok
 ROLLBACK
