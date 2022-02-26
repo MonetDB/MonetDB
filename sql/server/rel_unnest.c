@@ -907,7 +907,15 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				l = rel_dup(l);
 				if (!is_project(l->op) || rel_is_ref(l))
 					l = rel_project( sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
-				l->exps = list_merge(l->exps, r->exps, (fdup)NULL);
+				if (r->exps) {
+					for (m=r->exps->h; m; m = m->next) {
+						sql_exp *e = m->data;
+
+						if (exp_has_freevar(sql, e))
+							rel_bind_var(sql, l, e);
+						append(l->exps, e);
+					}
+				}
 				rel_destroy(rel);
 				return l;
 			}
