@@ -19,4 +19,18 @@ ON (SELECT y.y WHERE x.x)
 ----
 
 statement ok
+create view vx(vx) as (select distinct 2)
+
+query I nosort
+SELECT 1 FROM vx WHERE 1 <> ALL(VALUES (10), (vx.vx))
+----
+1
+
+# this one is right
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(1 <> ALL(VALUES (10), (vx.vx)) AS INT) as count FROM vx) as res
+----
+1
+
+statement ok
 ROLLBACK
