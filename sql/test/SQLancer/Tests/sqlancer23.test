@@ -44,4 +44,13 @@ ON vy.vc0 LIKE y.y) FROM (SELECT DISTINCT '1', 2) vy(vc0, vc2)
 1
 
 statement ok
+create view vy(vc0) as ((select 'a') union all (select z.z from (SELECT 1) y(y)
+cross join lateral (select 'v' where y.y > y.y) as z(z)))
+
+query I nosort
+SELECT ((SELECT y.y) EXCEPT ALL (SELECT count(*) FROM vy)) FROM (SELECT 1) y(y)
+----
+NULL
+
+statement ok
 ROLLBACK

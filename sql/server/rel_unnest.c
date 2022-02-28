@@ -1159,31 +1159,25 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 			if (rel->op == op_semi)
 				rel->op = op_join;
 
-			for (n = r->exps->h; n; n = n->next ) {
-				sql_exp *e = n->data;
+			if (!list_empty(r->exps)) {
+				for (n = r->exps->h; n; n = n->next ) {
+					sql_exp *e = n->data;
 
-				/* count_nil(* or constant) -> count(t.TID) */
-				if (exp_is_count(e, r) && (!e->l || exps_is_constant(e->l))) {
-					sql_exp *col;
-					sql_rel *p = r->l; /* ugh */
+					/* count_nil(* or constant) -> count(t.TID) */
+					if (exp_is_count(e, r) && (!e->l || exps_is_constant(e->l))) {
+						sql_rel *p = r->l; /* ugh */
+						sql_exp *col = list_length(p->exps) ? p->exps->t->data : NULL;
+						const char *cname = col ? exp_name(col) : NULL;
 
-					if (!is_project(p->op))
-						r->l = p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
-					col = p->exps->t->data;
-					if (strcmp(exp_name(col), TID) != 0) {
+						if ((!cname || strcmp(cname, TID) != 0) && !(r->l = p = rel_add_identity(sql, p, &col)))
+							return NULL;
 						col = exp_ref(sql, col);
-						col = exp_unop(sql->sa, col, sql_bind_func(sql, "sys", "identity", exp_subtype(col), NULL, F_FUNC, true));
-						set_has_no_nil(col);
-						set_unique(col);
-						col = exp_label(sql->sa, col, ++sql->label);
-						append(p->exps, col);
+						append(e->l=sa_list(sql->sa), col);
+						set_no_nil(e);
 					}
-					col = exp_ref(sql, col);
-					append(e->l=sa_list(sql->sa), col);
-					set_no_nil(e);
+					if (exp_has_freevar(sql, e))
+						rel_bind_var(sql, rel->l, e);
 				}
-				if (exp_has_freevar(sql, e))
-					rel_bind_var(sql, rel->l, e);
 			}
 			r->exps = list_distinct(list_merge(r->exps, a, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
 			if (list_empty(r->r)) {
