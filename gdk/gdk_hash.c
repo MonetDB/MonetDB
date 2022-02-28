@@ -1106,7 +1106,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		return;
 	}
 	assert(i * h->width == h->heaplink.free);
-	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+	if (h->nunique < b->batCount / hash_destroy_uniques_fraction) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		GDKclrerr();
@@ -1180,7 +1180,7 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+	if (h->nunique < b->batCount / hash_destroy_uniques_fraction) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		GDKclrerr();
@@ -1264,7 +1264,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+	if (h->nunique < b->batCount / hash_destroy_uniques_fraction) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		GDKclrerr();
@@ -1320,7 +1320,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 			break;
 		}
 		hb = hb2;
-		if (++links > HASH_DESTROY_CHAIN_LENGTH) {
+		if (++links > hash_destroy_chain_length) {
 			b->thash = NULL;
 			doHASHdestroy(b, h);
 			GDKclrerr();
