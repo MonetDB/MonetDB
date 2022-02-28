@@ -746,6 +746,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	}
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
+	assert(b->ttype != TYPE_msk);
 
 	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
@@ -1304,6 +1305,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	bool seen = false;
+	BUN links = 0;
 	for (;;) {
 		if (!seen)
 			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
@@ -1318,6 +1320,12 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 			break;
 		}
 		hb = hb2;
+		if (++links > HASH_DESTROY_CHAIN_LENGTH) {
+			b->thash = NULL;
+			doHASHdestroy(b, h);
+			GDKclrerr();
+			return;
+		}
 	}
 	h->heaplink.dirty = true;
 	HASHputlink(h, hb, HASHgetlink(h, p));

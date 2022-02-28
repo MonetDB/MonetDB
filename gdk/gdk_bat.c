@@ -1357,11 +1357,10 @@ BUNdelete(BAT *b, oid o)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			msk mval = mskGetVal(b, BUNlast(b) - 1);
-			HASHdelete(b, BUNlast(b) - 1, &mval);
+			assert(b->thash == NULL);
 			mskSetVal(b, p, mval);
 			/* don't leave garbage */
 			mskClr(b, BUNlast(b) - 1);
-			HASHinsert(b, p, &mval);
 		} else {
 			val = Tloc(b, BUNlast(b) - 1);
 			HASHdelete(b, BUNlast(b) - 1, val);
