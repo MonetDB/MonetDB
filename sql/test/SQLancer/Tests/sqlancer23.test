@@ -37,5 +37,11 @@ SELECT 1 FROM (SELECT DISTINCT 2) vy(vc1) WHERE EXISTS (VALUES (vc1))
 ----
 1
 
+query I nosort
+SELECT vy.vc2 <> ALL(SELECT DISTINCT (SELECT 4 WHERE TRUE) FROM (SELECT 'a') y(y) JOIN LATERAL (SELECT 1) AS x(x)
+ON vy.vc0 LIKE y.y) FROM (SELECT DISTINCT '1', 2) vy(vc0, vc2)
+----
+1
+
 statement ok
 ROLLBACK
