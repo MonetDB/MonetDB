@@ -471,16 +471,20 @@ extern MT_Lock GDKtmLock;
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */
-extern BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
+#define GDK_UNIQUE_ESTIMATE_KEEP_FRACTION	1000
+extern BUN gdk_unique_estimate_keep_fraction; /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */
-extern BUN HASH_DESTROY_UNIQUES_FRACTION;     /* likewise */
+#define HASH_DESTROY_UNIQUES_FRACTION		1000
+extern BUN hash_destroy_uniques_fraction;     /* likewise */
 /* if the estimated number of unique values is less than 1 in this
  * number, don't build a hash table to do a hashselect */
-extern dbl NO_HASH_SELECT_FRACTION;           /* same here */
+#define NO_HASH_SELECT_FRACTION			1000
+extern dbl no_hash_select_fraction;           /* same here */
 /* if the hash chain is longer than this number, we delete the hash
  * rather than maintaining it in HASHdelete */
-extern BUN HASH_DESTROY_CHAIN_LENGTH;
+#define HASH_DESTROY_CHAIN_LENGTH		1000
+extern BUN hash_destroy_chain_length;
 
 #if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */
