@@ -205,7 +205,6 @@ mo_system_config(opt **Set, int setlen)
 	if (!cfg)
 		return setlen;
 	setlen = mo_config_file(Set, setlen, cfg);
-	free(cfg);
 	return setlen;
 }
 
