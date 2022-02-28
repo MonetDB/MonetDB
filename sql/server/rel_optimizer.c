@@ -1979,7 +1979,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				return NULL;
 		}
 		/* possibly a groupby/project column is renamed */
-		if (is_groupby(f->op) && !list_empty(f->r)) {
+		if (is_groupby(f->op) && !list_empty(f->r) && ne->type == e_column) {
 			sql_exp *gbe = NULL;
 			if (ne->l)
 				gbe = exps_bind_column2(f->r, ne->l, ne->r, NULL);

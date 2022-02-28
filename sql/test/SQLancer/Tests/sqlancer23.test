@@ -52,5 +52,9 @@ SELECT ((SELECT y.y) EXCEPT ALL (SELECT count(*) FROM vy)) FROM (SELECT 1) y(y)
 ----
 NULL
 
+query I nosort
+SELECT 2 FROM (SELECT FALSE GROUP BY 'a', FALSE) y(y) WHERE y.y
+----
+
 statement ok
 ROLLBACK
