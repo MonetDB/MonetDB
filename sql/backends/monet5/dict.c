@@ -708,9 +708,10 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (op[0] == '<' || op[0] == '>') {
 			p = SORTfndfirst(lv, v);
 			if (p != BUN_NONE && op[0] == '<' && op[1] == '=') {
-				BUN q = SORTfnd(lv, v);
-				if (q == BUN_NONE)
+				BATiter li = bat_iterator(lv);
+				if (ATOMcmp(lv->ttype, v, BUNtail(li, p)) != 0)
 					p--;
+				bat_iterator_end(&li);
 			}
 		}
 		if (p != BUN_NONE) {
