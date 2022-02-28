@@ -66,6 +66,9 @@ BUN HASH_DESTROY_UNIQUES_FRACTION = 1000;     /* likewise */
 /* if the estimated number of unique values is less than 1 in this
  * number, don't build a hash table to do a hashselect */
 dbl NO_HASH_SELECT_FRACTION = 1000;           /* same here */
+/* if the hash chain is longer than this number, we delete the hash
+ * rather than maintaining it in HASHdelete */
+BUN HASH_DESTROY_CHAIN_LENGTH = 1000;
 
 /*
  * @+ Monet configuration file
@@ -1169,6 +1172,11 @@ GDKinit(opt *set, int setlen, bool embedded)
 		NO_HASH_SELECT_FRACTION = (dbl) strtoll(p, NULL, 10);
 	if (NO_HASH_SELECT_FRACTION == 0)
 		NO_HASH_SELECT_FRACTION = (dbl) GDK_UNIQUE_ESTIMATE_KEEP_FRACTION;
+	HASH_DESTROY_CHAIN_LENGTH = 0;
+	if ((p = GDKgetenv("hash_destroy_chain_length")) != NULL)
+		HASH_DESTROY_CHAIN_LENGTH = (BUN) strtoll(p, NULL, 10);
+	if (HASH_DESTROY_CHAIN_LENGTH == 0)
+		HASH_DESTROY_CHAIN_LENGTH = 1000;
 
 	return GDK_SUCCEED;
 }
