@@ -1309,6 +1309,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	bool seen = false;
+	BUN links = 0;
 	for (;;) {
 		if (!seen)
 			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
@@ -1323,6 +1324,12 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 			break;
 		}
 		hb = hb2;
+		if (++links > HASH_DESTROY_CHAIN_LENGTH) {
+			b->thash = NULL;
+			doHASHdestroy(b, h);
+			GDKclrerr();
+			return;
+		}
 	}
 	h->heaplink.dirty = true;
 	HASHputlink(h, hb, HASHgetlink(h, p));
