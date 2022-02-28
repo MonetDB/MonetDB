@@ -56,5 +56,10 @@ query I nosort
 SELECT 2 FROM (SELECT FALSE GROUP BY 'a', FALSE) y(y) WHERE y.y
 ----
 
+query I nosort
+SELECT (SELECT (VALUES (x.x)) FROM (VALUES (1),(2)) x(x) JOIN (VALUES (1, t0.c0, TRUE),
+(7, 9, FALSE)) y(a,b,c) ON y.c) FROM t0
+----
+
 statement ok
 ROLLBACK
