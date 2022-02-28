@@ -3419,19 +3419,13 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
 
-			if (strcmp(fimp, "rotate_xor_hash") == 0 && strcmp(mod, calcRef) == 0) {
-				q = newStmt(mb, mkeyRef, bulk_rotate_xor_hashRef);
-				if (q == NULL)
-					return NULL;
-			} else {
-				q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
-				if (q == NULL)
-					return NULL;
-				if (rows)
-					q = pushArgument(mb, q, card->nr);
-				q = pushStr(mb, q, mod);
-				q = pushStr(mb, q, fimp);
-			}
+			q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
+			if (q == NULL)
+				return NULL;
+			if (rows)
+				q = pushArgument(mb, q, card->nr);
+			q = pushStr(mb, q, mod);
+			q = pushStr(mb, q, fimp);
 			setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 		} else {
 			q = newStmtArgs(mb, mod, fimp, default_nargs);
