@@ -478,6 +478,9 @@ extern BUN HASH_DESTROY_UNIQUES_FRACTION;     /* likewise */
 /* if the estimated number of unique values is less than 1 in this
  * number, don't build a hash table to do a hashselect */
 extern dbl NO_HASH_SELECT_FRACTION;           /* same here */
+/* if the hash chain is longer than this number, we delete the hash
+ * rather than maintaining it in HASHdelete */
+extern BUN HASH_DESTROY_CHAIN_LENGTH;
 
 #if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */
