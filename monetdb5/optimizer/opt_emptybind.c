@@ -238,10 +238,14 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				emptyresult(0);
 			}
 		}
-		if( getModuleId(p) == batstrRef){
-			if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
-				actions++;
-				emptyresult(0);
+		if (getModuleId(p) == batmkeyRef || getModuleId(p) == batstrRef || getModuleId(p) == batmtimeRef ||
+			getModuleId(p) == batmmathRef || getModuleId(p) == batcalcRef || (getModuleId(p) == algebraRef && getFunctionId(p) == projectionpathRef)) {
+			for (int j = p->retc; j < p->argc; j++) {
+				if( empty[getArg(p,j)]){
+					actions++;
+					emptyresult(0);
+					break;
+				}
 			}
 		}
 		if (getModuleId(p)== batRef && isUpdateInstruction(p)){
