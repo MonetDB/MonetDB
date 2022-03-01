@@ -1143,8 +1143,8 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		tpe = i->type->base.name;
 		eclass = i->type->eclass;
 	}
-	if (EC_VARCHAR(lsuper.type->eclass))
-		scale = 0; /* strings don't have scale */
+	if (!EC_SCALE(lsuper.type->eclass))
+		scale = 0; /* reset scale for types without it */
 	if (!lsuper.type->localtype) {
 		tpe = "smallint";
 		eclass = EC_NUM;
