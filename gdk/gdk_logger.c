@@ -2715,7 +2715,7 @@ add_tid_flush_queue(logger *lg, int tid) {
 	// Semaphore protects ring buffer structure in queue against overflowing
 	MT_sema_down(&lg->flush_queue_semaphore);
 	MT_lock_set(&lg->flush_queue_lock);
-	int end = (lg->flush_queue_begin + lg->flush_queue_length) % FLUSH_QUEUE_SIZE;
+	const int end = (lg->flush_queue_begin + lg->flush_queue_length) % FLUSH_QUEUE_SIZE;
 	lg->flush_queue[end] = tid;
 	lg->flush_queue_length++;
 	MT_lock_unset(&lg->flush_queue_lock);
@@ -2735,10 +2735,10 @@ left_truncate_flush_queue(logger *lg, int limit) {
 int
 tid_in_flush_queue(logger *lg, int tid) {
 	MT_lock_set(&lg->flush_queue_lock);
-	int fql = lg->flush_queue_length; // Protect against add_tid_flush_queue
+	const int fql = lg->flush_queue_length; // Protect against add_tid_flush_queue
 	MT_lock_unset(&lg->flush_queue_lock);
 	for (int i = 0; i < fql; i++) {
-		int idx = (lg->flush_queue_begin + i) % FLUSH_QUEUE_SIZE;
+		const int idx = (lg->flush_queue_begin + i) % FLUSH_QUEUE_SIZE;
 		if (lg->flush_queue[idx] == tid) {
 			return 1;
 		}
@@ -2749,7 +2749,7 @@ tid_in_flush_queue(logger *lg, int tid) {
 int 
 flush_queue_length(logger *lg) {
 	MT_lock_set(&lg->flush_queue_lock);
-	int fql = lg->flush_queue_length; // Protect against add_tid_flush_queue
+	const int fql = lg->flush_queue_length; // Protect against add_tid_flush_queue
 	MT_lock_unset(&lg->flush_queue_lock);
 	return fql;
 }
@@ -2762,7 +2762,7 @@ log_tflush(logger *lg, int log_tid) {
 	/* the transaction is not yet flushed */
 	if (tid_in_flush_queue(lg, log_tid)) {
 		/* number of transactions in the group commit */
-		int fqueue_length = flush_queue_length(lg);
+		const int fqueue_length = flush_queue_length(lg);
 		/* flush + fsync */
 		if (mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
 				(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
