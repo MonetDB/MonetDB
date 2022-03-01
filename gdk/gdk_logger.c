@@ -2094,6 +2094,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	}
 
 	// flush variables
+	MT_sema_init(&lg->flush_queue_semaphore, FLUSH_QUEUE_SIZE, "flush_queue_semaphore");
 	MT_lock_init(&lg->flush_lock, "flush_lock");
 	MT_lock_init(&lg->flush_queue_lock, "flush_queue_lock");
 	lg->flush_queue_begin = 0;
@@ -2711,6 +2712,8 @@ log_tend(logger *lg)
 
 void
 add_tid_flush_queue(logger *lg, int tid) {
+	// Semaphore protects ring buffer structure in queue against overflowing
+	MT_sema_down(&lg->flush_queue_semaphore);
 	MT_lock_set(&lg->flush_queue_lock);
 	int end = (lg->flush_queue_begin + lg->flush_queue_length) % FLUSH_QUEUE_SIZE;
 	lg->flush_queue[end] = tid;
@@ -2724,6 +2727,9 @@ left_truncate_flush_queue(logger *lg, int limit) {
 	lg->flush_queue_begin = (lg->flush_queue_begin + limit) % FLUSH_QUEUE_SIZE;
 	lg->flush_queue_length -= limit;
 	MT_lock_unset(&lg->flush_queue_lock);
+
+	for (int i = 0; i < limit; i++)
+		MT_sema_up(&lg->flush_queue_semaphore);
 }
 
 int

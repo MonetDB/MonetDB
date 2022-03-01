@@ -70,6 +70,7 @@ struct logger {
 	int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
 	int flush_queue_begin; /* start index of the queue */
 	int flush_queue_length; /* length of the queue */
+	MT_Sema flush_queue_semaphore; /*to protect the queue against ring buffer overflows */
 	MT_Lock flush_queue_lock; /* to protect the queue against concurrent reads and writes */
 	MT_Lock flush_lock; /* so only one transaction can flush to disk at any given time */
 };
