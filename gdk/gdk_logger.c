@@ -2728,7 +2728,10 @@ left_truncate_flush_queue(logger *lg, int limit) {
 
 int
 tid_in_flush_queue(logger *lg, int tid) {
-	for (int i = 0; i < lg->flush_queue_length; i++) {
+	MT_lock_set(&lg->flush_queue_lock);
+	int fql = lg->flush_queue_length; // Protect against add_tid_flush_queue
+	MT_lock_unset(&lg->flush_queue_lock);
+	for (int i = 0; i < fql; i++) {
 		int idx = (lg->flush_queue_begin + i) % FLUSH_QUEUE_SIZE;
 		if (lg->flush_queue[idx] == tid) {
 			return 1;
