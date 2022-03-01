@@ -71,3 +71,16 @@ SELECT (SELECT (VALUES (x.x)) FROM (VALUES (1),(2)) x(x) JOIN (VALUES (1, t0.c0,
 
 statement ok
 ROLLBACK
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
+
+# these are right
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
