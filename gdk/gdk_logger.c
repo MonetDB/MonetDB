@@ -2765,15 +2765,11 @@ log_tflush(logger *lg, int log_tid) {
 		else {
 			/* flush succeeded */
 			left_truncate_flush_queue(lg, fqueue_length);
-			MT_lock_unset(&lg->flush_lock);
-			return GDK_SUCCEED;
 		}
 	}
-	/* the transaction was already flushed in a group commit, no need to do anything */
-	else {
-		MT_lock_unset(&lg->flush_lock);
-		return GDK_SUCCEED;
-	}
+	/* else the transaction was already flushed in a group commit, no need to do anything */
+	MT_lock_unset(&lg->flush_lock);
+	return GDK_SUCCEED;
 }
 
 gdk_return
