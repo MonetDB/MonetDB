@@ -1436,16 +1436,16 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);
 		sql_create_func(sa, "right", "str", "stringright", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
 		sql_create_func(sa, "left", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
-		sql_create_func(sa, "upper", "str", "toUpper", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
-		sql_create_func(sa, "ucase", "str", "toUpper", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
-		sql_create_func(sa, "lower", "str", "toLower", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
-		sql_create_func(sa, "lcase", "str", "toLower", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
-		sql_create_func(sa, "trim", "str", "trim", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
-		sql_create_func(sa, "trim", "str", "trim2", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
-		sql_create_func(sa, "ltrim", "str", "ltrim", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
-		sql_create_func(sa, "ltrim", "str", "ltrim2", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
-		sql_create_func(sa, "rtrim", "str", "rtrim", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
-		sql_create_func(sa, "rtrim", "str", "rtrim2", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
+		sql_create_func(sa, "upper", "str", "toUpper", FALSE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "ucase", "str", "toUpper", FALSE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "lower", "str", "toLower", FALSE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "lcase", "str", "toLower", FALSE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "trim", "str", "trim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "trim", "str", "trim2", FALSE, FALSE, INOUT, 0, *t, 2, *t, *t);
+		sql_create_func(sa, "ltrim", "str", "ltrim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "ltrim", "str", "ltrim2", FALSE, FALSE, INOUT, 0, *t, 2, *t, *t);
+		sql_create_func(sa, "rtrim", "str", "rtrim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "rtrim", "str", "rtrim2", FALSE, FALSE, INOUT, 0, *t, 2, *t, *t);
 
 		sql_create_func(sa, "lpad", "str", "lpad", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
 		sql_create_func(sa, "lpad", "str", "lpad3", FALSE, FALSE, SCALE_NONE, 0, *t, 3, *t, INT, *t);

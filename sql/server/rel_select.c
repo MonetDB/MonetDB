@@ -2879,14 +2879,8 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 		}
 	}
 	if (f) {
-		if (check_card(card, f)) {
-			if (f->func->fix_scale == INOUT) {
-				sql_subtype *res = f->res->h->data;
-				res->digits = t->digits;
-				res->scale = t->scale;
-			}
+		if (check_card(card, f))
 			return exp_unop(sql->sa, e, f);
-		}
 		found = false; /* reset found */
 	}
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s unary operator %s%s%s'%s'(%s)",

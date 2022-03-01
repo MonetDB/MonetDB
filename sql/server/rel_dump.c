@@ -1418,16 +1418,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					return function_error_string(sql, tname, cname, exps, true, F_FUNC);
 				/* apply scale fixes if needed */
 				if (f && f->func->type != F_ANALYTIC) {
-					if (list_length(exps) == 1) {
-						if (f->func->fix_scale == INOUT) {
-							sql_subtype *t = exp_subtype(exps->h->data);
-							sql_subtype *res = f->res->h->data;
-
-							res->digits = t->digits;
-							res->scale = t->scale;
-						} else if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
-							return NULL;
-					} else if (list_length(exps) == 2) {
+					if (list_length(exps) == 2) {
 						sql_exp *l = exps->h->data;
 						sql_exp *r = exps->h->next->data;
 
