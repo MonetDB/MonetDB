@@ -3138,9 +3138,9 @@ bl_log_isnew(sqlstore *store)
 }
 
 static int
-bl_tstart(sqlstore *store, bool flush)
+bl_tstart(sqlstore *store, bool flush, int *log_tid)
 {
-	return log_tstart(store->logger, flush) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger, flush, log_tid) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
@@ -3150,9 +3150,15 @@ bl_tend(sqlstore *store)
 }
 
 static int
-bl_tdone(sqlstore *store, ulng commit_ts)
+bl_tflush(sqlstore *store, int log_tid)
 {
-	return log_tdone(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tflush(store->logger, log_tid) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static int
+bl_tdone(sqlstore *store, ulng commit_ts, int log_tid)
+{
+	return log_tdone(store->logger, commit_ts, log_tid) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
@@ -3552,6 +3558,7 @@ bat_logger_init( logger_functions *lf )
 	lf->log_isnew = bl_log_isnew;
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
+	lf->log_tflush = bl_tflush;
 	lf->log_tdone = bl_tdone;
 	lf->log_sequence = bl_sequence;
 	lf->get_snapshot_files = bl_snapshot;
