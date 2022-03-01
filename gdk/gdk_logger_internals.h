@@ -9,6 +9,8 @@
 #ifndef _LOGGER_INTERNALS_H_
 #define _LOGGER_INTERNALS_H_
 
+#define FLUSH_QUEUE_SIZE 2048 /* maximum size of the flush queue, i.e. maximum number of transactions committing simultaneously */
+
 typedef struct logged_range_t {
 	ulng id;			/* log file id */
 	int first_tid;		/* first */
@@ -63,6 +65,13 @@ struct logger {
 
 	void *buf;
 	size_t bufsize;
+
+	/* flush variables */
+	int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
+	int flush_queue_begin; /* start index of the queue */
+	int flush_queue_length; /* length of the queue */
+	MT_Lock flush_queue_lock; /* to protect the queue against concurrent reads and writes */
+	MT_Lock flush_lock; /* so only one transaction can flush to disk at any given time */
 };
 
 struct old_logger {

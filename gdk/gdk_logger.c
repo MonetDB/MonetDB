@@ -2093,6 +2093,12 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
 
+	// flush variables
+	MT_lock_init(&lg->flush_lock, "flush_lock");
+	MT_lock_init(&lg->flush_queue_lock, "flush_queue_lock");
+	lg->flush_queue_begin = 0;
+	lg->flush_queue_length = 0;
+
 	if (logger_load(debug, fn, logdir, lg, filename) == GDK_SUCCEED) {
 		return lg;
 	}
@@ -2699,24 +2705,82 @@ log_tend(logger *lg)
 		return GDK_SUCCEED;
 	}
 
-	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
-	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
-	    new_logfile(lg) != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "write failed\n");
-		return GDK_FAIL;
+	gdk_return write_format = log_write_format(lg, &l);
+	return write_format;
+}
+
+void
+add_tid_flush_queue(logger *lg, int tid) {
+	MT_lock_set(&lg->flush_queue_lock);
+	int end = (lg->flush_queue_begin + lg->flush_queue_length) % FLUSH_QUEUE_SIZE;
+	lg->flush_queue[end] = tid;
+	lg->flush_queue_length++;
+	MT_lock_unset(&lg->flush_queue_lock);
+}
+
+void
+left_truncate_flush_queue(logger *lg, int limit) {
+	MT_lock_set(&lg->flush_queue_lock);
+	lg->flush_queue_begin = (lg->flush_queue_begin + limit) % FLUSH_QUEUE_SIZE;
+	lg->flush_queue_length -= limit;
+	MT_lock_unset(&lg->flush_queue_lock);
+}
+
+int
+tid_in_flush_queue(logger *lg, int tid) {
+	for (int i = 0; i < lg->flush_queue_length; i++) {
+		int idx = (lg->flush_queue_begin + i) % FLUSH_QUEUE_SIZE;
+		if (lg->flush_queue[idx] == tid) {
+			return 1;
+		}
 	}
-	return GDK_SUCCEED;
+	return 0;
+}
+
+int 
+flush_queue_length(logger *lg) {
+	return lg->flush_queue_length;
 }
 
 gdk_return
-log_tdone(logger *lg, ulng commit_ts)
+log_tflush(logger *lg, int log_tid) {
+	add_tid_flush_queue(lg, log_tid);
+
+	MT_lock_set(&lg->flush_lock);
+	/* the transaction is not yet flushed */
+	if (tid_in_flush_queue(lg, log_tid)) {
+		/* number of transactions in the group commit */
+		int fqueue_length = flush_queue_length(lg);
+		/* flush + fsync */
+		if (mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
+				(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
+				new_logfile(lg) != GDK_SUCCEED) {
+			/* flush failed */
+			MT_lock_unset(&lg->flush_lock);
+			return GDK_FAIL;
+		}
+		else {
+			/* flush succeeded */
+			left_truncate_flush_queue(lg, fqueue_length);
+			MT_lock_unset(&lg->flush_lock);
+			return GDK_SUCCEED;
+		}
+	}
+	/* the transaction was already flushed in a group commit, no need to do anything */
+	else {
+		MT_lock_unset(&lg->flush_lock);
+		return GDK_SUCCEED;
+	}
+}
+
+gdk_return
+log_tdone(logger *lg, ulng commit_ts, int log_tid)
 {
 	if (lg->debug & 1)
-		fprintf(stderr, "#log_tdone %d\n", lg->tid);
+		fprintf(stderr, "#log_tdone %d\n", log_tid);
 
 	if (lg->current) {
-		lg->current->last_tid = lg->tid;
+		lg->current->last_tid = log_tid;
 		lg->current->last_ts = commit_ts;
 	}
 	return GDK_SUCCEED;
@@ -2884,7 +2948,7 @@ logger_find_bat(logger *lg, log_id id)
 
 
 gdk_return
-log_tstart(logger *lg, bool flushnow)
+log_tstart(logger *lg, bool flushnow, int *log_tid)
 {
 	logformat l;
 
@@ -2906,6 +2970,7 @@ log_tstart(logger *lg, bool flushnow)
 
 	l.flag = LOG_START;
 	l.id = ++lg->tid;
+	*log_tid = lg->tid;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
