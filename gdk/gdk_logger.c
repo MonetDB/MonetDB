@@ -2748,7 +2748,10 @@ tid_in_flush_queue(logger *lg, int tid) {
 
 int 
 flush_queue_length(logger *lg) {
-	return lg->flush_queue_length;
+	MT_lock_set(&lg->flush_queue_lock);
+	int fql = lg->flush_queue_length; // Protect against add_tid_flush_queue
+	MT_lock_unset(&lg->flush_queue_lock);
+	return fql;
 }
 
 gdk_return
