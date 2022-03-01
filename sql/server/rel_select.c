@@ -2854,35 +2854,31 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 			return NULL;
 	}
 
-	/* try to find the function without a type, and convert
-	 * the value to the type needed by this function!
-	 */
-	if (!f) {
-		while ((f = find_func(sql, sname, fname, 1, type, false, f, &found)) != NULL) {
-			list *args = list_append(sa_list(sql->sa), e);
-
-			if (!check_card(card, f)) {
-				found = false; /* reset found */
-				continue;
-			}
-			if (!f->func->vararg)
-				args = check_arguments_and_find_largest_any_type(sql, rel, args, f, card == card_relation && e->card > CARD_ATOM);
-			if (args) {
-				e = args->h->data;
-				break;
-			}
-
-			/* reset error */
-			sql->session->status = 0;
-			sql->errstr[0] = '\0';
-			found = false;
-		}
-	}
 	if (f) {
 		if (check_card(card, f))
 			return exp_unop(sql->sa, e, f);
 		found = false; /* reset found */
+		f = NULL;
 	}
+	/* try to find the function without a type, and convert
+	 * the value to the type needed by this function!
+	 */
+	while ((f = find_func(sql, sname, fname, 1, type, false, f, &found)) != NULL) {
+		if (check_card(card, f)) {
+			list *args = list_append(sa_list(sql->sa), e);
+			if (!f->func->vararg)
+				args = check_arguments_and_find_largest_any_type(sql, rel, args, f, card == card_relation && e->card > CARD_ATOM);
+			if (args)
+				return exp_op(sql->sa, args, f);
+		}
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		found = false; /* reset found */
+	}
+	/* reset error */
+	sql->session->status = 0;
+	sql->errstr[0] = '\0';
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s unary operator %s%s%s'%s'(%s)",
 					 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, t ? t->type->base.name : "?");
 }
