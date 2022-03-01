@@ -4784,7 +4784,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		node *n;
 		sql_rel *l = rel->l, *ll = NULL, *lr = NULL;
 		sql_rel *r = rel->r;
-		list *exps = rel->exps, *nsexps, *njexps;
+		list *exps = rel->exps, *nsexps, *njexps, *nsattr, *njattr;
 		int left = 1, right = 1;
 
 		/* handle project
@@ -4829,18 +4829,22 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		if (right && is_left(lop))
 			return rel;
 		nsexps = exps_copy(v->sql, rel->exps);
+		nsattr = exps_copy(v->sql, rel->attr);
 		njexps = exps_copy(v->sql, l->exps);
+		njattr = exps_copy(v->sql, l->attr);
 		if (left)
 			l = rel_crossproduct(v->sql->sa, rel_dup(ll), rel_dup(r), op);
 		else
 			l = rel_crossproduct(v->sql->sa, rel_dup(lr), rel_dup(r), op);
 		l->exps = nsexps;
+		l->attr = nsattr;
 		set_processed(l);
 		if (left)
 			l = rel_crossproduct(v->sql->sa, l, rel_dup(lr), lop);
 		else
 			l = rel_crossproduct(v->sql->sa, rel_dup(ll), l, lop);
 		l->exps = njexps;
+		l->attr = njattr;
 		set_processed(l);
 		rel_destroy(rel);
 		rel = l;
@@ -4914,7 +4918,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 {
 	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
-		list *exps = rel->exps;
+		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
 
 		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
@@ -4955,7 +4959,9 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			nl = rel_crossproduct(v->sql->sa, ll, rel_dup(or), rel->op);
 			nr = rel_crossproduct(v->sql->sa, lr, rel_dup(or), rel->op);
 			nl->exps = exps_copy(v->sql, exps);
+			nl->attr = exps_copy(v->sql, attr);
 			nr->exps = exps_copy(v->sql, exps);
+			nr->attr = exps_copy(v->sql, attr);
 			set_processed(nl);
 			set_processed(nr);
 			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
@@ -5004,7 +5010,9 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			nl = rel_crossproduct(v->sql->sa, ll, rl, rel->op);
 			nr = rel_crossproduct(v->sql->sa, lr, rr, rel->op);
 			nl->exps = exps_copy(v->sql, exps);
+			nl->attr = exps_copy(v->sql, attr);
 			nr->exps = exps_copy(v->sql, exps);
+			nr->attr = exps_copy(v->sql, attr);
 			set_processed(nl);
 			set_processed(nr);
 			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
@@ -5037,7 +5045,9 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			nl = rel_crossproduct(v->sql->sa, rel_dup(ol), rl, rel->op);
 			nr = rel_crossproduct(v->sql->sa, rel_dup(ol), rr, rel->op);
 			nl->exps = exps_copy(v->sql, exps);
+			nl->attr = exps_copy(v->sql, attr);
 			nr->exps = exps_copy(v->sql, exps);
+			nr->attr = exps_copy(v->sql, attr);
 			set_processed(nl);
 			set_processed(nr);
 			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
@@ -5086,6 +5096,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 				}
 				nl = rel_crossproduct(v->sql->sa, rel_dup(ol), rl, rel->op);
 				nl->exps = exps_copy(v->sql, exps);
+				nl->attr = exps_copy(v->sql, attr);
 				set_processed(nl);
 				v->changes++;
 				return rel_inplace_project(v->sql->sa, rel, nl, rel_projections(v->sql, rel, NULL, 1, 1));
@@ -5106,6 +5117,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 				}
 				nl = rel_crossproduct(v->sql->sa, rel_dup(ol), rr, rel->op);
 				nl->exps = exps_copy(v->sql, exps);
+				nl->attr = exps_copy(v->sql, attr);
 				set_processed(nl);
 				v->changes++;
 				return rel_inplace_project(v->sql->sa, rel, nl, rel_projections(v->sql, rel, NULL, 1, 1));
@@ -5144,6 +5156,8 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 			sql_rel *nl = rel_crossproduct(v->sql->sa, rel_dup(l), rl, rel->op);
 			r->l = nl;
 			nl->exps = njexps;
+			nl->attr = rel->attr;
+			rel->attr = NULL;
 			set_processed(nl);
 			rel_dup(r);
 			rel_destroy(rel);
@@ -8410,6 +8424,8 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 
 			rel->exps = r->exps;
 			r->exps = NULL;
+			rel->attr = r->attr;
+			r->attr = NULL;
 			rel_destroy(or);
 			v->changes++;
 		}
@@ -8520,6 +8536,7 @@ rel_rewrite_antijoin(visitor *v, sql_rel *rel)
 
 		nl = rel_crossproduct(v->sql->sa, rel->l, rl, op_anti);
 		nl->exps = exps_copy(v->sql, rel->exps);
+		nl->attr = exps_copy(v->sql, rel->attr);
 		set_processed(nl);
 		rel->l = nl;
 		rel->r = rr;
