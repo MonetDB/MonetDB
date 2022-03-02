@@ -2756,6 +2756,11 @@ flush_queue_length(logger *lg) {
 
 gdk_return
 log_tflush(logger *lg, int log_tid) {
+
+	if (LOG_DISABLED(lg)) {
+		return GDK_SUCCEED;
+	}
+
 	add_tid_flush_queue(lg, log_tid);
 
 	MT_lock_set(&lg->flush_lock);
