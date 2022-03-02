@@ -3748,7 +3748,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			if (a) {
 				list *nexps = NULL;
 
-				if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+				if (!(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
 					a = NULL;
 					/* reset error */
 					sql->session->status = 0;
