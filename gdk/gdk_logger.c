@@ -107,42 +107,20 @@ logger_unlock(logger *lg)
 	MT_lock_unset(&lg->lock);
 }
 
-static bte
+static inline bte
 find_type(logger *lg, int tpe)
 {
-	BATiter cni = bat_iterator_nolock(lg->type_nr);
-	bte *res = (bte*)Tloc(lg->type_id, 0);
-	BUN p;
-
-	/* type should be there !*/
-	if (BAThash(lg->type_nr) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&cni.b->thashlock);
-		HASHloop_int(cni, cni.b->thash, p, &tpe) {
-			MT_rwlock_rdunlock(&cni.b->thashlock);
-			return res[p];
-		}
-		MT_rwlock_rdunlock(&cni.b->thashlock);
-	}
-	return -1;
+	assert(tpe >= 0 && tpe < MAXATOMS);
+	return lg->type_id[tpe];
 }
 
-static int
+static inline int
 find_type_nr(logger *lg, bte tpe)
 {
-	BATiter cni = bat_iterator_nolock(lg->type_id);
-	int *res = (int*)Tloc(lg->type_nr, 0);
-	BUN p;
-
-	/* type should be there !*/
-	if (BAThash(lg->type_id) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&cni.b->thashlock);
-		HASHloop_bte(cni, cni.b->thash, p, &tpe) {
-			MT_rwlock_rdunlock(&cni.b->thashlock);
-			return res[p];
-		}
-		MT_rwlock_rdunlock(&cni.b->thashlock);
-	}
-	return -1;
+	int nr = lg->type_nr[tpe < 0 ? 256 + tpe : tpe];
+	if (nr == 255)
+		return -1;
+	return nr;
 }
 
 static BUN
@@ -792,11 +770,10 @@ logger_write_new_types(logger *lg, FILE *fp, bool append)
 	for (int i = 0; i < GDKatomcnt; i++) {
 		if (ATOMvarsized(i))
 			continue;
-		if (append &&
-		    (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
-		     BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
-		     BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED))
-			return GDK_FAIL;
+		if (append) {
+			lg->type_id[i] = id;
+			lg->type_nr[id] = i;
+		}
 		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
 			return GDK_FAIL;
 		id++;
@@ -806,11 +783,10 @@ logger_write_new_types(logger *lg, FILE *fp, bool append)
 	for (int i = 0; i < GDKatomcnt; i++) {
 		if (!ATOMvarsized(i))
 			continue;
-		if (append &&
-		    (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
-		     BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
-		     BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED))
-			return GDK_FAIL;
+		if (append) {
+			lg->type_id[i] = id;
+			lg->type_nr[256 + id] = i;
+		}
 		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
 			return GDK_FAIL;
 		id++;
@@ -952,16 +928,12 @@ logger_read_types_file(logger *lg, FILE *fp)
 	while(fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
 		int i = ATOMindex(atom_name);
 
-		if (id > 255 || i < 0) {
+		if (id < -127 || id > 127 || i < 0) {
 			GDKerror("unknown type in log file '%s'\n", atom_name);
 			return GDK_FAIL;
 		}
-		bte lid = (bte)id;
-		if (BUNappend(lg->type_id, &lid, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nme, atom_name, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED) {
-			return GDK_FAIL;
-		}
+		lg->type_id[i] = (int8_t) id;
+		lg->type_nr[id < 0 ? 256 + id : id] = i;
 	}
 	return GDK_SUCCEED;
 }
@@ -1803,10 +1775,6 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	lg->seqs_val = NULL;
 	lg->dseqs = NULL;
 
-	lg->type_id = NULL;
-	lg->type_nme = NULL;
-	lg->type_nr = NULL;
-
 	if (!LOG_DISABLED(lg)) {
 		/* try to open logfile backup, or failing that, the file
 		 * itself. we need to know whether this file exists when
@@ -1831,18 +1799,9 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 	catalog_bid = BBPindex(bak);
 
-	/* create transient bats for type mapping, to be read from disk */
-	lg->type_id = logbat_new(TYPE_bte, BATSIZE, TRANSIENT);
-	lg->type_nme = logbat_new(TYPE_str, BATSIZE, TRANSIENT);
-	lg->type_nr = logbat_new(TYPE_int, BATSIZE, TRANSIENT);
-
-	if (lg->type_id == NULL || lg->type_nme == NULL || lg->type_nr == NULL) {
-		if (fp)
-			fclose(fp);
-		fp = NULL;
-		GDKerror("cannot create type bats");
-		goto error;
-	}
+	/* initialize arrays for type mapping, to be read from disk */
+	memset(lg->type_id, -1, sizeof(lg->type_id));
+	memset(lg->type_nr, 255, sizeof(lg->type_nr));
 
 	/* this is intentional - if catalog_bid is 0, force it to find
 	 * the persistent catalog */
@@ -2070,9 +2029,6 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	logbat_destroy(lg->seqs_id);
 	logbat_destroy(lg->seqs_val);
 	logbat_destroy(lg->dseqs);
-	logbat_destroy(lg->type_id);
-	logbat_destroy(lg->type_nme);
-	logbat_destroy(lg->type_nr);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->local_dir);

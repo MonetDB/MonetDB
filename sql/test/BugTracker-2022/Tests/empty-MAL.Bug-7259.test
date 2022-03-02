@@ -1,0 +1,24 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE Test (x int)
+
+query I nosort
+SELECT * FROM Test
+WHERE x IN (SELECT x FROM Test) AND (x IN (SELECT x FROM Test) OR (x IN (SELECT x FROM Test)))
+----
+
+statement ok rowcount 3
+INSERT INTO Test VALUES (1),(2),(3)
+
+query I rowsort
+SELECT * FROM Test
+WHERE x IN (SELECT x FROM Test) AND (x IN (SELECT x FROM Test) OR (x IN (SELECT x FROM Test)))
+----
+1
+2
+3
+
+statement ok
+ROLLBACK

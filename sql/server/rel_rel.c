@@ -529,7 +529,6 @@ rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps)
 	rel->r = NULL;
 	rel->op = op_select;
 	rel->exps = exps;
-	rel->card = exps_card(exps);
 	rel->card = CARD_ATOM; /* no relation */
 	if (l) {
 		rel->card = l->card;
@@ -1551,7 +1550,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 		return sql_error(sql, 10, SQLSTATE(42000) "Query projection must have at least one parameter with known SQL type");
 
 	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_unique(e), is_intern(e));
-	e = exp_unop(sql->sa, e, sql_bind_func(sql, "sys", "identity", exp_subtype(e), NULL, F_FUNC));
+	e = exp_unop(sql->sa, e, sql_bind_func(sql, "sys", "identity", exp_subtype(e), NULL, F_FUNC, true));
 	set_intern(e);
 	set_has_no_nil(e);
 	set_unique(e);
@@ -1564,6 +1563,10 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 sql_rel *
 rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
+	if (rel && is_basetable(rel->op)) { /* for base table relations just use TID column as identity */
+		*exp = basetable_get_tid_or_add_it(sql, rel);
+		return rel;
+	}
 	if (rel && is_simple_project(rel->op) && !need_distinct(rel) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
 		return rel;
 	return _rel_add_identity(sql, rel, exp);
@@ -1574,6 +1577,10 @@ rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
 	sql_rel *l = rel, *p = rel;
 
+	if (rel && is_basetable(rel->op)) { /* for base table relations just use TID column as identity */
+		*exp = basetable_get_tid_or_add_it(sql, rel);
+		return rel;
+	}
 	if (rel && is_simple_project(rel->op) && !need_distinct(rel) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
 		return rel;
 	while(l && !is_set(l->op) && rel_has_freevar(sql, l) && l->l) {
@@ -1699,7 +1706,7 @@ rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 			if (!has_label(e))
 				exp_label(sql->sa, e, ++sql->label);
 			sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
-			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
+			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR, true);
 
 			e = exp_ref(sql, e);
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));

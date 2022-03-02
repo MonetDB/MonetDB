@@ -40,6 +40,7 @@ target_sources(bat
   PRIVATE
   gdk_select.c
   gdk_calc.c gdk_calc.h
+  gdk_calc_addsub.c gdk_calc_muldiv.c gdk_calc_convert.c gdk_calc_compare.c
   gdk_calc_compare.h gdk_calc_private.h
   gdk_ssort.c gdk_ssort_impl.h
   gdk_aggr.c
@@ -80,6 +81,7 @@ target_sources(bat
   gdk_firstn.c
   gdk_subquery.c gdk_subquery.h
   gdk_analytic_bounds.c
+  gdk_analytic_statistics.c
   gdk_analytic_func.c
   gdk_analytic.h
   gdk_tracer.c gdk_tracer.h
@@ -89,7 +91,6 @@ target_sources(bat
 
 target_include_directories(bat
   PUBLIC
-  $<$<BOOL:${UUID_FOUND}>:$<TARGET_PROPERTY:UUID::UUID,INTERFACE_INCLUDE_DIRECTORIES>>
   $<TARGET_PROPERTY:stream,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:matomic,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mstring,INTERFACE_INCLUDE_DIRECTORIES>
@@ -106,7 +107,6 @@ target_link_libraries(bat
   mutils
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:ws2_32>
-  $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
   $<$<BOOL:${KVM_FOUND}>:KVM::KVM>
   ${CMAKE_DL_LIBS}
   Threads::Threads)

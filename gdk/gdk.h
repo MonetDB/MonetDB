@@ -483,15 +483,7 @@ typedef float flt;
 typedef double dbl;
 typedef char *str;
 
-#ifdef HAVE_UUID_UUID_H
-#include <uuid/uuid.h>
-#endif
-
-#ifdef HAVE_UUID
-#define UUID_SIZE	((int) sizeof(uuid_t)) /* size of a UUID */
-#else
 #define UUID_SIZE	16	/* size of a UUID */
-#endif
 #define UUID_STRLEN	36	/* length of string representation */
 
 typedef union {
@@ -500,11 +492,7 @@ typedef union {
 #else
 	lng l[2];		/* force alignment, not otherwise used */
 #endif
-#ifdef HAVE_UUID
-	uuid_t u;
-#else
 	uint8_t u[UUID_SIZE];
-#endif
 } uuid;
 
 typedef struct {

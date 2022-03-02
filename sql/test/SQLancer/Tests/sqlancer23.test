@@ -1,0 +1,86 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0 (c0 INT)
+
+query I nosort
+SELECT 1 FROM (SELECT 1 FROM t0 JOIN (SELECT EXISTS (SELECT 1)) x(x) ON x.x = (VALUES (x.x))) vx(vx)
+JOIN (VALUES (1, 2)) x(x,y) ON vx = ANY(SELECT vx)
+----
+
+query I nosort
+SELECT 1 FROM t0 WHERE (TRUE AND (SELECT TRUE)) OR (TRUE AND (SELECT TRUE))
+----
+
+query I nosort
+SELECT 1 FROM t0 JOIN (SELECT 1) x(x) ON (VALUES (x.x)) RIGHT OUTER JOIN (SELECT 3) y(y)
+ON (SELECT y.y WHERE x.x)
+----
+
+statement ok
+create view vx(vx) as (select distinct 2)
+
+query I nosort
+SELECT 1 FROM vx WHERE 1 <> ALL(VALUES (10), (vx.vx))
+----
+1
+
+# this one is right
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(1 <> ALL(VALUES (10), (vx.vx)) AS INT) as count FROM vx) as res
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT 2) vy(vc1) WHERE EXISTS (VALUES (vc1))
+----
+1
+
+query I nosort
+SELECT vy.vc2 <> ALL(SELECT DISTINCT (SELECT 4 WHERE TRUE) FROM (SELECT 'a') y(y) JOIN LATERAL (SELECT 1) AS x(x)
+ON vy.vc0 LIKE y.y) FROM (SELECT DISTINCT '1', 2) vy(vc0, vc2)
+----
+1
+
+query I nosort
+SELECT 3 <> ALL(VALUES (vz.z)) FROM ((SELECT 1) INTERSECT DISTINCT (SELECT 2)) vz(z)
+----
+
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT 2) vx(vc1) WHERE NOT EXISTS (VALUES (TRUE), (EXISTS (SELECT vx.vc1)))
+----
+
+statement ok
+create view vy(vc0) as ((select 'a') union all (select z.z from (SELECT 1) y(y)
+cross join lateral (select 'v' where y.y > y.y) as z(z)))
+
+query I nosort
+SELECT ((SELECT y.y) EXCEPT ALL (SELECT count(*) FROM vy)) FROM (SELECT 1) y(y)
+----
+NULL
+
+query I nosort
+SELECT 2 FROM (SELECT FALSE GROUP BY 'a', FALSE) y(y) WHERE y.y
+----
+
+query I nosort
+SELECT (SELECT (VALUES (x.x)) FROM (VALUES (1),(2)) x(x) JOIN (VALUES (1, t0.c0, TRUE),
+(7, 9, FALSE)) y(a,b,c) ON y.c) FROM t0
+----
+
+statement ok
+ROLLBACK
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
+
+# these are right
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
