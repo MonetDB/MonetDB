@@ -5021,13 +5021,21 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (!(wf = bind_func_(sql, sname, aname, types, F_ANALYTIC, false, &found))) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
-		if (!(wf = find_func(sql, sname, aname, list_length(types), F_ANALYTIC, false, NULL, &found))) {
-			char *arg_list = nfargs ? nary_function_arg_types_2str(sql, types, nfargs) : NULL;
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s window function %s%s%s'%s'(%s)",
-							 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", aname, arg_list ? arg_list : "");
+		if ((wf = find_func(sql, sname, aname, list_length(types), F_ANALYTIC, false, NULL, &found))) {
+			if (!list_empty(fargs) && !(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0))) {
+				sql->session->status = 0; /* reset error */
+				sql->errstr[0] = '\0';
+				found = false; /* reset found */
+			}
+		} else {
+			sql->session->status = 0; /* if the function was not found clean the error */
+			sql->errstr[0] = '\0';
 		}
-		if (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))
-			return NULL;
+	}
+	if (!wf) {
+		char *arg_list = nfargs ? nary_function_arg_types_2str(sql, types, nfargs) : NULL;
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s window function %s%s%s'%s'(%s)",
+						 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", aname, arg_list ? arg_list : "");
 	}
 
 	/* Frame */
