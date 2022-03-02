@@ -43,13 +43,13 @@ ON vy.vc0 LIKE y.y) FROM (SELECT DISTINCT '1', 2) vy(vc0, vc2)
 ----
 1
 
-query I nosort
-SELECT 3 <> ALL(VALUES (vz.z)) FROM ((SELECT 1) INTERSECT DISTINCT (SELECT 2)) vz(z)
-----
+#query I nosort
+#SELECT 3 <> ALL(VALUES (vz.z)) FROM ((SELECT 1) INTERSECT DISTINCT (SELECT 2)) vz(z)
+#----
 
-query I nosort
-SELECT 1 FROM (SELECT DISTINCT 2) vx(vc1) WHERE NOT EXISTS (VALUES (TRUE), (EXISTS (SELECT vx.vc1)))
-----
+#query I nosort
+#SELECT 1 FROM (SELECT DISTINCT 2) vx(vc1) WHERE NOT EXISTS (VALUES (TRUE), (EXISTS (SELECT vx.vc1)))
+#----
 
 statement ok
 create view vy(vc0) as ((select 'a') union all (select z.z from (SELECT 1) y(y)
@@ -72,10 +72,10 @@ SELECT (SELECT (VALUES (x.x)) FROM (VALUES (1),(2)) x(x) JOIN (VALUES (1, t0.c0,
 statement ok
 ROLLBACK
 
-statement error GDK reported error: mergejoin: more than one match
+statement error 21000!Cardinality violation, scalar value expected
 SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 
-statement error GDK reported error: mergejoin: more than one match
+statement error 21000!Cardinality violation, scalar value expected
 SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
 
 # these are right
