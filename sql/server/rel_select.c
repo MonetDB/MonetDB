@@ -3732,6 +3732,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	} else
 		a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false);
 
+	if (a) {
+		found = true;
+		if (!execute_priv(sql, a->func))
+			a = NULL;
+	} else {
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+	}
+
 	if (!a && list_length(exps) > 1) {
 		sql_subtype *t1 = exp_subtype(exps->h->data);
 		a = sql_bind_member(sql, sname, aname, exp_subtype(exps->h->data), F_AGGR, list_length(exps), false, NULL);
@@ -3740,114 +3750,133 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 						&((sql_arg*)a->func->ops->h->data)->type,
 						&((sql_arg*)a->func->ops->h->next->data)->type) != 0) )  {
 			if (a) {
-				node *n, *op = a->func->ops->h;
-				list *nexps = sa_list(sql->sa);
+				list *nexps = NULL;
+				found = true; /* something was found */
 
-				for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
-					sql_arg *arg = op->data;
-					sql_exp *e = n->data;
-
-					e = exp_check_type(sql, &arg->type, *rel, e, type_equal); /* rel is a valid pointer */
-					if (!e)
-						a = NULL;
-					list_append(nexps, e);
-				}
-				if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
+				if (!execute_priv(sql, a->func)) {
+					a = NULL;
+				} else if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+					a = NULL;
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					found = false; /* reset found */
+				} else
 					exps = nexps;
+			} else {
+				/* reset error */
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
 			}
 		} else {
-			sql_exp *l = exps->h->data, *ol = l;
-			sql_exp *r = exps->h->next->data, *or = r;
+			sql_exp *l = exps->h->data, *ol = l, *r = exps->h->next->data, *or = r;
 			sql_subtype *t2 = exp_subtype(r);
 
-			a = NULL; /* reset a */
-			if (rel_convert_types(sql, *rel, *rel, &l, &r, 1/*fix scale*/, type_equal) >= 0){
+			if (!a) {
+				/* reset error */
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+			}
+			a = NULL;
+			if (rel_convert_types(sql, *rel, *rel, &l, &r, 1/*fix scale*/, type_equal) >= 0) {
 				list *tps = sa_list(sql->sa);
 
 				t1 = exp_subtype(l);
 				list_append(tps, t1);
 				t2 = exp_subtype(r);
 				list_append(tps, t2);
-				a = sql_bind_func_(sql, sname, aname, tps, F_AGGR, false);
-			}
-			if (!a) {
+
+				if ((a = sql_bind_func_(sql, sname, aname, tps, F_AGGR, false))) {
+					found = true;
+					if (!execute_priv(sql, a->func))
+						a = NULL;
+					else
+						exps = list_append(list_append(sa_list(sql->sa),l),r);
+				} else {
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+				}
+				if (!a) {
+					l = ol;
+					r = or;
+				}
+			} else {
+				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
-
-				l = ol;
-				r = or;
-			} else {
-				list *nexps = sa_list(sql->sa);
-
-				append(nexps,l);
-				append(nexps,r);
-				exps = nexps;
 			}
 		}
 	}
-	if (!a) { /* find aggr + convert */
+	if (!a && !list_empty(exps)) { /* find aggr + convert */
 		/* try larger numeric type */
-		node *n;
 		list *nexps = sa_list(sql->sa);
-
-		for (n = exps->h ;  n; n = n->next ) {
+		for (node *n = exps->h ; n; n = n->next ) {
 			sql_exp *e = n->data;
 
 			/* cast up, for now just dec to double */
-			e = exp_numeric_supertype(sql, e);
-			if (!e)
+			if (!(e = exp_numeric_supertype(sql, e)))
 				break;
 			list_append(nexps, e);
 		}
-		a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false);
-		if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
-			exps = nexps;
-		if (!a) {
-			list *aggrs = sql_find_funcs(sql, sname, aname, list_length(exps), F_AGGR, false);
+		if (list_length(nexps) == list_length(exps)) { /* was able to upcast every input */
+			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false);
 
-			if (!list_empty(aggrs)) {
-				found = true;
-				int type_misses = 0;
-
-				for (node *m = aggrs->h ; m; m = m->next) {
-					list *nexps = sa_list(sql->sa);
-					node *n, *op;
-					a = (sql_subfunc *) m->data;
-					op = a->func->ops->h;
-
-					if (!execute_priv(sql, a->func))
-						a = NULL;
-					for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
-						sql_arg *arg = op->data;
-						sql_exp *e = n->data;
-
-						e = exp_check_type(sql, &arg->type, *rel, e, type_equal); /* rel is a valid pointer */
-						if (!e) {
-							a = NULL;
-							type_misses++;
-						}
-						list_append(nexps, e);
-					}
-					if (a) {
-						if (list_length(nexps)) /* count(col) has |exps| != |nexps| */
-							exps = nexps;
-						/* reset error */
-						sql->session->status = 0;
-						sql->errstr[0] = '\0';
-						break;
-					}
-				}
-				found &= !type_misses; /* if 'a' was found but the types didn't match don't give permission error */
+			if (a) {
+				found = true; /* something was found */
+				if (!execute_priv(sql, a->func))
+					a = NULL;
+				else if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+					a = NULL;
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					found = false; /* reset found */
+				} else
+					exps = nexps;
+			} else {
+				/* reset error */
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
 			}
+		} else {
+			/* reset convert error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
 		}
 	}
-	found |= a != NULL;
-	if (a && execute_priv(sql, a->func)) {
+	if (!a) {
+		list *aggrs = sql_find_funcs(sql, sname, aname, list_length(exps), F_AGGR, false);
+
+		if (!list_empty(aggrs)) {
+			for (node *m = aggrs->h ; m; m = m->next) {
+				list *nexps = NULL;
+				a = (sql_subfunc *) m->data;
+				found = true; /* something was found */
+
+				if (!execute_priv(sql, a->func)) {
+					a = NULL;
+				} else if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+					a = NULL;
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					found = false; /* reset found */
+				} else {
+					exps = nexps;
+					break;
+				}
+			}
+		} else {
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+		}
+	}
+	if (a) {
 		bool hasnil = have_nil(exps) || (strcmp(aname, "count") != 0 && (!groupby || list_empty(groupby->r))); /* for global case, the aggregate may return NULL */
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, hasnil);
 
-		sql->session->status = 0; /* if the function was not found clean the error */
-		sql->errstr[0] = '\0';
 		if (!groupby)
 			return e;
 		if (all_freevar)
@@ -3863,18 +3892,15 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			return e;
 		}
 		return e;
-	} else {
-		char *type = "unknown";
-		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
-
-		if (exps->h) {
-			sql_exp *e = exps->h->data;
-			type = exp_subtype(e)->type->base.name;
-		}
-
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s: %s aggregate %s%s%s'%s'(%s)", toUpperCopy(uaname, aname), found ? "insufficient privileges for" : "no such",
-						 sname ? "'":"", sname ? sname : "", sname ? "'.":"", aname, type);
 	}
+	char *type = "unknown", *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+
+	if (!list_empty(exps)) {
+		sql_exp *e = exps->h->data;
+		type = exp_subtype(e)->type->base.name;
+	}
+	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s: %s aggregate %s%s%s'%s'(%s)", toUpperCopy(uaname, aname), found ? "insufficient privileges for" : "no such",
+					 sname ? "'":"", sname ? sname : "", sname ? "'.":"", aname, type);
 }
 
 static sql_exp *
