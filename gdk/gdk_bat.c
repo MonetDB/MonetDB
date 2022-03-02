@@ -1087,7 +1087,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
-	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		MT_lock_set(&b->theaplock);
 		b->tunique_est = 0;
 		MT_lock_unset(&b->theaplock);
@@ -1357,11 +1357,10 @@ BUNdelete(BAT *b, oid o)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			msk mval = mskGetVal(b, BUNlast(b) - 1);
-			HASHdelete(b, BUNlast(b) - 1, &mval);
+			assert(b->thash == NULL);
 			mskSetVal(b, p, mval);
 			/* don't leave garbage */
 			mskClr(b, BUNlast(b) - 1);
-			HASHinsert(b, p, &mval);
 		} else {
 			val = Tloc(b, BUNlast(b) - 1);
 			HASHdelete(b, BUNlast(b) - 1, val);
@@ -1384,7 +1383,7 @@ BUNdelete(BAT *b, oid o)
 		b->tnorevsorted = 0;
 	MT_lock_set(&b->theaplock);
 	b->batCount--;
-	if (BATcount(b) < GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+	if (BATcount(b) < gdk_unique_estimate_keep_fraction)
 		b->tunique_est = 0;
 	MT_lock_unset(&b->theaplock);
 	if (b->batCount <= 1) {
@@ -1436,7 +1435,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		b->tminpos = BUN_NONE;
 		b->tmaxpos = BUN_NONE;
 		b->tunique_est = 0.0;
-	} else if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+	} else if (count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
 	MT_lock_unset(&b->theaplock);

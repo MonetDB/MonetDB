@@ -1606,7 +1606,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (wanthash && !havehash) {
 			MT_lock_set(&b->theaplock);
 			if (b->tunique_est != 0 &&
-			    b->tunique_est < BATcount(b) / NO_HASH_SELECT_FRACTION) {
+			    b->tunique_est < BATcount(b) / no_hash_select_fraction) {
 				/* too many duplicates: not worth it */
 				wanthash = false;
 			}

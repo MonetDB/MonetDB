@@ -261,9 +261,8 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 		list *l = exp_get_values(e);
 		e = l->h->data;
 	}
-	a_func = sql_bind_func(sql, "sys", anyequal ? "sql_anyequal" : "sql_not_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC);
-	if (!a_func)
-		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(le)->type->base.name);
+	if (!(a_func = sql_bind_func(sql, "sys", anyequal ? "sql_anyequal" : "sql_not_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC, true)))
+		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(e) ? exp_subtype(e)->type->base.name : "unknown");
 	e = exp_binop(sql->sa, le, vals, a_func);
 	if (e) {
 		unsigned int exps_card = CARD_ATOM;
@@ -289,7 +288,7 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 sql_exp *
 exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier)
 {
-	sql_subfunc *cmp_func = sql_bind_func(sql, "sys", compareop, exp_subtype(le), exp_subtype(le), F_FUNC);
+	sql_subfunc *cmp_func = sql_bind_func(sql, "sys", compareop, exp_subtype(le), exp_subtype(le), F_FUNC, true);
 	sql_exp *e;
 
 	assert(cmp_func);
@@ -1675,7 +1674,7 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_r
 				ne = e;
 		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op))) ||
 					(!list_empty(rel->attr) && is_join(rel->op))) {
-			list *l = rel->attr ? rel->attr : rel->exps; 
+			list *l = rel->attr ? rel->attr : rel->exps;
 			if (e->l) {
 				ne = exps_bind_column2(l, e->l, e->r, NULL);
 			} else {

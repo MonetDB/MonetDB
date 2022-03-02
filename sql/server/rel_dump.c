@@ -1281,7 +1281,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 					if (sname && !mvc_bind_schema(sql, sname))
 						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
-					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT)))
+					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT, true)))
 						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Filter: missing function '%s'.'%s'\n", sname, fname);
 					if (!execute_priv(sql, f->func))
 						return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'.'%s'\n", sname, fname);
@@ -1395,9 +1395,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				list *ops = sa_list(sql->sa);
 				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
-				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR);
+				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR, true);
 			} else {
-				f = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
+				f = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR, true); /* count(*) */
 			}
 			if (!f)
 				return function_error_string(sql, tname, cname, exps, false, F_AGGR);
@@ -1410,7 +1410,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			int nops = list_length(exps);
 			if (!strcmp(tname, "sys") && (!strcmp(cname, "case") || !strcmp(cname, "casewhen") || !strcmp(cname, "coalesce") || !strcmp(cname, "nullif"))) {
 				/* these functions are bound on a different way */
-				if ((f = sql_find_func(sql, NULL, cname, 2, F_FUNC, NULL))) {
+				if ((f = sql_find_func(sql, NULL, cname, 2, F_FUNC, true, NULL))) {
 					if (!execute_priv(sql, f->func))
 						return function_error_string(sql, tname, cname, exps, true, F_FUNC);
 					sql_exp *res = exps->t->data;
@@ -1422,41 +1422,32 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
 
-				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC);
+				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC, true);
 				if (!f) {
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true);
 				}
 				if (!f && nops > 1) { /* window functions without frames get 2 extra arguments */
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
 					list_remove_node(ops, NULL, ops->t);
 					list_remove_node(ops, NULL, ops->t);
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true);
 				}
 				if (!f && nops > 4) { /* window functions with frames get 5 extra arguments */
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
 					for (int i = 0 ; i < 3 ; i++)
 						list_remove_node(ops, NULL, ops->t);
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true);
 				}
 
 				if (f && !execute_priv(sql, f->func))
 					return function_error_string(sql, tname, cname, exps, true, F_FUNC);
 				/* apply scale fixes if needed */
 				if (f && f->func->type != F_ANALYTIC) {
-					if (list_length(exps) == 1) {
-						if (f->func->fix_scale == INOUT) {
-							sql_subtype *t = exp_subtype(exps->h->data);
-							sql_subtype *res = f->res->h->data;
-
-							res->digits = t->digits;
-							res->scale = t->scale;
-						} else if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
-							return NULL;
-					} else if (list_length(exps) == 2) {
+					if (list_length(exps) == 2) {
 						sql_exp *l = exps->h->data;
 						sql_exp *r = exps->h->next->data;
 

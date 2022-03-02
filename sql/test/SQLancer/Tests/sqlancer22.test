@@ -700,6 +700,21 @@ SELECT min((SELECT CASE t0.c0 WHEN t0.c0 THEN t0.c0 END)) FROM t0
 ----
 NULL
 
+query I nosort
+SELECT 1 FROM (SELECT 2) AS x(x) LEFT OUTER JOIN (SELECT 3) y(y) ON (SELECT TRUE) OR (SELECT TRUE)
+----
+1
+
+query I nosort
+SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT 1 FROM (SELECT t0.c0 FROM t0) y(y) CROSS JOIN LATERAL (SELECT 5) x(x)) z(z)
+----
+
+query I nosort
+SELECT EXISTS (SELECT 1 FROM (SELECT DISTINCT 1) y(y) WHERE x.x = ANY(VALUES (y.y))) FROM rt2 CROSS JOIN (SELECT 3) x(x)
+----
+0
+0
+
 statement ok
 ROLLBACK
 
@@ -768,6 +783,9 @@ SELECT (SELECT MIN(x.x)) FROM (SELECT 1, 2) x(x,y) ORDER BY x.y
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'x.y' in query results without an aggregate function
 SELECT x.y, MIN(x.x + x.y) FROM (SELECT 1, 2) x(x,y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT MAX(x), idontexist(x.x) FROM (SELECT 1) x(x)
 
 query I nosort
 SELECT ['1'] "like" [max(x.x), '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)

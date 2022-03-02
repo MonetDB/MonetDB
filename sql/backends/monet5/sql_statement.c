@@ -3412,26 +3412,20 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 			default_nargs++;
 		}
 
 		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
 
-			if (strcmp(fimp, "rotate_xor_hash") == 0 && strcmp(mod, calcRef) == 0) {
-				q = newStmt(mb, mkeyRef, bulk_rotate_xor_hashRef);
-				if (q == NULL)
-					return NULL;
-			} else {
-				q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
-				if (q == NULL)
-					return NULL;
-				if (rows)
-					q = pushArgument(mb, q, card->nr);
-				q = pushStr(mb, q, mod);
-				q = pushStr(mb, q, fimp);
-			}
+			q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
+			if (q == NULL)
+				return NULL;
+			if (rows)
+				q = pushArgument(mb, q, card->nr);
+			q = pushStr(mb, q, mod);
+			q = pushStr(mb, q, fimp);
 			setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 		} else {
 			q = newStmtArgs(mb, mod, fimp, default_nargs);
@@ -4068,9 +4062,9 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		return NULL;
 	if (anti) {
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
-		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC);
-		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC);
+		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
+		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true);
+		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true);
 		cond = stmt_binop(be,
 			stmt_unop(be, cond, NULL, not),
 			stmt_unop(be, cond, NULL, isnull), NULL, or);

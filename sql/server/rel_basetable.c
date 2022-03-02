@@ -421,6 +421,46 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+sql_exp *
+basetable_get_tid_or_add_it(mvc *sql, sql_rel *rel)
+{
+	sql_exp *res = NULL;
+
+	if (is_basetable(rel->op)) {
+		sql_allocator *sa = sql->sa;
+		sql_table *t = rel->l;
+		rel_base_t *ba = rel->r;
+		const char *tname = t->base.name;
+		const char *atname = ba->name?ba->name:tname;
+
+		if (isRemote(t))
+			tname = mapiuri_table(t->query, sql->sa, tname);
+		if (!rel->exps) { /* no exps yet, just set TID */
+			rel_base_use_tid(sql, rel);
+			res = exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+		} else if (!rel_base_is_used(ba, ol_length(t->columns)) ||  /* exps set, but no TID, add it */
+				   !(res = exps_bind_column2(rel->exps, atname, TID, NULL))) { /* exps set with TID, but maybe rel_dce removed it */
+			node *n = NULL;
+			rel_base_use_tid(sql, rel);
+			res = exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+
+			/* search for indexes */
+			for (node *cn = rel->exps->h; cn && !n; cn = cn->next) {
+				sql_exp *e = cn->data;
+
+				if (is_intern(e))
+					n = cn;
+			}
+			if (n) { /* has indexes, insert TID before them */
+				list_append_before(rel->exps, n, res);
+			} else {
+				list_append(rel->exps, res);
+			}
+		}
+	}
+	return res;
+}
+
 sql_rel *
 rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 {

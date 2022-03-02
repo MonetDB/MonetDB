@@ -1,4 +1,5 @@
 hash-threshold 100000
+
 query TTTTT nosort
 select * from sys.malfunctions() order by module, "function", address, signature, comment
 ----
@@ -23263,51 +23264,6 @@ pattern batcalc.flt_noerror(X_0:bat[:str], X_1:bat[:oid]):bat[:flt]
 CMDconvert_flt;
 (empty)
 batcalc
-hash
-command batcalc.hash(X_0:bat[:any_1]):bat[:lng] 
-MKEYbathash;
-(empty)
-batcalc
-hash
-command batcalc.hash(X_0:bat[:bte]):bat[:lng] 
-MKEYbathash;
-(empty)
-batcalc
-hash
-command batcalc.hash(X_0:bat[:dbl]):bat[:lng] 
-MKEYbathash;
-(empty)
-batcalc
-hash
-command batcalc.hash(X_0:bat[:flt]):bat[:lng] 
-MKEYbathash;
-(empty)
-batcalc
-hash
-command batcalc.hash(X_0:bat[:int]):bat[:lng] 
-MKEYbathash;
-(empty)
-batcalc
-hash
-command batcalc.hash(X_0:bat[:lng]):bat[:lng] 
-MKEYbathash;
-(empty)
-batcalc
-hash
-command batcalc.hash(X_0:bat[:lng]):bat[:lng] 
-MKEYbathash;
-(empty)
-batcalc
-hash
-command batcalc.hash(X_0:bat[:oid]):bat[:lng] 
-MKEYbathash;
-(empty)
-batcalc
-hash
-command batcalc.hash(X_0:bat[:sht]):bat[:lng] 
-MKEYbathash;
-(empty)
-batcalc
 identity
 command batcalc.identity(X_0:bat[:any]):bat[:oid] 
 BATSQLidentity;
@@ -27318,11 +27274,6 @@ pattern batcalc.or(X_0:sht, X_1:bat[:sht], X_2:bat[:oid]):bat[:sht]
 CMDbatOR;
 (empty)
 batcalc
-rotate_xor_hash
-command batcalc.rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:bat[:any_1]):bat[:int] 
-MKEYbulk_rotate_xor_hash;
-(empty)
-batcalc
 round
 pattern batcalc.round(X_0:bat[:bte], X_1:bte, X_2:bat[:oid], X_3:int, X_4:int):bat[:bte] 
 bte_bat_round_wrap;
@@ -29669,9 +29620,44 @@ MANIFOLDremapMultiplex;
 (empty)
 batmkey
 hash
-command batmkey.hash(X_0:bat[:any_1]):bat[:lng] 
+pattern batmkey.hash(X_0:bat[:any]):bat[:lng] 
 MKEYbathash;
 calculate a hash value
+batmkey
+hash
+pattern batmkey.hash(X_0:bat[:any], X_1:bat[:oid]):bat[:lng] 
+MKEYbathash;
+calculate a hash value, with a candidate list
+batmkey
+rotate_xor_hash
+pattern batmkey.rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:bat[:any]):bat[:lng] 
+MKEYbulk_rotate_xor_hash;
+pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b))
+batmkey
+rotate_xor_hash
+pattern batmkey.rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:bat[:any], X_3:bat[:oid], X_4:bat[:oid]):bat[:lng] 
+MKEYbulk_rotate_xor_hash;
+pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b)), with candidate lists
+batmkey
+rotate_xor_hash
+pattern batmkey.rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:any):bat[:lng] 
+MKEYbulkconst_rotate_xor_hash;
+pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b))
+batmkey
+rotate_xor_hash
+pattern batmkey.rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:any, X_3:bat[:oid]):bat[:lng] 
+MKEYbulkconst_rotate_xor_hash;
+pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list
+batmkey
+rotate_xor_hash
+pattern batmkey.rotate_xor_hash(X_0:lng, X_1:int, X_2:bat[:any]):bat[:lng] 
+MKEYconstbulk_rotate_xor_hash;
+pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b))
+batmkey
+rotate_xor_hash
+pattern batmkey.rotate_xor_hash(X_0:lng, X_1:int, X_2:bat[:any], X_3:bat[:oid]):bat[:lng] 
+MKEYconstbulk_rotate_xor_hash;
+pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list
 batmmath
 acos
 pattern batmmath.acos(X_0:bat[:dbl]):bat[:dbl] 
@@ -39658,51 +39644,6 @@ command calc.flt(X_0:sht, X_1:int, X_2:int):flt
 sht_num2dec_flt;
 cast number to decimal(flt) and check for overflow
 calc
-hash
-pattern calc.hash(X_0:any):lng 
-MKEYhash;
-(empty)
-calc
-hash
-pattern calc.hash(X_0:bte):lng 
-MKEYhash;
-(empty)
-calc
-hash
-pattern calc.hash(X_0:dbl):lng 
-MKEYhash;
-(empty)
-calc
-hash
-pattern calc.hash(X_0:flt):lng 
-MKEYhash;
-(empty)
-calc
-hash
-pattern calc.hash(X_0:int):lng 
-MKEYhash;
-(empty)
-calc
-hash
-pattern calc.hash(X_0:lng):lng 
-MKEYhash;
-(empty)
-calc
-hash
-pattern calc.hash(X_0:lng):lng 
-MKEYhash;
-(empty)
-calc
-hash
-pattern calc.hash(X_0:oid):lng 
-MKEYhash;
-(empty)
-calc
-hash
-pattern calc.hash(X_0:sht):lng 
-MKEYhash;
-(empty)
-calc
 identity
 command calc.identity(X_0:any):oid 
 SQLidentity;
@@ -41127,11 +41068,6 @@ ptr
 command calc.ptr(X_0:ptr):ptr 
 CMDvarCONVERTptr;
 Cast VALUE to ptr
-calc
-rotate_xor_hash
-pattern calc.rotate_xor_hash(X_0:lng, X_1:int, X_2:any_1):lng 
-MKEYrotate_xor_hash;
-(empty)
 calc
 round
 command calc.round(X_0:bte, X_1:bte, X_2:int, X_3:int):bte 
@@ -44678,75 +44614,15 @@ pattern mdb.var():void
 MDBvar;
 Dump the symboltable of current routine on standard out.
 mkey
-bulk_rotate_xor_hash
-command mkey.bulk_rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:bat[:any_1]):bat[:lng] 
-MKEYbulk_rotate_xor_hash;
-pre:  h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b))
-mkey
-bulk_rotate_xor_hash
-pattern mkey.bulk_rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:any):bat[:lng] 
-MKEYbulkconst_rotate_xor_hash;
-pre:  h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b))
-mkey
-bulk_rotate_xor_hash
-command mkey.bulk_rotate_xor_hash(X_0:lng, X_1:int, X_2:bat[:any_1]):bat[:lng] 
-MKEYconstbulk_rotate_xor_hash;
-pre:  h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b))
-mkey
-bulk_rotate_xor_hash
-pattern mkey.bulk_rotate_xor_hash(X_0:lng, X_1:int, X_2:any):lng 
-MKEYrotate_xor_hash;
-post: [:xor=]([:rotate=](h, nbits), [hash](b))
-mkey
 hash
 pattern mkey.hash(X_0:any):lng 
 MKEYhash;
 calculate a hash value
 mkey
-hash
-pattern mkey.hash(X_0:bit):lng 
-MKEYhash;
-calculate a hash value
-mkey
-hash
-pattern mkey.hash(X_0:bte):lng 
-MKEYhash;
-calculate a hash value
-mkey
-hash
-pattern mkey.hash(X_0:dbl):lng 
-MKEYhash;
-calculate a hash value
-mkey
-hash
-pattern mkey.hash(X_0:flt):lng 
-MKEYhash;
-calculate a hash value
-mkey
-hash
-pattern mkey.hash(X_0:int):lng 
-MKEYhash;
-calculate a hash value
-mkey
-hash
-pattern mkey.hash(X_0:lng):lng 
-MKEYhash;
-calculate a hash value
-mkey
-hash
-pattern mkey.hash(X_0:sht):lng 
-MKEYhash;
-calculate a hash value
-mkey
-hash
-pattern mkey.hash(X_0:str):lng 
-MKEYhash;
-calculate a hash value
-mkey
-rotate
-command mkey.rotate(X_0:lng, X_1:int):lng 
-MKEYrotate;
-left-rotate an int by nbits
+rotate_xor_hash
+pattern mkey.rotate_xor_hash(X_0:lng, X_1:int, X_2:any):lng 
+MKEYrotate_xor_hash;
+post: [:xor=]([:rotate=](h, nbits), [hash](b))
 mmath
 acos
 command mmath.acos(X_0:dbl):dbl 
