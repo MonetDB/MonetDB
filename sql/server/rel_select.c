@@ -3751,16 +3751,15 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 						&((sql_arg*)a->func->ops->h->next->data)->type) != 0) )  {
 			if (a) {
 				list *nexps = NULL;
-				found = true; /* something was found */
 
-				if (!execute_priv(sql, a->func)) {
-					a = NULL;
-				} else if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+				if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
 					a = NULL;
 					/* reset error */
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
-					found = false; /* reset found */
+				} else if (!execute_priv(sql, a->func)) {
+					found = true; /* something was found */
+					a = NULL;
 				} else
 					exps = nexps;
 			} else {
@@ -3823,15 +3822,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false);
 
 			if (a) {
-				found = true; /* something was found */
-				if (!execute_priv(sql, a->func))
-					a = NULL;
-				else if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+				if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
 					a = NULL;
 					/* reset error */
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
-					found = false; /* reset found */
+				} else if (!execute_priv(sql, a->func)) {
+					found = true; /* something was found */
+					a = NULL;
 				} else
 					exps = nexps;
 			} else {
@@ -3849,22 +3847,19 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		list *aggrs = sql_find_funcs(sql, sname, aname, list_length(exps), F_AGGR, false);
 
 		if (!list_empty(aggrs)) {
-			for (node *m = aggrs->h ; m; m = m->next) {
+			for (node *n = aggrs->h ; n && !a; n = n->next) {
 				list *nexps = NULL;
-				a = (sql_subfunc *) m->data;
-				found = true; /* something was found */
+				sql_subfunc *sf = (sql_subfunc *) n->data;
 
-				if (!execute_priv(sql, a->func)) {
-					a = NULL;
-				} else if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
-					a = NULL;
+				if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, sf, 0))) {
 					/* reset error */
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
-					found = false; /* reset found */
+				} else if (!execute_priv(sql, sf->func)) {
+					found = true; /* something was found */
 				} else {
+					a = sf;
 					exps = nexps;
-					break;
 				}
 			}
 		} else {
