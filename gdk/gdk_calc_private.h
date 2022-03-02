@@ -652,9 +652,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 	} while (0)
 
 #ifdef TRUNCATE_NUMBERS
-#define roundflt(x)	(x)
 #define rounddbl(x)	(x)
 #else
-#define roundflt(x)	roundf(x)
-#define rounddbl(x)	round(x)
+#define rounddbl(x)	roundl(x)
 #endif

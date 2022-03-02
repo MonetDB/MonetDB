@@ -443,7 +443,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else {					\
-				dst[i] = (TYPE2) round##TYPE1(v * mul);	\
+				long double m = (long double) v * mul;	\
+				dst[i] = (TYPE2) rounddbl(m);		\
 				if ((is_##TYPE2##_nil(dst[i]) ||	\
 				     (precision &&			\
 				      (dst[i] >= prec ||		\
@@ -466,7 +467,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else {					\
-				dst[i] = (TYPE2) round##TYPE1(v * mul);	\
+				long double m = (long double) v * mul;	\
+				dst[i] = (TYPE2) rounddbl(m);		\
 				if ((is_##TYPE2##_nil(dst[i]) ||	\
 				     (precision &&			\
 				      (dst[i] >= prec ||		\
