@@ -360,7 +360,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				double m = lft[i] * rgt[j];		\
+				long double m = lft[i] * (long double) rgt[j]; \
 				dst[k] = (TYPE3) rounddbl(m);		\
 			}						\
 		}							\
@@ -382,7 +382,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				double m = lft[i] * rgt[j];		\
+				long double m = lft[i] * (long double) rgt[j]; \
 				dst[k] = (TYPE3) rounddbl(m);		\
 			}						\
 		}							\
@@ -2674,8 +2674,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 					dst[k] = TYPE3##_nil;		\
 					nils++;				\
 				} else {				\
-					m = lft[i] / rgt[j];		\
-					dst[k] = (TYPE3) rounddbl(m);	\
+					dst[k] = (TYPE3) rounddbl(lft[i] / (long double) rgt[j]); \
 				}					\
 			}						\
 		}							\
@@ -2705,8 +2704,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 					dst[k] = TYPE3##_nil;		\
 					nils++;				\
 				} else {				\
-					m = lft[i] / rgt[j];		\
-					dst[k] = (TYPE3) rounddbl(m);	\
+					dst[k] = (TYPE3) rounddbl(lft[i] / (long double) rgt[j]); \
 				}					\
 			}						\
 		}							\
