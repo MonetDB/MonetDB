@@ -524,55 +524,53 @@ sql_exp *
 find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type)
 {
 	bool found = false;
-	sql_subfunc *f = NULL;
+	list *ff = NULL;
+	sql_subfunc *f = NULL, **ffuncs;
+	int i = 0, *scores, nfunc;
 
 	assert(type == F_UNION || type == F_LOADER);
-	if (!(f = bind_func_(sql, sname, fname, tl, type, false, &found)) && list_length(tl)) {
-		int len, match = 0;
-		list *ff;
-
-		sql->session->status = 0; /* if the function was not found clean the error */
-		sql->errstr[0] = '\0';
-		if (!(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type, false))) {
-			char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s %s function %s%s%s'%s'(%s)",
-							 found ? "insufficient privileges for" : "no such", type == F_UNION ? "table returning" : "loader", sname ? "'":"", sname ? sname : "",
-							 sname ? "'.":"", fname, arg_list ? arg_list : "");
-		}
-		if (!list_empty(ff)) {
-			found = true;
-			for (node *n = ff->h; n ; ) { /* Reduce on privileges */
-				sql_subfunc *sf = n->data;
-				node *nn = n->next;
-
-				if (!execute_priv(sql, sf->func))
-					list_remove_node(ff, NULL, n);
-				n = nn;
-			}
-		}
-		len = list_length(ff);
-		if (len > 1) {
-			int i, score = 0;
-			node *n;
-
-			for (i = 0, n = ff->h; i<len; i++, n = n->next) {
-				int cscore = score_func(n->data, tl);
-				if (cscore > score) {
-					score = cscore;
-					match = i;
-				}
-			}
-		}
-		if (!list_empty(ff))
-			f = list_fetch(ff, match);
+	if ((f = bind_func_(sql, sname, fname, tl, type, false, &found))) {
+		list *nexps = exps;
+		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1)))
+			return exp_op(sql->sa, nexps, f);
+		found = false;
 	}
-	if (f) {
-		if (f->func->vararg)
-			return exp_op(sql->sa, exps, f);
-		if (!list_empty(exps) && !(exps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1)))
-			return NULL;
+	sql->session->status = 0; /* reset error */
+	sql->errstr[0] = '\0';
+	if (list_empty(tl) || !(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type, false)) || list_empty(ff)) {
+		char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s %s function %s%s%s'%s'(%s)",
+						 found ? "insufficient privileges for" : "no such", type == F_UNION ? "table returning" : "loader", sname ? "'":"", sname ? sname : "",
+						 sname ? "'.":"", fname, arg_list ? arg_list : "");
+	}
+
+	/* sort functions by their score */
+	nfunc = list_length(ff);
+	scores = SA_NEW_ARRAY(sql->ta, int, nfunc);
+	ffuncs = SA_NEW_ARRAY(sql->ta, sql_subfunc*, nfunc);
+	for (node *n = ff->h; n; i++, n = n->next) {
+		ffuncs[i] = n->data;
+		scores[i] = score_func(n->data, tl);
+	}
+	GDKqsort(scores, ffuncs, NULL, nfunc, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+	for (int i = 0 ; i < nfunc && !f; i++) {
+		list *nexps = exps;
+		sql_subfunc *nf = ffuncs[i];
+
+		if (!list_empty(tl) && !nf->func->vararg && !(nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, nf, 1))) {
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+		} else if (!execute_priv(sql, nf->func)) {
+			found = true; /* something was found */
+		} else {
+			f = nf;
+			exps = nexps;
+		}
+	}
+	if (f)
 		return exp_op(sql->sa, exps, f);
-	}
 	char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s %s function %s%s%s'%s'(%s)",
 					 found ? "insufficient privileges for" : "no such", type == F_UNION ? "table returning" : "loader", sname ? "'":"", sname ? sname : "",
@@ -1787,57 +1785,55 @@ static sql_exp*
 _rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps, exp_kind ek)
 {
 	bool found = false;
-	sql_subfunc *f = NULL;
-	int table_func = (ek.card == card_relation);
+	list *ff = NULL;
+	sql_subfunc *f = NULL, **ffuncs;
+	int table_func = (ek.card == card_relation), i = 0, *scores, nfunc;
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
-	if (!(f = bind_func_(sql, sname, fname, tl, type, false, &found)) && list_length(tl)) {
-		int len, match = 0;
-		list *ff;
-
-		sql->session->status = 0; /* if the function was not found clean the error */
-		sql->errstr[0] = '\0';
-		if (!(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type, false))) {
-			char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s operator %s%s%s'%s'(%s)",
-							 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
-		}
-		if (!list_empty(ff)) {
-			found = true;
-			for (node *n = ff->h; n ; ) { /* Reduce on privileges */
-				sql_subfunc *sf = n->data;
-				node *nn = n->next;
-
-				if (!execute_priv(sql, sf->func))
-					list_remove_node(ff, NULL, n);
-				n = nn;
-			}
-		}
-		len = list_length(ff);
-		if (len > 1) {
-			int i, score = 0;
-			node *n;
-
-			for (i = 0, n = ff->h; i<len; i++, n = n->next) {
-				int cscore = score_func(n->data, tl);
-				if (cscore > score) {
-					score = cscore;
-					match = i;
-				}
-			}
-		}
-		if (!list_empty(ff))
-			f = list_fetch(ff, match);
+	assert(list_length(tl));
+	if ((f = bind_func_(sql, sname, fname, tl, type, false, &found))) {
+		list *nexps = exps;
+		if (f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, rel, exps, f, table_func)))
+			return exp_op(sql->sa, nexps, f);
+		found = false;
 	}
-	if (f) {
-		if (f->func->vararg)
-			return exp_op(sql->sa, exps, f);
-		if (!(exps = check_arguments_and_find_largest_any_type(sql, rel, exps, f, table_func)))
-			return NULL;
+	sql->session->status = 0; /* reset error */
+	sql->errstr[0] = '\0';
+	if (!(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type, false)) || list_empty(ff)) {
+		char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s operator %s%s%s'%s'(%s)",
+						 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
+	}
+
+	/* sort functions by their score */
+	nfunc = list_length(ff);
+	scores = SA_NEW_ARRAY(sql->ta, int, nfunc);
+	ffuncs = SA_NEW_ARRAY(sql->ta, sql_subfunc*, nfunc);
+	for (node *n = ff->h; n; i++, n = n->next) {
+		ffuncs[i] = n->data;
+		scores[i] = score_func(n->data, tl);
+	}
+	GDKqsort(scores, ffuncs, NULL, nfunc, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+	for (int i = 0 ; i < nfunc && !f; i++) {
+		list *nexps = exps;
+		sql_subfunc *nf = ffuncs[i];
+
+		if (!nf->func->vararg && !(nexps = check_arguments_and_find_largest_any_type(sql, rel, exps, nf, table_func))) {
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+		} else if (!execute_priv(sql, nf->func)) {
+			found = true; /* something was found */
+		} else {
+			f = nf;
+			exps = nexps;
+		}
+	}
+	if (f)
 		return exp_op(sql->sa, exps, f);
-	}
-	char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
+	char *arg_list = nary_function_arg_types_2str(sql, tl, list_length(tl));
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s operator %s%s%s'%s'(%s)",
 					 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
 }
@@ -3822,7 +3818,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false);
 
 			if (a) {
-				if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+				if (!(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
 					a = NULL;
 					/* reset error */
 					sql->session->status = 0;
@@ -5026,6 +5022,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				sql->session->status = 0; /* reset error */
 				sql->errstr[0] = '\0';
 				found = false; /* reset found */
+				wf = NULL;
 			}
 		} else {
 			sql->session->status = 0; /* if the function was not found clean the error */
