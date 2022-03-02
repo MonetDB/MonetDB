@@ -6742,11 +6742,9 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 }
 
 #ifdef TRUNCATE_NUMBERS
-#define roundflt(x)	(x)
 #define rounddbl(x)	(x)
 #else
-#define roundflt(x)	roundf(x)
-#define rounddbl(x)	round(x)
+#define rounddbl(x)	roundl(x)
 #endif
 
 #define absbte(x)	abs(x)
@@ -6788,7 +6786,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				double m = lft[i] * rgt[j];		\
+				long double m = lft[i] * (long double) rgt[j]; \
 				dst[k] = (TYPE3) rounddbl(m);		\
 			}						\
 		}							\
@@ -6810,7 +6808,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				double m = lft[i] * rgt[j];		\
+				long double m = lft[i] * (long double) rgt[j]; \
 				dst[k] = (TYPE3) rounddbl(m);		\
 			}						\
 		}							\
@@ -9102,8 +9100,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 					dst[k] = TYPE3##_nil;		\
 					nils++;				\
 				} else {				\
-					m = lft[i] / rgt[j];		\
-					dst[k] = (TYPE3) rounddbl(m);	\
+					dst[k] = (TYPE3) rounddbl(lft[i] / (long double) rgt[j]); \
 				}					\
 			}						\
 		}							\
@@ -9133,8 +9130,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 					dst[k] = TYPE3##_nil;		\
 					nils++;				\
 				} else {				\
-					m = lft[i] / rgt[j];		\
-					dst[k] = (TYPE3) rounddbl(m);	\
+					dst[k] = (TYPE3) rounddbl(lft[i] / (long double) rgt[j]); \
 				}					\
 			}						\
 		}							\
@@ -15650,7 +15646,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else {					\
-				dst[i] = (TYPE2) round##TYPE1(v * mul);	\
+				long double m = (long double) v * mul;	\
+				dst[i] = (TYPE2) rounddbl(m);		\
 				if ((is_##TYPE2##_nil(dst[i]) ||	\
 				     (precision &&			\
 				      (dst[i] >= prec ||		\
@@ -15673,7 +15670,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else {					\
-				dst[i] = (TYPE2) round##TYPE1(v * mul);	\
+				long double m = (long double) v * mul;	\
+				dst[i] = (TYPE2) rounddbl(m);		\
 				if ((is_##TYPE2##_nil(dst[i]) ||	\
 				     (precision &&			\
 				      (dst[i] >= prec ||		\
