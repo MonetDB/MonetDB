@@ -917,6 +917,14 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				l = rel_dup(l);
 				if (!is_project(l->op) || rel_is_ref(l))
 					l = rel_project( sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
+
+				if (is_left(rel->op) && !list_empty(rel->attr)) {
+					assert(list_length(rel->exps)==1);
+					sql_exp *e = rel->exps->h->data;
+					sql_exp *oe = rel->attr->h->data;
+					rel_project_add_exp(sql, l, e);
+					exp_setname(sql->sa, e, exp_relname(oe), exp_name(oe));
+				}
 				if (!list_empty(r->exps)) {
 					for (m=r->exps->h; m; m = m->next) {
 						sql_exp *e = m->data;
@@ -933,9 +941,8 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			sql_rel *n = rel_project( sql->sa, (r->l)?rel:rel->l,
 					rel_projections(sql, rel->l, NULL, 1, 1));
 
-			if (is_left(rel->op) && !list_empty(rel->attr)) {
+			if (is_left(rel->op) && !list_empty(rel->attr))
 				rel_project_add_exp(sql, n, exp_ref(sql, rel->attr->h->data));
-			}
 			if (list_empty(rel->attr) && !list_empty(r->exps)) {
 				for (m=r->exps->h; m; m = m->next) {
 					sql_exp *e = m->data;
@@ -1166,9 +1173,19 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 				assert(id);
 			}
 
-			assert(rel->op != op_anti);
+			//assert(rel->op != op_anti);
 			if (rel->op == op_semi)
 				rel->op = op_join;
+			if (rel->op == op_anti) {
+				rel->op = op_join;
+				/* need to change all exps */
+				if (!list_empty(rel->exps)) {
+					for(node *n = rel->exps->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						e->anti = !e->anti;
+					}
+				}
+			}
 
 			if (!list_empty(r->exps)) {
 				for (n = r->exps->h; n; n = n->next ) {
