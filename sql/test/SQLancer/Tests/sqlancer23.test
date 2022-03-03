@@ -69,6 +69,9 @@ SELECT (SELECT (VALUES (x.x)) FROM (VALUES (1),(2)) x(x) JOIN (VALUES (1, t0.c0,
 (7, 9, FALSE)) y(a,b,c) ON y.c) FROM t0
 ----
 
+statement ok rowcount 0
+DELETE FROM t0 WHERE 1 = (VALUES (t0.c0))
+
 statement ok
 ROLLBACK
 
