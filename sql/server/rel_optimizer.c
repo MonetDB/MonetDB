@@ -9635,9 +9635,9 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 		/* push (simple renaming) projections up */
 		if (gp->cnt[op_project])
 			rel = rel_visitor_bottomup(v, rel, &rel_push_project_up);
-		if (level <= 0 && (gp->cnt[op_project] || gp->cnt[op_groupby]))
-			rel = rel_split_project(v, rel, 1);
 		if (level <= 0) {
+			if (gp->cnt[op_project] || gp->cnt[op_groupby])
+				rel = rel_split_project(v, rel, 1);
 			if (gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_join] || gp->cnt[op_semi] || gp->cnt[op_anti])
 				rel = rel_visitor_bottomup(v, rel, &rel_remove_redundant_join); /* this optimizer has to run before rel_first_level_optimizations */
 			if (v->value_based_opt)
