@@ -1848,20 +1848,20 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 
 	if (!exp_name(le))
 		exp_label(sql->sa, le, ++sql->label);
-	if (!exp_subtype(le) && rel_set_type_param(sql, sql_bind_localtype("bit"), rel, le, 0) < 0) { /* workaround */
-		return NULL;
-	} else if (exp_is_rel(le)) { /* for the subquery case, propagate to the inner query */
+	if (exp_is_rel(le)) { /* for the subquery case, propagate to the inner query */
 		sql_rel *r = exp_rel_get_rel(sql->sa, le);
-		if ((is_simple_project(r->op) || is_groupby(r->op)) && !list_empty(r->exps)) {
+		if (is_project(r->op) && !list_empty(r->exps)) {
 			for (node *n = r->exps->h; n; n = n->next)
 				if (!exp_subtype(n->data) && rel_set_type_param(sql, sql_bind_localtype("bit"), r, n->data, 0) < 0) /* workaround */
 					return NULL;
+			le->tpe = *exp_subtype(r->exps->h->data); /* just take the first expression type */
 		}
-	}
+	} else if (!exp_subtype(le) && rel_set_type_param(sql, sql_bind_localtype("bit"), rel, le, 0) < 0) /* workaround */
+		return NULL;
 	t = exp_subtype(le);
 
 	if (!(exists_func = sql_bind_func(sql, "sys", exists ? "sql_exists" : "sql_not_exists", t, NULL, F_FUNC, true)))
-		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", t->type->base.name);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "exist operator on type %s missing", t ? t->type->base.name : "unknown");
 	res = exp_unop(sql->sa, le, exists_func);
 	set_has_no_nil(res);
 	return res;
