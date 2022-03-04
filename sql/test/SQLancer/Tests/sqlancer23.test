@@ -79,6 +79,10 @@ query I nosort
 SELECT 1 FROM t0 FULL OUTER JOIN (SELECT 1) AS x(x) ON least(t0.c0 = ANY(SELECT 1 FROM t0), TRUE)
 ----
 
+query I nosort
+SELECT 1 FROM t0 WHERE t0.c0 = (VALUES ((SELECT t0.c0)))
+----
+
 statement ok
 ROLLBACK
 
