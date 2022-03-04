@@ -3285,7 +3285,6 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		case op_left:
 		case op_right:
 		case op_full:
-		case op_merge:
 			if ((rel->l && rel_find_parameter(sql, type, rel->l, nrname, nename) < 0) ||
 				(rel->r && rel_find_parameter(sql, type, rel->r, nrname, nename)))
 				return -1;
@@ -3298,12 +3297,6 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		case op_topn:
 		case op_sample:
 			if ((rel->l && rel_find_parameter(sql, type, rel->l, nrname, nename) < 0))
-				return -1;
-			break;
-		case op_insert:
-		case op_update:
-		case op_delete:
-			if ((rel->r && rel_find_parameter(sql, type, rel->r, nrname, nename) < 0))
 				return -1;
 			break;
 		case op_union: /* TODO for set relations this needs further improvement */
