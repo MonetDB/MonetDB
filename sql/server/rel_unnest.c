@@ -3038,13 +3038,10 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (rsq) {
 				if (!lsq && is_simple_project(rsq->op) && !rsq->l) {
 					sql_exp *ire = rsq->exps->h->data;
-					if (is_values(ire) && list_length(ire->f) == 1) {
-						rsq = NULL;
-						re = ire;
-						if (is_values(re) && list_length(re->f) == 1 && !is_values(le)) {
-							list *exps = re->f;
-							re = exps->h->data;
-						}
+					if (is_values(ire) && list_length(ire->f) == 1 && !is_values(le)) {
+						list *exps = ire->f;
+						re = exps->h->data;
+						rsq = exp_rel_get_rel(v->sql->sa, re);
 					}
 				}
 				if (rsq)
