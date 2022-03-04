@@ -26,7 +26,6 @@ SELECT 1 FROM vx WHERE 1 <> ALL(VALUES (10), (vx.vx))
 ----
 1
 
-# this one is right
 query I nosort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(1 <> ALL(VALUES (10), (vx.vx)) AS INT) as count FROM vx) as res
 ----
@@ -72,6 +71,10 @@ SELECT (SELECT (VALUES (x.x)) FROM (VALUES (1),(2)) x(x) JOIN (VALUES (1, t0.c0,
 statement ok rowcount 0
 DELETE FROM t0 WHERE 1 = (VALUES (t0.c0))
 
+query I nosort
+SELECT (SELECT (SELECT 1 WHERE x.x = 1) FROM (SELECT 1) x(x) WHERE t0.c0 = ALL(SELECT 1 WHERE x.x = 1)) FROM t0
+----
+
 statement ok
 ROLLBACK
 
@@ -81,7 +84,6 @@ SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 statement error 21000!Cardinality violation, scalar value expected
 SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
 
-# these are right
 statement error GDK reported error: mergejoin: more than one match
 SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 
