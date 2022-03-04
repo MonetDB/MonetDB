@@ -818,6 +818,46 @@ static str URLnoop(url *u, url *val)
 	return MAL_SUCCEED;
 }
 
+/* Extract host identity from URL. This is a relaxed version,
+ * where no exceptions is thrown when the input URL is not valid,
+ * and empty string is returned instead.
+ * */
+static str
+extractURLHost(str *retval, str *url, bool no_www)
+{
+	const char *s;
+	const char *h = NULL;
+	const char *p = NULL;
+	*retval = GDKstrdup(str_nil);
+
+	if ((url != NULL || *url != NULL) && !strNil(*url)) {
+		if ((s = skip_scheme(*url)) != NULL &&
+			(s = skip_authority(s, NULL, NULL, &h, &p)) != NULL &&
+			h != NULL)
+	   	{
+			size_t l;
+
+			if (p != NULL) {
+				l = p - h - 1;
+			} else {
+				l = s - h;
+			}
+			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+				if (no_www && !strncmp(h, "wwww.", 4)) {
+					strcpy_len(*retval, (h + 4), l + 1);
+				} else {
+					strcpy_len(*retval, h, l + 1);
+				}
+			} else {
+				throw(MAL, "url.getURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+		}
+	}
+
+	return MAL_SUCCEED;
+}
+
+
 #include "mel.h"
 mel_atom url_init_atoms[] = {
  { .name="url", .basetype="str", .fromstr=URLfromString, .tostr=URLtoString, },  { .cmp=NULL }
@@ -833,7 +873,8 @@ mel_func url_init_funcs[] = {
  command("url", "getDomain", URLgetDomain, false, "Extract Internet domain from the URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getExtension", URLgetExtension, false, "Extract the file extension of the URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getFile", URLgetFile, false, "Extract the last file name of the URL", args(1,2, arg("",str),arg("u",url))),
- command("url", "getHost", URLgetHost, false, "Extract the server name from the URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getHost", URLgetHost, false, "Extract the server name from the URL strict version", args(1,2, arg("",str),arg("u",url))),
+ command("url", "extractURLHost", extractURLHost, false, "Extract server name from a URL relaxed version", args(1,3, arg("",str),arg("u",str), arg("no_www", bit))),
  command("url", "getPort", URLgetPort, false, "Extract the port id from the URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getProtocol", URLgetProtocol, false, "Extract the protocol from the URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getQuery", URLgetQuery, false, "Extract the query string from the URL", args(1,2, arg("",str),arg("u",url))),
