@@ -75,6 +75,10 @@ query I nosort
 SELECT (SELECT (SELECT 1 WHERE x.x = 1) FROM (SELECT 1) x(x) WHERE t0.c0 = ALL(SELECT 1 WHERE x.x = 1)) FROM t0
 ----
 
+query I nosort
+SELECT 1 FROM t0 FULL OUTER JOIN (SELECT 1) AS x(x) ON least(t0.c0 = ANY(SELECT 1 FROM t0), TRUE)
+----
+
 statement ok
 ROLLBACK
 
