@@ -1812,6 +1812,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		rel_destroy(l);
 		rel_bind_vars(v->sql, nl, nl->exps);
 		v->changes++;
+		nl->l = push_up_select2(v, nl->l);
 		return nl;
 	}
 	if (is_single(rel) && is_innerjoin(rel->op) && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) {
@@ -1824,6 +1825,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		rel_destroy(l);
 		rel_bind_vars(v->sql, rel, rel->exps);
 		v->changes++;
+		rel = push_up_select2(v, rel);
 		return rel;
 	}
 	if (!is_single(rel) && is_innerjoin(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)) {
@@ -1856,6 +1858,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		rel_destroy(l);
 		rel_bind_vars(v->sql, nl, nl->exps);
 		v->changes++;
+		nl->l = push_up_select2(v, nl->l);
 		return nl;
 	}
 	if (is_left(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)) {
@@ -1878,6 +1881,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		rel_destroy(r);
 		rel_bind_vars(v->sql, nr, nr->exps);
 		v->changes++;
+		nr->l = push_up_select2(v, nr->l);
 		return nr;
 	}
 	if (is_right(rel->op) && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) {
@@ -2931,7 +2935,8 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					return sql_error(sql, 02, SQLSTATE(42000) "Tuple matching at projections not implemented in the backend yet");
 				} else {
 					sql_exp *inexp = exp_compare(v->sql->sa, le, re, is_anyequal(sf)?mark_in:mark_notin);
-					rel_bind_var(sql, rel, inexp);
+					le->freevar = 1;
+					rel_bind_var(sql, join, inexp);
 					append(join->exps, inexp);
 				}
 				v->changes++;
