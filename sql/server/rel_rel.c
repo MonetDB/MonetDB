@@ -994,7 +994,7 @@ rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps)
 	if(!rel)
 		return NULL;
 
-	rel->flag = 1;
+	rel->flag = TABLE_PROD_FUNC;
 	rel->l = l;
 	rel->op = op_table;
 	rel->exps = exps;
