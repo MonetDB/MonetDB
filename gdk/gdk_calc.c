@@ -6741,10 +6741,24 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	return nils;							\
 }
 
+#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
+/* with Intel compiler on Windows, avoid using roundl and llroundl: they
+ * cause a mysterious crash; long double is the same size as double
+ * anyway */
+typedef double ldouble;
 #ifdef TRUNCATE_NUMBERS
 #define rounddbl(x)	(x)
 #else
-#define rounddbl(x)	roundl(x)
+#define rounddbl(x)	round(x)
+#endif
+#else
+typedef long double ldouble;
+#ifdef TRUNCATE_NUMBERS
+#define rounddbl(x)	(x)
+#else
+/* round long double to long long int in one go */
+#define rounddbl(x)	llroundl(x)
+#endif
 #endif
 
 #define absbte(x)	abs(x)
@@ -6786,7 +6800,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				long double m = lft[i] * (long double) rgt[j]; \
+				ldouble m = lft[i] * (ldouble) rgt[j];	\
 				dst[k] = (TYPE3) rounddbl(m);		\
 			}						\
 		}							\
@@ -6808,7 +6822,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				long double m = lft[i] * (long double) rgt[j]; \
+				ldouble m = lft[i] * (ldouble) rgt[j];	\
 				dst[k] = (TYPE3) rounddbl(m);		\
 			}						\
 		}							\
@@ -9100,7 +9114,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 					dst[k] = TYPE3##_nil;		\
 					nils++;				\
 				} else {				\
-					dst[k] = (TYPE3) rounddbl(lft[i] / (long double) rgt[j]); \
+					dst[k] = (TYPE3) rounddbl(lft[i] / (ldouble) rgt[j]); \
 				}					\
 			}						\
 		}							\
@@ -9130,7 +9144,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 					dst[k] = TYPE3##_nil;		\
 					nils++;				\
 				} else {				\
-					dst[k] = (TYPE3) rounddbl(lft[i] / (long double) rgt[j]); \
+					dst[k] = (TYPE3) rounddbl(lft[i] / (ldouble) rgt[j]);		\
 				}					\
 			}						\
 		}							\
@@ -15646,7 +15660,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else {					\
-				long double m = (long double) v * mul;	\
+				ldouble m = (ldouble) v * mul;		\
 				dst[i] = (TYPE2) rounddbl(m);		\
 				if ((is_##TYPE2##_nil(dst[i]) ||	\
 				     (precision &&			\
@@ -15670,7 +15684,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else {					\
-				long double m = (long double) v * mul;	\
+				ldouble m = (ldouble) v * mul;		\
 				dst[i] = (TYPE2) rounddbl(m);		\
 				if ((is_##TYPE2##_nil(dst[i]) ||	\
 				     (precision &&			\
