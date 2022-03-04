@@ -741,6 +741,10 @@ if __name__ == '__main__':
                         help='port the server listens on')
     parser.add_argument('--database', action='store', default='demo',
                         help='name of the database')
+    parser.add_argument('--user', action='store', default='monetdb',
+                        help='user name to login to the database with')
+    parser.add_argument('--password', action='store', default='monetdb',
+                        help='password to use to login to the database with')
     parser.add_argument('--language', action='store', default='sql',
                         help='language to use for testing')
     parser.add_argument('--nodrop', action='store_true',
@@ -760,7 +764,7 @@ if __name__ == '__main__':
     args = opts.tests
     sql = SQLLogic(report=opts.report)
     sql.res = opts.results
-    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language)
+    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language, username=opts.user, password=opts.password)
     for test in args:
         try:
             if not opts.nodrop:
