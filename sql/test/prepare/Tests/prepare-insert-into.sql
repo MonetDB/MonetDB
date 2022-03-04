@@ -1,3 +1,5 @@
+START TRANSACTION;
+
 CREATE TABLE "TestBulkDataInsert" (c1 BIGINT NOT NULL PRIMARY KEY, c2 VARCHAR(50) NOT NULL, c3 CLOB);
 
 INSERT INTO "TestBulkDataInsert" SELECT * FROM (VALUES(1,'1a','1b'),(2,'2a','2b'),(3,'3a','3b')) vt3(c1,c2,c3);
@@ -26,3 +28,5 @@ exec **('16a', 17, '17b');
 SELECT * FROM "TestBulkDataInsert";
 
 DROP TABLE "TestBulkDataInsert";
+
+ROLLBACK;
