@@ -3008,13 +3008,56 @@ exps_reset_freevar(list *exps)
 		}
 }
 
-int
-rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast)
-{
-	sql_rel *r = rel;
-	int is_rel = exp_is_rel(rel_exp);
+static int rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relname, const char *expname);
 
-	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && !is_rel))
+static int
+set_exp_type(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *e)
+{
+	if (mvc_highwater(sql)) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return -1;
+	}
+	if (e->tpe.type)
+		return 0;
+
+	if (e->type == e_column) {
+		const char *nrname = (const char*) e->l, *nename = (const char*) e->r;
+		/* find all the column references and set the type */
+		if (rel_find_parameter(sql, type, rel, nrname, nename) < 0)
+			return -1;
+		e->tpe = *type;
+	} else if (e->type == e_atom && e->f) {
+		list *atoms = e->f;
+		if (!list_empty(atoms))
+			for (node *n = atoms->h; n; n = n->next)
+				if (set_exp_type(sql, type, rel, n->data) < 0) /* set recursively */
+					return -1;
+		e->tpe = *type;
+	} else if (e->type == e_atom && !e->l && !e->r && !e->f) {
+		if (set_type_param(sql, type, e->flag) != 0)
+			return -1;
+		e->tpe = *type;
+	} else if (exp_is_rel(e)) { /* for relation expressions, restart cycle */
+		rel = (sql_rel*) e->l;
+		/* limiting to these cases */
+		if (!is_project(rel->op) || list_length(rel->exps) != 1)
+			return 0;
+		sql_exp *re = rel->exps->h->data;
+
+		if (set_exp_type(sql, type, rel, re) < 0) /* set recursively */
+			return -1;
+		e->tpe = *type;
+	}
+	return 0;
+}
+
+int
+rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int upcast)
+{
+	sql_exp *e = exp;
+	int is_rel = exp_is_rel(exp);
+
+	if (!type || !exp || (exp->type != e_atom && exp->type != e_column && !is_rel))
 		return -1;
 
 	/* use largest numeric types */
@@ -3024,22 +3067,10 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 #else
 		type = sql_bind_localtype("lng");
 #endif
-	if (upcast && type->type->eclass == EC_FLT)
+	else if (upcast && type->type->eclass == EC_FLT)
 		type = sql_bind_localtype("dbl");
 
-	if (is_rel)
-		r = (sql_rel*) rel_exp->l;
-
-	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || is_rel) {
-		/* it's not a parameter set possible parameters below */
-		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
-		if (rel_set_type_recurse(sql, type, r, &relname, &expname) < 0)
-			return -1;
-	} else if (set_type_param(sql, type, rel_exp->flag) != 0)
-		return -1;
-
-	rel_exp->tpe = *type;
-	return 0;
+	return set_exp_type(sql, type, rel, e);
 }
 
 /* try to do an in-place conversion
@@ -3192,199 +3223,96 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super)
 }
 
 static int
-exp_set_list_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relname, const char** expname)
+rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relname, const char *expname)
 {
 	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
-	assert(*relname && *expname);
-	if (!e)
-		return 0;
-
-	if (exp_is_rel(e)) {
-		/* Try to set parameters on the list of projections of the subquery. For now I won't go any further, ugh */
-		sql_rel *r = exp_rel_get_rel(sql->sa, e);
-		if ((is_simple_project(r->op) || is_groupby(r->op)) && list_length(r->exps) == 1) {
-			for (node *n = r->exps->h; n; n = n->next)
-				if (exp_set_list_recurse(sql, type, (sql_exp *) n->data, relname, expname) < 0)
-					return -1;
-		}
-	} else if (e->type == e_atom) {
-		if (e->f) {
-			const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
-			if (next_rel && next_exp && !strcmp(next_rel, *relname) && !strcmp(next_exp, *expname))
-				for (node *n = ((list *) e->f)->h; n; n = n->next)
-					if (exp_set_list_recurse(sql, type, (sql_exp *) n->data, relname, expname) < 0)
-						return -1;
-		}
-		if (e->f && !e->tpe.type) {
-			e->tpe = *type;
-		} else if (!e->l && !e->r && !e->f && !e->tpe.type) {
-			if (set_type_param(sql, type, e->flag) == 0)
-				e->tpe = *type;
-			else
-				return -1;
-		}
-	}
-	return 0;
-}
-
-static int
-exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relname, const char** expname)
-{
-	if (mvc_highwater(sql)) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-		return -1;
-	}
-	assert(*relname && *expname);
-	if (!e)
-		return 0;
-
-	switch (e->type) {
-		case e_atom: {
-			const char *next_exp = exp_name(e);
-			if (e->f || !next_exp || !strcmp(next_exp, *expname)) {
-				if (!e->f && next_exp)
-					*expname = next_exp;
-				return exp_set_list_recurse(sql, type, e, relname, expname);
-			}
-		} break;
-		case e_convert:
-		case e_column: {
-			/* if the column pretended is found, set its type */
-			const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
-			if (next_rel && *relname && !strcmp(next_rel, *relname)) {
-				*relname = (e->type == e_column && e->l) ? (const char*) e->l : next_rel;
-				if (next_exp && !strcmp(next_exp, *expname)) {
-					*expname = (e->type == e_column && e->r) ? (const char*) e->r : next_exp;
-					if (e->type == e_column && !e->tpe.type) {
-						if (set_type_param(sql, type, e->flag) == 0)
-							e->tpe = *type;
-						else
-							return -1;
-					}
-				}
-			}
-			if (e->type == e_convert)
-				exp_set_type_recurse(sql, type, e->l, relname, expname);
-		} break;
-		case e_psm: {
-			if (e->flag & PSM_RETURN) {
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-			} else if (e->flag & PSM_WHILE) {
-				exp_set_type_recurse(sql, type, e->l, relname, expname);
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-			} else if (e->flag & PSM_IF) {
-				exp_set_type_recurse(sql, type, e->l, relname, expname);
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-				if (e->f)
-					for(node *n = ((list*)e->f)->h ; n ; n = n->next)
-						exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-			} else if (e->flag & PSM_REL) {
-				rel_set_type_recurse(sql, type, e->l, relname, expname);
-			} else if (e->flag & PSM_EXCEPTION) {
-				exp_set_type_recurse(sql, type, e->l, relname, expname);
-			}
-		} break;
-		case e_aggr:
-		case e_func: {
-			if (e->l)
-				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-			if (e->type == e_func && e->r)
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-		} break;
-		case e_cmp: {
-			if (e->flag == cmp_in || e->flag == cmp_notin) {
-				exp_set_type_recurse(sql, type, e->l, relname, expname);
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
-				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-			} else {
-				if(e->l)
-					exp_set_type_recurse(sql, type, e->l, relname, expname);
-				if(e->r)
-					exp_set_type_recurse(sql, type, e->r, relname, expname);
-				if(e->f)
-					exp_set_type_recurse(sql, type, e->f, relname, expname);
-			}
-		} break;
-	}
-	return 0;
-}
-
-int
-rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **relname, const char **expname)
-{
-	if (mvc_highwater(sql)) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-		return -1;
-	}
-	assert(*relname && *expname);
 	if (!rel)
 		return 0;
 
-	if (rel->exps)
-		for (node *n = rel->exps->h; n; n = n->next)
-			exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
+	const char *nrname = relname, *nename = expname;
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->exps)) {
+		sql_exp *e = NULL;
+
+		if (nrname && nename) { /* find the column reference and propagate type setting */
+			e = exps_bind_column2(rel->exps, nrname, nename, NULL);
+		} else if (nename) {
+			e = exps_bind_column(rel->exps, nename, NULL, NULL, 1);
+		}
+		if (!e)
+			return 0;
+		/* set order by column types */
+		if (is_simple_project(rel->op) && !list_empty(rel->r)) {
+			sql_exp *ordere = NULL;
+			if (nrname && nename) {
+				ordere = exps_bind_column2(rel->r, nrname, nename, NULL);
+			} else if (nename) {
+				ordere = exps_bind_column(rel->r, nename, NULL, NULL, 1);
+			}
+			if (ordere && ordere->type == e_column)
+				ordere->tpe = *type;
+		}
+		if (e->type == e_column) {
+			nrname = (const char*) e->l;
+			nename = (const char*) e->r;
+			e->tpe = *type;
+		} else if ((e->type == e_atom || exp_is_rel(e)) && set_exp_type(sql, type, rel, e) < 0) {
+			return -1; /* don't search further */
+		}
+		/* group by columns can have aliases! */
+		if (is_groupby(rel->op) && !list_empty(rel->r)) {
+			if (nrname && nename) {
+				e = exps_bind_column2(rel->r, nrname, nename, NULL);
+			} else if (nename) {
+				e = exps_bind_column(rel->r, nename, NULL, NULL, 1);
+			}
+			if (e && e->type == e_column) {
+				nrname = (const char*) e->l;
+				nename = (const char*) e->r;
+				e->tpe = *type;
+			} else if (e && (e->type == e_atom || exp_is_rel(e)) && set_exp_type(sql, type, rel, e) < 0) {
+				return -1; /* don't search further */
+			}
+		}
+		if (!e || e->type != e_column)
+			return 0; /* don't search further */
+	}
 
 	switch (rel->op) {
-		case op_basetable:
-		case op_truncate:
-			break;
-		case op_table:
-			if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
-				if (rel->l)
-					rel_set_type_recurse(sql, type, rel->l, relname, expname);
-			break;
 		case op_join:
 		case op_left:
 		case op_right:
 		case op_full:
+		case op_merge:
+			if ((rel->l && rel_find_parameter(sql, type, rel->l, nrname, nename) < 0) ||
+				(rel->r && rel_find_parameter(sql, type, rel->r, nrname, nename)))
+				return -1;
+			break;
 		case op_semi:
 		case op_anti:
-		case op_union:
-		case op_inter:
-		case op_except:
-		case op_merge:
-			if (rel->l)
-				rel_set_type_recurse(sql, type, rel->l, relname, expname);
-			if (rel->r)
-				rel_set_type_recurse(sql, type, rel->r, relname, expname);
-			break;
 		case op_groupby:
 		case op_project:
 		case op_select:
 		case op_topn:
 		case op_sample:
-			if (rel->l)
-				rel_set_type_recurse(sql, type, rel->l, relname, expname);
+			if ((rel->l && rel_find_parameter(sql, type, rel->l, nrname, nename) < 0))
+				return -1;
 			break;
 		case op_insert:
 		case op_update:
 		case op_delete:
-			if (rel->r)
-				rel_set_type_recurse(sql, type, rel->r, relname, expname);
+			if ((rel->r && rel_find_parameter(sql, type, rel->r, nrname, nename) < 0))
+				return -1;
 			break;
-		case op_ddl:
-			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
-				if (rel->l)
-					rel_set_type_recurse(sql, type, rel->l, relname, expname);
-			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
-				if (rel->l)
-					rel_set_type_recurse(sql, type, rel->l, relname, expname);
-				if (rel->r)
-					rel_set_type_recurse(sql, type, rel->r, relname, expname);
-			}
+		case op_union: /* TODO for set relations this needs further improvement */
+		case op_inter:
+		case op_except: {
+			(void) sql_error(sql, 10, SQLSTATE(42000) "Cannot set parameter types under set relations at the moment");
+			return -1;
+		}
+		default: /* For table returning functions, the type must be set when the relation is created */
 			break;
 	}
 	return 0;
