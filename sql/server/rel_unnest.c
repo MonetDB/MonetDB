@@ -1117,6 +1117,7 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 		rel->r = rel_dup(r->l);
 		rel = rel_select(sql->sa, rel, NULL);
 		rel->exps = !cp?exps:exps_copy(sql, exps);
+		rel_bind_vars(sql, rel, rel->exps);
 		set_processed(rel);
 		rel_destroy(r);
 	}
@@ -1366,18 +1367,19 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				list *inner_exps = exps_copy(sql, j->exps);
 				list *outer_exps = exps_copy(sql, rel->exps);
 				list *attr = j->attr;
+				int single = is_single(j);
 
 				rel->r = rel_dup(jl);
 				rel->exps = sa_list(sql->sa);
 				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
-				if (is_single(j))
-					set_single(nj);
 				set_processed(nj);
 				rel_destroy(j);
 				j = nj;
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
 				n->exps = outer_exps;
+				if (single)
+					set_single(n);
 				if (!n->exps)
 					n->exps = inner_exps;
 				else
@@ -2704,7 +2706,6 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 {
 	sql_rel *u = NULL;
 	list *exps = NULL;
-	int freevar = 0;
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -2712,6 +2713,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 	for (node *n=vals->h; n; n = n->next) {
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
+		int freevar = 0;
 
 		exp_label(sql->sa, ve, ++sql->label); /* an alias is needed */
 		if (exp_has_rel(ve)) {
@@ -2900,10 +2902,12 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					(void)rewrite_inner(sql, rel, lsq, op_left, &rewrite);
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
 					join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
+					rel_bind_var(sql, join, le);
 				}
 				if (rsq) {
 					(void)rewrite_inner(sql, rel, rsq, op_left, &join);
 					exp_reset_props(join, re, is_left(join->op));
+					rel_bind_var(sql, join, re);
 				}
 				assert(join && is_join(join->op));
 				if (join && !join->exps)
