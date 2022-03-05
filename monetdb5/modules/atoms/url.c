@@ -828,7 +828,6 @@ extractURLHost(str *retval, str *url, bool no_www)
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
-	*retval = GDKstrdup(str_nil);
 
 	if ((url != NULL || *url != NULL) && !strNil(*url)) {
 		if ((s = skip_scheme(*url)) != NULL &&
@@ -851,7 +850,11 @@ extractURLHost(str *retval, str *url, bool no_www)
 			} else {
 				throw(MAL, "url.getURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
+		} else {
+			*retval = GDKstrdup(str_nil);
 		}
+	} else {
+		*retval = GDKstrdup(str_nil);
 	}
 
 	return MAL_SUCCEED;
