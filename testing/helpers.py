@@ -4,8 +4,9 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
-import os, sys
-import re
+import os
+import sys
+
 
 def get_tests_from_all_file(fpath:str):
     res = []
@@ -32,6 +33,7 @@ def get_tests_from_all_file(fpath:str):
                     test = r.strip()
                 res.append((cond, test, comment))
     return res
+
 
 def process_test_dir(dir_path:str, ctx={}, **kwargs):
     """
@@ -168,6 +170,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
     ctx['test_count'] += len(tests_out)
     return ctx
 
+
 def process_dir(dir_path: str, ctx={}, **kwargs):
     if os.path.basename(os.path.realpath(dir_path)) == 'Tests':
         return process_test_dir(dir_path, ctx, **kwargs)
@@ -175,6 +178,7 @@ def process_dir(dir_path: str, ctx={}, **kwargs):
     for d in onlydirs:
         dir_ = os.path.join(dir_path, d)
         process_dir(dir_, ctx, **kwargs)
+
 
 def build_work_ctx(*args):
     """
@@ -206,6 +210,7 @@ def build_work_ctx(*args):
     else:
         raise ValueError('ERROR: {} is not a valid Tests directory'.format(args[0]))
     return ctx
+
 
 if __name__ == '__main__':
     ctx = build_work_ctx(*sys.argv[1:])
