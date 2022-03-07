@@ -3413,9 +3413,6 @@ def main(argv) :
     parser.add_argument('--verbose', '-v', action='store_true', dest='verbose', help="more verbose test output")
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
-    parser.add_argument('-I', action='store', dest='ignore', metavar='<exp>', help="ignored, backward compatibility option")
-    parser.add_argument('-C', action='store', dest='context', metavar='<num>', type=int, default=1, help="ignored, backward compatibility option")
-    parser.add_argument('-A', action='store', dest='accuracy', metavar='<num>', type=int, default=1, help="ignored, backward compatibility option")
     parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
     parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
     parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
