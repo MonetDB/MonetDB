@@ -959,7 +959,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 									else
 										r->l = rel_add_identity(sql, r->l, &id);
 								}
-								sql_exp *ne = rel_unop_(sql, NULL, exp_copy(sql, id), "sys", "isnull", card_value);
+								sql_exp *ne = rel_unop_(sql, NULL, exp_ref(sql, id), "sys", "isnull", card_value);
 								set_has_no_nil(ne);
 								ne = rel_nop_(sql, NULL, ne, exp_null(sql->sa, exp_subtype(e)), e, NULL, "sys", "ifthenelse", card_value);
 								exp_prop_alias(sql->sa, ne, e);
