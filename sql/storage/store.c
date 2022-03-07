@@ -5784,6 +5784,7 @@ create_sql_ic(sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c)
 sql_idx *
 create_sql_idx_done(sql_trans *tr, sql_idx *i)
 {
+	(void) tr;
 	if (i && i->key && hash_index(i->type)) {
 		int ncols = list_length(i->columns);
 		for (node *n = i->columns->h ; n ; n = n->next) {
@@ -5792,9 +5793,6 @@ create_sql_idx_done(sql_trans *tr, sql_idx *i)
 			kc->c->unique = (ncols == 1) ? 2 : MAX(kc->c->unique, 1);
 		}
 	}
-	/* should we switch to oph_idx ? */
-	if (i->type == hash_idx && list_length(i->columns) == 1 && sql_trans_is_sorted(tr, ((sql_kc*)i->columns->h->data)->c))
-		i->type = no_idx;
 	return i;
 }
 
