@@ -106,6 +106,22 @@ SELECT 1 FROM (SELECT DISTINCT 1) y(y) WHERE EXISTS (SELECT 1 WHERE (SELECT y.y 
 statement ok
 ROLLBACK
 
+query I nosort
+SELECT x.x FROM (SELECT DISTINCT 1) x(x) WHERE EXISTS (VALUES (41), (x.x))
+----
+1
+
+# these are right
+query I nosort
+SELECT x.x FROM (SELECT 1) x(x) WHERE EXISTS (VALUES (41), (x.x))
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (VALUES (41), (x.x)) AS INT) as count FROM (SELECT DISTINCT 1) x(x)) as res
+----
+1
+
 statement error 21000!Cardinality violation, scalar value expected
 SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 
