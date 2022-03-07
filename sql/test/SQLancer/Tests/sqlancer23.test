@@ -83,6 +83,22 @@ query I nosort
 SELECT 1 FROM t0 WHERE t0.c0 = (VALUES ((SELECT t0.c0)))
 ----
 
+query I nosort
+SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
+----
+
+#query I nosort
+#SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
+#----
+
+query I nosort
+SELECT (SELECT ((SELECT 1) INTERSECT (SELECT x.x)) FROM (SELECT 1) x(x) WHERE t0.c0 < ANY(SELECT 2)) FROM t0
+----
+
+query I nosort
+SELECT 1 FROM t0 JOIN (SELECT 1) y(y) ON 1 = (SELECT y.y FROM (SELECT 1 IN (SELECT 1 FROM t0)) x(x), t0 WHERE x.x)
+----
+
 statement ok
 ROLLBACK
 

@@ -922,28 +922,30 @@ reorder_join(visitor *v, sql_rel *rel)
 	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel))
 		rel->exps = push_up_join_exps(v->sql, rel);
 
-	exps = rel->exps;
-	if (!exps) /* crosstable, ie order not important */
-		return rel;
-	rel->exps = NULL; /* should be all crosstables by now */
-	rels = sa_list(v->sql->sa);
-	if (!is_innerjoin(rel->op) || is_single(rel) || rel_is_ref(rel)) {
-		/* try to use an join index also for outer joins */
-		get_inner_relations(v->sql, rel, rels);
-		int cnt = list_length(exps);
-		rel->exps = find_fk(v->sql, rels, exps);
-		if (list_length(rel->exps) != cnt)
-			rel->exps = order_join_expressions(v->sql, exps, rels);
+	if (!is_innerjoin(rel->op) || is_single(rel) || rel_is_ref(rel) || list_empty(rel->exps)) {
+		if (!list_empty(rel->exps)) { /* cannot add join idxs to cross products */
+			exps = rel->exps;
+			rel->exps = NULL; /* should be all crosstables by now */
+			rels = sa_list(v->sql->sa);
+			/* try to use an join index also for outer joins */
+			get_inner_relations(v->sql, rel, rels);
+			int cnt = list_length(exps);
+			rel->exps = find_fk(v->sql, rels, exps);
+			if (list_length(rel->exps) != cnt)
+				rel->exps = order_join_expressions(v->sql, exps, rels);
+		}
 		rel->l = rel_join_order(v, rel->l);
 		rel->r = rel_join_order(v, rel->r);
 	} else {
+		exps = rel->exps;
+		rel->exps = NULL; /* should be all crosstables by now */
+		rels = sa_list(v->sql->sa);
 		get_relations(v, rel, rels);
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
 			rel = order_joins(v, rels, exps);
 		} else {
 			rel->exps = exps;
-			exps = NULL;
 		}
 	}
 	return rel;

@@ -1907,8 +1907,16 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	/* try to push select up */
 	if (!rel_is_ref(rel) && ((is_simple_project(rel->op) && !rel->r && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) ||
 	    (is_join(rel->op) && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) ||
-	    (is_join(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r))))
+	    (is_join(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)))) {
 		rel = push_up_select2(v, rel);
+		if (rel && is_select(rel->op)) {
+			sql_rel *l = rel->l;
+			if (is_dependent(l)) {
+				rel->l = l = rel_unnest_dependent(v->sql, l);
+				v->changes++;
+			}
+		}
+	}
 	if (is_dependent(rel)) {
 		rel = rel_unnest_dependent(v->sql, rel);
 		v->changes++;
