@@ -3097,8 +3097,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		if (curschema == NULL || strcmp(schema, curschema) != 0) {
 			if (curschema)
 				free(curschema);
-			curschema = schema ? strdup(schema) : NULL;
-			if (schema && !curschema) {
+			curschema = strdup(schema);
+			if (curschema == NULL) {
 				free(id);
 				free(schema);
 				free(name);
