@@ -103,6 +103,11 @@ query I nosort
 SELECT 1 FROM (SELECT DISTINCT 1) y(y) WHERE EXISTS (SELECT 1 WHERE (SELECT y.y FROM t0 x) = 0)
 ----
 
+query I nosort
+SELECT (SELECT 1 FROM generate_series((SELECT DISTINCT 1, x.c0 FROM t0 x WHERE t0.c0 = 0))
+JOIN LATERAL (SELECT DISTINCT 1) x(x) ON TRUE) FROM t0
+----
+
 statement ok
 ROLLBACK
 
