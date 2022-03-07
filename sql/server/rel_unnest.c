@@ -1677,7 +1677,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 			if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 				sql_rel *j = rel->r;
 
-				if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps) {
+				if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps && exps_have_freevar(sql, j->exps)) {
 					rel->exps =	rel->exps?list_merge(rel->exps, j->exps, (fdup)NULL):j->exps;
 					j->exps = NULL;
 					bind_join_vars(sql, rel);
