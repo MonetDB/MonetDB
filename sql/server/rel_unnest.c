@@ -917,6 +917,14 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				l = rel_dup(l);
 				if (!is_project(l->op) || rel_is_ref(l))
 					l = rel_project( sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
+
+				if (is_left(rel->op) && !list_empty(rel->attr)) {
+					assert(list_length(rel->exps)==1);
+					sql_exp *e = rel->exps->h->data;
+					sql_exp *oe = rel->attr->h->data;
+					rel_project_add_exp(sql, l, e);
+					exp_setname(sql->sa, e, exp_relname(oe), exp_name(oe));
+				}
 				if (!list_empty(r->exps)) {
 					for (m=r->exps->h; m; m = m->next) {
 						sql_exp *e = m->data;
@@ -933,9 +941,8 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			sql_rel *n = rel_project( sql->sa, (r->l)?rel:rel->l,
 					rel_projections(sql, rel->l, NULL, 1, 1));
 
-			if (is_left(rel->op) && !list_empty(rel->attr)) {
+			if (is_left(rel->op) && !list_empty(rel->attr))
 				rel_project_add_exp(sql, n, exp_ref(sql, rel->attr->h->data));
-			}
 			if (list_empty(rel->attr) && !list_empty(r->exps)) {
 				for (m=r->exps->h; m; m = m->next) {
 					sql_exp *e = m->data;
@@ -952,7 +959,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 									else
 										r->l = rel_add_identity(sql, r->l, &id);
 								}
-								sql_exp *ne = rel_unop_(sql, NULL, exp_copy(sql, id), "sys", "isnull", card_value);
+								sql_exp *ne = rel_unop_(sql, NULL, exp_ref(sql, id), "sys", "isnull", card_value);
 								set_has_no_nil(ne);
 								ne = rel_nop_(sql, NULL, ne, exp_null(sql->sa, exp_subtype(e)), e, NULL, "sys", "ifthenelse", card_value);
 								exp_prop_alias(sql->sa, ne, e);
@@ -1110,6 +1117,7 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 		rel->r = rel_dup(r->l);
 		rel = rel_select(sql->sa, rel, NULL);
 		rel->exps = !cp?exps:exps_copy(sql, exps);
+		rel_bind_vars(sql, rel, rel->exps);
 		set_processed(rel);
 		rel_destroy(r);
 	}
@@ -1166,9 +1174,19 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 				assert(id);
 			}
 
-			assert(rel->op != op_anti);
+			//assert(rel->op != op_anti);
 			if (rel->op == op_semi)
 				rel->op = op_join;
+			if (rel->op == op_anti) {
+				rel->op = op_join;
+				/* need to change all exps */
+				if (!list_empty(rel->exps)) {
+					for(node *n = rel->exps->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						e->anti = !e->anti;
+					}
+				}
+			}
 
 			if (!list_empty(r->exps)) {
 				for (n = r->exps->h; n; n = n->next ) {
@@ -1349,18 +1367,19 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				list *inner_exps = exps_copy(sql, j->exps);
 				list *outer_exps = exps_copy(sql, rel->exps);
 				list *attr = j->attr;
+				int single = is_single(j);
 
 				rel->r = rel_dup(jl);
 				rel->exps = sa_list(sql->sa);
 				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
-				if (is_single(j))
-					set_single(nj);
 				set_processed(nj);
 				rel_destroy(j);
 				j = nj;
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
 				n->exps = outer_exps;
+				if (single)
+					set_single(n);
 				if (!n->exps)
 					n->exps = inner_exps;
 				else
@@ -1658,7 +1677,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 			if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 				sql_rel *j = rel->r;
 
-				if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps) {
+				if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps && exps_have_freevar(sql, j->exps)) {
 					rel->exps =	rel->exps?list_merge(rel->exps, j->exps, (fdup)NULL):j->exps;
 					j->exps = NULL;
 					bind_join_vars(sql, rel);
@@ -1793,6 +1812,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		rel_destroy(l);
 		rel_bind_vars(v->sql, nl, nl->exps);
 		v->changes++;
+		nl->l = push_up_select2(v, nl->l);
 		return nl;
 	}
 	if (is_single(rel) && is_innerjoin(rel->op) && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) {
@@ -1805,6 +1825,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		rel_destroy(l);
 		rel_bind_vars(v->sql, rel, rel->exps);
 		v->changes++;
+		rel = push_up_select2(v, rel);
 		return rel;
 	}
 	if (!is_single(rel) && is_innerjoin(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)) {
@@ -1837,6 +1858,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		rel_destroy(l);
 		rel_bind_vars(v->sql, nl, nl->exps);
 		v->changes++;
+		nl->l = push_up_select2(v, nl->l);
 		return nl;
 	}
 	if (is_left(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)) {
@@ -1859,6 +1881,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		rel_destroy(r);
 		rel_bind_vars(v->sql, nr, nr->exps);
 		v->changes++;
+		nr->l = push_up_select2(v, nr->l);
 		return nr;
 	}
 	if (is_right(rel->op) && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) {
@@ -1884,8 +1907,16 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	/* try to push select up */
 	if (!rel_is_ref(rel) && ((is_simple_project(rel->op) && !rel->r && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) ||
 	    (is_join(rel->op) && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) ||
-	    (is_join(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r))))
+	    (is_join(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)))) {
 		rel = push_up_select2(v, rel);
+		if (rel && is_select(rel->op)) {
+			sql_rel *l = rel->l;
+			if (is_dependent(l)) {
+				rel->l = l = rel_unnest_dependent(v->sql, l);
+				v->changes++;
+			}
+		}
+	}
 	if (is_dependent(rel)) {
 		rel = rel_unnest_dependent(v->sql, rel);
 		v->changes++;
@@ -2687,7 +2718,6 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 {
 	sql_rel *u = NULL;
 	list *exps = NULL;
-	int freevar = 0;
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -2695,6 +2725,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 	for (node *n=vals->h; n; n = n->next) {
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
+		int freevar = 0;
 
 		exp_label(sql->sa, ve, ++sql->label); /* an alias is needed */
 		if (exp_has_rel(ve)) {
@@ -2883,10 +2914,12 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					(void)rewrite_inner(sql, rel, lsq, op_left, &rewrite);
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
 					join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
+					rel_bind_var(sql, join, le);
 				}
 				if (rsq) {
 					(void)rewrite_inner(sql, rel, rsq, op_left, &join);
 					exp_reset_props(join, re, is_left(join->op));
+					rel_bind_var(sql, join, re);
 				}
 				assert(join && is_join(join->op));
 				if (join && !join->exps)
@@ -2910,7 +2943,8 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					return sql_error(sql, 02, SQLSTATE(42000) "Tuple matching at projections not implemented in the backend yet");
 				} else {
 					sql_exp *inexp = exp_compare(v->sql->sa, le, re, is_anyequal(sf)?mark_in:mark_notin);
-					rel_bind_var(sql, rel, inexp);
+					le->freevar = 1;
+					rel_bind_var(sql, join, inexp);
 					append(join->exps, inexp);
 				}
 				v->changes++;
@@ -3012,9 +3046,10 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (rsq) {
 				if (!lsq && is_simple_project(rsq->op) && !rsq->l) {
 					sql_exp *ire = rsq->exps->h->data;
-					if (is_values(ire) && list_length(ire->f) == 1) {
-						rsq = NULL;
-						re = ire;
+					if (is_values(ire) && list_length(ire->f) == 1 && !is_values(le)) {
+						list *exps = ire->f;
+						re = exps->h->data;
+						rsq = exp_rel_get_rel(v->sql->sa, re);
 					}
 				}
 				if (rsq)
@@ -3027,6 +3062,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (!is_tuple && !lsq && !rsq) { /* trivial case, just re-write into a comparison */
 				e->flag = 0; /* remove quantifier */
 
+				rel_bind_var(v->sql, rel, re);
 				if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
 					return NULL;
 				if (depth == 0 && is_select(rel->op)) {

@@ -2739,67 +2739,61 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
             ClntOut = openutf8(ClntOutFile,"w")
             ClntErr = openutf8(ClntErrFile,"w")
 
-            Srvr = splitcommand(exe['mserver5'][1])
-            if nomito:
-                try:
-                    Srvr.remove('--forcemito')
-                except ValueError:
-                    pass
-            if threads is not None:
-                for i in range(len(Srvr)):
-                    if Srvr[i].startswith('gdk_nr_threads='):
-                        Srvr[i] = 'gdk_nr_threads=%s' % threads
-                        break
-            dbpath = os.path.join(env['GDK_DBFARM'], TSTDB)
-            Srvr.append('--dbpath=%s' % dbpath)
-            if env.get('MULTIFARM'):
-                Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-                shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
-                              ignore_errors = True)
-                os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-            elif env.get('TRANS_INMEM'):
-                Srvr.append('--dbextra=in-memory')
-            if os.path.isfile(TST + '.options5'):
-                Srvr.extend(openutf8(TST + '.options5').read().split())
-            lang=""
-
-            if SERVER == "MAL":
-                lang="mal"
-            if SERVER == "SQL":
-                lang="sql"
-
-            # enable r integration in server
-            if (not all_tests or (COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
-                Srvr.extend(['--set', 'embedded_r=yes'])
-
-            savepath = None
-            savepypath = os.environ.get('PYTHONPATH')
-            savepyhome = os.environ.get('PYTHONHOME')
-            if (COND != None and "HAVE_LIBPY3" in COND) and CONDITIONALS['HAVE_LIBPY3']:
-                # enable Python 3 integration in server
-                if winreg is not None:
-                    if env['TST_BITS'] == '32bit':
-                        if sys.maxsize > 2**32:
-                            regkey = r'SOFTWARE\Wow6432Node\Python\PythonCore\3.@PY3VER@-32\InstallPath'
-                        else:
-                            regkey = r'SOFTWARE\Python\PythonCore\3.@PY3VER@-32\InstallPath'
-                    else:
-                        regkey = r'SOFTWARE\Python\PythonCore\3.@PY3VER@\InstallPath'
-                    try:
-                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey) as key:
-                            instpath = winreg.QueryValue(key, None)
-                            os.environ['PYTHONHOME'] = instpath
-                            os.environ['PYTHONPATH'] = instpath + 'Lib'
-                            savepath = os.environ['PATH']
-                            os.environ['PATH'] = instpath.rstrip('\\') + os.pathsep + savepath
-                    except WindowsError:
-                        pass
-                Srvr.extend(['--set', 'embedded_py=3'])
-
-            # enable C integration in server
-            Srvr.extend(['--set', 'embedded_c=true'])
-
             if PSRVR is None:
+                Srvr = splitcommand(exe['mserver5'][1])
+                if nomito:
+                    try:
+                        Srvr.remove('--forcemito')
+                    except ValueError:
+                        pass
+                if threads is not None:
+                    for i in range(len(Srvr)):
+                        if Srvr[i].startswith('gdk_nr_threads='):
+                            Srvr[i] = 'gdk_nr_threads=%s' % threads
+                            break
+                dbpath = os.path.join(env['GDK_DBFARM'], TSTDB)
+                Srvr.append('--dbpath=%s' % dbpath)
+                if env.get('MULTIFARM'):
+                    Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
+                                  ignore_errors = True)
+                    os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+                elif env.get('TRANS_INMEM'):
+                    Srvr.append('--dbextra=in-memory')
+                if os.path.isfile(TST + '.options5'):
+                    Srvr.extend(openutf8(TST + '.options5').read().split())
+
+                # enable r integration in server
+                if (not all_tests or (COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
+                    Srvr.extend(['--set', 'embedded_r=yes'])
+
+                savepath = None
+                savepypath = os.environ.get('PYTHONPATH')
+                savepyhome = os.environ.get('PYTHONHOME')
+                if (COND != None and "HAVE_LIBPY3" in COND) and CONDITIONALS['HAVE_LIBPY3']:
+                    # enable Python 3 integration in server
+                    if winreg is not None:
+                        if env['TST_BITS'] == '32bit':
+                            if sys.maxsize > 2**32:
+                                regkey = r'SOFTWARE\Wow6432Node\Python\PythonCore\3.@PY3VER@-32\InstallPath'
+                            else:
+                                regkey = r'SOFTWARE\Python\PythonCore\3.@PY3VER@-32\InstallPath'
+                        else:
+                            regkey = r'SOFTWARE\Python\PythonCore\3.@PY3VER@\InstallPath'
+                        try:
+                            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey) as key:
+                                instpath = winreg.QueryValue(key, None)
+                                os.environ['PYTHONHOME'] = instpath
+                                os.environ['PYTHONPATH'] = instpath + 'Lib'
+                                savepath = os.environ['PATH']
+                                os.environ['PATH'] = instpath.rstrip('\\') + os.pathsep + savepath
+                        except WindowsError:
+                            pass
+                    Srvr.extend(['--set', 'embedded_py=3'])
+
+                # enable C integration in server
+                Srvr.extend(['--set', 'embedded_c=true'])
+
                 if env.get('MULTIFARM'):
                     Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                     shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -2815,19 +2809,19 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     return 'serverfail'
                 os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
                 SetExecEnv(exe,pSrvr.port,verbose)
+                if savepath is not None:
+                    os.environ['PATH'] = savepath
+                    if savepypath:
+                        os.environ['PYTHONPATH'] = savepypath
+                    else:
+                        del os.environ['PYTHONPATH']
+                    if savepyhome:
+                        os.environ['PYTHONHOME'] = savepyhome
+                    else:
+                        del os.environ['PYTHONHOME']
             else:
                 PSRVR.timer.settimeout(TIMEOUT)
                 PSRVR.timer.start()
-            if savepath is not None:
-                os.environ['PATH'] = savepath
-                if savepypath:
-                    os.environ['PYTHONPATH'] = savepypath
-                else:
-                    del os.environ['PYTHONPATH']
-                if savepyhome:
-                    os.environ['PYTHONHOME'] = savepyhome
-                else:
-                    del os.environ['PYTHONHOME']
         else:
             ClntOut = openutf8(TestOutFile, 'a')
             ClntErr = openutf8(TestErrFile, 'a')
@@ -3413,9 +3407,6 @@ def main(argv) :
     parser.add_argument('--verbose', '-v', action='store_true', dest='verbose', help="more verbose test output")
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
-    parser.add_argument('-I', action='store', dest='ignore', metavar='<exp>', help="ignored, backward compatibility option")
-    parser.add_argument('-C', action='store', dest='context', metavar='<num>', type=int, default=1, help="ignored, backward compatibility option")
-    parser.add_argument('-A', action='store', dest='accuracy', metavar='<num>', type=int, default=1, help="ignored, backward compatibility option")
     parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
     parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
     parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)

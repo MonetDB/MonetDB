@@ -26,7 +26,6 @@ SELECT 1 FROM vx WHERE 1 <> ALL(VALUES (10), (vx.vx))
 ----
 1
 
-# this one is right
 query I nosort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(1 <> ALL(VALUES (10), (vx.vx)) AS INT) as count FROM vx) as res
 ----
@@ -43,13 +42,13 @@ ON vy.vc0 LIKE y.y) FROM (SELECT DISTINCT '1', 2) vy(vc0, vc2)
 ----
 1
 
-#query I nosort
-#SELECT 3 <> ALL(VALUES (vz.z)) FROM ((SELECT 1) INTERSECT DISTINCT (SELECT 2)) vz(z)
-#----
+query I nosort
+SELECT 3 <> ALL(VALUES (vz.z)) FROM ((SELECT 1) INTERSECT DISTINCT (SELECT 2)) vz(z)
+----
 
-#query I nosort
-#SELECT 1 FROM (SELECT DISTINCT 2) vx(vc1) WHERE NOT EXISTS (VALUES (TRUE), (EXISTS (SELECT vx.vc1)))
-#----
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT 2) vx(vc1) WHERE NOT EXISTS (VALUES (TRUE), (EXISTS (SELECT vx.vc1)))
+----
 
 statement ok
 create view vy(vc0) as ((select 'a') union all (select z.z from (SELECT 1) y(y)
@@ -69,8 +68,64 @@ SELECT (SELECT (VALUES (x.x)) FROM (VALUES (1),(2)) x(x) JOIN (VALUES (1, t0.c0,
 (7, 9, FALSE)) y(a,b,c) ON y.c) FROM t0
 ----
 
+statement ok rowcount 0
+DELETE FROM t0 WHERE 1 = (VALUES (t0.c0))
+
+query I nosort
+SELECT (SELECT (SELECT 1 WHERE x.x = 1) FROM (SELECT 1) x(x) WHERE t0.c0 = ALL(SELECT 1 WHERE x.x = 1)) FROM t0
+----
+
+query I nosort
+SELECT 1 FROM t0 FULL OUTER JOIN (SELECT 1) AS x(x) ON least(t0.c0 = ANY(SELECT 1 FROM t0), TRUE)
+----
+
+query I nosort
+SELECT 1 FROM t0 WHERE t0.c0 = (VALUES ((SELECT t0.c0)))
+----
+
+query I nosort
+SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
+----
+
+#query I nosort
+#SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
+#----
+
+query I nosort
+SELECT (SELECT ((SELECT 1) INTERSECT (SELECT x.x)) FROM (SELECT 1) x(x) WHERE t0.c0 < ANY(SELECT 2)) FROM t0
+----
+
+query I nosort
+SELECT 1 FROM t0 JOIN (SELECT 1) y(y) ON 1 = (SELECT y.y FROM (SELECT 1 IN (SELECT 1 FROM t0)) x(x), t0 WHERE x.x)
+----
+
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT 1) y(y) WHERE EXISTS (SELECT 1 WHERE (SELECT y.y FROM t0 x) = 0)
+----
+
+query I nosort
+SELECT (SELECT 1 FROM generate_series((SELECT DISTINCT 1, x.c0 FROM t0 x WHERE t0.c0 = 0))
+JOIN LATERAL (SELECT DISTINCT 1) x(x) ON TRUE) FROM t0
+----
+
 statement ok
 ROLLBACK
+
+query I nosort
+SELECT x.x FROM (SELECT DISTINCT 1) x(x) WHERE EXISTS (VALUES (41), (x.x))
+----
+1
+
+# these are right
+query I nosort
+SELECT x.x FROM (SELECT 1) x(x) WHERE EXISTS (VALUES (41), (x.x))
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (VALUES (41), (x.x)) AS INT) as count FROM (SELECT DISTINCT 1) x(x)) as res
+----
+1
 
 statement error 21000!Cardinality violation, scalar value expected
 SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
@@ -78,7 +133,6 @@ SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 statement error 21000!Cardinality violation, scalar value expected
 SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
 
-# these are right
 statement error GDK reported error: mergejoin: more than one match
 SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 
