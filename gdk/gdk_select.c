@@ -1603,6 +1603,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			(!b->batTransient &&
 			 ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 			 BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
+		if (!wanthash) {
+			MT_lock_set(&b->theaplock);
+			if (++b->selcnt > 1000) {
+				wanthash = true;
+				b->selcnt = 1000; /* limit value */
+			}
+			MT_lock_unset(&b->theaplock);
+		}
 		if (wanthash && !havehash) {
 			MT_lock_set(&b->theaplock);
 			if (b->tunique_est != 0 &&
@@ -1624,7 +1632,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * to do a binary search on the candidate list (or 1
 		 * if no need for search)) */
 		tmp = BBP_cache(parent);
-		if (tmp && BATcheckhash(tmp)) {
+		if (BATcheckhash(tmp)) {
 			MT_rwlock_rdlock(&tmp->thashlock);
 			phash = tmp->thash != NULL &&
 				(BATcount(tmp) == BATcount(b) ||
@@ -1637,8 +1645,17 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		/* create a hash on the parent bat (and use it) if it is
 		 * the same size as the view and it is persistent */
+		bool wantphash = false;
+		if (!phash) {
+			MT_lock_set(&tmp->theaplock);
+			if (++tmp->selcnt > 1000) {
+				wantphash = true;
+				tmp->selcnt = 1000;
+			}
+			MT_lock_unset(&tmp->theaplock);
+		}
 		if (!phash &&
-		    !tmp->batTransient &&
+		    (!tmp->batTransient || wantphash) &&
 		    BATcount(tmp) == BATcount(b) &&
 		    BAThash(tmp) == GDK_SUCCEED) {
 			MT_rwlock_rdlock(&tmp->thashlock);
@@ -1885,7 +1902,17 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	assert(oidxh == NULL);
 	/* upper limit for result size */
 	maximum = ci.ncand;
-	if (b->tkey) {
+	if (equi && havehash) {
+		/* we can look in the hash struct to see whether all
+		 * values are distinct and set estimate accordingly */
+		if (phash) {
+			BAT *tmp = BBP_cache(parent);
+			if (tmp->thash->nunique == tmp->batCount)
+				estimate = 1;
+		} else if (b->thash->nunique == b->batCount)
+			estimate = 1;
+	}
+	if (estimate == BUN_NONE && (b->tkey || (parent != 0 && BBP_cache(parent)->tkey))) {
 		/* exact result size in special cases */
 		if (equi) {
 			estimate = 1;

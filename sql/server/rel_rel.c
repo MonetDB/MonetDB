@@ -691,9 +691,6 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
-	rel->single = is_single(r);
-	if (is_single(r))
-		reset_single(r);
 	return rel;
 }
 
@@ -997,7 +994,7 @@ rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps)
 	if(!rel)
 		return NULL;
 
-	rel->flag = 1;
+	rel->flag = TABLE_PROD_FUNC;
 	rel->l = l;
 	rel->op = op_table;
 	rel->exps = exps;
