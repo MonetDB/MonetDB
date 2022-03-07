@@ -539,7 +539,8 @@ def find_test_dirs(thisdir) :
     return testdirs
 ### find_test_dirs(thisdir) #
 
-def PerformDir(env, testdir) :
+
+def PerformDir(env, testdir):
     td = 0
     failed = 0
     skipped = 0
@@ -550,6 +551,10 @@ def PerformDir(env, testdir) :
     TSTTRGDIR = os.path.normpath(os.path.join(TSTTRGBASE, TSTPREF, TSTDIR))
 
     TSTDB = TSTPREF + "_" + TSTDIR.replace(os.sep, '_')
+
+    oneserver = testdir.get('single_server', False)
+    options = testdir.get('server_options', [])
+    testlist = testdir.get('tests', [])
 
     try:
         sys.path.insert(0, TSTSRCDIR)
@@ -615,10 +620,6 @@ def PerformDir(env, testdir) :
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
 
-        oneserver = testdir.get('single_server', False)
-        options = testdir.get('server_options', [])
-        testlist = testdir.get('tests', [])
-
         oktests = []
         alllinks = []
         pSrvr = None
@@ -637,7 +638,7 @@ def PerformDir(env, testdir) :
                     os.chdir(TSTTRGDIR)
                     pSrvr.LaunchIt()
                     os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
-                    SetExecEnv(env['exe'],pSrvr.port,verbose)
+                    SetExecEnv(env['exe'], pSrvr.port, verbose)
                 if global_timeout and start_time + global_timeout < time.time():
                     if not testweb:
                         print('\nGlobal testing timeout reached\n')
@@ -653,7 +654,7 @@ def PerformDir(env, testdir) :
                 TIMES.append((TSTDIR, test_name, t, tt, FtErr, reason))
                 td += tt
                 FdErr = max(FdErr,FtErr)
-                if FtErr ==  F_OK:
+                if FtErr == F_OK:
                     oktests.append(test_name)
                 if FtErr == F_SKIP:
                     skipped += 1
