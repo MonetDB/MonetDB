@@ -91,6 +91,10 @@ query I nosort
 SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
 ----
 
+query I nosort
+SELECT (SELECT ((SELECT 1) INTERSECT (SELECT x.x)) FROM (SELECT 1) x(x) WHERE t0.c0 < ANY(SELECT 2)) FROM t0
+----
+
 statement ok
 ROLLBACK
 
