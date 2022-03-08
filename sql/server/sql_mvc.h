@@ -133,6 +133,7 @@ typedef struct mvc {
 	int timezone;		/* milliseconds west of UTC */
 	int reply_size;		/* reply size */
 	int debug;
+	int sql_optimizer; /* SQL optimizer mask */
 
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */
