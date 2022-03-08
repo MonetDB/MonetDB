@@ -89,12 +89,13 @@ sequence_lookup( sql_hash *h, sqlid id)
 }
 
 /* lock is held */
-static void
+static store_sequence *
 update_sequence(sqlstore *store, store_sequence *s)
 {
-	if (!s->intrans)
-		list_append(store->seqchanges, s);
+	if (!s->intrans && !list_append(store->seqchanges, s))
+		return NULL;
 	s->intrans = true;
+	return s;
 }
 
 /* lock is held */
@@ -145,8 +146,13 @@ seq_restart(sql_store Store, sql_sequence *seq, lng start)
 			}
 		}
 	}
+	lng ocur = s->cur;
 	s->cur = start;
-	update_sequence(store, s);
+	if (!update_sequence(store, s)) {
+		s->cur = ocur;
+		sequences_unlock(store);
+		return 0;
+	}
 	sequences_unlock(store);
 	return 1;
 }
@@ -188,9 +194,14 @@ seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
 
 		if (0 < cnt && !seq->cycle && !(max > 0 && s->cur < 0)) {
 			if ((max - s->cur) >= ((cnt-1) * inc)) {
+				lng ocur = s->cur;
 				s->cur += inc * cnt;
 
-				update_sequence(store, s);
+				if (!update_sequence(store, s)) {
+					s->cur = ocur;
+					sequences_unlock(store);
+					return 0;
+				}
 				sequences_unlock(store);
 				store_unlocked = true;
 			} else {
@@ -210,9 +221,14 @@ seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
 
 		if (0 < cnt && !seq->cycle && !(min < 0 && s->cur > 0)) {
 			if ((s->cur - min) >= ((cnt-1) * inc)) {
+				lng ocur = s->cur;
 				s->cur -= inc * cnt;
 
-				update_sequence(store, s);
+				if (!update_sequence(store, s)) {
+					s->cur = ocur;
+					sequences_unlock(store);
+					return 0;
+				}
 				sequences_unlock(store);
 				store_unlocked = true;
 			} else {
@@ -230,9 +246,14 @@ seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
 	}
 
 	if (!store_unlocked) {
+		lng ocur = s->cur;
 		s->cur = cur;
 
-		update_sequence(store, s);
+		if (!update_sequence(store, s)) {
+			s->cur = ocur;
+			sequences_unlock(store);
+			return 0;
+		}
 		sequences_unlock(store);
 	}
 	return 1;
