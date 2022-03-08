@@ -1475,6 +1475,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		int single = is_single(rel);
 		sql_rel *d = rel->l, *s = rel->r;
+		int need_distinct = is_semi(rel->op) && need_distinct(d);
 
 		/* left of rel should be a set */
 		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
@@ -1522,6 +1523,8 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			if (single || is_single(s))
 				set_single(ns);
 			if (need_distinct(s))
+				set_distinct(ns);
+			if (need_distinct)
 				set_distinct(ns);
 
 			if (is_join(rel->op)) {
