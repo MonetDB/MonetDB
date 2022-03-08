@@ -1816,6 +1816,11 @@ store_load(sqlstore *store, sql_allocator *pa)
 	store->depchanges = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
 	store->sequences = hash_new(NULL, 32, (fkeyvalue)&seq_hash);
 	store->seqchanges = list_create(NULL);
+	if (!store->active || !store->dependencies || !store->depchanges || !store->sequences || !store->seqchanges) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
+		sql_trans_destroy(tr);
+		return NULL;
+	}
 
 	s = bootstrap_create_schema(tr, "sys", 2000, ROLE_SYSADMIN, USER_MONETDB);
 	if (!store->first)
