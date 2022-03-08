@@ -1662,6 +1662,10 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		if (rel_has_freevar(sql, r)) {
 			list *ad = rel_dependent_var(sql, rel->l, rel->r);
 
+			if (list_empty(ad)) {
+				reset_dependent(rel);
+				return rel;
+			}
 			if (r && is_select(r->op)) {
 				sql_rel *l = r->l;
 
