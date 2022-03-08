@@ -1449,7 +1449,8 @@ bm_get_counts(logger *lg)
 static int
 subcommit_list_add(int next, bat *n, BUN *sizes, bat bid, BUN sz)
 {
-	for(int i=0; i<next; i++) {
+	assert(sz <= BBP_desc(bid)->batCount || sz == BUN_NONE);
+	for (int i=0; i<next; i++) {
 		if (n[i] == bid) {
 			sizes[i] = sz;
 			return next;
