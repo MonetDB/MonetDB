@@ -3941,16 +3941,15 @@ sql_trans_commit(sql_trans *tr)
 				if (c->log && ok == LOG_OK)
 					ok = c->log(tr, c);
 			}
-			if (ok == LOG_OK) {
-				if (!list_empty(store->seqchanges)) {
-					sequences_lock(store);
-					for(node *n = store->seqchanges->h; n; n = n->next) {
-						log_store_sequence(store, n->data);
-					}
-					list_destroy(store->seqchanges);
-					store->seqchanges = list_create(NULL);
-					sequences_unlock(store);
+			if (ok == LOG_OK && !list_empty(store->seqchanges)) {
+				sequences_lock(store);
+				for(node *n = store->seqchanges->h; n; ) {
+					node *next = n->next;
+					log_store_sequence(store, n->data);
+					list_remove_node(store->seqchanges, NULL, n);
+					n = next;
 				}
+				sequences_unlock(store);
 			}
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
