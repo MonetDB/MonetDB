@@ -590,7 +590,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 
 
 static gdk_return
-la_bat_update_count(logger *lg, log_id id, lng cnt)
+la_bat_update_count(logger *lg, log_id id, lng cnt, int tid)
 {
 	BATiter cni = bat_iterator_nolock(lg->catalog_id);
 
@@ -601,7 +601,7 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 		HASHloop_int(cni, cni.b->thash, p, &id) {
 			lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 
-			if (lid != lng_nil && lid <= lg->tid)
+			if (lid != lng_nil && lid <= tid)
 				break;
 			cp = p;
 		}
@@ -619,7 +619,7 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 }
 
 static gdk_return
-la_bat_updates(logger *lg, logaction *la)
+la_bat_updates(logger *lg, logaction *la, int tid)
 {
 	log_bid bid = internal_find_bat(lg, la->cid);
 	BAT *b = NULL;
@@ -683,7 +683,7 @@ la_bat_updates(logger *lg, logaction *la)
 			}
 		}
 		cnt = (BUN)(la->offset + la->nr);
-		if (la_bat_update_count(lg, la->cid, cnt) != GDK_SUCCEED) {
+		if (la_bat_update_count(lg, la->cid, cnt, tid) != GDK_SUCCEED) {
 			if (b)
 				logbat_destroy(b);
 			return GDK_FAIL;
@@ -834,14 +834,14 @@ tr_create(trans *tr, int tid)
 }
 
 static gdk_return
-la_apply(logger *lg, logaction *c)
+la_apply(logger *lg, logaction *c, int tid)
 {
 	gdk_return ret = GDK_SUCCEED;
 
 	switch (c->type) {
 	case LOG_UPDATE_BULK:
 	case LOG_UPDATE:
-		ret = la_bat_updates(lg, c);
+		ret = la_bat_updates(lg, c, tid);
 		break;
 	case LOG_CREATE:
 		if (!lg->flushing)
@@ -924,7 +924,7 @@ tr_commit(logger *lg, trans *tr)
 		fprintf(stderr, "#tr_commit\n");
 
 	for (i = 0; i < tr->nr; i++) {
-		if (la_apply(lg, &tr->changes[i]) != GDK_SUCCEED) {
+		if (la_apply(lg, &tr->changes[i], tr->tid) != GDK_SUCCEED) {
 			do {
 				tr = tr_abort_(lg, tr, i);
 			} while (tr != NULL);
@@ -2341,7 +2341,7 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 		/* logging is switched off */
 		if (nr) {
 			logger_lock(lg);
-			ok = la_bat_update_count(lg, id, offset+cnt);
+			ok = la_bat_update_count(lg, id, offset+cnt, lg->tid);
 			logger_unlock(lg);
 		}
 		return ok;
@@ -2440,7 +2440,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 		/* logging is switched off */
 		lg->end += nr;
 		if (nr)
-			return la_bat_update_count(lg, id, offset+cnt);
+			return la_bat_update_count(lg, id, offset+cnt, lg->tid);
 		return GDK_SUCCEED;
 	}
 
@@ -2658,7 +2658,7 @@ log_bat_clear(logger *lg, int id)
 	lg->end++;
 	if (LOG_DISABLED(lg)) {
 		logger_lock(lg);
-		gdk_return res = la_bat_update_count(lg, id, 0);
+		gdk_return res = la_bat_update_count(lg, id, 0, lg->tid);
 		logger_unlock(lg);
 		return res;
 	}
