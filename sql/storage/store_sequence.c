@@ -56,21 +56,21 @@ sequence_destroy( void *dummy, store_sequence *s )
 void
 seq_hash_destroy( sql_hash *h )
 {
-    if (h == NULL || h->sa)
-        return ;
-    for (int i = 0; i < h->size; i++) {
-        sql_hash_e *e = h->buckets[i];
+	if (h == NULL || h->sa)
+		return ;
+	for (int i = 0; i < h->size; i++) {
+		sql_hash_e *e = h->buckets[i];
 
-        while (e) {
-            sql_hash_e *next = e->chain;
+		while (e) {
+			sql_hash_e *next = e->chain;
 
-            sequence_destroy(NULL, e->value);
-            _DELETE(e);
-            e = next;
-        }
-    }
-    _DELETE(h->buckets);
-    _DELETE(h);
+			sequence_destroy(NULL, e->value);
+			_DELETE(e);
+			e = next;
+		}
+	}
+	_DELETE(h->buckets);
+	_DELETE(h);
 }
 
 static store_sequence *
@@ -78,12 +78,12 @@ sequence_lookup( sql_hash *h, sqlid id)
 {
 	sql_hash_e *e = h->buckets[id & (h->size-1)];
 	while(e) {
-            sql_hash_e *next = e->chain;
-			store_sequence *s = e->value;
+		sql_hash_e *next = e->chain;
+		store_sequence *s = e->value;
 
-			if (s->seqid == id)
-				return s;
-			e = next;
+		if (s->seqid == id)
+			return s;
+		e = next;
 	}
 	return NULL;
 }
@@ -114,7 +114,10 @@ sequence_create(sqlstore *store, sql_sequence *seq )
 
 	if (!isNew(seq) && store->logger_api.get_sequence(store, seq->base.id, &val ))
 		s->cur = val;
-	hash_add(store->sequences, seq_hash(s), s);
+	if (!hash_add(store->sequences, seq_hash(s), s)) {
+		_DELETE(s);
+		return NULL;
+	}
 	return s;
 }
 
