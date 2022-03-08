@@ -1522,9 +1522,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			set_processed(ns);
 			if (single || is_single(s))
 				set_single(ns);
-			if (need_distinct(s))
-				set_distinct(ns);
-			if (need_distinct)
+			if (need_distinct || need_distinct(s))
 				set_distinct(ns);
 
 			if (is_join(rel->op)) {
