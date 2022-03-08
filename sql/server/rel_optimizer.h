@@ -12,6 +12,18 @@
 #include "sql_relation.h"
 #include "sql_mvc.h"
 
+#define NOPTIMIZERS 24
+
+typedef struct {
+	int nchanges;
+	lng time;
+} sql_optimizer_run;
+
+typedef struct {
+	sql_optimizer_run optimizers[NOPTIMIZERS];
+	sql_rel *rel;
+} sql_optimized_query;
+
 extern sql_rel *rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt);
 
 extern int exp_joins_rels(sql_exp *e, list *rels);
