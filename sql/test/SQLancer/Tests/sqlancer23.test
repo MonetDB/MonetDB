@@ -114,6 +114,12 @@ ON 2 > greatest((SELECT x.x WHERE y.y), x.x)
 ----
 1
 
+query I nosort
+SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT 1) x(x) ON (VALUES (t0.c0 > x.x)) AND
+greatest(CAST(t0.c0 AS BOOLEAN), 2 IN (SELECT 3 FROM t0))
+----
+1
+
 statement ok
 ROLLBACK
 
