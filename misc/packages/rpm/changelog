@@ -1,3 +1,10 @@
+* Wed Mar 09 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.17-20220309
+- Rebuilt.
+
+* Wed Mar  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.17-20220309
+- gdk: Found and fixed another source for the now infamous BBPcheckbats error
+  that sometimes occurs at startup of the server.
+
 * Thu Feb 24 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.15-20220224
 - Rebuilt.
 - GH#7225: Invalid memory access when extending a BAT during appends
