@@ -3811,6 +3811,9 @@ sql_trans_valid(sql_trans *tr)
 			pl *p = n->data;
 			sql_column *c = p->c;
 
+			if (c && c->base.name && c->base.name[0] == 'k')
+				printf("break\n");
+
 			if (c->t && isTable(c->t) && !isNew(c) && !isTempTable(c->t)) {
 				if ((ok = store->storage_api.tab_validate(tr, c->t, 0)))
 					break;
@@ -3900,10 +3903,7 @@ sql_trans_commit(sql_trans *tr)
 
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
-		ulng commit_ts = 0, oldest = 0;
-		/* stores the transaction id given at the log_tstart, to be used by the tflush/tdone,
-		   as we cannot rely on the current logger->tid due to the parallel execution */
-		int log_tid;
+		ulng commit_ts = 0, oldest = 0, log_file_id = 0;
 
 		MT_lock_set(&store->commit);
 
@@ -3931,7 +3931,7 @@ sql_trans_commit(sql_trans *tr)
 			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 			if (flush)
 				MT_lock_set(&store->flush);
-			ok = store->logger_api.log_tstart(store, flush, &log_tid); /* wal start */
+			ok = store->logger_api.log_tstart(store, flush, &log_file_id); /* wal start */
 			/* log */
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 				sql_change *c = n->data;
@@ -3957,13 +3957,12 @@ sql_trans_commit(sql_trans *tr)
 				ok = store->logger_api.log_tend(store); /* wal end */
 			if (ok == LOG_OK && !flush) {
 				MT_lock_unset(&store->commit); /* release the commit log when flushing to disk */
-				ok = store->logger_api.log_tflush(store, log_tid); /* flush/sync */
-				MT_lock_set(&store->commit); /* acquire back the commit lock */
+				ok = store->logger_api.log_tflush(store, log_file_id); /* flush/sync */
 			}
 			store_lock(store);
 			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 			if (ok == LOG_OK && !flush)					/* mark as done */
-				ok = store->logger_api.log_tdone(store, commit_ts, log_tid);
+				ok = store->logger_api.log_tdone(store, commit_ts);
 		} else {
 			store_lock(store);
 			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
@@ -3991,9 +3990,9 @@ sql_trans_commit(sql_trans *tr)
 			if (ok == LOG_OK) {
 				ok = store->logger_api.log_tend(store); /* wal end */
 				if (ok == LOG_OK) {
-					ok = store->logger_api.log_tflush(store, log_tid); /* flush/sync */
+					ok = store->logger_api.log_tflush(store, log_file_id); /* flush/sync */
 					if (ok == LOG_OK) {
-						ok = store->logger_api.log_tdone(store, commit_ts, log_tid); /* mark as done */
+						ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
 					}
 				}
 			}

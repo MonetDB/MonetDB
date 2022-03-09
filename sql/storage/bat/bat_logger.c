@@ -3138,9 +3138,9 @@ bl_log_isnew(sqlstore *store)
 }
 
 static int
-bl_tstart(sqlstore *store, bool flush, int *log_tid)
+bl_tstart(sqlstore *store, bool flush, ulng *log_file_id)
 {
-	return log_tstart(store->logger, flush, log_tid) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger, flush, log_file_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
@@ -3150,15 +3150,15 @@ bl_tend(sqlstore *store)
 }
 
 static int
-bl_tflush(sqlstore *store, int log_tid)
+bl_tflush(sqlstore *store, ulng log_file_id)
 {
-	return log_tflush(store->logger, log_tid) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tflush(store->logger, log_file_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
-bl_tdone(sqlstore *store, ulng commit_ts, int log_tid)
+bl_tdone(sqlstore *store, ulng commit_ts)
 {
-	return log_tdone(store->logger, commit_ts, log_tid) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tdone(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
