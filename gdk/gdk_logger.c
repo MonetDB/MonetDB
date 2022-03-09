@@ -3029,10 +3029,10 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 		}
 	}
 	(void) ATOMIC_INC(&lg->refcount);
-	MT_lock_unset(&lg->rotation_lock);
-
 	*log_file_id = lg->id;
 	lg->end++;
+	MT_lock_unset(&lg->rotation_lock);
+
 	if (LOG_DISABLED(lg)) {
 		(void) ATOMIC_DEC(&lg->refcount);
 		return GDK_SUCCEED;
