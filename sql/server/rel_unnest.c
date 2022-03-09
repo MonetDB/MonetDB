@@ -2919,12 +2919,10 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					(void)rewrite_inner(sql, rel, lsq, op_left, &rewrite);
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
 					join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
-					rel_bind_var(sql, join, le);
 				}
 				if (rsq) {
 					(void)rewrite_inner(sql, rel, rsq, op_left, &join);
 					exp_reset_props(join, re, is_left(join->op));
-					rel_bind_var(sql, join, re);
 				}
 				assert(join && is_join(join->op));
 				if (join && !join->exps)
@@ -2951,6 +2949,8 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					le->freevar = 1;
 					rel_bind_var(sql, join, inexp);
 					append(join->exps, inexp);
+					if (exp_has_freevar(v->sql, inexp) && is_join(rel->op))
+						set_dependent(rel);
 				}
 				v->changes++;
 				if (join) {
