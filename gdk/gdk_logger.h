@@ -68,16 +68,10 @@ gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 /* mark end of batgroup insert or clear */
 //gdk_export gdk_return log_batgroup_end(logger *lg, oid id);
 
-gdk_export gdk_return log_tstart(logger *lg, bool flush, int *log_tid);
+gdk_export gdk_return log_tstart(logger *lg, bool flushnow, ulng *log_file_id);
 gdk_export gdk_return log_tend(logger *lg);
-gdk_export gdk_return log_tdone(logger *lg, ulng commit_ts, int log_tid);
-
-/* flush functions */
-gdk_export gdk_return log_tflush(logger *lg, int log_tid); /* Flush the WAL to disk using group commit */
-void add_tid_flush_queue(logger *lg, int tid); /* Add a transaction to the flush queue */
-void left_truncate_flush_queue(logger *lg, int limit); /* Truncate the first *limit* elements from the flush queue, i.e. mark those transactions as flushed */
-int tid_in_flush_queue(logger *lg, int tid); /* Check if a transaction id is present in the flush queue, i.e. if the transaction is yet to be flushed */
-int flush_queue_length(logger *lg); /* Get the flush queue length, i.e. the number of transactions in the group commit */
+gdk_export gdk_return log_tflush(logger *lg, ulng log_file_id); /* Flush the WAL to disk using group commit */
+gdk_export gdk_return log_tdone(logger *lg, ulng commit_ts);
 
 gdk_export gdk_return log_sequence(logger *lg, int seq, lng id);
 gdk_export log_bid logger_find_bat(logger *lg, log_id id);

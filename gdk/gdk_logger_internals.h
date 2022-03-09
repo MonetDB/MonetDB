@@ -28,6 +28,7 @@ struct logger {
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 	bool flushing;
 	bool flushnow;
+	bool request_rotation;
 	logged_range *pending;
 	logged_range *current;
 
@@ -44,6 +45,8 @@ struct logger {
 	stream *input_log;	/* current stream to flush */
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 
+	ATOMIC_TYPE refcount; /* Number of active writers and flushers in the logger */ // TODO check refcount in c->log and c->end
+	MT_Lock rotation_lock;
 	MT_Lock lock;
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog_bid;	/* int bid column */
