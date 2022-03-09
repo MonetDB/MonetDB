@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021-SP3/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP4/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -846,6 +846,13 @@ else
 fi
 
 %changelog
+* Wed Mar 09 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.17-20220309
+- Rebuilt.
+
+* Wed Mar  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.17-20220309
+- gdk: Found and fixed another source for the now infamous BBPcheckbats error
+  that sometimes occurs at startup of the server.
+
 * Thu Feb 24 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.15-20220224
 - Rebuilt.
 - GH#7225: Invalid memory access when extending a BAT during appends
