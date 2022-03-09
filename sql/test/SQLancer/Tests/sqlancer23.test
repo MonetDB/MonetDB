@@ -87,10 +87,6 @@ query I nosort
 SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
 ----
 
-#query I nosort
-#SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
-#----
-
 query I nosort
 SELECT (SELECT ((SELECT 1) INTERSECT (SELECT x.x)) FROM (SELECT 1) x(x) WHERE t0.c0 < ANY(SELECT 2)) FROM t0
 ----
@@ -120,6 +116,15 @@ greatest(CAST(t0.c0 AS BOOLEAN), 2 IN (SELECT 3 FROM t0))
 ----
 1
 
+query I nosort
+SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT 1) x(x) ON (SELECT 2 FROM t0) IN (CASE x.x WHEN 3 THEN 4 END)
+----
+1
+
+# Postgres doesn't give an error here, but we are confident it must
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
+
 statement ok
 ROLLBACK
 
@@ -128,7 +133,6 @@ SELECT x.x FROM (SELECT DISTINCT 1) x(x) WHERE EXISTS (VALUES (41), (x.x))
 ----
 1
 
-# these are right
 query I nosort
 SELECT x.x FROM (SELECT 1) x(x) WHERE EXISTS (VALUES (41), (x.x))
 ----
