@@ -3895,11 +3895,17 @@ transaction_check_dependencies_and_removals(sql_trans *tr)
 	return ok;
 }
 
+
+static bool start_debug = 0;
+
 int
 sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
+
+	static int thread = 0;
+	int this_thread = 0;
 
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
@@ -3956,79 +3962,189 @@ sql_trans_commit(sql_trans *tr)
 			if (ok == LOG_OK && !flush)
 				ok = store->logger_api.log_tend(store); /* wal end */
 			if (ok == LOG_OK && !flush) {
+
+				if (start_debug)
+				{
+					this_thread = ++thread;
+				}
+				store_lock(store);
+				commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
+				oldest = tr->parent ? commit_ts : store_oldest(store);
+				tr->logchanges = 0;
+				TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
+				/* apply committed changes */
+				if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent)
+					oldest = commit_ts;
+				store_pending_changes(store, oldest);
+				for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
+					sql_change *c = n->data;
+
+					if (c->commit && ok == LOG_OK)
+						ok = c->commit(tr, c, commit_ts, oldest);
+					else
+						c->obj->new = 0;
+					c->ts = commit_ts;
+				}
+				/* propagate transaction dependencies to the storage only if other transactions are running */
+				if (ok == LOG_OK && !tr->parent && ATOMIC_GET(&store->nr_active) > 1) {
+					if (!list_empty(tr->dependencies)) {
+						for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
+							sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+							ok = transaction_add_hash_entry(store->dependencies, lchange->objid, lchange->type, commit_ts);
+						}
+					}
+					if (!list_empty(tr->depchanges)) {
+						for (node *n = tr->depchanges->h; n && ok == LOG_OK; n = n->next) {
+							sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+							ok = transaction_add_hash_entry(store->depchanges, lchange->objid, lchange->type, commit_ts);
+						}
+					}
+				}
+				/* garbage collect */
+				for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
+					node *next = n->next;
+					sql_change *c = n->data;
+
+					if (!c->cleanup || c->cleanup(store, c, oldest)) {
+						_DELETE(c);
+					} else if (tr->parent) { /* need to keep everything */
+						tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
+					} else {
+						store->changes = sa_list_append(tr->sa, store->changes, c);
+					}
+					n = next;
+				}
+				store_unlock(store);
+
 				MT_lock_unset(&store->commit); /* release the commit log when flushing to disk */
+
+				if (this_thread == 1) {
+					bool wait = true;
+					while (wait) {sleep(1);}
+					wait = false;
+				}
 				ok = store->logger_api.log_tflush(store, log_file_id); /* flush/sync */
 			}
-			store_lock(store);
-			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-			if (ok == LOG_OK && !flush)					/* mark as done */
+			if (ok == LOG_OK && !flush) { /* mark as done */
+				tr->ts = commit_ts;
 				ok = store->logger_api.log_tdone(store, commit_ts);
+			}
+
 		} else {
 			store_lock(store);
 			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 			if (tr->parent)
 				tr->parent->logchanges += tr->logchanges;
-		}
-		oldest = tr->parent ? commit_ts : store_oldest(store);
-		tr->logchanges = 0;
-		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
-		/* apply committed changes */
-		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent)
-			oldest = commit_ts;
-		store_pending_changes(store, oldest);
-		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
-			sql_change *c = n->data;
+			oldest = tr->parent ? commit_ts : store_oldest(store);
+			tr->logchanges = 0;
+			TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
+			/* apply committed changes */
+			if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent)
+				oldest = commit_ts;
+			store_pending_changes(store, oldest);
+			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
+				sql_change *c = n->data;
 
-			if (c->commit && ok == LOG_OK)
-				ok = c->commit(tr, c, commit_ts, oldest);
-			else
-				c->obj->new = 0;
-			c->ts = commit_ts;
+				if (c->commit && ok == LOG_OK)
+					ok = c->commit(tr, c, commit_ts, oldest);
+				else
+					c->obj->new = 0;
+				c->ts = commit_ts;
+			}
+			/* propagate transaction dependencies to the storage only if other transactions are running */
+			if (ok == LOG_OK && !tr->parent && ATOMIC_GET(&store->nr_active) > 1) {
+				if (!list_empty(tr->dependencies)) {
+					for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
+						sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+						ok = transaction_add_hash_entry(store->dependencies, lchange->objid, lchange->type, commit_ts);
+					}
+				}
+				if (!list_empty(tr->depchanges)) {
+					for (node *n = tr->depchanges->h; n && ok == LOG_OK; n = n->next) {
+						sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+						ok = transaction_add_hash_entry(store->depchanges, lchange->objid, lchange->type, commit_ts);
+					}
+				}
+			}
+			/* garbage collect */
+			for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
+				node *next = n->next;
+				sql_change *c = n->data;
+
+				if (!c->cleanup || c->cleanup(store, c, oldest)) {
+					_DELETE(c);
+				} else if (tr->parent) { /* need to keep everything */
+					tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
+				} else {
+					store->changes = sa_list_append(tr->sa, store->changes, c);
+				}
+				n = next;
+			}
+			tr->ts = commit_ts;
+			store_unlock(store);
 		}
 		/* when directly flushing: flush logger after changes got applied */
 		if (flush) {
 			if (ok == LOG_OK) {
 				ok = store->logger_api.log_tend(store); /* wal end */
 				if (ok == LOG_OK) {
+					store_lock(store);
+					commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
+					oldest = tr->parent ? commit_ts : store_oldest(store);
+					tr->logchanges = 0;
+					TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
+					/* apply committed changes */
+					if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent)
+						oldest = commit_ts;
+					store_pending_changes(store, oldest);
+					for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
+						sql_change *c = n->data;
+
+						if (c->commit && ok == LOG_OK)
+							ok = c->commit(tr, c, commit_ts, oldest);
+						else
+							c->obj->new = 0;
+						c->ts = commit_ts;
+					}
+					/* propagate transaction dependencies to the storage only if other transactions are running */
+					if (ok == LOG_OK && !tr->parent && ATOMIC_GET(&store->nr_active) > 1) {
+						if (!list_empty(tr->dependencies)) {
+							for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
+								sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+								ok = transaction_add_hash_entry(store->dependencies, lchange->objid, lchange->type, commit_ts);
+							}
+						}
+						if (!list_empty(tr->depchanges)) {
+							for (node *n = tr->depchanges->h; n && ok == LOG_OK; n = n->next) {
+								sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+								ok = transaction_add_hash_entry(store->depchanges, lchange->objid, lchange->type, commit_ts);
+							}
+						}
+					}
+					/* garbage collect */
+					for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
+						node *next = n->next;
+						sql_change *c = n->data;
+
+						if (!c->cleanup || c->cleanup(store, c, oldest)) {
+							_DELETE(c);
+						} else if (tr->parent) { /* need to keep everything */
+							tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
+						} else {
+							store->changes = sa_list_append(tr->sa, store->changes, c);
+						}
+						n = next;
+					}
+					store_unlock(store);
 					ok = store->logger_api.log_tflush(store, log_file_id); /* flush/sync */
 					if (ok == LOG_OK) {
+						tr->ts = commit_ts;
 						ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
 					}
 				}
 			}
 			MT_lock_unset(&store->flush);
 		}
-		/* propagate transaction dependencies to the storage only if other transactions are running */
-		if (ok == LOG_OK && !tr->parent && ATOMIC_GET(&store->nr_active) > 1) {
-			if (!list_empty(tr->dependencies)) {
-				for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
-					sql_dependency_change *lchange = (sql_dependency_change*) n->data;
-					ok = transaction_add_hash_entry(store->dependencies, lchange->objid, lchange->type, commit_ts);
-				}
-			}
-			if (!list_empty(tr->depchanges)) {
-				for (node *n = tr->depchanges->h; n && ok == LOG_OK; n = n->next) {
-					sql_dependency_change *lchange = (sql_dependency_change*) n->data;
-					ok = transaction_add_hash_entry(store->depchanges, lchange->objid, lchange->type, commit_ts);
-				}
-			}
-		}
-		/* garbage collect */
-		for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
-			node *next = n->next;
-			sql_change *c = n->data;
-
-			if (!c->cleanup || c->cleanup(store, c, oldest)) {
-				_DELETE(c);
-			} else if (tr->parent) { /* need to keep everything */
-				tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
-			} else {
-				store->changes = sa_list_append(tr->sa, store->changes, c);
-			}
-			n = next;
-		}
-		tr->ts = commit_ts;
-		store_unlock(store);
 		MT_lock_unset(&store->commit);
 		list_destroy(tr->changes);
 		tr->changes = NULL;
