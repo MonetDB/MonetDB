@@ -834,14 +834,23 @@ extractURLHost(str *retval, str *url, bool no_www)
 			(s = skip_authority(s, NULL, NULL, &h, &p)) != NULL &&
 			h != NULL)
 	   	{
-			size_t l;
+			ssize_t l;
+			const char *pos = s;
+			const char *domain = NULL;
+			while (pos > h) {
+				if (*pos == '.') {
+					domain = pos;
+					break;
+				}
+				pos--;
+			}
 
 			if (p != NULL) {
 				l = p - h - 1;
 			} else {
 				l = s - h;
 			}
-			if (l > 4) {
+			if (domain && l > 3) {
 				if ((*retval = GDKmalloc(l + 1)) != NULL) {
 					if (no_www && strlen(h) > 4 && !strncmp(h, "www.", 4)) {
 						strcpy_len(*retval, (h + 4), l + 1);
@@ -850,7 +859,7 @@ extractURLHost(str *retval, str *url, bool no_www)
 					}
 					// clean up if not valid UTF-8 
 					if (!checkUTF8(*retval)) {
-						printf("%s\n", h);
+						// printf("%s\n", h);
 						GDKfree(*retval);
 						*retval = GDKstrdup(str_nil);
 					}
@@ -858,6 +867,7 @@ extractURLHost(str *retval, str *url, bool no_www)
 					throw(MAL, "url.getURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			} else {
+				// printf("%s\n", h);
 				*retval = GDKstrdup(str_nil);
 			}
 
