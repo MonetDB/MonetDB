@@ -4087,6 +4087,11 @@ rewrite_rel(visitor *v, sql_rel *rel)
 {
 	if (!is_outerjoin(rel->op) || list_empty(rel->exps) || rel_is_ref(rel))
 		return rel;
+	sql_rel *l = rel->l, *r = rel->r;
+
+	if ((l && is_project(l->op) && !l->l) ||
+	    (r && is_project(r->op) && !r->l))
+		return rel;
 
 	sql_rel *or = rel;
 	for (node *n = rel->exps->h; n; ) {
