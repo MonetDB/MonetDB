@@ -121,6 +121,23 @@ SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT 1) x(x) ON (SELECT 2 FROM t0) IN (CASE
 ----
 1
 
+query I nosort
+SELECT 1 FROM (SELECT TRUE) v0(c0) WHERE NOT EXISTS (SELECT v0.c0 FROM (SELECT 1 WHERE FALSE) x(x)) = TRUE
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT TRUE) v0(c0) WHERE EXISTS (SELECT v0.c0 FROM (SELECT 1 WHERE FALSE) x(x)) = FALSE
+----
+1
+
+# this one is right
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT EXISTS (SELECT v0.c0 FROM (SELECT 1 WHERE FALSE)
+x(x)) = TRUE AS INT) as count FROM (SELECT TRUE) v0(c0)) as res
+----
+1
+
 # Postgres doesn't give an error here, but we are confident it must
 statement error GDK reported error: mergejoin: more than one match
 SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
