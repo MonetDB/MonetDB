@@ -190,3 +190,15 @@ SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON max((((SELECT (SELECT x.x)
 
 statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
 SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON max((((SELECT (SELECT x.x))) UNION (SELECT (SELECT y.y))))
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (SELECT 1 FROM (SELECT max(x.x) FROM (SELECT 1) z(z)) z(z))
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (SELECT 1 FROM (SELECT max((SELECT (SELECT x.x))) FROM (SELECT 1) z(z)) z(z))
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (EXISTS (SELECT max(x.x)))
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (SELECT 1 WHERE EXISTS (SELECT max(x.x)))
