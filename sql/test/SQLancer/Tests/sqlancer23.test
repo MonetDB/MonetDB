@@ -17,6 +17,7 @@ query I nosort
 SELECT 1 FROM t0 JOIN (SELECT 1) x(x) ON (VALUES (x.x)) RIGHT OUTER JOIN (SELECT 3) y(y)
 ON (SELECT y.y WHERE x.x)
 ----
+1
 
 statement ok
 create view vx(vx) as (select distinct 2)
@@ -78,6 +79,7 @@ SELECT (SELECT (SELECT 1 WHERE x.x = 1) FROM (SELECT 1) x(x) WHERE t0.c0 = ALL(S
 query I nosort
 SELECT 1 FROM t0 FULL OUTER JOIN (SELECT 1) AS x(x) ON least(t0.c0 = ANY(SELECT 1 FROM t0), TRUE)
 ----
+1
 
 query I nosort
 SELECT 1 FROM t0 WHERE t0.c0 = (VALUES ((SELECT t0.c0)))
