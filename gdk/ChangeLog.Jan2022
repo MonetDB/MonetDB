@@ -1,3 +1,11 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Wed Mar  9 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a bug in the append code for msk (bit mask) bats.
+- Conversions from floating point types to integral types that involve
+  multiplication now use the "long double" as intermediate type, thereby
+  using as few significant bits as is feasible.
+- Found and fixed another source for the now infamous BBPcheckbats error
+  that sometimes occurs at startup of the server.
+
