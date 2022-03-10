@@ -5333,7 +5333,7 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 							query_outer_pop_last_used(query, fv-1);
 							reset_outer(outer);
 						} else {
-							e->freevar = 0;
+							reset_freevar(e);
 						}
 					}
 				}

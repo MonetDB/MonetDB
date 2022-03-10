@@ -2946,7 +2946,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					return sql_error(sql, 02, SQLSTATE(42000) "Tuple matching at projections not implemented in the backend yet");
 				} else {
 					sql_exp *inexp = exp_compare(v->sql->sa, le, re, is_anyequal(sf)?mark_in:mark_notin);
-					le->freevar = 1;
+					exp_set_freevar(sql, le, join);
 					rel_bind_var(sql, join, inexp);
 					append(join->exps, inexp);
 					if (exp_has_freevar(v->sql, inexp) && is_join(rel->op))
