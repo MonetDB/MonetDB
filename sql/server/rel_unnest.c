@@ -2881,7 +2881,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					v->changes++;
 					return le;
 				}
-			} else if (!lsq && is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) {
+			} else if (!lsq && !exps_have_rel_exp(re->f)) {
 				return e; /* leave as is, handled later */
 			}
 
