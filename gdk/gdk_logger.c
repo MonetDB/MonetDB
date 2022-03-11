@@ -2794,11 +2794,24 @@ flush_queue_length(logger *lg) {
 	return fql;
 }
 
+static gdk_return
+log_tdone(logger *lg, ulng commit_ts)
+{
+	if (lg->debug & 1)
+		fprintf(stderr, "#log_tdone " LLFMT "\n", commit_ts);
+
+	if (lg->current) {
+		lg->current->last_ts = commit_ts;
+	}
+	return GDK_SUCCEED;
+}
+
 gdk_return
-log_tflush(logger* lg, ulng log_file_id) {
+log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 
 	if (lg->flushnow) {
 		lg->flushnow = 0;
+		log_tdone(lg, commit_ts);
 		return logger_commit(lg);
 	}
 
@@ -2834,20 +2847,11 @@ log_tflush(logger* lg, ulng log_file_id) {
 	/* else the log file has already rotated and hence my wal messages are already flushed.
 	 * No need to do anything */
 
+
+	log_tdone(lg, commit_ts);
 	(void) ATOMIC_DEC(&lg->refcount);
 	MT_lock_unset(&lg->flush_lock);
-	return GDK_SUCCEED;
-}
 
-gdk_return
-log_tdone(logger *lg, ulng commit_ts)
-{
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_tdone " LLFMT "\n", commit_ts);
-
-	if (lg->current) {
-		lg->current->last_ts = commit_ts;
-	}
 	return GDK_SUCCEED;
 }
 
