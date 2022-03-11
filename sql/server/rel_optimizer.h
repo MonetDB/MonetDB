@@ -9,26 +9,22 @@
 #ifndef _REL_OPTIMIZER_H_
 #define _REL_OPTIMIZER_H_
 
-#include "sql_relation.h"
 #include "sql_mvc.h"
+#include "sql_relation.h"
 
-#define NOPTIMIZERS 24
-
+/* a single SQL optimizer run */
 typedef struct {
+	const char *name;
 	int nchanges;
 	lng time;
 } sql_optimizer_run;
 
+/* an optimized SQL query */
 typedef struct {
-	sql_optimizer_run optimizers[NOPTIMIZERS];
+	sql_optimizer_run *runs;
 	sql_rel *rel;
 } sql_optimized_query;
 
 extern sql_rel *rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt);
-
-extern int exp_joins_rels(sql_exp *e, list *rels);
-
-/* WARNING exps_unique doesn't check for duplicate NULL values */
-extern int exps_unique(mvc *sql, sql_rel *rel, list *exps);
 
 #endif /*_REL_OPTIMIZER_H_*/
