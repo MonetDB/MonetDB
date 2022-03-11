@@ -1,0 +1,19 @@
+statement ok
+create table tmp(i,s) as (select i, cast(i as string) from generate_series(1,1000) as t(i))
+
+statement ok
+delete from tmp where i in (5,6,7)
+
+statement ok
+update tmp set s = 'hello'
+
+query I nosort
+select count(*) from tmp where s = 'hello'
+----
+996
+
+query I nosort
+select count(*) from tmp where s <> 'hello'
+----
+0
+
