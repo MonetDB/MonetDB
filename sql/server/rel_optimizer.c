@@ -55,8 +55,6 @@ rel_properties(visitor *v, sql_rel *rel)
 			}
 		}
 	}
-	if (rel->card > CARD_ATOM || (is_simple_project(rel->op) && rel->l) || (is_insert(rel->op) && rel->r && ((sql_rel*)rel->r)->card > CARD_ATOM))
-		gp->opt_level = 1;
 	return rel;
 }
 
@@ -712,6 +710,19 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* for trivial queries don't run optimizers */
+static int
+calculate_opt_level(mvc *sql, sql_rel *rel)
+{
+	if (rel->card <= CARD_ATOM) {
+		if (is_insert(rel->op))
+			return rel->r ? calculate_opt_level(sql, rel->r) : 0;
+		if (is_simple_project(rel->op))
+			return rel->l ? calculate_opt_level(sql, rel->l) : 0;
+	}
+	return 1;
+}
+
 static sql_rel *
 run_optimizer_set(visitor *v, sql_rel *rel, global_props *gp, const sql_optimizer *set)
 {
@@ -736,6 +747,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle};
 		rel = rel_visitor_topdown(&v, rel, &rel_properties); /* collect relational tree properties */
+		gp.opt_level = calculate_opt_level(sql, rel);
 		if (gp.opt_level == 0 && !gp.needs_mergetable_rewrite)
 			break;
 		rel = run_optimizer_set(&v, rel, &gp, pre_sql_optimizers);
