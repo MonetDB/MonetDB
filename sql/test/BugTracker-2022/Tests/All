@@ -5,3 +5,4 @@ recreate-view.Bug-7241
 HAVE_LIBPY3?python-udf-inside-udf.Bug-7252
 empty-MAL.Bug-7259
 pkey-restart.Bug-7263
+delete-update.Bug-7267
