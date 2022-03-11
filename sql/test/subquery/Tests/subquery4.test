@@ -454,7 +454,7 @@ SELECT col5, col6 FROM another_T
 10
 5555
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error 21000!Cardinality violation, scalar value expected
 UPDATE another_T SET (col7, col8) = (SELECT 1,2 UNION ALL SELECT 1,2)
 
 statement error 42000!UPDATE: The number of specified columns between the SET clause and the right side don't match (2 != 1)

@@ -302,7 +302,8 @@ SQLprepareClient(Client c, int login)
 				sql_var *var = find_global_var(m, s, "current_timezone");
 				ValRecord val;
 				VALinit(&val, TYPE_lng, &(lng){1000 * value});
-				sql_update_var(m, s, "current_timezone", &val);
+				if ((msg = sql_update_var(m, s, "current_timezone", &val)))
+					goto bailout1;
 				sqlvar_set(var, &val);
 			} else {
 				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);

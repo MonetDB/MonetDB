@@ -1896,6 +1896,7 @@ new_bbpentry(FILE *fp, bat i, BUN size)
 	}
 #endif
 
+	assert(size <= BBP_desc(i)->batCount || size == BUN_NONE);
 	if (size > BBP_desc(i)->batCount)
 		size = BBP_desc(i)->batCount;
 	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " BUNFMT " " OIDFMT,
@@ -3927,6 +3928,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
 					BATiter bi = bat_iterator(b);
+					assert(size <= bi.count || size == BUN_NONE);
 					if (size > bi.count)
 						size = bi.count;
 					MT_rwlock_rdlock(&b->thashlock);

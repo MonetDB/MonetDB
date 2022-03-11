@@ -475,7 +475,7 @@ typedef enum sql_flang {
 } sql_flang;
 
 #define LANG_EXT(l)  ((l)>FUNC_LANG_SQL)
-#define UDF_LANG(l)  ((l)>=FUNC_LANG_SQL)
+#define UDF_LANG(l)  ((l)!=FUNC_LANG_INT)
 
 typedef struct sql_func {
 	sql_base base;

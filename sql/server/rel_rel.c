@@ -657,7 +657,7 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 	if (!is_project(r->op))
 		rexps = rel_projections(sql, r, NULL, 0, 1);
 
-	assert(is_set(rel->op) && list_length(lexps) == list_length(rexps) && list_length(exps) == list_length(lexps));
+	assert(is_set(rel->op) /*&& list_length(lexps) == list_length(rexps) && list_length(exps) == list_length(lexps)*/);
 
 	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && n && o ; n = n->next, m = m->next,o = o->next) {
 		sql_exp *e = n->data, *f = m->data, *g = o->data;
@@ -691,9 +691,6 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
-	rel->single = is_single(r);
-	if (is_single(r))
-		reset_single(r);
 	return rel;
 }
 
@@ -997,7 +994,7 @@ rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps)
 	if(!rel)
 		return NULL;
 
-	rel->flag = 1;
+	rel->flag = TABLE_PROD_FUNC;
 	rel->l = l;
 	rel->op = op_table;
 	rel->exps = exps;

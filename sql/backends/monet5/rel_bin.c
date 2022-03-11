@@ -1149,9 +1149,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						list_append(l, const_column(be, (stmt*)n->data));
 					r = stmt_list(be, l);
 				} else if (r->type == st_table && e->card == CARD_ATOM) { /* fetch value */
-					sql_rel *ll = (sql_rel*) l->l;
 					r = lst->op4.lval->h->data;
-					if (!r->aggr && lastexp(ll)->card > CARD_ATOM) /* if the cardinality is atom, no fetch call needed */
+					if (!r->aggr) /* if the cardinality is atom, no fetch call needed */
 						r = stmt_fetch(be, r);
 				}
 				if (r->type == st_list)
@@ -1204,6 +1203,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			stmt *cond = exp_bin(be, e->l, left, right, grp, ext, cnt, sel, 0, 0, push);
 			if (!cond)
 				return NULL;
+			if (cond->nrcols)
+				cond = stmt_fetch(be, cond);
 			return stmt_exception(be, cond, (const char *) e->r, 0);
 		}
 		break;
@@ -2175,7 +2176,6 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	} else if (rel->l) { /* handle sub query via function */
 		int i;
 		char name[16], *nme;
-		sql_rel *fr;
 
 		nme = number2name(name, sizeof(name), ++be->remote);
 
@@ -2185,7 +2185,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		sub = stmt_list(be, l);
 		if (!(sub = stmt_func(be, sub, sa_strdup(sql->sa, nme), rel->l, 0)))
 			return NULL;
-		fr = rel->l = sub->op4.rel; /* rel->l may get rewritten */
+		rel->l = sub->op4.rel; /* rel->l may get rewritten */
 		l = sa_list(sql->sa);
 		for(i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
 			sql_exp *c = n->data;
@@ -2194,8 +2194,6 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			const char *rnme = exp_relname(c);
 
 			s = stmt_alias(be, s, rnme, nme);
-			if (fr->card <= CARD_ATOM) /* single value, get result from bat */
-				s = stmt_fetch(be, s);
 			list_append(l, s);
 		}
 		sub = stmt_list(be, l);

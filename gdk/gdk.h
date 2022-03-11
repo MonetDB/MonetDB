@@ -775,6 +775,8 @@ typedef struct BAT {
 	 batTransient:1;	/* should the BAT persist on disk? */
 	uint8_t	/* adjacent bit fields are packed together (if they fit) */
 	 batRestricted:2;	/* access privileges */
+	uint16_t /* adjacent bit fields are packed together (if they fit) */
+	 selcnt:10;		/* how often used in equi select without hash */
 	role_t batRole;		/* role of the bat */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
