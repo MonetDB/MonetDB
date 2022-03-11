@@ -992,6 +992,8 @@ logger_open_output(logger *lg)
 		TRC_CRITICAL(GDK, "allocation failure\n");
 		return GDK_FAIL;
 	}
+
+	lg->end = 0;
 	if (!LOG_DISABLED(lg)) {
 		char id[32];
 		char *filename;
@@ -1012,6 +1014,7 @@ logger_open_output(logger *lg)
 			short byteorder = 1234;
 			mnstr_write(lg->output_log, &byteorder, sizeof(byteorder), 1);
 		}
+		lg->end = 0;
 
 		if (lg->output_log == NULL || mnstr_errnr(lg->output_log)) {
 			TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
@@ -1021,9 +1024,6 @@ logger_open_output(logger *lg)
 		}
 		GDKfree(filename);
 	}
-
-	lg->id++;
-	lg->end = 0;
 	new_range->id = lg->id;
 	new_range->first_tid = lg->tid;
 	new_range->last_tid = lg->tid;
@@ -2065,7 +2065,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		.postfuncp = postfuncp,
 		.funcdata = funcdata,
 
-		.id = -1, // will be incremented logger_open_output
+		.id = 0,
 		.saved_id = getBBPlogno(), 		/* get saved log numer from bbp */
 		.saved_tid = (int)getBBPtransid(), 	/* get saved transaction id from bbp */
 	};
@@ -2205,6 +2205,7 @@ logger_activate(logger *lg)
 {
 	MT_lock_set(&lg->rotation_lock);
 	if (lg->end > 0 && lg->saved_id+1 == lg->id) {
+		lg->id++;
 		logger_close_output(lg);
 		/* start new file */
 		if (logger_open_output(lg) != GDK_SUCCEED) {
@@ -2708,6 +2709,7 @@ new_logfile(logger *lg)
 	}
 	if (( p > log_large || (lg->end*1024) > log_large )) {
 		if (ATOMIC_GET(&lg->refcount) == 1) {
+			lg->id++;
 			logger_close_output(lg);
 			result = logger_open_output(lg);
 			lg->request_rotation = false;
@@ -3015,6 +3017,7 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 {
 	MT_lock_set(&lg->rotation_lock);
 	if (flushnow || lg->request_rotation) {
+		lg->id++;
 		logger_close_output(lg);
 		/* start new file */
 		if (logger_open_output(lg) != GDK_SUCCEED) {
