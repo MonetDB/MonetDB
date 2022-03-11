@@ -46,6 +46,7 @@
 #include "gdk.h"
 #include <ctype.h>
 #include "mal_exception.h"
+#include "str.h"
 
 typedef str url;
 
@@ -818,6 +819,7 @@ static str URLnoop(url *u, url *val)
 	return MAL_SUCCEED;
 }
 
+
 /* Extract host identity from URL. This is a relaxed version,
  * where no exceptions is thrown when the input URL is not valid,
  * and empty string is returned instead.
@@ -857,7 +859,7 @@ extractURLHost(str *retval, str *url, bool no_www)
 					} else {
 						strcpy_len(*retval, h, l + 1);
 					}
-					// clean up if not valid UTF-8 
+					// clean up if not valid UTF-8
 					if (!checkUTF8(*retval)) {
 						// printf("%s\n", h);
 						GDKfree(*retval);
@@ -882,6 +884,100 @@ extractURLHost(str *retval, str *url, bool no_www)
 }
 
 
+// bulk version
+static str
+BATextractURLHost(bat *res, const bat *bid, bool no_www)
+{
+	const char *s;
+	const char *host = NULL;
+	const char *port = NULL;
+	BAT *bn = NULL;
+	BAT *b = BATdescriptor(*bid);
+	BUN p, q;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen);
+	str msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (buf == NULL)
+		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	if (b == NULL)
+		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
+		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(b->batCacheid);
+	}
+
+	BATiter bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		const char *url = (const char *) BUNtail(bi, p);
+		if (strNil(url)) {
+			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED) {
+				msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+				break;
+			}
+			nils = true;
+		} else {
+			if ((s = skip_scheme(url)) != NULL &&
+				(s = skip_authority(s, NULL, NULL, &host, &port)) != NULL &&
+				host != NULL)
+		   	{
+				ssize_t l;
+				const char *pos = s;
+				const char *domain = NULL;
+				while (pos > host) {
+					if (*pos == '.') {
+						domain = pos;
+						break;
+					}
+					pos--;
+				}
+
+				if (port != NULL) {
+					l = port - host - 1;
+				} else {
+					l = s - host;
+				}
+				if (domain && l > 3) {
+					if (no_www && strlen(host) > 4 && !strncmp(host, "www.", 4))
+						host += 4;
+					if ((msg = str_Sub_String(&buf, &buflen, host, 0, l)) != MAL_SUCCEED)
+						break;
+					if (checkUTF8(buf)) {
+						if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED) {
+							msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+							break;
+						}
+						continue;
+					}
+				}
+			}
+			// fall back insert nil str if no valid host
+			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED) {
+				msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+				break;
+			}
+			nils = true;
+		}
+	}
+	bat_iterator_end(&bi);
+
+	GDKfree(buf);
+	if (msg == MAL_SUCCEED) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	}
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+
 #include "mel.h"
 mel_atom url_init_atoms[] = {
  { .name="url", .basetype="str", .fromstr=URLfromString, .tostr=URLtoString, },  { .cmp=NULL }
@@ -898,7 +994,6 @@ mel_func url_init_funcs[] = {
  command("url", "getExtension", URLgetExtension, false, "Extract the file extension of the URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getFile", URLgetFile, false, "Extract the last file name of the URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getHost", URLgetHost, false, "Extract the server name from the URL strict version", args(1,2, arg("",str),arg("u",url))),
- command("url", "extractURLHost", extractURLHost, false, "Extract server name from a URL relaxed version", args(1,3, arg("",str),arg("u",str), arg("no_www", bit))),
  command("url", "getPort", URLgetPort, false, "Extract the port id from the URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getProtocol", URLgetProtocol, false, "Extract the protocol from the URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getQuery", URLgetQuery, false, "Extract the query string from the URL", args(1,2, arg("",str),arg("u",url))),
@@ -907,6 +1002,8 @@ mel_func url_init_funcs[] = {
  command("url", "isaURL", URLisaURL, false, "Check conformity of the URL syntax", args(1,2, arg("",bit),arg("u",str))),
  command("url", "new", URLnew4, false, "Construct URL from protocol, host, port, and file", args(1,5, arg("",url),arg("p",str),arg("h",str),arg("prt",int),arg("f",str))),
  command("url", "new", URLnew3, false, "Construct URL from protocol, host,and file", args(1,4, arg("",url),arg("prot",str),arg("host",str),arg("fnme",str))),
+ command("url", "extractURLHost", extractURLHost, false, "Extract host from a URL relaxed version", args(1,3, arg("",str),arg("u",str), arg("no_www", bit))),
+ command("baturl", "extractURLHost", BATextractURLHost, false, "Extract host from BAT of URLs", args(1,3, batarg("",str), batarg("s",str), arg("no_www", bit))),
  { .imp=NULL }
 };
 #include "mal_import.h"
