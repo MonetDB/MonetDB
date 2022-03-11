@@ -3960,10 +3960,8 @@ sql_trans_commit(sql_trans *tr)
 			store->prev_oid = store->obj_id;
 
 
-			if (!flush) {
-				if (ok == LOG_OK)
-					ok = store->logger_api.log_tend(store); /* wal end */
-			}
+			if (ok == LOG_OK)
+				ok = store->logger_api.log_tend(store); /* wal end */
 		}
 		store_lock(store);
 		commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
