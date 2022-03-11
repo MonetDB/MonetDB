@@ -2726,8 +2726,6 @@ new_logfile(logger *lg)
 gdk_return
 log_tend(logger *lg)
 {
-	assert(!lg->flushnow);
-
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tend %d\n", lg->tid);
 
