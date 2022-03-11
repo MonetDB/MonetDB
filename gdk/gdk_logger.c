@@ -14,7 +14,7 @@
 #include "mutils.h"
 #include <string.h>
 
-static gdk_return logger_add_bat(logger *lg, BAT *b, log_id id);
+static gdk_return logger_add_bat(logger *lg, BAT *b, log_id id, int tid);
 static gdk_return logger_del_bat(logger *lg, log_bid bid);
 /*
  * The logger uses a directory to store its log files. One master log
@@ -179,18 +179,33 @@ log_find(BAT *b, BAT *d, int val)
 }
 
 static log_bid
-internal_find_bat(logger *lg, log_id id)
+internal_find_bat(logger *lg, log_id id, int tid)
 {
 	BATiter cni = bat_iterator_nolock(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
 		MT_rwlock_rdlock(&cni.b->thashlock);
-		HASHloop_int(cni, cni.b->thash, p, &id) {
-			oid pos = p;
-			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
+		if (tid < 0) {
+			HASHloop_int(cni, cni.b->thash, p, &id) {
+				oid pos = p;
+				if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
+					MT_rwlock_rdunlock(&cni.b->thashlock);
+					return *(log_bid *) Tloc(lg->catalog_bid, p);
+				}
+			}
+		} else {
+			BUN cp = BUN_NONE;
+			HASHloop_int(cni, cni.b->thash, p, &id) {
+				lng lid = *(lng *) Tloc(lg->catalog_lid, p);
+				if (lid != lng_nil && lid <= tid) {
+					break;
+				}
+				cp = p;
+			}
+			if (cp != BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
-				return *(log_bid *) Tloc(lg->catalog_bid, p);
+				return *(log_bid *) Tloc(lg->catalog_bid, cp);
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
@@ -254,9 +269,9 @@ log_read_clear(logger *lg, trans *tr, log_id id)
 }
 
 static gdk_return
-la_bat_clear(logger *lg, logaction *la)
+la_bat_clear(logger *lg, logaction *la, int tid)
 {
-	log_bid bid = internal_find_bat(lg, la->cid);
+	log_bid bid = internal_find_bat(lg, la->cid, tid);
 	BAT *b;
 
 	if (lg->debug & 1)
@@ -625,7 +640,7 @@ la_bat_update_count(logger *lg, log_id id, lng cnt, int tid)
 static gdk_return
 la_bat_updates(logger *lg, logaction *la, int tid)
 {
-	log_bid bid = internal_find_bat(lg, la->cid);
+	log_bid bid = internal_find_bat(lg, la->cid, tid);
 	BAT *b = NULL;
 
 	if (bid == 0)
@@ -727,9 +742,9 @@ log_read_destroy(logger *lg, trans *tr, log_id id)
 }
 
 static gdk_return
-la_bat_destroy(logger *lg, logaction *la)
+la_bat_destroy(logger *lg, logaction *la, int tid)
 {
-	log_bid bid = internal_find_bat(lg, la->cid);
+	log_bid bid = internal_find_bat(lg, la->cid, tid);
 
 	if (bid && logger_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -762,7 +777,7 @@ log_read_create(logger *lg, trans *tr, log_id id)
 }
 
 static gdk_return
-la_bat_create(logger *lg, logaction *la)
+la_bat_create(logger *lg, logaction *la, int tid)
 {
 	BAT *b;
 
@@ -774,7 +789,7 @@ la_bat_create(logger *lg, logaction *la)
 		BATtseqbase(b, 0);
 
 	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
-	    logger_add_bat(lg, b, la->cid) != GDK_SUCCEED) {
+	    logger_add_bat(lg, b, la->cid, tid) != GDK_SUCCEED) {
 		logbat_destroy(b);
 		return GDK_FAIL;
 	}
@@ -851,15 +866,15 @@ la_apply(logger *lg, logaction *c, int tid)
 		break;
 	case LOG_CREATE:
 		if (!lg->flushing)
-			ret = la_bat_create(lg, c);
+			ret = la_bat_create(lg, c, tid);
 		break;
 	case LOG_DESTROY:
 		if (!lg->flushing)
-			ret = la_bat_destroy(lg, c);
+			ret = la_bat_destroy(lg, c, tid);
 		break;
 	case LOG_CLEAR:
 		if (!lg->flushing)
-			ret = la_bat_clear(lg, c);
+			ret = la_bat_clear(lg, c, tid);
 		break;
 	default:
 		assert(0);
@@ -2545,7 +2560,7 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 	bte ta = find_type(lg, b->ttype);
 	logformat l;
 
-	if (logger_add_bat(lg, b, id) != GDK_SUCCEED) {
+	if (logger_add_bat(lg, b, id, -1) != GDK_SUCCEED) {
 		logger_unlock(lg);
 		return GDK_FAIL;
 	}
@@ -2571,7 +2586,7 @@ gdk_return
 log_bat_transient(logger *lg, log_id id)
 {
 	logger_lock(lg);
-	log_bid bid = internal_find_bat(lg, id);
+	log_bid bid = internal_find_bat(lg, id, -1);
 	logformat l;
 
 	l.flag = LOG_DESTROY;
@@ -2858,9 +2873,9 @@ bm_commit(logger *lg)
 }
 
 static gdk_return
-logger_add_bat(logger *lg, BAT *b, log_id id)
+logger_add_bat(logger *lg, BAT *b, log_id id, int tid)
 {
-	log_bid bid = internal_find_bat(lg, id);
+	log_bid bid = internal_find_bat(lg, id, tid);
 	lng cnt = 0;
 	lng lid = lng_nil;
 
@@ -2922,7 +2937,7 @@ log_bid
 logger_find_bat(logger *lg, log_id id)
 {
 	logger_lock(lg);
-	log_bid bid = internal_find_bat(lg, id);
+	log_bid bid = internal_find_bat(lg, id, -1);
 	logger_unlock(lg);
 	return bid;
 }
