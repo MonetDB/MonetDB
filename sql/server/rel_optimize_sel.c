@@ -3407,24 +3407,23 @@ rel_use_index(visitor *v, sql_rel *rel)
 		sql_exp *re = NULL;
 
 		for( n = exps->h; n && single_table; n = n->next) {
-			sql_exp *e = n->data;
-			sql_exp *nre = e->r;
+			sql_exp *e = n->data, *nre = e->l;
 
-			if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l))))
-				nre = e->l;
+			if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, nre)) || (!left && rel_find_exp(rel->r, nre))))
+				nre = e->r;
 			single_table = (!re || (exp_relname(nre) && exp_relname(re) && strcmp(exp_relname(nre), exp_relname(re)) == 0));
 			re = nre;
 		}
 		if (single_table) { /* add PROP_HASHCOL to all column exps */
 			for( n = exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				int anti = is_anti(e), semantics = is_semantics(e);
 
 				/* swapped ? */
-				if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l))))
-					n->data = e = exp_compare(v->sql->sa, e->r, e->l, cmp_equal);
-				if (anti) set_anti(e);
-				if (semantics) set_semantics(e);
+				if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l)))) {
+					sql_exp *l = e->l;
+					e->l = e->r;
+					e->r = l;
+				}
 				p = find_prop(e->p, PROP_HASHCOL);
 				if (!p)
 					e->p = p = prop_create(v->sql->sa, PROP_HASHCOL, e->p);

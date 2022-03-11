@@ -1411,6 +1411,8 @@ sqllex(YYSTYPE * yylval, void *parm)
 
 		if (next == NOT) {
 			return sqllex(yylval, parm);
+		} else if (next == EXISTS) {
+			token = NOT_EXISTS;
 		} else if (next == BETWEEN) {
 			token = NOT_BETWEEN;
 		} else if (next == sqlIN) {

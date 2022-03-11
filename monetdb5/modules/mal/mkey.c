@@ -120,6 +120,11 @@
 #ifdef HAVE_HGE
 #define MKEYHASH_hge(valp)	((lng) (valp >> 64) ^ (lng) (valp))
 #endif
+#if SIZEOF_OID == SIZEOF_INT
+#define MKEYHASH_oid(valp)	MKEYHASH_int(valp)
+#else
+#define MKEYHASH_oid(valp)	MKEYHASH_lng(valp)
+#endif
 
 static inline ulng
 GDK_ROTATE(ulng x, int y, int z)
@@ -408,57 +413,66 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	hbi = bat_iterator(hb);
 	bi = bat_iterator(b);
-	switch (ATOMstorage(b->ttype)) {
-	case TYPE_bte:
-		MKEYbulk_rotate_xor_hashloop(bte);
-		break;
-	case TYPE_sht:
-		MKEYbulk_rotate_xor_hashloop(sht);
-		break;
-	case TYPE_int:
-	case TYPE_flt:
-		MKEYbulk_rotate_xor_hashloop(int);
-		break;
-	case TYPE_lng: { /* hb and b areas may overlap, so for this case the 'restrict' keyword cannot be used */
-		const ulng *h = (const ulng *) hbi.base;
-		const lng *v = (const lng *) bi.base;
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-			for (BUN i = 0; i < n; i++) {
-				oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
-				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (ulng) MKEYHASH_lng(v[p2]);
-			}
-		} else {
-			for (BUN i = 0; i < n; i++) {
-				oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
-				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (ulng) MKEYHASH_lng(v[p2]);
-			}
-		}
-	} break;
-	case TYPE_dbl:
-		MKEYbulk_rotate_xor_hashloop(lng);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		MKEYbulk_rotate_xor_hashloop(hge);
-		break;
-#endif
-	default: {
+	if (complex_cand(b)) {
 		const ulng *restrict h = (const ulng *) hbi.base;
-		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
-
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-			for (BUN i = 0; i < n; i++) {
-				oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
-				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (ulng) hash(BUNtail(bi, p2));
-			}
-		} else {
-			for (BUN i = 0; i < n; i++) {
-				oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
-				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (ulng) hash(BUNtail(bi, p2));
-			}
+		for (BUN i = 0; i < n; i++) {
+			oid p1 = canditer_next(&ci1) - off1;
+			oid p2 = canditer_next(&ci2) - off2;
+			r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ MKEYHASH_oid(*(oid*)Tpos(&bi, p2));
 		}
-		break;
-	}
+	} else {
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			MKEYbulk_rotate_xor_hashloop(bte);
+			break;
+		case TYPE_sht:
+			MKEYbulk_rotate_xor_hashloop(sht);
+			break;
+		case TYPE_int:
+		case TYPE_flt:
+			MKEYbulk_rotate_xor_hashloop(int);
+			break;
+		case TYPE_lng: { /* hb and b areas may overlap, so for this case the 'restrict' keyword cannot be used */
+			const ulng *h = (const ulng *) hbi.base;
+			const lng *v = (const lng *) bi.base;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < n; i++) {
+					oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+					r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (ulng) MKEYHASH_lng(v[p2]);
+				}
+			} else {
+				for (BUN i = 0; i < n; i++) {
+					oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+					r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (ulng) MKEYHASH_lng(v[p2]);
+				}
+			}
+		} break;
+		case TYPE_dbl:
+			MKEYbulk_rotate_xor_hashloop(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			MKEYbulk_rotate_xor_hashloop(hge);
+			break;
+#endif
+		default: {
+			const ulng *restrict h = (const ulng *) hbi.base;
+			BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
+
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < n; i++) {
+					oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+					r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (ulng) hash(BUNtail(bi, p2));
+				}
+			} else {
+				for (BUN i = 0; i < n; i++) {
+					oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+					r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (ulng) hash(BUNtail(bi, p2));
+				}
+			}
+			break;
+		}
+		}
 	}
 	bat_iterator_end(&hbi);
 	bat_iterator_end(&bi);

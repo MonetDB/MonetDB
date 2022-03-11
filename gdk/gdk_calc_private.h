@@ -666,13 +666,6 @@ typedef long double ldouble;
 #ifdef TRUNCATE_NUMBERS
 #define rounddbl(x)	(x)
 #else
-#ifdef HAVE_HGE
-/* can't round to hge via lng since we might loose significant bits, so
- * just keep it long double */
 #define rounddbl(x)	roundl(x)
-#else
-/* round long double to long long int in one go */
-#define rounddbl(x)	llroundl(x)
-#endif
 #endif
 #endif
