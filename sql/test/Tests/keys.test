@@ -1,5 +1,3 @@
-statement ok
-START TRANSACTION
 
 statement ok
 CREATE TABLE allnewtriples (id integer NOT NULL, subject integer NOT
@@ -317,7 +315,4 @@ select count(a) as x, count(*) as y from dummyme
 ----
 3
 3
-
-statement ok
-ROLLBACK
 
