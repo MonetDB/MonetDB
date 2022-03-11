@@ -404,6 +404,7 @@ CONDITIONALS = {
     'HAVE_PYMONETDB'       : False, # default PYTHON can import pymonetdb
     'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
     'HAVE_RUBY'            : False,
+    'HAVE_CPP'             : False,
     'HAVE_DATA_PATH'       : False,
     'MERCURIAL'            : False,
     'RELEASERUN'           : False,
@@ -1238,7 +1239,7 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                 options = []            # not used
             else:
                 oneserver = True
-                options = f.read().split()
+                options = splitcommand(f.read())
                 f.close()
 
         if testlist:
@@ -3611,6 +3612,14 @@ def main(argv) :
             else:
                 print('Ruby available, but MonetDB gem not available')
     CheckClassPath()
+
+    if CheckExec('c++'):
+        with process.Popen(['c++', '--version'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            cpp_out, cpp_err = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_CPP'] = True
 
     # tidy-up and fall-back to defaults where necessary
     vars_ = VARS + ['GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
