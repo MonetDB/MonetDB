@@ -2234,7 +2234,7 @@ exp_rel_update_set_freevar(sql_exp *e)
 }
 
 static list *
-exp_rel_update_exps(mvc *sql, list *exps)
+exp_rel_update_exps(mvc *sql, list *exps, bool up)
 {
 	if (list_empty(exps))
 		return exps;
@@ -2242,25 +2242,25 @@ exp_rel_update_exps(mvc *sql, list *exps)
 		sql_exp *e = n->data;
 
 		if (exp_has_rel(e))
-			n->data = exp_rel_update_exp(sql, e);
-		else if (!exp_is_atom(e))
+			n->data = exp_rel_update_exp(sql, e, up);
+		else if (!exp_is_atom(e) && !up)
 			exp_rel_update_set_freevar(e);
 	}
 	return exps;
 }
 
 static sql_exp *
-exp_rel_update_exp_(mvc *sql, sql_exp *e)
+exp_rel_update_exp_(mvc *sql, sql_exp *e, bool up)
 {
 	if (exp_has_rel(e))
-		e = exp_rel_update_exp(sql, e);
-	else if (!exp_is_atom(e))
+		e = exp_rel_update_exp(sql, e, up);
+	else if (!exp_is_atom(e) && !up)
 		exp_rel_update_set_freevar(e);
 	return e;
 }
 
 sql_exp *
-exp_rel_update_exp(mvc *sql, sql_exp *e)
+exp_rel_update_exp(mvc *sql, sql_exp *e, bool up)
 {
 	if (!e)
 		return NULL;
@@ -2269,42 +2269,45 @@ exp_rel_update_exp(mvc *sql, sql_exp *e)
 	case e_func:
 	case e_aggr:
 		if (exps_have_rel_exp(e->l))
-			e->l = exp_rel_update_exps(sql, e->l);
+			e->l = exp_rel_update_exps(sql, e->l, up);
 		return e;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if (exps_have_rel_exp(e->l))
-				e->l = exp_rel_update_exps(sql, e->l);
+				e->l = exp_rel_update_exps(sql, e->l, up);
 			if (exps_have_rel_exp(e->r))
-				e->r = exp_rel_update_exps(sql, e->r);
+				e->r = exp_rel_update_exps(sql, e->r, up);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if (exp_has_rel(e->l))
-				e->l = exp_rel_update_exp(sql, e->l);
+				e->l = exp_rel_update_exp(sql, e->l, up);
 			if (exps_have_rel_exp(e->r))
-				e->r = exp_rel_update_exps(sql, e->r);
+				e->r = exp_rel_update_exps(sql, e->r, up);
 		} else {
 			//if (exp_has_rel(e->l))
-				e->l = exp_rel_update_exp_(sql, e->l);
+				e->l = exp_rel_update_exp_(sql, e->l, up);
 			//if (exp_has_rel(e->r))
-				e->r = exp_rel_update_exp_(sql, e->r);
+				e->r = exp_rel_update_exp_(sql, e->r, up);
 			if (e->f /*&& exp_has_rel(e->f)*/)
-				e->f = exp_rel_update_exp_(sql, e->f);
+				e->f = exp_rel_update_exp_(sql, e->f, up);
 		}
 		return e;
 	case e_convert:
 		if (exp_has_rel(e->l))
-			e->l = exp_rel_update_exp(sql, e->l);
+			e->l = exp_rel_update_exp(sql, e->l, up);
 		return e;
 	case e_psm:
 		if (exp_is_rel(e)) {
 			sql_rel *r = exp_rel_get_rel(sql->sa, e);
 			e = r->exps->t->data;
-			return exp_ref(sql, e);
+			e = exp_ref(sql, e);
+			if (up)
+				set_freevar(e, 1);
+			return e;
 		}
 		return e;
 	case e_atom:
 		if (e->f && exps_have_rel_exp(e->f))
-			e->f = exp_rel_update_exps(sql, e->f);
+			e->f = exp_rel_update_exps(sql, e->f, up);
 		return e;
 	case e_column:
 		return e;
@@ -3032,15 +3035,11 @@ set_exp_type(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *e)
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
-	if (e->tpe.type)
-		return 0;
-
 	if (e->type == e_column) {
 		const char *nrname = (const char*) e->l, *nename = (const char*) e->r;
 		/* find all the column references and set the type */
-		if (rel_find_parameter(sql, type, rel, nrname, nename) < 0)
-			return -1;
 		e->tpe = *type;
+		return rel_find_parameter(sql, type, rel, nrname, nename);
 	} else if (e->type == e_atom && e->f) {
 		list *atoms = e->f;
 		if (!list_empty(atoms))
@@ -3048,10 +3047,10 @@ set_exp_type(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *e)
 				if (set_exp_type(sql, type, rel, n->data) < 0) /* set recursively */
 					return -1;
 		e->tpe = *type;
+		return 1; /* on a list of atoms, everything should be found */
 	} else if (e->type == e_atom && !e->l && !e->r && !e->f) {
-		if (set_type_param(sql, type, e->flag) != 0)
-			return -1;
 		e->tpe = *type;
+		return set_type_param(sql, type, e->flag) == 0 ? 1 : 0;
 	} else if (exp_is_rel(e)) { /* for relation expressions, restart cycle */
 		rel = (sql_rel*) e->l;
 		/* limiting to these cases */
@@ -3059,9 +3058,8 @@ set_exp_type(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *e)
 			return 0;
 		sql_exp *re = rel->exps->h->data;
 
-		if (set_exp_type(sql, type, rel, re) < 0) /* set recursively */
-			return -1;
 		e->tpe = *type;
+		return set_exp_type(sql, type, rel, re); /* set recursively */
 	}
 	return 0;
 }
@@ -3069,10 +3067,7 @@ set_exp_type(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *e)
 int
 rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int upcast)
 {
-	sql_exp *e = exp;
-	int is_rel = exp_is_rel(exp);
-
-	if (!type || !exp || (exp->type != e_atom && exp->type != e_column && !is_rel))
+	if (!type || !exp || (exp->type != e_atom && exp->type != e_column && !exp_is_rel(exp)))
 		return -1;
 
 	/* use largest numeric types */
@@ -3085,7 +3080,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
 	else if (upcast && type->type->eclass == EC_FLT)
 		type = sql_bind_localtype("dbl");
 
-	return set_exp_type(sql, type, rel, e);
+	return set_exp_type(sql, type, rel, exp);
 }
 
 /* try to do an in-place conversion
@@ -3237,9 +3232,12 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super)
 	return values;
 }
 
+/* return -1 on error, 0 not found, 1 found */
 static int
 rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relname, const char *expname)
 {
+	int res = 0;
+
 	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
@@ -3257,7 +3255,7 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 			e = exps_bind_column(rel->exps, nename, NULL, NULL, 1);
 		}
 		if (!e)
-			return 0;
+			return 0; /* not found */
 		/* set order by column types */
 		if (is_simple_project(rel->op) && !list_empty(rel->r)) {
 			sql_exp *ordere = NULL;
@@ -3273,8 +3271,9 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 			nrname = (const char*) e->l;
 			nename = (const char*) e->r;
 			e->tpe = *type;
-		} else if ((e->type == e_atom || exp_is_rel(e)) && set_exp_type(sql, type, rel, e) < 0) {
-			return -1; /* don't search further */
+			res = 1; /* found */
+		} else if ((e->type == e_atom || exp_is_rel(e)) && (res = set_exp_type(sql, type, rel, e)) <= 0) {
+			return res; /* don't search further */
 		}
 		/* group by columns can have aliases! */
 		if (is_groupby(rel->op) && !list_empty(rel->r)) {
@@ -3283,16 +3282,18 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 			} else if (nename) {
 				e = exps_bind_column(rel->r, nename, NULL, NULL, 1);
 			}
-			if (e && e->type == e_column) {
+			if (!e)
+				return res; /* don't search further */
+			if (e->type == e_column) {
 				nrname = (const char*) e->l;
 				nename = (const char*) e->r;
 				e->tpe = *type;
-			} else if (e && (e->type == e_atom || exp_is_rel(e)) && set_exp_type(sql, type, rel, e) < 0) {
-				return -1; /* don't search further */
+			} else if ((e->type == e_atom || exp_is_rel(e)) && (res = set_exp_type(sql, type, rel, e)) <= 0) {
+				return res; /* don't search further */
 			}
 		}
-		if (!e || e->type != e_column)
-			return 0; /* don't search further */
+		if (e->type != e_column)
+			return res; /* don't search further */
 	}
 
 	switch (rel->op) {
@@ -3300,9 +3301,22 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		case op_left:
 		case op_right:
 		case op_full:
-			if ((rel->l && rel_find_parameter(sql, type, rel->l, nrname, nename) < 0) ||
-				(rel->r && rel_find_parameter(sql, type, rel->r, nrname, nename)))
-				return -1;
+			if (rel->l)
+				res = rel_find_parameter(sql, type, rel->l, nrname, nename);
+			if (rel->r && res <= 0) { /* try other relation if not found */
+				int err = sql->session->status, lres = res;
+				char buf[ERRSIZE];
+
+				strcpy(buf, sql->errstr); /* keep error found and try other join relation */
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				res = rel_find_parameter(sql, type, rel->r, nrname, nename);
+				if (res == 0) { /* parameter wasn't found, set error */
+					res = lres;
+					sql->session->status = err;
+					strcpy(sql->errstr, buf);
+				}
+			}
 			break;
 		case op_semi:
 		case op_anti:
@@ -3311,8 +3325,8 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		case op_select:
 		case op_topn:
 		case op_sample:
-			if ((rel->l && rel_find_parameter(sql, type, rel->l, nrname, nename) < 0))
-				return -1;
+			if (rel->l)
+				res = rel_find_parameter(sql, type, rel->l, nrname, nename);
 			break;
 		case op_union: /* TODO for set relations this needs further improvement */
 		case op_inter:
@@ -3321,9 +3335,9 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 			return -1;
 		}
 		default: /* For table returning functions, the type must be set when the relation is created */
-			break;
+			return 0;
 	}
-	return 0;
+	return res;
 }
 
 sql_exp *

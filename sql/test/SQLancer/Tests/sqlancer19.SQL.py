@@ -369,6 +369,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('2.47'),"1","","1")])
     cli.execute("SELECT abs(2.47), ltrim(count(*)), ltrim(count(*),count(*)), lower(count(*)) FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('2.47'),"1","","1")])
+    cli.execute("SELECT 1 FROM t3 LEFT OUTER JOIN (SELECT 1) x(x) ON 1 <> ALL(VALUES (t3.c0)) where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(1,)])
+    cli.execute("SELECT 1 FROM rt3 LEFT OUTER JOIN (SELECT 1) x(x) ON 1 <> ALL(VALUES (rt3.c0)) where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(1,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("SELECT CASE 1 WHEN 5 THEN ((SELECT t3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (t3.c0), (1)) END FROM t3;") \
@@ -376,6 +380,13 @@ with SQLTestCase() as cli:
     # this query triggers a lot MAL user function calls at the moment. It allows to test concurrency issues with the query queue
     cli.execute("SELECT CASE 1 WHEN 5 THEN ((SELECT rt3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (rt3.c0), (1)) END FROM rt3;") \
         .assertFailed() # GDK reported error: hashjoin: more than one match
+
+    cli.execute('TRUNCATE t3;') \
+        .assertSucceeded().assertRowCount(6)
+    cli.execute("SELECT 1 FROM t3 CROSS JOIN LATERAL (SELECT 1 FROM (SELECT 1) z(z) JOIN (VALUES (1, t3.c0), (2, t3.c0)) x(x,y) ON x.x = 1) y(y);") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT 1 FROM rt3 CROSS JOIN LATERAL (SELECT 1 FROM (SELECT 1) z(z) JOIN (VALUES (1, rt3.c0), (2, rt3.c0)) x(x,y) ON x.x = 1) y(y);") \
+        .assertSucceeded().assertDataResultMatch([])
 
     cli.execute("""
     START TRANSACTION;

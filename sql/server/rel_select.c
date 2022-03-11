@@ -2467,8 +2467,16 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (rel && *rel)
 			query_push_outer(query, *rel, f);
 		sq = rel_setquery(query, sc);
-		if (rel && *rel)
+		if (rel && *rel) {
 			*rel = query_pop_outer(query);
+			if (is_sql_join(f) && is_groupby((*rel)->op)) {
+				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in JOIN conditions");
+			} else if (is_sql_where(f) && is_groupby((*rel)->op)) {
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: aggregate functions not allowed in WHERE clause");
+			} else if ((is_sql_update_set(f) || is_sql_psm(f)) && is_groupby((*rel)->op)) {
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses");
+			}
+		}
 		if (!sq)
 			return NULL;
 		if (ek.type == type_value && ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
@@ -2752,8 +2760,16 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (rel)
 			query_push_outer(query, rel, f);
 		sq = rel_setquery(query, sc);
-		if (rel)
+		if (rel) {
 			rel = query_pop_outer(query);
+			if (is_sql_join(f) && is_groupby(rel->op)) {
+				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in JOIN conditions");
+			} else if (is_sql_where(f) && is_groupby(rel->op)) {
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: aggregate functions not allowed in WHERE clause");
+			} else if ((is_sql_update_set(f) || is_sql_psm(f)) && is_groupby(rel->op)) {
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses");
+			}
+		}
 		if (!sq)
 			return NULL;
 		assert(ek.type == type_value); /* I don't expect IN tuple matching calls to land here */
@@ -5333,7 +5349,7 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 							query_outer_pop_last_used(query, fv-1);
 							reset_outer(outer);
 						} else {
-							e->freevar = 0;
+							reset_freevar(e);
 						}
 					}
 				}

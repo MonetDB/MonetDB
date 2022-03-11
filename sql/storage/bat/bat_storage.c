@@ -1312,7 +1312,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 				bat_destroy(tids);
 			return LOG_ERR;
 		}
-	} else if (updates && updates->ttype == TYPE_void) { /* dense later use optimized log structure */
+	} else if (updates && updates->ttype == TYPE_void && !complex_cand(updates)) { /* dense later use optimized log structure */
 		updates = COLcopy(updates, TYPE_oid, true /* make sure we get a oid col */, TRANSIENT);
 		if (!updates) {
 			if (otids != tids)
@@ -1341,7 +1341,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 	lock_table(tr->store, t->base.id);
 	storage *s = ATOMIC_PTR_GET(&t->data);
 	if (!is_new && !cs->cleared) {
-		if (!tids->tsorted || complex_cand(tids) /* make sure we have simple dense or oids */) {
+		if (!tids->tsorted /* make sure we have simple dense or oids */) {
 			BAT *sorted, *order;
 			if (BATsort(&sorted, &order, NULL, tids, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 				if (otids != tids)
@@ -1418,6 +1418,48 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 				}
 				if (end < seg->end)
 					break;
+			}
+		} else if (res == LOG_OK && complex_cand(tids)) {
+			struct canditer ci;
+			segment *seg = s->segs->h;
+			canditer_init(&ci, NULL, tids);
+			BUN i = 0;
+			while ( seg && res == LOG_OK && i < ucnt) {
+				oid rid = canditer_next(&ci);
+				if (seg->end <= rid)
+					seg = seg->next;
+				else if (seg->start <= rid && seg->end > rid) {
+					/* check for delete conflicts */
+					if (seg->ts >= tr->ts && seg->deleted) {
+						res = LOG_CONFLICT;
+						continue;
+					}
+
+					/* check for inplace updates */
+					if (seg->ts == tr->tid && !seg->deleted) {
+						if (!ins) {
+							ins = COLnew(0, TYPE_msk, ucnt, TRANSIENT);
+							if (!ins) {
+								res = LOG_ERR;
+								break;
+							} else {
+								BATsetcount(ins, ucnt); /* all full updates  */
+								msk = (int*)Tloc(ins, 0);
+								BUN end = (ucnt+31)/32;
+								memset(msk, 0, end * sizeof(int));
+							}
+						}
+						ptr upd = BUNtail(upi, i);
+						if (void_inplace(b, rid, upd, true) != GDK_SUCCEED)
+							res = LOG_ERR;
+
+						oid word = i/32;
+						int pos = i%32;
+						msk[word] |= 1U<<pos;
+						cnt++;
+					}
+					i++;
+				}
 			}
 		} else if (res == LOG_OK) {
 			BUN i = 0;
@@ -3069,21 +3111,43 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 			assert(BATtordered(b));
 			BUN icnt = BATcount(b);
 			BATiter bi = bat_iterator(b);
-			oid *o = bi.base, n = o[0]+1;
 			size_t lcnt = 1;
+			oid n;
 			segment *seg = s->segs->h;
-			for (size_t i=1; i<icnt; i++) {
-				if (o[i] == n) {
-					lcnt++;
-					n++;
-				} else {
-					if ((ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt)) != LOG_OK)
-						break;
-					lcnt = 0;
+			if (complex_cand(b)) {
+				oid o = * (oid *) Tpos(&bi, 0);
+				n = o + 1;
+				for (BUN i = 1; i < icnt; i++) {
+					o = * (oid *) Tpos(&bi, i);
+					if (o == n) {
+						lcnt++;
+						n++;
+					} else {
+						if ((ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt)) != LOG_OK)
+							break;
+						lcnt = 0;
+					}
+					if (!lcnt) {
+						n = o + 1;
+						lcnt = 1;
+					}
 				}
-				if (!lcnt) {
-					n = o[i]+1;
-					lcnt = 1;
+			} else {
+				oid *o = bi.base;
+				n = o[0]+1;
+				for (size_t i=1; i<icnt; i++) {
+					if (o[i] == n) {
+						lcnt++;
+						n++;
+					} else {
+						if ((ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt)) != LOG_OK)
+							break;
+						lcnt = 0;
+					}
+					if (!lcnt) {
+						n = o[i]+1;
+						lcnt = 1;
+					}
 				}
 			}
 			if (lcnt && ok == LOG_OK)
