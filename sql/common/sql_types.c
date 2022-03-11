@@ -1027,10 +1027,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "count", "aggr", "count", TRUE, FALSE, LNG, 1, ANY);
 	sql_create_func(sa, "cnt", "sql", "count", TRUE, TRUE, SCALE_FIX, 0, LNG, 2, STR, STR);
 
-	for (t = strings; t < numerical; t++) {
-		sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, FALSE, *t, 1, *t);
-		sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, FALSE, *t, 2, *t, *t);
-	}
+	sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, FALSE, STR, 1, STR);
+	sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, FALSE, STR, 2, STR, STR);
 
 	/* order based operators */
 	sql_create_analytic(sa, "diff", "sql", "diff", TRUE, SCALE_NONE, BIT, 1, ANY);
@@ -1165,10 +1163,9 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "avg", "sql", "avg", FALSE, SCALE_NONE, DAYINT, 1, DAYINT);
 	sql_create_analytic(sa, "avg", "sql", "avg", FALSE, SCALE_NONE, SECINT, 1, SECINT);
 
-	for (t = strings; t < numerical; t++) {
-		sql_create_analytic(sa, "listagg", "sql", "str_group_concat", FALSE, SCALE_NONE, *t, 1, *t);
-		sql_create_analytic(sa, "listagg", "sql", "str_group_concat", FALSE, SCALE_NONE, *t, 2, *t, *t);
-	}
+	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", FALSE, SCALE_NONE, STR, 1, STR);
+	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", FALSE, SCALE_NONE, STR, 2, STR, STR);
+
 	sql_create_func(sa, "and", "calc", "and", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "or",  "calc",  "or", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "xor", "calc", "xor", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
