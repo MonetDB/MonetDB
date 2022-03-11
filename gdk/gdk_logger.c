@@ -2724,25 +2724,20 @@ new_logfile(logger *lg)
 gdk_return
 log_tend(logger *lg)
 {
-	logformat l;
-	gdk_return result;
+	assert(!lg->flushnow);
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tend %d\n", lg->tid);
-
-	l.flag = LOG_END;
-	l.id = lg->tid;
-	if (lg->flushnow) {
-		lg->flushnow = 0;
-		if ((result = logger_commit(lg)) != GDK_SUCCEED && !LOG_DISABLED(lg))
-			(void) ATOMIC_DEC(&lg->refcount);
-		return result;
-	}
 
 	lg->end++;
 	if (LOG_DISABLED(lg)) {
 		return GDK_SUCCEED;
 	}
+
+	gdk_return result;
+	logformat l;
+	l.flag = LOG_END;
+	l.id = lg->tid;
 
 	if ((result = log_write_format(lg, &l)) != GDK_SUCCEED)
 		(void) ATOMIC_DEC(&lg->refcount);
@@ -2799,6 +2794,11 @@ flush_queue_length(logger *lg) {
 
 gdk_return
 log_tflush(logger* lg, ulng log_file_id) {
+
+	if (lg->flushnow) {
+		lg->flushnow = 0;
+		return logger_commit(lg);
+	}
 
 	if (LOG_DISABLED(lg)) {
 		return GDK_SUCCEED;
