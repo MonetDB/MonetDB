@@ -144,6 +144,11 @@ SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT 1) x(x) ON x.x = ANY(SELECT c0 FROM t0
 ----
 1
 
+query I nosort
+SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (SELECT y.y FROM (SELECT DISTINCT 1, t0.c0) y(y,z)) x(x)
+ON (VALUES (t0.c0)) = 1
+----
+
 # Postgres doesn't give an error here, but we are confident it must
 statement error GDK reported error: mergejoin: more than one match
 SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
