@@ -1413,10 +1413,19 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					BATrmprop_nolock(b, GDK_MIN_POS);
 				}
 				MT_lock_unset(&b->theaplock);
-				for (BUN i = 0, j = ni.count; i < j; i++)
-					o[i] = v++;
+				if (complex_cand(n)) {
+					for (BUN i = 0, j = ni.count; i < j; i++)
+						o[i] = *(oid *)Tpos(&ni, i);
+					/* last value */
+					v = o[ni.count - 1];
+				} else {
+					for (BUN i = 0, j = ni.count; i < j; i++)
+						o[i] = v++;
+					/* last value added (not one beyond) */
+					v--;
+				}
 				MT_lock_set(&b->theaplock);
-				if (maxprop && --v >= maxprop->val.oval) {
+				if (maxprop && v >= maxprop->val.oval) {
 					BATsetprop_nolock(b, GDK_MAX_VALUE, TYPE_oid, &v);
 					BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){pos + ni.count - 1});
 				} else {

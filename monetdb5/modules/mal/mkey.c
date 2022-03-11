@@ -121,6 +121,11 @@
 #define MKEYHASH_hge(valp)	((ulng) (*(const uhge *)(valp) >> 64) ^ \
 							 (ulng) *(const uhge *)(valp))
 #endif
+#if SIZEOF_OID == SIZEOF_INT
+#define MKEYHASH_oid(valp)	MKEYHASH_int(valp)
+#else
+#define MKEYHASH_oid(valp)	MKEYHASH_lng(valp)
+#endif
 
 static inline ulng
 GDK_ROTATE(ulng x, int y, int z)
@@ -371,62 +376,67 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	BATiter bi = bat_iterator(b);
 	BATiter hbi = bat_iterator(hb);
 	h = (const ulng *) hbi.base;
-	switch (ATOMstorage(b->ttype)) {
-	case TYPE_bte: {
-		const bte *restrict v = (const bte *) bi.base;
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_bte(v + i);
-		}
-		break;
-	}
-	case TYPE_sht: {
-		const sht *restrict v = (const sht *) bi.base;
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_sht(v + i);
-		}
-		break;
-	}
-	case TYPE_int:
-	case TYPE_flt: {
-		const int *restrict v = (const int *) bi.base;
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_int(v + i);
-		}
-		break;
-	}
-	case TYPE_lng:
-	case TYPE_dbl: {
-		const lng *restrict v = (const lng *) bi.base;
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_lng(v + i);
-		}
-		break;
-	}
-#ifdef HAVE_HGE
-	case TYPE_hge: {
-		const hge *restrict v = (const hge *) bi.base;
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_hge(v + i);
-		}
-		break;
-	}
-#endif
-	case TYPE_str:
-		if (bi.vh->hashash) {
+	if (complex_cand(b)) {
+		for (BUN i = 0; i < n; i++)
+			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_oid(Tpos(&bi, i));
+	} else {
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte: {
+			const bte *restrict v = (const bte *) bi.base;
 			for (BUN i = 0; i < n; i++) {
-				const void *restrict s = BUNtvar(bi, i);
-				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
+				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_bte(v + i);
 			}
 			break;
 		}
-		/* fall through */
-	default: {
-		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
+		case TYPE_sht: {
+			const sht *restrict v = (const sht *) bi.base;
+			for (BUN i = 0; i < n; i++) {
+				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_sht(v + i);
+			}
+			break;
+		}
+		case TYPE_int:
+		case TYPE_flt: {
+			const int *restrict v = (const int *) bi.base;
+			for (BUN i = 0; i < n; i++) {
+				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_int(v + i);
+			}
+			break;
+		}
+		case TYPE_lng:
+		case TYPE_dbl: {
+			const lng *restrict v = (const lng *) bi.base;
+			for (BUN i = 0; i < n; i++) {
+				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_lng(v + i);
+			}
+			break;
+		}
+#ifdef HAVE_HGE
+		case TYPE_hge: {
+			const hge *restrict v = (const hge *) bi.base;
+			for (BUN i = 0; i < n; i++) {
+				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_hge(v + i);
+			}
+			break;
+		}
+#endif
+		case TYPE_str:
+			if (bi.vh->hashash) {
+				for (BUN i = 0; i < n; i++) {
+					const void *restrict s = BUNtvar(bi, i);
+					r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
+				}
+				break;
+			}
+			/* fall through */
+		default: {
+			BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 
-		for (BUN i = 0; i < n; i++)
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) (*hash)(BUNtail(bi, i));
-		break;
-	}
+			for (BUN i = 0; i < n; i++)
+				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) (*hash)(BUNtail(bi, i));
+			break;
+		}
+		}
 	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&hbi);

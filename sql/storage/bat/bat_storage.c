@@ -1071,7 +1071,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 				bat_destroy(tids);
 			return LOG_ERR;
 		}
-	} else if (updates && updates->ttype == TYPE_void) { /* dense later use optimized log structure */
+	} else if (updates && updates->ttype == TYPE_void && !complex_cand(updates)) { /* dense later use optimized log structure */
 		updates = COLcopy(updates, TYPE_oid, true /* make sure we get a oid col */, TRANSIENT);
 		if (!updates) {
 			if (otids != tids)
@@ -2517,20 +2517,42 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 			assert(BATtordered(b));
 			BUN icnt = BATcount(b);
 			BATiter bi = bat_iterator(b);
-			oid *o = bi.base, n = o[0]+1;
 			size_t lcnt = 1;
-			for (size_t i=1; i<icnt; i++) {
-				if (o[i] == n) {
-					lcnt++;
-					n++;
-				} else {
-					if ((ok = delete_range(tr, t, s, n-lcnt, lcnt)) != LOG_OK)
-						break;
-					lcnt = 0;
+			oid n;
+			if (complex_cand(b)) {
+				oid o = * (oid *) Tpos(&bi, 0);
+				n = o + 1;
+				for (BUN i = 1; i < icnt; i++) {
+					o = * (oid *) Tpos(&bi, i);
+					if (o == n) {
+						lcnt++;
+						n++;
+					} else {
+						if ((ok = delete_range(tr, t, s, n-lcnt, lcnt)) != LOG_OK)
+							break;
+						lcnt = 0;
+					}
+					if (!lcnt) {
+						n = o + 1;
+						lcnt = 1;
+					}
 				}
-				if (!lcnt) {
-					n = o[i]+1;
-					lcnt = 1;
+			} else {
+				oid *o = bi.base;
+				n = o[0] + 1;
+				for (BUN i = 1; i < icnt; i++) {
+					if (o[i] == n) {
+						lcnt++;
+						n++;
+					} else {
+						if ((ok = delete_range(tr, t, s, n-lcnt, lcnt)) != LOG_OK)
+							break;
+						lcnt = 0;
+					}
+					if (!lcnt) {
+						n = o[i]+1;
+						lcnt = 1;
+					}
 				}
 			}
 			if (lcnt && ok == LOG_OK)
