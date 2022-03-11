@@ -133,7 +133,6 @@ SELECT 1 FROM (SELECT TRUE) v0(c0) WHERE EXISTS (SELECT v0.c0 FROM (SELECT 1 WHE
 ----
 1
 
-# this one is right
 query I nosort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT EXISTS (SELECT v0.c0 FROM (SELECT 1 WHERE FALSE)
 x(x)) = TRUE AS INT) as count FROM (SELECT TRUE) v0(c0)) as res
@@ -202,3 +201,15 @@ SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (EXISTS (SELECT max(x.x)))
 
 statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
 SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (SELECT 1 WHERE EXISTS (SELECT max(x.x)))
+
+statement error 42000!MIN: aggregate functions cannot be nested
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING min((SELECT 1 HAVING min(x.x + y.y) > 0))) FROM (SELECT 1) y(y)
+
+statement error 42000!MIN: aggregate functions cannot be nested
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING min((SELECT min(x.x + y.y)))) FROM (SELECT 1) y(y)
+
+statement error 42000!MIN: aggregate functions cannot be nested
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING min(min(x.x + y.y))) FROM (SELECT 1) y(y)
+
+statement error 42000!MIN: aggregate functions cannot be nested
+SELECT (SELECT min(min(x.x + y.y)) FROM (SELECT 1) x(x)) FROM (SELECT 1) y(y)
