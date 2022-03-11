@@ -846,6 +846,10 @@ else
 fi
 
 %changelog
+* Fri Mar 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.19-20220311
+- Rebuilt.
+- GH#7267: Update after delete does not update some rows
+
 * Wed Mar 09 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.17-20220309
 - Rebuilt.
 

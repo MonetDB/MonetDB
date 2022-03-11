@@ -1,3 +1,10 @@
+monetdb (11.41.19) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7267: Update after delete does not update some rows
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 11 Mar 2022 13:08:27 +0100
+
 monetdb (11.41.17) unstable; urgency=low
 
   * Rebuilt.
