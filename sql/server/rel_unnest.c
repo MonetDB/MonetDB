@@ -3835,17 +3835,14 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 	list *l = NULL;
 	node *n = prel->exps->h;
 	sql_rel *nilrel = rel_project(v->sql->sa, irel, rel_projections(v->sql, irel, NULL, 1, 1));
-	sql_exp *ll = NULL;
 	int nr = prel->nrcols - nilrel->nrcols;
 	if (end) {
 		for(node *m = nilrel->exps->h; n && m; n = n->next, m = m->next)
-			ll = m->data;
+			;
 	} else {
-		ll = nilrel->exps->h->data;
 		l = sa_list(v->sql->sa);
 	}
 	for(; nr; n = n->next, nr--) {
-		assert(ll);
 		sql_exp *e = n->data;
 		sql_exp *ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
 		exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
