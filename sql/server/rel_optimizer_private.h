@@ -24,55 +24,39 @@ typedef struct global_props {
 	uint8_t opt_cycle; /* the optimization cycle number */
 } global_props;
 
-extern bool can_split_select(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_push_project_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_merge_projects(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_push_project_up(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_split_project(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_remove_redundant_join(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_simplify_math(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_optimize_exps(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_optimize_select_and_joins_bottomup(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_project_reduce_casts(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_optimize_unions_bottomup(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_optimize_projections(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_optimize_joins(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_join_order(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_optimize_semi_and_anti(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_optimize_select_and_joins_topdown(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_optimize_unions_topdown(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_dce(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_push_func_and_select_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_push_topn_and_sample_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_distinct_project2groupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_push_select_up(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_merge_table_rewrite(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern bool can_setjoins_2_joingroupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+typedef sql_rel *(*run_optimizer)(visitor *v, global_props *gp, sql_rel *rel);
 
-extern sql_rel *rel_split_select(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_push_project_down(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_merge_projects(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_push_project_up(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_split_project(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_remove_redundant_join(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_simplify_math(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_optimize_exps(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_project_reduce_casts(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_optimize_unions_bottomup(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_optimize_projections(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_optimize_joins(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_join_order(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_optimize_semi_and_anti(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_optimize_select_and_joins_topdown(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_optimize_unions_topdown(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_dce(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_push_func_and_select_down(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_push_topn_and_sample_down(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_distinct_project2groupby(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_push_select_up(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_merge_table_rewrite(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_setjoins_2_joingroupby(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
+/* the definition of a single SQL optimizer */
+typedef struct sql_optimizer {
+	const int index; /* because some optimizers runs after the main loop, an index track is needed */
+	const char *name;
+	run_optimizer (*bind_optimizer)(visitor *v, global_props *gp); /* if cannot run (disabled or not needed) returns NULL */
+} sql_optimizer;
+
+extern run_optimizer bind_split_select(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_push_project_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_merge_projects(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_push_project_up(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_split_project(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_remove_redundant_join(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_simplify_math(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_optimize_exps(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_optimize_select_and_joins_bottomup(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_project_reduce_casts(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_optimize_unions_bottomup(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_optimize_projections(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_optimize_joins(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_join_order(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_optimize_semi_and_anti(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_optimize_select_and_joins_topdown(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_optimize_unions_topdown(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_dce(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_push_func_and_select_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_push_topn_and_sample_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_distinct_project2groupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_push_select_up(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_merge_table_rewrite(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_setjoins_2_joingroupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 
 extern sql_rel *rel_split_project_(visitor *v, sql_rel *rel, int top) __attribute__((__visibility__("hidden")));
 extern sql_exp *exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) __attribute__((__visibility__("hidden")));

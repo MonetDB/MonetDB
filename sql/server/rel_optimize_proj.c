@@ -93,18 +93,18 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-bool
-can_push_project_down(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_groupby]);
-}
-
-sql_rel *
+static sql_rel *
 rel_push_project_down(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_visitor_bottomup(v, rel, &rel_push_project_down_);
+}
+
+run_optimizer
+bind_push_project_down(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_groupby]) ? rel_push_project_down : NULL;
 }
 
 
@@ -303,18 +303,18 @@ rel_merge_projects_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-bool
-can_merge_projects(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_groupby]);
-}
-
-sql_rel *
+static sql_rel *
 rel_merge_projects(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_visitor_bottomup(v, rel, &rel_merge_projects_);
+}
+
+run_optimizer
+bind_merge_projects(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_groupby]) ? rel_merge_projects : NULL;
 }
 
 
@@ -674,18 +674,18 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-bool
-can_push_project_up(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_level == 1 && gp->cnt[op_project];
-}
-
-sql_rel *
+static sql_rel *
 rel_push_project_up(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_visitor_bottomup(v, rel, &rel_push_project_up_);
+}
+
+run_optimizer
+bind_push_project_up(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_level == 1 && gp->cnt[op_project] ? rel_push_project_up : NULL;
 }
 
 
@@ -871,29 +871,22 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 	return rel;
 }
 
-bool
-can_split_project(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_cycle == 0 && gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_groupby]);
-}
-
-sql_rel *
+static sql_rel *
 rel_split_project(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_split_project_(v, rel, 1);
 }
 
-
-bool
-can_project_reduce_casts(visitor *v, global_props *gp)
+run_optimizer
+bind_split_project(visitor *v, global_props *gp)
 {
 	(void) v;
-	return gp->cnt[op_project];
+	return gp->opt_cycle == 0 && gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_groupby]) ? rel_split_project : NULL;
 }
 
-sql_rel *
+
+static sql_rel *
 rel_project_reduce_casts(visitor *v, global_props *gp, sql_rel *rel)
 {
 	if (!rel)
@@ -938,6 +931,13 @@ rel_project_reduce_casts(visitor *v, global_props *gp, sql_rel *rel)
 		}
 	}
 	return rel;
+}
+
+run_optimizer
+bind_project_reduce_casts(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->cnt[op_project] ? rel_project_reduce_casts : NULL;
 }
 
 
@@ -1268,18 +1268,18 @@ rel_optimize_unions_bottomup_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-bool
-can_optimize_unions_bottomup(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_level == 1 && gp->cnt[op_union];
-}
-
-sql_rel *
+static sql_rel *
 rel_optimize_unions_bottomup(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_visitor_bottomup(v, rel, &rel_optimize_unions_bottomup_);
+}
+
+run_optimizer
+bind_optimize_unions_bottomup(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_level == 1 && gp->cnt[op_union] ? rel_optimize_unions_bottomup : NULL;
 }
 
 
@@ -2480,18 +2480,18 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-bool
-can_optimize_projections(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_groupby] || gp->cnt[op_project] || gp->cnt[op_union] || gp->cnt[op_inter] || gp->cnt[op_except]);
-}
-
-sql_rel *
+static sql_rel *
 rel_optimize_projections(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_visitor_topdown(v, rel, &rel_optimize_projections_);
+}
+
+run_optimizer
+bind_optimize_projections(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_level == 1 && (gp->cnt[op_groupby] || gp->cnt[op_project] || gp->cnt[op_union] || gp->cnt[op_inter] || gp->cnt[op_except]) ? rel_optimize_projections : NULL;
 }
 
 
@@ -2789,18 +2789,18 @@ rel_optimize_unions_topdown_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-bool
-can_optimize_unions_topdown(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_level == 1 && gp->cnt[op_union];
-}
-
-sql_rel *
+static sql_rel *
 rel_optimize_unions_topdown(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_visitor_topdown(v, rel, &rel_optimize_unions_topdown_);
+}
+
+run_optimizer
+bind_optimize_unions_topdown(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_level == 1 && gp->cnt[op_union] ? rel_optimize_unions_topdown : NULL;
 }
 
 
@@ -3052,16 +3052,16 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-bool
-can_distinct_project2groupby(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_cycle == 0 && gp->opt_level == 1 && gp->needs_distinct && gp->cnt[op_project];
-}
-
-sql_rel *
+static sql_rel *
 rel_distinct_project2groupby(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_visitor_topdown(v, rel, &rel_distinct_project2groupby_);
+}
+
+run_optimizer
+bind_distinct_project2groupby(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_cycle == 0 && gp->opt_level == 1 && gp->needs_distinct && gp->cnt[op_project] ? rel_distinct_project2groupby : NULL;
 }

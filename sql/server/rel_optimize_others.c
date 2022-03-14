@@ -994,19 +994,20 @@ rel_dce_(mvc *sql, sql_rel *rel)
 }
 
 /* Remove unused expressions */
-bool
-can_dce(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_cycle == 0 && gp->opt_level == 1;
-}
-
-sql_rel *
+static sql_rel *
 rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_dce_(v->sql, rel);
 }
+
+run_optimizer
+bind_dce(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_cycle == 0 && gp->opt_level == 1 ? rel_dce : NULL;
+}
+
 
 static int
 topn_sample_save_exps( list *exps )
@@ -1248,16 +1249,16 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-bool
-can_push_topn_and_sample_down(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_topn] || gp->cnt[op_sample]);
-}
-
-sql_rel *
+static sql_rel *
 rel_push_topn_and_sample_down(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_visitor_topdown(v, rel, &rel_push_topn_and_sample_down_);
+}
+
+run_optimizer
+bind_push_topn_and_sample_down(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_level == 1 && (gp->cnt[op_topn] || gp->cnt[op_sample]) ? rel_push_topn_and_sample_down : NULL;
 }

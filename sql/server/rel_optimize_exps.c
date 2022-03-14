@@ -361,17 +361,17 @@ rel_simplify_math_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-bool
-can_simplify_math(visitor *v, global_props *gp)
-{
-	return gp->opt_cycle == 0 && gp->opt_level == 1 && v->value_based_opt && (gp->cnt[op_project] || gp->cnt[op_ddl] || gp->cnt[ddl_psm]);
-}
-
-sql_rel *
+static sql_rel *
 rel_simplify_math(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_visitor_bottomup(v, rel, &rel_simplify_math_);
+}
+
+run_optimizer
+bind_simplify_math(visitor *v, global_props *gp)
+{
+	return gp->opt_cycle == 0 && gp->opt_level == 1 && v->value_based_opt && (gp->cnt[op_project] || gp->cnt[op_ddl] || gp->cnt[ddl_psm]) ? rel_simplify_math : NULL;
 }
 
 
@@ -778,16 +778,16 @@ rel_optimize_exps_(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
-bool
-can_optimize_exps(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->opt_cycle < 2 && gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select]);
-}
-
-sql_rel *
+static sql_rel *
 rel_optimize_exps(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_exp_visitor_bottomup(v, rel, &rel_optimize_exps_, false);
+}
+
+run_optimizer
+bind_optimize_exps(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->opt_cycle < 2 && gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select]) ? rel_optimize_exps : NULL;
 }
