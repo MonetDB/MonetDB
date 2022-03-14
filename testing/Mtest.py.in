@@ -47,6 +47,7 @@ approve = False
 initdb = None
 single_in_memory = False
 restart = False
+produce_html = True
 
 # extra mserver5 options
 mserver5_opts = []
@@ -301,8 +302,10 @@ def splitcommand(cmd):
 def remove(file):
     try:
         os.remove(file)
-    except:
+    except FileNotFound:
         pass
+    except:
+        Warn('could not remove {}'.format(file))
 
 def isexecutable(TST, ext = '.sh') :
     if   os.name == "nt":
@@ -1136,7 +1139,7 @@ def SkipTest(env, TST, EXT, REASON, length) :
             s = '%-*s' % (length, TST)
         print('%s%s skipped (%s)' % (prompt(), s, REASON))
 
-    if testweb:
+    if testweb or not produce_html:
         return None
 
     f = openutf8(".%s.SKIPPED.html" % TST, "w")
@@ -1445,11 +1448,10 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
             for f in alllinks:
                 remove(f)
 
-        if THISFILE == "Mtest.py":
-            if not testweb:
-                body = body_bad + body_good
-                CreateHtmlIndex(env, ssout, sserr, *body)
-                elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
+        if not testweb and produce_html:
+            body = body_bad + body_good
+            CreateHtmlIndex(env, ssout, sserr, *body)
+            elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -1813,41 +1815,6 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
         STABLEerr = '.stable.err'
     return STABLEout, STABLEerr
 ### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
-
-def CategorizeResult(TST, SockTime):
-    l = '<!--MajorDiffs-->'   # assign something in case file is empty
-    for l in openutf8("%s.out.diff.html" % TST):
-        pass
-    if   l.startswith('<!--NoDiffs-->'):
-        o = F_OK
-    elif l.startswith('<!--MinorDiffs-->'):
-        o = F_WARN
-    elif l.startswith('<!--MajorDiffs-->'):
-        o = F_ERROR
-    else:
-        Warn("Unexpected last line in %s.out.diff.html:\n%s" % (TST, l))
-        ff = openutf8("%s.out.diff.html" % TST, "a")
-        ff.write("\n<!--MajorDiffs-->\n")
-        ff.close()
-        o = F_ERROR
-    l = '<!--MajorDiffs-->'   # assign something in case file is empty
-    for l in openutf8("%s.err.diff.html" % TST):
-        pass
-    if   l.startswith('<!--NoDiffs-->'):
-        e = F_OK
-    elif l.startswith('<!--MinorDiffs-->'):
-        e = F_WARN
-    elif l.startswith('<!--MajorDiffs-->'):
-        e = F_ERROR
-    else:
-        Warn("Unexpected last line in %s.err.diff.html:\n%s" % (TST, l))
-        ff = openutf8("%s.err.diff.html" % TST, "a")
-        ff.write("\n<!--MajorDiffs-->\n")
-        ff.close()
-        e = F_ERROR
-    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
-        e = SockTime
-    return o, e
 
 relcond = {
     # upgrade testing conditionals:
@@ -2283,52 +2250,54 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
                     tst = '%s<a target="_blank" href="http://bugs.monetdb.org/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
                 else:
                     tst = TST
-                titlefmt = '-tTest %s%s (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (tst, EXT, f, REV, TST)
-            else:
-                # no need (and no space) to add link to bug report:
-                # it's done already elsewhere
-                titlefmt = '-tTest <a href="%s%s">%s%s</a> (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, f, REV, TST)
-        elif testweb:
-            titlefmt = '-tTest %s%s (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST)
-        else:
-            titlefmt = '-tTest <a href="%s%s">%s%s</a> (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, TST)
-        diff_html = openutf8('%s.out.diff.html' % TST,"w")
         out = openutf8('%s.test.out' % TST).read()
-        Element('html', None,
-#                 Element('head', None,
-#                         Element('style', None,
-#                                 Text('''
-# .neutral { color: black; }
-# .deleted { color: red; }
-# .added   { color: green; }
-# '''))),
-                Element('body', None,
-                        Element('pre', None,
-                                Text(out)))).write(diff_html, True)
         if out and [x for x in out.splitlines() if not x.startswith('#')]:
-            diff_html.write('<!--MajorDiffs-->\n')
+            FailedOut = F_ERROR
         else:
-            diff_html.write('<!--NoDiffs-->\n')
-        diff_html.close()
-        diff_html = openutf8('%s.err.diff.html' % TST,"w")
+            FailedOut = F_OK
         err = openutf8('%s.test.err' % TST).read()
-        Element('html', None,
-#                 Element('head', None,
-#                         Element('style', None,
-#                                 Text('''
+        if err and [x for x in err.splitlines() if not x.startswith('#')]:
+            if max(sockerr, errcode) in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
+                FailedErr = max(sockerr, errcode)
+            else:
+                FailedErr = F_ERROR
+        else:
+            FailedErr = F_OK
+        if produce_html:
+            diff_html = openutf8('%s.out.diff.html' % TST,"w")
+            Element('html', None,
+#                     Element('head', None,
+#                             Element('style', None,
+#                                     Text('''
 # .neutral { color: black; }
 # .deleted { color: red; }
 # .added   { color: green; }
 # '''))),
-                Element('body', None,
-                        Element('pre', None,
-                                Text(err)))).write(diff_html, True)
-        if err and [x for x in err.splitlines() if not x.startswith('#')]:
-            diff_html.write('<!--MajorDiffs-->\n')
-        else:
-            diff_html.write('<!--NoDiffs-->\n')
-        diff_html.close()
-        FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode))
+                    Element('body', None,
+                            Element('pre', None,
+                                    Text(out)))).write(diff_html, True)
+            if FailedOut == F_ERROR:
+                diff_html.write('<!--MajorDiffs-->\n')
+            else:
+                diff_html.write('<!--NoDiffs-->\n')
+            diff_html.close()
+            diff_html = openutf8('%s.err.diff.html' % TST,"w")
+            Element('html', None,
+#                     Element('head', None,
+#                             Element('style', None,
+#                                     Text('''
+# .neutral { color: black; }
+# .deleted { color: red; }
+# .added   { color: green; }
+# '''))),
+                    Element('body', None,
+                            Element('pre', None,
+                                    Text(err)))).write(diff_html, True)
+            if FailedErr == F_ERROR:
+                diff_html.write('<!--MajorDiffs-->\n')
+            else:
+                diff_html.write('<!--NoDiffs-->\n')
+            diff_html.close()
         if FailedOut == F_OK and FailedErr == F_OK and testweb:
             for f in ['%s.out.diff.html' % TST, '%s.test.out' % TST,
                       '%s.server.out' % TST, '%s.client.out' % TST,
@@ -2340,7 +2309,7 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
                       '%s%s.FILTERED' % (TST, STABLEerr)]:
                 remove(f)
 
-        if not testweb:
+        if not testweb and produce_html:
             elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT,
                                      FailedOut, FailedErr)
 
@@ -3134,6 +3103,8 @@ def SetExecEnv(exe,port,verbose) :
 #       MAIN
 
 THISFILE = os.path.basename(sys.argv[0])
+if THISFILE == 'Mz.py':
+    produce_html = False
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
 TSTDBG = str(2+8)
 TSTTHREADS = "0"
@@ -3393,6 +3364,11 @@ def main(argv) :
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--report-all-failures', action='store_true', dest='report_all_failures', help='report all failing tests, even if many')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
+    global produce_html
+    if produce_html:
+        parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
+    else:
+        parser.add_argument('--produce-html', action='store_true', dest='produce_html', help='produce HTML files')
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
@@ -3411,6 +3387,7 @@ def main(argv) :
     procdebug = opts.procdebug
     global approve
     approve = opts.approve
+    produce_html = opts.produce_html
     addreqs = False
     all_tests = False
     testweb = opts.testweb
@@ -4011,13 +3988,14 @@ def main(argv) :
                         if global_timeout and start_time + global_timeout < time.time():
                             print('\nGlobal testing timeout reached\n')
                             break
-                        # after a directory has been tested, create
-                        # the index file so that we can look at test
-                        # results while the tests are running
-                        env['TSTDIR'] = ""
-                        env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
-                        body = body_bad + body_good
-                        CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
+                        if produce_html:
+                            # after a directory has been tested, create
+                            # the index file so that we can look at test
+                            # results while the tests are running
+                            env['TSTDIR'] = ""
+                            env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
+                            body = body_bad + body_good
+                            CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
             if quiet:
                 print()
         except KeyboardInterrupt:
@@ -4119,7 +4097,7 @@ VALUES (%s, '%s', '%s', '%s',
 
         env['TSTDIR'] = ""
         env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
-        if not testweb:
+        if not testweb and produce_html:
             CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
 
         Failed = 0
@@ -4162,7 +4140,7 @@ VALUES (%s, '%s', '%s', '%s',
 
 %s
 """ % (how, Failed, num_tests, what))
-            if not testweb:
+            if not testweb and produce_html:
                 print("""\
  First, check the testing results in  %s  !
 
