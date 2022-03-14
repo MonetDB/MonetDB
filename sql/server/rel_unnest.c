@@ -4080,12 +4080,10 @@ rewrite_rel(visitor *v, sql_rel *rel)
 			assert(is_project(nr->op));
 			if (!rel_is_ref(nr))
 				nr = nr->l;
-			sql_rel *n = rel_project(v->sql->sa, nr->l, nr->exps);
-			nr->l = n;
-			nr->r = ir;
-			nr->exps = exps;
-			nr->op = op_semi;
-			set_dependent(nr);
+			sql_rel *s = rel_crossproduct(v->sql->sa, nr->l, ir, op_semi);
+			s->exps = exps;
+			set_dependent(s);
+			nr->l = s;
 			e = exp_rel_update_exp(v->sql, e, false);
 			exp_reset_props(nr, e, true);
 			v->changes++;
