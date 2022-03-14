@@ -123,11 +123,12 @@ sql_symbol2relation(backend *be, symbol *sym)
 	sql_query *query = query_create(be->mvc);
 	lng Tbegin;
 	int extra_opts = be->mvc->emode != m_prepare;
+	int profile = be->mvc->emode == m_plan;
 
 	rel = rel_semantic(query, sym);
 	Tbegin = GDKusec();
 	if (rel)
-		rel = sql_processrelation(be->mvc, rel, 1, extra_opts, extra_opts);
+		rel = sql_processrelation(be->mvc, rel, profile, 1, extra_opts, extra_opts);
 	if (rel)
 		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
@@ -450,7 +451,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0, 0, 0);
+			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(sql, r);
 			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY)) {

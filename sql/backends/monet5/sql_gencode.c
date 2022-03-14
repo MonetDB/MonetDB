@@ -1206,7 +1206,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r)
-		r = sql_processrelation(m, r, 1, 1, 0);
+		r = sql_processrelation(m, r, 0, 1, 1, 0);
 	if (!r)
 		return -1;
 
