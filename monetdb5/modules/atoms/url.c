@@ -948,17 +948,21 @@ BATextractURLHost(bat *res, const bat *bid, bool no_www)
 					l = s - host;
 				}
 				if (domain && l > 3) {
-					if (no_www && !strncmp(host, "www.", 4))
+					if (no_www && !strncmp(host, "www.", 4)) {
 						host += 4;
-					// if ((msg = str_Sub_String(&buf, &buflen, host, 0, l)) != MAL_SUCCEED)
-					// 	break;
-					if ((msg = str_buf_copy(&buf, &buflen, host, (size_t) l)) != MAL_SUCCEED)
-						break;
-					if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED) {
-						msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
-						break;
+						l -= 4;
 					}
-					continue;
+					if (l > 0) {
+						// if ((msg = str_Sub_String(&buf, &buflen, host, 0, l)) != MAL_SUCCEED)
+						// 	break;
+						if ((msg = str_buf_copy(&buf, &buflen, host, (size_t) l)) != MAL_SUCCEED)
+							break;
+						if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED) {
+							msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+							break;
+						}
+						continue;
+					}
 				}
 			}
 			// fall back insert nil str if no valid host
