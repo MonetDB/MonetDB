@@ -103,8 +103,9 @@ rel_push_project_down(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_push_project_down(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_groupby]) ? rel_push_project_down : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (flag & push_project_down) &&
+		   (gp->cnt[op_project] || gp->cnt[op_groupby]) ? rel_push_project_down : NULL;
 }
 
 
@@ -313,8 +314,9 @@ rel_merge_projects(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_merge_projects(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_groupby]) ? rel_merge_projects : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (flag & merge_projects) &&
+		   (gp->cnt[op_project] || gp->cnt[op_groupby]) ? rel_merge_projects : NULL;
 }
 
 
@@ -684,8 +686,9 @@ rel_push_project_up(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_push_project_up(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && gp->cnt[op_project] ? rel_push_project_up : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (flag & push_project_up) &&
+		   gp->cnt[op_project] ? rel_push_project_up : NULL;
 }
 
 
@@ -881,8 +884,9 @@ rel_split_project(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_split_project(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_cycle == 0 && gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_groupby]) ? rel_split_project : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_cycle == 0 && gp->opt_level == 1 && (flag & split_project) &&
+		   (gp->cnt[op_project] || gp->cnt[op_groupby]) ? rel_split_project : NULL;
 }
 
 
@@ -936,8 +940,8 @@ rel_project_reduce_casts(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_project_reduce_casts(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->cnt[op_project] ? rel_project_reduce_casts : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->cnt[op_project] && (flag & project_reduce_casts) ? rel_project_reduce_casts : NULL;
 }
 
 
@@ -1278,8 +1282,9 @@ rel_optimize_unions_bottomup(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_optimize_unions_bottomup(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && gp->cnt[op_union] ? rel_optimize_unions_bottomup : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && gp->cnt[op_union] && (flag & optimize_unions_bottomup)
+		   ? rel_optimize_unions_bottomup : NULL;
 }
 
 
@@ -2490,8 +2495,9 @@ rel_optimize_projections(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_optimize_projections(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_groupby] || gp->cnt[op_project] || gp->cnt[op_union] || gp->cnt[op_inter] || gp->cnt[op_except]) ? rel_optimize_projections : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (gp->cnt[op_groupby] || gp->cnt[op_project] || gp->cnt[op_union]
+		   || gp->cnt[op_inter] || gp->cnt[op_except]) && (flag & optimize_projections) ? rel_optimize_projections : NULL;
 }
 
 
@@ -3062,6 +3068,7 @@ rel_distinct_project2groupby(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_distinct_project2groupby(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_cycle == 0 && gp->opt_level == 1 && gp->needs_distinct && gp->cnt[op_project] ? rel_distinct_project2groupby : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_cycle == 0 && gp->opt_level == 1 && gp->needs_distinct && gp->cnt[op_project] &&
+		   (flag & distinct_project2groupby)? rel_distinct_project2groupby : NULL;
 }

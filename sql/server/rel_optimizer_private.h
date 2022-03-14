@@ -33,6 +33,31 @@ typedef struct sql_optimizer {
 	run_optimizer (*bind_optimizer)(visitor *v, global_props *gp); /* if cannot run (disabled or not needed) returns NULL */
 } sql_optimizer;
 
+/* At the moment the follwowing optimizers 'packs' can be disabled,
+   later we could disable individual optimizers from the 'pack' */
+#define split_select                        (1 << 0)
+#define push_project_down                   (1 << 1)
+#define merge_projects                      (1 << 2)
+#define push_project_up                     (1 << 3)
+#define split_project                       (1 << 4)
+#define remove_redundant_join               (1 << 5)
+#define simplify_math                       (1 << 6)
+#define optimize_exps                       (1 << 7)
+#define optimize_select_and_joins_bottomup  (1 << 8)
+#define project_reduce_casts                (1 << 9)
+#define optimize_unions_bottomup           (1 << 10)
+#define optimize_projections               (1 << 11)
+#define optimize_joins                     (1 << 12)
+#define join_order                         (1 << 13)
+#define optimize_semi_and_anti             (1 << 14)
+#define optimize_select_and_joins_topdown  (1 << 15)
+#define optimize_unions_topdown            (1 << 16)
+#define dce                                (1 << 17)
+#define push_func_and_select_down          (1 << 18)
+#define push_topn_and_sample_down          (1 << 19)
+#define distinct_project2groupby           (1 << 20)
+#define push_select_up                     (1 << 21)
+
 extern run_optimizer bind_split_select(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_push_project_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_merge_projects(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));

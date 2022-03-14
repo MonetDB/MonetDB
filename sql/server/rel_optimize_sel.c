@@ -148,8 +148,9 @@ rel_split_select(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_split_select(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_cycle == 0 && gp->opt_level == 1 && gp->cnt[op_select] ? rel_split_select : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_cycle == 0 && gp->opt_level == 1 && (flag & split_select)
+		   && gp->cnt[op_select] ? rel_split_select : NULL;
 }
 
 
@@ -214,8 +215,10 @@ rel_remove_redundant_join(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_remove_redundant_join(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_cycle == 0 && gp->opt_level == 1 && (gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_join] || gp->cnt[op_semi] || gp->cnt[op_anti]) ? rel_remove_redundant_join : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_cycle == 0 && gp->opt_level == 1 && (gp->cnt[op_left] || gp->cnt[op_right]
+		   || gp->cnt[op_full] || gp->cnt[op_join] || gp->cnt[op_semi] || gp->cnt[op_anti]) &&
+		   (flag & remove_redundant_join) ? rel_remove_redundant_join : NULL;
 }
 
 
@@ -958,8 +961,10 @@ rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *re
 run_optimizer
 bind_optimize_select_and_joins_bottomup(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select]) ? rel_optimize_select_and_joins_bottomup : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] ||
+		   gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] ||
+		   gp->cnt[op_select]) && (flag & optimize_select_and_joins_bottomup) ? rel_optimize_select_and_joins_bottomup : NULL;
 }
 
 
@@ -1547,8 +1552,9 @@ rel_optimize_joins(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_optimize_joins(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) ? rel_optimize_joins : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right]
+		   || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_joins) ? rel_optimize_joins : NULL;
 }
 
 
@@ -2444,8 +2450,9 @@ rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_join_order(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) ? rel_join_order : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
+		   gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & join_order) ? rel_join_order : NULL;
 }
 
 
@@ -2785,8 +2792,9 @@ run_optimizer
 bind_optimize_semi_and_anti(visitor *v, global_props *gp)
 {
 	/* Important -> Re-write semijoins after rel_join_order */
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) ? rel_optimize_semi_and_anti : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right]
+		   || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_semi_and_anti) ? rel_optimize_semi_and_anti : NULL;
 }
 
 
@@ -3539,8 +3547,10 @@ rel_optimize_select_and_joins_topdown(visitor *v, global_props *gp, sql_rel *rel
 run_optimizer
 bind_optimize_select_and_joins_topdown(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select]) ? rel_optimize_select_and_joins_topdown : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right]
+		   || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] ||
+		   gp->cnt[op_select]) && (flag & optimize_select_and_joins_topdown) ? rel_optimize_select_and_joins_topdown : NULL;
 }
 
 
@@ -3795,8 +3805,10 @@ rel_push_func_and_select_down(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_push_func_and_select_down(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select]) ? rel_push_func_and_select_down : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right]
+			|| gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select])
+			&& (flag & push_func_and_select_down) ? rel_push_func_and_select_down : NULL;
 }
 
 
@@ -3871,6 +3883,7 @@ rel_push_select_up(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_push_select_up(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && gp->cnt[op_select] && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) ? rel_push_select_up : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && gp->cnt[op_select] && (gp->cnt[op_join] || gp->cnt[op_left] ||
+		   gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & push_select_up) ? rel_push_select_up : NULL;
 }
