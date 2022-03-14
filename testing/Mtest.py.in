@@ -3382,6 +3382,8 @@ def main(argv) :
     addreqs = False
     all_tests = False
     testweb = opts.testweb
+    if testweb and verbosity == 0:
+        verbosity = 1
     CONDITIONALS['RELEASERUN'] = opts.releaserun
     nomito = opts.nomito
     global restart
