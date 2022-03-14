@@ -1004,8 +1004,8 @@ rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_dce(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_cycle == 0 && gp->opt_level == 1 ? rel_dce : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_cycle == 0 && gp->opt_level == 1 && (flag & dce) ? rel_dce : NULL;
 }
 
 
@@ -1259,6 +1259,7 @@ rel_push_topn_and_sample_down(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_push_topn_and_sample_down(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_level == 1 && (gp->cnt[op_topn] || gp->cnt[op_sample]) ? rel_push_topn_and_sample_down : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && (gp->cnt[op_topn] || gp->cnt[op_sample]) &&
+		   (flag & push_topn_and_sample_down) ? rel_push_topn_and_sample_down : NULL;
 }

@@ -371,7 +371,9 @@ rel_simplify_math(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_simplify_math(visitor *v, global_props *gp)
 {
-	return gp->opt_cycle == 0 && gp->opt_level == 1 && v->value_based_opt && (gp->cnt[op_project] || gp->cnt[op_ddl] || gp->cnt[ddl_psm]) ? rel_simplify_math : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_cycle == 0 && gp->opt_level == 1 && v->value_based_opt && (gp->cnt[op_project]
+		   || gp->cnt[op_ddl] || gp->cnt[ddl_psm]) && (flag & simplify_math) ? rel_simplify_math : NULL;
 }
 
 
@@ -788,6 +790,8 @@ rel_optimize_exps(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_optimize_exps(visitor *v, global_props *gp)
 {
-	(void) v;
-	return gp->opt_cycle < 2 && gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select]) ? rel_optimize_exps : NULL;
+	int flag = v->sql->sql_optimizer;
+	return gp->opt_cycle < 2 && gp->opt_level == 1 && (gp->cnt[op_project] || gp->cnt[op_join]
+		   || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi]
+		   || gp->cnt[op_anti] || gp->cnt[op_select]) && (flag & optimize_exps) ? rel_optimize_exps : NULL;
 }
