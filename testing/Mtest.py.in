@@ -40,8 +40,7 @@ except ImportError:
 MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 
 procdebug = False
-verbose = False
-quiet = False
+verbosity = 0
 approve = False
 
 initdb = None
@@ -1118,11 +1117,9 @@ def AddSubToHtmlIndex (env, TSTDIR, diff) :
 def SkipTest(env, TST, EXT, REASON, length) :
     TSTDIR = env['TSTDIR']
     TEXT = "Skipping test %s%s %s" % (TST, EXT, REASON)
-    if quiet:
-        pass
-    elif verbose:
+    if verbosity > 1:
         Warn(TEXT)
-    else:
+    elif verbosity == 1:
         if REASON.startswith('as '):
             REASON = REASON[3:]
         if REASON.endswith('.'):
@@ -1347,7 +1344,7 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
         body_good = []
         body_bad = []
         oktests = []
-        if not verbose and not quiet:
+        if verbosity == 1:
             print('\nRunning in %s' % TSTDIR)
         alllinks = []
         pSrvr = None
@@ -1388,7 +1385,7 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
                         print('\nFailed to start server.\n')
                         break
                     os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
-                    SetExecEnv(env['exe'],pSrvr.port,verbose)
+                    SetExecEnv(env['exe'], pSrvr.port, verbosity > 1)
                 if global_timeout and start_time + global_timeout < time.time():
                     if not testweb:
                         print('\nGlobal testing timeout reached\n')
@@ -1910,14 +1907,12 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
             #elif os.name == "posix":
             else:
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.malC|.sql|.R|.rb]`"
-            if quiet:
-                pass
-            elif verbose:
+            if verbosity > 1:
                 print('%s%s  ' %
                       (prompt(), os.path.join(env['TSTDIR'], TST + EXT)), end='')
                 prred('TEST MISSING')
                 print()
-            else:
+            elif verbosity == 1:
                 if ttywidth > 0 and length + 10 + 21 >= ttywidth:
                     # 10 - length of prompt()
                     # 21 - length of time plus result
@@ -2140,7 +2135,7 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
         tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, pSrvr, total_tests, test_progress)
         t1 = time.time()
         TX = t1 - t0
-        if not quiet:
+        if verbosity > 0:
             print(" %7.3fs " % TX, end='')
 
         if tres == 'timeout':
@@ -2190,36 +2185,36 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
         ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
 
         if tres == 'socket':
-            if quiet:
+            if verbosity == 0:
                 print("\n%s : Socket!" % TST)
-            elif verbose:
+            elif verbosity > 1:
                 print("(Socket!) ", end='')
 
         if tres == 'timeout':
-            if quiet:
+            if verbosity == 0:
                 print("\n%s : Timeout!" % TST)
-            elif verbose:
+            elif verbosity > 1:
                 print("(Timeout!) ", end='')
 
         if tres == 'recursion':
-            if quiet:
+            if verbosity == 0:
                 print("\n%s : Recursion!" % TST)
-            elif verbose:
+            elif verbosity > 1:
                 print("(Recursion!) ", end='')
 
         if tres == 'segfault':
-            if quiet:
+            if verbosity == 0:
                 print("\n%s : Crashed!" % TST)
-            elif verbose:
+            elif verbosity > 1:
                 print("(Crashed!) ", end='')
 
         if tres == 'signal':
-            if quiet:
+            if verbosity == 0:
                 print("\n%s : Signaled!" % TST)
-            elif verbose:
+            elif verbosity > 1:
                 print("(Signaled!) ", end='')
 
-        if verbose:
+        if verbosity > 1:
             print()
 
         try:
@@ -2313,7 +2308,7 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
             elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT,
                                      FailedOut, FailedErr)
 
-        if not verbose and not quiet:
+        if verbosity == 1:
             if tres == 'socket':
                 prpurple('SOCKET')
             elif tres == 'timeout':
@@ -2670,9 +2665,9 @@ def progress(count, total, test):
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, PSRVR, total_tests, test_progress) :
     ATJOB2 = ""
     print(file=sys.stderr, end='', flush=True)
-    if quiet:
+    if verbosity == 0:
         progress(test_progress, total_tests, os.path.join(env['TSTDIR'], TST + EXT))
-    elif verbose:
+    elif verbosity > 1:
         print('%s%s  (<=%d) ...' %
               (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
                TIMEOUT), end='')
@@ -2758,7 +2753,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     print('\nFailed to start server.\n')
                     return 'serverfail'
                 os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
-                SetExecEnv(exe,pSrvr.port,verbose)
+                SetExecEnv(exe,pSrvr.port,verbosity > 1)
             else:
                 PSRVR.timer.settimeout(TIMEOUT)
                 PSRVR.timer.start()
@@ -3063,7 +3058,7 @@ def CheckClassPath() :
                             CONDITIONALS[C] = True
     if cp:
         os.environ['CLASSPATH'] = cp
-    if verbose:
+    if verbosity > 1:
         miss = ''
         for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar']:
             C = 'HAVE_%s' % j.upper().replace('.','_')
@@ -3105,6 +3100,7 @@ def SetExecEnv(exe,port,verbose) :
 THISFILE = os.path.basename(sys.argv[0])
 if THISFILE == 'Mz.py':
     produce_html = False
+    verbosity == 0
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
 TSTDBG = str(2+8)
 TSTTHREADS = "0"
@@ -3328,8 +3324,7 @@ def main(argv) :
     parser.add_argument('--revision', action='store', dest='revision', metavar='<hgid>', help='use given revision as the HG short hash')
     parser.add_argument('--TSTSRCBASE', action='store', dest='TSTSRCBASE', metavar='<path>', help='default: "%s"' % _configure('@QXSOURCE@'))
     parser.add_argument('--TSTTRGBASE', action='store', dest='TSTTRGBASE', metavar='<path>', help='default: "%s"' % _configure('@QXprefix@'))
-    parser.add_argument('--quiet', '-q', action='store_true', dest='quiet', help="suppress messages on stdout")
-    parser.add_argument('--verbose', '-v', action='store_true', dest='verbose', help="more verbose test output")
+    parser.add_argument('--verbose', '-v', action='count', dest='verbosity', default=0, help="more verbose test output (can be used twice)")
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
     parser.add_argument('-I', action='store', dest='ignore', metavar='<exp>', help="ignored, backward compatibility option")
@@ -3377,12 +3372,8 @@ def main(argv) :
     recursive = opts.recursive
     global testweb
     testweb = False
-    global quiet
-    quiet = opts.quiet
-    global verbose
-    verbose = opts.verbose
-    if quiet and verbose:
-        ErrExit('--verbose and --quiet are mutually exclusive')
+    global verbosity
+    verbosity = opts.verbosity
     global procdebug
     procdebug = opts.procdebug
     global approve
@@ -3451,7 +3442,7 @@ def main(argv) :
 
     # display par's
     print(file=sys.stderr, end='', flush=True)
-    if verbose:
+    if verbosity > 1:
         for v in par.keys():
             #os.environ[v] = par[v]
             print("%s = %s" % (v, str(par[v])))
@@ -3577,7 +3568,7 @@ def main(argv) :
     for p in 'TSTSRCBASE', 'TSTTRGBASE':
         if os.path.isdir(env[p]):
             rp = os.path.realpath(env[p])
-            if verbose and os.path.normcase(rp) != os.path.normcase(env[p]):
+            if verbosity > 1 and os.path.normcase(rp) != os.path.normcase(env[p]):
                 Warn("%s: Replacing logical path  %s  by absolute physical path  %s" % (p, env[p], rp))
             env[p] = rp
         else:
@@ -3653,9 +3644,9 @@ def main(argv) :
     for v in vars_:
         if v in env:
             os.environ[v] = env[v]
-            if verbose:
+            if verbosity > 1:
                 print("%s = %s" % (v, env[v]))
-    if verbose or testweb:
+    if verbosity > 1 or testweb:
         print("%s = %s" % ('PATH', os.environ['PATH']))
         if 'PYTHONPATH' in os.environ:
             print("%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH']))
@@ -3668,7 +3659,7 @@ def main(argv) :
     print(end='', flush=True)
 
     # add QUIET par to env
-    env['QUIET'] = quiet
+    env['QUIET'] = verbosity == 0
 
     ## set/extend PATH & LD_LIBRARY_PATH
     #bp = ""        #_configure(os.path.join('@QXprefix@',"bin"))
@@ -3933,7 +3924,7 @@ def main(argv) :
         if GetBitsAndModsAndThreads(env):
             sys.exit(1)
         print(file=sys.stderr, end='', flush=True)
-        if verbose:
+        if verbosity > 1:
             print("Bits: " + env['TST_BITS'])
             print("Arch: " + env['TST_ARCH'])
             if env['TST_INT128']:
@@ -3963,7 +3954,7 @@ def main(argv) :
                 else:
                     tsts = "all tests"
                     all_tests = True
-                if verbose:
+                if verbosity > 1:
                     print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
                 t_, elem, diff, interrupted, test_progress = PerformDir(env, testdirs[0], testlist, all_tests, test_count, test_progress)
                 if elem is not None:
@@ -3972,7 +3963,7 @@ def main(argv) :
                     else:
                         body_bad.append(elem)
             else:
-                if verbose:
+                if verbosity > 1:
                     print("\nRunning all tests in directories %s.\n" % str(testdirs))
                 for d in testdirs:
                     t, elem, diff, interrupted, test_progress = PerformDir(env, d, [], True, test_count, test_progress)
@@ -3996,7 +3987,7 @@ def main(argv) :
                             env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
                             body = body_bad + body_good
                             CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
-            if quiet:
+            if verbosity == 0:
                 print()
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
@@ -4125,7 +4116,7 @@ VALUES (%s, '%s', '%s', '%s',
                     for f in Failure[x]:
                         what += "        %s\n" % f
         print(file=sys.stderr, end='', flush=True)
-        if quiet:
+        if verbosity == 0:
             if Failed:
                 prred('ERROR')
             else:
@@ -4152,9 +4143,9 @@ VALUES (%s, '%s', '%s', '%s',
 """ % os.path.join(TSTTRGBASE, TSTPREF, "index.html"))
             sys.exit(1)
         else:
-            if quiet:
+            if verbosity == 0:
                 pass
-            elif verbose:
+            elif verbosity > 1:
                 print("""\
 
  No differences encountered during testing.
