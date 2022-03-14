@@ -635,6 +635,7 @@ rel_setjoins_2_joingroupby(visitor *v, global_props *gp, sql_rel *rel)
 
 /* the definition of a single SQL optimizer */
 typedef struct sql_optimizer {
+	const int index;
 	const char *name;
 	bool (*can_run_optimizer)(visitor *v, global_props *gp);
 	sql_rel *(*run_optimizer)(visitor *v, global_props *gp, sql_rel *rel);
@@ -642,37 +643,39 @@ typedef struct sql_optimizer {
 
 /* these optimizers/rewriters run in a cycle loop */
 const sql_optimizer pre_sql_optimizers[] = {
-	{"split_select", can_split_select, rel_split_select},
-	{"push_project_down", can_push_project_down, rel_push_project_down},
-	{"merge_projects", can_merge_projects, rel_merge_projects},
-	{"push_project_up", can_push_project_up, rel_push_project_up},
-	{"split_project", can_split_project, rel_split_project},
-	{"remove_redundant_join", can_remove_redundant_join, rel_remove_redundant_join},
-	{"simplify_math", can_simplify_math, rel_simplify_math},
-	{"optimize_exps", can_optimize_exps, rel_optimize_exps},
-	{"optimize_select_and_joins_bottomup", can_optimize_select_and_joins_bottomup, rel_optimize_select_and_joins_bottomup},
-	{"project_reduce_casts", can_project_reduce_casts, rel_project_reduce_casts},
-	{"optimize_unions_bottomup", can_optimize_unions_bottomup, rel_optimize_unions_bottomup},
-	{"optimize_projections", can_optimize_projections, rel_optimize_projections},
-	{"optimize_joins", can_optimize_joins, rel_optimize_joins},
-	{"join_order", can_join_order, rel_join_order},
-	{"optimize_semi_and_anti", can_optimize_semi_and_anti, rel_optimize_semi_and_anti},
-	{"optimize_select_and_joins_topdown", can_optimize_select_and_joins_topdown, rel_optimize_select_and_joins_topdown},
-	{"optimize_unions_topdown", can_optimize_unions_topdown, rel_optimize_unions_topdown},
-	{"dce", can_dce, rel_dce},
-	{"push_func_and_select_down", can_push_func_and_select_down, rel_push_func_and_select_down},
-	{"push_topn_and_sample_down", can_push_topn_and_sample_down, rel_push_topn_and_sample_down},
-	{"distinct_project2groupby", can_distinct_project2groupby, rel_distinct_project2groupby},
-	{"merge_table_rewrite", can_merge_table_rewrite, rel_merge_table_rewrite},
-	{NULL, NULL, NULL}
+	{ 0, "split_select", can_split_select, rel_split_select},
+	{ 1, "push_project_down", can_push_project_down, rel_push_project_down},
+	{ 2, "merge_projects", can_merge_projects, rel_merge_projects},
+	{ 3, "push_project_up", can_push_project_up, rel_push_project_up},
+	{ 4, "split_project", can_split_project, rel_split_project},
+	{ 5, "remove_redundant_join", can_remove_redundant_join, rel_remove_redundant_join},
+	{ 6, "simplify_math", can_simplify_math, rel_simplify_math},
+	{ 7, "optimize_exps", can_optimize_exps, rel_optimize_exps},
+	{ 8, "optimize_select_and_joins_bottomup", can_optimize_select_and_joins_bottomup, rel_optimize_select_and_joins_bottomup},
+	{ 9, "project_reduce_casts", can_project_reduce_casts, rel_project_reduce_casts},
+	{10, "optimize_unions_bottomup", can_optimize_unions_bottomup, rel_optimize_unions_bottomup},
+	{11, "optimize_projections", can_optimize_projections, rel_optimize_projections},
+	{12, "optimize_joins", can_optimize_joins, rel_optimize_joins},
+	{13, "join_order", can_join_order, rel_join_order},
+	{14, "optimize_semi_and_anti", can_optimize_semi_and_anti, rel_optimize_semi_and_anti},
+	{15, "optimize_select_and_joins_topdown", can_optimize_select_and_joins_topdown, rel_optimize_select_and_joins_topdown},
+	{16, "optimize_unions_topdown", can_optimize_unions_topdown, rel_optimize_unions_topdown},
+	{17, "dce", can_dce, rel_dce},
+	{18, "push_func_and_select_down", can_push_func_and_select_down, rel_push_func_and_select_down},
+	{19, "push_topn_and_sample_down", can_push_topn_and_sample_down, rel_push_topn_and_sample_down},
+	{20, "distinct_project2groupby", can_distinct_project2groupby, rel_distinct_project2groupby},
+	{21, "merge_table_rewrite", can_merge_table_rewrite, rel_merge_table_rewrite},
+	{ 0, NULL, NULL, NULL}
 };
 
 /* these optimizers/rewriters only run once after the cycle loop */
 const sql_optimizer post_sql_optimizers[] = {
-	{"push_select_up", can_push_select_up, rel_push_select_up}, /* run rel_push_select_up only once at the end to avoid an infinite optimization loop */
-	{"setjoins_2_joingroupby", can_setjoins_2_joingroupby, rel_setjoins_2_joingroupby},
-	{NULL, NULL, NULL}
+	{22, "push_select_up", can_push_select_up, rel_push_select_up}, /* run rel_push_select_up only once at the end to avoid an infinite optimization loop */
+	{23, "setjoins_2_joingroupby", can_setjoins_2_joingroupby, rel_setjoins_2_joingroupby},
+	{ 0, NULL, NULL, NULL}
 };
+
+#define NOPTIMIZERS 24 
 
 /* make sure the outer project (without order by or distinct) has all the aliases */
 static sql_rel *
@@ -723,19 +726,32 @@ calculate_opt_level(mvc *sql, sql_rel *rel)
 	return 1;
 }
 
-static sql_rel *
-run_optimizer_set(visitor *v, sql_rel *rel, global_props *gp, const sql_optimizer *set)
+static inline sql_rel *
+run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_props *gp, const sql_optimizer *set)
 {
+	/* if 'runs' is set, it means profiling is intended */
 	for (int i = 0 ; set[i].name ; i++) {
-		if (set[i].can_run_optimizer(v, gp))
-			rel = set[i].run_optimizer(v, gp, rel);
+		if (set[i].can_run_optimizer(v, gp)) {
+			if (runs) {
+				sql_optimizer_run *run = &(runs[set[i].index]);
+				run->name = set[i].name;
+				int changes = v->changes;
+				lng clk = GDKusec();
+				rel = set[i].run_optimizer(v, gp, rel);
+				run->time += (GDKusec() - clk);
+				run->nchanges += (v->changes - changes);
+			} else {
+				rel = set[i].run_optimizer(v, gp, rel);
+			}
+		}
 	}
 	return rel;
 }
 
+/* 'profile' means to benchmark each individual optimizer run */
 /* 'instantiate' means to rewrite logical tables: (merge, remote, replica tables) */
 sql_rel *
-rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt)
+rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
 	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0};
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = 1, .data = &gp };
@@ -743,6 +759,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 	if (!(rel = rel_keep_renames(sql, rel)))
 		return rel;
 
+	sql_optimizer_run *runs = profile ? sa_zalloc(sql->ta, NOPTIMIZERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle};
@@ -750,14 +767,14 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 		gp.opt_level = calculate_opt_level(sql, rel);
 		if (gp.opt_level == 0 && !gp.needs_mergetable_rewrite)
 			break;
-		rel = run_optimizer_set(&v, rel, &gp, pre_sql_optimizers);
+		rel = run_optimizer_set(&v, runs, rel, &gp, pre_sql_optimizers);
 	}
 #ifndef NDEBUG
 	assert(gp.opt_cycle < 20);
 #endif
 
 	/* these optimizers run statistics gathered by the last optimization cycle */
-	rel = run_optimizer_set(&v, rel, &gp, post_sql_optimizers);
+	rel = run_optimizer_set(&v, runs, rel, &gp, post_sql_optimizers);
 
 	/* merge table rewrites may introduce remote or replica tables */
 	/* at the moment, make sure the remote table rewriters always run last */
