@@ -642,7 +642,7 @@ def startswithpath(str,pre) :
 ##def url(str) :
 ##    return str.replace(os.sep, '/')
 ### url(str) #
-import urllib.request
+import urllib.request, urllib.parse
 path = urllib.request.url2pathname
 def url(str) :
     url = urllib.request.pathname2url(str)
@@ -2293,6 +2293,16 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
             else:
                 diff_html.write('<!--NoDiffs-->\n')
             diff_html.close()
+        elif FailedOut > F_WARN or FailedErr > F_WARN:
+            print()
+            print('========================================')
+            prred('ERROR: ')
+            print(os.path.join(TSTDIR, TST + EXT))
+            print('========================================')
+            with openutf8(TestErrFile, 'r') as f:
+                print(f.read())
+            print()
+
         if FailedOut == F_OK and FailedErr == F_OK and testweb:
             for f in ['%s.out.diff.html' % TST, '%s.test.out' % TST,
                       '%s.server.out' % TST, '%s.client.out' % TST,
@@ -4125,6 +4135,8 @@ VALUES (%s, '%s', '%s', '%s',
                 prgreen('OK')
             print()
             print('failed={}, skipped={}'.format(Failed, len(Failure[F_SKIP])))
+            if produce_html and Failed:
+                print('see {}'.format(urllib.parse.urlunsplit(('file','',urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")),'',''))))
             print('Ran {} tests in {:7.3f}s'.format(num_tests - len(Failure[F_SKIP]), t_))
         elif Failed:
             print("""\
