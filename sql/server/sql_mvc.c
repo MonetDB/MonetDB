@@ -784,7 +784,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 
 	m->role_id = m->user_id = -1;
 	m->timezone = 0;
-	m->sql_optimizer = 0;
+	m->sql_optimizer = INT_MAX;
 	m->clientid = clientid;
 
 	m->emode = m_normal;
@@ -867,9 +867,9 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	if (m->timezone != 0)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "current_timezone"), 0);
 	m->timezone = 0;
-	if (m->sql_optimizer != 0)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "sql_optimizer"), 0);
-	m->sql_optimizer = 0;
+	if (m->sql_optimizer != INT_MAX)
+		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "sql_optimizer"), INT_MAX);
+	m->sql_optimizer = INT_MAX;
 	if (m->debug != debug)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "debug"), debug);
 	m->debug = debug;
