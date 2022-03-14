@@ -4086,7 +4086,7 @@ rewrite_rel(visitor *v, sql_rel *rel)
 			nr->exps = exps;
 			nr->op = op_semi;
 			set_dependent(nr);
-			e = exp_rel_update_exp(v->sql, e, true);
+			e = exp_rel_update_exp(v->sql, e, false);
 			exp_reset_props(nr, e, true);
 			v->changes++;
 			break;
