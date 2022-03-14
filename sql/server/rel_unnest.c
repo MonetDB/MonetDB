@@ -1358,6 +1358,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (is_outerjoin(j->op) && j->exps && !list_empty(rel->attr)) {
 				visitor v = { .sql = sql };
 				rel->r = j = rewrite_outer2inner_union(&v, j);
+				if (!j)
+					return NULL;
 				return rel;
 			}
 
@@ -3843,8 +3845,12 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 		l = sa_list(v->sql->sa);
 	}
 	for(; nr; n = n->next, nr--) {
-		sql_exp *e = n->data;
-		sql_exp *ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+		sql_exp *e = n->data, *ne;
+		sql_subtype *tp = exp_subtype(e);
+
+		if (!tp)
+			return sql_error(v->sql, 10, SQLSTATE(42000) "Cannot rewrite subquery because of parameter with unknown type");
+		ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, tp, NULL));
 		exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
 		if (end)
 			append(nilrel->exps, ne);
@@ -3878,6 +3884,9 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *nilrel = add_null_projects(v, prel, except, true);
+			if (!nilrel)
+				return NULL;
+
 			sql_rel *nrel = rel_setop(v->sql->sa, prel, nilrel, op_union);
 			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(nrel);
@@ -3898,6 +3907,9 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *nilrel = add_null_projects(v, prel, except, false);
+			if (!nilrel)
+				return NULL;
+
 			sql_rel *nrel = rel_setop(v->sql->sa, prel, nilrel, op_union);
 			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(nrel);
@@ -3918,6 +3930,8 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *lrel = add_null_projects(v, prel, except, true);
+			if (!lrel)
+				return NULL;
 
 			except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
@@ -3925,6 +3939,8 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *rrel = add_null_projects(v, prel, except, false);
+			if (!rrel)
+				return NULL;
 
 			lrel = rel_setop(v->sql->sa, lrel, rrel, op_union);
 			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
@@ -4057,7 +4073,7 @@ rewrite_rel(visitor *v, sql_rel *rel)
 			sql_rel *ir = exp_rel_get_rel(v->sql->sa, e);
 
 			rel = rewrite_outer2inner_union(v, rel);
-			if (or == rel)
+			if (!rel || or == rel)
 				return rel;
 			/* change referenced project into join with outer(ir) */
 			sql_rel *nr = rel->l;
