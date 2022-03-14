@@ -2672,7 +2672,7 @@ def main(argv) :
                 prgreen('OK')
             print()
             print('failed={}, skipped={}'.format(failed, skipped))
-            print('Ran {} test in {:7.3f}s'.format(test_count - skipped, t_))
+            print('Ran {} tests in {:7.3f}s'.format(test_count - skipped, t_))
             if verbose:
                 for TSTDIR, TST in FAILED_TESTS:
                     prred('ERROR\t')
