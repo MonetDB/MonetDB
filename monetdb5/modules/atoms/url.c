@@ -825,7 +825,7 @@ static str URLnoop(url *u, url *val)
  * and empty string is returned instead.
  * */
 static str
-extractURLHost(str *retval, str *url, bool no_www)
+extractURLHost(str *retval, str *url, bit *no_www)
 {
 	const char *s;
 	const char *h = NULL;
@@ -854,7 +854,7 @@ extractURLHost(str *retval, str *url, bool no_www)
 			}
 			if (domain && l > 3) {
 				if ((*retval = GDKmalloc(l + 1)) != NULL) {
-					if (no_www && strlen(h) > 4 && !strncmp(h, "www.", 4)) {
+					if (*no_www && strlen(h) > 4 && !strncmp(h, "www.", 4)) {
 						strcpy_len(*retval, (h + 4), l + 1);
 					} else {
 						strcpy_len(*retval, h, l + 1);
@@ -894,7 +894,7 @@ str_buf_copy(str *buf, size_t *buflen, const char *s, size_t l) {
 
 // bulk version
 static str
-BATextractURLHost(bat *res, const bat *bid, bool no_www)
+BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 {
 	const char *s;
 	const char *host = NULL;
@@ -948,7 +948,7 @@ BATextractURLHost(bat *res, const bat *bid, bool no_www)
 					l = s - host;
 				}
 				if (domain && l > 3) {
-					if (no_www && !strncmp(host, "www.", 4)) {
+					if (*no_www && !strncmp(host, "www.", 4)) {
 						host += 4;
 						l -= 4;
 					}
