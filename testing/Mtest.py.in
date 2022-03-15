@@ -2293,6 +2293,41 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
             else:
                 diff_html.write('<!--NoDiffs-->\n')
             diff_html.close()
+
+            if verbosity <= 1:
+                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                    print('\r', ' '*(ttywidth or 100), end='', sep='')
+                    print('\r', end='', sep='')
+                if tres == 'socket':
+                    prpurple('SOCKET')
+                elif tres == 'timeout':
+                    prpurple('TIMEOUT')
+                elif tres == 'recursion':
+                    prpurple('RECURSION')
+                elif tres == 'segfault':
+                    prpurple('CRASHED')
+                elif tres == 'abort':
+                    prpurple('ABORTED')
+                elif tres == 'signal':
+                    prpurple('SIGNALED')
+                elif verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                    prred('ERROR')
+                elif verbosity == 1:
+                    if FailedOut == F_OK:
+                        prgreen('OK   ')
+                    elif FailedOut == F_WARN:
+                        prgreen('minor')
+                    else:
+                        prred('ERROR')
+                    print(' ', end='')
+                    if FailedErr == F_OK:
+                        prgreen('OK')
+                    elif FailedErr == F_WARN:
+                        prgreen('minor')
+                    else:
+                        prred('ERROR')
+                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                    print(':', os.path.join(TSTDIR, TST + EXT))
         elif FailedOut > F_WARN or FailedErr > F_WARN:
             print()
             print('========================================')
@@ -2317,35 +2352,6 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
         if not testweb and produce_html:
             elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT,
                                      FailedOut, FailedErr)
-
-        if verbosity == 1:
-            if tres == 'socket':
-                prpurple('SOCKET')
-            elif tres == 'timeout':
-                prpurple('TIMEOUT')
-            elif tres == 'recursion':
-                prpurple('RECURSION')
-            elif tres == 'segfault':
-                prpurple('CRASHED')
-            elif tres == 'abort':
-                prpurple('ABORTED')
-            elif tres == 'signal':
-                prpurple('SIGNALED')
-            else:
-                if FailedOut == F_OK:
-                    prgreen('OK   ')
-                elif FailedOut == F_WARN:
-                    prgreen('minor')
-                else:
-                    prred('MAJOR')
-                print(' ', end='')
-                if FailedErr == F_OK:
-                    prgreen('OK')
-                elif FailedErr == F_WARN:
-                    prgreen('minor')
-                else:
-                    prred('MAJOR')
-            print()
 
     return TX,FailedOut,FailedErr,elem,reason,links
 ### RunTest(env, TST, COND, oktests) #
