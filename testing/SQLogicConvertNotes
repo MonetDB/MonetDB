@@ -2,7 +2,7 @@ Mconvert.py
 -----------
 Converts one test folder at the time. Only relevant option is `--auto`. When present a sqlogic test will be created for each matching .sql test. By default prints all to stdout. As initial dry run probably is a good idea to run without `--auto` option to see whether something goes wrong. 
 
-$Mconvert.py --auto sql/test/BugTracker-2008 
+$ Mconvert.py --auto sql/test/BugTracker-2008
 
 (deprecated) testing/convert_to_sqllogic.sh 
 ------------------------------

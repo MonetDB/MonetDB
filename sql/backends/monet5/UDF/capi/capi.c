@@ -20,7 +20,6 @@
 #include "cheader.text.h"
 
 #include "gdk_time.h"
-#include "blob.h"
 #include "mutils.h"
 
 #include <setjmp.h>
@@ -529,16 +528,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
-	if (!grouped) {
-		sql_subfunc *sqlmorefun =
-			(*(sql_subfunc **)getArgReference_ptr(stk, pci, pci->retc));
-		if (sqlmorefun)
-			sqlfun =
-				(*(sql_subfunc **)getArgReference_ptr(stk, pci, pci->retc))->func;
-	} else {
-		sqlfun = *(sql_func **)getArgReference_ptr(stk, pci, pci->retc);
-	}
-
+	sqlfun = *(sql_func **)getArgReference_ptr(stk, pci, pci->retc);
 	funcname = sqlfun ? sqlfun->base.name : "yet_another_c_function";
 
 	args = (str *)GDKzalloc(sizeof(str) * pci->argc);
@@ -1188,15 +1178,16 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bat_data->data[j].size = t->nitems;
 					if (can_mprotect_varheap) {
 						bat_data->data[j].data = &t->data[0];
-					} else {
-						bat_data->data[j].data = t->nitems == 0 ? NULL :
-							wrapped_GDK_malloc_nojump(t->nitems);
-						if (t->nitems > 0 && !bat_data->data[j].data) {
+					} else if (t->nitems > 0) {
+						bat_data->data[j].data = wrapped_GDK_malloc_nojump(t->nitems);
+						if (!bat_data->data[j].data) {
 							bat_iterator_end(&li);
 							msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 							goto wrapup;
 						}
 						memcpy(bat_data->data[j].data, &t->data[0], t->nitems);
+					} else {
+						bat_data->data[j].data = NULL;
 					}
 				}
 				j++;
@@ -1504,7 +1495,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						}
 
 						current_blob->nitems = blob.size;
-						memcpy(&current_blob->data[0], blob.data, blob.size);
+						if (blob.size > 0)
+							memcpy(&current_blob->data[0], blob.data, blob.size);
 					}
 
 					if (BUNappend(b, current_blob, false) != GDK_SUCCEED) {

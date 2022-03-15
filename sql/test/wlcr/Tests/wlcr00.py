@@ -2,7 +2,7 @@ try:
     from MonetDBtesting import process
 except ImportError:
     import process
-import os, sys, socket
+import os, sys
 
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')

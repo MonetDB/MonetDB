@@ -93,6 +93,18 @@ exps_simplify_exp(visitor *v, list *exps)
 	return exps;
 }
 
+static sql_exp *
+exp_exists(mvc *sql, sql_exp *le, int exists)
+{
+	sql_subfunc *exists_func = NULL;
+
+	if (!(exists_func = sql_bind_func(sql, "sys", exists ? "sql_exists" : "sql_not_exists", exp_subtype(le), NULL, F_FUNC, true)))
+		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le) ? exp_subtype(le)->type->base.name : "unknown");
+	sql_exp *res = exp_unop(sql->sa, le, exists_func);
+	set_has_no_nil(res);
+	return res;
+}
+
 sql_exp *
 rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
@@ -167,6 +179,19 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				v->changes++;
 				return exp_atom_bool(v->sql->sa, 1);
 			}
+		}
+	}
+	if (is_compare(e->type) && e->flag == cmp_equal) { /* predicate_func = TRUE */
+		sql_exp *l = e->l, *r = e->r;
+		if (is_func(l->type) && exp_is_true(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f))))
+			return l;
+		if (is_func(l->type) && exp_is_false(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f)))) {
+			sql_subfunc *sf = l->f;
+			if (is_anyequal_func(sf))
+				return exp_in_func(v->sql, ((list*)l->l)->h->data, ((list*)l->l)->h->next->data, !is_anyequal(sf), 0);
+			if (is_exists_func(sf))
+				return exp_exists(v->sql, ((list*)l->l)->h->data, !is_exists(sf));
+			return l;
 		}
 	}
 	return e;

@@ -300,11 +300,7 @@
 #ifdef HAVE_HGE
 #define uuid_equ(a, b)	((a).h == (b).h)
 #else
-#ifdef HAVE_UUID
-#define uuid_equ(a, b)	(uuid_compare((a).u, (b).u) == 0)
-#else
 #define uuid_equ(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#endif
 #endif
 
 #define GRP_subscan_old_groups_tpe(TYPE)			\
@@ -611,7 +607,7 @@ ctz(oid x)
 		if (ci.tpe == cand_dense) {				\
 			TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {		\
 				oid o = canditer_next_dense(&ci);	\
-				p = o - hseqb;			\
+				p = o - hseqb;				\
 				uint##BG##_t x = GV;			\
 				if ((v = sgrps[x]) == (uint##BG##_t) ~0 && ngrp < (1 << BG)) { \
 					sgrps[x] = v = (uint##BG##_t) ngrp++; \
@@ -628,7 +624,7 @@ ctz(oid x)
 		} else {						\
 			TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {		\
 				oid o = canditer_next(&ci);		\
-				p = o - hseqb;			\
+				p = o - hseqb;				\
 				uint##BG##_t x = GV;			\
 				if ((v = sgrps[x]) == (uint##BG##_t) ~0 && ngrp < (1 << BG)) { \
 					sgrps[x] = v = (uint##BG##_t) ngrp++; \
@@ -906,7 +902,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 #endif
 		default:
-			assert(0);
+			MT_UNREACHABLE();
 		}
 	}
 

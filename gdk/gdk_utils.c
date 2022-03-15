@@ -59,13 +59,16 @@ static void GDKunlockHome(int farmid);
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */
-BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000; /* should become a define once */
+BUN gdk_unique_estimate_keep_fraction = GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */
-BUN HASH_DESTROY_UNIQUES_FRACTION = 1000;     /* likewise */
+BUN hash_destroy_uniques_fraction = HASH_DESTROY_UNIQUES_FRACTION;     /* likewise */
 /* if the estimated number of unique values is less than 1 in this
  * number, don't build a hash table to do a hashselect */
-dbl NO_HASH_SELECT_FRACTION = 1000;           /* same here */
+dbl no_hash_select_fraction = NO_HASH_SELECT_FRACTION;           /* same here */
+/* if the hash chain is longer than this number, we delete the hash
+ * rather than maintaining it in HASHdelete */
+BUN hash_destroy_chain_length = HASH_DESTROY_CHAIN_LENGTH;
 
 /*
  * @+ Monet configuration file
@@ -1154,21 +1157,26 @@ GDKinit(opt *set, int setlen, bool embedded)
 		TRC_CRITICAL(GDK, "GDKsetenv revision failed");
 		return GDK_FAIL;
 	}
-	GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 0;
+	gdk_unique_estimate_keep_fraction = 0;
 	if ((p = GDKgetenv("gdk_unique_estimate_keep_fraction")) != NULL)
-		GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = (BUN) strtoll(p, NULL, 10);
-	if (GDK_UNIQUE_ESTIMATE_KEEP_FRACTION == 0)
-		GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000;
-	HASH_DESTROY_UNIQUES_FRACTION = 0;
+		gdk_unique_estimate_keep_fraction = (BUN) strtoll(p, NULL, 10);
+	if (gdk_unique_estimate_keep_fraction == 0)
+		gdk_unique_estimate_keep_fraction = GDK_UNIQUE_ESTIMATE_KEEP_FRACTION;
+	hash_destroy_uniques_fraction = 0;
 	if ((p = GDKgetenv("hash_destroy_uniques_fraction")) != NULL)
-		HASH_DESTROY_UNIQUES_FRACTION = (BUN) strtoll(p, NULL, 10);
-	if (HASH_DESTROY_UNIQUES_FRACTION == 0)
-		HASH_DESTROY_UNIQUES_FRACTION = GDK_UNIQUE_ESTIMATE_KEEP_FRACTION;
-	NO_HASH_SELECT_FRACTION = 0;
+		hash_destroy_uniques_fraction = (BUN) strtoll(p, NULL, 10);
+	if (hash_destroy_uniques_fraction == 0)
+		hash_destroy_uniques_fraction = HASH_DESTROY_UNIQUES_FRACTION;
+	no_hash_select_fraction = 0;
 	if ((p = GDKgetenv("no_hash_select_fraction")) != NULL)
-		NO_HASH_SELECT_FRACTION = (dbl) strtoll(p, NULL, 10);
-	if (NO_HASH_SELECT_FRACTION == 0)
-		NO_HASH_SELECT_FRACTION = (dbl) GDK_UNIQUE_ESTIMATE_KEEP_FRACTION;
+		no_hash_select_fraction = (dbl) strtoll(p, NULL, 10);
+	if (no_hash_select_fraction == 0)
+		no_hash_select_fraction = NO_HASH_SELECT_FRACTION;
+	hash_destroy_chain_length = 0;
+	if ((p = GDKgetenv("hash_destroy_chain_length")) != NULL)
+		hash_destroy_chain_length = (BUN) strtoll(p, NULL, 10);
+	if (hash_destroy_chain_length == 0)
+		hash_destroy_chain_length = HASH_DESTROY_CHAIN_LENGTH;
 
 	return GDK_SUCCEED;
 }
@@ -1201,6 +1209,10 @@ GDKreset(int status)
 	MT_Id pid = MT_getpid();
 
 	assert(GDKexiting());
+
+	if (GDKembedded())
+		// In the case of a restarted embedded database, GDKstopped has to be reset as well.
+		ATOMIC_SET(&GDKstopped, 0);
 
 	if (GDKkey) {
 		BBPunfix(GDKkey->batCacheid);
@@ -1275,7 +1287,7 @@ GDKreset(int status)
 		GDK_mmap_pagesize = MMAP_PAGESIZE;
 		GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 		GDK_vm_maxsize = GDK_VM_MAXSIZE;
-		GDKatomcnt = TYPE_str + 1;
+		GDKatomcnt = TYPE_blob + 1;
 
 		if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
 			GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;

@@ -81,3 +81,64 @@ select * from savepointtest
 statement error
 commit
 
+statement ok
+start transaction
+
+statement ok
+create table x(x int)
+
+statement ok rowcount 1
+insert into x values (1)
+
+query I rowsort
+SELECT x FROM x
+----
+1
+
+statement ok
+savepoint sp1
+
+statement ok rowcount 1
+insert into x values (2)
+
+query I rowsort
+SELECT x FROM x
+----
+1
+2
+
+# give one error
+statement error
+ups
+
+statement ok
+rollback to savepoint sp1
+
+query I rowsort
+SELECT x FROM x
+----
+1
+
+statement ok rowcount 1
+insert into x values (3)
+
+query I rowsort
+SELECT x FROM x
+----
+1
+3
+
+# give another error
+statement error
+mistake
+
+statement ok
+rollback to savepoint sp1
+
+query I rowsort
+SELECT x FROM x
+----
+1
+
+statement ok
+rollback

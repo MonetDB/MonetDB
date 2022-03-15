@@ -21,6 +21,7 @@ enum valtype {
 	STR,
 	MURI,
 	LADDR,
+	MODS,						/* list of mserver5 modules */
 	OTHER
 };
 

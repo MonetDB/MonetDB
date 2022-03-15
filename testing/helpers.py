@@ -4,8 +4,35 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
-import os, sys
-import re
+import os
+import sys
+
+
+import string                   # for whitespace
+def splitcommand(cmd):
+    '''Like string.split, except take quotes into account.'''
+    q = None
+    w = []
+    command = []
+    for c in cmd:
+        if q:
+            if c == q:
+                q = None
+            else:
+                w.append(c)
+        elif c in string.whitespace:
+            if w:
+                command.append(''.join(w))
+            w = []
+        elif c == '"' or c == "'":
+            q = c
+        else:
+            w.append(c)
+    if w:
+        command.append(''.join(w))
+    if len(command) > 1 and command[0] == 'call':
+        del command[0]
+    return command
 
 def get_tests_from_all_file(fpath:str):
     res = []
@@ -33,6 +60,7 @@ def get_tests_from_all_file(fpath:str):
                 res.append((cond, test, comment))
     return res
 
+
 def process_test_dir(dir_path:str, ctx={}, **kwargs):
     """
     Adds statistics and tests info to ctx
@@ -43,7 +71,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
     if os.path.isfile(os.path.join(dir_path, 'SingleServer')):
         folder['single_server'] = True
         with open(os.path.join(dir_path, 'SingleServer'), 'r') as f:
-            folder['server_options'] = f.read().split()
+            folder['server_options'] = splitcommand(f.read())
     allf = os.path.join(real_dir_path, 'All')
     tests = get_tests_from_all_file(allf) if os.path.isfile(allf) else []
     test_names = kwargs.get('test_names')
@@ -168,6 +196,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
     ctx['test_count'] += len(tests_out)
     return ctx
 
+
 def process_dir(dir_path: str, ctx={}, **kwargs):
     if os.path.basename(os.path.realpath(dir_path)) == 'Tests':
         return process_test_dir(dir_path, ctx, **kwargs)
@@ -175,6 +204,7 @@ def process_dir(dir_path: str, ctx={}, **kwargs):
     for d in onlydirs:
         dir_ = os.path.join(dir_path, d)
         process_dir(dir_, ctx, **kwargs)
+
 
 def build_work_ctx(*args):
     """
@@ -206,6 +236,7 @@ def build_work_ctx(*args):
     else:
         raise ValueError('ERROR: {} is not a valid Tests directory'.format(args[0]))
     return ctx
+
 
 if __name__ == '__main__':
     ctx = build_work_ctx(*sys.argv[1:])

@@ -256,6 +256,8 @@ gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer
 	__attribute__((__visibility__("hidden")));
 const char *gettailname(const BAT *b)
 	__attribute__((__visibility__("hidden")));
+const char *gettailnamebi(const BATiter *bi)
+	__attribute__((__visibility__("hidden")));
 void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
@@ -361,12 +363,13 @@ ilog2(BUN x)
 }
 
 /* some macros to help print info about BATs when using ALGODEBUG */
-#define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s]%s%s%s%s%s%s%s%s%s"
+#define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s%s]%s%s%s%s%s%s%s%s%s"
 #define ALGOBATPAR(b)							\
 	BATgetId(b),							\
 	BATcount(b),							\
 	b->hseqbase,							\
 	ATOMname(b->ttype),						\
+	b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"", \
 	!b->batTransient ? "P" : b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
 	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
@@ -377,7 +380,7 @@ ilog2(BUN x)
 	b->torderidx ? "O" : "",					\
 	b->timprints ? "I" : b->theap->parentid && BBP_cache(b->theap->parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
-#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
+#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
 	b ? BATgetId(b) : "",						\
 	b ? "#" : "",							\
@@ -386,6 +389,7 @@ ilog2(BUN x)
 	b ? b->hseqbase : 0,						\
 	b ? "[" : "",							\
 	b ? ATOMname(b->ttype) : "",					\
+	b ? b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"" : "", \
 	b ? "]" : "",							\
 	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
 	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
@@ -467,13 +471,20 @@ extern MT_Lock GDKtmLock;
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */
-extern BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
+#define GDK_UNIQUE_ESTIMATE_KEEP_FRACTION	1000
+extern BUN gdk_unique_estimate_keep_fraction; /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */
-extern BUN HASH_DESTROY_UNIQUES_FRACTION;     /* likewise */
+#define HASH_DESTROY_UNIQUES_FRACTION		1000
+extern BUN hash_destroy_uniques_fraction;     /* likewise */
 /* if the estimated number of unique values is less than 1 in this
  * number, don't build a hash table to do a hashselect */
-extern dbl NO_HASH_SELECT_FRACTION;           /* same here */
+#define NO_HASH_SELECT_FRACTION			1000
+extern dbl no_hash_select_fraction;           /* same here */
+/* if the hash chain is longer than this number, we delete the hash
+ * rather than maintaining it in HASHdelete */
+#define HASH_DESTROY_CHAIN_LENGTH		1000
+extern BUN hash_destroy_chain_length;
 
 #if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */

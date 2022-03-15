@@ -343,6 +343,9 @@
 
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
+gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
@@ -457,6 +460,7 @@ enum {
 	TYPE_timestamp,
 	TYPE_uuid,
 	TYPE_str,
+	TYPE_blob,
 	TYPE_any = 255,		/* limit types to <255! */
 };
 
@@ -479,15 +483,7 @@ typedef float flt;
 typedef double dbl;
 typedef char *str;
 
-#ifdef HAVE_UUID_UUID_H
-#include <uuid/uuid.h>
-#endif
-
-#ifdef HAVE_UUID
-#define UUID_SIZE	((int) sizeof(uuid_t)) /* size of a UUID */
-#else
 #define UUID_SIZE	16	/* size of a UUID */
-#endif
 #define UUID_STRLEN	36	/* length of string representation */
 
 typedef union {
@@ -496,12 +492,14 @@ typedef union {
 #else
 	lng l[2];		/* force alignment, not otherwise used */
 #endif
-#ifdef HAVE_UUID
-	uuid_t u;
-#else
 	uint8_t u[UUID_SIZE];
-#endif
 } uuid;
+
+typedef struct {
+	size_t nitems;
+	char data[FLEXIBLE_ARRAY_MEMBER] __attribute__((__nonstring__));
+} blob;
+gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
 #define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
@@ -777,6 +775,8 @@ typedef struct BAT {
 	 batTransient:1;	/* should the BAT persist on disk? */
 	uint8_t	/* adjacent bit fields are packed together (if they fit) */
 	 batRestricted:2;	/* access privileges */
+	uint16_t /* adjacent bit fields are packed together (if they fit) */
+	 selcnt:10;		/* how often used in equi select without hash */
 	role_t batRole;		/* role of the bat */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
@@ -1163,10 +1163,11 @@ typedef var_t stridx_t;
 
 #define BUNtvaroff(bi,p) VarHeapVal((bi).base, (p), (bi).width)
 
-#define BUNtloc(bi,p)	(ATOMstorage((bi).type) == TYPE_msk ? Tmsk(&(bi), p) : (void *) ((char *) (bi).base + ((p) << (bi).shift)))
+#define BUNtmsk(bi,p)	Tmsk(&(bi), (p))
+#define BUNtloc(bi,p)	(assert((bi).type != TYPE_msk), ((void *) ((char *) (bi).base + ((p) << (bi).shift))))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
 #define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
-#define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
+#define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 #define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
@@ -1617,12 +1618,6 @@ gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log
 		      format, ##__VA_ARGS__)
 #define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
 
-gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-	/*
-gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-	*/
 gdk_export void GDKclrerr(void);
 
 
@@ -1668,6 +1663,8 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 		((uint64_t *) b->theap->base)[p] = (uint64_t) d;
 		break;
 #endif
+	default:
+		MT_UNREACHABLE();
 	}
 	return GDK_SUCCEED;
 }
@@ -1976,6 +1973,7 @@ Tpos(BATiter *bi, BUN p)
 static inline bool
 Tmskval(BATiter *bi, BUN p)
 {
+	assert(ATOMstorage(bi->type) == TYPE_msk);
 	return ((uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
 }
 

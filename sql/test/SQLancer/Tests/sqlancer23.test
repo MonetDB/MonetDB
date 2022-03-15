@@ -1,0 +1,237 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0 (c0 INT)
+
+query I nosort
+SELECT 1 FROM (SELECT 1 FROM t0 JOIN (SELECT EXISTS (SELECT 1)) x(x) ON x.x = (VALUES (x.x))) vx(vx)
+JOIN (VALUES (1, 2)) x(x,y) ON vx = ANY(SELECT vx)
+----
+
+query I nosort
+SELECT 1 FROM t0 WHERE (TRUE AND (SELECT TRUE)) OR (TRUE AND (SELECT TRUE))
+----
+
+query I nosort
+SELECT 1 FROM t0 JOIN (SELECT 1) x(x) ON (VALUES (x.x)) RIGHT OUTER JOIN (SELECT 3) y(y)
+ON (SELECT y.y WHERE x.x)
+----
+1
+
+statement ok
+create view vx(vx) as (select distinct 2)
+
+query I nosort
+SELECT 1 FROM vx WHERE 1 <> ALL(VALUES (10), (vx.vx))
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(1 <> ALL(VALUES (10), (vx.vx)) AS INT) as count FROM vx) as res
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT 2) vy(vc1) WHERE EXISTS (VALUES (vc1))
+----
+1
+
+query I nosort
+SELECT vy.vc2 <> ALL(SELECT DISTINCT (SELECT 4 WHERE TRUE) FROM (SELECT 'a') y(y) JOIN LATERAL (SELECT 1) AS x(x)
+ON vy.vc0 LIKE y.y) FROM (SELECT DISTINCT '1', 2) vy(vc0, vc2)
+----
+1
+
+query I nosort
+SELECT 3 <> ALL(VALUES (vz.z)) FROM ((SELECT 1) INTERSECT DISTINCT (SELECT 2)) vz(z)
+----
+
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT 2) vx(vc1) WHERE NOT EXISTS (VALUES (TRUE), (EXISTS (SELECT vx.vc1)))
+----
+
+statement ok
+create view vy(vc0) as ((select 'a') union all (select z.z from (SELECT 1) y(y)
+cross join lateral (select 'v' where y.y > y.y) as z(z)))
+
+query I nosort
+SELECT ((SELECT y.y) EXCEPT ALL (SELECT count(*) FROM vy)) FROM (SELECT 1) y(y)
+----
+NULL
+
+query I nosort
+SELECT 2 FROM (SELECT FALSE GROUP BY 'a', FALSE) y(y) WHERE y.y
+----
+
+query I nosort
+SELECT (SELECT (VALUES (x.x)) FROM (VALUES (1),(2)) x(x) JOIN (VALUES (1, t0.c0, TRUE),
+(7, 9, FALSE)) y(a,b,c) ON y.c) FROM t0
+----
+
+statement ok rowcount 0
+DELETE FROM t0 WHERE 1 = (VALUES (t0.c0))
+
+query I nosort
+SELECT (SELECT (SELECT 1 WHERE x.x = 1) FROM (SELECT 1) x(x) WHERE t0.c0 = ALL(SELECT 1 WHERE x.x = 1)) FROM t0
+----
+
+query I nosort
+SELECT 1 FROM t0 FULL OUTER JOIN (SELECT 1) AS x(x) ON least(t0.c0 = ANY(SELECT 1 FROM t0), TRUE)
+----
+1
+
+query I nosort
+SELECT 1 FROM t0 WHERE t0.c0 = (VALUES ((SELECT t0.c0)))
+----
+
+query I nosort
+SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
+----
+
+query I nosort
+SELECT (SELECT ((SELECT 1) INTERSECT (SELECT x.x)) FROM (SELECT 1) x(x) WHERE t0.c0 < ANY(SELECT 2)) FROM t0
+----
+
+query I nosort
+SELECT 1 FROM t0 JOIN (SELECT 1) y(y) ON 1 = (SELECT y.y FROM (SELECT 1 IN (SELECT 1 FROM t0)) x(x), t0 WHERE x.x)
+----
+
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT 1) y(y) WHERE EXISTS (SELECT 1 WHERE (SELECT y.y FROM t0 x) = 0)
+----
+
+query I nosort
+SELECT (SELECT 1 FROM generate_series((SELECT DISTINCT 1, x.c0 FROM t0 x WHERE t0.c0 = 0))
+JOIN LATERAL (SELECT DISTINCT 1) x(x) ON TRUE) FROM t0
+----
+
+query I nosort
+SELECT 1 FROM (SELECT 1 = ANY(SELECT t0.c0) FROM t0) y(y) RIGHT OUTER JOIN (SELECT 1) x(x)
+ON 2 > greatest((SELECT x.x WHERE y.y), x.x)
+----
+1
+
+query I nosort
+SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT 1) x(x) ON (VALUES (t0.c0 > x.x)) AND
+greatest(CAST(t0.c0 AS BOOLEAN), 2 IN (SELECT 3 FROM t0))
+----
+1
+
+query I nosort
+SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT 1) x(x) ON (SELECT 2 FROM t0) IN (CASE x.x WHEN 3 THEN 4 END)
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT TRUE) v0(c0) WHERE NOT EXISTS (SELECT v0.c0 FROM (SELECT 1 WHERE FALSE) x(x)) = TRUE
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT TRUE) v0(c0) WHERE EXISTS (SELECT v0.c0 FROM (SELECT 1 WHERE FALSE) x(x)) = FALSE
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT EXISTS (SELECT v0.c0 FROM (SELECT 1 WHERE FALSE)
+x(x)) = TRUE AS INT) as count FROM (SELECT TRUE) v0(c0)) as res
+----
+1
+
+query I nosort
+SELECT 1 FROM t0 RIGHT OUTER JOIN (SELECT 1) x(x) ON x.x = ANY(SELECT c0 FROM t0) OR FALSE
+----
+1
+
+query I nosort
+SELECT 1 FROM t0 LEFT OUTER JOIN LATERAL (SELECT y.y FROM (SELECT DISTINCT 1, t0.c0) y(y,z)) x(x)
+ON (VALUES (t0.c0)) = 1
+----
+
+query I nosort
+SELECT x.c0 FROM t0, t0 x WHERE (1 IN (2)) = FALSE
+----
+
+query I nosort
+SELECT 1 FROM t0 RIGHT JOIN (SELECT 1) y(y) ON EXISTS (SELECT TRUE) AND 1 = ALL(SELECT 2)
+JOIN (SELECT CASE WHEN FALSE THEN 3 END) z(z) ON 1 = ALL(SELECT 3)
+----
+
+query I nosort
+SELECT 1 FROM t0, (SELECT 1 FROM (SELECT 1) y(y) LEFT JOIN (SELECT 1) x(x) ON 1 < any(SELECT y.y)) vx(vx)
+WHERE CASE WHEN TRUE THEN 2 = ANY(VALUES (vx.vx)) WHEN FALSE THEN t0.c0 = t0.c0 END
+----
+
+# Postgres doesn't give an error here, but we are confident it must
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
+
+statement ok
+ROLLBACK
+
+query I nosort
+SELECT x.x FROM (SELECT DISTINCT 1) x(x) WHERE EXISTS (VALUES (41), (x.x))
+----
+1
+
+query I nosort
+SELECT x.x FROM (SELECT 1) x(x) WHERE EXISTS (VALUES (41), (x.x))
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (VALUES (41), (x.x)) AS INT) as count FROM (SELECT DISTINCT 1) x(x)) as res
+----
+1
+
+statement error 21000!Cardinality violation, scalar value expected
+SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
+
+statement error 21000!Cardinality violation, scalar value expected
+SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 2) x(x) JOIN (SELECT 3) y(y) ON (SELECT max((SELECT x.x)))
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 2) x(x) JOIN (SELECT 3) y(y) ON ((SELECT max((SELECT x.x))) UNION (SELECT 4))
+
+statement error 42000!MAX: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON max((((SELECT (SELECT x.x))) UNION (SELECT 1)))
+
+statement error 42000!MAX: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON max((((SELECT (SELECT x.x))) UNION (SELECT (SELECT y.y))))
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (SELECT 1 FROM (SELECT max(x.x) FROM (SELECT 1) z(z)) z(z))
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (SELECT 1 FROM (SELECT max((SELECT (SELECT x.x))) FROM (SELECT 1) z(z)) z(z))
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (EXISTS (SELECT max(x.x)))
+
+statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (SELECT 1 WHERE EXISTS (SELECT max(x.x)))
+
+statement error 42000!MIN: aggregate functions cannot be nested
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING min((SELECT 1 HAVING min(x.x + y.y) > 0))) FROM (SELECT 1) y(y)
+
+statement error 42000!MIN: aggregate functions cannot be nested
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING min((SELECT min(x.x + y.y)))) FROM (SELECT 1) y(y)
+
+statement error 42000!MIN: aggregate functions cannot be nested
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING min(min(x.x + y.y))) FROM (SELECT 1) y(y)
+
+statement error 42000!MIN: aggregate functions cannot be nested
+SELECT (SELECT min(min(x.x + y.y)) FROM (SELECT 1) x(x)) FROM (SELECT 1) y(y)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
+SELECT (VALUES (prod(x.x - 1)), (x.x)) FROM (VALUES (1), (0.058128458)) x(x)

@@ -227,12 +227,10 @@ gdk_export const uuid uuid_nil;
 #ifdef HAVE_HGE
 #define is_uuid_nil(x)	((x).h == 0)
 #else
-#ifdef HAVE_UUID
-#define is_uuid_nil(x)	uuid_is_null((x).u)
-#else
 #define is_uuid_nil(x)	(memcmp((x).u, uuid_nil.u, UUID_SIZE) == 0)
 #endif
-#endif
+
+#define is_blob_nil(x)	((x)->nitems == ~(size_t)0)
 
 /*
  * @- Derived types
@@ -435,12 +433,14 @@ VarHeapVal(const void *b, BUN p, int w)
 		return (size_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
 	case 2:
 		return (size_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
-#if SIZEOF_VAR_T == 8
 	case 4:
 		return (size_t) ((const uint32_t *) b)[p];
+#if SIZEOF_VAR_T == 8
+	case 8:
+		return (size_t) ((const uint64_t *) b)[p];
 #endif
 	default:
-		return (size_t) ((const var_t *) b)[p];
+		MT_UNREACHABLE();
 	}
 }
 

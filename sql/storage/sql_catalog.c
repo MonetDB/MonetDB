@@ -24,24 +24,6 @@ _list_find_name(list *l, const char *name)
 	node *n;
 
 	if (l) {
-		MT_lock_set(&l->ht_lock);
-		if ((!l->ht || l->ht->size*16 < list_length(l)) && list_length(l) > HASH_MIN_SIZE && l->sa) {
-			l->ht = hash_new(l->sa, list_length(l), (fkeyvalue)&base_key);
-			if (l->ht == NULL) {
-				MT_lock_unset(&l->ht_lock);
-				return NULL;
-			}
-
-			for (n = l->h; n; n = n->next ) {
-				sql_base *b = n->data;
-				int key = base_key(b);
-
-				if (hash_add(l->ht, key, b) == NULL) {
-					MT_lock_unset(&l->ht_lock);
-					return NULL;
-				}
-			}
-		}
 		if (l->ht) {
 			int key = hash_key(name);
 			sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)];
@@ -50,14 +32,11 @@ _list_find_name(list *l, const char *name)
 				sql_base *b = he->value;
 
 				if (b->name && strcmp(b->name, name) == 0) {
-					MT_lock_unset(&l->ht_lock);
 					return b;
 				}
 			}
-			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
-		MT_lock_unset(&l->ht_lock);
 		for (n = l->h; n; n = n->next) {
 			sql_base *b = n->data;
 
@@ -551,8 +530,11 @@ atom_copy(sql_allocator *sa, atom *a)
 	if (!r)
 		return NULL;
 
-	*r = *a;
-	r->tpe = a->tpe;
+	*r = (atom) {
+		.isnull = a->isnull,
+		.tpe = a->tpe,
+		.data = (ValRecord) {.vtype = TYPE_void,},
+	};
 	if (!a->isnull)
 		SA_VALcopy(sa, &r->data, &a->data);
 	return r;

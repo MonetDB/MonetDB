@@ -81,7 +81,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jan2022/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jan2022-SP1/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -114,7 +114,6 @@ BuildRequires: geos-devel >= 3.4.0
 %endif
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
-BuildRequires: pkgconfig(uuid)
 BuildRequires: pkgconfig(libxml-2.0)
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre) >= 4.5
@@ -796,7 +795,6 @@ fi
 	-DWITH_PROJ=OFF \
 	-DWITH_READLINE=ON \
 	-DWITH_SNAPPY=OFF \
-	-DWITH_UUID=ON \
 	-DWITH_VALGRIND=OFF \
 	-DWITH_XML2=ON \
 	-DWITH_ZLIB=ON
@@ -850,6 +848,28 @@ fi
 %endif
 
 %changelog
+* Mon Feb 07 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.9-20220207
+- Rebuilt.
+- GH#7237: SELECT with concurrent writes rarely returns corrupt data
+- GH#7238: query with system function: "index"(varchar, boolean) fails
+  with GDK error or assertion failure.
+- GH#7241: Replacing a view by a query on the view itself crashes the
+  server.
+
+* Thu Feb 03 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.7-20220203
+- Rebuilt.
+- GH#7228: COMMIT: transaction is aborted because of concurrency
+  conflicts, will ROLLBACK instead
+- GH#7230: Prepared statement of INSERT with SELECT fails when types difer
+- GH#7232: False conflicts when inserting in a not null field
+
+* Mon Jan 24 2022 svetlin <svetlin.stalinov@monetdbsolutions.com> - 11.43.7-20220203
+- sql: [This feature was already released in Jan2022 (11.43), but the ChangeLog was missing]
+  Added SQL procedures sys.vacuum(sname string, tname string, cname string),
+  sys.vacuum(sname string, tname string, cname string, interval int),
+  sys.stop_vacuum(sname string, tname string, cname string).
+  These can be used to vacuum string columns.
+
 * Tue Jan 18 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.5-20220118
 - Rebuilt.
 

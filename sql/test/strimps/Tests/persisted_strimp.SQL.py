@@ -1,5 +1,4 @@
 import os
-import socket
 import tempfile
 
 try:
@@ -10,25 +9,20 @@ from MonetDBtesting.sqltest import SQLTestCase
 
 COUNT_QUERY = "SELECT COUNT(*) FROM orders WHERE o_comment LIKE '%%slyly%%';"
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.bind(('', 0))
-port = sock.getsockname()[1]
-sock.close()
-
 # Make sure that reading a persisted strimp from disk gives correct
 # results.
 
 with tempfile.TemporaryDirectory() as farm_dir:
     fdir = os.path.join(farm_dir, 'db1')
     os.mkdir(fdir)
-    with process.server(mapiport=port, dbname='db1',
+    with process.server(mapiport='0', dbname='db1',
                         args=["--set", "gdk_use_strimps=yes",],
                         dbfarm=fdir,
                         stdin=process.PIPE,
                         stdout=process.PIPE,
                         stderr=process.PIPE) as s:
         with SQLTestCase() as mdb:
-            mdb.connect(database='db1', port=port, username='monetdb', password='monetdb')
+            mdb.connect(database='db1', port=s.dbport, username='monetdb', password='monetdb')
             mdb.execute("""CREATE TABLE orders (
                               o_orderkey       BIGINT NOT NULL,
                               o_custkey        INTEGER NOT NULL,
@@ -46,12 +40,12 @@ with tempfile.TemporaryDirectory() as farm_dir:
             mdb.execute("SELECT COUNT(*) FROM orders WHERE o_comment LIKE '%%slyly%%';").assertSucceeded().assertDataResultMatch([(12896,)])
         s.communicate()
 
-    with process.server(mapiport=port, dbname='db1',
+    with process.server(mapiport='0', dbname='db1',
                         args=["--set", "gdk_use_strimps=yes",],
                         dbfarm=fdir,
                         stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
         with SQLTestCase() as mdb:
-            mdb.connect(database='db1', port=port, username='monetdb', password='monetdb')
+            mdb.connect(database='db1', port=s.dbport, username='monetdb', password='monetdb')
             mdb.execute("SELECT COUNT(*) FROM orders WHERE o_comment LIKE '%%slyly%%';").assertSucceeded().assertDataResultMatch([(12896,)])
             mdb.execute("SELECT COUNT(*) FROM orders WHERE o_comment LIKE '%%slyly%%';").assertSucceeded().assertDataResultMatch([(12896,)])
         s.communicate()

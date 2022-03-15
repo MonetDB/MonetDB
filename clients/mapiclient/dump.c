@@ -2517,6 +2517,16 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 {
 	const char *start_trx = "START TRANSACTION";
 	const char *end = "ROLLBACK";
+	const char *types =
+		"SELECT s.name, "
+		       "t.systemname, "
+		       "t.sqlname "
+		"FROM sys.types t LEFT JOIN sys.schemas s ON s.id = t.schema_id "
+		"WHERE t.eclass = 18 "
+		  "AND (t.schema_id <> 2000 "
+		        "OR (t.schema_id = 2000 "
+		             "AND t.sqlname NOT IN ('geometrya','mbr','url','inet','json','uuid')))"
+		"ORDER BY s.name, t.sqlname";
 	const char *users =
 		has_schema_path(mid) ?
 		"SELECT ui.name, "
@@ -2736,6 +2746,11 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	sname = get_schema(mid);
 	if (sname == NULL)
 		goto bailout2;
+	mnstr_printf(toConsole, "SET SCHEMA ");
+	dquoted_print(toConsole, sname, ";\n");
+	curschema = strdup(sname);
+	if (curschema == NULL)
+		goto bailout;
 	if (strcmp(sname, "sys") == 0 || strcmp(sname, "tmp") == 0) {
 		free(sname);
 		sname = NULL;
@@ -2850,13 +2865,25 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		if (mapi_error(mid))
 			goto bailout;
 		mapi_close_handle(hdl);
-	} else {
-		mnstr_printf(toConsole, "SET SCHEMA ");
-		dquoted_print(toConsole, sname, ";\n");
-		curschema = strdup(sname);
-		if (curschema == NULL)
-			goto bailout;
 	}
+
+	/* dump types */
+	if ((hdl = mapi_query(mid, types)) == NULL || mapi_error(mid))
+		goto bailout;
+
+	while (mapi_fetch_row(hdl) != 0) {
+		const char *sname = mapi_fetch_field(hdl, 0);
+		const char *sysname = mapi_fetch_field(hdl, 1);
+		const char *sqlname = mapi_fetch_field(hdl, 2);
+		mnstr_printf(toConsole, "CREATE TYPE ");
+		dquoted_print(toConsole, sname, ".");
+		dquoted_print(toConsole, sqlname, " EXTERNAL NAME ");
+		dquoted_print(toConsole, sysname, ";\n");
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	hdl = NULL;
 
 	/* dump sequences, part 1 */
 	if ((hdl = mapi_query(mid, sequences1)) == NULL || mapi_error(mid))
@@ -3097,8 +3124,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		if (curschema == NULL || strcmp(schema, curschema) != 0) {
 			if (curschema)
 				free(curschema);
-			curschema = schema ? strdup(schema) : NULL;
-			if (schema && !curschema) {
+			curschema = strdup(schema);
+			if (curschema == NULL) {
 				free(id);
 				free(schema);
 				free(name);
