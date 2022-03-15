@@ -11,15 +11,10 @@
 #include "monetdb_config.h"
 #include "sql_decimal.h"
 #include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_prop.h"
-#include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
-#include "sql_query.h"
-#include "mal_errors.h" /* for SQLSTATE() */
 
 /* some unnesting steps use the 'used' flag to avoid further rewrites. List them here, so only one reset flag iteration will be used */
 #define rewrite_fix_count_used (1 << 0)

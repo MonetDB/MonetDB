@@ -7,15 +7,11 @@
  */
 
 #include "monetdb_config.h"
-#include "rel_optimizer.h"
 #include "rel_optimizer_private.h"
-#include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
-#include "sql_mvc.h"
 
 static int
 exp_is_rename(sql_exp *e)
