@@ -14,12 +14,11 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
 #include "rel_updates.h"
 #include "rel_select.h"
 #include "rel_remote.h"
+#include "rel_optimizer.h"
 #include "sql_privileges.h"
-#include "mal_errors.h"		/* for SQLSTATE() */
 
 static void
 print_indent(mvc *sql, stream *fout, int depth, int decorate)
@@ -111,6 +110,8 @@ dump_sql_subtype(sql_allocator *sa, sql_subtype *t)
 
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets);
 
+static void rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
+
 static void
 exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias)
 {
@@ -158,7 +159,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				exps_print(sql, fout, e->f, depth, refs, 0, 0);
 			alias = 0;
 		} else if (e->flag & PSM_REL) {
-			rel_print_(sql, fout, e->l, depth+10, refs, 1);
+			rel_print_rel(sql, fout, e->l, depth+10, refs, 1);
 		} else if (e->flag & PSM_EXCEPTION) {
 			mnstr_printf(fout, "except ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
@@ -359,49 +360,6 @@ exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias,
 		mnstr_printf(fout, " ]");
 }
 
-const char *
-op2string(operator_type op)
-{
-	switch (op) {
-	case op_basetable:
-		return "basetable";
-	case op_table:
-		return "table";
-	case op_ddl:
-		return "ddl";
-	case op_project:
-		return "project";
-	case op_select:
-		return "select";
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-		return "join";
-	case op_semi:
-		return "semi";
-	case op_anti:
-		return "anti";
-	case op_union:
-	case op_inter:
-	case op_except:
-		return "set op";
-	case op_groupby:
-		return "group by";
-	case op_topn:
-		return "topn";
-	case op_sample:
-		return "sample";
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-	case op_merge:
-		return "modify op";
-	}
-	return "unknown";
-}
-
 static int
 find_ref( list *refs, sql_rel *rel )
 {
@@ -415,8 +373,8 @@ find_ref( list *refs, sql_rel *rel )
 	return 0;
 }
 
-void
-rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate)
+static void
+rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate)
 {
 	char *r = NULL;
 
@@ -437,35 +395,25 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
-#if 0
-		sql_column *c = rel->r;
+		const char *sname = t->s ? t->s->base.name : NULL; /* All tables, but declared ones on the stack have schema */
+		const char *tname = t->base.name;
 
-		if (!t && c) {
-			mnstr_printf(fout, "dict(\"%s\".\"%s\")",
-						 dump_escape_ident(sql->ta, c->t->base.name), dump_escape_ident(sql->ta, c->base.name));
-		} else {
-#endif
+		if (isRemote(t)) {
+			const char *uri = t->query;
 
-			const char *sname = t->s ? t->s->base.name : NULL; /* All tables, but declared ones on the stack have schema */
-			const char *tname = t->base.name;
-
-			if (isRemote(t)) {
-				const char *uri = t->query;
-
-				sname = mapiuri_schema( uri, sql->sa, sname);
-				tname = mapiuri_table( uri, sql->sa, tname);
-			}
-			if (sname)
-				mnstr_printf(fout, "%s(\"%s\".\"%s\")",
-					isRemote(t)&&decorate?"REMOTE":
-					isReplicaTable(t)?"REPLICA":"table",
-					dump_escape_ident(sql->ta, sname), dump_escape_ident(sql->ta, tname));
-			else
-				mnstr_printf(fout, "%s(\"%s\")",
-					isRemote(t)&&decorate?"REMOTE":
-					isReplicaTable(t)?"REPLICA":"table",
-					dump_escape_ident(sql->ta, tname));
-	//	}
+			sname = mapiuri_schema( uri, sql->sa, sname);
+			tname = mapiuri_table( uri, sql->sa, tname);
+		}
+		if (sname)
+			mnstr_printf(fout, "%s(\"%s\".\"%s\")",
+				isRemote(t)&&decorate?"REMOTE":
+				isReplicaTable(t)?"REPLICA":"table",
+				dump_escape_ident(sql->ta, sname), dump_escape_ident(sql->ta, tname));
+		else
+			mnstr_printf(fout, "%s(\"%s\")",
+				isRemote(t)&&decorate?"REMOTE":
+				isReplicaTable(t)?"REPLICA":"table",
+				dump_escape_ident(sql->ta, tname));
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		else
@@ -478,9 +426,9 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			exp_print(sql, fout, rel->r, depth, refs, 1, 0);
 		if (rel->l) {
 			if (rel->flag == TRIGGER_WRAPPER)
-		  		mnstr_printf(fout, "rel_dump not yet implemented for trigger input");
+				mnstr_printf(fout, "rel_dump not yet implemented for trigger input");
 			else
-				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
@@ -490,9 +438,9 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	case op_ddl:
 		mnstr_printf(fout, "ddl");
 		if (rel->l)
-			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+			rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 		if (rel->r)
-			rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
+			rel_print_rel(sql, fout, rel->r, depth+1, refs, decorate);
 		if (rel->exps && (rel->flag == ddl_psm || rel->flag == ddl_exception || rel->flag == ddl_list))
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
@@ -536,7 +484,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d ", nr);
 			} else
-				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 		}
 		mnstr_printf(fout, ",");
 		if (rel->r) {
@@ -545,7 +493,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d  ", nr);
 			} else
-				rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->r, depth+1, refs, decorate);
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
@@ -577,7 +525,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d ", nr);
 			} else
-				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 			print_indent(sql, fout, depth, decorate);
 			mnstr_printf(fout, ")");
 		}
@@ -616,7 +564,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d ", nr);
 			} else
-				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 		}
 		if (rel->r) {
 			if (rel_is_ref(rel->r)) {
@@ -624,7 +572,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d ", nr);
 			} else
-				rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->r, depth+1, refs, decorate);
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
@@ -643,7 +591,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 		}
 	}
-	//mnstr_printf(fout, " %p ", rel);
 }
 
 void
@@ -660,14 +607,14 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 			if (rel->l) {
 				rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 				if (rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
-					rel_print_(sql, fout, rel->l, depth, refs, decorate);
+					rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 					list_append(refs, rel->l);
 				}
 			}
 			if (rel->r) {
 				rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
 				if (rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
-					rel_print_(sql, fout, rel->r, depth, refs, decorate);
+					rel_print_rel(sql, fout, rel->r, depth, refs, decorate);
 					list_append(refs, rel->r);
 				}
 			}
@@ -687,11 +634,11 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->r)
 			rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
-			rel_print_(sql, fout, rel->l, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
 		if (rel->r && rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
-			rel_print_(sql, fout, rel->r, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->r, depth, refs, decorate);
 			list_append(refs, rel->r);
 		}
 		break;
@@ -703,7 +650,7 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->l)
 			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
-			rel_print_(sql, fout, rel->l, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
 		break;
@@ -715,16 +662,39 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->l)
 			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
-			rel_print_(sql, fout, rel->l, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
 		if (rel->r)
 			rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
 		if (rel->r && rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
-			rel_print_(sql, fout, rel->r, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->r, depth, refs, decorate);
 			list_append(refs, rel->r);
 		}
 		break;
+	}
+}
+
+void
+rel_print_(mvc *sql, stream *fout, sql_rel *rel, int depth, list *refs, int decorate)
+{
+	rel_print_rel(sql, fout, rel, depth, refs, decorate);
+	if (sql->runs) {
+		bool first = false;
+
+		for (int i = 0 ; i < NSQLREWRITERS ; i++) {
+			sql_optimizer_run *run = &(sql->runs[i]);
+
+			if (run->name) { /* if name is set, then the optimizer did run */
+				if (!first) {
+					mnstr_printf(fout, "\n");
+					first = true;
+				}
+				print_indent(sql, fout, depth, decorate);
+				mnstr_printf(fout, "%-36s %3d actions " LLFMT " usec\n",
+							 run->name, run->nchanges, run->time);
+			}
+		}
 	}
 }
 

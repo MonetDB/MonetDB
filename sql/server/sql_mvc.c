@@ -794,6 +794,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 
 	m->label = 0;
 	m->cascade_action = NULL;
+	m->runs = NULL;
 
 	if (!(m->schema_path = list_create((fdestroy)_free))) {
 		qc_destroy(m->qc);
@@ -876,6 +877,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 
 	m->label = 0;
 	m->cascade_action = NULL;
+	m->runs = NULL;
 	m->type = Q_PARSE;
 
 	scanner_init(&m->scanner, rs, ws);
