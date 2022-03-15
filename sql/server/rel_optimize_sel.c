@@ -2438,7 +2438,7 @@ static sql_rel *
 rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_visitor_topdown(v, rel, &rel_join_order_);
+	return rel_join_order_(v, rel);
 }
 
 run_optimizer
