@@ -16,7 +16,6 @@
 #include "mal_backend.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
-#include "blob.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_gencode.h"
@@ -618,7 +617,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 		goto cleanup;
 	}
 
-	 with_mapi_server = false;
+	with_mapi_server = false;
 
 	if (monetdbe_embedded_initialized) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "MonetDBe is already initialized"));
@@ -647,8 +646,18 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 
 	if (opts && opts->mapi_server) {
 		/*This monetdbe instance wants to listen to external mapi client connections.*/
-		with_mapi_server = true;
+		if (opts->mapi_server->host) {
+			with_mapi_server = true;
+			int psetlen = setlen;
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "mapi_listenaddr", opts->mapi_server->host);
+			if (setlen == psetlen) {
+				mo_free_options(set, setlen);
+				set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL));
+				goto cleanup;
+			}
+		}
 		if (opts->mapi_server->port) {
+			with_mapi_server = true;
 			int psetlen = setlen;
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "mapi_port", opts->mapi_server->port);
 			if (setlen == psetlen) {
@@ -658,6 +667,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 			}
 		}
 		if (opts->mapi_server->usock) {
+			with_mapi_server = true;
 			int psetlen = setlen;
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "mapi_usock", opts->mapi_server->usock);
 			if (setlen == psetlen) {
@@ -2414,7 +2424,7 @@ remote_cleanup:
 					d[j] = (blob*)nil;
 				} else {
 					size_t len = be[j].size;
-					var_t nlen = blobsize(len);
+					size_t nlen = blobsize(len);
 					blob *b = (blob*)GDKmalloc(nlen);
 					if (!b) {
 						set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
@@ -2831,4 +2841,9 @@ timestamp_from_data(monetdbe_data_timestamp *ptr)
 	return timestamp_create(
 		date_create(ptr->date.year, ptr->date.month, ptr->date.day),
 		daytime_create(ptr->time.hours, ptr->time.minutes, ptr->time.seconds, ptr->time.ms * 1000));
+}
+
+const char*
+monetdbe_get_mapi_port(void) {
+	return GDKgetenv("mapi_port");
 }

@@ -126,7 +126,8 @@ using the **set** command. The following properties can be set:
 
 **listenaddr**
    This property specifies an address that is allowed to connect to the
-   server. The following possibilities exist:
+   server. This property is ignored if the property **forward** is set
+   to **proxy** (the default). The following possibilities exist:
 
    **localhost**
       The server only listens on the IPv4 and IPv6 loopback interface
@@ -239,7 +240,8 @@ using the **set** command. The following properties can be set:
 REMOTE DATABASES
 ================
 
-**Deprecation notice:** This feature is deprecated and may be removed in the future.
+**Deprecation notice:** This feature is deprecated and may be removed in
+the future.
 
 The neighbor discovery capabilities of *monetdbd* allow a user to
 contact a remote database transparently, as if it were a local database.
@@ -312,7 +314,8 @@ user to decide how to use the tags.
 MULTIPLEX-FUNNELS
 =================
 
-**Deprecation notice:** This feature is deprecated and may be removed in the future.
+**Deprecation notice:** This feature is deprecated and may be removed in
+the future.
 
 *Monetdbd* implements multiplex-funnel capabilities. As the name
 suggests two techniques are combined, the multiplexer and the funnel.

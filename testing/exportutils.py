@@ -9,7 +9,7 @@ import os
 
 macrore = r'^[ \t]*#[ \t]*define[ \t]+(?P<name>\w+)(?:\((?P<args>[^()]*)\))?[ \t]*(?P<repl>.*)'
 includere = r'^[ \t]*#[ \t]*include[ \t]+"(?P<file>[^"]*)".*'
-ifre = r'^[ \t]*#[ \t]*if(def)?.*\b'
+ifre = r'^[ \t]*#[ \t]*if(n?def)?\b.*'
 elifre = r'^[ \t]*#[ \t]*elif\b.*'
 elsere = r'^[ \t]*#[ \t]*else\b.*'
 endifre = r'^[ \t]*#[ \t]*endif\b.*'
@@ -171,4 +171,4 @@ def normalize(decl):
 if __name__ == '__main__':
     import sys
     for f in sys.argv[1:]:
-        print(preprocess(f, printdef=False))
+        print(preprocess(f, printdef=True, include=False))

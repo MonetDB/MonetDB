@@ -23,7 +23,7 @@ include(monetdb-wix-packages)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
 
-  if (${LINUX_DISTRO} STREQUAL "debian")
+  if ("${LINUX_DISTRO}" STREQUAL "debian")
     monetdb_debian_extra_files()
   endif()
 endif()

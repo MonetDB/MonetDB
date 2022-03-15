@@ -1896,6 +1896,7 @@ new_bbpentry(FILE *fp, bat i, BUN size)
 	}
 #endif
 
+	assert(size <= BBP_desc(i)->batCount || size == BUN_NONE);
 	if (size > BBP_desc(i)->batCount)
 		size = BBP_desc(i)->batCount;
 	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " BUNFMT " " OIDFMT,
@@ -2830,7 +2831,6 @@ incref(bat i, bool logical, bool lock)
 	int refs;
 	bat tp = i, tvp = i;
 	BAT *b, *pb = NULL, *pvb = NULL;
-	bool load = false;
 
 	if (!BBPcheck(i))
 		return 0;
@@ -2890,40 +2890,12 @@ incref(bat i, bool logical, bool lock)
 	} else {
 		assert(tp >= 0);
 		refs = ++BBP_refs(i);
-		unsigned flag = BBPHOT;
-		if (refs == 1 && (tp != i || tvp != i)) {
-			/* If this is a view, we must load the parent
-			 * BATs, but we must do that outside of the
-			 * lock.  Set the BBPLOADING flag so that
-			 * other threads will wait until we're
-			 * done. */
-			flag |= BBPLOADING;
-			load = true;
-		}
-		BBP_status_on(i, flag);
+		BBP_status_on(i, BBPHOT);
 	}
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
 
-	if (load) {
-		/* load the parent BATs */
-		assert(!logical);
-		if (tp != i) {
-			assert(pb != NULL);
-			/* load being set implies there is no other
-			 * thread that has access to this bat, but the
-			 * parent is a different matter */
-			MT_lock_set(&pb->theaplock);
-			if (b->theap != pb->theap) {
-				HEAPincref(pb->theap);
-				HEAPdecref(b->theap, false);
-				b->theap = pb->theap;
-			}
-			MT_lock_unset(&pb->theaplock);
-		}
-		/* done loading, release descriptor */
-		BBP_status_off(i, BBPLOADING);
-	} else if (!logical) {
+	if (!logical && refs > 1) {
 		/* this wasn't the first physical reference, so undo
 		 * the fixes on the parent bats */
 		if (pb)
@@ -3067,8 +3039,12 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	      ? (!BATdirty(b) &&
 		 !(BBP_status(i) & chkflag) &&
 		 (BBP_status(i) & BBPPERSISTENT) &&
+		 /* cannot unload in-memory data */
 		 !GDKinmemory(farmid) &&
-		 b->batSharecnt == 0)
+		 /* do not unload views or parents of views */
+		 b->batSharecnt == 0 &&
+		 b->batCacheid == b->theap->parentid &&
+		 (b->tvheap == NULL || b->batCacheid == b->tvheap->parentid))
 	      : (BBP_status(i) & BBPTMP)))) {
 		/* bat will be unloaded now. set the UNLOADING bit
 		 * while locked so no other thread thinks it's
@@ -3771,46 +3747,37 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 static gdk_return
 BBPbackup(BAT *b, bool subcommit)
 {
-	char *srcdir;
-	long_str nme;
-	const char *s = BBP_physical(b->batCacheid);
-	size_t slen;
+	gdk_return rc;
 
-	if (BBPprepare(subcommit) != GDK_SUCCEED) {
-		return GDK_FAIL;
+	if ((rc = BBPprepare(subcommit)) != GDK_SUCCEED) {
+		return rc;
 	}
 	if (!b->batCopiedtodisk || b->batTransient) {
 		return GDK_SUCCEED;
 	}
 	/* determine location dir and physical suffix */
-	if (!(srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL)))
-		goto fail;
-	s = strrchr(srcdir, DIR_SEP);
-	if (!s)
-		goto fail;
+	char *srcdir;
+	if ((srcdir = GDKfilepath(NOFARM, BATDIR, BBP_physical(b->batCacheid), NULL)) != NULL) {
+		char *nme = strrchr(srcdir, DIR_SEP);
+		assert(nme != NULL);
+		*nme++ = '\0';	/* split into directory and file name */
 
-	slen = strlen(++s);
-	if (slen >= sizeof(nme))
-		goto fail;
-	memcpy(nme, s, slen + 1);
-	srcdir[s - srcdir] = 0;
-
-	if (b->ttype != TYPE_void &&
-	    do_backup(srcdir, nme, gettailname(b), b->theap,
-		      b->batDirtydesc || b->theap->dirty,
-		      subcommit) != GDK_SUCCEED)
-		goto fail;
-	if (b->tvheap &&
-	    do_backup(srcdir, nme, "theap", b->tvheap,
-		      b->batDirtydesc || b->tvheap->dirty,
-		      subcommit) != GDK_SUCCEED)
-		goto fail;
+		BATiter bi = bat_iterator(b);
+		if (bi.type != TYPE_void) {
+			rc = do_backup(srcdir, nme, gettailnamebi(&bi), bi.h,
+				       b->batDirtydesc || bi.h->dirty,
+				       subcommit);
+			if (rc == GDK_SUCCEED && bi.vh != NULL)
+				rc = do_backup(srcdir, nme, "theap", bi.vh,
+					       b->batDirtydesc || bi.vh->dirty,
+					       subcommit);
+		}
+		bat_iterator_end(&bi);
+	} else {
+		rc = GDK_FAIL;
+	}
 	GDKfree(srcdir);
-	return GDK_SUCCEED;
-  fail:
-	if(srcdir)
-		GDKfree(srcdir);
-	return GDK_FAIL;
+	return rc;
 }
 
 /*
@@ -3961,6 +3928,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
 					BATiter bi = bat_iterator(b);
+					assert(size <= bi.count || size == BUN_NONE);
 					if (size > bi.count)
 						size = bi.count;
 					MT_rwlock_rdlock(&b->thashlock);

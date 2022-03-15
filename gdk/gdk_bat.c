@@ -180,6 +180,28 @@ BATsetdims(BAT *b, uint16_t width)
 }
 
 const char *
+gettailnamebi(const BATiter *bi)
+{
+	if (bi->type == TYPE_str) {
+		switch (bi->width) {
+		case 1:
+			return "tail1";
+		case 2:
+			return "tail2";
+		case 4:
+#if SIZEOF_VAR_T == 8
+			return "tail4";
+		case 8:
+#endif
+			break;
+		default:
+			MT_UNREACHABLE();
+		}
+	}
+	return "tail";
+}
+
+const char *
 gettailname(const BAT *b)
 {
 	if (b->ttype == TYPE_str) {
@@ -188,12 +210,14 @@ gettailname(const BAT *b)
 			return "tail1";
 		case 2:
 			return "tail2";
-#if SIZEOF_VAR_T == 8
 		case 4:
+#if SIZEOF_VAR_T == 8
 			return "tail4";
+		case 8:
 #endif
-		default:
 			break;
+		default:
+			MT_UNREACHABLE();
 		}
 	}
 	return "tail";
@@ -215,15 +239,17 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
 				      sizeof(tail->filename), physnme,
 				      ".tail2", NULL);
 			return;
-#if SIZEOF_VAR_T == 8
 		case 4:
+#if SIZEOF_VAR_T == 8
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
 				      ".tail4", NULL);
 			return;
+		case 8:
 #endif
-		default:
 			break;
+		default:
+			MT_UNREACHABLE();
 		}
 	}
 	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
@@ -1061,7 +1087,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
-	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		MT_lock_set(&b->theaplock);
 		b->tunique_est = 0;
 		MT_lock_unset(&b->theaplock);
@@ -1331,11 +1357,10 @@ BUNdelete(BAT *b, oid o)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			msk mval = mskGetVal(b, BUNlast(b) - 1);
-			HASHdelete(b, BUNlast(b) - 1, &mval);
+			assert(b->thash == NULL);
 			mskSetVal(b, p, mval);
 			/* don't leave garbage */
 			mskClr(b, BUNlast(b) - 1);
-			HASHinsert(b, p, &mval);
 		} else {
 			val = Tloc(b, BUNlast(b) - 1);
 			HASHdelete(b, BUNlast(b) - 1, val);
@@ -1358,7 +1383,7 @@ BUNdelete(BAT *b, oid o)
 		b->tnorevsorted = 0;
 	MT_lock_set(&b->theaplock);
 	b->batCount--;
-	if (BATcount(b) < GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+	if (BATcount(b) < gdk_unique_estimate_keep_fraction)
 		b->tunique_est = 0;
 	MT_lock_unset(&b->theaplock);
 	if (b->batCount <= 1) {
@@ -1410,7 +1435,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		b->tminpos = BUN_NONE;
 		b->tmaxpos = BUN_NONE;
 		b->tunique_est = 0.0;
-	} else if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+	} else if (count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
 	MT_lock_unset(&b->theaplock);
@@ -1436,6 +1461,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			} else {
 				val = BUNtpos(bi, p);
 			}
+		} else if (bi.type == TYPE_msk) {
+			val = BUNtmsk(bi, p);
 		} else {
 			val = BUNtloc(bi, p);
 		}
@@ -1511,7 +1538,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			ptr _ptr;
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
-			default:	/* only three or four cases possible */
+			case 1:
 				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
 				break;
 			case 2:
@@ -1525,6 +1552,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				_d = (var_t) * (uint64_t *) _ptr;
 				break;
 #endif
+			default:
+				MT_UNREACHABLE();
 			}
 			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED) {
 				MT_rwlock_wrunlock(&b->thashlock);
@@ -1549,7 +1578,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
-			default:	/* only three or four cases possible */
+			case 1:
 				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
 				break;
 			case 2:
@@ -1563,6 +1592,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				* (uint64_t *) _ptr = (uint64_t) _d;
 				break;
 #endif
+			default:
+				MT_UNREACHABLE();
 			}
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			mskSetVal(b, p, * (msk *) t);

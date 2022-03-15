@@ -20,7 +20,7 @@
 #define psm_zero_or_one(exp) \
 	do { \
 		if (exp && exp->card > CARD_AGGR) { \
-			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(exp), NULL, F_AGGR); \
+			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(exp), NULL, F_AGGR, true); \
 			assert(zero_or_one); \
 			exp = exp_aggr1(sql->sa, exp, zero_or_one, 0, 0, CARD_ATOM, has_nil(exp)); \
 		} \
@@ -88,7 +88,7 @@ psm_set_exp(sql_query *query, dnode *n)
 		res = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), e, level);
 	} else { /* multi assignment */
 		exp_kind ek = {type_relation, card_value, FALSE};
-		sql_rel *rel_val = rel_subquery(query, NULL, val, ek);
+		sql_rel *rel_val = rel_subquery(query, val, ek);
 		dlist *vars = n->data.lval;
 		dnode *m;
 		node *n;
@@ -543,7 +543,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 
 	/* SELECT ... INTO var_list */
 	sn->into = NULL;
-	r = rel_subquery(query, NULL, sq, ek);
+	r = rel_subquery(query, sq, ek);
 	if (!r)
 		return NULL;
 	if (!is_project(r->op))
@@ -833,12 +833,16 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 	if (create && !mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: insufficient privileges for user '%s' in schema '%s'", F,
-						 get_string_global_var(sql, "current_user"), s->base.name); 
+						 get_string_global_var(sql, "current_user"), s->base.name);
 
 	type_list = create_type_list(sql, params, 1);
 
-	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type)) != NULL && create && !replace) {
-		if (params) {
+	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type, true)) != NULL && create) {
+		if (sf->func->private) { /* cannot create a function using a private name or replace a existing one */
+			list_destroy(type_list);
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
+		}
+		if (!replace && params) {
 			char *arg_list = NULL;
 			node *n;
 
@@ -854,9 +858,12 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			(void)sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' (%s) already in use", F, fname, arg_list ? arg_list : "");
 			list_destroy(type_list);
 			return NULL;
-		} else {
+		} else if (!replace) {
 			list_destroy(type_list);
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' already in use", F, fname);
+		} else if (replace && !sf->func->s) {
+			list_destroy(type_list);
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: cannot replace system function '%s'", F, fname);
 		}
 	} else {
 		sql->session->status = 0; /* if the function was not found clean the error */
@@ -865,8 +872,10 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT)) {
 		sql_subfunc *found = NULL;
-		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC))) {
+		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC, true))) {
 			list_destroy(type_list);
+			if (found->func->private) /* cannot create a function using a private name or replace a existing one */
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
 							 IS_AGGR(found->func) ? "an aggregate" : IS_FILT(found->func) ? "a filter function" : "a function", fname);
 		}
@@ -1018,8 +1027,10 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 					break;
 			}
 			/* instantiate MAL functions while being created. This also sets the side-effects flag */
-			if (!backend_resolve_function(&clientid, f, fnme, &(f->side_effect)))
+			bool se = f->side_effect;
+			if (!backend_resolve_function(&clientid, f, fnme, &se))
 				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
+			f->side_effect = se;
 			f->instantiated = TRUE;
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
@@ -1067,21 +1078,21 @@ resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql
 		sql_subfunc *sub_func;
 
 		type_list = create_type_list(sql, typelist, 0);
-		sub_func = sql_bind_func_(sql, sname, name, type_list, type);
+		sub_func = sql_bind_func_(sql, sname, name, type_list, type, false);
 		if (!sub_func && type == F_FUNC) {
 			sql->session->status = 0; /* if the function was not found clean the error */
 			sql->errstr[0] = '\0';
-			sub_func = sql_bind_func_(sql, sname, name, type_list, F_UNION);
+			sub_func = sql_bind_func_(sql, sname, name, type_list, F_UNION, false);
 			type = sub_func?F_UNION:F_FUNC;
 		}
 		if ( sub_func && sub_func->func->type == type)
 			func = sub_func->func;
 	} else {
-		list_func = sql_find_funcs_by_name(sql, sname, name, type);
+		list_func = sql_find_funcs_by_name(sql, sname, name, type, false);
 		if (!list_func && type == F_FUNC) {
 			sql->session->status = 0; /* if the function was not found clean the error */
 			sql->errstr[0] = '\0';
-			list_func = sql_find_funcs_by_name(sql, sname, name, F_UNION);
+			list_func = sql_find_funcs_by_name(sql, sname, name, F_UNION, false);
 		}
 		if (list_func && list_func->cnt > 1) {
 			list_destroy(list_func);
@@ -1175,8 +1186,10 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "DROP ALL %s: insufficient privileges for user '%s' in schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
 
-	if (!(list_func = sql_find_funcs_by_name(sql, s->base.name, name, type)))
+	if (!(list_func = sql_find_funcs_by_name(sql, s->base.name, name, type, false)) || list_empty(list_func)) {
+		list_destroy(list_func);
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "DROP ALL %s: no such %s '%s'", F, fn, name);
+	}
 	list_destroy(list_func);
 	return rel_drop_function(sql->sa, s->base.name, name, -1, type, drop_action);
 }
@@ -1442,7 +1455,7 @@ psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 			list_append(tl, exp_subtype(tname_exp));
 	}
 	if (!columns) {
-		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC)))
+		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
 		if (!execute_priv(sql, f->func))
 			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
@@ -1450,7 +1463,7 @@ psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 	} else {
 		if (!sname || !tname)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze schema or table name missing");
-		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC)))
+		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
 		if (!execute_priv(sql, f->func))
 			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");

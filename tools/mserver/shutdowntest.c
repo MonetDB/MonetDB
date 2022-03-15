@@ -271,6 +271,11 @@ static str monetdb_initialize(void) {
 
 	{
 		Client c = (Client) monetdb_connect();
+		if (!c) {
+			printf("Failed to initialize client\n");
+			retval = GDKstrdup("Failed to initialize client\n");
+			goto cleanup;
+		}
 		char* query = "SELECT * FROM tables;";
 		retval = monetdb_query(c, query);
 		monetdb_disconnect(c);
@@ -309,6 +314,11 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	c = (Client) monetdb_connect();
+	if (!c) {
+		printf("Failed to initialize client\n");
+		monetdb_shutdown();
+		return -1;
+	}
 	monetdb_query(c, "CREATE TABLE temporary_table(i INTEGER);");
 	monetdb_query(c, "INSERT INTO temporary_table VALUES (3), (4);");
 	monetdb_disconnect(c);
@@ -323,6 +333,11 @@ int main(int argc, char **argv) {
 		}
 //		printf("Successfully restarted MonetDB.\n");
 		c = (Client) monetdb_connect();
+		if (!c) {
+			printf("Failed to initialize client\n");
+			monetdb_shutdown();
+			return -1;
+		}
 		monetdb_query(c, "SELECT * FROM temporary_table;");
 		monetdb_query(c, "DROP TABLE temporary_table;");
 		monetdb_query(c, "CREATE TABLE temporary_table(i INTEGER);");
