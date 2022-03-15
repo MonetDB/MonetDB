@@ -768,6 +768,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	m->sizeframes = MAXPARAMS;
 	m->frames = SA_NEW_ARRAY(pa, sql_frame*, m->sizeframes);
 	m->topframes = 0;
+	m->sql_optimizer = INT_MAX;
 	m->frame = 0;
 
 	m->use_views = 0;

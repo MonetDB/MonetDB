@@ -3058,7 +3058,7 @@ static sql_rel *
 rel_distinct_project2groupby(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_visitor_topdown(v, rel, &rel_distinct_project2groupby_);
+	return rel_visitor_bottomup(v, rel, &rel_distinct_project2groupby_);
 }
 
 run_optimizer
