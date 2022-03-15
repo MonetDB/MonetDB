@@ -301,7 +301,7 @@ def splitcommand(cmd):
 def remove(file):
     try:
         os.remove(file)
-    except FileNotFound:
+    except FileNotFoundError:
         pass
     except:
         Warn('could not remove {}'.format(file))
