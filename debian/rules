@@ -13,6 +13,7 @@ DH_VERBOSE=1
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
+	-DPYTHON3_LIBDIR=lib/python3/dist-packages
 	-DCMAKE_INSTALL_RUNSTATEDIR=/run \
 	-DRELEASE_VERSION=ON \
 	-DASSERT=OFF \
