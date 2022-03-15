@@ -309,7 +309,7 @@ macro(monetdb_configure_misc)
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   if (PY3_LIBDIR_CODE)
     message(WARNING
-      "Could not determine MonetDB Python3 site-packages instalation directory")
+      "Could not determine MonetDB Python3 site-packages installation directory")
   endif()
   set(PYTHON3_LIBDIR "${PYTHON3_SITEDIR}")
   set(PYTHON "${Python3_EXECUTABLE}")
