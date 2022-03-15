@@ -6,10 +6,10 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
-#include "monetdb_config.h"
-#include "rel_optimizer.h"
 #include "rel_rel.h"
 #include "sql_mvc.h"
+
+/* This file should be included by SQL optimizers or essential rewriters only! */
 
 /* relations counts */
 typedef struct global_props {
@@ -82,6 +82,9 @@ extern run_optimizer bind_distinct_project2groupby(visitor *v, global_props *gp)
 extern run_optimizer bind_push_select_up(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_merge_table_rewrite(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_setjoins_2_joingroupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_rewrite_remote(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_rewrite_replica(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_remote_func(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 
 extern sql_rel *rel_split_project_(visitor *v, sql_rel *rel, int top) __attribute__((__visibility__("hidden")));
 extern sql_exp *exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) __attribute__((__visibility__("hidden")));

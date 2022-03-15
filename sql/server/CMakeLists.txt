@@ -64,7 +64,6 @@ target_sources(sqlserver
   rel_optimizer.h
   rel_optimizer_private.h
   rel_partition.h
-  rel_distribute.h
   rel_prop.h
   rel_schema.h
   rel_select.h

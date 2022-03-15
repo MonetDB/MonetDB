@@ -7,11 +7,11 @@
  */
 
 #include "monetdb_config.h"
-#include "rel_distribute.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "sql_privileges.h"
+#include "rel_optimizer_private.h"
 
 static int
 has_remote_or_replica( sql_rel *rel )
@@ -158,8 +158,8 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 	return res;
 }
 
-sql_rel *
-rel_rewrite_replica(visitor *v, sql_rel *rel)
+static sql_rel *
+rel_rewrite_replica_(visitor *v, sql_rel *rel)
 {
 	/* for merge statement join, ignore the multiple references */
 	if (rel_is_ref(rel) && !(rel->flag&MERGE_LEFT)) {
@@ -187,8 +187,23 @@ rel_rewrite_replica(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-sql_rel *
-rel_rewrite_remote(visitor *v, sql_rel *rel)
+static sql_rel *
+rel_rewrite_replica(visitor *v, global_props *gp, sql_rel *rel)
+{
+	(void) gp;
+	return rel_visitor_bottomup(v, rel, &rel_rewrite_replica_);
+}
+
+run_optimizer
+bind_rewrite_replica(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->needs_mergetable_rewrite || gp->needs_remote_replica_rewrite ? rel_rewrite_replica : NULL;
+}
+
+
+static sql_rel *
+rel_rewrite_remote_(visitor *v, sql_rel *rel)
 {
 	prop *p, *pl, *pr;
 
@@ -248,9 +263,9 @@ rel_rewrite_remote(visitor *v, sql_rel *rel)
 			/* cleanup replica's */
 			visitor rv = { .sql = v->sql };
 
-			l = rel->l = rel_visitor_bottomup(&rv, l, &rel_rewrite_replica);
+			l = rel->l = rel_visitor_bottomup(&rv, l, &rel_rewrite_replica_);
 			rv.data = NULL;
-			r = rel->r = rel_visitor_bottomup(&rv, r, &rel_rewrite_replica);
+			r = rel->r = rel_visitor_bottomup(&rv, r, &rel_rewrite_replica_);
 			if ((!l || !r) && v->sql->session->status) /* if the recursive calls failed */
 				return NULL;
 		}
@@ -259,20 +274,20 @@ rel_rewrite_remote(visitor *v, sql_rel *rel)
 			find_prop(r->p, PROP_REMOTE) == NULL) {
 			visitor rv = { .sql = v->sql, .data = pl->value };
 
-			if (!(r = rel_visitor_bottomup(&rv, r, &rel_rewrite_replica)) && v->sql->session->status)
+			if (!(r = rel_visitor_bottomup(&rv, r, &rel_rewrite_replica_)) && v->sql->session->status)
 				return NULL;
 			rv.data = NULL;
-			if (!(r = rel->r = rel_visitor_bottomup(&rv, r, &rel_rewrite_remote)) && v->sql->session->status)
+			if (!(r = rel->r = rel_visitor_bottomup(&rv, r, &rel_rewrite_remote_)) && v->sql->session->status)
 				return NULL;
 		} else if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) &&
 			find_prop(l->p, PROP_REMOTE) == NULL &&
 			(pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
 			visitor rv = { .sql = v->sql, .data = pr->value };
 
-			if (!(l = rel_visitor_bottomup(&rv, l, &rel_rewrite_replica)) && v->sql->session->status)
+			if (!(l = rel_visitor_bottomup(&rv, l, &rel_rewrite_replica_)) && v->sql->session->status)
 				return NULL;
 			rv.data = NULL;
-			if (!(l = rel->l = rel_visitor_bottomup(&rv, l, &rel_rewrite_remote)) && v->sql->session->status)
+			if (!(l = rel->l = rel_visitor_bottomup(&rv, l, &rel_rewrite_remote_)) && v->sql->session->status)
 				return NULL;
 		}
 
@@ -330,8 +345,23 @@ rel_rewrite_remote(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-sql_rel *
-rel_remote_func(visitor *v, sql_rel *rel)
+static sql_rel *
+rel_rewrite_remote(visitor *v, global_props *gp, sql_rel *rel)
+{
+	(void) gp;
+	return rel_visitor_bottomup(v, rel, &rel_rewrite_remote_);
+}
+
+run_optimizer
+bind_rewrite_remote(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->needs_mergetable_rewrite || gp->needs_remote_replica_rewrite ? rel_rewrite_remote : NULL;
+}
+
+
+static sql_rel *
+rel_remote_func_(visitor *v, sql_rel *rel)
 {
 	(void) v;
 
@@ -345,4 +375,18 @@ rel_remote_func(visitor *v, sql_rel *rel)
 		rel = rel_relational_func(v->sql->sa, rel, exps);
 	}
 	return rel;
+}
+
+static sql_rel *
+rel_remote_func(visitor *v, global_props *gp, sql_rel *rel)
+{
+	(void) gp;
+	return rel_visitor_bottomup(v, rel, &rel_remote_func_);
+}
+
+run_optimizer
+bind_remote_func(visitor *v, global_props *gp)
+{
+	(void) v;
+	return gp->needs_mergetable_rewrite || gp->needs_remote_replica_rewrite ? rel_remote_func : NULL;
 }
