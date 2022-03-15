@@ -17,7 +17,6 @@
 #include "rel_select.h"
 #include "rel_planner.h"
 #include "rel_propagate.h"
-#include "rel_distribute.h"
 #include "rel_rewriter.h"
 #include "sql_mvc.h"
 #include "sql_privileges.h"
@@ -664,10 +663,15 @@ const sql_optimizer pre_sql_optimizers[] = {
 const sql_optimizer post_sql_optimizers[] = {
 	{22, "push_select_up", bind_push_select_up}, /* run rel_push_select_up only once at the end to avoid an infinite optimization loop */
 	{23, "setjoins_2_joingroupby", bind_setjoins_2_joingroupby},
+	/* Merge table rewrites may introduce remote or replica tables */
+	/* At the moment, make sure the remote table rewriters always run last */
+	{24, "rewrite_remote", bind_rewrite_remote},
+	{25, "rewrite_replica", bind_rewrite_replica},
+	{26, "remote_func", bind_remote_func},
 	{ 0, NULL, NULL}
 };
 
-#define NOPTIMIZERS 24
+#define NREWRITERS 27
 
 /* make sure the outer project (without order by or distinct) has all the aliases */
 static sql_rel *
@@ -753,7 +757,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 	if (!(rel = rel_keep_renames(sql, rel)))
 		return rel;
 
-	sql_optimizer_run *runs = profile ? sa_zalloc(sql->ta, NOPTIMIZERS * sizeof(sql_optimizer_run)) : NULL;
+	sql_optimizer_run *runs = profile ? sa_zalloc(sql->ta, NREWRITERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle};
@@ -769,13 +773,5 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 
 	/* these optimizers run statistics gathered by the last optimization cycle */
 	rel = run_optimizer_set(&v, runs, rel, &gp, post_sql_optimizers);
-
-	/* merge table rewrites may introduce remote or replica tables */
-	/* at the moment, make sure the remote table rewriters always run last */
-	if (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite) {
-		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_remote);
-		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_replica);
-		rel = rel_visitor_bottomup(&v, rel, &rel_remote_func);
-	}
 	return rel;
 }
