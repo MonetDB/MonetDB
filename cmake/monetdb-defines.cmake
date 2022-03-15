@@ -302,10 +302,7 @@ macro(monetdb_configure_misc)
       "PASSWORD_BACKEND invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512")
   endif()
 
-  if((${CMAKE_INSTALL_PREFIX} STREQUAL "/usr") AND (EXISTS "/usr/lib/python3/dist-packages"))
-    # Debian and Ubuntu, system install
-    set(PYTHON3_LIBDIR "lib/python3/dist-packages")
-  else()
+  if(NOT DEFINED PYTHON3_LIBDIR)
     # Used for installing testing python module (don't pass a location, else we need to strip this again)
     execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': ''})[1:])"
       RESULT_VARIABLE PY3_LIBDIR_CODE
