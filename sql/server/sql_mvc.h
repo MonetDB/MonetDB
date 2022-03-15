@@ -106,9 +106,9 @@ typedef struct sql_frame {
 
 /* a single SQL optimizer run */
 typedef struct {
-	const char *name;
-	int nchanges;
-	lng time;
+	const char *name; /* the optimizer name itself */
+	int nchanges; /* how many changes it did */
+	lng time; /* how long it did take (all runs) */
 } sql_optimizer_run;
 
 typedef struct mvc {
@@ -141,6 +141,7 @@ typedef struct mvc {
 	int reply_size;		/* reply size */
 	int debug;
 	int sql_optimizer; /* SQL optimizer mask */
+	sql_optimizer_run *runs; /* Information about SQL optimizer runs */
 
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */

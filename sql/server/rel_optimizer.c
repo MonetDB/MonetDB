@@ -663,9 +663,9 @@ const sql_optimizer post_sql_optimizers[] = {
 	{25, "rewrite_replica", bind_rewrite_replica},
 	{26, "remote_func", bind_remote_func},
 	{ 0, NULL, NULL}
+	/* If an optimizer is going to be added, don't forget to update NSQLREWRITERS macro */
 };
 
-#define NREWRITERS 27
 
 /* make sure the outer project (without order by or distinct) has all the aliases */
 static sql_rel *
@@ -751,7 +751,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 	if (!(rel = rel_keep_renames(sql, rel)))
 		return rel;
 
-	sql_optimizer_run *runs = profile ? sa_zalloc(sql->ta, NREWRITERS * sizeof(sql_optimizer_run)) : NULL;
+	sql_optimizer_run *runs = profile ? sa_zalloc(sql->ta, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle};
@@ -767,5 +767,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 
 	/* these optimizers run statistics gathered by the last optimization cycle */
 	rel = run_optimizer_set(&v, runs, rel, &gp, post_sql_optimizers);
+	if (rel && profile)
+		sql->runs = runs;
 	return rel;
 }
