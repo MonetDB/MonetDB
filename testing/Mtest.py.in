@@ -1195,7 +1195,7 @@ def find_test_dirs(thisdir, recursive=True) :
     return testdirs, tstcnt
 ### find_test_dirs(thisdir) #
 
-def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
+def PerformDir(env, testdir, testlist, total_tests, test_progress) :
     interrupted = False
     td = 0
     elem = None
@@ -1249,7 +1249,6 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
 
         if testlist:
             tl = []
-            missing = False
             for tst in testlist:
                 for t, c in alltests:
                     if t == tst:
@@ -1257,10 +1256,7 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
                         break
                 else:
                     tl.append((tst,None))
-                    missing = True
             testlist = tl
-            if not missing:
-                all_tests = True
         else:
             testlist = alltests
         if not testlist:
@@ -1393,7 +1389,7 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
                     tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
                 else:
                     os.environ['TST'] = TST
-                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test_progress)
+                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress)
                     alllinks.extend(links)
                 if tt:
                     t = "%7.3f" % tt
@@ -1485,7 +1481,7 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
         return td, elem, max(FdOut, FdErr, ssout, sserr), interrupted, test_progress
     finally:
         del sys.path[0]
-### PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) #
+### PerformDir(env, testdir, testlist, total_tests, test_progress) #
 
 # this function is a slightly modified copy of the posixpath version
 # the differences are the doubling of \'s in the replacement value
@@ -1836,7 +1832,7 @@ relcond = {
                              'last hugeint chained empty'),
 }
 
-def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test_progress) :
+def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) :
     global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
@@ -2132,7 +2128,7 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, pSrvr, total_tests, test_progress)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, pSrvr, total_tests, test_progress)
         t1 = time.time()
         TX = t1 - t0
         if verbosity > 0:
@@ -2678,7 +2674,7 @@ def progress(count, total, test):
         s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
     print('\r', s, end='', sep='', flush=True)
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, PSRVR, total_tests, test_progress) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, test_progress) :
     ATJOB2 = ""
     print(file=sys.stderr, end='', flush=True)
     if verbosity == 0:
@@ -3396,7 +3392,6 @@ def main(argv) :
     approve = opts.approve
     produce_html = opts.produce_html
     addreqs = False
-    all_tests = False
     testweb = opts.testweb
     if testweb and verbosity == 0:
         verbosity = 1
@@ -3861,12 +3856,14 @@ def main(argv) :
                     if t not in testdirs:
                         testdirs.append(t)
         else:
+            test_count = 0
             for d in dirlist:
-                test_dirs, test_count = find_test_dirs(d, recursive=False)
-                if test_count == 0:
+                test_dirs, cnt = find_test_dirs(d, recursive=False)
+                if cnt == 0:
                     Warn("No tests found in '%s`; skipping directory!" % d)
                 else:
                     testdirs.extend(test_dirs)
+                    test_count += cnt
 
         if len(testdirs) > 1  and  testlist:
             testlist = []
@@ -3968,13 +3965,12 @@ def main(argv) :
         try:
             if len(testdirs) == 1:
                 if testlist:
-                    tsts = "tests "+str(testlist)
+                    tsts = "tests " + ", ".join(testlist)
                 else:
                     tsts = "all tests"
-                    all_tests = True
                 if verbosity > 1:
                     print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
-                t_, elem, diff, interrupted, test_progress = PerformDir(env, testdirs[0], testlist, all_tests, test_count, test_progress)
+                t_, elem, diff, interrupted, test_progress = PerformDir(env, testdirs[0], testlist, test_count, test_progress)
                 if elem is not None:
                     if diff <= F_OK:
                         body_good.append(elem)
@@ -3984,7 +3980,7 @@ def main(argv) :
                 if verbosity > 1:
                     print("\nRunning all tests in directories %s.\n" % str(testdirs))
                 for d in testdirs:
-                    t, elem, diff, interrupted, test_progress = PerformDir(env, d, [], True, test_count, test_progress)
+                    t, elem, diff, interrupted, test_progress = PerformDir(env, d, [], test_count, test_progress)
                     t_ = t_ + t
                     if elem is not None:
                         if diff <= F_OK:
