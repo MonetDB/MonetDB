@@ -3769,7 +3769,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			if (a) {
 				list *nexps = NULL;
 
-				if (!(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+				if (!(nexps = check_arguments_and_find_largest_any_type(sql, rel ? *rel : NULL, exps, a, 0))) {
 					a = NULL;
 					/* reset error */
 					sql->session->status = 0;
@@ -3794,7 +3794,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				sql->errstr[0] = '\0';
 			}
 			a = NULL;
-			if (rel_convert_types(sql, *rel, *rel, &l, &r, 1/*fix scale*/, type_equal) >= 0) {
+			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1/*fix scale*/, type_equal) >= 0) {
 				list *tps = sa_list(sql->sa);
 
 				t1 = exp_subtype(l);
@@ -3839,7 +3839,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false);
 
 			if (a) {
-				if (!(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+				if (!(nexps = check_arguments_and_find_largest_any_type(sql, rel ? *rel : NULL, exps, a, 0))) {
 					a = NULL;
 					/* reset error */
 					sql->session->status = 0;
@@ -3868,7 +3868,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				list *nexps = NULL;
 				sql_subfunc *sf = (sql_subfunc *) n->data;
 
-				if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, sf, 0))) {
+				if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, rel ? *rel : NULL, exps, sf, 0))) {
 					/* reset error */
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
