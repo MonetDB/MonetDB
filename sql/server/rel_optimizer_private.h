@@ -93,6 +93,7 @@ extern sql_exp *add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel) __attrib
 /* these functions are used across diferent optimizers */
 extern sql_rel *rel_find_ref(sql_rel *r) __attribute__((__visibility__("hidden")));
 extern void rel_rename_exps(mvc *sql, list *exps1, list *exps2) __attribute__((__visibility__("hidden")));
+extern atom *exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e) __attribute__((__visibility__("hidden")));
 extern atom *reduce_scale(mvc *sql, atom *a) __attribute__((__visibility__("hidden")));
 extern int exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool min_exclusive, bool max_exclusive) __attribute__((__visibility__("hidden")));
 extern int is_numeric_upcast(sql_exp *e) __attribute__((__visibility__("hidden")));

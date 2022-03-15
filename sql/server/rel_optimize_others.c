@@ -7,15 +7,9 @@
  */
 
 #include "monetdb_config.h"
-#include "rel_optimizer.h"
 #include "rel_optimizer_private.h"
-#include "rel_rel.h"
-#include "rel_basetable.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
 #include "rel_select.h"
-#include "rel_rewriter.h"
-#include "sql_mvc.h"
 
 static void
 rel_no_rename_exps( list *exps )
@@ -228,6 +222,37 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (e->type == e_atom && e->f) /* value list */
 			return NULL;
 		return e;
+	}
+	return NULL;
+}
+
+atom *
+exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e)
+{
+	if (e->type == e_atom) {
+		return value_based_opt ? exp_value(sql, e) : (atom *) e->l;
+	} else if (e->type == e_convert) {
+		atom *v = exp_flatten(sql, value_based_opt, e->l);
+
+		if (v)
+			return atom_cast(sql->sa, v, exp_subtype(e));
+	} else if (e->type == e_func) {
+		sql_subfunc *f = e->f;
+		list *l = e->l;
+		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
+
+		/* TODO handle date + x months */
+		if (!f->func->s && strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+			atom *l1 = exp_flatten(sql, value_based_opt, l->h->data);
+			atom *l2 = exp_flatten(sql, value_based_opt, l->h->next->data);
+			if (l1 && l2)
+				return atom_add(sql->sa, l1, l2);
+		} else if (!f->func->s && strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+			atom *l1 = exp_flatten(sql, value_based_opt, l->h->data);
+			atom *l2 = exp_flatten(sql, value_based_opt, l->h->next->data);
+			if (l1 && l2)
+				return atom_sub(sql->sa, l1, l2);
+		}
 	}
 	return NULL;
 }

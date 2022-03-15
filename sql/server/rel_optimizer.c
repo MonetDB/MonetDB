@@ -12,13 +12,7 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
-#include "rel_dump.h"
-#include "rel_select.h"
-#include "rel_planner.h"
 #include "rel_propagate.h"
-#include "rel_rewriter.h"
-#include "sql_mvc.h"
 #include "sql_privileges.h"
 
 static sql_rel *

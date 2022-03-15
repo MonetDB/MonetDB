@@ -7,11 +7,10 @@
  */
 
 #include "monetdb_config.h"
-#include "rel_rel.h"
+#include "rel_optimizer_private.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "sql_privileges.h"
-#include "rel_optimizer_private.h"
 
 static int
 has_remote_or_replica( sql_rel *rel )

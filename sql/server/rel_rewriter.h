@@ -10,7 +10,6 @@
 #define _REL_REWRITER_H_
 
 #include "sql_relation.h"
-#include "sql_mvc.h"
 #include "rel_rel.h"
 
 #define is_ifthenelse_func(sf) (strcmp((sf)->func->base.name, "ifthenelse") == 0)
@@ -39,8 +38,6 @@ try_remove_empty_select(visitor *v, sql_rel *rel)
 }
 
 extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
-
-extern atom *exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e);
 
 extern int find_member_pos(list *l, sql_table *t);
 extern sql_column *name_find_column(sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt);
