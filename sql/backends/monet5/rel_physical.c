@@ -96,12 +96,13 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		exps = rel_projections(sql, rel, NULL, 1, 1);
 		e = find_aggr_exp(sql, rel->exps, "count");
 		if (!e) {
-			sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", NULL, F_AGGR, false);
+			sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 
 			e = exp_aggr(sql->sa, NULL, cf, 0, 0, CARD_AGGR, 0);
+
 			exp_label(sql->sa, e, ++sql->label);
 			append(rel->exps, e);
-			e = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
+			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 		}
 		e = exp_compare(sql->sa, e, exp_atom_lng(sql->sa, 0), cmp_notequal);
 		rel = rel_select(sql->sa, rel, e);

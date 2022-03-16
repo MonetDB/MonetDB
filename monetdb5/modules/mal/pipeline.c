@@ -1347,7 +1347,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	b = BATdescriptor(*bid);
 	oid max = g->T.maxval;
 	/* probably need bat resize and create hash */
-	if (*rid)
+	if (*rid && !is_bat_nil(*rid))
 		r = BATdescriptor(*rid);
 	bool private = (!r || r->T.private_bat), local_storage = false;
 
@@ -1376,7 +1376,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			BBPshare(b->tvheap->parentid);
 			r->batDirtydesc = true;
 		}
-	} else if (BATcount(b)) {
+	} else if (!r || BATcount(b)) {
 		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
 			HEAPdecref(r->tvheap, r->tvheap->parentid == r->batCacheid);

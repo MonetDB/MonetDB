@@ -3717,6 +3717,8 @@ rel_getcount(sql_rel *rel)
 
 	if (rel && (p = find_prop(rel->p, PROP_COUNT)) != NULL)
 		return p->number;
+	if (rel && rel->op == op_join)
+		return rel_getcount(rel->l) * rel_getcount(rel->r);
 	if (rel && rel->l && rel->op == op_select)
 		return rel_getcount(rel->l);
 	if (rel && rel->l && rel->op == op_project)
