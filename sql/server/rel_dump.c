@@ -680,18 +680,12 @@ rel_print_(mvc *sql, stream *fout, sql_rel *rel, int depth, list *refs, int deco
 {
 	rel_print_rel(sql, fout, rel, depth, refs, decorate);
 	if (sql->runs) {
-		bool first = false;
-
 		for (int i = 0 ; i < NSQLREWRITERS ; i++) {
 			sql_optimizer_run *run = &(sql->runs[i]);
 
 			if (run->name) { /* if name is set, then the optimizer did run */
-				if (!first) {
-					mnstr_printf(fout, "\n");
-					first = true;
-				}
 				print_indent(sql, fout, depth, decorate);
-				mnstr_printf(fout, "%-36s %3d actions " LLFMT " usec\n",
+				mnstr_printf(fout, "%-36s %3d actions " LLFMT " usec",
 							 run->name, run->nchanges, run->time);
 			}
 		}
