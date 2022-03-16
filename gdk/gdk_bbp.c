@@ -1499,17 +1499,17 @@ BBPexit(void)
  * reclaimed as well.
  */
 static inline int
-heap_entry(FILE *fp, BAT *b, BUN size)
+heap_entry(FILE *fp, BAT *b, BUN size, BATiter *bi)
 {
 	const ValRecord *minprop, *maxprop;
 	minprop = BATgetprop_nolock(b, GDK_MIN_POS);
 	maxprop = BATgetprop_nolock(b, GDK_MAX_POS);
-	size_t free = b->theap->free;
+	size_t free = bi->hfree;
 	if (size < BUN_NONE) {
-		if ((b->ttype >= 0 && ATOMstorage(b->ttype) == TYPE_msk))
+		if ((bi->type >= 0 && ATOMstorage(bi->type) == TYPE_msk))
 			free = ((size + 31) / 32) * 4;
-		else if (b->twidth > 0)
-			free = size << b->tshift;
+		else if (bi->width > 0)
+			free = size << bi->shift;
 		else
 			free = 0;
 	}
@@ -1532,9 +1532,9 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
 		       BUNFMT " " OIDFMT " %zu %zu %d " OIDFMT " " OIDFMT,
-		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
-		       b->twidth,
-		       b->tvarsized | (b->tvheap ? b->tvheap->hashash << 1 : 0),
+		       bi->type >= 0 ? BATatoms[bi->type].name : ATOMunknown_name(bi->type),
+		       bi->width,
+		       b->tvarsized | (bi->vh ? bi->vh->hashash << 1 : 0),
 		       (unsigned short) b->tsorted |
 			   ((unsigned short) b->trevsorted << 7) |
 			   (((unsigned short) b->tkey & 0x01) << 8) |
@@ -1547,14 +1547,14 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
 		       b->tseqbase,
 		       free,
-		       b->theap->size,
+		       bi->h->size,
 		       0,
 		       minprop && minprop->val.oval < b->hseqbase + size ? minprop->val.oval : oid_nil,
 		       maxprop && maxprop->val.oval < b->hseqbase + size ? maxprop->val.oval : oid_nil);
 }
 
 static inline int
-vheap_entry(FILE *fp, Heap *h, BUN size)
+vheap_entry(FILE *fp, Heap *h, BUN size, BATiter *bi)
 {
 	(void) size;
 	if (h == NULL)
@@ -1566,18 +1566,18 @@ vheap_entry(FILE *fp, Heap *h, BUN size)
 			if (stat(fname, &stb) == -1) {
 				assert(0);
 				TRC_WARNING(GDK, "file %s not found (expected size %zu)\n", fname, h->free);
-			} else if ((size_t) stb.st_size < h->free) {
+			} else if ((size_t) stb.st_size < bi->vhfree) {
 				/* no assert since this can actually happen */
-				TRC_WARNING(GDK, "file %s too small (expected %zu, actual %zu)\n", fname, h->free, (size_t) stb.st_size);
+				TRC_WARNING(GDK, "file %s too small (expected %zu, actual %zu)\n", fname, bi->vhfree, (size_t) stb.st_size);
 			}
 			GDKfree(fname);
 		}
 	}
-	return fprintf(fp, " %zu %zu %d", h->free, h->size, 0);
+	return fprintf(fp, " %zu %zu %d", bi->vhfree, h->size, 0);
 }
 
 static gdk_return
-new_bbpentry(FILE *fp, bat i, BUN size)
+new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 {
 #ifndef NDEBUG
 	assert(i > 0);
@@ -1593,8 +1593,8 @@ new_bbpentry(FILE *fp, bat i, BUN size)
 	}
 #endif
 
-	if (size > BBP_desc(i)->batCount)
-		size = BBP_desc(i)->batCount;
+	if (size > bi->count)
+		size = bi->count;
 	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " BUNFMT " " OIDFMT,
 		    /* BAT info */
 		    (int) i,
@@ -1605,8 +1605,8 @@ new_bbpentry(FILE *fp, bat i, BUN size)
 		    size,
 		    BBP_desc(i)->batCapacity,
 		    BBP_desc(i)->hseqbase) < 0 ||
-	    heap_entry(fp, BBP_desc(i), size) < 0 ||
-	    vheap_entry(fp, BBP_desc(i)->tvheap, size) < 0 ||
+	    heap_entry(fp, BBP_desc(i), size, bi) < 0 ||
+	    vheap_entry(fp, BBP_desc(i)->tvheap, size, bi) < 0 ||
 	    (BBP_options(i) && fprintf(fp, " %s", BBP_options(i)) < 0) ||
 	    fprintf(fp, "\n") < 0) {
 		GDKsyserror("new_bbpentry: Writing BBP.dir entry failed\n");
@@ -1704,7 +1704,7 @@ BBPdir_first(bool subcommit, lng logno, lng transid,
 
 static bat
 BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
-	    FILE **obbpfp, FILE *nbbpf, bool subcommit)
+	    FILE **obbpfp, FILE *nbbpf, bool subcommit, BATiter *bi)
 {
 	if (n < -1)		/* safety catch */
 		return n;
@@ -1834,7 +1834,7 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 		}
 	}
 	if (BBP_status(bid) & BBPPERSISTENT) {
-		if (new_bbpentry(nbbpf, bid, size) != GDK_SUCCEED)
+		if (new_bbpentry(nbbpf, bid, size, bi) != GDK_SUCCEED)
 			goto bailout;
 	}
 	return n == -1 ? -1 : n == bid ? 0 : n;
@@ -3640,12 +3640,14 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			bat i = subcommit ? subcommit[idx] : idx;
 			/* BBP_desc(i) may be NULL */
 			BUN size = sizes ? sizes[idx] : BUN_NONE;
+			BATiter bi;
 
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
 					break;
 				}
+				bi = bat_iterator(BBP_desc(i));
 				if (b) {
 					/* wait for BBPSAVING so that we
 					 * can set it, wait for
@@ -3663,19 +3665,20 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					BBP_status_on(i, BBPSAVING);
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
-					BATiter bi = bat_iterator(b);
 					if (size > bi.count)
 						size = bi.count;
 					MT_rwlock_rdlock(&b->thashlock);
 					ret = BATsave_locked(b, &bi, size);
 					MT_rwlock_rdunlock(&b->thashlock);
-					bat_iterator_end(&bi);
 					BBP_status_off(i, BBPSAVING);
 				}
+			} else {
+				bi = bat_iterator(NULL);
 			}
 			if (ret == GDK_SUCCEED) {
-				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, subcommit != NULL);
+				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, subcommit != NULL, &bi);
 			}
+			bat_iterator_end(&bi);
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
