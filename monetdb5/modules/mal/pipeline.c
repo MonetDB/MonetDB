@@ -1358,14 +1358,13 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		pipeline_lock2(r);
 		//pipeline_lock(p);
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
-		   	if (r->twidth < b->twidth) {
-				if (GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED)
-					throw(MAL, "project", GDK_EXCEPTION);
-			}
-		}
-
-		if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		if (ATOMvarsized(r->ttype) &&
+			BATcount(r) == 0 &&
+			r->tvheap->parentid == r->batCacheid &&
+			r->twidth < b->twidth &&
+			GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
+			err = 1;
+		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
 			local_storage = true;
@@ -1405,18 +1404,22 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		assert((k[0] & (GDK_VARALIGN-1)) == 0);
 	}
 	*/
-	BUN cnt = BATcount(r);
-	if (BATcapacity(r) <= max) {
-		BUN sz = max*2;
-		if (BATextend(r, sz) != GDK_SUCCEED)
-			err = 1;
+	BUN cnt = 0;
+	if (!err) {
+		cnt = BATcount(r);
+		if (BATcapacity(r) <= max) {
+			BUN sz = max*2;
+			if (BATextend(r, sz) != GDK_SUCCEED)
+				err = 1;
+		}
 	}
-	if (cnt < max && ATOMvarsized(r->ttype))
-		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
 
 	/* get max id from gid */
 	if (!err) {
-		BUN cnt = BATcount(b);
+		if (cnt < max && ATOMvarsized(r->ttype))
+			memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
+
+		cnt = BATcount(b);
 
 		int err = 0, tt = b->ttype;
 		oid *gp = Tloc(g, 0);
