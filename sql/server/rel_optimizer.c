@@ -53,19 +53,6 @@ sjexp_col(sql_exp *e, sql_rel *r)
 	return res;
 }
 
-static sql_exp *
-list_find_exp( list *exps, sql_exp *e)
-{
-	sql_exp *ne = NULL;
-
-	if (e->type != e_column)
-		return NULL;
-	if (( e->l && (ne=exps_bind_column2(exps, e->l, e->r, NULL)) != NULL) ||
-	   ((!e->l && (ne=exps_bind_column(exps, e->r, NULL, NULL, 1)) != NULL)))
-		return ne;
-	return NULL;
-}
-
 static int
 kc_column_cmp(sql_kc *kc, sql_column *c)
 {
@@ -931,40 +918,35 @@ push_up_join_exps( mvc *sql, sql_rel *rel)
 static sql_rel *
 reorder_join(visitor *v, sql_rel *rel)
 {
-	list *exps;
-	list *rels;
+	list *exps, *rels;
 
-	if (rel->op == op_join && !rel_is_ref(rel))
+	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel))
 		rel->exps = push_up_join_exps(v->sql, rel);
 
-	exps = rel->exps;
-	if (!exps) /* crosstable, ie order not important */
-		return rel;
-	rel->exps = NULL; /* should be all crosstables by now */
- 	rels = sa_list(v->sql->sa);
-	if (is_outerjoin(rel->op) || is_single(rel)) {
-		sql_rel *l, *r;
-		int cnt = 0;
-		/* try to use an join index also for outer joins */
- 		get_inner_relations(v->sql, rel, rels);
-		cnt = list_length(exps);
-		rel->exps = find_fk(v->sql, rels, exps);
-		if (list_length(rel->exps) != cnt)
-			rel->exps = order_join_expressions(v->sql, exps, rels);
-		l = rel->l;
-		r = rel->r;
-		if (is_join(l->op))
-			rel->l = reorder_join(v, rel->l);
-		if (is_join(r->op))
-			rel->r = reorder_join(v, rel->r);
+	if (!is_innerjoin(rel->op) || is_single(rel) || rel_is_ref(rel) || list_empty(rel->exps)) {
+		if (!list_empty(rel->exps)) { /* cannot add join idxs to cross products */
+			exps = rel->exps;
+			rel->exps = NULL; /* should be all crosstables by now */
+			rels = sa_list(v->sql->sa);
+			/* try to use an join index also for outer joins */
+			get_inner_relations(v->sql, rel, rels);
+			int cnt = list_length(exps);
+			rel->exps = find_fk(v->sql, rels, exps);
+			if (list_length(rel->exps) != cnt)
+				rel->exps = order_join_expressions(v->sql, exps, rels);
+		}
+		rel->l = rel_join_order(v, rel->l);
+		rel->r = rel_join_order(v, rel->r);
 	} else {
- 		get_relations(v, rel, rels);
+		exps = rel->exps;
+		rel->exps = NULL; /* should be all crosstables by now */
+		rels = sa_list(v->sql->sa);
+		get_relations(v, rel, rels);
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
 			rel = order_joins(v, rels, exps);
 		} else {
 			rel->exps = exps;
-			exps = NULL;
 		}
 	}
 	return rel;
@@ -978,7 +960,10 @@ rel_join_order(visitor *v, sql_rel *rel)
 
 	switch (rel->op) {
 	case op_basetable:
+		break;
 	case op_table:
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+			rel->l = rel_join_order(v, rel->l);
 		break;
 	case op_join:
 	case op_left:
@@ -1019,12 +1004,8 @@ rel_join_order(visitor *v, sql_rel *rel)
 	case op_truncate:
 		break;
 	}
-	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
+	if (is_join(rel->op))
 		rel = reorder_join(v, rel);
-	} else if (is_join(rel->op)) {
-		rel->l = rel_join_order(v, rel->l);
-		rel->r = rel_join_order(v, rel->r);
-	}
 	return rel;
 }
 
@@ -6863,7 +6844,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 					sql_exp *e = n->data;
 					const char *nname = exp_name(e);
 
-					if (nname[0] == '%' && strcmp(nname, TID) == 0) { /* TID is used */
+					if (nname && nname[0] == '%' && strcmp(nname, TID) == 0) { /* TID is used */
 						e->used = 1;
 						break;
 					}
@@ -7429,24 +7410,23 @@ rel_use_index(visitor *v, sql_rel *rel)
 		sql_exp *re = NULL;
 
 		for( n = exps->h; n && single_table; n = n->next) {
-			sql_exp *e = n->data;
-			sql_exp *nre = e->r;
+			sql_exp *e = n->data, *nre = e->l;
 
-			if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l))))
-				nre = e->l;
+			if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, nre)) || (!left && rel_find_exp(rel->r, nre))))
+				nre = e->r;
 			single_table = (!re || (exp_relname(nre) && exp_relname(re) && strcmp(exp_relname(nre), exp_relname(re)) == 0));
 			re = nre;
 		}
 		if (single_table) { /* add PROP_HASHCOL to all column exps */
 			for( n = exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				int anti = is_anti(e), semantics = is_semantics(e);
 
 				/* swapped ? */
-				if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l))))
-					n->data = e = exp_compare(v->sql->sa, e->r, e->l, cmp_equal);
-				if (anti) set_anti(e);
-				if (semantics) set_semantics(e);
+				if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l)))) {
+					sql_exp *l = e->l;
+					e->l = e->r;
+					e->r = l;
+				}
 				p = find_prop(e->p, PROP_HASHCOL);
 				if (!p)
 					e->p = p = prop_create(v->sql->sa, PROP_HASHCOL, e->p);
@@ -9646,9 +9626,9 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 		/* push (simple renaming) projections up */
 		if (gp->cnt[op_project])
 			rel = rel_visitor_bottomup(v, rel, &rel_push_project_up);
-		if (level <= 0 && (gp->cnt[op_project] || gp->cnt[op_groupby]))
-			rel = rel_split_project(v, rel, 1);
 		if (level <= 0) {
+			if (gp->cnt[op_project] || gp->cnt[op_groupby])
+				rel = rel_split_project(v, rel, 1);
 			if (gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_join] || gp->cnt[op_semi] || gp->cnt[op_anti])
 				rel = rel_visitor_bottomup(v, rel, &rel_remove_redundant_join); /* this optimizer has to run before rel_first_level_optimizations */
 			if (v->value_based_opt)

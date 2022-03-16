@@ -102,7 +102,6 @@ query_update_outer(sql_query *q, sql_rel *r, int i)
 	stacked_query *sq = sql_stack_fetch(q->outer, i);
 	sq->rel = r;
 	sq->last_used = NULL;
-	sq->sql_state |= is_groupby(r->op)?sql_aggr:0;
 	sq->used_card = 0;
 	sq->grouped = is_groupby(r->op);
 }
