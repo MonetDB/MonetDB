@@ -3717,8 +3717,14 @@ rel_getcount(sql_rel *rel)
 
 	if (rel && (p = find_prop(rel->p, PROP_COUNT)) != NULL)
 		return p->number;
-	if (rel && rel->op == op_join)
+	if (rel && is_semi(rel->op))
+		return rel_getcount(rel->l);
+	if (rel && is_join(rel->op))
 		return rel_getcount(rel->l) * rel_getcount(rel->r);
+	if (rel && rel->op == op_union)
+		return rel_getcount(rel->l) + rel_getcount(rel->r);
+	if (rel && is_set(rel->op))
+		return rel_getcount(rel->l);
 	if (rel && rel->l && rel->op == op_select)
 		return rel_getcount(rel->l);
 	if (rel && rel->l && rel->op == op_project)
@@ -3934,7 +3940,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				return NULL;
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
-			assert(card);
+			assert(card >= 0);
 			q = pushInt(be->mb, q, card);//_2phases?card:estimate);
 			if (curhash)
 				q = pushArgument(be->mb, q, curhash);
