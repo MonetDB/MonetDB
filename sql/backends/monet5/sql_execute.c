@@ -530,6 +530,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			/* passed over to query cache, used during dumpproc */
 			m->sa = NULL;
 			m->sym = NULL;
+			m->runs = NULL;
 			m->params = NULL;
 			/* register name in the namespace */
 			if (be->q) {
@@ -632,6 +633,7 @@ endofcompile:
 		sa_destroy(m->sa);
 	m->sa = NULL;
 	m->sym = NULL;
+	m->runs = NULL;
 	/* variable stack maybe resized, ie we need to keep the new stack */
 	label = m->label;
 	status = m->session->status;
