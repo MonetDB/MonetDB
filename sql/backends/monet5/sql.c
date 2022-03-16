@@ -149,6 +149,7 @@ sqlcleanup(backend *be, int err)
 
 	/* some statements dynamically disable caching */
 	be->mvc->sym = NULL;
+	be->mvc->runs = NULL;
 	if (be->mvc->ta)
 		be->mvc->ta = sa_reset(be->mvc->ta);
 	if (be->mvc->sa)
