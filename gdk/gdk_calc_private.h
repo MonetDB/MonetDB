@@ -651,8 +651,21 @@ BUN dofsum(const void *restrict values, oid seqb,
 		}							\
 	} while (0)
 
+#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
+/* with Intel compiler on Windows, avoid using roundl and llroundl: they
+ * cause a mysterious crash; long double is the same size as double
+ * anyway */
+typedef double ldouble;
+#ifdef TRUNCATE_NUMBERS
+#define rounddbl(x)	(x)
+#else
+#define rounddbl(x)	round(x)
+#endif
+#else
+typedef long double ldouble;
 #ifdef TRUNCATE_NUMBERS
 #define rounddbl(x)	(x)
 #else
 #define rounddbl(x)	roundl(x)
+#endif
 #endif
