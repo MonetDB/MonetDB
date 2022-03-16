@@ -1360,10 +1360,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	if (r && BATcount(b)) {
 		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 		   	if (r->twidth < b->twidth) {
-				int m = b->twidth / r->twidth;
-				r->twidth = b->twidth;
-				r->tshift = b->tshift;
-				r->batCapacity /= m;
+				if (GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED)
+					throw(MAL, "project", GDK_EXCEPTION);
 			}
 		}
 
