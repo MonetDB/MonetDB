@@ -163,21 +163,6 @@ SELECT 1 FROM t0, (SELECT 1 FROM (SELECT 1) y(y) LEFT JOIN (SELECT 1) x(x) ON 1 
 WHERE CASE WHEN TRUE THEN 2 = ANY(VALUES (vx.vx)) WHEN FALSE THEN t0.c0 = t0.c0 END
 ----
 
-query I nosort
-SELECT 1 FROM (SELECT 1) x(x) WHERE (SELECT (SELECT min(CASE WHEN TRUE THEN x.x END)) FROM (SELECT 'a') x(x)) = 'a'
-----
-1
-
-query I nosort
-SELECT 1 FROM (SELECT TRUE) x(x) WHERE FALSE OR NOT EXISTS (SELECT 1 WHERE x.x AND FALSE)
-----
-1
-
-query I nosort
-SELECT 1 FROM (SELECT 1) x(x) CROSS JOIN LATERAL (SELECT 1 WHERE x.x BETWEEN x.x AND x.x) y(y)
-----
-1
-
 # Postgres doesn't give an error here, but we are confident it must
 statement error GDK reported error: mergejoin: more than one match
 SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
