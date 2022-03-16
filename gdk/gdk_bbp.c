@@ -2812,13 +2812,13 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 int
 BBPunfix(bat i)
 {
-	return decref(i, false, false, true, "BBPunfix");
+	return decref(i, false, false, true, __func__);
 }
 
 int
 BBPrelease(bat i)
 {
-	return decref(i, true, false, true, "BBPrelease");
+	return decref(i, true, false, true, __func__);
 }
 
 /*
@@ -2845,15 +2845,15 @@ BBPkeepref(bat i)
 		}
 
 		assert(BBP_refs(i));
-		decref(i, false, false, lock, "BBPkeepref");
+		decref(i, false, false, lock, __func__);
 	}
 }
 
 static inline void
 GDKunshare(bat parent)
 {
-	(void) decref(parent, false, true, true, "GDKunshare");
-	(void) decref(parent, true, false, true, "GDKunshare");
+	(void) decref(parent, false, true, true, __func__);
+	(void) decref(parent, true, false, true, __func__);
 }
 
 void
@@ -2883,7 +2883,7 @@ BBPreclaim(BAT *b)
 
 	assert(BBP_refs(i) == 1);
 
-	return decref(i, false, false, lock, "BBPreclaim") <0;
+	return decref(i, false, false, lock, __func__) <0;
 }
 
 /*
@@ -3125,7 +3125,7 @@ dirty_bat(bat *i, bool subcommit)
 		if (b != NULL) {
 			if ((BBP_status(*i) & BBPNEW) &&
 			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
-				*i = 0;	/* error */
+				*i = -*i;	/* error */
 			if ((BBP_status(*i) & BBPPERSISTENT) &&
 			    (subcommit || BATdirty(b)))
 				return b;	/* the bat is loaded, persistent and dirty */
@@ -3642,9 +3642,12 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			BUN size = sizes ? sizes[idx] : BUN_NONE;
 			BATiter bi;
 
+			/* add a fix so that BBPmanager doesn't interfere */
+			BBPfix(i);
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
+					decref(-i, false, false, locked_by == 0 || locked_by != MT_getpid(), __func__);
 					break;
 				}
 				bi = bat_iterator(BBP_desc(i));
@@ -3679,6 +3682,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, subcommit != NULL, &bi);
 			}
 			bat_iterator_end(&bi);
+			/* can't use BBPunfix because of the "lock"
+			 * argument: locked_by may be set here */
+			decref(i, false, false, locked_by == 0 || locked_by != MT_getpid(), __func__);
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
