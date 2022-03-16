@@ -19,7 +19,8 @@ find_func( mvc *sql, char *name, list *exps )
 
 	for(n = exps->h; n; n = n->next)
 		append(l, exp_subtype(n->data));
-	return sql_bind_func_(sql, "sys", name, l, F_FUNC);
+	return sql_bind_func_(sql, "sys", name, l, F_FUNC, false);
+
 }
 
 static sql_exp *
@@ -95,7 +96,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		exps = rel_projections(sql, rel, NULL, 1, 1);
 		e = find_aggr_exp(sql, rel->exps, "count");
 		if (!e) {
-			sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", NULL, F_AGGR);
+			sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", NULL, F_AGGR, false);
 
 			e = exp_aggr(sql->sa, NULL, cf, 0, 0, CARD_AGGR, 0);
 			exp_label(sql->sa, e, ++sql->label);
@@ -158,7 +159,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			name = exp_name(avg);
 			if (!cnt) {
 				list *l = avg->l;
-				sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", append(sa_list(sql->sa),exp_subtype(l->h->data)), F_AGGR);
+				sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", append(sa_list(sql->sa),exp_subtype(l->h->data)), F_AGGR, false);
 				sql_exp *e = exp_aggr(sql->sa, list_dup(avg->l, (fdup)NULL), cf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
 				//exp_label(sql->sa, e, ++sql->label);
@@ -167,7 +168,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			}
 			if (!sum) {
 				list *l = avg->l;
-				sql_subfunc *sf = sql_bind_func_(sql, "sys", "sum", append(sa_list(sql->sa), exp_subtype(l->h->data)), F_AGGR);
+				sql_subfunc *sf = sql_bind_func_(sql, "sys", "sum", append(sa_list(sql->sa), exp_subtype(l->h->data)), F_AGGR, false);
 				sql_exp *e = exp_aggr(sql->sa, list_dup(avg->l, (fdup)NULL), sf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
 				//exp_label(sql->sa, e, ++sql->label);
