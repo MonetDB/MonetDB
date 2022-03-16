@@ -707,7 +707,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			b->tminpos = BUN_NONE;
 		}
 	}
-	if (cnt > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+	if (cnt > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
 	MT_lock_unset(&b->theaplock);
@@ -1097,7 +1097,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	STRMPdestroy(b);
 	TSKdestroy(b);
 	MT_lock_set(&b->theaplock);
-	if (ni.count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+	if (ni.count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
 	MT_lock_unset(&b->theaplock);
@@ -1394,14 +1394,23 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					else if (pos <= bi.minpos && bi.minpos < pos + ni.count)
 						bi.minpos = BUN_NONE;
 				}
+				if (complex_cand(n)) {
+					for (BUN i = 0, j = ni.count; i < j; i++)
+						o[i] = *(oid *)Tpos(&ni, i);
+					/* last value */
+					v = o[ni.count - 1];
+				} else {
+					for (BUN i = 0, j = ni.count; i < j; i++)
+						o[i] = v++;
+					/* last value added (not one beyond) */
+					v--;
+				}
 				if (bi.maxpos != BUN_NONE) {
-					if (v + ni.count - 1 >= BUNtoid(b, bi.maxpos))
+					if (v >= BUNtoid(b, bi.maxpos))
 						bi.maxpos = pos + ni.count - 1;
 					else if (pos <= bi.maxpos && bi.maxpos < pos + ni.count)
 						bi.maxpos = BUN_NONE;
 				}
-				for (BUN i = 0, j = ni.count; i < j; i++)
-					o[i] = v++;
 			}
 		} else {
 			/* if the extremes of n are at least as

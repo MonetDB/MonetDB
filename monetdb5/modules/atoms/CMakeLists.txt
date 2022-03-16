@@ -33,7 +33,6 @@ target_include_directories(atoms
 
 target_link_libraries(atoms
   PRIVATE
-  $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
   $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
   stream
   monetdb_config_header

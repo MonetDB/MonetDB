@@ -637,7 +637,7 @@ int yydebug=1;
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE SNAPSHOT
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
-%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
+%token <operation> ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
 %token <operation> GROUPING SETS FROM FOR MATCH
 
 %token <operation> EXTRACT
@@ -667,7 +667,7 @@ int yydebug=1;
 
 %left <operation> NOT
 %left <operation> '='
-%left <operation> ALL ANY NOT_BETWEEN BETWEEN NOT_IN sqlIN NOT_LIKE LIKE NOT_ILIKE ILIKE OR SOME
+%left <operation> ALL ANY NOT_BETWEEN BETWEEN NOT_IN sqlIN NOT_EXISTS EXISTS NOT_LIKE LIKE NOT_ILIKE ILIKE OR SOME
 %left <operation> AND
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
@@ -824,7 +824,7 @@ if_exists:
 
 if_not_exists:
 	/* empty */   { $$ = FALSE; }
-|	IF NOT EXISTS { $$ = TRUE; }
+|	IF NOT_EXISTS { $$ = TRUE; }
 ;
 
 drop:
@@ -3747,6 +3747,7 @@ pred_exp_list:
 
 existence_test:
     EXISTS subquery 	{ $$ = _symbol_create_symbol( SQL_EXISTS, $2 ); }
+ |  NOT_EXISTS subquery 	{ $$ = _symbol_create_symbol( SQL_NOT_EXISTS, $2 ); }
  ;
 
 filter_arg_list:

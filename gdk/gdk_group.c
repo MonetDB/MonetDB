@@ -300,11 +300,7 @@
 #ifdef HAVE_HGE
 #define uuid_equ(a, b)	((a).h == (b).h)
 #else
-#ifdef HAVE_UUID
-#define uuid_equ(a, b)	(uuid_compare((a).u, (b).u) == 0)
-#else
 #define uuid_equ(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#endif
 #endif
 
 #define GRP_subscan_old_groups_tpe(TYPE)			\

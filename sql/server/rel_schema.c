@@ -1420,6 +1420,10 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 	if (create && (t = mvc_bind_table(sql, s, name))) {
 		if (!replace)
 			return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
+		if (!isView(t))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: '%s' is not a view", base, name);
+		if (t->system)
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot replace system view '%s'", base, name);
 		foundid = t->base.id; /* when recreating a view, the view itself can't be found */
 	}
 

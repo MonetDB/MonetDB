@@ -9,7 +9,7 @@ with process.client('sqldump', stdout=process.PIPE, stderr=process.PIPE) as c:
 for line in out.splitlines():
     if line.startswith('--') or not line:
         continue
-    if line != 'START TRANSACTION;' and line != 'COMMIT;':
+    if line != 'START TRANSACTION;' and line != 'COMMIT;' and line != 'SET SCHEMA "sys";':
         # unexpected output, dump it all
         print(out)
         break

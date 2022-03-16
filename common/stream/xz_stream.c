@@ -161,9 +161,9 @@ xz_stream(stream *inner, int preset)
 		ret = lzma_easy_encoder(&xz->strm, preset, LZMA_CHECK_CRC64);
 	}
 
-	stream *s = pump_stream(inner, state);
+	stream *s;
 
-	if (ret != LZMA_OK || s == NULL) {
+	if (ret != LZMA_OK || (s = pump_stream(inner, state)) == NULL) {
 		lzma_end(&xz->strm);
 		free(xz);
 		free(state);

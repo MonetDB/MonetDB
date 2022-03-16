@@ -4358,7 +4358,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	for (;;) {
 		line = read_line(mid);
 		if (line == NULL) {
-			if (mnstr_eof(mid->from)) {
+			if (mid->from && mnstr_eof(mid->from)) {
 				mapi_log_record(mid, "unexpected end of file");
 				mapi_log_record(mid, __func__);
 				close_connection(mid);

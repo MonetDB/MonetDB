@@ -73,7 +73,7 @@ select stmt from sys.dump_database(false) order by o, stmt
 START TRANSACTION;
 SET SCHEMA "sys";
 CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
-CREATE SEQUENCE "foo"."counter" AS BIGINT START WITH 1;
+CREATE SEQUENCE "foo"."counter" AS BIGINT;
 CREATE TABLE "foo"."tab" ("i" INTEGER, "j" DECIMAL(4,2));
 create view "foo"."vivi" as select * from tab@;
 create "foo"."f" unction "foo"."f" () returns int begin return 42; end@;
@@ -82,7 +82,7 @@ create "foo"."f" unction "foo"."f" (i int, j int) returns int begin return 44; e
 create "foo"."f" unction "foo"."f" (i int, j int, k int) returns int begin return 45; end@;
 create "foo"."f" unction "foo"."f" (i int, j int, k int, l int) returns int begin return 45; end@;
 create procedure "foo"."g" () be "foo"."g" in delete from tab where false; end@;
-UPDATE sys.sequences seq SET start = 1 WHERE name = 'counter' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = 'foo');
+ALTER SEQUENCE "foo"."counter" RESTART WITH 1 NO CYCLE;
 CREATE INDEX "idx" ON "foo"."tab"(j,i);
 COMMENT ON COLUMN "foo"."tab"."i" IS 'ii';
 COMMENT ON COLUMN "foo"."tab"."j" IS 'jj';

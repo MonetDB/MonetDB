@@ -590,3 +590,37 @@ rollback
 statement ok
 set optimizer='default_pipe'
 
+# push select expressions under group by if possible
+query T nosort
+plan select 1 from (select x from (values(1),(2),(3)) x(x) group by x) x(x) where x > 2
+----
+project (
+| group by (
+| | select (
+| | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
+| | ) [ ("x"."x") > (tinyint(2) "2") ]
+| ) [ "x"."x" ] [ "x"."x" ]
+) [ tinyint(1) "1" ]
+
+query T nosort
+plan select y from (select x, max(x) as y from (values(1),(2),(3)) x(x) group by x) x(x,y) where x > 2
+----
+project (
+| group by (
+| | select (
+| | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
+| | ) [ ("x"."x") > (tinyint(2) "2") ]
+| ) [ "x"."x" ] [ "sys"."max" no nil ("x"."x") as "%5"."%5" ]
+) [ "%5"."%5" as "x"."y" ]
+
+# here the select cannot be pushed down
+query T nosort
+plan select x from (select min(x) as x from (values(1,1),(2,2),(3,3)) x(x,y)) x(x) where x > 0
+----
+project (
+| select (
+| | group by (
+| | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
+| | ) [  ] [ "sys"."min" no nil ("x"."x") as "%11"."%11" ]
+| ) [ ("%11"."%11") > (tinyint(8) "0") ]
+) [ "%11"."%11" as "x"."x" ]

@@ -368,7 +368,7 @@ SELECT col4 FROM another_T
 186
 26
 
-statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
+statement error 42000!SELECT: cannot use non GROUP BY column 'another_t.col5' in query results without an aggregate function
 UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT AVG(col2))
 
 statement ok rowcount 0
@@ -383,7 +383,7 @@ UPDATE another_T SET col7 = 1 WHERE col5 = (SELECT 1 FROM integers i2 WHERE AVG(
 statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
 DELETE FROM another_T WHERE col1 = COUNT(col2)
 
-statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
+statement error 42000!SELECT: cannot use non GROUP BY column 'another_t.col7' in query results without an aggregate function
 DELETE FROM another_T WHERE col7 = (SELECT MIN(col3))
 
 statement ok rowcount 0
@@ -454,7 +454,7 @@ SELECT col5, col6 FROM another_T
 10
 5555
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error 21000!Cardinality violation, scalar value expected
 UPDATE another_T SET (col7, col8) = (SELECT 1,2 UNION ALL SELECT 1,2)
 
 statement error 42000!UPDATE: The number of specified columns between the SET clause and the right side don't match (2 != 1)

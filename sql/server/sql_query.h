@@ -17,6 +17,7 @@ typedef struct stacked_query {
 	sql_rel *rel;
 	int sql_state;
 	sql_exp *last_used;
+	sql_exp *prev;
 	int used_card;
 	int grouped;
 	int groupby;
@@ -25,10 +26,14 @@ typedef struct stacked_query {
 typedef struct sql_query {
 	mvc *sql;
 	sql_stack *outer;
+	sql_rel *last_rel;
 	sql_exp *last_exp;
+	sql_exp *prev;
 	int last_state;
+	int last_card;
 } sql_query;
 
+extern void query_processed(sql_query *query);
 extern sql_query *query_create(mvc *sql);
 extern void query_push_outer(sql_query *q, sql_rel *r, int sql_state);
 extern sql_rel *query_pop_outer(sql_query *q);

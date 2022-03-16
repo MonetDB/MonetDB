@@ -1,4 +1,4 @@
-statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 't.c0' in query results without an aggregate function
 select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
@@ -38,7 +38,7 @@ A
 A
 2
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 't.c0' in query results without an aggregate function
 select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
@@ -74,7 +74,7 @@ select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all 
 A
 1
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 't.c0' in query results without an aggregate function
 select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function

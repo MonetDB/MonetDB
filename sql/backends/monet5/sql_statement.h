@@ -140,6 +140,7 @@ typedef struct stmt {
 			 strcmp(mod, "mmath") == 0 || \
 			 strcmp(mod, "mtime") == 0 || \
 			 strcmp(mod, "blob") == 0 || \
+			 strcmp(mod, "mkey") == 0 || \
 			 (strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp))))
 
 extern int stmt_key(stmt *s);

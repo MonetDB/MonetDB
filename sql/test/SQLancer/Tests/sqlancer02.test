@@ -233,14 +233,6 @@ UPDATE t0 SET c2 = '' WHERE (((length('-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(
 statement ok
 ROLLBACK
 
-statement error 42000!types real(24,0) and boolean(1,0) are not equal
-SELECT 1 WHERE scale_up(CAST(0.89767724 AS REAL), 1)
-
-query R rowsort
-SELECT scale_up(0.2928163, 3)
-----
-8784489.000
-
 statement ok
 START TRANSACTION
 
@@ -446,9 +438,8 @@ COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.3672199296718357
 -1.7976931348623157e+308
 
-statement error 22003!Overflow in round
-update t2 set c1 = (scale_down(t2.c1, 0.39861114390109142480156378951505757868289947509765625))
-where (scale_up(-1155480997, 0.5434124050282382)) is not null
+statement error 22003!overflow in calculation -1.7976931348623157e+308*10.
+update t2 set c1 = t2.c1 * 10 where 2 is not null
 
 statement ok
 ROLLBACK

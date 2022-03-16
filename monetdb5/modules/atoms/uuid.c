@@ -21,7 +21,7 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
-#if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+#if !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
 static inline bool
 generate_uuid(uuid *U)
 {
@@ -49,9 +49,6 @@ generate_uuid(uuid *U)
 static inline void
 UUIDgenerateUuid_internal(uuid *u)
 {
-#ifdef HAVE_UUID
-	uuid_generate(u->u);
-#else
 #if defined(HAVE_GETENTROPY)
 	if (getentropy(u->u, 16) == 0) {
 		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
@@ -76,7 +73,6 @@ UUIDgenerateUuid_internal(uuid *u)
 		/* make sure this is version 4 (random UUID) */
 		u->u[6] = (u->u[6] & 0x0F) | 0x40;
 	}
-#endif
 }
 
 static str

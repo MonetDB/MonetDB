@@ -97,7 +97,7 @@ if(NOT ${CMAKE_INSTALL_PREFIX} STREQUAL "/usr")
 #  SET(CMAKE_SKIP_RPATH TRUE)
 endif()
 
-# required for some instalation files
+# required for some installation files
 set(PROGRAM_PERMISSIONS_DEFAULT
   OWNER_WRITE
   OWNER_READ

@@ -646,6 +646,10 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		l = BATunmask(l);
 		if (l == NULL)
 			goto doreturn;
+		if (complex_cand(l)) {
+			lcount = canditer_init(&ci, NULL, l);
+			lci = &ci;
+		}
 	}
 	if (lcount == 0 ||
 	    (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)) ||

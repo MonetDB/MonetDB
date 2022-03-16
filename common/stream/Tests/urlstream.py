@@ -18,6 +18,22 @@ def pickport():
         s.close()
         return port
 
+
+def wait_for_server(port, timeout):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.1)
+        try:
+            s.connect(('localhost', port))
+            break
+        except ConnectionRefusedError:
+            time.sleep(0.1)
+        finally:
+            s.close()
+    print(f'Warning: waited {timeout} seconds for the server to start but could still not connect', file=OUTPUT)
+
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         # add a # at the beginning of the line to not mess up Mtest diffs
@@ -66,7 +82,8 @@ def runserver(port):
 port = pickport()
 t = threading.Thread(target=lambda: runserver(port), daemon=True)
 t.start()
-time.sleep(0.5)
+wait_for_server(port, 5.0)
+
 url = f'http://localhost:{port}'
 
 def streamcat(suffix):

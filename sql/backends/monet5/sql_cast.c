@@ -384,6 +384,23 @@ bailout:
 #define lng_is_numeric 1
 #define hge_is_numeric 1
 
+/* stringify token */
+#define _STRNG_(s) #s
+#define STRNG(t) _STRNG_(t)
+
+/* concatenate two, three or four tokens */
+#define CONCAT_2(a,b)		a##b
+#define CONCAT_3(a,b,c)		a##b##c
+#define CONCAT_4(a,b,c,d)	a##b##c##d
+
+#define NIL(t)				CONCAT_2(t,_nil)
+#define ISNIL(t)			CONCAT_3(is_,t,_nil)
+#define TPE(t)				CONCAT_2(TYPE_,t)
+#define GDKmin(t)			CONCAT_3(GDK_,t,_min)
+#define GDKmax(t)			CONCAT_3(GDK_,t,_max)
+#define FUN(a,b,c,d)		CONCAT_4(a,b,c,d)
+#define IS_NUMERIC(t)		CONCAT_2(t,_is_numeric)
+
 /* up casting */
 
 #define TP1 bte
@@ -480,8 +497,6 @@ bailout:
 
 /* sql_cast_impl_down_from_flt */
 
-#define round_float(x)	roundf(x)
-
 #define TP1 flt
 #define TP2 bte
 #include "sql_cast_impl_int.h"
@@ -513,9 +528,6 @@ bailout:
 #undef TP2
 #undef TP1
 #endif
-
-#undef round_float
-#define round_float(x)	round(x)
 
 #define TP1 dbl
 #define TP2 bte

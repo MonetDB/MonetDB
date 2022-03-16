@@ -14,7 +14,7 @@
 #include "mutils.h"
 #include <string.h>
 
-static gdk_return logger_add_bat(logger *lg, BAT *b, log_id id);
+static gdk_return logger_add_bat(logger *lg, BAT *b, log_id id, int tid);
 static gdk_return logger_del_bat(logger *lg, log_bid bid);
 /*
  * The logger uses a directory to store its log files. One master log
@@ -107,42 +107,20 @@ logger_unlock(logger *lg)
 	MT_lock_unset(&lg->lock);
 }
 
-static bte
+static inline bte
 find_type(logger *lg, int tpe)
 {
-	BATiter cni = bat_iterator_nolock(lg->type_nr);
-	bte *res = (bte*)Tloc(lg->type_id, 0);
-	BUN p;
-
-	/* type should be there !*/
-	if (BAThash(lg->type_nr) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&cni.b->thashlock);
-		HASHloop_int(cni, cni.b->thash, p, &tpe) {
-			MT_rwlock_rdunlock(&cni.b->thashlock);
-			return res[p];
-		}
-		MT_rwlock_rdunlock(&cni.b->thashlock);
-	}
-	return -1;
+	assert(tpe >= 0 && tpe < MAXATOMS);
+	return lg->type_id[tpe];
 }
 
-static int
+static inline int
 find_type_nr(logger *lg, bte tpe)
 {
-	BATiter cni = bat_iterator_nolock(lg->type_id);
-	int *res = (int*)Tloc(lg->type_nr, 0);
-	BUN p;
-
-	/* type should be there !*/
-	if (BAThash(lg->type_id) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&cni.b->thashlock);
-		HASHloop_bte(cni, cni.b->thash, p, &tpe) {
-			MT_rwlock_rdunlock(&cni.b->thashlock);
-			return res[p];
-		}
-		MT_rwlock_rdunlock(&cni.b->thashlock);
-	}
-	return -1;
+	int nr = lg->type_nr[tpe < 0 ? 256 + tpe : tpe];
+	if (nr == 255)
+		return -1;
+	return nr;
 }
 
 static BUN
@@ -179,18 +157,33 @@ log_find(BAT *b, BAT *d, int val)
 }
 
 static log_bid
-internal_find_bat(logger *lg, log_id id)
+internal_find_bat(logger *lg, log_id id, int tid)
 {
 	BATiter cni = bat_iterator_nolock(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
 		MT_rwlock_rdlock(&cni.b->thashlock);
-		HASHloop_int(cni, cni.b->thash, p, &id) {
-			oid pos = p;
-			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
+		if (tid < 0) {
+			HASHloop_int(cni, cni.b->thash, p, &id) {
+				oid pos = p;
+				if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
+					MT_rwlock_rdunlock(&cni.b->thashlock);
+					return *(log_bid *) Tloc(lg->catalog_bid, p);
+				}
+			}
+		} else {
+			BUN cp = BUN_NONE;
+			HASHloop_int(cni, cni.b->thash, p, &id) {
+				lng lid = *(lng *) Tloc(lg->catalog_lid, p);
+				if (lid != lng_nil && lid <= tid) {
+					break;
+				}
+				cp = p;
+			}
+			if (cp != BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
-				return *(log_bid *) Tloc(lg->catalog_bid, p);
+				return *(log_bid *) Tloc(lg->catalog_bid, cp);
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
@@ -254,9 +247,9 @@ log_read_clear(logger *lg, trans *tr, log_id id)
 }
 
 static gdk_return
-la_bat_clear(logger *lg, logaction *la)
+la_bat_clear(logger *lg, logaction *la, int tid)
 {
-	log_bid bid = internal_find_bat(lg, la->cid);
+	log_bid bid = internal_find_bat(lg, la->cid, tid);
 	BAT *b;
 
 	if (lg->debug & 1)
@@ -594,7 +587,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id)
 
 
 static gdk_return
-la_bat_update_count(logger *lg, log_id id, lng cnt)
+la_bat_update_count(logger *lg, log_id id, lng cnt, int tid)
 {
 	BATiter cni = bat_iterator_nolock(lg->catalog_id);
 
@@ -605,7 +598,7 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 		HASHloop_int(cni, cni.b->thash, p, &id) {
 			lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 
-			if (lid != lng_nil && lid <= lg->tid)
+			if (lid != lng_nil && lid <= tid)
 				break;
 			cp = p;
 		}
@@ -623,9 +616,9 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 }
 
 static gdk_return
-la_bat_updates(logger *lg, logaction *la)
+la_bat_updates(logger *lg, logaction *la, int tid)
 {
-	log_bid bid = internal_find_bat(lg, la->cid);
+	log_bid bid = internal_find_bat(lg, la->cid, tid);
 	BAT *b = NULL;
 
 	if (bid == 0)
@@ -687,7 +680,7 @@ la_bat_updates(logger *lg, logaction *la)
 			}
 		}
 		cnt = (BUN)(la->offset + la->nr);
-		if (la_bat_update_count(lg, la->cid, cnt) != GDK_SUCCEED) {
+		if (la_bat_update_count(lg, la->cid, cnt, tid) != GDK_SUCCEED) {
 			if (b)
 				logbat_destroy(b);
 			return GDK_FAIL;
@@ -727,9 +720,9 @@ log_read_destroy(logger *lg, trans *tr, log_id id)
 }
 
 static gdk_return
-la_bat_destroy(logger *lg, logaction *la)
+la_bat_destroy(logger *lg, logaction *la, int tid)
 {
-	log_bid bid = internal_find_bat(lg, la->cid);
+	log_bid bid = internal_find_bat(lg, la->cid, tid);
 
 	if (bid && logger_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -762,7 +755,7 @@ log_read_create(logger *lg, trans *tr, log_id id)
 }
 
 static gdk_return
-la_bat_create(logger *lg, logaction *la)
+la_bat_create(logger *lg, logaction *la, int tid)
 {
 	BAT *b;
 
@@ -774,7 +767,7 @@ la_bat_create(logger *lg, logaction *la)
 		BATtseqbase(b, 0);
 
 	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
-	    logger_add_bat(lg, b, la->cid) != GDK_SUCCEED) {
+	    logger_add_bat(lg, b, la->cid, tid) != GDK_SUCCEED) {
 		logbat_destroy(b);
 		return GDK_FAIL;
 	}
@@ -792,11 +785,10 @@ logger_write_new_types(logger *lg, FILE *fp, bool append)
 	for (int i = 0; i < GDKatomcnt; i++) {
 		if (ATOMvarsized(i))
 			continue;
-		if (append &&
-		    (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
-		     BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
-		     BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED))
-			return GDK_FAIL;
+		if (append) {
+			lg->type_id[i] = id;
+			lg->type_nr[id] = i;
+		}
 		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
 			return GDK_FAIL;
 		id++;
@@ -806,11 +798,10 @@ logger_write_new_types(logger *lg, FILE *fp, bool append)
 	for (int i = 0; i < GDKatomcnt; i++) {
 		if (!ATOMvarsized(i))
 			continue;
-		if (append &&
-		    (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
-		     BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
-		     BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED))
-			return GDK_FAIL;
+		if (append) {
+			lg->type_id[i] = id;
+			lg->type_nr[256 + id] = i;
+		}
 		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
 			return GDK_FAIL;
 		id++;
@@ -840,26 +831,26 @@ tr_create(trans *tr, int tid)
 }
 
 static gdk_return
-la_apply(logger *lg, logaction *c)
+la_apply(logger *lg, logaction *c, int tid)
 {
 	gdk_return ret = GDK_SUCCEED;
 
 	switch (c->type) {
 	case LOG_UPDATE_BULK:
 	case LOG_UPDATE:
-		ret = la_bat_updates(lg, c);
+		ret = la_bat_updates(lg, c, tid);
 		break;
 	case LOG_CREATE:
 		if (!lg->flushing)
-			ret = la_bat_create(lg, c);
+			ret = la_bat_create(lg, c, tid);
 		break;
 	case LOG_DESTROY:
 		if (!lg->flushing)
-			ret = la_bat_destroy(lg, c);
+			ret = la_bat_destroy(lg, c, tid);
 		break;
 	case LOG_CLEAR:
 		if (!lg->flushing)
-			ret = la_bat_clear(lg, c);
+			ret = la_bat_clear(lg, c, tid);
 		break;
 	default:
 		assert(0);
@@ -930,7 +921,7 @@ tr_commit(logger *lg, trans *tr)
 		fprintf(stderr, "#tr_commit\n");
 
 	for (i = 0; i < tr->nr; i++) {
-		if (la_apply(lg, &tr->changes[i]) != GDK_SUCCEED) {
+		if (la_apply(lg, &tr->changes[i], tr->tid) != GDK_SUCCEED) {
 			do {
 				tr = tr_abort_(lg, tr, i);
 			} while (tr != NULL);
@@ -952,16 +943,12 @@ logger_read_types_file(logger *lg, FILE *fp)
 	while(fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
 		int i = ATOMindex(atom_name);
 
-		if (id > 255 || i < 0) {
+		if (id < -127 || id > 127 || i < 0) {
 			GDKerror("unknown type in log file '%s'\n", atom_name);
 			return GDK_FAIL;
 		}
-		bte lid = (bte)id;
-		if (BUNappend(lg->type_id, &lid, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nme, atom_name, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED) {
-			return GDK_FAIL;
-		}
+		lg->type_id[i] = (int8_t) id;
+		lg->type_nr[id < 0 ? 256 + id : id] = i;
 	}
 	return GDK_SUCCEED;
 }
@@ -1449,7 +1436,8 @@ bm_get_counts(logger *lg)
 static int
 subcommit_list_add(int next, bat *n, BUN *sizes, bat bid, BUN sz)
 {
-	for(int i=0; i<next; i++) {
+	assert(sz <= BBP_desc(bid)->batCount || sz == BUN_NONE);
+	for (int i=0; i<next; i++) {
 		if (n[i] == bid) {
 			sizes[i] = sz;
 			return next;
@@ -1803,10 +1791,6 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	lg->seqs_val = NULL;
 	lg->dseqs = NULL;
 
-	lg->type_id = NULL;
-	lg->type_nme = NULL;
-	lg->type_nr = NULL;
-
 	if (!LOG_DISABLED(lg)) {
 		/* try to open logfile backup, or failing that, the file
 		 * itself. we need to know whether this file exists when
@@ -1831,18 +1815,9 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 	catalog_bid = BBPindex(bak);
 
-	/* create transient bats for type mapping, to be read from disk */
-	lg->type_id = logbat_new(TYPE_bte, BATSIZE, TRANSIENT);
-	lg->type_nme = logbat_new(TYPE_str, BATSIZE, TRANSIENT);
-	lg->type_nr = logbat_new(TYPE_int, BATSIZE, TRANSIENT);
-
-	if (lg->type_id == NULL || lg->type_nme == NULL || lg->type_nr == NULL) {
-		if (fp)
-			fclose(fp);
-		fp = NULL;
-		GDKerror("cannot create type bats");
-		goto error;
-	}
+	/* initialize arrays for type mapping, to be read from disk */
+	memset(lg->type_id, -1, sizeof(lg->type_id));
+	memset(lg->type_nr, 255, sizeof(lg->type_nr));
 
 	/* this is intentional - if catalog_bid is 0, force it to find
 	 * the persistent catalog */
@@ -2070,9 +2045,6 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	logbat_destroy(lg->seqs_id);
 	logbat_destroy(lg->seqs_val);
 	logbat_destroy(lg->dseqs);
-	logbat_destroy(lg->type_id);
-	logbat_destroy(lg->type_nme);
-	logbat_destroy(lg->type_nr);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->local_dir);
@@ -2366,7 +2338,7 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 		/* logging is switched off */
 		if (nr) {
 			logger_lock(lg);
-			ok = la_bat_update_count(lg, id, offset+cnt);
+			ok = la_bat_update_count(lg, id, offset+cnt, lg->tid);
 			logger_unlock(lg);
 		}
 		return ok;
@@ -2465,7 +2437,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 		/* logging is switched off */
 		lg->end += nr;
 		if (nr)
-			return la_bat_update_count(lg, id, offset+cnt);
+			return la_bat_update_count(lg, id, offset+cnt, lg->tid);
 		return GDK_SUCCEED;
 	}
 
@@ -2544,7 +2516,7 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 	bte ta = find_type(lg, b->ttype);
 	logformat l;
 
-	if (logger_add_bat(lg, b, id) != GDK_SUCCEED) {
+	if (logger_add_bat(lg, b, id, -1) != GDK_SUCCEED) {
 		logger_unlock(lg);
 		return GDK_FAIL;
 	}
@@ -2570,7 +2542,7 @@ gdk_return
 log_bat_transient(logger *lg, log_id id)
 {
 	logger_lock(lg);
-	log_bid bid = internal_find_bat(lg, id);
+	log_bid bid = internal_find_bat(lg, id, -1);
 	logformat l;
 
 	l.flag = LOG_DESTROY;
@@ -2687,7 +2659,7 @@ log_bat_clear(logger *lg, int id)
 	lg->end++;
 	if (LOG_DISABLED(lg)) {
 		logger_lock(lg);
-		gdk_return res = la_bat_update_count(lg, id, 0);
+		gdk_return res = la_bat_update_count(lg, id, 0, lg->tid);
 		logger_unlock(lg);
 		return res;
 	}
@@ -2857,9 +2829,9 @@ bm_commit(logger *lg)
 }
 
 static gdk_return
-logger_add_bat(logger *lg, BAT *b, log_id id)
+logger_add_bat(logger *lg, BAT *b, log_id id, int tid)
 {
-	log_bid bid = internal_find_bat(lg, id);
+	log_bid bid = internal_find_bat(lg, id, tid);
 	lng cnt = 0;
 	lng lid = lng_nil;
 
@@ -2921,7 +2893,7 @@ log_bid
 logger_find_bat(logger *lg, log_id id)
 {
 	logger_lock(lg);
-	log_bid bid = internal_find_bat(lg, id);
+	log_bid bid = internal_find_bat(lg, id, -1);
 	logger_unlock(lg);
 	return bid;
 }

@@ -612,14 +612,26 @@ msab_pickSecret(char **generated_secret)
 		}
 	}
 #else
-	(void)bin_secret;
-	if (generated_secret)
-		// do not return an error, just continue without a secret
-		*generated_secret = NULL;
-	free(secret);
-	return NULL;
+	int rfd = open("/dev/urandom", O_RDONLY);
+	if (rfd >= 0) {
+		ssize_t nr;
+		for (size_t n = 0; n < sizeof(bin_secret); n += nr) {
+			nr = read(rfd, bin_secret + n, sizeof(bin_secret) - n);
+			if (nr < 0) {
+				free(secret);
+				return strdup("reading /dev/urandom failed");
+			}
+		}
+		close(rfd);
+	} else {
+		(void)bin_secret;
+		if (generated_secret)
+			// do not return an error, just continue without a secret
+			*generated_secret = NULL;
+		free(secret);
+		return NULL;
+	}
 #endif
-#if defined(HAVE_GETENTROPY) || defined(HAVE_RAND_S)
 	int fd;
 	FILE *f;
 	for (size_t i = 0; i < sizeof(bin_secret); i++) {
@@ -659,7 +671,6 @@ msab_pickSecret(char **generated_secret)
 	else
 		free(secret);
 	return NULL;
-#endif
 }
 
 /**

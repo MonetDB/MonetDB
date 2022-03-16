@@ -442,13 +442,12 @@ COPY 29 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 1.58919798e+09
 0.10009920106256454
 
-statement error 42000!Argument 2 to round function must be positive
-select max(agg0) from (select max(all cast(0.18525435 as string)) as agg0 from t0 where cast(scale_down(- (greatest(greatest(631218936, -562663513), cast(-265902058 as int))), cast(0.41370374 as int)) as boolean)
-union all select all max(all cast(0.18525435 as string)) as agg0 from t0 where not (cast(scale_down(- (greatest(greatest(631218936, -562663513), cast(-265902058 as int))), cast(0.41370374 as int)) as boolean))
-union all select all max(all cast(0.18525435 as string)) as agg0 from t0 where (cast(scale_down(- (greatest(greatest(631218936, -562663513), cast(-265902058 as int))), cast(0.41370374 as int)) as boolean)) is null) as asdf
-
-statement error 25005!Current transaction is aborted (please ROLLBACK)
-select scale_down(-631218936, cast(0.41370374 as int))
+query T rowsort
+select max(agg0) from (select max(all cast(0.18525435 as string)) as agg0 from t0 where cast(- (greatest(greatest(631218936, -562663513), cast(-265902058 as int))) as boolean)
+union all select all max(all cast(0.18525435 as string)) as agg0 from t0 where not (cast(- (greatest(greatest(631218936, -562663513), cast(-265902058 as int))) as boolean))
+union all select all max(all cast(0.18525435 as string)) as agg0 from t0 where (cast(- (greatest(greatest(631218936, -562663513), cast(-265902058 as int))) as boolean)) is null) as asdf
+----
+0.18525435
 
 statement ok
 ROLLBACK

@@ -58,10 +58,6 @@ if(WITH_SNAPPY)
   find_package(Snappy)
 endif()
 
-if(WITH_UUID)
-  find_package(UUID)
-endif()
-
 if(WITH_VALGRIND)
   find_package(Valgrind)
 endif()

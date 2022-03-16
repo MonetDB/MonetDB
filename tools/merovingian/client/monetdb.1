@@ -427,6 +427,17 @@ below.
 Defines how the server interprets literal strings. See the
 .IR mserver5 (1)
 manpage for more details.
+.TP
+\fBloadmodules=\fP\fImodule-list\fP
+Enable the modules in
+.I module-list
+for the given database.
+The
+.I module-list
+is a comma or space separated list of module names and translates
+to a \fB\-\-loadmodule=\fP\fImodule\fP option to
+.IR mserver5 (1)
+for each of the modules in the list.
 .RE
 .TP
 \fBinherit\fP \fIproperty\fP \fIdatabase\fP [\fIdatabase\fP ...]

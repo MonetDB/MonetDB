@@ -1,6 +1,6 @@
 START TRANSACTION;
-CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
 SET SCHEMA "sys";
+CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
 CREATE TABLE "sys"."test" (
 	"id" INTEGER,
 	"i"  SMALLINT

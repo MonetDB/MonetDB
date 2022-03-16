@@ -126,12 +126,12 @@ single left outer join (
 | | | ) [ "b3"."id" NOT NULL UNIQUE HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL UNIQUE, "b3"."increase" NOT NULL as "%2"."%2" ],
 | | | group by (
 | | | | join (
+| | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id", "bidder"."%TID%" NOT NULL UNIQUE as "b3a"."%TID%" ],
 | | | | | group by (
 | | | | | | project (
 | | | | | | | & REF 1 
 | | | | | | ) [ "o"."open_auction_id" NOT NULL ]
-| | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ],
-| | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id", "bidder"."%TID%" NOT NULL UNIQUE as "b3a"."%TID%" ]
+| | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ]
 | | | | ) [ ("b3a"."open_auction_id" NOT NULL) = ("o"."open_auction_id" NOT NULL) ]
 | | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."min" no nil ("b3a"."id" NOT NULL UNIQUE HASHCOL ) as "%1"."%1", "o"."open_auction_id" NOT NULL ]
 | | ) [ ("b3"."id" NOT NULL UNIQUE HASHCOL ) = ("%1"."%1") ]
@@ -149,12 +149,12 @@ project (
 | | | | | | ) [ "b2"."id" NOT NULL UNIQUE HASHCOL , "b2"."increase" NOT NULL as "%4"."%4" ],
 | | | | | | group by (
 | | | | | | | join (
+| | | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b2a"."id", "bidder"."open_auction_id" NOT NULL as "b2a"."open_auction_id" ],
 | | | | | | | | single group by (
 | | | | | | | | | single project (
 | | | | | | | | | | & REF 2 
 | | | | | | | | | ) [ "o"."open_auction_id" NOT NULL ]
-| | | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ],
-| | | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b2a"."id", "bidder"."open_auction_id" NOT NULL as "b2a"."open_auction_id" ]
+| | | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ]
 | | | | | | | ) [ ("b2a"."open_auction_id" NOT NULL) = ("o"."open_auction_id" NOT NULL) ]
 | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."max" no nil ("b2a"."id" NOT NULL UNIQUE HASHCOL ) as "%3"."%3", "o"."open_auction_id" NOT NULL ]
 | | | | | ) [ ("b2"."id" NOT NULL UNIQUE HASHCOL ) = ("%3"."%3") ]

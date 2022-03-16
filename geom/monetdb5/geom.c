@@ -2083,8 +2083,6 @@ geoGetType(char **res, int *info, int *flag)
 /* returns a pointer to a nil-mbr. */
 static mbr mbrNIL;		/* to be filled in */
 
-#include "gdk_geomlogger.h"
-
 str
 geom_prelude(void *ret)
 {

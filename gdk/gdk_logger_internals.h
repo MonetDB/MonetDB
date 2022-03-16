@@ -56,10 +56,10 @@ struct logger {
 	BAT *seqs_val;		/* lng value column */
 	BAT *dseqs;		/* deleted from seqs table */
 
-	/* we map type names into internal log ids, split in 2 ranges (0-127 fixed size types and 128 - 254 varsized) */
-	BAT *type_id;		/* id of a type */
-	BAT *type_nme;		/* names of types */
-	BAT *type_nr;		/* atom number of this type (transient) */
+	/* we map type names into internal log ids, split in 2 ranges
+	 * (0-127 fixed size types and 129 - 255 varsized) */
+	uint8_t type_nr[256];	/* mapping from logger type id to GDK type nr */
+	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
 	void *buf;
 	size_t bufsize;

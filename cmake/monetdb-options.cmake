@@ -121,10 +121,6 @@ option(WITH_SNAPPY
   "Include snappy support"
   ON)
 
-option(WITH_UUID
-  "Include uuid support"
-  ON)
-
 option(WITH_VALGRIND
   "Include valgrind support"
   ON)

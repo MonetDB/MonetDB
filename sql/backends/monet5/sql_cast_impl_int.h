@@ -6,25 +6,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
-/* ! ENSURE THAT THESE LOCAL MACROS ARE UNDEFINED AT THE END OF THIS FILE ! */
-
-/* stringify token */
-#define _STRNG_(s) #s
-#define STRNG(t) _STRNG_(t)
-
-/* concatenate two, three or four tokens */
-#define CONCAT_2(a,b)		a##b
-#define CONCAT_3(a,b,c)		a##b##c
-#define CONCAT_4(a,b,c,d)	a##b##c##d
-
-#define NIL(t)				CONCAT_2(t,_nil)
-#define ISNIL(t)			CONCAT_3(is_,t,_nil)
-#define TPE(t)				CONCAT_2(TYPE_,t)
-#define GDKmin(t)			CONCAT_3(GDK_,t,_min)
-#define GDKmax(t)			CONCAT_3(GDK_,t,_max)
-#define FUN(a,b,c,d)		CONCAT_4(a,b,c,d)
-#define IS_NUMERIC(t)		CONCAT_2(t,_is_numeric)
-
 static inline str
 FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 {
@@ -126,16 +107,3 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const bat *sid, const int 
 	BBPkeepref(*res = bn->batCacheid);
 	return MAL_SUCCEED;
 }
-
-/* undo local defines */
-#undef FUN
-#undef NIL
-#undef ISNIL
-#undef TPE
-#undef GDKmin
-#undef GDKmax
-#undef CONCAT_2
-#undef CONCAT_3
-#undef CONCAT_4
-#undef STRNG
-#undef _STRNG_

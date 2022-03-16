@@ -475,7 +475,7 @@ typedef enum sql_flang {
 } sql_flang;
 
 #define LANG_EXT(l)  ((l)>FUNC_LANG_SQL)
-#define UDF_LANG(l)  ((l)>=FUNC_LANG_SQL)
+#define UDF_LANG(l)  ((l)!=FUNC_LANG_INT)
 
 typedef struct sql_func {
 	sql_base base;
@@ -492,12 +492,14 @@ typedef struct sql_func {
 	list *res;	/* list of results */
 	sql_flang lang;
 	char *query;	/* sql code */
-	bit semantics; /*When set to true, function incorporates some kind of null semantics.*/
-	bit side_effect;
-	bit varres;	/* variable output result */
-	bit vararg;	/* variable input arguments */
-	bit system;	/* system function */
-	bit instantiated; /* if the function is instantiated */
+	bool
+	semantics:1, /* When set to true, function incorporates some kind of null semantics */
+	side_effect:1, /* if the function has side-effects */
+	varres:1,	/* variable output result */
+	vararg:1,	/* variable input arguments */
+	system:1,	/* system function */
+	instantiated:1,	/* if the function is instantiated */
+	private:1;	/* certain functions cannot be bound from user queries */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing

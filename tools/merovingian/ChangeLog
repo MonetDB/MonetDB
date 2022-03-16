@@ -1,3 +1,8 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Feb 18 2022 Sjoerd Mullender <sjoerd@acm.org>
+- There is now a loadmodules property that can be used to add --loadmodule
+  arguments to the mserver5 command line.  See the monetdb and mserver5
+  manual pages.
+

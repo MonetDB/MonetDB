@@ -52,7 +52,10 @@
 #define is_sql_merge(X)        ((X & sql_merge) == sql_merge)
 
 #define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
+#define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
 #define is_exists_func(sf) (strcmp(sf->func->base.name, "sql_exists") == 0 || strcmp(sf->func->base.name, "sql_not_exists") == 0)
+#define is_exists(sf) (strcmp(sf->func->base.name, "sql_exists") == 0)
+
 
 extern void rel_set_exps(sql_rel *rel, list *exps);
 extern int project_unsafe(sql_rel *rel, int allow_identity);

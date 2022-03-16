@@ -95,7 +95,7 @@ static const char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j
 	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
 
-#if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+#if !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
 static inline bool
 gen_win_challenge(char *buf, size_t size)
 {
