@@ -1506,8 +1506,9 @@ BBPexit(void)
  * reclaimed as well.
  */
 static inline int
-heap_entry(FILE *fp, BAT *b, BUN size, BATiter *bi)
+heap_entry(FILE *fp, BATiter *bi, BUN size)
 {
+	BAT *b = bi->b;
 	const ValRecord *minprop, *maxprop;
 	minprop = BATgetprop_nolock(b, GDK_MIN_POS);
 	maxprop = BATgetprop_nolock(b, GDK_MAX_POS);
@@ -1522,7 +1523,7 @@ heap_entry(FILE *fp, BAT *b, BUN size, BATiter *bi)
 	}
 
 	if ((GDKdebug & TAILCHKMASK) && free > 0) {
-		char *fname = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), gettailname(b));
+		char *fname = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), gettailnamebi(bi));
 		if (fname != NULL) {
 			struct stat stb;
 			if (stat(fname, &stb) == -1) {
@@ -1561,18 +1562,18 @@ heap_entry(FILE *fp, BAT *b, BUN size, BATiter *bi)
 }
 
 static inline int
-vheap_entry(FILE *fp, Heap *h, BUN size, BATiter *bi)
+vheap_entry(FILE *fp, BATiter *bi, BUN size)
 {
 	(void) size;
-	if (h == NULL)
+	if (bi->vh == NULL)
 		return 0;
 	if ((GDKdebug & TAILCHKMASK) && size > 0) {
-		char *fname = GDKfilepath(0, BATDIR, BBP_physical(h->parentid), "theap");
+		char *fname = GDKfilepath(0, BATDIR, BBP_physical(bi->vh->parentid), "theap");
 		if (fname != NULL) {
 			struct stat stb;
 			if (stat(fname, &stb) == -1) {
 				assert(0);
-				TRC_WARNING(GDK, "file %s not found (expected size %zu)\n", fname, h->free);
+				TRC_WARNING(GDK, "file %s not found (expected size %zu)\n", fname, bi->vhfree);
 			} else if ((size_t) stb.st_size < bi->vhfree) {
 				/* no assert since this can actually happen */
 				TRC_WARNING(GDK, "file %s too small (expected %zu, actual %zu)\n", fname, bi->vhfree, (size_t) stb.st_size);
@@ -1580,7 +1581,7 @@ vheap_entry(FILE *fp, Heap *h, BUN size, BATiter *bi)
 			GDKfree(fname);
 		}
 	}
-	return fprintf(fp, " %zu %zu %d", bi->vhfree, h->size, 0);
+	return fprintf(fp, " %zu %zu %d", bi->vhfree, bi->vh->size, 0);
 }
 
 static gdk_return
@@ -1589,14 +1590,14 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 #ifndef NDEBUG
 	assert(i > 0);
 	assert(i < (bat) ATOMIC_GET(&BBPsize));
-	assert(BBP_desc(i));
-	assert(BBP_desc(i)->batCacheid == i);
-	assert(BBP_desc(i)->batRole == PERSISTENT);
-	assert(0 <= BBP_desc(i)->theap->farmid && BBP_desc(i)->theap->farmid < MAXFARMS);
-	assert(BBPfarms[BBP_desc(i)->theap->farmid].roles & (1U << PERSISTENT));
-	if (BBP_desc(i)->tvheap) {
-		assert(0 <= BBP_desc(i)->tvheap->farmid && BBP_desc(i)->tvheap->farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(i)->tvheap->farmid].roles & (1U << PERSISTENT));
+	assert(bi->b);
+	assert(bi->b->batCacheid == i);
+	assert(bi->b->batRole == PERSISTENT);
+	assert(0 <= bi->h->farmid && bi->h->farmid < MAXFARMS);
+	assert(BBPfarms[bi->h->farmid].roles & (1U << PERSISTENT));
+	if (bi->vh) {
+		assert(0 <= bi->vh->farmid && bi->vh->farmid < MAXFARMS);
+		assert(BBPfarms[bi->vh->farmid].roles & (1U << PERSISTENT));
 	}
 #endif
 
@@ -1608,12 +1609,12 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
 		    BBP_physical(i),
-		    BBP_desc(i)->batRestricted << 1,
+		    bi->b->batRestricted << 1,
 		    size,
-		    BBP_desc(i)->batCapacity,
-		    BBP_desc(i)->hseqbase) < 0 ||
-	    heap_entry(fp, BBP_desc(i), size, bi) < 0 ||
-	    vheap_entry(fp, BBP_desc(i)->tvheap, size, bi) < 0 ||
+		    bi->b->batCapacity,
+		    bi->b->hseqbase) < 0 ||
+	    heap_entry(fp, bi, size) < 0 ||
+	    vheap_entry(fp, bi, size) < 0 ||
 	    (BBP_options(i) && fprintf(fp, " %s", BBP_options(i)) < 0) ||
 	    fprintf(fp, "\n") < 0) {
 		GDKsyserror("new_bbpentry: Writing BBP.dir entry failed\n");
