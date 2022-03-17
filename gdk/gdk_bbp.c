@@ -3662,7 +3662,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				HEAPincref(bi.h);
 				if (bi.vh)
 					HEAPincref(bi.vh);
+#ifndef NDEBUG
 				bi.locked = true;
+#endif
 				const ValRecord *prop;
 				prop = BATgetprop_nolock(bi.b, GDK_MIN_POS);
 				if (prop)
