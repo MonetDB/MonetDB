@@ -1887,8 +1887,8 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
 		       b->tseqbase,
 		       free,
-		       bi->minpos < b->hseqbase + size ? (uint64_t) bi->minpos : (uint64_t) oid_nil,
-		       bi->maxpos < b->hseqbase + size ? (uint64_t) bi->maxpos : (uint64_t) oid_nil);
+		       bi->minpos < size ? (uint64_t) bi->minpos : (uint64_t) oid_nil,
+		       bi->maxpos < size ? (uint64_t) bi->maxpos : (uint64_t) oid_nil);
 }
 
 static inline int
