@@ -852,14 +852,13 @@ extractURLHost(str *retval, str *url, bit *no_www)
 			} else {
 				l = s - h;
 			}
+			if (*no_www && !strncmp(h, "www.", 4)) {
+				h +=4;
+				l -=4;
+			}
 			if (domain && l > 3) {
-				if ((*retval = GDKmalloc(l + 1)) != NULL) {
-					if (*no_www && strlen(h) > 4 && !strncmp(h, "www.", 4)) {
-						strcpy_len(*retval, (h + 4), l + 1);
-					} else {
-						strcpy_len(*retval, h, l + 1);
-					}
-				}
+				if ((*retval = GDKmalloc(l + 1)) != NULL)
+					strcpy_len(*retval, h, l + 1);
 			} else {
 				*retval = GDKstrdup(str_nil);
 			}
