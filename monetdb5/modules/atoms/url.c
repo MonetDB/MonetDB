@@ -859,11 +859,6 @@ extractURLHost(str *retval, str *url, bit *no_www)
 					} else {
 						strcpy_len(*retval, h, l + 1);
 					}
-					// clean up if not valid UTF-8
-					if (!checkUTF8(*retval)) {
-						GDKfree(*retval);
-						*retval = GDKstrdup(str_nil);
-					}
 				}
 			} else {
 				*retval = GDKstrdup(str_nil);
