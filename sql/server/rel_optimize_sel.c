@@ -931,7 +931,7 @@ rel_optimize_select_and_joins_bottomup_(visitor *v, sql_rel *rel)
 {
 	if (!rel || (!is_join(rel->op) && !is_semi(rel->op) && !is_select(rel->op)) || list_empty(rel->exps))
 		return rel;
-	u_int8_t cycle = *(u_int8_t*) v->data;
+	uint8_t cycle = *(uint8_t*) v->data;
 
 	rel->exps = exp_merge_range(v, rel, rel->exps);
 	rel = rel_select_cse(v, rel);
@@ -2597,7 +2597,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 {
-	u_int8_t cycle = *(u_int8_t*) v->data;
+	uint8_t cycle = *(uint8_t*) v->data;
 
 	if (rel->op == op_join && rel->exps && rel->l) {
 		sql_rel *l = rel->l, *r = rel->r;
@@ -3514,7 +3514,7 @@ static sql_rel *
 rel_optimize_select_and_joins_topdown_(visitor *v, sql_rel *rel)
 {
 	/* push_join_down introduces semijoins */
-	u_int8_t cycle = *(u_int8_t*) v->data;
+	uint8_t cycle = *(uint8_t*) v->data;
 	if (cycle <= 0) {
 		rel = rel_semijoin_use_fk(v, rel);
 		rel = rel_push_join_down(v, rel);

@@ -195,7 +195,7 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 }
 
 sql_rel *
-rewrite_simplify(visitor *v, u_int8_t cycle, bool value_based_opt, sql_rel *rel)
+rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
