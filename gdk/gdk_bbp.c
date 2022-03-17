@@ -515,7 +515,14 @@ heapinit(BAT *b, const char *buf,
 	/* (properties & 0x0200) is the old tdense flag */
 	b->tseqbase = (properties & 0x0200) == 0 || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
 	b->theap->free = (size_t) free;
-	b->theap->size = (size_t) size;
+	/* set heap size to match capacity */
+	if (b->ttype == TYPE_msk) {
+		/* round up capacity to multiple of 32 */
+		b->batCapacity = (b->batCapacity + 31) & ~((BUN) 31);
+		b->theap->size = b->batCapacity / 8;
+	} else {
+		b->theap->size = (size_t) b->batCapacity << b->tshift;
+	}
 	b->theap->base = NULL;
 	settailname(b->theap, filename, t, width);
 	b->theap->storage = STORE_INVALID;
@@ -531,10 +538,6 @@ heapinit(BAT *b, const char *buf,
 		b->tmaxpos = (BUN) maxpos;
 	else
 		b->tmaxpos = BUN_NONE;
-	if (b->theap->free > b->theap->size) {
-		TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in heap of bat %d on line %d\n", (int) bid, lineno);
-		return -1;
-	}
 	return n;
 }
 
@@ -558,6 +561,13 @@ vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
 			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
 			return -1;
 		}
+		if (ATOMstorage(b->ttype) == TYPE_str &&
+		    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
+			size = GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN;
+		else if (free < 512)
+			size = 512;
+		else
+			size = free;
 		*b->tvheap = (Heap) {
 			.free = (size_t) free,
 			.size = (size_t) size,
@@ -572,10 +582,6 @@ vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
 		strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
 			      filename, ".theap", NULL);
 		ATOMIC_INIT(&b->tvheap->refs, 1);
-		if (b->tvheap->free > b->tvheap->size) {
-			TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in var heap of bat %d on line %d\n", (int) bid, lineno);
-			return -1;
-		}
 	}
 	return n;
 }
@@ -680,7 +686,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		bn->batRestricted = (properties & 0x06) >> 1;
 		bn->batCount = (BUN) count;
 		bn->batInserted = bn->batCount;
-		bn->batCapacity = (BUN) capacity;
+		/* set capacity to at least count */
+		bn->batCapacity = (BUN) count <= BATTINY ? BATTINY : (BUN) count;
 		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
 		MT_lock_init(&bn->theaplock, name);
