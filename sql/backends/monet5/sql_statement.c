@@ -189,12 +189,11 @@ stmt_create(sql_allocator *sa, st_type type)
 }
 
 stmt *
-stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
+stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done, int pipeline)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int tt = tail_type(s)->type->localtype;
-	int pipeline = (be->pipeline != 0);
 
 	if (s->nr < 0)
 		return NULL;
@@ -211,7 +210,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	/* output variables extent and hist */
 	if (pipeline) {
 		q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
-		q = pushArgument(mb, q, be->pipeline);
+		q = pushArgument(mb, q, pipeline);
 		if (grp)
 			q = pushArgument(mb, q, grp->nr);
 		q = pushArgument(mb, q, s->nr);

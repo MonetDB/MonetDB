@@ -367,7 +367,7 @@ distinct_value_list(backend *be, list *vals, stmt **last_null_value, int depth, 
 	s = stmt_append_bulk(be, stmt_temp(be, exp_subtype(vals->h->data)), l);
 	/* Probably faster to filter out the values directly in the underlying list of atoms.
 	   But for now use groupby to filter out duplicate values. */
-	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
+	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1, 0);
 	stmt* ext = stmt_result(be, groupby, 1);
 
 	return stmt_project(be, ext, s);
@@ -1333,7 +1333,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				stmt *ncnt = cnt;
 				for (en = l->h; en; en = en->next) {
 					stmt *as = en->data;
-					stmt *g = stmt_group(be, as, ngrp, next, ncnt, 1);
+					stmt *g = stmt_group(be, as, ngrp, next, ncnt, 1, be->pipeline);
 					ngrp = stmt_result(be, g, 0);
 					next = stmt_result(be, g, 1);
 					if (cnt)
@@ -3086,7 +3086,7 @@ rel2bin_distinct(backend *be, stmt *s, stmt **distinct)
 		for (n = tids->h; n; n = n->next) {
 			stmt *t = n->data;
 
-			g = stmt_group(be, column(be, t), grp, ext, cnt, !n->next);
+			g = stmt_group(be, column(be, t), grp, ext, cnt, !n->next, 0);
 			grp = stmt_result(be, g, 0);
 			ext = stmt_result(be, g, 1);
 			cnt = stmt_result(be, g, 2);
@@ -3095,7 +3095,7 @@ rel2bin_distinct(backend *be, stmt *s, stmt **distinct)
 		for (n = s->op4.lval->h; n; n = n->next) {
 			stmt *t = n->data;
 
-			g = stmt_group(be, column(be, t), grp, ext, cnt, !n->next);
+			g = stmt_group(be, column(be, t), grp, ext, cnt, !n->next, 0);
 			grp = stmt_result(be, g, 0);
 			ext = stmt_result(be, g, 1);
 			cnt = stmt_result(be, g, 2);
@@ -3242,13 +3242,13 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	 * number of rows.
 	 */
 	for (n = left->op4.lval->h; n; n = n->next) {
-		lg = stmt_group(be, column(be, n->data), lgrp, lext, lcnt, !n->next);
+		lg = stmt_group(be, column(be, n->data), lgrp, lext, lcnt, !n->next, 0);
 		lgrp = stmt_result(be, lg, 0);
 		lext = stmt_result(be, lg, 1);
 		lcnt = stmt_result(be, lg, 2);
 	}
 	for (n = right->op4.lval->h; n; n = n->next) {
-		rg = stmt_group(be, column(be, n->data), rgrp, rext, rcnt, !n->next);
+		rg = stmt_group(be, column(be, n->data), rgrp, rext, rcnt, !n->next, 0);
 		rgrp = stmt_result(be, rg, 0);
 		rext = stmt_result(be, rg, 1);
 		rcnt = stmt_result(be, rg, 2);
@@ -3353,13 +3353,13 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	 * number of rows.
 	 */
 	for (n = left->op4.lval->h; n; n = n->next) {
-		lg = stmt_group(be, column(be, n->data), lgrp, lext, lcnt, !n->next);
+		lg = stmt_group(be, column(be, n->data), lgrp, lext, lcnt, !n->next, 0);
 		lgrp = stmt_result(be, lg, 0);
 		lext = stmt_result(be, lg, 1);
 		lcnt = stmt_result(be, lg, 2);
 	}
 	for (n = right->op4.lval->h; n; n = n->next) {
-		rg = stmt_group(be, column(be, n->data), rgrp, rext, rcnt, !n->next);
+		rg = stmt_group(be, column(be, n->data), rgrp, rext, rcnt, !n->next, 0);
 		rgrp = stmt_result(be, rg, 0);
 		rext = stmt_result(be, rg, 1);
 		rcnt = stmt_result(be, rg, 2);
@@ -4215,7 +4215,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			}
 			if (!gbcol->nrcols)
 				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
-			groupby = stmt_group(be, gbcol, grp, grp /*ext*/, cnt, !en->next);
+			groupby = stmt_group(be, gbcol, grp, grp /*ext*/, cnt, !en->next, be->pipeline);
 
 			/* use global (shared (extend)) result */
 			if (groupby && m) {
@@ -4689,7 +4689,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				ins = stmt_project(be, nn, ins);
 			}
 
-			g = stmt_group(be, ins, NULL, NULL, NULL, 1);
+			g = stmt_group(be, ins, NULL, NULL, NULL, 1, 0);
 			ss = stmt_result(be, g, 2); /* use count */
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR, true);
@@ -5092,7 +5092,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 			/* also take the hopefully unique hash keys, to reduce
 			   (re)group costs */
 			if (k->idx && hash_index(k->idx->type)) {
-				g = stmt_group(be, idx_updates, grp, ext, Cnt, 0);
+				g = stmt_group(be, idx_updates, grp, ext, Cnt, 0, 0);
 				grp = stmt_result(be, g, 0);
 				ext = stmt_result(be, g, 1);
 				Cnt = stmt_result(be, g, 2);
@@ -5135,7 +5135,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 				}
 
 				/* apply group by on groups with Cnt > 1 */
-				g = stmt_group(be, upd, grp, ext, Cnt, !m->next);
+				g = stmt_group(be, upd, grp, ext, Cnt, !m->next, 0);
 				grp = stmt_result(be, g, 0);
 				ext = stmt_result(be, g, 1);
 				Cnt = stmt_result(be, g, 2);
@@ -5198,7 +5198,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 				upd = stmt_project(be, nn, upd);
 			}
 
-			g = stmt_group(be, upd, NULL, NULL, NULL, 1);
+			g = stmt_group(be, upd, NULL, NULL, NULL, 1, 0);
 			ss = stmt_result(be, g, 2); /* use count */
 
 			/* (count(ss) <> sum(ss)) */
