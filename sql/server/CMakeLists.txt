@@ -60,6 +60,7 @@ target_sources(sqlserver
   rel_dump.c
   rel_dump.h rel_exp.h rel_rel.h
   rel_basetable.h
+  rel_rewriter.h
   rel_unnest.h
   rel_optimizer.h
   rel_optimizer_private.h
