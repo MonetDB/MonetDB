@@ -180,28 +180,6 @@ BATsetdims(BAT *b, uint16_t width)
 }
 
 const char *
-gettailnamebi(const BATiter *bi)
-{
-	if (bi->type == TYPE_str) {
-		switch (bi->width) {
-		case 1:
-			return "tail1";
-		case 2:
-			return "tail2";
-		case 4:
-#if SIZEOF_VAR_T == 8
-			return "tail4";
-		case 8:
-#endif
-			break;
-		default:
-			MT_UNREACHABLE();
-		}
-	}
-	return "tail";
-}
-
-const char *
 gettailname(const BAT *b)
 {
 	if (b->ttype == TYPE_str) {
