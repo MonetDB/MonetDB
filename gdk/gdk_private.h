@@ -256,8 +256,6 @@ gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer
 	__attribute__((__visibility__("hidden")));
 const char *gettailname(const BAT *b)
 	__attribute__((__visibility__("hidden")));
-const char *gettailnamebi(const BATiter *bi)
-	__attribute__((__visibility__("hidden")));
 void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
@@ -291,12 +289,14 @@ gettailnamebi(const BATiter *bi)
 			return "tail1";
 		case 2:
 			return "tail2";
-#if SIZEOF_VAR_T == 8
 		case 4:
+#if SIZEOF_VAR_T == 8
 			return "tail4";
+		case 8:
 #endif
-		default:
 			break;
+		default:
+			MT_UNREACHABLE();
 		}
 	}
 	return "tail";
