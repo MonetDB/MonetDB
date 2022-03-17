@@ -758,8 +758,9 @@ typedef struct {
 #define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
 #define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
+#define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
-#define GDKLIBRARY		061045U /* first after Jul2021 */
+#define GDKLIBRARY		061046U /* first after Jan2022 */
 
 typedef struct BAT {
 	/* static bat properties */
