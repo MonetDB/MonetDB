@@ -443,6 +443,8 @@ heapinit(BAT *b, const char *buf,
 	(void) bbpversion;	/* could be used to implement compatibility */
 
 	minpos = maxpos = (uint64_t) oid_nil; /* for GDKLIBRARY_MINMAX_POS case */
+	size = 0;			      /* for GDKLIBRARY_HSIZE case */
+	storage = STORE_INVALID;	      /* for GDKLIBRARY_HSIZE case */
 	if (bbpversion <= GDKLIBRARY_MINMAX_POS ?
 	    sscanf(buf,
 		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
@@ -453,6 +455,7 @@ heapinit(BAT *b, const char *buf,
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &free, &size, &storage,
 		   &n) < 12 :
+	    bbpversion <= GDKLIBRARY_HSIZE ?
 	    sscanf(buf,
 		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
@@ -461,7 +464,16 @@ heapinit(BAT *b, const char *buf,
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &free, &size, &storage, &minpos, &maxpos,
-		   &n) < 14) {
+		   &n) < 14 :
+	    sscanf(buf,
+		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
+		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
+		   " %" SCNu64 " %" SCNu64 " %" SCNu64
+		   "%n",
+		   type, &width, &var, &properties, &nokey0,
+		   &nokey1, &nosorted, &norevsorted, &base,
+		   &free, &minpos, &maxpos,
+		   &n) < 12) {
 		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 		return -1;
 	}
@@ -542,17 +554,26 @@ heapinit(BAT *b, const char *buf,
 }
 
 static int
-vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
+vheapinit(BAT *b, const char *buf, bat bid, unsigned bbpversion, const char *filename, int lineno)
 {
 	int n = 0;
 	uint64_t free, size;
 	uint16_t storage;
 
+	(void) bbpversion;	/* could be used to implement compatibility */
+
+	size = 0;			      /* for GDKLIBRARY_HSIZE case */
+	storage = STORE_INVALID;	      /* for GDKLIBRARY_HSIZE case */
 	if (b->tvarsized && b->ttype != TYPE_void) {
-		if (sscanf(buf,
+		if (bbpversion <= GDKLIBRARY_HSIZE ?
+		    sscanf(buf,
 			   " %" SCNu64 " %" SCNu64 " %" SCNu16
 			   "%n",
-			   &free, &size, &storage, &n) < 3) {
+			   &free, &size, &storage, &n) < 3 :
+		    sscanf(buf,
+			   " %" SCNu64
+			   "%n",
+			   &free, &n) < 1) {
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 			return -1;
 		}
@@ -611,7 +632,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		int nread, n;
 		char *s, *options = NULL;
 		char logical[1024];
-		uint64_t count, capacity, base = 0;
+		uint64_t count, capacity = 0, base = 0;
 #ifdef GDKLIBRARY_HASHASH
 		int Thashash;
 #endif
@@ -627,14 +648,21 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			*s = 0;
 		}
 
-		if (sscanf(buf,
+		if (bbpversion <= GDKLIBRARY_HSIZE ?
+		    sscanf(buf,
 			   "%" SCNu64 " %" SCNu16 " %128s %19s %u %" SCNu64
 			   " %" SCNu64 " %" SCNu64
 			   "%n",
 			   &batid, &status, headname, filename,
-			   &properties,
-			   &count, &capacity, &base,
-			   &nread) < 8) {
+			   &properties, &count, &capacity, &base,
+			   &nread) < 8 :
+		    sscanf(buf,
+			   "%" SCNu64 " %" SCNu16 " %128s %19s %u %" SCNu64
+			   " %" SCNu64
+			   "%n",
+			   &batid, &status, headname, filename,
+			   &properties, &count, &base,
+			   &nread) < 7) {
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 			goto bailout;
 		}
@@ -713,7 +741,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			goto bailout;
 		}
 		nread += n;
-		n = vheapinit(bn, buf + nread, bid, filename, lineno);
+		n = vheapinit(bn, buf + nread, bid, bbpversion, filename, lineno);
 		if (n < 0) {
 			BATdestroy(bn);
 			goto bailout;
@@ -932,6 +960,7 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize)
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_HSIZE &&
 	    bbpversion != GDKLIBRARY_HASHASH &&
 	    bbpversion != GDKLIBRARY_TAILN &&
 	    bbpversion != GDKLIBRARY_MINMAX_POS) {
@@ -1842,7 +1871,7 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 	}
 
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
-		       BUNFMT " " OIDFMT " %zu %zu %d %" PRIu64" %" PRIu64,
+		       BUNFMT " " OIDFMT " %zu %" PRIu64" %" PRIu64,
 		       bi->type >= 0 ? BATatoms[bi->type].name : ATOMunknown_name(bi->type),
 		       bi->width,
 		       b->tvarsized,
@@ -1858,8 +1887,6 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
 		       b->tseqbase,
 		       free,
-		       bi->h->size,
-		       0,
 		       bi->minpos < b->hseqbase + size ? (uint64_t) bi->minpos : (uint64_t) oid_nil,
 		       bi->maxpos < b->hseqbase + size ? (uint64_t) bi->maxpos : (uint64_t) oid_nil);
 }
@@ -1884,7 +1911,7 @@ vheap_entry(FILE *fp, BATiter *bi, BUN size)
 			GDKfree(fname);
 		}
 	}
-	return fprintf(fp, " %zu %zu %d", bi->vhfree, bi->vh->size, 0);
+	return fprintf(fp, " %zu", bi->vhfree);
 }
 
 static gdk_return
@@ -1907,7 +1934,7 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 
 	if (size > bi->count)
 		size = bi->count;
-	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " BUNFMT " " OIDFMT,
+	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " OIDFMT,
 		    /* BAT info */
 		    (int) i,
 		    BBP_status(i) & BBPPERSISTENT,
@@ -1915,7 +1942,6 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 		    BBP_physical(i),
 		    bi->b->batRestricted << 1,
 		    size,
-		    bi->b->batCapacity,
 		    bi->b->hseqbase) < 0 ||
 	    heap_entry(fp, bi, size) < 0 ||
 	    vheap_entry(fp, bi, size) < 0 ||
