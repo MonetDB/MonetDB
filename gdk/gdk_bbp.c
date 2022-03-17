@@ -1506,12 +1506,9 @@ BBPexit(void)
  * reclaimed as well.
  */
 static inline int
-heap_entry(FILE *fp, BATiter *bi, BUN size)
+heap_entry(FILE *fp, BATiter *bi, BUN size, BUN minpos, BUN maxpos)
 {
 	BAT *b = bi->b;
-	const ValRecord *minprop, *maxprop;
-	minprop = BATgetprop_nolock(b, GDK_MIN_POS);
-	maxprop = BATgetprop_nolock(b, GDK_MAX_POS);
 	size_t free = bi->hfree;
 	if (size < BUN_NONE) {
 		if ((bi->type >= 0 && ATOMstorage(bi->type) == TYPE_msk))
@@ -1557,8 +1554,8 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       free,
 		       bi->h->size,
 		       0,
-		       minprop && minprop->val.oval < b->hseqbase + size ? minprop->val.oval : oid_nil,
-		       maxprop && maxprop->val.oval < b->hseqbase + size ? maxprop->val.oval : oid_nil);
+		       minpos < size ? (oid) minpos : oid_nil,
+		       maxpos < size ? (oid) maxpos : oid_nil);
 }
 
 static inline int
@@ -1585,7 +1582,7 @@ vheap_entry(FILE *fp, BATiter *bi, BUN size)
 }
 
 static gdk_return
-new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
+new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi, BUN minpos, BUN maxpos)
 {
 #ifndef NDEBUG
 	assert(i > 0);
@@ -1613,7 +1610,7 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 		    size,
 		    bi->b->batCapacity,
 		    bi->b->hseqbase) < 0 ||
-	    heap_entry(fp, bi, size) < 0 ||
+	    heap_entry(fp, bi, size, minpos, maxpos) < 0 ||
 	    vheap_entry(fp, bi, size) < 0 ||
 	    (BBP_options(i) && fprintf(fp, " %s", BBP_options(i)) < 0) ||
 	    fprintf(fp, "\n") < 0) {
@@ -1712,7 +1709,8 @@ BBPdir_first(bool subcommit, lng logno, lng transid,
 
 static bat
 BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
-	    FILE **obbpfp, FILE *nbbpf, bool subcommit, BATiter *bi)
+	    FILE **obbpfp, FILE *nbbpf, bool subcommit, BATiter *bi,
+	    BUN minpos, BUN maxpos)
 {
 	if (n < -1)		/* safety catch */
 		return n;
@@ -1842,7 +1840,7 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 		}
 	}
 	if (BBP_status(bid) & BBPPERSISTENT) {
-		if (new_bbpentry(nbbpf, bid, size, bi) != GDK_SUCCEED)
+		if (new_bbpentry(nbbpf, bid, size, bi, minpos, maxpos) != GDK_SUCCEED)
 			goto bailout;
 	}
 	return n == -1 ? -1 : n == bid ? 0 : n;
@@ -3649,6 +3647,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			/* BBP_desc(i) may be NULL */
 			BUN size = sizes ? sizes[idx] : BUN_NONE;
 			BATiter bi;
+			oid minpos = oid_nil, maxpos = oid_nil;
 
 			/* add a fix so that BBPmanager doesn't interfere */
 			BBPfix(i);
@@ -3658,7 +3657,20 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					decref(-i, false, false, locked_by == 0 || locked_by != MT_getpid(), __func__);
 					break;
 				}
-				bi = bat_iterator(BBP_desc(i));
+				MT_lock_set(&BBP_desc(i)->theaplock);
+				bi = bat_iterator_nolock(BBP_desc(i));
+				HEAPincref(bi.h);
+				if (bi.vh)
+					HEAPincref(bi.vh);
+				bi.locked = true;
+				const ValRecord *prop;
+				prop = BATgetprop_nolock(bi.b, GDK_MIN_POS);
+				if (prop)
+					minpos = prop->val.oval;
+				prop = BATgetprop_nolock(bi.b, GDK_MAX_POS);
+				if (prop)
+					maxpos = prop->val.oval;
+				MT_lock_unset(&bi.b->theaplock);
 				if (b) {
 					/* wait for BBPSAVING so that we
 					 * can set it, wait for
@@ -3687,7 +3699,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				bi = bat_iterator(NULL);
 			}
 			if (ret == GDK_SUCCEED) {
-				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, subcommit != NULL, &bi);
+				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, subcommit != NULL, &bi, (BUN) minpos, (BUN) maxpos);
 			}
 			bat_iterator_end(&bi);
 			/* can't use BBPunfix because of the "lock"
