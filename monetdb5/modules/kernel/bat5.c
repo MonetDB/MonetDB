@@ -861,7 +861,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
 	o = (oid*)Tloc(bs, 0);
-	ol = (oid*)Tloc(bs, BUNlast(bs));
+	ol = (oid*)Tloc(bs, BATcount(bs));
 
 	BATiter bi = bat_iterator(b);
 	q = bi.count;
@@ -961,7 +961,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
 	o = (oid*)Tloc(bs, 0);
-	ol= (oid*)Tloc(bs, BUNlast(bs));
+	ol= (oid*)Tloc(bs, BATcount(bs));
 	r = (oid*)Tloc(bn, 0);
 
 	lim = BATcount(b);

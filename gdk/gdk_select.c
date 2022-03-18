@@ -48,7 +48,7 @@ virtualize(BAT *bn)
 	if (bn->ttype == TYPE_oid &&
 	    (BATcount(bn) <= 1 ||
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
-	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
+	     * (const oid *) Tloc(bn, BATcount(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
 		TRC_DEBUG(ALGO, ALGOBATFMT ",seq=" OIDFMT "\n",
 			  ALGOBATPAR(bn),
@@ -190,7 +190,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	if (cnt > 1) {
 		/* hash chains produce results in the order high to
 		 * low, so we just need to reverse */
-		for (l = 0, h = BUNlast(bn) - 1; l < h; l++, h--) {
+		for (l = 0, h = BATcount(bn) - 1; l < h; l++, h--) {
 			o = dst[l];
 			dst[l] = dst[h];
 			dst[h] = o;
@@ -2306,8 +2306,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				high = canditer_search(lci, high + l->hseqbase, true);
 				assert(high >= low);
 
-				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
-					cnt = BUNlast(r1) + high - low + 1024;
+				if (BATcapacity(r1) < BATcount(r1) + high - low) {
+					cnt = BATcount(r1) + high - low + 1024;
 					if (cnt > maxsize)
 						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
@@ -2336,8 +2336,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				assert(oidxh);
 				ord = (const oid *) oidxh->base + ORDERIDXOFF;
 
-				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
-					cnt = BUNlast(r1) + high - low + 1024;
+				if (BATcapacity(r1) < BATcount(r1) + high - low) {
+					cnt = BATcount(r1) + high - low + 1024;
 					if (cnt > maxsize)
 						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
@@ -2718,7 +2718,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				}
 				if (BETWEEN(vl, vrl, linc, vrh, hinc, any) != 1)
 					continue;
-				if (BUNlast(r1) == BATcapacity(r1)) {
+				if (BATcount(r1) == BATcapacity(r1)) {
 					BUN newcap = BATgrows(r1);
 					if (newcap > maxsize)
 						newcap = maxsize;

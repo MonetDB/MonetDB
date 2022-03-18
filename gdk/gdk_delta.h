@@ -40,6 +40,6 @@ DELTAinit(BAT *b)
  * be storage-clean, but transaction-dirty). For this we have
  * DELTAdirty(b).
  */
-#define DELTAdirty(b)	((b)->batInserted < BUNlast(b))
+#define DELTAdirty(b)	((b)->batInserted < BATcount(b))
 
 #endif /* _GDK_DELTA_H_ */
