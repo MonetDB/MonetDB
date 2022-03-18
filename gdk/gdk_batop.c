@@ -934,7 +934,7 @@ BATdel(BAT *b, BAT *d)
 			} else {
 				memmove(Tloc(b, o),
 					Tloc(b, o + c),
-					Tsize(b) * (BATcount(b) - (o + c)));
+					b->twidth * (BATcount(b) - (o + c)));
 			}
 			b->theap->dirty = true;
 			// o += b->hseqbase; // if this were to be used again
@@ -999,7 +999,7 @@ BATdel(BAT *b, BAT *d)
 					}
 					pos += n;
 				} else {
-					n *= Tsize(b);
+					n *= b->twidth;
 					memmove(p,
 						Tloc(b, o[-1] + 1 - b->hseqbase),
 						n);
@@ -2460,7 +2460,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				if (do_sort(Tloc(bn, r),
 					    ords ? ords + r : NULL,
 					    bn->tvheap ? bn->tvheap->base : NULL,
-					    p - r, Tsize(bn), ords ? sizeof(oid) : 0,
+					    p - r, bn->twidth, ords ? sizeof(oid) : 0,
 					    bn->ttype, reverse, nilslast, stable) != GDK_SUCCEED)
 					goto error;
 				r = p;
@@ -2471,7 +2471,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (do_sort(Tloc(bn, r),
 			    ords ? ords + r : NULL,
 			    bn->tvheap ? bn->tvheap->base : NULL,
-			    p - r, Tsize(bn), ords ? sizeof(oid) : 0,
+			    p - r, bn->twidth, ords ? sizeof(oid) : 0,
 			    bn->ttype, reverse, nilslast, stable) != GDK_SUCCEED)
 			goto error;
 		/* if single group (r==0) the result is (rev)sorted,
@@ -2503,7 +2503,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		     do_sort(Tloc(bn, 0),
 			     ords,
 			     bn->tvheap ? bn->tvheap->base : NULL,
-			     BATcount(bn), Tsize(bn), ords ? sizeof(oid) : 0,
+			     BATcount(bn), bn->twidth, ords ? sizeof(oid) : 0,
 			     bn->ttype, reverse, nilslast, stable) != GDK_SUCCEED)) {
 			if (m != NULL) {
 				HEAPfree(m, true);

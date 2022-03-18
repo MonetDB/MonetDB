@@ -1148,8 +1148,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
 
-#define Tsize(b)	((b)->twidth)
-
 #define tailsize(b,p)	((b)->ttype ?				\
 			 (ATOMstorage((b)->ttype) == TYPE_msk ?	\
 			  (((size_t) (p) + 31) / 32) * 4 :	\

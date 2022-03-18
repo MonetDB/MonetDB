@@ -1342,7 +1342,7 @@ BUNdelete(BAT *b, oid o)
 		} else {
 			val = Tloc(b, BATcount(b) - 1);
 			HASHdelete(b, BATcount(b) - 1, val);
-			memcpy(Tloc(b, p), val, Tsize(b));
+			memcpy(Tloc(b, p), val, b->twidth);
 			HASHinsert(b, p, val);
 			MT_lock_set(&b->theaplock);
 			if (b->tminpos == BATcount(b) - 1)
