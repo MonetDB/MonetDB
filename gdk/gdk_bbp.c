@@ -549,7 +549,8 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename, i
 			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
 			return -1;
 		}
-		if (ATOMstorage(b->ttype) == TYPE_str &&
+		if (b->ttype >= 0 &&
+		    ATOMstorage(b->ttype) == TYPE_str &&
 		    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
 			size = GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN;
 		else if (free < 512)
