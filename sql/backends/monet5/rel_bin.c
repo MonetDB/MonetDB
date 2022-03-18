@@ -1336,7 +1336,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					stmt *g = stmt_group(be, as, ngrp, next, ncnt, 1, be->pipeline);
 					ngrp = stmt_result(be, g, 0);
 					next = stmt_result(be, g, 1);
-					if (cnt)
+					if (cnt || !be->pipeline)
 					ncnt = stmt_result(be, g, 2);
 				}
 				for (en = l->h; en; en = en->next) {
@@ -1365,7 +1365,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				}
 				append(l, stmt_project(be, u, a));
 			} else if (grp) {
-				if (grp) {
+				if (be->pipeline) {
 					list_prepend(l, grp);
 					grp = NULL;
 					ext = NULL;
@@ -1378,7 +1378,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			   and/or an attribute to count */
 			if (grp) {
 				as = grp;
-				grp = ext = NULL;
+				if (be->pipeline)
+					grp = ext = NULL;
 			} else if (left) {
 				as = bin_find_smallest_column(be, left);
 				as = exp_count_no_nil_arg(e, ext, NULL, as);
@@ -3717,10 +3718,17 @@ rel_getcount(sql_rel *rel)
 
 	if (rel && (p = find_prop(rel->p, PROP_COUNT)) != NULL)
 		return p->number;
+	if (rel && rel->op == op_table)
+		return 1;
 	if (rel && is_semi(rel->op))
 		return rel_getcount(rel->l);
-	if (rel && is_join(rel->op))
-		return rel_getcount(rel->l) * rel_getcount(rel->r);
+	if (rel && is_join(rel->op)) {
+		lng l = rel_getcount(rel->l);
+	    lng r =	rel_getcount(rel->r);
+		if ((l * r) < l)
+			return l;
+		return l*r;
+	}
 	if (rel && rel->op == op_union)
 		return rel_getcount(rel->l) + rel_getcount(rel->r);
 	if (rel && is_set(rel->op))
@@ -4171,11 +4179,46 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 	return cursub;
 }
 
+static sql_rel*
+rel_is_inter_except(visitor *v, sql_rel *rel)
+{
+	if (is_set(rel->op) && rel->op != op_union)
+		*((int*)v->data) = 1;
+	return rel;
+}
+
 static bool
-rel_groupby_pp(sql_rel *rel, bool _2phases)
+rel_has_inter_except(mvc *sql, sql_rel *rel)
+{
+	int set = 0;
+	visitor v = { .sql = sql, .data = &set };
+	rel = rel_visitor_bottomup(&v, rel, &rel_is_inter_except);
+	return set;
+}
+
+static bool
+rel_groupby_pp(mvc *sql, sql_rel *rel, bool _2phases)
 {
 	if (!is_groupby(rel->op))
 		return false;
+
+	if (rel_has_inter_except(sql, rel))
+		return false;
+
+	for(node *n = rel->exps->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (is_aggr(e->type)) {
+			sql_subfunc *sf = e->f;
+
+			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 /*||
+			    strcmp(sf->func->base.name, "prod") == 0*/)) {
+				return false;
+			}
+		}
+	}
+
 	if (list_empty(rel->r) && !_2phases)
 		return false;
 	/* more checks needed */
@@ -4191,7 +4234,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
-	bool df2 = (SQLrunning && rel_groupby_pp(rel, _2phases));
+	bool df2 = (SQLrunning && rel_groupby_pp(be->mvc, rel, _2phases));
 
 //	if (rel_single_distinct(rel))
 
@@ -4291,9 +4334,11 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column(be, gbexps, aggrexp->l, aggrexp->r);
 			if (!_2phases && aggrstmt && groupby) {
-				aggrstmt = stmt_project(be, grp /*ext*/, aggrstmt);
-				aggrstmt->q = pushArgument(be->mb, aggrstmt->q, be->pipeline);
-				aggrstmt->q->inout = 1;
+				aggrstmt = stmt_project(be, be->pipeline?grp:ext, aggrstmt);
+				if (be->pipeline) {
+					aggrstmt->q = pushArgument(be->mb, aggrstmt->q, be->pipeline);
+					aggrstmt->q->inout = 1;
+				}
 				if (list_length(gbexps) == 1)
 					aggrstmt->key = 1;
 			}

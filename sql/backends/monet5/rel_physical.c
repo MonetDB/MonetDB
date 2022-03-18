@@ -80,6 +80,9 @@ find_aggr_exp(mvc *sql, list *exps, char *name)
         return NULL;
 }
 
+#define rewrite_gt_zero_used (1 << 0)
+#define is_rewrite_gt_zero_used(X) ((X & rewrite_gt_zero_used) == rewrite_gt_zero_used)
+
 static sql_rel *
 rel_count_gt_zero(visitor *v, sql_rel *rel)
 {
@@ -89,7 +92,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		sql_exp *e = NULL;
 
 		gbe = rel->r;
-		if (!gbe || list_empty(gbe))
+		if (!gbe || list_empty(gbe) || is_rewrite_gt_zero_used(rel->used))
 			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */
@@ -104,6 +107,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 			append(rel->exps, e);
 			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 		}
+		rel->used |= rewrite_gt_zero_used;
 		e = exp_compare(sql->sa, e, exp_atom_lng(sql->sa, 0), cmp_notequal);
 		rel = rel_select(sql->sa, rel, e);
 		rel = rel_project(sql->sa, rel, exps);
