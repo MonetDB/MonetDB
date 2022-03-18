@@ -3856,7 +3856,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			|| BATordered_rev(l)
 			|| BATtdense(r)
 			|| lcnt < 1024
-			|| BATcount(r) * (Tsize(r) + hsz + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1))) {
+			|| BATcount(r) * (r->twidth + hsz + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1))) {
 			rc = mergejoin(r1p, r2p, l, r, &lci, &rci,
 				       nil_matches, nil_on_miss, semi, only_misses,
 				       not_in, max_one, min_one, estimate, t0, false, func);

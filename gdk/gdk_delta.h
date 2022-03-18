@@ -21,7 +21,7 @@ DELTAinit(BAT *b)
 	BATsetcount(b, 0);
 	b->theap->free = 0;
 	b->batInserted = 0;
-	b->tshift = ATOMelmshift(Tsize(b));
+	b->tshift = ATOMelmshift(b->twidth);
 	TRC_DEBUG(DELTA,
 		  "%s free %zu ins " BUNFMT " base %p\n",
 		  BBP_logical(b->batCacheid),
