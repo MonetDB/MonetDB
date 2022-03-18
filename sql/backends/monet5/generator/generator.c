@@ -419,7 +419,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			if (cand)
 				BBPunfix(cand->batCacheid);
-			BATsetcount(bn, (BUN) n);
+			BATsetcount(bn, n);
 			bn->tsorted = true;
 			bn->trevsorted = BATcount(bn) <= 1;
 			bn->tkey = true;
@@ -567,11 +567,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int c= 0, anti =0,tpe;
+	int anti =0,tpe;
 	bat cndid =0;
 	BAT *cand = 0, *bn = NULL;
 	struct canditer ci = (struct canditer) {.tpe = cand_dense};
-	BUN cap,j;
+	BUN cap,j, c = 0;
 	oid o = 0;
 	InstrPtr p;
 	str oper;
@@ -741,10 +741,10 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int c= 0, tpe;
+	int tpe;
 	bat *ret;
 	BAT *b, *bn = NULL;
-	BUN cnt;
+	BUN cnt, c = 0;
 	oid *ol = NULL, o= 0;
 	InstrPtr p;
 
