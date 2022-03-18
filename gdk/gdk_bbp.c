@@ -1878,7 +1878,7 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       b->tvarsized,
 		       (unsigned short) b->tsorted |
 			   ((unsigned short) b->trevsorted << 7) |
-			   (((unsigned short) b->tkey & 0x01) << 8) |
+			   ((unsigned short) b->tkey << 8) |
 		           ((unsigned short) BATtdense(b) << 9) |
 			   ((unsigned short) b->tnonil << 10) |
 			   ((unsigned short) b->tnil << 11),
