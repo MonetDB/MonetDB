@@ -1170,8 +1170,6 @@ typedef var_t stridx_t;
 #define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
-#define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
-
 #define BATcount(b)	((b)->batCount)
 
 #include "gdk_atoms.h"
@@ -2228,7 +2226,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * is the iteration variable.
  */
 #define BATloop(r, p, q)			\
-	for (q = BUNlast(r), p = 0; p < q; p++)
+	for (q = BATcount(r), p = 0; p < q; p++)
 
 /*
  * @+ Common BAT Operations

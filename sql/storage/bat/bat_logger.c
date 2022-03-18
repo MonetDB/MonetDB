@@ -1514,7 +1514,7 @@ upgrade(old_logger *lg)
 			}
 			if (d != NULL) {
 				const oid *dels = (const oid *) Tloc(d, 0);
-				for (BUN q = BUNlast(d), p = 0; p < q; p++)
+				for (BUN q = BATcount(d), p = 0; p < q; p++)
 					mskSetVal(m, (BUN) dels[p], true);
 				BBPretain(d->batCacheid);
 			}
@@ -1743,7 +1743,7 @@ upgrade(old_logger *lg)
 		}
 		const oid *dels;
 		dels = Tloc(b, 0);
-		for (BUN q = BUNlast(b), p = 0; p < q; p++) {
+		for (BUN q = BATcount(b), p = 0; p < q; p++) {
 			mskSetVal(bn, (BUN) dels[p], true);
 		}
 		bat_destroy(b);
@@ -1913,7 +1913,7 @@ bl_postversion(void *Store, void *Lg)
 		}
 		ocl = Tloc(te, 0);
 		ncl = Tloc(tne, 0);
-		for (BUN p = 0, q = BUNlast(te); p < q; p++) {
+		for (BUN p = 0, q = BATcount(te); p < q; p++) {
 			switch (ocl[p]) {
 			case EC_TIME_TZ:		/* old EC_DATE */
 				ncl[p] = EC_DATE;

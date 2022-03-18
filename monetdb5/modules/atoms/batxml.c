@@ -971,7 +971,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		bi[i] = bat_iterator(b);
 		p[i] = 0;
-		q[i] = BUNlast(bi[i].b);
+		q[i] = BATcount(bi[i].b);
 	}
 	/* check for errors */
 	if (i != pci->argc) {
@@ -1094,7 +1094,7 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 		throw(MAL, "xml.concat", INTERNAL_BAT_ACCESS);
 	}
 	p = 0;
-	q = BUNlast(b);
+	q = BATcount(b);
 	rp = 0;
 
 	prepareResult(bn, b, TYPE_xml, "concat",
