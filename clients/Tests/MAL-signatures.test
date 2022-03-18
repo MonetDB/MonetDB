@@ -33008,6 +33008,11 @@ similarity
 command battxtsim.similarity(X_0:bat[:str], X_1:bat[:str]):bat[:dbl] 
 fstrcmp0_impl_bulk;
 Normalized edit distance between two strings
+baturl
+extractURLHost
+command baturl.extractURLHost(X_0:bat[:str], X_1:bit):bat[:str] 
+BATextractURLHost;
+Extract host from BAT of URLs
 batuuid
 isaUUID
 command batuuid.isaUUID(X_0:bat[:str]):bat[:bit] 
@@ -47999,6 +48004,11 @@ command txtsim.stringdiff(X_0:str, X_1:str):int
 stringdiff_impl;
 calculate the soundexed editdistance
 url
+extractURLHost
+command url.extractURLHost(X_0:str, X_1:bit):str 
+extractURLHost;
+Extract host from a URL relaxed version
+url
 getAnchor
 command url.getAnchor(X_0:url):str 
 URLgetAnchor;
@@ -48032,7 +48042,7 @@ url
 getHost
 command url.getHost(X_0:url):str 
 URLgetHost;
-Extract the server name from the URL
+Extract the server name from the URL strict version
 url
 getPort
 command url.getPort(X_0:url):str 
