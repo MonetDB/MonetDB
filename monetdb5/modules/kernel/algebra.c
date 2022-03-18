@@ -1169,7 +1169,7 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT ": cannot fetch a single row from an empty input\n");
 	}
-	if (*pos >= (lng) BUNlast(b)) {
+	if (*pos >= (lng) BATcount(b)) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT ": row index to fetch is out of range\n");
 	}

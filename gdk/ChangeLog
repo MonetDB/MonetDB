@@ -1,6 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Fri Mar 18 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Get rid of macro Tsize, use ->twidth instead.
+- Get rid of macro BUNlast, just use BATcount instead.
+
 * Mon Jan 31 2022 Sjoerd Mullender <sjoerd@acm.org>
 - The BLOB type has been moved into the GDK layer.
 

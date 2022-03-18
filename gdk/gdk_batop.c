@@ -167,7 +167,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
 		MT_thread_setalgorithm("memcpy offsets");
-		memcpy(Tloc(b, BUNlast(b)), (const char *) ni.base + ((ci->seq - n->hseqbase) << ni.shift), cnt << ni.shift);
+		memcpy(Tloc(b, BATcount(b)), (const char *) ni.base + ((ci->seq - n->hseqbase) << ni.shift), cnt << ni.shift);
 	} else if (toff != ~(size_t) 0) {
 		/* we don't need to insert any actual strings since we
 		 * have already made sure that they are all in b's
@@ -374,11 +374,11 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		if (ci->tpe == cand_dense) {
 			/* fast memcpy since we copy a consecutive
 			 * chunk of memory */
-			memcpy(Tloc(b, BUNlast(b)),
+			memcpy(Tloc(b, BATcount(b)),
 			       (const var_t *) ni.base + (ci->seq - hseq),
 			       cnt << b->tshift);
 		} else {
-			var_t *restrict dst = (var_t *) Tloc(b, BUNlast(b));
+			var_t *restrict dst = (var_t *) Tloc(b, BATcount(b));
 			const var_t *restrict src = (const var_t *) ni.base;
 			while (cnt > 0) {
 				cnt--;
@@ -425,7 +425,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		MT_lock_unset(&b->theaplock);
 	}
 	/* copy data from n to b */
-	r = BUNlast(b);
+	r = BATcount(b);
 	MT_rwlock_wrlock(&b->thashlock);
 	while (cnt > 0) {
 		cnt--;
@@ -660,7 +660,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		goto doreturn;
 	}
 
-	if (BUNlast(b) + cnt > BUN_MAX) {
+	if (BATcount(b) + cnt > BUN_MAX) {
 		bat_iterator_end(&ni);
 		GDKerror("combined BATs too large\n");
 		return GDK_FAIL;
@@ -741,7 +741,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 	}
 
-	r = BUNlast(b);
+	r = BATcount(b);
 
 	/* property setting */
 	if (BATcount(b) == 0) {
@@ -832,7 +832,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		    ni.type != TYPE_void &&
 		    ci.tpe == cand_dense) {
 			/* use fast memcpy if we can */
-			memcpy(Tloc(b, BUNlast(b)),
+			memcpy(Tloc(b, BATcount(b)),
 			       (const char *) ni.base + ((ci.seq - hseq) << ni.shift),
 			       cnt << ni.shift);
 			for (BUN i = 0; b->thash && i < cnt; i++) {
@@ -934,7 +934,7 @@ BATdel(BAT *b, BAT *d)
 			} else {
 				memmove(Tloc(b, o),
 					Tloc(b, o + c),
-					Tsize(b) * (BATcount(b) - (o + c)));
+					b->twidth * (BATcount(b) - (o + c)));
 			}
 			b->theap->dirty = true;
 			// o += b->hseqbase; // if this were to be used again
@@ -999,7 +999,7 @@ BATdel(BAT *b, BAT *d)
 					}
 					pos += n;
 				} else {
-					n *= Tsize(b);
+					n *= b->twidth;
 					memmove(p,
 						Tloc(b, o[-1] + 1 - b->hseqbase),
 						n);
@@ -1782,7 +1782,7 @@ BATslice(BAT *b, BUN l, BUN h)
 			   (BATcount(bn) == 1 ||
 			    (bn->tkey &&
 			     bn->tsorted &&
-			     foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)))) {
+			     foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BATcount(bn) - 1)))) {
 			BATtseqbase(bn, foid);
 		}
 	}
@@ -1805,7 +1805,7 @@ BATslice(BAT *b, BUN l, BUN h)
 #define BAT_ORDERED(TPE)						\
 	do {								\
 		const TPE *restrict vals = Tloc(b, 0);			\
-		for (BUN q = BUNlast(b), p = 1; p < q; p++) {		\
+		for (BUN q = BATcount(b), p = 1; p < q; p++) {		\
 			if (vals[p - 1] > vals[p]) {			\
 				b->tnosorted = p;			\
 				TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0); \
@@ -1828,7 +1828,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		const TPE *restrict vals = Tloc(b, 0);			\
 		TPE prev = vals[0];					\
 		bool prevnil = is_##TPE##_nil(prev);			\
-		for (BUN q = BUNlast(b), p = 1; p < q; p++) {		\
+		for (BUN q = BATcount(b), p = 1; p < q; p++) {		\
 			TPE next = vals[p];				\
 			int cmp = prevnil ? -!(prevnil = is_##TPE##_nil(next)) : (prevnil = is_##TPE##_nil(next)) ? 1 : (prev > next) - (prev < next); \
 			prev = next;					\
@@ -1897,7 +1897,7 @@ BATordered(BAT *b)
 			BAT_ORDERED_FP(dbl);
 			break;
 		case TYPE_str:
-			for (BUN q = BUNlast(b), p = 1; p < q; p++) {
+			for (BUN q = BATcount(b), p = 1; p < q; p++) {
 				int c;
 				const char *p1 = BUNtail(bi, p - 1);
 				const char *p2 = BUNtail(bi, p);
@@ -1932,7 +1932,7 @@ BATordered(BAT *b)
 			break;
 		default: {
 			int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
-			for (BUN q = BUNlast(b), p = 1; p < q; p++) {
+			for (BUN q = BATcount(b), p = 1; p < q; p++) {
 				int c;
 				if ((c = cmpf(BUNtail(bi, p - 1), BUNtail(bi, p))) > 0) {
 					b->tnosorted = p;
@@ -1976,7 +1976,7 @@ BATordered(BAT *b)
 #define BAT_REVORDERED(TPE)						\
 	do {								\
 		const TPE *restrict vals = Tloc(b, 0);			\
-		for (BUN q = BUNlast(b), p = 1; p < q; p++) {		\
+		for (BUN q = BATcount(b), p = 1; p < q; p++) {		\
 			if (vals[p - 1] < vals[p]) {			\
 				b->tnorevsorted = p;			\
 				TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0); \
@@ -1988,7 +1988,7 @@ BATordered(BAT *b)
 #define BAT_REVORDERED_FP(TPE)						\
 	do {								\
 		const TPE *restrict vals = Tloc(b, 0);			\
-		for (BUN q = BUNlast(b), p = 1; p < q; p++) {		\
+		for (BUN q = BATcount(b), p = 1; p < q; p++) {		\
 			TPE prev = vals[p - 1], next = vals[p];		\
 			int cmp = is_flt_nil(prev) ? -!is_flt_nil(next) : is_flt_nil(next) ? 1 : (prev > next) - (prev < next);	\
 			if (cmp < 0) {					\
@@ -2045,7 +2045,7 @@ BATordered_rev(BAT *b)
 			break;
 		default: {
 			int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
-			for (BUN q = BUNlast(b), p = 1; p < q; p++) {
+			for (BUN q = BATcount(b), p = 1; p < q; p++) {
 				if (cmpf(BUNtail(bi, p - 1), BUNtail(bi, p)) < 0) {
 					b->tnorevsorted = p;
 					TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0);
@@ -2460,7 +2460,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				if (do_sort(Tloc(bn, r),
 					    ords ? ords + r : NULL,
 					    bn->tvheap ? bn->tvheap->base : NULL,
-					    p - r, Tsize(bn), ords ? sizeof(oid) : 0,
+					    p - r, bn->twidth, ords ? sizeof(oid) : 0,
 					    bn->ttype, reverse, nilslast, stable) != GDK_SUCCEED)
 					goto error;
 				r = p;
@@ -2471,7 +2471,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (do_sort(Tloc(bn, r),
 			    ords ? ords + r : NULL,
 			    bn->tvheap ? bn->tvheap->base : NULL,
-			    p - r, Tsize(bn), ords ? sizeof(oid) : 0,
+			    p - r, bn->twidth, ords ? sizeof(oid) : 0,
 			    bn->ttype, reverse, nilslast, stable) != GDK_SUCCEED)
 			goto error;
 		/* if single group (r==0) the result is (rev)sorted,
@@ -2503,7 +2503,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		     do_sort(Tloc(bn, 0),
 			     ords,
 			     bn->tvheap ? bn->tvheap->base : NULL,
-			     BATcount(bn), Tsize(bn), ords ? sizeof(oid) : 0,
+			     BATcount(bn), bn->twidth, ords ? sizeof(oid) : 0,
 			     bn->ttype, reverse, nilslast, stable) != GDK_SUCCEED)) {
 			if (m != NULL) {
 				HEAPfree(m, true);

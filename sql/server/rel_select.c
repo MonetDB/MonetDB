@@ -3418,14 +3418,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_subfunc *a = NULL;
-	int no_nil = 0, group = 0;
+	int no_nil = 0, group = 0, all_aggr = query_has_outer(query), i;
 	unsigned int all_freevar = 0;
 	sql_rel *groupby = rel ? *rel : NULL, *sel = NULL, *gr, *og = NULL, *res = groupby;
 	sql_rel *subquery = NULL;
-	list *exps = NULL;
+	list *exps = NULL, *ungrouped_cols = NULL;
 	bool is_grouping = !strcmp(aname, "grouping"), has_args = false, found = false, used_rel = false;
 
-	if (!query_has_outer(query)) {
+	if (!all_aggr) {
 		if (!groupby) {
 			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by", toUpperCopy(uaname, aname));
@@ -3458,9 +3458,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
-		int i, all_aggr = query_has_outer(query);
 		bool arguments_correlated = true, all_const = true;
-		list *ungrouped_cols = NULL;
 
 		all_freevar = all_aggr?1:0;
 		for (i = 0; args && args->data.sym; args = args->next, i++) {
@@ -3496,54 +3494,54 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		}
 		if (all_const)
 			all_freevar = 0;
-		if (!all_freevar) {
-			if (is_sql_groupby(f)) {
-				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause", toUpperCopy(uaname, aname), aname);
-			} else if (is_sql_aggr(f) && groupby->grouped) {
-				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", toUpperCopy(uaname, aname));
-			} else if (is_sql_values(f)) {
-				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value", toUpperCopy(uaname, aname));
-			} else if (is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
-				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions", toUpperCopy(uaname, aname));
-			} else if (is_sql_where(f)) {
-				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
-			} else if (is_sql_from(f)) {
-				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM", toUpperCopy(uaname, aname));
-			} else if (!all_aggr && ungrouped_cols && !list_empty(ungrouped_cols)) {
-				for (node *n = ungrouped_cols->h ; n ; n = n->next) {
-					sql_rel *outer;
-					sql_exp *e = (sql_exp*) n->data;
+	}
+	if (!all_freevar) {
+		if (is_sql_groupby(f)) {
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause", toUpperCopy(uaname, aname), aname);
+		} else if (is_sql_aggr(f) && groupby->grouped) {
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", toUpperCopy(uaname, aname));
+		} else if (is_sql_values(f)) {
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value", toUpperCopy(uaname, aname));
+		} else if (is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions", toUpperCopy(uaname, aname));
+		} else if (is_sql_where(f)) {
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
+		} else if (is_sql_from(f)) {
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM", toUpperCopy(uaname, aname));
+		} else if (!all_aggr && !list_empty(ungrouped_cols)) {
+			for (node *n = ungrouped_cols->h ; n ; n = n->next) {
+				sql_rel *outer;
+				sql_exp *e = (sql_exp*) n->data;
 
-					if ((outer = query_fetch_outer(query, is_freevar(e)-1))) {
-						int of = query_fetch_outer_state(query, is_freevar(e)-1);
-						if (outer->grouped) {
-							bool err = false, was_processed = false;
+				if ((outer = query_fetch_outer(query, is_freevar(e)-1))) {
+					int of = query_fetch_outer_state(query, is_freevar(e)-1);
+					if (outer->grouped) {
+						bool err = false, was_processed = false;
 
-							if (is_processed(outer)) {
-								was_processed = true;
-								reset_processed(outer);
-							}
-							if (!is_groupby_col(outer, e))
-								err = true;
-							if (was_processed)
-								set_processed(outer);
-							if (err) {
-								if (exp_name(e) && exp_relname(e) && !has_label(e))
-									return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
-								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
-							}
-						} else if (!used_rel && is_sql_where(of)) {
-							char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
-							return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
-						} else if (!is_sql_aggr(of)) {
-							set_outer(outer);
+						if (is_processed(outer)) {
+							was_processed = true;
+							reset_processed(outer);
 						}
+						if (!is_groupby_col(outer, e))
+							err = true;
+						if (was_processed)
+							set_processed(outer);
+						if (err) {
+							if (exp_name(e) && exp_relname(e) && !has_label(e))
+								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
+							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
+						}
+					} else if (!used_rel && is_sql_where(of)) {
+						char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+						return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
+					} else if (!is_sql_aggr(of)) {
+						set_outer(outer);
 					}
 				}
 			}

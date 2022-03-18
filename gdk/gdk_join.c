@@ -3176,7 +3176,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		    (hs.heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
 		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
-		    HASHnew(&hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(&hs, b->ttype, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
@@ -3856,7 +3856,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			|| BATordered_rev(l)
 			|| BATtdense(r)
 			|| lcnt < 1024
-			|| BATcount(r) * (Tsize(r) + hsz + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1))) {
+			|| BATcount(r) * (r->twidth + hsz + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1))) {
 			rc = mergejoin(r1p, r2p, l, r, &lci, &rci,
 				       nil_matches, nil_on_miss, semi, only_misses,
 				       not_in, max_one, min_one, estimate, t0, false, func);

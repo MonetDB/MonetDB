@@ -3707,7 +3707,7 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 		/* any updates */
 		if (ui == NULL || uv == NULL) {
 			ok = GDK_FAIL;
-		} else if (BUNlast(uv) > uv->batInserted || BATdirty(uv))
+		} else if (BATcount(uv) > uv->batInserted || BATdirty(uv))
 			ok = log_delta(store->logger, ui, uv, id);
 		bat_destroy(ui);
 		bat_destroy(uv);
@@ -3744,7 +3744,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				if (ok == GDK_SUCCEED && cs->ebid) {
 					BAT *ins = temp_descriptor(cs->ebid);
 					assert(ins);
-					if (BUNlast(ins) > ins->batInserted)
+					if (BATcount(ins) > ins->batInserted)
 						ok = log_bat(store->logger, ins, -c->base.id, ins->batInserted, BATcount(ins)-ins->batInserted);
 					BATcommit(ins, BATcount(ins));
 					bat_destroy(ins);
@@ -4878,8 +4878,8 @@ log_get_nr_inserted(sql_column *fc, lng *offset)
 		sql_delta *fb = fc->data;
 		BAT *ins = temp_descriptor(fb->cs.bid);
 
-		if (ins && BUNlast(ins) > 0 && BUNlast(ins) > ins->batInserted) {
-			cnt = BUNlast(ins) - ins->batInserted;
+		if (ins && BATcount(ins) > 0 && BATcount(ins) > ins->batInserted) {
+			cnt = BATcount(ins) - ins->batInserted;
 		}
 		bat_destroy(ins);
 	}
@@ -4898,8 +4898,8 @@ log_get_nr_deleted(sql_table *ft, lng *offset)
 		storage *fdb = ft->data;
 		BAT *db = temp_descriptor(fdb->cs.bid);
 
-		if (db && BUNlast(db) > 0 && BUNlast(db) > db->batInserted) {
-			cnt = BUNlast(db) - db->batInserted;
+		if (db && BATcount(db) > 0 && BATcount(db) > db->batInserted) {
+			cnt = BATcount(db) - db->batInserted;
 			*offset = db->batInserted;
 		}
 		bat_destroy(db);
