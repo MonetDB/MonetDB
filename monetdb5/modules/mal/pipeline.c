@@ -121,6 +121,7 @@ BATnegateprops(BAT *b)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
+	b->tmaxpos = b->tminpos = BUN_NONE;
 }
 
 static void
@@ -203,9 +204,10 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(bte,sum);
 		aggr(flt,sum);
 		aggr(dbl,sum);
-		if (!err)
+		if (!err) {
+			BATnegateprops(b);
 			BBPkeepref(b->batCacheid);
-		else
+		} else
 			BBPunfix(b->batCacheid);
 	} else {
 			err = createException(SQL, "aggr.sum",	"Result is not initialized");
@@ -244,9 +246,10 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(bte,min);
 		aggr(flt,min);
 		aggr(dbl,min);
-		if (!err)
+		if (!err) {
+			BATnegateprops(b);
 			BBPkeepref(b->batCacheid);
-		else
+		} else
 			BBPunfix(b->batCacheid);
 	} else {
 			err = createException(SQL, "aggr.min",	"Result is not initialized");
@@ -285,9 +288,10 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(bte,max);
 		aggr(flt,max);
 		aggr(dbl,max);
-		if (!err)
+		if (!err) {
+			BATnegateprops(b);
 			BBPkeepref(b->batCacheid);
-		else
+		} else
 			BBPunfix(b->batCacheid);
 	} else {
 			err = createException(SQL, "aggr.max",	"Result is not initialized");

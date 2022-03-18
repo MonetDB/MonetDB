@@ -3833,8 +3833,8 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 			if (need_distinct(e) && !global)
 				return false;
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
-			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
-			    strcmp(sf->func->base.name, "prod") == 0)) {
+			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 /*||
+			    strcmp(sf->func->base.name, "prod") == 0*/)) {
 				return false;
 			}
 		}
@@ -4171,6 +4171,17 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 	return cursub;
 }
 
+static bool
+rel_groupby_pp(sql_rel *rel, bool _2phases)
+{
+	if (!is_groupby(rel->op))
+		return false;
+	if (list_empty(rel->r) && !_2phases)
+		return false;
+	/* more checks needed */
+	return true;
+}
+
 static stmt *
 rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 {
@@ -4180,12 +4191,13 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
+	bool df2 = (SQLrunning && rel_groupby_pp(rel, _2phases));
 
 //	if (rel_single_distinct(rel))
 
 	stmt *pp = NULL;
 	int neededpp = get_need_pipeline(be);
-	if (SQLrunning)
+	if (df2)
 		pp = rel_groupby_prepare_pp(&aggrresults, be, rel, _2phases);
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
