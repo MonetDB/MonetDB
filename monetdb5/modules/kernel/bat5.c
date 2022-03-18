@@ -78,8 +78,6 @@ BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 	bn = BATattach(*tt, *heapfile, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "bat.attach", GDK_EXCEPTION);
-	if( !bn->batTransient)
-		BATmsync(bn);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -171,8 +169,6 @@ BKCdelete_all(bat *r, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
-	if( !b->batTransient)
-		BATmsync(b);
 	*r = b->batCacheid;
 	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
@@ -221,8 +217,6 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
-	if( !b->batTransient)
-		BATmsync(b);
 	*r = b->batCacheid;
 	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
