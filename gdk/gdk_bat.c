@@ -848,9 +848,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			 * argument of COLnew2 not being zero triggers a
 			 * skip in the allocation of the tvheap */
 			if (ATOMheap(bn->ttype, bn->tvheap, bn->batCapacity) != GDK_SUCCEED) {
-				bat_iterator_end(&bi);
-				BBPreclaim(bn);
-				return NULL;
+				goto bunins_failed;
 			}
 		}
 

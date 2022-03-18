@@ -773,7 +773,7 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 	BATcheck(b, GDK_FAIL);
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
-	assert(!GDKinmemory(b->theap->farmid));
+	assert(!GDKinmemory(bi->h->farmid));
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
