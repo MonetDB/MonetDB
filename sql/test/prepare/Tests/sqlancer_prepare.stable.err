@@ -44,3 +44,6 @@ MAPI  = (monetdb) /var/tmp/mtest-185783/.s.monetdb.32587
 QUERY = PREPARE WITH x(x) AS (SELECT ?) SELECT 1 FROM x WHERE COALESCE(FALSE, TRUE) OR (SELECT TRUE FROM t0); --error
 ERROR = !Could not determine type for argument number 1
 CODE  = 42000
+QUERY = PREPARE SELECT 1 FROM (SELECT 1) x(x) LEFT OUTER JOIN (SELECT DISTINCT ?) y(y) ON (SELECT TRUE FROM (SELECT 1) z(z)); --error while unnesting because of unknown type
+ERROR = !Cannot rewrite subquery because of parameter with unknown type
+CODE  = 42000
