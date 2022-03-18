@@ -220,14 +220,14 @@ def _configure(str):
     return str
 
 try:
-    from helpers import build_work_ctx
+    from helpers import build_work_ctx, splitcommand
 except ImportError:
     try:
-        from MonetDBtesting.helpers import build_work_ctx
+        from MonetDBtesting.helpers import build_work_ctx, splitcommand
     except ImportError:
         p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
         sys.path.insert(0, p)
-        from MonetDBtesting.helpers import build_work_ctx
+        from MonetDBtesting.helpers import build_work_ctx, splitcommand
         if 'PYTHONPATH' in os.environ:
             p += os.pathsep + os.environ['PYTHONPATH']
         os.environ['PYTHONPATH'] = p
@@ -291,32 +291,6 @@ except:
 else:
     if ttywidth > 0 and os.name == 'nt':
         ttywidth -= 1           # don't go to the edge
-
-import string                   # for whitespace
-def splitcommand(cmd):
-    '''Like string.split, except take quotes into account.'''
-    q = None
-    w = []
-    command = []
-    for c in cmd:
-        if q:
-            if c == q:
-                q = None
-            else:
-                w.append(c)
-        elif c in string.whitespace:
-            if w:
-                command.append(''.join(w))
-            w = []
-        elif c == '"' or c == "'":
-            q = c
-        else:
-            w.append(c)
-    if w:
-        command.append(''.join(w))
-    if len(command) > 1 and command[0] == 'call':
-        del command[0]
-    return command
 
 def remove(file):
     try:
@@ -426,6 +400,7 @@ CONDITIONALS = {
     'HAVE_PYMONETDB'       : True,  # default PYTHON can import pymonetdb
     'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
     'HAVE_RUBY'            : False,
+    'HAVE_CPP'             : False,
     'HAVE_DATA_PATH'       : False,
     'MERCURIAL'            : False,
     'RELEASERUN'           : False,
@@ -1636,37 +1611,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, nomito,
             if SERVER == "SQL":
                 lang="sql"
 
-            # enable r integration in server
-            if ((COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
-                Srvr.extend(['--set', 'embedded_r=yes'])
-
-            savepath = None
-            savepypath = os.environ.get('PYTHONPATH')
-            savepyhome = os.environ.get('PYTHONHOME')
-            if (COND != None and "HAVE_LIBPY3" in COND) and CONDITIONALS['HAVE_LIBPY3']:
-                # enable Python 3 integration in server
-                if winreg is not None:
-                    if env['TST_BITS'] == '32bit':
-                        if sys.maxsize > 2**32:
-                            regkey = r'SOFTWARE\Wow6432Node\Python\PythonCore\3.@PY3VER@-32\InstallPath'
-                        else:
-                            regkey = r'SOFTWARE\Python\PythonCore\3.@PY3VER@-32\InstallPath'
-                    else:
-                        regkey = r'SOFTWARE\Python\PythonCore\3.@PY3VER@\InstallPath'
-                    try:
-                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey) as key:
-                            instpath = winreg.QueryValue(key, None)
-                            os.environ['PYTHONHOME'] = instpath
-                            os.environ['PYTHONPATH'] = instpath + 'Lib'
-                            savepath = os.environ['PATH']
-                            os.environ['PATH'] = instpath.rstrip('\\') + os.pathsep + savepath
-                    except WindowsError:
-                        pass
-                Srvr.extend(['--set', 'embedded_py=3'])
-
-            # enable C integration in server
-            Srvr.extend(['--set', 'embedded_c=true'])
-
             if PSRVR is None:
                 # TODO
                 #def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, options=[]):
@@ -1684,16 +1628,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, nomito,
             else:
                 PSRVR.timer.settimeout(TIMEOUT)
                 PSRVR.timer.start()
-            if savepath is not None:
-                os.environ['PATH'] = savepath
-                if savepypath:
-                    os.environ['PYTHONPATH'] = savepypath
-                else:
-                    del os.environ['PYTHONPATH']
-                if savepyhome:
-                    os.environ['PYTHONHOME'] = savepyhome
-                else:
-                    del os.environ['PYTHONHOME']
         else:
             ClntOut = openutf8(TestOutFile, 'a')
             ClntErr = openutf8(TestErrFile, 'a')
@@ -2054,20 +1988,6 @@ else:
         return os.listdir(os.path.abspath(d))
 
 HOST = 'localhost'
-if 'HOST' in os.environ:
-    HOST = os.environ['HOST']
-#else:
-#    HOST = ''
-elif os.name != "nt":
-    HOST = os.uname()[1]
-elif 'COMPUTERNAME' in os.environ:
-    HOST = os.environ['COMPUTERNAME']
-##else:
-##    HOST = "WIN2000"
-if 'DOMAIN' in os.environ:
-    HOST = HOST.replace('.'+os.environ('DOMAIN'),'')
-else:
-    HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 os.environ['MAPIHOST'] = HOST
 
@@ -2446,6 +2366,14 @@ def main(argv) :
                 print('Ruby available, but MonetDB gem not available')
     CheckClassPath()
 
+    if CheckExec('c++'):
+        with process.Popen(['c++', '--version'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            cpp_out, cpp_err = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_CPP'] = True
+
     # tidy-up and fall-back to defaults where necessary
     vars_ = VARS + ['GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
     for v in vars_:
@@ -2746,7 +2674,7 @@ def main(argv) :
                 prgreen('OK')
             print()
             print('failed={}, skipped={}'.format(failed, skipped))
-            print('Ran {} test in {:7.3f}s'.format(test_count - skipped, t_))
+            print('Ran {} tests in {:7.3f}s'.format(test_count - skipped, t_))
             if verbose:
                 for TSTDIR, TST in FAILED_TESTS:
                     prred('ERROR\t')

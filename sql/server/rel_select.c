@@ -3500,6 +3500,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			if (is_sql_groupby(f)) {
 				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause", toUpperCopy(uaname, aname), aname);
+			} else if (is_sql_aggr(f) && groupby->grouped) {
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", toUpperCopy(uaname, aname));
 			} else if (is_sql_values(f)) {
 				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value", toUpperCopy(uaname, aname));
@@ -3583,8 +3586,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			if (exp && !is_groupby_col(res, exp)) {
 				if (is_sql_groupby(sql_state))
 					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function '%s' not allowed in GROUP BY clause", aname);
-				if (0 && is_sql_aggr(sql_state))
-					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
+				if (is_sql_aggr(sql_state) && groupby->grouped) {
+					char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", toUpperCopy(uaname, aname));
+				}
 				if (is_sql_values(sql_state))
 					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed on an unique value");
 				if (is_sql_update_set(sql_state) || is_sql_psm(f))
@@ -3764,7 +3769,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			if (a) {
 				list *nexps = NULL;
 
-				if (!(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+				if (!(nexps = check_arguments_and_find_largest_any_type(sql, rel ? *rel : NULL, exps, a, 0))) {
 					a = NULL;
 					/* reset error */
 					sql->session->status = 0;
@@ -3789,7 +3794,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				sql->errstr[0] = '\0';
 			}
 			a = NULL;
-			if (rel_convert_types(sql, *rel, *rel, &l, &r, 1/*fix scale*/, type_equal) >= 0) {
+			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1/*fix scale*/, type_equal) >= 0) {
 				list *tps = sa_list(sql->sa);
 
 				t1 = exp_subtype(l);
@@ -3834,7 +3839,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false);
 
 			if (a) {
-				if (!(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, a, 0))) {
+				if (!(nexps = check_arguments_and_find_largest_any_type(sql, rel ? *rel : NULL, exps, a, 0))) {
 					a = NULL;
 					/* reset error */
 					sql->session->status = 0;
@@ -3863,7 +3868,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				list *nexps = NULL;
 				sql_subfunc *sf = (sql_subfunc *) n->data;
 
-				if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, *rel, exps, sf, 0))) {
+				if (!list_empty(exps) && !(nexps = check_arguments_and_find_largest_any_type(sql, rel ? *rel : NULL, exps, sf, 0))) {
 					/* reset error */
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';

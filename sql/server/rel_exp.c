@@ -3304,11 +3304,18 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 			if (rel->l)
 				res = rel_find_parameter(sql, type, rel->l, nrname, nename);
 			if (rel->r && res <= 0) { /* try other relation if not found */
-				if (res < 0) { /* reset error */
-					sql->session->status = 0;
-					sql->errstr[0] = '\0';
-				}
+				int err = sql->session->status, lres = res;
+				char buf[ERRSIZE];
+
+				strcpy(buf, sql->errstr); /* keep error found and try other join relation */
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
 				res = rel_find_parameter(sql, type, rel->r, nrname, nename);
+				if (res == 0) { /* parameter wasn't found, set error */
+					res = lres;
+					sql->session->status = err;
+					strcpy(sql->errstr, buf);
+				}
 			}
 			break;
 		case op_semi:

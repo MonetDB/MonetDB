@@ -1029,7 +1029,7 @@ static const char *pcre_specials = ".+?*()[]{}|^$\\";
 #else
 /* special characters in POSIX basic regular expressions that need to
  * be escaped */
-static const char *pcre_specials = ".*[]^$\\";
+static const char *pcre_specials = "^.[$()|*+?{\\";
 #endif
 
 /* change SQL LIKE pattern into PCRE pattern */
@@ -1445,18 +1445,10 @@ re_like_clean(struct RE **re, uint32_t **wpat)
 	}
 }
 
+#ifdef HAVE_LIBPCRE
 static inline str
-pcre_like_build(
-#ifdef HAVE_LIBPCRE
-	pcre **res,
-	pcre_extra **ex
-#else
-	regex_t *res,
-	void *ex
-#endif
-, const char *ppat, bool caseignore, BUN count)
+pcre_like_build(pcre **res, pcre_extra **ex, const char *ppat, bool caseignore, BUN count)
 {
-#ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	int errpos = 0;
 	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_MULTILINE | PCRE_DOTALL;
@@ -1464,47 +1456,42 @@ pcre_like_build(
 
 	*res = NULL;
 	*ex = NULL;
-#else
-	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
-	int errcode;
-
-	*res = (regex_t) {0};
-	(void) count;
-#endif
 
 	if (caseignore) {
-#ifdef HAVE_LIBPCRE
 		options |= PCRE_CASELESS;
-#else
-		options |= REG_ICASE;
-#endif
 	}
-	if (
-#ifdef HAVE_LIBPCRE
-		(*res = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL
-#else
-		(errcode = regcomp(res, ppat, options)) != 0
-#endif
-		)
+	if ((*res = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL)
 		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
 								": compilation of regular expression (%s) failed"
-#ifdef HAVE_LIBPCRE
-								" at %d with '%s'", ppat, errpos, err_p
-#else
-								, ppat
-#endif
-			);
-#ifdef HAVE_LIBPCRE
+								" at %d with '%s'", ppat, errpos, err_p);
 	*ex = pcre_study(*res, pcrestopt, &err_p);
 	if (err_p != NULL)
 		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
 								": pcre study of pattern (%s) "
 								"failed with '%s'", ppat, err_p);
-#else
-	(void) ex;
-#endif
 	return MAL_SUCCEED;
 }
+#else
+static inline str
+pcre_like_build(regex_t *res, void *ex, const char *ppat, bool caseignore, BUN count)
+{
+	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
+	int errcode;
+
+	*res = (regex_t) {0};
+	(void) count;
+
+	if (caseignore) {
+		options |= REG_ICASE;
+	}
+	if ((errcode = regcomp(res, ppat, options)) != 0)
+		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
+							   ": compilation of regular expression (%s) failed",
+							   ppat);
+	(void) ex;
+	return MAL_SUCCEED;
+}
+#endif
 
 #define PCRE_LIKE_BODY(LOOP_BODY, RES1, RES2) \
 	do { \

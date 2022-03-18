@@ -4777,6 +4777,13 @@ sql_update_default(Client c, mvc *sql)
 		pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = %d;\n", F_UNION);
 
+		/* 12_url.sql */
+		pos += snprintf(buf + pos, bufsize - pos,
+						"CREATE function sys.url_extract_host(url string, no_www bool) RETURNS STRING\n"
+						"EXTERNAL NAME url.\"extractURLHost\";\n"
+						"GRANT EXECUTE ON FUNCTION url_extract_host(string, bool) TO PUBLIC;\n"
+						"update sys.functions set system = true where system <> true and name = 'url_extract_host' and schema_id = 2000 and type = %d;\n", F_FUNC);
+
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
