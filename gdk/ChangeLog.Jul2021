@@ -1,3 +1,8 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Fri Mar 18 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a race condition which could cause a too large size being written
+  for a .theap file to the BBP.dir file after the correct size file had
+  been saved to disk.
+
