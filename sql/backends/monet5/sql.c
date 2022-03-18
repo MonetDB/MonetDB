@@ -3192,7 +3192,7 @@ not_unique(bit *ret, const bat *bid)
 		BATiter bi = bat_iterator(b);
 		oid c = ((oid *) bi.base)[0];
 
-		for (p = 1, q = BUNlast(b); p < q; p++) {
+		for (p = 1, q = BATcount(b); p < q; p++) {
 			oid v = ((oid *) bi.base)[p];
 			if (v <= c) {
 				*ret = TRUE;

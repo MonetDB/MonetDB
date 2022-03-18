@@ -179,7 +179,7 @@ BATmaterialize(BAT *b)
 	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
 		return GDK_FAIL;
 	p = 0;
-	q = BUNlast(b);
+	q = BATcount(b);
 	assert(cnt >= q - p);
 	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b));
 

@@ -582,7 +582,8 @@ vheapinit(BAT *b, const char *buf, bat bid, unsigned bbpversion, const char *fil
 			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
 			return -1;
 		}
-		if (ATOMstorage(b->ttype) == TYPE_str &&
+		if (b->ttype >= 0 &&
+		    ATOMstorage(b->ttype) == TYPE_str &&
 		    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
 			size = GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN;
 		else if (free < 512)
@@ -1877,7 +1878,7 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       b->tvarsized,
 		       (unsigned short) b->tsorted |
 			   ((unsigned short) b->trevsorted << 7) |
-			   (((unsigned short) b->tkey & 0x01) << 8) |
+			   ((unsigned short) b->tkey << 8) |
 		           ((unsigned short) BATtdense(b) << 9) |
 			   ((unsigned short) b->tnonil << 10) |
 			   ((unsigned short) b->tnil << 11),

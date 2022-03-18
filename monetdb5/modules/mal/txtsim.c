@@ -923,17 +923,17 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced");
 
-	else if (Tsize(qgram) != ATOMsize(qgram->ttype))
+	else if (qgram->twidth != ATOMsize(qgram->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram is not a true void bat");
-	else if (Tsize(id) != ATOMsize(id->ttype))
+	else if (id->twidth != ATOMsize(id->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": id is not a true void bat");
 
-	else if (Tsize(pos) != ATOMsize(pos->ttype))
+	else if (pos->twidth != ATOMsize(pos->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": pos is not a true void bat");
-	else if (Tsize(len) != ATOMsize(len->ttype))
+	else if (len->twidth != ATOMsize(len->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": len is not a true void bat");
 	if (msg) {

@@ -1148,8 +1148,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
 
-#define Tsize(b)	((b)->twidth)
-
 #define tailsize(b,p)	((b)->ttype ?				\
 			 (ATOMstorage((b)->ttype) == TYPE_msk ?	\
 			  (((size_t) (p) + 31) / 32) * 4 :	\
@@ -1169,8 +1167,6 @@ typedef var_t stridx_t;
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
 #define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
-
-#define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
 #define BATcount(b)	((b)->batCount)
 
@@ -1310,7 +1306,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 
 gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
-gdk_export void BATmsync(BAT *b);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
@@ -2228,7 +2223,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * is the iteration variable.
  */
 #define BATloop(r, p, q)			\
-	for (q = BUNlast(r), p = 0; p < q; p++)
+	for (q = BATcount(r), p = 0; p < q; p++)
 
 /*
  * @+ Common BAT Operations
