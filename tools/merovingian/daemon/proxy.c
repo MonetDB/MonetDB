@@ -62,10 +62,10 @@ proxyThread(void *d)
 	if (p->name != NULL) {
 		/* name is only set on the client-to-server thread */
 		if (len <= 0) {
-			Mfprintf(stdout, "client %s has disconnected from proxy\n",
+			Mlevelfprintf(DEBUG, stdout, "client %s has disconnected from proxy\n",
 					p->name);
 		} else {
-			Mfprintf(stdout, "server has terminated proxy connection, "
+			Mlevelfprintf(WARNING, stdout, "server has terminated proxy connection, "
 					"disconnecting client %s\n", p->name);
 		}
 		free(p->name);
@@ -184,10 +184,8 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		msg.msg_controllen = cmsg->cmsg_len;
 		msg.msg_flags = 0;
 
-		/* Jan2022: disabled logging of next info message to reduce merovingian.log size:
-		Mfprintf(stdout, "target connection is on local UNIX domain socket, "
+		Mlevelfprintf(DEBUG, stdout, "target connection is on local UNIX domain socket, "
 				"passing on filedescriptor instead of proxying\n");
-		*/
 		if (sendmsg(ssock, &msg, 0) < 0) {
 			closesocket(ssock);
 			return(newErr("could not send initial byte: %s", strerror(errno)));
