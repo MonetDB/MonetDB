@@ -3727,8 +3727,11 @@ rel_getcount(sql_rel *rel)
 		return rel_getcount(rel->l);
 	if (rel && rel->l && rel->op == op_select)
 		return rel_getcount(rel->l);
-	if (rel && rel->l && rel->op == op_project)
-		return rel_getcount(rel->l);
+	if (rel && rel->op == op_project) {
+		if (rel->l)
+			return rel_getcount(rel->l);
+		return 1;
+	}
 	if (rel && rel->l && rel->op == op_groupby)
 		return rel_getcount(rel->l);
 	return -1;
@@ -3910,8 +3913,8 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
 		int curhash = 0;
-		int estimate = rel_getcount(rel->l);
-		int card = 1;
+		lng estimate = rel_getcount(rel->l);
+		lng card = 1;
 
 		if (estimate<0) {
 			assert(0);
@@ -3928,7 +3931,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			/* ext */
 			//InstrPtr q = newStmt(be->mb, batRef, newRef);
 			InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-			int ncard = exp_getcard(be->mvc, rel, e);
+			lng ncard = exp_getcard(be->mvc, rel, e);
 			card *= ncard;
 			if (card > estimate || ncard >= estimate)
 				card = estimate;
@@ -3941,7 +3944,9 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			assert(card >= 0);
-			q = pushInt(be->mb, q, card);//_2phases?card:estimate);
+			if (card > INT_MAX)
+				card = INT_MAX;
+			q = pushInt(be->mb, q, (int)card);//_2phases?card:estimate);
 			if (curhash)
 				q = pushArgument(be->mb, q, curhash);
 			curhash = getArg(q,0);
@@ -4050,6 +4055,14 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 			sql_subfunc *sf = e->f;
 			int *v = m->data;
 			stmt *i = o->data;
+
+			if (e->type == e_column) {
+				stmt *s = list_find_column(be, shared, e->l, e->r);
+				assert(s);
+				s = stmt_alias(be, s, exp_relname(e), exp_name(e));
+				append(shared, s);
+				continue;
+			}
 
 			assert(e->type == e_aggr);
 			char *name = NULL;

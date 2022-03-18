@@ -722,6 +722,7 @@ typedef void (*sink_destroy)(void *sink);
 typedef struct Sink {
 	sink_destroy destroy;
 	int type;		/* sink/source type */
+	ATOMIC_TYPE refcnt;
 } Sink;
 
 /* see also comment near BATassertProps() for more information about

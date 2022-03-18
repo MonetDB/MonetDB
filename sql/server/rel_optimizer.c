@@ -2195,7 +2195,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 				if (exp->type == e_column) {
 					sql_exp *e = rel_find_exp(l, exp);
 
-					if (e && exp_is_atom(e)) {
+					if (e && exp_is_atom(e) && e->type == e_atom) {
 						sql_exp *ne = exp_copy(v->sql, e);
 						exp_setname(v->sql->sa, ne, exp_find_rel_name(exp), exp_name(exp));
 						n->data = ne;
@@ -2207,7 +2207,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 			for (node *n = l->exps->h; n; n = n->next) {
 				sql_exp *exp = (sql_exp*) n->data;
 
-				if (!exp_is_atom(exp))
+				if (!exp_is_atom(exp) || exp->type != e_atom)
 					append(nl, exp);
 			}
 			l->exps = nl;
