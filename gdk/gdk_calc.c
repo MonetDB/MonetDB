@@ -71,9 +71,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		GDKerror("22003!overflow in calculation "	\
 			 OP "(" FMT##TYPE ").\n",		\
 			 CST##TYPE src[x]);			\
-		BBPreclaim(bn);					\
-		bat_iterator_end(&bi);				\
-		return NULL;					\
+		goto bailout;					\
 	} while (0)
 
 #define ON_OVERFLOW(TYPE1, TYPE2, OP)					\
@@ -1306,7 +1304,7 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		} else {						\
 			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {	\
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
@@ -1320,7 +1318,7 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		}							\
 	} while (0)
 
@@ -1406,11 +1404,11 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						p1 = cmp(p1, p2) < 0 ? p1 : p2;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
@@ -1424,11 +1422,11 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						p1 = cmp(p1, p2) < 0 ? p1 : p2;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
@@ -1449,7 +1447,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
@@ -1466,7 +1464,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		}
 	}
@@ -1497,7 +1495,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 	BBPreclaim(bn);
@@ -1524,7 +1522,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		} else {						\
 			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {	\
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
@@ -1542,7 +1540,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		}							\
 	} while (0)
 
@@ -1632,11 +1630,11 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
@@ -1654,11 +1652,11 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
@@ -1683,7 +1681,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
@@ -1704,7 +1702,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		}
 	}
@@ -1735,7 +1733,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 	BBPreclaim(bn);
@@ -1756,7 +1754,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 	} while (0)
 
 BAT *
@@ -1838,11 +1836,11 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 					p1 = cmp(p1, p2) < 0 ? p1 : p2;
 				}
 				if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-					goto bunins_failed;
+					goto bailout;
 				}
 			}
 			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
@@ -1859,7 +1857,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 				bcast += width;
 			}
 			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
 	}
 	bat_iterator_end(&bi);
@@ -1885,7 +1883,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
@@ -1908,7 +1906,7 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 				tbn[i] = p1;				\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		} else {						\
 			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {	\
 				oid x = canditer_next(&ci) - bhseqbase; \
@@ -1920,7 +1918,7 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		}							\
 	} while (0)
 
@@ -2002,22 +2000,22 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
@@ -2031,7 +2029,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
@@ -2041,7 +2039,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		}
 	}
@@ -2068,7 +2066,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
@@ -2162,11 +2160,11 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						p1 = cmp(p1, p2) > 0 ? p1 : p2;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
@@ -2180,11 +2178,11 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						p1 = cmp(p1, p2) > 0 ? p1 : p2;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
@@ -2205,7 +2203,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
@@ -2222,7 +2220,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		}
 	}
@@ -2253,7 +2251,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 	BBPreclaim(bn);
@@ -2347,11 +2345,11 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
@@ -2370,11 +2368,11 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
@@ -2400,7 +2398,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
@@ -2422,7 +2420,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		}
 	}
@@ -2453,7 +2451,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 	BBPreclaim(bn);
@@ -2539,11 +2537,11 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 					p1 = cmp(p1, p2) > 0 ? p1 : p2;
 				}
 				if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-					goto bunins_failed;
+					goto bailout;
 				}
 			}
 			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
@@ -2560,7 +2558,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 				bcast += width;
 			}
 			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
 	}
 	bat_iterator_end(&bi);
@@ -2586,7 +2584,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
@@ -2677,22 +2675,22 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bunins_failed;
+						goto bailout;
 					}
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
@@ -2706,7 +2704,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
@@ -2716,7 +2714,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					bcast += width;
 				}
 				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 		}
 	}
@@ -2743,7 +2741,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
@@ -4342,7 +4340,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn, BATiter b1i
 		if (strNil(l) || strNil(r)) {
 			nils++;
 			if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		} else {
 			llen = strlen(l);
 			rlen = strlen(r);
@@ -4351,20 +4349,20 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn, BATiter b1i
 				GDKfree(s);
 				s = GDKmalloc(slen);
 				if (s == NULL)
-					goto bunins_failed;
+					goto bailout;
 			}
 			(void) stpcpy(stpcpy(s, l), r);
 			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		}
 	}
 	TIMEOUT_CHECK(timeoffset,
-		      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	GDKfree(s);
 	bn->theap->dirty = true;
 	return nils;
 
-  bunins_failed:
+  bailout:
 	GDKfree(s);
 	return BUN_NONE;
 }
@@ -14857,9 +14855,7 @@ BATcalcifthenelse_intern(BAT *b,
 							p = col2;
 					}
 					if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
-						bat_iterator_end(&bi);
-						BBPreclaim(bn);
-						return NULL;
+						goto bailout;
 					}
 					k += incr1;
 					l += incr2;
@@ -14882,9 +14878,7 @@ BATcalcifthenelse_intern(BAT *b,
 						p = col2;
 				}
 				if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
-					bat_iterator_end(&bi);
-					BBPreclaim(bn);
-					return NULL;
+					goto bailout;
 				}
 				k += incr1;
 				l += incr2;
@@ -15977,7 +15971,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			if (strNil(src))
 				nils++;
 			if (tfastins_nocheckVAR(bn, i, src) != GDK_SUCCEED) {
-				goto bunins_failed;
+				goto bailout;
 			}
 		}
 	} else if (b->tvarsized) {
@@ -15988,12 +15982,12 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
-					goto bunins_failed;
+					goto bailout;
 				}
 			} else {
 				if ((*atomtostr)(&dst, &len, src, false) < 0 ||
 				    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
-					goto bunins_failed;
+					goto bailout;
 				}
 			}
 		}
@@ -16003,7 +15997,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			x = canditer_next(ci) - candoff;
 			v = Tmskval(&bi, x) ? "1" : "0";
 			if (tfastins_nocheckVAR(bn, i, v) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		}
 	} else {
 		for (i = 0; i < ncand; i++) {
@@ -16012,12 +16006,12 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
-					goto bunins_failed;
+					goto bailout;
 			} else {
 				if ((*atomtostr)(&dst, &len, src, false) < 0)
-					goto bunins_failed;
+					goto bailout;
 				if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
-					goto bunins_failed;
+					goto bailout;
 			}
 		}
 	}
@@ -16026,7 +16020,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 	BATsetcount(bn, ncand);
 	GDKfree(dst);
 	return nils;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&bi);
 	GDKfree(dst);
 	return BUN_NONE + 2;
@@ -16218,9 +16212,9 @@ convert_void_any(oid seq, BAT *bn,
 		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			if ((*atomtostr)(&s, &len, &(oid){seq + x}, false) < 0)
-				goto bunins_failed;
+				goto bailout;
 			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		}
 		GDKfree(s);
 		s = NULL;
@@ -16232,7 +16226,7 @@ convert_void_any(oid seq, BAT *bn,
 	bn->theap->dirty = true;
 	return nils;
 
-  bunins_failed:
+  bailout:
 	GDKfree(s);
 	return BUN_NONE + 2;
 }
