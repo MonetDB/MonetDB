@@ -102,7 +102,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 				if (!is_oid_nil(min)) {
 					/* found a non-nil, max must be last
 					 * value (and there is one!) */
-					max = gids[BUNlast(g) - 1];
+					max = gids[BATcount(g) - 1];
 				}
 			} else {
 				/* we'll do a complete scan */

@@ -180,28 +180,6 @@ BATsetdims(BAT *b, uint16_t width)
 }
 
 const char *
-gettailnamebi(const BATiter *bi)
-{
-	if (bi->type == TYPE_str) {
-		switch (bi->width) {
-		case 1:
-			return "tail1";
-		case 2:
-			return "tail2";
-		case 4:
-#if SIZEOF_VAR_T == 8
-			return "tail4";
-		case 8:
-#endif
-			break;
-		default:
-			MT_UNREACHABLE();
-		}
-	}
-	return "tail";
-}
-
-const char *
 gettailname(const BAT *b)
 {
 	if (b->ttype == TYPE_str) {
@@ -654,7 +632,7 @@ BATclear(BAT *b, bool force)
 		if (tatmdel) {
 			BATiter bi = bat_iterator_nolock(b);
 
-			for (p = b->batInserted, q = BUNlast(b); p < q; p++)
+			for (p = b->batInserted, q = BATcount(b); p < q; p++)
 				(*tatmdel)(b->tvheap, (var_t*) BUNtloc(bi,p));
 			b->tvheap->dirty = true;
 		}
@@ -974,7 +952,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tunique_est = bi.unique_est;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
-		BUN h = BUNlast(b);
+		BUN h = BATcount(b);
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		if (b->tkey)
@@ -1041,7 +1019,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 
 	TRC_DEBUG(ALGO, ALGOBATFMT " appending " BUNFMT " values%s\n", ALGOBATPAR(b), count, values ? "" : " (all nil)");
 
-	p = BUNlast(b);		/* insert at end */
+	p = BATcount(b);		/* insert at end */
 	if (p == BUN_MAX || BATcount(b) + count >= BUN_MAX) {
 		GDKerror("bat too large\n");
 		return GDK_FAIL;
@@ -1349,7 +1327,7 @@ BUNdelete(BAT *b, oid o)
 		return GDK_FAIL;
 	HASHdelete(b, p, val);
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
-	if (p != BUNlast(b) - 1 &&
+	if (p != BATcount(b) - 1 &&
 	    (b->ttype != TYPE_void || BATtdense(b))) {
 		/* replace to-be-delete BUN with last BUN; materialize
 		 * void column before doing so */
@@ -1357,20 +1335,20 @@ BUNdelete(BAT *b, oid o)
 		    BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
-			msk mval = mskGetVal(b, BUNlast(b) - 1);
+			msk mval = mskGetVal(b, BATcount(b) - 1);
 			assert(b->thash == NULL);
 			mskSetVal(b, p, mval);
 			/* don't leave garbage */
-			mskClr(b, BUNlast(b) - 1);
+			mskClr(b, BATcount(b) - 1);
 		} else {
-			val = Tloc(b, BUNlast(b) - 1);
-			HASHdelete(b, BUNlast(b) - 1, val);
-			memcpy(Tloc(b, p), val, Tsize(b));
+			val = Tloc(b, BATcount(b) - 1);
+			HASHdelete(b, BATcount(b) - 1, val);
+			memcpy(Tloc(b, p), val, b->twidth);
 			HASHinsert(b, p, val);
 			MT_lock_set(&b->theaplock);
-			if (b->tminpos == BUNlast(b) - 1)
+			if (b->tminpos == BATcount(b) - 1)
 				b->tminpos = p;
-			if (b->tmaxpos == BUNlast(b) - 1)
+			if (b->tmaxpos == BATcount(b) - 1)
 				b->tmaxpos = p;
 			MT_lock_unset(&b->theaplock);
 		}
@@ -1417,7 +1395,7 @@ BUNdelete(BAT *b, oid o)
 static gdk_return
 BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force, bool autoincr)
 {
-	BUN last = BUNlast(b) - 1;
+	BUN last = BATcount(b) - 1;
 	BATiter bi = bat_iterator_nolock(b);
 	int tt;
 	BUN prv, nxt;
@@ -1911,11 +1889,11 @@ BATsetcount(BAT *b, BUN cnt)
 		b->tnosorted = b->tnorevsorted = 0;
 	}
 	/* if the BAT was made smaller, we need to zap some values */
-	if (b->tnosorted >= BUNlast(b))
+	if (b->tnosorted >= BATcount(b))
 		b->tnosorted = 0;
-	if (b->tnorevsorted >= BUNlast(b))
+	if (b->tnorevsorted >= BATcount(b))
 		b->tnorevsorted = 0;
-	if (b->tnokey[0] >= BUNlast(b) || b->tnokey[1] >= BUNlast(b)) {
+	if (b->tnokey[0] >= BATcount(b) || b->tnokey[1] >= BATcount(b)) {
 		b->tnokey[0] = 0;
 		b->tnokey[1] = 0;
 	}
@@ -2547,7 +2525,7 @@ BATassertProps(BAT *b)
 	cmpf = ATOMcompare(b->ttype);
 	nilp = ATOMnilptr(b->ttype);
 
-	assert(b->theap->free >= tailsize(b, BUNlast(b)));
+	assert(b->theap->free >= tailsize(b, BATcount(b)));
 	if (b->ttype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
 		assert(b->theap->size >= b->theap->free);
@@ -2797,7 +2775,7 @@ BATassertProps(BAT *b)
 				     TRANSIENT, b->ttype, hashheap)) < 0 ||
 			    (hs->heapbckt.farmid = BBPselectfarm(
 				    TRANSIENT, b->ttype, hashheap)) < 0 ||
-			    HASHnew(hs, b->ttype, BUNlast(b),
+			    HASHnew(hs, b->ttype, BATcount(b),
 				    mask, BUN_NONE, false) != GDK_SUCCEED) {
 				GDKfree(hs);
 				TRC_WARNING(BAT_, "Cannot allocate hash table\n");

@@ -9,7 +9,7 @@
 /**
  * utils
  * Fabian Groffen
- * Shared utility functions between merovingian and monetdb
+ * Shared utility functions between merovingian/monetdbd and monetdb
  */
 
 /* NOTE: for this file to work correctly, the random number generator
@@ -283,6 +283,23 @@ setConfVal(confkeyval *ckv, const char *val) {
 						 "only valid values for %s are \"127.0.0.1\", \"0.0.0.0\", \"::1\", \"::\", \"localhost\" or \"all\"\n",
 						 ckv->key);
 				return(strdup(buf));
+			}
+		}; break;
+		case LOGLEVEL: {
+			if (strcasecmp(val, "error") == 0) {
+				val = "error";
+				ival = ERROR;
+			} else if (strcasecmp(val, "warning") == 0) {
+				val = "warning";
+				ival = WARNING;
+			} else if (strcasecmp(val, "information") == 0) {
+				val = "information";
+				ival = INFORMATION;
+			} else if (strcasecmp(val, "debug") == 0) {
+				val = "debug";
+				ival = DEBUG;
+			} else {
+				return(strdup("allowed loglevel values are: error or warning or information or debug\n"));
 			}
 		}; break;
 		case MODS:

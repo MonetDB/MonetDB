@@ -835,7 +835,7 @@ extractURLHost(str *retval, str *url, bit *no_www)
 		if ((s = skip_scheme(*url)) != NULL &&
 			(s = skip_authority(s, NULL, NULL, &h, &p)) != NULL &&
 			h != NULL)
-	   	{
+		{
 			ssize_t l;
 			const char *pos = s;
 			const char *domain = NULL;
@@ -852,33 +852,24 @@ extractURLHost(str *retval, str *url, bit *no_www)
 			} else {
 				l = s - h;
 			}
+			if (*no_www && !strncmp(h, "www.", 4)) {
+				h +=4;
+				l -=4;
+			}
 			if (domain && l > 3) {
-				if ((*retval = GDKmalloc(l + 1)) != NULL) {
-					if (*no_www && strlen(h) > 4 && !strncmp(h, "www.", 4)) {
-						strcpy_len(*retval, (h + 4), l + 1);
-					} else {
-						strcpy_len(*retval, h, l + 1);
-					}
-					// clean up if not valid UTF-8
-					if (!checkUTF8(*retval)) {
-						// printf("%s\n", h);
-						GDKfree(*retval);
-						*retval = GDKstrdup(str_nil);
-					}
-				} else {
-					throw(MAL, "url.getURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
+				if ((*retval = GDKmalloc(l + 1)) != NULL)
+					strcpy_len(*retval, h, l + 1);
 			} else {
-				// printf("%s\n", h);
 				*retval = GDKstrdup(str_nil);
 			}
-
 		} else {
 			*retval = GDKstrdup(str_nil);
 		}
 	} else {
 		*retval = GDKstrdup(str_nil);
 	}
+	if (!*retval)
+		throw(MAL, "url.getURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	return MAL_SUCCEED;
 }
@@ -899,8 +890,7 @@ BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 	const char *s;
 	const char *host = NULL;
 	const char *port = NULL;
-	BAT *bn = NULL;
-	BAT *b = BATdescriptor(*bid);
+	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen);
@@ -910,16 +900,19 @@ BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 	if (buf == NULL)
 		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (b == NULL)
+	if (!(b = BATdescriptor(*bid))) {
+		GDKfree(buf);
 		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
-		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		GDKfree(buf);
 		BBPunfix(b->batCacheid);
+		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	BATiter bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		const char *url = (const char *) BUNtail(bi, p);
+		const char *url = (const char *) BUNtvar(bi, p);
 		if (strNil(url)) {
 			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED) {
 				msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
@@ -930,7 +923,7 @@ BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 			if ((s = skip_scheme(url)) != NULL &&
 				(s = skip_authority(s, NULL, NULL, &host, &port)) != NULL &&
 				host != NULL)
-		   	{
+			{
 				ssize_t l;
 				const char *pos = s;
 				const char *domain = NULL;

@@ -145,7 +145,7 @@ log_find(BAT *b, BAT *d, int val)
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
 
-		for (p = 0, q = BUNlast(b); p < q; p++) {
+		for (p = 0, q = BATcount(b); p < q; p++) {
 			if (t[p] == val) {
 				oid pos = p;
 				if (BUNfnd(d, &pos) == BUN_NONE)
@@ -1492,7 +1492,7 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, 
 	}
 
 	int *oids = (int*)Tloc(catalog_id, 0);
-	q = BUNlast(catalog_bid);
+	q = BATcount(catalog_bid);
 	for(p = 0; p<q && !err; p++) {
 		bat col = bids[p];
 		int nid = oids[p];
@@ -2594,7 +2594,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	l.flag = LOG_UPDATE;
 	l.id = id;
-	nr = (BUNlast(uval));
+	nr = (BATcount(uval));
 	assert(nr);
 
 	lg->end += nr;
@@ -2614,13 +2614,13 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		ok = GDK_FAIL;
 		goto bailout;
 	}
-	for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
+	for (p = 0; p < BATcount(uid) && ok == GDK_SUCCEED; p++) {
 		const oid id = BUNtoid(uid, p);
 
 		ok = wh(&id, lg->output_log, 1);
 	}
 	if (uval->ttype == TYPE_msk) {
-		if (!mnstr_writeIntArray(lg->output_log, vi.base, (BUNlast(uval) + 31) / 32))
+		if (!mnstr_writeIntArray(lg->output_log, vi.base, (BATcount(uval) + 31) / 32))
 			ok = GDK_FAIL;
 	} else if (uval->ttype < TYPE_str && !isVIEW(uval)) {
 		const void *t = BUNtail(vi, 0);
@@ -2630,7 +2630,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		/* efficient string writes */
 		ok = string_writer(lg, uval, 0, nr);
 	} else {
-		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
+		for (p = 0; p < BATcount(uid) && ok == GDK_SUCCEED; p++) {
 			const void *val = BUNtail(vi, p);
 
 			ok = wt(val, lg->output_log, 1);
@@ -2804,7 +2804,7 @@ bm_commit(logger *lg)
 	const log_bid *bids;
 
 	bids = (log_bid *) Tloc(b, 0);
-	for (p = b->batInserted; p < BUNlast(b); p++) {
+	for (p = b->batInserted; p < BATcount(b); p++) {
 		log_bid bid = bids[p];
 		BAT *lb;
 

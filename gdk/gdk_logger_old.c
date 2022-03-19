@@ -182,7 +182,7 @@ log_find(BAT *b, BAT *d, int val)
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
 
-		for (p = 0, q = BUNlast(b); p < q; p++) {
+		for (p = 0, q = BATcount(b); p < q; p++) {
 			if (t[p] == val) {
 				oid pos = p;
 				if (BUNfnd(d, &pos) == BUN_NONE) {

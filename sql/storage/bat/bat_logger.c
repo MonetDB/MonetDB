@@ -1514,7 +1514,7 @@ upgrade(old_logger *lg)
 			}
 			if (d != NULL) {
 				const oid *dels = (const oid *) Tloc(d, 0);
-				for (BUN q = BUNlast(d), p = 0; p < q; p++)
+				for (BUN q = BATcount(d), p = 0; p < q; p++)
 					mskSetVal(m, (BUN) dels[p], true);
 				BBPretain(d->batCacheid);
 			}
@@ -1743,7 +1743,7 @@ upgrade(old_logger *lg)
 		}
 		const oid *dels;
 		dels = Tloc(b, 0);
-		for (BUN q = BUNlast(b), p = 0; p < q; p++) {
+		for (BUN q = BATcount(b), p = 0; p < q; p++) {
 			mskSetVal(bn, (BUN) dels[p], true);
 		}
 		bat_destroy(b);
@@ -1913,7 +1913,7 @@ bl_postversion(void *Store, void *Lg)
 		}
 		ocl = Tloc(te, 0);
 		ncl = Tloc(tne, 0);
-		for (BUN p = 0, q = BUNlast(te); p < q; p++) {
+		for (BUN p = 0, q = BATcount(te); p < q; p++) {
 			switch (ocl[p]) {
 			case EC_TIME_TZ:		/* old EC_DATE */
 				ncl[p] = EC_DATE;
@@ -3354,7 +3354,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Invalid first line of %s", bbpdir);
 		goto end;
 	}
-	if (gdk_version != 061045U) {
+	if (gdk_version != 061046U) {
 		// If this version number has changed, the structure of BBP.dir
 		// may have changed. Update this whole function to take this
 		// into account.
@@ -3392,16 +3392,16 @@ snapshot_bats(stream *plan, const char *db_dir)
 		// were actually present.
 		int scanned = sscanf(line,
 				// Taken from the sscanf in BBPreadEntries() in gdk_bbp.c.
-				// 8 fields, we need field 1 (batid) and field 4 (filename)
-				"%" SCNu64 " %*s %*s %19s %*s %*s %*s %*s"
+				// 7 fields, we need field 1 (batid) and field 4 (filename)
+				"%" SCNu64 " %*s %*s %19s %*s %*s %*s"
 
 				// Taken from the sscanf in heapinit() in gdk_bbp.c.
-				// 14 fields, we need fields 1 (type), 2 (width), 10 (free)
-				" %10s %" SCNu16 " %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s %*s %*s"
+				// 12 fields, we need fields 1 (type), 2 (width), 10 (free)
+				" %10s %" SCNu16 " %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s"
 
 				// Taken from the sscanf in vheapinit() in gdk_bbp.c.
-				// 3 fields, we need field 1 (free).
-				"%" SCNu64 " %*s ^*s"
+				// 1 field, we need field 1 (free).
+				"%" SCNu64
 				,
 				&batid, filename,
 				type, &width, &tail_free,

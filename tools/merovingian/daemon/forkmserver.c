@@ -45,20 +45,20 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 
 	er = msab_getStatus(&stats, dbname);
 	if (er != NULL) {
-		Mfprintf(stderr, "cannot terminate process %lld: %s\n",
+		Mlevelfprintf(ERROR, stderr, "cannot terminate process %lld: %s\n",
 				 (long long int)pid, er);
 		free(er);
 		return false;
 	}
 
 	if (stats == NULL) {
-		Mfprintf(stderr, "strange, process %lld serves database '%s' "
+		Mlevelfprintf(ERROR, stderr, "strange, process %lld serves database '%s' "
 				 "which does not exist\n", (long long int)pid, dbname);
 		return false;
 	}
 
 	if (stats->pid != pid) {
-		Mfprintf(stderr,
+		Mlevelfprintf(ERROR, stderr,
 			"strange, trying to kill process %lld to stop database '%s' "
 			"which seems to be served by process %lld instead\n",
 			(long long int)stats->pid,
@@ -75,24 +75,23 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 		/* ok, what we expect */
 		break;
 	case SABdbCrashed:
-		Mfprintf(stderr, "cannot shut down database '%s', mserver "
+		Mlevelfprintf(ERROR, stderr, "cannot shut down database '%s', mserver "
 				 "(pid %lld) has crashed\n",
 				 dbname, (long long int)pid);
 		msab_freeStatus(&stats);
 		return false;
 	case SABdbInactive:
-		Mfprintf(stdout, "database '%s' appears to have shut down already\n",
+		Mlevelfprintf(ERROR, stderr, "database '%s' appears to have shut down already\n",
 				 dbname);
-		fflush(stdout);
 		msab_freeStatus(&stats);
 		return false;
 	case SABdbStarting:
-		Mfprintf(stderr, "database '%s' appears to be starting up\n",
+		Mlevelfprintf(WARNING, stderr, "database '%s' appears to be starting up\n",
 				 dbname);
 		/* starting up, so we'll go to the shut down phase */
 		break;
 	default:
-		Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
+		Mlevelfprintf(ERROR, stderr, "unknown state: %d\n", (int)stats->state);
 		msab_freeStatus(&stats);
 		return false;
 	}
@@ -103,18 +102,18 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 		return true;
 	} else if (type != MERODB) {
 		/* barf */
-		Mfprintf(stderr, "cannot stop merovingian process role: %s\n",
+		Mlevelfprintf(ERROR, stderr, "cannot stop merovingian process role: %s\n",
 				 dbname);
 		msab_freeStatus(&stats);
 		return false;
 	}
 
 	/* ok, once we get here, we'll be shutting down the server */
-	Mfprintf(stdout, "sending process %lld (database '%s') the "
+	Mlevelfprintf(WARNING, stdout, "sending process %lld (database '%s') the "
 			 "TERM signal\n", (long long int)pid, dbname);
 	if (kill(pid, SIGTERM) < 0) {
 		/* barf */
-		Mfprintf(stderr, "cannot send TERM signal to process (database '%s')\n",
+		Mlevelfprintf(ERROR, stderr, "cannot send TERM signal to process (database '%s')\n",
 				 dbname);
 		msab_freeStatus(&stats);
 		return false;
@@ -127,11 +126,11 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 		sleep_ms(500);
 		er = msab_getStatus(&stats, dbname);
 		if (er != NULL) {
-			Mfprintf(stderr, "unexpected problem: %s\n", er);
+			Mlevelfprintf(ERROR, stderr, "unexpected problem: %s\n", er);
 			free(er);
 			/* don't die, just continue, so we KILL in the end */
 		} else if (stats == NULL) {
-			Mfprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
+			Mlevelfprintf(ERROR, stderr, "hmmmm, database '%s' suddenly doesn't exist "
 					 "any more\n", dbname);
 		} else {
 			switch (stats->state) {
@@ -140,22 +139,21 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 				/* ok, try again */
 				break;
 			case SABdbCrashed:
-				Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
+				Mlevelfprintf(ERROR, stderr, "database '%s' crashed after SIGTERM\n",
 						  dbname);
 				msab_freeStatus(&stats);
 				return true;
 			case SABdbInactive:
-				Mfprintf(stdout, "database '%s' has shut down\n", dbname);
-				fflush(stdout);
+				Mlevelfprintf(INFORMATION, stdout, "database '%s' has shut down\n", dbname);
 				msab_freeStatus(&stats);
 				return true;
 			default:
-				Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
+				Mlevelfprintf(ERROR, stderr, "unknown state: %d\n", (int)stats->state);
 				break;
 			}
 		}
 	}
-	Mfprintf(stderr, "timeout of %s seconds expired, sending process %lld"
+	Mlevelfprintf(WARNING, stderr, "timeout of %s seconds expired, sending process %lld"
 			 " (database '%s') the KILL signal\n",
 			 kv->val, (long long int)pid, dbname);
 	kill(pid, SIGKILL);
@@ -271,14 +269,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 
 	if ((*stats)->locked) {
 		if (!force) {
-			Mfprintf(stdout, "%s '%s' is under maintenance\n",
+			Mlevelfprintf(WARNING, stdout, "%s '%s' is under maintenance\n",
 					 kv->val, database);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
 			return(NO_ERR);
 		} else {
-			Mfprintf(stdout, "startup of %s under maintenance "
+			Mlevelfprintf(WARNING, stdout, "startup of %s under maintenance "
 					 "'%s' forced\n", kv->val, database);
 		}
 	}
@@ -307,7 +305,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		secondsToString(upmin, info.minuptime, 1);
 		secondsToString(upavg, info.avguptime, 1);
 		secondsToString(upmax, info.maxuptime, 1);
-		Mfprintf(stdout, "%s '%s' has crashed after start on %s, "
+		Mlevelfprintf(ERROR, stdout, "%s '%s' has crashed after start on %s, "
 				 "attempting restart, "
 				 "up min/avg/max: %s/%s/%s, "
 				 "crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
@@ -320,7 +318,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		secondsToString(upmin, info.minuptime, 1);
 		secondsToString(upavg, info.avguptime, 1);
 		secondsToString(upmax, info.maxuptime, 1);
-		Mfprintf(stdout, "starting %s '%s', "
+		Mlevelfprintf(INFORMATION, stdout, "starting %s '%s', "
 				 "up min/avg/max: %s/%s/%s, "
 				 "crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
 				 kv->val, database,
@@ -376,14 +374,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		kv = findConfKey(ckv, "mfunnel");
-		if(!(f1 = fdopen(pfdo[1], "a"))) {
+		if (!(f1 = fdopen(pfdo[1], "a"))) {
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
 			return newErr("Failed to open file descriptor\n");
 		}
-		if(!(f2 = fdopen(pfde[1], "a"))) {
+		if (!(f2 = fdopen(pfde[1], "a"))) {
 			fclose(f1);
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
@@ -392,7 +390,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			return newErr("Failed to open file descriptor\n");
 		}
 		if ((er = multiplexInit(database, kv->val, f1, f2)) != NO_ERR) {
-			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
+			Mlevelfprintf(ERROR, stderr, "failed to create multiplex-funnel: %s\n",
 					 getErrMsg(er));
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
@@ -643,11 +641,11 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		close(pfdo[1]);
 
 		close(pfde[0]);
-		if(dup_err == -1)
+		if (dup_err == -1)
 			perror("dup2");
 		dup_err = dup2(pfde[1], 2);
 		close(pfde[1]);
-		if(dup_err == -1)
+		if (dup_err == -1)
 			perror("dup2");
 
 		write_error = write(1, "arguments:", 10);
@@ -794,7 +792,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		pthread_mutex_unlock(&dp->fork_lock);
 
 		if ((*stats)->locked) {
-			Mfprintf(stdout, "database '%s' has been put into maintenance "
+			Mlevelfprintf(INFORMATION, stdout, "database '%s' has been put into maintenance "
 					 "mode during startup\n", database);
 		}
 

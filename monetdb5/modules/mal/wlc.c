@@ -724,7 +724,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define bulk(TPE1, TPE2)\
 {	TPE1 *p = (TPE1 *) bi.base;\
-	TPE1 *q = (TPE1 *) bi.base + BUNlast(b);\
+	TPE1 *q = (TPE1 *) bi.base + BATcount(b);\
 	int k=0; \
 	for( ; p < q; p++, k++){\
 		if( k % 32 == 31){\
@@ -739,7 +739,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define updateBatch(TPE1,TPE2)\
 {	TPE1 *x = (TPE1 *) bvali.base;\
-	TPE1 *y = (TPE1 *) bvali.base + BUNlast(b);\
+	TPE1 *y = (TPE1 *) bvali.base + BATcount(b);\
 	int k=0; \
 	for( ; x < y; x++, k++){\
 		p = newStmt(cntxt->wlc, "wlr","update");\

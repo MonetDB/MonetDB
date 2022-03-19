@@ -92,7 +92,7 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
 	}
 	i = (BUN) (*res + BATcount(view));
-	if (i >= BUNlast(b)) {
+	if (i >= BATcount(b)) {
 		*res = lng_nil;
 		*vid = 0;
 		BBPunfix(view->batCacheid);
@@ -175,7 +175,7 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	*head = *head + 1;
-	if (*head >= BUNlast(b)) {
+	if (*head >= BATcount(b)) {
 		*head = oid_nil;
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;

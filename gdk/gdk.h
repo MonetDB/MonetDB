@@ -767,8 +767,9 @@ typedef struct {
 #define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
 #define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
+#define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
-#define GDKLIBRARY		061045U /* first after Jul2021 */
+#define GDKLIBRARY		061046U /* first after Jan2022 */
 
 typedef struct BAT {
 	/* static bat properties */
@@ -1158,8 +1159,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
 
-#define Tsize(b)	((b)->twidth)
-
 #define tailsize(b,p)	((b)->ttype ?				\
 			 (ATOMstorage((b)->ttype) == TYPE_msk ?	\
 			  (((size_t) (p) + 31) / 32) * 4 :	\
@@ -1179,8 +1178,6 @@ typedef var_t stridx_t;
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
 #define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
-
-#define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
 #define BATcount(b)	((b)->batCount)
 
@@ -1320,7 +1317,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 
 gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
-gdk_export void BATmsync(BAT *b);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
@@ -2238,7 +2234,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * is the iteration variable.
  */
 #define BATloop(r, p, q)			\
-	for (q = BUNlast(r), p = 0; p < q; p++)
+	for (q = BATcount(r), p = 0; p < q; p++)
 
 /*
  * @+ Common BAT Operations

@@ -1924,7 +1924,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 					q = b->hseqbase + BATcount(b);
 			} else {
 				p = b->hseqbase;
-				q = BUNlast(b) + b->hseqbase;
+				q = BATcount(b) + b->hseqbase;
 			}
 		}
 
@@ -2017,7 +2017,7 @@ bailout:
 						if (PCRE_COND) \
 							continue; \
 					} \
-					if (BUNlast(r1) == BATcapacity(r1)) { \
+					if (BATcount(r1) == BATcapacity(r1)) { \
 						newcap = BATgrows(r1); \
 						BATsetcount(r1, BATcount(r1)); \
 						if (r2) \

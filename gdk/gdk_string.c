@@ -86,6 +86,14 @@ strCleanHash(Heap *h, bool rebuild)
 	(void) rebuild;
 	if (!h->cleanhash)
 		return;
+	if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) &&
+	    HEAPextend(h, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+		GDKclrerr();
+		if (h->size > 0)
+			memset(h->base, 0, h->size);
+		return;
+	}
+
 	/* rebuild hash table for double elimination
 	 *
 	 * If appending strings to the BAT was aborted, if the heap
