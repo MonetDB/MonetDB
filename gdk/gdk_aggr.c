@@ -1904,25 +1904,25 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 #endif
 		rems = GDKzalloc(ngrp * sizeof(lng));
 		if (rems == NULL)
-			goto bailout;
+			goto bailout1;
 		break;
 	default:
 		break;
 	}
 	if (cntsp) {
 		if ((cn = COLnew(min, TYPE_lng, ngrp, TRANSIENT)) == NULL)
-			goto bailout;
+			goto bailout1;
 		cnts = (lng *) Tloc(cn, 0);
 		memset(cnts, 0, ngrp * sizeof(lng));
 	} else {
 		cnts = GDKzalloc(ngrp * sizeof(lng));
 		if (cnts == NULL)
-			goto bailout;
+			goto bailout1;
 	}
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
 	if (bn == NULL)
-		goto bailout;
+		goto bailout1;
 	dbls = (dbl *) Tloc(bn, 0);
 
 	if (BATtdense(g))
@@ -1995,6 +1995,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	return GDK_SUCCEED;
   bailout:
 	bat_iterator_end(&bi);
+  bailout1:
 	if (bn)
 		BBPunfix(bn->batCacheid);
 	GDKfree(rems);
@@ -3184,7 +3185,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 			AGGR_COUNT(dbl);
 			break;
 		default:
-			CAND_LOOP(&ci) {
+			TIMEOUT_LOOP(ci.ncand, timeoffset) {
 				i = canditer_next(&ci) - b->hseqbase;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
@@ -3197,6 +3198,8 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 					}
 				}
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			break;
 		}
 		bat_iterator_end(&bi);
@@ -4099,7 +4102,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		if (g) {
 			g = BATproject(s, g);
 			if (g == NULL)
-				goto bunins_failed;
+				goto bailout;
 		}
 	}
 
@@ -4126,14 +4129,14 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			return bn;
 		}
 		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false, false) != GDK_SUCCEED)
-			goto bunins_failed;
+			goto bailout;
 		if (g != origg)
 			BBPunfix(g->batCacheid);
 		g = t1;
 
 		if (BATsort(&t1, NULL, NULL, b, t2, g, false, false, false) != GDK_SUCCEED) {
 			BBPunfix(t2->batCacheid);
-			goto bunins_failed;
+			goto bailout;
 		}
 		if (b != origb)
 			BBPunfix(b->batCacheid);
@@ -4145,7 +4148,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		else
 			bn = COLnew(min, tp, ngrp, TRANSIENT);
 		if (bn == NULL)
-			goto bunins_failed;
+			goto bailout;
 
 		bi = bat_iterator(b);
 
@@ -4218,7 +4221,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		nils += ngrp - BATcount(bn);
 		while (BATcount(bn) < ngrp) {
 			if (bunfastapp_nocheck(bn, dnil) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		}
 		bn->theap->dirty = true;
 		BBPunfix(g->batCacheid);
@@ -4230,7 +4233,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 
 		bn = COLnew(0, average ? TYPE_dbl : tp, 1, TRANSIENT);
 		if (bn == NULL)
-			goto bunins_failed;
+			goto bailout;
 
 		t1 = NULL;
 
@@ -4262,7 +4265,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			ords = (const oid *) oidxh->base + ORDERIDXOFF;
 		} else {
 			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false, false) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 			if (BATtdense(t1))
 				ords = NULL;
 			else
@@ -4334,7 +4337,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		gdk_return rc = BUNappend(bn, v, false);
 		bat_iterator_end(&bi);
 		if (rc != GDK_SUCCEED)
-			goto bunins_failed;
+			goto bailout;
 	}
 
 	if (b != origb)
@@ -4356,6 +4359,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 
   bunins_failed:
 	bat_iterator_end(&bi);
+  bailout:
 	if (b && b != origb)
 		BBPunfix(b->batCacheid);
 	if (g && g != origg)
@@ -4739,7 +4743,7 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
 				dbls[i] = dbl_nil;			\
@@ -4883,7 +4887,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	default:
 		GDKerror("%s: type (%s) not supported.\n",
 			 func, ATOMname(b->ttype));
-		goto alloc_fail;
+		goto bailout;
 	}
 	bat_iterator_end(&bi);
 	if (an) {
@@ -4922,8 +4926,9 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	return bn;
   overflow:
 	GDKerror("22003!overflow in calculation.\n");
-  alloc_fail:
+  bailout:
 	bat_iterator_end(&bi);
+  alloc_fail:
 	if (an)
 		BBPreclaim(an);
 	else
@@ -4997,7 +5002,7 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
 				dbls[i] = dbl_nil;			\
@@ -5119,7 +5124,7 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 		break;
 	default:
 		GDKerror("%s: type (%s) not supported.\n", func, ATOMname(b1->ttype));
-		goto alloc_fail;
+		goto bailout;
 	}
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
@@ -5152,9 +5157,10 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	return bn;
   overflow:
 	GDKerror("22003!overflow in calculation.\n");
-  alloc_fail:
+  bailout:
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
+  alloc_fail:
 	BBPreclaim(bn);
 	GDKfree(mean1);
 	GDKfree(mean2);
@@ -5210,7 +5216,7 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || down1[i] == 0 || down2[i] == 0) { \
 				dbls[i] = dbl_nil;			\
@@ -5330,7 +5336,7 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 		break;
 	default:
 		GDKerror("type (%s) not supported.\n", ATOMname(b1->ttype));
-		goto alloc_fail;
+		goto bailout;
 	}
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
@@ -5361,9 +5367,10 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	return bn;
   overflow:
 	GDKerror("22003!overflow in calculation.\n");
-  alloc_fail:
+  bailout:
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
+  alloc_fail:
 	BBPreclaim(bn);
 	GDKfree(mean1);
 	GDKfree(mean2);

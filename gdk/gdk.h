@@ -925,10 +925,10 @@ gdk_export void HEAPincref(Heap *h);
  * The BAT iterator provides a number of fields that can (and often
  * should) be used to access information about the BAT.  For string
  * BATs, if a parallel threads adds values, the offset heap (theap) may
- * get replaced by a one that is wider.  This involves changing the
- * twidth and tshift values in the BAT structure.  These changed values
- * should not be used to access the data in the iterator.  Instead, use
- * the width and shift values in the iterator itself.
+ * get replaced by one that is wider.  This involves changing the twidth
+ * and tshift values in the BAT structure.  These changed values should
+ * not be used to access the data in the iterator.  Instead, use the
+ * width and shift values in the iterator itself.
  */
 typedef struct BATiter {
 	BAT *b;

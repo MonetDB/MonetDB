@@ -761,7 +761,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			if (strNil(src))
 				nils++;
 			if (tfastins_nocheckVAR(bn, i, src) != GDK_SUCCEED) {
-				goto bunins_failed;
+				goto bailout;
 			}
 		}
 	} else if (b->tvarsized) {
@@ -772,12 +772,12 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
-					goto bunins_failed;
+					goto bailout;
 				}
 			} else {
 				if ((*atomtostr)(&dst, &len, src, false) < 0 ||
 				    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
-					goto bunins_failed;
+					goto bailout;
 				}
 			}
 		}
@@ -787,7 +787,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			x = canditer_next(ci) - candoff;
 			v = Tmskval(&bi, x) ? "1" : "0";
 			if (tfastins_nocheckVAR(bn, i, v) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		}
 	} else {
 		CAND_LOOP_IDX(ci, i) {
@@ -796,12 +796,12 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
-					goto bunins_failed;
+					goto bailout;
 			} else {
 				if ((*atomtostr)(&dst, &len, src, false) < 0)
-					goto bunins_failed;
+					goto bailout;
 				if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
-					goto bunins_failed;
+					goto bailout;
 			}
 		}
 	}
@@ -810,7 +810,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 	BATsetcount(bn, ci->ncand);
 	GDKfree(dst);
 	return nils;
-  bunins_failed:
+  bailout:
 	bat_iterator_end(&bi);
 	GDKfree(dst);
 	return BUN_NONE + 2;
@@ -1002,9 +1002,9 @@ convert_void_any(oid seq, BAT *bn,
 		CAND_LOOP_IDX(ci, i) {
 			x = canditer_next(ci) - candoff;
 			if ((*atomtostr)(&s, &len, &(oid){seq + x}, false) < 0)
-				goto bunins_failed;
+				goto bailout;
 			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		}
 		GDKfree(s);
 		s = NULL;
@@ -1016,7 +1016,7 @@ convert_void_any(oid seq, BAT *bn,
 	bn->theap->dirty = true;
 	return nils;
 
-  bunins_failed:
+  bailout:
 	GDKfree(s);
 	return BUN_NONE + 2;
 }

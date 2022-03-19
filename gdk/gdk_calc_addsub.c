@@ -1598,7 +1598,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn, BATiter b1i
 		if (strNil(l) || strNil(r)) {
 			nils++;
 			if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		} else {
 			llen = strlen(l);
 			rlen = strlen(r);
@@ -1607,20 +1607,20 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn, BATiter b1i
 				GDKfree(s);
 				s = GDKmalloc(slen);
 				if (s == NULL)
-					goto bunins_failed;
+					goto bailout;
 			}
 			(void) stpcpy(stpcpy(s, l), r);
 			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		}
 	}
 	TIMEOUT_CHECK(timeoffset,
-		      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	GDKfree(s);
 	bn->theap->dirty = true;
 	return nils;
 
-  bunins_failed:
+  bailout:
 	GDKfree(s);
 	return BUN_NONE;
 }

@@ -363,9 +363,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 		GDKerror("22003!overflow in calculation "	\
 			 OP "(" FMT##TYPE ").\n",		\
 			 CST##TYPE src[x]);			\
-		BBPreclaim(bn);					\
-		bat_iterator_end(&bi);				\
-		return NULL;					\
+		goto bailout;					\
 	} while (0)
 
 #define ON_OVERFLOW(TYPE1, TYPE2, OP)					\
