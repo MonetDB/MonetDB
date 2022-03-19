@@ -89,7 +89,6 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 	mvc *sql = v->sql;
 	if (is_groupby(rel->op)) {
 		list *exps, *gbe;
-		sql_exp *e = NULL;
 
 		gbe = rel->r;
 		if (!gbe || list_empty(gbe) || is_rewrite_gt_zero_used(rel->used))
@@ -97,8 +96,10 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		/* introduce select * from l where cnt > 0 */
 		/* find count */
 		exps = rel_projections(sql, rel, NULL, 1, 1);
-		e = find_aggr_exp(sql, rel->exps, "count");
-		if (!e) {
+		sql_exp *e = find_aggr_exp(sql, rel->exps, "count"), *ea = e;
+		if (e && e->type == e_column)
+			ea = exps_find_exp(rel->exps, e);
+		if (!ea || !list_empty(ea->l)) {
 			sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 
 			e = exp_aggr(sql->sa, NULL, cf, 0, 0, CARD_AGGR, 0);

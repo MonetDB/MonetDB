@@ -211,8 +211,10 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done, int 
 	if (pipeline) {
 		q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 		q = pushArgument(mb, q, pipeline);
-		if (grp)
+		if (grp) {
 			q = pushArgument(mb, q, grp->nr);
+			q = pushArgument(mb, q, ext->nr); /* needed for parent hash pointer */
+		}
 		q = pushArgument(mb, q, s->nr);
 	} else {
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));

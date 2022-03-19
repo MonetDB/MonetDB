@@ -4106,7 +4106,8 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 			sql_exp *e = n->data;
 			stmt *gstmt = m->data;
 
-			stmt *groupby = stmt_group_locked(be, gstmt, grp, ext, cnt, pp);
+			//stmt *groupby = stmt_group_locked(be, gstmt, grp, ext, cnt, pp);
+			stmt *groupby = stmt_group(be, gstmt, grp, ext, cnt, 0, be->pipeline);
 			/* reuse extend ! */
 			getArg(groupby->q, 1) = *(int*)o->data;
 			groupby->q->inout = 1;
@@ -4283,7 +4284,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			}
 			if (!gbcol->nrcols)
 				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
-			groupby = stmt_group(be, gbcol, grp, grp /*ext*/, cnt, !en->next, be->pipeline);
+			groupby = stmt_group(be, gbcol, grp, ext, cnt, !en->next, be->pipeline);
 
 			/* use global (shared (extend)) result */
 			if (groupby && m) {
