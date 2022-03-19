@@ -23,7 +23,6 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 	BATiter bi;
 	str msg = MAL_SUCCEED;
 	struct canditer ci;
-	BUN q = 0;
 	oid off = 0;
 	bool nils = false;
 	wkb *inWKB = NULL, *outWKB = NULL;
@@ -39,15 +38,15 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 		goto bailout;
 	}
 	off = b->hseqbase;
-	q = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 	//create a new BAT, aligned with input BAT
-	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), q, TRANSIENT))) {
+	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			inWKB = (wkb *) BUNtvar(bi, p);
 
@@ -63,7 +62,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 			outWKB = NULL;
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
 			inWKB = (wkb *) BUNtvar(bi, p);
 
@@ -88,7 +87,7 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
-		BATsetcount(dst, q);
+		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = BATcount(dst) <= 1;
@@ -114,7 +113,6 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 	BATiter bi;
 	str msg = MAL_SUCCEED;
 	struct canditer ci;
-	BUN q = 0;
 	oid off = 0;
 	bool nils = false;
 
@@ -129,15 +127,15 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 		goto bailout;
 	}
 	off = b->hseqbase;
-	q = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 	//create a new BAT, aligned with input BAT
-	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), q, TRANSIENT))) {
+	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			str inWKB = (str) BUNtvar(bi, p);
 			wkb *outSingle;
@@ -154,7 +152,7 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 			outSingle = NULL;
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
 			str inWKB = (str) BUNtvar(bi, p);
 			wkb *outSingle;
@@ -180,7 +178,7 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
-		BATsetcount(dst, q);
+		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = BATcount(dst) <= 1;

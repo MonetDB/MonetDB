@@ -26,7 +26,6 @@ BAT *
 BATunique(BAT *b, BAT *s)
 {
 	BAT *bn;
-	BUN cnt;
 	const void *v;
 	const char *vals;
 	const char *vars;
@@ -49,11 +48,11 @@ BATunique(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
-	cnt = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 
-	if (b->tkey || cnt <= 1 || BATtdense(b)) {
+	if (b->tkey || ci.ncand <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
-		bn = canditer_slice(&ci, 0, cnt);
+		bn = canditer_slice(&ci, 0, ci.ncand);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 			  " (already unique, slice candidates -- "
@@ -113,7 +112,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: byte-sized atoms";
 		uint32_t seen[256 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			o = canditer_next(&ci);
 			val = ((const uint8_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -139,7 +138,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: short-sized atoms";
 		uint32_t seen[65536 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			o = canditer_next(&ci);
 			val = ((const uint16_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -159,7 +158,7 @@ BATunique(BAT *b, BAT *s)
 	} else if (BATordered(b) || BATordered_rev(b)) {
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
@@ -172,7 +171,7 @@ BATunique(BAT *b, BAT *s)
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	} else if (BATcheckhash(b) ||
 		   (!b->batTransient &&
-		    cnt == bi.count &&
+		    ci.ncand == bi.count &&
 		    BAThash(b) == GDK_SUCCEED)) {
 		BUN lo = 0;
 
@@ -186,7 +185,7 @@ BATunique(BAT *b, BAT *s)
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
 		}
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			BUN p;
 
 			o = canditer_next(&ci);
@@ -230,7 +229,7 @@ BATunique(BAT *b, BAT *s)
 			mask = (BUN) 1 << 16;
 			cmp = NULL; /* no compare needed, "hash" is perfect */
 		} else {
-			mask = HASHmask(cnt);
+			mask = HASHmask(ci.ncand);
 			if (mask < ((BUN) 1 << 16))
 				mask = (BUN) 1 << 16;
 		}
@@ -248,7 +247,7 @@ BATunique(BAT *b, BAT *s)
 			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			prb = HASHprobe(hs, v);

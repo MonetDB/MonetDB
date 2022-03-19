@@ -1303,7 +1303,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 	}
 
-	if (canditer_init(&ci, b, s) == 0) {
+	canditer_init(&ci, b, s);
+	if (ci.ncand == 0) {
 		/* trivially empty result */
 		MT_thread_setalgorithm("select: trivially empty");
 		bn = BATdense(0, 0, 0);
