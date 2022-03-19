@@ -1977,7 +1977,7 @@ bailout:
 /* nested loop implementation for PCRE join */
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND) \
 	do { \
-		for (BUN ridx = 0; ridx < nrcand; ridx++) { \
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) { \
 			GDK_CHECK_TIMEOUT(timeoffset, counter, \
 					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			ro = canditer_next(&rci); \
@@ -1991,13 +1991,13 @@ bailout:
 					if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 						goto bailout; \
 				} else if (pcrepat) { \
-					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, nlcand)) != MAL_SUCCEED) \
+					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
 						goto bailout; \
 					GDKfree(pcrepat); \
 					pcrepat = NULL; \
 				} \
 				canditer_reset(&lci); \
-				for (BUN lidx = 0; lidx < nlcand; lidx++) { \
+				for (BUN lidx = 0; lidx < lci.ncand; lidx++) { \
 					lo = canditer_next(&lci); \
 					vl = VALUE(l, lo - lbase); \
 					if (strNil(vl)) { \
@@ -2076,7 +2076,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
 	int rskipped = 0;			/* whether we skipped values in r */
 	oid lbase, rbase, lo, ro, lastl = 0;		/* last value inserted into r1 */
-	BUN nl, newcap, nlcand, nrcand;
+	BUN nl, newcap;
 	char *pcrepat = NULL, *msg = MAL_SUCCEED;
 	struct RE *re = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
@@ -2116,8 +2116,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
 
-	nlcand = canditer_init(&lci, l, sl);
-	nrcand = canditer_init(&rci, r, sr);
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
 
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);

@@ -21,7 +21,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	BAT *bn, *b, *s = NULL;
 	struct canditer ci;
 	oid x, off;
-	BUN i, ncand;
+	BUN i;
 	BUN nils = 0;
 	int e = 0, ex = 0;
 	BATiter bi;
@@ -40,10 +40,10 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		}
 	}
 
-	ncand = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 	off = b->hseqbase;
-	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
-	if (bn == NULL || ncand == 0) {
+	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
+	if (bn == NULL || ci.ncand == 0) {
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
@@ -59,7 +59,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	case TYPE_flt: {
 		const flt *restrict fsrc = (const flt *) bi.base;
 		flt *restrict fdst = (flt *) Tloc(bn, 0);
-		for (i = 0; i < ncand; i++) {
+		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - off;
 			if (is_flt_nil(fsrc[x])) {
 				fdst[i] = flt_nil;
@@ -73,7 +73,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	case TYPE_dbl: {
 		const dbl *restrict dsrc = (const dbl *) bi.base;
 		dbl *restrict ddst = (dbl *) Tloc(bn, 0);
-		for (i = 0; i < ncand; i++) {
+		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - off;
 			if (is_dbl_nil(dsrc[x])) {
 				ddst[i] = dbl_nil;
@@ -107,7 +107,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		throw(MAL, malfunc, "Math exception: %s", err);
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci.ncand);
 	bn->tsorted = false;
 	bn->trevsorted = false;
 	bn->tnil = nils != 0;
@@ -395,7 +395,8 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
 			throw(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		q = canditer_init(&ci, b, bs);
+		canditer_init(&ci, b, bs);
+		q = ci.ncand;
 		if (bs)
 			BBPunfix(bs->batCacheid);
 	} else {

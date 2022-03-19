@@ -980,7 +980,7 @@ BATprint(stream *fdout, BAT *b)
 {
 	if (complex_cand(b)) {
 		struct canditer ci;
-		BUN ncand = canditer_init(&ci, NULL, b);
+		canditer_init(&ci, NULL, b);
 		oid hseq = ci.hseq;
 
 		mnstr_printf(fdout,
@@ -989,7 +989,7 @@ BATprint(stream *fdout, BAT *b)
 			     "# void\toid  # type\n"
 			     "#--------------------------#\n",
 			     b->tident);
-		for (BUN i = 0; i < ncand; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid o = canditer_next(&ci);
 			mnstr_printf(fdout,
 				     "[ " OIDFMT "@0,\t" OIDFMT "@0  ]\n",

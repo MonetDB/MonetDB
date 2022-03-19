@@ -115,8 +115,8 @@ bailout: \
 #define CLEAR_NOTHING(RES)
 
 
-#define COPYFLAGS	do { bn->tsorted = b1->tsorted; bn->trevsorted = b1->trevsorted; } while (0)
-#define SETFLAGS	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
+#define COPYFLAGS(n)	do { bn->tsorted = b1->tsorted; bn->trevsorted = b1->trevsorted; } while (0)
+#define SETFLAGS(n)	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
 #define func1(NAME, MALFUNC, INTYPE, OUTTYPE,							\
 			  FUNC, SETFLAGS, FUNC_CALL,								\
 			  DEC_SRC, DEC_OUTPUT,										\
@@ -135,7 +135,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
 	str msg = MAL_SUCCEED; 												\
 	BAT *b1 = NULL, *s = NULL, *bn = NULL;								\
-	BUN n;																\
 	struct canditer ci = {0};											\
 	oid off;															\
 	bool nils = false;													\
@@ -160,8 +159,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	off = b1->hseqbase;													\
-	n = canditer_init(&ci, b1, s);										\
-	if ((bn = COLnew(ci.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	canditer_init(&ci, b1, s);											\
+	if ((bn = COLnew(ci.hseq, TYPE_##OUTTYPE, ci.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -169,22 +168,22 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_SRC(1);														\
 	INIT_OUTPUT(n);														\
 	if (ci.tpe == cand_dense) {											\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci.ncand; i++) {							\
 			oid p = (canditer_next_dense(&ci) - off);					\
 			FUNC_CALL(FUNC, ptrn[i], GET_NEXT_SRC(1, p));				\
 			nils |= is_##OUTTYPE##_nil(ptrn[i]);						\
 		}																\
 	} else {															\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci.ncand; i++) {							\
 			oid p = (canditer_next(&ci) - off);							\
 			FUNC_CALL(FUNC, ptrn[i], GET_NEXT_SRC(1, p));				\
 			nils |= is_##OUTTYPE##_nil(ptrn[i]);						\
 		}																\
 	}																	\
-	BATsetcount(bn, n);													\
+	BATsetcount(bn, ci.ncand);											\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	SETFLAGS;															\
+	SETFLAGS(ci.ncand);													\
 	bn->tkey = false;													\
 bailout: 																\
 	if (b1) {															\
@@ -228,7 +227,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
 	str msg = MAL_SUCCEED; 												\
 	BAT *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *bn = NULL;		\
-	BUN n;																\
 	oid off1, off2; 													\
 	struct canditer ci1 = {0}, ci2 = {0}; 								\
 	bool nils = false; 													\
@@ -264,13 +262,14 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	n = canditer_init(&ci1, b1, s1);									\
-	if (canditer_init(&ci2, b2, s2) != n || ci1.hseq != ci2.hseq) {		\
+	canditer_init(&ci1, b1, s1);										\
+	canditer_init(&ci2, b2, s2);										\
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {				\
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  "inputs not the same size");								\
 		goto bailout;													\
 	}																	\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -281,7 +280,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_SRC2(2);														\
 	INIT_OUTPUT(n);														\
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {				\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next_dense(&ci1) - off1);				\
 			oid p2 = (canditer_next_dense(&ci2) - off2);				\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2)); \
@@ -289,7 +288,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next(&ci1) - off1);						\
 			oid p2 = (canditer_next(&ci2) - off2);						\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2)); \
@@ -297,11 +296,11 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
-	BATsetcount(bn, n);													\
+	BATsetcount(bn, ci1.ncand);											\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	bn->tsorted = n < 2;												\
-	bn->trevsorted = n < 2;												\
+	bn->tsorted = ci1.ncand < 2;										\
+	bn->trevsorted = ci1.ncand < 2;										\
 	bn->tkey = false;													\
 bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
@@ -328,7 +327,6 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
 	str msg = MAL_SUCCEED; 												\
 	BAT *b2 = NULL, *s2 = NULL, *bn = NULL;								\
-	BUN n;																\
 	oid off2; 															\
 	struct canditer ci2 = {0}; 											\
 	bool nils = false; 													\
@@ -349,13 +347,13 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	b2i = bat_iterator(b2);												\
-	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) {\
+	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	n = canditer_init(&ci2, b2, s2);									\
-	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	canditer_init(&ci2, b2, s2);										\
+	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE, ci2.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -364,25 +362,25 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_SRC2(2);														\
 	INIT_OUTPUT(n);														\
 	if (ci2.tpe == cand_dense) {										\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci2.ncand; i++) {							\
 			oid p2 = (canditer_next_dense(&ci2) - off2);				\
 			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(2, p2));			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci2.ncand; i++) {							\
 			oid p2 = (canditer_next(&ci2) - off2);						\
 			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(2, p2));			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
-	BATsetcount(bn, n);													\
+	BATsetcount(bn, ci2.ncand);											\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	bn->tsorted = n < 2;												\
-	bn->trevsorted = n < 2;												\
+	bn->tsorted = ci2.ncand < 2;										\
+	bn->trevsorted = ci2.ncand < 2;										\
 	bn->tkey = false;													\
 bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
@@ -405,7 +403,6 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
 	str msg = MAL_SUCCEED; 												\
 	BAT *b1 = NULL, *s1 = NULL, *bn = NULL;								\
-	BUN n;																\
 	oid off1; 															\
 	struct canditer ci1 = {0};											\
 	bool nils = false; 													\
@@ -431,8 +428,8 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	n = canditer_init(&ci1, b1, s1);									\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	canditer_init(&ci1, b1, s1);										\
+	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -441,25 +438,25 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_SRC1(1);														\
 	INIT_OUTPUT(n);														\
 	if (ci1.tpe == cand_dense) {										\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next_dense(&ci1) - off1);				\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), src2);			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next(&ci1) - off1);						\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), src2);			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
-	BATsetcount(bn, n);													\
+	BATsetcount(bn, ci1.ncand);											\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	bn->tsorted = n < 2;												\
-	bn->trevsorted = n < 2;												\
+	bn->tsorted = ci1.ncand < 2;										\
+	bn->trevsorted = ci1.ncand < 2;										\
 	bn->tkey = false;													\
 bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
@@ -476,7 +473,7 @@ bailout: 																\
 			BBPkeepref(*ret = bn->batCacheid);							\
 	}																	\
 	return msg;															\
-}																		\
+}
 
 #define func2_noexcept(FUNC, RET, PARAM1, PARAM2) RET = FUNC(PARAM1, PARAM2)
 #define func2_except(FUNC, RET, PARAM1, PARAM2) msg = FUNC(&RET, PARAM1, PARAM2); if (msg) break
