@@ -80,6 +80,22 @@
 #define __warn_unused_result__
 #endif
 
+/* unreachable code */
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#elif defined(__clang__) || defined(__INTEL_COMPILER)
+#ifdef WIN32
+#define __builtin_unreachable()	GDKfatal("Unreachable C code path reached");
+#endif
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#elif defined(_MSC_VER)
+#define MT_UNREACHABLE()	do { assert(0); __assume(0); } while (0)
+#else
+/* we don't know how to tell the compiler, so call a function that
+ * doesn't return */
+#define MT_UNREACHABLE()	do { assert(0); GDKfatal("Unreachable C code path reached"); } while (0)
+#endif
+
 /* also see gdk.h for these */
 #define THRDMASK	(1)
 #define TEMMASK		(1<<10)
@@ -230,51 +246,36 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 		TRC_DEBUG(TEM, "Locking %s complete\n", (l)->name);	\
 	} while (0)
 
-#define _DBG_LOCK_INIT(l)						\
-	do {								\
-		(l)->count = 0;						\
-		ATOMIC_INIT(&(l)->contention, 0);			\
-		ATOMIC_INIT(&(l)->sleep, 0);				\
-		(l)->locker = NULL;					\
-		(l)->thread = NULL;					\
-		/* if name starts with "sa_" don't link in GDKlocklist */ \
-		/* since the lock is in memory that is governed by the */ \
-		/* SQL storage allocator, and hence we have no control */ \
-		/* over when the lock is destroyed and the memory freed */ \
-		if (strncmp((l)->name, "sa_", 3) != 0) {		\
-			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
-				;					\
-			if (GDKlocklist)				\
-				GDKlocklist->prev = (l);		\
-			(l)->next = GDKlocklist;			\
-			(l)->prev = NULL;				\
-			GDKlocklist = (l);				\
-			ATOMIC_CLEAR(&GDKlocklistlock);			\
-		} else {						\
-			(l)->next = NULL;				\
-			(l)->prev = NULL;				\
-		}							\
+#define _DBG_LOCK_INIT(l)					\
+	do {							\
+		(l)->count = 0;					\
+		ATOMIC_INIT(&(l)->contention, 0);		\
+		ATOMIC_INIT(&(l)->sleep, 0);			\
+		(l)->locker = NULL;				\
+		(l)->thread = NULL;				\
+		while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
+			;					\
+		if (GDKlocklist)				\
+			GDKlocklist->prev = (l);		\
+		(l)->next = GDKlocklist;			\
+		(l)->prev = NULL;				\
+		GDKlocklist = (l);				\
+		ATOMIC_CLEAR(&GDKlocklistlock);			\
 	} while (0)
 
-#define _DBG_LOCK_DESTROY(l)						\
-	do {								\
-		/* if name starts with "sa_" don't link in GDKlocklist */ \
-		/* since the lock is in memory that is governed by the */ \
-		/* SQL storage allocator, and hence we have no control */ \
-		/* over when the lock is destroyed and the memory freed */ \
-		if (strncmp((l)->name, "sa_", 3) != 0) {		\
-			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
-				;					\
-			if ((l)->next)					\
-				(l)->next->prev = (l)->prev;		\
-			if ((l)->prev)					\
-				(l)->prev->next = (l)->next;		\
-			else if (GDKlocklist == (l))			\
-				GDKlocklist = (l)->next;		\
-			ATOMIC_CLEAR(&GDKlocklistlock);			\
-			ATOMIC_DESTROY(&(l)->contention);		\
-			ATOMIC_DESTROY(&(l)->sleep);			\
-		}							\
+#define _DBG_LOCK_DESTROY(l)					\
+	do {							\
+		while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
+			;					\
+		if ((l)->next)					\
+			(l)->next->prev = (l)->prev;		\
+		if ((l)->prev)					\
+			(l)->prev->next = (l)->next;		\
+		else if (GDKlocklist == (l))			\
+			GDKlocklist = (l)->next;		\
+		ATOMIC_CLEAR(&GDKlocklistlock);			\
+		ATOMIC_DESTROY(&(l)->contention);		\
+		ATOMIC_DESTROY(&(l)->sleep);			\
 	} while (0)
 
 #else
@@ -488,7 +489,7 @@ typedef struct MT_RWLock {
 	char name[MT_NAME_LEN];
 } MT_RWLock;
 
-#define MT_RWLOCK_INITIALIZER(n)				\
+#define MT_RWLOCK_INITIALIZER(n)					\
 	{ .lock = PTHREAD_MUTEX_INITIALIZER, .readers = ATOMIC_VAR_INIT(0), .name = #n, }
 
 #define MT_rwlock_init(l, n)					\

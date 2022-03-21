@@ -114,7 +114,6 @@ BuildRequires: geos-devel >= 3.4.0
 %endif
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
-BuildRequires: pkgconfig(uuid)
 BuildRequires: pkgconfig(libxml-2.0)
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre) >= 4.5
@@ -796,7 +795,6 @@ fi
 	-DWITH_PROJ=OFF \
 	-DWITH_READLINE=ON \
 	-DWITH_SNAPPY=OFF \
-	-DWITH_UUID=ON \
 	-DWITH_VALGRIND=OFF \
 	-DWITH_XML2=ON \
 	-DWITH_ZLIB=ON
@@ -850,6 +848,14 @@ fi
 %endif
 
 %changelog
+* Mon Feb 07 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.9-20220207
+- Rebuilt.
+- GH#7237: SELECT with concurrent writes rarely returns corrupt data
+- GH#7238: query with system function: "index"(varchar, boolean) fails
+  with GDK error or assertion failure.
+- GH#7241: Replacing a view by a query on the view itself crashes the
+  server.
+
 * Thu Feb 03 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.7-20220203
 - Rebuilt.
 - GH#7228: COMMIT: transaction is aborted because of concurrency

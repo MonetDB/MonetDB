@@ -1460,7 +1460,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 		// push pointer to the SQL structure into the MAL call
 		// allows getting argument names for example
 		if (LANG_EXT(f->func->lang))
-			q = pushPtr(mb, q, f); // nothing to see here, please move along
+			q = pushPtr(mb, q, f->func); // nothing to see here, please move along
 		// f->query contains the R code to be run
 		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
 			q = pushStr(mb, q, f->func->query);
@@ -3036,57 +3036,32 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	return NULL;
 }
 
-stmt *
-stmt_dependency_change(backend *be, sql_table *t, stmt *cnt)
+void
+stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
 	if (!t || cnt->nr < 0)
-		return NULL;
-	q = newStmtArgs(mb, sqlRef, dependRef, 3);
+		return ;
+	q = newStmtArgs(mb, sqlRef, dependRef, 4);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
 	q = pushArgument(mb, q, cnt->nr);
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_depend);
-		if(!s) {
-			freeInstruction(q);
-			return NULL;
-		}
-		s->op1 = cnt;
-		s->op4.tval = t;
-		s->nr = getDestVar(q);
-		s->q = q;
-		return s;
-	}
-	return NULL;
 }
 
-stmt *
-stmt_column_predicate(backend *be, sql_column *c)
+void
+stmt_add_column_predicate(backend *be, sql_column *c)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
 	if (!c)
-		return NULL;
-	q = newStmtArgs(mb, sqlRef, predicateRef, 3);
+		return ;
+	q = newStmtArgs(mb, sqlRef, predicateRef, 4);
 	q = pushSchema(mb, q, c->t);
 	q = pushStr(mb, q, c->t->base.name);
 	q = pushStr(mb, q, c->base.name);
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_predicate);
-		if(!s) {
-			freeInstruction(q);
-			return NULL;
-		}
-		s->op4.cval = c;
-		s->nr = getDestVar(q);
-		s->q = q;
-		return s;
-	}
-	return NULL;
 }
 
 stmt *
@@ -3494,7 +3469,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt *rows)
 
 	default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 	if (rows) {
-		card = stmt_aggr(be, rows, NULL, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		card = stmt_aggr(be, rows, NULL, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 		default_nargs++;
 	}
 	if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
@@ -3523,8 +3498,15 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt *rows)
 			setVarType(mb, getArg(q, 0), res->type->localtype);
 		}
 	}
-	if (LANG_EXT(f->func->lang))
-		q = pushPtr(mb, q, f);
+	if (LANG_EXT(f->func->lang)) {
+		/* TODO LOADER functions still use information in sql_subfunc struct
+			that won't be visible to other sessions if another function uses them.
+			It has to be cleaned up */
+		if (f->func->type == F_LOADER)
+			q = pushPtr(mb, q, f);
+		else
+			q = pushPtr(mb, q, f->func);
+	}
 	if (f->func->lang == FUNC_LANG_C) {
 		q = pushBit(mb, q, 0);
 	} else if (f->func->lang == FUNC_LANG_CPP) {
@@ -4184,9 +4166,9 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		return NULL;
 	if (anti) {
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
-		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC);
-		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC);
+		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
+		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true);
+		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true);
 		cond = stmt_binop(be,
 			stmt_unop(be, cond, NULL, not),
 			stmt_unop(be, cond, NULL, isnull), NULL, or);

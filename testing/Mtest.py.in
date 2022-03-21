@@ -40,13 +40,13 @@ except ImportError:
 MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 
 procdebug = False
-verbose = False
-quiet = False
+verbosity = 0
 approve = False
 
 initdb = None
 single_in_memory = False
 restart = False
+produce_html = True
 
 # extra mserver5 options
 mserver5_opts = []
@@ -59,13 +59,15 @@ isatty = os.isatty(sys.stdout.fileno())
 
 mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9]+:(?P<port>\d+)/')
 
+geos_version = '@GEOS_VERSION@'.split('.')
+
 # default is no color (these three functions may get redefined)
-def prred(str, write = sys.stdout.write):
-    write(str)
-def prgreen(str, write = sys.stdout.write):
-    write(str)
-def prpurple(str, write = sys.stdout.write):
-    write(str)
+def prred(str):
+    print(str, end='')
+def prgreen(str):
+    print(str, end='')
+def prpurple(str):
+    print(str, end='')
 if isatty:
     if os.name != 'nt':
         # color output a little
@@ -73,24 +75,24 @@ if isatty:
         GREEN = '\033[0;32m'
         PURPLE = '\033[1;35m'       # actually magenta
         BLACK = '\033[0;0m'
-        def prred(str, write = sys.stdout.write):
+        def prred(str):
             try:
-                write(RED)
-                write(str)
+                print(RED, end='')
+                print(str, end='')
             finally:
-                write(BLACK)
-        def prgreen(str, write = sys.stdout.write):
+                print(BLACK, end='')
+        def prgreen(str):
             try:
-                write(GREEN)
-                write(str)
+                print(GREEN, end='')
+                print(str, end='')
             finally:
-                write(BLACK)
-        def prpurple(str, write = sys.stdout.write):
+                print(BLACK, end='')
+        def prpurple(str):
             try:
-                write(PURPLE)
-                write(str)
+                print(PURPLE, end='')
+                print(str, end='')
             finally:
-                write(BLACK)
+                print(BLACK, end='')
     else:
         try:
             import ctypes
@@ -113,36 +115,27 @@ if isatty:
                     return wattr
                 reset = get_csbi_attributes(handle)
                 def prred(str,
-                          write=sys.stdout.write,
-                          flush=sys.stdout.flush,
                           scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
-                        flush()
+                        print(end='', flush=True)
                         scta(handle, 0x4)
-                        write(str)
-                        flush()
+                        print(str, end='', flush=True)
                     finally:
                         scta(handle, reset)
                 def prgreen(str,
-                            write=sys.stdout.write,
-                            flush=sys.stdout.flush,
                             scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
-                        flush()
+                        print(end='', flush=True)
                         scta(handle, 0x2)
-                        write(str)
-                        flush()
+                        print(str, end='', flush=True)
                     finally:
                         scta(handle, reset)
                 def prpurple(str,
-                             write=sys.stdout.write,
-                             flush=sys.stdout.flush,
                              scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
-                        flush()
+                        print(end='', flush=True)
                         scta(handle, 0x5)
-                        write(str)
-                        flush()
+                        print(str, end='', flush=True)
                     finally:
                         scta(handle, reset)
 
@@ -164,7 +157,7 @@ if os.path.exists('/usr/bin/coredumpctl'):
             pass
 
 def ErrExit(msg):
-    sys.stderr.write(msg + '\n')
+    print(msg, file=sys.stderr, flush=True)
     sys.exit(1)
 
 def _configure(str):
@@ -308,8 +301,10 @@ def splitcommand(cmd):
 def remove(file):
     try:
         os.remove(file)
-    except:
+    except FileNotFoundError:
         pass
+    except:
+        Warn('could not remove {}'.format(file))
 
 def isexecutable(TST, ext = '.sh') :
     if   os.name == "nt":
@@ -381,6 +376,7 @@ CONDITIONALS = {
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
+    'HAVE_GETENTROPY'      : "@HAVE_GETENTROPY_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
     'NOT_ASSERT'           : "@NOT_ASSERT_FALSE@",
@@ -402,6 +398,7 @@ CONDITIONALS = {
     'HAVE_PYMONETDB'       : False, # default PYTHON can import pymonetdb
     'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
     'HAVE_RUBY'            : False,
+    'HAVE_CPP'             : False,
     'HAVE_DATA_PATH'       : False,
     'MERCURIAL'            : False,
     'RELEASERUN'           : False,
@@ -577,8 +574,6 @@ class Timer:
             self.timer.cancel()
             self.timer = None
 
-STDOUT = sys.stdout
-STDERR = sys.stdout     # err
 REV = ''                # revision (output of hg id), default unknown
 
 black = 'black'                         # #000000
@@ -618,9 +613,8 @@ random.seed(time.time())
 #### AlarmHandler(signum, frame) #
 
 def ErrMsg(TEXT) :
-    STDOUT.flush()
-    STDERR.write("\n%s:  ERROR:  %s\n\n" % (THISFILE, TEXT))
-    STDERR.flush()
+    print(end='', flush=True)
+    print("\n%s:  ERROR:  %s\n" % (THISFILE, TEXT), file=sys.stderr, flush=True)
 ### ErrMsg(TEXT) #
 
 def ErrXit(TEXT) :
@@ -630,12 +624,11 @@ def ErrXit(TEXT) :
 
 def Warn(TEXT) :
     try:
-        STDOUT.flush()
+        print(end='', flush=True)
     except IOError:
         pass
     try:
-        STDERR.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
-        STDERR.flush()
+        print("\n%s  Warning:  %s\n" % (THISFILE, TEXT), file=sys.stderr, flush=True)
     except IOError:
         pass
 ### Warn(TEXT) #
@@ -650,7 +643,7 @@ def startswithpath(str,pre) :
 ##def url(str) :
 ##    return str.replace(os.sep, '/')
 ### url(str) #
-import urllib.request
+import urllib.request, urllib.parse
 path = urllib.request.url2pathname
 def url(str) :
     url = urllib.request.pathname2url(str)
@@ -1125,11 +1118,9 @@ def AddSubToHtmlIndex (env, TSTDIR, diff) :
 def SkipTest(env, TST, EXT, REASON, length) :
     TSTDIR = env['TSTDIR']
     TEXT = "Skipping test %s%s %s" % (TST, EXT, REASON)
-    if quiet:
-        STDOUT.write("-")
-    elif verbose:
+    if verbosity > 1:
         Warn(TEXT)
-    else:
+    elif verbosity == 1:
         if REASON.startswith('as '):
             REASON = REASON[3:]
         if REASON.endswith('.'):
@@ -1144,9 +1135,9 @@ def SkipTest(env, TST, EXT, REASON, length) :
                 s = '%s...%s' % (TST[:l//2 - 2], TST[-(l//2 - 1):])
         else:
             s = '%-*s' % (length, TST)
-        STDOUT.write('%s%s skipped (%s)\n' % (prompt(), s, REASON))
+        print('%s%s skipped (%s)' % (prompt(), s, REASON))
 
-    if testweb:
+    if testweb or not produce_html:
         return None
 
     f = openutf8(".%s.SKIPPED.html" % TST, "w")
@@ -1173,21 +1164,39 @@ def SkipTest(env, TST, EXT, REASON, length) :
     return td
 ### SkipTest(env, TST, EXT, REASON) #
 
-def find_test_dirs(thisdir) :
-    testdirs = []
+def find_test_dirs(thisdir, recursive=True) :
     thisdir = os.path.realpath(thisdir)
     dirnme = os.path.basename(thisdir)
+    if not recursive and dirnme != TSTSUFF and os.path.isdir(os.path.join(thisdir, TSTSUFF)):
+        return find_test_dirs(os.path.join(thisdir, TSTSUFF), recursive)
+    testdirs = []
     dirlst = listdir(thisdir)
+    tstcnt = 0
     if dirnme == TSTSUFF  and  "All" in dirlst  and  os.path.isfile(os.path.join(thisdir,"All")):
-        testdirs.append(os.path.dirname(thisdir))
-    for d in dirlst:
-        d = os.path.join(thisdir,d)
-        if os.path.isdir(d):
-            testdirs = testdirs + find_test_dirs(d)
-    return testdirs
+        try:
+            allf = openutf8(os.path.join(thisdir,"All"))
+        except IOError:
+            pass
+        else:
+            cnt = 0
+            for tc in allf:
+                tc = tc.strip()
+                if tc != '' and not tc.startswith('#'):
+                    cnt += 1
+            if cnt > 0:
+                testdirs.append(os.path.dirname(thisdir))
+                tstcnt += cnt
+    if recursive:
+        for d in dirlst:
+            d = os.path.join(thisdir,d)
+            if os.path.isdir(d):
+                tst, cnt = find_test_dirs(d)
+                testdirs.extend(tst)
+                tstcnt += cnt
+    return testdirs, tstcnt
 ### find_test_dirs(thisdir) #
 
-def PerformDir(env, testdir, testlist, all_tests = False) :
+def PerformDir(env, testdir, testlist, total_tests, test_progress) :
     interrupted = False
     td = 0
     elem = None
@@ -1236,12 +1245,11 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                 options = []            # not used
             else:
                 oneserver = True
-                options = f.read().split()
+                options = splitcommand(f.read())
                 f.close()
 
         if testlist:
             tl = []
-            missing = False
             for tst in testlist:
                 for t, c in alltests:
                     if t == tst:
@@ -1249,15 +1257,12 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                         break
                 else:
                     tl.append((tst,None))
-                    missing = True
             testlist = tl
-            if not missing:
-                all_tests = True
         else:
             testlist = alltests
         if not testlist:
             Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
-            return td, elem, max(FdOut, FdErr), interrupted
+            return td, elem, max(FdOut, FdErr), interrupted, test_progress
 
         # find length of longest test name
         length = 0
@@ -1286,11 +1291,6 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
             os.environ['TSTDATAPATH'] = TSTDATAPATH
 
 
-        #STDERR.flush()
-        #for v in 'RELSRCDIR':
-        #       print(v+" = "+str(env[v]))
-        #STDOUT.flush()
-
         if 'GDK_DBFARM' in env:
             LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
             if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
@@ -1302,7 +1302,7 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr), interrupted
+                    return td, elem, max(FdOut, FdErr), interrupted, test_progress
             if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
                 try:
                     os.makedirs(LogDBdir)
@@ -1310,7 +1310,7 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                     Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr), interrupted
+                    return td, elem, max(FdOut, FdErr), interrupted, test_progress
             if initdb:
                 import zipfile
                 try:
@@ -1319,7 +1319,7 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                     Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr), interrupted
+                    return td, elem, max(FdOut, FdErr), interrupted, test_progress
                 try:
                     z.extractall(LogDBdir)
                 except KeyboardInterrupt:
@@ -1328,7 +1328,7 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                     Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr), interrupted
+                    return td, elem, max(FdOut, FdErr), interrupted, test_progress
                 z.close()
                 if not oneserver:
                     pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts, open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
@@ -1341,12 +1341,13 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
         body_good = []
         body_bad = []
         oktests = []
-        if not verbose and not quiet:
+        if verbosity == 1:
             print('\nRunning in %s' % TSTDIR)
         alllinks = []
         pSrvr = None
         try:
             for TST,COND in testlist:
+                test_progress += 1
                 if oneserver and (pSrvr is None or pSrvr.poll() is not None):
                     # restart server
                     inmem = single_in_memory
@@ -1381,7 +1382,7 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                         print('\nFailed to start server.\n')
                         break
                     os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
-                    SetExecEnv(env['exe'],pSrvr.port,verbose)
+                    SetExecEnv(env['exe'], pSrvr.port, verbosity > 1)
                 if global_timeout and start_time + global_timeout < time.time():
                     if not testweb:
                         print('\nGlobal testing timeout reached\n')
@@ -1389,7 +1390,7 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                     tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
                 else:
                     os.environ['TST'] = TST
-                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, all_tests, pSrvr)
+                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress)
                     alllinks.extend(links)
                 if tt:
                     t = "%7.3f" % tt
@@ -1441,11 +1442,10 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
             for f in alllinks:
                 remove(f)
 
-        if THISFILE == "Mtest.py":
-            if not testweb:
-                body = body_bad + body_good
-                CreateHtmlIndex(env, ssout, sserr, *body)
-                elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
+        if not testweb and produce_html:
+            body = body_bad + body_good
+            CreateHtmlIndex(env, ssout, sserr, *body)
+            elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -1479,10 +1479,10 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
             except:
                 pass
 
-        return td, elem, max(FdOut, FdErr, ssout, sserr), interrupted
+        return td, elem, max(FdOut, FdErr, ssout, sserr), interrupted, test_progress
     finally:
         del sys.path[0]
-### PerformDir(env, testdir, testlist) #
+### PerformDir(env, testdir, testlist, total_tests, test_progress) #
 
 # this function is a slightly modified copy of the posixpath version
 # the differences are the doubling of \'s in the replacement value
@@ -1730,21 +1730,17 @@ def GetBitsAndModsAndThreads(env) :
         if not env['TST_MODS']:
             ErrMsg("Checking for Modules failed!")
         if not env['TST_BITS'] or not env['TST_MODS']:
-            STDERR.write(' '.join(cmd) + "\n\n")
-            STDERR.write(qOut)
-            STDERR.write("\n")
-            STDERR.write(qErr)
-            STDERR.write("\n")
-            STDERR.flush()
+            print(' '.join(cmd) + "\n\n", file=sys.stderr, end='')
+            print(qOut, file=sys.stderr, end='')
+            print.write(file=sys.stderr)
+            print(qErr, file=sys.stderr, flush=True)
             rtrn = 1
     else:
         rtrn = 1
         ErrMsg("No output from mserver5 when checking for Bits, Modules & Threads!?")
         if qErr:
-            STDERR.write(' '.join(cmd) + "\n\n")
-            STDERR.write(qErr)
-            STDERR.write("\n")
-            STDERR.flush()
+            print(' '.join(cmd) + "\n\n", file=sys.stderr, end='')
+            print(qErr, file=sys.stderr, flush=True)
     os.environ['TST_MODS'] = str(env['TST_MODS'])
     return rtrn
 ### GetBitsAndModsAndThreads(env) #
@@ -1814,41 +1810,6 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     return STABLEout, STABLEerr
 ### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
 
-def CategorizeResult(TST, SockTime):
-    l = '<!--MajorDiffs-->'   # assign something in case file is empty
-    for l in openutf8("%s.out.diff.html" % TST):
-        pass
-    if   l.startswith('<!--NoDiffs-->'):
-        o = F_OK
-    elif l.startswith('<!--MinorDiffs-->'):
-        o = F_WARN
-    elif l.startswith('<!--MajorDiffs-->'):
-        o = F_ERROR
-    else:
-        Warn("Unexpected last line in %s.out.diff.html:\n%s" % (TST, l))
-        ff = openutf8("%s.out.diff.html" % TST, "a")
-        ff.write("\n<!--MajorDiffs-->\n")
-        ff.close()
-        o = F_ERROR
-    l = '<!--MajorDiffs-->'   # assign something in case file is empty
-    for l in openutf8("%s.err.diff.html" % TST):
-        pass
-    if   l.startswith('<!--NoDiffs-->'):
-        e = F_OK
-    elif l.startswith('<!--MinorDiffs-->'):
-        e = F_WARN
-    elif l.startswith('<!--MajorDiffs-->'):
-        e = F_ERROR
-    else:
-        Warn("Unexpected last line in %s.err.diff.html:\n%s" % (TST, l))
-        ff = openutf8("%s.err.diff.html" % TST, "a")
-        ff.write("\n<!--MajorDiffs-->\n")
-        ff.close()
-        e = F_ERROR
-    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
-        e = SockTime
-    return o, e
-
 relcond = {
     # upgrade testing conditionals:
     # key is condition, value is tuple with file name and part of message
@@ -1872,7 +1833,7 @@ relcond = {
                              'last hugeint chained empty'),
 }
 
-def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
+def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) :
     global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
@@ -1943,14 +1904,12 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
             #elif os.name == "posix":
             else:
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.malC|.sql|.R|.rb]`"
-            if quiet:
-                pass
-            elif verbose:
-                STDOUT.write('%s%s  ' %
-                             (prompt(), os.path.join(env['TSTDIR'], TST + EXT)))
+            if verbosity > 1:
+                print('%s%s  ' %
+                      (prompt(), os.path.join(env['TSTDIR'], TST + EXT)), end='')
                 prred('TEST MISSING')
-                STDOUT.write('\n')
-            else:
+                print()
+            elif verbosity == 1:
                 if ttywidth > 0 and length + 10 + 21 >= ttywidth:
                     # 10 - length of prompt()
                     # 21 - length of time plus result
@@ -1961,9 +1920,9 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
                         s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
                 else:
                     s = '%-*s ' % (length, TST)
-                STDOUT.write('%s%s' % (prompt(), s))
+                print('%s%s' % (prompt(), s), end='')
                 prred('TEST MISSING')
-                STDOUT.write('\n')
+                print()
 
             return TX,Failed,Failed,elem,reason,links
 
@@ -2022,6 +1981,34 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
                 passwd = cond[7:]
+            elif cond.startswith('GEOS_VERSION>='):
+                if not geos_version or not geos_version[0]:
+                    reason = "no geos version information available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                req_vers = cond[14:].split('.')
+                if not negate:
+                    for i in range(len(geos_version)):
+                        if i >= len(req_vers):
+                            break
+                        if int(geos_version[i]) > int(req_vers[i]):
+                            break
+                        if int(geos_version[i]) < int(req_vers[i]):
+                            reason = "geos version too low"
+                            elem = SkipTest(env, TST, EXT, reason, length)
+                            break
+                else:
+                    for i in range(len(geos_version)):
+                        if i >= len(req_vers):
+                            break
+                        if int(geos_version[i]) < int(req_vers[i]):
+                            break
+                        if int(geos_version[i]) > int(req_vers[i]):
+                            reason = "geos version too high"
+                            elem = SkipTest(env, TST, EXT, reason, length)
+                            break
+                if reason is not None:
+                    break
             elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
@@ -2142,11 +2129,11 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, pSrvr, total_tests, test_progress)
         t1 = time.time()
         TX = t1 - t0
-        if not quiet:
-            STDOUT.write(" %7.3fs " % TX)
+        if verbosity > 0:
+            print(" %7.3fs " % TX, end='')
 
         if tres == 'timeout':
             errcode = F_TIME
@@ -2195,40 +2182,40 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
         ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
 
         if tres == 'socket':
-            if quiet:
-                STDOUT.write("\n%s : Socket!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Socket!) ")
+            if verbosity == 0:
+                print("\n%s : Socket!" % TST)
+            elif verbosity > 1:
+                print("(Socket!) ", end='')
 
         if tres == 'timeout':
-            if quiet:
-                STDOUT.write("\n%s : Timeout!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Timeout!) ")
+            if verbosity == 0:
+                print("\n%s : Timeout!" % TST)
+            elif verbosity > 1:
+                print("(Timeout!) ", end='')
 
         if tres == 'recursion':
-            if quiet:
-                STDOUT.write("\n%s : Recursion!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Recursion!) ")
+            if verbosity == 0:
+                print("\n%s : Recursion!" % TST)
+            elif verbosity > 1:
+                print("(Recursion!) ", end='')
 
         if tres == 'segfault':
-            if quiet:
-                STDOUT.write("\n%s : Crashed!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Crashed!) ")
+            if verbosity == 0:
+                print("\n%s : Crashed!" % TST)
+            elif verbosity > 1:
+                print("(Crashed!) ", end='')
 
         if tres == 'signal':
-            if quiet:
-                STDOUT.write("\n%s : Signaled!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Signaled!) ")
+            if verbosity == 0:
+                print("\n%s : Signaled!" % TST)
+            elif verbosity > 1:
+                print("(Signaled!) ", end='')
 
-        if verbose:
-            STDOUT.write("\n")
+        if verbosity > 1:
+            print()
 
         try:
-            STDOUT.flush()
+            print('', end='', flush=True)
         except IOError as err:
             Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (err.errno, err.strerror))
 
@@ -2255,52 +2242,99 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
                     tst = '%s<a target="_blank" href="http://bugs.monetdb.org/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
                 else:
                     tst = TST
-                titlefmt = '-tTest %s%s (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (tst, EXT, f, REV, TST)
-            else:
-                # no need (and no space) to add link to bug report:
-                # it's done already elsewhere
-                titlefmt = '-tTest <a href="%s%s">%s%s</a> (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, f, REV, TST)
-        elif testweb:
-            titlefmt = '-tTest %s%s (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST)
-        else:
-            titlefmt = '-tTest <a href="%s%s">%s%s</a> (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, TST)
-        diff_html = openutf8('%s.out.diff.html' % TST,"w")
         out = openutf8('%s.test.out' % TST).read()
-        Element('html', None,
-#                 Element('head', None,
-#                         Element('style', None,
-#                                 Text('''
-# .neutral { color: black; }
-# .deleted { color: red; }
-# .added   { color: green; }
-# '''))),
-                Element('body', None,
-                        Element('pre', None,
-                                Text(out)))).write(diff_html, True)
         if out and [x for x in out.splitlines() if not x.startswith('#')]:
-            diff_html.write('<!--MajorDiffs-->\n')
+            FailedOut = F_ERROR
         else:
-            diff_html.write('<!--NoDiffs-->\n')
-        diff_html.close()
-        diff_html = openutf8('%s.err.diff.html' % TST,"w")
+            FailedOut = F_OK
         err = openutf8('%s.test.err' % TST).read()
-        Element('html', None,
-#                 Element('head', None,
-#                         Element('style', None,
-#                                 Text('''
+        if err and [x for x in err.splitlines() if not x.startswith('#')]:
+            if max(sockerr, errcode) in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
+                FailedErr = max(sockerr, errcode)
+            else:
+                FailedErr = F_ERROR
+        else:
+            FailedErr = F_OK
+        if produce_html:
+            diff_html = openutf8('%s.out.diff.html' % TST,"w")
+            Element('html', None,
+#                     Element('head', None,
+#                             Element('style', None,
+#                                     Text('''
 # .neutral { color: black; }
 # .deleted { color: red; }
 # .added   { color: green; }
 # '''))),
-                Element('body', None,
-                        Element('pre', None,
-                                Text(err)))).write(diff_html, True)
-        if err and [x for x in err.splitlines() if not x.startswith('#')]:
-            diff_html.write('<!--MajorDiffs-->\n')
-        else:
-            diff_html.write('<!--NoDiffs-->\n')
-        diff_html.close()
-        FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode))
+                    Element('body', None,
+                            Element('pre', None,
+                                    Text(out)))).write(diff_html, True)
+            if FailedOut == F_ERROR:
+                diff_html.write('<!--MajorDiffs-->\n')
+            else:
+                diff_html.write('<!--NoDiffs-->\n')
+            diff_html.close()
+            diff_html = openutf8('%s.err.diff.html' % TST,"w")
+            Element('html', None,
+#                     Element('head', None,
+#                             Element('style', None,
+#                                     Text('''
+# .neutral { color: black; }
+# .deleted { color: red; }
+# .added   { color: green; }
+# '''))),
+                    Element('body', None,
+                            Element('pre', None,
+                                    Text(err)))).write(diff_html, True)
+            if FailedErr == F_ERROR:
+                diff_html.write('<!--MajorDiffs-->\n')
+            else:
+                diff_html.write('<!--NoDiffs-->\n')
+            diff_html.close()
+
+            if verbosity <= 1:
+                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                    print('\r', ' '*(ttywidth or 100), end='', sep='')
+                    print('\r', end='', sep='')
+                if tres == 'socket':
+                    prpurple('SOCKET')
+                elif tres == 'timeout':
+                    prpurple('TIMEOUT')
+                elif tres == 'recursion':
+                    prpurple('RECURSION')
+                elif tres == 'segfault':
+                    prpurple('CRASHED')
+                elif tres == 'abort':
+                    prpurple('ABORTED')
+                elif tres == 'signal':
+                    prpurple('SIGNALED')
+                elif verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                    prred('ERROR')
+                elif verbosity == 1:
+                    if FailedOut == F_OK:
+                        prgreen('OK   ')
+                    elif FailedOut == F_WARN:
+                        prgreen('minor')
+                    else:
+                        prred('ERROR')
+                    print(' ', end='')
+                    if FailedErr == F_OK:
+                        prgreen('OK')
+                    elif FailedErr == F_WARN:
+                        prgreen('minor')
+                    else:
+                        prred('ERROR')
+                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                    print(':', os.path.join(TSTDIR, TST + EXT))
+        elif FailedOut > F_WARN or FailedErr > F_WARN:
+            print()
+            print('========================================')
+            prred('ERROR: ')
+            print(os.path.join(TSTDIR, TST + EXT))
+            print('========================================')
+            with openutf8(TestErrFile, 'r') as f:
+                print(f.read())
+            print()
+
         if FailedOut == F_OK and FailedErr == F_OK and testweb:
             for f in ['%s.out.diff.html' % TST, '%s.test.out' % TST,
                       '%s.server.out' % TST, '%s.client.out' % TST,
@@ -2312,38 +2346,9 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
                       '%s%s.FILTERED' % (TST, STABLEerr)]:
                 remove(f)
 
-        if not testweb:
+        if not testweb and produce_html:
             elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT,
                                      FailedOut, FailedErr)
-
-        if not verbose and not quiet:
-            if tres == 'socket':
-                prpurple('SOCKET')
-            elif tres == 'timeout':
-                prpurple('TIMEOUT')
-            elif tres == 'recursion':
-                prpurple('RECURSION')
-            elif tres == 'segfault':
-                prpurple('CRASHED')
-            elif tres == 'abort':
-                prpurple('ABORTED')
-            elif tres == 'signal':
-                prpurple('SIGNALED')
-            else:
-                if FailedOut == F_OK:
-                    prgreen('OK   ')
-                elif FailedOut == F_WARN:
-                    prgreen('minor')
-                else:
-                    prred('MAJOR')
-                STDOUT.write(' ')
-                if FailedErr == F_OK:
-                    prgreen('OK')
-                elif FailedErr == F_WARN:
-                    prgreen('minor')
-                else:
-                    prred('MAJOR')
-            STDOUT.write('\n')
 
     return TX,FailedOut,FailedErr,elem,reason,links
 ### RunTest(env, TST, COND, oktests) #
@@ -2661,15 +2666,24 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
+def progress(count, total, test):
+    perc = round((count/total) * 100) if total and count else 0
+    print('\r', ' '*(ttywidth or 100), end='', sep='')
+    s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
+    if len(s) > ttywidth:
+        test = test[len(s)-ttywidth:]
+        s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
+    print('\r', s, end='', sep='', flush=True)
+
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, test_progress) :
     ATJOB2 = ""
-    STDERR.flush()
-    if quiet:
-        STDOUT.write(".")
-    elif verbose:
-        STDOUT.write('%s%s  (<=%d) ...' %
-                     (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
-                      TIMEOUT))
+    print(file=sys.stderr, end='', flush=True)
+    if verbosity == 0:
+        progress(test_progress, total_tests, os.path.join(env['TSTDIR'], TST + EXT))
+    elif verbosity > 1:
+        print('%s%s  (<=%d) ...' %
+              (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
+               TIMEOUT), end='')
     else:
         if ttywidth > 0 and length + 10 + 21 >= ttywidth:
             # 10 - length of prompt()
@@ -2681,13 +2695,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
         else:
             s = '%-*s ' % (length, TST)
-        STDOUT.write('%s%s' % (prompt(), s))
+        print('%s%s' % (prompt(), s), end='')
         if isatty and TIMEOUT > 0:
             s = '(<=%d)' % TIMEOUT
-            STDOUT.write(s + '\b' * len(s))
+            print(s + '\b' * len(s), end='')
 
     try:
-        STDOUT.flush()
+        print(end='', flush=True)
     except IOError as err:
         Warn("Flushing STDOUT in DoIt failed with #%d: '%s'." % (err.errno, err.strerror))
     TSTDB = env['TSTDB']
@@ -2708,67 +2722,30 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
             ClntOut = openutf8(ClntOutFile,"w")
             ClntErr = openutf8(ClntErrFile,"w")
 
-            Srvr = splitcommand(exe['mserver5'][1])
-            if nomito:
-                try:
-                    Srvr.remove('--forcemito')
-                except ValueError:
-                    pass
-            if threads is not None:
-                for i in range(len(Srvr)):
-                    if Srvr[i].startswith('gdk_nr_threads='):
-                        Srvr[i] = 'gdk_nr_threads=%s' % threads
-                        break
-            dbpath = os.path.join(env['GDK_DBFARM'], TSTDB)
-            Srvr.append('--dbpath=%s' % dbpath)
-            if env.get('MULTIFARM'):
-                Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-                shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
-                              ignore_errors = True)
-                os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-            elif env.get('TRANS_INMEM'):
-                Srvr.append('--dbextra=in-memory')
-            if os.path.isfile(TST + '.options5'):
-                Srvr.extend(openutf8(TST + '.options5').read().split())
-            lang=""
-
-            if SERVER == "MAL":
-                lang="mal"
-            if SERVER == "SQL":
-                lang="sql"
-
-            # enable r integration in server
-            if (not all_tests or (COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
-                Srvr.extend(['--set', 'embedded_r=yes'])
-
-            savepath = None
-            savepypath = os.environ.get('PYTHONPATH')
-            savepyhome = os.environ.get('PYTHONHOME')
-            if (COND != None and "HAVE_LIBPY3" in COND) and CONDITIONALS['HAVE_LIBPY3']:
-                # enable Python 3 integration in server
-                if winreg is not None:
-                    if env['TST_BITS'] == '32bit':
-                        if sys.maxsize > 2**32:
-                            regkey = r'SOFTWARE\Wow6432Node\Python\PythonCore\3.@PY3VER@-32\InstallPath'
-                        else:
-                            regkey = r'SOFTWARE\Python\PythonCore\3.@PY3VER@-32\InstallPath'
-                    else:
-                        regkey = r'SOFTWARE\Python\PythonCore\3.@PY3VER@\InstallPath'
-                    try:
-                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey) as key:
-                            instpath = winreg.QueryValue(key, None)
-                            os.environ['PYTHONHOME'] = instpath
-                            os.environ['PYTHONPATH'] = instpath + 'Lib'
-                            savepath = os.environ['PATH']
-                            os.environ['PATH'] = instpath.rstrip('\\') + os.pathsep + savepath
-                    except WindowsError:
-                        pass
-                Srvr.extend(['--set', 'embedded_py=3'])
-
-            # enable C integration in server
-            Srvr.extend(['--set', 'embedded_c=true'])
-
             if PSRVR is None:
+                Srvr = splitcommand(exe['mserver5'][1])
+                if nomito:
+                    try:
+                        Srvr.remove('--forcemito')
+                    except ValueError:
+                        pass
+                if threads is not None:
+                    for i in range(len(Srvr)):
+                        if Srvr[i].startswith('gdk_nr_threads='):
+                            Srvr[i] = 'gdk_nr_threads=%s' % threads
+                            break
+                dbpath = os.path.join(env['GDK_DBFARM'], TSTDB)
+                Srvr.append('--dbpath=%s' % dbpath)
+                if env.get('MULTIFARM'):
+                    Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
+                                  ignore_errors = True)
+                    os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+                elif env.get('TRANS_INMEM'):
+                    Srvr.append('--dbextra=in-memory')
+                if os.path.isfile(TST + '.options5'):
+                    Srvr.extend(openutf8(TST + '.options5').read().split())
+
                 if env.get('MULTIFARM'):
                     Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                     shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -2783,20 +2760,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     print('\nFailed to start server.\n')
                     return 'serverfail'
                 os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
-                SetExecEnv(exe,pSrvr.port,verbose)
+                SetExecEnv(exe,pSrvr.port,verbosity > 1)
             else:
                 PSRVR.timer.settimeout(TIMEOUT)
                 PSRVR.timer.start()
-            if savepath is not None:
-                os.environ['PATH'] = savepath
-                if savepypath:
-                    os.environ['PYTHONPATH'] = savepypath
-                else:
-                    del os.environ['PYTHONPATH']
-                if savepyhome:
-                    os.environ['PYTHONHOME'] = savepyhome
-                else:
-                    del os.environ['PYTHONHOME']
         else:
             ClntOut = openutf8(TestOutFile, 'a')
             ClntErr = openutf8(TestErrFile, 'a')
@@ -3038,15 +3005,12 @@ def Check(command, input) :
                 if qOut and qOut[-1].startswith("! Exit 1"):
                     qErr.append(qOut.pop())
                 for l in qOut+qErr:
-                    STDERR.write(l)
-                    STDERR.write("\n")
-                STDERR.write("\n")
-                STDERR.flush()
+                    print(l, file=sys.stderr)
+                print(file=sys.stderr, flush=True)
                 #sys.exit(1)
     if noErr:
-        STDOUT.flush()
-        STDERR.writelines(noErr)
-        STDERR.flush()
+        print(end='', flush=True)
+        print(*noErr, sep='\n', flush=True)
     return failed
 ### Check(command, input) #
 
@@ -3101,7 +3065,7 @@ def CheckClassPath() :
                             CONDITIONALS[C] = True
     if cp:
         os.environ['CLASSPATH'] = cp
-    if verbose:
+    if verbosity > 1:
         miss = ''
         for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar']:
             C = 'HAVE_%s' % j.upper().replace('.','_')
@@ -3121,7 +3085,7 @@ def SetExecEnv(exe,port,verbose) :
     else:
         CALL = ""
     if verbose:
-        STDERR.flush()
+        print(file=sys.stderr, end='', flush=True)
     for v in exe.keys():
         if v == 'mserver5':
             V = 'MSERVER'
@@ -3134,13 +3098,16 @@ def SetExecEnv(exe,port,verbose) :
         if verbose:
             print("%s = %s : %s" % (V, exe[v][0], exe[v][1].replace('${PORT}', port)))
     if verbose:
-        STDOUT.flush()
+        print(end='', flush=True)
 ### SetExecEnv(exe,port,procdebug) #
 
 #############################################################################
 #       MAIN
 
 THISFILE = os.path.basename(sys.argv[0])
+if THISFILE == 'Mz.py':
+    produce_html = False
+    verbosity == 0
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
 TSTDBG = str(2+8)
 TSTTHREADS = "0"
@@ -3157,20 +3124,6 @@ else:
         return os.listdir(os.path.abspath(d))
 
 HOST = 'localhost'
-# if 'HOST' in os.environ:
-#     HOST = os.environ['HOST']
-# #else:
-# #    HOST = ''
-# elif os.name != "nt":
-#     HOST = os.uname()[1]
-# elif 'COMPUTERNAME' in os.environ:
-#     HOST = os.environ['COMPUTERNAME']
-# ##else:
-# ##    HOST = "WIN2000"
-# if 'DOMAIN' in os.environ:
-#     HOST = HOST.replace('.'+os.environ('DOMAIN'),'')
-# else:
-#     HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 os.environ['MAPIHOST'] = HOST
 
@@ -3378,13 +3331,9 @@ def main(argv) :
     parser.add_argument('--revision', action='store', dest='revision', metavar='<hgid>', help='use given revision as the HG short hash')
     parser.add_argument('--TSTSRCBASE', action='store', dest='TSTSRCBASE', metavar='<path>', help='default: "%s"' % _configure('@QXSOURCE@'))
     parser.add_argument('--TSTTRGBASE', action='store', dest='TSTTRGBASE', metavar='<path>', help='default: "%s"' % _configure('@QXprefix@'))
-    parser.add_argument('--quiet', '-q', action='store_true', dest='quiet', help="suppress messages on stdout")
-    parser.add_argument('--verbose', '-v', action='store_true', dest='verbose', help="more verbose test output")
+    parser.add_argument('--verbose', '-v', action='count', dest='verbosity', default=0, help="more verbose test output (can be used twice)")
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
-    parser.add_argument('-I', action='store', dest='ignore', metavar='<exp>', help="ignored, backward compatibility option")
-    parser.add_argument('-C', action='store', dest='context', metavar='<num>', type=int, default=1, help="ignored, backward compatibility option")
-    parser.add_argument('-A', action='store', dest='accuracy', metavar='<num>', type=int, default=1, help="ignored, backward compatibility option")
     parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
     parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
     parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
@@ -3414,6 +3363,11 @@ def main(argv) :
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--report-all-failures', action='store_true', dest='report_all_failures', help='report all failing tests, even if many')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
+    global produce_html
+    if produce_html:
+        parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
+    else:
+        parser.add_argument('--produce-html', action='store_true', dest='produce_html', help='produce HTML files')
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
@@ -3422,19 +3376,17 @@ def main(argv) :
     recursive = opts.recursive
     global testweb
     testweb = False
-    global quiet
-    quiet = opts.quiet
-    global verbose
-    verbose = opts.verbose
-    if quiet and verbose:
-        ErrExit('--verbose and --quiet are mutually exclusive')
+    global verbosity
+    verbosity = opts.verbosity
     global procdebug
     procdebug = opts.procdebug
     global approve
     approve = opts.approve
+    produce_html = opts.produce_html
     addreqs = False
-    all_tests = False
     testweb = opts.testweb
+    if testweb and verbosity == 0:
+        verbosity = 1
     CONDITIONALS['RELEASERUN'] = opts.releaserun
     nomito = opts.nomito
     global restart
@@ -3494,12 +3446,12 @@ def main(argv) :
             env[v] = a
 
     # display par's
-    STDERR.flush()
-    if verbose:
+    print(file=sys.stderr, end='', flush=True)
+    if verbosity > 1:
         for v in par.keys():
             #os.environ[v] = par[v]
             print("%s = %s" % (v, str(par[v])))
-    STDOUT.flush()
+    print(end='', flush=True)
     #env['par'] = par
 
     # unknown at compile time, as Mtest.py is compiled with MonetDB;
@@ -3582,6 +3534,14 @@ def main(argv) :
                 print('Ruby available, but MonetDB gem not available')
     CheckClassPath()
 
+    if CheckExec('c++'):
+        with process.Popen(['c++', '--version'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            cpp_out, cpp_err = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_CPP'] = True
+
     # tidy-up and fall-back to defaults where necessary
     vars_ = VARS + ['GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
     for v in vars_:
@@ -3613,7 +3573,7 @@ def main(argv) :
     for p in 'TSTSRCBASE', 'TSTTRGBASE':
         if os.path.isdir(env[p]):
             rp = os.path.realpath(env[p])
-            if verbose and os.path.normcase(rp) != os.path.normcase(env[p]):
+            if verbosity > 1 and os.path.normcase(rp) != os.path.normcase(env[p]):
                 Warn("%s: Replacing logical path  %s  by absolute physical path  %s" % (p, env[p], rp))
             env[p] = rp
         else:
@@ -3671,10 +3631,10 @@ def main(argv) :
     RELSRCBASE = os.path.relpath(TSTSRCBASE, TSTTRGBASE)
     env['RELSRCBASE'] = RELSRCBASE
 
-    #STDERR.flush()
+    #print(file=sys.stderr, end='', flush=True)
     #for v in 'RELSRCBASE':
     #       print(v+" = "+str(env[v]))
-    #STDOUT.flush()
+    #print(end='', flush=True)
 
     env['BINDIR'] = _configure('@QXbindir@')
     vars_.append('BINDIR')
@@ -3682,16 +3642,16 @@ def main(argv) :
     vars_.append('LIBDIR')
 
     # export and display env
-    STDERR.flush()
+    print(file=sys.stderr, end='', flush=True)
     vars_ = vars_ + ['GDK_DBFARM']
     vars_ = vars_ + ['setMONETDB_MOD_PATH']
     vars_ = vars_ + ['TSTDATAPATH']
     for v in vars_:
         if v in env:
             os.environ[v] = env[v]
-            if verbose:
+            if verbosity > 1:
                 print("%s = %s" % (v, env[v]))
-    if verbose or testweb:
+    if verbosity > 1 or testweb:
         print("%s = %s" % ('PATH', os.environ['PATH']))
         if 'PYTHONPATH' in os.environ:
             print("%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH']))
@@ -3701,10 +3661,10 @@ def main(argv) :
         for v in ['BINDIR']:
             if v in os.environ:
                 print("%s = %s" % (v, os.environ[v]))
-    STDOUT.flush()
+    print(end='', flush=True)
 
     # add QUIET par to env
-    env['QUIET'] = quiet
+    env['QUIET'] = verbosity == 0
 
     ## set/extend PATH & LD_LIBRARY_PATH
     #bp = ""        #_configure(os.path.join('@QXprefix@',"bin"))
@@ -3882,19 +3842,20 @@ def main(argv) :
                 # WARNING
             testlist = []
             for d in dirlist:
-                test_dirs = find_test_dirs(d)
+                test_dirs, test_count = find_test_dirs(d)
                 test_dirs.sort()
                 for t in test_dirs:
                     if t not in testdirs:
                         testdirs.append(t)
         else:
+            test_count = 0
             for d in dirlist:
-                if   os.path.basename(d) == TSTSUFF  and  os.path.isfile(os.path.join(d,"All")):
-                    testdirs.append(os.path.dirname(os.path.realpath(d)))
-                elif os.path.isdir(os.path.join(d,TSTSUFF))  and  os.path.isfile(os.path.join(d,TSTSUFF,"All")):
-                    testdirs.append(os.path.realpath(d))
-                else:
+                test_dirs, cnt = find_test_dirs(d, recursive=False)
+                if cnt == 0:
                     Warn("No tests found in '%s`; skipping directory!" % d)
+                else:
+                    testdirs.extend(test_dirs)
+                    test_count += cnt
 
         if len(testdirs) > 1  and  testlist:
             testlist = []
@@ -3920,6 +3881,7 @@ def main(argv) :
                             #elif t in testlist:
                                 # WARNING: tests in wrong order
                     i = i + 1
+            test_count = len(testlist)
 
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
             try:
@@ -3968,14 +3930,14 @@ def main(argv) :
         env['TST_ARCH'] = ""
         if GetBitsAndModsAndThreads(env):
             sys.exit(1)
-        STDERR.flush()
-        if verbose:
+        print(file=sys.stderr, end='', flush=True)
+        if verbosity > 1:
             print("Bits: " + env['TST_BITS'])
             print("Arch: " + env['TST_ARCH'])
             if env['TST_INT128']:
                 print("Integers: 128bit")
             print("Modules: " + str(env['TST_MODS']))
-        STDOUT.flush()
+        print(end='', flush=True)
 
         env['SYST'] = os.environ['SYST']
         env['RELEASE'] = os.environ['RELEASE']
@@ -3987,30 +3949,30 @@ def main(argv) :
         if procdebug:
             for k in sorted(os.environ):
                 print('{}={}'.format(k, os.environ[k]))
-        STDERR.flush()
+        print(file=sys.stderr, end='', flush=True)
         t_ = 0
         body_good = []
         body_bad = []
+        test_progress = 0
         try:
             if len(testdirs) == 1:
                 if testlist:
-                    tsts = "tests "+str(testlist)
+                    tsts = "tests " + ", ".join(testlist)
                 else:
                     tsts = "all tests"
-                    all_tests = True
-                if verbose:
+                if verbosity > 1:
                     print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
-                t_, elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, all_tests)
+                t_, elem, diff, interrupted, test_progress = PerformDir(env, testdirs[0], testlist, test_count, test_progress)
                 if elem is not None:
                     if diff <= F_OK:
                         body_good.append(elem)
                     else:
                         body_bad.append(elem)
             else:
-                if verbose:
+                if verbosity > 1:
                     print("\nRunning all tests in directories %s.\n" % str(testdirs))
                 for d in testdirs:
-                    t, elem, diff, interrupted = PerformDir(env, d, [], True)
+                    t, elem, diff, interrupted, test_progress = PerformDir(env, d, [], test_count, test_progress)
                     t_ = t_ + t
                     if elem is not None:
                         if diff <= F_OK:
@@ -4023,13 +3985,16 @@ def main(argv) :
                         if global_timeout and start_time + global_timeout < time.time():
                             print('\nGlobal testing timeout reached\n')
                             break
-                        # after a directory has been tested, create
-                        # the index file so that we can look at test
-                        # results while the tests are running
-                        env['TSTDIR'] = ""
-                        env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
-                        body = body_bad + body_good
-                        CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
+                        if produce_html:
+                            # after a directory has been tested, create
+                            # the index file so that we can look at test
+                            # results while the tests are running
+                            env['TSTDIR'] = ""
+                            env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
+                            body = body_bad + body_good
+                            CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
+            if verbosity == 0:
+                print()
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass
@@ -4129,7 +4094,7 @@ VALUES (%s, '%s', '%s', '%s',
 
         env['TSTDIR'] = ""
         env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
-        if not testweb:
+        if not testweb and produce_html:
             CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
 
         Failed = 0
@@ -4156,15 +4121,25 @@ VALUES (%s, '%s', '%s', '%s',
                        (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
                     for f in Failure[x]:
                         what += "        %s\n" % f
-        STDERR.flush()
-        if Failed:
+        print(file=sys.stderr, end='', flush=True)
+        if verbosity == 0:
+            if Failed:
+                prred('ERROR')
+            else:
+                prgreen('OK')
+            print()
+            print('failed={}, skipped={}'.format(Failed, len(Failure[F_SKIP])))
+            if produce_html and Failed:
+                print('see {}'.format(urllib.parse.urlunsplit(('file','',urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")),'',''))))
+            print('Ran {} tests in {:7.3f}s'.format(num_tests - len(Failure[F_SKIP]), t_))
+        elif Failed:
             print("""\
 
  !ERROR:  Testing FAILED %s (%d out of %d tests failed)
 
 %s
 """ % (how, Failed, num_tests, what))
-            if not testweb:
+            if not testweb and produce_html:
                 print("""\
  First, check the testing results in  %s  !
 
@@ -4176,9 +4151,9 @@ VALUES (%s, '%s', '%s', '%s',
 """ % os.path.join(TSTTRGBASE, TSTPREF, "index.html"))
             sys.exit(1)
         else:
-            if quiet:
+            if verbosity == 0:
                 pass
-            elif verbose:
+            elif verbosity > 1:
                 print("""\
 
  No differences encountered during testing.

@@ -663,11 +663,7 @@ BAThashsync(void *arg)
 #ifdef HAVE_HGE
 #define EQuuid(a, b)	((a).h == (b).h)
 #else
-#ifdef HAVE_UUID
-#define EQuuid(a, b)	(uuid_compare((a).u, (b).u) == 0)
-#else
 #define EQuuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#endif
 #endif
 
 #define starthash(TYPE)							\
@@ -750,6 +746,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	}
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
+	assert(b->ttype != TYPE_msk);
 
 	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
@@ -1109,7 +1106,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		return;
 	}
 	assert(i * h->width == h->heaplink.free);
-	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+	if (h->nunique < b->batCount / hash_destroy_uniques_fraction) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		GDKclrerr();
@@ -1183,7 +1180,7 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+	if (h->nunique < b->batCount / hash_destroy_uniques_fraction) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		GDKclrerr();
@@ -1267,7 +1264,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+	if (h->nunique < b->batCount / hash_destroy_uniques_fraction) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		GDKclrerr();
@@ -1308,6 +1305,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	bool seen = false;
+	BUN links = 0;
 	for (;;) {
 		if (!seen)
 			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
@@ -1322,6 +1320,12 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 			break;
 		}
 		hb = hb2;
+		if (++links > hash_destroy_chain_length) {
+			b->thash = NULL;
+			doHASHdestroy(b, h);
+			GDKclrerr();
+			return;
+		}
 	}
 	h->heaplink.dirty = true;
 	HASHputlink(h, hb, HASHgetlink(h, p));

@@ -45,7 +45,6 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 	BATiter bi;
 	char *msg = NULL;
 	struct canditer ci;
-	BUN q;
 	oid off;
 	blob *r = NULL;
 	size_t rlen = 0;
@@ -60,15 +59,15 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	q = canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_blob, q, TRANSIENT))) {
+	canditer_init(&ci, b, s);
+	if (!(dst = COLnew(ci.hseq, TYPE_blob, ci.ncand, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	bi = bat_iterator(b);
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			const char *v = BUNtvar(bi, p);
 
@@ -81,7 +80,7 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(v);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
 			const char *v = BUNtvar(bi, p);
 
@@ -105,7 +104,7 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
-		BATsetcount(dst, q);
+		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = btkey;
@@ -218,7 +217,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *bid = getArgReference_bat(stk, pci, 5), *sid = pci->argc == 7 ? NULL : getArgReference_bat(stk, pci, 6);
 	int tpe = getBatType(getArgType(mb, pci, 5)), digits = pci->argc == 7 ? *getArgReference_int(stk, pci, 6) : *getArgReference_int(stk, pci, 7);
 	struct canditer ci;
-	BUN q;
 	oid off;
 	bool nils = false, from_str = EC_VARCHAR(eclass) || tpe == TYPE_str, btkey = false, btsorted = false, btrevsorted = false;
 	size_t rlen = 0;
@@ -252,11 +250,11 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	off = b->hseqbase;
-	q = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
 
-	if (from_str && ci.tpe == cand_dense && q == BATcount(b)) { /* from string case, just do validation, if right, return */
-		for (BUN i = 0; i < q; i++) {
+	if (from_str && ci.tpe == cand_dense && ci.ncand == BATcount(b)) { /* from string case, just do validation, if right, return */
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			const char *v = BUNtvar(bi, p);
 
@@ -270,7 +268,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 
-	if (!(dst = COLnew(ci.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(dst = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout1;
 	}
@@ -284,7 +282,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (ci.tpe == cand_dense) {
 		if (from_str) { /* string to string */
-			for (BUN i = 0; i < q; i++) {
+			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
 				const char *v = BUNtvar(bi, p);
 
@@ -303,7 +301,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		} else { /* any other type to string */
-			for (BUN i = 0; i < q; i++) {
+			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
 				const void *v = BUNtail(bi, p);
 
@@ -318,7 +316,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	} else {
 		if (from_str) { /* string to string */
-			for (BUN i = 0; i < q; i++) {
+			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next(&ci) - off);
 				const char *v = BUNtvar(bi, p);
 
@@ -337,7 +335,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		} else { /* any other type to string */
-			for (BUN i = 0; i < q; i++) {
+			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next(&ci) - off);
 				const void *v = BUNtail(bi, p);
 
@@ -351,9 +349,9 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	btkey = from_str ? b->tkey : q <= 1;
-	btsorted = from_str ? b->tsorted : q <= 1;
-	btrevsorted = from_str ? b->trevsorted : q <= 1;
+	btkey = from_str ? b->tkey : ci.ncand <= 1;
+	btsorted = from_str ? b->tsorted : ci.ncand <= 1;
+	btrevsorted = from_str ? b->trevsorted : ci.ncand <= 1;
 bailout1:
 	bat_iterator_end(&bi);
 
@@ -364,7 +362,7 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
-		BATsetcount(dst, q);
+		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = btkey;
@@ -383,6 +381,23 @@ bailout:
 #define int_is_numeric 1
 #define lng_is_numeric 1
 #define hge_is_numeric 1
+
+/* stringify token */
+#define _STRNG_(s) #s
+#define STRNG(t) _STRNG_(t)
+
+/* concatenate two, three or four tokens */
+#define CONCAT_2(a,b)		a##b
+#define CONCAT_3(a,b,c)		a##b##c
+#define CONCAT_4(a,b,c,d)	a##b##c##d
+
+#define NIL(t)				CONCAT_2(t,_nil)
+#define ISNIL(t)			CONCAT_3(is_,t,_nil)
+#define TPE(t)				CONCAT_2(TYPE_,t)
+#define GDKmin(t)			CONCAT_3(GDK_,t,_min)
+#define GDKmax(t)			CONCAT_3(GDK_,t,_max)
+#define FUN(a,b,c,d)		CONCAT_4(a,b,c,d)
+#define IS_NUMERIC(t)		CONCAT_2(t,_is_numeric)
 
 /* up casting */
 
@@ -480,8 +495,6 @@ bailout:
 
 /* sql_cast_impl_down_from_flt */
 
-#define round_float(x)	roundf(x)
-
 #define TP1 flt
 #define TP2 bte
 #include "sql_cast_impl_int.h"
@@ -513,9 +526,6 @@ bailout:
 #undef TP2
 #undef TP1
 #endif
-
-#undef round_float
-#define round_float(x)	round(x)
 
 #define TP1 dbl
 #define TP2 bte

@@ -188,12 +188,14 @@ gettailname(const BAT *b)
 			return "tail1";
 		case 2:
 			return "tail2";
-#if SIZEOF_VAR_T == 8
 		case 4:
+#if SIZEOF_VAR_T == 8
 			return "tail4";
+		case 8:
 #endif
-		default:
 			break;
+		default:
+			MT_UNREACHABLE();
 		}
 	}
 	return "tail";
@@ -215,15 +217,17 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
 				      sizeof(tail->filename), physnme,
 				      ".tail2", NULL);
 			return;
-#if SIZEOF_VAR_T == 8
 		case 4:
+#if SIZEOF_VAR_T == 8
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
 				      ".tail4", NULL);
 			return;
+		case 8:
 #endif
-		default:
 			break;
+		default:
+			MT_UNREACHABLE();
 		}
 	}
 	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
@@ -627,7 +631,7 @@ BATclear(BAT *b, bool force)
 		if (tatmdel) {
 			BATiter bi = bat_iterator_nolock(b);
 
-			for (p = b->batInserted, q = BUNlast(b); p < q; p++)
+			for (p = b->batInserted, q = BATcount(b); p < q; p++)
 				(*tatmdel)(b->tvheap, (var_t*) BUNtloc(bi,p));
 			b->tvheap->dirty = true;
 		}
@@ -848,9 +852,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			 * argument of COLnew2 not being zero triggers a
 			 * skip in the allocation of the tvheap */
 			if (ATOMheap(bn->ttype, bn->tvheap, bn->batCapacity) != GDK_SUCCEED) {
-				bat_iterator_end(&bi);
-				BBPreclaim(bn);
-				return NULL;
+				goto bunins_failed;
 			}
 		}
 
@@ -947,7 +949,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tunique_est = bi.unique_est;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
-		BUN h = BUNlast(b);
+		BUN h = BATcount(b);
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		if (b->tkey)
@@ -1014,7 +1016,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 
 	TRC_DEBUG(ALGO, ALGOBATFMT " appending " BUNFMT " values%s\n", ALGOBATPAR(b), count, values ? "" : " (all nil)");
 
-	p = BUNlast(b);		/* insert at end */
+	p = BATcount(b);		/* insert at end */
 	if (p == BUN_MAX || BATcount(b) + count >= BUN_MAX) {
 		GDKerror("bat too large\n");
 		return GDK_FAIL;
@@ -1061,7 +1063,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
-	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		MT_lock_set(&b->theaplock);
 		b->tunique_est = 0;
 		MT_lock_unset(&b->theaplock);
@@ -1322,7 +1324,7 @@ BUNdelete(BAT *b, oid o)
 		return GDK_FAIL;
 	HASHdelete(b, p, val);
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
-	if (p != BUNlast(b) - 1 &&
+	if (p != BATcount(b) - 1 &&
 	    (b->ttype != TYPE_void || BATtdense(b))) {
 		/* replace to-be-delete BUN with last BUN; materialize
 		 * void column before doing so */
@@ -1330,21 +1332,20 @@ BUNdelete(BAT *b, oid o)
 		    BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
-			msk mval = mskGetVal(b, BUNlast(b) - 1);
-			HASHdelete(b, BUNlast(b) - 1, &mval);
+			msk mval = mskGetVal(b, BATcount(b) - 1);
+			assert(b->thash == NULL);
 			mskSetVal(b, p, mval);
 			/* don't leave garbage */
-			mskClr(b, BUNlast(b) - 1);
-			HASHinsert(b, p, &mval);
+			mskClr(b, BATcount(b) - 1);
 		} else {
-			val = Tloc(b, BUNlast(b) - 1);
-			HASHdelete(b, BUNlast(b) - 1, val);
-			memcpy(Tloc(b, p), val, Tsize(b));
+			val = Tloc(b, BATcount(b) - 1);
+			HASHdelete(b, BATcount(b) - 1, val);
+			memcpy(Tloc(b, p), val, b->twidth);
 			HASHinsert(b, p, val);
 			MT_lock_set(&b->theaplock);
-			if (b->tminpos == BUNlast(b) - 1)
+			if (b->tminpos == BATcount(b) - 1)
 				b->tminpos = p;
-			if (b->tmaxpos == BUNlast(b) - 1)
+			if (b->tmaxpos == BATcount(b) - 1)
 				b->tmaxpos = p;
 			MT_lock_unset(&b->theaplock);
 		}
@@ -1358,7 +1359,7 @@ BUNdelete(BAT *b, oid o)
 		b->tnorevsorted = 0;
 	MT_lock_set(&b->theaplock);
 	b->batCount--;
-	if (BATcount(b) < GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+	if (BATcount(b) < gdk_unique_estimate_keep_fraction)
 		b->tunique_est = 0;
 	MT_lock_unset(&b->theaplock);
 	if (b->batCount <= 1) {
@@ -1391,7 +1392,7 @@ BUNdelete(BAT *b, oid o)
 static gdk_return
 BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force, bool autoincr)
 {
-	BUN last = BUNlast(b) - 1;
+	BUN last = BATcount(b) - 1;
 	BATiter bi = bat_iterator_nolock(b);
 	int tt;
 	BUN prv, nxt;
@@ -1410,7 +1411,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		b->tminpos = BUN_NONE;
 		b->tmaxpos = BUN_NONE;
 		b->tunique_est = 0.0;
-	} else if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+	} else if (count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
 	MT_lock_unset(&b->theaplock);
@@ -1436,6 +1437,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			} else {
 				val = BUNtpos(bi, p);
 			}
+		} else if (bi.type == TYPE_msk) {
+			val = BUNtmsk(bi, p);
 		} else {
 			val = BUNtloc(bi, p);
 		}
@@ -1511,7 +1514,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			ptr _ptr;
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
-			default:	/* only three or four cases possible */
+			case 1:
 				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
 				break;
 			case 2:
@@ -1525,6 +1528,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				_d = (var_t) * (uint64_t *) _ptr;
 				break;
 #endif
+			default:
+				MT_UNREACHABLE();
 			}
 			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED) {
 				MT_rwlock_wrunlock(&b->thashlock);
@@ -1549,7 +1554,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
-			default:	/* only three or four cases possible */
+			case 1:
 				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
 				break;
 			case 2:
@@ -1563,6 +1568,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				* (uint64_t *) _ptr = (uint64_t) _d;
 				break;
 #endif
+			default:
+				MT_UNREACHABLE();
 			}
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			mskSetVal(b, p, * (msk *) t);
@@ -1879,11 +1886,11 @@ BATsetcount(BAT *b, BUN cnt)
 		b->tnosorted = b->tnorevsorted = 0;
 	}
 	/* if the BAT was made smaller, we need to zap some values */
-	if (b->tnosorted >= BUNlast(b))
+	if (b->tnosorted >= BATcount(b))
 		b->tnosorted = 0;
-	if (b->tnorevsorted >= BUNlast(b))
+	if (b->tnorevsorted >= BATcount(b))
 		b->tnorevsorted = 0;
-	if (b->tnokey[0] >= BUNlast(b) || b->tnokey[1] >= BUNlast(b)) {
+	if (b->tnokey[0] >= BATcount(b) || b->tnokey[1] >= BATcount(b)) {
 		b->tnokey[0] = 0;
 		b->tnokey[1] = 0;
 	}
@@ -2515,7 +2522,7 @@ BATassertProps(BAT *b)
 	cmpf = ATOMcompare(b->ttype);
 	nilp = ATOMnilptr(b->ttype);
 
-	assert(b->theap->free >= tailsize(b, BUNlast(b)));
+	assert(b->theap->free >= tailsize(b, BATcount(b)));
 	if (b->ttype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
 		assert(b->theap->size >= b->theap->free);
@@ -2765,7 +2772,7 @@ BATassertProps(BAT *b)
 				     TRANSIENT, b->ttype, hashheap)) < 0 ||
 			    (hs->heapbckt.farmid = BBPselectfarm(
 				    TRANSIENT, b->ttype, hashheap)) < 0 ||
-			    HASHnew(hs, b->ttype, BUNlast(b),
+			    HASHnew(hs, b->ttype, BATcount(b),
 				    mask, BUN_NONE, false) != GDK_SUCCEED) {
 				GDKfree(hs);
 				TRC_WARNING(BAT_, "Cannot allocate hash table\n");

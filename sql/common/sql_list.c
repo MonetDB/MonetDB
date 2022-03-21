@@ -31,7 +31,6 @@ list_init(list *l, sql_allocator *sa, fdestroy destroy)
 			.sa = sa,
 			.destroy = destroy,
 		};
-		MT_lock_init(&l->ht_lock, "sa_ht_lock");
 	}
 	return l;
 }
@@ -109,7 +108,6 @@ list_destroy2(list *l, void *data)
 	if (l) {
 		node *n = l->h;
 
-		MT_lock_destroy(&l->ht_lock);
 		l->h = NULL;
 		if (l->destroy || l->sa == NULL) {
 			while (n) {
@@ -153,16 +151,13 @@ list_append_node(list *l, node *n)
 	l->t = n;
 	l->cnt++;
 	if (n->data) {
-		MT_lock_set(&l->ht_lock);
 		if (l->ht) {
 			int key = l->ht->key(n->data);
 
 			if (hash_add(l->ht, key, n->data) == NULL) {
-				MT_lock_unset(&l->ht_lock);
 				return NULL;
 			}
 		}
-		MT_lock_unset(&l->ht_lock);
 	}
 	return l;
 }
@@ -200,16 +195,13 @@ list_append_with_validate(list *l, void *data, void *extra, fvalidate cmp)
 	}
 	l->t = n;
 	l->cnt++;
-	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 
 		if (hash_add(l->ht, key, data) == NULL) {
-			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
 	}
-	MT_lock_unset(&l->ht_lock);
 	return NULL;
 }
 
@@ -251,16 +243,13 @@ list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 		}
 	}
 	l->cnt++;
-	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 
 		if (hash_add(l->ht, key, data) == NULL) {
-			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
 	}
-	MT_lock_unset(&l->ht_lock);
 	return NULL;
 }
 
@@ -281,16 +270,13 @@ list_append_before(list *l, node *m, void *data)
 		p->next = n;
 	}
 	l->cnt++;
-	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 
 		if (hash_add(l->ht, key, data) == NULL) {
-			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
 	}
-	MT_lock_unset(&l->ht_lock);
 	return l;
 }
 
@@ -307,16 +293,13 @@ list_prepend(list *l, void *data)
 	n->next = l->h;
 	l->h = n;
 	l->cnt++;
-	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 
 		if (hash_add(l->ht, key, data) == NULL) {
-			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
 	}
-	MT_lock_unset(&l->ht_lock);
 	return l;
 }
 
@@ -357,10 +340,8 @@ list_remove_node_(list *l, node *n)
 	if (n == l->t)
 		l->t = p;
 	if (data) {
-		MT_lock_set(&l->ht_lock);
 		if (l->ht && data)
 			hash_delete(l->ht, data);
-		MT_lock_unset(&l->ht_lock);
 	}
 	l->cnt--;
 	assert(l->cnt > 0 || l->h == NULL);
@@ -386,10 +367,8 @@ list_remove_data(list *s, void *gdata, void *data)
 		return;
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
-			MT_lock_set(&s->ht_lock);
 			if (s->ht && n->data)
 				hash_delete(s->ht, n->data);
-			MT_lock_unset(&s->ht_lock);
 			n->data = NULL;
 			list_remove_node(s, gdata, n);
 			break;
@@ -406,17 +385,15 @@ list_remove_list(list *l, void *gdata, list *data)
 		list_remove_data(l, gdata, n->data);
 }
 
-void
+list *
 list_move_data(list *s, list *d, void *data)
 {
 	node *n = NULL;
 
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
-			MT_lock_set(&s->ht_lock);
 			if (s->ht && n->data)
 				hash_delete(s->ht, n->data);
-			MT_lock_unset(&s->ht_lock);
 			n->data = NULL;	/* make sure data isn't destroyed */
 			(void)list_remove_node_(s, n);
 			n->data = data;
@@ -424,10 +401,10 @@ list_move_data(list *s, list *d, void *data)
 		}
 	}
 	if (!n) {
-		list_append(d, data);
+		return list_append(d, data);
 	} else {
 		n->next = NULL;
-		list_append_node(d, n);
+		return list_append_node(d, n);
 	}
 }
 
@@ -795,10 +772,8 @@ list_hash_delete(list *l, void *data, fcmp cmp)
 	if (l && data) {
 		node *n = list_find(l, data, cmp);
 		if(n) {
-			MT_lock_set(&l->ht_lock);
 			if (l->ht && n->data)
 				hash_delete(l->ht, data);
-			MT_lock_unset(&l->ht_lock);
 		}
 	}
 }
@@ -809,15 +784,12 @@ list_hash_add(list *l, void *data, fcmp cmp)
 	if (l && data) {
 		node *n = list_find(l, data, cmp);
 		if(n) {
-			MT_lock_set(&l->ht_lock);
 			if (l->ht && n->data) {
 				int nkey = l->ht->key(data);
 				if (hash_add(l->ht, nkey, data) == NULL) {
-					MT_lock_unset(&l->ht_lock);
 					return NULL;
 				}
 			}
-			MT_lock_unset(&l->ht_lock);
 		}
 	}
 	return data;
@@ -826,9 +798,5 @@ list_hash_add(list *l, void *data, fcmp cmp)
 void
 list_hash_clear(list *l)
 {
-	if (l->ht) {
-		MT_lock_set(&l->ht_lock);
-		l->ht = NULL;
-		MT_lock_unset(&l->ht_lock);
-	}
+	l->ht = NULL;
 }

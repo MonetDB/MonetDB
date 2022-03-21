@@ -936,9 +936,9 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 	} else if (fid == -2) { /* if exists option */
 		return MAL_SUCCEED;
 	} else { /* fid == -1 */
-		list *list_func = sql_find_funcs_by_name(sql, s->base.name, name, type);
+		list *list_func = sql_find_funcs_by_name(sql, s->base.name, name, type, false);
 
-		if (list_func)
+		if (!list_empty(list_func))
 			for (node *n = list_func->h; n; n = n->next) {
 				sql_func *func = n->data;
 
@@ -999,7 +999,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			}
 		}
 
-		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type)) != NULL) {
+		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type, false)) != NULL) {
 			sql_func *sff = sf->func;
 
 			if (!sff->s || sff->system)

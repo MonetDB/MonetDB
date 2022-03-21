@@ -12,14 +12,12 @@
 #include "monetdb_config.h"
 #include "muuid.h"
 #include <string.h> /* strdup */
-#ifdef HAVE_UUID_UUID_H
-# include <uuid/uuid.h>
-#endif
+#include <unistd.h>	/* for getentropy on FreeBSD */
 #if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
 #include <sys/random.h>
 #endif
 
-#if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+#if !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
 static inline bool
 generate_uuid(char *out)
 {
@@ -45,26 +43,9 @@ generate_uuid(char *out)
 }
 #endif
 
-/**
- * Shallow wrapper around uuid, that comes up with some random pseudo
- * uuid if uuid is not available
- */
 char *
 generateUUID(void)
 {
-#ifdef HAVE_UUID
-# ifdef UUID_PRINTABLE_STRING_LENGTH
-	/* Solaris */
-	char out[UUID_PRINTABLE_STRING_LENGTH];
-# else
-	char out[37];
-# endif
-	uuid_t uuid;
-	uuid_generate(uuid);
-	uuid_unparse(uuid, out);
-#else
-	/* try to do some pseudo interesting stuff, and stash it in the
-	 * format of a UUID to at least return some uniform answer */
 	char out[37];
 #if defined(HAVE_GETENTROPY)
 	unsigned char randbuf[16];
@@ -95,6 +76,5 @@ generateUUID(void)
 			 (unsigned) rand() & 0x0FFF, (unsigned) rand() & 0xFFFF,
 			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0xFFFF);
 	}
-#endif
 	return strdup(out);
 }

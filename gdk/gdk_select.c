@@ -48,7 +48,7 @@ virtualize(BAT *bn)
 	if (bn->ttype == TYPE_oid &&
 	    (BATcount(bn) <= 1 ||
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
-	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
+	     * (const oid *) Tloc(bn, BATcount(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
 		TRC_DEBUG(ALGO, ALGOBATFMT ",seq=" OIDFMT "\n",
 			  ALGOBATPAR(bn),
@@ -190,7 +190,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	if (cnt > 1) {
 		/* hash chains produce results in the order high to
 		 * low, so we just need to reverse */
-		for (l = 0, h = BUNlast(bn) - 1; l < h; l++, h--) {
+		for (l = 0, h = BATcount(bn) - 1; l < h; l++, h--) {
 			o = dst[l];
 			dst[l] = dst[h];
 			dst[h] = o;
@@ -215,7 +215,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		const oid e = (oid) (i+limit-pr_off+hseq);		\
 		if (im[icnt] & mask) {					\
 			if ((im[icnt] & ~innermask) == 0) {		\
-				while (p < ncand && o < e) {	\
+				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
 						BBPreclaim(bn);		\
@@ -226,7 +226,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 					o = canditer_next(ci);		\
 				}					\
 			} else {					\
-				while (p < ncand && o < e) {	\
+				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
 						BBPreclaim(bn);		\
@@ -238,7 +238,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				}					\
 			}						\
 		} else {						\
-			while (p < ncand && o < e) {		\
+			while (p < ncand && o < e) {			\
 				p++;					\
 				o = canditer_next(ci);			\
 			}						\
@@ -251,7 +251,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		const oid e = (oid) (i+limit-pr_off+hseq);		\
 		if (im[icnt] & mask) {					\
 			if ((im[icnt] & ~innermask) == 0) {		\
-				while (p < ncand && o < e) {	\
+				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
 						BBPreclaim(bn);		\
@@ -262,7 +262,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 					o = canditer_next_dense(ci);	\
 				}					\
 			} else {					\
-				while (p < ncand && o < e) {	\
+				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
 						BBPreclaim(bn);		\
@@ -274,7 +274,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				}					\
 			}						\
 		} else {						\
-			BUN skip_sz = MIN(ncand - p, e - o);	\
+			BUN skip_sz = MIN(ncand - p, e - o);		\
 			p += skip_sz;					\
 			o += skip_sz;					\
 			ci->next += skip_sz;				\
@@ -399,7 +399,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 /* choose number of bits */
 #define bitswitch(ISDENSE, TEST, TYPE)					\
 	do {								\
-		BUN ncand = ci->ncand;	\
+		BUN ncand = ci->ncand;					\
 		assert(imprints);					\
 		*algo = parent ? "parent imprints select " #TEST " (canditer_next" #ISDENSE ")" : "imprints select " #TEST " (canditer_next" #ISDENSE ")"; \
 		switch (imprints->bits) {				\
@@ -428,7 +428,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 /* core scan select loop with & without candidates */
 #define scanloop(NAME,canditer_next,TEST)				\
 	do {								\
-		BUN ncand = ci->ncand;	\
+		BUN ncand = ci->ncand;					\
 		*algo = "select: " #NAME " " #TEST " (" #canditer_next ")"; \
 		if (BATcapacity(bn) < maximum) {			\
 			TIMEOUT_LOOP_IDX(p, ncand, timeoffset) {	\
@@ -1160,6 +1160,30 @@ scanselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		/* in the case where equi==true, the check is x == *tl */ \
 	} while (false)
 
+#if SIZEOF_BUN == SIZEOF_INT
+#define CALC_ESTIMATE(TPE)						\
+	do {								\
+		if (*(TPE*)tl < 1) {					\
+			if ((int) BUN_MAX + *(TPE*)tl >= *(TPE*)th)	\
+				estimate = (BUN) ((int) *(TPE*)th - *(TPE*)tl); \
+		} else {						\
+			if (-(int) BUN_MAX + *(TPE*)tl <= *(TPE*)th)	\
+				estimate = (BUN) ((int) *(TPE*)th - *(TPE*)tl); \
+		}							\
+	} while (0)
+#else
+#define CALC_ESTIMATE(TPE)						\
+	do {								\
+		if (*(TPE*)tl < 1) {					\
+			if ((lng) BUN_MAX + *(TPE*)tl >= *(TPE*)th)	\
+				estimate = (BUN) ((lng) *(TPE*)th - *(TPE*)tl); \
+		} else {						\
+			if (-(lng) BUN_MAX + *(TPE*)tl <= *(TPE*)th)	\
+				estimate = (BUN) ((lng) *(TPE*)th - *(TPE*)tl); \
+		}							\
+	} while (0)
+#endif
+
 /* generic range select
  *
  * Return a BAT with the OID values of b for qualifying tuples.  The
@@ -1279,7 +1303,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 	}
 
-	if (canditer_init(&ci, b, s) == 0) {
+	canditer_init(&ci, b, s);
+	if (ci.ncand == 0) {
 		/* trivially empty result */
 		MT_thread_setalgorithm("select: trivially empty");
 		bn = BATdense(0, 0, 0);
@@ -1579,10 +1604,18 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			(!b->batTransient &&
 			 ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 			 BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
+		if (!wanthash) {
+			MT_lock_set(&b->theaplock);
+			if (++b->selcnt > 1000) {
+				wanthash = true;
+				b->selcnt = 1000; /* limit value */
+			}
+			MT_lock_unset(&b->theaplock);
+		}
 		if (wanthash && !havehash) {
 			MT_lock_set(&b->theaplock);
 			if (b->tunique_est != 0 &&
-			    b->tunique_est < BATcount(b) / NO_HASH_SELECT_FRACTION) {
+			    b->tunique_est < BATcount(b) / no_hash_select_fraction) {
 				/* too many duplicates: not worth it */
 				wanthash = false;
 			}
@@ -1600,7 +1633,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * to do a binary search on the candidate list (or 1
 		 * if no need for search)) */
 		tmp = BBP_cache(parent);
-		if (tmp && BATcheckhash(tmp)) {
+		if (BATcheckhash(tmp)) {
 			MT_rwlock_rdlock(&tmp->thashlock);
 			phash = tmp->thash != NULL &&
 				(BATcount(tmp) == BATcount(b) ||
@@ -1613,8 +1646,17 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		/* create a hash on the parent bat (and use it) if it is
 		 * the same size as the view and it is persistent */
+		bool wantphash = false;
+		if (!phash) {
+			MT_lock_set(&tmp->theaplock);
+			if (++tmp->selcnt > 1000) {
+				wantphash = true;
+				tmp->selcnt = 1000;
+			}
+			MT_lock_unset(&tmp->theaplock);
+		}
 		if (!phash &&
-		    !tmp->batTransient &&
+		    (!tmp->batTransient || wantphash) &&
 		    BATcount(tmp) == BATcount(b) &&
 		    BAThash(tmp) == GDK_SUCCEED) {
 			MT_rwlock_rdlock(&tmp->thashlock);
@@ -1861,7 +1903,17 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	assert(oidxh == NULL);
 	/* upper limit for result size */
 	maximum = ci.ncand;
-	if (b->tkey) {
+	if (equi && havehash) {
+		/* we can look in the hash struct to see whether all
+		 * values are distinct and set estimate accordingly */
+		if (phash) {
+			BAT *tmp = BBP_cache(parent);
+			if (tmp->thash->nunique == tmp->batCount)
+				estimate = 1;
+		} else if (b->thash->nunique == b->batCount)
+			estimate = 1;
+	}
+	if (estimate == BUN_NONE && (b->tkey || (parent != 0 && BBP_cache(parent)->tkey))) {
 		/* exact result size in special cases */
 		if (equi) {
 			estimate = 1;
@@ -1874,19 +1926,18 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				estimate = (BUN) (*(sht *) th - *(sht *) tl);
 				break;
 			case TYPE_int:
-				estimate = (BUN) (*(int *) th - *(int *) tl);
+				CALC_ESTIMATE(int);
 				break;
 			case TYPE_lng:
-				estimate = (BUN) (*(lng *) th - *(lng *) tl);
+				CALC_ESTIMATE(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				if (*(hge *) th - *(hge *) tl < (hge) BUN_MAX)
-					estimate = (BUN) (*(hge *) th - *(hge *) tl);
+				CALC_ESTIMATE(hge);
 				break;
 #endif
 			}
-			if (estimate != BUN_NONE)
+			if (estimate == BUN_NONE)
 				estimate += li + hi - 1;
 		}
 	}
@@ -2256,8 +2307,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				high = canditer_search(lci, high + l->hseqbase, true);
 				assert(high >= low);
 
-				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
-					cnt = BUNlast(r1) + high - low + 1024;
+				if (BATcapacity(r1) < BATcount(r1) + high - low) {
+					cnt = BATcount(r1) + high - low + 1024;
 					if (cnt > maxsize)
 						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
@@ -2286,8 +2337,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				assert(oidxh);
 				ord = (const oid *) oidxh->base + ORDERIDXOFF;
 
-				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
-					cnt = BUNlast(r1) + high - low + 1024;
+				if (BATcapacity(r1) < BATcount(r1) + high - low) {
+					cnt = BATcount(r1) + high - low + 1024;
 					if (cnt > maxsize)
 						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
@@ -2668,7 +2719,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				}
 				if (BETWEEN(vl, vrl, linc, vrh, hinc, any) != 1)
 					continue;
-				if (BUNlast(r1) == BATcapacity(r1)) {
+				if (BATcount(r1) == BATcapacity(r1)) {
 					BUN newcap = BATgrows(r1);
 					if (newcap > maxsize)
 						newcap = maxsize;

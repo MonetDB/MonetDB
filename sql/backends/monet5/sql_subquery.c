@@ -291,7 +291,7 @@ SQLnil(bit *ret, const bat *bid)
 	if (BATcount(b) == 0)
 		*ret = bit_nil;
 	if (BATcount(b) > 0) {
-		BUN o = BUNlast(b);
+		BUN o = BATcount(b);
 
 		BATiter bi = bat_iterator(b);
 		switch (ATOMbasetype(b->ttype)) {

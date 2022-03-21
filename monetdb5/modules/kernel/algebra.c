@@ -280,7 +280,8 @@ ALGcard(lng *result, const bat *bid)
 		throw(MAL, "algebra.card", GDK_EXCEPTION);
 	}
 	struct canditer ci;
-	*result = canditer_init(&ci, NULL, en);
+	canditer_init(&ci, NULL, en);
+	*result = (lng) ci.ncand;
 	BBPunfix(en->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1031,7 +1032,8 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 		*result = (lng) BATcount_no_nil(b, s);
 	} else {
 		struct canditer ci;
-		*result = (lng) canditer_init(&ci, b, s);
+		canditer_init(&ci, b, s);
+		*result = (lng) ci.ncand;
 	}
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -1205,7 +1207,7 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT ": cannot fetch a single row from an empty input\n");
 	}
-	if (*pos >= (lng) BUNlast(b)) {
+	if (*pos >= (lng) BATcount(b)) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT ": row index to fetch is out of range\n");
 	}

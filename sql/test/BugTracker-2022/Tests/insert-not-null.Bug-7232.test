@@ -27,14 +27,14 @@ statement ok
 COMMIT
 
 @connection(id=1)
-query T
+query I rowsort
 SELECT k FROM test
 ----
 1
 2
 
 @connection(id=2)
-query T
+query I rowsort
 SELECT k FROM test
 ----
 1

@@ -1,3 +1,14 @@
+monetdb (11.43.9) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7237: SELECT with concurrent writes rarely returns corrupt data
+  * GH#7238: query with system function: "index"(varchar, boolean) fails
+    with GDK error or assertion failure.
+  * GH#7241: Replacing a view by a query on the view itself crashes the
+    server.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 07 Feb 2022 14:42:18 +0100
+
 monetdb (11.43.7) unstable; urgency=low
 
   * Rebuilt.
