@@ -161,7 +161,7 @@ def main():
                vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\libxml2.dll'),
                vcpkg.format(r'bin\lz4.dll'),
-               vcpkg.format(r'bin\lzma.dll'),
+               vcpkg.format(r'bin\liblzma.dll'),
                vcpkg.format(r'bin\pcre.dll'),
                vcpkg.format(r'bin\zlib1.dll')])
     # id = comp(debug, id, 14,
