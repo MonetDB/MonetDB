@@ -1030,7 +1030,6 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_sequence *seq;
 	BATiter schi, seqi;
 	BAT *bn = NULL, *scheb = NULL, *sches = NULL, *seqb = NULL, *seqs = NULL;
-	BUN q = 0;
 	lng *restrict vals;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -1051,12 +1050,13 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, scheb, sches);
-	if (canditer_init(&ci2, seqb, seqs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, scheb, sches);
+	canditer_init(&ci2, seqb, seqs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(SQL, "sql.get_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_lng, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_lng, ci1.ncand, TRANSIENT))) {
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1066,7 +1066,7 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	schi = bat_iterator(scheb);
 	seqi = bat_iterator(seqb);
 	vals = Tloc(bn, 0);
-	for (BUN i = 0; i < q; i++) {
+	for (BUN i = 0; i < ci1.ncand; i++) {
 		oid p1 = canditer_next(&ci1) - off1, p2 = canditer_next(&ci2) - off2;
 		const char *sname = BUNtvar(schi, p1);
 		const char *seqname = BUNtvar(seqi, p2);
@@ -1103,7 +1103,7 @@ bailout:
 	if (seqs)
 		BBPunfix(seqs->batCacheid);
 	if (bn && !msg) {
-		BATsetcount(bn, q);
+		BATsetcount(bn, ci1.ncand);
 		bn->tnil = nils;
 		bn->tnonil = !nils;
 		bn->tkey = BATcount(bn) <= 1;
