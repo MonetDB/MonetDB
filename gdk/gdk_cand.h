@@ -65,6 +65,13 @@ struct canditer {
 	enum cand_type tpe;
 };
 
+/* iterate CI->ncand times using an anonymous index variable, and
+ * evaluating the loop count only once */
+#define CAND_LOOP(CI)	for (BUN CCTR = 0, CREPS = (CI)->ncand; CCTR < CREPS; CCTR++)
+/* iterate CI->ncand times using the given index variable, and
+ * evaluating the loop count only once */
+#define CAND_LOOP_IDX(CI, IDX)	for (BUN CREPS = (IDX = 0, (CI)->ncand); IDX < CREPS; IDX++)
+
 /* returns the position of the lowest order bit in x, i.e. the
  * smallest n such that (x & (1<<n)) != 0; must not be called with 0 */
 static inline int __attribute__((__const__))
@@ -171,7 +178,7 @@ canditer_next(struct canditer *ci)
 
 #define canditer_search_dense(ci, o, next) ((o) < (ci)->seq ? next ? 0 : BUN_NONE : (o) >= (ci)->seq + (ci)->ncand ? next ? (ci)->ncand : BUN_NONE : (o) - (ci)->seq)
 
-gdk_export BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
+gdk_export void canditer_init(struct canditer *ci, BAT *b, BAT *s);
 gdk_export oid canditer_peek(struct canditer *ci);
 gdk_export oid canditer_last(const struct canditer *ci);
 gdk_export oid canditer_prev(struct canditer *ci);

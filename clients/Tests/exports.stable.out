@@ -124,7 +124,7 @@ gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN 
 restrict_t BATgetaccess(BAT *b);
 ValPtr BATgetprop(BAT *b, enum prop_t idx);
 gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h) __attribute__((__warn_unused_result__));
-const char *BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s, oid *minp, oid *maxp, BUN *ngrpp, struct canditer *ci, BUN *ncand);
+const char *BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s, oid *minp, oid *maxp, BUN *ngrpp, struct canditer *ci);
 gdk_return BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error, int scale);
 gdk_return BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils);
 BAT *BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils);
@@ -462,7 +462,7 @@ ssize_t bteFromStr(const char *src, size_t *len, bte **dst, bool external);
 ssize_t bteToStr(str *dst, size_t *len, const bte *src, bool external);
 const bte bte_nil;
 oid canditer_idx(const struct canditer *ci, BUN p);
-BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
+void canditer_init(struct canditer *ci, BAT *b, BAT *s);
 oid canditer_last(const struct canditer *ci);
 oid canditer_mask_next(const struct canditer *ci, oid o, bool next);
 oid canditer_peek(struct canditer *ci);
