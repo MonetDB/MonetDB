@@ -866,7 +866,8 @@ AGGRgroupedquantile(bat *retval, const bat *bid1, const bat *bid2, const bat *gi
 	}
 
 	assert(b2->ttype == TYPE_dbl);
-	if (canditer_init(&ci2, b2, s2) == 0) {
+	canditer_init(&ci2, b2, s2);
+	if (ci2.ncand == 0) {
 		qvalue = 0.5;
 	} else {
 		BATiter bi = bat_iterator(b2);

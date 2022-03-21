@@ -1028,7 +1028,6 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_sequence *seq;
 	BATiter schi, seqi;
 	BAT *bn = NULL, *scheb = NULL, *sches = NULL, *seqb = NULL, *seqs = NULL;
-	BUN q = 0;
 	lng *restrict vals;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -1049,12 +1048,13 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, scheb, sches);
-	if (canditer_init(&ci2, seqb, seqs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, scheb, sches);
+	canditer_init(&ci2, seqb, seqs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(SQL, "sql.get_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_lng, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_lng, ci1.ncand, TRANSIENT))) {
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1064,7 +1064,7 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	schi = bat_iterator(scheb);
 	seqi = bat_iterator(seqb);
 	vals = Tloc(bn, 0);
-	for (BUN i = 0; i < q; i++) {
+	for (BUN i = 0; i < ci1.ncand; i++) {
 		oid p1 = canditer_next(&ci1) - off1, p2 = canditer_next(&ci2) - off2;
 		const char *sname = BUNtvar(schi, p1);
 		const char *seqname = BUNtvar(seqi, p2);
@@ -1101,7 +1101,7 @@ bailout:
 	if (seqs)
 		BBPunfix(seqs->batCacheid);
 	if (bn && !msg) {
-		BATsetcount(bn, q);
+		BATsetcount(bn, ci1.ncand);
 		bn->tnil = nils;
 		bn->tnonil = !nils;
 		bn->tkey = BATcount(bn) <= 1;
@@ -3190,7 +3190,7 @@ not_unique(bit *ret, const bat *bid)
 		BATiter bi = bat_iterator(b);
 		oid c = ((oid *) bi.base)[0];
 
-		for (p = 1, q = BUNlast(b); p < q; p++) {
+		for (p = 1, q = BATcount(b); p < q; p++) {
 			oid v = ((oid *) bi.base)[p];
 			if (v <= c) {
 				*ret = TRUE;
@@ -4586,26 +4586,29 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int arg = pci->retc;
 	str mod, fcn, ret = MAL_SUCCEED;
 	InstrPtr npci;
+	MalBlkPtr nmb = newMalBlk(1), omb = NULL;
 
+	if (!nmb)
+		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	mod = *getArgReference_str(stk, pci, arg++);
 	fcn = *getArgReference_str(stk, pci, arg++);
-	npci = newStmtArgs(mb, mod, fcn, pci->argc);
+	npci = newStmtArgs(nmb, mod, fcn, pci->argc);
 
 	for (int i = 1; i < pci->retc; i++) {
 		int type = getArgType(mb, pci, i);
 
 		if (i==1)
-			getArg(npci, 0) = newTmpVariable(mb, type);
+			getArg(npci, 0) = newTmpVariable(nmb, type);
 		else
-			npci = pushReturn(mb, npci, newTmpVariable(mb, type));
+			npci = pushReturn(nmb, npci, newTmpVariable(nmb, type));
 	}
 	for (int i = pci->retc+2+1; i < pci->argc; i++) {
 		int type = getBatType(getArgType(mb, pci, i));
 
-		npci = pushNil(mb, npci, type);
+		npci = pushNil(nmb, npci, type);
 	}
 	/* check program to get the proper malblk */
-	if (chkInstruction(cntxt->usermodule, mb, npci)) {
+	if (chkInstruction(cntxt->usermodule, nmb, npci)) {
 		freeInstruction(npci);
 		return createException(MAL, "sql.unionfunc", SQLSTATE(42000) PROGRAM_GENERAL);
 	}
@@ -4615,7 +4618,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATiter *bi = NULL;
 		BUN cnt = 0;
 		int nrinput = pci->argc - 2 - pci->retc;
-		MalBlkPtr nmb = NULL;
 		MalStkPtr env = NULL;
 		InstrPtr q = NULL;
 
@@ -4627,7 +4629,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
-		assert(nrinput == pci->retc);
+		assert(pci->retc + 2 + nrinput == pci->argc);
 		for (int i = 0, j = pci->retc+2; j < pci->argc; i++, j++) {
 			bat *b = getArgReference_bat(stk, pci, j);
 			if (!(input[i] = BATdescriptor(*b))) {
@@ -4652,15 +4654,17 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 
-		if (!(nmb = copyMalBlk(npci->blk))) {
-			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto finalize;
+		if (npci->blk->stop > 1) {
+			omb = nmb;
+			if (!(nmb = copyMalBlk(npci->blk))) {
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto finalize;
+			}
 		}
 		if (!(env = prepareMALstack(nmb, nmb->vsize))) { /* needed for result */
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
-
 		q = getInstrPtr(nmb, 0);
 
 		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
@@ -4681,11 +4685,14 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				if (!ret && ii == q->argc) {
 					BAT *fres = NULL;
-					ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
+					if (!omb && npci->fcn)
+						ret = npci->fcn(cntxt, nmb, nstk, npci);
+					else
+						ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 
 					if (!ret) {
 						/* insert into result */
-						if (!(fres = BBPquickdesc(env->stk[q->argv[0]].val.bval))) {
+						if (!(fres = BBPquickdesc(omb?env->stk[q->argv[0]].val.bval:nstk->stk[q->argv[0]].val.bval))) {
 							ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
 						} else {
 							BAT *p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), BATcount(fres), TRANSIENT);
@@ -4702,7 +4709,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						for (ii = 0; i < pci->retc && !ret; i++) {
 							BAT *b;
 
-							if (!(b = BATdescriptor(env->stk[q->argv[ii]].val.bval)))
+							if (!(b = BATdescriptor(omb?env->stk[q->argv[ii]].val.bval:nstk->stk[q->argv[ii]].val.bval)))
 								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
 							else if (BATappend(res[i], b, NULL, FALSE) != GDK_SUCCEED)
 								ret = createException(MAL, "sql.unionfunc", GDK_EXCEPTION);
@@ -4720,6 +4727,8 @@ finalize:
 		GDKfree(env);
 		if (nmb)
 			freeMalBlk(nmb);
+		if (omb)
+			freeMalBlk(omb);
 		if (res)
 			for (int i = 0; i<pci->retc; i++) {
 				bat *b = getArgReference_bat(stk, pci, i);

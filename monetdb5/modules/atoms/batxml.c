@@ -971,7 +971,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		bi[i] = bat_iterator(b);
 		p[i] = 0;
-		q[i] = BUNlast(bi[i].b);
+		q[i] = BATcount(bi[i].b);
 	}
 	/* check for errors */
 	if (i != pci->argc) {
@@ -1094,7 +1094,7 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 		throw(MAL, "xml.concat", INTERNAL_BAT_ACCESS);
 	}
 	p = 0;
-	q = BUNlast(b);
+	q = BATcount(b);
 	rp = 0;
 
 	prepareResult(bn, b, TYPE_xml, "concat",
@@ -1233,7 +1233,6 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	oid min, max;
 	BUN ngrp;
 	BUN nils = 0;
-	BUN ncand;
 	struct canditer ci;
 	int isnil;
 	const char *v;
@@ -1247,7 +1246,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	const char *err;
 	char *tmp;
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		return err;
 	}
 	assert(b->ttype == TYPE_xml);

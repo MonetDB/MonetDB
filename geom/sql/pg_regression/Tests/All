@@ -83,7 +83,7 @@ HAVE_GEOM?regress_ogc_cover
 
 #HAVE_GEOM?regress_management #Functions not applicable in MOnetDB
 
-HAVE_GEOM?dump #Unknown Types: TRIANGLE, TIN (queries for those types commented out)
+HAVE_GEOM&GEOS_VERSION>=3.10?dump #Unknown Types: TRIANGLE, TIN (queries for those types commented out)
 
 HAVE_GEOM?dumppoints #Uknown Types: TRIANGLE, TIN, CURVEPOLYGON (queries for these types commented out)
 

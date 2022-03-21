@@ -179,13 +179,13 @@ gdk_export int GDKms(void);
 			TRC_DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
 		GDKfree(_ptr);						\
 	})
-#define GDKstrdup(s)							\
-	({								\
-		const char *_str = (s);					\
-		void *_res = GDKstrdup(_str);				\
-		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",		\
-			  _str ? strlen(_str) : 0, _res);		\
-		_res;							\
+#define GDKstrdup(s)						\
+	({							\
+		const char *_str = (s);				\
+		void *_res = GDKstrdup(_str);			\
+		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",	\
+			  _str ? strlen(_str) : 0, _res);	\
+		_res;						\
 	})
 #define GDKstrndup(s, n)					\
 	({							\

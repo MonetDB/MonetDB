@@ -1,4 +1,4 @@
-import os, socket, sys, tempfile, pymonetdb
+import os, sys, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -6,32 +6,22 @@ except ImportError:
     import process
 
 
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
-
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
-    node1_port = freeport()
-    with process.server(mapiport=node1_port, dbname='db1',
+    with process.server(mapiport='0', dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as node1_proc:
-        node1_conn = pymonetdb.connect(database='db1', port=node1_port,
+        node1_conn = pymonetdb.connect(database='db1', port=node1_proc.dbport,
                                        autocommit=True)
         node1_cur = node1_conn.cursor()
 
         os.mkdir(os.path.join(farm_dir, 'db2'))
-        node2_port = freeport()
-        with process.server(mapiport=node2_port, dbname='db2',
+        with process.server(mapiport='0', dbname='db2',
                             dbfarm=os.path.join(farm_dir, 'db2'),
                             stdin=process.PIPE, stdout=process.PIPE,
                             stderr=process.PIPE) as node2_proc:
-            node2_conn = pymonetdb.connect(database='db2', port=node2_port,
+            node2_conn = pymonetdb.connect(database='db2', port=node2_proc.dbport,
                                            autocommit=True)
             node2_cur = node2_conn.cursor()
 
@@ -39,7 +29,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             node2_cur.execute('INSERT INTO "tb2" VALUES (1, 1), (2, 2), (3, 3);')
 
             node1_cur.execute('CREATE MERGE TABLE "tb1" ("col1" int, "col2" int) PARTITION BY RANGE ON ("col1");')
-            node1_cur.execute('CREATE REMOTE TABLE "tb2" ("col1" int, "col2" int) ON \'mapi:monetdb://localhost:'+str(node2_port)+'/db2\';')
+            node1_cur.execute('CREATE REMOTE TABLE "tb2" ("col1" int, "col2" int) ON \'mapi:monetdb://localhost:'+str(node2_proc.dbport)+'/db2\';')
             try:
                 node1_cur.execute('ALTER TABLE "tb1" ADD TABLE "tb2" AS PARTITION FROM 0 TO 1;')  # error
                 sys.stderr.write('Exception expected')
@@ -66,4 +56,3 @@ with tempfile.TemporaryDirectory() as farm_dir:
 
         out1, err1 = node1_proc.communicate()
         sys.stderr.write(err1)
-

@@ -35,6 +35,7 @@ BATcommit(BAT *b, BUN size)
 {
 	if (b == NULL)
 		return;
+	assert(size <= BATcount(b) || size == BUN_NONE);
 	TRC_DEBUG(DELTA, "BATcommit1 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
 	if (!BATdirty(b)) {
@@ -43,7 +44,7 @@ BATcommit(BAT *b, BUN size)
 	if (DELTAdirty(b)) {
 		b->batDirtydesc = true;
 	}
-	b->batInserted = size < BUNlast(b) ? size : BUNlast(b);
+	b->batInserted = size < BATcount(b) ? size : BATcount(b);
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
 }
@@ -87,7 +88,7 @@ BATundo(BAT *b)
 			b->tvheap->dirty = false;
 	}
 	bunfirst = b->batInserted;
-	bunlast = BUNlast(b) - 1;
+	bunlast = BATcount(b) - 1;
 	if (bunlast >= b->batInserted) {
 		BUN i = bunfirst;
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;

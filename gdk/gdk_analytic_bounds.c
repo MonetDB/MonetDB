@@ -1096,11 +1096,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				if (ll == GDK_bte_max) {	/* UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow */
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
+					bat_iterator_end(&li);
 					return GDKanalyticalallbounds(r, b, p, preceding);
 				}
 				if (ll == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
+					bat_iterator_end(&li);
 					return GDKanalyticalpeers(r, b, p, preceding);
 				}
 				limit = is_bte_nil(ll) ? lng_nil : (lng) ll;
@@ -1111,11 +1113,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				if (ll == GDK_sht_max) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
+					bat_iterator_end(&li);
 					return GDKanalyticalallbounds(r, b, p, preceding);
 				}
 				if (ll == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
+					bat_iterator_end(&li);
 					return GDKanalyticalpeers(r, b, p, preceding);
 				}
 				limit = is_sht_nil(ll) ? lng_nil : (lng) ll;
@@ -1126,11 +1130,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				if (int_limit == GDK_int_max) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
+					bat_iterator_end(&li);
 					return GDKanalyticalallbounds(r, b, p, preceding);
 				}
 				if (int_limit == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
+					bat_iterator_end(&li);
 					return GDKanalyticalpeers(r, b, p, preceding);
 				}
 				limit = is_int_nil(int_limit) ? lng_nil : (lng) int_limit;
@@ -1141,11 +1147,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				if (limit == GDK_lng_max) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
+					bat_iterator_end(&li);
 					return GDKanalyticalallbounds(r, b, p, preceding);
 				}
 				if (limit == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
+					bat_iterator_end(&li);
 					return GDKanalyticalpeers(r, b, p, preceding);
 				}
 				break;
@@ -1183,10 +1191,12 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			} else if (limit == GDK_flt_max) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
+				bat_iterator_end(&li);
 				return GDKanalyticalallbounds(r, b, p, preceding);
 			} else if (limit == 0) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
+				bat_iterator_end(&li);
 				return GDKanalyticalpeers(r, b, p, preceding);
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_FLT(_PRECEDING, SINGLE, limit);
@@ -1202,10 +1212,12 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			} else if (limit == GDK_dbl_max) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
+				bat_iterator_end(&li);
 				return GDKanalyticalallbounds(r, b, p, preceding);
 			} else if (limit == 0) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
+				bat_iterator_end(&li);
 				return GDKanalyticalpeers(r, b, p, preceding);
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_DBL(_PRECEDING, SINGLE, limit);
@@ -1222,10 +1234,12 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			} else if (limit == GDK_hge_max) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
+				bat_iterator_end(&li);
 				return GDKanalyticalallbounds(r, b, p, preceding);
 			} else if (limit == 0) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
+				bat_iterator_end(&li);
 				return GDKanalyticalpeers(r, b, p, preceding);
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_HGE(_PRECEDING, SINGLE, limit);

@@ -46,7 +46,6 @@ function(monetdb_configure_defines)
   check_include_file("sys/un.h" HAVE_SYS_UN_H)
   check_include_file("sys/wait.h" HAVE_SYS_WAIT_H)
   check_include_file("unistd.h" HAVE_UNISTD_H)
-  check_include_file("uuid/uuid.h" HAVE_UUID_UUID_H)
   check_include_file("winsock2.h" HAVE_WINSOCK_H)
 
   find_library(GETOPT_LIB "getopt.lib")
@@ -141,7 +140,6 @@ macro(monetdb_macro_variables)
   set(HAVE_PROJ ${PROJ_FOUND})
   set(HAVE_SNAPPY ${SNAPPY_FOUND})
   set(HAVE_FITS ${CFITSIO_FOUND})
-  set(HAVE_UUID ${HAVE_UUID_GENERATE})
   set(HAVE_VALGRIND ${VALGRIND_FOUND})
   set(HAVE_NETCDF ${NETCDF_FOUND})
   set(HAVE_READLINE ${READLINE_FOUND})
@@ -302,16 +300,18 @@ macro(monetdb_configure_misc)
       "PASSWORD_BACKEND invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512")
   endif()
 
-  # Used for installing testing python module (don't pass a location, else we need to strip this again)
-  execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': ''})[1:])"
-    RESULT_VARIABLE PY3_LIBDIR_CODE
-    OUTPUT_VARIABLE PYTHON3_SITEDIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if (PY3_LIBDIR_CODE)
-    message(WARNING
-      "Could not determine MonetDB Python3 site-packages instalation directory")
+  if(NOT DEFINED PYTHON3_LIBDIR)
+    # Used for installing testing python module (don't pass a location, else we need to strip this again)
+    execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': ''})[1:])"
+      RESULT_VARIABLE PY3_LIBDIR_CODE
+      OUTPUT_VARIABLE PYTHON3_SITEDIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if (PY3_LIBDIR_CODE)
+      message(WARNING
+        "Could not determine MonetDB Python3 site-packages installation directory")
+    endif()
+    set(PYTHON3_LIBDIR "${PYTHON3_SITEDIR}")
   endif()
-  set(PYTHON3_LIBDIR "${PYTHON3_SITEDIR}")
   set(PYTHON "${Python3_EXECUTABLE}")
 
   if(MSVC)

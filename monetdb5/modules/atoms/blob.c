@@ -51,7 +51,6 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	int *restrict vals;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -70,8 +69,8 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -80,7 +79,7 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const blob *b = BUNtvar(bi, p1);
 
@@ -93,7 +92,7 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const blob *b = BUNtvar(bi, p1);
 
@@ -108,7 +107,7 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 
-	BATsetcount(bn, q);
+	BATsetcount(bn, ci1.ncand);
 	bn->tnil = nils;
 	bn->tnonil = !nils;
 	bn->tkey = BATcount(bn) <= 1;
@@ -159,7 +158,6 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 	BATiter bi;
 	str msg = NULL;
 	struct canditer ci;
-	BUN q;
 	oid off;
 	bool nils = false;
 
@@ -177,15 +175,15 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	q = canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_blob, q, TRANSIENT))) {
+	canditer_init(&ci, b, s);
+	if (!(dst = COLnew(ci.hseq, TYPE_blob, ci.ncand, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	bi = bat_iterator(b);
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			const blob *v = BUNtvar(bi, p);
 
@@ -197,7 +195,7 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= is_blob_nil(v);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
 			const blob *v = BUNtvar(bi, p);
 
@@ -217,7 +215,7 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
-		BATsetcount(dst, q);
+		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = BATcount(dst) <= 1;

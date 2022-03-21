@@ -86,6 +86,14 @@ strCleanHash(Heap *h, bool rebuild)
 	(void) rebuild;
 	if (!h->cleanhash)
 		return;
+	if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) &&
+	    HEAPextend(h, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+		GDKclrerr();
+		if (h->size > 0)
+			memset(h->base, 0, h->size);
+		return;
+	}
+
 	/* rebuild hash table for double elimination
 	 *
 	 * If appending strings to the BAT was aborted, if the heap
@@ -1088,7 +1096,6 @@ gdk_return
 BATstr_group_concat(ValPtr res, BAT *b, BAT *s1, BAT *sep, BAT *s2, bool skip_nils,
 		    bool abort_on_error, bool nil_if_empty, const char *restrict separator)
 {
-	BUN ncand;
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid bhseq = b->hseqbase, shseq = sep ? sep->hseqbase : 0;
 	gdk_return r = GDK_SUCCEED;
@@ -1099,15 +1106,15 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s1, BAT *sep, BAT *s2, bool skip_ni
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	res->vtype = TYPE_str;
 
-	ncand = canditer_init(&ci1, b, s1);
+	canditer_init(&ci1, b, s1);
 
 	if (sep) {
-		BUN ncand2 = canditer_init(&ci2, sep, s2);
-		if (ncand != ncand2) {
+		canditer_init(&ci2, sep, s2);
+		if (ci1.ncand != ci2.ncand) {
 			GDKerror("b and sep must be aligned\n");
 			return GDK_FAIL;
 		}
-		if (ncand2 == 1) { /* Only one element in sep */
+		if (ci2.ncand == 1) { /* Only one element in sep */
 			BATiter bi = bat_iterator(sep);
 			BUN p = canditer_next(&ci2) - shseq;
 			nseparator = GDKstrdup(BUNtvar(bi, p));
@@ -1119,7 +1126,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s1, BAT *sep, BAT *s2, bool skip_ni
 		}
 	}
 
-	if (ncand == 0 || (nseparator && strNil(nseparator))) {
+	if (ci1.ncand == 0 || (nseparator && strNil(nseparator))) {
 		if (VALinit(res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
 		if (free_nseparator)
@@ -1127,7 +1134,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s1, BAT *sep, BAT *s2, bool skip_ni
 		return r;
 	}
 
-	r = concat_strings(NULL, res, b, bhseq, 1, &ci1, &ci2, ncand, NULL, 0, 0,
+	r = concat_strings(NULL, res, b, bhseq, 1, &ci1, &ci2, ci1.ncand, NULL, 0, 0,
 			      skip_nils, sep, shseq, nseparator, NULL);
 	if (free_nseparator)
 		GDKfree(nseparator);
@@ -1140,7 +1147,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s1, BAT *sep, BAT *s2, boo
 {
 	BAT *bn = NULL;
 	oid min, max, bhseq = b->hseqbase, shseq = sep ? sep->hseqbase : 0;
-	BUN ngrp, ncand, nils = 0;
+	BUN ngrp, nils = 0;
 	struct canditer ci1 = {0}, ci2 = {0};
 	const char *err;
 	gdk_return res;
@@ -1151,17 +1158,17 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s1, BAT *sep, BAT *s2, boo
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s1, &min, &max, &ngrp,
-				    &ci1, &ncand)) !=NULL) {
+				    &ci1)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
 	if (sep) {
-		BUN ncand2 = canditer_init(&ci2, sep, s2);
-		if (ncand != ncand2 || g == NULL || BATcount(g) != ncand) {
+		canditer_init(&ci2, sep, s2);
+		if (ci1.ncand != ci2.ncand || g == NULL || BATcount(g) != ci1.ncand) {
 			GDKerror("b, sep and g must be aligned\n");
 			return NULL;
 		}
-		if (ncand2 == 1) { /* Only one element in sep */
+		if (ci2.ncand == 1) { /* Only one element in sep */
 			BATiter bi = bat_iterator(sep);
 			BUN p = canditer_next(&ci2) - shseq;
 			nseparator = GDKstrdup(BUNtvar(bi, p));
@@ -1176,7 +1183,17 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s1, BAT *sep, BAT *s2, boo
 		return NULL;
 	}
 
-	if (ncand == 0 || ngrp == 0 || (nseparator && strNil(nseparator))) {
+	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
+		BATiter bi = bat_iterator(sep);
+		nseparator = GDKstrdup(BUNtvar(bi, 0));
+		bat_iterator_end(&bi);
+		if (!nseparator)
+			return NULL;
+		free_nseparator = true;
+		sep = NULL;
+	}
+
+	if (ci1.ncand == 0 || ngrp == 0 || (nseparator && strNil(nseparator))) {
 		/* trivial: no strings to concat, so return bat
 		 * aligned with g with nil in the tail */
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
@@ -1190,7 +1207,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s1, BAT *sep, BAT *s2, boo
 		goto done;
 	}
 
-	res = concat_strings(&bn, NULL, b, bhseq, ngrp, &ci1, &ci2, ncand,
+	res = concat_strings(&bn, NULL, b, bhseq, ngrp, &ci1, &ci2, ci1.ncand,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep, shseq,
 			     nseparator, &nils);
 	if (res != GDK_SUCCEED)
@@ -1205,7 +1222,7 @@ done:
 #define compute_next_single_str(START, END)				\
 	do {								\
 		for (oid m = START; m < END; m++) {			\
-			const char *sb = BUNtvar(bi, m);				\
+			const char *sb = BUNtvar(bi, m);		\
 									\
 			if (separator) {				\
 				if (!strNil(sb)) {			\
@@ -1216,7 +1233,7 @@ done:
 				}					\
 			} else { /* sep case */				\
 				assert(sep != NULL);			\
-				const char *sl = BUNtvar(sepi, m);			\
+				const char *sl = BUNtvar(sepi, m);	\
 									\
 				if (!strNil(sb)) {			\
 					next_group_length += strlen(sb); \
@@ -1253,7 +1270,7 @@ done:
 			}						\
 									\
 			for (oid m = START; m < END; m++) {		\
-				const char *sb = BUNtvar(bi, m);			\
+				const char *sb = BUNtvar(bi, m);	\
 									\
 				if (separator) {			\
 					if (strNil(sb))			\
@@ -1268,7 +1285,7 @@ done:
 					empty = false;			\
 				} else { /* sep case */			\
 					assert(sep != NULL);		\
-					const char *sl = BUNtvar(sepi, m);		\
+					const char *sl = BUNtvar(sepi, m); \
 									\
 					if (strNil(sb))			\
 						continue;		\
@@ -1296,14 +1313,14 @@ done:
 		compute_next_single_str(k, i); /* compute the entire string then slice it starting from the beginning */ \
 		empty = true;						\
 		for (; k < i;) {					\
-			const char *nsep;					\
+			const char *nsep;				\
 			oid m = k;					\
 			j = k;						\
 			do {						\
 				k++;					\
 			} while (k < i && !op[k]);			\
 			for (; j < k; j++) {				\
-				const char *nstr = BUNtvar(bi, j);			\
+				const char *nstr = BUNtvar(bi, j);	\
 				if (!strNil(nstr)) {			\
 					slice_length += strlen(nstr);	\
 					if (!empty) {			\
@@ -1348,7 +1365,7 @@ done:
 #define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW				\
 	do {								\
 		for (; k < i; k++) {					\
-			const char *next = BUNtvar(bi, k);			\
+			const char *next = BUNtvar(bi, k);		\
 			if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED) \
 				goto allocation_error;			\
 			has_nils |= strNil(next);			\

@@ -49,7 +49,6 @@ typedef enum tokens {
 	SQL_CREATE_TYPE,
 	SQL_CREATE_USER,
 	SQL_CREATE_VIEW,
-	SQL_CROSS,
 	SQL_CUBE,
 	SQL_CURRENT_ROW,
 	SQL_CYCLE,
@@ -181,7 +180,8 @@ typedef enum jt {
 	jt_inner = 0,
 	jt_left = 1,
 	jt_right = 2,
-	jt_full = 3
+	jt_full = 3,
+	jt_cross = 4
 } jt;
 
 typedef enum {

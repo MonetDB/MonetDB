@@ -487,12 +487,12 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
  * We should use an OS define to react to the maximal cores
  */
 
-#define MAXCPU		256
-#define LASTCPU		(MAXCPU - 1)
+#define MAXCORES		256
+#define LASTCPU		(MAXCORES - 1)
 static struct{
 	lng user, nice, system, idle, iowait;
 	double load;
-} corestat[MAXCPU];
+} corestat[MAXCORES];
 
 static int
 getCPULoad(char cpuload[BUFSIZ]){

@@ -2567,7 +2567,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	BAT *bn = NULL, *t1, *t2 = NULL;
 	BATiter bi;
 	oid min, max, mapoff = 0, prev;
-	BUN ngrp, nils = 0, p, q, ncand;
+	BUN ngrp, nils = 0, p, q;
 	struct canditer ci;
 	const char *err = NULL;
 	const oid *grps, *map;
@@ -2578,7 +2578,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 
 	assert(maxlen > 256); /* make sure every floating point fits on the dense case */
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		return err;
 	}
 	if (BATcount(b) == 0 || ngrp == 0) {

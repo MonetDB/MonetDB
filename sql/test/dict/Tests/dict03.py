@@ -1,4 +1,4 @@
-import os, socket, tempfile
+import os, tempfile
 
 try:
     from MonetDBtesting import process
@@ -6,17 +6,12 @@ except ImportError:
     import process
 from MonetDBtesting.sqltest import SQLTestCase
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.bind(('', 0))
-port = sock.getsockname()[1]
-sock.close()
-
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
 
-    with process.server(mapiport=port, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
+    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
         with SQLTestCase() as mdb:
-            mdb.connect(database='db1', port=port, username="monetdb", password="monetdb")
+            mdb.connect(database='db1', port=s.dbport, username="monetdb", password="monetdb")
             mdb.execute("""
             START TRANSACTION;
             create or replace procedure "sys"."dict_compress"(sname string, tname string, cname string) external name "dict"."compress";
@@ -38,16 +33,16 @@ with tempfile.TemporaryDirectory() as farm_dir:
             mdb.execute("SELECT c0 FROM t2;").assertSucceeded().assertDataResultMatch([(-1981639662,),])
         s.communicate()
 
-    with process.server(mapiport=port, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
+    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
         with SQLTestCase() as mdb:
-            mdb.connect(database='db1', port=port, username="monetdb", password="monetdb")
+            mdb.connect(database='db1', port=s.dbport, username="monetdb", password="monetdb")
             mdb.execute("SELECT c0 FROM t1 ORDER BY c0;").assertSucceeded().assertDataResultMatch([('',),('3be汉字0',),('aa8877',)])
             mdb.execute("SELECT c0 FROM t2;").assertSucceeded().assertDataResultMatch([(-1981639662,),])
         s.communicate()
 
-    with process.server(mapiport=port, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
+    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
         with SQLTestCase() as mdb:
-            mdb.connect(database='db1', port=port, username="monetdb", password="monetdb")
+            mdb.connect(database='db1', port=s.dbport, username="monetdb", password="monetdb")
             mdb.execute("SELECT c0 FROM t1 ORDER BY c0;").assertSucceeded().assertDataResultMatch([('',),('3be汉字0',),('aa8877',)])
             mdb.execute("SELECT c0 FROM t2;").assertSucceeded().assertDataResultMatch([(-1981639662,),])
             mdb.execute("""

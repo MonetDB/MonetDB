@@ -122,6 +122,7 @@ view_rename_columns(mvc *sql, const char *name, sql_rel *sq, dlist *column_spec)
 		p->next = 0;
 	if (n || m)
 		return sql_error(sql, 02, SQLSTATE(M0M03) "Column lists do not match");
+	list_hash_clear(sq->exps);
 	set_processed(sq);
 	return sq;
 }
@@ -1407,6 +1408,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 	int instantiate = (sql->emode == m_instantiate || !persistent);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
+	sqlid pfoundid = 0, foundid = 0;
 	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
 
 	(void) check;		/* Stefan: unused!? */
@@ -1415,8 +1417,15 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
-	if (create && !replace && mvc_bind_table(sql, s, name) != NULL)
-		return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
+	if (create && (t = mvc_bind_table(sql, s, name))) {
+		if (!replace)
+			return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
+		if (!isView(t))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: '%s' is not a view", base, name);
+		if (t->system)
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot replace system view '%s'", base, name);
+		foundid = t->base.id; /* when recreating a view, the view itself can't be found */
+	}
 
 	if (ast) {
 		sql_rel *sq = NULL;
@@ -1432,7 +1441,10 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 				return sql_error(sql, 01, SQLSTATE(42000) "%s: %s not supported", base, sn->limit ? "LIMIT" : "SAMPLE");
 		}
 
+		pfoundid = sql->objid;
+		sql->objid = foundid; /* when recreating a view, the view itself can't be found */
 		sq = schema_selects(query, s, ast);
+		sql->objid = pfoundid;
 		if (!sq)
 			return NULL;
 		if (!is_project(sq->op)) /* make sure sq is a projection */

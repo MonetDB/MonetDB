@@ -640,12 +640,18 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	if (complex_cand(l)) {
 		/* l is candidate list with exceptions or is a bitmask */
 		assert(l->ttype == TYPE_msk || !is_oid_nil(l->tseqbase));
-		lcount = canditer_init(&ci, NULL, l);
+		canditer_init(&ci, NULL, l);
+		lcount = ci.ncand;
 		lci = &ci;
 	} else if (l->ttype == TYPE_msk) {
 		l = BATunmask(l);
 		if (l == NULL)
 			goto doreturn;
+		if (complex_cand(l)) {
+			canditer_init(&ci, NULL, l);
+			lcount = ci.ncand;
+			lci = &ci;
+		}
 	}
 	if (lcount == 0 ||
 	    (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)) ||
