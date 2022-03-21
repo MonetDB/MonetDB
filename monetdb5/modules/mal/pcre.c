@@ -1940,7 +1940,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 			bn->tkey = true;
 			bn->tnil = false;
 			bn->tnonil = true;
-			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 || rcnt == b->batCount ? b->hseqbase : oid_nil;
+			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
 		}
 	}
 
