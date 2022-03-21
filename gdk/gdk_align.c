@@ -363,6 +363,7 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 		view->tmaxpos -= l;
 	else
 		view->tmaxpos = BUN_NONE;
+	view->tkey |= cnt <= 1;
 }
 
 /*
