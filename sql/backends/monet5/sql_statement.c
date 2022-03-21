@@ -3607,7 +3607,7 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 		rel->p = prop_remove(rel->p, p);
 	/* sql_processrelation may split projections, so make sure the topmost relation only contains references */
 	rel = rel_project(be->mvc->sa, rel, rel_projections(be->mvc, rel, NULL, 1, 1));
-	if (!(rel = sql_processrelation(be->mvc, rel, 0, 1, 1)))
+	if (!(rel = sql_processrelation(be->mvc, rel, 0, 0, 1, 1)))
 		return NULL;
 	if (p) {
 		p->p = rel->p;

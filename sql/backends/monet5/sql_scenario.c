@@ -1215,6 +1215,7 @@ SQLparser(Client c)
 			/* passed over to query cache, used during dumpproc */
 			m->sa = NULL;
 			m->sym = NULL;
+			m->runs = NULL;
 			m->params = NULL;
 			/* register name in the namespace */
 			if (be->q) {
