@@ -392,6 +392,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	m->errstr[0] = '\0';
 	m->params = NULL;
 	m->sym = NULL;
+	m->runs = NULL;
 	m->label = 0;
 	if (m->sa)
 		m->sa = sa_reset(m->sa);
