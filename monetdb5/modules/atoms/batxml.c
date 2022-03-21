@@ -54,7 +54,7 @@
 	do {										\
 		BATsetcount((Y), (Y)->batCount);		\
 		*(X) = (Y)->batCacheid;					\
-		BBPkeepref(*(X));						\
+		BBPkeepref(Y);							\
 		BBPunfix((Z)->batCacheid);				\
 	} while (0)
 
@@ -1042,7 +1042,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(buf);
 	BATsetcount(bn, bn->batCount);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	for (i = pci->retc; i < pci->argc; i++) {
 		BAT *b = bi[i].b;
 		if (b) {
@@ -1482,7 +1482,7 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 		throw(MAL, "aggr.subxml", "%s", err);
 
 	*retval = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 

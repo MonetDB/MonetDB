@@ -264,7 +264,7 @@ SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.all =", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -378,7 +378,7 @@ SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.nil", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -486,9 +486,10 @@ bailout1:
 	bat_iterator_end(&nri);
 
 bailout:
-	if (res && !msg)
-		BBPkeepref(*ret = res->batCacheid);
-	else if (res)
+	if (res && !msg) {
+		*ret = res->batCacheid;
+		BBPkeepref(res);
+	} else if (res)
 		BBPreclaim(res);
 	if (cmp)
 		BBPunfix(cmp->batCacheid);
@@ -597,9 +598,10 @@ bailout1:
 	bat_iterator_end(&nri);
 
 bailout:
-	if (res && !msg)
-		BBPkeepref(*ret = res->batCacheid);
-	else if (res)
+	if (res && !msg) {
+		*ret = res->batCacheid;
+		BBPkeepref(res);
+	} else if (res)
 		BBPreclaim(res);
 	if (cmp)
 		BBPunfix(cmp->batCacheid);
@@ -761,9 +763,10 @@ bailout1:
 	bat_iterator_end(&ri);
 
 bailout:
-	if (res && !msg)
-		BBPkeepref(*bret = res->batCacheid);
-	else if (res)
+	if (res && !msg) {
+		*bret = res->batCacheid;
+		BBPkeepref(res);
+	} else if (res)
 		BBPreclaim(res);
 	if (l)
 		BBPunfix(l->batCacheid);
@@ -827,7 +830,7 @@ SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.any =", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -892,7 +895,7 @@ SQLanyequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.any =", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -1023,9 +1026,10 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&ri);
 
 bailout:
-	if (res && !msg)
-		BBPkeepref(*bret = res->batCacheid);
-	else if (res)
+	if (res && !msg) {
+		*bret = res->batCacheid;
+		BBPkeepref(res);
+	} else if (res)
 		BBPreclaim(res);
 	if (l)
 		BBPunfix(l->batCacheid);
@@ -1089,7 +1093,7 @@ SQLallnotequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.all <>", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -1155,7 +1159,7 @@ SQLallnotequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.all <>", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -1176,7 +1180,8 @@ SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat *res = getArgReference_bat(stk, pci, 0);
 		if (!(r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)))
 			throw(SQL, "aggr.exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 		*res = count;
@@ -1226,7 +1231,7 @@ SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.subexist", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -1247,7 +1252,8 @@ SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat *res = getArgReference_bat(stk, pci, 0);
 		if (!(r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)))
 			throw(SQL, "aggr.not_exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 		*res = count;
@@ -1297,6 +1303,6 @@ SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.subnot_exist", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }

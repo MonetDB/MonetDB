@@ -1174,7 +1174,7 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, true);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
-		BBPkeepref(*res);
+		BBPkeepref(bn);
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -1191,7 +1191,7 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const str *pat, const str *r
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, false);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
-		BBPkeepref(*res);
+		BBPkeepref(bn);
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -1701,7 +1701,8 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*r = bn->batCacheid);
+		*r = bn->batCacheid;
+		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
 	if (b)
@@ -1950,9 +1951,10 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	GDKfree(ppat);
-	if (bn && !msg)
-		BBPkeepref(*ret = bn->batCacheid);
-	else if (bn)
+	if (bn && !msg) {
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
+	} else if (bn)
 		BBPreclaim(bn);
 	return msg;
 }
@@ -2263,10 +2265,10 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 	if (msg)
 		goto fail;
 	*r1 = result1->batCacheid;
-	BBPkeepref(*r1);
+	BBPkeepref(result1);
 	if (r2) {
 		*r2 = result2->batCacheid;
-		BBPkeepref(*r2);
+		BBPkeepref(result2);
 	}
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);

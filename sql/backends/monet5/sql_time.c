@@ -129,7 +129,8 @@ bailout:
 		res->tkey = btkey;
 		res->tsorted = btsorted;
 		res->trevsorted = btrevsorted;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -253,7 +254,8 @@ bailout:
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -274,7 +276,8 @@ nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!res)
 			throw(SQL, "batcalc.nil_2time_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = getArgReference_bat(stk, pci, 0);
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else {
 		daytime *ret = (daytime*) getArgReference(stk, pci, 0);
 		*ret = daytime_nil;
@@ -406,7 +409,8 @@ bailout:
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -553,7 +557,8 @@ bailout:
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -630,7 +635,8 @@ bailout:
 		res->tkey = btkey;
 		res->tsorted = btsorted;
 		res->trevsorted = btrevsorted;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -757,7 +763,8 @@ bailout:
 		res->tkey = btkey;
 		res->tsorted = btsorted;
 		res->trevsorted = btrevsorted;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -778,7 +785,8 @@ nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!res)
 			throw(SQL, "batcalc.nil_2time_timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = getArgReference_bat(stk, pci, 0);
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else {
 		timestamp *ret = (timestamp*) getArgReference(stk, pci, 0);
 		*ret = timestamp_nil;
@@ -910,7 +918,8 @@ bailout:
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -1042,7 +1051,8 @@ bailout:
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -1141,7 +1151,8 @@ bailout:
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -1316,7 +1327,8 @@ bailout:
 		res->tkey = btkey;
 		res->tsorted = btsorted;
 		res->trevsorted = btrevsorted;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -1453,7 +1465,8 @@ bailout:
 		res->tkey = btkey;
 		res->tsorted = btsorted;
 		res->trevsorted = btrevsorted;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -1564,7 +1577,8 @@ bailout:
 		res->tkey = btkey;
 		res->tsorted = btsorted;
 		res->trevsorted = btrevsorted;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
@@ -1585,7 +1599,8 @@ nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!res)
 			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = getArgReference_bat(stk, pci, 0);
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else {
 		date *ret = (date*) getArgReference(stk, pci, 0);
 		*ret = date_nil;
@@ -1687,7 +1702,8 @@ bailout:
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		BBPkeepref(*r = res->batCacheid);
+		*r = res->batCacheid;
+		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
 	return msg;

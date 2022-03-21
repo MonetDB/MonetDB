@@ -589,7 +589,7 @@ TKNZRgetLevel(bat *r, int *level)
 		throw(MAL, "tokenizer.getLevel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*r = view->batCacheid;
 
-	BBPkeepref(*r);
+	BBPkeepref(view);
 	return MAL_SUCCEED;
 }
 
@@ -614,7 +614,7 @@ TKNZRgetCount(bat *r)
 	}
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
-	BBPkeepref(*r);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -645,7 +645,7 @@ TKNZRgetCardinality(bat *r)
 
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
-	BBPkeepref(*r);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 

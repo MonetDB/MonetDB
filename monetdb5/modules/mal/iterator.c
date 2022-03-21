@@ -67,7 +67,7 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	 *granule, MIN(cnt,(BUN) *granule)); */
 	VIEWbounds(b, view, 0, MIN(cnt, (BUN) * granule));
 	*vid = view->batCacheid;
-	BBPkeepref(view->batCacheid);
+	BBPkeepref(view);
 	BBPunfix(b->batCacheid);
 	*res = 0;
 	return MAL_SUCCEED;
@@ -104,7 +104,8 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	VIEWbounds(b, view, i, i + (BUN) *granule);
 	view->tkey = b->tkey | (*granule <= 1);
 	BAThseqbase(view, is_oid_nil(b->hseqbase) ? oid_nil : b->hseqbase + i);
-	BBPkeepref(*vid = view->batCacheid);
+	*vid = view->batCacheid;
+	BBPkeepref(view);
 	BBPunfix(b->batCacheid);
 	*res = i;
 	return MAL_SUCCEED;

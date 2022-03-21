@@ -373,7 +373,8 @@ JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	JSONfree(jt);
 	if (bn == NULL)
 		throw(MAL, "json.dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1777,10 +1778,14 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		BBPreclaim(bo);
 		BBPreclaim(bv);
 	} else {
-		BBPkeepref(*key = bk->batCacheid);
-		BBPkeepref(*val = bv->batCacheid);
-		if (od)
-			BBPkeepref(*od = bo->batCacheid);
+		*key = bk->batCacheid;
+		BBPkeepref(bk);
+		*val = bv->batCacheid;
+		BBPkeepref(bv);
+		if (od) {
+			*od = bo->batCacheid;
+			BBPkeepref(bo);
+		}
 	}
 	return msg;
 }
@@ -1818,7 +1823,8 @@ JSONkeyTable(bat *ret, json *js)
 		GDKfree(r);
 	}
 	JSONfree(jt);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1921,7 +1927,8 @@ JSONvalueTable(bat *ret, json *js)
 		GDKfree(r);
 	}
 	JSONfree(jt);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -2901,7 +2908,7 @@ JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_n
 		throw(MAL, "aggr.subjson", "%s", err);
 
 	*retval = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 

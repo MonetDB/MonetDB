@@ -195,8 +195,10 @@ bailout: 																\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
-		else															\
-			BBPkeepref(*ret = bn->batCacheid);							\
+		else {															\
+			*ret = bn->batCacheid;										\
+			BBPkeepref(bn);												\
+		}																\
 	}																	\
 	return msg;															\
 }
@@ -317,8 +319,10 @@ bailout: 																\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
-		else															\
-			BBPkeepref(*ret = bn->batCacheid);							\
+		else {															\
+			*ret = bn->batCacheid;										\
+			BBPkeepref(bn);												\
+		}																\
 	}																	\
 	return msg;															\
 }																		\
@@ -393,8 +397,10 @@ bailout: 																\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
-		else															\
-			BBPkeepref(*ret = bn->batCacheid);							\
+		else {															\
+			*ret = bn->batCacheid;										\
+			BBPkeepref(bn);												\
+		}																\
 	}																	\
 	return msg;															\
 }																		\
@@ -469,8 +475,10 @@ bailout: 																\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
-		else															\
-			BBPkeepref(*ret = bn->batCacheid);							\
+		else {															\
+			*ret = bn->batCacheid;										\
+			BBPkeepref(bn);												\
+		}																\
 	}																	\
 	return msg;															\
 }

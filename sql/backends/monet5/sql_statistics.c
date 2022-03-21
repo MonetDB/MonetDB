@@ -416,19 +416,32 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	GDKfree(buf);
-	BBPkeepref(*rcid = cid->batCacheid);
-	BBPkeepref(*rsch = sch->batCacheid);
-	BBPkeepref(*rtab = tab->batCacheid);
-	BBPkeepref(*rcol = col->batCacheid);
-	BBPkeepref(*rtype = type->batCacheid);
-	BBPkeepref(*rwidth = width->batCacheid);
-	BBPkeepref(*rcount = count->batCacheid);
-	BBPkeepref(*runique = unique->batCacheid);
-	BBPkeepref(*rnils = nils->batCacheid);
-	BBPkeepref(*rminval = minval->batCacheid);
-	BBPkeepref(*rmaxval = maxval->batCacheid);
-	BBPkeepref(*rsorted = sorted->batCacheid);
-	BBPkeepref(*rrevsorted = revsorted->batCacheid);
+	*rcid = cid->batCacheid;
+	BBPkeepref(cid);
+	*rsch = sch->batCacheid;
+	BBPkeepref(sch);
+	*rtab = tab->batCacheid;
+	BBPkeepref(tab);
+	*rcol = col->batCacheid;
+	BBPkeepref(col);
+	*rtype = type->batCacheid;
+	BBPkeepref(type);
+	*rwidth = width->batCacheid;
+	BBPkeepref(width);
+	*rcount = count->batCacheid;
+	BBPkeepref(count);
+	*runique = unique->batCacheid;
+	BBPkeepref(unique);
+	*rnils = nils->batCacheid;
+	BBPkeepref(nils);
+	*rminval = minval->batCacheid;
+	BBPkeepref(minval);
+	*rmaxval = maxval->batCacheid;
+	BBPkeepref(maxval);
+	*rsorted = sorted->batCacheid;
+	BBPkeepref(sorted);
+	*rrevsorted = revsorted->batCacheid;
+	BBPkeepref(revsorted);
 	return MAL_SUCCEED;
 bailout:
 	GDKfree(buf);

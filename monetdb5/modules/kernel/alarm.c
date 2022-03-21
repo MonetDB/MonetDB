@@ -114,7 +114,8 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_iterator_end(&bi);
 
 		BBPunfix(b->batCacheid);
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else {
 		switch (getArgType(mb, pci, 1)) {
 			case TYPE_bte:

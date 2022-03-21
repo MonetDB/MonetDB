@@ -115,7 +115,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	BATkey(bn, false);
   doreturn:
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -340,7 +340,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		throw(MAL, malfunc, "Math exception: %s", err);
 	}
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
   bailout:
@@ -424,7 +424,8 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 

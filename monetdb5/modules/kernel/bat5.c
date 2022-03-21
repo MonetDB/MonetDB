@@ -79,7 +79,7 @@ BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 	if (bn == NULL)
 		throw(MAL, "bat.attach", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -97,7 +97,7 @@ BKCdensebat(bat *ret, const lng *size)
 	if (bn == NULL)
 		throw(MAL, "bat.densebat", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -111,7 +111,8 @@ BKCmirror(bat *ret, const bat *bid)
 		throw(MAL, "bat.mirror", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (!(bn = BATdense(b->hseqbase, b->hseqbase, BATcount(b))))
 		throw(MAL, "bat.mirror", GDK_EXCEPTION);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -567,8 +568,10 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 
 	if ((msg = BATinfo(&bk, &bv, *bid)) != NULL)
 		return msg;
-	BBPkeepref(*ret1 = bk->batCacheid);
-	BBPkeepref(*ret2 = bv->batCacheid);
+	*ret1 = bk->batCacheid;
+	BBPkeepref(bk);
+	*ret2 = bv->batCacheid;
+	BBPkeepref(bv);
 	return MAL_SUCCEED;
 }
 
@@ -919,7 +922,8 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	bn->tkey = btkey;
 	bn->tnonil = btnonil;
 	bn->tnil = false;		/* can't be sure if values deleted */
-	BBPkeepref(*ret= bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -976,7 +980,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
-	BBPkeepref(*ret= bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 #endif	/* unused */
@@ -1101,7 +1106,8 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
-	BBPkeepref(*ret= bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1158,7 +1164,8 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
-	BBPkeepref(*ret= bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1180,7 +1187,7 @@ BKCmergecand(bat *ret, const bat *aid, const bat *bid)
 	if (bn == NULL)
 		throw(MAL, "bat.mergecand", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1202,7 +1209,7 @@ BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 	if (bn == NULL)
 		throw(MAL, "bat.intersectcand", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1224,7 +1231,7 @@ BKCdiffcand(bat *ret, const bat *aid, const bat *bid)
 	if (bn == NULL)
 		throw(MAL, "bat.diffcand", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 

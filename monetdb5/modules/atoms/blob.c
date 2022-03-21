@@ -113,7 +113,8 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
   bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
@@ -221,7 +222,8 @@ bailout:
 		dst->tkey = BATcount(dst) <= 1;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*res = dst->batCacheid);
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;

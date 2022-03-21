@@ -364,7 +364,8 @@ wrapup:
 		if (ATOMstorage(mat[0].b->ttype) < TYPE_str)
 			BATsetcount(mat[0].b,cnt);
 		BATsettrivprop(mat[0].b);
-		BBPkeepref(*getArgReference_bat(stk,pci,0)=mat[0].b->batCacheid);
+		*getArgReference_bat(stk,pci,0) = mat[0].b->batCacheid;
+		BBPkeepref(mat[0].b);
 	}
 	GDKfree(mat);
 	return msg;

@@ -304,7 +304,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tnil = false;
 	bn->tnonil = true;
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -326,7 +326,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 		throw(MAL, "algebra.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*ret = *bid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 

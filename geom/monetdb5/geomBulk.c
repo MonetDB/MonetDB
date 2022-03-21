@@ -93,7 +93,8 @@ bailout:
 		dst->tkey = BATcount(dst) <= 1;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*outBAT_id = dst->batCacheid);
+		*outBAT_id = dst->batCacheid;
+		BBPkeepref(dst);
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
@@ -184,7 +185,8 @@ bailout:
 		dst->tkey = BATcount(dst) <= 1;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*outBAT_id = dst->batCacheid);
+		*outBAT_id = dst->batCacheid;
+		BBPkeepref(dst);
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
@@ -235,7 +237,8 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 	bat_iterator_end(&inBAT_iter);
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 	return MAL_SUCCEED;
 
 }
@@ -291,7 +294,8 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 	BATsetcount(outBAT, BATcount(inBAT));
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 }
@@ -361,7 +365,8 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 	BATsetcount(outBAT, BATcount(inBAT));
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 }
@@ -425,7 +430,8 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 	BATsetcount(outBAT, BATcount(inBAT));
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 }
@@ -485,7 +491,8 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 	BATsetcount(outBAT, BATcount(inBAT));
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 
@@ -571,7 +578,8 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 	BATsetcount(outBAT, BATcount(inBAT));
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 
@@ -638,7 +646,8 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 	BATsetcount(outBAT, BATcount(inBAT));
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 
@@ -705,7 +714,8 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 	BATsetcount(outBAT, BATcount(inBAT));
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 
@@ -762,7 +772,8 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		GDKfree(outSingle);
 	}
 
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
   bailout:
 	bat_iterator_end(&aBAT_iter);
 	bat_iterator_end(&bBAT_iter);
@@ -821,7 +832,8 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		}
 	}
 
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
   bailout:
 	bat_iterator_end(&aBAT_iter);
@@ -878,7 +890,8 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 	bat_iterator_end(&inBAT_iter);
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 
@@ -926,7 +939,8 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 	bat_iterator_end(&inBAT_iter);
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 }
@@ -974,7 +988,8 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 	bat_iterator_end(&inBATi);
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 	return MAL_SUCCEED;
 
 }
@@ -1050,7 +1065,8 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 		GDKfree(pointWKB);
 	}
 
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
   bailout:
 	bat_iterator_end(&xBAT_iter);
@@ -1119,7 +1135,8 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 	bat_iterator_end(&inBAT_iter);
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 }
@@ -1170,7 +1187,8 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		}
 	}
 
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
   bailout:
 	bat_iterator_end(&aBAT_iter);
@@ -1227,7 +1245,8 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 	bat_iterator_end(&inBAT_iter);
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
 }
@@ -1317,8 +1336,10 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 
 	BBPunfix(aBAT->batCacheid);
 	BBPunfix(bBAT->batCacheid);
-	BBPkeepref(*aBATfiltered_id = aBATfiltered->batCacheid);
-	BBPkeepref(*bBATfiltered_id = bBATfiltered->batCacheid);
+	*aBATfiltered_id = aBATfiltered->batCacheid;
+	BBPkeepref(aBATfiltered);
+	*bBATfiltered_id = bBATfiltered->batCacheid;
+	BBPkeepref(bBATfiltered);
 
 	return MAL_SUCCEED;
 
@@ -1404,7 +1425,8 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 
 	GDKfree(geomMBR);
 	BBPunfix(BAToriginal->batCacheid);
-	BBPkeepref(*BATfiltered_id = BATfiltered->batCacheid);
+	*BATfiltered_id = BATfiltered->batCacheid;
+	BBPkeepref(BATfiltered);
 
 	return MAL_SUCCEED;
 
@@ -1464,7 +1486,8 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 	bat_iterator_end(&inBAT_iter);
 
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 	return MAL_SUCCEED;
 }
 
@@ -1546,7 +1569,8 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	bat_iterator_end(&aBAT_iter);
 	bat_iterator_end(&bBAT_iter);
 
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 	BBPunfix(aBAT->batCacheid);
 	BBPunfix(bBAT->batCacheid);
 
@@ -1617,7 +1641,8 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	bat_iterator_end(&aBAT_iter);
 	bat_iterator_end(&bBAT_iter);
 
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
 	BBPunfix(aBAT->batCacheid);
 	BBPunfix(bBAT->batCacheid);
 
