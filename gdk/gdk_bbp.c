@@ -2854,7 +2854,7 @@ BBPcold(bat i)
 }
 
 /* This function can fail if the input parameter (i) is incorrect
- * (unlikely), of if the bat is a view, this is a physical (not
+ * (unlikely), or, if the bat is a view, this is a physical (not
  * logical) incref (i.e. called through BBPfix(), and it is the first
  * reference (refs was 0 and should become 1).  It can fail in this
  * case if the parent bat cannot be loaded.

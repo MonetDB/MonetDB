@@ -101,7 +101,8 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	}
 	/* printf("set bat chunk bound to " BUNFMT " - " BUNFMT " \n",
 	   i, i+(BUN) *granule-1); */
-	VIEWbounds(b, view, i, i + (BUN) * granule);
+	VIEWbounds(b, view, i, i + (BUN) *granule);
+	view->tkey = b->tkey | (*granule <= 1);
 	BAThseqbase(view, is_oid_nil(b->hseqbase) ? oid_nil : b->hseqbase + i);
 	BBPkeepref(*vid = view->batCacheid);
 	BBPunfix(b->batCacheid);
