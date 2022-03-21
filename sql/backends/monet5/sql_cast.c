@@ -110,7 +110,8 @@ bailout:
 		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*res = dst->batCacheid);
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
@@ -243,9 +244,11 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			BBPunfix(s->batCacheid);
 			BBPunfix(b->batCacheid);
-			BBPkeepref(*res = dst->batCacheid);
+			*res = dst->batCacheid;
+			BBPkeepref(dst);
 		} else {
-			BBPkeepref(*res = b->batCacheid);
+			*res = b->batCacheid;
+			BBPkeepref(b);
 		}
 		return MAL_SUCCEED;
 	}
@@ -264,7 +267,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (s)
 			BBPunfix(s->batCacheid);
 		bat_iterator_end(&bi);
-		BBPkeepref(*res = b->batCacheid);
+		*res = b->batCacheid;
+		BBPkeepref(b);
 		return MAL_SUCCEED;
 	}
 
@@ -368,7 +372,8 @@ bailout:
 		dst->tkey = btkey;
 		dst->tsorted = btsorted;
 		dst->trevsorted = btrevsorted;
-		BBPkeepref(*res = dst->batCacheid);
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;

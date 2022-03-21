@@ -211,7 +211,7 @@ void BBPcold(bat i);
 BAT *BBPdescriptor(bat b);
 int BBPfix(bat b);
 bat BBPindex(const char *nme);
-void BBPkeepref(bat i);
+void BBPkeepref(BAT *b) __attribute__((__nonnull__(1)));
 bat BBPlimit;
 void BBPlock(void);
 BAT *BBPquickdesc(bat b);

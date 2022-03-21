@@ -3143,24 +3143,25 @@ BBPrelease(bat i)
  * [first step, initiate code change]
  */
 void
-BBPkeepref(bat i)
+BBPkeepref(BAT *b)
 {
-	if (BBPcheck(i)) {
-		bool lock = locked_by == 0 || locked_by != MT_getpid();
-		BAT *b;
-
-		incref(i, true, lock);
-		if ((b = BBPdescriptor(i)) != NULL) {
-			BATsettrivprop(b);
-			if (GDKdebug & (CHECKMASK | PROPMASK))
-				BATassertProps(b);
-			if (BATsetaccess(b, BAT_READ) == NULL)
-				return; /* already decreffed */
-		}
-
-		assert(BBP_refs(i));
-		decref(i, false, false, lock, __func__);
+	assert(b != NULL);
+	bool lock = locked_by == 0 || locked_by != MT_getpid();
+	int i = b->batCacheid;
+	int refs = incref(i, true, lock);
+	if (refs == 1) {
+		MT_lock_set(&b->theaplock);
+		BATsettrivprop(b);
+		MT_lock_unset(&b->theaplock);
 	}
+	if (GDKdebug & (CHECKMASK | PROPMASK))
+		BATassertProps(b);
+	if (BATsetaccess(b, BAT_READ) == NULL)
+		return;		/* already decreffed */
+
+	refs = decref(i, false, false, lock, __func__);
+	(void) refs;
+	assert(refs >= 0);
 }
 
 static inline void

@@ -89,7 +89,7 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mask.mask", GDK_EXCEPTION);
 
 	*ret=  dst->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(dst);
 	return MAL_SUCCEED;
 }
 
@@ -116,7 +116,7 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (dst == NULL)
 		throw(MAL, "mask.umask", GDK_EXCEPTION);
 	*ret=  dst->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(dst);
 	return MAL_SUCCEED;
 }
 

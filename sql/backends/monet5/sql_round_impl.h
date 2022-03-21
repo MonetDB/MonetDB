@@ -694,7 +694,8 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 			throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	BBPkeepref(*res = dst->batCacheid);
+	*res = dst->batCacheid;
+	BBPkeepref(dst);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

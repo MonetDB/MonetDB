@@ -136,7 +136,8 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bn->tsorted = n <= 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = n <= 1;
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return msg;
 }
 
@@ -181,8 +182,10 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
-	if (bn)						/* implies msg==MAL_SUCCEED */
-		BBPkeepref(*ret = bn->batCacheid);
+	if (bn) {					/* implies msg==MAL_SUCCEED */
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
+	}
 	return msg;
 }
 
@@ -261,7 +264,8 @@ bailout:
 		dst->tkey = btkey;
 		dst->tsorted = btsorted;
 		dst->trevsorted = btrevsorted;
-		BBPkeepref(*res = dst->batCacheid);
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
 	}
 	return msg;
 }
@@ -349,7 +353,8 @@ bailout:
 		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*res = dst->batCacheid);
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
@@ -446,7 +451,8 @@ bailout:
 		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*res = dst->batCacheid);
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;

@@ -189,7 +189,7 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg =  VLTgenerator_table_(&bn, cntxt, mb, stk, pci);
 	if( msg == MAL_SUCCEED){
 		*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-		BBPkeepref(bn->batCacheid);
+		BBPkeepref(bn);
 	}
 	return msg;
 }
@@ -426,7 +426,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn->tnil = false;
 			bn->tnonil = true;
 			* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-			BBPkeepref(bn->batCacheid);
+			BBPkeepref(bn);
 			return MAL_SUCCEED;
 		} else {
 			if (cand)
@@ -483,7 +483,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -706,7 +706,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	bn->tkey = true;
 	bn->tnil = false;
 	bn->tnonil = true;
-	BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
+	*getArgReference_bat(stk,pci,0) = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -770,7 +771,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (bp == NULL)
 			throw(MAL, "generator.projection", GDK_EXCEPTION);
 		*ret = bp->batCacheid;
-		BBPkeepref(*ret);
+		BBPkeepref(bp);
 		return MAL_SUCCEED;
 	}
 
@@ -848,7 +849,8 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		bn->tkey = false;
 		bn->tnil = false;
 		bn->tnonil = false;
-		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
+		*getArgReference_bat(stk,pci,0) = bn->batCacheid;
+		BBPkeepref(bn);
 	}
 	return MAL_SUCCEED;
 }
@@ -913,8 +915,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL,"generator.join", GDK_EXCEPTION);
 		*getArgReference_bat(stk, pci, 0) = bln->batCacheid;
 		*getArgReference_bat(stk, pci, 1) = brn->batCacheid;
-		BBPkeepref(bln->batCacheid);
-		BBPkeepref(brn->batCacheid);
+		BBPkeepref(bln);
+		BBPkeepref(brn);
 		return MAL_SUCCEED;
 	}
 
@@ -1000,11 +1002,15 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;
 	if( q){
-		BBPkeepref(*getArgReference_bat(stk,pci,0)= brn->batCacheid);
-		BBPkeepref(*getArgReference_bat(stk,pci,1)= bln->batCacheid);
+		*getArgReference_bat(stk,pci,0) = brn->batCacheid;
+		BBPkeepref(brn);
+		*getArgReference_bat(stk,pci,1) = bln->batCacheid;
+		BBPkeepref(bln);
 	} else {
-		BBPkeepref(*getArgReference_bat(stk,pci,0)= bln->batCacheid);
-		BBPkeepref(*getArgReference_bat(stk,pci,1)= brn->batCacheid);
+		*getArgReference_bat(stk,pci,0) = bln->batCacheid;
+		BBPkeepref(bln);
+		*getArgReference_bat(stk,pci,1) = brn->batCacheid;
+		BBPkeepref(brn);
 	}
 	if ( materialized){
 		BBPreclaim(bl);
@@ -1154,8 +1160,10 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	brn->tnonil = false;
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;
-	BBPkeepref(*getArgReference_bat(stk,pci,0)= bln->batCacheid);
-	BBPkeepref(*getArgReference_bat(stk,pci,1)= brn->batCacheid);
+	*getArgReference_bat(stk,pci,0) = bln->batCacheid;
+	BBPkeepref(bln);
+	*getArgReference_bat(stk,pci,1) = brn->batCacheid;
+	BBPkeepref(brn);
 	if(blow) BBPunfix(blow->batCacheid);
 	if(bhgh) BBPunfix(bhgh->batCacheid);
 	return msg;
