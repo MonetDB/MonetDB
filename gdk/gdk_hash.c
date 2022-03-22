@@ -635,22 +635,6 @@ BAThashsave(BAT *b, bool dosync)
 	BAThashsave_intern(b, dosync);
 }
 
-#ifdef PERSISTENTHASH
-static void
-BAThashsync(void *arg)
-{
-	BAT *b = arg;
-
-	/* we could check whether b->thash == NULL before getting the
-	 * lock, and only lock if it isn't; however, it's very
-	 * unlikely that that is the case, so we don't */
-	MT_rwlock_rdlock(&b->thashlock);
-	BAThashsave_intern(b, true);
-	MT_rwlock_rdunlock(&b->thashlock);
-	BBPunfix(b->batCacheid);
-}
-#endif
-
 #define EQbte(a, b)	((a) == (b))
 #define EQsht(a, b)	((a) == (b))
 #define EQint(a, b)	((a) == (b))
@@ -1032,32 +1016,6 @@ BAThash(BAT *b)
 			MT_rwlock_wrunlock(&b->thashlock);
 			return GDK_FAIL;
 		}
-#ifdef PERSISTENTHASH
-		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap->dirty && !GDKinmemory(b->theap->farmid)) {
-			Hash *h = b->thash;
-			((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
-			((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
-			((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
-			((size_t *) h->heapbckt.base)[3] = (size_t) h->width;
-			((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
-			((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
-			((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
-			MT_Id tid;
-			BBPfix(b->batCacheid);
-			char name[MT_NAME_LEN];
-			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
-			MT_rwlock_wrunlock(&b->thashlock);
-			if (MT_create_thread(&tid, BAThashsync, b,
-					     MT_THR_DETACHED,
-					     name) < 0) {
-				/* couldn't start thread: clean up */
-				BBPunfix(b->batCacheid);
-			}
-			return GDK_SUCCEED;
-		} else
-			TRC_DEBUG(ACCELERATOR,
-					"NOT persisting hash %d\n", b->batCacheid);
-#endif
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 	return GDK_SUCCEED;
