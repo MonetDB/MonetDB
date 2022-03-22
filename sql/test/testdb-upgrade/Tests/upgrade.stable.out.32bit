@@ -2753,3 +2753,4 @@ CREATE function sys.url_extract_host(url string, no_www bool) RETURNS STRING
 EXTERNAL NAME url."extractURLHost";
 GRANT EXECUTE ON FUNCTION url_extract_host(string, bool) TO PUBLIC;
 update sys.functions set system = true where system <> true and name = 'url_extract_host' and schema_id = 2000 and type = 1;
+
