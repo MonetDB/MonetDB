@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021-SP4/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP5/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -846,6 +846,24 @@ else
 fi
 
 %changelog
+* Tue Mar 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.21-20220322
+- Rebuilt.
+
+* Fri Mar 18 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.21-20220322
+- gdk: Fixed a race condition which could cause a too large size being written
+  for a .theap file to the BBP.dir file after the correct size file had
+  been saved to disk.
+- gdk: We now ignore the size and capacity columns in the BBP.dir file.
+  These values are essential during run time, but not useful in the
+  on-disk image of the database.
+
+* Fri Mar 18 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.21-20220322
+- merovingian: Disabled logging into merovingian.log of next info message types:
+  "proxying client <host>:<port> for database '<dbname>' to <url>" and
+  "target connection is on local UNIX domain socket, passing on filedescriptor instead of proxying".
+  These messages were written to the log file at each connection. In most
+  cases this information is not used. The disabling reduces the log file size.
+
 * Fri Mar 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.19-20220311
 - Rebuilt.
 - GH#7267: Update after delete does not update some rows
