@@ -41,9 +41,10 @@ unshare_varsized_heap(BAT *b)
 		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
 		int parent = b->tvheap->parentid;
-		HEAPdecref(b->tvheap, false);
+		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		HEAPdecref(oh, false);
 		BBPunshare(parent);
 		BBPunfix(parent);
 	}
@@ -418,11 +419,12 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			return GDK_FAIL;
 		}
 		BBPunshare(b->tvheap->parentid);
-		MT_lock_set(&b->theaplock);
-		HEAPdecref(b->tvheap, false);
 		ATOMIC_INIT(&h->refs, 1);
+		MT_lock_set(&b->theaplock);
+		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		HEAPdecref(oh, false);
 	}
 	/* copy data from n to b */
 	r = BATcount(b);
