@@ -421,7 +421,11 @@ ilog2(BUN x)
 	b && b->torderidx ? "O" : "",					\
 	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid) && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
 
+#ifdef __SANITIZE_THREAD__
+#define BBP_BATMASK	31
+#else
 #define BBP_BATMASK	((1 << (SIZEOF_SIZE_T + 5)) - 1)
+#endif
 
 struct PROPrec {
 	enum prop_t id;
@@ -469,7 +473,6 @@ extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
 extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
 extern size_t GDK_mmap_pagesize; /* mmap granularity */
-extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 
 #define BATcheck(tst, err)				\

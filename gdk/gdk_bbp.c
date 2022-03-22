@@ -2566,12 +2566,14 @@ BBPinsert(BAT *bn)
 	bn->batCacheid = i;
 	bn->creator_tid = MT_getpid();
 
+	MT_lock_set(&GDKswapLock(i));
 	BBP_status_set(i, BBPDELETING|BBPHOT);
 	BBP_cache(i) = NULL;
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 	BBP_pid(i) = MT_getpid();
+	MT_lock_unset(&GDKswapLock(i));
 
 #ifdef HAVE_HGE
 	if (bn->ttype == TYPE_hge)
