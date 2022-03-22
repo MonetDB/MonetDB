@@ -492,6 +492,9 @@ extern MT_Lock GDKtmLock;
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 
+#define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << 63)
+#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 63) - 1)
+
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */
 #define GDK_UNIQUE_ESTIMATE_KEEP_FRACTION	1000

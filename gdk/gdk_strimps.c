@@ -783,12 +783,14 @@ STRMPcreate(BAT *b, BAT *s)
 void
 STRMPdecref(Strimps *strimps, bool remove)
 {
+	if (remove)
+		ATOMIC_OR(&strimps->strimps.refs, HEAPREMOVE);
+	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&strimps->strimps.refs);
 	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " BUNFMT "\n",
-		  strimps->strimps.filename, (BUN) (ATOMIC_GET(&strimps->strimps.refs) - 1));
-	strimps->strimps.remove |= remove;
-	if (ATOMIC_DEC(&strimps->strimps.refs) == 0) {
+		  strimps->strimps.filename, (BUN) (refs & HEAPREFS));
+	if ((refs & HEAPREFS) == 0) {
 		ATOMIC_DESTROY(&strimps->strimps.refs);
-		HEAPfree(&strimps->strimps, strimps->strimps.remove);
+		HEAPfree(&strimps->strimps, (bool) (refs & HEAPREMOVE));
 		GDKfree(strimps);
 	}
 
@@ -797,10 +799,9 @@ STRMPdecref(Strimps *strimps, bool remove)
 void
 STRMPincref(Strimps *strimps)
 {
+	ATOMIC_BASE_TYPE refs = ATOMIC_INC(&strimps->strimps.refs);
 	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s to " BUNFMT "\n",
-		  strimps->strimps.filename, (BUN) (ATOMIC_GET(&strimps->strimps.refs) + 1));
-	(void)ATOMIC_INC(&strimps->strimps.refs);
-
+		  strimps->strimps.filename, (BUN) (refs & HEAPREFS));
 }
 
 void
