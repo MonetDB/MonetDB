@@ -1079,9 +1079,8 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 
+	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
-		MT_sema_down(&task->sema);
-
 		/* stage one, break the rows spread the work over the workers */
 		switch (task->state) {
 		case BREAKROW:
@@ -1122,6 +1121,7 @@ SQLworker(void *arg)
 			goto do_return;
 		}
 		MT_sema_up(&task->reply);
+		MT_sema_down(&task->sema);
 	}
 	MT_sema_up(&task->reply);
 

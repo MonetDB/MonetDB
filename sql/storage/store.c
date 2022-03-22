@@ -2174,6 +2174,7 @@ void
 store_exit(sqlstore *store)
 {
 	sql_allocator *sa = store->sa;
+	MT_lock_set(&store->commit);
 	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
 
@@ -2184,11 +2185,12 @@ store_exit(sqlstore *store)
 			const int sleeptime = 100;
 			MT_lock_unset(&store->flush);
 			MT_lock_unset(&store->lock);
+			MT_lock_unset(&store->commit);
 			MT_sleep_ms(sleeptime);
+			MT_lock_set(&store->commit);
 			MT_lock_set(&store->lock);
 			MT_lock_set(&store->flush);
 		}
-		MT_lock_set(&store->commit);
 		if (!list_empty(store->changes)) {
 			ulng oldest = store_timestamp(store)+1;
 			for(node *n=store->changes->h; n; n = n->next) {

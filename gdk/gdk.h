@@ -567,10 +567,10 @@ typedef struct {
 
 	ATOMIC_TYPE refs;	/* reference count for this heap */
 	bte farmid;		/* id of farm where heap is located */
-	bool cleanhash:1,	/* string heaps must clean hash */
-		dirty:1,	/* specific heap dirty marker */
-		remove:1,	/* remove storage file when freeing */
-		wasempty:1;	/* heap was empty when last saved/created */
+	bool cleanhash;		/* string heaps must clean hash */
+	bool dirty;		/* specific heap dirty marker */
+	bool remove;		/* remove storage file when freeing */
+	bool wasempty;	    /* heap was empty when last saved/created */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
@@ -762,6 +762,18 @@ typedef struct {
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
 #define GDKLIBRARY		061046U /* first after Jan2022 */
 
+/* The batRestricted field indicates whether a BAT is readonly.
+ * we have modes: BAT_WRITE  = all permitted
+ *                BAT_APPEND = append-only
+ *                BAT_READ   = read-only
+ * VIEW bats are always mapped read-only.
+ */
+typedef enum {
+	BAT_WRITE,		  /* all kinds of access allowed */
+	BAT_READ,		  /* only read-access allowed */
+	BAT_APPEND,		  /* only reads and appends allowed */
+} restrict_t;
+
 typedef struct BAT {
 	/* static bat properties */
 	oid hseqbase;		/* head seq base */
@@ -769,13 +781,12 @@ typedef struct BAT {
 	bat batCacheid;		/* index into BBP */
 
 	/* dynamic bat properties */
+	restrict_t batRestricted; /* access privileges */
+	bool batTransient;	/* should the BAT persist on disk? */
 	bool
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
-	 batDirtydesc:1,	/* bat descriptor dirty marker */
-	 batTransient:1;	/* should the BAT persist on disk? */
-	uint8_t	/* adjacent bit fields are packed together (if they fit) */
-	 batRestricted:2;	/* access privileges */
+	 batDirtydesc:1;	/* bat descriptor dirty marker */
 	uint16_t /* adjacent bit fields are packed together (if they fit) */
 	 selcnt:10;		/* how often used in equi select without hash */
 	role_t batRole;		/* role of the bat */
@@ -1231,18 +1242,6 @@ gdk_export gdk_return BATmode(BAT *b, bool transient);
 gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
-
-/* The batRestricted field indicates whether a BAT is readonly.
- * we have modes: BAT_WRITE  = all permitted
- *                BAT_APPEND = append-only
- *                BAT_READ   = read-only
- * VIEW bats are always mapped read-only.
- */
-typedef enum {
-	BAT_WRITE,		  /* all kinds of access allowed */
-	BAT_READ,		  /* only read-access allowed */
-	BAT_APPEND,		  /* only reads and appends allowed */
-} restrict_t;
 
 gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
 	__attribute__((__warn_unused_result__));
