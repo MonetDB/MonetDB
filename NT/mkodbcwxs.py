@@ -93,7 +93,7 @@ def main():
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
                vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\lz4.dll'),
-               vcpkg.format(r'bin\lzma.dll'),
+               vcpkg.format(r'bin\liblzma.dll'),
                vcpkg.format(r'bin\zlib1.dll')])
     print(r'            </Directory>')
     id = comp(features, id, 12,
