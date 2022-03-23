@@ -318,6 +318,9 @@ DFLOWworker(void *T)
 			/* wait until we are allowed to start working */
 			MT_sema_down(&t->s);
 			t->flag = RUNNING;
+			if (ATOMIC_GET(&exiting)) {
+				break;
+			}
 		}
 		assert(t->flag == RUNNING);
 		cntxt = ATOMIC_PTR_GET(&t->cntxt);
@@ -980,8 +983,7 @@ stopMALdataflow(void)
 		MT_lock_set(&dataflowLock);
 		/* first wake up all running threads */
 		for (i = 0; i < THREADS; i++) {
-			if (workers[i].flag == RUNNING)
-				MT_sema_up(&todo->s);
+			MT_sema_up(&todo->s);
 		}
 		for (i = free_workers; i >= 0; i = workers[i].next) {
 			MT_sema_up(&workers[i].s);
