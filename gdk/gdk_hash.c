@@ -448,18 +448,19 @@ HASHgrowbucket(BAT *b)
 bool
 BATcheckhash(BAT *b)
 {
-	bool ret;
 	lng t = 0;
+	Hash *h;
 
-	/* we don't need the lock just to read the value b->thash */
-	if (b->thash == (Hash *) 1) {
+	MT_rwlock_rdlock(&b->thashlock);
+	h = b->thash;
+	MT_rwlock_rdunlock(&b->thashlock);
+	if (h == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
 		MT_rwlock_wrlock(&b->thashlock);
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
-			Hash *h;
 			int fd;
 
 			assert(!GDKinmemory(b->theap->farmid));
@@ -578,13 +579,13 @@ BATcheckhash(BAT *b)
 			GDKfree(h);
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
+		h = b->thash;
 		MT_rwlock_wrunlock(&b->thashlock);
 	}
-	ret = b->thash != NULL;
-	if (ret) {
+	if (h != NULL) {
 		TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
 	}
-	return ret;
+	return h != NULL;
 }
 
 static void
