@@ -4644,6 +4644,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!nmb)
 		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	nmb->starttime = mb->starttime;
 	mod = *getArgReference_str(stk, pci, arg++);
 	fcn = *getArgReference_str(stk, pci, arg++);
 	npci = newStmtArgs(nmb, mod, fcn, pci->argc);
