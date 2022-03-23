@@ -344,7 +344,7 @@ la_bat_clear(old_logger *lg, logaction *la)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		restrict_t access = (restrict_t) b->batRestricted;
+		restrict_t access = b->batRestricted;
 		b->batRestricted = BAT_WRITE;
 		BATclear(b, true);
 		b->batRestricted = access;

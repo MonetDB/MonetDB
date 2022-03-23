@@ -2283,7 +2283,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		b = bn;
 	}
 	MT_lock_set(&b->theaplock);
-	bakmode = (restrict_t) b->batRestricted;
+	bakmode = b->batRestricted;
 	bakdirty = b->batDirtydesc;
 	if (bakmode != newmode) {
 		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
@@ -2337,9 +2337,8 @@ BATsetaccess(BAT *b, restrict_t newmode)
 restrict_t
 BATgetaccess(BAT *b)
 {
-	BATcheck(b, BAT_WRITE /* 0 */);
-	assert(b->batRestricted != 3); /* only valid restrict_t values */
-	return (restrict_t) b->batRestricted;
+	BATcheck(b, BAT_WRITE);
+	return b->batRestricted;
 }
 
 /*

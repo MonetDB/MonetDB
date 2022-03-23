@@ -187,7 +187,7 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (isVIEW(b)) {
 		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
-		restrict_t mode = (restrict_t) b->batRestricted;
+		restrict_t mode = b->batRestricted;
 		BBPunfix(b->batCacheid);
 		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
 			throw(MAL, "bat.append", GDK_EXCEPTION);
@@ -252,7 +252,7 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (isVIEW(b)) {
 		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
-		restrict_t mode = (restrict_t) b->batRestricted;
+		restrict_t mode = b->batRestricted;
 		BBPunfix(b->batCacheid);
 		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
 			throw(MAL, "bat.append", GDK_EXCEPTION);

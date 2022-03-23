@@ -684,7 +684,22 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		}
 		bn->batTransient = false;
 		bn->batCopiedtodisk = true;
-		bn->batRestricted = (properties & 0x06) >> 1;
+		switch ((properties & 0x06) >> 1) {
+		case 0:
+			bn->batRestricted = BAT_WRITE;
+			break;
+		case 1:
+			bn->batRestricted = BAT_READ;
+			break;
+		case 2:
+			bn->batRestricted = BAT_APPEND;
+			break;
+		default:
+			GDKfree(bn->theap);
+			GDKfree(bn);
+			TRC_CRITICAL(GDK, "incorrect batRestricted value");
+			goto bailout;
+		}
 		bn->batCount = (BUN) count;
 		bn->batInserted = bn->batCount;
 		/* set capacity to at least count */
@@ -1905,7 +1920,7 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
 		    BBP_physical(i),
-		    bi->b->batRestricted << 1,
+		    (unsigned) bi->b->batRestricted << 1,
 		    size,
 		    bi->b->hseqbase) < 0 ||
 	    heap_entry(fp, bi, size) < 0 ||
