@@ -69,6 +69,11 @@ typedef struct subrids {
 	void *rids;
 } subrids;
 
+typedef struct sql_updates {
+	BAT* ui;
+	BAT* uv;
+} sql_updates;
+
 /* returns table rids, for the given select ranges */
 typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, const void *key_value_low, const void *key_value_high, ...);
 
@@ -131,6 +136,7 @@ typedef struct table_functions {
 -- binds for column,idx (rdonly, inserts, updates) and delets
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
+typedef void *(*bind_updates_fptr) (sql_trans *tr, sql_column *c);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
@@ -217,6 +223,7 @@ typedef void (*temp_del_tab_fptr) (sql_trans *tr, sql_table *ft);
 typedef struct store_functions {
 
 	bind_col_fptr bind_col;
+	bind_updates_fptr bind_updates;
 	bind_idx_fptr bind_idx;
 	bind_cands_fptr bind_cands;
 
