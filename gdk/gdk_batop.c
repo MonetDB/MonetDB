@@ -92,9 +92,9 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
 		HEAPincref(ni.vh);
 		b->tvheap = ni.vh;
-		BBPshare(ni.vh->parentid);
 		b->batDirtydesc = true;
 		MT_lock_unset(&b->theaplock);
+		BBPshare(ni.vh->parentid);
 		toff = 0;
 		MT_thread_setalgorithm("share vheap");
 	} else {
@@ -1858,10 +1858,15 @@ BATordered(BAT *b)
 {
 	lng t0 = GDKusec();
 
-	if (b->ttype == TYPE_void || b->tsorted || BATcount(b) == 0)
+	MT_lock_set(&b->theaplock);
+	if (b->ttype == TYPE_void || b->tsorted || BATcount(b) == 0) {
+		MT_lock_unset(&b->theaplock);
 		return true;
-	if (b->tnosorted > 0 || !ATOMlinear(b->ttype))
+	}
+	if (b->tnosorted > 0 || !ATOMlinear(b->ttype)) {
+		MT_lock_unset(&b->theaplock);
 		return false;
+	}
 
 	/* There are a few reasons why we need a lock here.  It may be
 	 * that multiple threads call this functions at the same time
@@ -1871,7 +1876,6 @@ BATordered(BAT *b)
 	 * remain accessible (could have used bat_iterator for that),
 	 * and, and this is the killer argument, we may need to make
 	 * changes to the bat descriptor. */
-	MT_lock_set(&b->theaplock);
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->tsorted && b->tnosorted == 0) {
 		b->batDirtydesc = true;
@@ -2012,13 +2016,19 @@ BATordered_rev(BAT *b)
 
 	if (b == NULL || !ATOMlinear(b->ttype))
 		return false;
-	if (BATcount(b) <= 1 || b->trevsorted)
-		return true;
-	if (b->ttype == TYPE_void)
-		return is_oid_nil(b->tseqbase);
-	if (BATtdense(b) || b->tnorevsorted > 0)
-		return false;
 	MT_lock_set(&b->theaplock);
+	if (BATcount(b) <= 1 || b->trevsorted) {
+		MT_lock_unset(&b->theaplock);
+		return true;
+	}
+	if (b->ttype == TYPE_void) {
+		MT_lock_unset(&b->theaplock);
+		return is_oid_nil(b->tseqbase);
+	}
+	if (BATtdense(b) || b->tnorevsorted > 0) {
+		MT_lock_unset(&b->theaplock);
+		return false;
+	}
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		b->batDirtydesc = true;

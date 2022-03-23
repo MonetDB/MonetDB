@@ -125,12 +125,6 @@ static void BBPcallbacks(void);
 static lng BBPlogno;		/* two lngs of extra info in BBP.dir */
 static lng BBPtransid;
 
-#ifdef HAVE_HGE
-/* start out by saying we have no hge, but as soon as we've seen one,
- * we'll always say we do have it */
-static bool havehge = false;
-#endif
-
 #define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
 
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? strtol((s) + 4, NULL, 8) : 0)
@@ -468,10 +462,6 @@ heapinit(BAT *b, const char *buf,
 	*hashash = var & 2;
 #endif
 	var &= ~2;
-#ifdef HAVE_HGE
-	if (strcmp(type, "hge") == 0)
-		havehge = true;
-#endif
 	if ((t = ATOMindex(type)) < 0) {
 		if ((t = ATOMunknown_find(type)) == 0) {
 			TRC_CRITICAL(GDK, "no space for atom %s", type);
@@ -1935,9 +1925,11 @@ BBPdir_header(FILE *f, int n, lng logno, lng transid)
 	if (fprintf(f, "BBP.dir, GDKversion %u\n%d %d %d\nBBPsize=%d\nBBPinfo=" LLFMT " " LLFMT "\n",
 		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID,
 #ifdef HAVE_HGE
-		    havehge ? SIZEOF_HGE :
+		    SIZEOF_HGE
+#else
+		    SIZEOF_LNG
 #endif
-		    SIZEOF_LNG, n, logno, transid) < 0 ||
+		    , n, logno, transid) < 0 ||
 	    ferror(f)) {
 		GDKsyserror("Writing BBP.dir header failed\n");
 		return GDK_FAIL;
@@ -2481,11 +2473,6 @@ BBPinsert(BAT *bn)
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 	BBP_pid(i) = MT_getpid();
 	MT_lock_unset(&GDKswapLock(i));
-
-#ifdef HAVE_HGE
-	if (bn->ttype == TYPE_hge)
-		havehge = true;
-#endif
 
 	if (*BBP_bak(i) == 0)
 		len = snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (unsigned) i);
