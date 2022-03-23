@@ -1221,19 +1221,29 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error
 			else if (!is_sht_nil(*(sht*)res))
 				* (sht *) resout += *(sht*) res;
 			break;
-		case TYPE_flt:
 		case TYPE_int:
 			if (is_int_nil(*(int*)resout))
 				* (int *) resout = *(int*) res;
 			else if (!is_int_nil(*(int*)res))
 				* (int *) resout += *(int*) res;
 			break;
-		case TYPE_dbl:
+		case TYPE_flt:
+			if (is_flt_nil(*(flt*)resout))
+				* (flt *) resout = *(flt*) res;
+			else if (!is_flt_nil(*(flt*)res))
+				* (flt *) resout += *(flt*) res;
+			break;
 		case TYPE_lng:
 			if (is_lng_nil(*(lng*)resout))
 				* (lng *) resout = *(lng*) res;
 			else if (!is_lng_nil(*(lng*)res))
 				* (lng *) resout += *(lng*) res;
+			break;
+		case TYPE_dbl:
+			if (is_dbl_nil(*(dbl*)resout))
+				* (dbl *) resout = *(dbl*) res;
+			else if (!is_dbl_nil(*(dbl*)res))
+				* (dbl *) resout += *(dbl*) res;
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
@@ -3896,9 +3906,12 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		s = ATOMsize(ATOMtype(b->ttype));
 	}
 	if (aggr != NULL) {	/* else: malloc error */
+		memcpy(aggr, res, s);
+		/*
 		if (ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
 		    ATOMcmp(b->ttype, res, aggr) < 0)
 			memcpy(aggr, res, s);
+			*/
 	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
@@ -4053,9 +4066,12 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		s = ATOMsize(ATOMtype(b->ttype));
 	}
 	if (aggr != NULL) {	/* else: malloc error */
+		memcpy(aggr, res, s);
+		/*
 		if (ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
 		    ATOMcmp(b->ttype, res, aggr) > 0)
 			memcpy(aggr, res, s);
+			*/
 	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",

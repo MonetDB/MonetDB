@@ -535,7 +535,7 @@ void traceFunction(component_t comp, MalBlkPtr mb, MalStkPtr stk, int flg)
 void
 setVariableScope(MalBlkPtr mb)
 {
-	int pc, k, depth=0, dflow= -1, jump = 0;
+	int pc, k, depth=0, dflow= -1, jump = 0, pp = -1;
 	InstrPtr p;
 
 	/* reset the scope admin */
@@ -559,9 +559,10 @@ setVariableScope(MalBlkPtr mb)
 
 		if( blockStart(p)){
 			if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 &&
-					(strcmp(getFunctionId(p),"dataflow")==0 || strcmp(getFunctionId(p),"pipelines")==0)){
+					(strcmp(getFunctionId(p),"dataflow")==0 || (pp=(strcmp(getFunctionId(p),"pipelines")==0)))){
 				if( dflow != -1)
 					addMalException(mb,"setLifeSpan nested dataflow blocks not allowed" );
+				pp = pc;
 				dflow= depth;
 				jump= p->jump;
 			} else
@@ -580,7 +581,7 @@ setVariableScope(MalBlkPtr mb)
 			if (k < p->retc )
 				setVarUpdated(mb,v, pc);
 			if ( getVarScope(mb,v) == depth )
-				setVarEolife(mb,v, (k >= p->inout && k < p->retc && jump > 0)?jump:pc);
+				setVarEolife(mb,v, ((k >= p->retc && getVarDeclared(mb, v) < pp) || (k >= p->inout && k < p->retc && jump > 0))?jump:pc);
 
 			if ( k >= p->retc && getVarScope(mb,v) < depth )
 				setVarEolife(mb,v,-1);
@@ -600,6 +601,7 @@ setVariableScope(MalBlkPtr mb)
 			if( dflow == depth) {
 				dflow= -1;
 				jump = -1;
+				pp = -1;
 			}
 			else depth--;
 		}

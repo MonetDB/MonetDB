@@ -105,7 +105,7 @@ _rel_partition(mvc *sql, sql_rel *rel)
 {
 	list *tables = sa_list(sql->sa);
 	/* find basetable relations */
-	/* mark one (largest) with REL_PARTITION */
+	/* mark one (largest) with partition */
 	find_basetables(sql, rel, tables);
 	if (list_length(tables)) {
 		sql_rel *r;
@@ -125,7 +125,7 @@ _rel_partition(mvc *sql, sql_rel *rel)
 			;
 		r = n->data;
 		/*  TODO, we now pick first (okay?)! In case of self joins we need to pick the correct table */
-		r->flag = REL_PARTITION;
+		r->partition = 1;
 	}
 	return rel;
 }
@@ -154,48 +154,104 @@ has_groupby(sql_rel *rel)
 	return 0;
 }
 
-sql_rel *
-rel_partition(mvc *sql, sql_rel *rel)
+#define REL_PARTITION 1
+#define SPB 2
+#define EPB 3
+#define INPB 4
+/*
+ * REL_PARTITION (need partition via bind).
+ */
+static int
+rel_partition_(mvc *sql, sql_rel *rel, int pb)
 {
-	if (mvc_highwater(sql))
-		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+	int res = 0, lres = 0, rres = 0;
+	if (mvc_highwater(sql)) {
+		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return 0;
+	}
 
 	if (is_basetable(rel->op)) {
-		rel->flag = REL_PARTITION;
-	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_groupby(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
+		rel->partition = 1;
+		res = REL_PARTITION;
+	} else if (is_groupby(rel->op)) {
 		if (rel->l)
-			rel_partition(sql, rel->l);
-	} else if (is_semi(rel->op) || is_set(rel->op) || is_merge(rel->op)) {
+			res = rel_partition_(sql, rel->l, SPB);
+		rel->parallel = 1;
+		if (res == REL_PARTITION)
+			rel->spb = 1;
+		sql_rel *l = rel->l;
+		if ((res == SPB || !res) && (is_set(l->op) || is_semi(l->op)))
+			l->spb = 1;
+		if (!res)
+			return 0;
+		res = EPB;
+	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
+		if (pb && is_simple_project(rel->op) && rel->r)
+			return 0;
 		if (rel->l)
-			rel_partition(sql, rel->l);
+			res = rel_partition_(sql, rel->l, pb);
+	} else if (is_set(rel->op)) {
+		if (rel->l)
+			lres = rel_partition_(sql, rel->l, 0);
 		if (rel->r)
-			rel_partition(sql, rel->r);
+			rres = rel_partition_(sql, rel->r, 0);
+		if (!lres || !rres)
+			return 0;
+		res = pb;
+	} else if (is_semi(rel->op) || is_merge(rel->op)) {
+		if (rel->l)
+			res = rel_partition_(sql, rel->l, pb);
+		if (rel->r)
+			res = rel_partition_(sql, rel->r, pb);
+		res = pb;
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
 		if (rel->r && rel->card <= CARD_AGGR)
-			rel_partition(sql, rel->r);
+			res = rel_partition_(sql, rel->r, pb);
 	} else if (is_join(rel->op)) {
-		if (has_groupby(rel->l) || has_groupby(rel->r)) {
-			if (rel->l)
-				rel_partition(sql, rel->l);
-			if (rel->r)
-				rel_partition(sql, rel->r);
-		} else
+		if (pb && is_outerjoin(rel->op))
+			return 0;
+		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
+		if (l || r) {
+			int lres = rel_partition_(sql, rel->l, pb);
+			int rres = rel_partition_(sql, rel->r, pb);
+			if (!lres || !rres)
+				return 0;
+			if (l && lres == EPB && !r && rres == REL_PARTITION)
+				res = SPB;
+			if (pb) {
+				rel->partition = l?1:2;
+				rel->spb = 1;
+			}
+		} else {
+			if (is_left(rel->op))
+				return rel_partition_(sql, rel->l, pb);
 			_rel_partition(sql, rel);
+			res = REL_PARTITION;
+		}
 	} else if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
-				rel_partition(sql, rel->l);
+				res = rel_partition_(sql, rel->l, pb);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				rel_partition(sql, rel->l);
+				res = rel_partition_(sql, rel->l, pb);
 			if (rel->r)
-				rel_partition(sql, rel->r);
+				res = rel_partition_(sql, rel->r, pb);
 		}
 	} else if (rel->op == op_table) {
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
-			rel_partition(sql, rel->l);
+			res = rel_partition_(sql, rel->l, pb);
+		return 0;
 	} else {
 		assert(0);
 	}
-	return rel;
+	if (rel_is_ref(rel))
+		return 0;
+	return res;
+}
+
+int
+rel_partition(mvc *sql, sql_rel *rel)
+{
+	return rel_partition_(sql, rel, 0);
 }

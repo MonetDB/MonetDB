@@ -11,6 +11,6 @@
 
 #include "rel_semantic.h"
 
-extern sql_rel * rel_partition(mvc *sql, sql_rel *rel);
+extern int rel_partition(mvc *sql, sql_rel *rel);
 
 #endif /*_REL_PARTITION_H_*/

@@ -3698,6 +3698,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	bool abort_on_error;
 	int *stmt_nr = NULL;
 	int avg = 0;
+	int pipeline_mod = (be->pipeline && !grp);
 
 	if (op1->nr < 0)
 		return NULL;
@@ -3705,6 +3706,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		return NULL;
 	mod = sql_func_mod(op->func);
 	aggrfunc = backend_function_imp(be, op->func);
+
+	if (pipeline_mod && strcmp(aggrfunc, "count") == 0) /* incremental versions TODO do for other aggr functions */
+		mod = putName("iaggr");
 
 	if (strcmp(aggrfunc, "avg") == 0)
 		avg = 1;
@@ -4553,7 +4557,8 @@ pp_jump(backend *be, stmt *label, int nrparts)
 int
 pp_end(backend *be, stmt *label)
 {
-	be->pp = be->nrparts = 0;
+	be->pp = be->nrparts = be->pipeline = 0;
+	be->ppstmt = NULL;
 	InstrPtr q = newAssignmentArgs(be->mb, 2);
 	if (q == NULL)
 		return -1;

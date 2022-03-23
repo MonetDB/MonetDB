@@ -87,7 +87,7 @@ static sql_rel *
 rel_count_gt_zero(visitor *v, sql_rel *rel)
 {
 	mvc *sql = v->sql;
-	if (is_groupby(rel->op)) {
+	if (is_groupby(rel->op) && rel->parallel) {
 		list *exps, *gbe;
 
 		gbe = rel->r;
@@ -158,7 +158,6 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			sql_exp *cnt = rel_find_aggr_exp(sql, rel, nexps, avg, "count");
 			sql_exp *sum = rel_find_aggr_exp(sql, rel, nexps, avg, "sum");
 			sql_subfunc *div, *ifthen, *cmp;
-			sql_subtype *dbl_t;
 			const char *rname = NULL, *name = NULL;
 
 			rname = exp_relname(avg);
@@ -183,12 +182,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			}
 			/* create new sum/cnt exp */
 
-			/* For now we always convert to dbl */
-			/* TODO fix this conversion could be done after sum! */
-			//dbl_t = sql_bind_localtype("dbl");
-			//cnt_d = exp_convert(sql->sa, cnt, exp_subtype(cnt), dbl_t);
 			cnt_d = cnt;
-			//sum = exp_convert(sql->sa, sum, exp_subtype(sum), dbl_t);
 
 			args = new_exp_list(sql->sa);
 			append(args, cnt);
@@ -199,13 +193,19 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 
 			args = new_exp_list(sql->sa);
 			append(args, cond);
-			//append(args, exp_atom(sql->sa, atom_general(sql->sa, dbl_t, NULL)));
 			append(args, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(cnt_d), NULL)));
 			/* TODO only ifthenelse if value column may have nil's*/
 			append(args, cnt_d);
 			ifthen = find_func(sql, "ifthenelse", args);
 			assert(ifthen);
 			cnt_d = exp_op(sql->sa, args, ifthen);
+
+			sql_subtype *avg_t = exp_subtype(avg);
+			sql_subtype *dbl_t = sql_bind_localtype("dbl");
+			if (subtype_cmp(avg_t, dbl_t) == 0) {
+				cnt_d = exp_convert(sql->sa, cnt, exp_subtype(cnt), dbl_t);
+				sum = exp_convert(sql->sa, sum, exp_subtype(sum), dbl_t);
+			}
 
 			args = new_exp_list(sql->sa);
 
@@ -216,7 +216,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 				sum = exp_convert(sql->sa, sum, st, ct);
 			} else if (st->type->eclass == EC_FLT) {
 				if (ct->type != st->type) {
-					dbl_t = sql_bind_localtype("dbl");
+					sql_subtype *dbl_t = sql_bind_localtype("dbl");
 					if (ct->type->eclass != EC_FLT || st->type == dbl_t->type)
 						cnt_d = exp_convert(sql->sa, cnt_d, exp_subtype(cnt_d), st);
 				}
@@ -255,6 +255,9 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 				append(pexps, exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e)));
 		}
 		sql_rel *nrel = rel_groupby(sql, rel_dup(rel->l), rel->r);
+		nrel->parallel = rel->parallel;
+		nrel->partition = rel->partition;
+		nrel->spb = rel->spb;
 		rel_destroy(rel);
 		nrel->exps = nexps;
 		rel = rel_project(sql->sa, nrel, pexps);

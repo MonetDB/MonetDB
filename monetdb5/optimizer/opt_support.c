@@ -389,7 +389,8 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 
 	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
 		 (getFunctionId(p) == setAccessRef ||
-	 	  getFunctionId(p) == setWriteModeRef ))
+	 	  getFunctionId(p) == setWriteModeRef ||
+		  getFunctionId(p) == singleRef))
 		return TRUE;
 
 	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
@@ -429,7 +430,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		if (getFunctionId(p) == not_uniqueRef) return FALSE;
 		if (getFunctionId(p) == zero_or_oneRef) return FALSE;
 		if (getFunctionId(p) == mvcRef) return FALSE;
-		if (getFunctionId(p) == singleRef) return FALSE;
 		if (getFunctionId(p) == importColumnRef) return FALSE;
 		return TRUE;
 	}

@@ -270,6 +270,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->counter = -1;
 	s->nr_workers = GDKnr_threads;
 	ATOMIC_SET(&s->workers, -1);
+	s->error = NULL;
 
 	/* fix endless call of runMALpipelines but use as loop for parts */
 	mb->stmt[startpc]->fcn = NULL;
@@ -291,8 +292,9 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 		MT_sema_down(&s->s);
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
+	str err = s->error;
 	GDKfree(s);
-	return MAL_SUCCEED;
+	return err;
 }
 
 static void

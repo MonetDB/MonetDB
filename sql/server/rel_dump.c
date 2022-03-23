@@ -431,6 +431,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 
 	print_indent(sql, fout, depth, decorate);
 
+	if ((GDKdebug & FORCEMITOMASK) == 0 && rel->spb)
+			mnstr_printf(fout, " start ");
+	if ((GDKdebug & FORCEMITOMASK) == 0 && rel->parallel)
+			mnstr_printf(fout, " || ");
+
 	if (is_single(rel))
 		mnstr_printf(fout, "single ");
 
@@ -470,6 +475,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		else
 			rel_base_dump_exps(fout, rel);
+		if ((GDKdebug & FORCEMITOMASK) == 0 && rel->partition)
+				mnstr_printf(fout, " PARTITION");
 	} 	break;
 	case op_table:
 		mnstr_printf(fout, "table (");
@@ -552,6 +559,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		if (is_join(rel->op) && rel->attr) /* mark joins */
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0);
+		if ((GDKdebug & FORCEMITOMASK) == 0 && rel->partition)
+				mnstr_printf(fout, " PARTITION");
 		break;
 	case op_project:
 	case op_select:
@@ -639,8 +648,10 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		char *pv;
 
 		for (; p; p = p->p) {
-			pv = propvalue2string(sql->ta, p);
-			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			if (p->kind != PROP_COUNT || (GDKdebug & FORCEMITOMASK) == 0) {
+				pv = propvalue2string(sql->ta, p);
+				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			}
 		}
 	}
 	//mnstr_printf(fout, " %p ", rel);

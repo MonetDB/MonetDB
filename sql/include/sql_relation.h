@@ -79,7 +79,6 @@ typedef struct expression {
 #define UPD_NO_CONSTRAINT	4
 
 #define LEFT_JOIN		4
-#define REL_PARTITION		8
 #define MERGE_LEFT		16 /* used by merge statements */
 #define OUTER_ZERO		32
 
@@ -297,6 +296,11 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
+
+	 parallel:1,		/* parallel block */
+	 partition:2,		/* partitioned using table slices (1 left/2 right) */
+	 spb:1,				/* start a parallel block */
+
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * All bits are used by rel_unnest modifiers and always reset after.

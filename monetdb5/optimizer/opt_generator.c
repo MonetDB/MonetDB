@@ -135,7 +135,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			pushInstruction(mb,p);
 		else {
 			// check for use without conversion
-			for(k = p->retc; k < p->argc; k++)
+			for(k = p->inout>=0?p->inout:p->retc; k < p->argc; k++)
 			if( series[getArg(p,k)]){
 				const char *m = getModuleId(p);
 				setModuleId(p, generatorRef);

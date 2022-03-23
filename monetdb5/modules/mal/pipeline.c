@@ -170,9 +170,9 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define aggr(T,f)  \
 	if (type == TYPE_##T) {								\
 		T val = *getArgReference_##T(stk, pci, 2);		\
-		if (val != T##_nil && BATcount(b)) {			\
+		if (!is_##T##_nil(val) && BATcount(b)) {		\
 			T *t = Tloc(b, 0);							\
-			if (t[0] == T##_nil) {						\
+			if (is_##T##_nil(t[0])) {					\
 				t[0] = val;								\
 			} else										\
 				t[0] = f(t[0], val);					\
@@ -183,6 +183,33 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				err = createException(SQL, "aggr.##f",	\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}												\
+	}
+
+#define vaggr(T,f)  \
+	if (type == TYPE_##T) {								\
+		BATiter bi = bat_iterator(b); \
+		T val = *getArgReference_##T(stk, pci, 2);		\
+		const void *nil = ATOMnilptr(type);						\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type); \
+		if (cmp(val,nil) != 0 && BATcount(b)) {		\
+			T t = BUNtvar(bi, 0); \
+			if (cmp(t,nil) == 0) {					\
+				if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)			\
+					err = createException(SQL, "aggr.##f",	\
+						SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+			} else										\
+				if (f(t, val) == val)					\
+					if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)			\
+						err = createException(SQL, "aggr.##f",	\
+							SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+			b->tnil = false;							\
+			b->tnonil = true;							\
+		} else if (BATcount(b) == 0) {					\
+			if (BUNappend(b, val, false) != GDK_SUCCEED)\
+				err = createException(SQL, "aggr.##f",	\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}												\
+		bat_iterator_end(&bi); \
 	}
 
 static str
@@ -223,6 +250,9 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#define vmin(a,b) ((cmp(a,b) < 0)?a:b)
+#define vmax(a,b) ((cmp(a,b) > 0)?a:b)
+
 static str
 LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -233,7 +263,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
 		type != TYPE_flt && type != TYPE_dbl &&
-		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp)
+		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_str)
 			return createException(SQL, "aggr.min",	"Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -250,6 +280,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(bte,min);
 		aggr(flt,min);
 		aggr(dbl,min);
+		vaggr(str,vmin);
 		if (!err) {
 			BATnegateprops(b);
 			BBPkeepref(b->batCacheid);
@@ -275,7 +306,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
 		type != TYPE_flt && type != TYPE_dbl &&
-		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp)
+		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_str)
 			return createException(SQL, "aggr.max",	"Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -292,6 +323,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(bte,max);
 		aggr(flt,max);
 		aggr(dbl,max);
+		vaggr(str,vmax);
 		if (!err) {
 			BATnegateprops(b);
 			BBPkeepref(b->batCacheid);
@@ -1736,12 +1768,16 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/* TODO handle nil based on argument 'skipnil' */
 #define gfunc(Type, f) \
-	if (ATOMstorage(tt) == TYPE_##Type) { \
+	if (tt == TYPE_##Type) { \
 			Type *in = Tloc(b, 0); \
 			Type *o = Tloc(r, 0); \
 			for(BUN i = 0; i<cnt; i++) \
-				o[grp[i]] = f(o[grp[i]], in[i]); \
+				if (is_##Type##_nil(o[grp[i]])) \
+					o[grp[i]] = in[i]; \
+				else \
+					o[grp[i]] = f(o[grp[i]], in[i]); \
 	}
 
 /* fron now assume shared heap */
@@ -1909,7 +1945,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			char *d = Tloc(r, 0);
 			const char *nil = ATOMnilptr(r->ttype);
 			for (BUN i=cnt; i<max; i++)
-				memcpy(d+i, nil, r->twidth);
+				memcpy(d+(i*r->twidth), nil, r->twidth);
 		}
 	}
 	assert(b->twidth == r->twidth || local_storage || !BATcount(b));
@@ -1923,7 +1959,10 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			gfunc(bte,min);
 			gfunc(sht,min);
 			gfunc(int,min);
+			gfunc(date,min);
 			gfunc(lng,min);
+			gfunc(daytime,min);
+			gfunc(timestamp,min);
 			gfunc(hge,min);
 			gfunc(flt,min);
 			gfunc(dbl,min);
@@ -2010,7 +2049,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			char *d = Tloc(r, 0);
 			const char *nil = ATOMnilptr(r->ttype);
 			for (BUN i=cnt; i<max; i++)
-				memcpy(d+i, nil, r->twidth);
+				memcpy(d+(i*r->twidth), nil, r->twidth);
 		}
 	}
 	assert(b->twidth == r->twidth || local_storage || !BATcount(b));
@@ -2024,7 +2063,10 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			gfunc(bte,max);
 			gfunc(sht,max);
 			gfunc(int,max);
+			gfunc(date,max);
 			gfunc(lng,max);
+			gfunc(daytime,max);
+			gfunc(timestamp,max);
 			gfunc(hge,max);
 			gfunc(flt,max);
 			gfunc(dbl,max);
@@ -2078,6 +2120,67 @@ SLICERslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
+{
+	BAT *b, *s = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (cnd && !is_bat_nil(*cnd) && (s = BATdescriptor(*cnd)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	lng result1 = 0;
+	if (b->ttype == TYPE_msk || mask_cand(b)) {
+		BATsum(&result1, TYPE_lng, b, s, *ignore_nils, false, false, false);
+	} else if (*ignore_nils) {
+		result1 = (lng) BATcount_no_nil(b, s);
+	} else {
+		struct canditer ci;
+		result1 = (lng) canditer_init(&ci, b, s);
+	}
+	if (is_lng_nil(*result))
+		*result = result1;
+	else if (!is_lng_nil(result1))
+		*result += result1;
+	if (s)
+		BBPunfix(s->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
+{
+	return ALGcountCND_nil(result, bid, NULL, ignore_nils);
+}
+
+static str
+ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
+{
+	return ALGcountCND_nil(result, bid, cnd, &(bit){0});
+}
+
+static str
+ALGcount_bat(lng *result, const bat *bid)
+{
+	return ALGcountCND_nil(result, bid, NULL, &(bit){0});
+}
+
+static str
+ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd)
+{
+	return ALGcountCND_nil(result, bid, cnd, &(bit){1});
+}
+
+static str
+ALGcount_no_nil(lng *result, const bat *bid)
+{
+	return ALGcountCND_nil(result, bid, NULL, &(bit){1});
+}
+
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return next atomic number [0..n>", args(1,2, arg("", int), arg("pipeline", ptr))),
@@ -2098,6 +2201,13 @@ static mel_func pipeline_init_funcs[] = {
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("sink",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("sink",1),argany("tt",1),arg("size",int), batargany("p",2))),
  pattern("slicer", "slice", SLICERslice, false, "", args(2,3, batargany("slice",1), batargany("b",1), arg("nr",int))),
+
+ command("iaggr", "count", ALGcount_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,2, arg("",lng),batargany("b",0))),
+ command("iaggr", "count", ALGcount_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng),batargany("b",0),arg("ignore_nils",bit))),
+ command("iaggr", "count_no_nil", ALGcount_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,2, arg("",lng),batargany("b",2))),
+ command("iaggr", "count", ALGcountCND_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,3, arg("",lng),batargany("b",0),batarg("cnd",oid))),
+ command("iaggr", "count", ALGcountCND_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng),batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
+ command("iaggr", "count_no_nil", ALGcountCND_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,3, arg("",lng),batargany("b",2),batarg("cnd",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"
