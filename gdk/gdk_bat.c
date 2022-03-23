@@ -1023,7 +1023,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	ALIGNapp(b, force, GDK_FAIL);
-	b->batDirtydesc = true;
 
 	if (b->ttype == TYPE_void && BATtdense(b)) {
 		const oid *ovals = values;

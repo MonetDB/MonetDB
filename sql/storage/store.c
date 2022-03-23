@@ -2353,9 +2353,13 @@ store_manager(sqlstore *store)
 		MT_lock_unset(&store->flush);
 		MT_sleep_ms(sleeptime);
 		flusher.countdown_ms -= sleeptime;
+		MT_lock_set(&store->commit);
 		MT_lock_set(&store->flush);
-		if (store->logger_api.changes(store) <= 0)
+		if (store->logger_api.changes(store) <= 0) {
+			MT_lock_unset(&store->commit);
 			continue;
+		}
+		MT_lock_unset(&store->commit);
 		if (GDKexiting())
 			break;
 

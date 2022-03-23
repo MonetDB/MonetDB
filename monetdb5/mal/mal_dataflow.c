@@ -846,7 +846,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 			/* doing a recursive call: copy specificity from
 			 * current worker to new worker */
 			for (int j = 0; j < THREADS; j++) {
-				if (workers[j].flag == RUNNING && workers[j].id == pid) {
+				if (workers[j].id == pid && workers[j].flag == RUNNING) {
 					ATOMIC_PTR_SET(&workers[i].cntxt,
 								   ATOMIC_PTR_GET(&workers[j].cntxt));
 					break;
