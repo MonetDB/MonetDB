@@ -3707,7 +3707,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	mod = sql_func_mod(op->func);
 	aggrfunc = backend_function_imp(be, op->func);
 
-	if (pipeline_mod && strcmp(aggrfunc, "count") == 0) /* incremental versions TODO do for other aggr functions */
+	if (pipeline_mod && (strcmp(aggrfunc, "count") == 0 ||
+						 strcmp(aggrfunc, "min") == 0 ||
+						 strcmp(aggrfunc, "max") == 0)) /* incremental versions TODO do for other aggr functions */
 		mod = putName("iaggr");
 
 	if (strcmp(aggrfunc, "avg") == 0)

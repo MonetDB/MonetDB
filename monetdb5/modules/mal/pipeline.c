@@ -2193,6 +2193,80 @@ ALGcount_no_nil(lng *result, const bat *bid)
 	return ALGcountCND_nil(result, bid, NULL, &(bit){1});
 }
 
+static str
+ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
+{
+	BAT *b;
+	ptr p;
+	str msg = MAL_SUCCEED;
+
+	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	if (!ATOMlinear(b->ttype)) {
+		msg = createException(MAL, "algebra.min",
+							  "atom '%s' cannot be ordered linearly",
+							  ATOMname(b->ttype));
+	} else {
+		if (ATOMextern(b->ttype)) {
+			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil, false);
+		} else {
+			p = BATmin_skipnil(b, result, *skipnil, true);
+			if ( p != result )
+				msg = createException(MAL, "algebra.min", SQLSTATE(HY002) "INTERNAL ERROR");
+		}
+		if (msg == MAL_SUCCEED && p == NULL)
+			msg = createException(MAL, "algebra.min", GDK_EXCEPTION);
+	}
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+static str
+ALGminany(ptr result, const bat *bid)
+{
+	bit skipnil = TRUE;
+	return ALGminany_skipnil(result, bid, &skipnil);
+}
+
+static str
+ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
+{
+	BAT *b;
+	ptr p;
+	str msg = MAL_SUCCEED;
+
+	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	if (!ATOMlinear(b->ttype)) {
+		msg = createException(MAL, "algebra.max",
+							  "atom '%s' cannot be ordered linearly",
+							  ATOMname(b->ttype));
+	} else {
+		if (ATOMextern(b->ttype)) {
+			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil, false);
+		} else {
+			p = BATmax_skipnil(b, result, *skipnil, true);
+			if ( p != result )
+				msg = createException(MAL, "algebra.max", SQLSTATE(HY002) "INTERNAL ERROR");
+		}
+		if ( msg == MAL_SUCCEED && p == NULL)
+			msg = createException(MAL, "algebra.max", GDK_EXCEPTION);
+	}
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+static str
+ALGmaxany(ptr result, const bat *bid)
+{
+	bit skipnil = TRUE;
+	return ALGmaxany_skipnil(result, bid, &skipnil);
+}
+
+
+
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return next atomic number [0..n>", args(1,2, arg("", int), arg("pipeline", ptr))),
@@ -2220,6 +2294,10 @@ static mel_func pipeline_init_funcs[] = {
  command("iaggr", "count", ALGcountCND_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,3, arg("",lng),batargany("b",0),batarg("cnd",oid))),
  command("iaggr", "count", ALGcountCND_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng),batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
  command("iaggr", "count_no_nil", ALGcountCND_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,3, arg("",lng),batargany("b",2),batarg("cnd",oid))),
+ command("iaggr", "min", ALGminany, false, "Return the lowest tail value or nil.", args(1,2, argany("",2),batargany("b",2))),
+ command("iaggr", "min", ALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2),batargany("b",2),arg("skipnil",bit))),
+ command("iaggr", "max", ALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2),batargany("b",2))),
+ command("iaggr", "max", ALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2),batargany("b",2),arg("skipnil",bit))),
  { .imp=NULL }
 };
 #include "mal_import.h"

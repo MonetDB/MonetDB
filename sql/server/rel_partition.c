@@ -190,19 +190,15 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			return 0;
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, pb);
-	} else if (is_set(rel->op)) {
+		if (res == SPB)
+			rel->spb = 1;
+	} else if (is_set(rel->op) || is_semi(rel->op) || is_merge(rel->op)) {
 		if (rel->l)
 			lres = rel_partition_(sql, rel->l, 0);
 		if (rel->r)
 			rres = rel_partition_(sql, rel->r, 0);
 		if (!lres || !rres)
 			return 0;
-		res = pb;
-	} else if (is_semi(rel->op) || is_merge(rel->op)) {
-		if (rel->l)
-			res = rel_partition_(sql, rel->l, pb);
-		if (rel->r)
-			res = rel_partition_(sql, rel->r, pb);
 		res = pb;
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
 		if (rel->r && rel->card <= CARD_AGGR)

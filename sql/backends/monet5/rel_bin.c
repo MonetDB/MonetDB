@@ -2920,11 +2920,6 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	if (rel->op == op_anti && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
 		return rel2bin_antijoin(be, rel, refs);
 
-	int neededpp = 0;
-
-	if (rel->spb)
-		neededpp = get_need_pipeline(be);
-
 	if (rel->l) { /* first construct the left sub relation */
 		sql_rel *l = rel->l;
 		l_is_base = is_basetable(l->op);
@@ -3144,10 +3139,6 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		list_append(l, s);
 	}
 	stmt *sub = stmt_list(be, l);
-	if (rel->spb && neededpp) {
-		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
-		sub = rel2bin_slicer(be, sub, 1);
-	}
 	return sub;
 }
 
@@ -3254,10 +3245,6 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 	list *l;
 	node *n, *m;
 	stmt *left = NULL, *right = NULL, *sub;
-	int neededpp = 0;
-
-	if (rel->spb)
-		neededpp = get_need_pipeline(be);
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
@@ -3289,10 +3276,6 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 		sub = rel2bin_distinct(be, sub, NULL);
 	if (is_single(rel))
 		sub = rel2bin_single(be, sub);
-	if (rel->spb && neededpp) {
-		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
-		sub = rel2bin_slicer(be, sub, 1);
-	}
 	return sub;
 }
 
@@ -3314,10 +3297,6 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
-	int neededpp = 0;
-
-	if (rel->spb)
-		neededpp = get_need_pipeline(be);
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
@@ -3409,10 +3388,6 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 		list_append(stmts, c1);
 	}
 	sub = stmt_list(be, stmts);
-	if (rel->spb && neededpp) {
-		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
-		sub = rel2bin_slicer(be, sub, 1);
-	}
 	return rel_rename(be, rel, sub);
 }
 
@@ -3433,10 +3408,7 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	stmt *s, *lm, *rm;
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
-	int neededpp = 0;
 
-	if (rel->spb)
-		neededpp = get_need_pipeline(be);
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
@@ -3514,10 +3486,6 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 		list_append(stmts, c1);
 	}
 	sub = stmt_list(be, stmts);
-	if (rel->spb && neededpp) {
-		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
-		sub = rel2bin_slicer(be, sub, 1);
-	}
 	return rel_rename(be, rel, sub);
 }
 
@@ -7118,13 +7086,16 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 
 	if (!rel)
 		return s;
+
 	if (rel_is_ref(rel)) {
 		s = refs_find_rel(refs, rel);
 		/* needs a proper fix!! */
 		if (s)
 			return s;
 		neededpp = get_need_pipeline(be);
-	}
+	} else if (rel->spb && (!is_groupby(rel->op) && !is_join(rel->op)))
+		neededpp = get_need_pipeline(be);
+
 	switch (rel->op) {
 	case op_basetable:
 		s = rel2bin_basetable(be, rel);
@@ -7210,8 +7181,14 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	if (s && rel_is_ref(rel)) {
 		list_append(refs, rel);
 		list_append(refs, s);
-		if (neededpp)
+		if (neededpp) {
 			set_need_pipeline(be);
+			neededpp = 0;
+		}
+	} else if (rel->spb && neededpp) {
+		assert(!is_groupby(rel->op) && !is_join(rel->op));
+		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+		s = rel2bin_slicer(be, s, 1);
 	}
 	return s;
 }

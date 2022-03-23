@@ -3764,7 +3764,7 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 /* return pointer to smallest non-nil value in b, or pointer to nil if
  * there is no such value (no values at all, or only nil) */
 void *
-BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
+BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 {
 	const void *res = NULL;
 	size_t s;
@@ -3906,12 +3906,11 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		s = ATOMsize(ATOMtype(b->ttype));
 	}
 	if (aggr != NULL) {	/* else: malloc error */
-		memcpy(aggr, res, s);
-		/*
-		if (ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
-		    ATOMcmp(b->ttype, res, aggr) < 0)
+		if (!inout ||
+		    ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
+		    (ATOMcmp(b->ttype, res, ATOMnilptr(b->ttype)) != 0 &&
+		    ATOMcmp(b->ttype, res, aggr) < 0))
 			memcpy(aggr, res, s);
-			*/
 	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
@@ -3922,7 +3921,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 void *
 BATmin(BAT *b, void *aggr)
 {
-	return BATmin_skipnil(b, aggr, 1);
+	return BATmin_skipnil(b, aggr, 1, false);
 }
 
 BAT *
@@ -3934,7 +3933,7 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 }
 
 void *
-BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
+BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 {
 	const void *res = NULL;
 	size_t s;
@@ -4066,12 +4065,11 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		s = ATOMsize(ATOMtype(b->ttype));
 	}
 	if (aggr != NULL) {	/* else: malloc error */
-		memcpy(aggr, res, s);
-		/*
-		if (ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
-		    ATOMcmp(b->ttype, res, aggr) > 0)
+		if (!inout ||
+		    ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
+		    (ATOMcmp(b->ttype, res, ATOMnilptr(b->ttype)) != 0 &&
+		    ATOMcmp(b->ttype, res, aggr) > 0))
 			memcpy(aggr, res, s);
-			*/
 	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
@@ -4082,7 +4080,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 void *
 BATmax(BAT *b, void *aggr)
 {
-	return BATmax_skipnil(b, aggr, 1);
+	return BATmax_skipnil(b, aggr, 1, false);
 }
 
 

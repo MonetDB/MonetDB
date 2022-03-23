@@ -148,9 +148,9 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil);
+			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil, false);
 		} else {
-			p = BATmin_skipnil(b, result, *skipnil);
+			p = BATmin_skipnil(b, result, *skipnil, false);
 			if ( p != result )
 				msg = createException(MAL, "algebra.min", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
@@ -184,9 +184,9 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil);
+			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil, false);
 		} else {
-			p = BATmax_skipnil(b, result, *skipnil);
+			p = BATmax_skipnil(b, result, *skipnil, false);
 			if ( p != result )
 				msg = createException(MAL, "algebra.max", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
