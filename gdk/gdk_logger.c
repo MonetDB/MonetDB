@@ -257,7 +257,7 @@ la_bat_clear(logger *lg, logaction *la, int tid)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		restrict_t access = (restrict_t) b->batRestricted;
+		restrict_t access = b->batRestricted;
 		b->batRestricted = BAT_WRITE;
 		/* during startup this is fine */
 		BATclear(b, true);
