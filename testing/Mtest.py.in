@@ -2324,6 +2324,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                         prred('ERROR')
                 if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
                     print(':', os.path.join(TSTDIR, TST + EXT))
+                elif verbosity == 1:
+                    print()
         elif FailedOut > F_WARN or FailedErr > F_WARN:
             print()
             print('========================================')
