@@ -638,6 +638,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	assert(*uid && !is_bat_nil(*uid));
 	BAT *u = BATdescriptor(*uid);
 	BAT *b = BATdescriptor(*bid);
+	int err = 0;
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
 
@@ -662,7 +663,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		BAT *g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 
 		/* probably need bat resize and create hash */
-		int err = 0, tt = b->ttype;
+		int tt = b->ttype;
 		oid *gp = Tloc(g, 0);
 		BUN r = 0;
 
@@ -689,6 +690,8 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			BBPkeepref(*rid = g->batCacheid);
 		}
 	}
+	if (err)
+		throw(MAL, "group.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
@@ -795,6 +798,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	BAT *u = BATdescriptor(*uid);
 	BAT *G = BATdescriptor(*Gid);
 	BAT *b = BATdescriptor(*bid);
+	int err = 0;
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
 
@@ -811,7 +815,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		BAT *ng = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 
 		/* probably need bat resize and create hash */
-		int err = 0, tt = b->ttype;
+		int tt = b->ttype;
 		oid *gp = Tloc(ng, 0);
 		gid *p = Tloc(G, 0);
 		gid *pgids = h->pgids;
@@ -841,6 +845,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			BBPkeepref(*rid = ng->batCacheid);
 		}
 	}
+	if (err)
+		throw(MAL, "group.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
@@ -1081,6 +1087,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			BBPkeepref(*rid = g->batCacheid);
 		}
 	}
+	if (err)
+		throw(MAL, "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
@@ -1339,6 +1347,8 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			BBPkeepref(*rid = g->batCacheid);
 		}
 	}
+	if (err)
+		throw(MAL, "group.derive", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return msg;
 }
 
@@ -1496,10 +1506,10 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			BBPkeepref(*rid = r->batCacheid);
 		}
 	}
-	if (err)
-		printf(" error \n");
 	if (!private)
 		pipeline_unlock2(r);
+	if (err)
+		throw(MAL, "aggr.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
@@ -1531,7 +1541,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
-		printf("count extend %ld\n", sz);
+		//printf("count extend %ld\n", sz);
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
 	}
@@ -1560,6 +1570,8 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	if (!private)
 		pipeline_unlock2(r);
 		//pipeline_unlock(p);
+	if (err)
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
@@ -1627,7 +1639,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
-		printf("count extend %ld\n", sz);
+		//printf("count extend %ld\n", sz);
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
 	}
@@ -1674,6 +1686,8 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	if (!private)
 		pipeline_unlock2(r);
 		//pipeline_unlock(p);
+	if (err)
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
@@ -1720,7 +1734,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
-		printf("sum extend %ld\n", sz);
+		//printf("sum extend %ld\n", sz);
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
 	}
@@ -1765,6 +1779,8 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!private)
 		pipeline_unlock2(r);
 		//pipeline_unlock(p);
+	if (err)
+		throw(MAL, "aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
@@ -1983,6 +1999,8 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	}
 	if (!private)
 		pipeline_unlock2(r);
+	if (err)
+		throw(MAL, "aggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
@@ -2087,6 +2105,8 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	}
 	if (!private)
 		pipeline_unlock2(r);
+	if (err)
+		throw(MAL, "aggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 

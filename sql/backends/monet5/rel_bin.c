@@ -4044,6 +4044,8 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			append(shared, q->argv);
 			append(*aggrresults, q->argv);
 		}
+		if (card < estimate)
+			estimate = card;
 		for( node *n = rel->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
