@@ -1414,28 +1414,38 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             if pSrvr is not None:
                 pSrvr.terminate()
                 pSrvr = None
-                for ext in ['out', 'err']:
-                    o = openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}.html'), 'w')
-                    o.write('<html>\n')
-                    o.write('<head><title>{} standard {}</title></head>\n'.format(TSTDIR, 'output' if ext == 'out' else 'error'))
-                    o.write('<body>\n')
-                    empty = True
-                    for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
-                        if empty:
-                            o.write('<pre>\n')
-                        empty = False
-                        span1 = span2 = ''
+                if produce_html:
+                    for ext in ['out', 'err']:
+                        o = openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}.html'), 'w')
+                        o.write('<html>\n')
+                        o.write('<head><title>{} standard {}</title></head>\n'.format(TSTDIR, 'output' if ext == 'out' else 'error'))
+                        o.write('<body>\n')
+                        empty = True
+                        for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
+                            if empty:
+                                o.write('<pre>\n')
+                            empty = False
+                            span1 = span2 = ''
+                            if line != '\n' and not line.startswith('#'):
+                                if ext == 'out':
+                                    ssout = F_ERROR
+                                else:
+                                    sserr = F_ERROR
+                                span1 = '<span style="background-color: rgb(100%,0%,0%);">'
+                                span2 = '</span>\n'
+                                line = line.rstrip('\n')
+                            o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
+                        o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
+                        o.close()
+                else:
+                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out')):
                         if line != '\n' and not line.startswith('#'):
-                            if ext == 'out':
-                                ssout = F_ERROR
-                            else:
-                                sserr = F_ERROR
-                            span1 = '<span style="background-color: rgb(100%,0%,0%);">'
-                            span2 = '</span>\n'
-                            line = line.rstrip('\n')
-                        o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
-                    o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
-                    o.close()
+                            ssout = F_ERROR
+                            break
+                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err')):
+                        if line != '\n' and not line.startswith('#'):
+                            sserr = F_ERROR
+                            break
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
@@ -1446,6 +1456,12 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             body = body_bad + body_good
             CreateHtmlIndex(env, ssout, sserr, *body)
             elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
+        if ssout == F_ERROR or sserr == F_ERROR:
+            if verbosity == 0:
+                print('\r', ' '*(ttywidth or 100), end='', sep='')
+                print('\r', end='', sep='')
+            prred('ERROR')
+            print(' in directory {}'.format(TSTDIR))
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
