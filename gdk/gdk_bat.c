@@ -1876,9 +1876,10 @@ BATsetcount(BAT *b, BUN cnt)
 	MT_lock_set(&b->theaplock);
 	b->batCount = cnt;
 	b->batDirtydesc = true;
-	b->theap->dirty |= b->ttype != TYPE_void && b->theap->parentid == b->batCacheid && cnt > 0;
-	if (b->theap->parentid == b->batCacheid)
+	if (b->theap->parentid == b->batCacheid) {
+		b->theap->dirty |= b->ttype != TYPE_void && cnt > 0;
 		b->theap->free = tailsize(b, cnt);
+	}
 	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {

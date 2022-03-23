@@ -1863,12 +1863,15 @@ BATordered(BAT *b)
 	if (b->tnosorted > 0 || !ATOMlinear(b->ttype))
 		return false;
 
-	/* In order that multiple threads don't scan the same BAT at the
-	 * same time (happens a lot with mitosis/mergetable), we use a
-	 * lock.  We reuse the batIdxLock lock for this, not because this
-	 * scanning interferes with heap reference counting, but because
-	 * it's there, and not so likely to be used at the same time. */
-	MT_lock_set(&b->batIdxLock);
+	/* There are a few reasons why we need a lock here.  It may be
+	 * that multiple threads call this functions at the same time
+	 * (happens a lot with mitosis/mergetable), but we only need to
+	 * scan the bat in one thread: the others can reap the rewards
+	 * when that one thread is done.  Also, we need the heap to
+	 * remain accessible (could have used bat_iterator for that),
+	 * and, and this is the killer argument, we may need to make
+	 * changes to the bat descriptor. */
+	MT_lock_set(&b->theaplock);
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->tsorted && b->tnosorted == 0) {
 		b->batDirtydesc = true;
@@ -1969,7 +1972,7 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&b->theaplock);
 	return b->tsorted;
 }
 
@@ -2015,7 +2018,7 @@ BATordered_rev(BAT *b)
 		return is_oid_nil(b->tseqbase);
 	if (BATtdense(b) || b->tnorevsorted > 0)
 		return false;
-	MT_lock_set(&b->batIdxLock);
+	MT_lock_set(&b->theaplock);
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		b->batDirtydesc = true;
@@ -2059,7 +2062,7 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&b->theaplock);
 	return b->trevsorted;
 }
 

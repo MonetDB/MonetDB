@@ -950,7 +950,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 		}
 	} else {
 		/* BBP was locked by BBPexit() */
-		BBPunlock();
+		//BBPunlock();
 	}
 	GDKtracer_init(dbpath, dbtrace);
 	errno = 0;
