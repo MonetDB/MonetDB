@@ -132,11 +132,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 
 					/* Collect new sorted and revsorted properties */
-					/* At the moment the heap must be locked around the BATordered calls to prevent a race condition on it */
-					MT_lock_set(&b->theaplock);
 					(void) BATordered(b);
 					(void) BATordered_rev(b);
-					MT_lock_unset(&b->theaplock);
 
 					/* Check for nils existence */
 					(void) BATcount_no_nil(b, NULL);

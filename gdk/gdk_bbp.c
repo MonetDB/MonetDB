@@ -1753,7 +1753,7 @@ BBPexit(void)
 	bat i;
 	bool skipped;
 
-	BBPlock();	/* stop all threads ever touching more descriptors */
+	//BBPlock();	/* stop all threads ever touching more descriptors */
 
 	/* free all memory (just for leak-checking in Purify) */
 	do {
@@ -2597,8 +2597,12 @@ bbpclear(bat i, bool lock)
 		MT_lock_set(&GDKcacheLock);
 
 	BBP_status_set(i, BBPUNLOADING);
+	if (lock)
+		MT_lock_set(&GDKswapLock(i));
 	BBP_refs(i) = 0;
 	BBP_lrefs(i) = 0;
+	if (lock)
+		MT_lock_unset(&GDKswapLock(i));
 	if (!BBPtmpcheck(BBP_logical(i))) {
 		MT_lock_set(&BBPnameLock);
 		BBP_delete(i);
@@ -2977,6 +2981,8 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	/* only consider unloading if refs is 0; if, in addition, lrefs
 	 * is 0, we can definitely unload, else only if some more
 	 * conditions are met */
+	if (b)
+		MT_lock_set(&b->theaplock);
 	if (BBP_refs(i) == 0 &&
 	    (BBP_lrefs(i) == 0 ||
 	     (b != NULL && b->theap != NULL
@@ -2999,6 +3005,8 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		swap = true;
 	} /* else: bat cannot be swapped out */
 	lrefs = BBP_lrefs(i);
+	if (b)
+		MT_lock_unset(&b->theaplock);
 
 	/* unlock before re-locking in unload; as saving a dirty
 	 * persistent bat may take a long time */

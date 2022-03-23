@@ -480,6 +480,7 @@ temp_dup_cs(column_storage *cs, ulng tid, int type)
 	BAT *b = bat_new(type, 1024, TRANSIENT);
 	if (!b)
 		return LOG_ERR;
+	bat_set_access(b, BAT_READ);
 	cs->bid = temp_create(b);
 	bat_destroy(b);
 	cs->uibid = e_bat(TYPE_oid);
@@ -988,7 +989,7 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 	b = temp_descriptor(cs->bid);
 	if (b == NULL)
 		return NULL;
-	bat_set_access(b, BAT_READ);
+	assert(b->batRestricted == BAT_READ);
 	/* return slice */
 	BAT *s = BATslice(b, 0, cnt);
 	bat_destroy(b);
@@ -1176,6 +1177,7 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 				}
 				if (cs->bid && !new)
 					temp_destroy(cs->bid);
+				bat_set_access(n, BAT_READ);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
 				if (cs->ebid && !new)
@@ -1217,6 +1219,7 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 				}
 				if (cs->bid && !new)
 					temp_destroy(cs->bid);
+				bat_set_access(n, BAT_READ);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
 				cs->cleared = true;
@@ -1268,6 +1271,7 @@ for_append_bat(column_storage *cs, BAT *i, char *storage_type)
 				return NULL;
 			if (cs->bid)
 				temp_destroy(cs->bid);
+			bat_set_access(n, BAT_READ);
 			cs->bid = temp_create(n);
 			cs->ucnt = 0;
 			if (cs->uibid)
@@ -1702,6 +1706,7 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 				}
 				if (cs->bid && !new)
 					temp_destroy(cs->bid);
+				bat_set_access(n, BAT_READ);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
 				if (cs->ebid && !new)
@@ -1738,6 +1743,7 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 				}
 				if (cs->bid)
 					temp_destroy(cs->bid);
+				bat_set_access(n, BAT_READ);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
 				cs->cleared = true;
@@ -1773,6 +1779,7 @@ for_append_val(column_storage *cs, void *i, BUN cnt, char *storage_type, int tt)
 			/* TODO decompress updates if any */
 			if (cs->bid)
 				temp_destroy(cs->bid);
+			bat_set_access(n, BAT_READ);
 			cs->bid = temp_create(n);
 			cs->st = ST_DEFAULT;
 			/* at append_col the column's storage type is cleared */
@@ -1881,7 +1888,7 @@ dup_cs(sql_trans *tr, column_storage *ocs, column_storage *cs, int type, int tem
 	cs->ucnt = ocs->ucnt;
 
 	if (temp) {
-		cs->bid = temp_copy(cs->bid, true, true);
+		cs->bid = temp_copy(cs->bid, true, false);
 		if (cs->bid == BID_NIL)
 			return LOG_ERR;
 	} else {
@@ -3526,7 +3533,7 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 				cs->bid = temp_create(n); /* create empty copy */
 				bat_destroy(n);
 			} else {
-				bat nbid = temp_copy(cs->bid, true, temp); /* create empty copy */
+				bat nbid = temp_copy(cs->bid, true, false); /* create empty copy */
 
 				if (nbid == BID_NIL)
 					return BUN_NONE;
@@ -4774,6 +4781,7 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 		temp_destroy(d->cs.uibid);
 	if (d->cs.uvbid)
 		temp_destroy(d->cs.uvbid);
+	bat_set_access(bn, BAT_READ);
 	d->cs.bid = temp_create(bn);
 	d->cs.uibid = 0;
 	d->cs.uvbid = 0;
@@ -4804,6 +4812,7 @@ col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 	d->cs.cleared = true;
 	if (d->cs.bid)
 		temp_destroy(d->cs.bid);
+	bat_set_access(o, BAT_READ);
 	d->cs.bid = temp_create(o);
 	if (u) {
 		if (d->cs.ebid)
