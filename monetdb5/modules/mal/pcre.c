@@ -2256,7 +2256,7 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 		goto fail;
 	}
 	bi = bat_iterator(caseignore);
-	ci = *(bit*)BUNtail(bi, 0);
+	ci = *(bit*)BUNtloc(bi, 0);
 	bat_iterator_end(&bi);
 	bi = bat_iterator(escape);
 	esc = BUNtvar(bi, 0);
