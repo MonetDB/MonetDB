@@ -645,16 +645,8 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
 	if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		pipeline_lock(p);
-		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-			assert (VIEWvtparent(b));
-			HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
-			HEAPincref(b->tvheap);
-			u->tvheap = b->tvheap;
-			BBPshare(b->tvheap->parentid);
-			u->batDirtydesc = true;
-		}
-		pipeline_unlock(p);
+		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid)
+			BATswap_heaps(u, b, p);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
