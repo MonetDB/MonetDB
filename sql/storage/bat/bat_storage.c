@@ -1070,6 +1070,63 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 	return s;
 }
 
+static int
+bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
+{
+	lock_column(tr->store, c->base.id);
+	size_t cnt = count_col(tr, c, 0);
+	sql_delta *d = col_timestamp_delta(tr, c);
+	int type = c->type.type->localtype;
+
+	if (!d) {
+		unlock_column(tr->store, c->base.id);
+		return LOG_ERR;
+	}
+	if (d->cs.st == ST_DICT) {
+		BAT *b = quick_descriptor(d->cs.bid);
+
+		type = b->ttype;
+	}
+
+	*ui = bind_ubat(tr, d, isTempTable(c->t), RD_UPD_ID, type, cnt);
+	*uv = bind_ubat(tr, d, isTempTable(c->t), RD_UPD_VAL, type, cnt);
+
+	unlock_column(tr->store, c->base.id);
+
+	if (*ui == NULL || *uv == NULL) {
+		bat_destroy(*ui);
+		bat_destroy(*uv);
+		return LOG_ERR;
+	}
+	return LOG_OK;
+}
+
+static int
+bind_updates_idx(sql_trans *tr, sql_idx *i, BAT **ui, BAT **uv)
+{
+	lock_column(tr->store, i->base.id);
+	size_t cnt = count_idx(tr, i, 0);
+	sql_delta *d = idx_timestamp_delta(tr, i);
+	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
+
+	if (!d) {
+		unlock_column(tr->store, i->base.id);
+		return LOG_ERR;
+	}
+
+	*ui = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_ID, type, cnt);
+	*uv = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_VAL, type, cnt);
+
+	unlock_column(tr->store, i->base.id);
+
+	if (*ui == NULL || *uv == NULL) {
+		bat_destroy(*ui);
+		bat_destroy(*uv);
+		return LOG_ERR;
+	}
+	return LOG_OK;
+}
+
 static void *					/* BAT * */
 bind_col(sql_trans *tr, sql_column *c, int access)
 {
@@ -4877,6 +4934,8 @@ void
 bat_storage_init( store_functions *sf)
 {
 	sf->bind_col = &bind_col;
+	sf->bind_updates = &bind_updates;
+	sf->bind_updates_idx = &bind_updates_idx;
 	sf->bind_idx = &bind_idx;
 	sf->bind_cands = &bind_cands;
 
