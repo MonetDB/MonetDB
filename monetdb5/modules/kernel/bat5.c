@@ -867,7 +867,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 			if ( o < ol && *o == oidx ){
 				o++;
 			} else {
-				if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
+				if (BUNappend(bn, BUNtvar(bi, p), false) != GDK_SUCCEED) {
 					bat_iterator_end(&bi);
 					BBPunfix(b->batCacheid);
 					BBPunfix(bn->batCacheid);

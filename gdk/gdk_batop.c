@@ -1902,8 +1902,8 @@ BATordered(BAT *b)
 		case TYPE_str:
 			for (BUN q = BATcount(b), p = 1; p < q; p++) {
 				int c;
-				const char *p1 = BUNtail(bi, p - 1);
-				const char *p2 = BUNtail(bi, p);
+				const char *p1 = BUNtvar(bi, p - 1);
+				const char *p2 = BUNtvar(bi, p);
 				if (p1 == p2)
 					c = 0;
 				else if (p1[0] == '\200') {
