@@ -1394,6 +1394,19 @@ SQLpagemove(int *len, int fields, int *ps, bool *silent)
 		SQLseparator(len, fields, '-');
 }
 
+static bool stopped;
+
+static void
+renderer_sigint_handler(int signum)
+{
+	if (signum == SIGINT) {
+		mnstr_printf(toConsole, "Renderer caught SIGINT\n");
+		stopped = true;
+	}
+	else
+		mnstr_printf(toConsole, "SQLrenderer: Caught a non-SIGINT signal\n");
+}
+
 static void
 SQLrenderer(MapiHdl hdl)
 {
@@ -1405,6 +1418,7 @@ SQLrenderer(MapiHdl hdl)
 	int ps = rowsperpage;
 	bool silent = false;
 	int64_t rows = 0;
+	sighandler_t prev_handler;
 
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
@@ -1425,6 +1439,12 @@ SQLrenderer(MapiHdl hdl)
 			free(numeric);
 		fprintf(stderr,"Malloc for SQLrenderer failed");
 		exit(2);
+	}
+
+	stopped = false;
+	prev_handler = signal(SIGINT, renderer_sigint_handler);
+	if (prev_handler == SIG_ERR) {
+		perror("SQLrenderer: Could not install handler");
 	}
 
 	total = 0;
@@ -1612,6 +1632,12 @@ SQLrenderer(MapiHdl hdl)
 			}
 		}
 
+		if (stopped) {
+			stopped = false;
+			mapi_finish(hdl);
+			break;
+		}
+
 		rows += SQLrow(len, numeric, rest, printfields, 2, 0);
 	}
 	if (fields)
@@ -1640,6 +1666,9 @@ SQLrenderer(MapiHdl hdl)
 	}
 	mnstr_printf(toConsole, "\n");
 
+	if (signal(SIGINT, prev_handler) == SIG_ERR) {
+		perror("SQLrenderer: Could not restore previous handler.");
+	}
 	free(len);
 	free(hdr);
 	free(rest);
