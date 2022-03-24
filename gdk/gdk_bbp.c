@@ -122,8 +122,10 @@ static gdk_return BBPbackup(BAT *b, bool subcommit);
 static gdk_return BBPdir_init(void);
 static void BBPcallbacks(void);
 
-static lng BBPlogno;		/* two lngs of extra info in BBP.dir */
-static lng BBPtransid;
+/* two lngs of extra info in BBP.dir */
+/* these two need to be atomic because of their use in AUTHcommit() */
+static ATOMIC_TYPE BBPlogno = ATOMIC_VAR_INIT(0);
+static ATOMIC_TYPE BBPtransid = ATOMIC_VAR_INIT(0);
 
 #define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
 
@@ -162,13 +164,13 @@ getBBPsize(void)
 lng
 getBBPlogno(void)
 {
-	return BBPlogno;
+	return (lng) ATOMIC_GET(&BBPlogno);
 }
 
 lng
 getBBPtransid(void)
 {
-	return BBPtransid;
+	return (lng) ATOMIC_GET(&BBPtransid);
 }
 
 
@@ -995,10 +997,13 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize)
 			TRC_CRITICAL(GDK, "short BBP");
 			return 0;
 		}
-		if (sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &BBPlogno, &BBPtransid) != 2) {
+		lng logno, transid;
+		if (sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &logno, &transid) != 2) {
 			TRC_CRITICAL(GDK, "no info value found\n");
 			return 0;
 		}
+		ATOMIC_SET(&BBPlogno, logno);
+		ATOMIC_SET(&BBPtransid, transid);
 	}
 	return bbpversion;
 }
@@ -2769,47 +2774,15 @@ BBPcold(bat i)
 }
 
 /* This function can fail if the input parameter (i) is incorrect
- * (unlikely), or, if the bat is a view, this is a physical (not
- * logical) incref (i.e. called through BBPfix(), and it is the first
- * reference (refs was 0 and should become 1).  It can fail in this
- * case if the parent bat cannot be loaded.
- * This means the return value of BBPfix should be checked in these
- * circumstances, but not necessarily in others. */
+ * (unlikely). */
 static inline int
 incref(bat i, bool logical, bool lock)
 {
 	int refs;
-	bat tp = i, tvp = i;
 	BAT *b, *pb = NULL, *pvb = NULL;
 
 	if (!BBPcheck(i))
 		return 0;
-
-	/* Before we get the lock and before we do all sorts of
-	 * things, make sure we can load the parent bats if there are
-	 * any.  If we can't load them, we can still easily fail.  If
-	 * this is indeed a view, but not the first physical
-	 * reference, getting the parent BAT descriptor is
-	 * superfluous, but not too expensive, so we do it anyway. */
-	if (!logical && (b = BBP_desc(i)) != NULL) {
-		MT_lock_set(&b->theaplock);
-		tp = b->theap ? b->theap->parentid : i;
-		tvp = b->tvheap ? b->tvheap->parentid : i;
-		MT_lock_unset(&b->theaplock);
-		if (tp != i) {
-			pb = BATdescriptor(tp);
-			if (pb == NULL)
-				return 0;
-		}
-		if (tvp != i) {
-			pvb = BATdescriptor(tvp);
-			if (pvb == NULL) {
-				if (pb)
-					BBPunfix(pb->batCacheid);
-				return 0;
-			}
-		}
-	}
 
 	if (lock) {
 		for (;;) {
@@ -2834,11 +2807,9 @@ incref(bat i, bool logical, bool lock)
 	assert(BBP_refs(i) + BBP_lrefs(i) ||
 	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
 	if (logical) {
-		/* parent BATs are not relevant for logical refs */
 		refs = ++BBP_lrefs(i);
 		BBP_pid(i) = 0;
 	} else {
-		assert(tp >= 0);
 		refs = ++BBP_refs(i);
 		BBP_status_on(i, BBPHOT);
 	}
@@ -2856,12 +2827,52 @@ incref(bat i, bool logical, bool lock)
 	return refs;
 }
 
+BAT *
+BATdescriptor(bat i)
+{
+	BAT *b = NULL;
+
+	if (BBPcheck(i)) {
+		b = BBP_desc(i);
+		if (b->theap->parentid != b->batCacheid &&
+		    BATdescriptor(b->theap->parentid) == NULL)
+			return NULL;
+		if (b->tvheap &&
+		    b->tvheap->parentid != b->batCacheid &&
+		    BATdescriptor(b->tvheap->parentid) == NULL) {
+			if (b->theap->parentid != b->batCacheid)
+				BBPunfix(b->theap->parentid);
+			return NULL;
+		}
+		for (;;) {
+			MT_lock_set(&GDKswapLock(i));
+			if (!(BBP_status(i) & (BBPUNSTABLE|BBPLOADING)))
+				break;
+			/* the BATs is "unstable", try again */
+			MT_lock_unset(&GDKswapLock(i));
+			BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
+		}
+		if (incref(i, false, false) <= 0)
+			return NULL;
+		b = BBP_cache(i);
+		if (b == NULL)
+			b = getBBPdescriptor(i, false);
+		MT_lock_unset(&GDKswapLock(i));
+	}
+	return b;
+}
+
 /* see comment for incref */
 int
 BBPfix(bat i)
 {
 	bool lock = locked_by == 0 || locked_by != MT_getpid();
 
+	BAT *b = BBP_desc(i);
+	if (b->theap->parentid != b->batCacheid)
+		(void) BBPfix(b->theap->parentid);
+	if (b->tvheap && b->tvheap->parentid != b->batCacheid)
+		(void) BBPfix(b->tvheap->parentid);
 	return incref(i, false, lock);
 }
 
@@ -2886,6 +2897,7 @@ BBPshare(bat parent)
 	assert(BBP_refs(parent) > 0);
 	if (lock)
 		MT_lock_unset(&GDKswapLock(parent));
+	assert(!isVIEW(BBP_desc(parent)));
 	(void) incref(parent, false, lock);
 }
 
@@ -3941,8 +3953,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 	/* AFTERMATH */
 	if (ret == GDK_SUCCEED) {
-		BBPlogno = logno;	/* the new value */
-		BBPtransid = transid;
+		ATOMIC_SET(&BBPlogno, logno);	/* the new value */
+		ATOMIC_SET(&BBPtransid, transid);
 		backup_files = subcommit ? (backup_files - backup_subdir) : 0;
 		backup_dir = backup_subdir = 0;
 		if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
