@@ -591,6 +591,7 @@ BATclear(BAT *b, bool force)
 	OIDXdestroy(b);
 	STRMPdestroy(b);
 	PROPdestroy(b);
+	HISTOGRAMdestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	MT_lock_set(&b->theaplock);
@@ -677,6 +678,7 @@ BATfree(BAT *b)
 	IMPSfree(b);
 	OIDXfree(b);
 	STRMPfree(b);
+	HISTOGRAMdestroy(b);
 	MT_lock_set(&b->theaplock);
 	if (nunique != BUN_NONE) {
 		b->tunique_est = (double) nunique;
@@ -1507,6 +1509,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		OIDXdestroy(b);
 		IMPSdestroy(b);
 		STRMPdestroy(b);
+		HISTOGRAMdestroy(b);
 
 		if (b->tvarsized && b->ttype) {
 			var_t _d;

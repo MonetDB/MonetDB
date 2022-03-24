@@ -133,6 +133,8 @@ VIEWcreate(oid seq, BAT *b)
 	bn->torderidx = NULL;
 	/* Only the parent should have a pointer to the strimp */
 	bn->tstrimps = NULL;
+	/* At the moment there are no plans to use histograms with views */
+	bn->thistogram = NULL;
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp) {
 			BBPunshare(tp);

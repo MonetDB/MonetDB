@@ -579,6 +579,7 @@ typedef struct {
 typedef struct Hash Hash;
 typedef struct Imprints Imprints;
 typedef struct Strimps Strimps;
+typedef struct Histogram Histogram;
 
 /*
  * @+ Binary Association Tables
@@ -746,6 +747,7 @@ typedef struct {
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
 	Strimps *strimps;	/* string imprint index  */
+	Histogram *histogram;	/* existing histogram */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -831,7 +833,7 @@ typedef struct BAT {
 #define timprints	T.imprints
 #define tprops		T.props
 #define tstrimps	T.strimps
-
+#define thistogram	T.histogram
 
 /* some access functions for the bitmask type */
 static inline void
@@ -1793,6 +1795,10 @@ gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATorderidx(BAT *b, bool stable);
 gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
 gdk_export bool BATcheckorderidx(BAT *b);
+
+/* Histogram related functions */
+gdk_export gdk_return HISTOGRAMcreate(BAT *b);
+gdk_export void HISTOGRAMdestroy(BAT *b);
 
 #include "gdk_delta.h"
 #include "gdk_hash.h"

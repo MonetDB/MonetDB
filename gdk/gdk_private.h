@@ -455,6 +455,19 @@ struct Strimps {
 	/* bitstrings_base is a pointer to uint64_t */
 };
 
+/* The current sample size is 1024, so an int will fit for the bucket count */
+struct HistogramEntry {
+	ValRecord min;	/* The minimum value in the range */
+	ValRecord max;	/* The maximum value in the range */
+	int count;	/* number of values */
+};
+
+struct Histogram {
+	struct HistogramEntry *histogram;	/* The histogram itself (at the moment it's malloc'ed) */
+	int nbuckets;	/* The number of buckets */
+	int nulls;	/* The number of null values */
+};
+
 typedef struct {
 	MT_Lock swap;
 } batlock_t;

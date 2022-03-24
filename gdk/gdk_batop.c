@@ -891,6 +891,7 @@ BATdel(BAT *b, BAT *d)
 	HASHdestroy(b);
 	PROPdestroy(b);
 	STRMPdestroy(b);
+	HISTOGRAMdestroy(b);
 	if (BATtdense(d)) {
 		oid o = d->tseqbase;
 		BUN c = BATcount(d);
