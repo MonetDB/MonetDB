@@ -1131,6 +1131,7 @@ fixhashashbat(BAT *b)
 	OIDXdestroy(b);
 	PROPdestroy(b);
 	STRMPdestroy(b);
+	HISTOGRAMdestroy(b);
 
 	/* make backup of heaps */
 	const char *t;

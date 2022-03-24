@@ -884,6 +884,7 @@ BATdelete(BAT *b)
 	OIDXdestroy(b);
 	PROPdestroy(b);
 	STRMPdestroy(b);
+	HISTOGRAMdestroy(b);
 	HEAPfree(b->theap, true);
 	if (b->tvheap)
 		HEAPfree(b->tvheap, true);

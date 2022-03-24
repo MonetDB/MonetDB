@@ -19,6 +19,7 @@ set(gdk_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_cand.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_calc.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_strimps.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_histogram.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_time.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_system.h>
@@ -32,6 +33,7 @@ set(gdk_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_calc.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_cand.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_strimps.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_histogram.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_time.h>)
 
 add_library(bat SHARED)
@@ -86,6 +88,7 @@ target_sources(bat
   gdk_analytic.h
   gdk_tracer.c gdk_tracer.h
   gdk_strimps.c
+  gdk_histogram.c
   PUBLIC
   ${gdk_public_headers})
 
