@@ -12,7 +12,6 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_rewriter.h"
-#include "rel_optimizer.h"
 
 typedef struct memoitem {
 	const char *name;

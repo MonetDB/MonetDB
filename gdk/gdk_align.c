@@ -165,6 +165,7 @@ BATmaterialize(BAT *b)
 {
 	BUN cnt;
 	Heap *tail;
+	Heap *h, *vh = NULL;
 	BUN p, q;
 	oid t, *x;
 
@@ -179,7 +180,7 @@ BATmaterialize(BAT *b)
 	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
 		return GDK_FAIL;
 	p = 0;
-	q = BUNlast(b);
+	q = BATcount(b);
 	assert(cnt >= q - p);
 	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b));
 
@@ -210,7 +211,7 @@ BATmaterialize(BAT *b)
 	ATOMIC_INIT(&tail->refs, 1);
 	/* point of no return */
 	MT_lock_set(&b->theaplock);
-	assert(ATOMIC_GET(&b->theap->refs) > 0);
+	assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 0);
 	/* can only look at tvheap when lock is held */
 	if (complex_cand(b)) {
 		assert(b->batRole == TRANSIENT);
@@ -245,10 +246,10 @@ BATmaterialize(BAT *b)
 			}
 			assert(n == q);
 		}
-		HEAPdecref(b->tvheap, true);
+		vh = b->tvheap;
 		b->tvheap = NULL;
 	}
-	HEAPdecref(b->theap, false);
+	h = b->theap;
 	b->theap = tail;
 	b->tbaseoff = 0;
 	b->theap->dirty = true;
@@ -258,6 +259,9 @@ BATmaterialize(BAT *b)
 	BATsetdims(b, 0);
 	b->batDirtydesc = true;
 	BATsetcount(b, b->batCount);
+	HEAPdecref(h, false);
+	if (vh)
+		HEAPdecref(vh, true);
 
 	return GDK_SUCCEED;
 }
@@ -363,6 +367,7 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 		view->tmaxpos -= l;
 	else
 		view->tmaxpos = BUN_NONE;
+	view->tkey |= cnt <= 1;
 }
 
 /*

@@ -69,7 +69,7 @@ pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3) {
 	if (BATroles(b,X2) != GDK_SUCCEED)
 		return -1;
 	*ret = b->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 	return 0;
 }
 
@@ -244,8 +244,10 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	addFlag("performance", GRPperformance, GDKdebug);
 	addFlag("forcemito", GRPforcemito, GDKdebug);
 
-	BBPkeepref( *f = flg->batCacheid);
-	BBPkeepref( *v = val->batCacheid);
+	*f = flg->batCacheid;
+	BBPkeepref(flg);
+	*v = val->batCacheid;
+	BBPkeepref(val);
 	return MAL_SUCCEED;
 
 bailout:
@@ -750,7 +752,7 @@ CMDmodules(bat *bid)
 	if (b == NULL)
 		throw(MAL, "mdb.modules", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*bid = b->batCacheid;
-	BBPkeepref(*bid);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 

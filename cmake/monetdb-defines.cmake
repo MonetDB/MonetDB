@@ -300,16 +300,18 @@ macro(monetdb_configure_misc)
       "PASSWORD_BACKEND invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512")
   endif()
 
-  # Used for installing testing python module (don't pass a location, else we need to strip this again)
-  execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': ''})[1:])"
-    RESULT_VARIABLE PY3_LIBDIR_CODE
-    OUTPUT_VARIABLE PYTHON3_SITEDIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if (PY3_LIBDIR_CODE)
-    message(WARNING
-      "Could not determine MonetDB Python3 site-packages instalation directory")
+  if(NOT DEFINED PYTHON3_LIBDIR)
+    # Used for installing testing python module (don't pass a location, else we need to strip this again)
+    execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': ''})[1:])"
+      RESULT_VARIABLE PY3_LIBDIR_CODE
+      OUTPUT_VARIABLE PYTHON3_SITEDIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if (PY3_LIBDIR_CODE)
+      message(WARNING
+        "Could not determine MonetDB Python3 site-packages installation directory")
+    endif()
+    set(PYTHON3_LIBDIR "${PYTHON3_SITEDIR}")
   endif()
-  set(PYTHON3_LIBDIR "${PYTHON3_SITEDIR}")
   set(PYTHON "${Python3_EXECUTABLE}")
 
   if(MSVC)

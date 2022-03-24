@@ -17,3 +17,5 @@ select count(*) from tmp where s <> 'hello'
 ----
 0
 
+statement ok
+drop table tmp

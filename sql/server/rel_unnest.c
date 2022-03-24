@@ -11,15 +11,10 @@
 #include "monetdb_config.h"
 #include "sql_decimal.h"
 #include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_prop.h"
-#include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
-#include "sql_query.h"
-#include "mal_errors.h" /* for SQLSTATE() */
 
 /* some unnesting steps use the 'used' flag to avoid further rewrites. List them here, so only one reset flag iteration will be used */
 #define rewrite_fix_count_used (1 << 0)
@@ -4104,7 +4099,7 @@ rel_unnest_simplify(visitor *v, sql_rel *rel)
 	if (rel)
 		rel = rewrite_empty_project(v, rel); /* remove empty project/groupby */
 	if (rel)
-		rel = rewrite_simplify(v, rel);
+		rel = rewrite_simplify(v, 0, false, rel);
 	if (rel)
 		rel = rewrite_split_select_exps(v, rel); /* has to run before rewrite_complex */
 	if (rel)
@@ -4142,7 +4137,7 @@ rel_unnest_comparison_rewriters(visitor *v, sql_rel *rel)
 	if (rel)
 		rel = rewrite_remove_xp_project(v, rel);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
 	if (rel)
-		rel = rewrite_simplify(v, rel);		/* as expressions got merged before, lets try to simplify again */
+		rel = rewrite_simplify(v, 0, false, rel);		/* as expressions got merged before, lets try to simplify again */
 	return rel;
 }
 
@@ -4159,8 +4154,7 @@ rel_simplify_exp_and_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
-	int level = 0;
-	visitor v = { .sql = sql, .data = &level }; /* make it compatible with rel_optimizer, so set the level to 0 */
+	visitor v = { .sql = sql };
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_exp_and_rank, false);
 	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_simplify);

@@ -39,7 +39,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	if (BATroles(b,X2) != GDK_SUCCEED)
 		return -1;
 	*ret = b->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 	return 0;
 }
 
@@ -498,8 +498,10 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 	if (GDKcopyenv(&k, &v, false) != GDK_SUCCEED)
 		throw(MAL, "inspect.getEnvironment", GDK_EXCEPTION);
 
-	BBPkeepref(*ret = k->batCacheid);
-	BBPkeepref(*ret2 = v->batCacheid);
+	*ret = k->batCacheid;
+	BBPkeepref(k);
+	*ret2 = v->batCacheid;
+	BBPkeepref(v);
 	return MAL_SUCCEED;
 }
 

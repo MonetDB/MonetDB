@@ -1598,7 +1598,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn, BATiter b1i
 		if (strNil(l) || strNil(r)) {
 			nils++;
 			if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		} else {
 			llen = strlen(l);
 			rlen = strlen(r);
@@ -1607,20 +1607,20 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn, BATiter b1i
 				GDKfree(s);
 				s = GDKmalloc(slen);
 				if (s == NULL)
-					goto bunins_failed;
+					goto bailout;
 			}
 			(void) stpcpy(stpcpy(s, l), r);
 			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bailout;
 		}
 	}
 	TIMEOUT_CHECK(timeoffset,
-		      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	GDKfree(s);
 	bn->theap->dirty = true;
 	return nils;
 
-  bunins_failed:
+  bailout:
 	GDKfree(s);
 	return BUN_NONE;
 }
@@ -1631,7 +1631,6 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
-	BUN ncand;
 	struct canditer ci1, ci2;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -1639,17 +1638,17 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	ncand = canditer_init(&ci1, b1, s1);
-	if (canditer_init(&ci2, b2, s2) != ncand ||
-	    ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, b1, s1);
+	canditer_init(&ci2, b2, s2);
+	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 
-	bn = COLnew(ci1.hseq, tp, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, tp, ci1.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ncand == 0)
+	if (ci1.ncand == 0)
 		return bn;
 
 	BATiter b1i = bat_iterator(b1);
@@ -1674,16 +1673,16 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci1.ncand);
 
 	/* if both inputs are sorted the same way, and no overflow
 	 * occurred (we only know for sure if abort_on_error is set),
 	 * the result is also sorted */
 	bn->tsorted = (abort_on_error && b1tsorted && b2tsorted && nils == 0)
-		|| ncand <= 1 || nils == ncand;
+		|| ci1.ncand <= 1 || nils == ci1.ncand;
 	bn->trevsorted = (abort_on_error && b1trevsorted && b2trevsorted && nils == 0)
-		|| ncand <= 1 || nils == ncand;
-	bn->tkey = ncand <= 1;
+		|| ci1.ncand <= 1 || nils == ci1.ncand;
+	bn->tkey = ci1.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1703,31 +1702,30 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
-	BUN ncand;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	ncand = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 
-	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ncand == 0)
+	if (ci.ncand == 0)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
 	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, bi, (BATiter){0}, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ncand});
+		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, bi, (BATiter){0}, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand});
 	} else {
 		nils = add_typeswitchloop(bi.base, b->ttype, true,
 					  VALptr(v), v->vtype, false,
 					  Tloc(bn, 0), tp,
 					  &ci,
-					  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+					  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 					  b->hseqbase, 0,
 					  abort_on_error, __func__);
 	}
@@ -1738,16 +1736,16 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci.ncand);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
 	bn->tsorted = (abort_on_error && btsorted && nils == 0) ||
-		ncand <= 1 || nils == ncand;
+		ci.ncand <= 1 || nils == ci.ncand;
 	bn->trevsorted = (abort_on_error && btrevsorted && nils == 0) ||
-		ncand <= 1 || nils == ncand;
-	bn->tkey = ncand <= 1;
+		ci.ncand <= 1 || nils == ci.ncand;
+	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1765,30 +1763,29 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
-	BUN ncand;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	ncand = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 
-	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ncand == 0)
+	if (ci.ncand == 0)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
 	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, (BATiter){0}, bi, &(struct canditer){.tpe=cand_dense, .ncand=ncand}, &ci);
+		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, (BATiter){0}, bi, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand}, &ci);
 	} else {
 		nils = add_typeswitchloop(VALptr(v), v->vtype, false,
 					  bi.base, b->ttype, true,
 					  Tloc(bn, 0), tp,
-					  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+					  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 					  &ci,
 					  0, b->hseqbase,
 					  abort_on_error, __func__);
@@ -1800,16 +1797,16 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci.ncand);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
 	bn->tsorted = (abort_on_error && btsorted && nils == 0) ||
-		ncand <= 1 || nils == ncand;
+		ci.ncand <= 1 || nils == ci.ncand;
 	bn->trevsorted = (abort_on_error && btrevsorted && nils == 0) ||
-		ncand <= 1 || nils == ncand;
-	bn->tkey = ncand <= 1;
+		ci.ncand <= 1 || nils == ci.ncand;
+	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1848,19 +1845,18 @@ BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils= 0;
-	BUN ncand;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	ncand = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 
-	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ncand == 0)
+	if (ci.ncand == 0)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
@@ -1879,16 +1875,16 @@ BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci.ncand);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
 	bn->tsorted = (abort_on_error && btsorted) ||
-		ncand <= 1 || nils == ncand;
+		ci.ncand <= 1 || nils == ci.ncand;
 	bn->trevsorted = (abort_on_error && btrevsorted) ||
-		ncand <= 1 || nils == ncand;
-	bn->tkey = ncand <= 1;
+		ci.ncand <= 1 || nils == ci.ncand;
+	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -3481,7 +3477,6 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
-	BUN ncand;
 	struct canditer ci1, ci2;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -3489,17 +3484,17 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	ncand = canditer_init(&ci1, b1, s1);
-	if (canditer_init(&ci2, b2, s2) != ncand ||
-	    ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, b1, s1);
+	canditer_init(&ci2, b2, s2);
+	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 
-	bn = COLnew(ci1.hseq, tp, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, tp, ci1.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ncand == 0)
+	if (ci1.ncand == 0)
 		return bn;
 
 	BATiter b1i = bat_iterator(b1);
@@ -3518,11 +3513,11 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci1.ncand);
 
-	bn->tsorted = ncand <= 1 || nils == ncand;
-	bn->trevsorted = ncand <= 1 || nils == ncand;
-	bn->tkey = ncand <= 1;
+	bn->tsorted = ci1.ncand <= 1 || nils == ci1.ncand;
+	bn->trevsorted = ci1.ncand <= 1 || nils == ci1.ncand;
+	bn->tkey = ci1.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -3542,19 +3537,18 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
-	BUN ncand;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	ncand = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 
-	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ncand == 0)
+	if (ci.ncand == 0)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
@@ -3563,7 +3557,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
 				  &ci,
-				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
 				  abort_on_error, __func__);
 	bat_iterator_end(&bi);
@@ -3573,16 +3567,16 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci.ncand);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
 	bn->tsorted = (abort_on_error && btsorted && nils == 0) ||
-		ncand <= 1 || nils == ncand;
+		ci.ncand <= 1 || nils == ci.ncand;
 	bn->trevsorted = (abort_on_error && btrevsorted && nils == 0) ||
-		ncand <= 1 || nils == ncand;
-	bn->tkey = ncand <= 1;
+		ci.ncand <= 1 || nils == ci.ncand;
+	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -3600,19 +3594,18 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
-	BUN ncand;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	ncand = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 
-	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ncand == 0)
+	if (ci.ncand == 0)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
@@ -3620,7 +3613,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	nils = sub_typeswitchloop(VALptr(v), v->vtype, false,
 				  bi.base, b->ttype, true,
 				  Tloc(bn, 0), tp,
-				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  &ci,
 				  0, b->hseqbase,
 				  abort_on_error, __func__);
@@ -3631,17 +3624,17 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci.ncand);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is
 	 * sorted in the opposite direction (except that NILs mess
 	 * things up */
 	bn->tsorted = (abort_on_error && nils == 0 && btrevsorted) ||
-		ncand <= 1 || nils == ncand;
+		ci.ncand <= 1 || nils == ci.ncand;
 	bn->trevsorted = (abort_on_error && nils == 0 && btsorted) ||
-		ncand <= 1 || nils == ncand;
-	bn->tkey = ncand <= 1;
+		ci.ncand <= 1 || nils == ci.ncand;
+	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 

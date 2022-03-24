@@ -193,8 +193,10 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = DICTcompress_intern(&O, &V, c, false, false, false /*output type matches input*/);
 	bat_destroy(c);
 	if (msg == MAL_SUCCEED) {
-		BBPkeepref(*RO = O->batCacheid);
-		BBPkeepref(*RV = V->batCacheid);
+		*RO = O->batCacheid;
+		BBPkeepref(O);
+		*RV = V->batCacheid;
+		BBPkeepref(V);
 	}
 	return msg;
 }
@@ -386,7 +388,8 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(u);
 	if (!b)
 		throw(SQL, "dict.decompress", GDK_EXCEPTION);
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -471,7 +474,8 @@ DICTconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "dict.convert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BBPkeepref(b);
 	bat_destroy(o);
 	return MAL_SUCCEED;
 }
@@ -664,10 +668,14 @@ DICTjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(rv);
 	bat_destroy(lc);
 	bat_destroy(rc);
-	if (r0)
-		BBPkeepref(*R0 = r0->batCacheid);
-	if (r1)
-		BBPkeepref(*R1 = r1->batCacheid);
+	if (r0) {
+		*R0 = r0->batCacheid;
+		BBPkeepref(r0);
+	}
+	if (r1) {
+		*R1 = r1->batCacheid;
+		BBPkeepref(r1);
+	}
 	if (err)
 		throw(MAL, "BATjoin", GDK_EXCEPTION);
 	return res;
@@ -770,7 +778,8 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(lc);
 	if (!bn)
 		throw(SQL, "dict.thetaselect", GDK_EXCEPTION);
-	BBPkeepref(*R0 = bn->batCacheid);
+	*R0 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -873,7 +882,8 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(lc);
 	if (!bn)
 		throw(SQL, "dict.select", GDK_EXCEPTION);
-	BBPkeepref(*R0 = bn->batCacheid);
+	*R0 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -961,7 +971,8 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_destroy(o);
 	bat_destroy(m);
-	BBPkeepref(*R = n->batCacheid);
+	*R = n->batCacheid;
+	BBPkeepref(n);
 	return MAL_SUCCEED;
 }
 

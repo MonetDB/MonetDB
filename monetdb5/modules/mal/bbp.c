@@ -34,7 +34,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2) {
 		return -1;
 	}
 	*ret = b->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 	return -0;
 }
 
@@ -77,7 +77,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.bind", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	BBPkeepref(b->batCacheid);
+	BBPkeepref(b);
 	lhs->vtype = TYPE_bat;
 	lhs->val.bval = i;
 	return MAL_SUCCEED;
@@ -452,17 +452,28 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCA
 			}
 		}
 	}
-	BBPkeepref(*ID = id->batCacheid);
-	BBPkeepref(*NS = ns->batCacheid);
-	BBPkeepref(*TT = tt->batCacheid);
-	BBPkeepref(*CNT = cnt->batCacheid);
-	BBPkeepref(*REFCNT = refcnt->batCacheid);
-	BBPkeepref(*LREFCNT = lrefcnt->batCacheid);
-	BBPkeepref(*LOCATION = location->batCacheid);
-	BBPkeepref(*HEAT = heat->batCacheid);
-	BBPkeepref(*DIRTY = dirty->batCacheid);
-	BBPkeepref(*STATUS = status->batCacheid);
-	BBPkeepref(*KIND = kind->batCacheid);
+	*ID = id->batCacheid;
+	BBPkeepref(id);
+	*NS = ns->batCacheid;
+	BBPkeepref(ns);
+	*TT = tt->batCacheid;
+	BBPkeepref(tt);
+	*CNT = cnt->batCacheid;
+	BBPkeepref(cnt);
+	*REFCNT = refcnt->batCacheid;
+	BBPkeepref(refcnt);
+	*LREFCNT = lrefcnt->batCacheid;
+	BBPkeepref(lrefcnt);
+	*LOCATION = location->batCacheid;
+	BBPkeepref(location);
+	*HEAT = heat->batCacheid;
+	BBPkeepref(heat);
+	*DIRTY = dirty->batCacheid;
+	BBPkeepref(dirty);
+	*STATUS = status->batCacheid;
+	BBPkeepref(status);
+	*KIND = kind->batCacheid;
+	BBPkeepref(kind);
 	return MAL_SUCCEED;
 
   bailout:

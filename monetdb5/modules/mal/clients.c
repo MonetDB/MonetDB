@@ -36,7 +36,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2) {
 	if (BATroles(b,X2) != GDK_SUCCEED)
 		return -1;
 	*ret = b->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 	return 0;
 }
 
@@ -144,7 +144,8 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	if (pseudo(ret,b,"client","info"))
 		goto bailout;
-	BBPkeepref(*ret2= bn->batCacheid);
+	*ret2 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
 bailout:
@@ -798,8 +799,10 @@ static str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	tmp = AUTHgetUsers(&uid, &nme, cntxt);
 	if (tmp)
 		return tmp;
-	BBPkeepref(*ret1 = uid->batCacheid);
-	BBPkeepref(*ret2 = nme->batCacheid);
+	*ret1 = uid->batCacheid;
+	BBPkeepref(uid);
+	*ret2 = nme->batCacheid;
+	BBPkeepref(nme);
 	return(MAL_SUCCEED);
 }
 
@@ -941,16 +944,25 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	MT_lock_unset(&mal_contextLock);
-	BBPkeepref(*idId = id->batCacheid);
-	BBPkeepref(*userId = user->batCacheid);
-	BBPkeepref(*loginId = login->batCacheid);
-	BBPkeepref(*sessiontimeoutId = sessiontimeout->batCacheid);
-	BBPkeepref(*querytimeoutId = querytimeout->batCacheid);
-	BBPkeepref(*idleId = idle->batCacheid);
+	*idId = id->batCacheid;
+	BBPkeepref(id);
+	*userId = user->batCacheid;
+	BBPkeepref(user);
+	*loginId = login->batCacheid;
+	BBPkeepref(login);
+	*sessiontimeoutId = sessiontimeout->batCacheid;
+	BBPkeepref(sessiontimeout);
+	*querytimeoutId = querytimeout->batCacheid;
+	BBPkeepref(querytimeout);
+	*idleId = idle->batCacheid;
+	BBPkeepref(idle);
 
-	BBPkeepref(*optId = opt->batCacheid);
-	BBPkeepref(*wlimitId = wlimit->batCacheid);
-	BBPkeepref(*mlimitId = mlimit->batCacheid);
+	*optId = opt->batCacheid;
+	BBPkeepref(opt);
+	*wlimitId = wlimit->batCacheid;
+	BBPkeepref(wlimit);
+	*mlimitId = mlimit->batCacheid;
+	BBPkeepref(mlimit);
 	return MAL_SUCCEED;
 
 bailout:
