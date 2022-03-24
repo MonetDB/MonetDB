@@ -98,6 +98,8 @@ gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__visibility__("hidden")));
 void BBPclear(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
+BAT *BBPdescriptor(bat b)
+	__attribute__((__visibility__("hidden")));
 void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
