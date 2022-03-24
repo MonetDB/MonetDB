@@ -70,6 +70,7 @@ gdk_export int BBPrename(BAT *b, const char *nme);
 
 /* query interface */
 gdk_export bat BBPindex(const char *nme);
+gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
 gdk_export gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);

@@ -1895,7 +1895,20 @@ BBPcheck(bat x)
 	return 0;
 }
 
-gdk_export BAT *BATdescriptor(bat i);
+static inline BAT *
+BATdescriptor(bat i)
+{
+	BAT *b = NULL;
+
+	if (BBPcheck(i)) {
+		if (BBPfix(i) <= 0)
+			return NULL;
+		b = BBP_cache(i);
+		if (b == NULL)
+			b = BBPdescriptor(i);
+	}
+	return b;
+}
 
 static inline void *
 Tpos(BATiter *bi, BUN p)
