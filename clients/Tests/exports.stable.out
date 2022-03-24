@@ -115,7 +115,6 @@ BAT *BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error, uint8_t scale1, uin
 BUN BATcount_no_nil(BAT *b, BAT *s);
 gdk_return BATdel(BAT *b, BAT *d) __attribute__((__warn_unused_result__));
 BAT *BATdense(oid hseq, oid tseq, BUN cnt) __attribute__((__warn_unused_result__));
-BAT *BATdescriptor(bat i);
 BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool not_in, BUN estimate);
 BAT *BATdiffcand(BAT *a, BAT *b);
 BAT *BATdiffcand(BAT *a, BAT *b);
@@ -209,6 +208,7 @@ gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, boo
 BBPrec *BBP[N_BBPINIT];
 gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
 void BBPcold(bat i);
+BAT *BBPdescriptor(bat b);
 int BBPfix(bat b);
 bat BBPindex(const char *nme);
 void BBPkeepref(BAT *b) __attribute__((__nonnull__(1)));
