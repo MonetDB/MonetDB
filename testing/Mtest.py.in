@@ -32,6 +32,7 @@ import struct
 import signal
 import fnmatch
 import glob
+import pymonetdb # check for pymonetdb early: it is essential for our work
 try:
     import winreg               # Python 3 on Windows
 except ImportError:
@@ -395,7 +396,7 @@ CONDITIONALS = {
     'HAVE_LIBSCIPY3'       : False,
     'HAVE_PERL'            : False,
     'HAVE_PHP'             : False,
-    'HAVE_PYMONETDB'       : False, # default PYTHON can import pymonetdb
+    'HAVE_PYMONETDB'       : True,  # default PYTHON can import pymonetdb
     'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
     'HAVE_RUBY'            : False,
     'HAVE_CPP'             : False,
@@ -1196,7 +1197,7 @@ def find_test_dirs(thisdir, recursive=True) :
     return testdirs, tstcnt
 ### find_test_dirs(thisdir) #
 
-def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
+def PerformDir(env, testdir, testlist, total_tests, test_progress) :
     interrupted = False
     td = 0
     elem = None
@@ -1250,7 +1251,6 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
 
         if testlist:
             tl = []
-            missing = False
             for tst in testlist:
                 for t, c in alltests:
                     if t == tst:
@@ -1258,10 +1258,7 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
                         break
                 else:
                     tl.append((tst,None))
-                    missing = True
             testlist = tl
-            if not missing:
-                all_tests = True
         else:
             testlist = alltests
         if not testlist:
@@ -1394,7 +1391,7 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
                     tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
                 else:
                     os.environ['TST'] = TST
-                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test_progress)
+                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress)
                     alllinks.extend(links)
                 if tt:
                     t = "%7.3f" % tt
@@ -1418,28 +1415,38 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
             if pSrvr is not None:
                 pSrvr.terminate()
                 pSrvr = None
-                for ext in ['out', 'err']:
-                    o = openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}.html'), 'w')
-                    o.write('<html>\n')
-                    o.write('<head><title>{} standard {}</title></head>\n'.format(TSTDIR, 'output' if ext == 'out' else 'error'))
-                    o.write('<body>\n')
-                    empty = True
-                    for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
-                        if empty:
-                            o.write('<pre>\n')
-                        empty = False
-                        span1 = span2 = ''
+                if produce_html:
+                    for ext in ['out', 'err']:
+                        o = openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}.html'), 'w')
+                        o.write('<html>\n')
+                        o.write('<head><title>{} standard {}</title></head>\n'.format(TSTDIR, 'output' if ext == 'out' else 'error'))
+                        o.write('<body>\n')
+                        empty = True
+                        for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
+                            if empty:
+                                o.write('<pre>\n')
+                            empty = False
+                            span1 = span2 = ''
+                            if line != '\n' and not line.startswith('#'):
+                                if ext == 'out':
+                                    ssout = F_ERROR
+                                else:
+                                    sserr = F_ERROR
+                                span1 = '<span style="background-color: rgb(100%,0%,0%);">'
+                                span2 = '</span>\n'
+                                line = line.rstrip('\n')
+                            o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
+                        o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
+                        o.close()
+                else:
+                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out')):
                         if line != '\n' and not line.startswith('#'):
-                            if ext == 'out':
-                                ssout = F_ERROR
-                            else:
-                                sserr = F_ERROR
-                            span1 = '<span style="background-color: rgb(100%,0%,0%);">'
-                            span2 = '</span>\n'
-                            line = line.rstrip('\n')
-                        o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
-                    o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
-                    o.close()
+                            ssout = F_ERROR
+                            break
+                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err')):
+                        if line != '\n' and not line.startswith('#'):
+                            sserr = F_ERROR
+                            break
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
@@ -1450,6 +1457,12 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
             body = body_bad + body_good
             CreateHtmlIndex(env, ssout, sserr, *body)
             elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
+        if ssout == F_ERROR or sserr == F_ERROR:
+            if verbosity == 0:
+                print('\r', ' '*(ttywidth or 100), end='', sep='')
+                print('\r', end='', sep='')
+            prred('ERROR')
+            print(' in directory {}'.format(TSTDIR))
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -1486,7 +1499,7 @@ def PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) :
         return td, elem, max(FdOut, FdErr, ssout, sserr), interrupted, test_progress
     finally:
         del sys.path[0]
-### PerformDir(env, testdir, testlist, all_tests, total_tests, test_progress) #
+### PerformDir(env, testdir, testlist, total_tests, test_progress) #
 
 # this function is a slightly modified copy of the posixpath version
 # the differences are the doubling of \'s in the replacement value
@@ -1837,7 +1850,7 @@ relcond = {
                              'last hugeint chained empty'),
 }
 
-def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test_progress) :
+def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) :
     global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
@@ -2038,9 +2051,6 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif EXT == ".test" and not CONDITIONALS['HAVE_PYMONETDB']:
-        reason = "as pymonetdb is not available."
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif SERVER in ["MAL", "SQL"] and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
@@ -2133,7 +2143,7 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, pSrvr, total_tests, test_progress)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, pSrvr, total_tests, test_progress)
         t1 = time.time()
         TX = t1 - t0
         if verbosity > 0:
@@ -2294,6 +2304,43 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
             else:
                 diff_html.write('<!--NoDiffs-->\n')
             diff_html.close()
+
+            if verbosity <= 1:
+                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                    print('\r', ' '*(ttywidth or 100), end='', sep='')
+                    print('\r', end='', sep='')
+                if tres == 'socket':
+                    prpurple('SOCKET')
+                elif tres == 'timeout':
+                    prpurple('TIMEOUT')
+                elif tres == 'recursion':
+                    prpurple('RECURSION')
+                elif tres == 'segfault':
+                    prpurple('CRASHED')
+                elif tres == 'abort':
+                    prpurple('ABORTED')
+                elif tres == 'signal':
+                    prpurple('SIGNALED')
+                elif verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                    prred('ERROR')
+                elif verbosity == 1:
+                    if FailedOut == F_OK:
+                        prgreen('OK   ')
+                    elif FailedOut == F_WARN:
+                        prgreen('minor')
+                    else:
+                        prred('ERROR')
+                    print(' ', end='')
+                    if FailedErr == F_OK:
+                        prgreen('OK')
+                    elif FailedErr == F_WARN:
+                        prgreen('minor')
+                    else:
+                        prred('ERROR')
+                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                    print(':', os.path.join(TSTDIR, TST + EXT))
+                elif verbosity == 1:
+                    print()
         elif FailedOut > F_WARN or FailedErr > F_WARN:
             print()
             print('========================================')
@@ -2318,35 +2365,6 @@ def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr, total_tests, test
         if not testweb and produce_html:
             elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT,
                                      FailedOut, FailedErr)
-
-        if verbosity == 1:
-            if tres == 'socket':
-                prpurple('SOCKET')
-            elif tres == 'timeout':
-                prpurple('TIMEOUT')
-            elif tres == 'recursion':
-                prpurple('RECURSION')
-            elif tres == 'segfault':
-                prpurple('CRASHED')
-            elif tres == 'abort':
-                prpurple('ABORTED')
-            elif tres == 'signal':
-                prpurple('SIGNALED')
-            else:
-                if FailedOut == F_OK:
-                    prgreen('OK   ')
-                elif FailedOut == F_WARN:
-                    prgreen('minor')
-                else:
-                    prred('MAJOR')
-                print(' ', end='')
-                if FailedErr == F_OK:
-                    prgreen('OK')
-                elif FailedErr == F_WARN:
-                    prgreen('minor')
-                else:
-                    prred('MAJOR')
-            print()
 
     return TX,FailedOut,FailedErr,elem,reason,links
 ### RunTest(env, TST, COND, oktests) #
@@ -2673,7 +2691,7 @@ def progress(count, total, test):
         s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
     print('\r', s, end='', sep='', flush=True)
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, PSRVR, total_tests, test_progress) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, test_progress) :
     ATJOB2 = ""
     print(file=sys.stderr, end='', flush=True)
     if verbosity == 0:
@@ -3382,7 +3400,6 @@ def main(argv) :
     approve = opts.approve
     produce_html = opts.produce_html
     addreqs = False
-    all_tests = False
     testweb = opts.testweb
     if testweb and verbosity == 0:
         verbosity = 1
@@ -3458,13 +3475,6 @@ def main(argv) :
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     os.environ['PYTHON'] = sys.executable
-    try:
-        import pymonetdb
-    except ImportError:
-        print('pymonetdb package not available')
-        CONDITIONALS['HAVE_PYMONETDB'] = False
-    else:
-        CONDITIONALS['HAVE_PYMONETDB'] = True
 
     try:
         import lz4
@@ -3847,12 +3857,14 @@ def main(argv) :
                     if t not in testdirs:
                         testdirs.append(t)
         else:
+            test_count = 0
             for d in dirlist:
-                test_dirs, test_count = find_test_dirs(d, recursive=False)
-                if test_count == 0:
+                test_dirs, cnt = find_test_dirs(d, recursive=False)
+                if cnt == 0:
                     Warn("No tests found in '%s`; skipping directory!" % d)
                 else:
                     testdirs.extend(test_dirs)
+                    test_count += cnt
 
         if len(testdirs) > 1  and  testlist:
             testlist = []
@@ -3954,13 +3966,12 @@ def main(argv) :
         try:
             if len(testdirs) == 1:
                 if testlist:
-                    tsts = "tests "+str(testlist)
+                    tsts = "tests " + ", ".join(testlist)
                 else:
                     tsts = "all tests"
-                    all_tests = True
                 if verbosity > 1:
                     print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
-                t_, elem, diff, interrupted, test_progress = PerformDir(env, testdirs[0], testlist, all_tests, test_count, test_progress)
+                t_, elem, diff, interrupted, test_progress = PerformDir(env, testdirs[0], testlist, test_count, test_progress)
                 if elem is not None:
                     if diff <= F_OK:
                         body_good.append(elem)
@@ -3970,7 +3981,7 @@ def main(argv) :
                 if verbosity > 1:
                     print("\nRunning all tests in directories %s.\n" % str(testdirs))
                 for d in testdirs:
-                    t, elem, diff, interrupted, test_progress = PerformDir(env, d, [], True, test_count, test_progress)
+                    t, elem, diff, interrupted, test_progress = PerformDir(env, d, [], test_count, test_progress)
                     t_ = t_ + t
                     if elem is not None:
                         if diff <= F_OK:

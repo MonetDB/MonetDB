@@ -780,7 +780,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 			return -1;
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
-		if (!(escaped_q = sql_escape_str(m->ta, (char*) query))) {
+		if (!(escaped_q = sql_escape_str(m->ta, query))) {
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
@@ -1206,7 +1206,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r)
-		r = sql_processrelation(m, r, 1, 1, 0);
+		r = sql_processrelation(m, r, 0, 1, 1, 0);
 	if (!r)
 		return -1;
 

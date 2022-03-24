@@ -567,10 +567,10 @@ typedef struct {
 
 	ATOMIC_TYPE refs;	/* reference count for this heap */
 	bte farmid;		/* id of farm where heap is located */
-	bool cleanhash:1,	/* string heaps must clean hash */
-		dirty:1,	/* specific heap dirty marker */
-		remove:1,	/* remove storage file when freeing */
-		wasempty:1;	/* heap was empty when last saved/created */
+	bool cleanhash;		/* string heaps must clean hash */
+	bool dirty;		/* specific heap dirty marker */
+	bool remove;		/* remove storage file when freeing */
+	bool wasempty;	    /* heap was empty when last saved/created */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
@@ -758,8 +758,21 @@ typedef struct {
 #define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
 #define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
+#define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
-#define GDKLIBRARY		061045U /* first after Jul2021 */
+#define GDKLIBRARY		061046U /* first after Jan2022 */
+
+/* The batRestricted field indicates whether a BAT is readonly.
+ * we have modes: BAT_WRITE  = all permitted
+ *                BAT_APPEND = append-only
+ *                BAT_READ   = read-only
+ * VIEW bats are always mapped read-only.
+ */
+typedef enum {
+	BAT_WRITE,		  /* all kinds of access allowed */
+	BAT_READ,		  /* only read-access allowed */
+	BAT_APPEND,		  /* only reads and appends allowed */
+} restrict_t;
 
 typedef struct BAT {
 	/* static bat properties */
@@ -768,13 +781,12 @@ typedef struct BAT {
 	bat batCacheid;		/* index into BBP */
 
 	/* dynamic bat properties */
+	restrict_t batRestricted; /* access privileges */
+	bool batTransient;	/* should the BAT persist on disk? */
 	bool
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
-	 batDirtydesc:1,	/* bat descriptor dirty marker */
-	 batTransient:1;	/* should the BAT persist on disk? */
-	uint8_t	/* adjacent bit fields are packed together (if they fit) */
-	 batRestricted:2;	/* access privileges */
+	 batDirtydesc:1;	/* bat descriptor dirty marker */
 	uint16_t /* adjacent bit fields are packed together (if they fit) */
 	 selcnt:10;		/* how often used in equi select without hash */
 	role_t batRole;		/* role of the bat */
@@ -924,10 +936,10 @@ gdk_export void HEAPincref(Heap *h);
  * The BAT iterator provides a number of fields that can (and often
  * should) be used to access information about the BAT.  For string
  * BATs, if a parallel threads adds values, the offset heap (theap) may
- * get replaced by a one that is wider.  This involves changing the
- * twidth and tshift values in the BAT structure.  These changed values
- * should not be used to access the data in the iterator.  Instead, use
- * the width and shift values in the iterator itself.
+ * get replaced by one that is wider.  This involves changing the twidth
+ * and tshift values in the BAT structure.  These changed values should
+ * not be used to access the data in the iterator.  Instead, use the
+ * width and shift values in the iterator itself.
  */
 typedef struct BATiter {
 	BAT *b;
@@ -1147,8 +1159,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
 
-#define Tsize(b)	((b)->twidth)
-
 #define tailsize(b,p)	((b)->ttype ?				\
 			 (ATOMstorage((b)->ttype) == TYPE_msk ?	\
 			  (((size_t) (p) + 31) / 32) * 4 :	\
@@ -1168,8 +1178,6 @@ typedef var_t stridx_t;
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
 #define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
-
-#define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
 #define BATcount(b)	((b)->batCount)
 
@@ -1235,18 +1243,6 @@ gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 
-/* The batRestricted field indicates whether a BAT is readonly.
- * we have modes: BAT_WRITE  = all permitted
- *                BAT_APPEND = append-only
- *                BAT_READ   = read-only
- * VIEW bats are always mapped read-only.
- */
-typedef enum {
-	BAT_WRITE,		  /* all kinds of access allowed */
-	BAT_READ,		  /* only read-access allowed */
-	BAT_APPEND,		  /* only reads and appends allowed */
-} restrict_t;
-
 gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
 	__attribute__((__warn_unused_result__));
 gdk_export restrict_t BATgetaccess(BAT *b);
@@ -1309,7 +1305,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 
 gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
-gdk_export void BATmsync(BAT *b);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
@@ -2227,7 +2222,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * is the iteration variable.
  */
 #define BATloop(r, p, q)			\
-	for (q = BUNlast(r), p = 0; p < q; p++)
+	for (q = BATcount(r), p = 0; p < q; p++)
 
 /*
  * @+ Common BAT Operations

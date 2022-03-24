@@ -753,7 +753,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 				r = rel_parse(sql, s, relt, m_deps);
 				if (r)
-					r = sql_processrelation(sql, r, 0, 0, 0);
+					r = sql_processrelation(sql, r, 0, 0, 0, 0);
 				if (r) {
 					list *id_l = rel_dependencies(sql, r);
 
@@ -789,7 +789,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = sql_processrelation(sql, r, 0, 0, 0);
+						r = sql_processrelation(sql, r, 0, 0, 0, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -817,7 +817,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 						r = rel_parse(sql, s, relt, m_deps);
 						if (r)
-							r = sql_processrelation(sql, r, 0, 0, 0);
+							r = sql_processrelation(sql, r, 0, 0, 0, 0);
 						if (r) {
 							list *id_l = rel_dependencies(sql, r);
 
@@ -4776,6 +4776,13 @@ sql_update_default(Client c, mvc *sql)
 			"update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences') AND schema_id = 2000;\n");
 		pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = %d;\n", F_UNION);
+
+		/* 12_url.sql */
+		pos += snprintf(buf + pos, bufsize - pos,
+						"CREATE function sys.url_extract_host(url string, no_www bool) RETURNS STRING\n"
+						"EXTERNAL NAME url.\"extractURLHost\";\n"
+						"GRANT EXECUTE ON FUNCTION url_extract_host(string, bool) TO PUBLIC;\n"
+						"update sys.functions set system = true where system <> true and name = 'url_extract_host' and schema_id = 2000 and type = %d;\n", F_FUNC);
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);

@@ -1466,7 +1466,8 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	lcnt = lend - lstart;
 	if (l->ttype == TYPE_void) {
 		assert(!is_oid_nil(l->tseqbase));
-		lcnt = canditer_init(&lci, NULL, l);
+		canditer_init(&lci, NULL, l);
+		lcnt = lci.ncand;
 		lvals = NULL;
 	} else {
 		lci = (struct canditer) {.tpe = cand_dense}; /* not used */
@@ -3176,7 +3177,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		    (hs.heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
 		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
-		    HASHnew(&hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(&hs, b->ttype, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
@@ -3385,7 +3386,6 @@ static gdk_return
 thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN estimate, const char *reason, lng t0)
 {
 	struct canditer lci, rci;
-	BUN lcnt, rcnt;
 	const char *lvals, *rvals;
 	const char *lvars, *rvars;
 	const void *nil = ATOMnilptr(l->ttype);
@@ -3411,8 +3411,8 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
-	lcnt = canditer_init(&lci, l, sl);
-	rcnt = canditer_init(&rci, r, sr);
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
 
 	lvals = BATtvoid(l) ? NULL : (const char *) li.base;
 	rvals = BATtvoid(r) ? NULL : (const char *) ri.base;
@@ -3446,7 +3446,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 		roff = (lng) r->tseqbase - (lng) r->hseqbase;
 	}
 
-	BUN maxsize = joininitresults(r1p, r2p, lcnt, rcnt, false, false,
+	BUN maxsize = joininitresults(r1p, r2p, lci.ncand, rci.ncand, false, false,
 				      false, false, false, false, estimate);
 	if (maxsize == BUN_NONE) {
 		bat_iterator_end(&li);
@@ -3734,7 +3734,6 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	 bool not_in, bool max_one, bool min_one, BUN estimate,
 	 const char *func, lng t0)
 {
-	BUN lcnt, rcnt;
 	struct canditer lci, rci;
 	bool rhash, prhash, rcand;
 	bat parent;
@@ -3752,8 +3751,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (r2p)
 		*r2p = NULL;
 
-	lcnt = canditer_init(&lci, l, sl);
-	rcnt = canditer_init(&rci, r, sr);
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
 
 	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBP_cache(parent);
@@ -3792,7 +3791,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		goto doreturn;
 	}
 
-	if (lcnt == 0 || rcnt == 0) {
+	if (lci.ncand == 0 || rci.ncand == 0) {
 		TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 			  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
@@ -3809,7 +3808,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 
 	if (!nil_on_miss && !semi && !max_one && !min_one && !only_misses && !not_in &&
-	    (lcnt == 1 || (BATordered(l) && BATordered_rev(l)) ||
+	    (lci.ncand == 1 || (BATordered(l) && BATordered_rev(l)) ||
 	     (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)))) {
 		/* single value to join, use select */
 		rc = selectjoin(r1p, r2p, l, r, &lci, &rci,
@@ -3830,7 +3829,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		   && !nil_matches
 		   && !only_misses
 		   && !not_in
-		   /* && (rcnt * 1024) < lcnt */
+		   /* && (rci.ncand * 1024) < lci.ncand */
 		   && (BATordered(r) || BATordered_rev(r))) {
 		assert(ATOMtype(l->ttype) == TYPE_oid); /* tdense */
 		rc = fetchjoin(r1p, r2p, l, r, sl, sr, &lci, &rci, func, t0);
@@ -3855,8 +3854,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    && (BATordered(l)
 			|| BATordered_rev(l)
 			|| BATtdense(r)
-			|| lcnt < 1024
-			|| BATcount(r) * (Tsize(r) + hsz + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1))) {
+			|| lci.ncand < 1024
+			|| BATcount(r) * (r->twidth + hsz + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1))) {
 			rc = mergejoin(r1p, r2p, l, r, &lci, &rci,
 				       nil_matches, nil_on_miss, semi, only_misses,
 				       not_in, max_one, min_one, estimate, t0, false, func);
@@ -4234,7 +4233,6 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	    const void *c1, const void *c2, bool linc, bool hinc, BUN estimate)
 {
 	lng t0 = 0;
-	BUN lcnt, rcnt;
 	struct canditer lci, rci;
 	const char *lvals, *rvals;
 	int t;
@@ -4270,10 +4268,10 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	t = ATOMtype(l->ttype);
 	t = ATOMbasetype(t);
 
-	lcnt = canditer_init(&lci, l, sl);
-	rcnt = canditer_init(&rci, r, sr);
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
 
-	if (lcnt == 0 || rcnt == 0)
+	if (lci.ncand == 0 || rci.ncand == 0)
 		return nomatch(r1p, r2p, l, r, &lci,
 			       false, false, __func__, t0);
 
@@ -4341,7 +4339,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		return GDK_FAIL;
 	}
 
-	BUN maxsize = joininitresults(r1p, r2p, lcnt, rcnt, false, false,
+	BUN maxsize = joininitresults(r1p, r2p, lci.ncand, rci.ncand, false, false,
 				      false, false, false, false, estimate);
 	if (maxsize == BUN_NONE)
 		return GDK_FAIL;
@@ -4367,7 +4365,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 
 	/* nested loop implementation for band join */
-	for (BUN lidx = 0; lidx < lcnt; lidx++) {
+	for (BUN lidx = 0; lidx < lci.ncand; lidx++) {
 		GDK_CHECK_TIMEOUT(timeoffset, counter,
 				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		lo = canditer_next(&lci);
@@ -4376,7 +4374,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			continue;
 		nr = 0;
 		canditer_reset(&rci);
-		for (BUN ridx = 0; ridx < rcnt; ridx++) {
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {
 			ro = canditer_next(&rci);
 			vr = FVALUE(r, ro - r->hseqbase);
 			switch (ATOMtype(l->ttype)) {
@@ -4652,8 +4650,10 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	}
 	if (joinparamcheck(l, rl, rh, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
-	if (canditer_init(&lci, l, sl) == 0 ||
-	    canditer_init(&rci, rl, sr) == 0 ||
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, rl, sr);
+	if (lci.ncand == 0 ||
+	    rci.ncand == 0 ||
 	    (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)) ||
 	    ((rl->ttype == TYPE_void && is_oid_nil(rl->tseqbase)) &&
 	     (rh->ttype == TYPE_void && is_oid_nil(rh->tseqbase)))) {

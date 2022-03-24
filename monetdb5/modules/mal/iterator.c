@@ -67,7 +67,7 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	 *granule, MIN(cnt,(BUN) *granule)); */
 	VIEWbounds(b, view, 0, MIN(cnt, (BUN) * granule));
 	*vid = view->batCacheid;
-	BBPkeepref(view->batCacheid);
+	BBPkeepref(view);
 	BBPunfix(b->batCacheid);
 	*res = 0;
 	return MAL_SUCCEED;
@@ -92,7 +92,7 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
 	}
 	i = (BUN) (*res + BATcount(view));
-	if (i >= BUNlast(b)) {
+	if (i >= BATcount(b)) {
 		*res = lng_nil;
 		*vid = 0;
 		BBPunfix(view->batCacheid);
@@ -101,9 +101,11 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	}
 	/* printf("set bat chunk bound to " BUNFMT " - " BUNFMT " \n",
 	   i, i+(BUN) *granule-1); */
-	VIEWbounds(b, view, i, i + (BUN) * granule);
+	VIEWbounds(b, view, i, i + (BUN) *granule);
+	view->tkey = b->tkey | (*granule <= 1);
 	BAThseqbase(view, is_oid_nil(b->hseqbase) ? oid_nil : b->hseqbase + i);
-	BBPkeepref(*vid = view->batCacheid);
+	*vid = view->batCacheid;
+	BBPkeepref(view);
 	BBPunfix(b->batCacheid);
 	*res = i;
 	return MAL_SUCCEED;
@@ -175,7 +177,7 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	*head = *head + 1;
-	if (*head >= BUNlast(b)) {
+	if (*head >= BATcount(b)) {
 		*head = oid_nil;
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;

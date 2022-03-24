@@ -125,13 +125,20 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	MT_lock_unset(&mal_delayLock);
-	BBPkeepref(*u = user->batCacheid);
-	BBPkeepref(*c = querycount->batCacheid);
-	BBPkeepref(*t = totalticks->batCacheid);
-	BBPkeepref(*s = started->batCacheid);
-	BBPkeepref(*f = finished->batCacheid);
-	BBPkeepref(*m = maxticks->batCacheid);
-	BBPkeepref(*q = maxquery->batCacheid);
+	*u = user->batCacheid;
+	BBPkeepref(user);
+	*c = querycount->batCacheid;
+	BBPkeepref(querycount);
+	*t = totalticks->batCacheid;
+	BBPkeepref(totalticks);
+	*s = started->batCacheid;
+	BBPkeepref(started);
+	*f = finished->batCacheid;
+	BBPkeepref(finished);
+	*m = maxticks->batCacheid;
+	BBPkeepref(maxticks);
+	*q = maxquery->batCacheid;
+	BBPkeepref(maxquery);
 	return MAL_SUCCEED;
 
 bailout:
@@ -247,15 +254,24 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			i = 0;
 	}
 	MT_lock_unset(&mal_delayLock);
-	BBPkeepref( *t =tag->batCacheid);
-	BBPkeepref( *s =sessionid->batCacheid);
-	BBPkeepref( *u =user->batCacheid);
-	BBPkeepref( *sd =started->batCacheid);
-	BBPkeepref( *ss =status->batCacheid);
-	BBPkeepref( *q =query->batCacheid);
-	BBPkeepref( *f =finished->batCacheid);
-	BBPkeepref( *w =workers->batCacheid);
-	BBPkeepref( *m =memory->batCacheid);
+	*t = tag->batCacheid;
+	BBPkeepref(tag);
+	*s = sessionid->batCacheid;
+	BBPkeepref(sessionid);
+	*u = user->batCacheid;
+	BBPkeepref(user);
+	*sd = started->batCacheid;
+	BBPkeepref(started);
+	*ss = status->batCacheid;
+	BBPkeepref(status);
+	*q = query->batCacheid;
+	BBPkeepref(query);
+	*f = finished->batCacheid;
+	BBPkeepref(finished);
+	*w = workers->batCacheid;
+	BBPkeepref(workers);
+	*m = memory->batCacheid;
+	BBPkeepref(memory);
 	return MAL_SUCCEED;
 
   bailout:

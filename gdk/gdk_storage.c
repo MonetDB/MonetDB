@@ -666,103 +666,6 @@ DESCload(int i)
 	return b;
 }
 
-/* spawning the background msync should be done carefully
- * because there is a (small) chance that the BAT has been
- * deleted by the time you issue the msync.
- * This leaves you with possibly deadbeef BAT descriptors.
- */
-
-/* #define DISABLE_MSYNC */
-#define MSYNC_BACKGROUND
-
-#ifndef DISABLE_MSYNC
-#ifndef MS_ASYNC
-struct msync {
-	bat id;
-	Heap *h;
-};
-
-static void
-BATmsyncImplementation(void *arg)
-{
-	Heap *h = ((struct msync *) arg)->h;
-
-	(void) MT_msync(h->base, h->size);
-	BBPunfix(((struct msync *) arg)->id);
-	GDKfree(arg);
-}
-#endif
-#endif
-
-void
-BATmsync(BAT *b)
-{
-	/* we don't sync views or if we're told not to */
-	if (isVIEW(b) || GDKinmemory(b->theap->farmid) || (GDKdebug & NOSYNCMASK))
-		return;
-	/* we don't sync transients */
-	if (b->theap->farmid != 0 ||
-	    (b->tvheap != NULL && b->tvheap->farmid != 0))
-		return;
-#ifndef DISABLE_MSYNC
-#ifdef MS_ASYNC
-	if (b->theap->storage == STORE_MMAP &&
-	    msync(b->theap->base, b->theap->free, MS_ASYNC) < 0)
-		GDKsyserror("msync heap of bat %d failed\n", b->batCacheid);
-	if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
-	    msync(b->tvheap->base, b->tvheap->free, MS_ASYNC) < 0)
-		GDKsyserror("msync vheap of bat %d failed\n", b->batCacheid);
-#else
-	{
-		struct msync *arg;
-
-		assert(!b->batTransient);
-		if (b->theap->storage == STORE_MMAP &&
-		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-			arg->id = b->batCacheid;
-			arg->h = b->theap;
-			BBPfix(b->batCacheid);
-#ifdef MSYNC_BACKGROUND
-			char name[MT_NAME_LEN];
-			MT_Id tid;
-			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
-					     MT_THR_DETACHED, name) < 0) {
-				/* don't bother if we can't create a thread */
-				BBPunfix(b->batCacheid);
-				GDKfree(arg);
-			}
-#else
-			BATmsyncImplementation(arg);
-#endif
-		}
-
-		if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
-		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-			arg->id = b->batCacheid;
-			arg->h = b->tvheap;
-			BBPfix(b->batCacheid);
-#ifdef MSYNC_BACKGROUND
-			char name[MT_NAME_LEN];
-			MT_Id tid;
-			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
-					     MT_THR_DETACHED, name) < 0) {
-				/* don't bother if we can't create a thread */
-				BBPunfix(b->batCacheid);
-				GDKfree(arg);
-			}
-#else
-			BATmsyncImplementation(arg);
-#endif
-		}
-	}
-#endif
-#else
-	(void) b;
-#endif	/* DISABLE_MSYNC */
-}
-
 gdk_return
 BATsave_locked(BAT *b, BATiter *bi, BUN size)
 {
@@ -773,7 +676,7 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 	BATcheck(b, GDK_FAIL);
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
-	assert(!GDKinmemory(b->theap->farmid));
+	assert(!GDKinmemory(bi->h->farmid));
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
@@ -1077,7 +980,7 @@ BATprint(stream *fdout, BAT *b)
 {
 	if (complex_cand(b)) {
 		struct canditer ci;
-		BUN ncand = canditer_init(&ci, NULL, b);
+		canditer_init(&ci, NULL, b);
 		oid hseq = ci.hseq;
 
 		mnstr_printf(fdout,
@@ -1086,7 +989,7 @@ BATprint(stream *fdout, BAT *b)
 			     "# void\toid  # type\n"
 			     "#--------------------------#\n",
 			     b->tident);
-		for (BUN i = 0; i < ncand; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid o = canditer_next(&ci);
 			mnstr_printf(fdout,
 				     "[ " OIDFMT "@0,\t" OIDFMT "@0  ]\n",
