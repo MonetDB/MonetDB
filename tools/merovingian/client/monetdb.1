@@ -280,7 +280,7 @@ the operation on other databases was successful.
 \fBmonetdb\fP \fBsnapshot\fP \fBwrite\fP \fIdbname\fP
 Takes a snapshot of the given database and writes it to stdout.
 .TP
-\fBmonetdb\fP \fBsnapshot\fP \fBcreate\fP [\fB-t\fP \fItargetfile\fP] \fIdbname\fP [\fIdbname\fP..]
+\fBmonetdb\fP \fBsnapshot\fP \fBcreate\fP [\fB-t\fP \fItargetfile\fP] \fIdbname\fP [\fIdbname\fP ...]
 Takes a snapshot of the given databases.
 Here,
 .I dbname
@@ -315,7 +315,7 @@ a file on the server which must be somewhere under
 .I snapshotdir
 but which does not have to follow any particular naming convention.
 .TP
-\fBmonetdb\fP \fBsnapshot\fP \fBlist\fP [\fIdbname\fP..]
+\fBmonetdb\fP \fBsnapshot\fP \fBlist\fP [\fIdbname\fP ...]
 Lists the snapshots for the given databases, or all databases if none
 is given, showing the snapshot id, the time the snapshot was taken and
 the (compressed) size of the snapshot file. Only snapshots following
@@ -343,14 +343,14 @@ When
 .B -f
 is given, no confirmation is asked when overwriting an existing database.
 .TP
-\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB-f\fP] \fIname\fP@\fItag\fP..
+\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB-f\fP] \fIname\fP@\fItag\fP [\fIname\fP@\fItag\fP ...]
 Delete the listed snapshots from the
 .I snapshotdir
 directory.  When
 .B -f
 is given, no confirmation is asked.
 .TP
-\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB-f\fP] \fB-r\fP \fIN\fP \fIdbname\fP..\&
+\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB-f\fP] \fB-r\fP \fIN\fP \fIdbname\fP [\fIdbname\fP ...]\&
 Delete all but the
 .I N
 latest snapshots for the given databases.
