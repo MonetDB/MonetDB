@@ -64,7 +64,7 @@ static int
 pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
-	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
+	if (BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
 		return -1;
 	if (BATroles(b,X2) != GDK_SUCCEED)
 		return -1;

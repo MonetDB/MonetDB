@@ -217,7 +217,7 @@ void BBPlock(void);
 BAT *BBPquickdesc(bat b);
 int BBPreclaim(BAT *b);
 int BBPrelease(bat b);
-int BBPrename(bat bid, const char *nme);
+int BBPrename(BAT *b, const char *nme);
 int BBPretain(bat b);
 gdk_return BBPsave(BAT *b);
 void BBPshare(bat b);

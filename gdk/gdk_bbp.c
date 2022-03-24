@@ -2654,10 +2654,10 @@ BBPclear(bat i, bool lock)
  * see them anymore in new repositories).
  */
 int
-BBPrename(bat bid, const char *nme)
+BBPrename(BAT *b, const char *nme)
 {
-	BAT *b = BBPdescriptor(bid);
 	char dirname[24];
+	bat bid = b->batCacheid;
 	bat tmpid = 0, i;
 
 	if (b == NULL)
