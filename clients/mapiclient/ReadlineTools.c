@@ -31,9 +31,7 @@
 #include <sys/stat.h>
 #endif
 
-#ifdef HAVE_SIGACTION
-#include <signal.h>		/* to intercept SIGINT */
-#endif
+#include <signal.h>
 
 static const char *sql_commands[] = {
 	"SELECT",
