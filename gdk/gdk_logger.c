@@ -1395,8 +1395,8 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 		GDKerror("name %s_%s too long\n", fn, name);
 		return GDK_FAIL;
 	}
-	if (BBPrename(old->batCacheid, NULL) != 0 ||
-	    BBPrename(new->batCacheid, bak) != 0) {
+	if (BBPrename(old, NULL) != 0 ||
+	    BBPrename(new, bak) != 0) {
 		GDKerror("rename (%s) failed\n", bak);
 		return GDK_FAIL;
 	}
@@ -1844,17 +1844,17 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		/* give the catalog bats names so we can find them
 		 * next time */
 		strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
-		if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0) {
+		if (BBPrename(lg->catalog_bid, bak) < 0) {
 			goto error;
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL);
-		if (BBPrename(lg->catalog_id->batCacheid, bak) < 0) {
+		if (BBPrename(lg->catalog_id, bak) < 0) {
 			goto error;
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
-		if (BBPrename(lg->dcatalog->batCacheid, bak) < 0) {
+		if (BBPrename(lg->dcatalog, bak) < 0) {
 			goto error;
 		}
 
@@ -1979,17 +1979,17 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
-		if (BBPrename(lg->seqs_id->batCacheid, bak) < 0) {
+		if (BBPrename(lg->seqs_id, bak) < 0) {
 			goto error;
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
-		if (BBPrename(lg->seqs_val->batCacheid, bak) < 0) {
+		if (BBPrename(lg->seqs_val, bak) < 0) {
 			goto error;
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
-		if (BBPrename(lg->dseqs->batCacheid, bak) < 0) {
+		if (BBPrename(lg->dseqs, bak) < 0) {
 			goto error;
 		}
 		needcommit = true;

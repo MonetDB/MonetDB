@@ -2963,10 +2963,10 @@ STRprelude(void *ret)
 		UTF8_toLowerTo->tnil = false;
 		UTF8_toLowerTo->tnonil = true;
 
-		if (BBPrename(UTF8_toUpperFrom->batCacheid, "monet_unicode_upper_from") != 0 ||
-			BBPrename(UTF8_toUpperTo->batCacheid, "monet_unicode_upper_to") != 0 ||
-			BBPrename(UTF8_toLowerFrom->batCacheid, "monet_unicode_lower_from") != 0 ||
-			BBPrename(UTF8_toLowerTo->batCacheid, "monet_unicode_lower_to") != 0) {
+		if (BBPrename(UTF8_toUpperFrom, "monet_unicode_upper_from") != 0 ||
+			BBPrename(UTF8_toUpperTo, "monet_unicode_upper_to") != 0 ||
+			BBPrename(UTF8_toLowerFrom, "monet_unicode_lower_from") != 0 ||
+			BBPrename(UTF8_toLowerTo, "monet_unicode_lower_to") != 0) {
 			goto bailout;
 		}
 		BBP_pid(UTF8_toUpperFrom->batCacheid) = 0;

@@ -29,7 +29,7 @@ static int
 pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
-	if ((BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0) || BATroles(b,X2) != GDK_SUCCEED) {
+	if ((BBPindex(buf) <= 0 && BBPrename(b, buf) != 0) || BATroles(b,X2) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return -1;
 	}
@@ -498,7 +498,7 @@ CMDsetName(str *rname, const bat *bid, str *name)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bbp.setName", INTERNAL_BAT_ACCESS);
 	}
-	if (BBPrename(b->batCacheid, *name) != 0) {
+	if (BBPrename(b, *name) != 0) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bbp.setName", GDK_EXCEPTION);
 	}

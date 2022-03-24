@@ -691,7 +691,7 @@ BKCsetName(void *r, const bat *bid, const char * const *s)
 		}
 
 	t = *s;
-	ret = BBPrename(b->batCacheid, t);
+	ret = BBPrename(b, t);
 	BBPunfix(b->batCacheid);
 	switch (ret) {
 	case BBPRENAME_ILLEGAL:
