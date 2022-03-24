@@ -121,9 +121,9 @@ static timertype t0, t1;	/* used for timing */
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
 #endif
-#ifdef HAVE_SIGACTION
-#include <signal.h>		/* to block SIGPIPE */
-#endif
+
+#include <signal.h>
+
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = 0;	/* -1: take whatever is necessary, >0: limit */
 static bool pagewidthset = false; /* whether the user set the width explicitly */
@@ -3205,15 +3205,9 @@ main(int argc, char **argv)
 		exit(2);
 	}
 #endif
-#ifdef HAVE_SIGACTION
-	struct sigaction act;
-	/* ignore SIGPIPE so that we get an error instead of signal */
-	act.sa_handler = SIG_IGN;
-	(void) sigemptyset(&act.sa_mask);
-	act.sa_flags = 0;
-	if (sigaction(SIGPIPE, &act, NULL) == -1)
+
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		perror("sigaction");
-#endif
 
 	if (mnstr_init() < 0) {
 		fprintf(stderr, "error: could not initialize streams library");
