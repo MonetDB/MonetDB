@@ -46,64 +46,119 @@ can_create_histogram(int tpe)
 	}
 }
 
+#define set_limit(LIMIT, TPE) \
+	do { \
+		TPE x = GDK_##TPE##_##LIMIT; \
+		VALset(LIMIT##v, TYPE_##TPE, &x); \
+	} while (0)
+
 /* retrieve min/max values to determine the limits of the histogram, if the range of values is < nbuckets,
    a perfect histogram can be created */
 static void
-min_and_max_values(BATiter *bi, int tpe, ValPtr minv, ValPtr maxv)
+min_and_max_values(BATiter *bi, ValPtr minv, ValPtr maxv)
 {
-	VAR_UPCAST val = 0;
-
 	if (bi->minpos != BUN_NONE) {
-		VALset(minv, tpe, BUNtloc(*bi, bi->minpos));
+		VALset(minv, bi->type, BUNtloc(*bi, bi->minpos));
 	} else {
-		switch (ATOMbasetype(tpe)) {
+		switch (ATOMbasetype(bi->type)) {
 		case TYPE_bte:
-			val = (VAR_UPCAST) GDK_bte_min;
+			set_limit(min, bte);
 			break;
 		case TYPE_sht:
-			val = (VAR_UPCAST) GDK_sht_min;
+			set_limit(min, sht);
 			break;
 		case TYPE_int:
-			val = (VAR_UPCAST) GDK_int_min;
+			set_limit(min, int);
 			break;
 		case TYPE_lng:
-			val = (VAR_UPCAST) GDK_lng_min;
+			set_limit(min, lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			val = GDK_hge_min;
+			set_limit(min, hge);
 			break;
 #endif
 		default:
 			assert(0);
 		}
-		VALset(minv, tpe, &val);
 	}
 	if (bi->maxpos != BUN_NONE) {
-		VALset(maxv, tpe, BUNtloc(*bi, bi->maxpos));
+		VALset(maxv, bi->type, BUNtloc(*bi, bi->maxpos));
 	} else {
-		switch (ATOMbasetype(tpe)) {
+		switch (ATOMbasetype(bi->type)) {
 		case TYPE_bte:
-			val = (VAR_UPCAST) GDK_bte_max;
+			set_limit(max, bte);
 			break;
 		case TYPE_sht:
-			val = (VAR_UPCAST) GDK_sht_max;
+			set_limit(max, sht);
 			break;
 		case TYPE_int:
-			val = (VAR_UPCAST) GDK_int_max;
+			set_limit(max, int);
 			break;
 		case TYPE_lng:
-			val = (VAR_UPCAST) GDK_lng_max;
+			set_limit(max, lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			val = GDK_hge_max;
+			set_limit(max, hge);
 			break;
 #endif
 		default:
 			assert(0);
 		}
-		VALset(maxv, tpe, &val);
+	}
+}
+
+#define perfect_histogram_loop(TPE)	\
+	do { \
+		TPE i = *(TPE*)VALget(min), ii = i, j = *(TPE*)VALget(max); \
+		const TPE *restrict v = Tloc(sam, 0); \
+		BUN k = 0, l = BATcount(sam);	\
+		while (true) { \
+			struct HistogramEntry *restrict e = &(h->histogram[k++]); \
+			VALinit(&(e->min), tpe, &ii); /* TODO? maybe I don't need to materialize this for 'perfect' histograms */\
+			VALinit(&(e->max), tpe, &ii);	\
+			e->count = 0; \
+			if (ii == j) \
+				break; \
+			ii++; \
+		} \
+		h->nbuckets = (int) (j - i + 1); \
+		for (BUN k = 0 ; k < l ; k++) { \
+			TPE next = v[k]; \
+			if (is_##TPE##_nil(next)) { \
+				h->nulls++; \
+			} else { \
+				int offset = (next - i); /* get the offset from min, then increment */ \
+				h->histogram[offset].count++; \
+			} \
+		} \
+	} while (0)
+
+static void
+create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
+{
+	int tpe = ATOMbasetype(sam->ttype);
+	switch (tpe) {
+	case TYPE_bte:
+		perfect_histogram_loop(bte);
+		break;
+	case TYPE_sht:
+		perfect_histogram_loop(sht);
+		break;
+	case TYPE_int:
+		perfect_histogram_loop(int);
+		break;
+	case TYPE_lng:
+		perfect_histogram_loop(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		perfect_histogram_loop(hge);
+		break;
+#endif
+	default:
+		assert(0);
 	}
 }
 
@@ -152,7 +207,7 @@ HISTOGRAMcreate(BAT *b)
 				VALinit(&max, TYPE_bit, &(bit){1});
 				perfect_histogram = true;
 			} else {
-				min_and_max_values(&bi, bi.type, &min, &max);
+				min_and_max_values(&bi, &min, &max);
 				if (VARcalcsub(&diff, &max, &min, true) == GDK_SUCCEED) {
 					if (VARconvert(&conv, &diff, true, 0, 0, 0) == GDK_SUCCEED) {
 						VAR_UPCAST v = (VAR_UPCAST) NBUCKETS;
@@ -171,8 +226,11 @@ HISTOGRAMcreate(BAT *b)
 				}
 			}
 
-			(void) perfect_histogram;
-			// ....
+			if (perfect_histogram) {
+				create_perfect_histogram(sam, b->thistogram, &min, &max);
+			}/* else {
+				 do the generic way
+			}*/
 			BBPreclaim(sam);
 		}
 		MT_lock_unset(&b->batIdxLock);
