@@ -464,7 +464,7 @@ struct HistogramEntry {
 
 struct Histogram {
 	struct HistogramEntry *histogram;	/* The histogram itself (at the moment it's malloc'ed) */
-	int nbuckets;	/* The number of buckets */
+	int nbuckets;	/* The number of buckets excluding the one for NULL values */
 	int nulls;	/* The number of null values */
 };
 
