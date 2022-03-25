@@ -205,7 +205,8 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 	if (msg == MAL_SUCCEED) {
 		/* register result BAT in buffer pool */
-		BBPkeepref((*ret = res->batCacheid));
+		*ret = res->batCacheid;
+		BBPkeepref(res);
 	}
 
 	return msg;
@@ -399,7 +400,8 @@ UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 
 	if (msg == MAL_SUCCEED) {
 		/* register result BAT in buffer pool */
-		BBPkeepref((*ires = bres->batCacheid));
+		*ires = bres->batCacheid;
+		BBPkeepref(bres);
 	}
 
 	return msg;

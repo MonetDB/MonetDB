@@ -177,6 +177,8 @@ batUnfix(const bat *b)
  * The incremental atom construction uses hardwired properties.  This
  * should be improved later on.
  */
+static MT_Lock GDKatomLock = MT_LOCK_INITIALIZER(GDKatomLock);
+
 int
 ATOMallocate(const char *id)
 {
@@ -187,13 +189,13 @@ ATOMallocate(const char *id)
 		return int_nil;
 	}
 
-	MT_lock_set(&GDKthreadLock);
+	MT_lock_set(&GDKatomLock);
 	t = ATOMindex(id);
 	if (t < 0) {
 		t = -t;
 		if (t == GDKatomcnt) {
 			if (GDKatomcnt == MAXATOMS) {
-				MT_lock_unset(&GDKthreadLock);
+				MT_lock_unset(&GDKatomLock);
 				GDKerror("too many types");
 				return int_nil;
 			}
@@ -206,7 +208,7 @@ ATOMallocate(const char *id)
 		};
 		strcpy(BATatoms[t].name, id);
 	}
-	MT_lock_unset(&GDKthreadLock);
+	MT_lock_unset(&GDKatomLock);
 	return t;
 }
 
@@ -1925,11 +1927,11 @@ ATOMunknown_find(const char *nme)
 	int i, j = 0;
 
 	/* first try to find the atom */
-	MT_lock_set(&GDKthreadLock);
+	MT_lock_set(&GDKatomLock);
 	for (i = 1; i < MAXATOMS; i++) {
 		if (unknown[i]) {
 			if (strcmp(unknown[i], nme) == 0) {
-				MT_lock_unset(&GDKthreadLock);
+				MT_lock_unset(&GDKatomLock);
 				return -i;
 			}
 		} else if (j == 0)
@@ -1937,14 +1939,14 @@ ATOMunknown_find(const char *nme)
 	}
 	if (j == 0) {
 		/* no space for new atom (shouldn't happen) */
-		MT_lock_unset(&GDKthreadLock);
+		MT_lock_unset(&GDKatomLock);
 		return 0;
 	}
 	if ((unknown[j] = GDKstrdup(nme)) == NULL) {
-		MT_lock_unset(&GDKthreadLock);
+		MT_lock_unset(&GDKatomLock);
 		return 0;
 	}
-	MT_lock_unset(&GDKthreadLock);
+	MT_lock_unset(&GDKatomLock);
 	return -j;
 }
 
@@ -1962,7 +1964,7 @@ ATOMunknown_clean(void)
 {
 	int i;
 
-	MT_lock_set(&GDKthreadLock);
+	MT_lock_set(&GDKatomLock);
 	for (i = 1; i < MAXATOMS; i++) {
 		if(unknown[i]) {
 			GDKfree(unknown[i]);
@@ -1971,5 +1973,5 @@ ATOMunknown_clean(void)
 			break;
 		}
 	}
-	MT_lock_unset(&GDKthreadLock);
+	MT_lock_unset(&GDKatomLock);
 }

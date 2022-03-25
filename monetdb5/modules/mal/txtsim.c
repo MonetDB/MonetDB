@@ -846,7 +846,8 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*res = bn->batCacheid);
+		*res = bn->batCacheid;
+		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
 	if (left)
@@ -923,17 +924,17 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced");
 
-	else if (Tsize(qgram) != ATOMsize(qgram->ttype))
+	else if (qgram->twidth != ATOMsize(qgram->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram is not a true void bat");
-	else if (Tsize(id) != ATOMsize(id->ttype))
+	else if (id->twidth != ATOMsize(id->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": id is not a true void bat");
 
-	else if (Tsize(pos) != ATOMsize(pos->ttype))
+	else if (pos->twidth != ATOMsize(pos->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": pos is not a true void bat");
-	else if (Tsize(len) != ATOMsize(len->ttype))
+	else if (len->twidth != ATOMsize(len->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": len is not a true void bat");
 	if (msg) {
@@ -994,8 +995,10 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	BBPunfix(pos->batCacheid);
 	BBPunfix(len->batCacheid);
 
-	BBPkeepref(*res1 = bn->batCacheid);
-	BBPkeepref(*res2 = bn2->batCacheid);
+	*res1 = bn->batCacheid;
+	BBPkeepref(bn);
+	*res2 = bn2->batCacheid;
+	BBPkeepref(bn2);
 
 	return MAL_SUCCEED;
 }
@@ -1058,7 +1061,8 @@ CMDstr2qgrams(bat *ret, str *val)
 				i++;
 		}
 	}
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	GDKfree(s);
 	return MAL_SUCCEED;
 }

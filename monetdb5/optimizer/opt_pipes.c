@@ -420,9 +420,12 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 		}
 	}
 
-	BBPkeepref(*nme = b->batCacheid);
-	BBPkeepref(*def = bn->batCacheid);
-	BBPkeepref(*stat = bs->batCacheid);
+	*nme = b->batCacheid;
+	BBPkeepref(b);
+	*def = bn->batCacheid;
+	BBPkeepref(bn);
+	*stat = bs->batCacheid;
+	BBPkeepref(bs);
 	return MAL_SUCCEED;
 }
 

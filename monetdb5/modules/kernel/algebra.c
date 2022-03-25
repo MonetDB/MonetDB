@@ -224,7 +224,7 @@ ALGgroupby(bat *res, const bat *gids, const bat *cnts)
 		throw(MAL, "algebra.groupby",GDK_EXCEPTION);
 	}
 	*res = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	BBPunfix(g->batCacheid);
 	BBPunfix(c->batCacheid);
 	return MAL_SUCCEED;
@@ -244,7 +244,8 @@ ALGcard(lng *result, const bat *bid)
 		throw(MAL, "algebra.card", GDK_EXCEPTION);
 	}
 	struct canditer ci;
-	*result = canditer_init(&ci, NULL, en);
+	canditer_init(&ci, NULL, en);
+	*result = (lng) ci.ncand;
 	BBPunfix(en->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -283,7 +284,7 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const v
 	if (bn == NULL)
 		throw(MAL, "algebra.select", GDK_EXCEPTION);
 	*result = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -332,7 +333,7 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	if (bn == NULL)
 		throw(MAL, "algebra.select", GDK_EXCEPTION);
 	*result = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -368,7 +369,7 @@ ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, co
 	if (bn == NULL)
 		throw(MAL, "algebra.select", GDK_EXCEPTION);
 	*result = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -389,7 +390,7 @@ ALGselectNotNil(bat *result, const bat *bid)
 			if (bn) {
 				BBPunfix(b->batCacheid);
 				*result = bn->batCacheid;
-				BBPkeepref(*result);
+				BBPkeepref(bn);
 				return MAL_SUCCEED;
 			}
 		}
@@ -398,7 +399,7 @@ ALGselectNotNil(bat *result, const bat *bid)
 	}
 	/* just pass on the result */
 	*result = b->batCacheid;
-	BBPkeepref(*result);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -501,10 +502,10 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		result2 = NULL;
 	}
 	*r1 = result1->batCacheid;
-	BBPkeepref(*r1);
+	BBPkeepref(result1);
 	if (r2) {
 		*r2 = result2->batCacheid;
-		BBPkeepref(*r2);
+		BBPkeepref(result2);
 	}
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
@@ -728,9 +729,12 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(g->batCacheid);
 	if (rc != GDK_SUCCEED)
 		throw(MAL, "algebra.firstn", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	BBPkeepref(*ret1 = bn->batCacheid);
-	if (ret2)
-		BBPkeepref(*ret2 = gn->batCacheid);
+	*ret1 = bn->batCacheid;
+	BBPkeepref(bn);
+	if (ret2) {
+		*ret2 = gn->batCacheid;
+		BBPkeepref(gn);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -747,7 +751,7 @@ ALGunary(bat *result, const bat *bid, BAT *(*func)(BAT *), const char *name)
 	if (bn == NULL)
 		throw(MAL, name, GDK_EXCEPTION);
 	*result = bn->batCacheid;
-	BBPkeepref(*result);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -782,7 +786,7 @@ ALGunique(bat *result, const bat *bid, const bat *sid)
 	if (bn == NULL)
 		throw(MAL, "algebra.unique", GDK_EXCEPTION);
 	*result = bn->batCacheid;
-	BBPkeepref(*result);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -821,9 +825,12 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bat *sl
 		BBPunfix(sr->batCacheid);
 	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
-	BBPkeepref(*l = bn1->batCacheid);
-	if (r)
-		BBPkeepref(*r = bn2->batCacheid);
+	*l = bn1->batCacheid;
+	BBPkeepref(bn1);
+	if (r) {
+		*r = bn2->batCacheid;
+		BBPkeepref(bn2);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -876,7 +883,7 @@ ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
 	if (bn == NULL)
 		throw(MAL, "algebra.projection", GDK_EXCEPTION);
 	*result = bn->batCacheid;
-	BBPkeepref(*result);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -920,12 +927,18 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 		BBPunfix(o->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
-	if (result)
-		BBPkeepref(*result = bn->batCacheid);
-	if (norder)
-		BBPkeepref(*norder = on->batCacheid);
-	if (ngroup)
-		BBPkeepref(*ngroup = gn->batCacheid);
+	if (result) {
+		*result = bn->batCacheid;
+		BBPkeepref(bn);
+	}
+	if (norder) {
+		*norder = on->batCacheid;
+		BBPkeepref(on);
+	}
+	if (ngroup) {
+		*ngroup = gn->batCacheid;
+		BBPkeepref(gn);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -995,7 +1008,8 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 		*result = (lng) BATcount_no_nil(b, s);
 	} else {
 		struct canditer ci;
-		*result = (lng) canditer_init(&ci, b, s);
+		canditer_init(&ci, b, s);
+		*result = (lng) ci.ncand;
 	}
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -1043,7 +1057,7 @@ ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 	}
 	if (slice(&bn, b, *start, *end) == GDK_SUCCEED) {
 		*ret = bn->batCacheid;
-		BBPkeepref(*ret);
+		BBPkeepref(bn);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -1103,7 +1117,7 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 	if (bn == NULL)
 		throw(MAL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1169,7 +1183,7 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT ": cannot fetch a single row from an empty input\n");
 	}
-	if (*pos >= (lng) BUNlast(b)) {
+	if (*pos >= (lng) BATcount(b)) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT ": row index to fetch is out of range\n");
 	}
@@ -1243,7 +1257,8 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ret = bat_nil;
 		throw(MAL, "algebra.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BBPkeepref(*ret= bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1273,10 +1288,11 @@ ALGreuse(bat *ret, const bat *bid)
 			bn->trevsorted = false;
 			BATkey(bn, false);
 		}
-		BBPkeepref(*ret= bn->batCacheid);
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
 		BBPunfix(b->batCacheid);
 	} else
-		BBPkeepref(*ret = *bid);
+		BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 

@@ -353,7 +353,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 
 	if (b) {
 		BATsetcount(b, cnt);
-		BBPkeepref(b->batCacheid);
+		BBPkeepref(b);
 	}
 	return b;
 }
@@ -582,7 +582,8 @@ bailout:
 				if (b && msg) {
 					BBPreclaim(b);
 				} else if (b) {
-					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+					*getArgReference_bat(stk, pci, i) = b->batCacheid;
+					BBPkeepref(b);
 				}
 			} else if (msg) {
 				ValPtr pt = ((ValPtr*)res)[i];

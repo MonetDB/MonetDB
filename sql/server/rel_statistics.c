@@ -7,6 +7,7 @@
  */
 
 #include "monetdb_config.h"
+#include "rel_optimizer_private.h"
 #include "rel_statistics.h"
 #include "rel_rewriter.h"
 
@@ -529,8 +530,8 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 	return rel->exps;
 }
 
-sql_rel *
-rel_get_statistics(visitor *v, sql_rel *rel)
+static sql_rel *
+rel_get_statistics_(visitor *v, sql_rel *rel)
 {
 	switch(rel->op){
 	case op_basetable:
@@ -599,7 +600,7 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 			int changes = v->changes;
 			rel->exps = rel_prune_predicates(v, rel);
 			if (v->changes > changes)
-				rel = rewrite_simplify(v, rel);
+				rel = rewrite_simplify(v, 0, v->value_based_opt, rel);
 		}
 		break;
 	/*These relations are less important for now
@@ -615,4 +616,18 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 	}
 
 	return rel;
+}
+
+static sql_rel *
+rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
+{
+	(void) gp;
+	return rel_visitor_bottomup(v, rel, &rel_get_statistics_);
+}
+
+run_optimizer
+bind_get_statistics(visitor *v, global_props *gp)
+{
+	/* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
+	return gp->opt_level == 1 && v->storage_based_opt && !gp->has_special_modify ? rel_get_statistics : NULL;
 }

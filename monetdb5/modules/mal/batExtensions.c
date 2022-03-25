@@ -105,7 +105,8 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 		throw(MAL, "bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BBPkeepref(*ret = b->batCacheid);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -142,7 +143,8 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAThseqbase(bn, lval);
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
 		ret= getArgReference_bat(stk,pci,i);
-		BBPkeepref(*ret = bn->batCacheid);
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -183,7 +185,8 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);
 	}
 	ret= getArgReference_bat(stk,pci,0);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -294,7 +297,8 @@ CMDBATvacuum(bat *r, const bat *bid)
 		throw(MAL, "bat.vacuum", GDK_EXCEPTION);
 	}
 
-	BBPkeepref(*r = bn->batCacheid);
+	*r = bn->batCacheid;
+	BBPkeepref(bn);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

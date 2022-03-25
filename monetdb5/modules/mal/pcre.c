@@ -1174,7 +1174,7 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, true);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
-		BBPkeepref(*res);
+		BBPkeepref(bn);
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -1191,7 +1191,7 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const str *pat, const str *r
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, false);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
-		BBPkeepref(*res);
+		BBPkeepref(bn);
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -1701,7 +1701,8 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*r = bn->batCacheid);
+		*r = bn->batCacheid;
+		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
 	if (b)
@@ -1924,7 +1925,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 					q = b->hseqbase + BATcount(b);
 			} else {
 				p = b->hseqbase;
-				q = BUNlast(b) + b->hseqbase;
+				q = BATcount(b) + b->hseqbase;
 			}
 		}
 
@@ -1940,7 +1941,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 			bn->tkey = true;
 			bn->tnil = false;
 			bn->tnonil = true;
-			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 || rcnt == b->batCount ? b->hseqbase : oid_nil;
+			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
 		}
 	}
 
@@ -1950,9 +1951,10 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	GDKfree(ppat);
-	if (bn && !msg)
-		BBPkeepref(*ret = bn->batCacheid);
-	else if (bn)
+	if (bn && !msg) {
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
+	} else if (bn)
 		BBPreclaim(bn);
 	return msg;
 }
@@ -1977,7 +1979,7 @@ bailout:
 /* nested loop implementation for PCRE join */
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND) \
 	do { \
-		for (BUN ridx = 0; ridx < nrcand; ridx++) { \
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) { \
 			GDK_CHECK_TIMEOUT(timeoffset, counter, \
 					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			ro = canditer_next(&rci); \
@@ -1991,13 +1993,13 @@ bailout:
 					if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 						goto bailout; \
 				} else if (pcrepat) { \
-					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, nlcand)) != MAL_SUCCEED) \
+					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
 						goto bailout; \
 					GDKfree(pcrepat); \
 					pcrepat = NULL; \
 				} \
 				canditer_reset(&lci); \
-				for (BUN lidx = 0; lidx < nlcand; lidx++) { \
+				for (BUN lidx = 0; lidx < lci.ncand; lidx++) { \
 					lo = canditer_next(&lci); \
 					vl = VALUE(l, lo - lbase); \
 					if (strNil(vl)) { \
@@ -2017,7 +2019,7 @@ bailout:
 						if (PCRE_COND) \
 							continue; \
 					} \
-					if (BUNlast(r1) == BATcapacity(r1)) { \
+					if (BATcount(r1) == BATcapacity(r1)) { \
 						newcap = BATgrows(r1); \
 						BATsetcount(r1, BATcount(r1)); \
 						if (r2) \
@@ -2076,7 +2078,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
 	int rskipped = 0;			/* whether we skipped values in r */
 	oid lbase, rbase, lo, ro, lastl = 0;		/* last value inserted into r1 */
-	BUN nl, newcap, nlcand, nrcand;
+	BUN nl, newcap;
 	char *pcrepat = NULL, *msg = MAL_SUCCEED;
 	struct RE *re = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
@@ -2116,8 +2118,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
 
-	nlcand = canditer_init(&lci, l, sl);
-	nrcand = canditer_init(&rci, r, sr);
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
 
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
@@ -2254,7 +2256,7 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 		goto fail;
 	}
 	bi = bat_iterator(caseignore);
-	ci = *(bit*)BUNtail(bi, 0);
+	ci = *(bit*)BUNtloc(bi, 0);
 	bat_iterator_end(&bi);
 	bi = bat_iterator(escape);
 	esc = BUNtvar(bi, 0);
@@ -2263,10 +2265,10 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 	if (msg)
 		goto fail;
 	*r1 = result1->batCacheid;
-	BBPkeepref(*r1);
+	BBPkeepref(result1);
 	if (r2) {
 		*r2 = result2->batCacheid;
-		BBPkeepref(*r2);
+		BBPkeepref(result2);
 	}
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
