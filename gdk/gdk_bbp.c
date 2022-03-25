@@ -117,7 +117,7 @@ static gdk_return BBPfree(BAT *b);
 static void BBPdestroy(BAT *b);
 static void BBPuncacheit(bat bid, bool unloaddesc);
 static gdk_return BBPprepare(bool subcommit);
-static BAT *getBBPdescriptor(bat i, bool lock, bool relock);
+static BAT *getBBPdescriptor(bat i);
 static gdk_return BBPbackup(BAT *b, bool subcommit);
 static gdk_return BBPdir_init(void);
 static void BBPcallbacks(void);
@@ -2856,7 +2856,7 @@ BATdescriptor(bat i)
 			return NULL;
 		b = BBP_cache(i);
 		if (b == NULL)
-			b = getBBPdescriptor(i, false, true);
+			b = getBBPdescriptor(i);
 		MT_lock_unset(&GDKswapLock(i));
 	}
 	return b;
@@ -3144,7 +3144,7 @@ BBPreclaim(BAT *b)
  * this.
  */
 static BAT *
-getBBPdescriptor(bat i, bool lock, bool relock)
+getBBPdescriptor(bat i)
 {
 	bool load = false;
 	BAT *b = NULL;
@@ -3155,16 +3155,12 @@ getBBPdescriptor(bat i, bool lock, bool relock)
 		return NULL;
 	}
 	assert(BBP_refs(i));
-	if (lock)
-		MT_lock_set(&GDKswapLock(i));
 	if ((b = BBP_cache(i)) == NULL || BBP_status(i) & BBPWAITING) {
 
 		while (BBP_status(i) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
-			if (relock)
-				MT_lock_unset(&GDKswapLock(i));
+			MT_lock_unset(&GDKswapLock(i));
 			BBPspin(i, __func__, BBPWAITING);
-			if (relock)
-				MT_lock_set(&GDKswapLock(i));
+			MT_lock_set(&GDKswapLock(i));
 		}
 		if (BBPvalid(i)) {
 			b = BBP_cache(i);
@@ -3175,12 +3171,10 @@ getBBPdescriptor(bat i, bool lock, bool relock)
 			}
 		}
 	}
-	if (lock)
-		MT_lock_unset(&GDKswapLock(i));
 	if (load) {
 		TRC_DEBUG(IO_, "load %s\n", BBP_logical(i));
 
-		b = BATload_intern(i, lock);
+		b = BATload_intern(i, false);
 
 		/* clearing bits can be done without the lock */
 		BBP_status_off(i, BBPLOADING);
@@ -3188,14 +3182,6 @@ getBBPdescriptor(bat i, bool lock, bool relock)
 			BATassertProps(b);
 	}
 	return b;
-}
-
-BAT *
-BBPdescriptor(bat i)
-{
-	bool lock = locked_by == 0 || locked_by != MT_getpid();
-
-	return getBBPdescriptor(i, lock, lock);
 }
 
 /*
