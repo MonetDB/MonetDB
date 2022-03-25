@@ -2488,7 +2488,7 @@ BBPinsert(BAT *bn)
 	MT_lock_set(&GDKswapLock(i));
 	BBP_status_set(i, BBPDELETING|BBPHOT);
 	BBP_cache(i) = NULL;
-	BBP_desc(i) = NULL;
+	BBP_desc(i) = bn;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 	BBP_pid(i) = MT_getpid();
@@ -2545,7 +2545,6 @@ BBPcacheit(BAT *bn, bool lock)
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING | BBPDELETING | BBPSWAPPED);
-	BBP_desc(i) = bn;
 
 	/* cache it! */
 	BBP_cache(i) = bn;
@@ -2834,14 +2833,19 @@ BATdescriptor(bat i)
 
 	if (BBPcheck(i)) {
 		b = BBP_desc(i);
-		if (b->theap->parentid != b->batCacheid &&
-		    BATdescriptor(b->theap->parentid) == NULL)
+		MT_lock_set(&b->theaplock);
+		int tp = b->theap->parentid;
+		int tvp = b->tvheap ? b->tvheap->parentid : 0;
+		MT_lock_unset(&b->theaplock);
+		if (tp != b->batCacheid &&
+		    BATdescriptor(tp) == NULL) {
 			return NULL;
-		if (b->tvheap &&
-		    b->tvheap->parentid != b->batCacheid &&
-		    BATdescriptor(b->tvheap->parentid) == NULL) {
-			if (b->theap->parentid != b->batCacheid)
-				BBPunfix(b->theap->parentid);
+		}
+		if (tvp != 0 &&
+		    tvp != b->batCacheid &&
+		    BATdescriptor(tvp) == NULL) {
+			if (tp != b->batCacheid)
+				BBPunfix(tp);
 			return NULL;
 		}
 		for (;;) {
