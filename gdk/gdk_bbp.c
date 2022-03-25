@@ -117,7 +117,7 @@ static gdk_return BBPfree(BAT *b);
 static void BBPdestroy(BAT *b);
 static void BBPuncacheit(bat bid, bool unloaddesc);
 static gdk_return BBPprepare(bool subcommit);
-static BAT *getBBPdescriptor(bat i, bool lock);
+static BAT *getBBPdescriptor(bat i, bool lock, bool relock);
 static gdk_return BBPbackup(BAT *b, bool subcommit);
 static gdk_return BBPdir_init(void);
 static void BBPcallbacks(void);
@@ -2856,7 +2856,7 @@ BATdescriptor(bat i)
 			return NULL;
 		b = BBP_cache(i);
 		if (b == NULL)
-			b = getBBPdescriptor(i, false);
+			b = getBBPdescriptor(i, false, true);
 		MT_lock_unset(&GDKswapLock(i));
 	}
 	return b;
@@ -3144,7 +3144,7 @@ BBPreclaim(BAT *b)
  * this.
  */
 static BAT *
-getBBPdescriptor(bat i, bool lock)
+getBBPdescriptor(bat i, bool lock, bool relock)
 {
 	bool load = false;
 	BAT *b = NULL;
@@ -3160,10 +3160,10 @@ getBBPdescriptor(bat i, bool lock)
 	if ((b = BBP_cache(i)) == NULL || BBP_status(i) & BBPWAITING) {
 
 		while (BBP_status(i) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
-			if (lock)
+			if (relock)
 				MT_lock_unset(&GDKswapLock(i));
 			BBPspin(i, __func__, BBPWAITING);
-			if (lock)
+			if (relock)
 				MT_lock_set(&GDKswapLock(i));
 		}
 		if (BBPvalid(i)) {
@@ -3195,7 +3195,7 @@ BBPdescriptor(bat i)
 {
 	bool lock = locked_by == 0 || locked_by != MT_getpid();
 
-	return getBBPdescriptor(i, lock);
+	return getBBPdescriptor(i, lock, lock);
 }
 
 /*
