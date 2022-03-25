@@ -24,7 +24,6 @@ rel_properties(visitor *v, sql_rel *rel)
 	/* Don't flag any changes here! */
 	gp->cnt[(int)rel->op]++;
 	gp->needs_distinct |= need_distinct(rel);
-	gp->has_special_modify = is_modify(rel->op) && rel->flag&UPD_COMP;
 	if (gp->instantiate && is_basetable(rel->op)) {
 		mvc *sql = v->sql;
 		sql_table *t = (sql_table *) rel->l;
@@ -748,7 +747,8 @@ run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_prop
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
-	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0};
+	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0,
+									  .has_special_modify = rel && is_modify(rel->op) && rel->flag&UPD_COMP};
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = 1, .data = &gp };
 
 	if (!(rel = rel_keep_renames(sql, rel)))
@@ -757,7 +757,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 	sql->runs = !(GDKdebug & FORCEMITOMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
-		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle};
+		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle, .has_special_modify = gp.has_special_modify};
 		rel = rel_visitor_topdown(&v, rel, &rel_properties); /* collect relational tree properties */
 		gp.opt_level = calculate_opt_level(sql, rel);
 		if (gp.opt_level == 0 && !gp.needs_mergetable_rewrite)

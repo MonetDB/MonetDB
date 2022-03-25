@@ -323,10 +323,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " NOT NULL");
 	if (e->type != e_atom && e->type != e_cmp && is_unique(e))
 		mnstr_printf(fout, " UNIQUE");
-	if (e->p && !(GDKdebug & FORCEMITOMASK)) {
+	if (e->p) {
 		for (prop *p = e->p; p; p = p->p) {
-			/* don't show min/max on atoms */
-			if (e->type != e_atom || (p->kind != PROP_MIN && p->kind != PROP_MAX)) {
+			/* Don't show min/max on atoms, or when running tests with forcemito */
+			if (e->type != e_atom && (!(GDKdebug & FORCEMITOMASK) || (p->kind != PROP_MIN && p->kind != PROP_MAX))) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
