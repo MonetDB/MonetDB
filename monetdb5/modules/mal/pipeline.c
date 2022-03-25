@@ -2175,7 +2175,7 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 	} else {
 		struct canditer ci;
 		canditer_init(&ci, b, s);
-		*result = (lng) ci.ncand;
+		result1 = (lng) ci.ncand;
 	}
 	if (is_lng_nil(*result))
 		*result = result1;
