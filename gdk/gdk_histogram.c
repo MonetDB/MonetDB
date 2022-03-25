@@ -114,6 +114,11 @@ min_and_max_values(BATiter *bi, ValPtr minv, ValPtr maxv)
 		TPE i = *(TPE*)VALget(min), ii = i, j = *(TPE*)VALget(max); \
 		const TPE *restrict v = Tloc(sam, 0); \
 		BUN k = 0, l = BATcount(sam);	\
+	\
+		h->nbuckets = (int) (j - i + 1); \
+		if (!(h->histogram = GDKmalloc(sizeof(struct HistogramEntry) * h->nbuckets))) \
+			return NULL; \
+	\
 		while (true) { \
 			struct HistogramEntry *restrict e = &(h->histogram[k++]); \
 			VALinit(&(e->min), tpe, &ii); /* TODO? maybe I don't need to materialize this for 'perfect' histograms */\
@@ -123,7 +128,7 @@ min_and_max_values(BATiter *bi, ValPtr minv, ValPtr maxv)
 				break; \
 			ii++; \
 		} \
-		h->nbuckets = (int) (j - i + 1); \
+	\
 		for (BUN k = 0 ; k < l ; k++) { \
 			TPE next = v[k]; \
 			if (is_##TPE##_nil(next)) { \
@@ -135,7 +140,7 @@ min_and_max_values(BATiter *bi, ValPtr minv, ValPtr maxv)
 		} \
 	} while (0)
 
-static void
+static Histogram *
 create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 {
 	int tpe = ATOMbasetype(sam->ttype);
@@ -160,6 +165,7 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 	default:
 		assert(0);
 	}
+	return h;
 }
 
 gdk_return
@@ -179,23 +185,19 @@ HISTOGRAMcreate(BAT *b)
 	if (VIEWtparent(b)) /* don't create histograms on views */
 		b = BBP_cache(VIEWtparent(b));
 
+	if (BATcount(b) == 0) /* no histograms on empty BATs */
+		return GDK_SUCCEED;
+
 	if (b->thistogram == NULL) {
 		bi = bat_iterator(b);
 		MT_lock_set(&b->batIdxLock);
 		if (b->thistogram == NULL) {
 			BAT *sids, *sam;
+			Histogram *h;
 			bool perfect_histogram = false;
 			ValRecord min, max, diff, conv = {.vtype = VAR_TPE}, nbuckets, truth;
 
-			if (!(b->thistogram = GDKmalloc(sizeof(struct Histogram))) ||
-				!(b->thistogram->histogram = GDKmalloc(sizeof(struct HistogramEntry) * NBUCKETS))) {
-				GDKfree(b->thistogram);
-				b->thistogram = NULL;
-				goto fail;
-			}
-
-			sids = BATsample_with_seed(b, SAMPLE_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
-			if (!sids)
+			if (!(sids = BATsample_with_seed(b, SAMPLE_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid)))
 				goto fail;
 			sam = BATproject(sids, b);
 			BBPreclaim(sids);
@@ -226,12 +228,26 @@ HISTOGRAMcreate(BAT *b)
 				}
 			}
 
+			if (!(b->thistogram = GDKmalloc(sizeof(struct Histogram)))) {
+				BBPreclaim(sam);
+				goto fail;
+			}
+
+			h = b->thistogram;
+			h->nulls = 0;
+			h->size = (int) BATcount(sam); /* it should fit */
 			if (perfect_histogram) {
-				create_perfect_histogram(sam, b->thistogram, &min, &max);
+				h = create_perfect_histogram(sam, h, &min, &max);
 			}/* else {
 				 do the generic way
 			}*/
+
 			BBPreclaim(sam);
+			if (!h) {
+				GDKfree(b->thistogram);
+				b->thistogram = NULL;
+				goto fail;
+			}
 		}
 		MT_lock_unset(&b->batIdxLock);
 		bat_iterator_end(&bi);
