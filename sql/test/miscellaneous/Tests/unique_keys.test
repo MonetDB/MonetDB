@@ -12,8 +12,8 @@ project (
 | semijoin (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
-| ) [ ("y"."y") = ("testkeys"."a" NOT NULL HASHCOL ) ]
-) [ "y"."y" ]
+| ) [ ("y"."y") = ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) ]
+) [ "y"."y" NOT NULL ]
 
 query T nosort
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
@@ -22,8 +22,8 @@ project (
 | semijoin (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE HASHCOL  ]
-| ) [ ("y"."y") = ("testkeys"."b" HASHCOL ) ]
-) [ "y"."y" ]
+| ) [ ("y"."y") = ("testkeys"."b" UNIQUE HASHCOL ) ]
+) [ "y"."y" NOT NULL ]
 
 query T nosort
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a or (y.y is null and testkeys.a is null)
@@ -32,8 +32,8 @@ project (
 | semijoin (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
-| ) [ ("y"."y") = ("testkeys"."a" NOT NULL HASHCOL ) ]
-) [ "y"."y" ]
+| ) [ ("y"."y") = ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) ]
+) [ "y"."y" NOT NULL ]
 
 # The following joins cannot be converted into semijoins
 query T nosort
@@ -43,7 +43,7 @@ project (
 | join (
 | |  [  [ int(32) NULL, int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE HASHCOL  ]
-| ) [ ("y"."y") * = ("testkeys"."b" HASHCOL ) ]
+| ) [ ("y"."y") * = ("testkeys"."b" UNIQUE HASHCOL ) ]
 ) [ "y"."y" ]
 
 query T nosort
@@ -52,8 +52,8 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
-| | table("sys"."testkeys") [ "testkeys"."c" ]
-| ) [ ("y"."y") * = ("testkeys"."c") ]
+| | table("sys"."testkeys") [ "testkeys"."c" UNIQUE ]
+| ) [ ("y"."y") * = ("testkeys"."c" UNIQUE) ]
 ) [ "y"."y" ]
 
 statement ok
@@ -67,18 +67,18 @@ insert into othertable values (1,1,1,1),(2,2,2,2),(3,3,3,3)
 
 # here 'othertable.a = 2' can be pushed up
 query T nosort
-plan select othertable.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.a = 1 and othertable.a = 2
+plan select othertable.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.a = 1 and othertable.a = 1
 ----
 project (
 | select (
 | | join (
 | | | select (
 | | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
-| | | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = (int(32) "1") ],
+| | | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = (int(32) "1") ],
 | | | table("sys"."othertable") [ "othertable"."a" ]
-| | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
-| ) [ ("othertable"."a") = (int(32) "2") ]
-) [ "othertable"."a" ]
+| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL) ]
+| ) [ ("othertable"."a") = (int(32) "1") ]
+) [ "othertable"."a" NOT NULL ]
 
 # here 'othertable.a between 2 and 5' can be pushed up too
 query T nosort
@@ -89,9 +89,9 @@ project (
 | | join (
 | | | select (
 | | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
-| | | ) [ ("testkeys"."b" HASHCOL ) = (int(32) "1") ],
+| | | ) [ ("testkeys"."b" UNIQUE HASHCOL ) = (int(32) "1") ],
 | | | table("sys"."othertable") [ "othertable"."a" ]
-| | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
+| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL) ]
 | ) [ (int(32) "2") <= ("othertable"."a") <= (int(32) "5") ]
 ) [ "testkeys"."a" NOT NULL HASHCOL  ]
 
@@ -103,11 +103,11 @@ project (
 | join (
 | | select (
 | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
-| | ) [ ("testkeys"."b" HASHCOL ) * = (int(32) NULL) ],
+| | ) [ ("testkeys"."b" UNIQUE HASHCOL ) * = (int(32) NULL) ],
 | | select (
 | | | table("sys"."othertable") [ "othertable"."a" ]
 | | ) [ ("othertable"."a") > (int(32) "1") ]
-| ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
+| ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL) ]
 ) [ "testkeys"."a" NOT NULL HASHCOL  ]
 
 statement ok
@@ -126,9 +126,9 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
-| | table("sys"."testkeys") [ "testkeys"."a" NOT NULL ]
-| ) [ ("y"."y") = ("testkeys"."a" NOT NULL) ]
-) [ "y"."y" ]
+| | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE ]
+| ) [ ("y"."y") = ("testkeys"."a" NOT NULL UNIQUE) ]
+) [ "y"."y" NOT NULL ]
 
 query T nosort
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
@@ -136,9 +136,9 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
-| | table("sys"."testkeys") [ "testkeys"."b" ]
-| ) [ ("y"."y") = ("testkeys"."b") ]
-) [ "y"."y" ]
+| | table("sys"."testkeys") [ "testkeys"."b" UNIQUE ]
+| ) [ ("y"."y") = ("testkeys"."b" UNIQUE) ]
+) [ "y"."y" NOT NULL ]
 
 statement ok
 start transaction
@@ -159,9 +159,9 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
-| | table("sys"."testkeys") [ "testkeys"."a" NOT NULL ]
-| ) [ ("y"."y") = ("testkeys"."a" NOT NULL) ]
-) [ "y"."y" ]
+| | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE ]
+| ) [ ("y"."y") = ("testkeys"."a" NOT NULL UNIQUE) ]
+) [ "y"."y" NOT NULL ]
 
 query T nosort
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
@@ -169,9 +169,9 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
-| | table("sys"."testkeys") [ "testkeys"."b" ]
-| ) [ ("y"."y") = ("testkeys"."b") ]
-) [ "y"."y" ]
+| | table("sys"."testkeys") [ "testkeys"."b" UNIQUE ]
+| ) [ ("y"."y") = ("testkeys"."b" UNIQUE) ]
+) [ "y"."y" NOT NULL ]
 
 statement ok
 DROP TABLE testkeys
