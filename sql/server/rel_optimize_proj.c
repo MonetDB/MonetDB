@@ -2114,6 +2114,8 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_remove_const_aggr(visitor *v, sql_rel *rel)
 {
+	if (!rel)
+		return rel;
 	sql_rel *l = rel->l;
 	if ((rel->op == op_project || rel->op == op_select) && l && is_groupby(l->op) && list_length(rel->exps) >= 1) {
 		int needed = 0;
@@ -2504,6 +2506,7 @@ static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
+	rel = rel_remove_const_aggr(v, rel);
 
 	if (!rel || !is_groupby(rel->op))
 		return rel;
@@ -2513,7 +2516,6 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	rel = rel_groupby_order(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
-	rel = rel_remove_const_aggr(v, rel);
 	rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
 	/* only when value_based_opt is on, ie not for dependency resolution */

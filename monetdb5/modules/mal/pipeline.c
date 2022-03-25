@@ -163,6 +163,9 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define min(a,b) a<b?a:b
 #define max(a,b) a>b?a:b
 
+#define uuid_min(a,b) ((cmp((void*)&a,(void*)&b)<0)?a:b)
+#define uuid_max(a,b) ((cmp((void*)&a,(void*)&b)>0)?a:b)
+
 #define getArgReference_date(stk, pci, nr) (date*)getArgReference(stk, pci, nr)
 #define getArgReference_daytime(stk, pci, nr) (daytime*)getArgReference(stk, pci, nr)
 #define getArgReference_timestamp(stk, pci, nr) (timestamp*)getArgReference(stk, pci, nr)
@@ -1807,6 +1810,18 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					o[grp[i]] = f(o[grp[i]], in[i]); \
 	}
 
+#define gfunc2(Type, f) \
+	if (tt == TYPE_##Type) { \
+		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			Type *in = Tloc(b, 0); \
+			Type *o = Tloc(r, 0); \
+			for(BUN i = 0; i<cnt; i++) \
+				if (is_##Type##_nil(o[grp[i]])) \
+					o[grp[i]] = in[i]; \
+				else \
+					o[grp[i]] = f(o[grp[i]], in[i]); \
+	}
+
 /* fron now assume shared heap */
 #define vamin(cmp, o, opos, op, in, i, bp) \
 	if (!o[opos] || cmp(op+o[opos], bp+in[i]) > 0) \
@@ -1991,6 +2006,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			gfunc(daytime,min);
 			gfunc(timestamp,min);
 			gfunc(hge,min);
+			gfunc2(uuid,uuid_min);
 			gfunc(flt,min);
 			gfunc(dbl,min);
 			if (local_storage) {
@@ -2098,6 +2114,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			gfunc(daytime,max);
 			gfunc(timestamp,max);
 			gfunc(hge,max);
+			gfunc2(uuid,uuid_max);
 			gfunc(flt,max);
 			gfunc(dbl,max);
 			if (local_storage) {

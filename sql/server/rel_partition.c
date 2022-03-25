@@ -44,7 +44,7 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		return;
 	}
 
-	if (!rel)
+	if (!rel || rel_is_ref(rel))
 		return;
 	switch (rel->op) {
 	case op_basetable: {
@@ -104,7 +104,7 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 #define REL_PARTITION 1
 #define SPB 2
 #define EPB 3
-#define INPB 4
+#define NPB 4
 
 static int
 rel_mark_partition(sql_rel *rel)
@@ -288,12 +288,18 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
 				rel->spb = 1;
+			/*
 			sql_rel *l = rel->l;
 			if ((res == SPB || !res) && (is_set(l->op)))
 				l->spb = 1;
+				*/
 			if (!res)
 				return 0;
-			res = EPB;
+			if (pb) {
+				rel->partition = 1;
+				res = SPB;
+			} else
+				res = EPB;
 		}
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
 		if (pb && is_simple_project(rel->op) && rel->r)
@@ -311,9 +317,9 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			res = rel_partition_(sql, rel->l, pb);
 		if (!res)
 			return 0;
-		if (res == REL_PARTITION) {
+		if (res == EPB || res == REL_PARTITION) {
 			rel->partition = 1;
-			if (pb)
+			if (pb && res == REL_PARTITION)
 				rel->spb = 1;
 		}
 		sql_rel *r = rel->r;
@@ -324,6 +330,12 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			lres = rel_partition_(sql, rel->l, 0);
 		if (rel->r && !is_semi(rel->op))
 			rres = rel_partition_(sql, rel->r, 0);
+		if (lres == EPB)
+			rel->partition = 1;
+		if (rres == EPB)
+			rel->partition = 1;
+		if (pb)
+			rel->spb = 1;
 		if (!lres || !rres)
 			return 0;
 		res = pb;
@@ -333,6 +345,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_join(rel->op)) {
 		if (pb && is_outerjoin(rel->op))
 			return 0;
+		/* TODo also move this into rel_partition_ */
 		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
 		if (0 && (l || r)) {
 			int lres = rel_partition_(sql, rel->l, 0);

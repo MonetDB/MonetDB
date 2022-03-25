@@ -2577,28 +2577,35 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	int neededpp = rel->spb && get_need_pipeline(be);
 
 	if (rel->partition == 1) {
-		if (rel->r) /* first construct the right sub relation */
+		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
+			right = subrel_project(be, right, refs, rel->r);
+		}
 		if (rel->spb)
 			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
-		if (rel->l) /* first construct the left sub relation */
+		if (rel->l) { /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
+			left = subrel_project(be, left, refs, rel->l);
+		}
 	} else {
-		if (rel->l) /* first construct the left sub relation */
+		if (rel->l){ /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
+			left = subrel_project(be, left, refs, rel->l);
+		}
 		if (rel->spb && rel->partition == 2)
 			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
-		if (rel->r) /* first construct the right sub relation */
+		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
+			right = subrel_project(be, right, refs, rel->r);
+		}
 	}
-	left = subrel_project(be, left, refs, rel->l);
-	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right)
 		return NULL;
 	left = row2cols(be, left);
 	right = row2cols(be, right);
 
 	if (neededpp && !rel->partition) {
+		assert(0);
 		stmt *pp = pp_create(be, 32*GDKnr_threads);
 		set_pipeline(be, pp);
 		/* left or right ?? */
@@ -2922,21 +2929,24 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		return rel2bin_antijoin(be, rel, refs);
 
 	int neededpp = rel->spb && get_need_pipeline(be);
-	if (neededpp && rel->partition == 1) {
+	if (rel->partition == 1) {
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
 		}
-		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+		if (rel->spb)
+			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 	} else {
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
-		if (rel->spb && neededpp && rel->partition)
+		if (rel->spb && rel->partition == 2)
 			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
-		if (rel->r) /* first construct the right sub relation */
+		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
+			right = subrel_project(be, right, refs, rel->r);
+		}
 	}
 
 #if 0
@@ -2954,6 +2964,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	right = row2cols(be, right);
 
 	if (neededpp && !rel->partition) {
+		assert(0);
 		stmt *pp = pp_create(be, 32*GDKnr_threads);
 		set_pipeline(be, pp);
 		/* left or right ?? */
@@ -4303,7 +4314,7 @@ rel_groupby_pp(mvc *sql, sql_rel *rel, bool _2phases)
 	if (!is_groupby(rel->op))
 		return false;
 
-	if (rel_pp_possible(sql, rel))
+	if (0 && rel_pp_possible(sql, rel))
 		return false;
 
 	for(node *n = rel->exps->h; n; n = n->next ) {
@@ -4336,7 +4347,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 	bool df2 = (SQLrunning && rel->parallel && rel_groupby_pp(be->mvc, rel, _2phases));
-	int neededpp = get_need_pipeline(be);
+	int neededpp = rel->partition && get_need_pipeline(be);
 
 //	if (rel_single_distinct(rel))
 
@@ -4366,7 +4377,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		set_pipeline(be, pp = pp_create(be, 32*GDKnr_threads));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
-	assert(!be->need_pipeline);
 
 	if (sub && sub->type == st_list && sub->op4.lval->h && !((stmt*)sub->op4.lval->h->data)->nrcols) {
 		list *newl = sa_list(sql->sa);
