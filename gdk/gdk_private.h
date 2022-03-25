@@ -456,14 +456,8 @@ struct Strimps {
 };
 
 /* The current sample size is 1024, so an int will fit for the bucket count */
-struct HistogramEntry {
-	ValRecord min;	/* The minimum value in the range */
-	ValRecord max;	/* The maximum value in the range */
-	int count;	/* number of values */
-};
-
 struct Histogram {
-	struct HistogramEntry *histogram;	/* The histogram itself (at the moment it's malloc'ed) */
+	void *histogram;	/* The histogram itself (at the moment it's malloc'ed). It contains min. max and count per bucket */
 	int nbuckets;	/* The number of buckets excluding the one for NULL values */
 	int nulls;	/* The number of null values */
 	int size;	/* The total number of values in the histogram (if the table is smaller than the sample size)*/
