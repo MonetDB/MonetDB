@@ -34,10 +34,10 @@ static_assert(SAMPLE_SIZE < INT_MAX, "The sample size must be on the integer ran
 #endif
 
 #define histogram_entry(TPE)	\
-typedef struct HistogramEntry_##TPE {	\
+typedef struct HistogramBucket_##TPE {	\
 	TPE min, max;	/* The minimum and maximum value in the range */	\
 	int count;	/* number of values */	\
-} HistogramEntry_##TPE;
+} HistogramBucket_##TPE;
 
 histogram_entry(bte)
 histogram_entry(sht)
@@ -131,23 +131,22 @@ min_and_max_values(BATiter *bi, ValPtr minv, ValPtr maxv)
 	do { \
 		TPE i = *(TPE*)VALget(min), ii = i, j = *(TPE*)VALget(max); \
 		const TPE *restrict v = Tloc(sam, 0); \
-		BUN k = 0, l = BATcount(sam);	\
+		BUN c = BATcount(sam), m;	\
+		HistogramBucket_##TPE *restrict hist; \
 	\
 		h->nbuckets = (int) (j - i + 1); \
-		if (!(h->histogram = GDKmalloc(sizeof(HistogramEntry_##TPE) * h->nbuckets))) \
+		if (!(h->histogram = GDKmalloc(sizeof(HistogramBucket_##TPE) * h->nbuckets))) \
 			return NULL; \
 	\
-		while (true) { /* Initialize bucket ranges */ \
-			HistogramEntry_##TPE *restrict e = &(((HistogramEntry_##TPE *)h->histogram)[k++]); \
-			e->min = e->max = ii; /* TODO? maybe I don't need to materialize this for 'perfect' histograms */ \
-			e->count = 0; \
-			if (ii == j) \
-				break; \
-			ii++; \
+		hist = (HistogramBucket_##TPE *) h->histogram; \
+		m = (BUN) h->nbuckets; \
+		for (BUN k = 0 ; k < m ; k++) {  /* Initialize bucket ranges */ \
+			HistogramBucket_##TPE *restrict b = &(hist[k]); \
+			b->min = b->max = ii++; /* TODO? maybe I don't need to materialize this for 'perfect' histograms */ \
+			b->count = 0; \
 		} \
 	\
-		HistogramEntry_##TPE *restrict hist = (HistogramEntry_##TPE *)h->histogram; \
-		for (BUN k = 0 ; k < l ; k++) { /* Now create the histogram */\
+		for (BUN k = 0 ; k < c ; k++) { /* Now create the histogram */ \
 			TPE next = v[k]; \
 			if (is_##TPE##_nil(next)) { \
 				nulls++; \
@@ -192,33 +191,46 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 	do { \
 		TPE i = *(TPE*)VALget(min), ii = i, j = *(TPE*)VALget(max), gap; \
 		const TPE *restrict v = Tloc(sam, 0); \
-		BUN l = BATcount(sam);	\
+		BUN c = BATcount(sam);	\
+		HistogramBucket_##TPE *restrict hist; \
 	\
 		h->nbuckets = NBUCKETS; \
-		if (!(h->histogram = GDKmalloc(sizeof(HistogramEntry_##TPE) * h->nbuckets))) \
+		if (!(h->histogram = GDKmalloc(sizeof(HistogramBucket_##TPE) * h->nbuckets))) \
 			return NULL; \
-		gap = (TPE) floor((double) (j - i) / (double) h->nbuckets); \
+		gap = (TPE) floor((double) (j - i) / (double) h->nbuckets); /* TODO this may overflow for large integer types */ \
 	\
+		hist = (HistogramBucket_##TPE *) h->histogram; \
 		for (BUN k = 0 ; k < NBUCKETS ; k++) { \
-			HistogramEntry_##TPE *restrict e = &(((HistogramEntry_##TPE *)h->histogram)[k]); \
-			e->min = ii;	\
-			ii += gap; \
+			HistogramBucket_##TPE *restrict b = &(hist[k]); \
+			b->min = ii;	\
 			if (k == NBUCKETS - 1) { \
-				e->max = ii; \
+				b->max = j; /* The last bucket will contain the max value inclusive */ \
 			} else { \
-				e->max = j; /* The last bucket will contain the max value inclusive */ \
+				ii += gap; \
+				b->max = ii; \
 			} \
-			e->count = 0; \
+			b->count = 0; \
 		} \
 	\
-		HistogramEntry_##TPE *restrict hist = (HistogramEntry_##TPE *)h->histogram; \
-		for (BUN k = 0 ; k < l ; k++) { /* Now create the histogram */\
+		for (BUN k = 0 ; k < c ; k++) { /* Now create the histogram */ \
 			TPE next = v[k]; \
 			if (is_##TPE##_nil(next)) { \
 				nulls++; \
 			} else { \
-				(void) hist; \
-				/* ... */ \
+				int l = 0, r = NBUCKETS - 1; \
+				while (l <= r) { /* Do binary search to find the bucket */ \
+					int m = l + (r - l) / 2; \
+					HistogramBucket_##TPE *restrict b = &(hist[m]); \
+					/* Check if on the bucket. Don't forget last bucket case where max is inclusive */ \
+					if (next >= b->min && (next < b->max || (next == j && m == (NBUCKETS - 1)))) { \
+						b->count++; \
+					} else if (next < b->min) { /* value is smaller, ignore right half */ \
+						r = m - 1; \
+					} else { /* value is greater, ignore left half */ \
+						l = m + 1; \
+					} \
+				} \
+				assert(0); /* the value must be found */ \
 			} \
 		} \
 		h->nulls = nulls; \
