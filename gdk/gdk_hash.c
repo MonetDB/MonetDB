@@ -448,18 +448,19 @@ HASHgrowbucket(BAT *b)
 bool
 BATcheckhash(BAT *b)
 {
-	bool ret;
 	lng t = 0;
+	Hash *h;
 
-	/* we don't need the lock just to read the value b->thash */
-	if (b->thash == (Hash *) 1) {
+	MT_rwlock_rdlock(&b->thashlock);
+	h = b->thash;
+	MT_rwlock_rdunlock(&b->thashlock);
+	if (h == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
 		MT_rwlock_wrlock(&b->thashlock);
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
-			Hash *h;
 			int fd;
 
 			assert(!GDKinmemory(b->theap->farmid));
@@ -578,13 +579,13 @@ BATcheckhash(BAT *b)
 			GDKfree(h);
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
+		h = b->thash;
 		MT_rwlock_wrunlock(&b->thashlock);
 	}
-	ret = b->thash != NULL;
-	if (ret) {
+	if (h != NULL) {
 		TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
 	}
-	return ret;
+	return h != NULL;
 }
 
 static void
@@ -634,22 +635,6 @@ BAThashsave(BAT *b, bool dosync)
 	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
 	BAThashsave_intern(b, dosync);
 }
-
-#ifdef PERSISTENTHASH
-static void
-BAThashsync(void *arg)
-{
-	BAT *b = arg;
-
-	/* we could check whether b->thash == NULL before getting the
-	 * lock, and only lock if it isn't; however, it's very
-	 * unlikely that that is the case, so we don't */
-	MT_rwlock_rdlock(&b->thashlock);
-	BAThashsave_intern(b, true);
-	MT_rwlock_rdunlock(&b->thashlock);
-	BBPunfix(b->batCacheid);
-}
-#endif
 
 #define EQbte(a, b)	((a) == (b))
 #define EQsht(a, b)	((a) == (b))
@@ -975,10 +960,12 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	h->heaplink.parentid = b->batCacheid;
 	/* if the number of unique values is equal to the bat count,
 	 * all values are necessarily distinct */
+	MT_lock_set(&b->theaplock);
 	if (h->nunique == BATcount(b) && !b->tkey) {
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
+	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG_IF(ACCELERATOR) {
 		TRC_DEBUG_ENDIF(ACCELERATOR,
 				"hash construction " LLFMT " usec\n", GDKusec() - t0);
@@ -1032,32 +1019,6 @@ BAThash(BAT *b)
 			MT_rwlock_wrunlock(&b->thashlock);
 			return GDK_FAIL;
 		}
-#ifdef PERSISTENTHASH
-		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap->dirty && !GDKinmemory(b->theap->farmid)) {
-			Hash *h = b->thash;
-			((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
-			((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
-			((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
-			((size_t *) h->heapbckt.base)[3] = (size_t) h->width;
-			((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
-			((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
-			((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
-			MT_Id tid;
-			BBPfix(b->batCacheid);
-			char name[MT_NAME_LEN];
-			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
-			MT_rwlock_wrunlock(&b->thashlock);
-			if (MT_create_thread(&tid, BAThashsync, b,
-					     MT_THR_DETACHED,
-					     name) < 0) {
-				/* couldn't start thread: clean up */
-				BBPunfix(b->batCacheid);
-			}
-			return GDK_SUCCEED;
-		} else
-			TRC_DEBUG(ACCELERATOR,
-					"NOT persisting hash %d\n", b->batCacheid);
-#endif
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 	return GDK_SUCCEED;

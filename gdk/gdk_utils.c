@@ -950,7 +950,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 		}
 	} else {
 		/* BBP was locked by BBPexit() */
-		BBPunlock();
+		//BBPunlock();
 	}
 	GDKtracer_init(dbpath, dbtrace);
 	errno = 0;
@@ -996,7 +996,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 	else
 #endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-	if (BBPinit(first) != GDK_SUCCEED)
+	if (BBPinit() != GDK_SUCCEED)
 		return GDK_FAIL;
 	first = false;
 
@@ -1067,8 +1067,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 		TRC_CRITICAL(GDK, "Could not create environment BATs");
 		return GDK_FAIL;
 	}
-	if (BBPrename(GDKkey->batCacheid, "environment_key") != 0 ||
-	    BBPrename(GDKval->batCacheid, "environment_val") != 0) {
+	if (BBPrename(GDKkey, "environment_key") != 0 ||
+	    BBPrename(GDKval, "environment_val") != 0) {
 		free(n);
 		TRC_CRITICAL(GDK, "BBPrename of environment BATs failed");
 		return GDK_FAIL;
@@ -1203,6 +1203,8 @@ GDKprepareExit(void)
 	}
 }
 
+static MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
+
 void
 GDKreset(int status)
 {
@@ -1334,7 +1336,6 @@ GDKexit(int status)
  */
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
-MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
 
 /* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR */
 MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);

@@ -373,7 +373,8 @@ JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	JSONfree(jt);
 	if (bn == NULL)
 		throw(MAL, "json.dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1777,10 +1778,14 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		BBPreclaim(bo);
 		BBPreclaim(bv);
 	} else {
-		BBPkeepref(*key = bk->batCacheid);
-		BBPkeepref(*val = bv->batCacheid);
-		if (od)
-			BBPkeepref(*od = bo->batCacheid);
+		*key = bk->batCacheid;
+		BBPkeepref(bk);
+		*val = bv->batCacheid;
+		BBPkeepref(bv);
+		if (od) {
+			*od = bo->batCacheid;
+			BBPkeepref(bo);
+		}
 	}
 	return msg;
 }
@@ -1818,7 +1823,8 @@ JSONkeyTable(bat *ret, json *js)
 		GDKfree(r);
 	}
 	JSONfree(jt);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1921,7 +1927,8 @@ JSONvalueTable(bat *ret, json *js)
 		GDKfree(r);
 	}
 	JSONfree(jt);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -2567,7 +2574,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	BAT *bn = NULL, *t1, *t2 = NULL;
 	BATiter bi;
 	oid min, max, mapoff = 0, prev;
-	BUN ngrp, nils = 0, p, q, ncand;
+	BUN ngrp, nils = 0, p, q;
 	struct canditer ci;
 	const char *err = NULL;
 	const oid *grps, *map;
@@ -2578,7 +2585,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 
 	assert(maxlen > 256); /* make sure every floating point fits on the dense case */
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		return err;
 	}
 	if (BATcount(b) == 0 || ngrp == 0) {
@@ -2901,7 +2908,7 @@ JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_n
 		throw(MAL, "aggr.subjson", "%s", err);
 
 	*retval = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 

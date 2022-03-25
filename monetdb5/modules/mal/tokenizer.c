@@ -589,7 +589,7 @@ TKNZRgetLevel(bat *r, int *level)
 		throw(MAL, "tokenizer.getLevel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*r = view->batCacheid;
 
-	BBPkeepref(*r);
+	BBPkeepref(view);
 	return MAL_SUCCEED;
 }
 
@@ -614,7 +614,7 @@ TKNZRgetCount(bat *r)
 	}
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
-	BBPkeepref(*r);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -623,7 +623,7 @@ TKNZRgetCardinality(bat *r)
 {
 	BAT *b, *en;
 	int i;
-	lng cnt;
+	struct canditer ci;
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
@@ -635,9 +635,9 @@ TKNZRgetCardinality(bat *r)
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", GDK_EXCEPTION);
 		}
-		cnt = (lng) canditer_init(&(struct canditer){0}, NULL, en);
+		canditer_init(&ci, NULL, en);
 		BBPunfix(en->batCacheid);
-		if (BUNappend(b, &cnt, false) != GDK_SUCCEED) {
+		if (BUNappend(b, &(lng){ci.ncand}, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -645,7 +645,7 @@ TKNZRgetCardinality(bat *r)
 
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
-	BBPkeepref(*r);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 

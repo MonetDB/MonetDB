@@ -133,7 +133,7 @@ bat_utils_init(void)
 			/* give it a name for debugging purposes */
 			snprintf(name, sizeof(name), "sql_empty_%s_bat",
 				 ATOMname(t));
-			BBPrename(ebats[t]->batCacheid, name);
+			BBPrename(ebats[t], name);
 		}
 	}
 	return 0;

@@ -182,7 +182,7 @@ log_find(BAT *b, BAT *d, int val)
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
 
-		for (p = 0, q = BUNlast(b); p < q; p++) {
+		for (p = 0, q = BATcount(b); p < q; p++) {
 			if (t[p] == val) {
 				oid pos = p;
 				if (BUNfnd(d, &pos) == BUN_NONE) {
@@ -344,7 +344,7 @@ la_bat_clear(old_logger *lg, logaction *la)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		restrict_t access = (restrict_t) b->batRestricted;
+		restrict_t access = b->batRestricted;
 		b->batRestricted = BAT_WRITE;
 		BATclear(b, true);
 		b->batRestricted = access;
@@ -1377,7 +1377,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	if (t == NULL) {
 		t = logbat_new(TYPE_bte, BATSIZE, TRANSIENT);
 		if (t == NULL
-		    ||BBPrename(t->batCacheid, bak) < 0) {
+		    ||BBPrename(t, bak) < 0) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(n->batCacheid);
 			if (t)
@@ -1403,7 +1403,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	if (o == NULL) {
 		o = logbat_new(TYPE_lng, BATSIZE, TRANSIENT);
 		if (o == NULL
-		    ||BBPrename(o->batCacheid, bak) < 0) {
+		    ||BBPrename(o, bak) < 0) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(n->batCacheid);
 			BBPunfix(t->batCacheid);
@@ -1440,7 +1440,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 			BBPunfix(o->batCacheid);
 			goto error;
 		}
-		if (BBPrename(d->batCacheid, bak) < 0) {
+		if (BBPrename(d, bak) < 0) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(n->batCacheid);
 			BBPunfix(t->batCacheid);
@@ -1552,17 +1552,17 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
-		if (BBPrename(lg->seqs_id->batCacheid, bak) < 0) {
+		if (BBPrename(lg->seqs_id, bak) < 0) {
 			goto error;
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
-		if (BBPrename(lg->seqs_val->batCacheid, bak) < 0) {
+		if (BBPrename(lg->seqs_val, bak) < 0) {
 			goto error;
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
-		if (BBPrename(lg->dseqs->batCacheid, bak) < 0) {
+		if (BBPrename(lg->dseqs, bak) < 0) {
 			goto error;
 		}
 		if (BUNappend(lg->add, &lg->seqs_id->batCacheid, false) != GDK_SUCCEED)
@@ -1732,20 +1732,20 @@ old_logger_destroy(old_logger *lg)
 	/* give the catalog bats names so we can find them
 	 * next time */
 	char bak[IDLENGTH];
-	if (BBPrename(lg->catalog_bid->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->catalog_nme->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->catalog_tpe->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->catalog_oid->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->dcatalog->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->snapshots_bid->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->snapshots_tid->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->dsnapshots->batCacheid, NULL) < 0 ||
+	if (BBPrename(lg->catalog_bid, NULL) < 0 ||
+	    BBPrename(lg->catalog_nme, NULL) < 0 ||
+	    BBPrename(lg->catalog_tpe, NULL) < 0 ||
+	    BBPrename(lg->catalog_oid, NULL) < 0 ||
+	    BBPrename(lg->dcatalog, NULL) < 0 ||
+	    BBPrename(lg->snapshots_bid, NULL) < 0 ||
+	    BBPrename(lg->snapshots_tid, NULL) < 0 ||
+	    BBPrename(lg->dsnapshots, NULL) < 0 ||
 	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_catalog_bid", NULL) >= sizeof(bak) ||
-	    BBPrename(lg->lg->catalog_bid->batCacheid, bak) < 0 ||
+	    BBPrename(lg->lg->catalog_bid, bak) < 0 ||
 	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_catalog_id", NULL) >= sizeof(bak) ||
-	    BBPrename(lg->lg->catalog_id->batCacheid, bak) < 0 ||
+	    BBPrename(lg->lg->catalog_id, bak) < 0 ||
 	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_dcatalog", NULL) >= sizeof(bak) ||
-	    BBPrename(lg->lg->dcatalog->batCacheid, bak) < 0) {
+	    BBPrename(lg->lg->dcatalog, bak) < 0) {
 		GDKfree(subcommit);
 		return GDK_FAIL;
 	}

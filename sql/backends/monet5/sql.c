@@ -126,12 +126,13 @@ sql_symbol2relation(backend *be, symbol *sym)
 	sql_query *query = query_create(be->mvc);
 	lng Tbegin;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
+	int profile = be->mvc->emode == m_plan;
 
 	rel = rel_semantic(query, sym);
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = GDKusec();
 	if (rel)
-		rel = sql_processrelation(be->mvc, rel, 1, value_based_opt, storage_based_opt);
+		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 	if (rel)
 		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
@@ -152,6 +153,7 @@ sqlcleanup(backend *be, int err)
 
 	/* some statements dynamically disable caching */
 	be->mvc->sym = NULL;
+	be->mvc->runs = NULL;
 	if (be->mvc->ta)
 		be->mvc->ta = sa_reset(be->mvc->ta);
 	if (be->mvc->sa)
@@ -454,7 +456,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0, 0, 0);
+			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(sql, r);
 			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY)) {
@@ -513,8 +515,10 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.claim", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (mvc_claim_slots(m->session->tr, t, (size_t)cnt, offset, &pos) == LOG_OK) {
 		*res = bat_nil;
-		if (pos)
-			BBPkeepref(*res = pos->batCacheid);
+		if (pos) {
+			*res = pos->batCacheid;
+			BBPkeepref(pos);
+		}
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.claim", SQLSTATE(3F000) "Could not claim slots");
@@ -892,10 +896,14 @@ bailout:
 		BBPreclaim(types);
 		BBPreclaim(values);
 	} else {
-		BBPkeepref(*s = schemas->batCacheid);
-		BBPkeepref(*n = names->batCacheid);
-		BBPkeepref(*t = types->batCacheid);
-		BBPkeepref(*v = values->batCacheid);
+		*s = schemas->batCacheid;
+		BBPkeepref(schemas);
+		*n = names->batCacheid;
+		BBPkeepref(names);
+		*t = types->batCacheid;
+		BBPkeepref(types);
+		*v = values->batCacheid;
+		BBPkeepref(values);
 	}
 	return msg;
 }
@@ -989,7 +997,8 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		r->tnil = false;
 		/* TODO set the min/max, tsorted/trevsorted and tkey properties based on the sequence values */
 		r->tsorted = r->trevsorted = r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 		return MAL_SUCCEED;
 	}
 	BBPreclaim(r);
@@ -1032,7 +1041,6 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_sequence *seq;
 	BATiter schi, seqi;
 	BAT *bn = NULL, *scheb = NULL, *sches = NULL, *seqb = NULL, *seqs = NULL;
-	BUN q = 0;
 	lng *restrict vals;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -1053,12 +1061,13 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, scheb, sches);
-	if (canditer_init(&ci2, seqb, seqs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, scheb, sches);
+	canditer_init(&ci2, seqb, seqs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(SQL, "sql.get_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_lng, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_lng, ci1.ncand, TRANSIENT))) {
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1068,7 +1077,7 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	schi = bat_iterator(scheb);
 	seqi = bat_iterator(seqb);
 	vals = Tloc(bn, 0);
-	for (BUN i = 0; i < q; i++) {
+	for (BUN i = 0; i < ci1.ncand; i++) {
 		oid p1 = canditer_next(&ci1) - off1, p2 = canditer_next(&ci2) - off2;
 		const char *sname = BUNtvar(schi, p1);
 		const char *seqname = BUNtvar(seqi, p2);
@@ -1105,13 +1114,14 @@ bailout:
 	if (seqs)
 		BBPunfix(seqs->batCacheid);
 	if (bn && !msg) {
-		BATsetcount(bn, q);
+		BATsetcount(bn, ci1.ncand);
 		bn->tnil = nils;
 		bn->tnonil = !nils;
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*res = bn->batCacheid);
+		*res = bn->batCacheid;
+		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
 	return msg;
@@ -1282,8 +1292,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
 					sname,tname,cname);
 			}
-			BBPkeepref(*bid = b->batCacheid);
-			BBPkeepref(*uvl = uv->batCacheid);
+			*bid = b->batCacheid;
+			BBPkeepref(b);
+			*uvl = uv->batCacheid;
+			BBPkeepref(uv);
 			return MAL_SUCCEED;
 		}
 		if (upd) {
@@ -1317,8 +1329,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bat_destroy(vl);
 					throw(SQL, "sql.bind", SQLSTATE(0000) "Inconsistent BAT count");
 				}
-				BBPkeepref(*bid = id->batCacheid);
-				BBPkeepref(*uvl = vl->batCacheid);
+				*bid = id->batCacheid;
+				BBPkeepref(id);
+				*uvl = vl->batCacheid;
+				BBPkeepref(vl);
 			} else {
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat(c->type.type->localtype);
@@ -1333,7 +1347,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			BBPunfix(b->batCacheid);
 		} else {
-			BBPkeepref(*bid = b->batCacheid);
+			*bid = b->batCacheid;
+			BBPkeepref(b);
 		}
 		return MAL_SUCCEED;
 	}
@@ -1527,13 +1542,20 @@ cleanup:
 		if (col7)
 			BBPreclaim(col7);
 	} else {
-		BBPkeepref(*b1 = col1->batCacheid);
-		BBPkeepref(*b2 = col2->batCacheid);
-		BBPkeepref(*b3 = col3->batCacheid);
-		BBPkeepref(*b4 = col4->batCacheid);
-		BBPkeepref(*b5 = col5->batCacheid);
-		BBPkeepref(*b6 = col6->batCacheid);
-		BBPkeepref(*b7 = col7->batCacheid);
+		*b1 = col1->batCacheid;
+		BBPkeepref(col1);
+		*b2 = col2->batCacheid;
+		BBPkeepref(col2);
+		*b3 = col3->batCacheid;
+		BBPkeepref(col3);
+		*b4 = col4->batCacheid;
+		BBPkeepref(col4);
+		*b5 = col5->batCacheid;
+		BBPkeepref(col5);
+		*b6 = col6->batCacheid;
+		BBPkeepref(col6);
+		*b7 = col7->batCacheid;
+		BBPkeepref(col7);
 	}
 	return msg;
 }
@@ -1618,8 +1640,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 				throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
 			}
-			BBPkeepref(*bid = b->batCacheid);
-			BBPkeepref(*uvl = uv->batCacheid);
+			*bid = b->batCacheid;
+			BBPkeepref(b);
+			*uvl = uv->batCacheid;
+			BBPkeepref(uv);
 			return MAL_SUCCEED;
 		}
 		if (upd) {
@@ -1651,8 +1675,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bat_destroy(vl);
 					throw(SQL, "sql.bindidx", SQLSTATE(0000) "Inconsistent BAT count");
 				}
-				BBPkeepref(*bid = id->batCacheid);
-				BBPkeepref(*uvl = vl->batCacheid);
+				*bid = id->batCacheid;
+				BBPkeepref(id);
+				*uvl = vl->batCacheid;
+				BBPkeepref(vl);
 			} else {
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
@@ -1667,7 +1693,8 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			BBPunfix(b->batCacheid);
 		} else {
-			BBPkeepref(*bid = b->batCacheid);
+			*bid = b->batCacheid;
+			BBPkeepref(b);
 		}
 		return MAL_SUCCEED;
 	}
@@ -2045,7 +2072,8 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval)
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
 
-	BBPkeepref(*result = res->batCacheid);
+	*result = res->batCacheid;
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -2150,7 +2178,8 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 	}
 
 	BATkey(res, true);
-	BBPkeepref(*result = res->batCacheid);
+	*result = res->batCacheid;
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -2186,7 +2215,8 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	if (!BATcount(u_id)) {
 		BBPunfix(u_id->batCacheid);
 		BBPunfix(s->batCacheid);
-		BBPkeepref(*result = res->batCacheid);
+		*result = res->batCacheid;
+		BBPkeepref(res);
 		return MAL_SUCCEED;
 	}
 	if ((u_val = BATdescriptor(*uval)) == NULL) {
@@ -2239,7 +2269,8 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
 
-	BBPkeepref(*result = res->batCacheid);
+	*result = res->batCacheid;
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -2308,7 +2339,8 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 	BBPunfix(c->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
-	BBPkeepref(*Res = res->batCacheid);
+	*Res = res->batCacheid;
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -2351,7 +2383,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BAT *b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
 	if (b) {
-		BBPkeepref(*res = b->batCacheid);
+		*res = b->batCacheid;
+		BBPkeepref(b);
 	} else {
 		msg = createException(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -3029,7 +3062,7 @@ bat2return(MalStkPtr stk, InstrPtr pci, BAT **b)
 
 	for (i = 0; i < pci->retc; i++) {
 		*getArgReference_bat(stk, pci, i) = b[i]->batCacheid;
-		BBPkeepref(b[i]->batCacheid);
+		BBPkeepref(b[i]);
 	}
 }
 
@@ -3194,7 +3227,7 @@ not_unique(bit *ret, const bat *bid)
 		BATiter bi = bat_iterator(b);
 		oid c = ((oid *) bi.base)[0];
 
-		for (p = 1, q = BUNlast(b); p < q; p++) {
+		for (p = 1, q = BATcount(b); p < q; p++) {
 			oid v = ((oid *) bi.base)[p];
 			if (v <= c) {
 				*ret = TRUE;
@@ -3242,7 +3275,8 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(bn = BATdense(b->hseqbase, s, BATcount(b))))
 		throw(MAL, "batcalc.identity", GDK_EXCEPTION);
 	*ns = s + BATcount(b);
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -3318,7 +3352,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 	}
 	bat_iterator_end(&bi);
 	*res = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	BBPunfix(b->batCacheid);
 	return msg;
 }
@@ -3364,7 +3398,8 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
 		}
 	}
 	bat_iterator_end(&bi);
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	BBPunfix(b->batCacheid);
 	return msg;
 }
@@ -3405,8 +3440,8 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*rquery = query->batCacheid;
 	*rcount = count->batCacheid;
-	BBPkeepref(*rquery);
-	BBPkeepref(*rcount);
+	BBPkeepref(query);
+	BBPkeepref(count);
 	return MAL_SUCCEED;
 }
 
@@ -3443,8 +3478,8 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	*rrewrite = rewrite->batCacheid;
 	*rcount = count->batCacheid;
-	BBPkeepref(*rrewrite);
-	BBPkeepref(*rcount);
+	BBPkeepref(rewrite);
+	BBPkeepref(count);
 	return MAL_SUCCEED;
 }
 
@@ -3454,7 +3489,6 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[3];
-	bat id;
 
 	(void) cntxt;
 	(void) mb;
@@ -3462,9 +3496,8 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
 	for(i=0; i < 3; i++)
 	if( t[i]){
-		id = t[i]->batCacheid;
-		*getArgReference_bat(stk, pci, i) = id;
-		BBPkeepref(id);
+		*getArgReference_bat(stk, pci, i) = t[i]->batCacheid;
+		BBPkeepref(t[i]);
 	} else
 		throw(SQL,"dump_trace", SQLSTATE(45000) "Missing trace BAT ");
 	return MAL_SUCCEED;
@@ -3509,9 +3542,12 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (BUNappend(hashb, hashs? hashs: str_nil, false) != GDK_SUCCEED)
 		goto lbailout;
 	MT_lock_unset(&mal_contextLock);
-	BBPkeepref(*uri = urib->batCacheid);
-	BBPkeepref(*uname = unameb->batCacheid);
-	BBPkeepref(*hash = hashb->batCacheid);
+	*uri = urib->batCacheid;
+	BBPkeepref(urib);
+	*uname = unameb->batCacheid;
+	BBPkeepref(unameb);
+	*hash = hashb->batCacheid;
+	BBPkeepref(hashb);
 
 	GDKfree(uris);
 	GDKfree(unames);
@@ -3545,10 +3581,8 @@ sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	for (i = 0; i < 8; i++)
 	if( t[i]){
-		bat id = t[i]->batCacheid;
-
-		*getArgReference_bat(stk, pci, i) = id;
-		BBPkeepref(id);
+		*getArgReference_bat(stk, pci, i) = t[i]->batCacheid;
+		BBPkeepref(t[i]);
 	} else
 		throw(SQL,"sql.querylog", SQLSTATE(45000) "Missing query catalog BAT");
 	return MAL_SUCCEED;
@@ -3568,10 +3602,8 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	for (i = 0; i < 9; i++)
 	if( t[i]){
-		bat id = t[i]->batCacheid;
-
-		*getArgReference_bat(stk, pci, i) = id;
-		BBPkeepref(id);
+		*getArgReference_bat(stk, pci, i) = t[i]->batCacheid;
+		BBPkeepref(t[i]);
 	} else
 		throw(SQL,"sql.querylog", SQLSTATE(45000) "Missing query call BAT");
 	return MAL_SUCCEED;
@@ -3697,7 +3729,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	bat_iterator_end(&gi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
-	BBPkeepref(*rid = r->batCacheid);
+	*rid = r->batCacheid;
+	BBPkeepref(r);
 	return MAL_SUCCEED;
 }
 
@@ -3747,7 +3780,8 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	}
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
-	BBPkeepref(*rid = r->batCacheid);
+	*rid = r->batCacheid;
+	BBPkeepref(r);
 	return MAL_SUCCEED;
   bailout:
 	bat_iterator_end(&bi);
@@ -4162,23 +4196,40 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	BBPkeepref(*rsch = sch->batCacheid);
-	BBPkeepref(*rtab = tab->batCacheid);
-	BBPkeepref(*rcol = col->batCacheid);
-	BBPkeepref(*rmode = mode->batCacheid);
-	BBPkeepref(*rloc = loc->batCacheid);
-	BBPkeepref(*rtype = type->batCacheid);
-	BBPkeepref(*rcnt = cnt->batCacheid);
-	BBPkeepref(*ratom = atom->batCacheid);
-	BBPkeepref(*rsize = size->batCacheid);
-	BBPkeepref(*rheap = heap->batCacheid);
-	BBPkeepref(*rindices = indices->batCacheid);
-	BBPkeepref(*rphash = phash->batCacheid);
-	BBPkeepref(*rimprints = imprints->batCacheid);
-	BBPkeepref(*rsort = sort->batCacheid);
-	BBPkeepref(*rrevsort = revsort->batCacheid);
-	BBPkeepref(*rkey = key->batCacheid);
-	BBPkeepref(*roidx = oidx->batCacheid);
+	*rsch = sch->batCacheid;
+	BBPkeepref(sch);
+	*rtab = tab->batCacheid;
+	BBPkeepref(tab);
+	*rcol = col->batCacheid;
+	BBPkeepref(col);
+	*rmode = mode->batCacheid;
+	BBPkeepref(mode);
+	*rloc = loc->batCacheid;
+	BBPkeepref(loc);
+	*rtype = type->batCacheid;
+	BBPkeepref(type);
+	*rcnt = cnt->batCacheid;
+	BBPkeepref(cnt);
+	*ratom = atom->batCacheid;
+	BBPkeepref(atom);
+	*rsize = size->batCacheid;
+	BBPkeepref(size);
+	*rheap = heap->batCacheid;
+	BBPkeepref(heap);
+	*rindices = indices->batCacheid;
+	BBPkeepref(indices);
+	*rphash = phash->batCacheid;
+	BBPkeepref(phash);
+	*rimprints = imprints->batCacheid;
+	BBPkeepref(imprints);
+	*rsort = sort->batCacheid;
+	BBPkeepref(sort);
+	*rrevsort = revsort->batCacheid;
+	BBPkeepref(revsort);
+	*rkey = key->batCacheid;
+	BBPkeepref(key);
+	*roidx = oidx->batCacheid;
+	BBPkeepref(oidx);
 	return MAL_SUCCEED;
 
   bailout:
@@ -4435,11 +4486,16 @@ bailout:
 		BBPreclaim(statement);
 		BBPreclaim(created);
 	} else {
-		BBPkeepref(*sid = sessionid->batCacheid);
-		BBPkeepref(*u = user->batCacheid);
-		BBPkeepref(*i = statementid->batCacheid);
-		BBPkeepref(*s = statement->batCacheid);
-		BBPkeepref(*c = created->batCacheid);
+		*sid = sessionid->batCacheid;
+		BBPkeepref(sessionid);
+		*u = user->batCacheid;
+		BBPkeepref(user);
+		*i = statementid->batCacheid;
+		BBPkeepref(statementid);
+		*s = statement->batCacheid;
+		BBPkeepref(statement);
+		*c = created->batCacheid;
+		BBPkeepref(created);
 	}
 	return msg;
 }
@@ -4556,15 +4612,24 @@ bailout:
 		BBPreclaim(table);
 		BBPreclaim(column);
 	} else {
-		BBPkeepref(*sid = statementid->batCacheid);
-		BBPkeepref(*t = type->batCacheid);
-		BBPkeepref(*d = digits->batCacheid);
-		BBPkeepref(*s = scale->batCacheid);
-		BBPkeepref(*io = isinout->batCacheid);
-		BBPkeepref(*n = number->batCacheid);
-		BBPkeepref(*sch = schema->batCacheid);
-		BBPkeepref(*tbl = table->batCacheid);
-		BBPkeepref(*col = column->batCacheid);
+		*sid = statementid->batCacheid;
+		BBPkeepref(statementid);
+		*t = type->batCacheid;
+		BBPkeepref(type);
+		*d = digits->batCacheid;
+		BBPkeepref(digits);
+		*s = scale->batCacheid;
+		BBPkeepref(scale);
+		*io = isinout->batCacheid;
+		BBPkeepref(isinout);
+		*n = number->batCacheid;
+		BBPkeepref(number);
+		*sch = schema->batCacheid;
+		BBPkeepref(schema);
+		*tbl = table->batCacheid;
+		BBPkeepref(table);
+		*col = column->batCacheid;
+		BBPkeepref(column);
 	}
 	return msg;
 }
@@ -4583,6 +4648,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!nmb)
 		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	nmb->starttime = mb->starttime;
 	mod = *getArgReference_str(stk, pci, arg++);
 	fcn = *getArgReference_str(stk, pci, arg++);
 	npci = newStmtArgs(nmb, mod, fcn, pci->argc);
@@ -4730,7 +4796,7 @@ finalize:
 					if (ret)
 						BBPunfix(*b);
 					else
-						BBPkeepref(*b);
+						BBPkeepref(res[i]);
 				}
 			}
 		GDKfree(res);

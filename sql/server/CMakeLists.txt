@@ -47,6 +47,10 @@ target_sources(sqlserver
   rel_unnest.c
   rel_optimizer.c
   rel_statistics.c rel_statistics_functions.c
+  rel_optimize_exps.c
+  rel_optimize_others.c
+  rel_optimize_proj.c
+  rel_optimize_sel.c
   rel_partition.c
   rel_planner.c rel_planner.h
   rel_distribute.c
@@ -57,11 +61,12 @@ target_sources(sqlserver
   rel_dump.c
   rel_dump.h rel_exp.h rel_rel.h
   rel_basetable.h
+  rel_rewriter.h
   rel_unnest.h
   rel_optimizer.h
   rel_statistics.h
+  rel_optimizer_private.h
   rel_partition.h
-  rel_distribute.h
   rel_prop.h
   rel_schema.h
   rel_select.h

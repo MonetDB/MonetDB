@@ -89,11 +89,16 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	BBPkeepref( *mx = mod->batCacheid);
-	BBPkeepref( *fx = fcn->batCacheid);
-	BBPkeepref( *sx = sig->batCacheid);
-	BBPkeepref( *ax = adr->batCacheid);
-	BBPkeepref( *cx = com->batCacheid);
+	*mx = mod->batCacheid;
+	BBPkeepref(mod);
+	*fx = fcn->batCacheid;
+	BBPkeepref(fcn);
+	*sx = sig->batCacheid;
+	BBPkeepref(sig);
+	*ax = adr->batCacheid;
+	BBPkeepref(adr);
+	*cx = com->batCacheid;
+	BBPkeepref(com);
 	(void)mb;
 	return MAL_SUCCEED;
 

@@ -8,11 +8,8 @@
 
 #include "monetdb_config.h"
 #include "rel_rewriter.h"
-#include "rel_prop.h"
-#include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_basetable.h"
-#include "mal_errors.h" /* for SQLSTATE() */
 
 /* simplify expressions, such as not(not(x)) */
 /* exp visitor */
@@ -198,16 +195,16 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 }
 
 sql_rel *
-rewrite_simplify(visitor *v, sql_rel *rel)
+rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
 
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
-		int changes = v->changes, level = *(int*)v->data;
+		int changes = v->changes;
 		rel->exps = exps_simplify_exp(v, rel->exps);
 		/* At a select or inner join relation if the single expression is false, eliminate the inner relations with a dummy projection */
-		if (v->value_based_opt && (v->changes > changes || level == 0) && (is_select(rel->op) || is_innerjoin(rel->op)) &&
+		if (value_based_opt && (v->changes > changes || cycle == 0) && (is_select(rel->op) || is_innerjoin(rel->op)) &&
 			!is_single(rel) && list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
 			list *nexps = sa_list(v->sql->sa), *toconvert = rel_projections(v->sql, rel->l, NULL, 1, 1);
 			if (is_innerjoin(rel->op))
@@ -240,37 +237,6 @@ rewrite_reset_used(visitor *v, sql_rel *rel)
 	(void) v;
 	rel->used = 0;
 	return rel;
-}
-
-atom *
-exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e)
-{
-	if (e->type == e_atom) {
-		return value_based_opt ? exp_value(sql, e) : (atom *) e->l;
-	} else if (e->type == e_convert) {
-		atom *v = exp_flatten(sql, value_based_opt, e->l);
-
-		if (v)
-			return atom_cast(sql->sa, v, exp_subtype(e));
-	} else if (e->type == e_func) {
-		sql_subfunc *f = e->f;
-		list *l = e->l;
-		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
-
-		/* TODO handle date + x months */
-		if (!f->func->s && strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
-			atom *l1 = exp_flatten(sql, value_based_opt, l->h->data);
-			atom *l2 = exp_flatten(sql, value_based_opt, l->h->next->data);
-			if (l1 && l2)
-				return atom_add(sql->sa, l1, l2);
-		} else if (!f->func->s && strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
-			atom *l1 = exp_flatten(sql, value_based_opt, l->h->data);
-			atom *l2 = exp_flatten(sql, value_based_opt, l->h->next->data);
-			if (l1 && l2)
-				return atom_sub(sql->sa, l1, l2);
-		}
-	}
-	return NULL;
 }
 
 int
@@ -425,4 +391,115 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			return name_find_column(rel->l, alias->l, alias->r, pnr, bt);
 	}
 	return NULL;
+}
+
+sql_column *
+exp_find_column( sql_rel *rel, sql_exp *exp, int pnr)
+{
+	if (exp->type == e_column)
+		return name_find_column(rel, exp->l, exp->r, pnr, NULL);
+	return NULL;
+}
+
+int
+exp_joins_rels(sql_exp *e, list *rels)
+{
+	sql_rel *l = NULL, *r = NULL;
+
+	assert (e->type == e_cmp);
+
+	if (e->flag == cmp_or) {
+		l = NULL;
+	} else if (e->flag == cmp_filter) {
+		list *ll = e->l;
+		list *lr = e->r;
+
+		l = find_rel(rels, ll->h->data);
+		r = find_rel(rels, lr->h->data);
+	} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		list *lr = e->r;
+
+		l = find_rel(rels, e->l);
+		if (lr && lr->h)
+			r = find_rel(rels, lr->h->data);
+	} else {
+		l = find_rel(rels, e->l);
+		r = find_rel(rels, e->r);
+	}
+
+	if (l && r)
+		return 0;
+	return -1;
+}
+
+static int
+rel_is_unique(sql_rel *rel)
+{
+	switch(rel->op) {
+	case op_semi:
+	case op_anti:
+	case op_inter:
+	case op_except:
+	case op_topn:
+	case op_sample:
+		return rel_is_unique(rel->l);
+	case op_table:
+	case op_basetable:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+int
+kc_column_cmp(sql_kc *kc, sql_column *c)
+{
+	/* return on equality */
+	return !(c == kc->c);
+}
+
+/* WARNING exps_unique doesn't check for duplicate NULL values */
+int
+exps_unique(mvc *sql, sql_rel *rel, list *exps)
+{
+	int nr = 0, need_check = 0;
+	sql_ukey *k = NULL;
+
+	if (list_empty(exps))
+		return 0;
+	for(node *n = exps->h; n ; n = n->next) {
+		sql_exp *e = n->data;
+		prop *p;
+
+		if (!is_unique(e)) { /* ignore unique columns */
+			need_check++;
+			if (!k && (p = find_prop(e->p, PROP_HASHCOL))) /* at the moment, use only one k */
+				k = p->value;
+		}
+	}
+	if (!need_check) /* all have unique property return */
+		return 1;
+	if (!k || list_length(k->k.columns) != need_check)
+		return 0;
+	if (rel) {
+		char *matched = SA_ZNEW_ARRAY(sql->sa, char, list_length(k->k.columns));
+		fcmp cmp = (fcmp)&kc_column_cmp;
+		for(node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			sql_column *c;
+			node *m;
+
+			if (is_unique(e))
+				continue;
+			if ((c = exp_find_column(rel, e, -2)) != NULL && (m = list_find(k->k.columns, c, cmp)) != NULL) {
+				int pos = list_position(k->k.columns, m->data);
+				if (!matched[pos])
+					nr++;
+				matched[pos] = 1;
+			}
+		}
+		if (nr == list_length(k->k.columns))
+			return rel_is_unique(rel);
+	}
+	return 0;
 }
