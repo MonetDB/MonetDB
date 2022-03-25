@@ -2183,7 +2183,7 @@ static inline sql_rel *
 rel_remove_const_aggr(visitor *v, sql_rel *rel)
 {
 	sql_rel *l = rel->l;
-	if (rel->op == op_project && l && is_groupby(l->op) && list_length(rel->exps) > 1) {
+	if ((rel->op == op_project || rel->op == op_select) && l && is_groupby(l->op) && list_length(rel->exps) >= 1) {
 		int needed = 0;
 		for (node *n = l->exps->h; n && !needed; n = n->next) {
 			sql_exp *exp = (sql_exp*) n->data;
@@ -2192,7 +2192,10 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 				needed = 1;
 		}
 		if (needed) {
-			for (node *n = rel->exps->h; n; n = n->next) {
+			sql_rel *nrel = rel;
+			if (rel->op == op_select)
+				nrel = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
+			for (node *n = nrel->exps->h; n; n = n->next) {
 				sql_exp *exp = (sql_exp*) n->data;
 				if (exp->type == e_column) {
 					sql_exp *e = rel_find_exp(l, exp);

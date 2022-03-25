@@ -180,7 +180,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b->tnonil = true;							\
 		} else if (BATcount(b) == 0) {					\
 			if (BUNappend(b, &val, true) != GDK_SUCCEED)\
-				err = createException(SQL, "aggr.##f",	\
+				err = createException(SQL, "aggr." #f,	\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}												\
 	}
@@ -195,18 +195,18 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			T t = BUNtvar(bi, 0); \
 			if (cmp(t,nil) == 0) {					\
 				if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)			\
-					err = createException(SQL, "aggr.##f",	\
+					err = createException(SQL, "2 aggr." #f,	\
 						SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 			} else										\
 				if (f(t, val) == val)					\
 					if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)			\
-						err = createException(SQL, "aggr.##f",	\
+						err = createException(SQL, "1 aggr." #f,	\
 							SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 			b->tnil = false;							\
 			b->tnonil = true;							\
 		} else if (BATcount(b) == 0) {					\
 			if (BUNappend(b, val, false) != GDK_SUCCEED)\
-				err = createException(SQL, "aggr.##f",	\
+				err = createException(SQL, "3 aggr." #f,	\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}												\
 		bat_iterator_end(&bi); \
@@ -283,7 +283,10 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		vaggr(str,vmin);
 		if (!err) {
 			BATnegateprops(b);
-			BBPkeepref(b->batCacheid);
+			//BBPkeepref(*res = b->batCacheid);
+			//leave writable
+			BBPretain(*res = b->batCacheid);
+			BBPunfix(b->batCacheid);
 		} else
 			BBPunfix(b->batCacheid);
 	} else {
@@ -326,7 +329,10 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		vaggr(str,vmax);
 		if (!err) {
 			BATnegateprops(b);
-			BBPkeepref(b->batCacheid);
+			//BBPkeepref(*res = b->batCacheid);
+			//leave writable
+			BBPretain(*res = b->batCacheid);
+			BBPunfix(b->batCacheid);
 		} else
 			BBPunfix(b->batCacheid);
 	} else {
@@ -2209,7 +2215,14 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil, false);
+			const void *nil = ATOMnilptr(b->ttype);
+			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(b->ttype);
+
+			p = BATmin_skipnil(b, NULL, *skipnil, false);
+			if (cmp(*(ptr*)result, nil) == 0 || (cmp(p, nil) != 0 && cmp(p, *(ptr*)result) < 0))
+				* (ptr *) result = p;
+			else
+				GDKfree(p);
 		} else {
 			p = BATmin_skipnil(b, result, *skipnil, true);
 			if ( p != result )
@@ -2245,7 +2258,14 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil, false);
+			const void *nil = ATOMnilptr(b->ttype);
+			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(b->ttype);
+
+			p = BATmax_skipnil(b, NULL, *skipnil, false);
+			if (cmp(*(ptr*)result, nil) == 0 || (cmp(p, nil) != 0 && cmp(p, *(ptr*)result) > 0))
+				* (ptr *) result = p;
+			else
+				GDKfree(p);
 		} else {
 			p = BATmax_skipnil(b, result, *skipnil, true);
 			if ( p != result )

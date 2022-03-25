@@ -2574,18 +2574,19 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL, *res;
 	int need_left = (rel->flag & LEFT_JOIN);
-	int neededpp = get_need_pipeline(be);
+	int neededpp = rel->spb && get_need_pipeline(be);
 
-	if (neededpp && rel->partition == 2) {
+	if (rel->partition == 1) {
 		if (rel->r) /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
-		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+		if (rel->spb)
+			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 	} else {
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
-		if (neededpp && rel->partition)
+		if (rel->spb && rel->partition == 2)
 			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
 		if (rel->r) /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
@@ -2920,6 +2921,25 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	if (rel->op == op_anti && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
 		return rel2bin_antijoin(be, rel, refs);
 
+	int neededpp = rel->spb && get_need_pipeline(be);
+	if (neededpp && rel->partition == 1) {
+		if (rel->r) { /* first construct the right sub relation */
+			right = subrel_bin(be, rel->r, refs);
+			right = subrel_project(be, right, refs, rel->r);
+		}
+		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+		if (rel->l) /* first construct the left sub relation */
+			left = subrel_bin(be, rel->l, refs);
+	} else {
+		if (rel->l) /* first construct the left sub relation */
+			left = subrel_bin(be, rel->l, refs);
+		if (rel->spb && neededpp && rel->partition)
+			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+		if (rel->r) /* first construct the right sub relation */
+			right = subrel_bin(be, rel->r, refs);
+	}
+
+#if 0
 	if (rel->l) { /* first construct the left sub relation */
 		sql_rel *l = rel->l;
 		l_is_base = is_basetable(l->op);
@@ -2927,10 +2947,18 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	}
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
+#endif
 	if (!left || !right)
 		return NULL;
 	left = row2cols(be, left);
 	right = row2cols(be, right);
+
+	if (neededpp && !rel->partition) {
+		stmt *pp = pp_create(be, 32*GDKnr_threads);
+		set_pipeline(be, pp);
+		/* left or right ?? */
+		left = rel2bin_slicer(be, left, 1);
+	}
 	/*
  	 * split in 2 steps,
  	 * 	first cheap join(s) (equality or idx)
@@ -3784,7 +3812,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 }
 
 static lng
-rel_getcount(sql_rel *rel)
+rel_getcount(mvc *sql, sql_rel *rel)
 {
 	prop *p = NULL;
 
@@ -3793,27 +3821,52 @@ rel_getcount(sql_rel *rel)
 	if (rel && rel->op == op_table)
 		return 1;
 	if (rel && is_semi(rel->op))
-		return rel_getcount(rel->l);
+		return rel_getcount(sql, rel->l);
 	if (rel && is_join(rel->op)) {
-		lng l = rel_getcount(rel->l);
-	    lng r =	rel_getcount(rel->r);
+		lng l = rel_getcount(sql, rel->l);
+	    lng r =	rel_getcount(sql, rel->r);
+		if (!list_empty(rel->exps)) {
+			sql_exp *e = rel->exps->h->data;
+			if (e && (p = find_prop(e->p, PROP_JOINIDX)) != NULL)
+				return l>r?l:r;
+
+			sql_exp *el = e->l;
+			if (e && e->type == e_cmp && e->flag == cmp_equal && (p = find_prop(el->p, PROP_HASHCOL)) != NULL)
+				return l;
+			sql_exp *er = e->r;
+			if (e && e->type == e_cmp && e->flag == cmp_equal && (p = find_prop(er->p, PROP_HASHCOL)) != NULL)
+				return r;
+		}
 		if ((l * r) < l)
 			return l;
 		return l*r;
 	}
 	if (rel && rel->op == op_union)
-		return rel_getcount(rel->l) + rel_getcount(rel->r);
+		return rel_getcount(sql, rel->l) + rel_getcount(sql, rel->r);
 	if (rel && is_set(rel->op))
-		return rel_getcount(rel->l);
+		return rel_getcount(sql, rel->l);
 	if (rel && rel->l && rel->op == op_select)
-		return rel_getcount(rel->l);
+		return rel_getcount(sql, rel->l);
 	if (rel && rel->op == op_project) {
 		if (rel->l)
-			return rel_getcount(rel->l);
+			return rel_getcount(sql, rel->l);
 		return 1;
 	}
-	if (rel && rel->l && rel->op == op_groupby)
-		return rel_getcount(rel->l);
+	if (rel && rel->l && rel->op == op_groupby) {
+		if (list_empty(rel->r))
+			return 1;
+		else if (list_length(rel->r) == 1) {
+			list *gbes = rel->r;
+			sql_exp *e = gbes->h->data;
+			if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL && p->value) {
+				sql_key *k = p->value;
+				sql_table *t = k->t;
+				sqlstore *store = sql->session->tr->store;
+				return (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
+			}
+		}
+		return rel_getcount(sql, rel->l);
+	}
 	return -1;
 }
 
@@ -3830,7 +3883,7 @@ rel_getcount(sql_rel *rel)
 static lng
 exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	lng cnt = rel_getcount(rel);
+	lng cnt = rel_getcount(sql, rel);
 	sql_subtype *t = exp_subtype(e);
 
 	if (e->type == e_column && t && t->type->localtype == TYPE_str) {
@@ -3861,7 +3914,7 @@ static bool
 rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 {
 	lng card = 1;
-	lng cnt = rel_getcount(rel);
+	lng cnt = rel_getcount(sql, rel);
 	bool global = list_empty(rel->r);
 
 	if (!list_empty(rel->r)) {
@@ -3972,7 +4025,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
 		int curhash = 0;
-		lng estimate = rel_getcount(rel->l);
+		lng estimate = rel_getcount(be->mvc, rel->l);
 		lng card = 1;
 
 		if (estimate<0) {
@@ -4036,7 +4089,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				//InstrPtr q = newStmt(be->mb, batRef, newRef);
 				//optionaly pass the base (hash)
 				InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-				int estimate = rel_getcount(rel->l);
+				int estimate = rel_getcount(be->mvc, rel->l);
 				if (estimate<0) {
 					assert(0);
 					estimate = 85000000;
@@ -7093,7 +7146,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		if (s)
 			return s;
 		neededpp = get_need_pipeline(be);
-	} else if (rel->spb && (!is_groupby(rel->op) && !is_join(rel->op)))
+	} else if (rel->spb && (!is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op)))
 		neededpp = get_need_pipeline(be);
 
 	switch (rel->op) {

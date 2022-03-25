@@ -123,7 +123,7 @@ static sql_rel *
 rel_avg_rewrite(visitor *v, sql_rel *rel)
 {
 	mvc *sql = v->sql;
-	if (is_groupby(rel->op)) {
+	if (is_groupby(rel->op) && rel->parallel) {
 		list *pexps, *nexps = new_exp_list(sql->sa), *avgs = new_exp_list(sql->sa);
 		list *aexps = new_exp_list(sql->sa); /* alias list */
 		node *m, *n;

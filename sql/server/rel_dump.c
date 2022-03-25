@@ -475,8 +475,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		else
 			rel_base_dump_exps(fout, rel);
-		if ((GDKdebug & FORCEMITOMASK) == 0 && rel->partition)
-				mnstr_printf(fout, " PARTITION");
 	} 	break;
 	case op_table:
 		mnstr_printf(fout, "table (");
@@ -559,8 +557,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		if (is_join(rel->op) && rel->attr) /* mark joins */
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0);
-		if ((GDKdebug & FORCEMITOMASK) == 0 && rel->partition)
-				mnstr_printf(fout, " PARTITION");
 		break;
 	case op_project:
 	case op_select:
@@ -643,6 +639,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	default:
 		assert(0);
 	}
+	if ((GDKdebug & FORCEMITOMASK) == 0 && rel->partition)
+			mnstr_printf(fout, " %c PARTITION", rel->partition==1?'L':rel->partition == 2?'R':' ');
 	if (rel->p) {
 		prop *p = rel->p;
 		char *pv;
