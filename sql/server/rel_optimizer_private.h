@@ -80,7 +80,6 @@ extern run_optimizer bind_dce(visitor *v, global_props *gp) __attribute__((__vis
 extern run_optimizer bind_push_func_and_select_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_push_topn_and_sample_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_distinct_project2groupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern run_optimizer bind_push_select_up(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_merge_table_rewrite(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_setjoins_2_joingroupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_get_statistics(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
@@ -92,9 +91,6 @@ extern run_optimizer bind_remote_func(visitor *v, global_props *gp) __attribute_
 
 /* these rewriters are shared by multiple optimizers */
 extern sql_rel *rel_split_project_(visitor *v, sql_rel *rel, int top) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_push_select_up_(visitor *v, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_select_order_(visitor *v, sql_rel *rel) __attribute__((__visibility__("hidden")));
-extern sql_rel *rel_groupby_order_(visitor *v, sql_rel *rel) __attribute__((__visibility__("hidden")));
 extern sql_exp *exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) __attribute__((__visibility__("hidden")));
 extern sql_exp *add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel) __attribute__((__visibility__("hidden")));
 
@@ -107,4 +103,4 @@ extern int exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool 
 extern int is_numeric_upcast(sql_exp *e) __attribute__((__visibility__("hidden")));
 extern sql_exp *list_exps_uses_exp(list *exps, const char *rname, const char *name) __attribute__((__visibility__("hidden")));
 extern sql_exp *exps_uses_exp(list *exps, sql_exp *e) __attribute__((__visibility__("hidden")));
-extern int sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_based) __attribute__((__visibility__("hidden")));
+extern int exp_keyvalue(sql_exp *e) __attribute__((__visibility__("hidden")));

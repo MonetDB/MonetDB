@@ -627,39 +627,6 @@ bind_setjoins_2_joingroupby(visitor *v, global_props *gp)
 }
 
 
-/* This optimization loop contains optimizations that can potentially use statistics */
-static sql_rel *
-rel_final_optimization_loop_(visitor *v, sql_rel *rel)
-{
-	/* Run rel_push_select_up only once at the end to avoid an infinite optimization loop */
-	rel = rel_push_select_up_(v, rel);
-	rel = rel_select_order_(v, rel);
-
-	/* TODO? Maybe later add rel_simplify_count, rel_join2semijoin, rel_simplify_fk_joins,
-		rel_distinct_project2groupby, rel_simplify_predicates, rel_simplify_math,
-		rel_distinct_aggregate_on_unique_values */
-
-	rel = rel_groupby_order_(v, rel);
-	return rel;
-}
-
-static sql_rel *
-rel_final_optimization_loop(visitor *v, global_props *gp, sql_rel *rel)
-{
-	(void) gp;
-	return rel_visitor_bottomup(v, rel, &rel_final_optimization_loop_);
-}
-
-run_optimizer
-bind_final_optimization_loop(visitor *v, global_props *gp)
-{
-	int flag = v->sql->sql_optimizer;
-	/* At the moment, this optimizer has dependency on 3 flags */
-	return gp->opt_level == 1 && !gp->has_special_modify && (gp->cnt[op_groupby] || gp->cnt[op_select]) &&
-		(flag & push_select_up) && (flag & optimize_select_and_joins_topdown) && (flag & optimize_projections) ? rel_final_optimization_loop : NULL;
-}
-
-
 /* these optimizers/rewriters run in a cycle loop */
 const sql_optimizer pre_sql_optimizers[] = {
 	{ 0, "split_select", bind_split_select},
@@ -689,16 +656,15 @@ const sql_optimizer pre_sql_optimizers[] = {
 
 /* these optimizers/rewriters only run once after the cycle loop */
 const sql_optimizer post_sql_optimizers[] = {
-	{22, "push_select_up", bind_push_select_up}, /* run rel_push_select_up only once at the end to avoid an infinite optimization loop */
+	{22, "setjoins_2_joingroupby", bind_setjoins_2_joingroupby},
 	{23, "get_statistics", bind_get_statistics}, /* gather statistics */
 	{24, "join_order2", bind_join_order2}, /* run join order one more time with statistics */
-	{25, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order one more time with statistics gathered  */
-	{26, "setjoins_2_joingroupby", bind_setjoins_2_joingroupby},
+	{25, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
 	/* Merge table rewrites may introduce remote or replica tables */
 	/* At the moment, make sure the remote table rewriters always run last */
-	{27, "rewrite_remote", bind_rewrite_remote},
-	{28, "rewrite_replica", bind_rewrite_replica},
-	{29, "remote_func", bind_remote_func},
+	{26, "rewrite_remote", bind_rewrite_remote},
+	{27, "rewrite_replica", bind_rewrite_replica},
+	{28, "remote_func", bind_remote_func},
 	{ 0, NULL, NULL}
 	/* If an optimizer is going to be added, don't forget to update NSQLREWRITERS macro */
 };

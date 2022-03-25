@@ -1800,105 +1800,6 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-int
-sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_based)
-{
-	int de;
-
-	if (!t)
-		return 0;
-	switch (ATOMstorage(t->type->localtype)) {
-		case TYPE_bte:
-			return 150 - 8;
-		case TYPE_sht:
-			return 150 - 16;
-		case TYPE_int:
-			return 150 - 32;
-		case TYPE_void:
-		case TYPE_lng:
-			return 150 - 64;
-		case TYPE_uuid:
-#ifdef HAVE_HGE
-		case TYPE_hge:
-#endif
-			return 150 - 128;
-		case TYPE_flt:
-			return 75 - 24;
-		case TYPE_dbl:
-			return 75 - 53;
-		default: {
-			if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
-				return 150 - de * 8;
-			/* strings and blobs not duplicate eliminated don't get any points here */
-			return 0;
-		}
-	}
-}
-
-/* Compute the efficiency of using this expression earl	y in a group by list */
-static int
-score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
-{
-	int res = 0;
-	sql_subtype *t = exp_subtype(e);
-	sql_column *c = exp_find_column(rel, e, -2);
-
-	if (e->card == CARD_ATOM) /* constants are trivial to group */
-		res += 1000;
-	/* can we find out if the underlying table is sorted */
-	if (is_unique(e) || find_prop(e->p, PROP_HASHCOL) || (c && v->storage_based_opt && mvc_is_unique(v->sql, c))) /* distinct columns */
-		res += 700;
-	if (c && v->storage_based_opt && mvc_is_sorted(v->sql, c))
-		res += 500;
-	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
-		res += 200;
-
-	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(v, c, t, true); /* smaller the type, better */
-	return res;
-}
-
-/* reorder group by expressions */
-sql_rel *
-rel_groupby_order_(visitor *v, sql_rel *rel)
-{
-	int *scores = NULL;
-	sql_exp **exps = NULL;
-
-	if (is_groupby(rel->op) && list_length(rel->r) > 1) {
-		node *n;
-		list *gbe = rel->r;
-		int i, ngbe = list_length(gbe);
-		scores = SA_NEW_ARRAY(v->sql->ta, int, ngbe);
-		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, ngbe);
-
-		/* first sorting step, give priority for integers and sorted columns */
-		for (i = 0, n = gbe->h; n; i++, n = n->next) {
-			exps[i] = n->data;
-			scores[i] = score_gbe(v, rel, exps[i]);
-		}
-		GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
-
-		/* second sorting step, give priority to strings with lower number of digits */
-		for (i = ngbe - 1; i && !scores[i]; i--); /* find expressions with no score from the first round */
-		if (scores[i])
-			i++;
-		if (ngbe - i > 1) {
-			for (int j = i; j < ngbe; j++) {
-				sql_subtype *t = exp_subtype(exps[j]);
-				scores[j] = t ? t->digits : 0;
-			}
-			/* the less number of digits the better, order ascending */
-			GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
-		}
-
-		for (i = 0, n = gbe->h; n; i++, n = n->next)
-			n->data = exps[i];
-	}
-
-	return rel;
-}
-
 /* reduce group by expressions based on pkey info
  *
  * The reduced group by and (derived) aggr expressions are restored via
@@ -2468,7 +2369,6 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 
 	rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
-	rel = rel_groupby_order_(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
 	rel = rel_groupby_distinct(v, rel);

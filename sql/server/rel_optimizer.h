@@ -12,7 +12,7 @@
 #include "sql_mvc.h"
 #include "sql_relation.h"
 
-#define NSQLREWRITERS 30
+#define NSQLREWRITERS 29
 
 extern sql_rel *rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt);
 

@@ -1678,7 +1678,7 @@ exp_count(int *cnt, sql_exp *e)
 	}
 }
 
-static int
+int
 exp_keyvalue(sql_exp *e)
 {
 	int cnt = 0;
@@ -3454,70 +3454,6 @@ rel_use_index(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static int
-score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
-{
-	int res = 0;
-	sql_subtype *t = exp_subtype(e);
-	sql_column *c = NULL;
-
-	/* can we find out if the underlying table is sorted */
-	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
-		res += 600;
-
-	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(v, c, t, is_equality_or_inequality_exp(e->flag)); /* smaller the type, better */
-	return res;
-}
-
-static int
-score_se(visitor *v, sql_rel *rel, sql_exp *e)
-{
-	int score = 0;
-	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
-		sql_exp *l = e->l;
-
-		while (l->type == e_cmp) { /* go through nested comparisons */
-			sql_exp *ll;
-
-			if (l->flag == cmp_filter || l->flag == cmp_or)
-				ll = ((list*)l->l)->h->data;
-			else
-				ll = l->l;
-			if (ll->type != e_cmp)
-				break;
-			l = ll;
-		}
-		score += score_se_base(v, rel, l);
-	}
-	score += exp_keyvalue(e);
-	return score;
-}
-
-sql_rel *
-rel_select_order_(visitor *v, sql_rel *rel)
-{
-	int *scores = NULL;
-	sql_exp **exps = NULL;
-
-	if (is_select(rel->op) && list_length(rel->exps) > 1) {
-		node *n;
-		int i, nexps = list_length(rel->exps);
-		scores = SA_NEW_ARRAY(v->sql->ta, int, nexps);
-		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, nexps);
-
-		for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
-			exps[i] = n->data;
-			scores[i] = score_se(v, rel, n->data);
-		}
-		GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
-
-		for (i = 0, n = rel->exps->h; n; i++, n = n->next)
-			n->data = exps[i];
-	}
-
-	return rel;
-}
 
 static sql_rel *
 rel_optimize_select_and_joins_topdown_(visitor *v, sql_rel *rel)
@@ -3533,8 +3469,6 @@ rel_optimize_select_and_joins_topdown_(visitor *v, sql_rel *rel)
 	rel = rel_push_select_down(v, rel);
 	if (rel && rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
-
-	rel = rel_select_order_(v, rel);
 	return rel;
 }
 
@@ -3812,81 +3746,4 @@ bind_push_func_and_select_down(visitor *v, global_props *gp)
 	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right]
 			|| gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select])
 			&& (flag & push_func_and_select_down) ? rel_push_func_and_select_down : NULL;
-}
-
-
-static bool
-point_select_on_unique_column(sql_rel *rel)
-{
-	if (is_select(rel->op) && !list_empty(rel->exps)) {
-		for (node *n = rel->exps->h; n ; n = n->next) {
-			sql_exp *e = n->data, *el = e->l, *er = e->r, *found = NULL;
-
-			if (is_compare(e->type) && e->flag == cmp_equal) {
-				if (is_numeric_upcast(el))
-					el = el->l;
-				if (is_numeric_upcast(er))
-					er = er->l;
-				if (is_alias(el->type) && exp_is_atom(er) && (found = rel_find_exp(rel->l, el)) &&
-					is_unique(found) && (!is_semantics(e) || !has_nil(found) || !has_nil(er)))
-					return true;
-				if (is_alias(er->type) && exp_is_atom(el) && (found = rel_find_exp(rel->l, er)) &&
-					is_unique(found) && (!is_semantics(e) || !has_nil(el) || !has_nil(found)))
-					return true;
-			}
-		}
-	}
-	return false;
-}
-
-/*
- * A point select on an unique column reduces the number of rows to 1. If the same select is under a
- * join, the opposite side's select can be pushed above the join.
- */
-sql_rel *
-rel_push_select_up_(visitor *v, sql_rel *rel)
-{
-	if ((is_join(rel->op) || is_semi(rel->op)) && !is_single(rel)) {
-		sql_rel *l = rel->l, *r = rel->r;
-		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l) && !is_single(l),
-			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_single(r) && !is_semi(rel->op);
-
-		if (can_pushup_left || can_pushup_right) {
-			if (can_pushup_left)
-				can_pushup_left = point_select_on_unique_column(r);
-			if (can_pushup_right)
-				can_pushup_right = point_select_on_unique_column(l);
-
-			/* if both selects retrieve one row each, it's not worth it to push both up */
-			if (can_pushup_left && !can_pushup_right) {
-				sql_rel *nrel = rel_dup_copy(v->sql->sa, rel);
-				nrel->l = l->l;
-				rel = rel_inplace_select(rel, nrel, l->exps);
-				assert(is_select(rel->op));
-				v->changes++;
-			} else if (!can_pushup_left && can_pushup_right) {
-				sql_rel *nrel = rel_dup_copy(v->sql->sa, rel);
-				nrel->r = r->l;
-				rel = rel_inplace_select(rel, nrel, r->exps);
-				assert(is_select(rel->op));
-				v->changes++;
-			}
-		}
-	}
-	return rel;
-}
-
-static sql_rel *
-rel_push_select_up(visitor *v, global_props *gp, sql_rel *rel)
-{
-	(void) gp;
-	return rel_visitor_topdown(v, rel, &rel_push_select_up_);
-}
-
-run_optimizer
-bind_push_select_up(visitor *v, global_props *gp)
-{
-	int flag = v->sql->sql_optimizer;
-	return gp->opt_level == 1 && gp->cnt[op_select] && (gp->cnt[op_join] || gp->cnt[op_left] ||
-		   gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & push_select_up) ? rel_push_select_up : NULL;
 }

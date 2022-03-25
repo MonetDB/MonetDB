@@ -11,9 +11,7 @@
 
 #include "sql_relation.h"
 #include "sql_mvc.h"
-#include "rel_rel.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
 
 typedef void (*lookup_function) (mvc*, sql_exp*);
 
