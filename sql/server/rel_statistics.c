@@ -474,7 +474,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 			} else if (!fe) {
 				switch (e->flag) {
 				case cmp_equal:
-					if (lval_min && lval_max && rval_min && rval_max)
+					if (lval_min && lval_max && rval_min && rval_max && (!is_semantics(e) || exp_is_not_null(le) || exp_is_not_null(re)))
 						always_false |= is_anti(e) ? (atom_cmp(lval_min, rval_min) == 0 && atom_cmp(lval_max, rval_max) <= 0) : (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0);
 					if (is_semantics(e)) { /* prune *= NULL cases */
 						always_false |= is_anti(e) ? (exp_is_null(le) && exp_is_null(re)) : ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)));
@@ -482,7 +482,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 					}
 					break;
 				case cmp_notequal:
-					if (lval_min && lval_max && rval_min && rval_max)
+					if (lval_min && lval_max && rval_min && rval_max && (!is_semantics(e) || exp_is_not_null(le) || exp_is_not_null(re)))
 						always_true |= is_anti(e) ? (atom_cmp(lval_min, rval_min) == 0 && atom_cmp(lval_max, rval_max) <= 0) : (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0);
 					if (is_semantics(e)) {
 						always_true |= is_anti(e) ? (exp_is_null(le) && exp_is_null(re)) : ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)));
