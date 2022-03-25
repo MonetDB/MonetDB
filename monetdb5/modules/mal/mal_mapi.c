@@ -1595,7 +1595,7 @@ SERVERfetch_field_bat(bat *bid, int *key){
 		}
 	}
 	*bid = b->batCacheid;
-	BBPkeepref(*bid);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -1838,7 +1838,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 	mapi_close_handle(hdl);
 	*ret = b->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 
 	return err;
 }

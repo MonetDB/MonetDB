@@ -571,7 +571,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			}
 			r = rel_parse(sql, s, buf, m_deps);
 			if (r)
-				r = sql_processrelation(sql, r, 0, 0, 0);
+				r = sql_processrelation(sql, r, 0, 0, 0, 0);
 			if (r) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
@@ -1060,7 +1060,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 		}
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0, 0, 0);
+			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			node *n;
 			list *blist = rel_dependencies(sql, r);

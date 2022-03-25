@@ -332,6 +332,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	}
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
+	mb->starttime = GDKusec();
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 
 	/* pass the new debug mode to the caller */
@@ -422,6 +423,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 				BBPretain(lhs->val.bval);
 		}
 		stk->cmd = debug;
+		mb->starttime = GDKusec();
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
 	case FACTORYsymbol:
@@ -503,7 +505,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		startedProfileQueue = 1;
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
-		mb->starttime = GDKusec();
 		if (cntxt->sessiontimeout && mb->starttime - cntxt->session > cntxt->sessiontimeout) {
 			runtimeProfileFinish(cntxt, mb, stk);
 			if ( backup != backups) GDKfree(backup);

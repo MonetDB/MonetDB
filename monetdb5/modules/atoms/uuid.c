@@ -136,7 +136,8 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bn->tsorted = n <= 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = n <= 1;
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return msg;
 }
 
@@ -181,8 +182,10 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
-	if (bn)						/* implies msg==MAL_SUCCEED */
-		BBPkeepref(*ret = bn->batCacheid);
+	if (bn) {					/* implies msg==MAL_SUCCEED */
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
+	}
 	return msg;
 }
 
@@ -200,7 +203,6 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	uuid *restrict bv, *restrict dv;
 	str msg = NULL;
 	struct canditer ci;
-	BUN q = 0;
 	oid off;
 	bool nils = false, btsorted = false, btrevsorted = false, btkey = false;
 	BATiter bi;
@@ -219,8 +221,8 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	q = canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_uuid, q, TRANSIENT))) {
+	canditer_init(&ci, b, s);
+	if (!(dst = COLnew(ci.hseq, TYPE_uuid, ci.ncand, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -229,7 +231,7 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	bv = bi.base;
 	dv = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			uuid v = bv[p];
 
@@ -237,7 +239,7 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= is_uuid_nil(v);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
 			uuid v = bv[p];
 
@@ -256,13 +258,14 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst) {					/* implies msg==MAL_SUCCEED */
-		BATsetcount(dst, q);
+		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = btkey;
 		dst->tsorted = btsorted;
 		dst->trevsorted = btrevsorted;
-		BBPkeepref(*res = dst->batCacheid);
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
 	}
 	return msg;
 }
@@ -286,7 +289,6 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	str msg = NULL;
 	uuid *restrict vals;
 	struct canditer ci;
-	BUN q = 0;
 	oid off;
 	bool nils = false, btkey = false;
 	size_t l = UUID_SIZE;
@@ -301,8 +303,8 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	q = canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_uuid, q, TRANSIENT))) {
+	canditer_init(&ci, b, s);
+	if (!(dst = COLnew(ci.hseq, TYPE_uuid, ci.ncand, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -310,7 +312,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	bi = bat_iterator(b);
 	vals = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
@@ -323,7 +325,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(v);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
 			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
@@ -345,13 +347,14 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
-		BATsetcount(dst, q);
+		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*res = dst->batCacheid);
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
@@ -373,7 +376,6 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 	uuid *restrict vals;
-	BUN q = 0;
 	struct canditer ci;
 	oid off;
 	bool nils = false, btkey = false;
@@ -391,8 +393,8 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	q = canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci, b, s);
+	if (!(dst = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -400,7 +402,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	bi = bat_iterator(b);
 	vals = bi.base;
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			uuid v = vals[p];
 
@@ -417,7 +419,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(buf);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
 			uuid v = vals[p];
 
@@ -443,13 +445,14 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
-		BATsetcount(dst, q);
+		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = btkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*res = dst->batCacheid);
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;

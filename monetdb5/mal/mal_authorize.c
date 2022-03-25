@@ -189,7 +189,7 @@ AUTHinitTables(const char *passwd) {
 			throw(MAL, "initTables.user", SQLSTATE(HY013) MAL_MALLOC_FAIL " user table");
 
 		if (BATkey(user, true) != GDK_SUCCEED ||
-			BBPrename(user->batCacheid, "M5system_auth_user") != 0 ||
+			BBPrename(user, "M5system_auth_user") != 0 ||
 			BATmode(user, false) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
@@ -212,7 +212,7 @@ AUTHinitTables(const char *passwd) {
 		if (pass == NULL)
 			throw(MAL, "initTables.passwd", SQLSTATE(HY013) MAL_MALLOC_FAIL " password table");
 
-		if (BBPrename(pass->batCacheid, "M5system_auth_passwd_v2") != 0 ||
+		if (BBPrename(pass, "M5system_auth_passwd_v2") != 0 ||
 			BATmode(pass, false) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
@@ -235,7 +235,7 @@ AUTHinitTables(const char *passwd) {
 		if (duser == NULL)
 			throw(MAL, "initTables.duser", SQLSTATE(HY013) MAL_MALLOC_FAIL " deleted user table");
 
-		if (BBPrename(duser->batCacheid, "M5system_auth_deleted") != 0 ||
+		if (BBPrename(duser, "M5system_auth_deleted") != 0 ||
 			BATmode(duser, false) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
@@ -259,7 +259,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_key == NULL)
 			throw(MAL, "initTables.rt_key", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table key bat");
 
-		if (BBPrename(rt_key->batCacheid, "M5system_auth_rt_key") != 0 ||
+		if (BBPrename(rt_key, "M5system_auth_rt_key") != 0 ||
 			BATmode(rt_key, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_key", GDK_EXCEPTION);
 	}
@@ -283,7 +283,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_uri == NULL)
 			throw(MAL, "initTables.rt_uri", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table uri bat");
 
-		if (BBPrename(rt_uri->batCacheid, "M5system_auth_rt_uri") != 0 ||
+		if (BBPrename(rt_uri, "M5system_auth_rt_uri") != 0 ||
 			BATmode(rt_uri, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_uri", GDK_EXCEPTION);
 	}
@@ -307,7 +307,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_remoteuser == NULL)
 			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
-		if (BBPrename(rt_remoteuser->batCacheid, "M5system_auth_rt_remoteuser") != 0 ||
+		if (BBPrename(rt_remoteuser, "M5system_auth_rt_remoteuser") != 0 ||
 			BATmode(rt_remoteuser, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_remoteuser", GDK_EXCEPTION);
 	}
@@ -331,7 +331,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_hashedpwd == NULL)
 			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
-		if (BBPrename(rt_hashedpwd->batCacheid, "M5system_auth_rt_hashedpwd") != 0 ||
+		if (BBPrename(rt_hashedpwd, "M5system_auth_rt_hashedpwd") != 0 ||
 			BATmode(rt_hashedpwd, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_hashedpwd", GDK_EXCEPTION);
 	}
@@ -355,7 +355,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_deleted == NULL)
 			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
-		if (BBPrename(rt_deleted->batCacheid, "M5system_auth_rt_deleted") != 0 ||
+		if (BBPrename(rt_deleted, "M5system_auth_rt_deleted") != 0 ||
 			BATmode(rt_deleted, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_deleted", GDK_EXCEPTION);
 		/* If the database is not new, but we just created this BAT,

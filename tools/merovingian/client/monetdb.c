@@ -163,11 +163,11 @@ command_help(int argc, char *argv[])
 		printf("  prints the version of this monetdb utility\n");
 	} else if (strcmp(argv[1], "snapshot") == 0) {
 		if (argc > 2 && strcmp(argv[2], "list") == 0) {
-			printf("Usage: monetdb snapshot list [<dbname>...]\n");
-			printf("  List snapshots for the given database, or all databases\n");
+			printf("Usage: monetdb snapshot list [<dbname> ...]\n");
+			printf("  List snapshots for the given database(s), or all databases\n");
 			printf("  if none given.\n");
 		} else if (argc > 2 && strcmp(argv[2], "create") == 0) {
-			printf("Usage: monetdb snapshot create [-t <targetfile>] <dbname> [<dbname>..]\n");
+			printf("Usage: monetdb snapshot create [-t <targetfile>] <dbname> [<dbname> ...]\n");
 			printf("  Take a snapshot of the listed databases. Unless -t is given, the snapshots\n");
 			printf("  are written to files named\n");
 			printf("  <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC<snapshotcompression>.\n");
@@ -175,14 +175,14 @@ command_help(int argc, char *argv[])
 			printf("  -t <targetfile>  File on the server to write the snapshot to.\n");
 		} else if (argc > 2 && strcmp(argv[2], "restore") == 0) {
 			printf("Usage: monetdb snapshot restore [-f] <snapid> [dbname]\n");
-			printf("  Create a database from the given snapshot, where  <snapid> is either\n");
+			printf("  Create a database from the given snapshot, where <snapid> is either\n");
 			printf("  a path on the server or <dbname>@<num> as produced by\n");
 			printf("  'monetdb snapshot list'\n");
 			printf("Options:\n");
 			printf("  -f  do not ask for confirmation\n");
 		} else if (argc > 2 && strcmp(argv[2], "destroy") == 0) {
-			printf("Usage: monetdb snapshot destroy [-f] <snapid>...\n");
-			printf("       monetdb snapshot destroy [-f] -r <N> <dbname>...\n");
+			printf("Usage: monetdb snapshot destroy [-f] <snapid> [<snapid> ...]\n");
+			printf("       monetdb snapshot destroy [-f] -r <N> <dbname> [<dbname> ...]\n");
 			printf("  Destroy one or more database snapshots, identified by a database name\n");
 			printf("  and a sequence number as given by 'monetdb snapshot list'.\n");
 			printf("  In the first form, the sequence numbers are part of the <snapid>.\n");
@@ -195,8 +195,9 @@ command_help(int argc, char *argv[])
 			printf("Usage: monetdb snapshot write <dbname>\n");
 			printf("  Write a snapshot of database <dbname> to standard out.\n");
 		} else {
-			printf("Usage: monetdb <create|list|restore|destroy|write> [arguments]\n");
-			printf("  Manage database snapshots\n");
+			printf("Usage: monetdb snapshot subcommand [arguments]\n");
+			printf("  where subcommand is one of:\n");
+			printf("    create, list, restore, destroy or write\n");
 		}
 	} else {
 		printf("help: unknown command: %s\n", argv[1]);

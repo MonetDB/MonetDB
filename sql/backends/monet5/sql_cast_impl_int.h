@@ -58,7 +58,8 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *sid
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), GDK_EXCEPTION);
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -81,7 +82,8 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const bat *
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), GDK_EXCEPTION);
 
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 #endif
@@ -104,6 +106,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const bat *sid, const int 
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), GDK_EXCEPTION);
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }

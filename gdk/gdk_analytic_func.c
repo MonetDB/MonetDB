@@ -1795,10 +1795,10 @@ cleanup:
 		BUN parcel = i - k;					\
 		TPE2 curval = TPE2##_nil;				\
 		if (dofsum(bs, 0,					\
-				&(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
-				parcel, &curval, 1, TYPE_##TPE1,	\
-				TYPE_##TPE2, NULL, 0, 0, true,		\
-				false, true) == BUN_NONE) {		\
+			   &(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
+			   &curval, 1, TYPE_##TPE1,			\
+			   TYPE_##TPE2, NULL, 0, 0, true,		\
+			   false, true) == BUN_NONE) {			\
 			goto bailout;					\
 		}							\
 		for (; k < i; k++)					\

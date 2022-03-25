@@ -41,9 +41,10 @@ unshare_varsized_heap(BAT *b)
 		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
 		int parent = b->tvheap->parentid;
-		HEAPdecref(b->tvheap, false);
+		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		HEAPdecref(oh, false);
 		BBPunshare(parent);
 		BBPunfix(parent);
 	}
@@ -91,9 +92,9 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
 		HEAPincref(ni.vh);
 		b->tvheap = ni.vh;
-		BBPshare(ni.vh->parentid);
 		b->batDirtydesc = true;
 		MT_lock_unset(&b->theaplock);
+		BBPshare(ni.vh->parentid);
 		toff = 0;
 		MT_thread_setalgorithm("share vheap");
 	} else {
@@ -418,11 +419,12 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			return GDK_FAIL;
 		}
 		BBPunshare(b->tvheap->parentid);
-		MT_lock_set(&b->theaplock);
-		HEAPdecref(b->tvheap, false);
 		ATOMIC_INIT(&h->refs, 1);
+		MT_lock_set(&b->theaplock);
+		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		HEAPdecref(oh, false);
 	}
 	/* copy data from n to b */
 	r = BATcount(b);
@@ -624,7 +626,6 @@ gdk_return
 BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 {
 	struct canditer ci;
-	BUN cnt;
 	BUN r;
 	oid hseq = n->hseqbase;
 	char buf[64];
@@ -655,18 +656,18 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	BATiter ni = bat_iterator(n);
 
-	cnt = canditer_init(&ci, n, s);
-	if (cnt == 0) {
+	canditer_init(&ci, n, s);
+	if (ci.ncand == 0) {
 		goto doreturn;
 	}
 
-	if (BATcount(b) + cnt > BUN_MAX) {
+	if (BATcount(b) + ci.ncand > BUN_MAX) {
 		bat_iterator_end(&ni);
 		GDKerror("combined BATs too large\n");
 		return GDK_FAIL;
 	}
 
-	if (b->hseqbase + BATcount(b) + cnt >= GDK_oid_max) {
+	if (b->hseqbase + BATcount(b) + ci.ncand >= GDK_oid_max) {
 		bat_iterator_end(&ni);
 		GDKerror("overflow of head value\n");
 		return GDK_FAIL;
@@ -707,7 +708,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			b->tminpos = BUN_NONE;
 		}
 	}
-	if (cnt > BATcount(b) / gdk_unique_estimate_keep_fraction) {
+	if (ci.ncand > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
 	MT_lock_unset(&b->theaplock);
@@ -724,18 +725,18 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			/* n is also dense and consecutive with b */
 			if (BATcount(b) == 0)
 				BATtseqbase(b, n->tseqbase + ci.seq - hseq);
-			BATsetcount(b, BATcount(b) + cnt);
+			BATsetcount(b, BATcount(b) + ci.ncand);
 			goto doreturn;
 		}
 		if ((BATcount(b) == 0 || is_oid_nil(b->tseqbase)) &&
 		    ni.type == TYPE_void && is_oid_nil(n->tseqbase)) {
 			/* both b and n are void/nil */
 			BATtseqbase(b, oid_nil);
-			BATsetcount(b, BATcount(b) + cnt);
+			BATsetcount(b, BATcount(b) + ci.ncand);
 			goto doreturn;
 		}
 		/* we need to materialize b; allocate enough capacity */
-		b->batCapacity = BATcount(b) + cnt;
+		b->batCapacity = BATcount(b) + ci.ncand;
 		if (BATmaterialize(b) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
@@ -750,10 +751,10 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		b->trevsorted = n->trevsorted;
 		b->tseqbase = oid_nil;
 		b->tnonil = n->tnonil;
-		b->tnil = n->tnil && cnt == BATcount(n);
+		b->tnil = n->tnil && ci.ncand == BATcount(n);
 		if (ci.tpe == cand_dense) {
-			b->tnosorted = ci.seq - hseq <= n->tnosorted && n->tnosorted < ci.seq + cnt - hseq ? n->tnosorted + hseq - ci.seq : 0;
-			b->tnorevsorted = ci.seq - hseq <= n->tnorevsorted && n->tnorevsorted < ci.seq + cnt - hseq ? n->tnorevsorted + hseq - ci.seq : 0;
+			b->tnosorted = ci.seq - hseq <= n->tnosorted && n->tnosorted < ci.seq + ci.ncand - hseq ? n->tnosorted + hseq - ci.seq : 0;
+			b->tnorevsorted = ci.seq - hseq <= n->tnorevsorted && n->tnorevsorted < ci.seq + ci.ncand - hseq ? n->tnorevsorted + hseq - ci.seq : 0;
 			if (BATtdense(n)) {
 				b->tseqbase = n->tseqbase + ci.seq - hseq;
 			}
@@ -762,7 +763,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			b->tnorevsorted = 0;
 		}
 		b->tkey = n->tkey;
-		if (cnt == BATcount(n)) {
+		if (ci.ncand == BATcount(n)) {
 			b->tnokey[0] = n->tnokey[0];
 			b->tnokey[1] = n->tnokey[1];
 		} else {
@@ -796,7 +797,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			b->tseqbase = oid_nil;
 		}
 		b->tnonil &= n->tnonil;
-		b->tnil |= n->tnil && cnt == ni.count;
+		b->tnil |= n->tnil && ci.ncand == ni.count;
 	}
 	if (b->ttype == TYPE_str) {
 		if (insert_string_bat(b, n, &ci, force, mayshare) != GDK_SUCCEED) {
@@ -814,10 +815,10 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			return GDK_FAIL;
 		}
 	} else {
-		if (cnt > BATcapacity(b) - BATcount(b)) {
+		if (ci.ncand > BATcapacity(b) - BATcount(b)) {
 			/* if needed space exceeds a normal growth
 			 * extend just with what's needed */
-			BUN ncap = BATcount(b) + cnt;
+			BUN ncap = BATcount(b) + ci.ncand;
 			BUN grows = BATgrows(b);
 
 			if (ncap > grows)
@@ -835,14 +836,13 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			/* use fast memcpy if we can */
 			memcpy(Tloc(b, BATcount(b)),
 			       (const char *) ni.base + ((ci.seq - hseq) << ni.shift),
-			       cnt << ni.shift);
-			for (BUN i = 0; b->thash && i < cnt; i++) {
+			       ci.ncand << ni.shift);
+			for (BUN i = 0; b->thash && i < ci.ncand; i++) {
 				HASHappend_locked(b, r, Tloc(b, r));
 				r++;
 			}
 		} else {
-			while (cnt > 0) {
-				cnt--;
+			CAND_LOOP(&ci) {
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
 				if (tfastins_nocheck(b, r, t) != GDK_SUCCEED) {
@@ -1861,17 +1861,24 @@ BATordered(BAT *b)
 {
 	lng t0 = GDKusec();
 
-	if (b->ttype == TYPE_void || b->tsorted || BATcount(b) == 0)
+	MT_lock_set(&b->theaplock);
+	if (b->ttype == TYPE_void || b->tsorted || BATcount(b) == 0) {
+		MT_lock_unset(&b->theaplock);
 		return true;
-	if (b->tnosorted > 0 || !ATOMlinear(b->ttype))
+	}
+	if (b->tnosorted > 0 || !ATOMlinear(b->ttype)) {
+		MT_lock_unset(&b->theaplock);
 		return false;
+	}
 
-	/* In order that multiple threads don't scan the same BAT at the
-	 * same time (happens a lot with mitosis/mergetable), we use a
-	 * lock.  We reuse the batIdxLock lock for this, not because this
-	 * scanning interferes with heap reference counting, but because
-	 * it's there, and not so likely to be used at the same time. */
-	MT_lock_set(&b->batIdxLock);
+	/* There are a few reasons why we need a lock here.  It may be
+	 * that multiple threads call this functions at the same time
+	 * (happens a lot with mitosis/mergetable), but we only need to
+	 * scan the bat in one thread: the others can reap the rewards
+	 * when that one thread is done.  Also, we need the heap to
+	 * remain accessible (could have used bat_iterator for that),
+	 * and, and this is the killer argument, we may need to make
+	 * changes to the bat descriptor. */
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->tsorted && b->tnosorted == 0) {
 		b->batDirtydesc = true;
@@ -1902,8 +1909,8 @@ BATordered(BAT *b)
 		case TYPE_str:
 			for (BUN q = BATcount(b), p = 1; p < q; p++) {
 				int c;
-				const char *p1 = BUNtail(bi, p - 1);
-				const char *p2 = BUNtail(bi, p);
+				const char *p1 = BUNtvar(bi, p - 1);
+				const char *p2 = BUNtvar(bi, p);
 				if (p1 == p2)
 					c = 0;
 				else if (p1[0] == '\200') {
@@ -1972,7 +1979,7 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&b->theaplock);
 	return b->tsorted;
 }
 
@@ -2012,13 +2019,19 @@ BATordered_rev(BAT *b)
 
 	if (b == NULL || !ATOMlinear(b->ttype))
 		return false;
-	if (BATcount(b) <= 1 || b->trevsorted)
+	MT_lock_set(&b->theaplock);
+	if (BATcount(b) <= 1 || b->trevsorted) {
+		MT_lock_unset(&b->theaplock);
 		return true;
-	if (b->ttype == TYPE_void)
+	}
+	if (b->ttype == TYPE_void) {
+		MT_lock_unset(&b->theaplock);
 		return is_oid_nil(b->tseqbase);
-	if (BATtdense(b) || b->tnorevsorted > 0)
+	}
+	if (BATtdense(b) || b->tnorevsorted > 0) {
+		MT_lock_unset(&b->theaplock);
 		return false;
-	MT_lock_set(&b->batIdxLock);
+	}
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		b->batDirtydesc = true;
@@ -2062,7 +2075,7 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&b->theaplock);
 	return b->trevsorted;
 }
 
@@ -2845,7 +2858,6 @@ BUN
 BATcount_no_nil(BAT *b, BAT *s)
 {
 	BUN cnt = 0;
-	BUN i, n;
 	const void *restrict p, *restrict nil;
 	const char *restrict base;
 	int t;
@@ -2856,71 +2868,71 @@ BATcount_no_nil(BAT *b, BAT *s)
 	BATcheck(b, 0);
 
 	hseq = b->hseqbase;
-	n = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 	if (b->tnonil)
-		return n;
+		return ci.ncand;
 	BATiter bi = bat_iterator(b);
 	p = bi.base;
 	t = ATOMbasetype(b->ttype);
 	switch (t) {
 	case TYPE_void:
-		cnt = n * BATtdense(b);
+		cnt = ci.ncand * BATtdense(b);
 		break;
 	case TYPE_msk:
-		cnt = n;
+		cnt = ci.ncand;
 		break;
 	case TYPE_bte:
-		for (i = 0; i < n; i++)
+		CAND_LOOP(&ci)
 			cnt += !is_bte_nil(((const bte *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_sht:
-		for (i = 0; i < n; i++)
+		CAND_LOOP(&ci)
 			cnt += !is_sht_nil(((const sht *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_int:
-		for (i = 0; i < n; i++)
+		CAND_LOOP(&ci)
 			cnt += !is_int_nil(((const int *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_lng:
-		for (i = 0; i < n; i++)
+		CAND_LOOP(&ci)
 			cnt += !is_lng_nil(((const lng *) p)[canditer_next(&ci) - hseq]);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		for (i = 0; i < n; i++)
+		CAND_LOOP(&ci)
 			cnt += !is_hge_nil(((const hge *) p)[canditer_next(&ci) - hseq]);
 		break;
 #endif
 	case TYPE_flt:
-		for (i = 0; i < n; i++)
+		CAND_LOOP(&ci)
 			cnt += !is_flt_nil(((const flt *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_dbl:
-		for (i = 0; i < n; i++)
+		CAND_LOOP(&ci)
 			cnt += !is_dbl_nil(((const dbl *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_uuid:
-		for (i = 0; i < n; i++)
+		CAND_LOOP(&ci)
 			cnt += !is_uuid_nil(((const uuid *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
 		base = bi.vh->base;
 		switch (bi.width) {
 		case 1:
-			for (i = 0; i < n; i++)
+			CAND_LOOP(&ci)
 				cnt += base[(var_t) ((const uint8_t *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
 			break;
 		case 2:
-			for (i = 0; i < n; i++)
+			CAND_LOOP(&ci)
 				cnt += base[(var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
 			break;
 		case 4:
-			for (i = 0; i < n; i++)
+			CAND_LOOP(&ci)
 				cnt += base[(var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq]] != '\200';
 			break;
 #if SIZEOF_VAR_T == 8
 		case 8:
-			for (i = 0; i < n; i++)
+			CAND_LOOP(&ci)
 				cnt += base[(var_t) ((const uint64_t *) p)[canditer_next(&ci) - hseq]] != '\200';
 			break;
 #endif
@@ -2932,13 +2944,13 @@ BATcount_no_nil(BAT *b, BAT *s)
 		nil = ATOMnilptr(t);
 		cmp = ATOMcompare(t);
 		if (nil == NULL) {
-			cnt = n;
+			cnt = ci.ncand;
 		} else if (b->tvarsized) {
 			base = b->tvheap->base;
-			for (i = 0; i < n; i++)
+			CAND_LOOP(&ci)
 				cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]) != 0;
 		} else {
-			for (i = 0, n += i; i < n; i++)
+			CAND_LOOP(&ci)
 				cnt += (*cmp)(BUNtloc(bi, canditer_next(&ci) - hseq), nil) != 0;
 		}
 		break;

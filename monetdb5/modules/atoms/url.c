@@ -976,7 +976,8 @@ BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*res = bn->batCacheid);
+		*res = bn->batCacheid;
+		BBPkeepref(bn);
 	}
 	BBPunfix(b->batCacheid);
 	return msg;

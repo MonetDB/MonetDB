@@ -678,7 +678,7 @@ end:
 
 	// Manage the return values and `bat`.
 	if (msg == MAL_SUCCEED) {
-		BBPkeepref(bat->batCacheid);
+		BBPkeepref(bat);
 		*ret = bat->batCacheid;
 		*retcnt = BATcount(bat);
 	} else {

@@ -417,7 +417,8 @@ bailout:
 				if (b && msg) {
 					BBPreclaim(b);
 				} else if (b) {
-					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+					*getArgReference_bat(stk, pci, i) = b->batCacheid;
+					BBPkeepref(b);
 				}
 			} else if (msg) {
 				ValPtr pt = ((ValPtr*)res)[i];
@@ -1560,7 +1561,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// return the BAT from the function
 		if (isaBatType(getArgType(mb, pci, i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
+			BBPkeepref(b);
 		} else {
 			BATiter li = bat_iterator(b);
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,

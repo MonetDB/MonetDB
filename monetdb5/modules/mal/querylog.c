@@ -178,7 +178,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 	if ((b = BATsetaccess(b, BAT_APPEND)) == NULL)
 		return NULL;
 
-	if (BBPrename(b->batCacheid, buf) != 0 ||
+	if (BBPrename(b, buf) != 0 ||
 		BATmode(b, false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
@@ -188,7 +188,15 @@ QLOGcreate(str hnme, str tnme, int tt)
 	return b;
 }
 
-#define cleanup(X)  if (X) { (X)->batTransient = true; BBPrename((X)->batCacheid,"_"); BBPunfix((X)->batCacheid); } (X) = NULL;
+#define cleanup(X)								\
+	do {										\
+		if (X) {								\
+			(X)->batTransient = true;			\
+			BBPrename((X), NULL);				\
+			BBPunfix((X)->batCacheid);			\
+		}										\
+		(X) = NULL;								\
+	} while (0)
 
 static void
 _QLOGcleanup(void)

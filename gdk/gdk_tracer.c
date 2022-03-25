@@ -523,11 +523,11 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
 		return;
 
-	if (level <= M_WARNING) {
-		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
+	if (level <= M_WARNING || (GDKdebug & FORCEMITOMASK)) {
+		fprintf(stderr, "#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
-			MT_thread_getname(), func, level == M_WARNING ? GDKWARNING : GDKERROR,
+			MT_thread_getname(), func, level_str[level] + 2,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
 		if (active_tracer == NULL || active_tracer == stderr)

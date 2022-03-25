@@ -71,7 +71,7 @@ typedef struct{
 					args[i] += mut->args[i].size;						\
 				} else if (ATOMvarsized(mut->args[i].type)) {			\
 					mut->args[i].o++;									\
-					mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o); \
+					mut->args[i].s = (str *) BUNtvar(mut->args[i].bi, mut->args[i].o); \
 					args[i] = (void*)  &mut->args[i].s;					\
 				} else {												\
 					mut->args[i].o++;									\
@@ -123,7 +123,7 @@ typedef struct{
 						args[i] += mut->args[i].size;					\
 					} else if(ATOMvarsized(mut->args[i].type)){			\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o); \
+						mut->args[i].s = (str*) BUNtvar(mut->args[i].bi, mut->args[i].o); \
 						args[i] =  (void*) & mut->args[i].s;			\
 					} else {											\
 						mut->args[i].o++;								\
@@ -161,7 +161,7 @@ MANIFOLDjob(MULTItask *mut)
 			if(ATOMstorage(mut->args[i].type) < TYPE_str){
 				args[i] = (char*) mut->args[i].first;
 			} else if(ATOMvarsized(mut->args[i].type)){
-				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
+				mut->args[i].s = (str*) BUNtvar(mut->args[i].bi, mut->args[i].o);
 				args[i] =  (void*) & mut->args[i].s;
 			} else {
 				mut->args[i].s = (str*) BUNtloc(mut->args[i].bi, mut->args[i].o);
@@ -364,7 +364,8 @@ wrapup:
 		if (ATOMstorage(mat[0].b->ttype) < TYPE_str)
 			BATsetcount(mat[0].b,cnt);
 		BATsettrivprop(mat[0].b);
-		BBPkeepref(*getArgReference_bat(stk,pci,0)=mat[0].b->batCacheid);
+		*getArgReference_bat(stk,pci,0) = mat[0].b->batCacheid;
+		BBPkeepref(mat[0].b);
 	}
 	GDKfree(mat);
 	return msg;

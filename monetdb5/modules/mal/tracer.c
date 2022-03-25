@@ -148,9 +148,12 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
     MT_lock_unset(&mal_delayLock);
 
-    BBPkeepref(*i = id->batCacheid);
-    BBPkeepref(*c = component->batCacheid);
-    BBPkeepref(*l = log_level->batCacheid);
+    *i = id->batCacheid;
+    BBPkeepref(id);
+    *c = component->batCacheid;
+    BBPkeepref(component);
+    *l = log_level->batCacheid;
+    BBPkeepref(log_level);
     return MAL_SUCCEED;
 }
 

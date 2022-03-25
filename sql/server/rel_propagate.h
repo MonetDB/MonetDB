@@ -9,7 +9,6 @@
 #ifndef _REL_PROPAGATE_H_
 #define _REL_PROPAGATE_H_
 
-#include "sql_relation.h"
 #include "sql_symbol.h"
 #include "sql_mvc.h"
 #include "sql_query.h"

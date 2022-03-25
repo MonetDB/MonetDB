@@ -417,7 +417,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 }
 
 static str
-malPrelude(Client c, int listing, int no_mapi_server)
+malPrelude(Client c, int listing)
 {
 	int i;
 	str msg = MAL_SUCCEED;
@@ -443,8 +443,8 @@ malPrelude(Client c, int listing, int no_mapi_server)
 			if (msg)
 				return msg;
 
-			/* skip sql should be last to startup and mapi if configured without mapi server */
-			if (strcmp(mel_module[i].name, "sql") == 0 || (no_mapi_server && strcmp(mel_module[i].name, "mapi") == 0))
+			/* mapi should be last, and sql last before mapi */
+			if (strcmp(mel_module[i].name, "sql") == 0 || strcmp(mel_module[i].name, "mapi") == 0)
 				continue;
 			if (!mel_module[i].inits) {
 				msg = initModule(c, mel_module[i].name);
@@ -456,8 +456,8 @@ malPrelude(Client c, int listing, int no_mapi_server)
 			msg = mel_module[i].inits();
 			if (msg)
 				return msg;
-			/* skip sql should be last to startup and mapi if configured without mapi server */
-			if (strcmp(mel_module[i].name, "sql") == 0 || (no_mapi_server && strcmp(mel_module[i].name, "mapi") == 0))
+			/* mapi should be last, and sql last before mapi */
+			if (strcmp(mel_module[i].name, "sql") == 0 || strcmp(mel_module[i].name, "mapi") == 0)
 				continue;
 			msg = initModule(c, mel_module[i].name);
 			if (msg)
@@ -481,13 +481,15 @@ malIncludeModules(Client c, char *modules[], int listing, int no_mapi_server)
 			return msg;
 	}
 	/* load the mal code for these modules and execute preludes */
-	if ((msg = malPrelude(c, listing, no_mapi_server)) != NULL)
+	if ((msg = malPrelude(c, listing)) != NULL)
 		return msg;
-	for(int i = 0; modules[i]; i++) {
-		if (strcmp(modules[i], "sql") == 0) { /* start now */
-			initModule(c, modules[i]);
-			break;
-		}
+	msg = initModule(c, "sql");
+	if (msg)
+		return msg;
+	if (!no_mapi_server) {
+		msg = initModule(c, "mapi");
+		if (msg)
+			return msg;
 	}
 	return MAL_SUCCEED;
 }

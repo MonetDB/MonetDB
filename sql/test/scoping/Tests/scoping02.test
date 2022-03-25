@@ -108,7 +108,7 @@ statement ok
 DROP TABLE "sys"
 
 query TTTT rowsort
-SELECT * from sys.var() where "name" not in ('debug', 'cache', 'last_id', 'current_timezone')
+SELECT * from sys.var() where "name" not in ('debug', 'cache', 'last_id', 'current_timezone', 'sql_optimizer')
 ----
 sys
 current_role

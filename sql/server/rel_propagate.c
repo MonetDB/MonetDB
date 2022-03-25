@@ -8,14 +8,10 @@
 
 #include "monetdb_config.h"
 #include "rel_propagate.h"
-#include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
-#include "rel_dump.h"
 #include "rel_select.h"
 #include "rel_updates.h"
-#include "sql_mvc.h"
 #include "sql_partition.h"
 
 extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);

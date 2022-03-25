@@ -16,8 +16,7 @@
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) li.base;	\
 		TYPE *restrict rp = (TYPE *) Tloc(res, 0);		\
-		while (ncand > 0) {					\
-			ncand--;					\
+		for (BUN n = 0; n < ci.ncand; n++) {			\
 			i = canditer_next(&ci) - l->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -53,7 +52,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 	BAT *res = NULL;
 	const oid *restrict gids;
 	oid gid, min, max, *restrict oids = NULL; /* The oids variable controls if we have found a nil in the group so far */
-	BUN i, ngrp, ncand;
+	BUN i, ngrp;
 	bit hasnil = 0;
 	struct canditer ci;
 	const char *err;
@@ -61,7 +60,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -119,8 +118,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *restrict nilp = ATOMnilptr(l->ttype);
 
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - l->hseqbase;
 				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
@@ -204,8 +202,7 @@ alloc_fail:
 #define SQLnil_grp_imp(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) li.base;	\
-		while (ncand > 0) {					\
-			ncand--;					\
+		for (BUN n = 0; n < ci.ncand; n++) {			\
 			i = canditer_next(&ci) - l->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -225,14 +222,14 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 	BAT *res = NULL;
 	const oid *restrict gids;
 	oid gid, min, max;
-	BUN i, ngrp, ncand;
+	BUN i, ngrp;
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -289,8 +286,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *restrict nilp = ATOMnilptr(l->ttype);
 
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - l->hseqbase;
 				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
@@ -332,8 +328,7 @@ alloc_fail:
 	do {								\
 		const TYPE *vals1 = (const TYPE *) li.base;		\
 		const TYPE *vals2 = (const TYPE *) ri.base;		\
-		while (ncand > 0) {					\
-			ncand--;					\
+		for (BUN n = 0; n < ci.ncand; n++) {			\
 			i = canditer_next(&ci) - l->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -359,7 +354,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 	BAT *res = NULL;
 	const oid *restrict gids;
 	oid gid, min, max;
-	BUN i, ngrp, ncand;
+	BUN i, ngrp;
 	bit hasnil = 0;
 	struct canditer ci;
 	const char *err;
@@ -367,7 +362,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -424,8 +419,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - l->hseqbase;
 				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
@@ -476,7 +470,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 	BAT *res = NULL;
 	const oid *restrict gids;
 	oid gid, min, max;
-	BUN i, ngrp, ncand;
+	BUN i, ngrp;
 	bit hasnil = 0;
 	struct canditer ci;
 	const char *err;
@@ -484,7 +478,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -541,8 +535,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - l->hseqbase;
 				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
@@ -591,8 +584,7 @@ alloc_fail:
 	do {								\
 		const TYPE *vals1 = (const TYPE *) li.base;		\
 		const TYPE *vals2 = (const TYPE *) ri.base;		\
-		while (ncand > 0) {					\
-			ncand--;					\
+		for (BUN n = 0; n < ci.ncand; n++) {			\
 			i = canditer_next(&ci) - l->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -620,7 +612,7 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 	BAT *res = NULL;
 	const oid *restrict gids;
 	oid gid, min, max;
-	BUN i, ngrp, ncand;
+	BUN i, ngrp;
 	bit hasnil = 0;
 	struct canditer ci;
 	const char *err;
@@ -628,7 +620,7 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -686,8 +678,7 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - l->hseqbase;
 				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
@@ -745,7 +736,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 	BAT *res = NULL;
 	const oid *restrict gids;
 	oid gid, min, max;
-	BUN i, ngrp, ncand;
+	BUN i, ngrp;
 	bit hasnil = 0;
 	struct canditer ci;
 	const char *err;
@@ -753,7 +744,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -811,8 +802,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - l->hseqbase;
 				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
@@ -870,14 +860,14 @@ BATsubexist(BAT *b, BAT *g, BAT *e, BAT *s)
 	BAT *res = NULL;
 	const oid *restrict gids;
 	oid min, max;
-	BUN i, ngrp, ncand;
+	BUN i, ngrp;
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -904,15 +894,13 @@ BATsubexist(BAT *b, BAT *g, BAT *e, BAT *s)
 			gids = (const oid *) Tloc(g, 0);
 
 		if (gids) {
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - b->hseqbase;
 				if (gids[i] >= min && gids[i] <= max)
 					exists[gids[i] - min] = TRUE;
 			}
 		} else {
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - b->hseqbase;
 				exists[i] = TRUE;
 			}
@@ -945,14 +933,14 @@ BATsubnot_exist(BAT *b, BAT *g, BAT *e, BAT *s)
 	BAT *res = NULL;
 	const oid *restrict gids;
 	oid min, max;
-	BUN i, ngrp, ncand;
+	BUN i, ngrp;
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -979,15 +967,13 @@ BATsubnot_exist(BAT *b, BAT *g, BAT *e, BAT *s)
 			gids = (const oid *) Tloc(g, 0);
 
 		if (gids) {
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - b->hseqbase;
 				if (gids[i] >= min && gids[i] <= max)
 					exists[gids[i] - min] = FALSE;
 			}
 		} else {
-			while (ncand > 0) {
-				ncand--;
+			for (BUN n = 0; n < ci.ncand; n++) {
 				i = canditer_next(&ci) - b->hseqbase;
 				exists[i] = FALSE;
 			}

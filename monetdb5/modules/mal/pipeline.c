@@ -237,7 +237,7 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(dbl,sum);
 		if (!err) {
 			BATnegateprops(b);
-			BBPkeepref(b->batCacheid);
+			BBPkeepref(b);
 		} else
 			BBPunfix(b->batCacheid);
 	} else {
@@ -541,7 +541,8 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
 	b->T.sink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
-	BBPkeepref(*res = b->batCacheid);
+	*res = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -684,8 +685,10 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			BATsetcount(g, r);
 			BATnegateprops(g);
 			/* props */
-			BBPkeepref(*uid = u->batCacheid);
-			BBPkeepref(*rid = g->batCacheid);
+			*uid = u->batCacheid;
+			*rid = g->batCacheid;
+			BBPkeepref(u);
+			BBPkeepref(g);
 		}
 	}
 	if (err)
@@ -839,8 +842,10 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			BATsetcount(ng, r);
 			BATnegateprops(ng);
 			/* props */
-			BBPkeepref(*uid = u->batCacheid);
-			BBPkeepref(*rid = ng->batCacheid);
+			*uid = u->batCacheid;
+			*rid = ng->batCacheid;
+			BBPkeepref(u);
+			BBPkeepref(ng);
 		}
 	}
 	if (err)
@@ -1081,8 +1086,10 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			/* pass max id */
 			g->T.maxval = last;
 			g->tkey = FALSE;
-			BBPkeepref(*uid = u->batCacheid);
-			BBPkeepref(*rid = g->batCacheid);
+			*uid = u->batCacheid;
+			*rid = g->batCacheid;
+			BBPkeepref(u);
+			BBPkeepref(g);
 		}
 	}
 	if (err)
@@ -1341,8 +1348,10 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			/* pass max id */
 			g->T.maxval = last;
 			g->tkey = FALSE;
-			BBPkeepref(*uid = u->batCacheid);
-			BBPkeepref(*rid = g->batCacheid);
+			*uid = u->batCacheid;
+			*rid = g->batCacheid;
+			BBPkeepref(u);
+			BBPkeepref(g);
 		}
 	}
 	if (err)
@@ -1501,7 +1510,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
-			BBPkeepref(*rid = r->batCacheid);
+			*rid = r->batCacheid;
+			BBPkeepref(r);
 		}
 	}
 	if (!private)
@@ -1562,7 +1572,8 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
-			BBPkeepref(*rid = r->batCacheid);
+			*rid = r->batCacheid;
+			BBPkeepref(r);
 		}
 	}
 	if (!private)
@@ -1678,7 +1689,8 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
-			BBPkeepref(*rid = r->batCacheid);
+			*rid = r->batCacheid;
+			BBPkeepref(r);
 		}
 	}
 	if (!private)
@@ -1771,7 +1783,8 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
-			BBPkeepref(*rid = r->batCacheid);
+			*rid = r->batCacheid;
+			BBPkeepref(r);
 		}
 	}
 	if (!private)
@@ -1992,7 +2005,8 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
-			BBPkeepref(*rid = r->batCacheid);
+			*rid = r->batCacheid;
+			BBPkeepref(r);
 		}
 	}
 	if (!private)
@@ -2098,7 +2112,8 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
-			BBPkeepref(*rid = r->batCacheid);
+			*rid = r->batCacheid;
+			BBPkeepref(r);
 		}
 	}
 	if (!private)
@@ -2133,8 +2148,10 @@ SLICERslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!r)
 		return createException(SQL, "slicer.slice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	BBPkeepref(*bid = b->batCacheid);
-	BBPkeepref(*res = r->batCacheid);
+	*bid = b->batCacheid;
+	*res = r->batCacheid;
+	BBPkeepref(b);
+	BBPkeepref(r);
 	return MAL_SUCCEED;
 }
 
@@ -2157,7 +2174,8 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 		result1 = (lng) BATcount_no_nil(b, s);
 	} else {
 		struct canditer ci;
-		result1 = (lng) canditer_init(&ci, b, s);
+		canditer_init(&ci, b, s);
+		*result = (lng) ci.ncand;
 	}
 	if (is_lng_nil(*result))
 		*result = result1;

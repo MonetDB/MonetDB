@@ -1226,7 +1226,7 @@ returnvalues:
 		msg = MAL_SUCCEED;
 		if (isaBatType(getArgType(mb, pci, i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
+			BBPkeepref(b);
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
 			if (bat_type != TYPE_str) {
@@ -1693,7 +1693,8 @@ bailout:
 				if (b && msg) {
 					BBPreclaim(b);
 				} else if (b) {
-					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+					*getArgReference_bat(stk, pci, i) = b->batCacheid;
+					BBPkeepref(b);
 				}
 			} else if (msg) {
 				ValPtr pt = ((ValPtr*)res)[i];

@@ -209,7 +209,8 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 	bn->tsorted = (cnt <= 1 || (series == 1 && step > 0));
 	bn->trevsorted = (cnt <= 1 || (series == 1 && step < 0));
 	bn->tnonil = true;
-	BBPkeepref(*bid= bn->batCacheid);
+	*bid = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -667,7 +668,8 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	res->tsorted = false;
 	res->trevsorted = false;
 	BATkey(res, false);
-	BBPkeepref(vbid = res->batCacheid);
+	vbid = res->batCacheid;
+	BBPkeepref(res);
 
 	res = NULL;
 
@@ -694,7 +696,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 		sermsg = NCDFARRAYseries(&dim_bids[i], 0, 1, dlen[i], val_rep[i], grp_rep[i]);
 
 		if (sermsg != MAL_SUCCEED) {
-			BBPrelease(vbid); /* undo the BBPkeepref(vbid) above */
+			BBPrelease(vbid); /* undo the BBPkeepref(res) above */
 			for ( j = 0; j < i; j++) /* undo log. ref of previous dimensions */
 				BBPrelease(dim_bids[j]);
 			GDKfree(dlen);

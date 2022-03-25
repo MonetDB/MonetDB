@@ -320,7 +320,8 @@ MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed){
 
 	BATrandom(&bn, base, size, domain, *seed);
 	if( bn ){
-		BBPkeepref(*ret= bn->batCacheid);
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
 	} else throw(MAL, "microbenchmark.random", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -336,7 +337,8 @@ MBMuniform(bat *ret, oid *base, lng *size, int *domain){
 
 	BATuniform(&bn, base, size, domain);
 	if( bn ){
-		BBPkeepref(*ret= bn->batCacheid);
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
 	} else throw(MAL, "microbenchmark.uniform", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -346,7 +348,8 @@ MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean){
 	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
-		BBPkeepref(*ret= bn->batCacheid);
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
 	} else throw(MAL, "microbenchmark.normal", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -372,7 +375,8 @@ MBMmix(bat *bn, bat *batid)
 		*(int *) Tloc(b, idx) = val;
 	}
 
-	BBPkeepref(*bn= b->batCacheid);
+	*bn = b->batCacheid;
+	BBPkeepref(b);
 
 	return MAL_SUCCEED;
 }
@@ -383,7 +387,8 @@ MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew){
 
 	BATskewed(&bn, base, size, domain, skew);
 	if( bn ){
-		BBPkeepref(*ret= bn->batCacheid);
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
 	} else throw(MAL, "microbenchmark.skewed", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

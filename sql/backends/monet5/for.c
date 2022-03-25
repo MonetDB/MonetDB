@@ -115,7 +115,8 @@ FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "for.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bat_destroy(o);
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 

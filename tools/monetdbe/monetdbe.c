@@ -392,6 +392,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	m->errstr[0] = '\0';
 	m->params = NULL;
 	m->sym = NULL;
+	m->runs = NULL;
 	m->label = 0;
 	if (m->sa)
 		m->sa = sa_reset(m->sa);
@@ -853,6 +854,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		return -2;
 	}
 	stk->keepAlive = TRUE;
+	mb->starttime = GDKusec();
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);

@@ -45,9 +45,10 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc; i < pci->argc; i++)
 		BBPunfix(joins[i - pci->retc]->batCacheid);
 	GDKfree(joins);
-	if ( b)
-		BBPkeepref( *r = b->batCacheid);
-	else
+	if ( b) {
+		*r = b->batCacheid;
+		BBPkeepref(b);
+	} else
 		throw(MAL, "algebra.projectionpath", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

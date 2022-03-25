@@ -683,12 +683,12 @@ BATfree(BAT *b)
 		b->tunique_est = (double) nunique;
 	}
 	if (b->theap) {
-		assert(ATOMIC_GET(&b->theap->refs) == 1);
+		assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
 		assert(b->theap->parentid == b->batCacheid);
 		HEAPfree(b->theap, false);
 	}
 	if (b->tvheap) {
-		assert(ATOMIC_GET(&b->tvheap->refs) == 1);
+		assert((ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
 		assert(b->tvheap->parentid == b->batCacheid);
 		HEAPfree(b->tvheap, false);
 	}
@@ -853,9 +853,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			 * argument of COLnew2 not being zero triggers a
 			 * skip in the allocation of the tvheap */
 			if (ATOMheap(bn->ttype, bn->tvheap, bn->batCapacity) != GDK_SUCCEED) {
-				bat_iterator_end(&bi);
-				BBPreclaim(bn);
-				return NULL;
+				goto bunins_failed;
 			}
 		}
 
@@ -1026,7 +1024,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	ALIGNapp(b, force, GDK_FAIL);
-	b->batDirtydesc = true;
 
 	if (b->ttype == TYPE_void && BATtdense(b)) {
 		const oid *ovals = values;
@@ -1071,7 +1068,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tunique_est = 0;
 		MT_lock_unset(&b->theaplock);
 	}
-	b->theap->dirty = true;
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	if (b->ttype == TYPE_oid) {
 		/* spend extra effort on oid (possible candidate list) */
@@ -1879,9 +1875,10 @@ BATsetcount(BAT *b, BUN cnt)
 	MT_lock_set(&b->theaplock);
 	b->batCount = cnt;
 	b->batDirtydesc = true;
-	b->theap->dirty |= b->ttype != TYPE_void && b->theap->parentid == b->batCacheid && cnt > 0;
-	if (b->theap->parentid == b->batCacheid)
+	if (b->theap->parentid == b->batCacheid) {
+		b->theap->dirty |= b->ttype != TYPE_void && cnt > 0;
 		b->theap->free = tailsize(b, cnt);
+	}
 	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
@@ -2284,44 +2281,54 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			return NULL;
 		b = bn;
 	}
-	bakmode = (restrict_t) b->batRestricted;
+	MT_lock_set(&b->theaplock);
+	bakmode = b->batRestricted;
 	bakdirty = b->batDirtydesc;
 	if (bakmode != newmode) {
 		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
 		bool wr = (newmode == BAT_WRITE);
 		bool rd = (bakmode == BAT_WRITE);
-		storage_t m1, m3 = STORE_MEM;
-		storage_t b1, b3 = STORE_MEM;
+		storage_t m1 = STORE_MEM, m3 = STORE_MEM;
+		storage_t b1 = STORE_MEM, b3 = STORE_MEM;
 
-		b1 = b->theap->newstorage;
-		m1 = HEAPchangeaccess(b->theap, ACCESSMODE(wr, rd), existing);
-		if (b->tvheap) {
+		if (b->theap->parentid == b->batCacheid) {
+			b1 = b->theap->newstorage;
+			m1 = HEAPchangeaccess(b->theap, ACCESSMODE(wr, rd), existing);
+		}
+		if (b->tvheap && b->tvheap->parentid == b->batCacheid) {
 			bool ta = (newmode == BAT_APPEND && ATOMappendpriv(b->ttype, b->tvheap));
 			b3 = b->tvheap->newstorage;
 			m3 = HEAPchangeaccess(b->tvheap, ACCESSMODE(wr && ta, rd && ta), existing);
 		}
 		if (m1 == STORE_INVALID || m3 == STORE_INVALID) {
+			MT_lock_unset(&b->theaplock);
 			BBPunfix(b->batCacheid);
 			return NULL;
 		}
 
 		/* set new access mode and mmap modes */
-		b->batRestricted = (unsigned int) newmode;
+		b->batRestricted = newmode;
 		b->batDirtydesc = true;
-		b->theap->newstorage = m1;
-		if (b->tvheap)
+		if (b->theap->parentid == b->batCacheid)
+			b->theap->newstorage = m1;
+		if (b->tvheap && b->tvheap->parentid == b->batCacheid)
 			b->tvheap->newstorage = m3;
 
-		if (existing && BBPsave(b) != GDK_SUCCEED) {
+		MT_lock_unset(&b->theaplock);
+		if (existing && !isVIEW(b) && BBPsave(b) != GDK_SUCCEED) {
 			/* roll back all changes */
-			b->batRestricted = (unsigned int) bakmode;
+			MT_lock_set(&b->theaplock);
+			b->batRestricted = bakmode;
 			b->batDirtydesc = bakdirty;
 			b->theap->newstorage = b1;
 			if (b->tvheap)
 				b->tvheap->newstorage = b3;
+			MT_lock_unset(&b->theaplock);
 			BBPunfix(b->batCacheid);
 			return NULL;
 		}
+	} else {
+		MT_lock_unset(&b->theaplock);
 	}
 	return b;
 }
@@ -2329,9 +2336,8 @@ BATsetaccess(BAT *b, restrict_t newmode)
 restrict_t
 BATgetaccess(BAT *b)
 {
-	BATcheck(b, BAT_WRITE /* 0 */);
-	assert(b->batRestricted != 3); /* only valid restrict_t values */
-	return (restrict_t) b->batRestricted;
+	BATcheck(b, BAT_WRITE);
+	return b->batRestricted;
 }
 
 /*
