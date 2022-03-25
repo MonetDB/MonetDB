@@ -466,6 +466,7 @@ struct Histogram {
 	struct HistogramEntry *histogram;	/* The histogram itself (at the moment it's malloc'ed) */
 	int nbuckets;	/* The number of buckets excluding the one for NULL values */
 	int nulls;	/* The number of null values */
+	int size;	/* The total number of values in the histogram (if the table is smaller than the sample size)*/
 };
 
 typedef struct {
