@@ -1069,7 +1069,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tunique_est = 0;
 		MT_lock_unset(&b->theaplock);
 	}
-	b->theap->dirty = true;
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	if (b->ttype == TYPE_oid) {
 		/* spend extra effort on oid (possible candidate list) */

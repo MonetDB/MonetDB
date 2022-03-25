@@ -78,8 +78,6 @@ utility are
 .BR start ,
 .BR stop ,
 .BR kill ,
-.BR profilerstart ,
-.BR profilerstop ,
 .BR snapshot ,
 .BR set ,
 .BR get ,
@@ -282,7 +280,7 @@ the operation on other databases was successful.
 \fBmonetdb\fP \fBsnapshot\fP \fBwrite\fP \fIdbname\fP
 Takes a snapshot of the given database and writes it to stdout.
 .TP
-\fBmonetdb\fP \fBsnapshot\fP \fBcreate\fP [\fB-t\fP \fItargetfile\fP] \fIdbname\fP [\fIdbname\fP..]
+\fBmonetdb\fP \fBsnapshot\fP \fBcreate\fP [\fB\-t\fP \fItargetfile\fP] \fIdbname\fP [\fIdbname\fP ...]
 Takes a snapshot of the given databases.
 Here,
 .I dbname
@@ -290,7 +288,7 @@ can be either the name of a single database or a pattern such as
 .I staging*
 indicating multiple databases to snapshot.
 Unless
-.B -t
+.B \-t
 is given, the snapshots are written to files named
 .I <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC<snapshotcompression>
 where
@@ -309,7 +307,7 @@ setting which defaults to
 or
 .IR .tar .
 If
-.B -t
+.B \-t
 is given, only a single database can be snapshotted and the snapshot
 is written to
 .IR targetfile ,
@@ -317,7 +315,7 @@ a file on the server which must be somewhere under
 .I snapshotdir
 but which does not have to follow any particular naming convention.
 .TP
-\fBmonetdb\fP \fBsnapshot\fP \fBlist\fP [\fIdbname\fP..]
+\fBmonetdb\fP \fBsnapshot\fP \fBlist\fP [\fIdbname\fP ...]
 Lists the snapshots for the given databases, or all databases if none
 is given, showing the snapshot id, the time the snapshot was taken and
 the (compressed) size of the snapshot file. Only snapshots following
@@ -329,7 +327,7 @@ of a database, 2 for the next most recent, etc. For clarity, the first
 snapshot for each database shows the full snapshot id (\fIdbname\fP@1) and
 older snapshots for the same database are listed just as @2, @3, etc.
 .TP
-\fBmonetdb\fP \fBsnapshot\fP \fBrestore\fP [\fB-f\fP] \fIsnapshotid\fP [\fIdbname\fP]
+\fBmonetdb\fP \fBsnapshot\fP \fBrestore\fP [\fB\-f\fP] \fIsnapshotid\fP [\fIdbname\fP]
 Restores a database from the given snapshot, where
 .I snapshotid
 is either a path on the server or \fIname\fP@\fItag\fP as listed by
@@ -342,17 +340,17 @@ omitted unless
 .I snapshotid
 is a full path.
 When
-.B -f
+.B \-f
 is given, no confirmation is asked when overwriting an existing database.
 .TP
-\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB-f\fP] \fIname\fP@\fItag\fP..
+\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB\-f\fP] \fIname\fP@\fItag\fP [\fIname\fP@\fItag\fP ...]
 Delete the listed snapshots from the
 .I snapshotdir
 directory.  When
-.B -f
+.B \-f
 is given, no confirmation is asked.
 .TP
-\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB-f\fP] \fB-r\fP \fIN\fP \fIdbname\fP..\&
+\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB\-f\fP] \fB\-r\fP \fIN\fP \fIdbname\fP [\fIdbname\fP ...]\&
 Delete all but the
 .I N
 latest snapshots for the given databases.
@@ -364,7 +362,7 @@ or even
 .I *
 to work on all snapshotted databases.
 When
-.B -f
+.B \-f
 is given, no confirmation is asked.
 .TP
 \fBget\fP <\fBall\fP | \fIproperty\fP[,\fIproperty\fP[,..]]> [\fIdatabase\fP ...]
