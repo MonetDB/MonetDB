@@ -188,6 +188,25 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}												\
 	}
 
+#define faggr(T,f)  \
+	if (type == TYPE_##T) {								\
+		T val = *getArgReference_TYPE(stk, pci, 2, T);		\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type); \
+		if (!is_##T##_nil(val) && BATcount(b)) {		\
+			T *t = Tloc(b, 0);							\
+			if (is_##T##_nil(t[0])) {					\
+				t[0] = val;								\
+			} else										\
+				t[0] = f(t[0], val);					\
+			b->tnil = false;							\
+			b->tnonil = true;							\
+		} else if (BATcount(b) == 0) {					\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)\
+				err = createException(SQL, "aggr." #f,	\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}												\
+	}
+
 #define vaggr(T,f)  \
 	if (type == TYPE_##T) {								\
 		BATiter bi = bat_iterator(b); \
@@ -266,7 +285,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
 		type != TYPE_flt && type != TYPE_dbl &&
-		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_str)
+		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
 			return createException(SQL, "aggr.min",	"Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -276,6 +295,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(date,min);
 		aggr(daytime,min);
 		aggr(timestamp,min);
+		faggr(uuid,uuid_min);
 		aggr(hge,min);
 		aggr(lng,min);
 		aggr(int,min);
@@ -312,7 +332,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
 		type != TYPE_flt && type != TYPE_dbl &&
-		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_str)
+		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
 			return createException(SQL, "aggr.max",	"Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -322,6 +342,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(date,max);
 		aggr(daytime,max);
 		aggr(timestamp,max);
+		faggr(uuid,uuid_max);
 		aggr(hge,max);
 		aggr(lng,max);
 		aggr(int,max);
@@ -476,6 +497,8 @@ _ht_create( int type, int size, hash_table *p)
 		if (type == TYPE_str) {
 			h->cmp = (fcmp)str_cmp;
 			h->hsh = (fhsh)str_hsh;
+		} else {
+			h->cmp = (fcmp)ATOMcompare(type);
 		}
         return _ht_init(h);
 }
@@ -499,6 +522,7 @@ ht_create(int type, int size, hash_table *p)
 #define _hash_lng(X)  ((((ulng)X)>>7)^(((ulng)X)>>13)^(((ulng)X)>>21)^(((ulng)X)>>31)^(((ulng)X)>>38)^(((ulng)X)>>46)^(((ulng)X)>>56)^((ulng)X))
 #define _hash_daytime(X) _hash_lng(X)
 #define _hash_timestamp(X) _hash_lng(X)
+#define _hash_uuid(X) _hash_hge(X)
 
 #define _mix_hge(X)      (((hge) (X) >> 7) ^     \
                          ((hge) (X) >> 13) ^    \
@@ -609,6 +633,36 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		} \
 	}
 
+#define cunique(Type, BaseType) \
+	if (tt == TYPE_##Type) { \
+		Type *bp = Tloc(b, 0); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool new = 0, fnd = 0; \
+			\
+			for(; !fnd; ) { \
+				gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && h->cmp(vals+k, bp+i) != 0);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
+					vals[k] = bp[i]; \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+					continue; \
+				fnd = 1; \
+			} \
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+	}
+
 #define aunique(Type) \
 	if (tt == TYPE_##Type) { \
 		BATiter bi = bat_iterator(b); \
@@ -681,6 +735,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			unique(hge)
 			funique(flt, int)
 			funique(dbl, lng)
+			cunique(uuid, hge)
 			aunique(str)
 		}
 		if (!err) {
@@ -742,6 +797,37 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 				gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
 				for(;g&1 && (pgids[k] != p[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && vals[k] != bp[i]));) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
+					vals[k] = bp[i]; \
+					pgids[k] = p[i]; \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+					continue; \
+				fnd = 1; \
+			} \
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+	}
+
+#define gcunique(Type, BaseType) \
+	if (tt == TYPE_##Type) { \
+		Type *bp = Tloc(b, 0); \
+		Type *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool new = 0, fnd = 0; \
+			\
+			for(; !fnd; ) { \
+				gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && (pgids[k] != p[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && h->cmp(vals+k, bp+i) != 0));) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
@@ -837,6 +923,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			gunique(hge)
 			gfunique(flt, int)
 			gfunique(dbl, lng)
+			gcunique(uuid, hge)
 			gaunique(str)
 		}
 		if (!err) {
@@ -1594,6 +1681,14 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 				o[v[i]]+= (in[i] != Type##_nil); \
 	}
 
+#define gfcount(Type) \
+	if (tt == TYPE_##Type) { \
+			Type *in = Tloc(b, 0); \
+		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			for(BUN i = 0; i<cnt; i++) \
+				o[v[i]]+= cmp(in+i, &Type##_nil) != 0; \
+	}
+
 #define gacount(Type) \
 	if (tt == TYPE_##Type) { \
 			BATiter bi = bat_iterator(b); \
@@ -1681,6 +1776,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 				gcount(daytime);
 				gcount(timestamp);
 				gcount(hge);
+				gfcount(uuid);
 				gcount(flt);
 				gcount(dbl);
 				gacount(str);
