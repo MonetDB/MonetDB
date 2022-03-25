@@ -9,12 +9,6 @@
 
 #include "monetdb_config.h"
 #include "rel_statistics.h"
-#include "rel_optimizer.h"
-#include "rel_rel.h"
-#include "rel_exp.h"
-#include "rel_prop.h"
-#include "rel_rewriter.h"
-#include "sql_mvc.h"
 #include "mtime.h"
 
 sql_hash *sql_functions_lookup = NULL;

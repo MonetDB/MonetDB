@@ -631,3 +631,261 @@ bind_get_statistics(visitor *v, global_props *gp)
 	/* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
 	return gp->opt_level == 1 && v->storage_based_opt && !gp->has_special_modify ? rel_get_statistics : NULL;
 }
+
+
+static bool
+point_select_on_unique_column(sql_rel *rel)
+{
+	if (is_select(rel->op) && !list_empty(rel->exps)) {
+		for (node *n = rel->exps->h; n ; n = n->next) {
+			sql_exp *e = n->data, *el = e->l, *er = e->r, *found = NULL;
+
+			if (is_compare(e->type) && e->flag == cmp_equal) {
+				if (is_numeric_upcast(el))
+					el = el->l;
+				if (is_numeric_upcast(er))
+					er = er->l;
+				if (is_alias(el->type) && exp_is_atom(er) && (found = rel_find_exp(rel->l, el)) &&
+					is_unique(found) && (!is_semantics(e) || !has_nil(found) || !has_nil(er)))
+					return true;
+				if (is_alias(er->type) && exp_is_atom(el) && (found = rel_find_exp(rel->l, er)) &&
+					is_unique(found) && (!is_semantics(e) || !has_nil(el) || !has_nil(found)))
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
+/*
+ * A point select on an unique column reduces the number of rows to 1. If the same select is under a
+ * join, the opposite side's select can be pushed above the join.
+ */
+static inline sql_rel *
+rel_push_select_up(visitor *v, sql_rel *rel)
+{
+	if ((is_join(rel->op) || is_semi(rel->op)) && !is_single(rel)) {
+		sql_rel *l = rel->l, *r = rel->r;
+		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l) && !is_single(l),
+			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_single(r) && !is_semi(rel->op);
+
+		if (can_pushup_left || can_pushup_right) {
+			if (can_pushup_left)
+				can_pushup_left = point_select_on_unique_column(r);
+			if (can_pushup_right)
+				can_pushup_right = point_select_on_unique_column(l);
+
+			/* if both selects retrieve one row each, it's not worth it to push both up */
+			if (can_pushup_left && !can_pushup_right) {
+				sql_rel *nrel = rel_dup_copy(v->sql->sa, rel);
+				nrel->l = l->l;
+				rel = rel_inplace_select(rel, nrel, l->exps);
+				assert(is_select(rel->op));
+				v->changes++;
+			} else if (!can_pushup_left && can_pushup_right) {
+				sql_rel *nrel = rel_dup_copy(v->sql->sa, rel);
+				nrel->r = r->l;
+				rel = rel_inplace_select(rel, nrel, r->exps);
+				assert(is_select(rel->op));
+				v->changes++;
+			}
+		}
+	}
+	return rel;
+}
+
+static int
+sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_based)
+{
+	int de;
+
+	if (!t)
+		return 0;
+	switch (ATOMstorage(t->type->localtype)) {
+		case TYPE_bte:
+			return 150 - 8;
+		case TYPE_sht:
+			return 150 - 16;
+		case TYPE_int:
+			return 150 - 32;
+		case TYPE_void:
+		case TYPE_lng:
+			return 150 - 64;
+		case TYPE_uuid:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
+			return 150 - 128;
+		case TYPE_flt:
+			return 75 - 24;
+		case TYPE_dbl:
+			return 75 - 53;
+		default: {
+			if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
+				return 150 - de * 8;
+			/* strings and blobs not duplicate eliminated don't get any points here */
+			return 0;
+		}
+	}
+}
+
+static int
+score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
+{
+	int res = 0;
+	sql_subtype *t = exp_subtype(e);
+	sql_column *c = NULL;
+
+	/* can we find out if the underlying table is sorted */
+	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
+		res += 600;
+
+	/* prefer the shorter var types over the longer ones */
+	res += sql_class_base_score(v, c, t, is_equality_or_inequality_exp(e->flag)); /* smaller the type, better */
+	return res;
+}
+
+static int
+score_se(visitor *v, sql_rel *rel, sql_exp *e)
+{
+	int score = 0;
+	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
+		sql_exp *l = e->l;
+
+		while (l->type == e_cmp) { /* go through nested comparisons */
+			sql_exp *ll;
+
+			if (l->flag == cmp_filter || l->flag == cmp_or)
+				ll = ((list*)l->l)->h->data;
+			else
+				ll = l->l;
+			if (ll->type != e_cmp)
+				break;
+			l = ll;
+		}
+		score += score_se_base(v, rel, l);
+	}
+	score += exp_keyvalue(e);
+	return score;
+}
+
+static inline sql_rel *
+rel_select_order(visitor *v, sql_rel *rel)
+{
+	int *scores = NULL;
+	sql_exp **exps = NULL;
+
+	if (is_select(rel->op) && list_length(rel->exps) > 1) {
+		node *n;
+		int i, nexps = list_length(rel->exps);
+		scores = SA_NEW_ARRAY(v->sql->ta, int, nexps);
+		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, nexps);
+
+		for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
+			exps[i] = n->data;
+			scores[i] = score_se(v, rel, n->data);
+		}
+		GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+		for (i = 0, n = rel->exps->h; n; i++, n = n->next)
+			n->data = exps[i];
+	}
+
+	return rel;
+}
+
+/* Compute the efficiency of using this expression earl	y in a group by list */
+static int
+score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
+{
+	int res = 0;
+	sql_subtype *t = exp_subtype(e);
+	sql_column *c = exp_find_column(rel, e, -2);
+
+	if (e->card == CARD_ATOM) /* constants are trivial to group */
+		res += 1000;
+	/* can we find out if the underlying table is sorted */
+	if (is_unique(e) || find_prop(e->p, PROP_HASHCOL) || (c && v->storage_based_opt && mvc_is_unique(v->sql, c))) /* distinct columns */
+		res += 700;
+	if (c && v->storage_based_opt && mvc_is_sorted(v->sql, c))
+		res += 500;
+	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
+		res += 200;
+
+	/* prefer the shorter var types over the longer ones */
+	res += sql_class_base_score(v, c, t, true); /* smaller the type, better */
+	return res;
+}
+
+/* reorder group by expressions */
+static inline sql_rel *
+rel_groupby_order(visitor *v, sql_rel *rel)
+{
+	int *scores = NULL;
+	sql_exp **exps = NULL;
+
+	if (is_groupby(rel->op) && list_length(rel->r) > 1) {
+		node *n;
+		list *gbe = rel->r;
+		int i, ngbe = list_length(gbe);
+		scores = SA_NEW_ARRAY(v->sql->ta, int, ngbe);
+		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, ngbe);
+
+		/* first sorting step, give priority for integers and sorted columns */
+		for (i = 0, n = gbe->h; n; i++, n = n->next) {
+			exps[i] = n->data;
+			scores[i] = score_gbe(v, rel, exps[i]);
+		}
+		GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+		/* second sorting step, give priority to strings with lower number of digits */
+		for (i = ngbe - 1; i && !scores[i]; i--); /* find expressions with no score from the first round */
+		if (scores[i])
+			i++;
+		if (ngbe - i > 1) {
+			for (int j = i; j < ngbe; j++) {
+				sql_subtype *t = exp_subtype(exps[j]);
+				scores[j] = t ? t->digits : 0;
+			}
+			/* the less number of digits the better, order ascending */
+			GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
+		}
+
+		for (i = 0, n = gbe->h; n; i++, n = n->next)
+			n->data = exps[i];
+	}
+
+	return rel;
+}
+
+/* This optimization loop contains optimizations that can potentially use statistics */
+static sql_rel *
+rel_final_optimization_loop_(visitor *v, sql_rel *rel)
+{
+	/* Run rel_push_select_up only once at the end to avoid an infinite optimization loop */
+	rel = rel_push_select_up(v, rel);
+	rel = rel_select_order(v, rel);
+
+	/* TODO? Maybe later add rel_simplify_count, rel_join2semijoin, rel_simplify_fk_joins,
+		rel_distinct_project2groupby, rel_simplify_predicates, rel_simplify_math,
+		rel_distinct_aggregate_on_unique_values */
+
+	rel = rel_groupby_order(v, rel);
+	return rel;
+}
+
+static sql_rel *
+rel_final_optimization_loop(visitor *v, global_props *gp, sql_rel *rel)
+{
+	(void) gp;
+	return rel_visitor_bottomup(v, rel, &rel_final_optimization_loop_);
+}
+
+run_optimizer
+bind_final_optimization_loop(visitor *v, global_props *gp)
+{
+	int flag = v->sql->sql_optimizer;
+	/* At the moment, this optimizer has dependency on 3 flags */
+	return gp->opt_level == 1 && (gp->cnt[op_groupby] || gp->cnt[op_select]) &&
+		(flag & push_select_up) && (flag & optimize_select_and_joins_topdown) && (flag & optimize_projections) ? rel_final_optimization_loop : NULL;
+}
