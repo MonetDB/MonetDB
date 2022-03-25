@@ -21,12 +21,30 @@
 #define NBUCKETS 64
 #define SAMPLE_SIZE 1024
 
+static_assert(NBUCKETS > 2, "The number of buckets must be > 2");
+static_assert(SAMPLE_SIZE > NBUCKETS, "The sample size must be > number of buckets");
+static_assert(SAMPLE_SIZE < INT_MAX, "The sample size must be on the integer range");
+
 #ifdef HAVE_HGE
 #define	VAR_UPCAST hge
 #define	VAR_TPE    TYPE_hge
 #else
 #define	VAR_UPCAST lng
 #define	VAR_TPE    TYPE_lng
+#endif
+
+#define histogram_entry(TPE)	\
+typedef struct HistogramEntry_##TPE {	\
+	TPE min, max;	/* The minimum and maximum value in the range */	\
+	int count;	/* number of values */	\
+} HistogramEntry_##TPE;
+
+histogram_entry(bte)
+histogram_entry(sht)
+histogram_entry(int)
+histogram_entry(lng)
+#ifdef HAVE_HGE
+histogram_entry(hge)
 #endif
 
 static bool
@@ -116,34 +134,36 @@ min_and_max_values(BATiter *bi, ValPtr minv, ValPtr maxv)
 		BUN k = 0, l = BATcount(sam);	\
 	\
 		h->nbuckets = (int) (j - i + 1); \
-		if (!(h->histogram = GDKmalloc(sizeof(struct HistogramEntry) * h->nbuckets))) \
+		if (!(h->histogram = GDKmalloc(sizeof(HistogramEntry_##TPE) * h->nbuckets))) \
 			return NULL; \
 	\
-		while (true) { \
-			struct HistogramEntry *restrict e = &(h->histogram[k++]); \
-			VALinit(&(e->min), tpe, &ii); /* TODO? maybe I don't need to materialize this for 'perfect' histograms */\
-			VALinit(&(e->max), tpe, &ii);	\
+		while (true) { /* Initialize bucket ranges */ \
+			HistogramEntry_##TPE *restrict e = &(((HistogramEntry_##TPE *)h->histogram)[k++]); \
+			e->min = e->max = ii; /* TODO? maybe I don't need to materialize this for 'perfect' histograms */ \
 			e->count = 0; \
 			if (ii == j) \
 				break; \
 			ii++; \
 		} \
 	\
-		for (BUN k = 0 ; k < l ; k++) { \
+		HistogramEntry_##TPE *restrict hist = (HistogramEntry_##TPE *)h->histogram; \
+		for (BUN k = 0 ; k < l ; k++) { /* Now create the histogram */\
 			TPE next = v[k]; \
 			if (is_##TPE##_nil(next)) { \
-				h->nulls++; \
+				nulls++; \
 			} else { \
-				int offset = (next - i); /* get the offset from min, then increment */ \
-				h->histogram[offset].count++; \
+				int offset = (int) (next - i); /* get the offset from min, then increment */ \
+				hist[offset].count++; \
 			} \
 		} \
+		h->nulls = nulls; \
 	} while (0)
 
 static Histogram *
 create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 {
-	int tpe = ATOMbasetype(sam->ttype);
+	int nulls = 0, tpe = ATOMbasetype(sam->ttype);
+
 	switch (tpe) {
 	case TYPE_bte:
 		perfect_histogram_loop(bte);
@@ -160,6 +180,71 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		perfect_histogram_loop(hge);
+		break;
+#endif
+	default:
+		assert(0);
+	}
+	return h;
+}
+
+#define generic_histogram_loop(TPE)	\
+	do { \
+		TPE i = *(TPE*)VALget(min), ii = i, j = *(TPE*)VALget(max), gap; \
+		const TPE *restrict v = Tloc(sam, 0); \
+		BUN l = BATcount(sam);	\
+	\
+		h->nbuckets = NBUCKETS; \
+		if (!(h->histogram = GDKmalloc(sizeof(HistogramEntry_##TPE) * h->nbuckets))) \
+			return NULL; \
+		gap = (TPE) floor((double) (j - i) / (double) h->nbuckets); \
+	\
+		for (BUN k = 0 ; k < NBUCKETS ; k++) { \
+			HistogramEntry_##TPE *restrict e = &(((HistogramEntry_##TPE *)h->histogram)[k]); \
+			e->min = ii;	\
+			ii += gap; \
+			if (k == NBUCKETS - 1) { \
+				e->max = ii; \
+			} else { \
+				e->max = j; /* The last bucket will contain the max value inclusive */ \
+			} \
+			e->count = 0; \
+		} \
+	\
+		HistogramEntry_##TPE *restrict hist = (HistogramEntry_##TPE *)h->histogram; \
+		for (BUN k = 0 ; k < l ; k++) { /* Now create the histogram */\
+			TPE next = v[k]; \
+			if (is_##TPE##_nil(next)) { \
+				nulls++; \
+			} else { \
+				(void) hist; \
+				/* ... */ \
+			} \
+		} \
+		h->nulls = nulls; \
+	} while (0)
+
+static Histogram *
+create_generic_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
+{
+	int nulls = 0, tpe = ATOMbasetype(sam->ttype);
+
+	switch (tpe) {
+	case TYPE_bte:
+		generic_histogram_loop(bte);
+		break;
+	case TYPE_sht:
+		generic_histogram_loop(sht);
+		break;
+	case TYPE_int:
+		generic_histogram_loop(int);
+		break;
+	case TYPE_lng:
+		generic_histogram_loop(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		generic_histogram_loop(hge);
 		break;
 #endif
 	default:
@@ -238,9 +323,9 @@ HISTOGRAMcreate(BAT *b)
 			h->size = (int) BATcount(sam); /* it should fit */
 			if (perfect_histogram) {
 				h = create_perfect_histogram(sam, h, &min, &max);
-			}/* else {
-				 do the generic way
-			}*/
+			} else {
+				h = create_generic_histogram(sam, h, &min, &max);
+			}
 
 			BBPreclaim(sam);
 			if (!h) {
