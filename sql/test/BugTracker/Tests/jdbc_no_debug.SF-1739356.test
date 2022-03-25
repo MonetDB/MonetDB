@@ -6,18 +6,16 @@ project (
 | | union (
 | | | group by (
 | | | | project (
-| | | | | select (
-| | | | | | table("sys"."_tables") [ "_tables"."id", "_tables"."type" ]
-| | | | | ) [ ("_tables"."type") != (smallint(16) "2") ]
+| | | | | table("sys"."_tables") [ "_tables"."id", "_tables"."type" ]
 | | | | ) [ "_tables"."id" as "tables"."id" ]
 | | | ) [  ] [ "sys"."count"() NOT NULL as "%10"."%10" ],
 | | | group by (
 | | | | project (
-| | | | | table("tmp"."_tables") [ "_tables"."id" ]
-| | | | ) [ "_tables"."id" as "tables"."id" ]
+| | | | | table("tmp"."_tables") [ "_tables"."id" NOT NULL ]
+| | | | ) [ "_tables"."id" NOT NULL as "tables"."id" ]
 | | | ) [  ] [ "sys"."count"() NOT NULL as "%10"."%10" ]
-| | ) [ "%10"."%10" ]
-| ) [  ] [ "sys"."sum" no nil ("%10"."%10") as "%10"."%10" ]
+| | ) [ "%10"."%10" NOT NULL ]
+| ) [  ] [ "sys"."sum" no nil ("%10"."%10" NOT NULL) as "%10"."%10" ]
 ) [ "%10"."%10" NOT NULL ]
 
 statement ok
@@ -30,8 +28,6 @@ aggr.count
 2
 aggr.sum
 1
-algebra.thetaselect
-2
 bat.append
 2
 bat.new
@@ -40,13 +36,9 @@ bat.single
 1
 querylog.define
 1
-sql.bind
-2
 sql.mvc
 1
 sql.resultSet
-1
-sql.subdelta
 1
 sql.tid
 2

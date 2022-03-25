@@ -9,10 +9,10 @@ WHERE t2.a between t1.a and t1.b
 ----
 project (
 | join (
-| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ],
-| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ]
-| ) [ ("t1"."a") <= ("t2"."a") <= ("t1"."b") ]
-) [ "t2"."a" ]
+| | table("sys"."t4311") [ "t4311"."a" NOT NULL as "t2"."a" ],
+| | table("sys"."t4311") [ "t4311"."a" NOT NULL as "t1"."a", "t4311"."b" NOT NULL as "t1"."b" ]
+| ) [ ("t1"."a" NOT NULL) <= ("t2"."a" NOT NULL) <= ("t1"."b" NOT NULL) ]
+) [ "t2"."a" NOT NULL ]
 
 query T nosort
 PLAN
@@ -23,10 +23,10 @@ AND   t2.a <= t1.b
 ----
 project (
 | join (
-| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ],
-| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ]
-| ) [ ("t1"."a") <= ("t2"."a") <= ("t1"."b") ]
-) [ "t2"."a" ]
+| | table("sys"."t4311") [ "t4311"."a" NOT NULL as "t2"."a" ],
+| | table("sys"."t4311") [ "t4311"."a" NOT NULL as "t1"."a", "t4311"."b" NOT NULL as "t1"."b" ]
+| ) [ ("t1"."a" NOT NULL) <= ("t2"."a" NOT NULL) <= ("t1"."b" NOT NULL) ]
+) [ "t2"."a" NOT NULL ]
 
 query T nosort
 PLAN
@@ -37,10 +37,10 @@ AND   t1.b >= t2.a
 ----
 project (
 | join (
-| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ],
-| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ]
-| ) [ ("t1"."a") <= ("t2"."a") <= ("t1"."b") ]
-) [ "t2"."a" ]
+| | table("sys"."t4311") [ "t4311"."a" NOT NULL as "t2"."a" ],
+| | table("sys"."t4311") [ "t4311"."a" NOT NULL as "t1"."a", "t4311"."b" NOT NULL as "t1"."b" ]
+| ) [ ("t1"."a" NOT NULL) <= ("t2"."a" NOT NULL) <= ("t1"."b" NOT NULL) ]
+) [ "t2"."a" NOT NULL ]
 
 statement ok
 drop table t4311
