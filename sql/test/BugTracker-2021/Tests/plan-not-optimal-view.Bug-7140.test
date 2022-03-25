@@ -4,8 +4,14 @@ START TRANSACTION
 statement ok
 create table "plantest0" ("id" bigint)
 
+statement ok rowcount 1
+insert into plantest0 values (150000000)
+
 statement ok
 create table "plantest1" ("id" bigint)
+
+statement ok rowcount 1
+insert into plantest1 values (150000000)
 
 statement ok
 create procedure plantestp()
@@ -58,19 +64,19 @@ project (
 | | | | | | select (
 | | | | | | | table("sys"."plantest0") [ "plantest0"."id" ]
 | | | | | | ) [ ("plantest0"."id") >= (bigint(64) "150000000") ]
-| | | | | ) [ "sys"."sql_div"("plantest0"."id", int(24) "10000000") as "t"."id_r" ]
-| | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ],
+| | | | | ) [ "sys"."sql_div"("plantest0"."id" NOT NULL, int(24) "10000000") NOT NULL as "t"."id_r" ]
+| | | | ) [ "t"."id_r" ] [ "t"."id_r" NOT NULL, "sys"."count" no nil ("t"."id_r" NOT NULL) NOT NULL as "%6"."%6" ],
 | | | | group by (
 | | | | | project (
 | | | | | | select (
 | | | | | | | table("sys"."plantest1") [ "plantest1"."id" ]
 | | | | | | ) [ ("plantest1"."id") >= (bigint(64) "150000000") ]
-| | | | | ) [ "sys"."sql_div"("plantest1"."id", int(24) "10000000") as "t"."id_r" ]
-| | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ]
-| | | ) [ "t"."id_r", "%6"."%6" ]
-| | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."sum" no nil ("%6"."%6") as "%6"."%6" ]
-| ) [ "sys"."sql_mul"("t"."id_r", int(24) "10000000") as "id_range_base", "%6"."%6" NOT NULL as "nrows", "t"."id_r" ]
-) [ "id_range_base", "nrows" NOT NULL ] [ "t"."id_r" ASC ]
+| | | | | ) [ "sys"."sql_div"("plantest1"."id" NOT NULL, int(24) "10000000") NOT NULL as "t"."id_r" ]
+| | | | ) [ "t"."id_r" ] [ "t"."id_r" NOT NULL, "sys"."count" no nil ("t"."id_r" NOT NULL) NOT NULL as "%6"."%6" ]
+| | | ) [ "t"."id_r" NOT NULL, "%6"."%6" NOT NULL ]
+| | ) [ "t"."id_r" ] [ "t"."id_r" NOT NULL, "sys"."sum" no nil ("%6"."%6" NOT NULL) NOT NULL as "%6"."%6" ]
+| ) [ "sys"."sql_mul"("t"."id_r" NOT NULL UNIQUE, int(24) "10000000") NOT NULL as "id_range_base", "%6"."%6" NOT NULL as "nrows", "t"."id_r" NOT NULL UNIQUE ]
+) [ "id_range_base" NOT NULL, "nrows" NOT NULL ] [ "t"."id_r" ASC NOT NULL UNIQUE ]
 
 query II rowsort
 select
@@ -89,6 +95,8 @@ id_r
 order by
 id_r asc
 ----
+150000000
+2
 
 query T nosort
 plan select
@@ -117,22 +125,22 @@ project (
 | | | | | | | select (
 | | | | | | | | table("sys"."plantest0") [ "plantest0"."id" ]
 | | | | | | | ) [ ("plantest0"."id") >= (bigint(64) "150000000") ]
-| | | | | | ) [ "sys"."sql_div"("plantest0"."id", int(24) "10000000") as "v"."id_div" ]
-| | | | | ) [ "v"."id_div" as "t"."id_r" ]
-| | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ],
+| | | | | | ) [ "sys"."sql_div"("plantest0"."id" NOT NULL, int(24) "10000000") NOT NULL as "v"."id_div" ]
+| | | | | ) [ "v"."id_div" NOT NULL as "t"."id_r" ]
+| | | | ) [ "t"."id_r" ] [ "t"."id_r" NOT NULL, "sys"."count" no nil ("t"."id_r" NOT NULL) NOT NULL as "%6"."%6" ],
 | | | | group by (
 | | | | | project (
 | | | | | | project (
 | | | | | | | select (
 | | | | | | | | table("sys"."plantest1") [ "plantest1"."id" ]
 | | | | | | | ) [ ("plantest1"."id") >= (bigint(64) "150000000") ]
-| | | | | | ) [ "sys"."sql_div"("plantest1"."id", int(24) "10000000") as "v"."id_div" ]
-| | | | | ) [ "v"."id_div" as "t"."id_r" ]
-| | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ]
-| | | ) [ "t"."id_r", "%6"."%6" ]
-| | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."sum" no nil ("%6"."%6") as "%6"."%6" ]
-| ) [ "sys"."sql_mul"("t"."id_r", int(24) "10000000") as "id_range_base", "%6"."%6" NOT NULL as "nrows", "t"."id_r" ]
-) [ "id_range_base", "nrows" NOT NULL ] [ "t"."id_r" ASC ]
+| | | | | | ) [ "sys"."sql_div"("plantest1"."id" NOT NULL, int(24) "10000000") NOT NULL as "v"."id_div" ]
+| | | | | ) [ "v"."id_div" NOT NULL as "t"."id_r" ]
+| | | | ) [ "t"."id_r" ] [ "t"."id_r" NOT NULL, "sys"."count" no nil ("t"."id_r" NOT NULL) NOT NULL as "%6"."%6" ]
+| | | ) [ "t"."id_r" NOT NULL, "%6"."%6" NOT NULL ]
+| | ) [ "t"."id_r" ] [ "t"."id_r" NOT NULL, "sys"."sum" no nil ("%6"."%6" NOT NULL) NOT NULL as "%6"."%6" ]
+| ) [ "sys"."sql_mul"("t"."id_r" NOT NULL UNIQUE, int(24) "10000000") NOT NULL as "id_range_base", "%6"."%6" NOT NULL as "nrows", "t"."id_r" NOT NULL UNIQUE ]
+) [ "id_range_base" NOT NULL, "nrows" NOT NULL ] [ "t"."id_r" ASC NOT NULL UNIQUE ]
 
 query II rowsort
 select
@@ -151,6 +159,8 @@ id_r
 order by
 id_r asc
 ----
+150000000
+2
 
 statement ok
 ROLLBACK
