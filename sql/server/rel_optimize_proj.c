@@ -2122,7 +2122,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 		for (node *n = l->exps->h; n && !needed; n = n->next) {
 			sql_exp *exp = (sql_exp*) n->data;
 
-			if (exp_is_atom(exp))
+			if (exp_is_atom(exp) && exp->type != e_aggr)
 				needed = 1;
 		}
 		if (needed) {

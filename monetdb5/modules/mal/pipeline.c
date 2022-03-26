@@ -113,10 +113,12 @@ BATnegateprops(BAT *b)
 	/* disable all properties here */
 	b->tnonil = false;
 	b->tnil = false;
-	b->tsorted = false;
-	b->trevsorted = false;
-	b->tnosorted = 0;
-	b->tnorevsorted = 0;
+	if (b->ttype) {
+		b->tsorted = false;
+		b->trevsorted = false;
+		b->tnosorted = 0;
+		b->tnorevsorted = 0;
+	}
 	b->tseqbase = oid_nil;
 	b->tkey = false;
 	b->tnokey[0] = 0;
@@ -283,7 +285,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int type = getArgType(mb, pci, 2);
 	str err = NULL;
 
-	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
+	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
 			return createException(SQL, "aggr.min",	"Wrong input type (%d)", type);
@@ -301,6 +303,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(int,min);
 		aggr(sht,min);
 		aggr(bte,min);
+		aggr(bit,min);
 		aggr(flt,min);
 		aggr(dbl,min);
 		vaggr(str,vmin);
@@ -330,7 +333,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int type = getArgType(mb, pci, 2);
 	str err = NULL;
 
-	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
+	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
 			return createException(SQL, "aggr.max",	"Wrong input type (%d)", type);
@@ -348,6 +351,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(int,max);
 		aggr(sht,max);
 		aggr(bte,max);
+		aggr(bit,max);
 		aggr(flt,max);
 		aggr(dbl,max);
 		vaggr(str,vmax);
@@ -484,6 +488,7 @@ _ht_create( int type, int size, hash_table *p)
         hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
         int bits = log_base2(size-1);
 
+		assert(type);
 		h->s.destroy = (sink_destroy)&ht_destroy;
 		h->s.type = HASH_SINK;
         if (bits >= GIDBITS)
@@ -520,6 +525,7 @@ ht_create(int type, int size, hash_table *p)
 #define _hash_int(X)  ((((unsigned int)X)>>7)^(((unsigned int)X)>>13)^(((unsigned int)X)>>21)^((unsigned int)X))
 #define _hash_date(X) _hash_int(X)
 #define _hash_lng(X)  ((((ulng)X)>>7)^(((ulng)X)>>13)^(((ulng)X)>>21)^(((ulng)X)>>31)^(((ulng)X)>>38)^(((ulng)X)>>46)^(((ulng)X)>>56)^((ulng)X))
+#define _hash_oid(X)  _hash_lng(X)
 #define _hash_daytime(X) _hash_lng(X)
 #define _hash_timestamp(X) _hash_lng(X)
 #define _hash_uuid(X) _hash_hge(X)
@@ -980,6 +986,43 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		} \
 	}
 
+#define vgroup() \
+	if (tt == TYPE_void) { \
+		assert(BATtdense(b)); \
+		int slots = 0; \
+		gid slot = 0; \
+		oid bpi = b->tseqbase; \
+		oid *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++, bpi++) { \
+			bool fnd = 0; \
+			gid k = (gid)_hash_oid(bpi)&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && vals[g] != bpi;) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bpi; \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+	}
+
 #define fgroup(Type, BaseType) \
 	if (tt == TYPE_##Type) { \
 		int slots = 0; \
@@ -1106,8 +1149,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	if (!b)
 		return createException(SQL, "group.group",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
-		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
-		u->T.sink = (Sink*)ht_create(b->ttype, 1, NULL);
+		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
+		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
 	} else {
 		u = BATdescriptor(*uid);
 	}
@@ -1150,12 +1193,14 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		oid *gp = Tloc(g, 0);
 
 		if (cnt && !err) {
+			vgroup()
 			group(bit)
 			group(bte)
 			group(sht)
 			group(int)
 			group(date)
 			group(lng)
+			group(oid)
 			group(daytime)
 			group(timestamp)
 			group(hge)
@@ -1214,6 +1259,43 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					slots--; \
 					g = ++slot; \
 					vals[g] = bp[i]; \
+					pgids[g] = gi[i]; \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+	}
+
+#define vderive() \
+	if (tt == TYPE_void) { \
+		int slots = 0; \
+		gid slot = 0; \
+		oid bpi = b->tseqbase; \
+		oid *vals = h->vals; \
+		\
+		for(BUN i = 0; i<cnt; i++) { \
+			bool fnd = 0; \
+			gid k = (gid)combine(gi[i], _hash_oid(bpi))&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && (pgids[g] != gi[i] || vals[g] != bpi);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bpi; \
 					pgids[g] = gi[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
@@ -1363,9 +1445,9 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			BBPunfix(*Gid);
 			return createException(SQL, "group.group",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		u = COLnew(b->hseqbase, b->ttype, 0, TRANSIENT);
+		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		/* Lookup parent hash */
-		u->T.sink = (Sink*)ht_create(b->ttype, 1, (hash_table*)H->T.sink);
+		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->T.sink);
 		BBPunfix(*Ph);
 	} else {
 		u = BATdescriptor(*uid);
@@ -1411,12 +1493,14 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		gid *pgids = h->pgids;
 
 		if (cnt && !err) {
+			vderive()
 			derive(bit)
 			derive(bte)
 			derive(sht)
 			derive(int)
 			derive(date)
 			derive(lng)
+			derive(oid)
 			derive(daytime)
 			derive(timestamp)
 			derive(hge)
@@ -1455,6 +1539,15 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		Type *o = Tloc(r, 0); \
 		for(BUN i = 0; i<cnt; i++) { \
 			o[gp[i]] = v[i]; \
+		} \
+	}
+
+#define vproject() \
+	if (tt == TYPE_void) { \
+		oid vi = b->tseqbase; \
+		oid *o = Tloc(r, 0); \
+		for(BUN i = 0; i<cnt; i++, vi++) { \
+			o[gp[i]] = vi; \
 		} \
 	}
 
@@ -1509,12 +1602,15 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
+	int tt = b->ttype;
 	oid max = BATcount(g)?g->T.maxval:0;
 	/* probably need bat resize and create hash */
 	if (*rid && !is_bat_nil(*rid))
 		r = BATdescriptor(*rid);
 	bool private = (!r || r->T.private_bat), local_storage = false;
 
+	if (!tt)
+		tt = TYPE_oid;
 	/* probably want to use a per 'r' lock, but the r->theaplock is blocking this on BATextend and BATsetcount */
 	if (!private)
 		pipeline_lock2(r);
@@ -1533,12 +1629,12 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			BATswap_heaps(r, b, p);
 		}
 	} else if (!r || BATcount(b)) {
-		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
-			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
+		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
 			BATswap_heaps(r, b, p);
 		} else {
 			local_storage = true;
-			r = COLnew(0, b->ttype, max, TRANSIENT);
+			r = COLnew(0, tt, max, TRANSIENT);
 
 			if (ATOMvarsized(r->ttype) &&
 				BATcount(r) == 0 &&
@@ -1572,10 +1668,12 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 
 		cnt = BATcount(b);
 
-		int err = 0, tt = b->ttype;
+		int err = 0;
 		oid *gp = Tloc(g, 0);
 
+		tt = b->ttype;
 		if (!err && cnt) {
+			vproject()
 			project(bte)
 			project(sht)
 			project(int)
