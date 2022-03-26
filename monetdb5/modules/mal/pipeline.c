@@ -2098,6 +2098,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		if (!err) {
 			oid *grp = Tloc(g, 0);
 
+			gfunc(bit,min);
 			gfunc(bte,min);
 			gfunc(sht,min);
 			gfunc(int,min);
@@ -2206,6 +2207,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		if (!err) {
 			oid *grp = Tloc(g, 0);
 
+			gfunc(bit,max);
 			gfunc(bte,max);
 			gfunc(sht,max);
 			gfunc(int,max);
