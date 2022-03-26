@@ -288,16 +288,10 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
 				rel->spb = 1;
-			/*
-			sql_rel *l = rel->l;
-			if ((res == SPB || !res) && (is_set(l->op)))
-				l->spb = 1;
-				*/
-			if (!res)
-				return 0;
 			if (pb) {
 				rel->partition = 1;
-				res = SPB;
+				if (res)
+					res = SPB;
 			} else
 				res = EPB;
 		}

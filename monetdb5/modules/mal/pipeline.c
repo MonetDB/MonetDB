@@ -1678,7 +1678,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	if (tt == TYPE_##Type) { \
 			Type *in = Tloc(b, 0); \
 			for(BUN i = 0; i<cnt; i++) \
-				o[v[i]]+= (in[i] != Type##_nil); \
+				o[v[i]]+= (!is_##Type##_nil(in[i])); \
 	}
 
 #define gfcount(Type) \
