@@ -1800,12 +1800,16 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	return MAL_SUCCEED;
 }
 
+/* TODO do we need to split out the nil check, ie for when we know there are no nils */
 #define gsum(OutType, InType) \
 	if (tt == TYPE_##InType && ot == TYPE_##OutType) { \
 			InType *in = Tloc(b, 0); \
 			OutType *o = Tloc(r, 0); \
 			for(BUN i = 0; i<cnt; i++) \
-				o[grp[i]] += in[i]; \
+				if (is_##InType##_nil(in[i])) \
+					o[grp[i]] = OutType##_nil; \
+				else if (!is_##OutType##_nil(o[grp[i]])) \
+					o[grp[i]] += in[i]; \
 	}
 
 static str
