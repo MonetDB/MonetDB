@@ -571,25 +571,19 @@ main(int argc, char *argv[])
 	}
 
 /* use after the logger thread has started */
-#define MERO_EXIT(status)												\
-	do {																\
-		if (!merodontfork) {											\
-			char s = (char) status;										\
-			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {		\
+#define MERO_EXIT(status)											\
+	do {															\
+		if (!merodontfork) {										\
+			char s = (char) status;									\
+			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {	\
 				Mlevelfprintf(ERROR, stderr, "could not write to parent\n");	\
-			}															\
-			if (status != 0) {											\
-				Mlevelfprintf(ERROR, stderr, "fatal startup condition encountered, " \
-						 "aborting startup\n");							\
-				goto shutdown;											\
-			}															\
-		} else {														\
-			if (status != 0) {											\
-				Mlevelfprintf(ERROR, stderr, "fatal startup condition encountered, " \
-						 "aborting startup\n");							\
-				goto shutdown;											\
-			}															\
-		}																\
+			}														\
+		}															\
+		if (status != 0) {											\
+			Mlevelfprintf(ERROR, stderr, "fatal startup condition encountered, " \
+					 "aborting startup\n");							\
+			goto shutdown;											\
+		}															\
 	} while (0)
 
 /* use before logger thread has started */

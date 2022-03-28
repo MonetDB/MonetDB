@@ -1023,7 +1023,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	ALIGNapp(b, force, GDK_FAIL);
-	b->batDirtydesc = true;
 
 	if (b->ttype == TYPE_void && BATtdense(b)) {
 		const oid *ovals = values;
@@ -1068,7 +1067,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tunique_est = 0;
 		MT_lock_unset(&b->theaplock);
 	}
-	b->theap->dirty = true;
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	if (b->ttype == TYPE_oid) {
 		/* spend extra effort on oid (possible candidate list) */
@@ -2283,7 +2281,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		b = bn;
 	}
 	MT_lock_set(&b->theaplock);
-	bakmode = (restrict_t) b->batRestricted;
+	bakmode = b->batRestricted;
 	bakdirty = b->batDirtydesc;
 	if (bakmode != newmode) {
 		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
@@ -2337,9 +2335,8 @@ BATsetaccess(BAT *b, restrict_t newmode)
 restrict_t
 BATgetaccess(BAT *b)
 {
-	BATcheck(b, BAT_WRITE /* 0 */);
-	assert(b->batRestricted != 3); /* only valid restrict_t values */
-	return (restrict_t) b->batRestricted;
+	BATcheck(b, BAT_WRITE);
+	return b->batRestricted;
 }
 
 /*

@@ -96,15 +96,35 @@ VIEWcreate(oid seq, BAT *b)
 		return NULL;
 	assert(bn->theap == NULL);
 
-	/* the T column descriptor is fully copied. We need copies
-	 * because in case of a mark, we are going to override a
-	 * column with a void. Take care to zero the accelerator data,
-	 * though. */
 	MT_lock_set(&b->theaplock);
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
-	bn->T = b->T;
+	bn->batRestricted = BAT_READ;
+
+	/* the T column descriptor is fully copied except for the
+	 * accelerator data. We need copies because in case of a mark,
+	 * we are going to override a column with a void. */
+	bn->tkey = b->tkey;
+	bn->tvarsized = b->tvarsized;
+	bn->tseqbase = b->tseqbase;
+	bn->tsorted = b->tsorted;
+	bn->trevsorted = b->trevsorted;
+	bn->twidth = b->twidth;
+	bn->tshift = b->tshift;
+	bn->tnonil = b->tnonil;
+	bn->tnil = b->tnil;
+	bn->tnokey[0] = b->tnokey[0];
+	bn->tnokey[1] = b->tnokey[1];
+	bn->tnosorted = b->tnosorted;
+	bn->tnorevsorted = b->tnorevsorted;
+	bn->tminpos = b->tminpos;
+	bn->tmaxpos = b->tmaxpos;
+	bn->tunique_est = b->tunique_est;
+	bn->theap = b->theap;
+	bn->tbaseoff = b->tbaseoff;
+	bn->tvheap = b->tvheap;
+
 	tp = VIEWtparent(b);
 	if (tp == 0 && b->ttype != TYPE_void)
 		tp = b->batCacheid;
@@ -121,18 +141,6 @@ VIEWcreate(oid seq, BAT *b)
 		BBPshare(bn->tvheap->parentid);
 	}
 
-	bn->tprops = NULL;
-
-	/* correct values after copy of column info */
-	BATinit_idents(bn);
-	bn->batRestricted = BAT_READ;
-	bn->thash = NULL;
-	/* imprints are shared, but the check is dynamic */
-	bn->timprints = NULL;
-	/* Order OID index */
-	bn->torderidx = NULL;
-	/* Only the parent should have a pointer to the strimp */
-	bn->tstrimps = NULL;
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp) {
 			BBPunshare(tp);
