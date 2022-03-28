@@ -4019,7 +4019,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				int tt = t->type->localtype;
 				//InstrPtr q = newStmt(be->mb, batRef, newRef);
 				InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-				int estimate = exp_getcard(be->mvc, rel, e);
+				int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, e);
 				if (estimate<0) {
 					assert(0);
 					estimate = 85000000;
