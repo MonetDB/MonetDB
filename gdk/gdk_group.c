@@ -1292,7 +1292,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		en->tnonil = true;
 		en->tnil = false;
 		if (!*extents)
-			*extents = virtualize(en);
+			*extents = en;
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
