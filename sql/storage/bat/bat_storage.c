@@ -272,6 +272,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	}
 
 	/* disable all properties here */
+	MT_lock_set(&b->theaplock);
 	b->tsorted = false;
 	b->trevsorted = false;
 	b->tnosorted = 0;
@@ -280,6 +281,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
+	MT_lock_unset(&b->theaplock);
 
 	uint32_t *restrict dst;
 	BUN cnt = BATcount(b);

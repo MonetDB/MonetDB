@@ -2098,8 +2098,8 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
 		MT_lock_init(&store->column_locks[i], "sqlstore_column");
 
-	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
+	MT_lock_set(&store->lock);
 
 	/* initialize empty bats */
 	switch (store_tpe) {
@@ -2175,8 +2175,8 @@ store_exit(sqlstore *store)
 {
 	sql_allocator *sa = store->sa;
 	MT_lock_set(&store->commit);
-	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
+	MT_lock_set(&store->lock);
 
 	TRC_DEBUG(SQL_STORE, "Store locked\n");
 
@@ -2353,9 +2353,13 @@ store_manager(sqlstore *store)
 		MT_lock_unset(&store->flush);
 		MT_sleep_ms(sleeptime);
 		flusher.countdown_ms -= sleeptime;
+		MT_lock_set(&store->commit);
 		MT_lock_set(&store->flush);
-		if (store->logger_api.changes(store) <= 0)
+		if (store->logger_api.changes(store) <= 0) {
+			MT_lock_unset(&store->commit);
 			continue;
+		}
+		MT_lock_unset(&store->commit);
 		if (GDKexiting())
 			break;
 

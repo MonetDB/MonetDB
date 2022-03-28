@@ -960,10 +960,12 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	h->heaplink.parentid = b->batCacheid;
 	/* if the number of unique values is equal to the bat count,
 	 * all values are necessarily distinct */
+	MT_lock_set(&b->theaplock);
 	if (h->nunique == BATcount(b) && !b->tkey) {
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
+	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG_IF(ACCELERATOR) {
 		TRC_DEBUG_ENDIF(ACCELERATOR,
 				"hash construction " LLFMT " usec\n", GDKusec() - t0);
