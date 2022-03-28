@@ -4095,20 +4095,37 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
 
+    stmt *nonil_rows = NULL;
 	for (node *m = k->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
 		/* foreach column add predicate */
 		stmt_add_column_predicate(be, c->c);
+	    
+        // foreach column aggregate the nonil (literally 'null') values.
+        // mind that null values are valid fkeys with undefined value so
+        // we won't have an entry for them in the idx_inserts col
+		s = list_fetch(inserts, c->c->colnr);
+		nonil_rows = stmt_selectnonil(be, s, nonil_rows);
 	}
 
-	if (pin && list_length(pin->op4.lval))
+	if (!s && pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
+    
+    // we want to make sure that the data column(s) has the same number
+    // of (nonil) rows as the index column. if that is **not** the case
+    // then we are obviously dealing with an invalid foreign key 
 	if (s->key && s->nrcols == 0) {
-		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 1), NULL, ne);
+		s = stmt_binop(be, 
+		        stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1), 
+		        stmt_aggr(be, const_column(be, nonil_rows), NULL, NULL, cnt, 1, 1, 1), 
+		        NULL, ne);
 	} else {
-		/* releqjoin.count <> inserts[col1].count */
-		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, column(be, s), NULL, NULL, cnt, 1, 0, 1), NULL, ne);
+		/* relThetaJoin.notNull.count <> inserts[notNull(col1) && ... && notNull(colN)].count */
+		s = stmt_binop(be, 
+		        stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1), 
+		        stmt_aggr(be, column(be, nonil_rows), NULL, NULL, cnt, 1, 1, 1), 
+		        NULL, ne);
 	}
 
 	/* s should be empty */
