@@ -31,6 +31,7 @@ static struct worker {
 	Queue *q;				/* pipeline tasks to execute */
 	int self;
 } workers[THREADS];
+static int pipelines_initialized = 0;
 
 static ATOMIC_TYPE exiting = ATOMIC_VAR_INIT(0);
 static MT_Lock pipelineLock = MT_LOCK_INITIALIZER(pipelineLock);
@@ -218,7 +219,7 @@ PIPELINESinitialize(void)
 
 	MT_lock_set(&mal_contextLock);
 	MT_lock_set(&pipelineLock);
-	if (workers[0].id) {
+	if (pipelines_initialized) {
 		/* somebody else beat us to it */
 		MT_lock_unset(&pipelineLock);
 		MT_lock_unset(&mal_contextLock);
@@ -246,6 +247,8 @@ PIPELINESinitialize(void)
 			created++;
 		}
 	}
+	if (created)
+		pipelines_initialized = 1;
 	MT_lock_unset(&pipelineLock);
 	MT_lock_unset(&mal_contextLock);
 	if (created == 0) /* no threads created */
@@ -256,13 +259,17 @@ PIPELINESinitialize(void)
 str
 runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, MalStkPtr stk)
 {
-	if (workers[1].self != 1)
+	if (!pipelines_initialized)
 		PIPELINESinitialize();
 	Pipelines *s = GDKmalloc(sizeof(Pipelines));
-	if (!s)
+	MalBlkPtr nmb = copyMalBlk(mb);
+	if (!s || !nmb) {
+		if (s)
+			GDKfree(s);
 		throw(MAL, "pipelines", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	s->mb = nmb;
 	s->cntxt = cntxt;
-	s->mb = mb;
 	s->start = startpc;
 	s->stop = stoppc;
 	s->stk = stk;
@@ -272,11 +279,12 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	ATOMIC_SET(&s->workers, -1);
 	s->error = NULL;
 
+	s->mb = nmb;
 	/* fix endless call of runMALpipelines but use as loop for parts */
-	mb->stmt[startpc]->fcn = NULL;
-	mb->stmt[startpc]->token = ASSIGNsymbol;
-	getModuleId(mb->stmt[startpc]) = NULL;
-	getFunctionId(mb->stmt[startpc]) = NULL;
+	nmb->stmt[startpc]->fcn = NULL;
+	nmb->stmt[startpc]->token = ASSIGNsymbol;
+	getModuleId(nmb->stmt[startpc]) = NULL;
+	getFunctionId(nmb->stmt[startpc]) = NULL;
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "PIPELINE%d", cntxt->idx);
@@ -286,13 +294,14 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	for (int i = 0; i < s->nr_workers; i++)
 		q_enqueue(workers[i].q, s);
 
-	//stk->stk[mb->stmt[startpc]->argv[0]].val.btval = FALSE; /* end barrier */
+	//stk->stk[nmb->stmt[startpc]->argv[0]].val.btval = FALSE; /* end barrier */
 	/* wait for result */
 	for (int i = 0; i < s->nr_workers; i++)
 		MT_sema_down(&s->s);
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
 	str err = s->error;
+	freeMalBlk(s->mb);
 	GDKfree(s);
 	return err;
 }

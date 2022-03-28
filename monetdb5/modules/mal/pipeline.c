@@ -136,6 +136,7 @@ static void
 BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 {
 	MT_lock_set(&b->theaplock);
+	MT_lock_set(&u->theaplock);
 	if (p)
 		pipeline_lock(p);
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
@@ -147,6 +148,7 @@ BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 	}
 	if (p)
 		pipeline_unlock(p);
+	MT_lock_unset(&u->theaplock);
 	MT_lock_unset(&b->theaplock);
 }
 
