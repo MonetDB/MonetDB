@@ -19,10 +19,12 @@ static void
 BATnegateprops(BAT *b)
 {
 	/* disable all properties here */
-	b->tsorted = false;
-	b->trevsorted = false;
-	b->tnosorted = 0;
-	b->tnorevsorted = 0;
+	if (b->ttype) {
+		b->tsorted = false;
+		b->trevsorted = false;
+		b->tnosorted = 0;
+		b->tnorevsorted = 0;
+	}
 	b->tseqbase = oid_nil;
 	b->tkey = false;
 	b->tnokey[0] = 0;

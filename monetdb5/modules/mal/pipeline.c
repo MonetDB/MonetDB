@@ -1702,7 +1702,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 
 	/* get max id from gid */
 	if (!err) {
-		if (cnt < max && ATOMvarsized(r->ttype))
+		if (cnt < max)
 			memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
 
 		cnt = BATcount(b);
