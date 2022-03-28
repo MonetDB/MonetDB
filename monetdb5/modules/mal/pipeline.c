@@ -488,7 +488,8 @@ _ht_create( int type, int size, hash_table *p)
         hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
         int bits = log_base2(size-1);
 
-		assert(type);
+		if (!type)
+			type = TYPE_oid;
 		h->s.destroy = (sink_destroy)&ht_destroy;
 		h->s.type = HASH_SINK;
         if (bits >= GIDBITS)
@@ -988,15 +989,15 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 
 #define vgroup() \
 	if (tt == TYPE_void) { \
-		assert(BATtdense(b)); \
-		int slots = 0; \
-		gid slot = 0; \
-		oid bpi = b->tseqbase; \
-		oid *vals = h->vals; \
-		\
-		for(BUN i = 0; i<cnt; i++, bpi++) { \
+		if (!BATtdense(b)) { \
+			assert(cnt); \
+			int slots = 0; \
+			gid slot = 0; \
+			oid bpi = b->tseqbase; \
+			oid *vals = h->vals; \
+			\
 			bool fnd = 0; \
-			gid k = (gid)_hash_oid(bpi)&h->mask; \
+			gid k = (gid)_hash_oid(oid_nil)&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1019,7 +1020,43 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				fnd = 1; \
 			} \
-			gp[i] = g-1; \
+			for(BUN i = 0; i<cnt; i++, bpi++) { \
+				gp[i] = g-1; \
+			} \
+		} else { \
+			assert(BATtdense(b)); \
+			int slots = 0; \
+			gid slot = 0; \
+			oid bpi = b->tseqbase; \
+			oid *vals = h->vals; \
+			\
+			for(BUN i = 0; i<cnt; i++, bpi++) { \
+				bool fnd = 0; \
+				gid k = (gid)_hash_oid(bpi)&h->mask; \
+				gid g = 0; \
+				\
+				for(; !fnd; ) { \
+					g = ATOMIC_GET(h->gids+k); \
+					for(;g && vals[g] != bpi;) { \
+						k++; \
+						k &= h->mask; \
+						g = ATOMIC_GET(h->gids+k); \
+					} \
+					if (!g) { \
+						if (slots == 0) { \
+							slots = PRE_CLAIM; \
+							slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						} \
+						slots--; \
+						g = ++slot; \
+						vals[g] = bpi; \
+						if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+							continue; \
+					} \
+					fnd = 1; \
+				} \
+				gp[i] = g-1; \
+			} \
 		} \
 	}
 

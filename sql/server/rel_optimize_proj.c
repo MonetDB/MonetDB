@@ -2116,33 +2116,30 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
-	sql_rel *l = rel->l;
-	if ((rel->op == op_project || rel->op == op_select) && l && is_groupby(l->op) && list_length(l->exps) >= 1) {
+	if (rel && is_groupby(rel->op) && list_length(rel->exps) >= 1 && !rel_is_ref(rel)) {
 		int needed = 0;
-		for (node *n = l->exps->h; n; n = n->next) {
+		for (node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *exp = (sql_exp*) n->data;
 
 			if (exp_is_atom(exp) && exp->type != e_aggr)
 				needed++;
 		}
 		if (needed) {
-			sql_rel *nrel = rel;
-			if (list_empty(l->r) && list_length(l->exps) == needed) { /* all are const */
-				sql_rel *ll = l->l;
-				l->op = op_project;
+			if (list_empty(rel->r) && list_length(rel->exps) == needed) { /* all are const */
+				sql_rel *ll = rel->l;
+				rel->op = op_project;
 				/* TODO check if l->l == const, else change that */
 				if (ll && ll->l) {
 					rel_destroy(ll);
-					l->l = rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
+					rel->l = rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
 				}
 				return rel;
 			}
-			if (rel->op == op_select)
-				nrel = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
+			sql_rel *nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 			for (node *n = nrel->exps->h; n; n = n->next) {
 				sql_exp *exp = (sql_exp*) n->data;
 				if (exp->type == e_column) {
-					sql_exp *e = rel_find_exp(l, exp);
+					sql_exp *e = rel_find_exp(rel, exp);
 
 					if (e && exp_is_atom(e) && e->type == e_atom) {
 						sql_exp *ne = exp_copy(v->sql, e);
@@ -2153,13 +2150,14 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 				}
 			}
 			list *nl = sa_list(v->sql->sa);
-			for (node *n = l->exps->h; n; n = n->next) {
+			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *exp = (sql_exp*) n->data;
 
 				if (!exp_is_atom(exp) || exp->type != e_atom)
 					append(nl, exp);
 			}
-			l->exps = nl;
+			rel->exps = nl;
+			return nrel;
 		}
 	}
 	return rel;
@@ -2516,11 +2514,11 @@ static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
-	rel = rel_remove_const_aggr(v, rel);
 
 	if (!rel || !is_groupby(rel->op))
 		return rel;
 
+	rel = rel_remove_const_aggr(v, rel);
 	rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_groupby_order(v, rel);
@@ -3090,6 +3088,7 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *ne;
 
+			set_nodistinct(e);
 			ne = exp_ref(v->sql, e);
 			if (e->card > CARD_ATOM && !list_find_exp(gbe, ne)) /* no need to group by on constants, or the same column multiple times */
 				append(gbe, ne);

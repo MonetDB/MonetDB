@@ -3754,7 +3754,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		if (q == NULL)
 			return NULL;
 		if (complex_aggr) {
-			setVarType(mb, getArg(q, 0), (grp|| nrargs>1)?newBatType(restype):restype);
+			setVarType(mb, getArg(q, 0), (grp|| (be->pipeline && nrargs>1))?newBatType(restype):restype);
 			if (avg) { /* for avg also return rest and count */
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
