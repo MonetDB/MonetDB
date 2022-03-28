@@ -32,6 +32,7 @@ import struct
 import signal
 import fnmatch
 import glob
+import pymonetdb # check for pymonetdb early: it is essential for our work
 try:
     import winreg               # Python 3 on Windows
 except ImportError:
@@ -395,7 +396,7 @@ CONDITIONALS = {
     'HAVE_LIBSCIPY3'       : False,
     'HAVE_PERL'            : False,
     'HAVE_PHP'             : False,
-    'HAVE_PYMONETDB'       : False, # default PYTHON can import pymonetdb
+    'HAVE_PYMONETDB'       : True,  # default PYTHON can import pymonetdb
     'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
     'HAVE_RUBY'            : False,
     'HAVE_CPP'             : False,
@@ -1381,6 +1382,16 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     if pSrvr.port is None:
                         print('\nFailed to start server.\n')
                         break
+                    dbh = pymonetdb.connect(username='monetdb',
+                                            password='monetdb',
+                                            hostname='localhost',
+                                            port=pSrvr.port,
+                                            database=TSTDB,
+                                            autocommit=True)
+                    crs = dbh.cursor()
+                    crs.execute("call logging.setcomplevel('SQL_EXECUTION', 'INFO')")
+                    crs.close()
+                    dbh.close()
                     os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
                     SetExecEnv(env['exe'], pSrvr.port, verbosity > 1)
                 if global_timeout and start_time + global_timeout < time.time():
@@ -1414,28 +1425,38 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             if pSrvr is not None:
                 pSrvr.terminate()
                 pSrvr = None
-                for ext in ['out', 'err']:
-                    o = openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}.html'), 'w')
-                    o.write('<html>\n')
-                    o.write('<head><title>{} standard {}</title></head>\n'.format(TSTDIR, 'output' if ext == 'out' else 'error'))
-                    o.write('<body>\n')
-                    empty = True
-                    for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
-                        if empty:
-                            o.write('<pre>\n')
-                        empty = False
-                        span1 = span2 = ''
+                if produce_html:
+                    for ext in ['out', 'err']:
+                        o = openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}.html'), 'w')
+                        o.write('<html>\n')
+                        o.write('<head><title>{} standard {}</title></head>\n'.format(TSTDIR, 'output' if ext == 'out' else 'error'))
+                        o.write('<body>\n')
+                        empty = True
+                        for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
+                            if empty:
+                                o.write('<pre>\n')
+                            empty = False
+                            span1 = span2 = ''
+                            if line != '\n' and not line.startswith('#'):
+                                if ext == 'out':
+                                    ssout = F_ERROR
+                                else:
+                                    sserr = F_ERROR
+                                span1 = '<span style="background-color: rgb(100%,0%,0%);">'
+                                span2 = '</span>\n'
+                                line = line.rstrip('\n')
+                            o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
+                        o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
+                        o.close()
+                else:
+                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out')):
                         if line != '\n' and not line.startswith('#'):
-                            if ext == 'out':
-                                ssout = F_ERROR
-                            else:
-                                sserr = F_ERROR
-                            span1 = '<span style="background-color: rgb(100%,0%,0%);">'
-                            span2 = '</span>\n'
-                            line = line.rstrip('\n')
-                        o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
-                    o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
-                    o.close()
+                            ssout = F_ERROR
+                            break
+                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err')):
+                        if line != '\n' and not line.startswith('#'):
+                            sserr = F_ERROR
+                            break
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
@@ -1446,6 +1467,12 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             body = body_bad + body_good
             CreateHtmlIndex(env, ssout, sserr, *body)
             elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
+        if ssout == F_ERROR or sserr == F_ERROR:
+            if verbosity == 0:
+                print('\r', ' '*(ttywidth or 100), end='', sep='')
+                print('\r', end='', sep='')
+            prred('ERROR')
+            print(' in directory {}'.format(TSTDIR))
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -2034,9 +2061,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif EXT == ".test" and not CONDITIONALS['HAVE_PYMONETDB']:
-        reason = "as pymonetdb is not available."
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif SERVER in ["MAL", "SQL"] and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
@@ -2325,6 +2349,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                         prred('ERROR')
                 if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
                     print(':', os.path.join(TSTDIR, TST + EXT))
+                elif verbosity == 1:
+                    print()
         elif FailedOut > F_WARN or FailedErr > F_WARN:
             print()
             print('========================================')
@@ -3459,13 +3485,6 @@ def main(argv) :
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     os.environ['PYTHON'] = sys.executable
-    try:
-        import pymonetdb
-    except ImportError:
-        print('pymonetdb package not available')
-        CONDITIONALS['HAVE_PYMONETDB'] = False
-    else:
-        CONDITIONALS['HAVE_PYMONETDB'] = True
 
     try:
         import lz4

@@ -1719,9 +1719,11 @@ wkbDump(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
-		BBPkeepref(*idBAT_id = idBAT->batCacheid);
+		*idBAT_id = idBAT->batCacheid;
+		BBPkeepref(idBAT);
 
-		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+		*geomBAT_id = geomBAT->batCacheid;
+		BBPkeepref(geomBAT);
 
 		return MAL_SUCCEED;
 	}
@@ -1750,8 +1752,10 @@ wkbDump(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 		return err;
 	}
 
-	BBPkeepref(*idBAT_id = idBAT->batCacheid);
-	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+	*idBAT_id = idBAT->batCacheid;
+	BBPkeepref(idBAT);
+	*geomBAT_id = geomBAT->batCacheid;
+	BBPkeepref(geomBAT);
 	return MAL_SUCCEED;
 }
 
@@ -1952,9 +1956,11 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
-		BBPkeepref(*idBAT_id = idBAT->batCacheid);
+		*idBAT_id = idBAT->batCacheid;
+		BBPkeepref(idBAT);
 
-		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+		*geomBAT_id = geomBAT->batCacheid;
+		BBPkeepref(geomBAT);
 
 		return MAL_SUCCEED;
 	}
@@ -1985,8 +1991,10 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 		return err;
 	}
 
-	BBPkeepref(*idBAT_id = idBAT->batCacheid);
-	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+	*idBAT_id = idBAT->batCacheid;
+	BBPkeepref(idBAT);
+	*geomBAT_id = geomBAT->batCacheid;
+	BBPkeepref(geomBAT);
 	return MAL_SUCCEED;
 }
 
@@ -5802,7 +5810,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	bo->tkey = false;
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
-	BBPkeepref(*out = bo->batCacheid);
+	*out = bo->batCacheid;
+	BBPkeepref(bo);
 	return MAL_SUCCEED;
 }
 
@@ -5894,7 +5903,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	bo->tkey = false;
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
-	BBPkeepref(*out = bo->batCacheid);
+	*out = bo->batCacheid;
+	BBPkeepref(bo);
 	return MAL_SUCCEED;
 }
 

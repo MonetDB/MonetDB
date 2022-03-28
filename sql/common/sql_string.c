@@ -108,7 +108,7 @@ sql_strdup(char *s)
 }
 
 char *
-sql_escape_str(sql_allocator *sa, char *s)
+sql_escape_str(sql_allocator *sa, const char *s)
 {
 	size_t l = strlen(s);
 	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
@@ -166,4 +166,3 @@ char *sa_message( sql_allocator *sa, const char *format, ... )
 	va_end (ap);
 	return sa_strdup(sa, buf);
 }
-

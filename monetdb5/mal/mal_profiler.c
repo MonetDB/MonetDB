@@ -751,7 +751,8 @@ str
 stopProfiler(Client cntxt)
 {
 	MT_lock_set(&mal_profileLock);
-	malProfileMode = 0;
+	if (malProfileMode)
+		malProfileMode = 0;
 	setHeartbeat(0); // stop heartbeat
 	if(cntxt)
 		closeProfilerStream(cntxt);

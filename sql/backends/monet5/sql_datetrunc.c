@@ -176,7 +176,8 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	bn->tsorted = btsorted;
 	bn->trevsorted = btrevsorted;
 	bn->tkey = false;	/* can't be sure */
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return msg;
 }
 

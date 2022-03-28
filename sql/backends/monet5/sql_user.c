@@ -221,7 +221,7 @@ db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return err;
 	BBPunfix(uid->batCacheid);
 	*r = nme->batCacheid;
-	BBPkeepref(*r);
+	BBPkeepref(nme);
 	return MAL_SUCCEED;
 }
 
@@ -261,7 +261,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
-		BBPkeepref(bn->batCacheid);
+		BBPkeepref(bn);
 		*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 		return MAL_SUCCEED;
 	}

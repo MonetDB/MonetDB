@@ -31,7 +31,8 @@ finalize_output(bat *res, BAT *r, str msg)
 		r->tsorted = BATcount(r) <= 1;
 		r->trevsorted = BATcount(r) <= 1;
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 }
@@ -254,7 +255,8 @@ bailout:
 	unfix_inputs(2, b, p);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
@@ -359,7 +361,8 @@ bailout:
 	unfix_inputs(3, b, p, o);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
@@ -464,7 +467,8 @@ bailout:
 	unfix_inputs(3, b, p, o);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
@@ -598,7 +602,8 @@ bailout:
 	unfix_inputs(3, b, p, o);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
@@ -727,7 +732,8 @@ bailout:
 	unfix_inputs(3, b, p, o);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
