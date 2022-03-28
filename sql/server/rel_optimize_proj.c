@@ -2117,7 +2117,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 	if (!rel)
 		return rel;
 	sql_rel *l = rel->l;
-	if ((rel->op == op_project || rel->op == op_select) && l && is_groupby(l->op) && list_length(rel->exps) >= 1) {
+	if ((rel->op == op_project || rel->op == op_select) && l && is_groupby(l->op) && list_length(l->exps) >= 1) {
 		int needed = 0;
 		for (node *n = l->exps->h; n; n = n->next) {
 			sql_exp *exp = (sql_exp*) n->data;
