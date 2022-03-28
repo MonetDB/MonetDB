@@ -2119,14 +2119,24 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 	sql_rel *l = rel->l;
 	if ((rel->op == op_project || rel->op == op_select) && l && is_groupby(l->op) && list_length(rel->exps) >= 1) {
 		int needed = 0;
-		for (node *n = l->exps->h; n && !needed; n = n->next) {
+		for (node *n = l->exps->h; n; n = n->next) {
 			sql_exp *exp = (sql_exp*) n->data;
 
 			if (exp_is_atom(exp) && exp->type != e_aggr)
-				needed = 1;
+				needed++;
 		}
 		if (needed) {
 			sql_rel *nrel = rel;
+			if (list_empty(l->r) && list_length(l->exps) == needed) { /* all are const */
+				sql_rel *ll = l->l;
+				l->op = op_project;
+				/* TODO check if l->l == const, else change that */
+				if (ll && ll->l) {
+					rel_destroy(ll);
+					l->l = rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
+				}
+				return rel;
+			}
 			if (rel->op == op_select)
 				nrel = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
 			for (node *n = nrel->exps->h; n; n = n->next) {
