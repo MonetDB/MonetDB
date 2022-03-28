@@ -320,4 +320,3 @@ select count(a) as x, count(*) as y from dummyme
 
 statement ok
 ROLLBACK
-

@@ -150,6 +150,13 @@ to reload the properties file (if running).
 For an explanation of the properties, see the
 .I CONFIGURATION
 section below.
+.TP
+\fBhelp\fP [ \fIcommand\fP ]
+Shows general help, or short help for a given command.
+.TP
+.B version
+Shows the version and release information of
+.IR monetdbd .
 .SH CONFIGURATION
 .I Monetdbd
 reads its properties from the

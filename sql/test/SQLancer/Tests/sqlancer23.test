@@ -235,3 +235,6 @@ SELECT (SELECT min(min(x.x + y.y)) FROM (SELECT 1) x(x)) FROM (SELECT 1) y(y)
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
 SELECT (VALUES (prod(x.x - 1)), (x.x)) FROM (VALUES (1), (0.058128458)) x(x)
+
+statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
+SELECT (SELECT 1 WHERE count(*) = 1)

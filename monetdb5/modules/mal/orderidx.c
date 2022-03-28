@@ -223,6 +223,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	newstk->stk[arg].vtype= TYPE_bat;
 	newstk->stk[arg].val.bval= b->batCacheid;
 	BBPretain(newstk->stk[arg].val.bval);
+	smb->starttime = GDKusec();
 	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 	freeStack(newstk);
 	/* get rid of temporary MAL block */
@@ -304,7 +305,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tnil = false;
 	bn->tnonil = true;
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -326,7 +327,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 		throw(MAL, "algebra.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*ret = *bid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 

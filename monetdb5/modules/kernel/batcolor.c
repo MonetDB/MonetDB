@@ -64,7 +64,7 @@ static str CLRbat##NAME(bat *ret, const bat *l)							\
 	bat_iterator_end(&bi);												\
 	bn->theap->dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
-	BBPkeepref(*ret);													\
+	BBPkeepref(bn);														\
 	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\
 bunins_failed:															\
@@ -153,7 +153,7 @@ static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3
 	bat_iterator_end(&b3i);												\
 	bn->theap->dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
-	BBPkeepref(*ret);													\
+	BBPkeepref(bn);														\
 	BBPunfix(b->batCacheid);											\
 	BBPunfix(b2->batCacheid);											\
 	BBPunfix(b3->batCacheid);											\

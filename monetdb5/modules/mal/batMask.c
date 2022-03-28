@@ -49,7 +49,7 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN max = 0;
 		if (b->tsorted) {
 			fst = BUNtoid(b, 0);
-			dst = COLnew(fst, TYPE_msk, BUNtoid(b, BUNlast(b) - 1) + 1 - fst, TRANSIENT);
+			dst = COLnew(fst, TYPE_msk, BUNtoid(b, BATcount(b) - 1) + 1 - fst, TRANSIENT);
 		} else {
 			fst = 0;
 			dst = COLnew(0, TYPE_msk, BATcount(b), TRANSIENT);
@@ -89,7 +89,7 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mask.mask", GDK_EXCEPTION);
 
 	*ret=  dst->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(dst);
 	return MAL_SUCCEED;
 }
 
@@ -116,7 +116,7 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (dst == NULL)
 		throw(MAL, "mask.umask", GDK_EXCEPTION);
 	*ret=  dst->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(dst);
 	return MAL_SUCCEED;
 }
 

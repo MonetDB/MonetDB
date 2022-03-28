@@ -92,7 +92,8 @@ HEAPgrow(MT_Lock *lock, Heap **hp, size_t size, bool mayshare)
 	Heap *new;
 
 	MT_lock_set(lock);
-	if (ATOMIC_GET(&(*hp)->refs) == 1) {
+	ATOMIC_BASE_TYPE refs = ATOMIC_GET(&(*hp)->refs);
+	if ((refs & HEAPREFS) == 1) {
 		gdk_return rc = HEAPextend((*hp), size, mayshare);
 		MT_lock_unset(lock);
 		return rc;
@@ -103,13 +104,12 @@ HEAPgrow(MT_Lock *lock, Heap **hp, size_t size, bool mayshare)
 		*new = (Heap) {
 			.farmid = old->farmid,
 			.dirty = true,
-			.remove = old->remove,
 			.parentid = old->parentid,
 			.wasempty = old->wasempty,
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
 		if (HEAPalloc(new, size, 1, 1) == GDK_SUCCEED) {
-			ATOMIC_INIT(&new->refs, 1);
+			ATOMIC_INIT(&new->refs, 1 | (refs & HEAPREMOVE));
 			new->free = old->free;
 			new->cleanhash = old->cleanhash;
 			if (old->free > 0 &&
@@ -553,7 +553,6 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	*new = (Heap) {
 		.farmid = old->farmid,
 		.dirty = true,
-		.remove = old->remove,
 		.parentid = old->parentid,
 		.wasempty = old->wasempty,
 	};
@@ -564,7 +563,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	}
 	/* HEAPalloc initialized .free, so we need to set it after */
 	new->free = old->free << (shift - b->tshift);
-	ATOMIC_INIT(&new->refs, 1);
+	ATOMIC_INIT(&new->refs, 1 | (ATOMIC_GET(&old->refs) & HEAPREMOVE));
 	switch (width) {
 	case 1:
 		memcpy(new->base, old->base, n);
@@ -722,11 +721,13 @@ HEAPfree(Heap *h, bool rmheap)
 void
 HEAPdecref(Heap *h, bool remove)
 {
-	h->remove |= remove;
+	if (remove)
+		ATOMIC_OR(&h->refs, HEAPREMOVE);
+	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&h->refs);
 	//printf("dec ref(%d) %p %d\n", (int)h->refs, h, h->parentid);
-	if (ATOMIC_DEC(&h->refs) == 0) {
+	if ((refs & HEAPREFS) == 0) {
 		ATOMIC_DESTROY(&h->refs);
-		HEAPfree(h, h->remove);
+		HEAPfree(h, (bool) (refs & HEAPREMOVE));
 		GDKfree(h);
 	}
 }

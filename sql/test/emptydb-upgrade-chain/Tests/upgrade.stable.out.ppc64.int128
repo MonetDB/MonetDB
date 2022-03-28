@@ -3171,4 +3171,8 @@ RETURN sys.dump_statements;
 END;
 update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences') AND schema_id = 2000;
 update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = 5;
+CREATE function sys.url_extract_host(url string, no_www bool) RETURNS STRING
+EXTERNAL NAME url."extractURLHost";
+GRANT EXECUTE ON FUNCTION url_extract_host(string, bool) TO PUBLIC;
+update sys.functions set system = true where system <> true and name = 'url_extract_host' and schema_id = 2000 and type = 1;
 

@@ -567,10 +567,10 @@ typedef struct {
 
 	ATOMIC_TYPE refs;	/* reference count for this heap */
 	bte farmid;		/* id of farm where heap is located */
-	bool cleanhash:1,	/* string heaps must clean hash */
-		dirty:1,	/* specific heap dirty marker */
-		remove:1,	/* remove storage file when freeing */
-		wasempty:1;	/* heap was empty when last saved/created */
+	bool cleanhash;		/* string heaps must clean hash */
+	bool dirty;		/* specific heap dirty marker */
+	bool remove;		/* remove storage file when freeing */
+	bool wasempty;	    /* heap was empty when last saved/created */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
@@ -762,6 +762,18 @@ typedef struct {
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
 #define GDKLIBRARY		061046U /* first after Jan2022 */
 
+/* The batRestricted field indicates whether a BAT is readonly.
+ * we have modes: BAT_WRITE  = all permitted
+ *                BAT_APPEND = append-only
+ *                BAT_READ   = read-only
+ * VIEW bats are always mapped read-only.
+ */
+typedef enum {
+	BAT_WRITE,		  /* all kinds of access allowed */
+	BAT_READ,		  /* only read-access allowed */
+	BAT_APPEND,		  /* only reads and appends allowed */
+} restrict_t;
+
 typedef struct BAT {
 	/* static bat properties */
 	oid hseqbase;		/* head seq base */
@@ -769,13 +781,12 @@ typedef struct BAT {
 	bat batCacheid;		/* index into BBP */
 
 	/* dynamic bat properties */
+	restrict_t batRestricted; /* access privileges */
+	bool batTransient;	/* should the BAT persist on disk? */
 	bool
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
-	 batDirtydesc:1,	/* bat descriptor dirty marker */
-	 batTransient:1;	/* should the BAT persist on disk? */
-	uint8_t	/* adjacent bit fields are packed together (if they fit) */
-	 batRestricted:2;	/* access privileges */
+	 batDirtydesc:1;	/* bat descriptor dirty marker */
 	uint16_t /* adjacent bit fields are packed together (if they fit) */
 	 selcnt:10;		/* how often used in equi select without hash */
 	role_t batRole;		/* role of the bat */
@@ -925,10 +936,10 @@ gdk_export void HEAPincref(Heap *h);
  * The BAT iterator provides a number of fields that can (and often
  * should) be used to access information about the BAT.  For string
  * BATs, if a parallel threads adds values, the offset heap (theap) may
- * get replaced by a one that is wider.  This involves changing the
- * twidth and tshift values in the BAT structure.  These changed values
- * should not be used to access the data in the iterator.  Instead, use
- * the width and shift values in the iterator itself.
+ * get replaced by one that is wider.  This involves changing the twidth
+ * and tshift values in the BAT structure.  These changed values should
+ * not be used to access the data in the iterator.  Instead, use the
+ * width and shift values in the iterator itself.
  */
 typedef struct BATiter {
 	BAT *b;
@@ -1148,8 +1159,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
 
-#define Tsize(b)	((b)->twidth)
-
 #define tailsize(b,p)	((b)->ttype ?				\
 			 (ATOMstorage((b)->ttype) == TYPE_msk ?	\
 			  (((size_t) (p) + 31) / 32) * 4 :	\
@@ -1169,8 +1178,6 @@ typedef var_t stridx_t;
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
 #define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
-
-#define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
 #define BATcount(b)	((b)->batCount)
 
@@ -1236,18 +1243,6 @@ gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 
-/* The batRestricted field indicates whether a BAT is readonly.
- * we have modes: BAT_WRITE  = all permitted
- *                BAT_APPEND = append-only
- *                BAT_READ   = read-only
- * VIEW bats are always mapped read-only.
- */
-typedef enum {
-	BAT_WRITE,		  /* all kinds of access allowed */
-	BAT_READ,		  /* only read-access allowed */
-	BAT_APPEND,		  /* only reads and appends allowed */
-} restrict_t;
-
 gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
 	__attribute__((__warn_unused_result__));
 gdk_export restrict_t BATgetaccess(BAT *b);
@@ -1310,7 +1305,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 
 gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
-gdk_export void BATmsync(BAT *b);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
@@ -1901,20 +1895,7 @@ BBPcheck(bat x)
 	return 0;
 }
 
-static inline BAT *
-BATdescriptor(bat i)
-{
-	BAT *b = NULL;
-
-	if (BBPcheck(i)) {
-		if (BBPfix(i) <= 0)
-			return NULL;
-		b = BBP_cache(i);
-		if (b == NULL)
-			b = BBPdescriptor(i);
-	}
-	return b;
-}
+gdk_export BAT *BATdescriptor(bat i);
 
 static inline void *
 Tpos(BATiter *bi, BUN p)
@@ -2015,68 +1996,8 @@ BUNtoid(BAT *b, BUN p)
 
 /*
  * @+ Transaction Management
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab
- *  TMcommit ()
- * @item int
- * @tab
- *  TMabort ()
- * @item int
- * @tab
- *  TMsubcommit ()
- * @end multitable
- *
- * MonetDB by default offers a global transaction environment.  The
- * global transaction involves all activities on all persistent BATs
- * by all threads.  Each global transaction ends with either TMabort
- * or TMcommit, and immediately starts a new transaction.  TMcommit
- * implements atomic commit to disk on the collection of all
- * persistent BATs. For all persistent BATs, the global commit also
- * flushes the delta status for these BATs (see
- * BATcommit/BATabort). This allows to perform TMabort quickly in
- * memory (without re-reading all disk images from disk).  The
- * collection of which BATs is persistent is also part of the global
- * transaction state. All BATs that where persistent at the last
- * commit, but were made transient since then, are made persistent
- * again by TMabort.  In other words, BATs that are deleted, are only
- * physically deleted at TMcommit time. Until that time, rollback
- * (TMabort) is possible.
- *
- * Use of TMabort is currently NOT RECOMMENDED due to two bugs:
- *
- * @itemize
- * @item
- * TMabort after a failed %TMcommit@ does not bring us back to the
- * previous committed state; but to the state at the failed TMcommit.
- * @item
- * At runtime, TMabort does not undo BAT name changes, whereas a cold
- * MonetDB restart does.
- * @end itemize
- *
- * In effect, the problems with TMabort reduce the functionality of
- * the global transaction mechanism to consistent checkpointing at
- * each TMcommit. For many applications, consistent checkpointingis
- * enough.
- *
- * Extension modules exist that provide fine grained locking (lock
- * module) and Write Ahead Logging (sqlserver).  Applications that
- * need more fine-grained transactions, should build this on top of
- * these extension primitives.
- *
- * TMsubcommit is intended to quickly add or remove BATs from the
- * persistent set. In both cases, rollback is not necessary, such that
- * the commit protocol can be accelerated. It comes down to writing a
- * new BBP.dir.
- *
- * Its parameter is a BAT-of-BATs (in the tail); the persistence
- * status of that BAT is committed. We assume here that the calling
- * thread has exclusive access to these bats.  An error is reported if
- * you try to partially commit an already committed persistent BAT (it
- * needs the rollback mechanism).
  */
 gdk_export gdk_return TMcommit(void);
-gdk_export void TMabort(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
 
@@ -2108,13 +2029,7 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  * commit protocol, and changes may be lost after quitting or crashing
  * MonetDB.
  *
- * BATabort undo-s all changes since the previous state. The global
- * TMabort achieves a rollback to the previously committed state by
- * doing BATabort on all persistent bats.
- *
- * BUG: after a failed TMcommit, TMabort does not do anything because
- * TMcommit does the BATcommits @emph{before} attempting to sync to
- * disk instead of @sc{after} doing this.
+ * BATabort undo-s all changes since the previous state.
  */
 gdk_export void BATcommit(BAT *b, BUN size);
 gdk_export void BATfakeCommit(BAT *b);
@@ -2228,7 +2143,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * is the iteration variable.
  */
 #define BATloop(r, p, q)			\
-	for (q = BUNlast(r), p = 0; p < q; p++)
+	for (q = BATcount(r), p = 0; p < q; p++)
 
 /*
  * @+ Common BAT Operations
