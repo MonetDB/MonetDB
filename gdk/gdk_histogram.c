@@ -292,7 +292,7 @@ HISTOGRAMcreate(BAT *b)
 			BAT *sids, *sam;
 			Histogram *h;
 			bool perfect_histogram = false;
-			ValRecord min, max, diff, conv = {.vtype = VAR_TPE}, nbuckets, truth;
+			ValRecord min, max, diff = {.vtype = VAR_TPE}, conv = {.vtype = VAR_TPE}, nbuckets = {.vtype = VAR_TPE}, truth = {.vtype = TYPE_bit};
 
 			if (!(sids = BATsample_with_seed(b, SAMPLE_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid)))
 				goto fail;
@@ -355,6 +355,13 @@ fail:
 	MT_lock_unset(&b->batIdxLock);
 	bat_iterator_end(&bi);
 	return GDK_FAIL;
+}
+
+str
+HISTOGRAMprint(BAT *b)
+{
+	(void) b;
+	return GDKstrdup("I am doing this next");
 }
 
 void
