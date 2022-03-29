@@ -205,6 +205,7 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 		if (!(h->histogram = GDKmalloc(sizeof(HistogramBucket_##TPE) * h->nbuckets))) \
 			return NULL; \
 		gap = (j / NBUCKETS) - (i / NBUCKETS) + (TPE) ceil(abs((j % NBUCKETS) - (i % NBUCKETS)) / (dbl) NBUCKETS); \
+		/* TODO for temporal types, this is gibing values out of range such as 1994-02-00 */ \
 	\
 		hist = (HistogramBucket_##TPE *) h->histogram; \
 		for (BUN k = 0 ; k < NBUCKETS ; k++) { \
@@ -367,95 +368,95 @@ fail:
 	return GDK_FAIL;
 }
 
-#define histogram_print_loop(TPE, FMT) \
+#define histogram_print_loop(TPE) \
 	do { \
 		HistogramBucket_##TPE *restrict hist = (HistogramBucket_##TPE *) b->thistogram->histogram; \
 		for (int i = 0 ; i < nbuckets ; i++) { \
 			HistogramBucket_##TPE *restrict hb = &(hist[i]); \
-			if (len + 150 >= maxlen) { \
-				maxlen *= 2; \
-				str newbuf = GDKrealloc(res, maxlen); \
+			if (atomtostr(&minbuf, &minlen, &hb->min, true) < 0 || \
+				atomtostr(&maxbuf, &maxlen, &hb->max, true) < 0) { \
+				MT_lock_unset(&b->batIdxLock); \
+				GDKfree(res); \
+				GDKfree(minbuf); \
+				GDKfree(maxbuf); \
+				return NULL; \
+			} \
+			size_t next_len = strlen(minbuf) + strlen(maxbuf) + 10 + 8 + len; \
+			if (next_len >= rlen) { \
+				rlen = (rlen * 2) + ((next_len + 2047) & ~2047); \
+				str newbuf = GDKrealloc(res, rlen); \
 				if (!newbuf) { \
+					MT_lock_unset(&b->batIdxLock); \
 					GDKfree(res); \
+					GDKfree(minbuf); \
+					GDKfree(maxbuf); \
 					return NULL; \
 				} \
 				res = newbuf; \
 			} \
-			len += sprintf(res + len, "["FMT","FMT"%c -> %d\n", hb->min, hb->max, i == (nbuckets - 1) ? ']' : '[', hb->count); \
+			len += sprintf(res + len, "[%s,%s%c -> %d\n", minbuf, maxbuf, i == (nbuckets - 1) ? ']' : '[', hb->count); \
 		} \
 	} while (0)
-
-#ifdef HAVE_HGE
-#define HGE_LL018FMT "%018" PRId64
-#define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
-#define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
-static str
-histogram_print_loop_hge(BAT *b, int nbuckets, str res, int len, int maxlen)
-{
-	HistogramBucket_hge *restrict hist = (HistogramBucket_hge *) b->thistogram->histogram;
-	for (int i = 0 ; i < nbuckets ; i++) {
-		HistogramBucket_hge *restrict hb = &(hist[i]);
-		if (len + 256 >= maxlen) {
-			maxlen *= 2;
-			str newbuf = GDKrealloc(res, maxlen);
-			if (!newbuf) {
-				GDKfree(res);
-				return NULL;
-			} 
-			res = newbuf;
-		}
-		len += sprintf(res + len, "["HGE_LL018FMT","HGE_LL018FMT"%c -> %d\n",
-		(lng) HGE_ABS(hb->min % HGE_LL18DIGITS), (lng) HGE_ABS(hb->max % HGE_LL18DIGITS), i == (nbuckets - 1) ? ']' : '[', hb->count);
-	}
-	return res;
-}
-#endif
 
 str
 HISTOGRAMprint(BAT *b)
 {
-	size_t len = 0, maxlen = 4096;
-	str res = NULL;
-	int tpe, nbuckets;
-	
+	size_t len = 0, rlen = 2048, minlen = 256, maxlen = 256;
+	str res = NULL, minbuf = NULL, maxbuf = NULL;
+	int tpe = ATOMbasetype(b->ttype), nbuckets;
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[b->ttype].atomToStr;
+
 	if (VIEWtparent(b)) /* don't look on views */
 		b = BBP_cache(VIEWtparent(b));
 
+	MT_lock_set(&b->batIdxLock);
 	if (!b->thistogram) {
+		MT_lock_unset(&b->batIdxLock);
 		GDKerror("No histogram present\n");
 		return NULL;
 	}
 
-	if (!(res = GDKmalloc(maxlen)))
+	if (!(res = GDKmalloc(rlen)) || !(minbuf = GDKmalloc(minlen)) || !(maxbuf = GDKmalloc(maxlen))) {
+		MT_lock_unset(&b->batIdxLock);
+		GDKfree(res);
+		GDKfree(minbuf);
+		GDKfree(maxbuf);
 		return NULL;
+	}
 
 	len = sprintf(res, "Total entries: %d, buckets: %d\n", b->thistogram->size, b->thistogram->nbuckets);
 	len += sprintf(res + len, "nulls -> %d\n", b->thistogram->nulls);
 
-	tpe = ATOMbasetype(b->ttype);
 	nbuckets = b->thistogram->nbuckets;
 	switch (tpe) {
 	case TYPE_bte:
-		histogram_print_loop(bte, "%hhd");
+		histogram_print_loop(bte);
 		break;
 	case TYPE_sht:
-		histogram_print_loop(sht, "%hd");
+		histogram_print_loop(sht);
 		break;
 	case TYPE_int:
-		histogram_print_loop(int, "%d");
+		histogram_print_loop(int);
 		break;
 	case TYPE_lng:
-		histogram_print_loop(lng, LLFMT);
+		histogram_print_loop(lng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		res = histogram_print_loop_hge(b, nbuckets, res, len, maxlen);
+		histogram_print_loop(hge);
 		break;
 #endif
 	default:
-		assert(0);
+		MT_lock_unset(&b->batIdxLock);
+		GDKfree(res);
+		GDKfree(minbuf);
+		GDKfree(maxbuf);
+		GDKerror("Histogram print function not available for %s bats\n", ATOMname(b->ttype));
+		return NULL;
 	}
-
+	MT_lock_unset(&b->batIdxLock);
+	GDKfree(minbuf);
+	GDKfree(maxbuf);
 	return res;
 }
 
