@@ -369,6 +369,7 @@ HISTOGRAMdestroy(BAT *b)
 {
 	if (b && b->thistogram) {
 		MT_lock_set(&b->batIdxLock);
+		GDKfree(b->thistogram->histogram);
 		GDKfree(b->thistogram);
 		b->thistogram = NULL;
 		MT_lock_unset(&b->batIdxLock);
