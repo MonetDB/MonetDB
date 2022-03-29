@@ -17,6 +17,7 @@
 #include "gdk_private.h"
 
 #include "gdk_histogram.h"
+#include "gdk_calc_private.h"
 
 #define NBUCKETS 64
 #define SAMPLE_SIZE 1024
@@ -187,7 +188,13 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 	return h;
 }
 
-#define generic_histogram_loop(TPE)	\
+#define absbte(x)	abs(x)
+#define abssht(x)	abs(x)
+#define absint(x)	abs(x)
+#define abslng(x)	llabs(x)
+#define abshge(x)	ABSOLUTE(x)
+
+#define generic_histogram_loop(TPE, abs)	\
 	do { \
 		TPE i = *(TPE*)VALget(min), ii = i, j = *(TPE*)VALget(max), gap; \
 		const TPE *restrict v = Tloc(sam, 0); \
@@ -197,7 +204,7 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 		h->nbuckets = NBUCKETS; \
 		if (!(h->histogram = GDKmalloc(sizeof(HistogramBucket_##TPE) * h->nbuckets))) \
 			return NULL; \
-		gap = (TPE) floor((double) (j - i) / (double) h->nbuckets); /* TODO this may overflow for large integer types */ \
+		gap = (j / NBUCKETS) - (i / NBUCKETS) + (TPE) ceil(abs((j % NBUCKETS) - (i % NBUCKETS)) / (dbl) NBUCKETS); \
 	\
 		hist = (HistogramBucket_##TPE *) h->histogram; \
 		for (BUN k = 0 ; k < NBUCKETS ; k++) { \
@@ -217,6 +224,7 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 			if (is_##TPE##_nil(next)) { \
 				nulls++; \
 			} else { \
+				bool found = false; \
 				int l = 0, r = NBUCKETS - 1; \
 				while (l <= r) { /* Do binary search to find the bucket */ \
 					int m = l + (r - l) / 2; \
@@ -224,13 +232,15 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 					/* Check if on the bucket. Don't forget last bucket case where max is inclusive */ \
 					if (next >= b->min && (next < b->max || (next == j && m == (NBUCKETS - 1)))) { \
 						b->count++; \
+						found = true; \
+						break; \
 					} else if (next < b->min) { /* value is smaller, ignore right half */ \
 						r = m - 1; \
 					} else { /* value is greater, ignore left half */ \
 						l = m + 1; \
 					} \
 				} \
-				assert(0); /* the value must be found */ \
+				assert(found); /* the value must be found */ \
 			} \
 		} \
 		h->nulls = nulls; \
@@ -243,20 +253,20 @@ create_generic_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 
 	switch (tpe) {
 	case TYPE_bte:
-		generic_histogram_loop(bte);
+		generic_histogram_loop(bte, absbte);
 		break;
 	case TYPE_sht:
-		generic_histogram_loop(sht);
+		generic_histogram_loop(sht, abssht);
 		break;
 	case TYPE_int:
-		generic_histogram_loop(int);
+		generic_histogram_loop(int, absint);
 		break;
 	case TYPE_lng:
-		generic_histogram_loop(lng);
+		generic_histogram_loop(lng, abslng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		generic_histogram_loop(hge);
+		generic_histogram_loop(hge, abshge);
 		break;
 #endif
 	default:
@@ -419,7 +429,7 @@ HISTOGRAMprint(BAT *b)
 	if (!(res = GDKmalloc(maxlen)))
 		return NULL;
 
-	len = sprintf(res, "Total entries: %d, sample size: %d, buckets: %d\n", b->thistogram->size, b->thistogram->size, b->thistogram->nbuckets);
+	len = sprintf(res, "Total entries: %d, buckets: %d\n", b->thistogram->size, b->thistogram->nbuckets);
 	len += sprintf(res + len, "nulls -> %d\n", b->thistogram->nulls);
 
 	tpe = ATOMbasetype(b->ttype);
