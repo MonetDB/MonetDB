@@ -317,6 +317,41 @@ BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 	return (ssize_t) (s - *tostr);
 }
 
+static const bool xdigit[256] = {
+	false,false,false,false,false,false,false,false, /* NUL-BEL */
+	false,false,false,false,false,false,false,false, /* BS-SI */
+	false,false,false,false,false,false,false,false, /* DLE-ETB */
+	false,false,false,false,false,false,false,false, /* CAN-US */
+	false,false,false,false,false,false,false,false, /* SPACE-'\'' */
+	false,false,false,false,false,false,false,false, /* '('-'/' */
+	true,true,true,true,true,true,true,true,		 /* '0'-'7' */
+	true,true,false,false,false,false,false,false,	 /* '8'-'?' */
+	false,true,true,true,true,true,true,false,		 /* '@'-'G' */
+	false,false,false,false,false,false,false,false, /* 'H'-'O' */
+	false,false,false,false,false,false,false,false, /* 'P'-'W' */
+	false,false,false,false,false,false,false,false, /* 'X'-'_' */
+	false,true,true,true,true,true,true,false,		 /* '`'-'g' */
+	false,false,false,false,false,false,false,false, /* 'h'-'o' */
+	false,false,false,false,false,false,false,false, /* 'p'-'w' */
+	false,false,false,false,false,false,false,false, /* 'x'-DEL */
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+};
+
 static ssize_t
 BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 {
@@ -341,9 +376,14 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	/* count hexits and check for hexits/space
 	 */
 	for (i = nitems = 0; instr[i]; i++) {
-		if (isxdigit((unsigned char) instr[i]))
+		if (xdigit[(unsigned char) instr[i]])
 			nitems++;
-		else if (!isspace((unsigned char) instr[i])) {
+		else if (instr[i] != ' ' &&
+				 instr[i] != '\n' &&
+				 instr[i] != '\t' &&
+				 instr[i] != '\r' &&
+				 instr[i] != '\f' &&
+				 instr[i] != '\v') {
 			GDKerror("Illegal char in blob\n");
 			return -1;
 		}
@@ -372,7 +412,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 		char res = 0;
 
 		for (;;) {
-			if (isdigit((unsigned char) *s)) {
+			if (*s >= '0' && *s <= '9') {
 				res = *s - '0';
 			} else if (*s >= 'A' && *s <= 'F') {
 				res = 10 + *s - 'A';
@@ -388,7 +428,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 		s++;
 		res <<= 4;
 		for (;;) {
-			if (isdigit((unsigned char) *s)) {
+			if (*s >= '0' && *s <= '9') {
 				res += *s - '0';
 			} else if (*s >= 'A' && *s <= 'F') {
 				res += 10 + *s - 'A';
