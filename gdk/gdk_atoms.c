@@ -426,10 +426,45 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src, bool external)	\
 	return snprintf(*dst, *len, FMT, FMTCAST *src);			\
 }
 
-#define num10(x)	GDKisdigit(x)
+static const bool xdigit[256] = {
+	false,false,false,false,false,false,false,false, /* NUL-BEL */
+	false,false,false,false,false,false,false,false, /* BS-SI */
+	false,false,false,false,false,false,false,false, /* DLE-ETB */
+	false,false,false,false,false,false,false,false, /* CAN-US */
+	false,false,false,false,false,false,false,false, /* SPACE-'\'' */
+	false,false,false,false,false,false,false,false, /* '('-'/' */
+	true, true, true, true, true, true, true, true,	 /* '0'-'7' */
+	true, true, false,false,false,false,false,false, /* '8'-'?' */
+	false,true, true, true, true, true, true, false, /* '@'-'G' */
+	false,false,false,false,false,false,false,false, /* 'H'-'O' */
+	false,false,false,false,false,false,false,false, /* 'P'-'W' */
+	false,false,false,false,false,false,false,false, /* 'X'-'_' */
+	false,true, true, true, true, true, true, false, /* '`'-'g' */
+	false,false,false,false,false,false,false,false, /* 'h'-'o' */
+	false,false,false,false,false,false,false,false, /* 'p'-'w' */
+	false,false,false,false,false,false,false,false, /* 'x'-DEL */
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+};
+
+#define num10(x)	((x) >= '0' && (x) <= '9')
 #define base10(x)	((x) - '0')
 
-#define num16(x)	isxdigit((unsigned char) (x))
+#define num16(x)	xdigit[(unsigned char) (x)]
 #define base16(x)	(((x) >= 'a' && (x) <= 'f') ? ((x) - 'a' + 10) : ((x) >= 'A' && (x) <= 'F') ? ((x) - 'A' + 10) : (x) - '0')
 #define mult16(x)	((x) << 4)
 
@@ -1210,7 +1245,7 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 	if (external && strncmp(p, "nil", 3) == 0)
 		return (ssize_t) (p - src) + 3;
 
-	if (GDKisdigit(*p)) {
+	if (*p >= '0' && *p <= '9') {
 #if SIZEOF_OID == SIZEOF_INT
 		pos = intFromStr(p, &l, &uip, external);
 #else
@@ -1220,7 +1255,7 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 			return pos;
 		if (p[pos] == '@') {
 			pos++;
-			while (GDKisdigit(p[pos]))
+			while (p[pos] >= '0' && p[pos] <= '9')
 				pos++;
 		}
 		if (ui >= 0) {
@@ -1291,7 +1326,7 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 			if (*s == '-')
 				s++;
 		}
-		if (isdigit((unsigned char) *s))
+		if (*s >= '0' && *s <= '9')
 			u.u[i] = *s - '0';
 		else if ('a' <= *s && *s <= 'f')
 			u.u[i] = *s - 'a' + 10;
@@ -1302,7 +1337,7 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		s++;
 		j++;
 		u.u[i] <<= 4;
-		if (isdigit((unsigned char) *s))
+		if (*s >= '0' && *s <= '9')
 			u.u[i] |= *s - '0';
 		else if ('a' <= *s && *s <= 'f')
 			u.u[i] |= *s - 'a' + 10;
@@ -1562,10 +1597,15 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 
 	/* count hexits and check for hexits/space */
 	for (i = nitems = 0; instr[i]; i++) {
-		if (isxdigit((unsigned char) instr[i]))
+		if (xdigit[(unsigned char) instr[i]])
 			nitems++;
-		else if (!isspace((unsigned char) instr[i])) {
-			GDKerror("Illegal char (not a hexadecimal digit) in blob\n");
+		else if (instr[i] != ' ' &&
+				 instr[i] != '\n' &&
+				 instr[i] != '\t' &&
+				 instr[i] != '\r' &&
+				 instr[i] != '\f' &&
+				 instr[i] != '\v') {
+			GDKerror("Illegal char in blob\n");
 			return -1;
 		}
 	}
@@ -1593,7 +1633,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 		char res = 0;
 
 		for (;;) {
-			if (isdigit((unsigned char) *s)) {
+			if (*s >= '0' && *s <= '9') {
 				res = *s - '0';
 			} else if (*s >= 'A' && *s <= 'F') {
 				res = 10 + *s - 'A';
@@ -1609,7 +1649,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 		s++;
 		res <<= 4;
 		for (;;) {
-			if (isdigit((unsigned char) *s)) {
+			if (*s >= '0' && *s <= '9') {
 				res += *s - '0';
 			} else if (*s >= 'A' && *s <= 'F') {
 				res += 10 + *s - 'A';
