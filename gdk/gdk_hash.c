@@ -713,7 +713,6 @@ Hash *
 BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 {
 	lng t0 = 0;
-	unsigned int tpe = ATOMbasetype(b->ttype);
 	BUN cnt1;
 	BUN mask, maxmask = 0;
 	BUN p, c;
@@ -722,6 +721,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	Hash *h = NULL;
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
+	unsigned int tpe = ATOMbasetype(bi.type);
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	lng timeoffset = 0;
@@ -731,13 +731,13 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	}
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
-	assert(b->ttype != TYPE_msk);
+	assert(bi.type != TYPE_msk);
 
 	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	TRC_DEBUG(ACCELERATOR,
 		  ALGOBATFMT ": create hash;\n", ALGOBATPAR(b));
-	if (b->ttype == TYPE_void) {
+	if (bi.type == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
 			TRC_DEBUG(ACCELERATOR,
 				  "cannot create hash-table on void-NIL column.\n");
@@ -752,8 +752,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	}
 
 	if ((h = GDKzalloc(sizeof(*h))) == NULL ||
-	    (h->heaplink.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, b->ttype, hashheap)) < 0 ||
-	    (h->heapbckt.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, b->ttype, hashheap)) < 0) {
+	    (h->heaplink.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, bi.type, hashheap)) < 0 ||
+	    (h->heapbckt.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, bi.type, hashheap)) < 0) {
 		GDKfree(h);
 		bat_iterator_end(&bi);
 		return NULL;
@@ -788,7 +788,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	} else if (ATOMsize(tpe) == 2) {
 		/* perfect hash for two-byte sized atoms */
 		mask = (1 << 16);
-	} else if (b->tkey || ci->ncand <= 4096) {
+	} else if (bi.key || ci->ncand <= 4096) {
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
@@ -820,7 +820,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		p = 0;
 		HEAPfree(&h->heapbckt, true);
 		/* create the hash structures */
-		if (HASHnew(h, ATOMtype(b->ttype), BATcapacity(b),
+		if (HASHnew(h, ATOMtype(bi.type), BATcapacity(b),
 			    mask, ci->ncand, true) != GDK_SUCCEED) {
 			HEAPfree(&h->heaplink, true);
 			GDKfree(h);
@@ -1363,7 +1363,7 @@ HASHgonebad(BAT *b, const void *v)
 
 	BATiter bi = bat_iterator(b);
 	if (h->nbucket * 2 < BATcount(b)) {
-		int (*cmp) (const void *, const void *) = ATOMcompare(b->ttype);
+		int (*cmp) (const void *, const void *) = ATOMcompare(bi.type);
 		BUN i = HASHget(h, (BUN) HASHprobe(h, v));
 		for (cnt = hit = 1; i != BUN_NONE; i = HASHgetlink(h, i), cnt++)
 			hit += ((*cmp) (v, BUNtail(bi, (BUN) i)) == 0);
