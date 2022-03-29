@@ -25,6 +25,7 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
+#define SLICES 32
 static void
 set_need_pipeline(backend *be)
 {
@@ -373,25 +374,6 @@ row2cols(backend *be, stmt *sub)
 	return sub;
 }
 
-static stmt *
-rel2bin_slicer(backend *be, stmt *sub, int slicer)
-{
-	if (slicer == 1) {
-		list *newl = sa_list(be->mvc->sa);
-		for (node *n = sub->op4.lval->h; n; n = n->next) {
-			stmt *sc = n->data;
-			const char *cname = column_name(be->mvc->sa, sc);
-			const char *tname = table_name(be->mvc->sa, sc);
-
-			sc = column(be, sc);
-			sc = stmt_slicer(be, sc, slicer);
-			list_append(newl, stmt_alias(be, sc, tname, cname));
-		}
-		sub = stmt_list(be, newl);
-	}
-	return sub;
-}
-
 static stmt*
 distinct_value_list(backend *be, list *vals, stmt **last_null_value, int depth, int push)
 {
@@ -470,6 +452,27 @@ subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 	if (rel && rel_is_ref(rel))
 		refs_update_stmt(refs, rel, s);
 	return s;
+}
+
+static stmt *
+rel2bin_slicer(backend *be, stmt *sub, int slicer)
+{
+	if (slicer == 1) {
+		if (sub && sub->cand)
+			sub  = subrel_project(be, sub, NULL, NULL);
+		list *newl = sa_list(be->mvc->sa);
+		for (node *n = sub->op4.lval->h; n; n = n->next) {
+			stmt *sc = n->data;
+			const char *cname = column_name(be->mvc->sa, sc);
+			const char *tname = table_name(be->mvc->sa, sc);
+
+			sc = column(be, sc);
+			sc = stmt_slicer(be, sc, slicer);
+			list_append(newl, stmt_alias(be, sc, tname, cname));
+		}
+		sub = stmt_list(be, newl);
+	}
+	return sub;
 }
 
 static stmt *
@@ -2582,7 +2585,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 		}
 		if (rel->spb)
-			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+			set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
 		if (rel->l) { /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 			left = subrel_project(be, left, refs, rel->l);
@@ -2593,7 +2596,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			left = subrel_project(be, left, refs, rel->l);
 		}
 		if (rel->spb && rel->partition == 2)
-			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+			set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
@@ -2606,7 +2609,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 	if (neededpp && !rel->partition) {
 		assert(0);
-		stmt *pp = pp_create(be, 32*GDKnr_threads);
+		stmt *pp = pp_create(be, SLICES*GDKnr_threads);
 		set_pipeline(be, pp);
 		/* left or right ?? */
 		left = rel2bin_slicer(be, left, 1);
@@ -2935,14 +2938,14 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 		}
 		if (rel->spb)
-			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+			set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 	} else {
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 		if (rel->spb && rel->partition == 2)
-			set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+			set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
@@ -2965,7 +2968,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	if (neededpp && !rel->partition) {
 		assert(0);
-		stmt *pp = pp_create(be, 32*GDKnr_threads);
+		stmt *pp = pp_create(be, SLICES*GDKnr_threads);
 		set_pipeline(be, pp);
 		/* left or right ?? */
 		left = rel2bin_slicer(be, left, 1);
@@ -4358,7 +4361,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (!rel->spb || pp_can_not_start(be->mvc, rel->l)) {
 			set_need_pipeline(be);
 		} else {
-			pp = pp_create(be, 32*GDKnr_threads);
+			pp = pp_create(be, SLICES*GDKnr_threads);
 			//pp -> op4.lval = shared;
 			set_pipeline(be, pp);
 		}
@@ -4374,7 +4377,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	if (df2 && !pp) {
 		int npp = get_need_pipeline(be);
 		assert(npp);
-		set_pipeline(be, pp = pp_create(be, 32*GDKnr_threads));
+		set_pipeline(be, pp = pp_create(be, SLICES*GDKnr_threads));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
@@ -4514,7 +4517,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		cursub = rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp, shared, _2phases);
 	set_pipeline(be, NULL);
 	if (neededpp) {
-		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+		set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
 		cursub = rel2bin_slicer(be, cursub, 1);
 	}
 	return cursub;
@@ -7250,7 +7253,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		}
 	} else if (rel->spb && neededpp) {
 		assert(!is_groupby(rel->op) && !is_join(rel->op));
-		set_pipeline(be, pp_create(be, 32*GDKnr_threads));
+		set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
 		s = rel2bin_slicer(be, s, 1);
 	}
 	return s;
