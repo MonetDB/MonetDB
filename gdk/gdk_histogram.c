@@ -419,7 +419,7 @@ HISTOGRAMprint(BAT *b)
 	if (!(res = GDKmalloc(maxlen)))
 		return NULL;
 
-	len = sprintf(res, "Total entries: %d\n", b->thistogram->size);
+	len = sprintf(res, "Total entries: %d, sample size: %d, buckets: %d\n", b->thistogram->size, b->thistogram->size, b->thistogram->nbuckets);
 	len += sprintf(res + len, "nulls -> %d\n", b->thistogram->nulls);
 
 	tpe = ATOMbasetype(b->ttype);
