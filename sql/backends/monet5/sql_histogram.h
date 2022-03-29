@@ -6,13 +6,12 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
-/*  (co) M.L. Kersten */
-#ifndef _SQL_STRIMPS_DEF
-#define _SQL_STRIMPS_DEF
+#ifndef _SQL_HISTOGRAM_DEF
+#define _SQL_HISTOGRAM_DEF
 
 #include "sql.h"
 
-extern str sql_load_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, BAT **b);
-extern str sql_createstrimps(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str sql_createhistogram(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str sql_printhistogram(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#endif /* _SQL_STRIMPS_DEF */
+#endif /* _SQL_HISTOGRAM_DEF */

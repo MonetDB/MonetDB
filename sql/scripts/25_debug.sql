@@ -85,3 +85,9 @@ create function sys.deltas ("schema" string, "table" string)
 create function sys.deltas ("schema" string, "table" string, "column" string)
 	returns table ("id" int, "segments" bigint, "all" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
 	external name "sql"."deltas";
+
+create procedure sys."createhistogram"("sname" varchar(1024), "tname" varchar(1024), "cname" varchar(1024))
+	external name "sql"."createhistogram";
+
+create function sys."printhistogram"("sname" varchar(1024), "tname" varchar(1024), "cname" varchar(1024)) returns string
+	external name "sql"."printhistogram";

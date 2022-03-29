@@ -1798,6 +1798,7 @@ gdk_export bool BATcheckorderidx(BAT *b);
 
 /* Histogram related functions */
 gdk_export gdk_return HISTOGRAMcreate(BAT *b);
+gdk_export str HISTOGRAMprint(BAT *b);
 gdk_export void HISTOGRAMdestroy(BAT *b);
 
 #include "gdk_delta.h"
