@@ -33,19 +33,10 @@ str
 sql_printhistogram(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
-	str msg = MAL_SUCCEED;
-	str *res = getArgReference_str(stk, pci, 0);
-	const char *sch = *getArgReference_str(stk, pci, 1);
-	const char *tbl = *getArgReference_str(stk, pci, 2);
-	const char *col = *getArgReference_str(stk, pci, 3);
+	str msg = MAL_SUCCEED, *res = getArgReference_str(stk, pci, 0);
 
 	if ((msg = sql_load_bat(cntxt, mb, stk, pci, "sql.printhistogram", &b)) != MAL_SUCCEED)
 		return msg;
-
-	if (!b->thistogram) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.printhistogram", "%s.%s.%s doesn't have an histogram associated", sch, tbl, col);
-	}
 
 	*res = HISTOGRAMprint(b);
 	BBPunfix(b->batCacheid);

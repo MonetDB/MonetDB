@@ -357,11 +357,96 @@ fail:
 	return GDK_FAIL;
 }
 
+#define histogram_print_loop(TPE, FMT) \
+	do { \
+		HistogramBucket_##TPE *restrict hist = (HistogramBucket_##TPE *) b->thistogram->histogram; \
+		for (int i = 0 ; i < nbuckets ; i++) { \
+			HistogramBucket_##TPE *restrict hb = &(hist[i]); \
+			if (len + 150 >= maxlen) { \
+				maxlen *= 2; \
+				str newbuf = GDKrealloc(res, maxlen); \
+				if (!newbuf) { \
+					GDKfree(res); \
+					return NULL; \
+				} \
+				res = newbuf; \
+			} \
+			len += sprintf(res + len, "["FMT","FMT"%c -> %d\n", hb->min, hb->max, i == (nbuckets - 1) ? ']' : '[', hb->count); \
+		} \
+	} while (0)
+
+#ifdef HAVE_HGE
+#define HGE_LL018FMT "%018" PRId64
+#define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
+#define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
+static str
+histogram_print_loop_hge(BAT *b, int nbuckets, str res, int len, int maxlen)
+{
+	HistogramBucket_hge *restrict hist = (HistogramBucket_hge *) b->thistogram->histogram;
+	for (int i = 0 ; i < nbuckets ; i++) {
+		HistogramBucket_hge *restrict hb = &(hist[i]);
+		if (len + 256 >= maxlen) {
+			maxlen *= 2;
+			str newbuf = GDKrealloc(res, maxlen);
+			if (!newbuf) {
+				GDKfree(res);
+				return NULL;
+			} 
+			res = newbuf;
+		}
+		len += sprintf(res + len, "["HGE_LL018FMT","HGE_LL018FMT"%c -> %d\n",
+		(lng) HGE_ABS(hb->min % HGE_LL18DIGITS), (lng) HGE_ABS(hb->max % HGE_LL18DIGITS), i == (nbuckets - 1) ? ']' : '[', hb->count);
+	}
+	return res;
+}
+#endif
+
 str
 HISTOGRAMprint(BAT *b)
 {
-	(void) b;
-	return GDKstrdup("I am doing this next");
+	size_t len = 0, maxlen = 4096;
+	str res = NULL;
+	int tpe, nbuckets;
+	
+	if (VIEWtparent(b)) /* don't look on views */
+		b = BBP_cache(VIEWtparent(b));
+
+	if (!b->thistogram) {
+		GDKerror("No histogram present\n");
+		return NULL;
+	}
+
+	if (!(res = GDKmalloc(maxlen)))
+		return NULL;
+
+	len = sprintf(res, "Total entries: %d\n", b->thistogram->size);
+	len += sprintf(res + len, "nulls -> %d\n", b->thistogram->nulls);
+
+	tpe = ATOMbasetype(b->ttype);
+	nbuckets = b->thistogram->nbuckets;
+	switch (tpe) {
+	case TYPE_bte:
+		histogram_print_loop(bte, "%hhd");
+		break;
+	case TYPE_sht:
+		histogram_print_loop(sht, "%hd");
+		break;
+	case TYPE_int:
+		histogram_print_loop(int, "%d");
+		break;
+	case TYPE_lng:
+		histogram_print_loop(lng, LLFMT);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		res = histogram_print_loop_hge(b, nbuckets, res, len, maxlen);
+		break;
+#endif
+	default:
+		assert(0);
+	}
+
+	return res;
 }
 
 void
