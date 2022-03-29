@@ -2060,11 +2060,11 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 /* fron now assume shared heap */
-#define vamin(cmp, o, opos, op, in, i, bp) \
-	if (!o[opos] || cmp(op+o[opos], bp+in[i]) > 0) \
+#define vamin(cmp, o, opos, op, in, i, bp, nil) \
+	if (!o[opos] || (cmp(bp+in[i], nil) != 0 && cmp(op+o[opos], nil) != 0 && cmp(op+o[opos], bp+in[i]) > 0)) \
 		o[opos] = in[i];
-#define vamax(cmp, o, opos, op, in, i, bp) \
-	if (!o[opos] || cmp(op+o[opos], bp+in[i]) < 0) \
+#define vamax(cmp, o, opos, op, in, i, bp, nil) \
+	if (!o[opos] || (cmp(bp+in[i], nil) != 0 && cmp(op+o[opos], nil) != 0 && cmp(op+o[opos], bp+in[i]) < 0)) \
 		o[opos] = in[i];
 
 #define gafunc(f) \
@@ -2074,43 +2074,44 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			char *bp = bi.vh->base; \
 			char *op = ri.vh->base; \
 		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			const char *nil = ATOMnilptr(r->ttype); \
 			if (b->twidth == 1) { \
 				bp += GDK_VAROFFSET; \
 				op += GDK_VAROFFSET; \
 				uint8_t *in = Tloc(b, 0); \
 				uint8_t *o = Tloc(r, 0); \
 				for(BUN i = 0; i<cnt; i++) \
-					f(cmp, o, grp[i], op, in, i, bp); \
+					f(cmp, o, grp[i], op, in, i, bp, nil); \
 			} else if (b->twidth == 2) { \
 				bp += GDK_VAROFFSET; \
 				op += GDK_VAROFFSET; \
 				uint16_t *in = Tloc(b, 0); \
 				uint16_t *o = Tloc(r, 0); \
 				for(BUN i = 0; i<cnt; i++) \
-					f(cmp, o, grp[i], op, in, i, bp); \
+					f(cmp, o, grp[i], op, in, i, bp, nil); \
 			} else if (b->twidth == 4) { \
 				uint32_t *in = Tloc(b, 0); \
 				uint32_t *o = Tloc(r, 0); \
 				for(BUN i = 0; i<cnt; i++) \
-					f(cmp, o, grp[i], op, in, i, bp); \
+					f(cmp, o, grp[i], op, in, i, bp, nil); \
 			} else if (b->twidth == 8) { \
 				var_t *in = Tloc(b, 0); \
 				var_t *o = Tloc(r, 0); \
 				for(BUN i = 0; i<cnt; i++) \
-					f(cmp, o, grp[i], op, in, i, bp); \
+					f(cmp, o, grp[i], op, in, i, bp, nil); \
 			} \
 			bat_iterator_end(&bi); \
 			bat_iterator_end(&ri); \
 	}
 
 /* private (changing) heap */
-#define vamin_(cmp, opos, in, i, bp) \
-	if (!getoffset(r->theap->base, opos, r->twidth) || cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) > 0) \
+#define vamin_(cmp, opos, in, i, bp, nil) \
+	if (!getoffset(r->theap->base, opos, r->twidth) || (cmp(bp+in[i], nil) != 0 && cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) > 0)) \
 		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) \
 			err = 1; \
 
-#define vamax_(cmp, opos, in, i, bp) \
-	if (!getoffset(r->theap->base, opos, r->twidth) || cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) < 0) \
+#define vamax_(cmp, opos, in, i, bp, nil) \
+	if (!getoffset(r->theap->base, opos, r->twidth) || (cmp(bp+in[i], nil) != 0 && cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) < 0)) \
 		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) \
 			err = 1; \
 
@@ -2137,24 +2138,25 @@ getoffset(const void *b, BUN p, int w)
 			BATiter ri = bat_iterator(r); \
 			char *bp = bi.vh->base; \
 		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			const char *nil = ATOMnilptr(r->ttype); \
 			if (b->twidth == 1) { \
 				bp += GDK_VAROFFSET; \
 				uint8_t *in = Tloc(b, 0); \
 				for(BUN i = 0; i<cnt; i++) \
-					f##_(cmp, grp[i], in, i, bp); \
+					f##_(cmp, grp[i], in, i, bp, nil); \
 			} else if (b->twidth == 2) { \
 				bp += GDK_VAROFFSET; \
 				uint16_t *in = Tloc(b, 0); \
 				for(BUN i = 0; i<cnt; i++) \
-					f##_(cmp, grp[i], in, i, bp); \
+					f##_(cmp, grp[i], in, i, bp, nil); \
 			} else if (b->twidth == 4) { \
 				uint32_t *in = Tloc(b, 0); \
 				for(BUN i = 0; i<cnt; i++) \
-					f##_(cmp, grp[i], in, i, bp); \
+					f##_(cmp, grp[i], in, i, bp, nil); \
 			} else if (b->twidth == 8) { \
 				var_t *in = Tloc(b, 0); \
 				for(BUN i = 0; i<cnt; i++) \
-					f##_(cmp, grp[i], in, i, bp); \
+					f##_(cmp, grp[i], in, i, bp, nil); \
 			} \
 			bat_iterator_end(&bi); \
 			bat_iterator_end(&ri); \
