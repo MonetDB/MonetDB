@@ -50,9 +50,13 @@ BATunique(BAT *b, BAT *s)
 	BATcheck(b, NULL);
 	canditer_init(&ci, b, s);
 
-	if (b->tkey || ci.ncand <= 1 || BATtdense(b)) {
+	(void) BATordered(b);
+	(void) BATordered_rev(b);
+	BATiter bi = bat_iterator(b);
+	if (bi.key || ci.ncand <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
 		bn = canditer_slice(&ci, 0, ci.ncand);
+		bat_iterator_end(&bi);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 			  " (already unique, slice candidates -- "
@@ -62,10 +66,11 @@ BATunique(BAT *b, BAT *s)
 		return bn;
 	}
 
-	if ((BATordered(b) && BATordered_rev(b)) ||
-	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
+	if ((bi.sorted && bi.revsorted) ||
+	    (bi.type == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
 		bn = BATdense(0, ci.seq, 1);
+		bat_iterator_end(&bi);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 			  " (all equal -- "
@@ -75,9 +80,8 @@ BATunique(BAT *b, BAT *s)
 		return bn;
 	}
 
-	assert(b->ttype != TYPE_void);
+	assert(bi.type != TYPE_void);
 
-	BATiter bi = bat_iterator(b);
 	BUN initsize = BUN_NONE;
 	if (s == NULL) {
 		MT_rwlock_rdlock(&b->thashlock);
@@ -155,7 +159,7 @@ BATunique(BAT *b, BAT *s)
 		}
 		TIMEOUT_CHECK(timeoffset,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
-	} else if (BATordered(b) || BATordered_rev(b)) {
+	} else if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
 		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {

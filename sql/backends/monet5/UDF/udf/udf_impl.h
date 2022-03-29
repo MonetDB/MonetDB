@@ -112,9 +112,9 @@ UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, BAT *bone, BAT *btwo, BUN n,
 	msg = UF(UDFarrayfuse_,UI,UO,) ( res, one, two , n );
 	if (msg == MAL_SUCCEED) {
 		*two_tail_sorted_unsigned =
-			BATtordered(btwo) && (two[0] >= 0 || two[n-1] < 0);
+			btwoi.sorted && (two[0] >= 0 || two[n-1] < 0);
 		*two_tail_revsorted_unsigned =
-			BATtrevordered(btwo) &&	(two[0] < 0 || two[n-1] >= 0);
+			btwoi.revsorted &&	(two[0] < 0 || two[n-1] >= 0);
 	}
 	bat_iterator_end(&bonei);
 	bat_iterator_end(&btwoi);

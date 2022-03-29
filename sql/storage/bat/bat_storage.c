@@ -2478,7 +2478,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			}
 			unlock_table(tr->store, t->base.id);
 		} else {
-			if (!BATtordered(i)) {
+			if (!i->tsorted) {
 				assert(oi == i);
 				BAT *ni = NULL;
 				if (BATsort(&ni, NULL, NULL, i, NULL, NULL, false, false, false) != GDK_SUCCEED)
@@ -2486,7 +2486,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 				if (ni)
 					i = ni;
 			}
-			assert(BATtordered(i));
+			assert(i->tsorted);
 			BUN icnt = BATcount(i);
 			BATiter ii = bat_iterator(i);
 			oid *o = ii.base, n = o[0]+1;
@@ -2751,7 +2751,7 @@ sorted_col(sql_trans *tr, sql_column *col)
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b)
-			sorted = BATtordered(b) || BATtrevordered(b);
+			sorted = b->tsorted || b->trevsorted;
 	}
 	return sorted;
 }
@@ -3153,7 +3153,7 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 			size_t cnt = BATcount(b);
 			ok = delete_range(tr, t, s, start, cnt);
 		} else {
-			assert(BATtordered(b));
+			assert(b->tsorted);
 			BUN icnt = BATcount(b);
 			BATiter bi = bat_iterator(b);
 			size_t lcnt = 1;
