@@ -1943,10 +1943,12 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 			InType *in = Tloc(b, 0); \
 			OutType *o = Tloc(r, 0); \
 			for(BUN i = 0; i<cnt; i++) \
-				if (is_##InType##_nil(in[i])) \
-					o[grp[i]] = OutType##_nil; \
-				else if (!is_##OutType##_nil(o[grp[i]])) \
-					o[grp[i]] += in[i]; \
+				if (!is_##InType##_nil(in[i])) { \
+					if (is_##OutType##_nil(o[grp[i]])) \
+						o[grp[i]] = in[i]; \
+					else \
+						o[grp[i]] += in[i]; \
+				} \
 	}
 
 static str
@@ -1988,8 +1990,12 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
 	}
-	if (cnt < max)
-		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
+	if (cnt < max) {
+		char *d = Tloc(r, 0);
+		const char *nil = ATOMnilptr(r->ttype);
+		for (BUN i=cnt; i<max; i++)
+			memcpy(d+(i*r->twidth), nil, r->twidth);
+	}
 
 	if (!err) {
 		BUN cnt = BATcount(g);
