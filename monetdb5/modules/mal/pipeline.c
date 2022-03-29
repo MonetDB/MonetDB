@@ -2043,7 +2043,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for(BUN i = 0; i<cnt; i++) \
 				if (is_##Type##_nil(o[grp[i]])) \
 					o[grp[i]] = in[i]; \
-				else \
+				else if (!is_##Type##_nil(in[i])) \
 					o[grp[i]] = f(o[grp[i]], in[i]); \
 	}
 
@@ -2055,7 +2055,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for(BUN i = 0; i<cnt; i++) \
 				if (is_##Type##_nil(o[grp[i]])) \
 					o[grp[i]] = in[i]; \
-				else \
+				else if (!is_##Type##_nil(in[i])) \
 					o[grp[i]] = f(o[grp[i]], in[i]); \
 	}
 

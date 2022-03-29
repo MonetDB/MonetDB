@@ -1105,7 +1105,6 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error
 			  ci.seq, ci.ncand, GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
-	if (!inout)
 	switch (tp) {
 	case TYPE_bte:
 		* (bte *) res = nil_if_empty ? bte_nil : 0;
