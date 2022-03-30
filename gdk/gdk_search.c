@@ -396,9 +396,9 @@ SORTfnd(BAT *b, const void *v)
 		return BUN_NONE;
 	}
 	BATiter bi = bat_iterator(b);
-	BUN p =  binsearch(NULL, 0, b->ttype, bi.base,
+	BUN p =  binsearch(NULL, 0, bi.type, bi.base,
 			   bi.vh ? bi.vh->base : NULL, bi.width, 0,
-			   bi.count, v, b->tsorted ? 1 : -1, -1);
+			   bi.count, v, bi.sorted ? 1 : -1, -1);
 	bat_iterator_end(&bi);
 	return p;
 }
@@ -410,7 +410,7 @@ ORDERfnd(BAT *b, Heap *oidxh, const void *v)
 	if (BATcount(b) == 0)
 		return BUN_NONE;
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, b->ttype,
+	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, bi.type,
 			  bi.base, bi.vh ? bi.vh->base : NULL,
 			  bi.width, 0, bi.count, v, 1, -1);
 	bat_iterator_end(&bi);
@@ -442,9 +442,9 @@ SORTfndfirst(BAT *b, const void *v)
 		return 0;
 	}
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch(NULL, 0, b->ttype, bi.base,
+	BUN p = binsearch(NULL, 0, bi.type, bi.base,
 			  bi.vh ? bi.vh->base : NULL, bi.width, 0,
-			  bi.count, v, b->tsorted ? 1 : -1, 0);
+			  bi.count, v, bi.sorted ? 1 : -1, 0);
 	bat_iterator_end(&bi);
 	return p;
 }
@@ -491,7 +491,7 @@ SORTfndlast(BAT *b, const void *v)
 	BATiter bi = bat_iterator(b);
 	BUN p = binsearch(NULL, 0, bi.type, bi.base,
 			  bi.vh ? bi.vh->base : NULL, bi.width, 0,
-			  bi.count, v, b->tsorted ? 1 : -1, 1);
+			  bi.count, v, bi.sorted ? 1 : -1, 1);
 	bat_iterator_end(&bi);
 	return p;
 }

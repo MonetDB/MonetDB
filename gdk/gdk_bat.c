@@ -932,8 +932,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			BATtseqbase(bn, oid_nil);
 		}
 		BATkey(bn, BATtkey(b));
-		bn->tsorted = BATtordered(b);
-		bn->trevsorted = BATtrevordered(b);
+		bn->tsorted = bi.sorted;
+		bn->trevsorted = bi.revsorted;
 		bn->batDirtydesc = true;
 		bn->tnorevsorted = b->tnorevsorted;
 		if (b->tnokey[0] != b->tnokey[1]) {
@@ -943,20 +943,20 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
 		bn->tnosorted = b->tnosorted;
-		bn->tnonil = b->tnonil;
-		bn->tnil = b->tnil;
+		bn->tnonil = bi.nonil;
+		bn->tnil = bi.nil;
 		bn->tminpos = bi.minpos;
 		bn->tmaxpos = bi.maxpos;
 		bn->tunique_est = bi.unique_est;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
 		BUN h = BATcount(b);
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-		if (b->tkey)
+		bn->tsorted = bi.sorted;
+		bn->trevsorted = bi.revsorted;
+		if (bi.key)
 			BATkey(bn, true);
-		bn->tnonil = b->tnonil;
-		bn->tnil = b->tnil;
+		bn->tnonil = bi.nonil;
+		bn->tnil = bi.nil;
 		if (b->tnosorted > 0 && b->tnosorted < h)
 			bn->tnosorted = b->tnosorted;
 		else
@@ -1034,9 +1034,11 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 		}
 		if (dense) {
+			MT_lock_set(&b->theaplock);
 			if (b->batCount == 0)
 				b->tseqbase = ovals ? ovals[0] : oid_nil;
 			BATsetcount(b, BATcount(b) + count);
+			MT_lock_unset(&b->theaplock);
 			return GDK_SUCCEED;
 		} else {
 			/* we need to materialize b; allocate enough capacity */
@@ -1274,7 +1276,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
+	MT_lock_set(&b->theaplock);
 	BATsetcount(b, p);
+	MT_lock_unset(&b->theaplock);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
@@ -1308,12 +1312,12 @@ BUNdelete(BAT *b, oid o)
 		return GDK_FAIL;
 	}
 	TRC_DEBUG(ALGO, ALGOBATFMT " deleting oid " OIDFMT "\n", ALGOBATPAR(b), o);
-	b->batDirtydesc = true;
 	val = BUNtail(bi, p);
 	/* writing the values should be locked, reading could be done
 	 * unlocked (since we're the only thread that should be changing
 	 * anything) */
 	MT_lock_set(&b->theaplock);
+	b->batDirtydesc = true;
 	if (b->tmaxpos == p)
 		b->tmaxpos = BUN_NONE;
 	if (b->tminpos == p)
@@ -1349,18 +1353,19 @@ BUNdelete(BAT *b, oid o)
 			MT_lock_unset(&b->theaplock);
 		}
 		/* no longer sorted */
+		MT_lock_set(&b->theaplock);
 		b->tsorted = b->trevsorted = false;
 		b->theap->dirty = true;
+		MT_lock_unset(&b->theaplock);
 	}
+	MT_lock_set(&b->theaplock);
 	if (b->tnosorted >= p)
 		b->tnosorted = 0;
 	if (b->tnorevsorted >= p)
 		b->tnorevsorted = 0;
-	MT_lock_set(&b->theaplock);
 	b->batCount--;
 	if (BATcount(b) < gdk_unique_estimate_keep_fraction)
 		b->tunique_est = 0;
-	MT_lock_unset(&b->theaplock);
 	if (b->batCount <= 1) {
 		/* some trivial properties */
 		b->tkey = true;
@@ -1371,6 +1376,7 @@ BUNdelete(BAT *b, oid o)
 			b->tnonil = true;
 		}
 	}
+	MT_lock_unset(&b->theaplock);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	return GDK_SUCCEED;
@@ -1613,7 +1619,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		prv = p > 0 ? p - 1 : BUN_NONE;
 		nxt = p < last ? p + 1 : BUN_NONE;
 
-		if (BATtordered(b)) {
+		MT_lock_set(&b->theaplock);
+		if (b->tsorted) {
 			if (prv != BUN_NONE &&
 			    ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) {
 				b->tsorted = false;
@@ -1636,7 +1643,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 		} else if (b->tnosorted >= p)
 			b->tnosorted = 0;
-		if (BATtrevordered(b)) {
+		if (b->trevsorted) {
 			if (prv != BUN_NONE &&
 			    ATOMcmp(tt, t, BUNtail(bi, prv)) > 0) {
 				b->trevsorted = false;
@@ -1654,6 +1661,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			b->tnokey[0] = b->tnokey[1] = 0;
 		if (b->tnonil && ATOMstorage(b->ttype) != TYPE_msk)
 			b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
+		MT_lock_unset(&b->theaplock);
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
@@ -1729,7 +1737,7 @@ slowfnd(BAT *b, const void *v)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
+	int (*cmp)(const void *, const void *) = ATOMcompare(bi.type);
 
 	BATloop(b, p, q) {
 		if ((*cmp)(v, BUNtail(bi, p)) == 0) {
@@ -1797,7 +1805,7 @@ BUNfnd(BAT *b, const void *v)
 			bat_iterator_end(&bi);
 			goto hashfnd_failed;
 		}
-		switch (ATOMbasetype(b->ttype)) {
+		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte:
 			HASHloop_bte(bi, b->thash, r, v)
 				break;
@@ -1865,6 +1873,9 @@ BATsetcapacity(BAT *b, BUN cnt)
 	assert(b->batCount <= cnt);
 }
 
+/* Set the batCount value for the bat and also set some dependent
+ * properties.  This function should be called only when it is save from
+ * concurrent use (e.g. when theaplock is being held). */
 void
 BATsetcount(BAT *b, BUN cnt)
 {
@@ -1872,7 +1883,6 @@ BATsetcount(BAT *b, BUN cnt)
 	assert(!is_oid_nil(b->hseqbase));
 	assert(cnt <= BUN_MAX);
 
-	MT_lock_set(&b->theaplock);
 	b->batCount = cnt;
 	b->batDirtydesc = true;
 	if (b->theap->parentid == b->batCacheid) {
@@ -1909,7 +1919,6 @@ BATsetcount(BAT *b, BUN cnt)
 		}
 	}
 	assert(b->batCapacity >= cnt);
-	MT_lock_unset(&b->theaplock);
 }
 
 /*
@@ -2259,7 +2268,6 @@ BATcheckmodes(BAT *b, bool existing)
 		return GDK_FAIL;
 
 	if (dirty) {
-		b->batDirtydesc = true;
 		b->theap->newstorage = m1;
 		if (b->tvheap)
 			b->tvheap->newstorage = m3;
@@ -2418,6 +2426,7 @@ BATmode(BAT *b, bool transient)
 		}
 		/* session bats or persistent bats that did not
 		 * witness a commit yet may have been saved */
+		MT_lock_set(&b->theaplock);
 		if (b->batCopiedtodisk) {
 			if (!transient) {
 				BBP_status_off(bid, BBPTMP);
@@ -2428,6 +2437,7 @@ BATmode(BAT *b, bool transient)
 			}
 		}
 		b->batTransient = transient;
+		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&GDKswapLock(bid));
 	}
 	return GDK_SUCCEED;

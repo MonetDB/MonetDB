@@ -54,31 +54,34 @@
 static gdk_return
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
-	lng j, gcnt = BATcount(gids);
-	BAT *r = COLnew(0, TYPE_oid, BATcount(gids)*2, TRANSIENT);
+	BUN j;
+	BATiter gi = bat_iterator(gids);
+	BAT *r = COLnew(0, TYPE_oid, gi.count*2, TRANSIENT);
 
-	if (r == NULL)
+	if (r == NULL) {
+		bat_iterator_end(&gi);
 		return GDK_FAIL;
+	}
 	BATiter ci = bat_iterator(cnts);
-	if (gids->ttype == TYPE_void) {
-		oid id = gids->tseqbase;
+	if (gi.type == TYPE_void) {
+		oid id = gi.tseq;
 		lng *cnt = (lng*)ci.base;
-		for(j = 0; j < gcnt; j++) {
+		for(j = 0; j < gi.count; j++) {
 			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, &id, false) != GDK_SUCCEED) {
 					BBPreclaim(r);
 					bat_iterator_end(&ci);
+					bat_iterator_end(&gi);
 					return GDK_FAIL;
 				}
 			}
 			id++;
 		}
 	} else {
-		BATiter gi = bat_iterator(gids);
 		oid *id = (oid*)gi.base;
 		lng *cnt = (lng*)ci.base;
-		for(j = 0; j < gcnt; j++) {
+		for(j = 0; j < gi.count; j++) {
 			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, id, false) != GDK_SUCCEED) {
@@ -90,14 +93,14 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 			}
 			id++;
 		}
-		bat_iterator_end(&gi);
 	}
 	bat_iterator_end(&ci);
 	r -> tkey = false;
 	r -> tseqbase = oid_nil;
-	r -> tsorted = BATtordered(gids);
-	r -> trevsorted = BATtrevordered(gids);
-	r -> tnonil = gids->tnonil;
+	r -> tsorted = gi.sorted;
+	r -> trevsorted = gi.revsorted;
+	r -> tnonil = gi.nonil;
+	bat_iterator_end(&gi);
 	*result = r;
 	return GDK_SUCCEED;
 }
@@ -381,7 +384,10 @@ ALGselectNotNil(bat *result, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.selectNotNil", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (!b->tnonil) {
+	MT_lock_set(&b->theaplock);
+	bool bnonil = b->tnonil;
+	MT_lock_unset(&b->theaplock);
+	if (!bnonil) {
 		BAT *s;
 		s = BATselect(b, NULL, ATOMnilptr(b->ttype), NULL, true, true, true);
 		if (s) {

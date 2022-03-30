@@ -20,7 +20,7 @@ BATiscand(BAT *b)
 		return true;
 	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))
 		return false;
-	return BATtordered(b) && BATtkey(b);
+	return b->tsorted && BATtkey(b);
 }
 
 /* create a new, dense candidate list with values from `first' up to,
@@ -1321,7 +1321,7 @@ BATnegcands(BUN nr, BAT *odels)
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
 	dels->dirty = true;
 	BATiter bi = bat_iterator(odels);
-	if (odels->ttype == TYPE_void) {
+	if (bi.type == TYPE_void) {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
 		for (BUN x = lo; x < hi; x++)
 			r[x - lo] = x + odels->tseqbase;

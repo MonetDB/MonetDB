@@ -2285,8 +2285,8 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp,
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
-	nils = (*typeswitchloop)(b1i.base, b1->ttype, true,
-				 b2i.base, b2->ttype, true,
+	nils = (*typeswitchloop)(b1i.base, b1i.type, true,
+				 b2i.base, b2i.type, true,
 				 Tloc(bn, 0), tp,
 				 &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				 abort_on_error, func);
@@ -2344,18 +2344,17 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
-	nils = mul_typeswitchloop(bi.base, b->ttype, true,
+	nils = mul_typeswitchloop(bi.base, bi.type, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
 				  abort_on_error, __func__);
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
+		bat_iterator_end(&bi);
 		return NULL;
 	}
 
@@ -2368,11 +2367,11 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		ValRecord sign;
 
 		VARcalcsign(&sign, v);
-		bn->tsorted = (sign.val.btval >= 0 && btsorted && nils == 0) ||
-			(sign.val.btval <= 0 && btrevsorted && nils == 0) ||
+		bn->tsorted = (sign.val.btval >= 0 && bi.sorted && nils == 0) ||
+			(sign.val.btval <= 0 && bi.revsorted && nils == 0) ||
 			ci.ncand <= 1 || nils == ci.ncand;
-		bn->trevsorted = (sign.val.btval >= 0 && btrevsorted && nils == 0) ||
-			(sign.val.btval <= 0 && btsorted && nils == 0) ||
+		bn->trevsorted = (sign.val.btval >= 0 && bi.revsorted && nils == 0) ||
+			(sign.val.btval <= 0 && bi.sorted && nils == 0) ||
 			ci.ncand <= 1 || nils == ci.ncand;
 	} else {
 		bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
@@ -2381,6 +2380,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -2411,18 +2411,17 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	nils = mul_typeswitchloop(VALptr(v), v->vtype, false,
-				  bi.base, b->ttype, true,
+				  bi.base, bi.type, true,
 				  Tloc(bn, 0), tp,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  &ci,
 				  0, b->hseqbase,
 				  abort_on_error, __func__);
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
+		bat_iterator_end(&bi);
 		return NULL;
 	}
 
@@ -2435,11 +2434,11 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		ValRecord sign;
 
 		VARcalcsign(&sign, v);
-		bn->tsorted = (sign.val.btval >= 0 && btsorted && nils == 0) ||
-			(sign.val.btval <= 0 && btrevsorted && nils == 0) ||
+		bn->tsorted = (sign.val.btval >= 0 && bi.sorted && nils == 0) ||
+			(sign.val.btval <= 0 && bi.revsorted && nils == 0) ||
 			ci.ncand <= 1 || nils == ci.ncand;
-		bn->trevsorted = (sign.val.btval >= 0 && btrevsorted && nils == 0) ||
-			(sign.val.btval <= 0 && btsorted && nils == 0) ||
+		bn->trevsorted = (sign.val.btval >= 0 && bi.revsorted && nils == 0) ||
+			(sign.val.btval <= 0 && bi.sorted && nils == 0) ||
 			ci.ncand <= 1 || nils == ci.ncand;
 	} else {
 		bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
@@ -2448,6 +2447,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -4688,18 +4688,17 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
-	nils = div_typeswitchloop(bi.base, b->ttype, true,
+	nils = div_typeswitchloop(bi.base, bi.type, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
 				  abort_on_error, __func__);
-	bat_iterator_end(&bi);
 
 	if (nils >= BUN_NONE) {
 		BBPunfix(bn->batCacheid);
+		bat_iterator_end(&bi);
 		return NULL;
 	}
 
@@ -4713,11 +4712,11 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		ValRecord sign;
 
 		VARcalcsign(&sign, v);
-		bn->tsorted = (sign.val.btval > 0 && btsorted && nils == 0) ||
-			(sign.val.btval < 0 && btrevsorted && nils == 0) ||
+		bn->tsorted = (sign.val.btval > 0 && bi.sorted && nils == 0) ||
+			(sign.val.btval < 0 && bi.revsorted && nils == 0) ||
 			ci.ncand <= 1 || nils == ci.ncand;
-		bn->trevsorted = (sign.val.btval > 0 && btrevsorted && nils == 0) ||
-			(sign.val.btval < 0 && btsorted && nils == 0) ||
+		bn->trevsorted = (sign.val.btval > 0 && bi.revsorted && nils == 0) ||
+			(sign.val.btval < 0 && bi.sorted && nils == 0) ||
 			ci.ncand <= 1 || nils == ci.ncand;
 	} else {
 		bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
@@ -4728,6 +4727,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -4760,7 +4760,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 
 	BATiter bi = bat_iterator(b);
 	nils = div_typeswitchloop(VALptr(v), v->vtype, false,
-				  bi.base, b->ttype, true,
+				  bi.base, bi.type, true,
 				  Tloc(bn, 0), tp,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  &ci,
@@ -6133,7 +6133,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	nils = mod_typeswitchloop(bi.base, b->ttype, true,
+	nils = mod_typeswitchloop(bi.base, bi.type, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
 				  &ci,
@@ -6184,7 +6184,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 
 	BATiter bi = bat_iterator(b);
 	nils = mod_typeswitchloop(VALptr(v), v->vtype, false,
-				  bi.base, b->ttype, true,
+				  bi.base, bi.type, true,
 				  Tloc(bn, 0), tp,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  &ci,

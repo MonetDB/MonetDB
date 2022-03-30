@@ -93,7 +93,7 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(v);
 		}
 	}
-	btkey = b->tkey;
+	btkey = bi.key;
 bailout1:
 	bat_iterator_end(&bi);
 
@@ -353,9 +353,9 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	btkey = from_str ? b->tkey : ci.ncand <= 1;
-	btsorted = from_str ? b->tsorted : ci.ncand <= 1;
-	btrevsorted = from_str ? b->trevsorted : ci.ncand <= 1;
+	btkey = from_str ? bi.key : ci.ncand <= 1;
+	btsorted = from_str ? bi.sorted : ci.ncand <= 1;
+	btrevsorted = from_str ? bi.revsorted : ci.ncand <= 1;
 bailout1:
 	bat_iterator_end(&bi);
 

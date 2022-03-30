@@ -352,12 +352,12 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 		 * second/right tail values are either all >= 0 or all < 0;
 		 * otherwise, we cannot tell.
 		 */
-		if (BATtordered(bone)
+		if (bone->tsorted
 		    && (BATtkey(bone) || two_tail_sorted_unsigned))
 			bres->tsorted = true;
 		else
 			bres->tsorted = (BATcount(bres) <= 1);
-		if (BATtrevordered(bone)
+		if (bone->trevsorted
 		    && (BATtkey(bone) || two_tail_revsorted_unsigned))
 			bres->trevsorted = true;
 		else

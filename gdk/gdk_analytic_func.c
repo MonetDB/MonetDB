@@ -1631,7 +1631,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	const void *restrict nil = ATOMnilptr(tpe);
 	int (*cmp) (const void *, const void *) = ATOMcompare(tpe);
 	const void *restrict bheap = bi.base;
-	bool count_all = !ignore_nils || b->tnonil, last = false;
+	bool count_all = !ignore_nils || bi.nonil, last = false;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
 	BAT *st = NULL;

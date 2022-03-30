@@ -166,7 +166,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
-	bool btnonil = b->tnonil, btnil = b->tnil, btsorted = b->tsorted, btrevsorted = b->trevsorted;
+	bool btnonil = bi.nonil, btnil = bi.nil, btsorted = bi.sorted, btrevsorted = bi.revsorted;
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BATsetcount(bn, (BUN) lo);

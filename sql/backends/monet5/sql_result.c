@@ -819,45 +819,47 @@ mvc_export_warning(stream *s, str w)
 static int
 mvc_export_binary_bat(stream *s, BAT* bn)
 {
-	bool sendtheap = bn->ttype != TYPE_void, sendtvheap = sendtheap && bn->tvarsized;
+	BATiter bni = bat_iterator(bn);
+	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bn->tvarsized;
 
 	if (mnstr_printf(s, /*JSON*/"{"
-		"\"version\":1,"
-		"\"ttype\":%d,"
-		"\"hseqbase\":" OIDFMT ","
-		"\"tseqbase\":" OIDFMT ","
-		"\"tsorted\":%d,"
-		"\"trevsorted\":%d,"
-		"\"tkey\":%d,"
-		"\"tnonil\":%d,"
-		"\"tdense\":%d,"
-		"\"size\":" BUNFMT ","
-		"\"tailsize\":%zu,"
-		"\"theapsize\":%zu"
-		"}\n",
-		bn->ttype,
-		bn->hseqbase, bn->tseqbase,
-		bn->tsorted, bn->trevsorted,
-		bn->tkey,
-		bn->tnonil,
-		BATtdense(bn),
-		bn->batCount,
-		sendtheap ? (size_t)bn->batCount << bn->tshift : 0,
-		sendtvheap && bn->batCount > 0 ? bn->tvheap->free : 0) < 0)
+					 "\"version\":1,"
+					 "\"ttype\":%d,"
+					 "\"hseqbase\":" OIDFMT ","
+					 "\"tseqbase\":" OIDFMT ","
+					 "\"tsorted\":%d,"
+					 "\"trevsorted\":%d,"
+					 "\"tkey\":%d,"
+					 "\"tnonil\":%d,"
+					 "\"tdense\":%d,"
+					 "\"size\":" BUNFMT ","
+					 "\"tailsize\":%zu,"
+					 "\"theapsize\":%zu"
+					 "}\n",
+					 bni.type,
+					 bn->hseqbase, bn->tseqbase,
+					 bni.sorted, bni.revsorted,
+					 bni.key,
+					 bni.nonil,
+					 BATtdense(bn),
+					 bn->batCount,
+					 sendtheap ? (size_t)bni.count << bni.shift : 0,
+					 sendtvheap && bni.count > 0 ? bni.vhfree : 0) < 0) {
+		bat_iterator_end(&bni);
 		return -4;
+	}
 
-	if (sendtheap && bn->batCount > 0) {
-		BATiter bni = bat_iterator(bn);
+	if (sendtheap && bni.count > 0) {
 		if (mnstr_write(s, /* tail */ bni.base, bni.count * bni.width, 1) < 1) {
 			bat_iterator_end(&bni);
 			return -4;
 		}
-		if (sendtvheap && mnstr_write(s, /* tvheap */ bni.vh->base, bni.vh->free, 1) < 1) {
+		if (sendtvheap && mnstr_write(s, /* tvheap */ bni.vh->base, bni.vhfree, 1) < 1) {
 			bat_iterator_end(&bni);
 			return -4;
 		}
-		bat_iterator_end(&bni);
 	}
+	bat_iterator_end(&bni);
 	return 0;
 }
 

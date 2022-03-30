@@ -292,7 +292,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						int w;
 						lng cnt;
 						bit un, hnils, issorted, isrevsorted, dict;
-						BAT *qd = NULL, *fb = NULL, *re = NULL, *pos = NULL;
+						BAT *qd = NULL, *fb = NULL, *re = NULL;
 
 						if (cname && strcmp(c->base.name, cname))
 							continue;
@@ -301,33 +301,41 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 							goto bailout;
 						}
+						BATiter qdi = bat_iterator(qd);
+						BATiter posi;
 						if ((dict = (c->storage_type && c->storage_type[0] == 'D'))) {
 							if (!(re = store->storage_api.bind_col(tr, c, RD_EXT))) {
+								bat_iterator_end(&qdi);
 								msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 								goto bailout;
 							}
+							BATiter rei = bat_iterator(re);
 							if (isVIEW(re)) { /* If it is a view get the parent BAT */
 								BAT *nb = BBP_cache(VIEWtparent(re));
 								BBPunfix(re->batCacheid);
 								if (!(re = BATdescriptor(nb->batCacheid))) {
+									bat_iterator_end(&qdi);
+									bat_iterator_end(&rei);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 									goto bailout;
 								}
 							}
-							issorted = BATtordered(qd) && BATtordered(re);
-							isrevsorted = BATtrevordered(qd) && BATtrevordered(re);
-							hnils = !re->tnonil || re->tnil;
-							pos = re;
+							issorted = qdi.sorted && rei.sorted;
+							isrevsorted = qdi.revsorted && rei.revsorted;
+							hnils = !rei.nonil || rei.nil;
+							posi = bat_iterator_copy(&rei);
+							bat_iterator_end(&rei);
 						} else {
-							issorted = BATtordered(qd);
-							isrevsorted = BATtrevordered(qd);
-							hnils = !qd->tnonil || qd->tnil;
-							pos = qd;
+							issorted = qdi.sorted;
+							isrevsorted = qdi.revsorted;
+							hnils = !qdi.nonil || qdi.nil;
+							posi = bat_iterator_copy(&qdi);
 						}
 
-						w = qd->twidth;
-						cnt = BATcount(qd);
-						un = BATtkey(qd);
+						w = qdi.width;
+						cnt = qdi.count;
+						un = qdi.key;
+						bat_iterator_end(&qdi);
 
 						if (BUNappend(cid, &c->base.id, false) != GDK_SUCCEED ||
 							BUNappend(sch, b->name, false) != GDK_SUCCEED ||
@@ -340,12 +348,14 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							BUNappend(nils, &hnils, false) != GDK_SUCCEED ||
 							BUNappend(sorted, &issorted, false) != GDK_SUCCEED ||
 							BUNappend(revsorted, &isrevsorted, false) != GDK_SUCCEED) {
+							bat_iterator_end(&posi);
 							if (re)
 								BBPunfix(re->batCacheid);
 							goto bailout;
 						}
 
-						if (pos->tminpos != BUN_NONE || pos->tmaxpos != BUN_NONE) {
+						if (posi.minpos != BUN_NONE || posi.maxpos != BUN_NONE) {
+							bat_iterator_end(&posi);
 							if (dict) {
 								fb = re;
 							} else {
@@ -363,11 +373,11 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 							}
 
-							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[fb->ttype].atomToStr;
-							BATiter bi = bat_iterator(fb);
-							if (bi.minpos != BUN_NONE) {
-								if (tostr(&buf, &buflen, BUNtail(bi, bi.minpos), false) < 0) {
-									bat_iterator_end(&bi);
+							BATiter fbi = bat_iterator(fb);
+							ssize_t (*tostr)(str*,size_t*,const void*,bool) = BATatoms[fbi.type].atomToStr;
+							if (fbi.minpos != BUN_NONE) {
+								if (tostr(&buf, &buflen, BUNtail(fbi, fbi.minpos), false) < 0) {
+									bat_iterator_end(&fbi);
 									BBPunfix(fb->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									goto bailout;
@@ -377,14 +387,14 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								nval = (char *) str_nil;
 							}
 							if (BUNappend(minval, nval, false) != GDK_SUCCEED) {
-								bat_iterator_end(&bi);
+								bat_iterator_end(&fbi);
 								BBPunfix(fb->batCacheid);
 								goto bailout;
 							}
 
-							if (bi.maxpos != BUN_NONE) {
-								if (tostr(&buf, &buflen, BUNtail(bi, bi.maxpos), false) < 0) {
-									bat_iterator_end(&bi);
+							if (fbi.maxpos != BUN_NONE) {
+								if (tostr(&buf, &buflen, BUNtail(fbi, fbi.maxpos), false) < 0) {
+									bat_iterator_end(&fbi);
 									BBPunfix(fb->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									goto bailout;
@@ -393,19 +403,23 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							} else {
 								nval = (char *) str_nil;
 							}
+							bat_iterator_end(&fbi);
 							if (BUNappend(maxval, nval, false) != GDK_SUCCEED) {
-								bat_iterator_end(&bi);
 								BBPunfix(fb->batCacheid);
 								goto bailout;
 							}
-							bat_iterator_end(&bi);
 							BBPunfix(fb->batCacheid);
 						} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
+							bat_iterator_end(&posi);
 							if (re)
 								BBPunfix(re->batCacheid);
 							goto bailout;
-						} else if (re)
+						} else if (re) {
+							bat_iterator_end(&posi);
 							BBPunfix(re->batCacheid);
+						} else {
+							bat_iterator_end(&posi);
+						}
 					}
 				}
 			}

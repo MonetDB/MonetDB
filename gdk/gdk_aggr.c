@@ -961,8 +961,8 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		gids = (const oid *) Tloc(g, 0);
 
 	BATiter bi = bat_iterator(b);
-	nils = dosum(bi.base, b->tnonil, b->hseqbase, &ci,
-		     Tloc(bn, 0), ngrp, b->ttype, tp, gids, min, max,
+	nils = dosum(bi.base, bi.nonil, b->hseqbase, &ci,
+		     Tloc(bn, 0), ngrp, bi.type, tp, gids, min, max,
 		     skip_nils, abort_on_error, true, __func__, &algo);
 	bat_iterator_end(&bi);
 
@@ -1199,8 +1199,8 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error
 	if (ci.ncand == 0)
 		return GDK_SUCCEED;
 	BATiter bi = bat_iterator(b);
-	BUN nils = dosum(bi.base, b->tnonil, b->hseqbase, &ci,
-			 res, true, b->ttype, tp, &min, min, max,
+	BUN nils = dosum(bi.base, bi.nonil, b->hseqbase, &ci,
+			 res, true, bi.type, tp, &min, min, max,
 			 skip_nils, abort_on_error, nil_if_empty, __func__, &algo);
 	bat_iterator_end(&bi);
 	if (inout) {
@@ -1705,7 +1705,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 
 	BATiter bi = bat_iterator(b);
 	nils = doprod(bi.base, b->hseqbase, &ci, Tloc(bn, 0), ngrp,
-		      b->ttype, tp, gids, true, min, max, skip_nils,
+		      bi.type, tp, gids, true, min, max, skip_nils,
 		      abort_on_error, true, __func__);
 	bat_iterator_end(&bi);
 
@@ -1781,7 +1781,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		return GDK_SUCCEED;
 	BATiter bi = bat_iterator(b);
 	nils = doprod(bi.base, b->hseqbase, &ci, res, true,
-		      b->ttype, tp, &min, false, min, max,
+		      bi.type, tp, &min, false, min, max,
 		      skip_nils, abort_on_error, nil_if_empty, __func__);
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
@@ -2013,7 +2013,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		AGGR_AVG_FLOAT(dbl);
 		break;
 	default:
-		GDKerror("type (%s) not supported.\n", ATOMname(b->ttype));
+		GDKerror("type (%s) not supported.\n", ATOMname(bi.type));
 		goto bailout;
 	}
 	bat_iterator_end(&bi);
@@ -3100,7 +3100,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 		break;
 	default:
 		GDKerror("average of type %s unsupported.\n",
-			 ATOMname(b->ttype));
+			 ATOMname(bi.type));
 		goto bailout;
 	}
 	bat_iterator_end(&bi);
@@ -3762,7 +3762,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 	}
 	BATiter bi = bat_iterator(b);
 	if (bi.count == 0) {
-		res = ATOMnilptr(b->ttype);
+		res = ATOMnilptr(bi.type);
 	} else if (bi.minpos != BUN_NONE) {
 		res = BUNtail(bi, bi.minpos);
 	} else {
@@ -3784,7 +3784,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			/* no lock on b needed since it's a view */
 			MT_lock_set(&pb->batIdxLock);
 			MT_lock_set(&pb->theaplock);
-			if (pb->tbaseoff == b->tbaseoff &&
+			if (pb->tbaseoff == bi.baseoff &&
 			    BATcount(pb) == bi.count &&
 			    pb->hseqbase == b->hseqbase &&
 			    (oidxh = pb->torderidx) != NULL) {
@@ -3796,15 +3796,18 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 		if (oidxh != NULL) {
 			const oid *ords = (const oid *) oidxh->base + ORDERIDXOFF;
 			BUN r;
-			if (!b->tnonil) {
+			if (!bi.nonil) {
 				MT_thread_setalgorithm(pb ? "binsearch on parent oidx" : "binsearch on oidx");
-				r = binsearch(ords, 0, b->ttype, bi.base,
+				r = binsearch(ords, 0, bi.type, bi.base,
 					      bi.vh ? bi.vh->base : NULL,
 					      bi.width, 0, bi.count,
-					      ATOMnilptr(b->ttype), 1, 1);
+					      ATOMnilptr(bi.type), 1, 1);
 				if (r == 0) {
+					/* there are no nils, record that */
+					MT_lock_set(&b->theaplock);
 					b->tnonil = true;
 					b->batDirtydesc = true;
+					MT_lock_unset(&b->theaplock);
 				}
 			} else {
 				r = 0;
@@ -3862,30 +3865,28 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			}
 		}
 		if (is_oid_nil(pos)) {
-			res = ATOMnilptr(b->ttype);
+			res = ATOMnilptr(bi.type);
 		} else {
 			bi.minpos = pos - b->hseqbase;
 			res = BUNtail(bi, bi.minpos);
 			MT_lock_set(&b->theaplock);
 			if (bi.count == BATcount(b) && bi.h == b->theap)
 				b->tminpos = bi.minpos;
-			MT_lock_unset(&b->theaplock);
 			bat pbid = VIEWtparent(b);
 			if (pbid) {
 				BAT *pb = BBP_cache(pbid);
-				MT_lock_set(&pb->theaplock);
 				if (bi.count == BATcount(pb) &&
 				    bi.h == pb->theap)
 					pb->tminpos = bi.minpos;
-				MT_lock_unset(&pb->theaplock);
 			}
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 	if (aggr == NULL) {
-		s = ATOMlen(b->ttype, res);
+		s = ATOMlen(bi.type, res);
 		aggr = GDKmalloc(s);
 	} else {
-		s = ATOMsize(ATOMtype(b->ttype));
+		s = ATOMsize(ATOMtype(bi.type));
 	}
 	if (aggr != NULL) {	/* else: malloc error */
 		if (!inout ||
@@ -3930,7 +3931,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 	}
 	bi = bat_iterator(b);
 	if (bi.count == 0) {
-		res = ATOMnilptr(b->ttype);
+		res = ATOMnilptr(bi.type);
 	} else if (bi.maxpos != BUN_NONE) {
 		res = BUNtail(bi, bi.maxpos);
 	} else {
@@ -3952,7 +3953,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			/* no lock on b needed since it's a view */
 			MT_lock_set(&pb->batIdxLock);
 			MT_lock_set(&pb->theaplock);
-			if (pb->tbaseoff == b->tbaseoff &&
+			if (pb->tbaseoff == bi.baseoff &&
 			    BATcount(pb) == bi.count &&
 			    pb->hseqbase == b->hseqbase &&
 			    (oidxh = pb->torderidx) != NULL) {
@@ -3972,7 +3973,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 
 				res = BUNtail(bi, z - b->hseqbase);
 
-				if (ATOMcmp(b->ttype, res, ATOMnilptr(b->ttype)) == 0)
+				if (ATOMcmp(bi.type, res, ATOMnilptr(bi.type)) == 0)
 					pos = z;
 			}
 			HEAPdecref(oidxh, false);
@@ -4021,30 +4022,28 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			}
 		}
 		if (is_oid_nil(pos)) {
-			res = ATOMnilptr(b->ttype);
+			res = ATOMnilptr(bi.type);
 		} else {
 			bi.maxpos = pos - b->hseqbase;
 			res = BUNtail(bi, bi.maxpos);
 			MT_lock_set(&b->theaplock);
 			if (bi.count == BATcount(b) && bi.h == b->theap)
 				b->tmaxpos = bi.maxpos;
-			MT_lock_unset(&b->theaplock);
 			bat pbid = VIEWtparent(b);
 			if (pbid) {
 				BAT *pb = BBP_cache(pbid);
-				MT_lock_set(&pb->theaplock);
 				if (bi.count == BATcount(pb) &&
 				    bi.h == pb->theap)
 					pb->tmaxpos = bi.maxpos;
-				MT_lock_unset(&pb->theaplock);
 			}
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 	if (aggr == NULL) {
-		s = ATOMlen(b->ttype, res);
+		s = ATOMlen(bi.type, res);
 		aggr = GDKmalloc(s);
 	} else {
-		s = ATOMsize(ATOMtype(b->ttype));
+		s = ATOMsize(ATOMtype(bi.type));
 	}
 	if (aggr != NULL) {	/* else: malloc error */
 		if (!inout ||
@@ -4230,7 +4229,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			/* search for end of current group (grps is
 			 * sorted so we can use binary search) */
 			p = binsearch_oid(NULL, 0, grps, r, q - 1, prev, 1, 1);
-			if (skip_nils && !b->tnonil) {
+			if (skip_nils && !bi.nonil) {
 				/* within group, locate start of non-nils */
 				r = binsearch(NULL, 0, tp, bi.base,
 					      bi.vh ? bi.vh->base : NULL,
@@ -4278,7 +4277,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				/* be a little paranoid about the index */
 				assert(qindex >= r && qindex <  p);
 				v = BUNtail(bi, qindex);
-				if (!skip_nils && !b->tnonil)
+				if (!skip_nils && !bi.nonil)
 					nils += (*atomcmp)(v, dnil) == 0;
 			}
 			if (bunfastapp_nocheck(bn, v) != GDK_SUCCEED)
@@ -4341,7 +4340,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 
 		bi = bat_iterator(b);
 
-		if (skip_nils && !b->tnonil)
+		if (skip_nils && !bi.nonil)
 			r = binsearch(ords, 0, tp, bi.base,
 				      bi.vh ? bi.vh->base : NULL,
 				      bi.width, 0, p,

@@ -327,7 +327,6 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 					goto cleanup_and_exit;
 				}
 				if(d) {
-					BAT *v;
 					MT_lock_set(&d->theaplock);
 					BATiter di = bat_iterator_nolock(d);
 					/* outside the lock we cannot dereference di.h or di.vh,
@@ -336,7 +335,13 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 					MT_lock_unset(&d->theaplock);
 					cnt = di.count;
 					if(isVIEW(d)){
-						v= BBP_cache(VIEWtparent(d));
+						BAT *v= BBP_cache(VIEWtparent(d));
+						bool vtransient = true;
+						if (v) {
+							MT_lock_set(&v->theaplock);
+							vtransient = v->batTransient;
+							MT_lock_unset(&v->theaplock);
+						}
 						if (!logadd(&logbuf,
 									",\"view\":\"true\""
 									",\"parent\":%d"
@@ -344,12 +349,12 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 									",\"mode\":\"%s\"",
 									VIEWtparent(d),
 									d->hseqbase,
-									v && !v->batTransient ? "persistent" : "transient")) {
+									vtransient ? "transient" : "persistent")) {
 							BBPunfix(d->batCacheid);
 							goto cleanup_and_exit;
 						}
 					} else {
-						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"))) {
+						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (di.transient ? "transient" : "persistent"))) {
 							BBPunfix(d->batCacheid);
 							goto cleanup_and_exit;
 						}
@@ -360,11 +365,11 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 								",\"nonil\":%d"
 								",\"nil\":%d"
 								",\"key\":%d",
-								d->tsorted,
-								d->trevsorted,
-								d->tnonil,
-								d->tnil,
-								d->tkey)) {
+								di.sorted,
+								di.revsorted,
+								di.nonil,
+								di.nil,
+								di.key)) {
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}

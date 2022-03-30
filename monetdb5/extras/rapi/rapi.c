@@ -64,7 +64,7 @@
 		retsxp = PROTECT(newfun(bati.count));							\
 		if (!retsxp) break;												\
 		valptr = ptrfun(retsxp);										\
-		if (bat->tnonil && !bat->tnil) {								\
+		if (bati.nonil && !bati.nil) {								\
 			if (memcopy) {												\
 				memcpy(valptr, p,										\
 					   bati.count * sizeof(tpe));						\
@@ -145,7 +145,7 @@ bat_to_sexp(BAT* b, int type)
 	SEXP varvalue = NULL;
 	BATiter bi = bat_iterator(b);
 	// TODO: deal with SQL types (DECIMAL/TIME/TIMESTAMP)
-	switch (ATOMstorage(b->ttype)) {
+	switch (ATOMstorage(bi.type)) {
 	case TYPE_void: {
 		size_t i = 0;
 		varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
@@ -238,7 +238,7 @@ bat_to_sexp(BAT* b, int type)
 			GDKfree(sexp_ptrs);
 		}
 		else {
-			if (b->tnonil) {
+			if (bi.nonil) {
 				BATloop(b, p, q) {
 					SET_STRING_ELT(varvalue, j++, RSTR(
 									   (const char *) BUNtvar(bi, p)));

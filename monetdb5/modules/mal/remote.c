@@ -1539,6 +1539,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
+	BATiter vi = bat_iterator(v);
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
 			"\"version\":1,"
 			"\"ttype\":%d,"
@@ -1553,26 +1554,25 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			"\"tailsize\":%zu,"
 			"\"theapsize\":%zu"
 			"}\n",
-			v->ttype,
+			vi.type,
 			v->hseqbase, v->tseqbase,
-			v->tsorted, v->trevsorted,
-			v->tkey,
-			v->tnonil,
+			vi.sorted, vi.revsorted,
+			vi.key,
+			vi.nonil,
 			BATtdense(v),
 			v->batCount,
-			sendtheap ? (size_t)v->batCount << v->tshift : 0,
-			sendtvheap && v->batCount > 0 ? v->tvheap->free : 0
+			sendtheap ? (size_t)vi.count << vi.shift : 0,
+			sendtvheap && vi.count > 0 ? vi.vhfree : 0
 			);
 
 	if (sendtheap && v->batCount > 0) {
-		BATiter vi = bat_iterator(v);
 		mnstr_write(cntxt->fdout, /* tail */
 					vi.base, vi.count * vi.width, 1);
 		if (sendtvheap)
 			mnstr_write(cntxt->fdout, /* theap */
 						vi.vh->base, vi.vhfree, 1);
-		bat_iterator_end(&vi);
 	}
+	bat_iterator_end(&vi);
 	/* flush is done by the calling environment (MAL) */
 
 	if (b != v)
