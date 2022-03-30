@@ -436,7 +436,9 @@ BKCgetKey(bit *ret, const bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	MT_lock_set(&b->theaplock);
 	*ret = b->tkey;
+	MT_lock_unset(&b->theaplock);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -910,19 +912,18 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		}
 		}
 	}
-	bool btnonil = b->tnonil, btkey = b->tkey;
-	bat_iterator_end(&bi);
-	BBPunfix(b->batCacheid);
-	BBPunfix(bs->batCacheid);
 
 	BATsetcount(bn, cnt);
 	bn->tsorted = false;
 	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
-	bn->tkey = btkey;
-	bn->tnonil = btnonil;
+	bn->tkey = bi.key;
+	bn->tnonil = bi.nonil;
 	bn->tnil = false;		/* can't be sure if values deleted */
 	*ret = bn->batCacheid;
+	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bs->batCacheid);
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
@@ -1096,10 +1097,10 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		}
 		}
 		BATsetcount(bn, n);
-		bn->tkey = b->tkey;
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-		bn->tnonil = b->tnonil;
+		bn->tkey = bi.key;
+		bn->tsorted = bi.sorted;
+		bn->trevsorted = bi.revsorted;
+		bn->tnonil = bi.nonil;
 		bn->tnil = false;		/* can't be sure if values deleted */
 	}
 	bat_iterator_end(&bi);

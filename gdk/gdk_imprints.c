@@ -315,7 +315,7 @@ BATcheckimprints(BAT *b)
 			assert(!GDKinmemory(bi.h->farmid));
 			b->timprints = NULL;
 			if ((imprints = GDKzalloc(sizeof(Imprints))) != NULL &&
-			    (imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0) {
+			    (imprints->imprints.farmid = BBPselectfarm(b->batRole, bi.type, imprintsheap)) >= 0) {
 				int fd;
 
 				strconcat_len(imprints->imprints.filename,
@@ -499,7 +499,7 @@ BATimprints(BAT *b)
 			      sizeof(imprints->imprints.filename),
 			      nme, ".timprints", NULL);
 		pages = (((size_t) bi.count * bi.width) + IMPS_PAGE - 1) / IMPS_PAGE;
-		imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype,
+		imprints->imprints.farmid = BBPselectfarm(b->batRole, bi.type,
 							  imprintsheap);
 
 #define SMP_SIZE 2048
@@ -580,7 +580,7 @@ BATimprints(BAT *b)
 		imprints->imps = (void *) (imprints->stats + 64 * 3);
 		imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 
-		switch (ATOMbasetype(b->ttype)) {
+		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte:
 			FILL_HISTOGRAM(bte);
 			break;

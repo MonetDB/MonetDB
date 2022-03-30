@@ -1861,12 +1861,12 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       bi->type >= 0 ? BATatoms[bi->type].name : ATOMunknown_name(bi->type),
 		       bi->width,
 		       b->tvarsized,
-		       (unsigned short) b->tsorted |
-			   ((unsigned short) b->trevsorted << 7) |
-			   ((unsigned short) b->tkey << 8) |
+		       (unsigned short) bi->sorted |
+			   ((unsigned short) bi->revsorted << 7) |
+			   ((unsigned short) bi->key << 8) |
 		           ((unsigned short) BATtdense(b) << 9) |
-			   ((unsigned short) b->tnonil << 10) |
-			   ((unsigned short) b->tnil << 11),
+			   ((unsigned short) bi->nonil << 10) |
+			   ((unsigned short) bi->nil << 11),
 		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[0],
 		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[1],
 		       b->tnosorted >= size ? 0 : b->tnosorted,
@@ -3729,11 +3729,11 @@ BBPbackup(BAT *b, bool subcommit)
 		BATiter bi = bat_iterator(b);
 		if (bi.type != TYPE_void) {
 			rc = do_backup(srcdir, nme, gettailnamebi(&bi), bi.h,
-				       b->batDirtydesc || bi.h->dirty,
+				       b->batDirtydesc || bi.hdirty,
 				       subcommit);
 			if (rc == GDK_SUCCEED && bi.vh != NULL)
 				rc = do_backup(srcdir, nme, "theap", bi.vh,
-					       b->batDirtydesc || bi.vh->dirty,
+					       b->batDirtydesc || bi.vhdirty,
 					       subcommit);
 		}
 		bat_iterator_end(&bi);

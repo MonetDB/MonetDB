@@ -3219,15 +3219,16 @@ not_unique(bit *ret, const bat *bid)
 	}
 
 	*ret = FALSE;
-	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
+	BATiter bi = bat_iterator(b);
+	if (bi.key || BATtdense(b) || bi.count <= 1) {
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
-	} else if (b->tsorted) {
-		BUN p, q;
-		BATiter bi = bat_iterator(b);
+	} else if (bi.sorted) {
+		BUN p;
 		oid c = ((oid *) bi.base)[0];
 
-		for (p = 1, q = BATcount(b); p < q; p++) {
+		for (p = 1; p < bi.count; p++) {
 			oid v = ((oid *) bi.base)[p];
 			if (v <= c) {
 				*ret = TRUE;
@@ -3235,11 +3236,12 @@ not_unique(bit *ret, const bat *bid)
 			}
 			c = v;
 		}
-		bat_iterator_end(&bi);
 	} else {
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		throw(SQL, "not_unique", SQLSTATE(42000) "Input column should be sorted");
 	}
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -3691,7 +3693,7 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 		throw(SQL, name, SQLSTATE(45000) "Internal error, columns not aligned");
 	}
 /*
-  if (!BATtordered(b)) {
+  if (!b->tsorted) {
   BBPunfix(b->batCacheid);
   BBPunfix(g->batCacheid);
   throw(SQL, name, SQLSTATE(45000) "Internal error, columns not sorted");
@@ -3747,13 +3749,14 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, name, SQLSTATE(HY005) "Cannot access column descriptor");
-	if (!BATtordered(b) && !BATtrevordered(b)) {
+	bi = bat_iterator(b);
+	if (!bi.sorted && !bi.revsorted) {
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		throw(SQL, name, SQLSTATE(45000) "Internal error, columns not sorted");
 	}
 
-	bi = bat_iterator(b);
-	cmp = ATOMcompare(b->ttype);
+	cmp = ATOMcompare(bi.type);
 	cur = BUNtail(bi, 0);
 	r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
@@ -3914,6 +3917,7 @@ str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *revsort, *key, *oidx, *bs = NULL;
+	BATiter bsi = bat_iterator(NULL);
 	mvc *m = NULL;
 	str msg = MAL_SUCCEED;
 	sql_trans *tr;
@@ -4019,6 +4023,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto bailout;
 							}
 
+							bat_iterator_end(&bsi);
+							bsi = bat_iterator(bs);
 							/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 							if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 							    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
@@ -4040,20 +4046,20 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED)
 								goto bailout;
 
-							/*printf(" cnt "BUNFMT, BATcount(bs)); */
-							sz = BATcount(bs);
+							/*printf(" cnt "BUNFMT, bsi.count); */
+							sz = bsi.count;
 							if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
 								goto bailout;
 
 							/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 							if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
 								goto bailout;
-							/*printf(" width %d", bs->twidth); */
-							w = bs->twidth;
+							/*printf(" width %d", bsi.width); */
+							w = bsi.width;
 							if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 								goto bailout;
 
-							sz = BATcount(bs) << bs->tshift;
+							sz = bsi.count << bsi.shift;
 							if (BUNappend(size, &sz, false) != GDK_SUCCEED)
 								goto bailout;
 
@@ -4076,13 +4082,13 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto bailout;
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
 							/*printf("\n"); */
-							bitval = BATtordered(bs);
+							bitval = bsi.sorted;
 							if (!bitval && bs->tnosorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
 								goto bailout;
 
-							bitval = BATtrevordered(bs);
+							bitval = bsi.revsorted;
 							if (!bitval && bs->tnorevsorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
@@ -4114,6 +4120,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								if( cname && strcmp(bc->name, cname) )
 									continue;
+								bat_iterator_end(&bsi);
+								bsi = bat_iterator(bs);
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 								if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 								    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
@@ -4135,20 +4143,20 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(type, "oid", false) != GDK_SUCCEED)
 									goto bailout;
 
-								/*printf(" cnt "BUNFMT, BATcount(bs)); */
-								sz = BATcount(bs);
+								/*printf(" cnt "BUNFMT, bsi.count); */
+								sz = bsi.count;
 								if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
 								/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 								if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
 									goto bailout;
-								/*printf(" width %d", bs->twidth); */
-								w = bs->twidth;
+								/*printf(" width %d", bsi.width); */
+								w = bsi.width;
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 									goto bailout;
-								/*printf(" size "BUNFMT, tailsize(bs,BATcount(bs)) + (bs->tvheap? bs->tvheap->size:0)); */
-								sz = tailsize(bs, BATcount(bs));
+								/*printf(" size "BUNFMT, tailsize(bs,bsi.count) + (bs->tvheap? bs->tvheap->size:0)); */
+								sz = tailsize(bs, bsi.count);
 								if (BUNappend(size, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
@@ -4170,12 +4178,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									goto bailout;
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
 								/*printf("\n"); */
-								bitval = BATtordered(bs);
+								bitval = bsi.sorted;
 								if (!bitval && bs->tnosorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
-								bitval = BATtrevordered(bs);
+								bitval = bsi.revsorted;
 								if (!bitval && bs->tnorevsorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
@@ -4196,6 +4204,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
+	bat_iterator_end(&bsi);
 	*rsch = sch->batCacheid;
 	BBPkeepref(sch);
 	*rtab = tab->batCacheid;
@@ -4233,6 +4242,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
+	bat_iterator_end(&bsi);
 	if (sch)
 		BBPunfix(sch->batCacheid);
 	if (tab)
