@@ -1653,23 +1653,21 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
-	bool b1tsorted = b1->tsorted, b1trevsorted = b1->trevsorted;
-	bool b2tsorted = b2->tsorted, b2trevsorted = b2->trevsorted;
-	if (b1->ttype == TYPE_str && b2->ttype == TYPE_str && tp == TYPE_str) {
+	if (b1i.type == TYPE_str && b2i.type == TYPE_str && tp == TYPE_str) {
 		nils = addstr_loop(b1, NULL, b2, NULL, bn, b1i, b2i, &ci1, &ci2);
 	} else {
-		nils = add_typeswitchloop(b1i.base, b1->ttype, true,
-					  b2i.base, b2->ttype, true,
+		nils = add_typeswitchloop(b1i.base, b1i.type, true,
+					  b2i.base, b2i.type, true,
 					  Tloc(bn, 0), tp,
 					  &ci1, &ci2,
 					  b1->hseqbase, b2->hseqbase,
 					  abort_on_error, __func__);
 	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		return NULL;
 	}
 
@@ -1678,13 +1676,15 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	/* if both inputs are sorted the same way, and no overflow
 	 * occurred (we only know for sure if abort_on_error is set),
 	 * the result is also sorted */
-	bn->tsorted = (abort_on_error && b1tsorted && b2tsorted && nils == 0)
+	bn->tsorted = (abort_on_error && b1i.sorted && b2i.sorted && nils == 0)
 		|| ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->trevsorted = (abort_on_error && b1trevsorted && b2trevsorted && nils == 0)
+	bn->trevsorted = (abort_on_error && b1i.revsorted && b2i.revsorted && nils == 0)
 		|| ci1.ncand <= 1 || nils == ci1.ncand;
 	bn->tkey = ci1.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
@@ -1717,11 +1717,10 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
-	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
+	if (bi.type == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
 		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, bi, (BATiter){0}, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand});
 	} else {
-		nils = add_typeswitchloop(bi.base, b->ttype, true,
+		nils = add_typeswitchloop(bi.base, bi.type, true,
 					  VALptr(v), v->vtype, false,
 					  Tloc(bn, 0), tp,
 					  &ci,
@@ -1729,9 +1728,9 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 					  b->hseqbase, 0,
 					  abort_on_error, __func__);
 	}
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
+		bat_iterator_end(&bi);
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
@@ -1741,13 +1740,14 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->tsorted = (abort_on_error && btsorted && nils == 0) ||
+	bn->tsorted = (abort_on_error && bi.sorted && nils == 0) ||
 		ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = (abort_on_error && btrevsorted && nils == 0) ||
+	bn->trevsorted = (abort_on_error && bi.revsorted && nils == 0) ||
 		ci.ncand <= 1 || nils == ci.ncand;
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -1778,21 +1778,20 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
-	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
+	if (bi.type == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
 		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, (BATiter){0}, bi, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand}, &ci);
 	} else {
 		nils = add_typeswitchloop(VALptr(v), v->vtype, false,
-					  bi.base, b->ttype, true,
+					  bi.base, bi.type, true,
 					  Tloc(bn, 0), tp,
 					  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 					  &ci,
 					  0, b->hseqbase,
 					  abort_on_error, __func__);
 	}
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
+		bat_iterator_end(&bi);
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
@@ -1802,13 +1801,14 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->tsorted = (abort_on_error && btsorted && nils == 0) ||
+	bn->tsorted = (abort_on_error && bi.sorted && nils == 0) ||
 		ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = (abort_on_error && btrevsorted && nils == 0) ||
+	bn->trevsorted = (abort_on_error && bi.revsorted && nils == 0) ||
 		ci.ncand <= 1 || nils == ci.ncand;
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -1860,17 +1860,16 @@ BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
-	nils = (*typeswitchloop)(bi.base, b->ttype, true,
+	nils = (*typeswitchloop)(bi.base, bi.type, true,
 				 &(bte){1}, TYPE_bte, false,
 				 Tloc(bn, 0), bn->ttype,
 				 &(struct canditer){.tpe=cand_dense, .ncand=1},
 				 &ci,
 				 0, b->hseqbase,
 				 abort_on_error, func);
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
+		bat_iterator_end(&bi);
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
@@ -1880,13 +1879,14 @@ BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->tsorted = (abort_on_error && btsorted) ||
+	bn->tsorted = (abort_on_error && bi.sorted) ||
 		ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = (abort_on_error && btrevsorted) ||
+	bn->trevsorted = (abort_on_error && bi.revsorted) ||
 		ci.ncand <= 1 || nils == ci.ncand;
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "%s: b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -3499,8 +3499,8 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
-	nils = sub_typeswitchloop(b1i.base, b1->ttype, true,
-				  b2i.base, b2->ttype, true,
+	nils = sub_typeswitchloop(b1i.base, b1i.type, true,
+				  b2i.base, b2i.type, true,
 				  Tloc(bn, 0), tp,
 				  &ci1, &ci2,
 				  b1->hseqbase, b2->hseqbase,
@@ -3552,17 +3552,16 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
-	nils = sub_typeswitchloop(bi.base, b->ttype, true,
+	nils = sub_typeswitchloop(bi.base, bi.type, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
 				  abort_on_error, __func__);
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
+		bat_iterator_end(&bi);
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
@@ -3572,13 +3571,14 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->tsorted = (abort_on_error && btsorted && nils == 0) ||
+	bn->tsorted = (abort_on_error && bi.sorted && nils == 0) ||
 		ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = (abort_on_error && btrevsorted && nils == 0) ||
+	bn->trevsorted = (abort_on_error && bi.revsorted && nils == 0) ||
 		ci.ncand <= 1 || nils == ci.ncand;
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -3609,17 +3609,16 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
 	nils = sub_typeswitchloop(VALptr(v), v->vtype, false,
-				  bi.base, b->ttype, true,
+				  bi.base, bi.type, true,
 				  Tloc(bn, 0), tp,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  &ci,
 				  0, b->hseqbase,
 				  abort_on_error, __func__);
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
+		bat_iterator_end(&bi);
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
@@ -3630,13 +3629,14 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	 * know for sure if abort_on_error is set), the result is
 	 * sorted in the opposite direction (except that NILs mess
 	 * things up */
-	bn->tsorted = (abort_on_error && nils == 0 && btrevsorted) ||
+	bn->tsorted = (abort_on_error && nils == 0 && bi.revsorted) ||
 		ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = (abort_on_error && nils == 0 && btsorted) ||
+	bn->trevsorted = (abort_on_error && nils == 0 && bi.sorted) ||
 		ci.ncand <= 1 || nils == ci.ncand;
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",

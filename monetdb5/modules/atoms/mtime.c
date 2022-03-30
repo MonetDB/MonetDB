@@ -113,7 +113,7 @@ bailout: \
 #define CLEAR_NOTHING(RES)
 
 
-#define COPYFLAGS(n)	do { bn->tsorted = b1->tsorted; bn->trevsorted = b1->trevsorted; } while (0)
+#define COPYFLAGS(n)	do { bn->tsorted = b1i.sorted; bn->trevsorted = b1i.revsorted; } while (0)
 #define SETFLAGS(n)	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
 #define func1(NAME, MALFUNC, INTYPE, OUTTYPE,							\
 			  FUNC, SETFLAGS, FUNC_CALL,								\
