@@ -770,7 +770,6 @@ STRMPcreate(BAT *b, BAT *s)
 
 			r->strimps.free += ci.ncand*sizeof(uint64_t);
 			pb->tstrimps = r;
-			pb->batDirtydesc = true;
 			persistStrimp(pb);
 		}
 		MT_lock_unset(&pb->batIdxLock);
@@ -908,7 +907,6 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 
 			// incref
 			b->tstrimps = r;
-			b->batDirtydesc = true;
 		}
 	}
 	else

@@ -319,8 +319,10 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				}
 				assert(lnr==0);
 			}
+			MT_lock_set(&b->theaplock);
 			b->batDirtydesc = true;
 			b->theap->dirty = true;
+			MT_lock_unset(&b->theaplock);
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
 			dst = (uint32_t *) Tloc(b, 0) + (pos/32);
@@ -378,8 +380,11 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				cnt = s->end;
 		}
 	}
-	if (nr > BATcount(b))
+	if (nr > BATcount(b)) {
+		MT_lock_set(&b->theaplock);
 		BATsetcount(b, nr);
+		MT_lock_unset(&b->theaplock);
+	}
 
 	bat_destroy(b);
 	return LOG_OK;

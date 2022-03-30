@@ -514,6 +514,7 @@ DFLOWinitialize(void)
 		MT_sema_init(&workers[i].s, 0, name);
 		workers[i].flag = IDLE;
 		workers[i].self = i;
+		workers[i].id = 0;
 		workers[i].next = idle_workers;
 		idle_workers = i;
 		if (first)				/* only initialize once */
@@ -829,6 +830,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		MT_lock_unset(&dataflowLock);
 		MT_join_thread(workers[i].id);
 		MT_lock_set(&dataflowLock);
+		workers[i].id = 0;
 		workers[i].next = idle_workers;
 		idle_workers = i;
 	}
@@ -990,10 +992,11 @@ stopMALdataflow(void)
 		}
 		free_workers = -1;
 		for (i = 0; i < THREADS; i++) {
-			if (workers[i].flag != IDLE) {
+			if (workers[i].id != 0) {
 				MT_lock_unset(&dataflowLock);
 				MT_join_thread(workers[i].id);
 				MT_lock_set(&dataflowLock);
+				workers[i].id = 0;
 				workers[i].flag = IDLE;
 				workers[i].next = idle_workers;
 				idle_workers = i;

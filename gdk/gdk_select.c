@@ -1270,7 +1270,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	int t;			/* data type */
 	bat parent;		/* b's parent bat (if b is a view) */
 	const void *nil;
-	BAT *bn, *tmp;
+	BAT *bn;
 	struct canditer ci;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 	oid vwl = 0, vwh = 0;
@@ -1596,7 +1596,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 		wanthash = havehash ||
-			(!b->batTransient &&
+			(!bi.transient &&
 			 ATOMsize(bi.type) >= sizeof(BUN) / 4 &&
 			 BATcount(b) * (ATOMsize(bi.type) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
 		if (!wanthash) {
@@ -1625,12 +1625,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * hash chain (count divided by #slots) times the cost
 		 * to do a binary search on the candidate list (or 1
 		 * if no need for search)) */
-		tmp = BBP_cache(parent);
+		BAT *tmp = BBP_cache(parent);
+		BATiter tmpi = bat_iterator(tmp);
 		if (BATcheckhash(tmp)) {
 			MT_rwlock_rdlock(&tmp->thashlock);
 			phash = tmp->thash != NULL &&
-				(BATcount(tmp) == BATcount(b) ||
-				 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
+				(tmpi.count == BATcount(b) ||
+				 tmpi.count / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
 				 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == BUN_NONE);
 			if (phash)
 				havehash = wanthash = true;
@@ -1649,8 +1650,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			MT_lock_unset(&tmp->theaplock);
 		}
 		if (!phash &&
-		    (!tmp->batTransient || wantphash) &&
-		    BATcount(tmp) == BATcount(b) &&
+		    (!tmpi.transient || wantphash) &&
+		    tmpi.count == BATcount(b) &&
 		    BAThash(tmp) == GDK_SUCCEED) {
 			MT_rwlock_rdlock(&tmp->thashlock);
 			if (tmp->thash)
@@ -1658,6 +1659,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			else
 				MT_rwlock_rdunlock(&tmp->thashlock);
 		}
+		bat_iterator_end(&tmpi);
 	}
 	/* at this point, if havehash is set, we have the hash lock
 	 * the lock is on the parent if phash is set, on b itself if not
@@ -2008,13 +2010,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 *  ii) it is not an equi-select, and
 		 * iii) imprints are supported.
 		 */
-		tmp = NULL;
+		BAT *tmp = NULL;
 		Imprints *imprints = NULL;
 		if (!equi &&
 		    /* DISABLES CODE */ (0) && imprintable(bi.type) &&
-		    (!b->batTransient ||
+		    (!bi.transient ||
 		     (parent != 0 &&
 		      (tmp = BBP_cache(parent)) != NULL &&
+		      /* batTransient access needs to be protected */
 		      !tmp->batTransient)) &&
 		    BATimprints(b) == GDK_SUCCEED) {
 			if (tmp != NULL) {
@@ -2376,9 +2379,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	} else if (!anti && !symmetric &&
 		   /* DISABLES CODE */ (0) && imprintable(li.type) &&
 		   (BATcount(rl) > 2 ||
+		    /* batTransient access needs to be protected */
 		    !l->batTransient ||
 		    (VIEWtparent(l) != 0 &&
 		     (tmp = BBP_cache(VIEWtparent(l))) != NULL &&
+		     /* batTransient access needs to be protected */
 		     !tmp->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {

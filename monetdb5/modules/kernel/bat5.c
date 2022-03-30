@@ -475,7 +475,9 @@ BKCisPersistent(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	MT_lock_set(&b->theaplock);
 	*res = !b->batTransient;
+	MT_lock_unset(&b->theaplock);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -495,7 +497,9 @@ BKCisTransient(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setTransient", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	MT_lock_set(&b->theaplock);
 	*res = b->batTransient;
+	MT_lock_unset(&b->theaplock);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -758,10 +762,13 @@ BKCsave2(void *r, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.save", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	MT_lock_set(&b->theaplock);
 	if ( !b->batTransient){
+		MT_lock_unset(&b->theaplock);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.save", "Only save transient columns.");
 	}
+	MT_lock_unset(&b->theaplock);
 
 	if (b && BATdirty(b))
 		BBPsave(b);
