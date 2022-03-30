@@ -2776,6 +2776,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 	BAT *b = NULL;
 	sql_delta *d = NULL;
 
+	(void) tr;
 	assert(tr->active);
 	*nonil = false;
 	*unique = false;
