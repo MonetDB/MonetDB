@@ -428,6 +428,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tvheap->dirty", false) != GDK_SUCCEED ||
 	    BUNappend(bv, (b->tvheap && b->tvheap->dirty) ? "dirty" : "clean", false) != GDK_SUCCEED ||
 		infoHeap(bk, bv, b->tvheap, "theap.") != GDK_SUCCEED) {
+		bat_iterator_end(&bi);
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
@@ -437,6 +438,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	MT_rwlock_rdlock(&b->thashlock);
 	if (b->thash && HASHinfo(bk, bv, b->thash, "thash->") != GDK_SUCCEED) {
 		MT_rwlock_rdunlock(&b->thashlock);
+		bat_iterator_end(&bi);
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
