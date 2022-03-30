@@ -172,13 +172,13 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 	bi = bat_iterator(b);
 	for (BUN p = 0 ; p < q ; p++)
 		dst[p] = isaUUID(BUNtvar(bi, p));
-	bat_iterator_end(&bi);
 	GDKclrerr(); /* Not interested in atomFromStr errors */
 	BATsetcount(bn, q);
-	bn->tnonil = b->tnonil;
-	bn->tnil = b->tnil;
+	bn->tnonil = bi.nonil;
+	bn->tnil = bi.nil;
 	bn->tsorted = bn->trevsorted = q < 2;
 	bn->tkey = false;
+	bat_iterator_end(&bi);
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
@@ -247,9 +247,9 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= is_uuid_nil(v);
 		}
 	}
-	btkey = b->tkey;
-	btsorted = b->tsorted;
-	btrevsorted = b->trevsorted;
+	btkey = bi.key;
+	btsorted = bi.sorted;
+	btrevsorted = bi.revsorted;
 	bat_iterator_end(&bi);
 
 bailout:
@@ -338,7 +338,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(v);
 		}
 	}
-	btkey = b->tkey;
+	btkey = bi.key;
 	bat_iterator_end(&bi);
 
 bailout:
@@ -436,7 +436,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= strNil(buf);
 		}
 	}
-	btkey = b->tkey;
+	btkey = bi.key;
 	bat_iterator_end(&bi);
 
 bailout:

@@ -947,6 +947,7 @@ typedef struct BATiter {
 	void *base;
 	Heap *vh;
 	BUN count;
+	BUN baseoff;
 	uint16_t width;
 	uint8_t shift;
 	int8_t type;
@@ -954,6 +955,13 @@ typedef struct BATiter {
 	BUN hfree, vhfree;
 	BUN minpos, maxpos;
 	double unique_est;
+	bool key:1,
+		nonil:1,
+		nil:1,
+		sorted:1,
+		revsorted:1,
+		hdirty:1,
+		vhdirty:1;
 	union {
 		oid tvid;
 		bool tmsk;
@@ -973,6 +981,7 @@ bat_iterator_nolock(BAT *b)
 			.b = b,
 			.h = b->theap,
 			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
+			.baseoff = b->tbaseoff,
 			.vh = b->tvheap,
 			.count = b->batCount,
 			.width = b->twidth,
@@ -989,6 +998,13 @@ bat_iterator_nolock(BAT *b)
 			.minpos = isview ? BUN_NONE : b->tminpos,
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
+			.key = b->tkey,
+			.nonil = b->tnonil,
+			.nil = b->tnil,
+			.sorted = b->tsorted,
+			.revsorted = b->trevsorted,
+			.hdirty = b->theap->dirty,
+			.vhdirty = b->tvheap && b->tvheap->dirty,
 #ifndef NDEBUG
 			.locked = false,
 #endif
@@ -1021,6 +1037,20 @@ bat_iterator(BAT *b)
 		};
 	}
 	return bi;
+}
+
+/* return a copy of a BATiter instance; needs to be released with
+ * bat_iterator_end */
+static inline BATiter
+bat_iterator_copy(BATiter *bip)
+{
+	assert(bip);
+	assert(bip->locked);
+	if (bip->h)
+		HEAPincref(bip->h);
+	if (bip->vh)
+		HEAPincref(bip->vh);
+	return *bip;
 }
 
 static inline void
@@ -1359,8 +1389,6 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 
 gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
 
-#define BATtordered(b)	((b)->tsorted)
-#define BATtrevordered(b) ((b)->trevsorted)
 /* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
 #define BATtdense(b)	(!is_oid_nil((b)->tseqbase) &&			\
 			 ((b)->tvheap == NULL || (b)->tvheap->free == 0))

@@ -1368,12 +1368,12 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	BATiter sepi = bat_iterator(sep);
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
-	oid i = 0, j = 0, k = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base;
+	oid i = 0, j = 0, k = 0, cnt = bi.count, *restrict start = si.base, *restrict end = ei.base;
 	bit *np = pi.base, *op = oi.base;
 	str single_str = NULL, next_single_str;
 	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
 
-	assert((sep && !separator && BATcount(b) == BATcount(sep)) || (!sep && separator));
+	assert((sep && !separator && bi.count == sepi.count) || (!sep && separator));
 	if (b->ttype != TYPE_str || r->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
 		GDKerror("only string type is supported\n");
 		bat_iterator_end(&pi);
@@ -1384,7 +1384,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 		bat_iterator_end(&ei);
 		return GDK_FAIL;
 	}
-	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
+	if (sep && sepi.count == 1) { /* Only one element in sep */
 		separator = BUNtvar(sepi, 0);
 		sep = NULL;
 	}

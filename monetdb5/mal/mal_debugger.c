@@ -354,6 +354,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 		accessmode = "unknown";
 	}
 
+	BATiter bi = bat_iterator(b);
 	if (BUNappend(bk, "batId", false) != GDK_SUCCEED ||
 	    BUNappend(bv, BATgetId(b), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCacheid", false) != GDK_SUCCEED ||
@@ -369,7 +370,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "head", false) != GDK_SUCCEED ||
 	    BUNappend(bv, ATOMname(TYPE_void), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tail", false) != GDK_SUCCEED ||
-	    BUNappend(bv, ATOMname(b->ttype), false) != GDK_SUCCEED ||
+	    BUNappend(bv, ATOMname(bi.type), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batPersistence", false) != GDK_SUCCEED ||
 	    BUNappend(bv, mode, false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batRestricted", false) != GDK_SUCCEED ||
@@ -391,11 +392,11 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tseqbase", false) != GDK_SUCCEED ||
 	    BUNappend(bv, oidtostr(b->tseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtordered(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) bi.sorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "trevsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtrevordered(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) bi.revsorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tkey", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->tkey, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) bi.key, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tvarsized", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) b->tvarsized, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnosorted", false) != GDK_SUCCEED ||
@@ -407,9 +408,9 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tnokey[1]", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->tnokey[1], buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnonil", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnonil, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nonil, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnil", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnil, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nil, buf), false) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "batInserted", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->batInserted, buf), false) != GDK_SUCCEED ||
@@ -427,6 +428,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tvheap->dirty", false) != GDK_SUCCEED ||
 	    BUNappend(bv, (b->tvheap && b->tvheap->dirty) ? "dirty" : "clean", false) != GDK_SUCCEED ||
 		infoHeap(bk, bv, b->tvheap, "theap.") != GDK_SUCCEED) {
+		bat_iterator_end(&bi);
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
@@ -436,12 +438,14 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	MT_rwlock_rdlock(&b->thashlock);
 	if (b->thash && HASHinfo(bk, bv, b->thash, "thash->") != GDK_SUCCEED) {
 		MT_rwlock_rdunlock(&b->thashlock);
+		bat_iterator_end(&bi);
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	MT_rwlock_rdunlock(&b->thashlock);
+	bat_iterator_end(&bi);
 	*key = bk;
 	*val = bv;
 	assert(BATcount(bk) == BATcount(bv));

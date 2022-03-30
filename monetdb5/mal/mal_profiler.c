@@ -360,11 +360,11 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 								",\"nonil\":%d"
 								",\"nil\":%d"
 								",\"key\":%d",
-								d->tsorted,
-								d->trevsorted,
-								d->tnonil,
-								d->tnil,
-								d->tkey)) {
+								di.sorted,
+								di.revsorted,
+								di.nonil,
+								di.nil,
+								di.key)) {
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
