@@ -20,6 +20,8 @@
 #include "mal_debugger.h"
 #include "opt_prelude.h"
 
+static stmt * stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty, int pipeline);
+
 /*
  * Some utility routines to generate code
  * The equality operator in MAL is '==' instead of '='.
@@ -3487,7 +3489,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
+			card = stmt_aggr_(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1, 0 /* no pipelined version */);
 			default_nargs++;
 		}
 
@@ -3686,8 +3688,8 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	return NULL;
 }
 
-stmt *
-stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
+static stmt *
+stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty, int pipeline)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3698,7 +3700,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	bool abort_on_error;
 	int *stmt_nr = NULL;
 	int avg = 0;
-	int pipeline_mod = (be->pipeline && !grp);
+	int pipeline_mod = (pipeline && !grp);
 
 	if (op1->nr < 0)
 		return NULL;
@@ -3754,7 +3756,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		if (q == NULL)
 			return NULL;
 		if (complex_aggr) {
-			setVarType(mb, getArg(q, 0), (grp|| (be->pipeline && nrargs>1))?newBatType(restype):restype);
+			setVarType(mb, getArg(q, 0), (grp|| (pipeline && nrargs>1))?newBatType(restype):restype);
 			if (avg) { /* for avg also return rest and count */
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
@@ -3836,6 +3838,12 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		return s;
 	}
 	return NULL;
+}
+
+stmt *
+stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
+{
+	return stmt_aggr_(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty, be->pipeline);
 }
 
 static stmt *
