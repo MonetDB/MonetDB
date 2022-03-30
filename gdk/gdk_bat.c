@@ -933,8 +933,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			BATtseqbase(bn, oid_nil);
 		}
 		BATkey(bn, BATtkey(b));
-		bn->tsorted = BATtordered(b);
-		bn->trevsorted = BATtrevordered(b);
+		bn->tsorted = bi.sorted;
+		bn->trevsorted = bi.revsorted;
 		bn->batDirtydesc = true;
 		bn->tnorevsorted = b->tnorevsorted;
 		if (b->tnokey[0] != b->tnokey[1]) {
@@ -944,20 +944,20 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
 		bn->tnosorted = b->tnosorted;
-		bn->tnonil = b->tnonil;
-		bn->tnil = b->tnil;
+		bn->tnonil = bi.nonil;
+		bn->tnil = bi.nil;
 		bn->tminpos = bi.minpos;
 		bn->tmaxpos = bi.maxpos;
 		bn->tunique_est = bi.unique_est;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
 		BUN h = BATcount(b);
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-		if (b->tkey)
+		bn->tsorted = bi.sorted;
+		bn->trevsorted = bi.revsorted;
+		if (bi.key)
 			BATkey(bn, true);
-		bn->tnonil = b->tnonil;
-		bn->tnil = b->tnil;
+		bn->tnonil = bi.nonil;
+		bn->tnil = bi.nil;
 		if (b->tnosorted > 0 && b->tnosorted < h)
 			bn->tnosorted = b->tnosorted;
 		else
@@ -1615,7 +1615,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		prv = p > 0 ? p - 1 : BUN_NONE;
 		nxt = p < last ? p + 1 : BUN_NONE;
 
-		if (BATtordered(b)) {
+		if (b->tsorted) {
 			if (prv != BUN_NONE &&
 			    ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) {
 				b->tsorted = false;
@@ -1638,7 +1638,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 		} else if (b->tnosorted >= p)
 			b->tnosorted = 0;
-		if (BATtrevordered(b)) {
+		if (b->trevsorted) {
 			if (prv != BUN_NONE &&
 			    ATOMcmp(tt, t, BUNtail(bi, prv)) > 0) {
 				b->trevsorted = false;
@@ -1731,7 +1731,7 @@ slowfnd(BAT *b, const void *v)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
+	int (*cmp)(const void *, const void *) = ATOMcompare(bi.type);
 
 	BATloop(b, p, q) {
 		if ((*cmp)(v, BUNtail(bi, p)) == 0) {
@@ -1799,7 +1799,7 @@ BUNfnd(BAT *b, const void *v)
 			bat_iterator_end(&bi);
 			goto hashfnd_failed;
 		}
-		switch (ATOMbasetype(b->ttype)) {
+		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte:
 			HASHloop_bte(bi, b->thash, r, v)
 				break;

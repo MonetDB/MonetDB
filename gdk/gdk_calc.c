@@ -64,8 +64,7 @@ BATcalcnot(BAT *b, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted, btkey = b->tkey;
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_msk:
 		if (ci.tpe == cand_dense) {
 			const uint32_t *restrict src = (const uint32_t *) bi.base + (ci.seq - b->hseqbase) / 32;
@@ -97,7 +96,7 @@ BATcalcnot(BAT *b, BAT *s)
 		}
 		break;
 	case TYPE_bte:
-		if (b->ttype == TYPE_bit) {
+		if (bi.type == TYPE_bit) {
 			UNARY_2TYPE_FUNC(bit, bit, NOTBIT);
 		} else {
 			UNARY_2TYPE_FUNC_nilcheck(bte, bte, NOT, ON_OVERFLOW1(bte, "NOT"));
@@ -118,19 +117,19 @@ BATcalcnot(BAT *b, BAT *s)
 		break;
 #endif
 	default:
-		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
+		GDKerror("type %s not supported.\n", ATOMname(bi.type));
 		goto bailout;
 	}
-	bat_iterator_end(&bi);
 
 	BATsetcount(bn, ci.ncand);
 
 	/* NOT reverses the order, but NILs mess it up */
-	bn->tsorted = nils == 0 && btrevsorted;
-	bn->trevsorted = nils == 0 && btsorted;
+	bn->tsorted = nils == 0 && bi.revsorted;
+	bn->trevsorted = nils == 0 && bi.sorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = btkey && nils <= 1;
+	bn->tkey = bi.key && nils <= 1;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -262,8 +261,7 @@ BATcalcnegate(BAT *b, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted, btkey = b->tkey;
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, NEGATE);
 		break;
@@ -288,19 +286,19 @@ BATcalcnegate(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, dbl, NEGATE);
 		break;
 	default:
-		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
+		GDKerror("type %s not supported.\n", ATOMname(bi.type));
 		goto bailout;
 	}
-	bat_iterator_end(&bi);
 
 	BATsetcount(bn, ci.ncand);
 
 	/* unary - reverses the order, but NILs mess it up */
-	bn->tsorted = nils == 0 && btrevsorted;
-	bn->trevsorted = nils == 0 && btsorted;
+	bn->tsorted = nils == 0 && bi.revsorted;
+	bn->trevsorted = nils == 0 && bi.sorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = btkey && nils <= 1;
+	bn->tkey = bi.key && nils <= 1;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -405,7 +403,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, (bte) abs);
 		break;
@@ -430,7 +428,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, dbl, fabs);
 		break;
 	default:
-		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
+		GDKerror("bad input type %s.\n", ATOMname(bi.type));
 		goto bailout;
 	}
 	bat_iterator_end(&bi);
@@ -550,7 +548,7 @@ BATcalciszero(BAT *b, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bit, ISZERO);
 		break;
@@ -575,7 +573,7 @@ BATcalciszero(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, bit, ISZERO);
 		break;
 	default:
-		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
+		GDKerror("bad input type %s.\n", ATOMname(bi.type));
 		goto bailout;
 	}
 	bat_iterator_end(&bi);
@@ -693,8 +691,7 @@ BATcalcsign(BAT *b, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, SIGN);
 		break;
@@ -719,21 +716,21 @@ BATcalcsign(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, bte, SIGN);
 		break;
 	default:
-		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
+		GDKerror("bad input type %s.\n", ATOMname(bi.type));
 		goto bailout;
 	}
-	bat_iterator_end(&bi);
 
 	BATsetcount(bn, ci.ncand);
 
 	/* SIGN is ordered if the input is ordered (negative comes
 	 * first, positive comes after) and NILs stay in the same
 	 * position */
-	bn->tsorted = btsorted || ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = btrevsorted || ci.ncand <= 1 || nils == ci.ncand;
+	bn->tsorted = bi.sorted || ci.ncand <= 1 || nils == ci.ncand;
+	bn->trevsorted = bi.revsorted || ci.ncand <= 1 || nils == ci.ncand;
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -859,8 +856,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	dst = (bit *) Tloc(bn, 0);
 
 	BATiter bi = bat_iterator(b);
-	bool btsorted = b->tsorted, btrevsorted = b->trevsorted;
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		ISNIL_TYPE(bte, notnil);
 		break;
@@ -889,8 +885,8 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 		break;
 	default:
 	{
-		int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
-		const void *nil = ATOMnilptr(b->ttype);
+		int (*atomcmp)(const void *, const void *) = ATOMcompare(bi.type);
+		const void *nil = ATOMnilptr(bi.type);
 
 		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			x = canditer_next(&ci) - bhseqbase;
@@ -900,7 +896,6 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 		break;
 	}
 	}
-	bat_iterator_end(&bi);
 
 	BATsetcount(bn, ci.ncand);
 
@@ -908,15 +903,16 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	 * 1's and ends with 0's, hence bn is revsorted.  Similarly
 	 * for revsorted. At the notnil case, these properties remain the same */
 	if (notnil) {
-		bn->tsorted = btsorted;
-		bn->trevsorted = btrevsorted;
+		bn->tsorted = bi.sorted;
+		bn->trevsorted = bi.revsorted;
 	} else {
-		bn->tsorted = btrevsorted;
-		bn->trevsorted = btsorted;
+		bn->tsorted = bi.revsorted;
+		bn->trevsorted = bi.sorted;
 	}
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 	bn->tkey = ci.ncand <= 1;
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",notnil=%s -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -1032,7 +1028,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
-	switch (ATOMbasetype(b1->ttype)) {
+	switch (ATOMbasetype(b1i.type)) {
 	case TYPE_bte:
 		MINMAX_TYPE(bte, <);
 		break;
@@ -1057,10 +1053,10 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		MINMAX_TYPE(dbl, <);
 		break;
 	default: {
-		const void *restrict nil = ATOMnilptr(b1->ttype);
-		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
+		const void *restrict nil = ATOMnilptr(b1i.type);
+		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
 
-		if (ATOMvarsized(b1->ttype)) {
+		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
@@ -1139,8 +1135,6 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		}
 	}
 	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	bn->tnil = nils;
 	bn->tnonil = !nils;
@@ -1149,13 +1143,15 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		bn->tsorted = true;
 		bn->trevsorted = true;
 		bn->tkey = true;
-		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+		bn->tseqbase = ATOMtype(b1i.type) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = false;
 		bn->trevsorted = false;
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
@@ -1254,7 +1250,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
-	switch (ATOMbasetype(b1->ttype)) {
+	switch (ATOMbasetype(b1i.type)) {
 	case TYPE_bte:
 		MINMAX_NONIL_TYPE(bte, <);
 		break;
@@ -1279,10 +1275,10 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		MINMAX_NONIL_TYPE(dbl, <);
 		break;
 	default: {
-		const void *restrict nil = ATOMnilptr(b1->ttype);
-		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
+		const void *restrict nil = ATOMnilptr(b1i.type);
+		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
 
-		if (ATOMvarsized(b1->ttype)) {
+		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
@@ -1377,8 +1373,6 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		}
 	}
 	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	bn->tnil = nils;
 	bn->tnonil = !nils;
@@ -1387,13 +1381,15 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		bn->tsorted = true;
 		bn->trevsorted = true;
 		bn->tkey = true;
-		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+		bn->tseqbase = ATOMtype(b1i.type) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = false;
 		bn->trevsorted = false;
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
@@ -1469,7 +1465,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		MINMAX_CST_TYPE(bte, <);
 		break;
@@ -1494,7 +1490,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		MINMAX_CST_TYPE(dbl, <);
 		break;
 	default:
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMvarsized(bi.type)) {
 			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtvar(bi, x);
@@ -1636,7 +1632,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		MINMAX_NONIL_CST_TYPE(bte, <);
 		break;
@@ -1661,7 +1657,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		MINMAX_NONIL_CST_TYPE(dbl, <);
 		break;
 	default:
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMvarsized(bi.type)) {
 			if (cmp(p2, nil) == 0) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
@@ -1786,7 +1782,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
-	switch (ATOMbasetype(b1->ttype)) {
+	switch (ATOMbasetype(b1i.type)) {
 	case TYPE_bte:
 		MINMAX_TYPE(bte, >);
 		break;
@@ -1811,10 +1807,10 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		MINMAX_TYPE(dbl, >);
 		break;
 	default: {
-		const void *restrict nil = ATOMnilptr(b1->ttype);
-		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
+		const void *restrict nil = ATOMnilptr(b1i.type);
+		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
 
-		if (ATOMvarsized(b1->ttype)) {
+		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
@@ -1893,8 +1889,6 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		}
 	}
 	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	bn->tnil = nils;
 	bn->tnonil = !nils;
@@ -1903,13 +1897,15 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		bn->tsorted = true;
 		bn->trevsorted = true;
 		bn->tkey = true;
-		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+		bn->tseqbase = ATOMtype(b1i.type) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = false;
 		bn->trevsorted = false;
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
@@ -1966,7 +1962,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
-	switch (ATOMbasetype(b1->ttype)) {
+	switch (ATOMbasetype(b1i.type)) {
 	case TYPE_bte:
 		MINMAX_NONIL_TYPE(bte, >);
 		break;
@@ -1991,10 +1987,10 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		MINMAX_NONIL_TYPE(dbl, >);
 		break;
 	default: {
-		const void *restrict nil = ATOMnilptr(b1->ttype);
-		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
+		const void *restrict nil = ATOMnilptr(b1i.type);
+		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
 
-		if (ATOMvarsized(b1->ttype)) {
+		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
@@ -2093,8 +2089,6 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		}
 	}
 	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	bn->tnil = nils;
 	bn->tnonil = !nils;
@@ -2103,13 +2097,15 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		bn->tsorted = true;
 		bn->trevsorted = true;
 		bn->tkey = true;
-		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+		bn->tseqbase = ATOMtype(b1i.type) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = false;
 		bn->trevsorted = false;
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
@@ -2168,7 +2164,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		MINMAX_CST_TYPE(bte, >);
 		break;
@@ -2193,7 +2189,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		MINMAX_CST_TYPE(dbl, >);
 		break;
 	default:
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMvarsized(bi.type)) {
 			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtvar(bi, x);
@@ -2309,7 +2305,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(b->ttype)) {
+	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		MINMAX_NONIL_CST_TYPE(bte, >);
 		break;
@@ -2334,7 +2330,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		MINMAX_NONIL_CST_TYPE(dbl, >);
 		break;
 	default:
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMvarsized(bi.type)) {
 			if (cmp(p2, nil) == 0) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
@@ -2527,10 +2523,10 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	nils = xor_typeswitchloop(b1i.base, true,
 				  b2i.base, true,
 				  Tloc(bn, 0),
-				  b1->ttype,
+				  b1i.type,
 				  &ci1, &ci2,
 				  b1->hseqbase, b2->hseqbase,
-				  b1->tnonil && b2->tnonil,
+				  b1i.nonil && b2i.nonil,
 				  __func__);
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
@@ -2586,11 +2582,11 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	BATiter bi = bat_iterator(b);
 	nils = xor_typeswitchloop(bi.base, true,
 				  VALptr(v), false,
-				  Tloc(bn, 0), b->ttype,
+				  Tloc(bn, 0), bi.type,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
-				  b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  __func__);
 	bat_iterator_end(&bi);
 
@@ -2761,9 +2757,9 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	nils = or_typeswitchloop(b1i.base, true,
 				 b2i.base, true,
 				 Tloc(bn, 0),
-				 b1->ttype,
+				 b1i.type,
 				 &ci1, &ci2, b1->hseqbase, b2->hseqbase,
-				 b1->tnonil && b2->tnonil,
+				 b1i.nonil && b2i.nonil,
 				 __func__);
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
@@ -2825,11 +2821,11 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	BATiter bi = bat_iterator(b);
 	nils = or_typeswitchloop(bi.base, true,
 				 VALptr(v), false,
-				 Tloc(bn, 0), b->ttype,
+				 Tloc(bn, 0), bi.type,
 				 &ci,
 				 &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				 b->hseqbase, 0,
-				 b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				 bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 __func__);
 	bat_iterator_end(&bi);
 
@@ -2995,9 +2991,9 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	nils = and_typeswitchloop(b1i.base, true,
 				  b2i.base, true,
 				  Tloc(bn, 0),
-				  b1->ttype,
+				  b1i.type,
 				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
-				  b1->tnonil && b2->tnonil,
+				  b1i.nonil && b2i.nonil,
 				  __func__);
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
@@ -3059,11 +3055,11 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	BATiter bi = bat_iterator(b);
 	nils = and_typeswitchloop(bi.base, true,
 				  VALptr(v), false,
-				  Tloc(bn, 0), b->ttype,
+				  Tloc(bn, 0), bi.type,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
-				  b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  __func__);
 	bat_iterator_end(&bi);
 
@@ -3335,8 +3331,8 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
-	nils = lsh_typeswitchloop(b1i.base, b1->ttype, true,
-				  b2i.base, b2->ttype, true,
+	nils = lsh_typeswitchloop(b1i.base, b1i.type, true,
+				  b2i.base, b2i.type, true,
 				  Tloc(bn, 0),
 				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				  abort_on_error, __func__);
@@ -3387,7 +3383,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	nils = lsh_typeswitchloop(bi.base, b->ttype, true,
+	nils = lsh_typeswitchloop(bi.base, bi.type, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0),
 				  &ci,
@@ -3439,7 +3435,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 
 	BATiter bi = bat_iterator(b);
 	nils = lsh_typeswitchloop(VALptr(v), v->vtype, false,
-				  bi.base, b->ttype, true,
+				  bi.base, bi.type, true,
 				  Tloc(bn, 0),
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  &ci,
@@ -3690,8 +3686,8 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
-	nils = rsh_typeswitchloop(b1i.base, b1->ttype, true,
-				  b2i.base, b2->ttype, true,
+	nils = rsh_typeswitchloop(b1i.base, b1i.type, true,
+				  b2i.base, b2i.type, true,
 				  Tloc(bn, 0),
 				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				  abort_on_error, __func__);
@@ -3742,7 +3738,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 		return bn;
 
 	BATiter bi = bat_iterator(b);
-	nils = rsh_typeswitchloop(bi.base, b->ttype, true,
+	nils = rsh_typeswitchloop(bi.base, bi.type, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0),
 				  &ci,
@@ -3794,7 +3790,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 
 	BATiter bi = bat_iterator(b);
 	nils = rsh_typeswitchloop(VALptr(v), v->vtype, false,
-				  bi.base, b->ttype, true,
+				  bi.base, bi.type, true,
 				  Tloc(bn, 0),
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  &ci,
@@ -4077,7 +4073,7 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 				   hii.base, 1,
 				   hii.vh ? hii.vh->base : NULL,
 				   hii.width,
-				   b->ttype,
+				   bi.type,
 				   &ci, &cilo, &cihi,
 				   b->hseqbase, lo->hseqbase, hi->hseqbase,
 				   symmetric, anti, linc, hinc,
@@ -4124,7 +4120,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 				   bi.width,
 				   VALptr(lo), 0, NULL, 0,
 				   VALptr(hi), 0, NULL, 0,
-				   b->ttype,
+				   bi.type,
 				   &ci,
 				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
@@ -4176,7 +4172,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 				   loi.vh ? loi.vh->base : NULL,
 				   loi.width,
 				   VALptr(hi), 0, NULL, 0,
-				   b->ttype,
+				   bi.type,
 				   &ci,
 				   &cilo,
 				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
@@ -4232,7 +4228,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 				   hii.base, 1,
 				   hii.vh ? hii.vh->base : NULL,
 				   hii.width,
-				   b->ttype,
+				   bi.type,
 				   &ci,
 				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				   &cihi,
@@ -4383,7 +4379,7 @@ BATcalcifthenelse_intern(BAT *b,
 	if (bn->tvarsized) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
-		if (ATOMstorage(b->ttype) == TYPE_msk) {
+		if (ATOMstorage(bi.type) == TYPE_msk) {
 			const uint32_t *src = bi.base;
 			BUN n = cnt / 32;
 			TIMEOUT_LOOP_IDX(i, n + 1, timeoffset) {
@@ -4436,7 +4432,7 @@ BATcalcifthenelse_intern(BAT *b,
 	} else {
 		assert(heap1 == NULL);
 		assert(heap2 == NULL);
-		if (ATOMstorage(b->ttype) == TYPE_msk) {
+		if (ATOMstorage(bi.type) == TYPE_msk) {
 			const uint32_t *src = bi.base;
 			uint32_t mask = 0;
 			BUN n = 32;
@@ -4659,9 +4655,9 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
 	bn = BATcalcifthenelse_intern(b,
-				      b1i.base, true, b1i.vh ? b1i.vh->base : NULL, b1i.width, b1->tnonil, b1->tseqbase,
-				      b2i.base, true, b2i.vh ? b2i.vh->base : NULL, b2i.width, b2->tnonil, b2->tseqbase,
-				      b1->ttype);
+				      b1i.base, true, b1i.vh ? b1i.vh->base : NULL, b1i.width, b1i.nonil, b1->tseqbase,
+				      b2i.base, true, b2i.vh ? b2i.vh->base : NULL, b2i.width, b2i.nonil, b2->tseqbase,
+				      b1i.type);
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 
@@ -4693,9 +4689,9 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 	}
 	BATiter b1i = bat_iterator(b1);
 	bn = BATcalcifthenelse_intern(b,
-				      b1i.base, true, b1i.vh ? b1i.vh->base : NULL, b1i.width, b1->tnonil, b1->tseqbase,
+				      b1i.base, true, b1i.vh ? b1i.vh->base : NULL, b1i.width, b1i.nonil, b1->tseqbase,
 				      VALptr(c2), false, NULL, 0, !VALisnil(c2), 0,
-				      b1->ttype);
+				      b1i.type);
 	bat_iterator_end(&b1i);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b1=" ALGOBATFMT
@@ -4727,7 +4723,7 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 	BATiter b2i = bat_iterator(b2);
 	bn = BATcalcifthenelse_intern(b,
 				      VALptr(c1), false, NULL, 0, !VALisnil(c1), 0,
-				      b2i.base, true, b2i.vh ? b2i.vh->base : NULL, b2i.width, b2->tnonil, b2->tseqbase,
+				      b2i.base, true, b2i.vh ? b2i.vh->base : NULL, b2i.width, b2i.nonil, b2->tseqbase,
 				      c1->vtype);
 	bat_iterator_end(&b2i);
 
