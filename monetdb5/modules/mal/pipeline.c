@@ -132,6 +132,24 @@ BATnegateprops(BAT *b)
 #define pipeline_lock2(r) MT_lock_set(&r->batIdxLock)
 #define pipeline_unlock2(r) MT_lock_unset(&r->batIdxLock)
 
+static int
+BATupgrade(BAT *r, BAT *b)
+{
+	int err = 0;
+	MT_lock_set(&b->theaplock);
+	//MT_lock_set(&r->theaplock);
+	if (ATOMvarsized(r->ttype) &&
+		BATcount(r) == 0 &&
+		r->tvheap->parentid == r->batCacheid &&
+		r->twidth < b->twidth &&
+			GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
+			err = 1;
+	}
+	//MT_lock_unset(&r->theaplock);
+	MT_lock_unset(&b->theaplock);
+	return err;
+}
+
 static void
 BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 {
@@ -974,8 +992,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1011,8 +1029,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1046,8 +1064,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					} \
 					if (!g) { \
 						if (slots == 0) { \
-							slots = PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+							slots = private?1:PRE_CLAIM; \
+							slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 						} \
 						slots--; \
 						g = ++slot; \
@@ -1083,8 +1101,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1120,8 +1138,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1159,8 +1177,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1292,8 +1310,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1329,8 +1347,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1366,8 +1384,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1404,8 +1422,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1444,8 +1462,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, PRE_CLAIM); \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1654,20 +1672,16 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	if (!private)
 		pipeline_lock2(r);
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) &&
-			BATcount(r) == 0 &&
-			r->tvheap->parentid == r->batCacheid &&
-			r->twidth < b->twidth &&
-			GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
 			err = 1;
-		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 			BATswap_heaps(r, b, p);
 		}
-	} else if (!r || BATcount(b)) {
+	} else if (!r) {
 		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
 			BATswap_heaps(r, b, p);
@@ -1682,6 +1696,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 				GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED)
 						err = 1;
 		}
+		assert(private);
 		r->T.private_bat = 1;
 	}
 	/*
@@ -1693,7 +1708,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	BUN cnt = 0;
 	if (!err) {
 		cnt = BATcount(r);
-		if (BATcapacity(r) <= max) {
+		if (BATcapacity(r) < max) {
 			BUN sz = max*2;
 			if (BATextend(r, sz) != GDK_SUCCEED)
 				err = 1;
@@ -2189,20 +2204,16 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	BBPunfix(pg->batCacheid);
 
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) &&
-			BATcount(r) == 0 &&
-			r->tvheap->parentid == r->batCacheid &&
-		   	r->twidth < b->twidth &&
-			GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
 			err = 1;
-		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 			BATswap_heaps(r, b, p);
 		}
-	} else if (!r || BATcount(b)) {
+	} else if (!r) {
 		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
 			BATswap_heaps(r, b, p);
@@ -2299,19 +2310,15 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	BBPunfix(pg->batCacheid);
 
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) &&
-			BATcount(r) == 0 &&
-			r->tvheap->parentid == r->batCacheid &&
-		   	r->twidth < b->twidth &&
-			GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
 			err = 1;
-		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 			BATswap_heaps(r, b, p);
 		}
-	} else if (!r || BATcount(b)) {
+	} else if (!r) {
 		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
 			BATswap_heaps(r, b, p);
@@ -2329,7 +2336,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		r->T.private_bat = 1;
 	}
 	BUN cnt = BATcount(r);
-	if (BATcapacity(r) <= max) {
+	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED)
 			err = 1;
