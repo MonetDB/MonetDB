@@ -223,6 +223,7 @@ const char *passRef;
 const char *pcreRef;
 const char *percent_rankRef;
 const char *pinRef;
+const char *pipelinesRef;
 const char *plusRef;
 const char *postludeRef;
 const char *predicateRef;
@@ -542,6 +543,7 @@ void optimizerInit(void)
 	pcreRef = putName("pcre");
 	percent_rankRef = putName("percent_rank");
 	pinRef = putName("pin");
+	pipelinesRef = putName("pipelines");
 	plusRef = putName("+");
 	postludeRef = putName("postlude");
 	predicateRef = putName("predicate");

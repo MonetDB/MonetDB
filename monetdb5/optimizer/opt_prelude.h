@@ -221,6 +221,7 @@ mal_export  const char *passRef;
 mal_export  const char *pcreRef;
 mal_export  const char *percent_rankRef;
 mal_export  const char *pinRef;
+mal_export  const char *pipelinesRef;
 mal_export  const char *plusRef;
 mal_export  const char *postludeRef;
 mal_export  const char *predicateRef;
