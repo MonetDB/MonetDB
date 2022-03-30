@@ -1097,7 +1097,11 @@ HEAP_malloc(BAT *b, size_t nbytes)
 		size_t newsize;
 
 		assert(heap->free + MAX(heap->free, nbytes) <= VAR_MAX);
+#if SIZEOF_SIZE_T == 4
 		newsize = MIN(heap->free, (size_t) 1 << 20);
+#else
+		newsize = MIN(heap->free, (size_t) 1 << 30);
+#endif
 		newsize = (size_t) roundup_8(heap->free + MAX(newsize, nbytes));
 		assert(heap->free <= VAR_MAX);
 		block = (size_t) heap->free;	/* current end-of-heap */
