@@ -304,8 +304,10 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			r++;
 		}
 	}
+	MT_lock_set(&b->theaplock);
 	BATsetcount(b, oldcnt + ci->ncand);
 	assert(b->batCapacity >= b->batCount);
+	MT_lock_unset(&b->theaplock);
 	/* maintain hash */
 	MT_rwlock_wrlock(&b->thashlock);
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
@@ -376,7 +378,9 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 				*dst++ = src[canditer_next(ci) - hseq];
 			}
 		}
+		MT_lock_set(&b->theaplock);
 		BATsetcount(b, BATcount(b) + ci->ncand);
+		MT_lock_unset(&b->theaplock);
 		/* maintain hash table */
 		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = BATcount(b) - ci->ncand;
@@ -429,7 +433,9 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		r++;
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
+	MT_lock_set(&b->theaplock);
 	BATsetcount(b, r);
+	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
 
@@ -656,12 +662,12 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		return GDK_FAIL;
 	}
 
-	b->batDirtydesc = true;
-
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
 	MT_lock_set(&b->theaplock);
+	b->batDirtydesc = true;
+
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
 		if (ni.maxpos != BUN_NONE) {
 			BATiter bi = bat_iterator_nolock(b);
@@ -700,6 +706,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	if (b->ttype == TYPE_void) {
 		/* b does not have storage, keep it that way if we can */
 		HASHdestroy(b);	/* we're not maintaining the hash here */
+		MT_lock_set(&b->theaplock);
 		if (BATtdense(n) && ci.tpe == cand_dense &&
 		    (BATcount(b) == 0 ||
 		     (BATtdense(b) &&
@@ -708,6 +715,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (BATcount(b) == 0)
 				BATtseqbase(b, n->tseqbase + ci.seq - hseq);
 			BATsetcount(b, BATcount(b) + ci.ncand);
+			MT_lock_unset(&b->theaplock);
 			goto doreturn;
 		}
 		if ((BATcount(b) == 0 || is_oid_nil(b->tseqbase)) &&
@@ -715,10 +723,12 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			/* both b and n are void/nil */
 			BATtseqbase(b, oid_nil);
 			BATsetcount(b, BATcount(b) + ci.ncand);
+			MT_lock_unset(&b->theaplock);
 			goto doreturn;
 		}
 		/* we need to materialize b; allocate enough capacity */
 		b->batCapacity = BATcount(b) + ci.ncand;
+		MT_lock_unset(&b->theaplock);
 		if (BATmaterialize(b) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
@@ -728,6 +738,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	r = BATcount(b);
 
 	/* property setting */
+	MT_lock_set(&b->theaplock);
 	if (BATcount(b) == 0) {
 		b->tsorted = ni.sorted;
 		b->trevsorted = ni.revsorted;
@@ -781,6 +792,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		b->tnonil &= ni.nonil;
 		b->tnil |= ni.nil && ci.ncand == ni.count;
 	}
+	MT_lock_unset(&b->theaplock);
 	if (b->ttype == TYPE_str) {
 		if (insert_string_bat(b, &ni, &ci, force, mayshare) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
@@ -838,7 +850,9 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			}
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
+		MT_lock_set(&b->theaplock);
 		BATsetcount(b, b->batCount + ci.ncand);
+		MT_lock_unset(&b->theaplock);
 	}
 
   doreturn:
@@ -905,6 +919,7 @@ BATdel(BAT *b, BAT *d)
 		}
 		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
+		MT_lock_set(&b->theaplock);
 		if (o + c < b->hseqbase + BATcount(b)) {
 			o -= b->hseqbase;
 			if (ATOMstorage(b->ttype) == TYPE_msk) {
@@ -922,7 +937,6 @@ BATdel(BAT *b, BAT *d)
 			b->theap->dirty = true;
 			// o += b->hseqbase; // if this were to be used again
 		}
-		MT_lock_set(&b->theaplock);
 		b->batCount -= c;
 		MT_lock_unset(&b->theaplock);
 	} else {
@@ -1430,7 +1444,9 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			bi.maxpos = ni.maxpos;
 			if (BATtdense(n)) {
 				/* replaced all of b with a dense sequence */
+				MT_lock_set(&b->theaplock);
 				BATtseqbase(b, ni.tseq);
+				MT_lock_unset(&b->theaplock);
 			}
 		}
 	} else {
@@ -2120,6 +2136,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	BAT *b, BAT *o, BAT *g, bool reverse, bool nilslast, bool stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL, *pb = NULL;
+	BATiter pbi;
 	oid *restrict grps, *restrict ords, prev;
 	BUN p, q, r;
 	lng t0 = GDKusec();
@@ -2143,6 +2160,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		GDKerror("type %s cannot be sorted\n", ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
+	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void) {
 		if (!b->tsorted) {
 			b->tsorted = true;
@@ -2162,6 +2180,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			b->batDirtydesc = true;
 		}
 	}
+	MT_lock_unset(&b->theaplock);
 	if (o != NULL &&
 	    (ATOMtype(o->ttype) != TYPE_oid || /* oid tail */
 	     BATcount(o) != BATcount(b) ||     /* same size as b */
@@ -2198,6 +2217,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		 * be used */
 		nilslast = reverse;
 	}
+	pbi = bat_iterator(NULL);
 	if (BATcount(b) <= 1 ||
 	    (reverse == nilslast &&
 	     (reverse ? b->trevsorted : b->tsorted) &&
@@ -2236,6 +2256,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			}
 			*groups = gn;
 		}
+		bat_iterator_end(&pbi);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",o="
 			  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
 			  ",reverse=%d,nilslast=%d,stable=%d) = ("
@@ -2258,8 +2279,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	} else {
 		pb = b;
 	}
+	bat_iterator_end(&pbi);
+	pbi = bat_iterator(pb);
 	/* when we will create an order index if it doesn't already exist */
-	mkorderidx = (g == NULL && !reverse && !nilslast && pb != NULL && (order || !pb->batTransient));
+	mkorderidx = (g == NULL && !reverse && !nilslast && pb != NULL && (order || !pbi.transient));
 	if (g == NULL && !reverse && !nilslast && pb != NULL) {
 		(void) BATcheckorderidx(pb);
 		MT_lock_set(&pb->batIdxLock);
@@ -2282,10 +2305,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	if (g == NULL && o == NULL && !reverse && !nilslast && oidxh != NULL) {
 		/* there is an order index that we can use */
-		on = COLnew(pb->hseqbase, TYPE_oid, BATcount(pb), TRANSIENT);
+		on = COLnew(pb->hseqbase, TYPE_oid, pbi.count, TRANSIENT);
 		if (on == NULL)
 			goto error;
-		memcpy(Tloc(on, 0), (oid *) oidxh->base + ORDERIDXOFF, BATcount(pb) * sizeof(oid));
+		memcpy(Tloc(on, 0), (oid *) oidxh->base + ORDERIDXOFF, pbi.count * sizeof(oid));
 		BATsetcount(on, BATcount(b));
 		HEAPdecref(oidxh, false);
 		oidxh = NULL;
@@ -2325,6 +2348,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			BBPunfix(on->batCacheid);
 			on = NULL;
 		}
+		bat_iterator_end(&pbi);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",o="
 			  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
 			  ",reverse=%d,nilslast=%d,stable=%d) = ("
@@ -2348,6 +2372,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			BAT *b2 = COLcopy(bn, ATOMtype(bn->ttype), true, TRANSIENT);
 			BBPunfix(bn->batCacheid);
 			bn = b2;
+		}
+		if (pb) {
+			bat_iterator_end(&pbi);
+			pbi = bat_iterator(NULL);
 		}
 		pb = NULL;
 	} else {
@@ -2432,6 +2460,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 					goto error;
 				*groups = gn;
 			}
+			bat_iterator_end(&pbi);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",o=" ALGOOPTBATFMT ",g=" ALGOBATFMT
 				  ",reverse=%d,nilslast=%d,stable=%d"
@@ -2512,11 +2541,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (m != NULL) {
 			assert(orderidxlock);
 			if (pb->torderidx == NULL) {
-				pb->batDirtydesc = true;
 				if (ords != (oid *) m->base + ORDERIDXOFF) {
 					memcpy((oid *) m->base + ORDERIDXOFF,
 					       ords,
-					       BATcount(pb) * sizeof(oid));
+					       pbi.count * sizeof(oid));
 				}
 				ATOMIC_INIT(&m->refs, 1);
 				pb->torderidx = m;
@@ -2550,6 +2578,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 	}
 
+	bat_iterator_end(&pbi);
 	if (sorted)
 		*sorted = bn;
 	else {
@@ -2568,6 +2597,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	return GDK_SUCCEED;
 
   error:
+	bat_iterator_end(&pbi);
 	if (orderidxlock)
 		MT_lock_unset(&pb->batIdxLock);
 	if (oidxh)
