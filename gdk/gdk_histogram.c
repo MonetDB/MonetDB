@@ -285,19 +285,22 @@ HISTOGRAMcreate(BAT *b)
 	MT_thread_setalgorithm("create histogram");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
-	if (!can_create_histogram(b->ttype)) {
-		GDKerror("Cannot create histogram for %s bats\n", ATOMname(b->ttype));
-		return GDK_FAIL;
-	}
-
 	if (VIEWtparent(b)) /* don't create histograms on views */
 		b = BBP_cache(VIEWtparent(b));
 
-	if (BATcount(b) == 0) /* no histograms on empty BATs */
+	bi = bat_iterator(b);
+	if (!can_create_histogram(bi.type)) {
+		bat_iterator_end(&bi);
+		GDKerror("Cannot create histogram for %s bats\n", ATOMname(bi.type));
+		return GDK_FAIL;
+	}
+
+	if (BATcount(b) == 0) { /* no histograms on empty BATs */
+		bat_iterator_end(&bi);
 		return GDK_SUCCEED;
+	}
 
 	if (b->thistogram == NULL) {
-		bi = bat_iterator(b);
 		MT_lock_set(&b->batIdxLock);
 		if (b->thistogram == NULL) {
 			BAT *sids, *sam;
@@ -358,8 +361,8 @@ HISTOGRAMcreate(BAT *b)
 			}
 		}
 		MT_lock_unset(&b->batIdxLock);
-		bat_iterator_end(&bi);
 	}
+	bat_iterator_end(&bi);
 	TRC_DEBUG(ACCELERATOR, "histogram creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
 fail:
