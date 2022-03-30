@@ -548,7 +548,7 @@ sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 	sql_subtype *tp = exp_subtype(first);
 	const char *localtype = tp->type->eclass == EC_SEC ? "lng" : "int";
 	atom *omin, *omax;
-	int nmin = 1, nmax = 31;
+	lng nmin = 1, nmax = 31;
 
 	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
 		if (tp->type->eclass == EC_SEC) {
