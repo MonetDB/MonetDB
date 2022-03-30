@@ -912,8 +912,6 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		}
 		}
 	}
-	BBPunfix(b->batCacheid);
-	BBPunfix(bs->batCacheid);
 
 	BATsetcount(bn, cnt);
 	bn->tsorted = false;
@@ -924,6 +922,8 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	bn->tnil = false;		/* can't be sure if values deleted */
 	*ret = bn->batCacheid;
 	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bs->batCacheid);
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
