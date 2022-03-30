@@ -2826,27 +2826,36 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			return ok;
 		}
 		bat bid = d->cs.st == ST_DICT ? d->cs.ebid : d->cs.bid;
-		if ((b = quick_descriptor(bid))) {
-			*nonil = b->tnonil && !b->tnil;
+		if ((b = temp_descriptor(bid))) {
 			int eclass = c->type.type->eclass;
+			BATiter bi = bat_iterator(b);
+			*nonil = bi.nonil && !bi.nil;
 
 			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
-				d->cs.ucnt == 0 && (b->tminpos != BUN_NONE || b->tmaxpos != BUN_NONE) && (b = temp_descriptor(bid))) {
-				BATiter bi = bat_iterator(b);
+				d->cs.ucnt == 0 && (bi.minpos != BUN_NONE || bi.maxpos != BUN_NONE)) {
 				if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
 					ok |= 1;
 				if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
 					ok |= 2;
-				bat_iterator_end(&bi);
-				bat_destroy(b);
 			}
+			bat_iterator_end(&bi);
+			bat_destroy(b);
 			/* for dict, check the offsets bat for uniqueness */
 			if (d->cs.ucnt == 0 && (d->cs.st == ST_DEFAULT || (b = quick_descriptor(d->cs.bid)))) {
+				MT_lock_set(&b->theaplock);
 				*unique = b->tkey;
 				*unique_est = b->tunique_est;
+				MT_lock_unset(&b->theaplock);
 			}
-			if (*nonil && d->cs.ucnt > 0)
-				*nonil &= ((b = quick_descriptor(d->cs.uvbid)) != NULL) && b->tnonil && !b->tnil;
+			if (*nonil && d->cs.ucnt > 0) {
+				if (!(b = quick_descriptor(d->cs.uvbid))) {
+					*nonil = false;
+				} else {
+					MT_lock_set(&b->theaplock);
+					*nonil &= b->tnonil && !b->tnil;
+					MT_lock_unset(&b->theaplock);
+				}
+			}
 		}
 	}
 	return ok;
