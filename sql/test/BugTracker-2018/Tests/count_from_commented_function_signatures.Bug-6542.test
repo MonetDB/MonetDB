@@ -1,4 +1,11 @@
 statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE sys.myfunctions ("id" INTEGER,"name" VARCHAR(256),"func" VARCHAR(8196),"mod" VARCHAR(8196),"language" INTEGER,	"type" INTEGER,"side_effect" BOOLEAN,"varres" BOOLEAN,"vararg" BOOLEAN,
+	"schema_id" INTEGER,"system" BOOLEAN,"semantics" BOOLEAN)
+
+statement ok
 CREATE VIEW sys.commented_function_signatures_6542 AS
 SELECT f.id AS fid,
        s.name AS schema,
@@ -9,7 +16,7 @@ SELECT f.id AS fid,
        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,
        p.type, p.type_digits, p.type_scale,
        ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line
-  FROM sys.functions f
+  FROM sys.myfunctions f
   JOIN sys.comments c ON f.id = c.id
   JOIN sys.schemas s ON f.schema_id = s.id
   LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1
@@ -36,12 +43,12 @@ project (
 | | | | | | | | | | join (
 | | | | | | | | | | | semijoin (
 | | | | | | | | | | | | select (
-| | | | | | | | | | | | | table("sys"."functions") [ "functions"."id" UNIQUE as "f"."id", "functions"."schema_id" as "f"."schema_id", "functions"."system" as "f"."system" ]
-| | | | | | | | | | | | ) [ ("f"."system") = (boolean(1) "true") ],
+| | | | | | | | | | | | | table("sys"."myfunctions") [ "myfunctions"."id" NOT NULL as "f"."id", "myfunctions"."schema_id" NOT NULL as "f"."schema_id", "myfunctions"."system" NOT NULL as "f"."system" ]
+| | | | | | | | | | | | ) [ ("f"."system" NOT NULL) = (boolean(1) "true") ],
 | | | | | | | | | | | | table("sys"."comments") [ "comments"."id" NOT NULL UNIQUE HASHCOL  as "c"."id" ]
-| | | | | | | | | | | ) [ ("f"."id" UNIQUE) = ("c"."id" NOT NULL UNIQUE HASHCOL ) ],
+| | | | | | | | | | | ) [ ("f"."id" NOT NULL) = ("c"."id" NOT NULL UNIQUE HASHCOL ) ],
 | | | | | | | | | | | table("sys"."schemas") [ "schemas"."id" UNIQUE as "s"."id" ]
-| | | | | | | | | | ) [ ("f"."schema_id") = ("s"."id" UNIQUE) ],
+| | | | | | | | | | ) [ ("f"."schema_id" NOT NULL) = ("s"."id" UNIQUE) ],
 | | | | | | | | | | select (
 | | | | | | | | | | | table("sys"."args") [ "args"."func_id" as "p"."func_id", "args"."inout" as "p"."inout", "args"."number" as "p"."number" ]
 | | | | | | | | | | ) [ ("p"."inout") = (tinyint(1) "1") ]
@@ -64,3 +71,8 @@ select count (*) from sys.commented_function_signatures_6542
 statement ok
 DROP VIEW sys.commented_function_signatures_6542
 
+statement ok
+DROP TABLE sys.myfunctions
+
+statement ok
+ROLLBACK
