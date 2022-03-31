@@ -349,8 +349,6 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		/* if b is still empty, in the transient farm, and n
 		 * is read-only, we replace b's vheap with a reference
 		 * to n's */
-		/* make sure locking happens in a predictable order:
-		 * lowest id first */
 		MT_lock_set(&b->theaplock);
 		if (b->tvheap->parentid != b->batCacheid)
 			BBPunshare(b->tvheap->parentid);
@@ -416,6 +414,30 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
 		HEAPdecref(oh, false);
+	}
+	if (BATcount(b) == 0 && BATatoms[b->ttype].atomFix == NULL &&
+	    ci->tpe == cand_dense && ci->ncand == ni->count) {
+		/* just copy the heaps */
+		if (HEAPgrow(&b->theaplock, &b->tvheap, ni->vhfree, false) != GDK_SUCCEED)
+			return GDK_FAIL;
+		memcpy(b->theap->base, ni->base, ni->hfree);
+		memcpy(b->tvheap->base, ni->vh->base, ni->vhfree);
+		b->theap->free = ni->hfree;
+		b->tvheap->free = ni->vhfree;
+		BATsetcount(b, ni->count);
+		b->tnil = ni->nil;
+		b->tnonil = ni->nonil;
+		b->tsorted = ni->sorted;
+		b->tnosorted = ni->b->tnosorted;
+		b->trevsorted = ni->revsorted;
+		b->tnorevsorted = ni->b->tnorevsorted;
+		b->tkey = ni->key;
+		b->tnokey[0] = ni->b->tnokey[0];
+		b->tnokey[1] = ni->b->tnokey[1];
+		b->tminpos = ni->minpos;
+		b->tmaxpos = ni->maxpos;
+		b->tunique_est = ni->unique_est;
+		return GDK_SUCCEED;
 	}
 	/* copy data from n to b */
 	r = BATcount(b);

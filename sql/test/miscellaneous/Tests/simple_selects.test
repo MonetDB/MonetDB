@@ -896,6 +896,48 @@ select dosomething()
 statement ok
 drop function dosomething
 
+statement ok
+create global temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop table x
+
+statement ok
+create global temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop index tmp.ups
+
+statement ok
+drop table x
+
+statement ok
+create local temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop table x
+
+statement ok
+create local temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop index tmp.ups
+
+statement ok
+drop table x
+
 # some private functions related errors
 statement error 42000!SELECT: no such binary operator 'scale_up'(decimal,tinyint)
 select scale_up(12.1, 10)
