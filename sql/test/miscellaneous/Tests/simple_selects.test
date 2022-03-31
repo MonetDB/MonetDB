@@ -914,13 +914,7 @@ statement ok
 CREATE INDEX ups ON tmp.x (x)
 
 statement ok
-drop table x
-
-statement ok
-create local temp table x(x int, y int)
-
-statement ok
-CREATE INDEX ups ON tmp.x (x)
+drop index tmp.ups
 
 statement ok
 drop table x
@@ -930,6 +924,18 @@ create local temp table x(x int, y int)
 
 statement ok
 CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop table x
+
+statement ok
+create local temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop index tmp.ups
 
 statement ok
 drop table x
