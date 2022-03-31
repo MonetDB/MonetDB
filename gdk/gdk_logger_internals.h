@@ -65,7 +65,7 @@ struct logger {
 	size_t bufsize;
 };
 
-typedef struct old_logger {
+struct old_logger {
 	logger *lg;		/* the new logger instance */
 	const char *filename;	/* name of log file */
 	lng changes;
@@ -94,12 +94,8 @@ typedef struct old_logger {
 				   commit). */
 	BAT *add;		/* bat ids of bats being added by upgrade */
 	BAT *del;		/* bat ids of bats being deleted by upgrade */
-} old_logger;
+};
 
 gdk_return logger_create_types_file(logger *lg, const char *filename, bool append);
-
-/* interface for the "old" logger */
-gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version, const char *filename);
-log_bid old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id);
 
 #endif /* _LOGGER_INTERNALS_H_ */
