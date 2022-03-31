@@ -331,12 +331,12 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (fr == too) {
 			if ((lval = find_prop_and_get(l->p, PROP_MAX))) {
 				atom *res = atom_copy(sql->sa, lval);
-				if (atom_cast(sql->sa, res, to))
+				if ((res = atom_cast(sql->sa, res, to)))
 					set_property(sql, e, PROP_MAX, res);
 			}
 			if ((lval = find_prop_and_get(l->p, PROP_MIN))) {
 				atom *res = atom_copy(sql->sa, lval);
-				if (atom_cast(sql->sa, res, to))
+				if ((res = atom_cast(sql->sa, res, to)))
 					set_property(sql, e, PROP_MIN, res);
 			}
 		}
