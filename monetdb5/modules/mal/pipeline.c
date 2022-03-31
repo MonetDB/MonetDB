@@ -1208,6 +1208,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
+		u->T.private_bat = 1;
 	} else {
 		u = BATdescriptor(*uid);
 	}
@@ -1215,6 +1216,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		BBPunfix(*bid);
 		return createException(SQL, "group.group",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	private = u->T.private_bat;
 
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
@@ -1505,6 +1507,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		/* Lookup parent hash */
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->T.sink);
+		u->T.private_bat = 1;
 		BBPunfix(*Ph);
 	} else {
 		u = BATdescriptor(*uid);
@@ -1514,6 +1517,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		BBPunfix(*bid);
 		return createException(SQL, "group.group",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	private = u->T.private_bat;
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
