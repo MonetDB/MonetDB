@@ -4375,8 +4375,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	}
 	pp = get_pipeline(be);
 	if (df2 && !pp) {
-		int npp = get_need_pipeline(be);
-		assert(npp);
+		(void)get_need_pipeline(be);
 		set_pipeline(be, pp = pp_create(be, SLICES*GDKnr_threads));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
