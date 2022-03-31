@@ -898,3 +898,14 @@ select dosomething()
 statement ok
 drop function dosomething
 
+statement ok
+start transaction
+
+statement ok
+create global temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+rollback
