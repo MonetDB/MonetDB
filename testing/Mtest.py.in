@@ -3351,7 +3351,7 @@ def main(argv) :
             # make sure, that PATHs are absolute
 
     # commandline options overrule environment
-    parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about Mtest.py.' % _configure(os.path.join('@QXSOURCE@','testing','README')))
+    parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about %s.' % (_configure(os.path.join('@QXSOURCE@','testing','README')), THISFILE))
     parser.add_argument('--version', action='version', version='@VERSION@')
     parser.add_argument('--recursive', '-r', action='store_true', dest='recursive', help="recurse into subdirectories (implies 'All')")
     parser.add_argument('--revision', action='store', dest='revision', metavar='<hgid>', help='use given revision as the HG short hash')
@@ -3387,7 +3387,6 @@ def main(argv) :
     parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
-    parser.add_argument('--report-all-failures', action='store_true', dest='report_all_failures', help='report all failing tests, even if many')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
     global produce_html
     if produce_html:
@@ -4140,11 +4139,8 @@ VALUES (%s, '%s', '%s', '%s',
             if Failure[x]:
                 how = z
                 what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
-                # only report failed tests if there aren't too many
-                if opts.report_all_failures or Failed < 30 and \
-                       (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
-                    for f in Failure[x]:
-                        what += "        %s\n" % f
+                for f in Failure[x]:
+                    what += "        %s\n" % f
         print(file=sys.stderr, end='', flush=True)
         if verbosity == 0:
             if Failed or errseen:
