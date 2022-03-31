@@ -42,6 +42,11 @@ typedef int log_id;
 #define LOG_BATGROUP_ID 5
 #define LOG_BATGROUP_END 6
 
+/* interface for the "old" logger */
+typedef struct old_logger old_logger;
+gdk_export gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version, const char *filename);
+gdk_export log_bid old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id);
+
 gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 gdk_export void logger_destroy(logger *lg);
 gdk_export gdk_return logger_flush(logger *lg, ulng saved_id); /* try to flush a part of the logs, including the passed saved_id transaction id */
