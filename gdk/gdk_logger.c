@@ -2045,6 +2045,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	logbat_destroy(lg->seqs_id);
 	logbat_destroy(lg->seqs_val);
 	logbat_destroy(lg->dseqs);
+	MT_lock_destroy(&lg->lock);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->local_dir);
@@ -2085,7 +2086,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		.saved_id = getBBPlogno(), 		/* get saved log numer from bbp */
 		.saved_tid = (int)getBBPtransid(), 	/* get saved transaction id from bbp */
 	};
-	MT_lock_init(&lg->lock, fn);
 
 	/* probably open file and check version first, then call call old logger code */
 	if (snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP) >= FILENAME_MAX) {
@@ -2105,6 +2105,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		GDKfree(lg);
 		return NULL;
 	}
+	MT_lock_init(&lg->lock, fn);
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
@@ -2152,6 +2153,7 @@ logger_destroy(logger *lg)
 		logbat_destroy(lg->catalog_lid);
 		logger_unlock(lg);
 	}
+	MT_lock_destroy(&lg->lock);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->buf);
