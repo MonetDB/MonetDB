@@ -1067,8 +1067,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 		TRC_CRITICAL(GDK, "Could not create environment BATs");
 		return GDK_FAIL;
 	}
-	if (BBPrename(GDKkey->batCacheid, "environment_key") != 0 ||
-	    BBPrename(GDKval->batCacheid, "environment_val") != 0) {
+	if (BBPrename(GDKkey, "environment_key") != 0 ||
+	    BBPrename(GDKval, "environment_val") != 0) {
 		free(n);
 		TRC_CRITICAL(GDK, "BBPrename of environment BATs failed");
 		return GDK_FAIL;

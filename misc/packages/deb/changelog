@@ -1,3 +1,76 @@
+monetdb (11.43.13) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7278: BUG when there is more than one field/filter in the having
+    clause
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 01 Apr 2022 11:31:11 +0200
+
+monetdb (11.43.13) unstable; urgency=low
+
+  * gdk: Improved speed of BATappend to empty varsized bat: we now just copy
+    the heaps instead of inserting individual values.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 1 Apr 2022 11:31:11 +0200
+
+monetdb (11.43.13) unstable; urgency=low
+
+  * monetdb5: Improved parsing speed of blob values, especially on Windows.
+    On Windows, using the locale-aware functions isdigit and isxdigit is
+    comparatively very slow, so we avoid them.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 1 Apr 2022 11:31:11 +0200
+
+monetdb (11.43.13) unstable; urgency=low
+
+  * gdk: Improved speed of projection (BATproject) on varsized bats by sharing
+    the data heap (vheap).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 29 Mar 2022 11:31:11 +0200
+
+monetdb (11.43.11) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7252: Segmentation fault on second run
+  * GH#7253: Extremely slow INSERT INTO <table> SELECT
+  * GH#7254: Commit with deletions is very slow
+  * GH#7263: PRIMARY KEY constraint is not persistent through server restarts
+  * GH#7267: Update after delete does not update some rows
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Mar 2022 09:53:47 +0100
+
+monetdb (11.43.11) unstable; urgency=low
+
+  * gdk: Fixed a race condition which could cause a too large size being written
+    for a .theap file to the BBP.dir file after the correct size file had
+    been saved to disk.
+  * gdk: We now ignore the size and capacity columns in the BBP.dir file.
+    These values are essential during run time, but not useful in the
+    on-disk image of the database.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 18 Mar 2022 09:53:47 +0100
+
+monetdb (11.43.11) unstable; urgency=low
+
+  * gdk: Fixed a bug in the append code for msk (bit mask) bats.
+  * gdk: Conversions from floating point types to integral types that involve
+    multiplication now use the "long double" as intermediate type, thereby
+    loosing as few significant bits as is feasible.
+  * gdk: Found and fixed another source for the now infamous BBPcheckbats error
+    that sometimes occurs at startup of the server.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 9 Mar 2022 09:53:47 +0100
+
+monetdb (11.43.11) unstable; urgency=low
+
+  * clients: Improved the handling of the \r (internal pager) command in mclient.
+    It now properly counts the header of table, and when a (very) long
+    table is being printed and aborted part way in the built-in pager, not
+    all data is transferred to the client (and then discarded).  Instead
+    at most 1000 rows are transferred.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 16 Feb 2022 09:53:47 +0100
+
 monetdb (11.43.9) unstable; urgency=low
 
   * Rebuilt.
