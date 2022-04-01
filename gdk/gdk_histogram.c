@@ -208,7 +208,7 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 		if (!(h->histogram = GDKmalloc(sizeof(HistogramBucket_##TPE) * h->nbuckets))) \
 			return NULL; \
 		gap = (j / NBUCKETS) - (i / NBUCKETS) + (TPE) ceil(abs((j % NBUCKETS) - (i % NBUCKETS)) / (dbl) NBUCKETS); \
-		/* TODO for temporal types, this is gibing values out of range such as 1994-02-00 */ \
+		/* TODO for temporal types, this is giving values out of range such as 1994-02-00 */ \
 	\
 		hist = (HistogramBucket_##TPE *) h->histogram; \
 		for (BUN k = 0 ; k < NBUCKETS ; k++) { \
@@ -430,9 +430,9 @@ fail:
 #define histogram_print_loop(TPE) \
 	do { \
 		ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[TYPE_##TPE].atomToStr; \
-		HistogramBucket_##TPE *restrict hist = (HistogramBucket_##TPE *) b->thistogram->histogram; \
+		const HistogramBucket_##TPE *restrict hist = (HistogramBucket_##TPE *) b->thistogram->histogram; \
 		for (int i = 0 ; i < nbuckets ; i++) { \
-			HistogramBucket_##TPE *restrict hb = &(hist[i]); \
+			const HistogramBucket_##TPE *restrict hb = &(hist[i]); \
 			if (atomtostr(&minbuf, &minlen, &hb->min, true) < 0 || \
 				atomtostr(&maxbuf, &maxlen, &hb->max, true) < 0) { \
 				MT_lock_unset(&b->batIdxLock); \
