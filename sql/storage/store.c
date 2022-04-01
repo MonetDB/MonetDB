@@ -927,6 +927,8 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->instantiated = t->lang != FUNC_LANG_SQL && t->lang != FUNC_LANG_MAL;
 	t->type = (sql_ftype) store->table_api.column_find_int(tr, find_sql_column(funcs, "type"), rid);
 	t->side_effect = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "side_effect"), rid);
+	if (t->type == F_FUNC && t->lang > FUNC_LANG_SQL)
+		t->side_effect = 1;
 	t->varres = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "varres"), rid);
 	t->vararg = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "vararg"), rid);
 	t->system = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "system"), rid);
@@ -4888,6 +4890,8 @@ create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args
 	t->instantiated = lang != FUNC_LANG_SQL && lang != FUNC_LANG_MAL;
 	t->semantics = TRUE;
 	t->side_effect = side_effect;
+	if (t->type == F_FUNC && t->lang > FUNC_LANG_SQL)
+		t->side_effect = 1;
 	t->varres = varres;
 	t->vararg = vararg;
 	t->ops = args;
@@ -4920,6 +4924,8 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	t->instantiated = lang != FUNC_LANG_SQL && lang != FUNC_LANG_MAL;
 	t->semantics = semantics;
 	t->side_effect = side_effect;
+	if (t->type == F_FUNC && t->lang > FUNC_LANG_SQL)
+		t->side_effect = 1;
 	t->varres = varres;
 	t->vararg = vararg;
 	t->ops = SA_LIST(tr->sa, (fdestroy) &arg_destroy);

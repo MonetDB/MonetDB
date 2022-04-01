@@ -156,7 +156,7 @@ rel_mark_partition(sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
-		if (is_simple_project(rel->op) && exps_have_unsafe(rel->exps, 1))
+		if ((is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1))
 			return 0;
 		if (rel->l)
 			res = rel_mark_partition(rel->l);
@@ -300,7 +300,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
 		if (pb && is_simple_project(rel->op) && rel->r)
 			return 0;
-		if (pb && exps_have_unsafe(rel->exps, 1))
+		//if (pb && exps_have_unsafe(rel->exps, 1))
+		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1))
 			return 0;
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, pb);
