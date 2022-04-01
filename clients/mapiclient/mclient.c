@@ -1418,7 +1418,7 @@ SQLrenderer(MapiHdl hdl)
 	int ps = rowsperpage;
 	bool silent = false;
 	int64_t rows = 0;
-	sighandler_t prev_handler;
+	void (*prev_handler)(int);
 
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
@@ -3233,11 +3233,11 @@ main(int argc, char **argv)
 		fprintf(stderr, "error: could not set locale\n");
 		exit(2);
 	}
-#endif
 
+	/* Windows does't know about SIGPIPE */
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		perror("sigaction");
-
+#endif
 	if (mnstr_init() < 0) {
 		fprintf(stderr, "error: could not initialize streams library");
 		exit(2);
