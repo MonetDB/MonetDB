@@ -792,17 +792,16 @@ typedef struct BAT {
 	oid hseqbase;		/* head seq base */
 	MT_Id creator_tid;	/* which thread created it */
 	bat batCacheid;		/* index into BBP */
+	role_t batRole;		/* role of the bat */
 
 	/* dynamic bat properties */
-	restrict_t batRestricted; /* access privileges */
-	bool batTransient;	/* should the BAT persist on disk? */
+	restrict_t batRestricted:2; /* access privileges */
 	bool
+	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
 	 batDirtydesc:1;	/* bat descriptor dirty marker */
-	uint16_t /* adjacent bit fields are packed together (if they fit) */
-	 selcnt:10;		/* how often used in equi select without hash */
-	role_t batRole;		/* role of the bat */
+	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
 
@@ -979,13 +978,13 @@ typedef struct BATiter {
 		copiedtodisk:1,
 		transient:1;
 	restrict_t restricted:2;
+#ifndef NDEBUG
+	bool locked:1;
+#endif
 	union {
 		oid tvid;
 		bool tmsk;
 	};
-#ifndef NDEBUG
-	bool locked;
-#endif
 } BATiter;
 
 static inline BATiter
