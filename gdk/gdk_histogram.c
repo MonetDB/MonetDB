@@ -25,6 +25,7 @@
 static_assert(NBUCKETS > 2, "The number of buckets must be > 2");
 static_assert(SAMPLE_SIZE > NBUCKETS, "The sample size must be > number of buckets");
 static_assert(SAMPLE_SIZE < INT_MAX, "The sample size must be on the integer range");
+static_assert((SAMPLE_SIZE % NBUCKETS) == 0, "The sample size must be a multiple of the number of buckets");
 
 #ifdef HAVE_HGE
 #define	VAR_UPCAST hge
@@ -59,6 +60,7 @@ can_create_histogram(int tpe)
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
+	case TYPE_str:
 		return true;
 	default:		/* type not supported */
 		return false;
@@ -183,6 +185,7 @@ create_perfect_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 		break;
 #endif
 	default:
+		/* no perfect histograms on strings yet */
 		assert(0);
 	}
 	return h;
@@ -270,6 +273,56 @@ create_generic_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 		generic_histogram_loop(hge, abshge);
 		break;
 #endif
+	case TYPE_str: { /* for strings use the hashed value (it cannot be used in ranges) */
+		int i = 0;
+		const int gap = SAMPLE_SIZE / NBUCKETS;
+		HistogramBucket_int *restrict hist;
+
+		h->nbuckets = NBUCKETS;
+		if (!(h->histogram = GDKmalloc(sizeof(HistogramBucket_int) * h->nbuckets)))
+			return NULL;
+
+		hist = (HistogramBucket_int *) h->histogram;
+		for (BUN k = 0 ; k < NBUCKETS ; k++) {
+			HistogramBucket_int *restrict b = &(hist[k]);
+			b->min = i;
+			i += gap;
+			b->max = i;
+			b->count = 0;
+		}
+
+		BATiter bi = bat_iterator(sam);
+		BUN c = bi.count;
+		for (BUN k = 0 ; k < c ; k++) { /* Now create the histogram */
+			const char *next = BUNtvar(bi, k);
+
+			if (strNil(next)) {
+				nulls++;
+			} else {
+				bool found = false;
+				int l = 0, r = NBUCKETS - 1;
+				/* pick the lowest bits according to the sample size from the hash value */
+				int value = (int)(strHash(next) & (SAMPLE_SIZE - 1));
+
+				while (l <= r) { /* Do binary search to find the bucket */
+					int m = l + (r - l) / 2;
+					HistogramBucket_int *restrict b = &(hist[m]);
+					if (value >= b->min && value < b->max) {
+						b->count++;
+						found = true;
+						break;
+					} else if (value < b->min) { /* value is smaller, ignore right half */
+						r = m - 1;
+					} else { /* value is greater, ignore left half */
+						l = m + 1;
+					}
+				}
+				assert(found); /* the value must be found */
+			}
+		}
+		bat_iterator_end(&bi);
+		h->nulls = nulls;
+	} break;
 	default:
 		assert(0);
 	}
@@ -306,7 +359,7 @@ HISTOGRAMcreate(BAT *b)
 			BAT *sids, *sam;
 			Histogram *h;
 			bool perfect_histogram = false;
-			ValRecord min, max, diff = {.vtype = VAR_TPE}, conv = {.vtype = VAR_TPE}, nbuckets = {.vtype = VAR_TPE}, truth = {.vtype = TYPE_bit};
+			ValRecord min = {.vtype = bi.type}, max = {.vtype = bi.type};
 
 			if (!(sids = BATsample_with_seed(b, SAMPLE_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid)))
 				goto fail;
@@ -315,27 +368,31 @@ HISTOGRAMcreate(BAT *b)
 			if (!sam)
 				goto fail;
 
-			if (bi.type == TYPE_bit) {
-				VALinit(&min, TYPE_bit, &(bit){0});
-				VALinit(&max, TYPE_bit, &(bit){1});
-				perfect_histogram = true;
-			} else {
-				min_and_max_values(&bi, &min, &max);
-				if (VARcalcsub(&diff, &max, &min, true) == GDK_SUCCEED) {
-					if (VARconvert(&conv, &diff, true, 0, 0, 0) == GDK_SUCCEED) {
-						VAR_UPCAST v = (VAR_UPCAST) NBUCKETS;
-						VALinit(&nbuckets, VAR_TPE, &v);
-						/* if the number of buckets is greater than max and min difference, then there is a 'perfect' histogram */
-						if (VARcalcgt(&truth, &nbuckets, &conv) == GDK_SUCCEED) {
-							perfect_histogram = truth.val.btval == 1;
+			if (ATOMbasetype(bi.type) != TYPE_str) {
+				ValRecord diff = {.vtype = VAR_TPE}, conv = {.vtype = VAR_TPE}, nbuckets = {.vtype = VAR_TPE}, truth = {.vtype = TYPE_bit};
+
+				if (bi.type == TYPE_bit) {
+					VALinit(&min, TYPE_bit, &(bit){0});
+					VALinit(&max, TYPE_bit, &(bit){1});
+					perfect_histogram = true;
+				} else {
+					min_and_max_values(&bi, &min, &max);
+					if (VARcalcsub(&diff, &max, &min, true) == GDK_SUCCEED) {
+						if (VARconvert(&conv, &diff, true, 0, 0, 0) == GDK_SUCCEED) {
+							VAR_UPCAST v = (VAR_UPCAST) NBUCKETS;
+							VALinit(&nbuckets, VAR_TPE, &v);
+							/* if the number of buckets is greater than max and min difference, then there is a 'perfect' histogram */
+							if (VARcalcgt(&truth, &nbuckets, &conv) == GDK_SUCCEED) {
+								perfect_histogram = truth.val.btval == 1;
+							} else {
+								GDKclrerr();
+							}
 						} else {
 							GDKclrerr();
 						}
 					} else {
 						GDKclrerr();
 					}
-				} else {
-					GDKclrerr();
 				}
 			}
 
@@ -373,6 +430,7 @@ fail:
 
 #define histogram_print_loop(TPE) \
 	do { \
+		ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[TYPE_##TPE].atomToStr; \
 		HistogramBucket_##TPE *restrict hist = (HistogramBucket_##TPE *) b->thistogram->histogram; \
 		for (int i = 0 ; i < nbuckets ; i++) { \
 			HistogramBucket_##TPE *restrict hb = &(hist[i]); \
@@ -407,7 +465,6 @@ HISTOGRAMprint(BAT *b)
 	size_t len = 0, rlen = 2048, minlen = 256, maxlen = 256;
 	str res = NULL, minbuf = NULL, maxbuf = NULL;
 	int tpe = ATOMbasetype(b->ttype), nbuckets;
-	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[b->ttype].atomToStr;
 
 	if (VIEWtparent(b)) /* don't look on views */
 		b = BBP_cache(VIEWtparent(b));
@@ -438,6 +495,7 @@ HISTOGRAMprint(BAT *b)
 	case TYPE_sht:
 		histogram_print_loop(sht);
 		break;
+	case TYPE_str: /* strings use integer size buckets */
 	case TYPE_int:
 		histogram_print_loop(int);
 		break;
