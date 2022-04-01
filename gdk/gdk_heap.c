@@ -72,7 +72,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 }
 
 static gdk_return HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc);
-static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free);
+static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free, MT_Lock *lock);
 
 static char *
 decompose_filename(str nme)
@@ -318,7 +318,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
 				/* couldn't allocate, now first save data to
 				 * file */
-				if (HEAPsave_intern(&bak, nme, ext, ".tmp", false, bak.free) != GDK_SUCCEED) {
+				if (HEAPsave_intern(&bak, nme, ext, ".tmp", false, bak.free, NULL) != GDK_SUCCEED) {
 					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
 					goto failed;
 				}
@@ -850,7 +850,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
  * safe on stable storage.
  */
 static gdk_return
-HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free)
+HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free, MT_Lock *lock)
 {
 	storage_t store = h->newstorage;
 	long_str extension;
@@ -862,7 +862,11 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	}
 	if (free == 0) {
 		/* nothing to see, please move on */
+		if (lock)
+			MT_lock_set(lock);
 		h->wasempty = true;
+		if (lock)
+			MT_lock_unset(lock);
 		TRC_DEBUG(HEAP,
 			  "not saving: "
 			  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
@@ -883,19 +887,24 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
 		  nme?nme:"", ext, (int) h->newstorage, free, h->size,
 		  dosync?"true":"false");
-	h->dirty = free != h->free;
 	rc = GDKsave(h->farmid, nme, ext, h->base, free, store, dosync);
-	if (rc == GDK_SUCCEED)
+	if (lock)
+		MT_lock_set(lock);
+	if (rc == GDK_SUCCEED) {
+		h->dirty = free != h->free;
 		h->wasempty = false;
-	else
+	} else {
 		h->dirty = true;
+	}
+	if (lock)
+		MT_lock_unset(lock);
 	return rc;
 }
 
 gdk_return
-HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free)
+HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 {
-	return HEAPsave_intern(h, nme, ext, ".new", dosync, free);
+	return HEAPsave_intern(h, nme, ext, ".new", dosync, free, lock);
 }
 
 int

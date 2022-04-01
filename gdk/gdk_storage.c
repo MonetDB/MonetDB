@@ -734,14 +734,14 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			}
 		}
 	} else {
-		if (!b->batCopiedtodisk || bi->dirtydesc || bi->hdirty)
+		if (!bi->copiedtodisk || bi->dirtydesc || bi->hdirty)
 			if (err == GDK_SUCCEED && bi->type)
-				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree);
+				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
 		if (bi->vh
-		    && (!b->batCopiedtodisk || bi->dirtydesc || bi->vhdirty)
+		    && (!bi->copiedtodisk || bi->dirtydesc || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
-			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree);
+			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, &b->theaplock);
 	}
 
 	if (err == GDK_SUCCEED) {

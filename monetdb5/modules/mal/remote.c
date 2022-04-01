@@ -1560,12 +1560,12 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			vi.key,
 			vi.nonil,
 			BATtdense(v),
-			v->batCount,
+			vi.count,
 			sendtheap ? (size_t)vi.count << vi.shift : 0,
 			sendtvheap && vi.count > 0 ? vi.vhfree : 0
 			);
 
-	if (sendtheap && v->batCount > 0) {
+	if (sendtheap && vi.count > 0) {
 		mnstr_write(cntxt->fdout, /* tail */
 					vi.base, vi.count * vi.width, 1);
 		if (sendtvheap)
