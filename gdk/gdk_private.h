@@ -181,13 +181,13 @@ void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHdelete(BAT *b, BUN p, const void *v)
+void HASHdelete(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHdelete_locked(BAT *b, BUN p, const void *v)
+void HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHinsert(BAT *b, BUN p, const void *v)
+void HASHinsert(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHinsert_locked(BAT *b, BUN p, const void *v)
+void HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 BUN HASHmask(BUN cnt)
 	__attribute__((__const__))
@@ -202,14 +202,14 @@ gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	__attribute__((__visibility__("hidden")));
 void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPgrow(MT_Lock *lock, Heap **old, size_t size, bool mayshare)
+gdk_return HEAPgrow(Heap **old, size_t size, bool mayshare)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free)
+gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPshrink(Heap *h, size_t size)

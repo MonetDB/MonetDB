@@ -1,0 +1,176 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create table x (x int, y int, z int)
+
+statement ok rowcount 3
+insert into x values (1,1,1),(2,2,2),(3,3,3)
+
+query I rowsort
+select y from x group by y having count(z) > 1 and count(x) > 1
+----
+
+query I nosort
+select y from x group by y order by count(z) > 1 and count(x) > 1
+----
+1
+2
+3
+
+query I nosort
+select y from x group by y order by count(z), count(x)
+----
+1
+2
+3
+
+query I nosort
+select y from x group by y having count(z) > 1 and count(x) > 1 order by count(z), count(x)
+----
+
+query I nosort
+select y from x group by y having count(z) > 1 and count(x) > 1 order by count(z) > 1 and count(x) > 1
+----
+
+query I rowsort
+select count(y) from x group by y having count(z) > 1 and count(x) > 1
+----
+
+query I nosort
+select count(y) from x group by y order by count(z) > 1 and count(x) > 1
+----
+1
+1
+1
+
+query I nosort
+select count(y) from x group by y order by count(z), count(x)
+----
+1
+1
+1
+
+query I nosort
+select count(y) from x group by y having count(z) > 1 and count(x) > 1 order by count(z), count(x)
+----
+
+query I nosort
+select count(y) from x group by y having count(z) > 1 and count(x) > 1 order by count(z) > 1 and count(x) > 1
+----
+
+query I rowsort
+select count(x) from x group by y having count(z) > 1 and count(x) > 1
+----
+
+query II nosort
+select count(x), count(z) from x group by y order by count(z) > 1 and count(x) > 1
+----
+1
+1
+1
+1
+1
+1
+
+query II nosort
+select count(x), count(z) from x group by y order by count(z), count(x)
+----
+1
+1
+1
+1
+1
+1
+
+query II nosort
+select count(x), count(z) from x group by y having count(z) > 1 and count(x) > 1 order by count(z), count(x)
+----
+
+query II nosort
+select count(x), count(z) from x group by y having count(z) > 1 and count(x) > 1 order by count(z) > 1 and count(x) > 1
+----
+
+query I rowsort
+select 1 from x having count(z) > 1 and count(x) > 1
+----
+1
+
+query I nosort
+select 1 from x order by count(z) > 1 and count(x) > 1
+----
+1
+
+query I nosort
+select 1 from x order by count(z), count(x)
+----
+1
+
+query I nosort
+select 1 from x having count(z) > 1 and count(x) > 1 order by count(z), count(x)
+----
+1
+
+query I nosort
+select 1 from x having count(z) > 1 and count(x) > 1 order by count(z) > 1 and count(x) > 1
+----
+1
+
+query I rowsort
+select count(y) from x having count(z) > 1 and count(x) > 1
+----
+3
+
+query I nosort
+select count(y) from x order by count(z) > 1 and count(x) > 1
+----
+3
+
+query I nosort
+select count(y) from x order by count(z), count(x)
+----
+3
+
+query I nosort
+select count(y) from x having count(z) > 1 and count(x) > 1 order by count(z), count(x)
+----
+3
+
+query I nosort
+select count(y) from x having count(z) > 1 and count(x) > 1 order by count(z) > 1 and count(x) > 1
+----
+3
+
+query II rowsort
+select count(x), count(z) from x having count(z) > 1 and count(x) > 1
+----
+3
+3
+
+query II nosort
+select count(x), count(z) from x order by count(z) > 1 and count(x) > 1
+----
+3
+3
+
+query II nosort
+select count(x), count(z) from x order by count(z), count(x)
+----
+3
+3
+
+query II nosort
+select count(x), count(z) from x having count(z) > 1 and count(x) > 1 order by count(z), count(x)
+----
+3
+3
+
+query II nosort
+select count(x), count(z) from x having count(z) > 1 and count(x) > 1 order by count(z) > 1 and count(x) > 1
+----
+3
+3
+
+statement ok
+ROLLBACK
+

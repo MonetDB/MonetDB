@@ -47,3 +47,7 @@ CODE  = 42000
 QUERY = PREPARE SELECT 1 FROM (SELECT 1) x(x) LEFT OUTER JOIN (SELECT DISTINCT ?) y(y) ON (SELECT TRUE FROM (SELECT 1) z(z)); --error while unnesting because of unknown type
 ERROR = !Cannot rewrite subquery because of parameter with unknown type
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-185783/.s.monetdb.32587
+QUERY = PREPARE SELECT 1 FROM (SELECT ?) x(x) CROSS JOIN LATERAL (SELECT 1 FROM ((SELECT 1) INTERSECT (SELECT 2)) vx(vx) JOIN (SELECT 1) z(z) ON x.x) w(w); --error, Could not determine type for argument number 1
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000
