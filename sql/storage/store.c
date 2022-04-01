@@ -3031,9 +3031,8 @@ part_dup(sql_trans *tr, sql_part *op, sql_table *mt, sql_part **pres)
 			list_append(p->part.values, nextv);
 		}
 	}
-	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base)))) {
+	if (isGlobal(mt) && (res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 		return res;
-	}
 	*pres = p;
 	return res;
 }
@@ -3066,9 +3065,8 @@ trigger_dup(sql_trans *tr, sql_trigger *i, sql_table *t, sql_trigger **tres)
 
 		list_append(nt->columns, kc_dup(tr, okc, t));
 	}
-	if (isGlobal(t) && (res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base)))) {
+	if (isGlobal(t) && (res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
 		return res;
-	}
 	*tres = nt;
 	return res;
 }
@@ -3402,7 +3400,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	if ((res = ol_add(t->idxs, &ni->base)))
 		return res;
 
-	if ((res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
+	if (isGlobal(t) && (res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
 		return res;
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
@@ -3473,7 +3471,7 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigg
 	if ((res = ol_add(t->triggers, &nt->base)))
 		return res;
 
-	if ((res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
+	if (isGlobal(t) && (res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
 		return res;
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
@@ -4249,7 +4247,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 			return res;
 	}
 
-	/* remove idx from schema and table*/
+	/* remove idx from schema and table */
 	if (isGlobal(i->t))
 		if ((res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
 			return res;
@@ -6555,9 +6553,8 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		sqlid *local_id = MNEW(sqlid);
-		if (!local_id) {
+		if (!local_id)
 			return -1;
-		}
 
 		if (!tr->dropped) {
 			tr->dropped = list_create((fdestroy) &id_destroy);
@@ -6575,7 +6572,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
 
-	if (!isTempTable(k->t) && (res = sys_drop_key(tr, k, drop_action)))
+	if ((res = sys_drop_key(tr, k, drop_action)))
 		return res;
 
 	/*Clean the key from the keys*/
@@ -6665,9 +6662,8 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		sqlid *local_id = MNEW(sqlid);
-		if (!local_id) {
+		if (!local_id)
 			return -1;
-		}
 
 		if (!tr->dropped) {
 			tr->dropped = list_create((fdestroy) &id_destroy);
@@ -6680,7 +6676,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if (!isTempTable(i->t) && (res = sys_drop_idx(tr, i, drop_action)))
+	if ((res = sys_drop_idx(tr, i, drop_action)))
 		return res;
 	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql functions depending on the table */
 		return res;

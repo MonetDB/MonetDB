@@ -174,7 +174,7 @@ BATunique(BAT *b, BAT *s)
 		TIMEOUT_CHECK(timeoffset,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	} else if (BATcheckhash(b) ||
-		   (!b->batTransient &&
+		   (!bi.transient &&
 		    ci.ncand == bi.count &&
 		    BAThash(b) == GDK_SUCCEED)) {
 		BUN lo = 0;

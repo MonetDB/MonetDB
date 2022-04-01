@@ -1270,7 +1270,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	int t;			/* data type */
 	bat parent;		/* b's parent bat (if b is a view) */
 	const void *nil;
-	BAT *bn, *tmp;
+	BAT *bn;
 	struct canditer ci;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 	oid vwl = 0, vwh = 0;
@@ -1582,6 +1582,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	parent = VIEWtparent(b);
 	assert(parent >= 0);
+	BAT *pb;
+	BATiter pbi;
+	if (parent > 0)
+		pb = BBP_cache(parent);
+	else
+		pb = NULL;
+	pbi = bat_iterator(pb);
 	/* use hash only for equi-join, and then only if b or its
 	 * parent already has a hash, or if b or its parent is
 	 * persistent and the total size wouldn't be too large; check
@@ -1596,9 +1603,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 		wanthash = havehash ||
-			(!b->batTransient &&
+			(!bi.transient &&
 			 ATOMsize(bi.type) >= sizeof(BUN) / 4 &&
-			 BATcount(b) * (ATOMsize(bi.type) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
+			 bi.count * (ATOMsize(bi.type) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
 		if (!wanthash) {
 			MT_lock_set(&b->theaplock);
 			if (++b->selcnt > 1000) {
@@ -1609,7 +1616,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		if (wanthash && !havehash) {
 			if (bi.unique_est != 0 &&
-			    bi.unique_est < BATcount(b) / no_hash_select_fraction) {
+			    bi.unique_est < bi.count / no_hash_select_fraction) {
 				/* too many duplicates: not worth it */
 				wanthash = false;
 			}
@@ -1625,38 +1632,37 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * hash chain (count divided by #slots) times the cost
 		 * to do a binary search on the candidate list (or 1
 		 * if no need for search)) */
-		tmp = BBP_cache(parent);
-		if (BATcheckhash(tmp)) {
-			MT_rwlock_rdlock(&tmp->thashlock);
-			phash = tmp->thash != NULL &&
-				(BATcount(tmp) == BATcount(b) ||
-				 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
-				 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == BUN_NONE);
+		if (BATcheckhash(pb)) {
+			MT_rwlock_rdlock(&pb->thashlock);
+			phash = pb->thash != NULL &&
+				(pbi.count == bi.count ||
+				 pbi.count / pb->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : bi.count) ||
+				 HASHget(pb->thash, HASHprobe(pb->thash, tl)) == BUN_NONE);
 			if (phash)
 				havehash = wanthash = true;
 			else
-				MT_rwlock_rdunlock(&tmp->thashlock);
+				MT_rwlock_rdunlock(&pb->thashlock);
 		}
 		/* create a hash on the parent bat (and use it) if it is
 		 * the same size as the view and it is persistent */
 		bool wantphash = false;
 		if (!phash) {
-			MT_lock_set(&tmp->theaplock);
-			if (++tmp->selcnt > 1000) {
+			MT_lock_set(&pb->theaplock);
+			if (++pb->selcnt > 1000) {
 				wantphash = true;
-				tmp->selcnt = 1000;
+				pb->selcnt = 1000;
 			}
-			MT_lock_unset(&tmp->theaplock);
+			MT_lock_unset(&pb->theaplock);
 		}
 		if (!phash &&
-		    (!tmp->batTransient || wantphash) &&
-		    BATcount(tmp) == BATcount(b) &&
-		    BAThash(tmp) == GDK_SUCCEED) {
-			MT_rwlock_rdlock(&tmp->thashlock);
-			if (tmp->thash)
+		    (!pbi.transient || wantphash) &&
+		    pbi.count == bi.count &&
+		    BAThash(pb) == GDK_SUCCEED) {
+			MT_rwlock_rdlock(&pb->thashlock);
+			if (pb->thash)
 				havehash = wanthash = phash = true;
 			else
-				MT_rwlock_rdunlock(&tmp->thashlock);
+				MT_rwlock_rdunlock(&pb->thashlock);
 		}
 	}
 	/* at this point, if havehash is set, we have the hash lock
@@ -1705,8 +1711,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (oidxh) {
 			/* Is query selective enough to use the ordered index ? */
 			/* TODO: Test if this heuristic works in practice */
-			/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))*/
-			if ((ORDERfnd(b, oidxh, th) - ORDERfnd(b, oidxh, tl)) < b->batCount/3) {
+			/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < bi.count/1000 ? (BUN)1000: bi.count/1000))*/
+			if ((ORDERfnd(b, oidxh, th) - ORDERfnd(b, oidxh, tl)) < bi.count/3) {
 				if (view) {
 					bat_iterator_end(&bi);
 					bi = bat_iterator(b);
@@ -1733,7 +1739,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	if (!havehash && (bi.sorted || bi.revsorted || oidxh != NULL)) {
 		BUN low = 0;
-		BUN high = b->batCount;
+		BUN high = bi.count;
 
 		if (BATtdense(b)) {
 			/* positional */
@@ -1746,16 +1752,16 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			assert(oidxh == NULL);
 			algo = "select: dense";
 			h = * (oid *) th + hi;
-			if (h > b->tseqbase)
-				h -= b->tseqbase;
+			if (h > bi.tseq)
+				h -= bi.tseq;
 			else
 				h = 0;
 			if ((BUN) h < high)
 				high = (BUN) h;
 
 			l = *(oid *) tl + !li;
-			if (l > b->tseqbase)
-				l -= b->tseqbase;
+			if (l > bi.tseq)
+				l -= bi.tseq;
 			else
 				l = 0;
 			if ((BUN) l > low)
@@ -1855,6 +1861,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				if (bn == NULL) {
 					HEAPdecref(oidxh, false);
 					bat_iterator_end(&bi);
+					bat_iterator_end(&pbi);
 					return NULL;
 				}
 
@@ -1895,6 +1902,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			  GDKusec() - t0);
 
 		bat_iterator_end(&bi);
+		bat_iterator_end(&pbi);
 		return bn;
 	}
 
@@ -1905,10 +1913,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* we can look in the hash struct to see whether all
 		 * values are distinct and set estimate accordingly */
 		if (phash) {
-			BAT *tmp = BBP_cache(parent);
-			if (tmp->thash->nunique == tmp->batCount)
+			if (pb->thash->nunique == pbi.count)
 				estimate = 1;
-		} else if (b->thash->nunique == b->batCount)
+		} else if (b->thash->nunique == bi.count)
 			estimate = 1;
 	}
 	if (estimate == BUN_NONE && (bi.key || (parent != 0 && BBP_cache(parent)->tkey))) {
@@ -1956,8 +1963,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			BAT *smpl, *slct;
 
 			delta = 1000 / 3 / 2;
-			skip = (BATcount(b) - (2 * delta)) / 2;
-			for (pos = delta; pos < BATcount(b); pos += skip) {
+			skip = (bi.count - (2 * delta)) / 2;
+			for (pos = delta; pos < bi.count; pos += skip) {
 				smpl = BATslice(b, pos - delta, pos + delta);
 				if (smpl) {
 					slct = BATselect(smpl, NULL, tl,
@@ -1973,7 +1980,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (smpl_cnt > 0 && slct_cnt > 0) {
 				/* linear extrapolation plus 10% margin */
 				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt
-						  * (dbl) BATcount(b) * 1.1);
+						  * (dbl) bi.count * 1.1);
 			} else if (smpl_cnt > 0 && slct_cnt == 0) {
 				/* estimate low enough to trigger hash select */
 				estimate = (ci.ncand / 100) - 1;
@@ -1992,9 +1999,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	bn = COLnew(0, TYPE_oid, estimate, TRANSIENT);
 	if (bn == NULL) {
-		if (havehash)
-			MT_rwlock_rdunlock(&b->thashlock);
+		if (havehash) {
+			if (phash)
+				MT_rwlock_rdunlock(&pb->thashlock);
+			else
+				MT_rwlock_rdunlock(&b->thashlock);
+		}
 		bat_iterator_end(&bi);
+		bat_iterator_end(&pbi);
 		return NULL;
 	}
 
@@ -2008,23 +2020,22 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 *  ii) it is not an equi-select, and
 		 * iii) imprints are supported.
 		 */
-		tmp = NULL;
 		Imprints *imprints = NULL;
 		if (!equi &&
 		    /* DISABLES CODE */ (0) && imprintable(bi.type) &&
-		    (!b->batTransient ||
+		    (!bi.transient ||
 		     (parent != 0 &&
-		      (tmp = BBP_cache(parent)) != NULL &&
-		      !tmp->batTransient)) &&
+		      pb != NULL &&
+		      !pbi.transient)) &&
 		    BATimprints(b) == GDK_SUCCEED) {
-			if (tmp != NULL) {
-				MT_lock_set(&tmp->batIdxLock);
-				imprints = tmp->timprints;
+			if (pb != NULL) {
+				MT_lock_set(&pb->batIdxLock);
+				imprints = pb->timprints;
 				if (imprints != NULL)
 					IMPSincref(imprints);
 				else
 					imprints = NULL;
-				MT_lock_unset(&tmp->batIdxLock);
+				MT_lock_unset(&pb->batIdxLock);
 			} else {
 				MT_lock_set(&b->batIdxLock);
 				imprints = b->timprints;
@@ -2042,6 +2053,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			IMPSdecref(imprints, false);
 	}
 	bat_iterator_end(&bi);
+	bat_iterator_end(&pbi);
 
 	bn = virtualize(bn);
 	MT_thread_setalgorithm(algo);
@@ -2376,9 +2388,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	} else if (!anti && !symmetric &&
 		   /* DISABLES CODE */ (0) && imprintable(li.type) &&
 		   (BATcount(rl) > 2 ||
-		    !l->batTransient ||
+		    !li.transient ||
 		    (VIEWtparent(l) != 0 &&
 		     (tmp = BBP_cache(VIEWtparent(l))) != NULL &&
+		     /* batTransient access needs to be protected */
 		     !tmp->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
