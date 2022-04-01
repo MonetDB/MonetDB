@@ -934,8 +934,8 @@ create local temp table x(x int, y int)
 statement ok
 CREATE INDEX ups ON tmp.x (x)
 
-statement ok
-drop index tmp.ups
+#statement ok
+#drop index tmp.ups
 
 statement ok
 drop table x
