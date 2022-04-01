@@ -586,7 +586,7 @@ BATstrimpsync(void *arg)
 
 	MT_lock_set(&b->batIdxLock);
 	if ((hp = &b->tstrimps->strimps)) {
-		if (HEAPsave(hp, hp->filename, NULL, true, hp->free) == GDK_SUCCEED) {
+		if (HEAPsave(hp, hp->filename, NULL, true, hp->free, NULL) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 					((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
@@ -770,7 +770,6 @@ STRMPcreate(BAT *b, BAT *s)
 
 			r->strimps.free += ci.ncand*sizeof(uint64_t);
 			pb->tstrimps = r;
-			pb->batDirtydesc = true;
 			persistStrimp(pb);
 		}
 		MT_lock_unset(&pb->batIdxLock);
@@ -908,7 +907,6 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 
 			// incref
 			b->tstrimps = r;
-			b->batDirtydesc = true;
 		}
 	}
 	else

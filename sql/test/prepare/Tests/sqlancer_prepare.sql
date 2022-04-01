@@ -85,3 +85,9 @@ PREPARE WITH y(a,b) AS (SELECT 1, ?) SELECT "json"."filter"(JSON '"a"', y.b) FRO
 PREPARE WITH y(a,b) AS (SELECT 1, ?) SELECT "json"."filter"(JSON '"a"', y.b) FROM ((SELECT 1, 4) EXCEPT (SELECT 1,2)) x(x,y) CROSS JOIN y;
 
 PREPARE SELECT 1 FROM (SELECT 1) x(x) LEFT OUTER JOIN (SELECT DISTINCT ?) y(y) ON (SELECT TRUE FROM (SELECT 1) z(z)); --error while unnesting because of unknown type
+
+START TRANSACTION;
+create or replace function mybooludf(a bool) returns bool return a;
+PREPARE (SELECT ?) EXCEPT (SELECT 'a' FROM (SELECT 1) x(x) JOIN ((SELECT FALSE) EXCEPT (SELECT ?)) y(y) ON sys.mybooludf(y.y));
+EXEC **('b',true);
+ROLLBACK;

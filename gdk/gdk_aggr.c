@@ -3746,8 +3746,11 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 					      bi.width, 0, bi.count,
 					      ATOMnilptr(bi.type), 1, 1);
 				if (r == 0) {
-					bi.nonil = true;
+					/* there are no nils, record that */
+					MT_lock_set(&b->theaplock);
+					b->tnonil = true;
 					b->batDirtydesc = true;
+					MT_lock_unset(&b->theaplock);
 				}
 			} else {
 				r = 0;
