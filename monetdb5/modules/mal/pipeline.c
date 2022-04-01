@@ -129,8 +129,11 @@ BATnegateprops(BAT *b)
 #define pipeline_lock(p) MT_lock_set(&p->p->l)
 #define pipeline_unlock(p) MT_lock_unset(&p->p->l)
 
-#define pipeline_lock2(r) MT_lock_set(&r->batIdxLock)
-#define pipeline_unlock2(r) MT_lock_unset(&r->batIdxLock)
+#define pipeline_lock1(r) MT_lock_set(&r->batIdxLock)
+#define pipeline_unlock1(r) MT_lock_unset(&r->batIdxLock)
+
+#define pipeline_lock2(r) MT_lock_set(&r->theaplock)
+#define pipeline_unlock2(r) MT_lock_unset(&r->theaplock)
 
 static int
 BATupgrade(BAT *r, BAT *b)
@@ -1674,7 +1677,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		tt = TYPE_oid;
 	/* probably want to use a per 'r' lock, but the r->theaplock is blocking this on BATextend and BATsetcount */
 	if (!private)
-		pipeline_lock2(r);
+		pipeline_lock1(r);
 	if (r && BATcount(b)) {
 		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
 			err = 1;
@@ -1709,6 +1712,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		assert((k[0] & (GDK_VARALIGN-1)) == 0);
 	}
 	*/
+
 	BUN cnt = 0;
 	if (!err) {
 		cnt = BATcount(r);
@@ -1761,7 +1765,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		}
 	}
 	if (!private)
-		pipeline_unlock2(r);
+		pipeline_unlock1(r);
 	if (err)
 		throw(MAL, "aggr.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
@@ -1781,7 +1785,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	bool private = (!r || r->T.private_bat);
 
 	if (!private)
-		pipeline_lock2(r);
+		pipeline_lock1(r);
 		//pipeline_lock(p);
 
 	BAT *pg = BATdescriptor(*pid);
@@ -1823,7 +1827,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 		}
 	}
 	if (!private)
-		pipeline_unlock2(r);
+		pipeline_unlock1(r);
 		//pipeline_unlock(p);
 	if (err)
 		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1888,7 +1892,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	bool private = (!r || r->T.private_bat);
 
 	if (!private)
-		pipeline_lock2(r);
+		pipeline_lock1(r);
 		//pipeline_lock(p);
 
 	BAT *pg = BATdescriptor(*pid);
@@ -1949,7 +1953,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 		}
 	}
 	if (!private)
-		pipeline_unlock2(r);
+		pipeline_unlock1(r);
 		//pipeline_unlock(p);
 	if (err)
 		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1990,7 +1994,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool private = (!r || r->T.private_bat);
 
 	if (!private)
-		pipeline_lock2(r);
+		pipeline_lock1(r);
 		//pipeline_lock(p);
 
 	BAT *pg = BATdescriptor(*pid);
@@ -2053,7 +2057,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (!private)
-		pipeline_unlock2(r);
+		pipeline_unlock1(r);
 		//pipeline_unlock(p);
 	if (err)
 		throw(MAL, "aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2201,7 +2205,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	bool private = (!r || r->T.private_bat), local_storage = false;
 
 	if (!private)
-		pipeline_lock2(r);
+		pipeline_lock1(r);
 
 	BAT *pg = BATdescriptor(*pid);
 	oid max = BATcount(pg)?pg->T.maxval:0;
@@ -2287,7 +2291,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		}
 	}
 	if (!private)
-		pipeline_unlock2(r);
+		pipeline_unlock1(r);
 	if (err)
 		throw(MAL, "aggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
@@ -2307,7 +2311,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	bool private = (!r || r->T.private_bat), local_storage = false;
 
 	if (!private)
-		pipeline_lock2(r);
+		pipeline_lock1(r);
 
 	BAT *pg = BATdescriptor(*pid);
 	oid max = BATcount(pg)?pg->T.maxval:0;
@@ -2392,7 +2396,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		}
 	}
 	if (!private)
-		pipeline_unlock2(r);
+		pipeline_unlock1(r);
 	if (err)
 		throw(MAL, "aggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
