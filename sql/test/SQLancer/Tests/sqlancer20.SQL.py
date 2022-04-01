@@ -117,6 +117,33 @@ with SQLTestCase() as cli:
     DROP TABLE rt0;
     COMMIT;""").assertSucceeded()
 
+    # issue with 'scale_up' function on remote plans
+    cli.execute("""
+    START TRANSACTION;
+    CREATE MERGE TABLE "mt0" ("c1" DECIMAL(18,3));
+    CREATE TABLE "rmct00" ("c1" DECIMAL(18,3));
+    CREATE REMOTE TABLE "rrmct00" ("c1" DECIMAL(18,3)) ON 'mapi:monetdb://localhost:%s/%s/sys/rmct00';
+    CREATE TABLE "rmct01" ("c1" DECIMAL(18,3));
+    INSERT INTO "rmct01" VALUES (NULL);
+    CREATE REMOTE TABLE "rrmct01" ("c1" DECIMAL(18,3)) ON 'mapi:monetdb://localhost:%s/%s/sys/rmct01';
+    ALTER TABLE "mt0" ADD TABLE "rrmct00";
+    ALTER TABLE "mt0" ADD TABLE "rrmct01";
+    COMMIT;""" % (port, db, port, db)).assertSucceeded()
+
+    cli.execute("SELECT 1 FROM rmct00, (SELECT mt0.c1 + 0.4870337739393783 FROM mt0) x(x);") \
+        .assertSucceeded().assertDataResultMatch([])
+
+    cli.execute("""
+    START TRANSACTION;
+    ALTER TABLE mt0 DROP TABLE rrmct00;
+    ALTER TABLE mt0 DROP TABLE rrmct01;
+    DROP TABLE mt0;
+    DROP TABLE rrmct00;
+    DROP TABLE rrmct01;
+    DROP TABLE rmct00;
+    DROP TABLE rmct01;
+    COMMIT;""").assertSucceeded()
+
 # testing temporary tables
 with SQLTestCase() as mdb1:
     mdb1.connect(username="monetdb", password="monetdb")
