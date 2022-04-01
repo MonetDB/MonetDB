@@ -1046,8 +1046,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return GDK_SUCCEED;
 		} else {
 			/* we need to materialize b; allocate enough capacity */
-			b->batCapacity = BATcount(b) + count;
-			if (BATmaterialize(b) != GDK_SUCCEED)
+			if (BATmaterialize(b, BATcount(b) + count) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
 	}
@@ -1336,7 +1335,7 @@ BUNdelete(BAT *b, oid o)
 		/* replace to-be-delete BUN with last BUN; materialize
 		 * void column before doing so */
 		if (b->ttype == TYPE_void &&
-		    BATmaterialize(b) != GDK_SUCCEED)
+		    BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			msk mval = mskGetVal(b, BATcount(b) - 1);
@@ -1685,7 +1684,7 @@ BUNreplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 {
 	BATcheck(b, GDK_FAIL);
 
-	if (b->ttype == TYPE_void && BATmaterialize(b) != GDK_SUCCEED)
+	if (b->ttype == TYPE_void && BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	return BUNinplacemulti(b, positions, values, count, force, false);
@@ -1698,7 +1697,7 @@ BUNreplacemultiincr(BAT *b, oid position, const void *values, BUN count, bool fo
 {
 	BATcheck(b, GDK_FAIL);
 
-	if (b->ttype == TYPE_void && BATmaterialize(b) != GDK_SUCCEED)
+	if (b->ttype == TYPE_void && BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	return BUNinplacemulti(b, &position, values, count, force, true);
