@@ -108,9 +108,9 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
-		btkey = b->tkey;
-		btsorted = b->tsorted;
-		btrevsorted = b->trevsorted;
+		btkey = bi.key;
+		btsorted = bi.sorted;
+		btrevsorted = bi.revsorted;
 		bat_iterator_end(&bi);
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);
@@ -615,9 +615,9 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils |= is_timestamp_nil(ret[i]);
 			}
 		}
-		btkey = b->tkey;
-		btsorted = b->tsorted;
-		btrevsorted = b->trevsorted;
+		btkey = bi.key;
+		btsorted = bi.sorted;
+		btrevsorted = bi.revsorted;
 		bat_iterator_end(&bi);
 	} else {
 		*ret = timestamp_fromdate(*(date*)getArgReference(stk, pci, 1));
@@ -742,9 +742,9 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				}
 			}
 		}
-		btkey = b->tkey;
-		btsorted = b->tsorted;
-		btrevsorted = b->trevsorted;
+		btkey = bi.key;
+		btsorted = bi.sorted;
+		btrevsorted = bi.revsorted;
 		bat_iterator_end(&bi);
 	} else {
 		timestamp next = *(timestamp*)getArgReference(stk, pci, 1);
@@ -1308,9 +1308,9 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	}
 	if (b) {
-		btkey = b->tkey;
-		btsorted = b->tsorted;
-		btrevsorted = b->trevsorted;
+		btkey = bi.key;
+		btsorted = bi.sorted;
+		btrevsorted = bi.revsorted;
 	}
 bailout1:
 	bat_iterator_end(&bi);
@@ -1446,9 +1446,9 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	}
 	if (b) {
-		btkey = b->tkey;
-		btsorted = b->tsorted;
-		btrevsorted = b->trevsorted;
+		btkey = bi.key;
+		btsorted = bi.sorted;
+		btrevsorted = bi.revsorted;
 	}
 bailout1:
 	bat_iterator_end(&bi);
@@ -1556,9 +1556,9 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
-		btkey = b->tkey;
-		btsorted = b->tsorted;
-		btrevsorted = b->trevsorted;
+		btkey = bi.key;
+		btsorted = bi.sorted;
+		btrevsorted = bi.revsorted;
 		bat_iterator_end(&bi);
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);

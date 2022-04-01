@@ -262,11 +262,11 @@ BATmaterialize(BAT *b)
 	b->tbaseoff = 0;
 	b->theap->dirty = true;
 	b->tunique_est = is_oid_nil(t) ? 1.0 : (double) b->batCount;
-	MT_lock_unset(&b->theaplock);
 	b->ttype = TYPE_oid;
 	BATsetdims(b, 0);
 	b->batDirtydesc = true;
 	BATsetcount(b, b->batCount);
+	MT_lock_unset(&b->theaplock);
 	HEAPdecref(h, false);
 	if (vh)
 		HEAPdecref(vh, true);
