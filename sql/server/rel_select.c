@@ -1141,9 +1141,14 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (!exp && inner)
 			if (!(exp = rel_bind_column(sql, inner, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
-		if (!exp && inner && is_sql_aggr(f) && is_groupby(inner->op))
-			if (!(exp = rel_bind_column(sql, inner->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+		if (!exp && inner && is_sql_aggr(f) && (is_groupby(inner->op) || is_select(inner->op))) {
+			/* if inner is selection, ie having clause, get the left relation to reach group by */
+			sql_rel *gp = inner;
+			while (gp && is_select(gp->op))
+				gp = gp->l;
+			if (gp && gp->l && !(exp = rel_bind_column(sql, gp->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
+		}
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 
@@ -1226,9 +1231,14 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (!exp && rel && inner)
 			if (!(exp = rel_bind_column2(sql, inner, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
-		if (!exp && inner && is_sql_aggr(f) && is_groupby(inner->op))
-			if (!(exp = rel_bind_column2(sql, inner->l, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+		if (!exp && inner && is_sql_aggr(f) && (is_groupby(inner->op) || is_select(inner->op))) {
+			/* if inner is selection, ie having clause, get the left relation to reach group by */
+			sql_rel *gp = inner;
+			while (gp && is_select(gp->op))
+				gp = gp->l;
+			if (gp && gp->l && !(exp = rel_bind_column2(sql, gp->l, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
+		}
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 

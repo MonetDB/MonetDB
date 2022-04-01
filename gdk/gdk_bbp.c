@@ -1294,7 +1294,7 @@ fixhashashbat(BAT *b)
 	/* cleanup */
 	HEAPfree(&h1, false);
 	HEAPfree(&vh1, false);
-	if (HEAPsave(h2, nme, gettailname(b), true, h2->free) != GDK_SUCCEED) {
+	if (HEAPsave(h2, nme, gettailname(b), true, h2->free, NULL) != GDK_SUCCEED) {
 		HEAPdecref(h2, false);
 		HEAPdecref(b->tvheap, false);
 		b->tvheap = ovh;
@@ -1302,7 +1302,7 @@ fixhashashbat(BAT *b)
 		TRC_CRITICAL(GDK, "saving heap failed\n");
 		return GDK_FAIL;
 	}
-	if (HEAPsave(b->tvheap, nme, "theap", true, b->tvheap->free) != GDK_SUCCEED) {
+	if (HEAPsave(b->tvheap, nme, "theap", true, b->tvheap->free, &b->theaplock) != GDK_SUCCEED) {
 		HEAPfree(b->tvheap, false);
 		b->tvheap = ovh;
 		GDKfree(srcdir);
@@ -1398,14 +1398,17 @@ BBPtrim(bool aggressive)
 		bool swap = false;
 		if (BBP_refs(bid) == 0 &&
 		    BBP_lrefs(bid) != 0 &&
-		    (b = BBP_cache(bid)) != NULL &&
-		    b->batSharecnt == 0 &&
-		    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
-		    !(BBP_status(bid) & flag) /*&&
-		    (BBP_status(bid) & BBPPERSISTENT ||
-		    (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
-			BBP_status_on(bid, BBPUNLOADING);
-			swap = true;
+		    (b = BBP_cache(bid)) != NULL) {
+			MT_lock_set(&b->theaplock);
+			if (b->batSharecnt == 0 &&
+			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
+			    !(BBP_status(bid) & flag) /*&&
+			    (BBP_status(bid) & BBPPERSISTENT ||
+			    (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
+				BBP_status_on(bid, BBPUNLOADING);
+				swap = true;
+			}
+			MT_lock_unset(&b->theaplock);
 		}
 		MT_lock_unset(&GDKswapLock(bid));
 		if (swap) {
@@ -1926,7 +1929,7 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
 		    BBP_physical(i),
-		    (unsigned) bi->b->batRestricted << 1,
+		    (unsigned) bi->restricted << 1,
 		    size,
 		    bi->b->hseqbase) < 0 ||
 	    heap_entry(fp, bi, size) < 0 ||
@@ -2722,8 +2725,11 @@ BBPrename(BAT *b, const char *nme)
 	if (tmpid == 0) {
 		BBP_insert(bid);
 	}
+	MT_lock_set(&b->theaplock);
 	b->batDirtydesc = true;
-	if (!b->batTransient) {
+	bool transient = b->batTransient;
+	MT_lock_unset(&b->theaplock);
+	if (!transient) {
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
 
 		if (lock)
@@ -2980,6 +2986,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	}
 	if (b) {
 		MT_lock_set(&b->theaplock);
+#if 0
 		if (b->batCount > b->batInserted && !isVIEW(b)) {
 			/* if batCount is larger than batInserted and
 			 * the dirty bits are off, it may be that a
@@ -2987,11 +2994,12 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			 * update; we must undo the turning off of the
 			 * dirty bits */
 			b->batDirtydesc = true;
-			if (b->theap)
+			if (b->theap && b->theap->parentid == i)
 				b->theap->dirty = true;
-			if (b->tvheap)
+			if (b->tvheap && b->tvheap->parentid == i)
 				b->tvheap->dirty = true;
 		}
+#endif
 		if (b->theap)
 			farmid = b->theap->farmid;
 		MT_lock_unset(&b->theaplock);
@@ -3201,8 +3209,10 @@ BBPsave(BAT *b)
 	bat bid = b->batCacheid;
 	gdk_return ret = GDK_SUCCEED;
 
+	MT_lock_set(&b->theaplock);
 	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirtydata(b)) {
 		/* do nothing */
+		MT_lock_unset(&b->theaplock);
 		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash && b->thash != (Hash *) 1 &&
 		    (b->thash->heaplink.dirty || b->thash->heapbckt.dirty))
@@ -3210,6 +3220,7 @@ BBPsave(BAT *b)
 		MT_rwlock_rdunlock(&b->thashlock);
 		return GDK_SUCCEED;
 	}
+	MT_lock_unset(&b->theaplock);
 	if (lock)
 		MT_lock_set(&GDKswapLock(bid));
 
@@ -3222,12 +3233,14 @@ BBPsave(BAT *b)
 		/* save it */
 		unsigned flags = BBPSAVING;
 
+		MT_lock_set(&b->theaplock);
 		if (DELTAdirty(b)) {
 			flags |= BBPSWAPPED;
 		}
 		if (b->batTransient) {
 			flags |= BBPTMP;
 		}
+		MT_lock_unset(&b->theaplock);
 		BBP_status_on(bid, flags);
 		if (lock)
 			MT_lock_unset(&GDKswapLock(bid));
@@ -3366,16 +3379,26 @@ dirty_bat(bat *i, bool subcommit)
 		BBPspin(*i, __func__, BBPSAVING);
 		b = BBP_cache(*i);
 		if (b != NULL) {
+			MT_lock_set(&b->theaplock);
 			if ((BBP_status(*i) & BBPNEW) &&
 			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
 				*i = -*i;	/* error */
 			if ((BBP_status(*i) & BBPPERSISTENT) &&
-			    (subcommit || BATdirty(b)))
+			    (subcommit || BATdirty(b))) {
+				MT_lock_unset(&b->theaplock);
 				return b;	/* the bat is loaded, persistent and dirty */
+			}
+			MT_lock_unset(&b->theaplock);
 		} else if (BBP_status(*i) & BBPSWAPPED) {
 			b = (BAT *) BBPquickdesc(*i);
-			if (b && (subcommit || b->batDirtydesc))
-				return b;	/* only the desc is loaded & dirty */
+			if (b) {
+				MT_lock_set(&b->theaplock);
+				if (subcommit || b->batDirtydesc) {
+					MT_lock_unset(&b->theaplock);
+					return b;	/* only the desc is loaded & dirty */
+				}
+				MT_lock_unset(&b->theaplock);
+			}
 		}
 	}
 	return NULL;
@@ -3716,7 +3739,9 @@ BBPbackup(BAT *b, bool subcommit)
 	if ((rc = BBPprepare(subcommit)) != GDK_SUCCEED) {
 		return rc;
 	}
-	if (!b->batCopiedtodisk || b->batTransient) {
+	BATiter bi = bat_iterator(b);
+	if (!bi.copiedtodisk || bi.transient) {
+		bat_iterator_end(&bi);
 		return GDK_SUCCEED;
 	}
 	/* determine location dir and physical suffix */
@@ -3726,20 +3751,19 @@ BBPbackup(BAT *b, bool subcommit)
 		assert(nme != NULL);
 		*nme++ = '\0';	/* split into directory and file name */
 
-		BATiter bi = bat_iterator(b);
 		if (bi.type != TYPE_void) {
 			rc = do_backup(srcdir, nme, gettailnamebi(&bi), bi.h,
-				       b->batDirtydesc || bi.hdirty,
+				       bi.dirtydesc || bi.hdirty,
 				       subcommit);
 			if (rc == GDK_SUCCEED && bi.vh != NULL)
 				rc = do_backup(srcdir, nme, "theap", bi.vh,
-					       b->batDirtydesc || bi.vhdirty,
+					       bi.dirtydesc || bi.vhdirty,
 					       subcommit);
 		}
-		bat_iterator_end(&bi);
 	} else {
 		rc = GDK_FAIL;
 	}
+	bat_iterator_end(&bi);
 	GDKfree(srcdir);
 	return rc;
 }
