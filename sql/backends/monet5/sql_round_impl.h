@@ -122,8 +122,8 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	btsorted = b->tsorted;
-	btrevsorted = b->trevsorted;
+	btsorted = bi.sorted;
+	btrevsorted = bi.revsorted;
 	bat_iterator_end(&bi);
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, msg, nils, ci1.ncand, btsorted, btrevsorted);
@@ -419,8 +419,8 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	btsorted = b->tsorted;
-	btrevsorted = b->trevsorted;
+	btsorted = bi.sorted;
+	btrevsorted = bi.revsorted;
 	bat_iterator_end(&bi);
 
 bailout:

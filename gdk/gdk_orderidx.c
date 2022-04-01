@@ -25,7 +25,7 @@ BATidxsync(void *arg)
 
 	MT_lock_set(&b->batIdxLock);
 	if ((hp = b->torderidx) != NULL) {
-		if (HEAPsave(hp, hp->filename, NULL, true, hp->free) == GDK_SUCCEED) {
+		if (HEAPsave(hp, hp->filename, NULL, true, hp->free, NULL) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 					((oid *) hp->base)[0] |= (oid) 1 << 24;
@@ -196,12 +196,14 @@ BATorderidx(BAT *b, bool stable)
 		if (BATtdense(on)) {
 			/* if the order bat is dense, the input was
 			 * sorted and we don't need an order index */
+			MT_lock_set(&b->theaplock);
 			assert(!b->tnosorted);
 			if (!b->tsorted) {
 				b->tsorted = true;
 				b->tnosorted = 0;
 				b->batDirtydesc = true;
 			}
+			MT_lock_unset(&b->theaplock);
 		} else {
 			/* BATsort quite possibly already created the
 			 * order index, but just to be sure... */
@@ -215,7 +217,6 @@ BATorderidx(BAT *b, bool stable)
 				memcpy((oid *) m->base + ORDERIDXOFF, Tloc(on, 0), BATcount(on) * sizeof(oid));
 				ATOMIC_INIT(&m->refs, 1);
 				b->torderidx = m;
-				b->batDirtydesc = true;
 				persistOIDX(b);
 			}
 			MT_lock_unset(&b->batIdxLock);
@@ -368,7 +369,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		return GDK_SUCCEED;
 	}
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
-	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
+	    (m->farmid = BBPselectfarm(b->batRole, bi.type, orderidxheap)) < 0 ||
 	    strconcat_len(m->filename, sizeof(m->filename),
 			  nme, ".torderidx", NULL) >= sizeof(m->filename) ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID, 0) != GDK_SUCCEED) {
@@ -414,7 +415,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		q0 = p0 + BATcount(a[0]);
 		q1 = p1 + BATcount(a[1]);
 
-		switch (ATOMbasetype(b->ttype)) {
+		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte: BINARY_MERGE(bte); break;
 		case TYPE_sht: BINARY_MERGE(sht); break;
 		case TYPE_int: BINARY_MERGE(int); break;
@@ -458,7 +459,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			q[i] = p[i] + BATcount(a[i]);
 		}
 
-		switch (ATOMbasetype(b->ttype)) {
+		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte: NWAY_MERGE(bte); break;
 		case TYPE_sht: NWAY_MERGE(sht); break;
 		case TYPE_int: NWAY_MERGE(int); break;
@@ -496,7 +497,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		TRC_DEBUG(ACCELERATOR, "GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
 #endif
 
-	b->batDirtydesc = true;
 	MT_lock_unset(&b->batIdxLock);
 	bat_iterator_end(&bi);
 	return GDK_SUCCEED;

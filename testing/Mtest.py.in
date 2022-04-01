@@ -1382,6 +1382,16 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     if pSrvr.port is None:
                         print('\nFailed to start server.\n')
                         break
+                    dbh = pymonetdb.connect(username='monetdb',
+                                            password='monetdb',
+                                            hostname='localhost',
+                                            port=pSrvr.port,
+                                            database=TSTDB,
+                                            autocommit=True)
+                    crs = dbh.cursor()
+                    crs.execute("call logging.setcomplevel('SQL_EXECUTION', 'INFO')")
+                    crs.close()
+                    dbh.close()
                     os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
                     SetExecEnv(env['exe'], pSrvr.port, verbosity > 1)
                 if global_timeout and start_time + global_timeout < time.time():
@@ -3341,7 +3351,7 @@ def main(argv) :
             # make sure, that PATHs are absolute
 
     # commandline options overrule environment
-    parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about Mtest.py.' % _configure(os.path.join('@QXSOURCE@','testing','README')))
+    parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about %s.' % (_configure(os.path.join('@QXSOURCE@','testing','README')), THISFILE))
     parser.add_argument('--version', action='version', version='@VERSION@')
     parser.add_argument('--recursive', '-r', action='store_true', dest='recursive', help="recurse into subdirectories (implies 'All')")
     parser.add_argument('--revision', action='store', dest='revision', metavar='<hgid>', help='use given revision as the HG short hash')
@@ -3377,7 +3387,6 @@ def main(argv) :
     parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
-    parser.add_argument('--report-all-failures', action='store_true', dest='report_all_failures', help='report all failing tests, even if many')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
     global produce_html
     if produce_html:
@@ -3963,6 +3972,7 @@ def main(argv) :
         body_good = []
         body_bad = []
         test_progress = 0
+        errseen = False
         try:
             if len(testdirs) == 1:
                 if testlist:
@@ -3977,6 +3987,8 @@ def main(argv) :
                         body_good.append(elem)
                     else:
                         body_bad.append(elem)
+                if not errseen and diff > F_WARN:
+                    errseen = True
             else:
                 if verbosity > 1:
                     print("\nRunning all tests in directories %s.\n" % str(testdirs))
@@ -3988,6 +4000,8 @@ def main(argv) :
                             body_good.append(elem)
                         else:
                             body_bad.append(elem)
+                    if not errseen and diff > F_WARN:
+                        errseen = True
                     if interrupted:
                         break
                     if not testweb:
@@ -4125,14 +4139,11 @@ VALUES (%s, '%s', '%s', '%s',
             if Failure[x]:
                 how = z
                 what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
-                # only report failed tests if there aren't too many
-                if opts.report_all_failures or Failed < 30 and \
-                       (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
-                    for f in Failure[x]:
-                        what += "        %s\n" % f
+                for f in Failure[x]:
+                    what += "        %s\n" % f
         print(file=sys.stderr, end='', flush=True)
         if verbosity == 0:
-            if Failed:
+            if Failed or errseen:
                 prred('ERROR')
             else:
                 prgreen('OK')
@@ -4158,7 +4169,21 @@ VALUES (%s, '%s', '%s', '%s',
 
  After that, re-run Mtest.
 """ % os.path.join(TSTTRGBASE, TSTPREF, "index.html"))
-            sys.exit(1)
+        elif errseen:
+            print("""\
+
+ !ERROR:  Testing FAILED in some directories
+""")
+            if not testweb and produce_html:
+                print("""\
+ First, check the testing results in  %s  !
+
+ Then, fix the problems by:
+  - fixing sources and test scripts
+  - fixing stable output by hand
+
+ After that, re-run Mtest.
+""" % os.path.join(TSTTRGBASE, TSTPREF, "index.html"))
         else:
             if verbosity == 0:
                 pass
@@ -4171,7 +4196,7 @@ VALUES (%s, '%s', '%s', '%s',
 """)
             else:
                 print("No differences encountered during testing.")
-            sys.exit(0)
+        sys.exit(1 if Failed or errseen else 0)
 
     finally:
         # cleanup the place where we put our UNIX sockets

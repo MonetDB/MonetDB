@@ -774,22 +774,34 @@ typedef enum {
 	BAT_APPEND,		  /* only reads and appends allowed */
 } restrict_t;
 
+/* batDirtydesc: should be set (true) if any of the following fields
+ * have changed since the bat was last saved: hseqbase, batRestricted,
+ * batTransient, batCount, and the theap properties tkey, tseqbase,
+ * tsorted, trevsorted, twidth, tshift, tnonil, tnil, tnokey, tnosorted,
+ * tnorevsorted, tminpos, tmaxpos, and tunique_est; in addition, the
+ * value should be set if the BBP field BBP_logical(bid) is changed.
+ *
+ * theaplock: this lock should be held when reading or writing any of
+ * the fields mentioned above for batDirtydesc, and also when reading or
+ * writing any of the following fields: batDirtydesc, theap, tvheap,
+ * batInserted, batCapacity.  There is no need for the lock if the bat
+ * cannot possibly be modified concurrently, e.g. when it is new and not
+ * yet returned to the interpreter or during system initialization. */
 typedef struct BAT {
 	/* static bat properties */
 	oid hseqbase;		/* head seq base */
 	MT_Id creator_tid;	/* which thread created it */
 	bat batCacheid;		/* index into BBP */
+	role_t batRole;		/* role of the bat */
 
 	/* dynamic bat properties */
-	restrict_t batRestricted; /* access privileges */
-	bool batTransient;	/* should the BAT persist on disk? */
+	restrict_t batRestricted:2; /* access privileges */
 	bool
+	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
 	 batDirtydesc:1;	/* bat descriptor dirty marker */
-	uint16_t /* adjacent bit fields are packed together (if they fit) */
-	 selcnt:10;		/* how often used in equi select without hash */
-	role_t batRole;		/* role of the bat */
+	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
 
@@ -947,6 +959,7 @@ typedef struct BATiter {
 	void *base;
 	Heap *vh;
 	BUN count;
+	BUN baseoff;
 	uint16_t width;
 	uint8_t shift;
 	int8_t type;
@@ -954,13 +967,24 @@ typedef struct BATiter {
 	BUN hfree, vhfree;
 	BUN minpos, maxpos;
 	double unique_est;
+	bool key:1,
+		nonil:1,
+		nil:1,
+		sorted:1,
+		revsorted:1,
+		hdirty:1,
+		vhdirty:1,
+		dirtydesc:1,
+		copiedtodisk:1,
+		transient:1;
+	restrict_t restricted:2;
+#ifndef NDEBUG
+	bool locked:1;
+#endif
 	union {
 		oid tvid;
 		bool tmsk;
 	};
-#ifndef NDEBUG
-	bool locked;
-#endif
 } BATiter;
 
 static inline BATiter
@@ -973,6 +997,7 @@ bat_iterator_nolock(BAT *b)
 			.b = b,
 			.h = b->theap,
 			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
+			.baseoff = b->tbaseoff,
 			.vh = b->tvheap,
 			.count = b->batCount,
 			.width = b->twidth,
@@ -989,6 +1014,19 @@ bat_iterator_nolock(BAT *b)
 			.minpos = isview ? BUN_NONE : b->tminpos,
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
+			.key = b->tkey,
+			.nonil = b->tnonil,
+			.nil = b->tnil,
+			.sorted = b->tsorted,
+			.revsorted = b->trevsorted,
+			/* only look at heap dirty flag if we own it */
+			.hdirty = b->theap->parentid == b->batCacheid && b->theap->dirty,
+			/* also, if there is no vheap, it's not dirty */
+			.vhdirty = b->tvheap && b->tvheap->parentid == b->batCacheid && b->tvheap->dirty,
+			.dirtydesc = b->batDirtydesc,
+			.copiedtodisk = b->batCopiedtodisk,
+			.transient = b->batTransient,
+			.restricted = b->batRestricted,
 #ifndef NDEBUG
 			.locked = false,
 #endif
@@ -1021,6 +1059,20 @@ bat_iterator(BAT *b)
 		};
 	}
 	return bi;
+}
+
+/* return a copy of a BATiter instance; needs to be released with
+ * bat_iterator_end */
+static inline BATiter
+bat_iterator_copy(BATiter *bip)
+{
+	assert(bip);
+	assert(bip->locked);
+	if (bip->h)
+		HEAPincref(bip->h);
+	if (bip->vh)
+		HEAPincref(bip->vh);
+	return *bip;
 }
 
 static inline void
@@ -1252,6 +1304,10 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 			 (b)->batDirtydesc ||				\
 			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
+#define BATdirtybi(bi)	(!(bi).copiedtodisk ||	\
+			 (bi).dirtydesc ||	\
+			 (bi).hdirty ||		\
+			 (bi).vhdirty)
 #define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
@@ -1359,8 +1415,6 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 
 gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
 
-#define BATtordered(b)	((b)->tsorted)
-#define BATtrevordered(b) ((b)->trevsorted)
 /* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
 #define BATtdense(b)	(!is_oid_nil((b)->tseqbase) &&			\
 			 ((b)->tvheap == NULL || (b)->tvheap->free == 0))
@@ -1368,7 +1422,8 @@ gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restric
 #define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
 #define BATtkey(b)	((b)->tkey || BATtdense(b))
 
-/* set some properties that are trivial to deduce */
+/* set some properties that are trivial to deduce; called with theaplock
+ * held */
 static inline void
 BATsettrivprop(BAT *b)
 {
@@ -1895,20 +1950,7 @@ BBPcheck(bat x)
 	return 0;
 }
 
-static inline BAT *
-BATdescriptor(bat i)
-{
-	BAT *b = NULL;
-
-	if (BBPcheck(i)) {
-		if (BBPfix(i) <= 0)
-			return NULL;
-		b = BBP_cache(i);
-		if (b == NULL)
-			b = BBPdescriptor(i);
-	}
-	return b;
-}
+gdk_export BAT *BATdescriptor(bat i);
 
 static inline void *
 Tpos(BATiter *bi, BUN p)
@@ -2009,68 +2051,8 @@ BUNtoid(BAT *b, BUN p)
 
 /*
  * @+ Transaction Management
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab
- *  TMcommit ()
- * @item int
- * @tab
- *  TMabort ()
- * @item int
- * @tab
- *  TMsubcommit ()
- * @end multitable
- *
- * MonetDB by default offers a global transaction environment.  The
- * global transaction involves all activities on all persistent BATs
- * by all threads.  Each global transaction ends with either TMabort
- * or TMcommit, and immediately starts a new transaction.  TMcommit
- * implements atomic commit to disk on the collection of all
- * persistent BATs. For all persistent BATs, the global commit also
- * flushes the delta status for these BATs (see
- * BATcommit/BATabort). This allows to perform TMabort quickly in
- * memory (without re-reading all disk images from disk).  The
- * collection of which BATs is persistent is also part of the global
- * transaction state. All BATs that where persistent at the last
- * commit, but were made transient since then, are made persistent
- * again by TMabort.  In other words, BATs that are deleted, are only
- * physically deleted at TMcommit time. Until that time, rollback
- * (TMabort) is possible.
- *
- * Use of TMabort is currently NOT RECOMMENDED due to two bugs:
- *
- * @itemize
- * @item
- * TMabort after a failed %TMcommit@ does not bring us back to the
- * previous committed state; but to the state at the failed TMcommit.
- * @item
- * At runtime, TMabort does not undo BAT name changes, whereas a cold
- * MonetDB restart does.
- * @end itemize
- *
- * In effect, the problems with TMabort reduce the functionality of
- * the global transaction mechanism to consistent checkpointing at
- * each TMcommit. For many applications, consistent checkpointingis
- * enough.
- *
- * Extension modules exist that provide fine grained locking (lock
- * module) and Write Ahead Logging (sqlserver).  Applications that
- * need more fine-grained transactions, should build this on top of
- * these extension primitives.
- *
- * TMsubcommit is intended to quickly add or remove BATs from the
- * persistent set. In both cases, rollback is not necessary, such that
- * the commit protocol can be accelerated. It comes down to writing a
- * new BBP.dir.
- *
- * Its parameter is a BAT-of-BATs (in the tail); the persistence
- * status of that BAT is committed. We assume here that the calling
- * thread has exclusive access to these bats.  An error is reported if
- * you try to partially commit an already committed persistent BAT (it
- * needs the rollback mechanism).
  */
 gdk_export gdk_return TMcommit(void);
-gdk_export void TMabort(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
 
@@ -2102,13 +2084,7 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  * commit protocol, and changes may be lost after quitting or crashing
  * MonetDB.
  *
- * BATabort undo-s all changes since the previous state. The global
- * TMabort achieves a rollback to the previously committed state by
- * doing BATabort on all persistent bats.
- *
- * BUG: after a failed TMcommit, TMabort does not do anything because
- * TMcommit does the BATcommits @emph{before} attempting to sync to
- * disk instead of @sc{after} doing this.
+ * BATabort undo-s all changes since the previous state.
  */
 gdk_export void BATcommit(BAT *b, BUN size);
 gdk_export void BATfakeCommit(BAT *b);
