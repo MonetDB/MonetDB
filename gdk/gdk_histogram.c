@@ -291,7 +291,7 @@ create_generic_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 			b->count = 0;
 		}
 
-		BATiter bi = bat_iterator(sam);
+		BATiter bi = bat_iterator_nolock(sam);
 		BUN c = bi.count;
 		for (BUN k = 0 ; k < c ; k++) { /* Now create the histogram */
 			const char *next = BUNtvar(bi, k);
@@ -320,7 +320,6 @@ create_generic_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 				assert(found); /* the value must be found */
 			}
 		}
-		bat_iterator_end(&bi);
 		h->nulls = nulls;
 	} break;
 	default:
