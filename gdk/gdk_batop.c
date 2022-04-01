@@ -138,11 +138,14 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 					MT_thread_setalgorithm("append vheap");
 				}
 
-				if (HEAPgrow(&b->theaplock, &b->tvheap, toff + ni->vh->size, force) != GDK_SUCCEED) {
+				MT_lock_set(&b->theaplock);
+				if (HEAPgrow(&b->tvheap, toff + ni->vh->size, force) != GDK_SUCCEED) {
+					MT_lock_unset(&b->theaplock);
 					return GDK_FAIL;
 				}
 				memcpy(b->tvheap->base + toff, ni->vh->base, ni->vhfree);
 				b->tvheap->free = toff + ni->vhfree;
+				MT_lock_unset(&b->theaplock);
 			}
 		}
 	}
@@ -418,8 +421,11 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 	if (BATcount(b) == 0 && BATatoms[b->ttype].atomFix == NULL &&
 	    ci->tpe == cand_dense && ci->ncand == ni->count) {
 		/* just copy the heaps */
-		if (HEAPgrow(&b->theaplock, &b->tvheap, ni->vhfree, false) != GDK_SUCCEED)
+		MT_lock_set(&b->theaplock);
+		if (HEAPgrow(&b->tvheap, ni->vhfree, false) != GDK_SUCCEED) {
+			MT_lock_unset(&b->theaplock);
 			return GDK_FAIL;
+		}
 		memcpy(b->theap->base, ni->base, ni->hfree);
 		memcpy(b->tvheap->base, ni->vh->base, ni->vhfree);
 		b->theap->free = ni->hfree;
@@ -437,6 +443,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		b->tminpos = ni->minpos;
 		b->tmaxpos = ni->maxpos;
 		b->tunique_est = ni->unique_est;
+		MT_lock_unset(&b->theaplock);
 		return GDK_SUCCEED;
 	}
 	/* copy data from n to b */
