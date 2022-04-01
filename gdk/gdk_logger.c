@@ -1103,7 +1103,6 @@ logger_open_input(logger *lg, char *filename, bool *filemissing)
 static log_return
 logger_read_transaction(logger *lg)
 {
-	/* logger_lock is held or this is a new logger */
 	logformat l;
 	trans *tr = NULL;
 	log_return err = LOG_OK;
@@ -1368,7 +1367,6 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 static BAT *
 bm_tids(BAT *b, BAT *d)
 {
-	/* logger_lock is held */
 	BUN sz = BATcount(b);
 	BAT *tids = BATdense(0, 0, sz);
 
@@ -1387,7 +1385,6 @@ bm_tids(BAT *b, BAT *d)
 static gdk_return
 logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 {
-	/* logger_lock is held */
 	char bak[IDLENGTH];
 
 	if (BATmode(old, true) != GDK_SUCCEED) {
@@ -1439,7 +1436,6 @@ bm_get_counts(logger *lg)
 static int
 subcommit_list_add(int next, bat *n, BUN *sizes, bat bid, BUN sz)
 {
-	/* logger_lock is held */
 	assert(sz <= BBP_desc(bid)->batCount || sz == BUN_NONE);
 	for (int i=0; i<next; i++) {
 		if (n[i] == bid) {
@@ -1455,7 +1451,6 @@ subcommit_list_add(int next, bat *n, BUN *sizes, bat bid, BUN sz)
 static int
 cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, BAT *catalog_bid, BAT *catalog_id, BAT *dcatalog, int cleanup)
 {
-	/* logger_lock is held */
 	BAT *nbids, *noids, *ncnts, *nlids, *ndels;
 	BUN p, q;
 	int err = 0, rcnt = 0;
