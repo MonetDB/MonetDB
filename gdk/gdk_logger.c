@@ -214,11 +214,11 @@ logbat_new(int tt, BUN size, role_t role)
 }
 
 static int
-log_read_format(logger *l, logformat *data)
+log_read_format(logger *lg, logformat *data)
 {
-	assert(!l->inmemory);
-	return mnstr_read(l->input_log, &data->flag, 1, 1) == 1 &&
-		mnstr_readInt(l->input_log, &data->id) == 1;
+	assert(!lg->inmemory);
+	return mnstr_read(lg->input_log, &data->flag, 1, 1) == 1 &&
+		mnstr_readInt(lg->input_log, &data->id) == 1;
 }
 
 static gdk_return
