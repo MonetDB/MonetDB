@@ -113,9 +113,9 @@ query T python .explain.function_histogram
 explain select x,y from test where x between 4.0 and 6.0
 ----
 algebra.projection
-6
+4
 algebra.select
-3
+2
 bat.append
 4
 bat.new
@@ -125,19 +125,17 @@ bat.pack
 language.dataflow
 1
 language.pass
-6
-mat.packIncrement
 4
 querylog.define
 1
 sql.bind
-6
+4
 sql.mvc
 1
 sql.resultSet
 1
 sql.tid
-3
+2
 user.main
 1
 
@@ -145,9 +143,9 @@ query T python .explain.function_histogram
 explain select x,y from test where x between (7-3) and (7-1)
 ----
 algebra.projection
-6
+4
 algebra.select
-3
+2
 bat.append
 4
 bat.new
@@ -157,19 +155,17 @@ bat.pack
 language.dataflow
 1
 language.pass
-6
-mat.packIncrement
 4
 querylog.define
 1
 sql.bind
-6
+4
 sql.mvc
 1
 sql.resultSet
 1
 sql.tid
-3
+2
 user.main
 1
 
@@ -177,27 +173,25 @@ query T python .explain.function_histogram
 explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0
 ----
 algebra.projection
-4
+2
 algebra.select
-4
+2
 bat.pack
 5
 language.dataflow
 1
 language.pass
-6
-mat.packIncrement
-4
+3
 querylog.define
 1
 sql.bind
-4
+2
 sql.mvc
 1
 sql.resultSet
 1
 sql.tid
-2
+1
 user.main
 1
 
@@ -205,27 +199,25 @@ query T python .explain.function_histogram
 explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0)
 ----
 algebra.projection
-4
+2
 algebra.select
-4
+2
 bat.pack
 5
 language.dataflow
 1
 language.pass
-6
-mat.packIncrement
-4
+3
 querylog.define
 1
 sql.bind
-4
+2
 sql.mvc
 1
 sql.resultSet
 1
 sql.tid
-2
+1
 user.main
 1
 
@@ -233,27 +225,25 @@ query T python .explain.function_histogram
 explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0)
 ----
 algebra.projection
-4
+2
 algebra.select
-4
+2
 bat.pack
 5
 language.dataflow
 1
 language.pass
-6
-mat.packIncrement
-4
+3
 querylog.define
 1
 sql.bind
-4
+2
 sql.mvc
 1
 sql.resultSet
 1
 sql.tid
-2
+1
 user.main
 1
 

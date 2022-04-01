@@ -4,7 +4,17 @@ set optimizer = 'sequential_pipe'
 query T python .explain.function_histogram
 explain select count(*) from v0
 ----
-aggr.count
+algebra.fetch
+1
+bat.single
+1
+iaggr.count
+1
+language.pipelines
+1
+lockedaggr.sum
+1
+pipeline.counter
 1
 querylog.define
 1
