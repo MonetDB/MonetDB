@@ -116,7 +116,7 @@
 					prev = grps[r];			\
 				}					\
 				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 			} else {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, !groups"); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
@@ -132,7 +132,7 @@
 					KEEP;				\
 				}					\
 				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 			}						\
 		} else {						\
 			if (grps) {					\
@@ -151,7 +151,7 @@
 					prev = grps[r];			\
 				}					\
 				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 			} else {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, !groups"); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
@@ -167,7 +167,7 @@
 					KEEP;				\
 				}					\
 				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 			}						\
 		}							\
 	} while(0)
@@ -244,7 +244,7 @@
 				GRPnotfound();				\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 		} else {						\
 			MT_thread_setalgorithm("GRP_subscan_old_groups, !dense"); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
@@ -286,7 +286,7 @@
 				GRPnotfound();				\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 		}							\
 	} while(0)
 
@@ -374,7 +374,7 @@
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 		} else {						\
 			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, !dense, parent hash" : "GRP_use_existing_hash_table, !dense"); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
@@ -410,7 +410,7 @@
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 		}							\
 	} while(0)
 
@@ -524,7 +524,7 @@ ctz(oid x)
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 		} else {						\
 			MT_thread_setalgorithm("GRP_create_partial_hash_table, !dense"); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
@@ -558,7 +558,7 @@ ctz(oid x)
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error1)); \
+				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
 		}							\
 	} while (0)
 #define GCGRPTST(i, j)	if (grps[i] != grps[j]) { hb = BUN_NONE; break; }
@@ -640,7 +640,7 @@ ctz(oid x)
 			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(error1));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(error));	\
 	} while (0)
 
 gdk_return
@@ -682,6 +682,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	assert(s == NULL || BATttype(s) == TYPE_oid);
 	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
 
 	/* g is NULL or [oid(dense),oid] and same size as b or s */
 	assert(g == NULL || BATttype(g) == TYPE_oid || BATcount(g) == 0);
@@ -702,7 +703,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	} else {
 		hseqb = ci.seq;
 	}
-	if (b->tkey || ci.ncand <= 1 || (g && (g->tkey || BATtdense(g)))) {
+	if (bi.key || ci.ncand <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
 		gn = BATdense(hseqb, 0, BATcount(b));
 		if (gn == NULL)
@@ -720,6 +721,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				goto error;
 			*histo = hn;
 		}
+		bat_iterator_end(&bi);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
 			  ",h=" ALGOOPTBATFMT ",subsorted=%s -> groups="
@@ -735,9 +737,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	assert(!BATtdense(b));
 	if (g) {
 		assert(!BATtdense(g));
-		if (BATtordered(g))
+		if (g->tsorted)
 			maxgrp = * (oid *) Tloc(g, BATcount(g) - 1);
-		else if (BATtrevordered(g))
+		else if (g->trevsorted)
 			maxgrp = * (oid *) Tloc(g, 0);
 		else {
 			/* group bats are not modified in parallel, so
@@ -753,7 +755,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		else
 			grps = (const oid *) Tloc(g, 0);
 	}
-	if (BATordered(b) && BATordered_rev(b)) {
+	(void) BATordered(b);
+	(void) BATordered_rev(b);
+	bat_iterator_end(&bi);
+	bi = bat_iterator(b);
+	if (bi.sorted && bi.revsorted) {
 		/* all values are equal */
 		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
 			/* there's only a single group: 0 */
@@ -773,6 +779,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					goto error;
 				*histo = hn;
 			}
+			bat_iterator_end(&bi);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 				  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
 				  ",h=" ALGOOPTBATFMT ",subsorted=%s -> groups="
@@ -812,6 +819,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					goto error;
 				*histo = hn;
 			}
+			bat_iterator_end(&bi);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 				  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
 				  ",h=" ALGOOPTBATFMT ",subsorted=%s -> groups="
@@ -828,7 +836,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	}
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
-	cmp = ATOMcompare(b->ttype);
+	cmp = ATOMcompare(bi.type);
 	gn = COLnew(hseqb, TYPE_oid, ci.ncand, TRANSIENT);
 	if (gn == NULL)
 		goto error;
@@ -840,8 +848,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	MT_rwlock_rdunlock(&b->thashlock);
 	if (maxgrps == BUN_NONE) {
 		MT_lock_set(&b->theaplock);
-		if (b->tunique_est != 0)
-			maxgrps = (BUN) b->tunique_est;
+		if (bi.unique_est != 0)
+			maxgrps = (BUN) bi.unique_est;
 		else
 			maxgrps = ci.ncand / 10;
 		MT_lock_unset(&b->theaplock);
@@ -854,7 +862,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps += BATcount(h);
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
-	bi = bat_iterator(b);
 
 	if (bi.width <= 2) {
 		maxgrps = (BUN) 1 << (8 * bi.width);
@@ -864,13 +871,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
-			goto error1;
+			goto error;
 		exts = (oid *) Tloc(en, 0);
 	}
 	if (histo) {
 		hn = COLnew(0, TYPE_lng, maxgrps, TRANSIENT);
 		if (hn == NULL)
-			goto error1;
+			goto error;
 		cnts = (lng *) Tloc(hn, 0);
 	}
 	ngrp = 0;
@@ -880,7 +887,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 	/* figure out if we can use the storage type also for
 	 * comparing values */
-	t = ATOMbasetype(b->ttype);
+	t = ATOMbasetype(bi.type);
 	/* for strings we can use the offset instead of the actual
 	 * string values if we know that the strings in the string
 	 * heap are unique */
@@ -925,7 +932,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * id fits in a uint16_t */
 		GRP_small_values(16, 16, w[p]);
 	} else if (subsorted ||
-	    ((BATordered(b) || BATordered_rev(b)) &&
+	    ((bi.sorted || bi.revsorted) &&
 	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
 		algomsg = "compare consecutive values -- ";
@@ -960,7 +967,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		gn->tsorted = true;
 		*groups = gn;
-	} else if (BATordered(b) || BATordered_rev(b)) {
+	} else if (bi.sorted || bi.revsorted) {
 		BUN i, j;
 		BUN *pgrp;
 
@@ -989,7 +996,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* array to maintain last time we saw each old group */
 		pgrp = GDKmalloc(sizeof(BUN) * j);
 		if (pgrp == NULL)
-			goto error1;
+			goto error;
 		/* initialize to impossible position */
 		memset(pgrp, ~0, sizeof(BUN) * j);
 
@@ -1027,7 +1034,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(pgrp);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
-		    (!b->batTransient &&
+		    (!bi.transient &&
 		     BAThash(b) == GDK_SUCCEED) ||
 		    (/* DISABLES CODE */ (0) &&
 		     (parent = VIEWtparent(b)) != 0 &&
@@ -1156,20 +1163,20 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * tells us which power of two */
 		bits = 8 * SIZEOF_OID - ctz(nbucket);
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
-		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
+		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
+		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");
-			goto error1;
+			goto error;
 		}
 		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
 		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
-		    HASHnew(hs, b->ttype, BATcount(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(hs, bi.type, BATcount(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");
-			goto error1;
+			goto error;
 		}
 		gn->tsorted = true; /* be optimistic */
 
@@ -1305,9 +1312,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(en),
 		  ALGOOPTBATPAR(hn), algomsg, GDKusec() - t0);
 	return GDK_SUCCEED;
-  error1:
-	bat_iterator_end(&bi);
   error:
+	bat_iterator_end(&bi);
 	if (hs != NULL && hs != b->thash) {
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
