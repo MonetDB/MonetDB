@@ -726,8 +726,8 @@ typedef struct {
 	uint16_t width;		/* byte-width of the atom array */
 	int8_t type;		/* type id. */
 	uint8_t shift;		/* log2 of bun width */
-	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
-		key:1,		/* no duplicate values present */
+	bool varsized;		/* varsized/void (true) or fixedsized (false) */
+	bool key:1,		/* no duplicate values present */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */

@@ -2915,19 +2915,26 @@ log_tstart(logger *lg, bool flushnow)
 {
 	logformat l;
 
+	logger_lock(lg);
 	if (flushnow) {
 		lg->id++;
 		logger_close_output(lg);
 		/* start new file */
-		if (logger_open_output(lg) != GDK_SUCCEED)
+		if (logger_open_output(lg) != GDK_SUCCEED) {
+			logger_unlock(lg);
 			return GDK_FAIL;
-		while (lg->saved_id+1 < lg->id)
+		}
+		while (lg->saved_id+1 < lg->id) {
+			logger_unlock(lg);
 			logger_flush(lg, (1ULL<<63));
+			logger_lock(lg);
+		}
 		lg->flushnow = flushnow;
 	}
 
 	lg->end++;
 	if (LOG_DISABLED(lg)) {
+		logger_unlock(lg);
 		return GDK_SUCCEED;
 	}
 
@@ -2936,7 +2943,10 @@ log_tstart(logger *lg, bool flushnow)
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
-	if (log_write_format(lg, &l) != GDK_SUCCEED)
+	if (log_write_format(lg, &l) != GDK_SUCCEED) {
+		logger_unlock(lg);
 		return GDK_FAIL;
+	}
+	logger_unlock(lg);
 	return GDK_SUCCEED;
 }
