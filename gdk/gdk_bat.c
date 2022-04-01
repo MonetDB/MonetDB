@@ -1027,7 +1027,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		return GDK_FAIL;
 	}
 
+	MT_lock_set(&b->theaplock);
 	ALIGNapp(b, force, GDK_FAIL);
+	MT_lock_unset(&b->theaplock);
 
 	if (b->ttype == TYPE_void && BATtdense(b)) {
 		const oid *ovals = values;
@@ -1400,20 +1402,21 @@ BUNdelete(BAT *b, oid o)
 static gdk_return
 BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force, bool autoincr)
 {
-	BUN last = BATcount(b) - 1;
-	BATiter bi = bat_iterator_nolock(b);
 	int tt;
 	BUN prv, nxt;
 	const void *val;
 
+	MT_lock_set(&b->theaplock);
+	BUN last = BATcount(b) - 1;
+	BATiter bi = bat_iterator_nolock(b);
 	/* zap alignment info */
 	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
+		MT_lock_unset(&b->theaplock);
 		GDKerror("access denied to %s, aborting.\n",
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
 	TRC_DEBUG(ALGO, ALGOBATFMT " replacing " BUNFMT " values\n", ALGOBATPAR(b), count);
-	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void) {
 		PROPdestroy(b);
 		b->tminpos = BUN_NONE;
