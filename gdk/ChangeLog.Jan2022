@@ -1,6 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Fri Apr  1 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Improved speed of BATappend to empty varsized bat: we now just copy
+  the heaps instead of inserting individual values.
+
 * Tue Mar 29 2022 Sjoerd Mullender <sjoerd@acm.org>
 - Improved speed of projection (BATproject) on varsized bats by sharing
   the data heap (vheap).
