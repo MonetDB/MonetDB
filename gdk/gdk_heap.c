@@ -86,16 +86,15 @@ decompose_filename(str nme)
 	return ext;
 }
 
+/* this function is called with the theaplock held */
 gdk_return
-HEAPgrow(MT_Lock *lock, Heap **hp, size_t size, bool mayshare)
+HEAPgrow(Heap **hp, size_t size, bool mayshare)
 {
 	Heap *new;
 
-	MT_lock_set(lock);
 	ATOMIC_BASE_TYPE refs = ATOMIC_GET(&(*hp)->refs);
 	if ((refs & HEAPREFS) == 1) {
 		gdk_return rc = HEAPextend((*hp), size, mayshare);
-		MT_lock_unset(lock);
 		return rc;
 	}
 	new = GDKmalloc(sizeof(Heap));
@@ -126,7 +125,6 @@ HEAPgrow(MT_Lock *lock, Heap **hp, size_t size, bool mayshare)
 			new = NULL;
 		}
 	}
-	MT_lock_unset(lock);
 	return new ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -1118,11 +1116,14 @@ HEAP_malloc(BAT *b, size_t nbytes)
 
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
-		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, false) != GDK_SUCCEED) {
+		MT_lock_set(&b->theaplock);
+		if (HEAPgrow(&b->tvheap, newsize, false) != GDK_SUCCEED) {
+			MT_lock_unset(&b->theaplock);
 			return (var_t) -1;
 		}
 		heap = b->tvheap;
 		heap->free = newsize;
+		MT_lock_unset(&b->theaplock);
 		hheader = HEAP_index(heap, 0, HEADER);
 
 		blockp = HEAP_index(heap, block, CHUNK);

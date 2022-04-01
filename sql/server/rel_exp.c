@@ -3082,6 +3082,10 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
 	else if (upcast && type->type->eclass == EC_FLT)
 		type = sql_bind_localtype("dbl");
 
+	/* TODO we could use the sql_query* struct to set paremeters used as freevars,
+	   but it requires to change a lot of interfaces */
+	/* if (is_freevar(exp))
+		rel = query_fetch_outer(query, is_freevar(exp)-1); */
 	return set_exp_type(sql, type, rel, exp);
 }
 
@@ -3248,7 +3252,7 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		return 0;
 
 	const char *nrname = relname, *nename = expname;
-	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->exps)) {
+	if (is_project(rel->op) && !list_empty(rel->exps)) {
 		sql_exp *e = NULL;
 
 		if (nrname && nename) { /* find the column reference and propagate type setting */
@@ -3258,6 +3262,10 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		}
 		if (!e)
 			return 0; /* not found */
+		if (is_set(rel->op)) { /* TODO for set relations this needs further improvement */
+			(void) sql_error(sql, 10, SQLSTATE(42000) "Cannot set parameter types under set relations at the moment");
+			return -1;
+		}
 		/* set order by column types */
 		if (is_simple_project(rel->op) && !list_empty(rel->r)) {
 			sql_exp *ordere = NULL;
