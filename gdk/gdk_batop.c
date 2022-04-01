@@ -1138,7 +1138,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	bool anynil = false;
 	bool locked = false;
 
-	if (b->tvarsized) {
+	if (b->tvheap) {
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
 			if (positions) {
@@ -1759,15 +1759,14 @@ BATslice(BAT *b, BUN l, BUN h)
 		if (bn == NULL)
 			goto doreturn;
 
-		if (bn->ttype == TYPE_void ||
-		    (!bn->tvarsized &&
-		     BATatoms[bn->ttype].atomPut == NULL &&
-		     BATatoms[bn->ttype].atomFix == NULL)) {
-			if (bn->ttype) {
-				memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
-				       (q - p) << bn->tshift);
-				bn->theap->dirty = true;
-			}
+		if (bn->ttype == TYPE_void) {
+			BATsetcount(bn, h - l);
+		} else if (bn->tvheap == NULL &&
+			   BATatoms[bn->ttype].atomFix == NULL) {
+			assert(BATatoms[bn->ttype].atomPut == NULL);
+			memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
+			       (q - p) << bn->tshift);
+			bn->theap->dirty = true;
 			BATsetcount(bn, h - l);
 		} else {
 			for (; p < q; p++) {
@@ -2989,7 +2988,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 		cmp = ATOMcompare(t);
 		if (nil == NULL) {
 			cnt = ci.ncand;
-		} else if (b->tvarsized) {
+		} else if (b->tvheap) {
 			base = b->tvheap->base;
 			CAND_LOOP(&ci)
 				cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]) != 0;

@@ -106,7 +106,6 @@ VIEWcreate(oid seq, BAT *b)
 	 * accelerator data. We need copies because in case of a mark,
 	 * we are going to override a column with a void. */
 	bn->tkey = b->tkey;
-	bn->tvarsized = b->tvarsized;
 	bn->tseqbase = b->tseqbase;
 	bn->tsorted = b->tsorted;
 	bn->trevsorted = b->trevsorted;
@@ -178,9 +177,8 @@ BATmaterialize(BAT *b, BUN cap)
 
 	BATcheck(b, GDK_FAIL);
 	assert(!isVIEW(b));
-	if (cap == BUN_NONE)
+	if (cap == BUN_NONE || cap < BATcapacity(b))
 		cap = BATcapacity(b);
-	assert(cap >= BATcapacity(b));
 	if (b->ttype != TYPE_void) {
 		/* no voids; just call BATextend to make sure of capacity */
 		return BATextend(b, cap);
