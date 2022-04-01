@@ -586,7 +586,7 @@ BATstrimpsync(void *arg)
 
 	MT_lock_set(&b->batIdxLock);
 	if ((hp = &b->tstrimps->strimps)) {
-		if (HEAPsave(hp, hp->filename, NULL, true, hp->free) == GDK_SUCCEED) {
+		if (HEAPsave(hp, hp->filename, NULL, true, hp->free, NULL) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 					((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;

@@ -95,7 +95,6 @@ exps_push_down_prj(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 		narg = exp_push_down_prj(sql, arg, f, t);
 		if (!narg)
 			return NULL;
-		narg = exp_propagate(sql->sa, narg, arg);
 		append(nl, narg);
 	}
 	return nl;

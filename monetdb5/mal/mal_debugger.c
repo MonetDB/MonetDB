@@ -417,7 +417,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "ttop", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(bi.hfree, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->batCopiedtodisk, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) bi.copiedtodisk, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batDirtydesc", false) != GDK_SUCCEED ||
 	    BUNappend(bv, bi.dirtydesc ? "dirty" : "clean", false) != GDK_SUCCEED ||
 

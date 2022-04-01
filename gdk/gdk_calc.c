@@ -17,10 +17,10 @@
  * the candidates, all other values are NIL (so that the output is
  * still aligned). */
 
-static gdk_return
-checkbats(BAT *b1, BAT *b2, const char *func)
+static inline gdk_return
+checkbats(BATiter *b1i, BATiter *b2i, const char *func)
 {
-	if (b1->batCount != b2->batCount) {
+	if (b1i->count != b2i->count) {
 		GDKerror("%s: inputs not the same size.\n", func);
 		return GDK_FAIL;
 	}
@@ -4340,7 +4340,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	} while (0)
 
 static BAT *
-BATcalcifthenelse_intern(BAT *b,
+BATcalcifthenelse_intern(BATiter *bi,
 			 const void *col1, bool incr1, const char *heap1,
 			 int width1, bool nonil1, oid seq1,
 			 const void *col2, bool incr2, const char *heap2,
@@ -4351,7 +4351,7 @@ BATcalcifthenelse_intern(BAT *b,
 	void *restrict dst;
 	BUN i, k, l;
 	const void *p;
-	BUN cnt = b->batCount;
+	BUN cnt = bi->count;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -4367,20 +4367,19 @@ BATcalcifthenelse_intern(BAT *b,
 	assert(col1 != NULL || incr1 == true);
 	assert(col2 != NULL || incr2 == true);
 
-	bn = COLnew(b->hseqbase, ATOMtype(tpe), cnt, TRANSIENT);
+	bn = COLnew(bi->b->hseqbase, ATOMtype(tpe), cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (cnt == 0)
 		return bn;
 
-	BATiter bi = bat_iterator(b);
 	dst = (void *) Tloc(bn, 0);
 	k = l = 0;
 	if (bn->tvarsized) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
-		if (ATOMstorage(bi.type) == TYPE_msk) {
-			const uint32_t *src = bi.base;
+		if (ATOMstorage(bi->type) == TYPE_msk) {
+			const uint32_t *src = bi->base;
 			BUN n = cnt / 32;
 			TIMEOUT_LOOP_IDX(i, n + 1, timeoffset) {
 				BUN rem = i == n ? cnt % 32 : 32;
@@ -4407,7 +4406,7 @@ BATcalcifthenelse_intern(BAT *b,
 			TIMEOUT_CHECK(timeoffset,
 				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		} else {
-			const bit *src = bi.base;
+			const bit *src = bi->base;
 			TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 				if (src[i] && !is_bit_nil(src[i])) {
 					if (heap1)
@@ -4432,8 +4431,8 @@ BATcalcifthenelse_intern(BAT *b,
 	} else {
 		assert(heap1 == NULL);
 		assert(heap2 == NULL);
-		if (ATOMstorage(bi.type) == TYPE_msk) {
-			const uint32_t *src = bi.base;
+		if (ATOMstorage(bi->type) == TYPE_msk) {
+			const uint32_t *src = bi->base;
 			uint32_t mask = 0;
 			BUN n = 32;
 			if (ATOMtype(tpe) == TYPE_oid) {
@@ -4518,7 +4517,7 @@ BATcalcifthenelse_intern(BAT *b,
 				}
 			}
 		} else {
-			const bit *src = bi.base;
+			const bit *src = bi->base;
 			if (ATOMtype(tpe) == TYPE_oid) {
 				TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 					if (src[i] && !is_bit_nil(src[i])) {
@@ -4614,7 +4613,6 @@ BATcalcifthenelse_intern(BAT *b,
 			}
 		}
 	}
-	bat_iterator_end(&bi);
 
 	BATsetcount(bn, cnt);
 	bn->theap->dirty = true;
@@ -4627,7 +4625,6 @@ BATcalcifthenelse_intern(BAT *b,
 
 	return bn;
 bailout:
-	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -4644,20 +4641,28 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	if (checkbats(b, b1, __func__) != GDK_SUCCEED)
+	BATiter bi = bat_iterator(b);
+	BATiter b1i = bat_iterator(b1);
+	BATiter b2i = bat_iterator(b2);
+	if (checkbats(&bi, &b1i, __func__) != GDK_SUCCEED ||
+	    checkbats(&bi, &b2i, __func__) != GDK_SUCCEED) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		return NULL;
-	if (checkbats(b, b2, __func__) != GDK_SUCCEED)
-		return NULL;
+	}
 	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	bn = BATcalcifthenelse_intern(b,
+	bn = BATcalcifthenelse_intern(&bi,
 				      b1i.base, true, b1i.vh ? b1i.vh->base : NULL, b1i.width, b1i.nonil, b1->tseqbase,
 				      b2i.base, true, b2i.vh ? b2i.vh->base : NULL, b2i.width, b2i.nonil, b2->tseqbase,
 				      b1i.type);
+	bat_iterator_end(&bi);
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 
@@ -4681,17 +4686,24 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 	BATcheck(b1, NULL);
 	BATcheck(c2, NULL);
 
-	if (checkbats(b, b1, __func__) != GDK_SUCCEED)
+	BATiter bi = bat_iterator(b);
+	BATiter b1i = bat_iterator(b1);
+	if (checkbats(&bi, &b1i, __func__) != GDK_SUCCEED) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&b1i);
 		return NULL;
+	}
 	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(c2->vtype)) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&b1i);
 		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	BATiter b1i = bat_iterator(b1);
-	bn = BATcalcifthenelse_intern(b,
+	bn = BATcalcifthenelse_intern(&bi,
 				      b1i.base, true, b1i.vh ? b1i.vh->base : NULL, b1i.width, b1i.nonil, b1->tseqbase,
 				      VALptr(c2), false, NULL, 0, !VALisnil(c2), 0,
 				      b1i.type);
+	bat_iterator_end(&bi);
 	bat_iterator_end(&b1i);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b1=" ALGOBATFMT
@@ -4714,17 +4726,24 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 	BATcheck(c1, NULL);
 	BATcheck(b2, NULL);
 
-	if (checkbats(b, b2, __func__) != GDK_SUCCEED)
+	BATiter bi = bat_iterator(b);
+	BATiter b2i = bat_iterator(b2);
+	if (checkbats(&bi, &b2i, __func__) != GDK_SUCCEED) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&b2i);
 		return NULL;
+	}
 	if (b->ttype != TYPE_bit || ATOMtype(b2->ttype) != ATOMtype(c1->vtype)) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&b2i);
 		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	BATiter b2i = bat_iterator(b2);
-	bn = BATcalcifthenelse_intern(b,
+	bn = BATcalcifthenelse_intern(&bi,
 				      VALptr(c1), false, NULL, 0, !VALisnil(c1), 0,
 				      b2i.base, true, b2i.vh ? b2i.vh->base : NULL, b2i.width, b2i.nonil, b2->tseqbase,
 				      c1->vtype);
+	bat_iterator_end(&bi);
 	bat_iterator_end(&b2i);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b2=" ALGOBATFMT
@@ -4751,10 +4770,12 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	bn = BATcalcifthenelse_intern(b,
+	BATiter bi = bat_iterator(b);
+	bn = BATcalcifthenelse_intern(&bi,
 				      VALptr(c1), false, NULL, 0, !VALisnil(c1), 0,
 				      VALptr(c2), false, NULL, 0, !VALisnil(c2), 0,
 				      c1->vtype);
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",

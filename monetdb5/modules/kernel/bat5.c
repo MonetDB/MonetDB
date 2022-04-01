@@ -187,7 +187,9 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (isVIEW(b)) {
 		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		MT_lock_set(&b->theaplock);
 		restrict_t mode = b->batRestricted;
+		MT_lock_unset(&b->theaplock);
 		BBPunfix(b->batCacheid);
 		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
 			throw(MAL, "bat.append", GDK_EXCEPTION);
@@ -252,7 +254,9 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (isVIEW(b)) {
 		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		MT_lock_set(&b->theaplock);
 		restrict_t mode = b->batRestricted;
+		MT_lock_unset(&b->theaplock);
 		BBPunfix(b->batCacheid);
 		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
 			throw(MAL, "bat.append", GDK_EXCEPTION);
@@ -553,6 +557,8 @@ BKCgetAccess(str *res, const bat *bid)
 	case BAT_WRITE:
 		*res = GDKstrdup("write");
 		break;
+	default:
+		MT_UNREACHABLE();
 	}
 	BBPunfix(b->batCacheid);
 	if(*res == NULL)

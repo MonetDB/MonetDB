@@ -161,3 +161,15 @@
 % 4,	1,	1,	0,	3,	3 # length
 [ "json",	0,	0,	"",	"%15",	"%15"	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	1,	1,	0,	3,	3 # length
+[ "char",	1,	0,	"",	"%22",	"%14"	]
+[ "char",	1,	0,	NULL,	NULL,	NULL	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+% .%22 # table_name
+% %14 # name
+% char # type
+% 1 # length
+[ "b"	]
