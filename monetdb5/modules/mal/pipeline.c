@@ -1675,7 +1675,6 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 
 	if (!tt)
 		tt = TYPE_oid;
-	/* probably want to use a per 'r' lock, but the r->theaplock is blocking this on BATextend and BATsetcount */
 	if (!private)
 		pipeline_lock1(r);
 	if (r && BATcount(b)) {
@@ -1706,12 +1705,6 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		assert(private);
 		r->T.private_bat = 1;
 	}
-	/*
-	if (BATcount(r) && r->twidth==1) {
-		uint8_t *k = Tloc(r, 0);
-		assert((k[0] & (GDK_VARALIGN-1)) == 0);
-	}
-	*/
 
 	BUN cnt = 0;
 	if (!err) {
@@ -1744,8 +1737,12 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			project(flt)
 			project(dbl)
 			if (local_storage) {
+				if (!private)
+					pipeline_lock2(r);
 				if (BATcount(r) < max)
 					BATsetcount(r, max);
+				if (!private)
+					pipeline_unlock2(r);
 				aproject_(str)
 			} else {
 				aproject(str,1,uint8_t)
@@ -1757,9 +1754,13 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		if (!err) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(g->batCacheid);
+			if (!private)
+				pipeline_lock2(r);
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
+			if (!private)
+				pipeline_unlock2(r);
 			*rid = r->batCacheid;
 			BBPkeepref(r);
 		}
@@ -1819,9 +1820,13 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 		}
 		if (!err) {
 			BBPunfix(g->batCacheid);
+			if (!private)
+				pipeline_lock2(r);
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
+			if (!private)
+				pipeline_unlock2(r);
 			*rid = r->batCacheid;
 			BBPkeepref(r);
 		}
@@ -1945,9 +1950,13 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 		if (!err) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(g->batCacheid);
+			if (!private)
+				pipeline_lock2(r);
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
+			if (!private)
+				pipeline_unlock2(r);
 			*rid = r->batCacheid;
 			BBPkeepref(r);
 		}
@@ -2049,9 +2058,13 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!err) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(g->batCacheid);
+			if (!private)
+				pipeline_lock2(r);
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
+			if (!private)
+				pipeline_unlock2(r);
 			*rid = r->batCacheid;
 			BBPkeepref(r);
 		}
@@ -2283,9 +2296,13 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		if (!err) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(g->batCacheid);
+			if (!private)
+				pipeline_lock2(r);
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
+			if (!private)
+				pipeline_unlock2(r);
 			*rid = r->batCacheid;
 			BBPkeepref(r);
 		}
@@ -2388,9 +2405,13 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		if (!err) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(g->batCacheid);
+			if (!private)
+				pipeline_lock2(r);
 			if (BATcount(r) < max)
 				BATsetcount(r, max);
 			BATnegateprops(r);
+			if (!private)
+				pipeline_unlock2(r);
 			*rid = r->batCacheid;
 			BBPkeepref(r);
 		}

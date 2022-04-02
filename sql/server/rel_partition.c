@@ -257,6 +257,7 @@ rel_groupby_partition_safe(sql_rel *rel)
 			sql_subfunc *sf = e->f;
 
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "avg") == 0 ||
 			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 /*||
 			    strcmp(sf->func->base.name, "prod") == 0*/)) {
 				return false;
