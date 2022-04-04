@@ -4375,7 +4375,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 
 	dst = (void *) Tloc(bn, 0);
 	k = l = 0;
-	if (bn->tvarsized) {
+	if (bn->tvheap) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
 		if (ATOMstorage(bi->type) == TYPE_msk) {
