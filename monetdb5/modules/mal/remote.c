@@ -1525,7 +1525,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
 	sendtheap = b->ttype != TYPE_void;
-	sendtvheap = sendtheap && b->tvarsized;
+	sendtvheap = sendtheap && b->tvheap;
 	if (isVIEW(b) && sendtvheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);

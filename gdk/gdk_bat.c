@@ -176,7 +176,6 @@ BATsetdims(BAT *b, uint16_t width)
 	b->twidth = b->ttype == TYPE_str ? width > 0 ? width : 1 : ATOMsize(b->ttype);
 	b->tshift = ATOMelmshift(b->twidth);
 	assert_shift_width(b->tshift, b->twidth);
-	b->tvarsized = b->ttype == TYPE_void || BATatoms[b->ttype].atomPut != NULL;
 }
 
 const char *
@@ -820,7 +819,10 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		}
 		if (tt != bn->ttype) {
 			bn->ttype = tt;
-			bn->tvarsized = ATOMvarsized(tt);
+			if (bn->tvheap && !ATOMvarsized(tt)) {
+				HEAPdecref(bn->tvheap, false);
+				bn->tvheap = NULL;
+			}
 			bn->tseqbase = ATOMtype(tt) == TYPE_oid ? bi.tseq : oid_nil;
 		}
 	} else {
@@ -1027,7 +1029,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		return GDK_FAIL;
 	}
 
+	MT_lock_set(&b->theaplock);
 	ALIGNapp(b, force, GDK_FAIL);
+	MT_lock_unset(&b->theaplock);
 
 	if (b->ttype == TYPE_void && BATtdense(b)) {
 		const oid *ovals = values;
@@ -1046,8 +1050,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return GDK_SUCCEED;
 		} else {
 			/* we need to materialize b; allocate enough capacity */
-			b->batCapacity = BATcount(b) + count;
-			if (BATmaterialize(b) != GDK_SUCCEED)
+			if (BATmaterialize(b, BATcount(b) + count) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
 	}
@@ -1179,7 +1182,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			minvalp = BUNtail(bi, bi.minpos);
 		if (bi.maxpos != BUN_NONE)
 			maxvalp = BUNtail(bi, bi.maxpos);
-		if (b->tvarsized) {
+		if (b->tvheap) {
 			const void *vbase = b->tvheap->base;
 			for (BUN i = 0; i < count; i++) {
 				t = ((void **) values)[i];
@@ -1294,7 +1297,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 gdk_return
 BUNappend(BAT *b, const void *t, bool force)
 {
-	return BUNappendmulti(b, b->ttype && b->tvarsized ? (const void *) &t : (const void *) t, 1, force);
+	return BUNappendmulti(b, b->ttype && b->tvheap ? (const void *) &t : (const void *) t, 1, force);
 }
 
 gdk_return
@@ -1336,7 +1339,7 @@ BUNdelete(BAT *b, oid o)
 		/* replace to-be-delete BUN with last BUN; materialize
 		 * void column before doing so */
 		if (b->ttype == TYPE_void &&
-		    BATmaterialize(b) != GDK_SUCCEED)
+		    BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			msk mval = mskGetVal(b, BATcount(b) - 1);
@@ -1401,20 +1404,21 @@ BUNdelete(BAT *b, oid o)
 static gdk_return
 BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force, bool autoincr)
 {
-	BUN last = BATcount(b) - 1;
-	BATiter bi = bat_iterator_nolock(b);
 	int tt;
 	BUN prv, nxt;
 	const void *val;
 
+	MT_lock_set(&b->theaplock);
+	BUN last = BATcount(b) - 1;
+	BATiter bi = bat_iterator_nolock(b);
 	/* zap alignment info */
 	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
+		MT_lock_unset(&b->theaplock);
 		GDKerror("access denied to %s, aborting.\n",
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
 	TRC_DEBUG(ALGO, ALGOBATFMT " replacing " BUNFMT " values\n", ALGOBATPAR(b), count);
-	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void) {
 		PROPdestroy(b);
 		b->tminpos = BUN_NONE;
@@ -1427,7 +1431,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
 		BUN p = autoincr ? positions[0] - b->hseqbase + i : positions[i] - b->hseqbase;
-		const void *t = b->ttype && b->tvarsized ?
+		const void *t = b->ttype && b->tvheap ?
 			((const void **) values)[i] :
 			(const void *) ((const char *) values + (i << b->tshift));
 		const bool isnil = ATOMlinear(b->ttype) &&
@@ -1436,18 +1440,16 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		/* retrieve old value, but if this comes from the
 		 * logger, we need to deal with offsets that point
 		 * outside of the valid vheap */
-		if (b->tvarsized) {
-			if (b->ttype) {
-				size_t off = BUNtvaroff(bi, p);
-				if (off < bi.vhfree)
-					val = bi.vh->base + off;
-				else
-					val = NULL; /* bad offset */
-			} else {
-				val = BUNtpos(bi, p);
-			}
+		if (b->ttype == TYPE_void) {
+			val = BUNtpos(bi, p);
 		} else if (bi.type == TYPE_msk) {
 			val = BUNtmsk(bi, p);
+		} else if (b->tvheap) {
+			size_t off = BUNtvaroff(bi, p);
+			if (off < bi.vhfree)
+				val = bi.vh->base + off;
+			else
+				val = NULL; /* bad offset */
 		} else {
 			val = BUNtloc(bi, p);
 		}
@@ -1518,7 +1520,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		IMPSdestroy(b);
 		STRMPdestroy(b);
 
-		if (b->tvarsized && b->ttype) {
+		if (b->tvheap && b->ttype) {
 			var_t _d;
 			ptr _ptr;
 			_ptr = BUNtloc(bi, p);
@@ -1685,7 +1687,7 @@ BUNreplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 {
 	BATcheck(b, GDK_FAIL);
 
-	if (b->ttype == TYPE_void && BATmaterialize(b) != GDK_SUCCEED)
+	if (b->ttype == TYPE_void && BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	return BUNinplacemulti(b, positions, values, count, force, false);
@@ -1698,7 +1700,7 @@ BUNreplacemultiincr(BAT *b, oid position, const void *values, BUN count, bool fo
 {
 	BATcheck(b, GDK_FAIL);
 
-	if (b->ttype == TYPE_void && BATmaterialize(b) != GDK_SUCCEED)
+	if (b->ttype == TYPE_void && BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	return BUNinplacemulti(b, &position, values, count, force, true);
@@ -1707,7 +1709,7 @@ BUNreplacemultiincr(BAT *b, oid position, const void *values, BUN count, bool fo
 gdk_return
 BUNreplace(BAT *b, oid id, const void *t, bool force)
 {
-	return BUNreplacemulti(b, &id, b->ttype && b->tvarsized ? (const void *) &t : t, 1, force);
+	return BUNreplacemulti(b, &id, b->ttype && b->tvheap ? (const void *) &t : t, 1, force);
 }
 
 /* very much like BUNreplace, but this doesn't make any changes if the
@@ -1722,7 +1724,7 @@ void_inplace(BAT *b, oid id, const void *val, bool force)
 	}
 	if (b->ttype == TYPE_void)
 		return GDK_SUCCEED;
-	return BUNinplacemulti(b, &id, b->ttype && b->tvarsized ? (const void *) &val : (const void *) val, 1, force, false);
+	return BUNinplacemulti(b, &id, b->ttype && b->tvheap ? (const void *) &val : (const void *) val, 1, force, false);
 }
 
 /*
@@ -2575,14 +2577,14 @@ BATassertProps(BAT *b)
 		assert(strcmp(b->tvheap->filename, filename) == 0);
 	}
 
-	/* void and str imply varsized */
-	if (b->ttype == TYPE_void ||
-	    ATOMstorage(b->ttype) == TYPE_str)
-		assert(b->tvarsized);
+	/* void, str and blob imply varsized */
+	if (ATOMstorage(b->ttype) == TYPE_str ||
+	    ATOMstorage(b->ttype) == TYPE_blob)
+		assert(b->tvheap != NULL);
 	/* other "known" types are not varsized */
 	if (ATOMstorage(b->ttype) > TYPE_void &&
 	    ATOMstorage(b->ttype) < TYPE_str)
-		assert(!b->tvarsized);
+		assert(b->tvheap == NULL);
 	/* shift and width have a particular relationship */
 	if (ATOMstorage(b->ttype) == TYPE_str)
 		assert(b->twidth >= 1 && b->twidth <= ATOMsize(b->ttype));
