@@ -5915,39 +5915,39 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	system,	id,	name,	authorization,	owner,	system # name
 % char,	boolean,	int,	varchar,	int,	int,	boolean # type
 % 22,	5,	1,	0,	1,	1,	5 # length
-% .%1,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% .%1,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences # table_name
 % %1,	id,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	int,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 20,	1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% .%1,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences # table_name
 % %1,	schema_id,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	int,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 27,	1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% .%1,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences # table_name
 % %1,	name,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	varchar,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 22,	0,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% .%1,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences # table_name
 % %1,	start,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 23,	1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% .%1,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences # table_name
 % %1,	minvalue,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 26,	1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% .%1,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences # table_name
 % %1,	maxvalue,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 26,	1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% .%1,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences # table_name
 % %1,	increment,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 27,	1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% .%1,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences # table_name
 % %1,	cacheinc,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 26,	1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
-% .%1,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% .%1,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences,	.sequences # table_name
 % %1,	cycle,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
 % char,	boolean,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 23,	5,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
@@ -6087,11 +6087,11 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	reference,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
 % char,	boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
 % 35,	5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
-% .%1,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% .%1,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput # table_name
 % %1,	sorted,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
 % char,	boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
 % 32,	5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
-% .%1,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% .%1,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput # table_name
 % %1,	unique,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
 % char,	boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
 % 32,	5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
@@ -6207,11 +6207,11 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	schema_id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % char,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 23,	1,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%1,	sys.user_role,	sys.user_role,	sys.user_role # table_name
+% .%1,	.user_role,	.user_role,	.user_role # table_name
 % %1,	login_id,	login_id,	role_id # name
 % char,	int,	int,	int # type
 % 26,	1,	1,	1 # length
-% .%1,	sys.user_role,	sys.user_role,	sys.user_role # table_name
+% .%1,	.user_role,	.user_role,	.user_role # table_name
 % %1,	role_id,	login_id,	role_id # name
 % char,	int,	int,	int # type
 % 25,	1,	1,	1 # length
@@ -6235,39 +6235,39 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %124,	value,	var_name,	value # name
 % char,	varchar,	char,	varchar # type
 % 24,	0,	16,	0 # length
-% .%1,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% .%1,	.range_partitions,	.range_partitions,	.range_partitions,	.range_partitions,	.range_partitions,	.range_partitions # table_name
 % %1,	table_id,	table_id,	partition_id,	minimum,	maximum,	with_nulls # name
 % char,	int,	int,	int,	varchar,	varchar,	boolean # type
 % 33,	1,	1,	1,	0,	0,	5 # length
-% .%1,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% .%1,	.range_partitions,	.range_partitions,	.range_partitions,	.range_partitions,	.range_partitions,	.range_partitions # table_name
 % %1,	partition_id,	table_id,	partition_id,	minimum,	maximum,	with_nulls # name
 % char,	int,	int,	int,	varchar,	varchar,	boolean # type
 % 37,	1,	1,	1,	0,	0,	5 # length
-% .%1,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% .%1,	.range_partitions,	.range_partitions,	.range_partitions,	.range_partitions,	.range_partitions,	.range_partitions # table_name
 % %1,	with_nulls,	table_id,	partition_id,	minimum,	maximum,	with_nulls # name
 % char,	boolean,	int,	int,	varchar,	varchar,	boolean # type
 % 35,	5,	1,	1,	0,	0,	5 # length
-% .%1,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
+% .%1,	.table_partitions,	.table_partitions,	.table_partitions,	.table_partitions,	.table_partitions,	.table_partitions # table_name
 % %1,	id,	id,	table_id,	column_id,	expression,	type # name
 % char,	int,	int,	int,	int,	varchar,	tinyint # type
 % 27,	1,	1,	1,	1,	0,	1 # length
-% .%1,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
+% .%1,	.table_partitions,	.table_partitions,	.table_partitions,	.table_partitions,	.table_partitions,	.table_partitions # table_name
 % %1,	table_id,	id,	table_id,	column_id,	expression,	type # name
 % char,	int,	int,	int,	int,	varchar,	tinyint # type
 % 33,	1,	1,	1,	1,	0,	1 # length
-% .%1,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
+% .%1,	.table_partitions,	.table_partitions,	.table_partitions,	.table_partitions,	.table_partitions,	.table_partitions # table_name
 % %1,	type,	id,	table_id,	column_id,	expression,	type # name
 % char,	tinyint,	int,	int,	int,	varchar,	tinyint # type
 % 29,	1,	1,	1,	1,	0,	1 # length
-% .%1,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
+% .%1,	.value_partitions,	.value_partitions,	.value_partitions,	.value_partitions # table_name
 % %1,	table_id,	table_id,	partition_id,	value # name
 % char,	int,	int,	int,	varchar # type
 % 33,	1,	1,	1,	0 # length
-% .%1,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
+% .%1,	.value_partitions,	.value_partitions,	.value_partitions,	.value_partitions # table_name
 % %1,	partition_id,	table_id,	partition_id,	value # name
 % char,	int,	int,	int,	varchar # type
 % 37,	1,	1,	1,	0 # length
-% .%1,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
+% .%1,	.value_partitions,	.value_partitions,	.value_partitions,	.value_partitions # table_name
 % %1,	value,	table_id,	partition_id,	value # name
 % char,	varchar,	int,	int,	varchar # type
 % 30,	0,	1,	1,	0 # length
