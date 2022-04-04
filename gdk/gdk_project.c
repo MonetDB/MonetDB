@@ -34,7 +34,7 @@ project1_##TYPE(BAT *restrict bn, BATiter *restrict li, BATiter *restrict r1i) \
 	bt = (TYPE *) Tloc(bn, 0);					\
 	r1seq = r1i->b->hseqbase;					\
 	r1end = r1seq + r1i->count;					\
-	if (BATtdense(li->b)) {						\
+	if (BATtdensebi(li)) {						\
 		if (li->tseq < r1seq ||					\
 		    (li->tseq + li->count) >= r1end) {			\
 			GDKerror("does not match always\n");		\
@@ -87,8 +87,8 @@ project_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 	oid r2seq, r2end;						\
 									\
 	if (r2i == NULL &&						\
-	    (ci == NULL || (ci->tpe == cand_dense && BATtdense(li->b))) && \
-	    li->nonil && r1i->type && !BATtdense(r1i->b))		\
+	    (ci == NULL || (ci->tpe == cand_dense && BATtdensebi(li))) && \
+	    li->nonil && r1i->type && !BATtdensebi(r1i))		\
 		return project1_##TYPE(bn, li, r1i);			\
 	MT_thread_setalgorithm(__func__);				\
 	r1t = (const TYPE *) r1i->base;					\
@@ -116,7 +116,7 @@ project_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 				v = r2t[o - r2seq];			\
 			bt[lo] = v;					\
 		}							\
-	} else if (BATtdense(li->b)) {					\
+	} else if (BATtdensebi(li)) {					\
 		for (lo = 0, hi = li->count; lo < hi; lo++) {		\
 			oid o = li->tseq + lo;				\
 			if (o < r1seq || o >= r2end) {			\
@@ -178,7 +178,7 @@ project_oid(BAT *restrict bn, BATiter *restrict li,
 	const oid *restrict r2t = NULL;
 	struct canditer r1ci = {0}, r2ci = {0};
 
-	if ((!lci || (lci->tpe == cand_dense && BATtdense(li->b))) && r1i->type && !BATtdense(r1i->b) && !r2i && li->nonil) {
+	if ((!lci || (lci->tpe == cand_dense && BATtdensebi(li))) && r1i->type && !BATtdensebi(r1i) && !r2i && li->nonil) {
 		if (sizeof(oid) == sizeof(lng))
 			return project1_lng(bn, li, r1i);
 		else
@@ -187,14 +187,14 @@ project_oid(BAT *restrict bn, BATiter *restrict li,
 	MT_thread_setalgorithm(__func__);
 	if (complex_cand(r1i->b))
 		canditer_init(&r1ci, NULL, r1i->b);
-	else if (!BATtdense(r1i->b))
+	else if (!BATtdensebi(r1i))
 		r1t = (const oid *) r1i->base;
 	r1seq = r1i->b->hseqbase;
 	r1end = r1seq + r1i->count;
 	if (r2i) {
 		if (complex_cand(r2i->b))
 			canditer_init(&r2ci, NULL, r2i->b);
-		else if (!BATtdense(r2i->b))
+		else if (!BATtdensebi(r2i))
 			r2t = (const oid *) r2i->base;
 		r2seq = r2i->b->hseqbase;
 		r2end = r2seq + r2i->count;
@@ -224,7 +224,7 @@ project_oid(BAT *restrict bn, BATiter *restrict li,
 					bt[lo] = o - r2seq + r2i->tseq;
 			}
 		}
-	} else if (BATtdense(li->b)) {
+	} else if (BATtdensebi(li)) {
 		for (lo = 0, hi = li->count; lo < hi; lo++) {
 			oid o = li->tseq + lo;
 			if (o < r1seq || o >= r2end) {
@@ -315,7 +315,7 @@ project_any(BAT *restrict bn, BATiter *restrict li,
 				return GDK_FAIL;
 			}
 		}
-	} else if (BATtdense(li->b)) {
+	} else if (BATtdensebi(li)) {
 		for (lo = 0, hi = li->count; lo < hi; lo++) {
 			oid o = li->tseq + lo;
 			if (o < r1seq || o >= r2end) {
@@ -456,7 +456,7 @@ project_str(BATiter *restrict li, struct canditer *restrict ci, int tpe,
 				break;
 			}
 		}
-	} else if (BATtdense(li->b)) {
+	} else if (BATtdensebi(li)) {
 		for (lo = 0, hi = li->count; lo < hi; lo++) {
 			oid o = li->tseq + lo;
 			if (o < r1seq || o >= r2end) {
@@ -598,7 +598,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		r2i = bat_iterator(NULL);
 	}
 
-	if (BATtdense(l) && lcount > 0) {
+	if (BATtdensebi(&li) && lcount > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + lcount;
 		if (lo >= r1->hseqbase && hi <= r1->hseqbase + r1i.count) {
@@ -799,7 +799,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->tshift = r1i.shift;
 	}
 
-	if (!BATtdense(r1) || (r2 && !BATtdense(r2)))
+	if (!BATtdensebi(&r1i) || (r2 && !BATtdensebi(&r2i)))
 		BATtseqbase(bn, oid_nil);
 
   doreturn:
