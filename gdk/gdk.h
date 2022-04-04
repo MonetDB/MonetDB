@@ -693,7 +693,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           bool   tkey;             // tail values are unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
- *           bool   tvarsized;        // for speed: tail type is varsized?
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
@@ -727,8 +726,7 @@ typedef struct {
 	uint16_t width;		/* byte-width of the atom array */
 	int8_t type;		/* type id. */
 	uint8_t shift;		/* log2 of bun width */
-	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
-		key:1,		/* no duplicate values present */
+	bool key:1,		/* no duplicate values present */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
@@ -822,7 +820,6 @@ typedef struct BAT {
 /* macros to hide complexity of the BAT structure */
 #define ttype		T.type
 #define tkey		T.key
-#define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
@@ -1230,8 +1227,8 @@ typedef var_t stridx_t;
 #define BUNtmsk(bi,p)	Tmsk(&(bi), (p))
 #define BUNtloc(bi,p)	(assert((bi).type != TYPE_msk), ((void *) ((char *) (bi).base + ((p) << (bi).shift))))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
-#define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
-#define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
+#define BUNtvar(bi,p)	(assert((bi).type && (bi).vh), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
+#define BUNtail(bi,p)	((bi).type?(bi).vh?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 #define BATcount(b)	((b)->batCount)
 
@@ -1474,7 +1471,7 @@ BATsettrivprop(BAT *b)
 		}
 	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
 		int c;
-		if (b->tvarsized)
+		if (b->tvheap)
 			c = ATOMcmp(b->ttype,
 				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
 				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 1, b->twidth));
@@ -1736,7 +1733,7 @@ tfastins_nocheck(BAT *b, BUN p, const void *v)
 		;
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 		mskSetVal(b, p, * (msk *) v);
-	} else if (b->tvarsized) {
+	} else if (b->tvheap) {
 		return tfastins_nocheckVAR(b, p, v);
 	} else {
 		return tfastins_nocheckFIX(b, p, v);
