@@ -820,7 +820,7 @@ static int
 mvc_export_binary_bat(stream *s, BAT* bn)
 {
 	BATiter bni = bat_iterator(bn);
-	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bn->tvarsized;
+	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bni.vh;
 
 	if (mnstr_printf(s, /*JSON*/"{"
 					 "\"version\":1,"
