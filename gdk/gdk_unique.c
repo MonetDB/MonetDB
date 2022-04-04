@@ -53,7 +53,7 @@ BATunique(BAT *b, BAT *s)
 	(void) BATordered(b);
 	(void) BATordered_rev(b);
 	BATiter bi = bat_iterator(b);
-	if (bi.key || ci.ncand <= 1 || BATtdense(b)) {
+	if (bi.key || ci.ncand <= 1 || BATtdensebi(&bi)) {
 		/* trivial: already unique */
 		bn = canditer_slice(&ci, 0, ci.ncand);
 		bat_iterator_end(&bi);

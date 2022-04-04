@@ -130,29 +130,32 @@ log_find(BAT *b, BAT *d, int val)
 
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
+	BATiter bi = bat_iterator(b);
 	if (BAThash(b) == GDK_SUCCEED) {
-		BATiter cni = bat_iterator_nolock(b);
-		MT_rwlock_rdlock(&cni.b->thashlock);
-		HASHloop_int(cni, cni.b->thash, p, &val) {
+		MT_rwlock_rdlock(&b->thashlock);
+		HASHloop_int(bi, b->thash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE) {
-				MT_rwlock_rdunlock(&cni.b->thashlock);
+				MT_rwlock_rdunlock(&b->thashlock);
+				bat_iterator_end(&bi);
 				return p;
 			}
 		}
-		MT_rwlock_rdunlock(&cni.b->thashlock);
+		MT_rwlock_rdunlock(&b->thashlock);
 	} else {		/* unlikely: BAThash failed */
-		BUN q;
-		int *t = (int *) Tloc(b, 0);
+		int *t = (int *) bi.base;
 
-		for (p = 0, q = BATcount(b); p < q; p++) {
+		for (p = 0; p < bi.count; p++) {
 			if (t[p] == val) {
 				oid pos = p;
-				if (BUNfnd(d, &pos) == BUN_NONE)
+				if (BUNfnd(d, &pos) == BUN_NONE) {
+					bat_iterator_end(&bi);
 					return p;
+				}
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 	return BUN_NONE;
 }
 
@@ -2775,8 +2778,11 @@ log_sequence(logger *lg, int seq, lng val)
 		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
 	logger_lock(lg);
+	MT_lock_set(&lg->seqs_id->theaplock);
+	BUN inserted = lg->seqs_id->batInserted;
+	MT_lock_unset(&lg->seqs_id->theaplock);
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
-	    p >= lg->seqs_id->batInserted) {
+	    p >= inserted) {
 		assert(lg->seqs_val->hseqbase == 0);
 		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
 			logger_unlock(lg);
