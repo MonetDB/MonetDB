@@ -795,7 +795,6 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 				goto bailout;
 		}
 		bn->ttype = r1i.type;
-		bn->tvarsized = true;
 		bn->twidth = r1i.width;
 		bn->tshift = r1i.shift;
 	}
@@ -1059,7 +1058,6 @@ BATprojectchain(BAT **bats)
 			bn->tvheap = bi.vh;
 			HEAPincref(bi.vh);
 			assert(bn->ttype == b->ttype);
-			assert(bn->tvarsized);
 			assert(bn->twidth == bi.width);
 			assert(bn->tshift == bi.shift);
 		}

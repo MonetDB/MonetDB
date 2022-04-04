@@ -99,7 +99,7 @@ BATunique(BAT *b, BAT *s)
 		return NULL;
 	}
 	vals = bi.base;
-	if (b->tvarsized && bi.type)
+	if (bi.vh && bi.type)
 		vars = bi.vh->base;
 	else
 		vars = NULL;

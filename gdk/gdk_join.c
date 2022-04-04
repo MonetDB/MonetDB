@@ -829,7 +829,6 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rend = BATcount(r);
 	lvals = (const int *) li.base;
 	rvals = (const int *) ri.base;
-	assert(!r->tvarsized || !ri.type);
 	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1148,7 +1147,6 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rend = BATcount(r);
 	lvals = (const lng *) li.base;
 	rvals = (const lng *) ri.base;
-	assert(!r->tvarsized || !ri.type);
 	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1819,12 +1817,12 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else {
 		rvals = ri.base;
 	}
-	if (l->tvarsized && li.type) {
-		assert(r->tvarsized && ri.type);
+	if (li.vh && li.type) {
+		assert(ri.vh && ri.type);
 		lvars = li.vh->base;
 		rvars = ri.vh->base;
 	} else {
-		assert(!r->tvarsized || !ri.type);
+		assert(ri.vh == NULL);
 		lvars = rvars = NULL;
 	}
 
@@ -2682,11 +2680,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		t = TYPE_void;
 
 	lvals = (const char *) li.base;
-	if (l->tvarsized && li.type) {
-		assert(r->tvarsized && ri.type);
+	if (li.vh && li.type) {
+		assert(ri.vh && ri.type);
 		lvars = li.vh->base;
 	} else {
-		assert(!r->tvarsized || !ri.type);
+		assert(ri.vh == NULL);
 		lvars = NULL;
 	}
 	/* offset to convert BUN to OID for value in right column */
@@ -3093,7 +3091,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	assert(bi.type != TYPE_void);
 
 	bvals = bi.base;
-	if (b->tvarsized && bi.type)
+	if (bi.vh && bi.type)
 		bvars = bi.vh->base;
 	else
 		bvars = NULL;
@@ -3424,12 +3422,12 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 
 	lvals = BATtvoid(l) ? NULL : (const char *) li.base;
 	rvals = BATtvoid(r) ? NULL : (const char *) ri.base;
-	if (l->tvarsized && li.type) {
-		assert(r->tvarsized && ri.type);
+	if (li.vh && li.type) {
+		assert(ri.vh && ri.type);
 		lvars = li.vh->base;
 		rvars = ri.vh->base;
 	} else {
-		assert(!r->tvarsized || !ri.type);
+		assert(ri.vh == NULL);
 		lvars = rvars = NULL;
 	}
 
@@ -4357,7 +4355,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	lvals = (const char *) li.base;
 	rvals = (const char *) ri.base;
-	assert(!r->tvarsized);
+	assert(ri.vh == NULL);
 
 	assert(lvals != NULL);
 	assert(rvals != NULL);

@@ -848,6 +848,24 @@ fi
 %endif
 
 %changelog
+* Fri Apr 01 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
+- Rebuilt.
+- GH#7278: BUG when there is more than one field/filter in the having
+  clause
+
+* Fri Apr  1 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
+- gdk: Improved speed of BATappend to empty varsized bat: we now just copy
+  the heaps instead of inserting individual values.
+
+* Fri Apr  1 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
+- monetdb5: Improved parsing speed of blob values, especially on Windows.
+  On Windows, using the locale-aware functions isdigit and isxdigit is
+  comparatively very slow, so we avoid them.
+
+* Tue Mar 29 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
+- gdk: Improved speed of projection (BATproject) on varsized bats by sharing
+  the data heap (vheap).
+
 * Fri Mar 25 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.11-20220325
 - Rebuilt.
 - GH#7252: Segmentation fault on second run

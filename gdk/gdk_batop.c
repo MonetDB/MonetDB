@@ -757,9 +757,8 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			goto doreturn;
 		}
 		/* we need to materialize b; allocate enough capacity */
-		b->batCapacity = BATcount(b) + ci.ncand;
 		MT_lock_unset(&b->theaplock);
-		if (BATmaterialize(b) != GDK_SUCCEED) {
+		if (BATmaterialize(b, BATcount(b) + ci.ncand) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
@@ -950,7 +949,7 @@ BATdel(BAT *b, BAT *d)
 				p++;
 			}
 		}
-		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED)
+		if (BATtdense(b) && BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
 			return GDK_FAIL;
 		MT_lock_set(&b->theaplock);
 		if (o + c < b->hseqbase + BATcount(b)) {
@@ -993,7 +992,7 @@ BATdel(BAT *b, BAT *d)
 			GDKerror("cannot delete committed values\n");
 			return GDK_FAIL;
 		}
-		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED) {
+		if (BATtdense(b) && BATmaterialize(b, BUN_NONE) != GDK_SUCCEED) {
 			bat_iterator_end(&di);
 			return GDK_FAIL;
 		}
@@ -1142,7 +1141,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	bool anynil = false;
 	bool locked = false;
 
-	if (b->tvarsized) {
+	if (b->tvheap) {
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
 			if (positions) {
@@ -1763,15 +1762,14 @@ BATslice(BAT *b, BUN l, BUN h)
 		if (bn == NULL)
 			goto doreturn;
 
-		if (bn->ttype == TYPE_void ||
-		    (!bn->tvarsized &&
-		     BATatoms[bn->ttype].atomPut == NULL &&
-		     BATatoms[bn->ttype].atomFix == NULL)) {
-			if (bn->ttype) {
-				memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
-				       (q - p) << bn->tshift);
-				bn->theap->dirty = true;
-			}
+		if (bn->ttype == TYPE_void) {
+			BATsetcount(bn, h - l);
+		} else if (bn->tvheap == NULL &&
+			   BATatoms[bn->ttype].atomFix == NULL) {
+			assert(BATatoms[bn->ttype].atomPut == NULL);
+			memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
+			       (q - p) << bn->tshift);
+			bn->theap->dirty = true;
 			BATsetcount(bn, h - l);
 		} else {
 			for (; p < q; p++) {
@@ -2515,7 +2513,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		assert(g->ttype == TYPE_oid);
 		grps = (oid *) Tloc(g, 0);
 		prev = grps[0];
-		if (BATmaterialize(bn) != GDK_SUCCEED)
+		if (BATmaterialize(bn, BUN_NONE) != GDK_SUCCEED)
 			goto error;
 		for (r = 0, p = 1, q = BATcount(g); p < q; p++) {
 			if (grps[p] != prev) {
@@ -2562,7 +2560,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		if ((reverse != nilslast ||
 		     (reverse ? !bn->trevsorted : !bn->tsorted)) &&
-		    (BATmaterialize(bn) != GDK_SUCCEED ||
+		    (BATmaterialize(bn, BUN_NONE) != GDK_SUCCEED ||
 		     do_sort(Tloc(bn, 0),
 			     ords,
 			     bn->tvheap ? bn->tvheap->base : NULL,
@@ -2993,7 +2991,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 		cmp = ATOMcompare(t);
 		if (nil == NULL) {
 			cnt = ci.ncand;
-		} else if (b->tvarsized) {
+		} else if (b->tvheap) {
 			base = b->tvheap->base;
 			CAND_LOOP(&ci)
 				cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]) != 0;

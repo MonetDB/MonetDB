@@ -78,7 +78,7 @@ bool BATiscand(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATmaterialize(BAT *b)
+gdk_return BATmaterialize(BAT *b, BUN cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BATrmprop(BAT *b, enum prop_t idx)

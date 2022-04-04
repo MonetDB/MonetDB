@@ -430,9 +430,9 @@ table_fetch_value(res_table *rt, sql_column *c)
 	BAT *b = (BAT*)rt->cols[c->colnr].p;
 	BATiter bi = bat_iterator_nolock(b);
 	assert(b->ttype && b->ttype != TYPE_msk);
-	if (b->tvarsized)
+	if (bi.vh)
 		return BUNtvar(bi, rt->cur_row);
-	return Tloc(b, rt->cur_row);
+	return BUNtloc(bi, rt->cur_row);
 	//return (void*)BUNtail(bi, rt->cur_row);
 }
 

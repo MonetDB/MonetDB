@@ -91,3 +91,6 @@ create or replace function mybooludf(a bool) returns bool return a;
 PREPARE (SELECT ?) EXCEPT (SELECT 'a' FROM (SELECT 1) x(x) JOIN ((SELECT FALSE) EXCEPT (SELECT ?)) y(y) ON sys.mybooludf(y.y));
 EXEC **('b',true);
 ROLLBACK;
+
+-- TODO it requires some internal changes to be able to set types on parameters used as freevars
+PREPARE SELECT 1 FROM (SELECT ?) x(x) CROSS JOIN LATERAL (SELECT 1 FROM ((SELECT 1) INTERSECT (SELECT 2)) vx(vx) JOIN (SELECT 1) z(z) ON x.x) w(w); --error, Could not determine type for argument number 1

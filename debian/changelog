@@ -1,3 +1,33 @@
+monetdb (11.43.13) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7278: BUG when there is more than one field/filter in the having
+    clause
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 01 Apr 2022 11:31:11 +0200
+
+monetdb (11.43.13) unstable; urgency=low
+
+  * gdk: Improved speed of BATappend to empty varsized bat: we now just copy
+    the heaps instead of inserting individual values.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 1 Apr 2022 11:31:11 +0200
+
+monetdb (11.43.13) unstable; urgency=low
+
+  * monetdb5: Improved parsing speed of blob values, especially on Windows.
+    On Windows, using the locale-aware functions isdigit and isxdigit is
+    comparatively very slow, so we avoid them.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 1 Apr 2022 11:31:11 +0200
+
+monetdb (11.43.13) unstable; urgency=low
+
+  * gdk: Improved speed of projection (BATproject) on varsized bats by sharing
+    the data heap (vheap).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 29 Mar 2022 11:31:11 +0200
+
 monetdb (11.43.11) unstable; urgency=low
 
   * Rebuilt.

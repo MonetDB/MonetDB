@@ -398,7 +398,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tkey", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) bi.key, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tvarsized", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->tvarsized, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) (bi.type == TYPE_void || bi.vh != NULL), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnosorted", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->tnosorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnorevsorted", false) != GDK_SUCCEED ||
