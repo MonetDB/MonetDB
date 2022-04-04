@@ -763,7 +763,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 				goto bailout;
 			}
 		}
-	} else if (bi->b->tvarsized) {
+	} else if (bi->b->tvheap) {
 		assert(bi->type != TYPE_void);
 		CAND_LOOP_IDX(ci, i) {
 			x = canditer_next(ci) - candoff;
