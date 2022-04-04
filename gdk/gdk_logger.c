@@ -2050,7 +2050,12 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	logbat_destroy(lg->seqs_id);
 	logbat_destroy(lg->seqs_val);
 	logbat_destroy(lg->dseqs);
+	ATOMIC_DESTROY(&lg->refcount);
 	MT_lock_destroy(&lg->lock);
+	MT_lock_destroy(&lg->rotation_lock);
+	MT_sema_destroy(&lg->flush_queue_semaphore);
+	MT_lock_destroy(&lg->flush_lock);
+	MT_lock_destroy(&lg->flush_queue_lock);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->local_dir);
@@ -2113,14 +2118,15 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
-	MT_lock_init(&lg->lock, fn);
 
-	// flush variables
 	ATOMIC_INIT(&lg->refcount, 0);
+	MT_lock_init(&lg->lock, fn);
 	MT_lock_init(&lg->rotation_lock, "rotation_lock");
 	MT_sema_init(&lg->flush_queue_semaphore, FLUSH_QUEUE_SIZE, "flush_queue_semaphore");
 	MT_lock_init(&lg->flush_lock, "flush_lock");
 	MT_lock_init(&lg->flush_queue_lock, "flush_queue_lock");
+
+	// flush variables
 	lg->flush_queue_begin = 0;
 	lg->flush_queue_length = 0;
 
@@ -2167,8 +2173,12 @@ logger_destroy(logger *lg)
 		logbat_destroy(lg->catalog_lid);
 		logger_unlock(lg);
 	}
+	ATOMIC_DESTROY(&lg->refcount);
 	MT_lock_destroy(&lg->lock);
-	// TODO: destroy other locks
+	MT_lock_destroy(&lg->rotation_lock);
+	MT_sema_destroy(&lg->flush_queue_semaphore);
+	MT_lock_destroy(&lg->flush_lock);
+	MT_lock_destroy(&lg->flush_queue_lock);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->buf);
