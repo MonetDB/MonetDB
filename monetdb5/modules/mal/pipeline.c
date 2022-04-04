@@ -141,11 +141,12 @@ BATupgrade(BAT *r, BAT *b)
 	int err = 0;
 	MT_lock_set(&b->theaplock);
 	//MT_lock_set(&r->theaplock);
+	//TODO add upgradevarheap variant which only widens, no resize!
 	if (ATOMvarsized(r->ttype) &&
 		BATcount(r) == 0 &&
 		r->tvheap->parentid == r->batCacheid &&
 		r->twidth < b->twidth &&
-			GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
+		GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
 			err = 1;
 	}
 	//MT_lock_unset(&r->theaplock);
@@ -1695,12 +1696,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			local_storage = true;
 			r = COLnew(0, tt, max, TRANSIENT);
 
-			if (ATOMvarsized(r->ttype) &&
-				BATcount(r) == 0 &&
-				r->tvheap->parentid == r->batCacheid &&
-			    r->twidth < b->twidth &&
-				GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED)
-						err = 1;
+			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+					err = 1;
 		}
 		assert(private);
 		r->T.private_bat = 1;
@@ -2242,12 +2239,8 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			local_storage = true;
 			r = COLnew(0, b->ttype, max, TRANSIENT);
 
-			if (ATOMvarsized(r->ttype) &&
-				BATcount(r) == 0 &&
-				r->tvheap->parentid == r->batCacheid &&
-			    r->twidth < b->twidth &&
-				GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED)
-						err = 1;
+			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+				err = 1;
 		}
 		r->T.private_bat = 1;
 	}
@@ -2351,12 +2344,8 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			local_storage = true;
 			r = COLnew(0, b->ttype, max, TRANSIENT);
 
-			if (ATOMvarsized(r->ttype) &&
-				BATcount(r) == 0 &&
-				r->tvheap->parentid == r->batCacheid &&
-			    r->twidth < b->twidth &&
-				GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED)
-						err = 1;
+			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+				err = 1;
 		}
 		r->T.private_bat = 1;
 	}
