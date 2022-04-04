@@ -680,7 +680,7 @@ def CreateHtmlIndex (env, ssout, sserr, *body) :
 
         if TSTDIR:
             header = Text(TSTDIR)
-            if URLPREFIX:
+            if REV:
                 header = Element('a',
                                  {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
                                   'target': '%s_%s_body' % (DISTVER, TSTDIR),
@@ -946,7 +946,7 @@ def CreateSrcIndex (env, TST, EXT) :
     TSTSRCDIR = env['TSTSRCDIR']
     TSTDIR    = env['TSTDIR']
 
-    if URLPREFIX:
+    if REV:
         framesrc = '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT)
     else:
         f = openutf8(".%s.nosrc.index.html" % TST, "w")
@@ -1000,7 +1000,7 @@ def CreateSrcIndex (env, TST, EXT) :
     for s in listdir(TSTSRCDIR):
         if s.startswith(TST):
             slink = Text(s)
-            if URLPREFIX:
+            if REV:
                 slink = Element('a',
                                 {'href': '%s%s/%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s),
                                  'target': '%s_%s_%s_body' % (DISTVER, TSTDIR, TST)},
@@ -3716,26 +3716,28 @@ def main(argv) :
     global REV
     global URLPREFIX
     REV = opts.revision
-    if REV is None:             # no --revision option: try to find out
-        try:
-            with process.Popen(['hg', 'id', '-i'],
-                               stdout=process.PIPE,
-                               text=True) as proc:
-                out, err = proc.communicate()
-            if proc.returncode == 0:
-                REV = out.strip()
-            proc = None
-        except KeyboardInterrupt:
-            raise
-        except:
-            pass
-    # fix up URLPREFIX
-    if REV:
-        URLPREFIX += '%s/' % REV.split()[0].rstrip('+')
-        os.environ['REVISION'] = REV
-    else:
-        # if no revision known, can't refer to repository
-        URLPREFIX = None
+    if produce_html and CONDITIONALS['MERCURIAL']:
+        if REV is None:             # no --revision option: try to find out
+            try:
+                with process.Popen(['hg', 'id', '-i'],
+                                   stdout=process.PIPE,
+                                   stderr=process.PIPE,
+                                   text=True) as proc:
+                    out, err = proc.communicate()
+                if proc.returncode == 0:
+                    REV = out.strip()
+                proc = None
+            except KeyboardInterrupt:
+                raise
+            except:
+                pass
+        # fix up URLPREFIX
+        if REV:
+            URLPREFIX += '%s/' % REV.split()[0].rstrip('+')
+            os.environ['REVISION'] = REV
+        else:
+            # if no revision known, can't refer to repository
+            URLPREFIX = None
 
     global SOCK, HOST
     try:                        # try/finally to clean up sockdir
