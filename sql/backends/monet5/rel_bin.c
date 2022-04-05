@@ -1291,9 +1291,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
-		stmt* args = stmt_list(be, l);
-		args->argument_independence = e->argument_independence;
-		if (!(s = stmt_Nop(be, args, sel, f, rows)))
+		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f, rows)))
 			return NULL;
 	} 	break;
 	case e_aggr: {
