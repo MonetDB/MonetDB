@@ -2814,7 +2814,7 @@ static int
 col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
 {
 	int ok = 0;
-	BAT *b = NULL;
+	BAT *b = NULL, *off = NULL;
 	sql_delta *d = NULL;
 
 	(void) tr;
@@ -2843,15 +2843,20 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 				if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
 					ok |= 2;
 			}
+			/* for dict, check the offsets bat for uniqueness */
+			if (d->cs.ucnt == 0 && (d->cs.st == ST_DEFAULT || (off = quick_descriptor(d->cs.bid)))) {
+				if (off) {
+					MT_lock_set(&off->theaplock);
+					*unique = off->tkey;
+					*unique_est = off->tunique_est;
+					MT_lock_unset(&off->theaplock);
+				} else {
+					*unique = bi.key;
+					*unique_est = bi.unique_est;
+				}
+			}
 			bat_iterator_end(&bi);
 			bat_destroy(b);
-			/* for dict, check the offsets bat for uniqueness */
-			if (d->cs.ucnt == 0 && (d->cs.st == ST_DEFAULT || (b = quick_descriptor(d->cs.bid)))) {
-				MT_lock_set(&b->theaplock);
-				*unique = b->tkey;
-				*unique_est = b->tunique_est;
-				MT_lock_unset(&b->theaplock);
-			}
 			if (*nonil && d->cs.ucnt > 0) {
 				if (!(b = quick_descriptor(d->cs.uvbid))) {
 					*nonil = false;
