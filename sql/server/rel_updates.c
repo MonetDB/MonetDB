@@ -146,9 +146,10 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	sql_trans *tr = sql->session->tr;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name);
-	int need_nulls = 0, selfref = (rk->t == i->t);
+	int selfref = (rk->t->base.id == i->t->base.id);
+	int need_nulls = 0;
 	if (selfref)
-		printf("#selfref\n");
+		TRC_DEBUG(SQL_TRANS, "Self-reference index\n");
 
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
