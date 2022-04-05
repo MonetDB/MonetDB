@@ -198,8 +198,6 @@ typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 */
 typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 
-typedef void (*temp_del_tab_fptr) (sql_trans *tr, sql_table *ft);
-
 /* backing struct for this interface */
 typedef struct store_functions {
 
@@ -247,8 +245,6 @@ typedef struct store_functions {
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;
 	upgrade_del_fptr upgrade_del;
-
-	temp_del_tab_fptr temp_del_tab;
 } store_functions;
 
 typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
@@ -441,6 +437,7 @@ extern int sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c, sql
 extern int sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres);
 extern int sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires);
 extern int sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigger **tres);
+extern sql_table *globaltmp_instantiate(sql_trans *tr, sql_table *t);
 
 #define NR_TABLE_LOCKS 64
 #define NR_COLUMN_LOCKS 512
