@@ -168,16 +168,18 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		case op_groupby: {
 			sql_exp *found;
 			atom *fval;
-			if ((found = rel_find_exp(rel, e)) && rel->op != op_table) {
-				if ((fval = find_prop_and_get(found->p, PROP_MAX)))
-					set_property(sql, e, PROP_MAX, fval);
-				if ((fval = find_prop_and_get(found->p, PROP_MIN)))
-					set_property(sql, e, PROP_MIN, fval);
-				if (!has_nil(found))
-					set_has_no_nil(e);
-				if (is_unique(found) || (need_distinct(rel) && list_length(rel->exps) == 1) ||
-					(is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)))
-					set_unique(e);
+			if ((found = rel_find_exp(rel, e))) {
+				if (rel->op != op_table) { /* At the moment don't propagate statistics for table relations */
+					if ((fval = find_prop_and_get(found->p, PROP_MAX)))
+						set_property(sql, e, PROP_MAX, fval);
+					if ((fval = find_prop_and_get(found->p, PROP_MIN)))
+						set_property(sql, e, PROP_MIN, fval);
+					if (!has_nil(found))
+						set_has_no_nil(e);
+					if (is_unique(found) || (need_distinct(rel) && list_length(rel->exps) == 1) ||
+						(is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)))
+						set_unique(e);
+				}
 				return e;
 			}
 			return NULL;
