@@ -299,7 +299,7 @@ typedef struct relation {
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * All bits are used by rel_unnest modifiers and always reset after.
-	 * The first bit is also used by rel_dce and rel_merge_select_rse optimizers.
+	 * The first bit is also used by rel_dce and rel_merge_select_rse optimizers and rel_get_statistics
 	 * The third bit is used by rel_remote_func only and it's not reset.
 	 */
 	 used:3;

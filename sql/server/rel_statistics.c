@@ -11,6 +11,9 @@
 #include "rel_statistics.h"
 #include "rel_rewriter.h"
 
+#define statistics_gathered       (1 << 0)
+#define are_statistics_gathered(X) ((X & statistics_gathered) == statistics_gathered)
+
 static sql_exp *
 comparison_find_column(sql_exp *input, sql_exp *e)
 {
@@ -535,6 +538,11 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_get_statistics_(visitor *v, sql_rel *rel)
 {
+	/* Don't look at the same relation twice */
+	if (are_statistics_gathered(rel->used))
+		return rel;
+	rel->used |= statistics_gathered;
+
 	switch(rel->op){
 	case op_basetable:
 		rel->exps = exps_exp_visitor_bottomup(v, rel, rel->exps, 0, &rel_basetable_get_statistics, false);
@@ -624,7 +632,9 @@ static sql_rel *
 rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_visitor_bottomup(v, rel, &rel_get_statistics_);
+	rel = rel_visitor_bottomup(v, rel, &rel_get_statistics_);
+	/*reset used flag */
+	return rel_visitor_bottomup(v, rel, &rewrite_reset_used);
 }
 
 run_optimizer
