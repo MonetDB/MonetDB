@@ -432,7 +432,7 @@ mcrypt_hashPassword(
 		SHA512Context sc;
 		SHA512Reset(&sc);
 		SHA512Input(&sc, (const uint8_t *) password, (unsigned int) strlen(password));
-		SHA512Input(&sc, (const uint8_t *) challenge, strlen(challenge));
+		SHA512Input(&sc, (const uint8_t *) challenge, (unsigned int) strlen(challenge));
 		SHA512Result(&sc, md);
 #endif
 
