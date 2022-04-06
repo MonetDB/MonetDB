@@ -3816,13 +3816,15 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 			if (bi.count == BATcount(b) && bi.h == b->theap)
 				b->tminpos = bi.minpos;
 			bat pbid = VIEWtparent(b);
+			MT_lock_unset(&b->theaplock);
 			if (pbid) {
 				BAT *pb = BBP_cache(pbid);
+				MT_lock_set(&pb->theaplock);
 				if (bi.count == BATcount(pb) &&
 				    bi.h == pb->theap)
 					pb->tminpos = bi.minpos;
+				MT_lock_unset(&pb->theaplock);
 			}
-			MT_lock_unset(&b->theaplock);
 		}
 	}
 	if (aggr == NULL) {
