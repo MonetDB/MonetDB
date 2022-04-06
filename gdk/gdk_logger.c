@@ -2227,7 +2227,9 @@ logger_cleanup_range(logger *lg)
 {
 	logged_range *p = lg->pending;
 	if (p) {
+		logger_lock(lg);
 		lg->pending = p->next;
+		logger_unlock(lg);
 		GDKfree(p);
 	}
 }

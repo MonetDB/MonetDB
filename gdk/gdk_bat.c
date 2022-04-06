@@ -641,8 +641,7 @@ BATclear(BAT *b, bool force)
 		}
 	}
 
-	if (force)
-		b->batInserted = 0;
+	b->batInserted = 0;
 	b->batCount = 0;
 	if (b->ttype == TYPE_void)
 		b->batCapacity = 0;

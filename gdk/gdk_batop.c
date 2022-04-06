@@ -90,7 +90,6 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
 		HEAPincref(ni->vh);
 		b->tvheap = ni->vh;
-		b->batDirtydesc = true;
 		MT_lock_unset(&b->theaplock);
 		BBPshare(ni->vh->parentid);
 		toff = 0;
@@ -359,7 +358,6 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		HEAPdecref(b->tvheap, true);
 		HEAPincref(ni->vh);
 		b->tvheap = ni->vh;
-		b->batDirtydesc = true;
 		MT_lock_unset(&b->theaplock);
 	}
 	if (b->tvheap == ni->vh) {
@@ -2849,7 +2847,6 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 		GDKclrerr();
 		p = NULL;
 	}
-	b->batDirtydesc = true;
 	return p ? &p->v : NULL;
 }
 

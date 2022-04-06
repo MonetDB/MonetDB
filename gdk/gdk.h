@@ -778,6 +778,7 @@ typedef enum {
  * tsorted, trevsorted, twidth, tshift, tnonil, tnil, tnokey, tnosorted,
  * tnorevsorted, tminpos, tmaxpos, and tunique_est; in addition, the
  * value should be set if the BBP field BBP_logical(bid) is changed.
+ * This corresponds with any field that gets saved in the BBP.dir file.
  *
  * theaplock: this lock should be held when reading or writing any of
  * the fields mentioned above for batDirtydesc, and also when reading or
@@ -1297,17 +1298,15 @@ gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
 gdk_export restrict_t BATgetaccess(BAT *b);
 
 
-#define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
-			 (b)->batDirtydesc ||				\
+#define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
+#define BATdirty(b)	(BATdirtydata(b) ||	\
+			 (b)->batDirtydesc)
 #define BATdirtybi(bi)	(!(bi).copiedtodisk ||	\
 			 (bi).dirtydesc ||	\
 			 (bi).hdirty ||		\
 			 (bi).vhdirty)
-#define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
-			 (b)->theap->dirty ||				\
-			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 
 #define BATcapacity(b)	(b)->batCapacity
 /*
