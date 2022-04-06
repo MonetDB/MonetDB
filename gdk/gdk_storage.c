@@ -683,7 +683,7 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
-	if (!BATdirty(b)) {
+	if (!BATdirtybi(*bi)) {
 		return GDK_SUCCEED;
 	}
 
@@ -734,14 +734,14 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			}
 		}
 	} else {
-		if (!b->batCopiedtodisk || b->batDirtydesc || bi->h->dirty)
+		if (!bi->copiedtodisk || bi->dirtydesc || bi->hdirty)
 			if (err == GDK_SUCCEED && bi->type)
-				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree);
+				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
 		if (bi->vh
-		    && (!b->batCopiedtodisk || b->batDirtydesc || bi->vh->dirty)
+		    && (!bi->copiedtodisk || bi->dirtydesc || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
-			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree);
+			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, &b->theaplock);
 	}
 
 	if (err == GDK_SUCCEED) {

@@ -737,10 +737,10 @@ convertimpl_msk(flt)
 convertimpl_msk(dbl)
 
 static BUN
-convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
+convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 {
-	int tp = b->ttype;
-	oid candoff = b->hseqbase;
+	int tp = bi->type;
+	oid candoff = bi->b->hseqbase;
 	str dst = 0;
 	size_t len = 0;
 	BUN nils = 0;
@@ -751,24 +751,23 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 	oid x;
 
-	BATiter bi = bat_iterator(b);
 	if (atomtostr == BATatoms[TYPE_str].atomToStr) {
 		/* compatible with str, we just copy the value */
-		assert(b->ttype != TYPE_void);
+		assert(bi->type != TYPE_void);
 		CAND_LOOP_IDX(ci, i) {
 			x = canditer_next(ci) - candoff;
-			src = BUNtvar(bi, x);
+			src = BUNtvar(*bi, x);
 			if (strNil(src))
 				nils++;
 			if (tfastins_nocheckVAR(bn, i, src) != GDK_SUCCEED) {
 				goto bailout;
 			}
 		}
-	} else if (b->tvarsized) {
-		assert(b->ttype != TYPE_void);
+	} else if (bi->b->tvheap) {
+		assert(bi->type != TYPE_void);
 		CAND_LOOP_IDX(ci, i) {
 			x = canditer_next(ci) - candoff;
-			src = BUNtvar(bi, x);
+			src = BUNtvar(*bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -781,18 +780,18 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 				}
 			}
 		}
-	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+	} else if (ATOMstorage(bi->type) == TYPE_msk) {
 		CAND_LOOP_IDX(ci, i) {
 			const char *v;
 			x = canditer_next(ci) - candoff;
-			v = Tmskval(&bi, x) ? "1" : "0";
+			v = Tmskval(bi, x) ? "1" : "0";
 			if (tfastins_nocheckVAR(bn, i, v) != GDK_SUCCEED)
 				goto bailout;
 		}
 	} else {
 		CAND_LOOP_IDX(ci, i) {
 			x = canditer_next(ci) - candoff;
-			src = BUNtloc(bi, x);
+			src = BUNtloc(*bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
@@ -805,19 +804,17 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	bat_iterator_end(&bi);
 	bn->theap->dirty = true;
 	BATsetcount(bn, ci->ncand);
 	GDKfree(dst);
 	return nils;
   bailout:
-	bat_iterator_end(&bi);
 	GDKfree(dst);
 	return BUN_NONE + 2;
 }
 
 static BUN
-convert_str_any(BAT *b, int tp, void *restrict dst,
+convert_str_any(BATiter *bi, int tp, void *restrict dst,
 		struct canditer *restrict ci,
 		oid candoff, bool abort_on_error)
 {
@@ -826,7 +823,6 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	size_t len = ATOMsize(tp);
 	ssize_t l;
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
-	BATiter bi = bat_iterator(b);
 	const char *s = NULL;
 
 	if (ATOMstorage(tp) == TYPE_msk) {
@@ -836,7 +832,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 		CAND_LOOP(ci) {
 			oid x = canditer_next(ci) - candoff;
 			uint32_t v;
-			s = BUNtvar(bi, x);
+			s = BUNtvar(*bi, x);
 			if (strcmp(s, "0") == 0)
 				v = 0;
 			else if (strcmp(s, "1") == 0)
@@ -852,7 +848,6 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 				mask = 0;
 			}
 		}
-		bat_iterator_end(&bi);
 		if (j > 0)
 			*d = mask;
 		return 0;
@@ -860,7 +855,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 
 	CAND_LOOP(ci) {
 		oid x = canditer_next(ci) - candoff;
-		const char *s = BUNtvar(bi, x);
+		const char *s = BUNtvar(*bi, x);
 		if (strNil(s)) {
 			memcpy(dst, nil, len);
 			nils++;
@@ -879,12 +874,10 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 		}
 		dst = (void *) ((char *) dst + len);
 	}
-	bat_iterator_end(&bi);
 	return nils;
 
   conversion_failed:
 	GDKclrerr();
-	bat_iterator_end(&bi);
 	size_t sz = 0;
 	char *bf = NULL;
 
@@ -1512,73 +1505,80 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 	if (tp == TYPE_void)
 		tp = TYPE_oid;
 
+	BATiter bi = bat_iterator(b);
 	cnt = BATcount(b);
 	canditer_init(&ci, b, s);
-	if (ci.ncand == 0 || (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
+	if (ci.ncand == 0 || (bi.type == TYPE_void && is_oid_nil(b->tseqbase))) {
+		bat_iterator_end(&bi);
 		return BATconstant(ci.hseq, tp,
 				   ATOMnilptr(tp), ci.ncand, TRANSIENT);
+	}
 
 	if (cnt == ci.ncand && tp != TYPE_bit &&
-	    ATOMbasetype(b->ttype) == ATOMbasetype(tp) &&
-	    (tp != TYPE_oid || b->ttype == TYPE_oid) &&
+	    ATOMbasetype(bi.type) == ATOMbasetype(tp) &&
+	    (tp != TYPE_oid || bi.type == TYPE_oid) &&
 	    scale1 == 0 && scale2 == 0 && precision == 0 &&
 	    (tp != TYPE_str ||
-	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
+	     BATatoms[bi.type].atomToStr == BATatoms[TYPE_str].atomToStr)) {
 		bn = COLcopy(b, tp, false, TRANSIENT);
 		if (bn && s)
 			bn->hseqbase = s->hseqbase;
+		bat_iterator_end(&bi);
 		return bn;
 	}
 	if (ATOMstorage(tp) == TYPE_ptr) {
 		GDKerror("type combination (convert(%s)->%s) "
 			 "not supported.\n",
-			 ATOMname(b->ttype), ATOMname(tp));
+			 ATOMname(bi.type), ATOMname(tp));
+		bat_iterator_end(&bi);
 		return NULL;
 	}
 	if (ATOMstorage(tp) == TYPE_msk) {
-		if (BATtdense(b)) {
+		if (BATtdensebi(&bi)) {
 			/* dense to msk is easy: all values 1, except
 			 * maybe the first */
 			bn = BATconstant(ci.hseq, tp, &(msk){1}, ci.ncand,
 					 TRANSIENT);
 			if (bn && b->tseqbase == 0)
 				mskClr(bn, 0);
+			bat_iterator_end(&bi);
 			return bn;
-		} else if (b->ttype == TYPE_void) {
+		} else if (bi.type == TYPE_void) {
 			/* void-nil to msk is easy: all values 0 */
 			bn = BATconstant(ci.hseq, tp, &(msk){0}, ci.ncand,
 					 TRANSIENT);
+			bat_iterator_end(&bi);
 			return bn;
 		}
 	}
 
 	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
-	if (bn == NULL)
+	if (bn == NULL) {
+		bat_iterator_end(&bi);
 		return NULL;
+	}
 
-	if (b->ttype == TYPE_void)
+	if (bi.type == TYPE_void)
 		nils = convert_void_any(b->tseqbase, bn,
 					&ci, b->hseqbase,
 					abort_on_error, &reduce);
 	else if (tp == TYPE_str)
-		nils = convert_any_str(b, bn, &ci);
-	else if (b->ttype == TYPE_str) {
+		nils = convert_any_str(&bi, bn, &ci);
+	else if (bi.type == TYPE_str) {
 		reduce = true;
-		nils = convert_str_any(b, tp, Tloc(bn, 0),
+		nils = convert_str_any(&bi, tp, Tloc(bn, 0),
 				       &ci, b->hseqbase,
 				       abort_on_error);
-	} else if (ATOMstorage(b->ttype) == TYPE_msk &&
+	} else if (ATOMstorage(bi.type) == TYPE_msk &&
 		   ATOMstorage(tp) == TYPE_msk) {
 		if (BATappend(bn, b, s, false) != GDK_SUCCEED)
 			nils = BUN_NONE + 2;
 	} else {
-		BATiter bi = bat_iterator(b);
-		nils = convert_typeswitchloop(bi.base, b->ttype,
+		nils = convert_typeswitchloop(bi.base, bi.type,
 					      Tloc(bn, 0), tp,
 					      &ci, b->hseqbase,
 					      abort_on_error, &reduce,
 					      scale1, scale2, precision);
-		bat_iterator_end(&bi);
 	}
 
 	if (nils >= BUN_NONE) {
@@ -1586,10 +1586,11 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 		if (nils == BUN_NONE + 1) {
 			GDKerror("type combination (convert(%s)->%s) "
 				 "not supported.\n",
-				 ATOMname(b->ttype), ATOMname(tp));
+				 ATOMname(bi.type), ATOMname(tp));
 		} else if (nils == BUN_NONE + 2) {
 			GDKerror("could not insert value into BAT.\n");
 		}
+		bat_iterator_end(&bi);
 		return NULL;
 	}
 
@@ -1597,19 +1598,20 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	if ((bn->ttype != TYPE_str && bn->ttype != TYPE_bit && b->ttype != TYPE_str) ||
+	if ((bn->ttype != TYPE_str && bn->ttype != TYPE_bit && bi.type != TYPE_str) ||
 	    BATcount(bn) < 2) {
-		bn->tsorted = nils == 0 && b->tsorted;
-		bn->trevsorted = nils == 0 && b->trevsorted;
+		bn->tsorted = nils == 0 && bi.sorted;
+		bn->trevsorted = nils == 0 && bi.revsorted;
 	} else {
 		bn->tsorted = false;
 		bn->trevsorted = false;
 	}
 	if (!reduce || BATcount(bn) < 2)
-		bn->tkey = b->tkey && nils <= 1;
+		bn->tkey = bi.key && nils <= 1;
 	else
 		bn->tkey = false;
 
+	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),

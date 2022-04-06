@@ -285,6 +285,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 
 	uint32_t *restrict dst;
 	BUN cnt = BATcount(b);
+	MT_rwlock_wrlock(&b->thashlock);
 	for (; s ; s=s->next) {
 		if (s->start >= nr)
 			break;
@@ -319,8 +320,10 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				}
 				assert(lnr==0);
 			}
+			MT_lock_set(&b->theaplock);
 			b->batDirtydesc = true;
 			b->theap->dirty = true;
+			MT_lock_unset(&b->theaplock);
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
 			dst = (uint32_t *) Tloc(b, 0) + (pos/32);
@@ -378,8 +381,12 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				cnt = s->end;
 		}
 	}
-	if (nr > BATcount(b))
+	MT_rwlock_wrunlock(&b->thashlock);
+	if (nr > BATcount(b)) {
+		MT_lock_set(&b->theaplock);
 		BATsetcount(b, nr);
+		MT_lock_unset(&b->theaplock);
+	}
 
 	bat_destroy(b);
 	return LOG_OK;
@@ -827,9 +834,9 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	oid *uipt = NULL, *oipt = NULL;
 	BATiter uii = bat_iterator(ui);
 	BATiter oii = bat_iterator(oi);
-	if (!BATtdense(ui))
+	if (!BATtdensebi(&uii))
 		uipt = uii.base;
-	if (!BATtdense(oi))
+	if (!BATtdensebi(&oii))
 		oipt = oii.base;
 	while (uip < uie && oip < oie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
@@ -996,6 +1003,42 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 	BAT *s = BATslice(b, 0, cnt);
 	bat_destroy(b);
 	return s;
+}
+
+static void*
+bind_updates(sql_trans *tr, sql_column *c) {
+	sql_updates* upd = GDKmalloc(sizeof(sql_updates));
+	if (!upd)
+		return NULL;
+
+	lock_column(tr->store, c->base.id);
+	size_t cnt = count_col(tr, c, 0);
+	sql_delta *d = col_timestamp_delta(tr, c);
+	int type = c->type.type->localtype;
+
+	if (!d) {
+		unlock_column(tr->store, c->base.id);
+		GDKfree(upd);
+		return NULL;
+	}
+	if (d->cs.st == ST_DICT) {
+		BAT *b = quick_descriptor(d->cs.bid);
+
+		type = b->ttype;
+	}
+
+	upd->ui = bind_ubat(tr, d, RD_UPD_ID, type, cnt);
+	upd->uv = bind_ubat(tr, d, RD_UPD_VAL, type, cnt);
+
+	unlock_column(tr->store, c->base.id);
+
+	if (upd->ui == NULL || upd->uv == NULL) {
+		bat_destroy(upd->ui);
+		bat_destroy(upd->uv);
+		GDKfree(upd);
+		return NULL;
+	}
+	return upd;
 }
 
 static void *					/* BAT * */
@@ -1556,9 +1599,9 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 						oid *uipt = NULL, *nipt = NULL;
 						BATiter uii = bat_iterator(ui);
 						BATiter tidsi = bat_iterator(tids);
-						if (!BATtdense(ui))
+						if (!BATtdensebi(&uii))
 							uipt = uii.base;
-						if (!BATtdense(tids))
+						if (!BATtdensebi(&tidsi))
 							nipt = tidsi.base;
 						while (uip < uie && nip < nie && res == LOG_OK) {
 							oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
@@ -2442,7 +2485,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			}
 			unlock_table(tr->store, t->base.id);
 		} else {
-			if (!BATtordered(i)) {
+			if (!i->tsorted) {
 				assert(oi == i);
 				BAT *ni = NULL;
 				if (BATsort(&ni, NULL, NULL, i, NULL, NULL, false, false, false) != GDK_SUCCEED)
@@ -2450,7 +2493,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 				if (ni)
 					i = ni;
 			}
-			assert(BATtordered(i));
+			assert(i->tsorted);
 			BUN icnt = BATcount(i);
 			BATiter ii = bat_iterator(i);
 			oid *o = ii.base, n = o[0]+1;
@@ -2715,7 +2758,7 @@ sorted_col(sql_trans *tr, sql_column *col)
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b)
-			sorted = BATtordered(b) || BATtrevordered(b);
+			sorted = b->tsorted || b->trevsorted;
 	}
 	return sorted;
 }
@@ -2896,7 +2939,7 @@ create_col(sql_trans *tr, sql_column *c)
 
 		/* alter ? */
 		if (ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL) {
-			storage *s = ATOMIC_PTR_GET(&fc->t->data);
+			storage *s = tab_timestamp_storage(tr, fc->t);
 			cnt = segs_end(s->segs, tr, c->t);
 		}
 		if (cnt && fc != c) {
@@ -3117,7 +3160,7 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 			size_t cnt = BATcount(b);
 			ok = delete_range(tr, t, s, start, cnt);
 		} else {
-			assert(BATtordered(b));
+			assert(b->tsorted);
 			BUN icnt = BATcount(b);
 			BATiter bi = bat_iterator(b);
 			size_t lcnt = 1;
@@ -4829,6 +4872,7 @@ void
 bat_storage_init( store_functions *sf)
 {
 	sf->bind_col = &bind_col;
+	sf->bind_updates = &bind_updates;
 	sf->bind_idx = &bind_idx;
 	sf->bind_cands = &bind_cands;
 

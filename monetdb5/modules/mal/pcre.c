@@ -2127,7 +2127,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	rbase = r->hseqbase;
 	lvals = (const char *) li.base;
 	rvals = (const char *) ri.base;
-	assert(r->tvarsized && r->ttype);
+	assert(ri.vh && r->ttype);
 	lvars = li.vh->base;
 	rvars = ri.vh->base;
 
