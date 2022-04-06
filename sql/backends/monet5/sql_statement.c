@@ -1502,7 +1502,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		k = getDestVar(q);
 
 		if (notin) {
-			q = newStmt(mb, batcalcRef, "ifthenelse");
+			q = newStmt(mb, batcalcRef, ifthenelseRef);
 			q = pushArgument(mb, q, k);
 			q = pushBit(mb, q, FALSE);
 			q = pushBit(mb, q, TRUE);
@@ -3397,7 +3397,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = pushArgument(mb, q, e2->nr);
 			int nr = getDestVar(q);
 
-			q = newStmt(mb, mod, "ifthenelse");
+			q = newStmt(mb, mod, ifthenelseRef);
 			q = pushArgument(mb, q, nr);
 			q = pushNil(mb, q, tt);
 			q = pushArgument(mb, q, e1->nr);

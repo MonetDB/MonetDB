@@ -130,29 +130,32 @@ log_find(BAT *b, BAT *d, int val)
 
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
+	BATiter bi = bat_iterator(b);
 	if (BAThash(b) == GDK_SUCCEED) {
-		BATiter cni = bat_iterator_nolock(b);
-		MT_rwlock_rdlock(&cni.b->thashlock);
-		HASHloop_int(cni, cni.b->thash, p, &val) {
+		MT_rwlock_rdlock(&b->thashlock);
+		HASHloop_int(bi, b->thash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE) {
-				MT_rwlock_rdunlock(&cni.b->thashlock);
+				MT_rwlock_rdunlock(&b->thashlock);
+				bat_iterator_end(&bi);
 				return p;
 			}
 		}
-		MT_rwlock_rdunlock(&cni.b->thashlock);
+		MT_rwlock_rdunlock(&b->thashlock);
 	} else {		/* unlikely: BAThash failed */
-		BUN q;
-		int *t = (int *) Tloc(b, 0);
+		int *t = (int *) bi.base;
 
-		for (p = 0, q = BATcount(b); p < q; p++) {
+		for (p = 0; p < bi.count; p++) {
 			if (t[p] == val) {
 				oid pos = p;
-				if (BUNfnd(d, &pos) == BUN_NONE)
+				if (BUNfnd(d, &pos) == BUN_NONE) {
+					bat_iterator_end(&bi);
 					return p;
+				}
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 	return BUN_NONE;
 }
 
@@ -214,11 +217,11 @@ logbat_new(int tt, BUN size, role_t role)
 }
 
 static int
-log_read_format(logger *l, logformat *data)
+log_read_format(logger *lg, logformat *data)
 {
-	assert(!l->inmemory);
-	return mnstr_read(l->input_log, &data->flag, 1, 1) == 1 &&
-		mnstr_readInt(l->input_log, &data->id) == 1;
+	assert(!lg->inmemory);
+	return mnstr_read(lg->input_log, &data->flag, 1, 1) == 1 &&
+		mnstr_readInt(lg->input_log, &data->id) == 1;
 }
 
 static gdk_return
@@ -2045,6 +2048,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	logbat_destroy(lg->seqs_id);
 	logbat_destroy(lg->seqs_val);
 	logbat_destroy(lg->dseqs);
+	MT_lock_destroy(&lg->lock);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->local_dir);
@@ -2085,7 +2089,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		.saved_id = getBBPlogno(), 		/* get saved log numer from bbp */
 		.saved_tid = (int)getBBPtransid(), 	/* get saved transaction id from bbp */
 	};
-	MT_lock_init(&lg->lock, fn);
 
 	/* probably open file and check version first, then call call old logger code */
 	if (snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP) >= FILENAME_MAX) {
@@ -2105,6 +2108,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		GDKfree(lg);
 		return NULL;
 	}
+	MT_lock_init(&lg->lock, fn);
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
@@ -2152,6 +2156,7 @@ logger_destroy(logger *lg)
 		logbat_destroy(lg->catalog_lid);
 		logger_unlock(lg);
 	}
+	MT_lock_destroy(&lg->lock);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->buf);
@@ -2210,13 +2215,17 @@ logger_cleanup_range(logger *lg)
 gdk_return
 logger_activate(logger *lg)
 {
+	logger_lock(lg);
 	if (lg->end > 0 && lg->saved_id+1 == lg->id) {
 		lg->id++;
 		logger_close_output(lg);
 		/* start new file */
-		if (logger_open_output(lg) != GDK_SUCCEED)
+		if (logger_open_output(lg) != GDK_SUCCEED) {
+			logger_unlock(lg);
 			return GDK_FAIL;
+		}
 	}
+	logger_unlock(lg);
 	return GDK_SUCCEED;
 }
 
@@ -2769,8 +2778,11 @@ log_sequence(logger *lg, int seq, lng val)
 		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
 	logger_lock(lg);
+	MT_lock_set(&lg->seqs_id->theaplock);
+	BUN inserted = lg->seqs_id->batInserted;
+	MT_lock_unset(&lg->seqs_id->theaplock);
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
-	    p >= lg->seqs_id->batInserted) {
+	    p >= inserted) {
 		assert(lg->seqs_val->hseqbase == 0);
 		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
 			logger_unlock(lg);
@@ -2904,19 +2916,26 @@ log_tstart(logger *lg, bool flushnow)
 {
 	logformat l;
 
+	logger_lock(lg);
 	if (flushnow) {
 		lg->id++;
 		logger_close_output(lg);
 		/* start new file */
-		if (logger_open_output(lg) != GDK_SUCCEED)
+		if (logger_open_output(lg) != GDK_SUCCEED) {
+			logger_unlock(lg);
 			return GDK_FAIL;
-		while (lg->saved_id+1 < lg->id)
+		}
+		while (lg->saved_id+1 < lg->id) {
+			logger_unlock(lg);
 			logger_flush(lg, (1ULL<<63));
+			logger_lock(lg);
+		}
 		lg->flushnow = flushnow;
 	}
 
 	lg->end++;
 	if (LOG_DISABLED(lg)) {
+		logger_unlock(lg);
 		return GDK_SUCCEED;
 	}
 
@@ -2925,7 +2944,10 @@ log_tstart(logger *lg, bool flushnow)
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
-	if (log_write_format(lg, &l) != GDK_SUCCEED)
+	if (log_write_format(lg, &l) != GDK_SUCCEED) {
+		logger_unlock(lg);
 		return GDK_FAIL;
+	}
+	logger_unlock(lg);
 	return GDK_SUCCEED;
 }
