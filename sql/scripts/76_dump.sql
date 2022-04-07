@@ -257,81 +257,65 @@ CREATE TABLE sys.dump_statements(o INT, s STRING);
 
 CREATE PROCEDURE sys.dump_table_data(sch STRING, tbl STRING)
 BEGIN
-
-  DECLARE k INT;
-  SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.name = tbl AND t.schema_id = s.id AND s.name = sch);
-  IF k IS NOT NULL THEN
-
-    DECLARE cname STRING;
-    DECLARE ctype STRING;
-    SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
-    SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
-
-    DECLARE COPY_INTO_STMT STRING;
-    DECLARE _cnt INT;
-    SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));
-
-    IF _cnt > 0 THEN
-      SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
-
-      DECLARE SELECT_DATA_STMT STRING;
-      SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
-
-      DECLARE M INT;
-      SET M = (SELECT MAX(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl);
-
-      WHILE (k < M) DO
-	SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);
-        SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
-	SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
-	SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
-	SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype);
-      END WHILE;
-
-      SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
-      SET SELECT_DATA_STMT = SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);
-
-      insert into sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
-
-      CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');
+  DECLARE tid INT;
+  SET tid = (SELECT MIN(t.id) FROM sys.tables t, sys.schemas s WHERE t.name = tbl AND t.schema_id = s.id AND s.name = sch);
+  IF tid IS NOT NULL THEN
+    DECLARE k INT;
+    DECLARE m INT;
+    SET k = (SELECT MIN(c.id) FROM sys.columns c WHERE c.table_id = tid);
+    SET m = (SELECT MAX(c.id) FROM sys.columns c WHERE c.table_id = tid);
+    IF k IS NOT NULL AND m IS NOT NULL THEN
+      DECLARE cname STRING;
+      DECLARE ctype STRING;
+      DECLARE _cnt INT;
+      SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+      SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+      SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));
+      IF _cnt > 0 THEN
+        DECLARE COPY_INTO_STMT STRING;
+        DECLARE SELECT_DATA_STMT STRING;
+        SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
+        SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
+        WHILE (k < m) DO
+          SET k = (SELECT MIN(c.id) FROM sys.columns c WHERE c.table_id = tid AND c.id > k);
+          SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+          SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+          SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
+          SET SELECT_DATA_STMT = (SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype));
+        END WHILE;
+        SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
+        SET SELECT_DATA_STMT = (SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl));
+        INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
+        CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');
+      END IF;
     END IF;
   END IF;
 END;
 
 CREATE PROCEDURE sys.dump_table_data()
 BEGIN
-
   DECLARE i INT;
   SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
-
   IF i IS NOT NULL THEN
     DECLARE M INT;
     SET M = (SELECT MAX(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
-
     DECLARE sch STRING;
     DECLARE tbl STRING;
-
-    WHILE i < M DO
-      set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
-      set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+    WHILE i IS NOT NULL AND i <= M DO
+      SET sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+      SET tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
       CALL sys.dump_table_data(sch, tbl);
       SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system AND t.id > i);
     END WHILE;
-
-    set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
-    set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
-    CALL sys.dump_table_data(sch, tbl);
   END IF;
 END;
 
 CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
 BEGIN
-
   SET SCHEMA sys;
   TRUNCATE sys.dump_statements;
-
   INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
-  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA "sys";');
+  INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA "sys";');
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
