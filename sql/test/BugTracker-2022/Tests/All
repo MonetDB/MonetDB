@@ -7,3 +7,4 @@ empty-MAL.Bug-7259
 pkey-restart.Bug-7263
 delete-update.Bug-7267
 having-clauses.Bug-7278
+dump-table-data.Bug-7282
