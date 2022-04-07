@@ -12,7 +12,6 @@
 
 #include "monetdb_config.h"
 #include "sql_result.h"
-#include "sql_copyinto.h"
 #include "str.h"
 #include "tablet.h"
 #include "gdk_time.h"
@@ -236,6 +235,168 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	return (ssize_t) (s - *buf);
 }
 
+static inline int
+STRwidth(const char *restrict s)
+{
+	int len = 0;
+	int c;
+	int n;
+
+	if (strNil(s))
+		return int_nil;
+	c = 0;
+	n = 0;
+	while (*s != 0) {
+		if ((*s & 0x80) == 0) {
+			assert(n == 0);
+			len++;
+			n = 0;
+		} else if ((*s & 0xC0) == 0x80) {
+			c = (c << 6) | (*s & 0x3F);
+			if (--n == 0) {
+				/* last byte of a multi-byte character */
+				len++;
+				/* this list was created by combining
+				 * the code points marked as
+				 * Emoji_Presentation in
+				 * /usr/share/unicode/emoji/emoji-data.txt
+				 * and code points marked either F or
+				 * W in EastAsianWidth.txt; this list
+				 * is up-to-date with Unicode 9.0 */
+				if ((0x1100 <= c && c <= 0x115F) ||
+				    (0x231A <= c && c <= 0x231B) ||
+				    (0x2329 <= c && c <= 0x232A) ||
+				    (0x23E9 <= c && c <= 0x23EC) ||
+				    c == 0x23F0 ||
+				    c == 0x23F3 ||
+				    (0x25FD <= c && c <= 0x25FE) ||
+				    (0x2614 <= c && c <= 0x2615) ||
+				    (0x2648 <= c && c <= 0x2653) ||
+				    c == 0x267F ||
+				    c == 0x2693 ||
+				    c == 0x26A1 ||
+				    (0x26AA <= c && c <= 0x26AB) ||
+				    (0x26BD <= c && c <= 0x26BE) ||
+				    (0x26C4 <= c && c <= 0x26C5) ||
+				    c == 0x26CE ||
+				    c == 0x26D4 ||
+				    c == 0x26EA ||
+				    (0x26F2 <= c && c <= 0x26F3) ||
+				    c == 0x26F5 ||
+				    c == 0x26FA ||
+				    c == 0x26FD ||
+				    c == 0x2705 ||
+				    (0x270A <= c && c <= 0x270B) ||
+				    c == 0x2728 ||
+				    c == 0x274C ||
+				    c == 0x274E ||
+				    (0x2753 <= c && c <= 0x2755) ||
+				    c == 0x2757 ||
+				    (0x2795 <= c && c <= 0x2797) ||
+				    c == 0x27B0 ||
+				    c == 0x27BF ||
+				    (0x2B1B <= c && c <= 0x2B1C) ||
+				    c == 0x2B50 ||
+				    c == 0x2B55 ||
+				    (0x2E80 <= c && c <= 0x2E99) ||
+				    (0x2E9B <= c && c <= 0x2EF3) ||
+				    (0x2F00 <= c && c <= 0x2FD5) ||
+				    (0x2FF0 <= c && c <= 0x2FFB) ||
+				    (0x3000 <= c && c <= 0x303E) ||
+				    (0x3041 <= c && c <= 0x3096) ||
+				    (0x3099 <= c && c <= 0x30FF) ||
+				    (0x3105 <= c && c <= 0x312D) ||
+				    (0x3131 <= c && c <= 0x318E) ||
+				    (0x3190 <= c && c <= 0x31BA) ||
+				    (0x31C0 <= c && c <= 0x31E3) ||
+				    (0x31F0 <= c && c <= 0x321E) ||
+				    (0x3220 <= c && c <= 0x3247) ||
+				    (0x3250 <= c && c <= 0x32FE) ||
+				    (0x3300 <= c && c <= 0x4DBF) ||
+				    (0x4E00 <= c && c <= 0xA48C) ||
+				    (0xA490 <= c && c <= 0xA4C6) ||
+				    (0xA960 <= c && c <= 0xA97C) ||
+				    (0xAC00 <= c && c <= 0xD7A3) ||
+				    (0xF900 <= c && c <= 0xFAFF) ||
+				    (0xFE10 <= c && c <= 0xFE19) ||
+				    (0xFE30 <= c && c <= 0xFE52) ||
+				    (0xFE54 <= c && c <= 0xFE66) ||
+				    (0xFE68 <= c && c <= 0xFE6B) ||
+				    (0xFF01 <= c && c <= 0xFF60) ||
+				    (0xFFE0 <= c && c <= 0xFFE6) ||
+				    c == 0x16FE0 ||
+				    (0x17000 <= c && c <= 0x187EC) ||
+				    (0x18800 <= c && c <= 0x18AF2) ||
+				    (0x1B000 <= c && c <= 0x1B001) ||
+				    c == 0x1F004 ||
+				    c == 0x1F0CF ||
+				    c == 0x1F18E ||
+				    (0x1F191 <= c && c <= 0x1F19A) ||
+				    /* removed 0x1F1E6..0x1F1FF */
+				    (0x1F200 <= c && c <= 0x1F202) ||
+				    (0x1F210 <= c && c <= 0x1F23B) ||
+				    (0x1F240 <= c && c <= 0x1F248) ||
+				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x1F300 <= c && c <= 0x1F320) ||
+				    (0x1F32D <= c && c <= 0x1F335) ||
+				    (0x1F337 <= c && c <= 0x1F37C) ||
+				    (0x1F37E <= c && c <= 0x1F393) ||
+				    (0x1F3A0 <= c && c <= 0x1F3CA) ||
+				    (0x1F3CF <= c && c <= 0x1F3D3) ||
+				    (0x1F3E0 <= c && c <= 0x1F3F0) ||
+				    c == 0x1F3F4 ||
+				    (0x1F3F8 <= c && c <= 0x1F43E) ||
+				    c == 0x1F440 ||
+				    (0x1F442 <= c && c <= 0x1F4FC) ||
+				    (0x1F4FF <= c && c <= 0x1F53D) ||
+				    (0x1F54B <= c && c <= 0x1F54E) ||
+				    (0x1F550 <= c && c <= 0x1F567) ||
+				    c == 0x1F57A ||
+				    (0x1F595 <= c && c <= 0x1F596) ||
+				    c == 0x1F5A4 ||
+				    (0x1F5FB <= c && c <= 0x1F64F) ||
+				    (0x1F680 <= c && c <= 0x1F6C5) ||
+				    c == 0x1F6CC ||
+				    (0x1F6D0 <= c && c <= 0x1F6D2) ||
+				    (0x1F6EB <= c && c <= 0x1F6EC) ||
+				    (0x1F6F4 <= c && c <= 0x1F6F6) ||
+				    (0x1F910 <= c && c <= 0x1F91E) ||
+				    (0x1F920 <= c && c <= 0x1F927) ||
+				    c == 0x1F930 ||
+				    (0x1F933 <= c && c <= 0x1F93E) ||
+				    (0x1F940 <= c && c <= 0x1F94B) ||
+				    (0x1F950 <= c && c <= 0x1F95E) ||
+				    (0x1F980 <= c && c <= 0x1F991) ||
+				    c == 0x1F9C0 ||
+				    (0x20000 <= c && c <= 0x2FFFD) ||
+				    (0x30000 <= c && c <= 0x3FFFD))
+					len++;
+			}
+		} else if ((*s & 0xE0) == 0xC0) {
+			assert(n == 0);
+			n = 1;
+			c = *s & 0x1F;
+		} else if ((*s & 0xF0) == 0xE0) {
+			assert(n == 0);
+			n = 2;
+			c = *s & 0x0F;
+		} else if ((*s & 0xF8) == 0xF0) {
+			assert(n == 0);
+			n = 3;
+			c = *s & 0x07;
+		} else if ((*s & 0xFC) == 0xF8) {
+			assert(n == 0);
+			n = 4;
+			c = *s & 0x03;
+		} else {
+			assert(0);
+			n = 0;
+		}
+		s++;
+	}
+	return len;
+}
+
 static int
 bat_max_strlength(BAT *b)
 {
@@ -245,7 +406,7 @@ bat_max_strlength(BAT *b)
 	BATiter bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		l = strPrintWidth((const char *) BUNtvar(bi, p));
+		l = STRwidth((const char *) BUNtvar(bi, p));
 
 		if (is_int_nil(l))
 			l = 0;
@@ -296,11 +457,188 @@ bat_max_length(lng, lng)
 bat_max_length(hge, hge)
 #endif
 
+#define DEC_FRSTR(X)													\
+	do {																\
+		sql_column *col = c->extra;										\
+		sql_subtype *t = &col->type;									\
+		unsigned int scale = t->scale;									\
+		unsigned int i;													\
+		bool neg = false;												\
+		X *r;															\
+		X res = 0;														\
+		while(isspace((unsigned char) *s))								\
+			s++;														\
+		if (*s == '-'){													\
+			neg = true;													\
+			s++;														\
+		} else if (*s == '+'){											\
+			s++;														\
+		}																\
+		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
+			if (!isdigit((unsigned char) *s))							\
+				break;													\
+			res *= 10;													\
+			res += (*s-'0');											\
+			if (res)													\
+				i++;													\
+		}																\
+		if (*s == '.') {												\
+			s++;														\
+			while (*s && isdigit((unsigned char) *s) && scale > 0) {	\
+				res *= 10;												\
+				res += *s++ - '0';										\
+				scale--;												\
+			}															\
+		}																\
+		while(*s && isspace((unsigned char) *s))						\
+			s++;														\
+		while (scale > 0) {												\
+			res *= 10;													\
+			scale--;													\
+		}																\
+		if (*s)															\
+			return NULL;												\
+		r = c->data;													\
+		if (r == NULL &&												\
+		    (r = GDKzalloc(sizeof(X))) == NULL)							\
+			return NULL;												\
+		c->data = r;													\
+		if (neg)														\
+			*r = -res;													\
+		else															\
+			*r = res;													\
+		return (void *) r;												\
+	} while (0)
+
+static void *
+dec_frstr(Column *c, int type, const char *s)
+{
+	/* support dec map to bte, sht, int and lng */
+	if( strcmp(s,"nil")== 0)
+		return NULL;
+	if (type == TYPE_bte) {
+		DEC_FRSTR(bte);
+	} else if (type == TYPE_sht) {
+		DEC_FRSTR(sht);
+	} else if (type == TYPE_int) {
+		DEC_FRSTR(int);
+	} else if (type == TYPE_lng) {
+		DEC_FRSTR(lng);
+#ifdef HAVE_HGE
+	} else if (type == TYPE_hge) {
+		DEC_FRSTR(hge);
+#endif
+	}
+	return NULL;
+}
+
+static void *
+sec_frstr(Column *c, int type, const char *s)
+{
+	/* read a sec_interval value
+	 * this knows that the stored scale is always 3 */
+	unsigned int i, neg = 0;
+	lng *r;
+	lng res = 0;
+
+	(void) c;
+	(void) type;
+	assert(type == TYPE_lng);
+
+	if (*s == '-') {
+		neg = 1;
+		s++;
+	} else if (*s == '+') {
+		neg = 0;
+		s++;
+	}
+	for (i = 0; i < (19 - 3) && *s && *s != '.'; i++, s++) {
+		if (!isdigit((unsigned char) *s))
+			return NULL;
+		res *= 10;
+		res += (*s - '0');
+	}
+	i = 0;
+	if (*s) {
+		if (*s != '.')
+			return NULL;
+		s++;
+		for (; *s && i < 3; i++, s++) {
+			if (!isdigit((unsigned char) *s))
+				return NULL;
+			res *= 10;
+			res += (*s - '0');
+		}
+	}
+	if (*s)
+		return NULL;
+	for (; i < 3; i++) {
+		res *= 10;
+	}
+	r = c->data;
+	if (r == NULL && (r = (lng *) GDKzalloc(sizeof(lng))) == NULL)
+		return NULL;
+	c->data = r;
+	if (neg)
+		*r = -res;
+	else
+		*r = res;
+	return (void *) r;
+}
+
+/* Literal parsing for SQL all pass through this routine */
+static void *
+_ASCIIadt_frStr(Column *c, int type, const char *s)
+{
+	ssize_t len;
+
+	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, false);
+	if (len < 0)
+		return NULL;
+	switch (type) {
+	case TYPE_bte:
+	case TYPE_int:
+	case TYPE_lng:
+	case TYPE_sht:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+		if (len == 0 || s[len]) {
+			/* decimals can be converted to integers when *.000 */
+			if (s[len++] == '.') {
+				while (s[len] == '0')
+					len++;
+				if (s[len] == 0)
+					return c->data;
+			}
+			return NULL;
+		}
+		break;
+	case TYPE_str: {
+		sql_column *col = (sql_column *) c->extra;
+		int slen;
+
+		s = c->data;
+		slen = strNil(s) ? int_nil : UTF8_strlen(s);
+		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
+			len = STRwidth(c->data);
+			if (len > (ssize_t) col->type.digits)
+				return NULL;
+		}
+		break;
+	}
+	default:
+		break;
+	}
+	return c->data;
+}
+
+
 static ssize_t
 _ASCIIadt_toStr(void *extra, char **buf, size_t *len, int type, const void *a)
 {
 	if (type == TYPE_str) {
-		OutputColumn *c = extra;
+		Column *c = extra;
 		char *dst;
 		const char *src = a;
 		size_t l = escapedStrlen(src, c->sep, c->rsep, c->quote), l2 = 0;
@@ -336,6 +674,127 @@ _ASCIIadt_toStr(void *extra, char **buf, size_t *len, int type, const void *a)
 	}
 }
 
+
+static int
+has_whitespace(const char *s)
+{
+	if (*s == ' ' || *s == '\t')
+		return 1;
+	while (*s)
+		s++;
+	s--;
+	if (*s == ' ' || *s == '\t')
+		return 1;
+	return 0;
+}
+
+str
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape)
+{
+	int i = 0, j;
+	node *n;
+	Tablet as;
+	Column *fmt;
+	str msg = MAL_SUCCEED;
+
+	*bats =0;	// initialize the receiver
+
+	if (!bs)
+		throw(IO, "sql.copy_from", SQLSTATE(42000) "No stream (pointer) provided");
+	if (mnstr_errnr(bs->s)) {
+		mnstr_error_kind errnr = mnstr_errnr(bs->s);
+		char *stream_msg = mnstr_error(bs->s);
+		msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Stream not open %s: %s", mnstr_error_kind_name(errnr), stream_msg ? stream_msg : "unknown error");
+		free(stream_msg);
+		return msg;
+	}
+	if (offset < 0 || offset > (lng) BUN_MAX)
+		throw(IO, "sql.copy_from", SQLSTATE(42000) "Offset out of range");
+
+	if (offset > 0)
+		offset--;
+	if (ol_first_node(t->columns)) {
+		stream *out = m->scanner.ws;
+
+		as = (Tablet) {
+			.nr_attrs = ol_length(t->columns),
+			.nr = (sz < 1) ? BUN_NONE : (BUN) sz,
+			.offset = (BUN) offset,
+			.error = NULL,
+			.tryall = 0,
+			.complaints = NULL,
+			.filename = m->scanner.rs == bs ? NULL : "",
+		};
+		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
+		if (fmt == NULL)
+			throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		as.format = fmt;
+		if (!isa_block_stream(bs->s))
+			out = NULL;
+
+		for (n = ol_first_node(t->columns), i = 0; n; n = n->next, i++) {
+			sql_column *col = n->data;
+
+			fmt[i].name = col->base.name;
+			fmt[i].sep = (n->next) ? sep : rsep;
+			fmt[i].rsep = rsep;
+			fmt[i].seplen = _strlen(fmt[i].sep);
+			fmt[i].type = sql_subtype_string(m->ta, &col->type);
+			fmt[i].adt = ATOMindex(col->type.type->impl);
+			fmt[i].tostr = &_ASCIIadt_toStr;
+			fmt[i].frstr = &_ASCIIadt_frStr;
+			fmt[i].extra = col;
+			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+			fmt[i].data = GDKzalloc(fmt[i].len);
+			if(fmt[i].data == NULL || fmt[i].type == NULL) {
+				for (j = 0; j < i; j++) {
+					GDKfree(fmt[j].data);
+					BBPunfix(fmt[j].c->batCacheid);
+				}
+				GDKfree(fmt[i].data);
+				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			fmt[i].c = NULL;
+			fmt[i].ws = !has_whitespace(fmt[i].sep);
+			fmt[i].quote = ssep ? ssep[0] : 0;
+			fmt[i].nullstr = ns;
+			fmt[i].null_length = strlen(ns);
+			fmt[i].nildata = ATOMnilptr(fmt[i].adt);
+			fmt[i].skip = (col->base.name[0] == '%');
+			if (col->type.type->eclass == EC_DEC) {
+				fmt[i].tostr = &dec_tostr;
+				fmt[i].frstr = &dec_frstr;
+			} else if (col->type.type->eclass == EC_SEC) {
+				fmt[i].tostr = &dec_tostr;
+				fmt[i].frstr = &sec_frstr;
+			}
+			fmt[i].size = ATOMsize(fmt[i].adt);
+		}
+		if ((msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED){
+			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape) != BUN_NONE &&
+				(best || !as.error))) {
+				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
+				if ( *bats == NULL){
+					TABLETdestroy_format(&as);
+					throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				msg = TABLETcollect(*bats,&as);
+			}
+		}
+		if (as.error) {
+			if( !best) msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, getExceptionMessage(as.error));
+			freeException(as.error);
+			as.error = NULL;
+		}
+		for (n = ol_first_node(t->columns), i = 0; n; n = n->next, i++) {
+			fmt[i].sep = NULL;
+			fmt[i].rsep = NULL;
+			fmt[i].nullstr = NULL;
+		}
+		TABLETdestroy_format(&as);
+	}
+	return msg;
+}
 
 /*
  * mvc_export_result dumps the sql header information and the
@@ -873,8 +1332,8 @@ mvc_export_table_columnar(stream *s, res_table *t)
 static int
 mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
-	OutputTable as;
-	OutputColumn *fmt;
+	Tablet as;
+	Column *fmt;
 	int i, ok = 0;
 	struct time_res *tres;
 	int csv = (output_format == OFMT_CSV);
@@ -887,7 +1346,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = nr;
 	as.offset = offset;
-	fmt = as.format = (OutputColumn *) GDKzalloc(sizeof(OutputColumn) * (as.nr_attrs + 1));
+	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 	tres = GDKzalloc(sizeof(struct time_res) * (as.nr_attrs));
 	if (fmt == NULL || tres == NULL) {
 		GDKfree(fmt);
@@ -899,7 +1358,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 	fmt[0].sep = (csv) ? btag : "";
 	fmt[0].rsep = rsep;
 	fmt[0].seplen = _strlen(fmt[0].sep);
-	// fmt[0].ws = 0;
+	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
 
 	for (i = 1; i <= t->nr_cols; i++) {
@@ -951,13 +1410,19 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 				fmt[i].rsep = NULL;
 			}
 		}
+		fmt[i].type = ATOMname(fmt[i].c->ttype);
 		fmt[i].adt = fmt[i].c->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
+		fmt[i].frstr = &_ASCIIadt_frStr;
 		fmt[i].extra = fmt + i;
+		fmt[i].data = NULL;
+		fmt[i].len = 0;
+		fmt[i].ws = 0;
 		fmt[i].quote = ssep ? ssep[0] : 0;
 		fmt[i].nullstr = ns;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
+			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) c->type.scale;
 		} else if (c->type.type->eclass == EC_TIMESTAMP || c->type.type->eclass == EC_TIMESTAMP_TZ) {
 			struct time_res *ts_res = tres + (i - 1);
@@ -966,6 +1431,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 			ts_res->timezone = m->timezone;
 
 			fmt[i].tostr = &sql_timestamp_tostr;
+			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
 		} else if (c->type.type->eclass == EC_TIME || c->type.type->eclass == EC_TIME_TZ) {
 			struct time_res *ts_res = tres + (i - 1);
@@ -974,9 +1440,11 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 			ts_res->timezone = m->timezone;
 
 			fmt[i].tostr = &sql_time_tostr;
+			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
 		} else if (c->type.type->eclass == EC_SEC) {
 			fmt[i].tostr = &dec_tostr;
+			fmt[i].frstr = &sec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) 3;
 		} else {
 			fmt[i].extra = fmt + i;
@@ -987,11 +1455,12 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 	for (i = 0; i <= t->nr_cols; i++) {
 		fmt[i].sep = NULL;
 		fmt[i].rsep = NULL;
+		fmt[i].type = NULL;
 		fmt[i].nullstr = NULL;
 	}
 	for (i = 1; i <= t->nr_cols; i++)
 		bat_iterator_end(&fmt[i].ci);
-	TABLETdestroy_outputformat(&as);
+	TABLETdestroy_format(&as);
 	GDKfree(tres);
 	if (mnstr_errnr(s))
 		return -4;
@@ -1054,7 +1523,7 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 					return -2;
 				}
 			} else if (p) {
-				l = strPrintWidth((const char *) p);
+				l = STRwidth((const char *) p);
 				if (is_int_nil(l))
 					l = 0;
 			}

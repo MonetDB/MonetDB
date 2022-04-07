@@ -22,8 +22,8 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-typedef struct {
-		const char *name;			/* column title */
+typedef struct Column_t {
+	const char *name;			/* column title */
 	const char *sep;
 	const char *rsep;
 	int seplen;
@@ -32,11 +32,25 @@ typedef struct {
 	BAT *c;						/* set to NULL when scalar is meant */
 	BATiter ci;
 	BUN p;
+	unsigned int tabs;			/* field size in tab positions */
 	const char *nullstr;		/* null representation */
+	size_t null_length;			/* its length */
+	unsigned int width;			/* actual column width */
+	unsigned int maxwidth;		/* permissible width */
+	int fieldstart;				/* Fixed character field load positions */
+	int fieldwidth;
+	int scale, precision;
 	ssize_t (*tostr)(void *extra, char **buf, size_t *len, int type, const void *a);
+	void *(*frstr)(struct Column_t *fmt, int type, const char *s);
 	void *extra;
+	void *data;
+	int skip;					/* only skip to the next field */
+	size_t len;
+	bit ws;						/* if set we need to skip white space */
 	char quote;					/* if set use this character for string quotes */
-} OutputColumn;
+	const void *nildata;
+	int size;
+} Column;
 
 /*
  * All table printing is based on building a report structure first.
@@ -44,19 +58,24 @@ typedef struct {
  * keep it in an ADT.
  */
 
-typedef struct {
+typedef struct Table_t {
 	BUN offset;
 	BUN nr;						/* allocated space for table loads */
 	BUN nr_attrs;				/* attributes found sofar */
-	OutputColumn *format;				/* remove later */
+	Column *format;				/* remove later */
 	str error;					/* last error */
 	int tryall;					/* skip erroneous lines */
 	str filename;				/* source */
 	BAT *complaints;			/* lines that did not match the required input */
-} OutputTable;
+} Tablet;
 
-mal_export void TABLETdestroy_outputformat(OutputTable *as);
-
-mal_export int TABLEToutput_file(OutputTable *as, BAT *order, stream *s);
+mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam, bool escape);
+mal_export str TABLETcreate_bats(Tablet *as, BUN est);
+mal_export str TABLETcollect(BAT **bats, Tablet *as);
+mal_export str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);
+mal_export void TABLETdestroy_format(Tablet *as);
+mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
+mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

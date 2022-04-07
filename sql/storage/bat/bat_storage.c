@@ -2083,7 +2083,7 @@ delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 }
 
 static int
-delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *offsets, void *i, BUN cnt, char *storage_type, int tt)
+delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, void *i, BUN cnt, char *storage_type, int tt)
 {
 	void *oi = i;
 	BAT *b;
@@ -2116,15 +2116,6 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 		unlock_column(tr->store, id);
 		return LOG_ERR;
 	}
-
-	if (offsets) {
-		oid *positions = Tloc(offsets, 0);
-		int ret = BUNreplacemulti(b, positions, i, cnt, true);
-		bat_destroy(b);
-		unlock_column(tr->store, id);
-		return ret == GDK_SUCCEED ? LOG_OK : LOG_ERR;
-	}
-
 	BUN bcnt = BATcount(b);
 	if (bcnt > offset){
 		size_t ccnt = ((offset+cnt) > bcnt)? (bcnt - offset):cnt;
@@ -2191,7 +2182,7 @@ append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *
 		if (BATcount(bat))
 			ok = delta_append_bat(tr, delta, id, offset, offsets, bat, storage_type);
 	} else {
-		ok = delta_append_val(tr, delta, id, offset, offsets, incoming_data, cnt, storage_type, tt);
+		ok = delta_append_val(tr, delta, id, offset, incoming_data, cnt, storage_type, tt);
 	}
 	return ok;
 }
