@@ -328,7 +328,7 @@ BEGIN
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
 				    FROM (
 				      SELECT f.o, f.stmt FROM sys.dump_functions f
-				       UNION
+				       UNION ALL
 				      SELECT t.o, t.stmt FROM sys.dump_tables t
 				    ) AS stmts(o, s);
 
