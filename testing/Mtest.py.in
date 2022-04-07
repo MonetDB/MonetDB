@@ -4151,7 +4151,7 @@ VALUES (%s, '%s', '%s', '%s',
                 prgreen('OK')
             print()
             print('failed={}, skipped={}'.format(Failed, len(Failure[F_SKIP])))
-            if produce_html and Failed:
+            if produce_html and (Failed or errseen):
                 print('see {}'.format(urllib.parse.urlunsplit(('file','',urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")),'',''))))
             print('Ran {} tests in {:7.3f}s'.format(num_tests - len(Failure[F_SKIP]), t_))
         elif Failed:

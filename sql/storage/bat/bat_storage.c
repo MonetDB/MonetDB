@@ -285,6 +285,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 
 	uint32_t *restrict dst;
 	BUN cnt = BATcount(b);
+	MT_rwlock_wrlock(&b->thashlock);
 	for (; s ; s=s->next) {
 		if (s->start >= nr)
 			break;
@@ -380,6 +381,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				cnt = s->end;
 		}
 	}
+	MT_rwlock_wrunlock(&b->thashlock);
 	if (nr > BATcount(b)) {
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, nr);
@@ -832,9 +834,9 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	oid *uipt = NULL, *oipt = NULL;
 	BATiter uii = bat_iterator(ui);
 	BATiter oii = bat_iterator(oi);
-	if (!BATtdense(ui))
+	if (!BATtdensebi(&uii))
 		uipt = uii.base;
-	if (!BATtdense(oi))
+	if (!BATtdensebi(&oii))
 		oipt = oii.base;
 	while (uip < uie && oip < oie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
@@ -1597,9 +1599,9 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 						oid *uipt = NULL, *nipt = NULL;
 						BATiter uii = bat_iterator(ui);
 						BATiter tidsi = bat_iterator(tids);
-						if (!BATtdense(ui))
+						if (!BATtdensebi(&uii))
 							uipt = uii.base;
-						if (!BATtdense(tids))
+						if (!BATtdensebi(&tidsi))
 							nipt = tidsi.base;
 						while (uip < uie && nip < nie && res == LOG_OK) {
 							oid uiv = (uipt)?uipt[uip]: uiseqb+uip;

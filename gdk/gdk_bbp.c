@@ -1863,14 +1863,14 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       (unsigned short) bi->sorted |
 			   ((unsigned short) bi->revsorted << 7) |
 			   ((unsigned short) bi->key << 8) |
-		           ((unsigned short) BATtdense(b) << 9) |
+		           ((unsigned short) BATtdensebi(bi) << 9) |
 			   ((unsigned short) bi->nonil << 10) |
 			   ((unsigned short) bi->nil << 11),
 		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[0],
 		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[1],
 		       b->tnosorted >= size ? 0 : b->tnosorted,
 		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
-		       b->tseqbase,
+		       bi->tseq,
 		       free,
 		       bi->minpos < size ? (uint64_t) bi->minpos : (uint64_t) oid_nil,
 		       bi->maxpos < size ? (uint64_t) bi->maxpos : (uint64_t) oid_nil);

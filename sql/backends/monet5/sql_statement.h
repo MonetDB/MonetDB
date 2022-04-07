@@ -120,8 +120,7 @@ typedef struct stmt {
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */
 	 reduce:1,		/* used to reduce number of rows (also for joins) */
-	 loop:1,		/* cond statement is looping */
-	 argument_independence:1; /*list statement represents a list of function call arguments which are independent of the inner project relation. */
+	 loop:1;		/* cond statement is looping */
 
 	struct stmt *cand;	/* optional candidate list */
 
