@@ -130,29 +130,32 @@ log_find(BAT *b, BAT *d, int val)
 
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
+	BATiter bi = bat_iterator(b);
 	if (BAThash(b) == GDK_SUCCEED) {
-		BATiter cni = bat_iterator_nolock(b);
-		MT_rwlock_rdlock(&cni.b->thashlock);
-		HASHloop_int(cni, cni.b->thash, p, &val) {
+		MT_rwlock_rdlock(&b->thashlock);
+		HASHloop_int(bi, b->thash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE) {
-				MT_rwlock_rdunlock(&cni.b->thashlock);
+				MT_rwlock_rdunlock(&b->thashlock);
+				bat_iterator_end(&bi);
 				return p;
 			}
 		}
-		MT_rwlock_rdunlock(&cni.b->thashlock);
+		MT_rwlock_rdunlock(&b->thashlock);
 	} else {		/* unlikely: BAThash failed */
-		BUN q;
-		int *t = (int *) Tloc(b, 0);
+		int *t = (int *) bi.base;
 
-		for (p = 0, q = BATcount(b); p < q; p++) {
+		for (p = 0; p < bi.count; p++) {
 			if (t[p] == val) {
 				oid pos = p;
-				if (BUNfnd(d, &pos) == BUN_NONE)
+				if (BUNfnd(d, &pos) == BUN_NONE) {
+					bat_iterator_end(&bi);
 					return p;
+				}
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 	return BUN_NONE;
 }
 
@@ -2917,8 +2920,11 @@ log_sequence(logger *lg, int seq, lng val)
 		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
 	logger_lock(lg);
+	MT_lock_set(&lg->seqs_id->theaplock);
+	BUN inserted = lg->seqs_id->batInserted;
+	MT_lock_unset(&lg->seqs_id->theaplock);
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
-	    p >= lg->seqs_id->batInserted) {
+	    p >= inserted) {
 		assert(lg->seqs_val->hseqbase == 0);
 		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
 			logger_unlock(lg);
@@ -3050,28 +3056,34 @@ gdk_return
 log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 {
 	MT_lock_set(&lg->rotation_lock);
+	logger_lock(lg);
 	if (flushnow || lg->request_rotation) {
 		lg->id++;
 		logger_close_output(lg);
 		/* start new file */
 		if (logger_open_output(lg) != GDK_SUCCEED) {
+			logger_unlock(lg);
 			MT_lock_unset(&lg->rotation_lock);
 			return GDK_FAIL;
 		}
 		lg->request_rotation = false;
 		if (flushnow) {
-			while (lg->saved_id+1 < lg->id)
+			while (lg->saved_id+1 < lg->id) {
+				logger_unlock(lg);
 				logger_flush(lg, (1ULL<<63));
+				logger_lock(lg);
+			}
 			lg->flushnow = flushnow;
 		}
 	}
 	(void) ATOMIC_INC(&lg->refcount);
 	*log_file_id = lg->id;
 	lg->end++;
-	MT_lock_unset(&lg->rotation_lock);
 
 	if (LOG_DISABLED(lg)) {
 		(void) ATOMIC_DEC(&lg->refcount);
+		logger_unlock(lg);
+		MT_lock_unset(&lg->rotation_lock);
 		return GDK_SUCCEED;
 	}
 
@@ -3083,7 +3095,12 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
 	if (log_write_format(lg, &l) != GDK_SUCCEED) {
 		(void) ATOMIC_DEC(&lg->refcount);
+		logger_unlock(lg);
+		MT_lock_unset(&lg->rotation_lock);
 		return GDK_FAIL;
 	}
+
+	logger_unlock(lg);
+	MT_lock_unset(&lg->rotation_lock);
 	return GDK_SUCCEED;
 }

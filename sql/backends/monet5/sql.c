@@ -3220,7 +3220,7 @@ not_unique(bit *ret, const bat *bid)
 
 	*ret = FALSE;
 	BATiter bi = bat_iterator(b);
-	if (bi.key || BATtdense(b) || bi.count <= 1) {
+	if (bi.key || BATtdensebi(&bi) || bi.count <= 1) {
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -3764,7 +3764,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 		BBPunfix(b->batCacheid);
 		throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (BATtdense(b)) {
+	if (BATtdensebi(&bi)) {
 		BATloop(b, p, q) {
 			if (BUNappend(r, &rank, false) != GDK_SUCCEED)
 				goto bailout;
