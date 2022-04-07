@@ -2139,37 +2139,6 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	return store;
 }
 
-// All this must only be accessed while holding the store->flush.
-// The exception is flush_now, which can be set by anyone at any
-// time and therefore needs some special treatment.
-static struct {
-	// These two are inputs, set from outside the store_manager
-	bool enabled;
-	ATOMIC_TYPE flush_now;
-	// These are state set from within the store_manager
-	bool working;
-	int countdown_ms;
-	unsigned int cycle;
-	char *reason_to;
-	char *reason_not_to;
-} flusher = {
-	.flush_now = ATOMIC_VAR_INIT(0),
-	.enabled = true,
-};
-
-static void
-flusher_new_cycle(void)
-{
-	int cycle_time = GDKdebug & FORCEMITOMASK ? 500 : 50000;
-
-	// do not touch .enabled and .flush_now, those are inputs
-	flusher.working = false;
-	flusher.countdown_ms = cycle_time;
-	flusher.cycle += 1;
-	flusher.reason_to = NULL;
-	flusher.reason_not_to = NULL;
-}
-
 void
 store_exit(sqlstore *store)
 {
@@ -2233,14 +2202,11 @@ store_apply_deltas(sqlstore *store)
 {
 	int res = LOG_OK;
 
-	flusher.working = true;
-
 	store_lock(store);
 	ulng oldest = store_oldest_pending(store);
 	store_unlock(store);
 	if (oldest)
 	    res = store->logger_api.flush(store, oldest-1);
-	flusher.working = false;
 	return res;
 }
 
@@ -2248,7 +2214,6 @@ void
 store_suspend_log(sqlstore *store)
 {
 	MT_lock_set(&store->lock);
-	flusher.enabled = false;
 	MT_lock_unset(&store->lock);
 }
 
@@ -2256,7 +2221,6 @@ void
 store_resume_log(sqlstore *store)
 {
 	MT_lock_set(&store->flush);
-	flusher.enabled = true;
 	MT_lock_unset(&store->flush);
 }
 
@@ -2352,7 +2316,6 @@ store_manager(sqlstore *store)
 		const int sleeptime = 100;
 		MT_lock_unset(&store->flush);
 		MT_sleep_ms(sleeptime);
-		flusher.countdown_ms -= sleeptime;
 		MT_lock_set(&store->commit);
 		MT_lock_set(&store->flush);
 		if (store->logger_api.changes(store) <= 0) {
@@ -2373,7 +2336,6 @@ store_manager(sqlstore *store)
 
 		if (GDKexiting())
 			break;
-		flusher_new_cycle();
 		MT_thread_setworking("sleeping");
 		TRC_DEBUG(SQL_STORE, "Store flusher done\n");
 	}

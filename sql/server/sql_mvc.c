@@ -290,7 +290,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 
 		for (int i = 0; i < 9; i++) {
 			sql_column *col = NULL;
-			
+
 			mvc_create_column_(&col, m, t, tview[i].name, tview[i].type, tview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);
@@ -999,10 +999,9 @@ mvc_first_column(mvc *m, sql_table *t)
 sql_key *
 mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 {
-	sql_base *b = os_find_name(s->keys, m->session->tr, kname);
-	sql_key *k = (sql_key*)b;
+	sql_key *k = schema_find_key(m->session->tr, s, kname);
 
-	if (!b)
+	if (!k)
 		return NULL;
 	TRC_DEBUG(SQL_TRANS, "Bind key: %s.%s\n", s->base.name, kname);
 	return k;
@@ -1011,11 +1010,10 @@ mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 sql_idx *
 mvc_bind_idx(mvc *m, sql_schema *s, const char *iname)
 {
-	sql_base *b = os_find_name(s->idxs, m->session->tr, iname);
+	sql_idx *i = schema_find_idx(m->session->tr, s, iname);
 
-	if (!b)
+	if (!i)
 		return NULL;
-	sql_idx *i = (sql_idx*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind index: %s.%s\n", s->base.name, iname);
 	return i;
 }
@@ -1060,13 +1058,12 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 sql_trigger *
 mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 {
-	sql_base *b = os_find_name(s->triggers, m->session->tr, tname);
+	sql_trigger *t = schema_find_trigger(m->session->tr, s, tname);
 
-	if (!b)
+	if (!t)
 		return NULL;
-	sql_trigger *trigger = (sql_trigger*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind trigger: %s.%s\n", s->base.name, tname);
-	return trigger;
+	return t;
 }
 
 int
