@@ -3909,7 +3909,7 @@ sql_trans_commit(sql_trans *tr)
 
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
-		ulng commit_ts = 0, oldest = 0;
+		ulng commit_ts = 0, oldest = 0, log_file_id = 0;
 
 		MT_lock_set(&store->commit);
 
@@ -3922,7 +3922,9 @@ sql_trans_commit(sql_trans *tr)
 			}
 		}
 
-		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
+		if (!tr->parent &&
+			ATOMIC_GET(&store->nr_active) == 1 &&
+			(!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
 			ok = transaction_check_dependencies_and_removals(tr);
 			if (ok != LOG_OK) {
 				sql_trans_rollback(tr, true);
@@ -3932,12 +3934,17 @@ sql_trans_commit(sql_trans *tr)
 		}
 
 		/* log changes should only be done if there is something to log */
-		if (!tr->parent && tr->logchanges > 0) {
-			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
-			flush = (tr->logchanges > min_changes && list_empty(store->changes));
-			if (flush)
-				MT_lock_set(&store->flush);
-			ok = store->logger_api.log_tstart(store, flush);
+		const bool log = !tr->parent && tr->logchanges > 0;
+
+		if (log) {
+			const int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
+			flush = log && (tr->logchanges > min_changes && list_empty(store->changes));
+		}
+
+		if (flush)
+			MT_lock_set(&store->flush);
+		if (log) {
+			ok = store->logger_api.log_tstart(store, flush, &log_file_id); /* wal start */
 			/* log */
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 				sql_change *c = n->data;
@@ -3958,18 +3965,15 @@ sql_trans_commit(sql_trans *tr)
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
 			store->prev_oid = store->obj_id;
-			if (ok == LOG_OK && !flush)
-				ok = store->logger_api.log_tend(store); /* flush/sync */
-			store_lock(store);
-			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-			if (ok == LOG_OK && !flush)					/* mark as done */
-				ok = store->logger_api.log_tdone(store, commit_ts);
-		} else {
-			store_lock(store);
-			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-			if (tr->parent)
-				tr->parent->logchanges += tr->logchanges;
+
+
+			if (ok == LOG_OK)
+				ok = store->logger_api.log_tend(store); /* wal end */
 		}
+		store_lock(store);
+		commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
+		if (tr->parent)
+			tr->parent->logchanges += tr->logchanges;
 		oldest = tr->parent ? commit_ts : store_oldest(store);
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
@@ -3985,15 +3989,6 @@ sql_trans_commit(sql_trans *tr)
 			else
 				c->obj->new = 0;
 			c->ts = commit_ts;
-		}
-		/* when directly flushing: flush logger after changes got applied */
-		if (flush) {
-			if (ok == LOG_OK) {
-				ok = store->logger_api.log_tend(store); /* flush/sync */
-				if (ok == LOG_OK)
-					ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
-			}
-			MT_lock_unset(&store->flush);
 		}
 		/* propagate transaction dependencies to the storage only if other transactions are running */
 		if (ok == LOG_OK && !tr->parent && ATOMIC_GET(&store->nr_active) > 1) {
@@ -4026,6 +4021,17 @@ sql_trans_commit(sql_trans *tr)
 		}
 		tr->ts = commit_ts;
 		store_unlock(store);
+		/* flush the log structure */
+		if (log) {
+			if (!flush)
+				MT_lock_unset(&store->commit); /* release the commit log when flushing to disk */
+			if (ok == LOG_OK)
+				ok = store->logger_api.log_tflush(store, log_file_id, commit_ts); /* flush/sync */
+			if (!flush)
+				MT_lock_set(&store->commit); /* release the commit log when flushing to disk */
+			if (flush)
+				MT_lock_unset(&store->flush);
+		}
 		MT_lock_unset(&store->commit);
 		list_destroy(tr->changes);
 		tr->changes = NULL;
