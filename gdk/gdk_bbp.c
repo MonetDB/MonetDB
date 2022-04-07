@@ -396,6 +396,59 @@ static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
 
 static int
+vheapinit(BAT *b, const char *buf, bat bid, unsigned bbpversion, const char *filename, int lineno)
+{
+	int n = 0;
+	uint64_t free, size;
+	uint16_t storage;
+
+	(void) bbpversion;	/* could be used to implement compatibility */
+
+	size = 0;			      /* for GDKLIBRARY_HSIZE case */
+	storage = STORE_INVALID;	      /* for GDKLIBRARY_HSIZE case */
+	if (bbpversion <= GDKLIBRARY_HSIZE ?
+	    sscanf(buf,
+		   " %" SCNu64 " %" SCNu64 " %" SCNu16
+		   "%n",
+		   &free, &size, &storage, &n) < 3 :
+	    sscanf(buf,
+		   " %" SCNu64
+		   "%n",
+		   &free, &n) < 1) {
+		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
+		return -1;
+	}
+	b->tvheap = GDKmalloc(sizeof(Heap));
+	if (b->tvheap == NULL) {
+		TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
+		return -1;
+	}
+	if (b->ttype >= 0 &&
+	    ATOMstorage(b->ttype) == TYPE_str &&
+	    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
+		size = GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN;
+	else if (free < 512)
+		size = 512;
+	else
+		size = free;
+	*b->tvheap = (Heap) {
+		.free = (size_t) free,
+		.size = (size_t) size,
+		.base = NULL,
+		.storage = STORE_INVALID,
+		.cleanhash = true,
+		.newstorage = STORE_INVALID,
+		.dirty = false,
+		.parentid = bid,
+		.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
+	};
+	strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
+		      filename, ".theap", NULL);
+	ATOMIC_INIT(&b->tvheap->refs, 1);
+	return n;
+}
+
+static int
 heapinit(BAT *b, const char *buf,
 #ifdef GDKLIBRARY_HASHASH
 	 int *hashash,
@@ -485,7 +538,6 @@ heapinit(BAT *b, const char *buf,
 	}
 	b->ttype = t;
 	b->twidth = width;
-	b->tvarsized = var != 0;
 	b->tshift = ATOMelmshift(width);
 	assert_shift_width(b->tshift,b->twidth);
 	b->tnokey[0] = (BUN) nokey0;
@@ -524,60 +576,11 @@ heapinit(BAT *b, const char *buf,
 		b->tmaxpos = (BUN) maxpos;
 	else
 		b->tmaxpos = BUN_NONE;
-	return n;
-}
-
-static int
-vheapinit(BAT *b, const char *buf, bat bid, unsigned bbpversion, const char *filename, int lineno)
-{
-	int n = 0;
-	uint64_t free, size;
-	uint16_t storage;
-
-	(void) bbpversion;	/* could be used to implement compatibility */
-
-	size = 0;			      /* for GDKLIBRARY_HSIZE case */
-	storage = STORE_INVALID;	      /* for GDKLIBRARY_HSIZE case */
-	if (b->tvarsized && b->ttype != TYPE_void) {
-		if (bbpversion <= GDKLIBRARY_HSIZE ?
-		    sscanf(buf,
-			   " %" SCNu64 " %" SCNu64 " %" SCNu16
-			   "%n",
-			   &free, &size, &storage, &n) < 3 :
-		    sscanf(buf,
-			   " %" SCNu64
-			   "%n",
-			   &free, &n) < 1) {
-			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-			return -1;
-		}
-		b->tvheap = GDKmalloc(sizeof(Heap));
-		if (b->tvheap == NULL) {
-			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
-			return -1;
-		}
-		if (b->ttype >= 0 &&
-		    ATOMstorage(b->ttype) == TYPE_str &&
-		    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
-			size = GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN;
-		else if (free < 512)
-			size = 512;
-		else
-			size = free;
-		*b->tvheap = (Heap) {
-			.free = (size_t) free,
-			.size = (size_t) size,
-			.base = NULL,
-			.storage = STORE_INVALID,
-			.cleanhash = true,
-			.newstorage = STORE_INVALID,
-			.dirty = false,
-			.parentid = bid,
-			.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
-		};
-		strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
-			      filename, ".theap", NULL);
-		ATOMIC_INIT(&b->tvheap->refs, 1);
+	if (t && var) {
+		t = vheapinit(b, buf + n, bid, bbpversion, filename, lineno);
+		if (t < 0)
+			return t;
+		n += t;
 	}
 	return n;
 }
@@ -726,12 +729,6 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			     &Thashash,
 #endif
 			     bbpversion, bid, filename, lineno);
-		if (n < 0) {
-			BATdestroy(bn);
-			goto bailout;
-		}
-		nread += n;
-		n = vheapinit(bn, buf + nread, bid, bbpversion, filename, lineno);
 		if (n < 0) {
 			BATdestroy(bn);
 			goto bailout;
@@ -1862,18 +1859,18 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       BUNFMT " " OIDFMT " %zu %" PRIu64" %" PRIu64,
 		       bi->type >= 0 ? BATatoms[bi->type].name : ATOMunknown_name(bi->type),
 		       bi->width,
-		       b->tvarsized,
+		       bi->type == TYPE_void || bi->vh != NULL,
 		       (unsigned short) bi->sorted |
 			   ((unsigned short) bi->revsorted << 7) |
 			   ((unsigned short) bi->key << 8) |
-		           ((unsigned short) BATtdense(b) << 9) |
+		           ((unsigned short) BATtdensebi(bi) << 9) |
 			   ((unsigned short) bi->nonil << 10) |
 			   ((unsigned short) bi->nil << 11),
 		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[0],
 		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[1],
 		       b->tnosorted >= size ? 0 : b->tnosorted,
 		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
-		       b->tseqbase,
+		       bi->tseq,
 		       free,
 		       bi->minpos < size ? (uint64_t) bi->minpos : (uint64_t) oid_nil,
 		       bi->maxpos < size ? (uint64_t) bi->maxpos : (uint64_t) oid_nil);

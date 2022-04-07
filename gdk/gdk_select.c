@@ -79,7 +79,6 @@ virtualize(BAT *bn)
 		bn->theap->storage = bn->theap->newstorage = STORE_MEM;
 		bn->theap->size = 0;
 		bn->ttype = TYPE_void;
-		bn->tvarsized = true;
 		bn->twidth = 0;
 		bn->tshift = 0;
 	}
@@ -1741,7 +1740,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		BUN low = 0;
 		BUN high = bi.count;
 
-		if (BATtdense(b)) {
+		if (BATtdensebi(&bi)) {
 			/* positional */
 			/* we expect nonil to be set, in which case we
 			 * already know that we're not dealing with a
@@ -2231,15 +2230,15 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	t = ATOMtype(li.type);
 	t = ATOMbasetype(t);
 
-	if (l->tvarsized && li.type) {
-		assert(rl->tvarsized && rli.type);
-		assert(rh->tvarsized && rhi.type);
+	if (li.vh && li.type) {
+		assert(rli.vh && rli.type);
+		assert(rhi.vh && rhi.type);
 		lvars = li.vh->base;
 		rlvars = rli.vh->base;
 		rhvars = rhi.vh->base;
 	} else {
-		assert(!rl->tvarsized || !rli.type);
-		assert(!rh->tvarsized || !rhi.type);
+		assert(rli.vh == NULL);
+		assert(rhi.vh == NULL);
 		lvars = rlvars = rhvars = NULL;
 	}
 

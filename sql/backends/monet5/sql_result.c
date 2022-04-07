@@ -820,7 +820,7 @@ static int
 mvc_export_binary_bat(stream *s, BAT* bn)
 {
 	BATiter bni = bat_iterator(bn);
-	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bn->tvarsized;
+	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bni.vh;
 
 	if (mnstr_printf(s, /*JSON*/"{"
 					 "\"version\":1,"
@@ -841,7 +841,7 @@ mvc_export_binary_bat(stream *s, BAT* bn)
 					 bni.sorted, bni.revsorted,
 					 bni.key,
 					 bni.nonil,
-					 BATtdense(bn),
+					 BATtdensebi(&bni),
 					 bn->batCount,
 					 sendtheap ? (size_t)bni.count << bni.shift : 0,
 					 sendtvheap && bni.count > 0 ? bni.vhfree : 0) < 0) {

@@ -763,7 +763,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 				goto bailout;
 			}
 		}
-	} else if (bi->b->tvarsized) {
+	} else if (bi->b->tvheap) {
 		assert(bi->type != TYPE_void);
 		CAND_LOOP_IDX(ci, i) {
 			x = canditer_next(ci) - candoff;
@@ -1534,7 +1534,7 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 		return NULL;
 	}
 	if (ATOMstorage(tp) == TYPE_msk) {
-		if (BATtdense(b)) {
+		if (BATtdensebi(&bi)) {
 			/* dense to msk is easy: all values 1, except
 			 * maybe the first */
 			bn = BATconstant(ci.hseq, tp, &(msk){1}, ci.ncand,

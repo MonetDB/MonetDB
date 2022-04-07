@@ -106,7 +106,6 @@ VIEWcreate(oid seq, BAT *b)
 	 * accelerator data. We need copies because in case of a mark,
 	 * we are going to override a column with a void. */
 	bn->tkey = b->tkey;
-	bn->tvarsized = b->tvarsized;
 	bn->tseqbase = b->tseqbase;
 	bn->tsorted = b->tsorted;
 	bn->trevsorted = b->trevsorted;
@@ -169,9 +168,8 @@ VIEWcreate(oid seq, BAT *b)
  */
 
 gdk_return
-BATmaterialize(BAT *b)
+BATmaterialize(BAT *b, BUN cap)
 {
-	BUN cnt;
 	Heap *tail;
 	Heap *h, *vh = NULL;
 	BUN p, q;
@@ -179,17 +177,18 @@ BATmaterialize(BAT *b)
 
 	BATcheck(b, GDK_FAIL);
 	assert(!isVIEW(b));
+	if (cap == BUN_NONE || cap < BATcapacity(b))
+		cap = BATcapacity(b);
 	if (b->ttype != TYPE_void) {
-		/* no voids */
-		return GDK_SUCCEED;
+		/* no voids; just call BATextend to make sure of capacity */
+		return BATextend(b, cap);
 	}
 
-	cnt = BATcapacity(b);
 	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
 		return GDK_FAIL;
 	p = 0;
 	q = BATcount(b);
-	assert(cnt >= q - p);
+	assert(cap >= q - p);
 	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b));
 
 	/* cleanup possible ACC's */
@@ -203,7 +202,7 @@ BATmaterialize(BAT *b)
 		.dirty = true,
 	};
 	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
-	if (HEAPalloc(tail, cnt, sizeof(oid), 0) != GDK_SUCCEED) {
+	if (HEAPalloc(tail, cap, sizeof(oid), 0) != GDK_SUCCEED) {
 		GDKfree(tail);
 		return GDK_FAIL;
 	}
@@ -266,6 +265,7 @@ BATmaterialize(BAT *b)
 	BATsetdims(b, 0);
 	b->batDirtydesc = true;
 	BATsetcount(b, b->batCount);
+	BATsetcapacity(b, cap);
 	MT_lock_unset(&b->theaplock);
 	HEAPdecref(h, false);
 	if (vh)
