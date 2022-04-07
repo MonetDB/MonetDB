@@ -1051,7 +1051,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	while (o < ol && *o < b->hseqbase)
 		o++;
 	BATiter bi = bat_iterator(b);
-	if (b->tvarsized) {
+	if (bi.vh) {
 		for (BUN p = 0; p < bi.count; p++) {
 			if (o < ol && b->hseqbase + p == *o) {
 				do

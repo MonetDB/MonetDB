@@ -736,7 +736,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		/* b does not have storage, keep it that way if we can */
 		HASHdestroy(b);	/* we're not maintaining the hash here */
 		MT_lock_set(&b->theaplock);
-		if (BATtdense(n) && ci.tpe == cand_dense &&
+		if (BATtdensebi(&ni) && ci.tpe == cand_dense &&
 		    (BATcount(b) == 0 ||
 		     (BATtdense(b) &&
 		      b->tseqbase + BATcount(b) == n->tseqbase + ci.seq - hseq))) {
@@ -756,9 +756,8 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			goto doreturn;
 		}
 		/* we need to materialize b; allocate enough capacity */
-		b->batCapacity = BATcount(b) + ci.ncand;
 		MT_lock_unset(&b->theaplock);
-		if (BATmaterialize(b) != GDK_SUCCEED) {
+		if (BATmaterialize(b, BATcount(b) + ci.ncand) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
@@ -777,7 +776,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		if (ci.tpe == cand_dense) {
 			b->tnosorted = ci.seq - hseq <= n->tnosorted && n->tnosorted < ci.seq + ci.ncand - hseq ? n->tnosorted + hseq - ci.seq : 0;
 			b->tnorevsorted = ci.seq - hseq <= n->tnorevsorted && n->tnorevsorted < ci.seq + ci.ncand - hseq ? n->tnorevsorted + hseq - ci.seq : 0;
-			if (BATtdense(n)) {
+			if (BATtdensebi(&ni)) {
 				b->tseqbase = n->tseqbase + ci.seq - hseq;
 			}
 		} else {
@@ -813,7 +812,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			BATkey(b, false);
 		}
 		if (b->ttype != TYPE_void && b->tsorted && BATtdense(b) &&
-		    (!BATtdense(n) ||
+		    (!BATtdensebi(&ni) ||
 		     ci.tpe != cand_dense ||
 		     1 + *(oid *) BUNtloc(bi, last) != BUNtoid(n, ci.seq - hseq))) {
 			b->tseqbase = oid_nil;
@@ -948,7 +947,7 @@ BATdel(BAT *b, BAT *d)
 				p++;
 			}
 		}
-		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED)
+		if (BATtdense(b) && BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
 			return GDK_FAIL;
 		MT_lock_set(&b->theaplock);
 		if (o + c < b->hseqbase + BATcount(b)) {
@@ -991,7 +990,7 @@ BATdel(BAT *b, BAT *d)
 			GDKerror("cannot delete committed values\n");
 			return GDK_FAIL;
 		}
-		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED) {
+		if (BATtdense(b) && BATmaterialize(b, BUN_NONE) != GDK_SUCCEED) {
 			bat_iterator_end(&di);
 			return GDK_FAIL;
 		}
@@ -1139,7 +1138,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	bool anynil = false;
 	bool locked = false;
 
-	if (b->tvarsized) {
+	if (b->tvheap) {
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
 			if (positions) {
@@ -1471,7 +1470,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * properties */
 			bi.minpos = ni.minpos;
 			bi.maxpos = ni.maxpos;
-			if (BATtdense(n)) {
+			if (BATtdensebi(&ni)) {
 				/* replaced all of b with a dense sequence */
 				MT_lock_set(&b->theaplock);
 				BATtseqbase(b, ni.tseq);
@@ -1756,19 +1755,18 @@ BATslice(BAT *b, BUN l, BUN h)
 		BUN p = l;
 		BUN q = h;
 
-		bn = COLnew((oid) (b->hseqbase + low), BATtdense(b) ? TYPE_void : b->ttype, h - l, TRANSIENT);
+		bn = COLnew((oid) (b->hseqbase + low), BATtdensebi(&bi) ? TYPE_void : b->ttype, h - l, TRANSIENT);
 		if (bn == NULL)
 			goto doreturn;
 
-		if (bn->ttype == TYPE_void ||
-		    (!bn->tvarsized &&
-		     BATatoms[bn->ttype].atomPut == NULL &&
-		     BATatoms[bn->ttype].atomFix == NULL)) {
-			if (bn->ttype) {
-				memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
-				       (q - p) << bn->tshift);
-				bn->theap->dirty = true;
-			}
+		if (bn->ttype == TYPE_void) {
+			BATsetcount(bn, h - l);
+		} else if (bn->tvheap == NULL &&
+			   BATatoms[bn->ttype].atomFix == NULL) {
+			assert(BATatoms[bn->ttype].atomPut == NULL);
+			memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
+			       (q - p) << bn->tshift);
+			bn->theap->dirty = true;
 			BATsetcount(bn, h - l);
 		} else {
 			for (; p < q; p++) {
@@ -1806,7 +1804,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	bn->tnosorted = 0;
 	bn->tnokey[0] = bn->tnokey[1] = 0;
 	bni = bat_iterator_nolock(bn);
-	if (BATtdense(b)) {
+	if (BATtdensebi(&bi)) {
 		BATtseqbase(bn, (oid) (bi.tseq + low));
 	} else if (bn->ttype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
@@ -2512,7 +2510,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		assert(g->ttype == TYPE_oid);
 		grps = (oid *) Tloc(g, 0);
 		prev = grps[0];
-		if (BATmaterialize(bn) != GDK_SUCCEED)
+		if (BATmaterialize(bn, BUN_NONE) != GDK_SUCCEED)
 			goto error;
 		for (r = 0, p = 1, q = BATcount(g); p < q; p++) {
 			if (grps[p] != prev) {
@@ -2559,7 +2557,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		if ((reverse != nilslast ||
 		     (reverse ? !bn->trevsorted : !bn->tsorted)) &&
-		    (BATmaterialize(bn) != GDK_SUCCEED ||
+		    (BATmaterialize(bn, BUN_NONE) != GDK_SUCCEED ||
 		     do_sort(Tloc(bn, 0),
 			     ords,
 			     bn->tvheap ? bn->tvheap->base : NULL,
@@ -2921,7 +2919,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 	t = ATOMbasetype(bi.type);
 	switch (t) {
 	case TYPE_void:
-		cnt = ci.ncand * BATtdense(b);
+		cnt = ci.ncand * BATtdensebi(&bi);
 		break;
 	case TYPE_msk:
 		cnt = ci.ncand;
@@ -2990,7 +2988,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 		cmp = ATOMcompare(t);
 		if (nil == NULL) {
 			cnt = ci.ncand;
-		} else if (b->tvarsized) {
+		} else if (b->tvheap) {
 			base = b->tvheap->base;
 			CAND_LOOP(&ci)
 				cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]) != 0;
