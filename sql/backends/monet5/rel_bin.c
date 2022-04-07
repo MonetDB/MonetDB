@@ -4285,11 +4285,11 @@ dump_code(int starting_point)
 	dump_code_state.pos = stop;
 }
 
-// This is basically a long list of reasons not to use the new direct append
+// This is basically a long list of reasons not to use the new
 // code. The idea is that we'll gradually add support for more cases and shorten
 // this list until it disappears.
 static sql_exp*
-can_use_directappend(sql_rel *rel)
+can_use_copyparpipe(sql_rel *rel)
 {
 	if (rel->flag & UPD_NO_CONSTRAINT) {
 		// "no constraint" mode.. don't know what it is but it sounds scary
@@ -4439,65 +4439,6 @@ can_use_directappend(sql_rel *rel)
 	return copy_from;
 }
 
-// Temporarily emit the MAL to call to sql.copy_from and aggr.count directly
-// from rel2bin_insert. This needs to move to rel2bin_exp.
-static stmt *
-rel2bin_directappend(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
-{
-	(void)be;
-	(void)rel;
-	(void)refs;
-	(void)copyfrom;
-	mvc *mvc = be->mvc;
-	MalBlkPtr mb = be->mb;
-
-
-	if (parallel_copy_enabled())
-		return rel2bin_copyparpipe(be, rel, refs, copyfrom);
-
-	// We're about to emit a custom sql.copy_from invocation.
-	// Temporarily, until we learn how to do that properly.
-
-	// First emit statements for all copyfrom's arguments.
-	list *args = copyfrom->l;
-	list *l = sa_list(mvc->sa);
-	for (node *n = args->h; n; n = n->next) {
-		sql_exp *arg = n->data;
-		stmt *arg_stmt = exp_bin(be, arg, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		list_append(l, arg_stmt);
-	}
-
-	// Then emit the call. Maybe there's a stmt_function for that..
-	InstrPtr append_instr = newFcnCallArgs(mb, sqlRef, append_fromRef, 100);
-	setDestType(mb, append_instr, newBatType(TYPE_oid));
-	for (node *n = l->h; n; n = n->next) {
-		stmt *s = n->data;
-		int varnr = s->nr;
-		append_instr = pushArgument(mb, append_instr, varnr);
-	}
-
-	// Then we manually count.
-	InstrPtr count_instr = newFcnCallArgs(be->mb, aggrRef, countRef, 1);
-	count_instr = pushArgument(be->mb, count_instr, getDestVar(append_instr));
-
-	int destvar = getDestVar(count_instr);
-	stmt *s = stmt_none(be);
-	s->nr = destvar;
-
-	// I'm assuming that attaching the stmt list to op4.lval
-	// will make some else free the arg_stmt's we created here.
-	s->op4.lval = l;
-
-	// Accumulate row counts.
-	add_to_rowcount_accumulator(be, s->nr);
-
-	// dump_code(-1);
-	return s;
-
-	// snprintf(be->mvc->errstr, sizeof(be->mvc->errstr), "banana");
-	// return NULL;
-}
-
 static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
@@ -4506,9 +4447,11 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	// If can_use_appendfrom doesn't return NULL, short circuit to
 	// the temporary dedicated code generator
-	sql_exp *copyfrom = can_use_directappend(rel);
-	if (copyfrom != NULL) {
-		return rel2bin_directappend(be, rel, refs, copyfrom);
+	if (parallel_copy_enabled()) {
+		sql_exp *copyfrom = can_use_copyparpipe(rel);
+		if (copyfrom != NULL) {
+			return rel2bin_copyparpipe(be, rel, refs, copyfrom);
+		}
 	}
 
 	mvc *sql = be->mvc;
