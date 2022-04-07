@@ -400,13 +400,13 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tvarsized", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) (bi.type == TYPE_void || bi.vh != NULL), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnosorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnosorted, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nosorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnorevsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnorevsorted, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.norevsorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnokey[0]", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnokey[0], buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nokey[0], buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnokey[1]", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnokey[1], buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nokey[1], buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnonil", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(bi.nonil, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnil", false) != GDK_SUCCEED ||

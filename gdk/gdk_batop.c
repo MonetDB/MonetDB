@@ -432,12 +432,12 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		b->tnil = ni->nil;
 		b->tnonil = ni->nonil;
 		b->tsorted = ni->sorted;
-		b->tnosorted = ni->b->tnosorted;
+		b->tnosorted = ni->nosorted;
 		b->trevsorted = ni->revsorted;
-		b->tnorevsorted = ni->b->tnorevsorted;
+		b->tnorevsorted = ni->norevsorted;
 		b->tkey = ni->key;
-		b->tnokey[0] = ni->b->tnokey[0];
-		b->tnokey[1] = ni->b->tnokey[1];
+		b->tnokey[0] = ni->nokey[0];
+		b->tnokey[1] = ni->nokey[1];
 		b->tminpos = ni->minpos;
 		b->tmaxpos = ni->maxpos;
 		b->tunique_est = ni->unique_est;
@@ -772,8 +772,8 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		b->tnonil = ni.nonil;
 		b->tnil = ni.nil && ci.ncand == BATcount(n);
 		if (ci.tpe == cand_dense) {
-			b->tnosorted = ci.seq - hseq <= n->tnosorted && n->tnosorted < ci.seq + ci.ncand - hseq ? n->tnosorted + hseq - ci.seq : 0;
-			b->tnorevsorted = ci.seq - hseq <= n->tnorevsorted && n->tnorevsorted < ci.seq + ci.ncand - hseq ? n->tnorevsorted + hseq - ci.seq : 0;
+			b->tnosorted = ci.seq - hseq <= ni.nosorted && ni.nosorted < ci.seq + ci.ncand - hseq ? ni.nosorted + hseq - ci.seq : 0;
+			b->tnorevsorted = ci.seq - hseq <= ni.norevsorted && ni.norevsorted < ci.seq + ci.ncand - hseq ? ni.norevsorted + hseq - ci.seq : 0;
 			if (BATtdensebi(&ni)) {
 				b->tseqbase = n->tseqbase + ci.seq - hseq;
 			}
@@ -783,8 +783,8 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 		b->tkey = ni.key;
 		if (ci.ncand == BATcount(n)) {
-			b->tnokey[0] = n->tnokey[0];
-			b->tnokey[1] = n->tnokey[1];
+			b->tnokey[0] = ni.nokey[0];
+			b->tnokey[1] = ni.nokey[1];
 		} else {
 			b->tnokey[0] = b->tnokey[1] = 0;
 		}
@@ -1780,19 +1780,19 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->trevsorted = bi.revsorted;
 		bn->tkey = bi.key;
 		bn->tnonil = bi.nonil;
-		if (b->tnosorted > l && b->tnosorted < h)
-			bn->tnosorted = b->tnosorted - l;
+		if (bi.nosorted > l && bi.nosorted < h)
+			bn->tnosorted = bi.nosorted - l;
 		else
 			bn->tnosorted = 0;
-		if (b->tnorevsorted > l && b->tnorevsorted < h)
-			bn->tnorevsorted = b->tnorevsorted - l;
+		if (bi.norevsorted > l && bi.norevsorted < h)
+			bn->tnorevsorted = bi.norevsorted - l;
 		else
 			bn->tnorevsorted = 0;
-		if (b->tnokey[0] >= l && b->tnokey[0] < h &&
-		    b->tnokey[1] >= l && b->tnokey[1] < h &&
-		    b->tnokey[0] != b->tnokey[1]) {
-			bn->tnokey[0] = b->tnokey[0] - l;
-			bn->tnokey[1] = b->tnokey[1] - l;
+		if (bi.nokey[0] >= l && bi.nokey[0] < h &&
+		    bi.nokey[1] >= l && bi.nokey[1] < h &&
+		    bi.nokey[0] != bi.nokey[1]) {
+			bn->tnokey[0] = bi.nokey[0] - l;
+			bn->tnokey[1] = bi.nokey[1] - l;
 		} else {
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}

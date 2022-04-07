@@ -162,7 +162,7 @@ log_find(BAT *b, BAT *d, int val)
 static log_bid
 internal_find_bat(logger *lg, log_id id, int tid)
 {
-	BATiter cni = bat_iterator_nolock(lg->catalog_id);
+	BATiter cni = bat_iterator(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
@@ -172,6 +172,7 @@ internal_find_bat(logger *lg, log_id id, int tid)
 				oid pos = p;
 				if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 					MT_rwlock_rdunlock(&cni.b->thashlock);
+					bat_iterator_end(&cni);
 					return *(log_bid *) Tloc(lg->catalog_bid, p);
 				}
 			}
@@ -186,11 +187,13 @@ internal_find_bat(logger *lg, log_id id, int tid)
 			}
 			if (cp != BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
+				bat_iterator_end(&cni);
 				return *(log_bid *) Tloc(lg->catalog_bid, cp);
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
+	bat_iterator_end(&cni);
 	return 0;
 }
 

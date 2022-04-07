@@ -59,7 +59,7 @@
 #include "optimizer_private.h"
 
 // keep the optimizer list sorted
-struct{
+static struct {
 	str nme;
 	str (*fcn)();
 	int calls;
@@ -75,16 +75,16 @@ struct{
 	{"dataflow", &OPTdataflowImplementation,0,0},
 	{"deadcode", &OPTdeadcodeImplementation,0,0},
 	{"defaultfast", &OPTdefaultfastImplementation,0,0},
+	{"dict", &OPTdictImplementation,0,0},
 	{"emptybind", &OPTemptybindImplementation,0,0},
 	{"evaluate", &OPTevaluateImplementation,0,0},
+	{"for", &OPTforImplementation,0,0},
 	{"garbageCollector", &OPTgarbageCollectorImplementation,0,0},
 	{"generator", &OPTgeneratorImplementation,0,0},
 	{"inline", &OPTinlineImplementation,0,0},
 	{"jit", &OPTjitImplementation,0,0},
 	{"json", &OPTjsonImplementation,0,0},
 	{"mask", &OPTmaskImplementation,0,0},
-	{"for", &OPTforImplementation,0,0},
-	{"dict", &OPTdictImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},
 	{"mergetable", &OPTmergetableImplementation,0,0},
 	{"minimalfast", &OPTminimalfastImplementation,0,0},
@@ -104,7 +104,8 @@ struct{
 	{"wlc", &OPTwlcImplementation,0,0},
 	{0,0,0,0}
 };
-int codehash[256];
+static int codehash[256];
+static MT_Lock codeslock = MT_LOCK_INITIALIZER(codeslock);
 
 static
 void fillcodehash(void)
@@ -175,10 +176,11 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		if (codes[i].nme[0] == *id && strcmp(codes[i].nme, getFunctionId(p)) == 0){
 			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, p);
 			clk = GDKusec() - clk;
+			MT_lock_set(&codeslock);
 			codes[i].timing += clk;
 			codes[i].calls++;
+			MT_lock_unset(&codeslock);
 			p= pushLng(mb, p, clk);
-			codes[i].calls++;
 			if (msg) {
 				str newmsg = createException(MAL, getFunctionId(p), SQLSTATE(42000) "Error in optimizer %s: %s", getFunctionId(p), msg);
 				freeException(msg);
@@ -216,16 +218,19 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BBPreclaim(t);
 		throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	MT_lock_set(&codeslock);
 	for( i= 0; codes[i].nme; i++){
 		if (BUNappend(n, codes[i].nme, false) != GDK_SUCCEED ||
 			BUNappend(c, &codes[i].calls, false) != GDK_SUCCEED ||
 			BUNappend(t, &codes[i].timing, false) != GDK_SUCCEED) {
+			MT_lock_unset(&codeslock);
 			BBPreclaim(n);
 			BBPreclaim(c);
 			BBPreclaim(t);
 			throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
+	MT_lock_unset(&codeslock);
 	*nme = n->batCacheid;
 	BBPkeepref(n);
 	*cnt = c->batCacheid;
