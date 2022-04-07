@@ -686,7 +686,8 @@ def CreateHtmlIndex (env, ssout, sserr, *body) :
                 header = Element('a',
                                  {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
                                   'target': '%s_%s_body' % (DISTVER, TSTDIR),
-                                  'class': 'black'},
+                                  'class': 'black',
+                                  'title': TSTDIR},
                                  header)
             th = Element('th', {'class': 'header'}, header)
             if os.path.exists('SingleServer.out.html'):
@@ -921,7 +922,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
         bugno = res.group('bugno')
         text.addchildren([
                 Text(' ('),
-                Element('a', {'href': 'http://bugs.monetdb.org/%s' % bugno,
+                Element('a', {'href': 'https://github.com/MonetDB/MonetDB/issues/%s' % bugno,
                               'target': '_blank'},
                         Text('Bugzilla')),
                 Text(')')])
@@ -1049,7 +1050,8 @@ def AddHref (href, target, linktext, diff) :
         klass = 'warning'
     else:
         klass = 'good'
-    a = Element('a', {'href': href, 'target': target, 'class': klass},
+    a = Element('a', {'href': href, 'target': target, 'class': klass,
+                      'title': linktext},
                 Text(linktext))
     if klass == 'good':
         return [Text('('), a, Text(')')]
@@ -2266,7 +2268,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                 res = bugre.search(TST)
                 if res is not None:
                     bugno = res.group('bugno')
-                    tst = '%s<a target="_blank" href="http://bugs.monetdb.org/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
+                    tst = '%s<a target="_blank" href="https://github.com/MonetDB/MonetDB/issues/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
                 else:
                     tst = TST
         out = openutf8('%s.test.out' % TST).read()
@@ -3285,7 +3287,7 @@ if 'HTMLTITLE' in os.environ:
 else:
     HTMLTITLE = "{} results on {} ({})".format(THISFILE, HOST, DISTVER)       #"+ ("`date`")"
 
-URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
+URLPREFIX = 'https://dev.monetdb.org/hg/MonetDB/file/'
 
 par = {}
 dft = {}

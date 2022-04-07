@@ -940,14 +940,14 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tsorted = bi.sorted;
 		bn->trevsorted = bi.revsorted;
 		bn->batDirtydesc = true;
-		bn->tnorevsorted = b->tnorevsorted;
-		if (b->tnokey[0] != b->tnokey[1]) {
-			bn->tnokey[0] = b->tnokey[0];
-			bn->tnokey[1] = b->tnokey[1];
+		bn->tnorevsorted = bi.norevsorted;
+		if (bi.nokey[0] != bi.nokey[1]) {
+			bn->tnokey[0] = bi.nokey[0];
+			bn->tnokey[1] = bi.nokey[1];
 		} else {
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
-		bn->tnosorted = b->tnosorted;
+		bn->tnosorted = bi.nosorted;
 		bn->tnonil = bi.nonil;
 		bn->tnil = bi.nil;
 		bn->tminpos = bi.minpos;
@@ -962,19 +962,19 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			BATkey(bn, true);
 		bn->tnonil = bi.nonil;
 		bn->tnil = bi.nil;
-		if (b->tnosorted > 0 && b->tnosorted < h)
-			bn->tnosorted = b->tnosorted;
+		if (bi.nosorted > 0 && bi.nosorted < h)
+			bn->tnosorted = bi.nosorted;
 		else
 			bn->tnosorted = 0;
-		if (b->tnorevsorted > 0 && b->tnorevsorted < h)
-			bn->tnorevsorted = b->tnorevsorted;
+		if (bi.norevsorted > 0 && bi.norevsorted < h)
+			bn->tnorevsorted = bi.norevsorted;
 		else
 			bn->tnorevsorted = 0;
-		if (b->tnokey[0] < h &&
-		    b->tnokey[1] < h &&
-		    b->tnokey[0] != b->tnokey[1]) {
-			bn->tnokey[0] = b->tnokey[0];
-			bn->tnokey[1] = b->tnokey[1];
+		if (bi.nokey[0] < h &&
+		    bi.nokey[1] < h &&
+		    bi.nokey[0] != bi.nokey[1]) {
+			bn->tnokey[0] = bi.nokey[0];
+			bn->tnokey[1] = bi.nokey[1];
 		} else {
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}

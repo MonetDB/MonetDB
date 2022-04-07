@@ -963,6 +963,8 @@ typedef struct BATiter {
 	int8_t type;
 	oid tseq;
 	BUN hfree, vhfree;
+	BUN nokey[2];
+	BUN nosorted, norevsorted;
 	BUN minpos, maxpos;
 	double unique_est;
 	bool key:1,
@@ -1009,6 +1011,10 @@ bat_iterator_nolock(BAT *b)
 				  (size_t) b->batCount << b->tshift :
 				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
+			.nokey[0] = b->tnokey[0],
+			.nokey[1] = b->tnokey[1],
+			.nosorted = b->tnosorted,
+			.norevsorted = b->tnorevsorted,
 			.minpos = isview ? BUN_NONE : b->tminpos,
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,

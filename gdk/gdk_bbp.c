@@ -1866,10 +1866,10 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		           ((unsigned short) BATtdensebi(bi) << 9) |
 			   ((unsigned short) bi->nonil << 10) |
 			   ((unsigned short) bi->nil << 11),
-		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[0],
-		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[1],
-		       b->tnosorted >= size ? 0 : b->tnosorted,
-		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
+		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[0],
+		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[1],
+		       bi->nosorted >= size ? 0 : bi->nosorted,
+		       bi->norevsorted >= size ? 0 : bi->norevsorted,
 		       bi->tseq,
 		       free,
 		       bi->minpos < size ? (uint64_t) bi->minpos : (uint64_t) oid_nil,
@@ -3354,6 +3354,7 @@ BBPquickdesc(bat bid)
 		}
 		return NULL;
 	}
+	BBPspin(bid, __func__, BBPWAITING);
 	b = BBP_desc(bid);
 	if (b && b->ttype < 0) {
 		const char *aname = ATOMunknown_name(b->ttype);
