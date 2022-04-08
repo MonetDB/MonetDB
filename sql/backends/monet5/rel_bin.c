@@ -3952,6 +3952,7 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 			if (need_distinct(e) && !global)
 				return false;
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "avg") == 0 ||
 			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 /*||
 			    strcmp(sf->func->base.name, "prod") == 0*/)) {
 				return false;
@@ -3992,23 +3993,30 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 		*aggrresults = sa_list(be->mvc->sa);
 		for( node *n = rel->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
+			sql_subfunc *sf = e->f;
 			sql_subtype *t = exp_subtype(e);
 			int tt = t->type->localtype;
-			stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)));
-			InstrPtr q;
-			/*
-			q = newStmt(be->mb, batRef, newRef);
 
-			if (q == NULL)
+			stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)));
+			if (!cc)
 				return NULL;
-			setVarType(be->mb, getArg(q, 0), newBatType(tt));
-			q = pushType(be->mb, q, tt);
-			append(shared, q->argv);
-			*/
 			append(shared, &cc->nr);
 
-			q = newAssignment(be->mb);
-			if (q == NULL)
+			if (e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0) {
+				/* remainder and count */
+				cc = const_column(be, stmt_atom_lng(be, 0));
+				if (!cc)
+					return NULL;
+				append(shared, &cc->nr);
+
+				cc = const_column(be, stmt_atom_lng(be, 0));
+				if (!cc)
+					return NULL;
+				append(shared, &cc->nr);
+			}
+
+			InstrPtr q = newAssignment(be->mb);
+			if (!q)
 				return NULL;
 			q = pushNil(be->mb, q, tt);
 			append(*aggrresults, q->argv);
@@ -4018,7 +4026,6 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				sql_exp *a = el->h->data;
 				sql_subtype *t = exp_subtype(a);
 				int tt = t->type->localtype;
-				//InstrPtr q = newStmt(be->mb, batRef, newRef);
 				InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
 				int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, e);
 				if (estimate<0) {
@@ -4155,6 +4162,7 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 				n = n->next, m = m->next, o = o->next) {
 			/* min -> min, max -> max, sum -> sum, count -> sum */
 			sql_exp *e = n->data;
+			sql_subtype *tpe = exp_subtype(e);
 			sql_subfunc *sf = e->f;
 			int *v = m->data;
 			stmt *i = o->data;
@@ -4169,8 +4177,10 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 
 			assert(e->type == e_aggr);
 			char *name = NULL;
+			int avg = 0;
 			if (strcmp(sf->func->base.name, "min") == 0 ||
 			    strcmp(sf->func->base.name, "max") == 0 ||
+			    (avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
 			    strcmp(sf->func->base.name, "sum") == 0) {
 				name = sf->func->base.name;
 			} else {
@@ -4178,11 +4188,26 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 				name = "sum";
 			}
 			InstrPtr q = newStmt(be->mb, getName("lockedaggr"), getName(name));
+			if (avg) {
+				if (!EC_APPNUM(tpe->type->eclass)) {
+					m = m->next;
+					q = pushReturn(be->mb, q, *(int*)m->data);
+				}
+				m = m->next;
+				q = pushReturn(be->mb, q, *(int*)m->data);
+				q->inout = 0;
+			}
 			q = pushArgument(be->mb, q, getArg(pp->q, 2));
 			q = pushArgument(be->mb, q, i->nr);
+			if (avg) {
+				/* remainder and count */
+				q = pushArgument(be->mb, q, getArg(i->q, 1));
+				if (!EC_APPNUM(tpe->type->eclass))
+					q = pushArgument(be->mb, q, getArg(i->q, 2));
+			}
 			getArg(q, 0) = *v;
 			stmt *s = stmt_none(be);
-			s->op4.typeval = *exp_subtype(e);
+			s->op4.typeval = *tpe;
 			s->nr = *v;
 			s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
 			append(shared, s);
@@ -4276,26 +4301,9 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 }
 
 static sql_rel*
-rel_is_pp_possible(visitor *v, sql_rel *rel)
-{
-	if (is_set(rel->op) && rel->op != op_union && !is_join(rel->op) && !is_semi(rel->op))
-		*((int*)v->data) = 1;
-	return rel;
-}
-
-static bool
-rel_pp_possible(mvc *sql, sql_rel *rel)
-{
-	int set = 0;
-	visitor v = { .sql = sql, .data = &set };
-	rel = rel_visitor_bottomup(&v, rel, &rel_is_pp_possible);
-	return set;
-}
-
-static sql_rel*
 rel_is_not_pp_safe(visitor *v, sql_rel *rel)
 {
-	if (/*rel_is_ref(rel) ||*/ is_groupby(rel->op) || rel->op == op_table)
+	if (is_groupby(rel->op) || rel->op == op_table)
 		*((int*)v->data) = 1;
 	return rel;
 }
@@ -4310,12 +4318,9 @@ pp_can_not_start(mvc *sql, sql_rel *rel)
 }
 
 static bool
-rel_groupby_pp(mvc *sql, sql_rel *rel, bool _2phases)
+rel_groupby_pp(sql_rel *rel, bool _2phases)
 {
 	if (!is_groupby(rel->op))
-		return false;
-
-	if (0 && rel_pp_possible(sql, rel))
 		return false;
 
 	for(node *n = rel->exps->h; n; n = n->next ) {
@@ -4325,6 +4330,7 @@ rel_groupby_pp(mvc *sql, sql_rel *rel, bool _2phases)
 			sql_subfunc *sf = e->f;
 
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "avg") == 0 ||
 			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 /*||
 			    strcmp(sf->func->base.name, "prod") == 0*/)) {
 				return false;
@@ -4347,7 +4353,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
-	bool df2 = (SQLrunning && rel->parallel && rel_groupby_pp(be->mvc, rel, _2phases));
+	bool df2 = (SQLrunning && rel->parallel && rel_groupby_pp(rel, _2phases));
 	int neededpp = rel->partition && get_need_pipeline(be);
 
 //	if (rel_single_distinct(rel))
@@ -4453,7 +4459,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	aggrs = rel->exps;
 	cursub = stmt_list(be, l);
 
-	assert(!aggrresults || list_length(aggrresults) == list_length(aggrs) + list_length(rel->r));
+	//assert(!aggrresults || list_length(aggrresults) == list_length(aggrs) + list_length(rel->r));
 	for( n = aggrs->h; n; n = n->next ) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;

@@ -298,6 +298,72 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#define avg_aggr(T)  \
+	if (type == TYPE_##T) {								\
+		T val = *getArgReference_##T(stk, pci, 3);		\
+		lng cnt = *getArgReference_lng(stk, pci, 4);	\
+		if (cnt > 0 && !is_##T##_nil(val) && BATcount(b)) {		\
+			T *t = Tloc(b, 0);							\
+			lng *tcnt = Tloc(c, 0);						\
+			if (is_##T##_nil(t[0])) {					\
+				t[0] = val;								\
+				tcnt[0] = cnt;							\
+			} else {									\
+			    dbl tt = (tcnt[0] + cnt);				\
+				t[0] = (t[0]*((dbl)tcnt[0]/tt)) + (val*((dbl)cnt/tt));	\
+				tcnt[0] += cnt;							\
+			}											\
+			b->tnil = false;							\
+			b->tnonil = true;							\
+		} else if (cnt > 0 && BATcount(b) == 0) {		\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)\
+				err = createException(SQL, "aggr.avg",	\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}												\
+	}
+
+static str
+LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat *rcnt = getArgReference_bat(stk, pci, 1);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+	int type = getArgType(mb, pci, 3);
+	str err = NULL;
+
+	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
+			type != TYPE_flt && type != TYPE_dbl)
+			return createException(SQL, "aggr.sum",	"Wrong input type (%d)", type);
+
+	pipeline_lock(p);
+	if (*res) {
+		BAT *b = BATdescriptor(*res);
+		BAT *c = BATdescriptor(*rcnt);
+
+		assert(b->ttype == TYPE_dbl);
+		avg_aggr(hge);
+		avg_aggr(lng);
+		avg_aggr(int);
+		avg_aggr(sht);
+		avg_aggr(bte);
+		avg_aggr(flt);
+		avg_aggr(dbl);
+		if (!err) {
+			BATnegateprops(b);
+			BBPkeepref(b);
+		} else
+			BBPunfix(b->batCacheid);
+	} else {
+			err = createException(SQL, "aggr.avg",	"Result is not initialized");
+	}
+	pipeline_unlock(p);
+	if (err)
+		return err;
+	return MAL_SUCCEED;
+}
+
 #define vmin(a,b) ((cmp(a,b) < 0)?a:b)
 #define vmax(a,b) ((cmp(a,b) > 0)?a:b)
 
@@ -2598,6 +2664,7 @@ ALGmaxany(ptr result, const bat *bid)
 static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return next atomic number [0..n>", args(1,2, arg("", int), arg("pipeline", ptr))),
  pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "sum values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
+ pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,5, sharedbatargany("", 1), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("cnt", lng))),
  pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",3), arg("pipeline", ptr), batarg("left",oid),batargany("right",3))),

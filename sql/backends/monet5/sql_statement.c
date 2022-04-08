@@ -3719,8 +3719,13 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
 		complex_aggr = true;
+
+	if (avg && pipeline)
+		mod = putName("batcalc");
+	/*
 	if (restype == TYPE_dbl)
 		avg = 0;
+		*/
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
 	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
 					strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
@@ -3747,7 +3752,8 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 			return NULL;
 		setVarType(mb, getArg(q, 0), newBatType(restype));
 		if (avg) { /* for avg also return rest and count */
-			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
+			if (restype != TYPE_dbl)
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 		}
 	} else {
@@ -3758,7 +3764,8 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		if (complex_aggr) {
 			setVarType(mb, getArg(q, 0), (grp|| (pipeline && nrargs>1))?newBatType(restype):restype);
 			if (avg) { /* for avg also return rest and count */
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
+				if (restype != TYPE_dbl)
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 			}
 		}
@@ -3799,7 +3806,7 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	if (grp) {
 		q = pushArgument(mb, q, grp->nr);
 		q = pushArgument(mb, q, ext->nr);
-		if (avg) /* push nil candidates */
+		if (!pipeline && avg) /* push nil candidates */
 			q = pushNil(mb, q, TYPE_bat);
 		if (q == NULL)
 			return NULL;
@@ -3810,7 +3817,7 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		q = pushBit(mb, q, no_nil);
 	} else if (!nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
-	} else if (avg) { /* push candidates */
+	} else if (avg && !pipeline) { /* push candidates */
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, no_nil);
 	}

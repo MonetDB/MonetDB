@@ -59,6 +59,7 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
 #define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .shared=true, .inout=true }
+#define sharedbatarg(n,t){ /*.name=n,*/ .type=# t, .isbat=true, .shared=true, .inout=true }
 
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	//char *name;
@@ -110,6 +111,7 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 #define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
 
 #define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any, .shared=true, .inout=true }
+#define sharedbatarg(n,t){ /*.name=n,*/ .type=# t, .isbat=true, .shared=true, .inout=true }
 
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	uint16_t type:8,
