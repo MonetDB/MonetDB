@@ -300,6 +300,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("REMOTE", REMOTE);
 	failed += keywords_insert("MERGE", MERGE);
 	failed += keywords_insert("REPLICA", REPLICA);
+	failed += keywords_insert("UNLOGGED", UNLOGGED);
 	failed += keywords_insert("TO", TO);
 	failed += keywords_insert("UNION", UNION);
 	failed += keywords_insert("EXCEPT", EXCEPT);

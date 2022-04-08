@@ -684,7 +684,7 @@ CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMP TEMPORARY MERGE REMOTE REPLICA
+%token TEMP TEMPORARY MERGE REMOTE REPLICA UNLOGGED
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
@@ -1552,6 +1552,19 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, $7);
 	  append_list(l, $8);
+	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
+	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  UNLOGGED TABLE if_not_exists qname table_content_source
+	{ int commit_action = CA_COMMIT, tpe = SQL_UNLOGGED_TABLE;
+	  dlist *l = L();
+
+	  append_int(l, tpe);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
+	  append_int(l, commit_action);
+	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
@@ -5468,6 +5481,7 @@ non_reserved_word:
 | STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 | TEMP		{ $$ = sa_strdup(SA, "temp"); }
 | TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
+| UNLOGGED	{ $$ = sa_strdup(SA, "unlogged"); }
 | sqlTEXT	{ $$ = sa_strdup(SA, "text"); }
 | SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
