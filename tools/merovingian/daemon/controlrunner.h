@@ -11,7 +11,7 @@
 
 #include "stream.h"
 
-char control_authorise(const char *host, const char *chal, const char *algo, const char *passwd, stream *fout);
+bool control_authorise(const char *host, const char *chal, const char *algo, const char *passwd, stream *fout);
 void control_handleclient(const char *host, int sock, stream *fdin, stream *fdout);
 void *controlRunner(void *d);
 

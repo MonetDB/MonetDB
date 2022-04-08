@@ -52,7 +52,6 @@ typedef struct expression {
 	 nulls_last:1,	/* return null after all other rows */
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
 	 distinct:1,
-	 argument_independence:1, /* for a function expression, the arguments are independent of the inner project relation. */
 
 	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
 	 need_no_nil:1,
@@ -299,15 +298,12 @@ typedef struct relation {
 
 	 parallel:1,		/* parallel block */
 	 partition:2,		/* partitioned using table slices (1 left/2 right) */
-	 spb:1,				/* start a parallel block */
-
+	 spb:1;				/* start a parallel block */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
-	 * All bits are used by rel_unnest modifiers and always reset after.
-	 * The first bit is also used by rel_dce and rel_merge_select_rse optimizers.
-	 * The third bit is used by rel_remote_func only and it's not reset.
+	 * The list is kept at rel_optimizer_private.h Please update it accordingly
 	 */
-	 used:3;
+	uint8_t used;
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

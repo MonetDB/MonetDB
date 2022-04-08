@@ -897,7 +897,7 @@ static inline sql_rel *
 rel_merge_select_rse(visitor *v, sql_rel *rel)
 {
 	/* only execute once per select */
-	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps && !rel->used) {
+	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps && !is_rel_merge_select_rse_used(rel->used)) {
 		node *n, *o;
 		list *nexps = new_exp_list(v->sql->sa);
 
@@ -920,7 +920,7 @@ rel_merge_select_rse(visitor *v, sql_rel *rel)
 			}
 		}
 		rel->exps = nexps;
-		rel->used = 1;
+		rel->used |= rel_merge_select_rse_used;
 	}
 	return rel;
 }
@@ -946,8 +946,6 @@ rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *re
 {
 	v->data = &gp->opt_cycle;
 	rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup_);
-	if (gp->opt_cycle == 1)
-		rel = rel_visitor_bottomup(v, rel, &rewrite_reset_used); /* reset used flag, used by rel_merge_select_rse */
 	v->data = gp;
 	return rel;
 }

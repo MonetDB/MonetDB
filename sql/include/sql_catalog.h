@@ -766,9 +766,11 @@ extern node *list_find_base_id(list *l, sqlid id);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
 extern sql_key *sql_trans_find_key(sql_trans *tr, sqlid id);
+extern sql_key *schema_find_key(sql_trans *tr, sql_schema *s, const char *name);
 
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
+extern sql_idx *schema_find_idx(sql_trans *tr, sql_schema *s, const char *name);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
@@ -786,6 +788,7 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *n
 extern sql_type *sql_trans_find_type(sql_trans *tr, sql_schema *s /*optional */, sqlid id);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
 extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
+extern sql_trigger *schema_find_trigger(sql_trans *tr, sql_schema *s, const char *name);
 
 extern void find_partition_type(sql_subtype *tpe, sql_table *mt);
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res);

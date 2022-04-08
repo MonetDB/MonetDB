@@ -388,7 +388,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tident", false) != GDK_SUCCEED ||
 	    BUNappend(bv, b->tident, false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tdense", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtdense(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) BATtdensebi(&bi), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tseqbase", false) != GDK_SUCCEED ||
 	    BUNappend(bv, oidtostr(bi.tseq, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", false) != GDK_SUCCEED ||

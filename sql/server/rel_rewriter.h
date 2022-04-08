@@ -37,8 +37,6 @@ try_remove_empty_select(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
-
 extern int find_member_pos(list *l, sql_table *t);
 extern sql_column *name_find_column(sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt);
 
