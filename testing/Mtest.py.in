@@ -1384,8 +1384,8 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         break
                     dbh = pymonetdb.connect(username='monetdb',
                                             password='monetdb',
-                                            hostname='localhost',
-                                            port=pSrvr.port,
+                                            hostname=HOST,
+                                            port=int(pSrvr.port),
                                             database=TSTDB,
                                             autocommit=True)
                     crs = dbh.cursor()
