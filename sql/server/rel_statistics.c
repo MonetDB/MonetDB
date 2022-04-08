@@ -11,9 +11,6 @@
 #include "rel_statistics.h"
 #include "rel_rewriter.h"
 
-#define statistics_gathered       (1 << 0)
-#define are_statistics_gathered(X) ((X & statistics_gathered) == statistics_gathered)
-
 static sql_exp *
 comparison_find_column(sql_exp *input, sql_exp *e)
 {
@@ -632,9 +629,7 @@ static sql_rel *
 rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	rel = rel_visitor_bottomup(v, rel, &rel_get_statistics_);
-	/*reset used flag */
-	return rel_visitor_bottomup(v, rel, &rewrite_reset_used);
+	return rel_visitor_bottomup(v, rel, &rel_get_statistics_);
 }
 
 run_optimizer

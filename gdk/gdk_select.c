@@ -1740,7 +1740,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		BUN low = 0;
 		BUN high = bi.count;
 
-		if (BATtdense(b)) {
+		if (BATtdensebi(&bi)) {
 			/* positional */
 			/* we expect nonil to be set, in which case we
 			 * already know that we're not dealing with a

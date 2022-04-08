@@ -20,7 +20,7 @@
 /**
  * Returns if haystack matches expr, using tag globbing.
  */
-char
+bool
 db_glob(const char *expr, const char *haystack)
 {
 	const char *haymem = NULL;
@@ -48,7 +48,7 @@ db_glob(const char *expr, const char *haystack)
 						expr++;
 						if (*expr == '\0') {
 							/* this will always match the rest */
-							return(1);
+							return(true);
 						} else if (!escape && *expr == '*') {
 							continue;
 						} else if (*expr == '\\') {
@@ -65,7 +65,7 @@ db_glob(const char *expr, const char *haystack)
 					haymem = haystack + 1;
 					if (*haystack == '\0')
 						/* couldn't find it, so no match  */
-						return(0);
+						return(false);
 					break;
 				}
 				/* do asterisk match if escaped */
@@ -75,7 +75,7 @@ db_glob(const char *expr, const char *haystack)
 					if (haymem != NULL) {
 						return(db_glob(exprmem, haymem));
 					} else {
-						return(0);
+						return(false);
 					}
 				}
 			break;

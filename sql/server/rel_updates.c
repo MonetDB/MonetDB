@@ -142,11 +142,14 @@ static sql_rel *
 rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
-	int need_nulls = 0;
 	node *m, *o;
 	sql_trans *tr = sql->session->tr;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name);
+	int selfref = (rk->t->base.id == i->t->base.id);
+	int need_nulls = 0;
+	if (selfref)
+		TRC_DEBUG(SQL_TRANS, "Self-reference index\n");
 
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
@@ -162,6 +165,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		if (c->c->null)
 			need_nulls = 1;
 	}
+	need_nulls = 0;
 	/* NULL and NOT NULL, for 'SIMPLE MATCH' semantics */
 	/* AND joins expressions */
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
@@ -214,7 +218,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	}
 
 	pexps = rel_projections(sql, nnlls, NULL, 1, 1);
-	nnlls = rel_crossproduct(sql->sa, nnlls, rt, op_join);
+	nnlls = rel_crossproduct(sql->sa, nnlls, rt, op_left/*op_join*/);
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
