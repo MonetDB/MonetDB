@@ -599,6 +599,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 	case op_project:
 	case op_groupby:
 	case op_ddl:
+		if (is_groupby(rel->op) && !list_empty(rel->r))
+			rel->r = exps_exp_visitor_bottomup(v, rel, rel->r, 0, &rel_propagate_statistics, false);
 		rel->exps = exps_exp_visitor_bottomup(v, rel, rel->exps, 0, &rel_propagate_statistics, false);
 		if (is_simple_project(rel->op) && !list_empty(rel->r))
 			rel->r = exps_exp_visitor_bottomup(v, rel, rel->r, 0, &rel_propagate_statistics, false);
