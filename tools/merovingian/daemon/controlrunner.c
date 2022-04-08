@@ -150,7 +150,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 	}
 }
 
-char
+bool
 control_authorise(
 		const char *host,
 		const char *chal,
@@ -166,7 +166,7 @@ control_authorise(
 		Mfprintf(_mero_ctlout, "%s: remote control disabled\n", host);
 		mnstr_printf(fout, "!access denied\n");
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
-		return 0;
+		return false;
 	}
 
 	pwd = mcrypt_hashPassword(algo,
@@ -175,7 +175,7 @@ control_authorise(
 		Mfprintf(_mero_ctlout, "%s: Allocation failure during authentication\n", host);
 		mnstr_printf(fout, "!allocation failure\n");
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
-		return 0;
+		return false;
 	}
 	if (strcmp(pwd, passwd) != 0) {
 		free(pwd);
@@ -183,14 +183,14 @@ control_authorise(
 				"(bad passphrase)\n", host);
 		mnstr_printf(fout, "!access denied\n");
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
-		return 0;
+		return false;
 	}
 	free(pwd);
 
 	mnstr_printf(fout, "=OK\n");
 	mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
-	return 1;
+	return true;
 }
 
 #define send_client(P)								\

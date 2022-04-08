@@ -478,7 +478,7 @@ char* control_send(
 		int port,
 		const char *database,
 		const char *command,
-		char wait,
+		bool wait,
 		const char *pass)
 {
 	char *msg;
@@ -639,7 +639,7 @@ char *
 control_ping(const char *host, int port, const char *pass) {
 	char *res;
 	char *err;
-	if ((err = control_send(&res, host, port, "", "ping", 0, pass)) == NULL) {
+	if ((err = control_send(&res, host, port, "", "ping", false, pass)) == NULL) {
 		if (res != NULL)
 			free(res);
 	}
