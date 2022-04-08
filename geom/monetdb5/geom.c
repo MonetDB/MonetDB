@@ -253,10 +253,10 @@ freeGeoPolygon(GeoPolygon polygon) {
 	return msg;
 }
 
-static CartPoint 
+static CartPoint3D 
 cartPointFromXYZ(double x, double y, double z)
 {
-	CartPoint cart;
+	CartPoint3D cart;
 	cart.x = x;
 	cart.y = y;
 	cart.z = z;
@@ -292,10 +292,10 @@ wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
 * Convert spherical coordinates to cartesian coordinates on unit sphere.
 * The inputs have to be in radians.
 */
-static CartPoint 
+static CartPoint3D 
 geo2cart(GeoPoint geo)
 {
-	CartPoint cart;
+	CartPoint3D cart;
 	cart.x = cos(geo.lat) * cos(geo.lon);
 	cart.y = cos(geo.lat) * sin(geo.lon);
 	cart.z = sin(geo.lat);
@@ -306,7 +306,7 @@ geo2cart(GeoPoint geo)
 * Convert spherical coordinates to cartesian coordinates on unit sphere.
 * The inputs have to be in degrees.
 */
-static CartPoint 
+static CartPoint3D 
 geo2cartFromDegrees(GeoPoint geo)
 {
 	return geo2cart(deg2RadPoint(geo));
@@ -314,7 +314,7 @@ geo2cartFromDegrees(GeoPoint geo)
 
 /* Convert cartesian coordinates to spherical coordinates on unit sphere */
 static GeoPoint 
-cart2geo(CartPoint cart)
+cart2geo(CartPoint3D cart)
 {
 	GeoPoint geo;
 	geo.lon = atan2(cart.y, cart.x);
@@ -326,7 +326,7 @@ cart2geo(CartPoint cart)
 static GEOSGeom 
 cartesianLineFromGeoPoints(GeoPoint p1, GeoPoint p2)
 {
-	CartPoint p1_cart, p2_cart;
+	CartPoint3D p1_cart, p2_cart;
 	p1_cart = geo2cartFromDegrees(p1);
 	p2_cart = geo2cartFromDegrees(p2);
 	GEOSCoordSequence *lineSeq = GEOSCoordSeq_create(2, 3);
@@ -341,7 +341,7 @@ cartesianLineFromGeoPoints(GeoPoint p1, GeoPoint p2)
 **/
 /* Adds a Cartesian Point to the BoundingBox */
 static void 
-boundingBoxAddPoint(BoundingBox *bb, CartPoint p)
+boundingBoxAddPoint(BoundingBox *bb, CartPoint3D p)
 {
 	if (bb->xmin > p.x)
 		bb->xmin = p.x;
@@ -361,7 +361,7 @@ boundingBoxAddPoint(BoundingBox *bb, CartPoint p)
 static BoundingBox *
 boundingBoxLines(GeoLines lines)
 {
-	CartPoint c;
+	CartPoint3D c;
 	BoundingBox *bb = GDKzalloc(sizeof(BoundingBox));
 
 	//If there are no segments, return NULL
@@ -383,7 +383,7 @@ boundingBoxLines(GeoLines lines)
 }
 
 static int 
-boundingBoxContainsPoint(BoundingBox bb, CartPoint pt)
+boundingBoxContainsPoint(BoundingBox bb, CartPoint3D pt)
 {
 	return bb.xmin <= pt.x && bb.xmax >= pt.x && bb.ymin <= pt.y && bb.ymax >= pt.y && bb.zmin <= pt.z && bb.zmax >= pt.z;
 }
@@ -411,7 +411,7 @@ pointOutsidePolygon(GeoPolygon polygon)
 
 	//TODO: From POSTGIS -> CHANGE
 	double grow = M_PI / 180.0 / 60.0;
-	CartPoint corners[8];
+	CartPoint3D corners[8];
 	while (grow < M_PI) {
 		if (bb.xmin > -1)
 			bb.xmin -= grow;
@@ -460,7 +460,7 @@ pointOutsidePolygon(GeoPolygon polygon)
 
 		for (int i = 0; i < 8; i++)
 			if (!boundingBoxContainsPoint(*bb2, corners[i])) {
-				CartPoint pt_cart = corners[i];
+				CartPoint3D pt_cart = corners[i];
 				GDKfree(bb2);
 				return rad2DegPoint(cart2geo(pt_cart));
 			}
@@ -501,7 +501,7 @@ geoDistancePointPoint(GeoPoint a, GeoPoint b)
 static double 
 calculatePerpendicularDistance(GeoPoint p_geo, GeoPoint l1_geo, GeoPoint l2_geo)
 {
-	CartPoint l1, l2, p, projection;
+	CartPoint3D l1, l2, p, projection;
 	GeoPoint projection_geo;
 
 	//First, convert the points to 3D cartesian coordinates
@@ -1490,6 +1490,136 @@ wkbCollectAggr (wkb **out, const bat *bid) {
     BBPunfix(b->batCacheid);
 
 	return msg;
+}
+
+static inline CartPoint3D
+crossProduct (const CartPoint3D *p1, const CartPoint3D *p2) 
+{
+	CartPoint3D p3;
+	p3.x = p1->y * p2->z - p1->z * p2->y;
+	p3.y = p1->z * p2->x - p1->x * p2->z;
+	p3.z = p1->x * p2->y - p1->y * p2->x;
+	return p3;
+}
+
+static inline double
+dotProduct (const CartPoint3D *p1, const CartPoint3D *p2) 
+{
+	return (p1->x * p2->x) + (p1->y * p2->y) + (p1->z * p2->z);
+}
+
+//
+static inline int
+angleRotation (const CartPoint2D p1, const CartPoint2D p2, const CartPoint2D p3) 
+{
+	// vector P = P1P2
+	// vector Q = P1P3
+	// side = || Q x P ||
+	// Q and P are 2D vectors, so z component is 0
+	double side = ((p3.x - p1.x) * (p2.y - p1.y) - (p2.x - p1.x) * (p3.y - p1.y));
+	// 
+	if (side < 0)
+		return -1;
+	else if (side > 0)
+		return 1;
+	else
+		return 0;
+}
+
+static void
+normalize2D (CartPoint2D *p) {
+	double c = sqrt(p->x * p->x + p->y * p->y);
+	if (c == 0) {
+		p->x = p->y = 0;
+		return;
+	}
+	p->x = p->x / c;
+	p->y = p->y / c;
+}
+
+static void
+normalize3D (CartPoint3D *p) {
+	double c = sqrt(p->x * p->x + p->y * p->y + p->z * p->z);
+	if (c == 0) {
+		p->x = p->y = p->z = 0;
+		return;
+	}
+	p->x = p->x / c;
+	p->y = p->y / c;
+	p->z = p->z / c;
+}
+
+static inline bool
+FP_EQUALS (double x, double y) 
+{
+	return fabs(x-y) < 1e-12;
+}
+
+static str
+geodeticEdgeBoundingBox(const CartPoint3D* p1, const CartPoint3D* p2, BoundingBox* mbox)
+{
+	CartPoint3D p3, pn, ep3d;
+	CartPoint3D e[6];
+	CartPoint2D s1, s2, ep, o;
+	int rotation_to_origin, rotation_to_ep;
+
+    // check coinciding points
+	if (FP_EQUALS(p1->x,p2->x) && FP_EQUALS(p1->y,p2->y) && FP_EQUALS(p1->z,p2->z))
+		return MAL_SUCCEED;
+    // check antipodal points
+	if (FP_EQUALS(p1->x,-p2->x) && FP_EQUALS(p1->y,-p2->y) && FP_EQUALS(p1->z,-p2->z))
+		throw(MAL, "geom.geodeticEdgeBoundingBox", SQLSTATE(38000) "Antipodal edge");
+
+    // create the great circle plane coord system (p1, p3)
+    // pn = p1 x p2
+    // p3 = pn x p1
+	// TODO handle the narrow and wide angle cases
+	pn = crossProduct(p1,p2);
+	normalize3D(&pn);
+	p3 = crossProduct(&pn,p1);
+	normalize3D(&p3);
+
+    // represent p1, p2 with (s1, s2) 2-D space
+    // s1.x = 1, s1.y = 0
+    // s2.x = p2 * p1, s2.y = p2 * p3
+	s1.x = 1;
+	s1.y = 0;
+	s2.x = dotProduct(p2, p1);
+	s2.y = dotProduct(p2, &p3);
+    // 2-D space origin
+    // O.x = 0, O.y = 0
+	o.x = 0;
+	o.y = 0;
+
+    // create 3D endpoints E.x, E.-x, ...
+    // E.x = (1, 0, 0), E.-x = (-1, 0, 0) ...
+	memset(e, 0, sizeof(CartPoint2D) * 6);
+	e[0].x = e[1].y = e[2].z = 1;
+	e[3].x = e[4].y = e[5].z = -1;
+
+    // find the rotation between s1->s2 and s1->O
+    // rot = norm( vec(s1,s2) x vec(s1,0))
+	rotation_to_origin = angleRotation(s1,s2,o);
+
+    // for every endpoint E
+	for (int i = 0; i < 6; i++) {
+		// project the endpoint in the 2-D space
+		ep.x = dotProduct(&e[i],p1);
+		ep.y = dotProduct(&e[i],&p3);
+        // re-normalize it e.g. EP (for endpoint_projection) 
+		normalize2D(&ep);
+        // ep_rot = norm( vec(s1,s2) x vec(s1,EP_end) )
+		rotation_to_ep = angleRotation(s1,s2,ep);
+		if (rotation_to_origin != rotation_to_ep) {
+			// convert the 2-D EP into 3-D space
+			ep3d.x = ep.x * p1->x + ep.y * p3.x;
+			ep3d.y = ep.x * p1->y + ep.y * p3.y;
+			ep3d.z = ep.x * p1->z + ep.y * p3.z;
+            // expand the mbox in order to include 3-D representation of EP
+			boundingBoxAddPoint(mbox,ep3d);
+		}
+	}
+	return MAL_SUCCEED;
 }
 
 /** 

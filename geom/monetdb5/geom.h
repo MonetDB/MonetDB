@@ -74,12 +74,18 @@ typedef struct GeoPolygon
 } GeoPolygon;
 
 //Cartesian representation of a geographic point (converted from Latitude/Longitude)
-typedef struct CartPoint
+typedef struct CartPoint3D
 {
     double x;
     double y;
     double z;
-} CartPoint;
+} CartPoint3D;
+
+typedef struct CartPoint2D
+{
+    double x;
+    double y;
+} CartPoint2D;
 
 /* Geographic functions */
 str wkbCoversGeographic(bit* out, wkb** a, wkb** b);
