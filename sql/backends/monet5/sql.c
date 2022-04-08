@@ -1565,16 +1565,19 @@ str
 mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int upd = (pci->argc == 7 || pci->argc == 9);
-	BAT *b = NULL, *bn;
+	BAT *b = NULL;
 	bat *bid = getArgReference_bat(stk, pci, 0);
-	int coltype = getBatType(getArgType(mb, pci, 0));
 	mvc *m = NULL;
 	str msg;
-	const char *sname = *getArgReference_str(stk, pci, 2 + upd);
-	const char *tname = *getArgReference_str(stk, pci, 3 + upd);
-	const char *iname = *getArgReference_str(stk, pci, 4 + upd);
-	int access = *getArgReference_int(stk, pci, 5 + upd);
+	const char *sname	= *getArgReference_str(stk, pci, 2 + upd);
+	const char *tname	= *getArgReference_str(stk, pci, 3 + upd);
+	const char *iname	= *getArgReference_str(stk, pci, 4 + upd);
+	const int	access	= *getArgReference_int(stk, pci, 5 + upd);
 
+	const bool partitioned_access = pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
+
+	/* This doesn't work with quick access for now... */
+	assert(access != QUICK);
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -1583,102 +1586,73 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 	if (t && !isTable(t))
-		throw(SQL, "sql.tid", SQLSTATE(42000) "%s '%s' is not persistent",
+		throw(SQL, "sql.bindidx", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
-	b = mvc_bind_idxbat(m, sname, tname, iname, access);
-	if (b && b->ttype && b->ttype != coltype) {
-		BBPunfix(b->batCacheid);
-		throw(SQL,"sql.bind",SQLSTATE(42000) "Index column type mismatch %s.%s.%s",sname,tname,iname);
-	}
-	if (b) {
-		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
-			BUN cnt = store->storage_api.count_idx(m->session->tr, i, 0), psz;
-			/* partitioned access */
-			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
-			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
 
-			if (access == 0) {
-				BUN l, h;
-				psz = cnt ? (cnt / nr_parts) : 0;
-				l = part_nr * psz;
-				if (l > cnt)
-					l = cnt;
-				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
-				if (h > cnt)
-					h = cnt;
-				bn = BATslice(b, l, h);
-				if(bn == NULL){
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
-				}
-				BAThseqbase(bn, l);
-			} else {
-				/* BAT b holds the UPD_ID bat */
-				oid l, h;
-				cnt = store->storage_api.count_idx(m->session->tr, i, 0);
-				psz = cnt ? (cnt / nr_parts) : 0;
-				l = part_nr * psz;
-				if (l > cnt)
-					l = cnt;
-				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
-				if (h > cnt)
-					h = cnt;
-				h--;
-				bn = BATselect(b, NULL, &l, &h, true, true, false);
-				if(bn == NULL) {
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
-				}
-			}
-			BBPunfix(b->batCacheid);
-			b = bn;
-		} else if (upd) {
-			BAT *uv = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_VAL);
-			bat *uvl = getArgReference_bat(stk, pci, 1);
-			if ( uv == NULL){
-				BBPunfix(b->batCacheid);
-				throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
-			}
-			*bid = b->batCacheid;
-			BBPkeepref(b);
-			*uvl = uv->batCacheid;
-			BBPkeepref(uv);
-			return MAL_SUCCEED;
-		}
+	if (partitioned_access) {
+		/* partitioned access */
+		int part_nr = *getArgReference_int(stk, pci, 6 + upd);
+		int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
+		BUN cnt = store->storage_api.count_idx(m->session->tr, i, 0), psz;
+		oid l, h;
+		psz = cnt ? (cnt / nr_parts) : 0;
+		l = part_nr * psz;
+		if (l > cnt)
+			l = cnt;
+		h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
+		if (h > cnt)
+			h = cnt;
+
 		if (upd) {
+			sql_updates* updates = store->storage_api.bind_updates_idx(m->session->tr, i);
+
+			if (!updates)
+				throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
+			BAT *ui = updates->ui;
+			BAT *uv = updates->uv;
+			GDKfree(updates);
+
+			h--;
+			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
+			if(bn == NULL) {
+				BBPunfix(ui->batCacheid);
+				BBPunfix(uv->batCacheid);
+				throw(SQL, "sql.bindidx", GDK_EXCEPTION);
+			}
+
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 
-			if (BATcount(b)) {
-				BAT *uv = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_VAL);
-				BAT *ui = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_ID);
-				BAT *id, *vl;
-				if ( ui == NULL || uv == NULL) {
+			if (BATcount(bn)) {
+				BAT *id;
+				BAT *vl;
+				if (ui == NULL || uv == NULL) {
 					bat_destroy(uv);
 					bat_destroy(ui);
-					BBPunfix(b->batCacheid);
+					BBPunfix(bn->batCacheid);
 					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
 				}
-				id = BATproject(b, ui);
-				vl = BATproject(b, uv);
+				assert(uv->batCount == ui->batCount);
+				id = BATproject(bn, ui);
+				vl = BATproject(bn, uv);
 				bat_destroy(ui);
 				bat_destroy(uv);
 				if (id == NULL || vl == NULL) {
+					BBPunfix(bn->batCacheid);
 					bat_destroy(id);
 					bat_destroy(vl);
-					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
 				}
 				if ( BATcount(id) != BATcount(vl)){
-					BBPunfix(b->batCacheid);
+					BBPunfix(bn->batCacheid);
 					bat_destroy(id);
 					bat_destroy(vl);
 					throw(SQL, "sql.bindidx", SQLSTATE(0000) "Inconsistent BAT count");
 				}
-				*bid = id->batCacheid;
 				BBPkeepref(id);
-				*uvl = vl->batCacheid;
 				BBPkeepref(vl);
+				*bid = id->batCacheid;
+				*uvl = vl->batCacheid;
 			} else {
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
@@ -1691,16 +1665,51 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			BBPunfix(b->batCacheid);
 		} else {
-			*bid = b->batCacheid;
-			BBPkeepref(b);
+			int idxtype = getBatType(getArgType(mb, pci, 0));
+			b = store->storage_api.bind_idx(m->session->tr, i, access);
+
+			if (b && b->ttype && b->ttype != idxtype) {
+				BBPunfix(b->batCacheid);
+				throw(SQL,"sql.bindidx",SQLSTATE(42000) "Index type mismatch %s.%s.%s",sname,tname,iname);
+			}
+
+			BAT* bn = BATslice(b, l, h);
+			if(bn == NULL) {
+				BBPunfix(b->batCacheid);
+				throw(SQL, "sql.bindidx", GDK_EXCEPTION);
+			}
+			BAThseqbase(bn, l);
+			BBPunfix(b->batCacheid);
+			BBPkeepref(bn);
+			*bid = bn->batCacheid;
 		}
-		return MAL_SUCCEED;
 	}
-	if (sname)
-		throw(SQL, "sql.bindidx", SQLSTATE(HY005) "Cannot access column descriptor %s for %s.%s", iname, sname, tname);
-	throw(SQL, "sql.bindidx", SQLSTATE(HY005) "Cannot access column descriptor %s for %s", iname, tname);
+	else if (upd) { /*unpartitioned access to update bats*/
+		sql_updates* updates = store->storage_api.bind_updates_idx(m->session->tr, i);
+
+		if (!updates)
+			throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
+
+		bat *uvl = getArgReference_bat(stk, pci, 1);
+		BBPkeepref(updates->ui);
+		BBPkeepref(updates->uv);
+		*bid = updates->ui->batCacheid;
+		*uvl = updates->uv->batCacheid;
+		GDKfree(updates);
+	}
+	else { /*unpartitioned access to base index*/
+		int idxtype = getBatType(getArgType(mb, pci, 0));
+		b = store->storage_api.bind_idx(m->session->tr, i, access);
+
+		if (b && b->ttype && b->ttype != idxtype) {
+			BBPunfix(b->batCacheid);
+			throw(SQL,"sql.bindidx",SQLSTATE(42000) "Index type mismatch %s.%s.%s",sname,tname,iname);
+		}
+		BBPkeepref(b);
+		*bid = b->batCacheid;
+	}
+	return MAL_SUCCEED;
 }
 
 str
