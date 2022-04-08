@@ -217,7 +217,8 @@ mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *t
 	sql_table *t = NULL;
 	table_types tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_MERGE_TABLE)?tt_merge_table:
-		(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+		(temp == SQL_REPLICA_TABLE)?tt_replica_table:
+		(temp == SQL_UNLOGGED_TABLE)?tt_unlogged_table:tt_table;
 
 	switch (mvc_create_table(&t, sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0)) {
 		case -1:
@@ -1280,7 +1281,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 	mvc *sql = query->sql;
 	int tt = (temp == SQL_REMOTE)?tt_remote:
 		 (temp == SQL_MERGE_TABLE)?tt_merge_table:
-		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:
+		 (temp == SQL_UNLOGGED_TABLE)?tt_unlogged_table:tt_table;
 	bit properties = partition_def ? (bit) partition_def->data.lval->h->next->next->data.i_val : 0;
 	sql_table *t = NULL;
 	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";

@@ -187,6 +187,13 @@ SQLhelp sqlhelp1[] = {
 	 "CREATE REMOTE TABLE [ IF NOT EXISTS ] qname ON string [WITH [USER 'username'] [[ENCRYPTED] PASSWORD 'password']]",
 	 NULL,
 	 "remote name should match mapi:monetdb://host:port/database[/schema[/table]]"},
+	{"CREATE UNLOGGED TABLE",
+	 "Create a new unlogged table",
+	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
+	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname FROM LOADER function_ref\n"
+	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname table_source [on_commit]",
+	 "table_source,on_commit,function_ref",
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-definition/"},
 	{"CREATE REPLICA TABLE",
 	 "",
 	 "CREATE REPLICA TABLE [ IF NOT EXISTS ] qname table_source",

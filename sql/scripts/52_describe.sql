@@ -299,7 +299,7 @@ CREATE VIEW sys.describe_tables AS
 				''
 		END opt
 	FROM sys.schemas s, sys.table_types ts, sys.tables t
-	WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
+	WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE', 'UNLOGGED TABLE')
 		AND t.system = FALSE
 		AND s.id = t.schema_id
 		AND ts.table_type_id = t.type
