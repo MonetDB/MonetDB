@@ -69,11 +69,6 @@ typedef struct subrids {
 	void *rids;
 } subrids;
 
-typedef struct sql_updates {
-	BAT* ui;
-	BAT* uv;
-} sql_updates;
-
 /* returns table rids, for the given select ranges */
 typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, const void *key_value_low, const void *key_value_high, ...);
 
@@ -136,7 +131,8 @@ typedef struct table_functions {
 -- binds for column,idx (rdonly, inserts, updates) and delets
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
-typedef void *(*bind_updates_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BAT **ui, BAT **uv);
+typedef int (*bind_updates_idx_fptr) (sql_trans *tr, sql_idx *c, BAT **ui, BAT **uv);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
@@ -218,13 +214,12 @@ typedef int (*col_compress_fptr) (sql_trans *tr, sql_column *c, storage_type st,
 */
 typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 
-typedef void (*temp_del_tab_fptr) (sql_trans *tr, sql_table *ft);
-
 /* backing struct for this interface */
 typedef struct store_functions {
 
 	bind_col_fptr bind_col;
 	bind_updates_fptr bind_updates;
+	bind_updates_idx_fptr bind_updates_idx;
 	bind_idx_fptr bind_idx;
 	bind_cands_fptr bind_cands;
 
@@ -271,7 +266,6 @@ typedef struct store_functions {
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;
 	upgrade_del_fptr upgrade_del;
-	temp_del_tab_fptr temp_del_tab;
 	swap_bats_fptr swap_bats;
 } store_functions;
 
@@ -286,9 +280,9 @@ typedef int (*logger_changes_fptr)(struct sqlstore *store);
 typedef int (*logger_get_sequence_fptr) (struct sqlstore *store, int seq, lng *id);
 
 typedef int (*log_isnew_fptr)(struct sqlstore *store);
-typedef int (*log_tstart_fptr) (struct sqlstore *store, bool flush);
+typedef int (*log_tstart_fptr) (struct sqlstore *store, bool flush, ulng *log_file_id);
 typedef int (*log_tend_fptr) (struct sqlstore *store);
-typedef int (*log_tdone_fptr) (struct sqlstore *store, ulng commit_ts);
+typedef int (*log_tflush_fptr) (struct sqlstore *store, ulng log_file_id, ulng commit_tis);
 typedef lng (*log_save_id_fptr) (struct sqlstore *store);
 typedef int (*log_sequence_fptr) (struct sqlstore *store, int seq, lng id);
 
@@ -321,7 +315,7 @@ typedef struct logger_functions {
 	log_isnew_fptr log_isnew;
 	log_tstart_fptr log_tstart;
 	log_tend_fptr log_tend;
-	log_tdone_fptr log_tdone;
+	log_tflush_fptr log_tflush;
 	log_save_id_fptr log_save_id;
 	log_sequence_fptr log_sequence;
 } logger_functions;
@@ -470,6 +464,7 @@ extern int sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c, sql
 extern int sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres);
 extern int sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires);
 extern int sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigger **tres);
+extern sql_table *globaltmp_instantiate(sql_trans *tr, sql_table *t);
 
 #define NR_TABLE_LOCKS 64
 #define NR_COLUMN_LOCKS 512
