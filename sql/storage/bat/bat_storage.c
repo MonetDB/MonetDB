@@ -1052,12 +1052,9 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 	return s;
 }
 
-static void*
-bind_updates(sql_trans *tr, sql_column *c) {
-	sql_updates* upd = GDKmalloc(sizeof(sql_updates));
-	if (!upd)
-		return NULL;
-
+static int
+bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
+{
 	lock_column(tr->store, c->base.id);
 	size_t cnt = count_col(tr, c, 0);
 	sql_delta *d = col_timestamp_delta(tr, c);
@@ -1065,8 +1062,7 @@ bind_updates(sql_trans *tr, sql_column *c) {
 
 	if (!d) {
 		unlock_column(tr->store, c->base.id);
-		GDKfree(upd);
-		return NULL;
+		return LOG_ERR;
 	}
 	if (d->cs.st == ST_DICT) {
 		BAT *b = quick_descriptor(d->cs.bid);
@@ -1074,26 +1070,22 @@ bind_updates(sql_trans *tr, sql_column *c) {
 		type = b->ttype;
 	}
 
-	upd->ui = bind_ubat(tr, d, isTempTable(c->t), RD_UPD_ID, type, cnt);
-	upd->uv = bind_ubat(tr, d, isTempTable(c->t), RD_UPD_VAL, type, cnt);
+	*ui = bind_ubat(tr, d, isTempTable(c->t), RD_UPD_ID, type, cnt);
+	*uv = bind_ubat(tr, d, isTempTable(c->t), RD_UPD_VAL, type, cnt);
 
 	unlock_column(tr->store, c->base.id);
 
-	if (upd->ui == NULL || upd->uv == NULL) {
-		bat_destroy(upd->ui);
-		bat_destroy(upd->uv);
-		GDKfree(upd);
-		return NULL;
+	if (*ui == NULL || *uv == NULL) {
+		bat_destroy(*ui);
+		bat_destroy(*uv);
+		return LOG_ERR;
 	}
-	return upd;
+	return LOG_OK;
 }
 
-static void*
-bind_updates_idx(sql_trans *tr, sql_idx *i) {
-	sql_updates* upd = GDKmalloc(sizeof(sql_updates));
-	if (!upd)
-		return NULL;
-
+static int
+bind_updates_idx(sql_trans *tr, sql_idx *i, BAT **ui, BAT **uv)
+{
 	lock_column(tr->store, i->base.id);
 	size_t cnt = count_idx(tr, i, 0);
 	sql_delta *d = idx_timestamp_delta(tr, i);
@@ -1101,22 +1093,20 @@ bind_updates_idx(sql_trans *tr, sql_idx *i) {
 
 	if (!d) {
 		unlock_column(tr->store, i->base.id);
-		GDKfree(upd);
-		return NULL;
+		return LOG_ERR;
 	}
 
-	upd->ui = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_ID, type, cnt);
-	upd->uv = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_VAL, type, cnt);
+	*ui = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_ID, type, cnt);
+	*uv = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_VAL, type, cnt);
 
 	unlock_column(tr->store, i->base.id);
 
-	if (upd->ui == NULL || upd->uv == NULL) {
-		bat_destroy(upd->ui);
-		bat_destroy(upd->uv);
-		GDKfree(upd);
-		return NULL;
+	if (*ui == NULL || *uv == NULL) {
+		bat_destroy(*ui);
+		bat_destroy(*uv);
+		return LOG_ERR;
 	}
-	return upd;
+	return LOG_OK;
 }
 
 static void *					/* BAT * */
