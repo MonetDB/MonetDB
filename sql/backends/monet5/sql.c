@@ -1249,13 +1249,9 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			h = cnt;
 
 		if (upd) {
-			sql_updates* updates = store->storage_api.bind_updates(m->session->tr, c);
-
-			if (!updates)
+			BAT *ui = NULL, *uv = NULL;
+			if (store->storage_api.bind_updates(m->session->tr, c, &ui, &uv) == LOG_ERR)
 				throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
-			BAT *ui = updates->ui;
-			BAT *uv = updates->uv;
-			GDKfree(updates);
 
 			h--;
 			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
@@ -1331,17 +1327,15 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	else if (upd) { /*unpartitioned access to update bats*/
-		sql_updates* updates = store->storage_api.bind_updates(m->session->tr, c);
-
-		if (!updates)
+		BAT *ui = NULL, *uv = NULL;
+		if (store->storage_api.bind_updates(m->session->tr, c, &ui, &uv) == LOG_ERR)
 			throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
 
 		bat *uvl = getArgReference_bat(stk, pci, 1);
-		BBPkeepref(updates->ui);
-		BBPkeepref(updates->uv);
-		*bid = updates->ui->batCacheid;
-		*uvl = updates->uv->batCacheid;
-		GDKfree(updates);
+		BBPkeepref(ui);
+		BBPkeepref(uv);
+		*bid = ui->batCacheid;
+		*uvl = uv->batCacheid;
 	}
 	else { /*unpartitioned access to base column*/
 		int coltype = getBatType(getArgType(mb, pci, 0));
@@ -1605,13 +1599,9 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			h = cnt;
 
 		if (upd) {
-			sql_updates* updates = store->storage_api.bind_updates_idx(m->session->tr, i);
-
-			if (!updates)
+			BAT *ui = NULL, *uv = NULL;
+			if (store->storage_api.bind_updates_idx(m->session->tr, i, &ui, &uv) == LOG_ERR)
 				throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
-			BAT *ui = updates->ui;
-			BAT *uv = updates->uv;
-			GDKfree(updates);
 
 			h--;
 			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
@@ -1686,17 +1676,15 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	else if (upd) { /*unpartitioned access to update bats*/
-		sql_updates* updates = store->storage_api.bind_updates_idx(m->session->tr, i);
-
-		if (!updates)
+		BAT *ui = NULL, *uv = NULL;
+		if (store->storage_api.bind_updates_idx(m->session->tr, i, &ui, &uv) == LOG_ERR)
 			throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
 
 		bat *uvl = getArgReference_bat(stk, pci, 1);
-		BBPkeepref(updates->ui);
-		BBPkeepref(updates->uv);
-		*bid = updates->ui->batCacheid;
-		*uvl = updates->uv->batCacheid;
-		GDKfree(updates);
+		BBPkeepref(ui);
+		BBPkeepref(uv);
+		*bid = ui->batCacheid;
+		*uvl = uv->batCacheid;
 	}
 	else { /*unpartitioned access to base index*/
 		int idxtype = getBatType(getArgType(mb, pci, 0));
