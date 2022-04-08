@@ -249,7 +249,7 @@ MEROgetStatus(sabdb **ret, char *database)
 		database = "#all";
 
 	e = control_send(&buf, mero_host, mero_port,
-			database, "status", 1, mero_pass);
+			database, "status", true, mero_pass);
 	if (e != NULL)
 		return(e);
 
@@ -594,7 +594,7 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 		}
 
 		ret = control_send(&out, mero_host, mero_port,
-				dbs->dbname, merocmd, 0, mero_pass);
+				dbs->dbname, merocmd, false, mero_pass);
 
 		if (ret != NULL) {
 			if (premsg != NULL && !monetdb_quiet)
@@ -955,7 +955,7 @@ command_discover(int argc, char *argv[])
 	 * which help each other, just like merovingians do among each
 	 * other. */
 	p = control_send(&buf, mero_host, mero_port,
-			"anelosimus", "eximius", 1, mero_pass);
+			"anelosimus", "eximius", true, mero_pass);
 	if (p != NULL) {
 		printf("%s: %s\n", argv[0], p);
 		free(p);
@@ -1246,7 +1246,7 @@ command_set(int argc, char *argv[], meroset type)
 		}
 
 		out = control_send(&res, mero_host, mero_port,
-				orig->dbname, p, 0, mero_pass);
+				orig->dbname, p, false, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1264,7 +1264,7 @@ command_set(int argc, char *argv[], meroset type)
 			p = property;
 		}
 		out = control_send(&res, mero_host, mero_port,
-				stats->dbname, p, 0, mero_pass);
+				stats->dbname, p, false, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1365,7 +1365,7 @@ command_get(int argc, char *argv[])
 	}
 
 	e = control_send(&buf, mero_host, mero_port,
-			"#defaults", "get", 1, mero_pass);
+			"#defaults", "get", true, mero_pass);
 	if (e != NULL) {
 		fprintf(stderr, "get: %s\n", e);
 		free(e);
@@ -1393,7 +1393,7 @@ command_get(int argc, char *argv[])
 	stats = orig;
 	while (stats != NULL) {
 		e = control_send(&buf, mero_host, mero_port,
-				stats->dbname, "get", 1, mero_pass);
+				stats->dbname, "get", true, mero_pass);
 		if (e != NULL) {
 			fprintf(stderr, "get: %s\n", e);
 			free(e);
@@ -1668,7 +1668,7 @@ command_destroy(int argc, char *argv[])
 		for (stats = orig; stats != NULL; stats = stats->next) {
 			if (stats->state == SABdbRunning || stats->state == SABdbStarting) {
 				ret = control_send(&out, mero_host, mero_port,
-						stats->dbname, "stop", 0, mero_pass);
+						stats->dbname, "stop", false, mero_pass);
 				if (ret != NULL)
 					free(ret);
 				else
@@ -1742,7 +1742,7 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 {
 	int ninitial = *nsnapshots;
 	char *out = NULL;
-	char *ret = control_send(&out, mero_host, mero_port, "", "snapshot list", 1, mero_pass);
+	char *ret = control_send(&out, mero_host, mero_port, "", "snapshot list", true, mero_pass);
 	if (ret != NULL)
 		return ret;
 
@@ -1908,7 +1908,7 @@ snapshot_restore_file(char *sourcefile, char *dbname)
 	}
 
 	sprintf(merocmd, "snapshot restore adhoc %s", sourcefile);
-	ret = control_send(&out, mero_host, mero_port, dbname, merocmd, 0, mero_pass);
+	ret = control_send(&out, mero_host, mero_port, dbname, merocmd, false, mero_pass);
 	free(merocmd);
 
 	if (ret != NULL) {
@@ -1935,7 +1935,7 @@ snapshot_destroy_file(char *path)
 	char *merocmd = malloc(100 + strlen(path));
 
 	sprintf(merocmd, "snapshot destroy %s", path);
-	ret = control_send(&out, mero_host, mero_port, "", merocmd, 0, mero_pass);
+	ret = control_send(&out, mero_host, mero_port, "", merocmd, false, mero_pass);
 	if (ret != NULL) {
 		fprintf(stderr, "snapshot destroy %s failed: %s", path, ret);
 		exit(2);
