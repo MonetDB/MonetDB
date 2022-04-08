@@ -3722,10 +3722,8 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 
 	if (avg && pipeline)
 		mod = putName("batcalc");
-	/*
-	if (restype == TYPE_dbl)
+	if (!pipeline && restype == TYPE_dbl)
 		avg = 0;
-		*/
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
 	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
 					strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
