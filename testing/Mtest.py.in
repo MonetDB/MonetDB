@@ -1398,15 +1398,16 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     if not testweb:
                         print('\nGlobal testing timeout reached\n')
                         break
-                    tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
+                    tt, FtOut, FtErr, bodyline, reason = -1,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
                 else:
                     os.environ['TST'] = TST
                     tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress)
                     alllinks.extend(links)
-                if tt:
+                if tt >= 0:
                     t = "%7.3f" % tt
                 else:
                     t = '-.---'
+                    tt = 0
                 TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
                 td += tt
                 FdOut = max(FdOut,FtOut)
@@ -1876,7 +1877,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
     links = []                  # symlinks we make
     threads = None              # set if we override number of threads
 
-    TX = 0
+    TX = -1
     EXT = CALL = SERVER = ""
     x  = isexecutable(TST)
     if not x[0]:

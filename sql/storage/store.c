@@ -3046,7 +3046,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	t->type = ot->type;
 	t->system = ot->system;
 	t->bootstrap = ot->bootstrap;
-	t->persistence = ot->persistence;
+	t->persistence = s?ot->persistence:SQL_LOCAL_TEMP;
 	t->commit_action = ot->commit_action;
 	t->access = ot->access;
 	t->query = (ot->query) ? SA_STRDUP(sa, ot->query) : NULL;
@@ -3060,7 +3060,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 		t->members = list_new(sa, (fdestroy) &part_destroy);
 
 	t->pkey = NULL;
-	t->s = s;
+	t->s = s?s:tr->tmp;
 	t->sz = ot->sz;
 	ATOMIC_PTR_INIT(&t->data, NULL);
 
@@ -3132,6 +3132,15 @@ cleanup:
 	}
 	*tres = t;
 	return res;
+}
+
+sql_table *
+globaltmp_instantiate(sql_trans *tr, sql_table *ot)
+{
+	sql_table *t = NULL;
+	if (table_dup(tr, ot, NULL, NULL, &t) == LOG_OK)
+		return t;
+	return NULL;
 }
 
 static int
@@ -3672,11 +3681,6 @@ sql_trans_destroy(sql_trans *tr)
 	sqlstore *store = tr->store;
 	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
-	struct os_iter oi;
-	os_iterator(&oi, tr->tmp->tables, tr, NULL);
-	for (sql_table *t = (sql_table *) oi_next(&oi); t; t = (sql_table *) oi_next(&oi)) {
-		store->storage_api.temp_del_tab(tr, t);
-	}
 	store_unlock(store);
 	MT_lock_destroy(&tr->lock);
 	if (!list_empty(tr->dropped))
@@ -5801,11 +5805,16 @@ create_sql_column(sqlstore *store, sql_allocator *sa, sql_table *t, const char *
 int
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action)
 {
-	sql_table *t = find_sql_table(tr, s, name);
+	sql_table *t = find_sql_table(tr, s, name), *gt = NULL;
+	if (t && isTempTable(t)) {
+		gt = find_sql_table_id(tr, s, t->base.id);
+		if (gt)
+			t = gt;
+	}
 	int is_global = isGlobal(t), res = LOG_OK;
 	node *n = NULL;
 
-	if (!is_global)
+	if (!is_global || gt)
 		n = cs_find_id(&tr->localtmps, t->base.id);
 
 	if ((drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) &&
@@ -5836,7 +5845,8 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 	if (is_global) {
 		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
 			return res;
-	} else if (n && !cs_del(&tr->localtmps, tr->store, n, 0))
+	}
+	if (n && !cs_del(&tr->localtmps, tr->store, n, 0))
 		return -1;
 
 	sqlstore *store = tr->store;
