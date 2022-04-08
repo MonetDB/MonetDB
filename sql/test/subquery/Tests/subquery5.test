@@ -16,7 +16,7 @@ CREATE TABLE integers(i INTEGER)
 statement ok rowcount 4
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-statement error 42000!SELECT: subquery uses ungrouped column "another_t.col2" from outer query
+statement error 42000!SELECT: cannot use non GROUP BY column 'another_t.col2' in query results without an aggregate function
 SELECT
     (SELECT MIN(col1) GROUP BY col2)
 FROM another_T
@@ -125,7 +125,7 @@ SELECT (SELECT i = ANY(VALUES(1), (i))) FROM integers
 1
 NULL
 
-statement error 42000!SELECT: subquery uses ungrouped column "i1.i" from outer query
+statement error 42000!SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 SELECT (SELECT i1.i IN (SELECT SUM(i1.i))) FROM integers i1
 
 query R rowsort
@@ -181,7 +181,7 @@ SELECT (SELECT 1 WHERE SUM(col2 + 1) > 0) FROM another_t
 ----
 1
 
-statement error 42000!SELECT: subquery uses ungrouped column "another_t.col1" from outer query
+statement error 42000!SELECT: cannot use non GROUP BY column 'another_t.col1' in query results without an aggregate function
 SELECT (SELECT col1 HAVING SUM(col2 + col1) > 0) FROM another_t
 
 statement error 42000!SELECT: identifier 'col1' ambiguous
@@ -341,13 +341,13 @@ SELECT 1 FROM integers i1 RIGHT OUTER JOIN integers i2 ON NOT EXISTS(SELECT 1)
 1
 1
 
-statement error 42000!SELECT: subquery uses ungrouped column from outer query
+statement error 42000!SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON i1.i = 1) = (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1
 
-statement error 42000!SELECT: subquery uses ungrouped column from outer query
+statement error 42000!SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 SELECT (SELECT i1.i) = (SELECT SUM(i1.i)) FROM integers i1
 
-statement error 42000!SELECT: subquery uses ungrouped column from outer query
+statement error 42000!SELECT: cannot use non GROUP BY column 'another_t.col1' in query results without an aggregate function
 SELECT (VALUES(col1)), (VALUES(MAX(col2))) FROM another_t
 
 statement error 42000!SELECT: aggregate function calls cannot be nested
@@ -447,7 +447,7 @@ SELECT (VALUES(SUM(i1.i)) UNION VALUES(AVG(i1.i))) FROM integers i1
 statement error GDK reported error: mergejoin: more than one match
 SELECT ((SELECT SUM(i1.i)) UNION ALL (SELECT AVG(i1.i))) FROM integers i1
 
-statement error 42000!SELECT: subquery uses ungrouped column "i1.i" from outer query
+statement error 42000!SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 SELECT ((SELECT i1.i NOT IN (SELECT i1.i)) UNION (SELECT SUM(i1.i) IN (SELECT i1.i))) FROM integers i1
 
 query I rowsort

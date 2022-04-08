@@ -343,6 +343,9 @@
 
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
+gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
@@ -457,6 +460,7 @@ enum {
 	TYPE_timestamp,
 	TYPE_uuid,
 	TYPE_str,
+	TYPE_blob,
 	TYPE_any = 255,		/* limit types to <255! */
 };
 
@@ -479,15 +483,7 @@ typedef float flt;
 typedef double dbl;
 typedef char *str;
 
-#ifdef HAVE_UUID_UUID_H
-#include <uuid/uuid.h>
-#endif
-
-#ifdef HAVE_UUID
-#define UUID_SIZE	((int) sizeof(uuid_t)) /* size of a UUID */
-#else
 #define UUID_SIZE	16	/* size of a UUID */
-#endif
 #define UUID_STRLEN	36	/* length of string representation */
 
 typedef union {
@@ -496,12 +492,14 @@ typedef union {
 #else
 	lng l[2];		/* force alignment, not otherwise used */
 #endif
-#ifdef HAVE_UUID
-	uuid_t u;
-#else
 	uint8_t u[UUID_SIZE];
-#endif
 } uuid;
+
+typedef struct {
+	size_t nitems;
+	char data[FLEXIBLE_ARRAY_MEMBER] __attribute__((__nonstring__));
+} blob;
+gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
 #define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
@@ -569,10 +567,10 @@ typedef struct {
 
 	ATOMIC_TYPE refs;	/* reference count for this heap */
 	bte farmid;		/* id of farm where heap is located */
-	bool cleanhash:1,	/* string heaps must clean hash */
-		dirty:1,	/* specific heap dirty marker */
-		remove:1,	/* remove storage file when freeing */
-		wasempty:1;	/* heap was empty when last saved/created */
+	bool cleanhash;		/* string heaps must clean hash */
+	bool dirty;		/* specific heap dirty marker */
+	bool remove;		/* remove storage file when freeing */
+	bool wasempty;	    /* heap was empty when last saved/created */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
@@ -694,7 +692,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           bool   tkey;             // tail values are unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
- *           bool   tvarsized;        // for speed: tail type is varsized?
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
@@ -728,8 +725,7 @@ typedef struct {
 	uint16_t width;		/* byte-width of the atom array */
 	int8_t type;		/* type id. */
 	uint8_t shift;		/* log2 of bun width */
-	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
-		key:1,		/* no duplicate values present */
+	bool key:1,		/* no duplicate values present */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
@@ -760,24 +756,50 @@ typedef struct {
 #define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
 #define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
+#define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
-#define GDKLIBRARY		061045U /* first after Jul2021 */
+#define GDKLIBRARY		061046U /* first after Jan2022 */
 
+/* The batRestricted field indicates whether a BAT is readonly.
+ * we have modes: BAT_WRITE  = all permitted
+ *                BAT_APPEND = append-only
+ *                BAT_READ   = read-only
+ * VIEW bats are always mapped read-only.
+ */
+typedef enum {
+	BAT_WRITE,		  /* all kinds of access allowed */
+	BAT_READ,		  /* only read-access allowed */
+	BAT_APPEND,		  /* only reads and appends allowed */
+} restrict_t;
+
+/* batDirtydesc: should be set (true) if any of the following fields
+ * have changed since the bat was last saved: hseqbase, batRestricted,
+ * batTransient, batCount, and the theap properties tkey, tseqbase,
+ * tsorted, trevsorted, twidth, tshift, tnonil, tnil, tnokey, tnosorted,
+ * tnorevsorted, tminpos, tmaxpos, and tunique_est; in addition, the
+ * value should be set if the BBP field BBP_logical(bid) is changed.
+ *
+ * theaplock: this lock should be held when reading or writing any of
+ * the fields mentioned above for batDirtydesc, and also when reading or
+ * writing any of the following fields: batDirtydesc, theap, tvheap,
+ * batInserted, batCapacity.  There is no need for the lock if the bat
+ * cannot possibly be modified concurrently, e.g. when it is new and not
+ * yet returned to the interpreter or during system initialization. */
 typedef struct BAT {
 	/* static bat properties */
 	oid hseqbase;		/* head seq base */
 	MT_Id creator_tid;	/* which thread created it */
 	bat batCacheid;		/* index into BBP */
+	role_t batRole;		/* role of the bat */
 
 	/* dynamic bat properties */
+	restrict_t batRestricted:2; /* access privileges */
 	bool
+	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
-	 batDirtydesc:1,	/* bat descriptor dirty marker */
-	 batTransient:1;	/* should the BAT persist on disk? */
-	uint8_t	/* adjacent bit fields are packed together (if they fit) */
-	 batRestricted:2;	/* access privileges */
-	role_t batRole;		/* role of the bat */
+	 batDirtydesc:1;	/* bat descriptor dirty marker */
+	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
 
@@ -796,7 +818,6 @@ typedef struct BAT {
 /* macros to hide complexity of the BAT structure */
 #define ttype		T.type
 #define tkey		T.key
-#define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
@@ -924,10 +945,10 @@ gdk_export void HEAPincref(Heap *h);
  * The BAT iterator provides a number of fields that can (and often
  * should) be used to access information about the BAT.  For string
  * BATs, if a parallel threads adds values, the offset heap (theap) may
- * get replaced by a one that is wider.  This involves changing the
- * twidth and tshift values in the BAT structure.  These changed values
- * should not be used to access the data in the iterator.  Instead, use
- * the width and shift values in the iterator itself.
+ * get replaced by one that is wider.  This involves changing the twidth
+ * and tshift values in the BAT structure.  These changed values should
+ * not be used to access the data in the iterator.  Instead, use the
+ * width and shift values in the iterator itself.
  */
 typedef struct BATiter {
 	BAT *b;
@@ -935,6 +956,7 @@ typedef struct BATiter {
 	void *base;
 	Heap *vh;
 	BUN count;
+	BUN baseoff;
 	uint16_t width;
 	uint8_t shift;
 	int8_t type;
@@ -942,13 +964,24 @@ typedef struct BATiter {
 	BUN hfree, vhfree;
 	BUN minpos, maxpos;
 	double unique_est;
+	bool key:1,
+		nonil:1,
+		nil:1,
+		sorted:1,
+		revsorted:1,
+		hdirty:1,
+		vhdirty:1,
+		dirtydesc:1,
+		copiedtodisk:1,
+		transient:1;
+	restrict_t restricted:2;
+#ifndef NDEBUG
+	bool locked:1;
+#endif
 	union {
 		oid tvid;
 		bool tmsk;
 	};
-#ifndef NDEBUG
-	bool locked;
-#endif
 } BATiter;
 
 static inline BATiter
@@ -961,6 +994,7 @@ bat_iterator_nolock(BAT *b)
 			.b = b,
 			.h = b->theap,
 			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
+			.baseoff = b->tbaseoff,
 			.vh = b->tvheap,
 			.count = b->batCount,
 			.width = b->twidth,
@@ -977,6 +1011,19 @@ bat_iterator_nolock(BAT *b)
 			.minpos = isview ? BUN_NONE : b->tminpos,
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
+			.key = b->tkey,
+			.nonil = b->tnonil,
+			.nil = b->tnil,
+			.sorted = b->tsorted,
+			.revsorted = b->trevsorted,
+			/* only look at heap dirty flag if we own it */
+			.hdirty = b->theap->parentid == b->batCacheid && b->theap->dirty,
+			/* also, if there is no vheap, it's not dirty */
+			.vhdirty = b->tvheap && b->tvheap->parentid == b->batCacheid && b->tvheap->dirty,
+			.dirtydesc = b->batDirtydesc,
+			.copiedtodisk = b->batCopiedtodisk,
+			.transient = b->batTransient,
+			.restricted = b->batRestricted,
 #ifndef NDEBUG
 			.locked = false,
 #endif
@@ -1009,6 +1056,20 @@ bat_iterator(BAT *b)
 		};
 	}
 	return bi;
+}
+
+/* return a copy of a BATiter instance; needs to be released with
+ * bat_iterator_end */
+static inline BATiter
+bat_iterator_copy(BATiter *bip)
+{
+	assert(bip);
+	assert(bip->locked);
+	if (bip->h)
+		HEAPincref(bip->h);
+	if (bip->vh)
+		HEAPincref(bip->vh);
+	return *bip;
 }
 
 static inline void
@@ -1147,8 +1208,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
 
-#define Tsize(b)	((b)->twidth)
-
 #define tailsize(b,p)	((b)->ttype ?				\
 			 (ATOMstorage((b)->ttype) == TYPE_msk ?	\
 			  (((size_t) (p) + 31) / 32) * 4 :	\
@@ -1163,12 +1222,11 @@ typedef var_t stridx_t;
 
 #define BUNtvaroff(bi,p) VarHeapVal((bi).base, (p), (bi).width)
 
-#define BUNtloc(bi,p)	(ATOMstorage((bi).type) == TYPE_msk ? Tmsk(&(bi), p) : (void *) ((char *) (bi).base + ((p) << (bi).shift)))
+#define BUNtmsk(bi,p)	Tmsk(&(bi), (p))
+#define BUNtloc(bi,p)	(assert((bi).type != TYPE_msk), ((void *) ((char *) (bi).base + ((p) << (bi).shift))))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
-#define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
-#define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
-
-#define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
+#define BUNtvar(bi,p)	(assert((bi).type && (bi).vh), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
+#define BUNtail(bi,p)	((bi).type?(bi).vh?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 #define BATcount(b)	((b)->batCount)
 
@@ -1234,18 +1292,6 @@ gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 
-/* The batRestricted field indicates whether a BAT is readonly.
- * we have modes: BAT_WRITE  = all permitted
- *                BAT_APPEND = append-only
- *                BAT_READ   = read-only
- * VIEW bats are always mapped read-only.
- */
-typedef enum {
-	BAT_WRITE,		  /* all kinds of access allowed */
-	BAT_READ,		  /* only read-access allowed */
-	BAT_APPEND,		  /* only reads and appends allowed */
-} restrict_t;
-
 gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
 	__attribute__((__warn_unused_result__));
 gdk_export restrict_t BATgetaccess(BAT *b);
@@ -1255,6 +1301,10 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 			 (b)->batDirtydesc ||				\
 			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
+#define BATdirtybi(bi)	(!(bi).copiedtodisk ||	\
+			 (bi).dirtydesc ||	\
+			 (bi).hdirty ||		\
+			 (bi).vhdirty)
 #define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
@@ -1308,7 +1358,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 
 gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
-gdk_export void BATmsync(BAT *b);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
@@ -1363,16 +1412,17 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 
 gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
 
-#define BATtordered(b)	((b)->tsorted)
-#define BATtrevordered(b) ((b)->trevsorted)
 /* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
 #define BATtdense(b)	(!is_oid_nil((b)->tseqbase) &&			\
 			 ((b)->tvheap == NULL || (b)->tvheap->free == 0))
+#define BATtdensebi(bi)	(!is_oid_nil((bi)->tseq) &&			\
+			 ((bi)->vh == NULL || (bi)->vhfree == 0))
 /* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
 #define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
 #define BATtkey(b)	((b)->tkey || BATtdense(b))
 
-/* set some properties that are trivial to deduce */
+/* set some properties that are trivial to deduce; called with theaplock
+ * held */
 static inline void
 BATsettrivprop(BAT *b)
 {
@@ -1421,7 +1471,7 @@ BATsettrivprop(BAT *b)
 		}
 	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
 		int c;
-		if (b->tvarsized)
+		if (b->tvheap)
 			c = ATOMcmp(b->ttype,
 				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
 				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 1, b->twidth));
@@ -1617,12 +1667,6 @@ gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log
 		      format, ##__VA_ARGS__)
 #define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
 
-gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-	/*
-gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-	*/
 gdk_export void GDKclrerr(void);
 
 
@@ -1668,6 +1712,8 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 		((uint64_t *) b->theap->base)[p] = (uint64_t) d;
 		break;
 #endif
+	default:
+		MT_UNREACHABLE();
 	}
 	return GDK_SUCCEED;
 }
@@ -1687,7 +1733,7 @@ tfastins_nocheck(BAT *b, BUN p, const void *v)
 		;
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 		mskSetVal(b, p, * (msk *) v);
-	} else if (b->tvarsized) {
+	} else if (b->tvheap) {
 		return tfastins_nocheckVAR(b, p, v);
 	} else {
 		return tfastins_nocheckFIX(b, p, v);
@@ -1903,20 +1949,7 @@ BBPcheck(bat x)
 	return 0;
 }
 
-static inline BAT *
-BATdescriptor(bat i)
-{
-	BAT *b = NULL;
-
-	if (BBPcheck(i)) {
-		if (BBPfix(i) <= 0)
-			return NULL;
-		b = BBP_cache(i);
-		if (b == NULL)
-			b = BBPdescriptor(i);
-	}
-	return b;
-}
+gdk_export BAT *BATdescriptor(bat i);
 
 static inline void *
 Tpos(BATiter *bi, BUN p)
@@ -1976,6 +2009,7 @@ Tpos(BATiter *bi, BUN p)
 static inline bool
 Tmskval(BATiter *bi, BUN p)
 {
+	assert(ATOMstorage(bi->type) == TYPE_msk);
 	return ((uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
 }
 
@@ -2016,68 +2050,8 @@ BUNtoid(BAT *b, BUN p)
 
 /*
  * @+ Transaction Management
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab
- *  TMcommit ()
- * @item int
- * @tab
- *  TMabort ()
- * @item int
- * @tab
- *  TMsubcommit ()
- * @end multitable
- *
- * MonetDB by default offers a global transaction environment.  The
- * global transaction involves all activities on all persistent BATs
- * by all threads.  Each global transaction ends with either TMabort
- * or TMcommit, and immediately starts a new transaction.  TMcommit
- * implements atomic commit to disk on the collection of all
- * persistent BATs. For all persistent BATs, the global commit also
- * flushes the delta status for these BATs (see
- * BATcommit/BATabort). This allows to perform TMabort quickly in
- * memory (without re-reading all disk images from disk).  The
- * collection of which BATs is persistent is also part of the global
- * transaction state. All BATs that where persistent at the last
- * commit, but were made transient since then, are made persistent
- * again by TMabort.  In other words, BATs that are deleted, are only
- * physically deleted at TMcommit time. Until that time, rollback
- * (TMabort) is possible.
- *
- * Use of TMabort is currently NOT RECOMMENDED due to two bugs:
- *
- * @itemize
- * @item
- * TMabort after a failed %TMcommit@ does not bring us back to the
- * previous committed state; but to the state at the failed TMcommit.
- * @item
- * At runtime, TMabort does not undo BAT name changes, whereas a cold
- * MonetDB restart does.
- * @end itemize
- *
- * In effect, the problems with TMabort reduce the functionality of
- * the global transaction mechanism to consistent checkpointing at
- * each TMcommit. For many applications, consistent checkpointingis
- * enough.
- *
- * Extension modules exist that provide fine grained locking (lock
- * module) and Write Ahead Logging (sqlserver).  Applications that
- * need more fine-grained transactions, should build this on top of
- * these extension primitives.
- *
- * TMsubcommit is intended to quickly add or remove BATs from the
- * persistent set. In both cases, rollback is not necessary, such that
- * the commit protocol can be accelerated. It comes down to writing a
- * new BBP.dir.
- *
- * Its parameter is a BAT-of-BATs (in the tail); the persistence
- * status of that BAT is committed. We assume here that the calling
- * thread has exclusive access to these bats.  An error is reported if
- * you try to partially commit an already committed persistent BAT (it
- * needs the rollback mechanism).
  */
 gdk_export gdk_return TMcommit(void);
-gdk_export void TMabort(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
 
@@ -2109,13 +2083,7 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  * commit protocol, and changes may be lost after quitting or crashing
  * MonetDB.
  *
- * BATabort undo-s all changes since the previous state. The global
- * TMabort achieves a rollback to the previously committed state by
- * doing BATabort on all persistent bats.
- *
- * BUG: after a failed TMcommit, TMabort does not do anything because
- * TMcommit does the BATcommits @emph{before} attempting to sync to
- * disk instead of @sc{after} doing this.
+ * BATabort undo-s all changes since the previous state.
  */
 gdk_export void BATcommit(BAT *b, BUN size);
 gdk_export void BATfakeCommit(BAT *b);
@@ -2229,7 +2197,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * is the iteration variable.
  */
 #define BATloop(r, p, q)			\
-	for (q = BUNlast(r), p = 0; p < q; p++)
+	for (q = BATcount(r), p = 0; p < q; p++)
 
 /*
  * @+ Common BAT Operations

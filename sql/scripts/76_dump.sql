@@ -165,7 +165,7 @@ CREATE VIEW sys.dump_foreign_keys AS
 CREATE VIEW sys.dump_partition_tables AS
   SELECT
     'ALTER TABLE ' || sys.FQN(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
-      CASE 
+      CASE
       WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
       WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')
       WHEN tpe = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'
@@ -181,31 +181,19 @@ CREATE VIEW sys.dump_partition_tables AS
 
 CREATE VIEW sys.dump_sequences AS
   SELECT
-    'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||
-    CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
-    CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
-    CASE
-      WHEN nomin THEN ' NO MINVALUE'
-      WHEN rmi IS NOT NULL THEN ' MINVALUE ' || rmi
-      ELSE ''
-    END ||
-    CASE
-      WHEN nomax THEN ' NO MAXVALUE'
-      WHEN rma IS NOT NULL THEN ' MAXVALUE ' || rma
-      ELSE ''
-    END ||
-    CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
-    CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END ||
-    ';' stmt,
+    'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT;' stmt,
     sch schema_name,
     seq seqname
     FROM sys.describe_sequences;
 
 CREATE VIEW sys.dump_start_sequences AS
-  SELECT
-    'UPDATE sys.sequences seq SET start = ' || s ||
-      ' WHERE name = ' || sys.SQ(seq) ||
-      ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sys.SQ(sch) || ');' stmt,
+  SELECT 'ALTER SEQUENCE ' || sys.FQN(sch, seq) ||
+	   CASE WHEN s = 0 THEN '' ELSE ' RESTART WITH ' || rs END ||
+	   CASE WHEN inc = 1 THEN '' ELSE ' INCREMENT BY ' || inc END ||
+	   CASE WHEN nomin THEN ' NO MINVALUE' WHEN rmi IS NULL THEN '' ELSE ' MINVALUE ' || rmi END ||
+	   CASE WHEN nomax THEN ' NO MAXVALUE' WHEN rma IS NULL THEN '' ELSE ' MAXVALUE ' || rma END ||
+	   CASE WHEN "cache" = 1 THEN '' ELSE ' CACHE ' || "cache" END ||
+	   CASE WHEN "cycle" THEN '' ELSE ' NO' END || ' CYCLE;' stmt,
     sch schema_name,
     seq sequence_name
     FROM sys.describe_sequences;
@@ -269,81 +257,65 @@ CREATE TABLE sys.dump_statements(o INT, s STRING);
 
 CREATE PROCEDURE sys.dump_table_data(sch STRING, tbl STRING)
 BEGIN
-
-  DECLARE k INT;
-  SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.name = tbl AND t.schema_id = s.id AND s.name = sch);
-  IF k IS NOT NULL THEN
-
-    DECLARE cname STRING;
-    DECLARE ctype STRING;
-    SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
-    SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
-
-    DECLARE COPY_INTO_STMT STRING;
-    DECLARE _cnt INT;
-    SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));
-
-    IF _cnt > 0 THEN
-      SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
-
-      DECLARE SELECT_DATA_STMT STRING;
-      SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
-
-      DECLARE M INT;
-      SET M = (SELECT MAX(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl);
-
-      WHILE (k < M) DO
-	SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);
-        SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
-	SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
-	SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
-	SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype);
-      END WHILE;
-
-      SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
-      SET SELECT_DATA_STMT = SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);
-
-      insert into sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
-
-      CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');
+  DECLARE tid INT;
+  SET tid = (SELECT MIN(t.id) FROM sys.tables t, sys.schemas s WHERE t.name = tbl AND t.schema_id = s.id AND s.name = sch);
+  IF tid IS NOT NULL THEN
+    DECLARE k INT;
+    DECLARE m INT;
+    SET k = (SELECT MIN(c.id) FROM sys.columns c WHERE c.table_id = tid);
+    SET m = (SELECT MAX(c.id) FROM sys.columns c WHERE c.table_id = tid);
+    IF k IS NOT NULL AND m IS NOT NULL THEN
+      DECLARE cname STRING;
+      DECLARE ctype STRING;
+      DECLARE _cnt INT;
+      SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+      SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+      SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));
+      IF _cnt > 0 THEN
+        DECLARE COPY_INTO_STMT STRING;
+        DECLARE SELECT_DATA_STMT STRING;
+        SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
+        SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
+        WHILE (k < m) DO
+          SET k = (SELECT MIN(c.id) FROM sys.columns c WHERE c.table_id = tid AND c.id > k);
+          SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+          SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+          SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
+          SET SELECT_DATA_STMT = (SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype));
+        END WHILE;
+        SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
+        SET SELECT_DATA_STMT = (SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl));
+        INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
+        CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');
+      END IF;
     END IF;
   END IF;
 END;
 
 CREATE PROCEDURE sys.dump_table_data()
 BEGIN
-
   DECLARE i INT;
   SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
-
   IF i IS NOT NULL THEN
     DECLARE M INT;
     SET M = (SELECT MAX(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
-
     DECLARE sch STRING;
     DECLARE tbl STRING;
-
-    WHILE i < M DO
-      set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
-      set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+    WHILE i IS NOT NULL AND i <= M DO
+      SET sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+      SET tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
       CALL sys.dump_table_data(sch, tbl);
       SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system AND t.id > i);
     END WHILE;
-
-    set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
-    set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
-    CALL sys.dump_table_data(sch, tbl);
   END IF;
 END;
 
 CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
 BEGIN
-
   SET SCHEMA sys;
   TRUNCATE sys.dump_statements;
-
   INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
-  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA "sys";');
+  INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA "sys";');
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
@@ -356,7 +328,7 @@ BEGIN
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
 				    FROM (
 				      SELECT f.o, f.stmt FROM sys.dump_functions f
-				       UNION
+				       UNION ALL
 				      SELECT t.o, t.stmt FROM sys.dump_tables t
 				    ) AS stmts(o, s);
 

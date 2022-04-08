@@ -318,6 +318,9 @@ DFLOWworker(void *T)
 			/* wait until we are allowed to start working */
 			MT_sema_down(&t->s);
 			t->flag = RUNNING;
+			if (ATOMIC_GET(&exiting)) {
+				break;
+			}
 		}
 		assert(t->flag == RUNNING);
 		cntxt = ATOMIC_PTR_GET(&t->cntxt);
@@ -511,6 +514,7 @@ DFLOWinitialize(void)
 		MT_sema_init(&workers[i].s, 0, name);
 		workers[i].flag = IDLE;
 		workers[i].self = i;
+		workers[i].id = 0;
 		workers[i].next = idle_workers;
 		idle_workers = i;
 		if (first)				/* only initialize once */
@@ -826,6 +830,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		MT_lock_unset(&dataflowLock);
 		MT_join_thread(workers[i].id);
 		MT_lock_set(&dataflowLock);
+		workers[i].id = 0;
 		workers[i].next = idle_workers;
 		idle_workers = i;
 	}
@@ -843,7 +848,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 			/* doing a recursive call: copy specificity from
 			 * current worker to new worker */
 			for (int j = 0; j < THREADS; j++) {
-				if (workers[j].flag == RUNNING && workers[j].id == pid) {
+				if (workers[j].id == pid && workers[j].flag == RUNNING) {
 					ATOMIC_PTR_SET(&workers[i].cntxt,
 								   ATOMIC_PTR_GET(&workers[j].cntxt));
 					break;
@@ -980,18 +985,18 @@ stopMALdataflow(void)
 		MT_lock_set(&dataflowLock);
 		/* first wake up all running threads */
 		for (i = 0; i < THREADS; i++) {
-			if (workers[i].flag == RUNNING)
-				MT_sema_up(&todo->s);
+			MT_sema_up(&todo->s);
 		}
 		for (i = free_workers; i >= 0; i = workers[i].next) {
 			MT_sema_up(&workers[i].s);
 		}
 		free_workers = -1;
 		for (i = 0; i < THREADS; i++) {
-			if (workers[i].flag != IDLE) {
+			if (workers[i].id != 0) {
 				MT_lock_unset(&dataflowLock);
 				MT_join_thread(workers[i].id);
 				MT_lock_set(&dataflowLock);
+				workers[i].id = 0;
 				workers[i].flag = IDLE;
 				workers[i].next = idle_workers;
 				idle_workers = i;

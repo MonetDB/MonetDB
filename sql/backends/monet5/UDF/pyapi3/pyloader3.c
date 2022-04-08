@@ -68,13 +68,13 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	char *loader_additional_args[] = {"_emit", "_conn"};
 
-    if (!PYAPI3PyAPIInitialized()) {
-        throw(MAL, "pyapi3.eval",
-              SQLSTATE(PY000) "Embedded Python is enabled but an error was thrown during initialization.");
-    }
-    sqlmorefun = *(sql_subfunc**) getArgReference(stk, pci, pci->retc);
-    sqlfun = sqlmorefun->func;
-    exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
+	if (!PYAPI3PyAPIInitialized()) {
+		throw(MAL, "pyapi3.eval",
+				SQLSTATE(PY000) "Embedded Python is enabled but an error was thrown during initialization.");
+	}
+	sqlmorefun = *(sql_subfunc**) getArgReference(stk, pci, pci->retc);
+	sqlfun = sqlmorefun->func;
+	exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
 	args = (str *)GDKzalloc(pci->argc * sizeof(str));
 	if (!args) {

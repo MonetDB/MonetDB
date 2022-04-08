@@ -1,4 +1,4 @@
-import os, socket, tempfile, pymonetdb
+import os, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -6,20 +6,11 @@ except ImportError:
     import process
 
 
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
-
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'renames'))
-    sport = freeport()
-    with process.server(mapiport=sport, dbname='renames', dbfarm=os.path.join(farm_dir, 'renames'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
-        client1 = pymonetdb.connect(database='renames', port=sport, autocommit=True)
-        client2 = pymonetdb.connect(database='renames', port=sport, autocommit=True)
+    with process.server(mapiport='0', dbname='renames', dbfarm=os.path.join(farm_dir, 'renames'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
+        client1 = pymonetdb.connect(database='renames', port=s.dbport, autocommit=True)
+        client2 = pymonetdb.connect(database='renames', port=s.dbport, autocommit=True)
         cursor1 = client1.cursor()
         cursor2 = client2.cursor()
 
@@ -64,7 +55,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         client1.close()
         client2.close()
 
-        client3 = pymonetdb.connect(database='renames', port=sport, autocommit=True)
+        client3 = pymonetdb.connect(database='renames', port=s.dbport, autocommit=True)
         cursor3 = client3.cursor()
 
         cursor3.execute('SELECT col1 FROM tab2;')
@@ -75,7 +66,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         cursor3.close()
         client3.close()
 
-        client4 = pymonetdb.connect(database='renames', port=sport, autocommit=True)
+        client4 = pymonetdb.connect(database='renames', port=s.dbport, autocommit=True)
         cursor4 = client4.cursor()
 
         cursor4.execute('DROP SCHEMA s3 CASCADE;')

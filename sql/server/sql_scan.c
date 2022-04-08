@@ -589,7 +589,7 @@ U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
    utf8chkmsk[n] should be non-zero (else the encoding could be
    shorter).
 */
-static int utf8chkmsk[] = {
+static const int utf8chkmsk[] = {
 	0x0000007f,
 	0x00000780,
 	0x0000f800,
@@ -1411,6 +1411,8 @@ sqllex(YYSTYPE * yylval, void *parm)
 
 		if (next == NOT) {
 			return sqllex(yylval, parm);
+		} else if (next == EXISTS) {
+			token = NOT_EXISTS;
 		} else if (next == BETWEEN) {
 			token = NOT_BETWEEN;
 		} else if (next == sqlIN) {

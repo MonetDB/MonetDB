@@ -448,18 +448,19 @@ HASHgrowbucket(BAT *b)
 bool
 BATcheckhash(BAT *b)
 {
-	bool ret;
 	lng t = 0;
+	Hash *h;
 
-	/* we don't need the lock just to read the value b->thash */
-	if (b->thash == (Hash *) 1) {
+	MT_rwlock_rdlock(&b->thashlock);
+	h = b->thash;
+	MT_rwlock_rdunlock(&b->thashlock);
+	if (h == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
 		MT_rwlock_wrlock(&b->thashlock);
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
-			Hash *h;
 			int fd;
 
 			assert(!GDKinmemory(b->theap->farmid));
@@ -578,13 +579,13 @@ BATcheckhash(BAT *b)
 			GDKfree(h);
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
+		h = b->thash;
 		MT_rwlock_wrunlock(&b->thashlock);
 	}
-	ret = b->thash != NULL;
-	if (ret) {
+	if (h != NULL) {
 		TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
 	}
-	return ret;
+	return h != NULL;
 }
 
 static void
@@ -607,8 +608,8 @@ BAThashsave_intern(BAT *b, bool dosync)
 		 * mean time */
 		if (!b->theap->dirty &&
 		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
-		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free) == GDK_SUCCEED &&
-		    HEAPsave(hp, hp->filename, NULL, dosync, hp->free) == GDK_SUCCEED) {
+		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free, NULL) == GDK_SUCCEED &&
+		    HEAPsave(hp, hp->filename, NULL, dosync, hp->free, NULL) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
 			hp->dirty = false;
 			gdk_return rc = HASHfix(h, true, dosync);
@@ -635,22 +636,6 @@ BAThashsave(BAT *b, bool dosync)
 	BAThashsave_intern(b, dosync);
 }
 
-#ifdef PERSISTENTHASH
-static void
-BAThashsync(void *arg)
-{
-	BAT *b = arg;
-
-	/* we could check whether b->thash == NULL before getting the
-	 * lock, and only lock if it isn't; however, it's very
-	 * unlikely that that is the case, so we don't */
-	MT_rwlock_rdlock(&b->thashlock);
-	BAThashsave_intern(b, true);
-	MT_rwlock_rdunlock(&b->thashlock);
-	BBPunfix(b->batCacheid);
-}
-#endif
-
 #define EQbte(a, b)	((a) == (b))
 #define EQsht(a, b)	((a) == (b))
 #define EQint(a, b)	((a) == (b))
@@ -663,11 +648,7 @@ BAThashsync(void *arg)
 #ifdef HAVE_HGE
 #define EQuuid(a, b)	((a).h == (b).h)
 #else
-#ifdef HAVE_UUID
-#define EQuuid(a, b)	(uuid_compare((a).u, (b).u) == 0)
-#else
 #define EQuuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#endif
 #endif
 
 #define starthash(TYPE)							\
@@ -732,7 +713,6 @@ Hash *
 BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 {
 	lng t0 = 0;
-	unsigned int tpe = ATOMbasetype(b->ttype);
 	BUN cnt1;
 	BUN mask, maxmask = 0;
 	BUN p, c;
@@ -741,6 +721,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	Hash *h = NULL;
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
+	unsigned int tpe = ATOMbasetype(bi.type);
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	lng timeoffset = 0;
@@ -750,12 +731,13 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	}
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
+	assert(bi.type != TYPE_msk);
 
 	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	TRC_DEBUG(ACCELERATOR,
 		  ALGOBATFMT ": create hash;\n", ALGOBATPAR(b));
-	if (b->ttype == TYPE_void) {
+	if (bi.type == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
 			TRC_DEBUG(ACCELERATOR,
 				  "cannot create hash-table on void-NIL column.\n");
@@ -770,8 +752,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	}
 
 	if ((h = GDKzalloc(sizeof(*h))) == NULL ||
-	    (h->heaplink.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, b->ttype, hashheap)) < 0 ||
-	    (h->heapbckt.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, b->ttype, hashheap)) < 0) {
+	    (h->heaplink.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, bi.type, hashheap)) < 0 ||
+	    (h->heapbckt.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, bi.type, hashheap)) < 0) {
 		GDKfree(h);
 		bat_iterator_end(&bi);
 		return NULL;
@@ -806,7 +788,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	} else if (ATOMsize(tpe) == 2) {
 		/* perfect hash for two-byte sized atoms */
 		mask = (1 << 16);
-	} else if (b->tkey || ci->ncand <= 4096) {
+	} else if (bi.key || ci->ncand <= 4096) {
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
@@ -838,7 +820,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		p = 0;
 		HEAPfree(&h->heapbckt, true);
 		/* create the hash structures */
-		if (HASHnew(h, ATOMtype(b->ttype), BATcapacity(b),
+		if (HASHnew(h, ATOMtype(bi.type), BATcapacity(b),
 			    mask, ci->ncand, true) != GDK_SUCCEED) {
 			HEAPfree(&h->heaplink, true);
 			GDKfree(h);
@@ -978,10 +960,12 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	h->heaplink.parentid = b->batCacheid;
 	/* if the number of unique values is equal to the bat count,
 	 * all values are necessarily distinct */
+	MT_lock_set(&b->theaplock);
 	if (h->nunique == BATcount(b) && !b->tkey) {
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
+	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG_IF(ACCELERATOR) {
 		TRC_DEBUG_ENDIF(ACCELERATOR,
 				"hash construction " LLFMT " usec\n", GDKusec() - t0);
@@ -1035,32 +1019,6 @@ BAThash(BAT *b)
 			MT_rwlock_wrunlock(&b->thashlock);
 			return GDK_FAIL;
 		}
-#ifdef PERSISTENTHASH
-		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap->dirty && !GDKinmemory(b->theap->farmid)) {
-			Hash *h = b->thash;
-			((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
-			((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
-			((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
-			((size_t *) h->heapbckt.base)[3] = (size_t) h->width;
-			((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
-			((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
-			((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
-			MT_Id tid;
-			BBPfix(b->batCacheid);
-			char name[MT_NAME_LEN];
-			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
-			MT_rwlock_wrunlock(&b->thashlock);
-			if (MT_create_thread(&tid, BAThashsync, b,
-					     MT_THR_DETACHED,
-					     name) < 0) {
-				/* couldn't start thread: clean up */
-				BBPunfix(b->batCacheid);
-			}
-			return GDK_SUCCEED;
-		} else
-			TRC_DEBUG(ACCELERATOR,
-					"NOT persisting hash %d\n", b->batCacheid);
-#endif
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 	return GDK_SUCCEED;
@@ -1109,7 +1067,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		return;
 	}
 	assert(i * h->width == h->heaplink.free);
-	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+	if (h->nunique < b->batCount / hash_destroy_uniques_fraction) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		GDKclrerr();
@@ -1170,8 +1128,9 @@ HASHappend(BAT *b, BUN i, const void *v)
 
 /* insert value v at position p into the hash table of b */
 void
-HASHinsert_locked(BAT *b, BUN p, const void *v)
+HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 {
+	BAT *b = bi->b;
 	Hash *h = b->thash;
 	if (h == NULL) {
 		return;
@@ -1183,7 +1142,7 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+	if (h->nunique < b->batCount / hash_destroy_uniques_fraction) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		GDKclrerr();
@@ -1197,7 +1156,6 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
-	BATiter bi = bat_iterator_nolock(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	if (hb == BUN_NONE || hb < p) {
 		/* bucket is empty, or bucket is used by lower numbered
@@ -1210,7 +1168,7 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 			h->nheads++;
 		} else {
 			do {
-				if (atomcmp(v, BUNtail(bi, hb)) == 0) {
+				if (atomcmp(v, BUNtail(*bi, hb)) == 0) {
 					/* found another row with the
 					 * same value, so don't
 					 * increment nunique */
@@ -1226,14 +1184,14 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 	bool seen = false;
 	for (;;) {
 		if (!seen)
-			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
+			seen = atomcmp(v, BUNtail(*bi, hb)) == 0;
 		BUN hb2 = HASHgetlink(h, hb);
 		if (hb2 == BUN_NONE || hb2 < p) {
 			h->heaplink.dirty = true;
 			HASHputlink(h, p, hb2);
 			HASHputlink(h, hb, p);
 			while (!seen && hb2 != BUN_NONE) {
-				seen = atomcmp(v, BUNtail(bi, hb2)) == 0;
+				seen = atomcmp(v, BUNtail(*bi, hb2)) == 0;
 				hb2 = HASHgetlink(h, hb2);
 			}
 			if (!seen)
@@ -1245,17 +1203,18 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 }
 
 void
-HASHinsert(BAT *b, BUN p, const void *v)
+HASHinsert(BATiter *bi, BUN p, const void *v)
 {
-	MT_rwlock_wrlock(&b->thashlock);
-	HASHinsert_locked(b, p, v);
-	MT_rwlock_wrunlock(&b->thashlock);
+	MT_rwlock_wrlock(&bi->b->thashlock);
+	HASHinsert_locked(bi, p, v);
+	MT_rwlock_wrunlock(&bi->b->thashlock);
 }
 
 /* delete value v at position p from the hash table of b */
 void
-HASHdelete_locked(BAT *b, BUN p, const void *v)
+HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 {
+	BAT *b = bi->b;
 	Hash *h = b->thash;
 	if (h == NULL) {
 		return;
@@ -1267,7 +1226,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+	if (h->nunique < b->batCount / hash_destroy_uniques_fraction) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		GDKclrerr();
@@ -1281,7 +1240,6 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
-	BATiter bi = bat_iterator_nolock(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	if (hb == p) {
 		BUN hb2 = HASHgetlink(h, p);
@@ -1293,7 +1251,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 			h->nheads--;
 		} else {
 			do {
-				if (atomcmp(v, BUNtail(bi, hb2)) == 0) {
+				if (atomcmp(v, BUNtail(*bi, hb2)) == 0) {
 					/* found another row with the
 					 * same value, so don't
 					 * decrement nunique below */
@@ -1308,9 +1266,10 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	bool seen = false;
+	BUN links = 0;
 	for (;;) {
 		if (!seen)
-			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
+			seen = atomcmp(v, BUNtail(*bi, hb)) == 0;
 		BUN hb2 = HASHgetlink(h, hb);
 		assert(hb2 != BUN_NONE );
 		assert(hb2 < hb);
@@ -1318,10 +1277,16 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 			for (hb2 = HASHgetlink(h, hb2);
 			     !seen && hb2 != BUN_NONE;
 			     hb2 = HASHgetlink(h, hb2))
-				seen = atomcmp(v, BUNtail(bi, hb2)) == 0;
+				seen = atomcmp(v, BUNtail(*bi, hb2)) == 0;
 			break;
 		}
 		hb = hb2;
+		if (++links > hash_destroy_chain_length) {
+			b->thash = NULL;
+			doHASHdestroy(b, h);
+			GDKclrerr();
+			return;
+		}
 	}
 	h->heaplink.dirty = true;
 	HASHputlink(h, hb, HASHgetlink(h, p));
@@ -1331,11 +1296,11 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 }
 
 void
-HASHdelete(BAT *b, BUN p, const void *v)
+HASHdelete(BATiter *bi, BUN p, const void *v)
 {
-	MT_rwlock_wrlock(&b->thashlock);
-	HASHdelete_locked(b, p, v);
-	MT_rwlock_wrunlock(&b->thashlock);
+	MT_rwlock_wrlock(&bi->b->thashlock);
+	HASHdelete_locked(bi, p, v);
+	MT_rwlock_wrunlock(&bi->b->thashlock);
 }
 
 BUN
@@ -1398,7 +1363,7 @@ HASHgonebad(BAT *b, const void *v)
 
 	BATiter bi = bat_iterator(b);
 	if (h->nbucket * 2 < BATcount(b)) {
-		int (*cmp) (const void *, const void *) = ATOMcompare(b->ttype);
+		int (*cmp) (const void *, const void *) = ATOMcompare(bi.type);
 		BUN i = HASHget(h, (BUN) HASHprobe(h, v));
 		for (cnt = hit = 1; i != BUN_NONE; i = HASHgetlink(h, i), cnt++)
 			hit += ((*cmp) (v, BUNtail(bi, (BUN) i)) == 0);

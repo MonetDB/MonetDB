@@ -9,7 +9,7 @@
 /**
  * utils
  * Fabian Groffen
- * Shared utility functions between merovingian and monetdb
+ * Shared utility functions between merovingian/monetdbd and monetdb
  */
 
 /* NOTE: for this file to work correctly, the random number generator
@@ -285,6 +285,29 @@ setConfVal(confkeyval *ckv, const char *val) {
 				return(strdup(buf));
 			}
 		}; break;
+		case LOGLEVEL: {
+			if (strcasecmp(val, "error") == 0) {
+				val = "error";
+				ival = ERROR;
+			} else if (strcasecmp(val, "warning") == 0) {
+				val = "warning";
+				ival = WARNING;
+			} else if (strcasecmp(val, "information") == 0) {
+				val = "information";
+				ival = INFORMATION;
+			} else if (strcasecmp(val, "debug") == 0) {
+				val = "debug";
+				ival = DEBUG;
+			} else {
+				return(strdup("allowed loglevel values are: error or warning or information or debug\n"));
+			}
+		}; break;
+		case MODS:
+			for (size_t i = 0; val[i]; i++) {
+				if (val[i] < ' ' || val[i] == '\\' || val[i] == '/' || val[i] >= 0177)
+					return strdup("only printable ASCII character other than \\ and / allowed");
+			}
+			/* fall through */
 		case STR:
 		case OTHER:
 			/* leave as is, not much to check */
@@ -398,7 +421,7 @@ abbreviateString(char *ret, const char *in, size_t width)
 	}
 }
 
-static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+static const char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
 	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
 	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',

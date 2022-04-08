@@ -312,9 +312,358 @@
 	} while (0)
 
 BUN dofsum(const void *restrict values, oid seqb,
-		    struct canditer *restrict ci, BUN ncand,
+		    struct canditer *restrict ci,
 		    void *restrict results, BUN ngrp, int tp1, int tp2,
 		    const oid *restrict gids,
 		    oid min, oid max, bool skip_nils, bool abort_on_error,
 		    bool nil_if_empty)
 	__attribute__((__visibility__("hidden")));
+
+/* format strings for the seven/eight basic types we deal with */
+#define FMTbte	"%d"
+#define FMTsht	"%d"
+#define FMTint	"%d"
+#define FMTlng	LLFMT
+#ifdef HAVE_HGE
+#define FMThge	"%.40g"
+#endif
+#define FMTflt	"%.9g"
+#define FMTdbl	"%.17g"
+#define FMToid	OIDFMT
+
+/* casts; only required for type hge, since there is no genuine format
+ * string for it (i.e., for __int128) (yet?) */
+#define CSTbte
+#define CSTsht
+#define CSTint
+#define CSTlng
+#ifdef HAVE_HGE
+#define CSThge  (dbl)
+#endif
+#define CSTflt
+#define CSTdbl
+#define CSToid
+
+/* Most of the internal routines return a count of the number of NIL
+ * values they produced.  They indicate an error by returning a value
+ * >= BUN_NONE.  BUN_NONE means that the error was dealt with by
+ * calling GDKerror (generally for overflow or conversion errors).
+ * BUN_NONE+1 is returned by the DIV and MOD functions to indicate
+ * division by zero.  */
+
+/* replace BATconstant with a version that produces a void bat for
+ * TYPE_oid/nil */
+#define BATconstantV(HSEQ, TAILTYPE, VALUE, CNT, ROLE)			\
+	((TAILTYPE) == TYPE_oid && ((CNT) == 0 || *(oid*)(VALUE) == oid_nil) \
+	 ? BATconstant(HSEQ, TYPE_void, VALUE, CNT, ROLE)		\
+	 : BATconstant(HSEQ, TAILTYPE, VALUE, CNT, ROLE))
+
+#define ON_OVERFLOW1(TYPE, OP)					\
+	do {							\
+		GDKerror("22003!overflow in calculation "	\
+			 OP "(" FMT##TYPE ").\n",		\
+			 CST##TYPE src[x]);			\
+		goto bailout;					\
+	} while (0)
+
+#define ON_OVERFLOW(TYPE1, TYPE2, OP)					\
+	do {								\
+		GDKerror("22003!overflow in calculation "		\
+			 FMT##TYPE1 OP FMT##TYPE2 ".\n",		\
+			 CST##TYPE1 ((TYPE1 *)lft)[i], CST##TYPE2 ((TYPE2 *)rgt)[j]); \
+		return BUN_NONE;					\
+	} while (0)
+
+#define UNARY_2TYPE_FUNC(TYPE1, TYPE2, FUNC)				\
+	do {								\
+		const TYPE1 *restrict src = (const TYPE1 *) bi.base;	\
+		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {		\
+			x = canditer_next(&ci) - bhseqbase;		\
+			if (is_##TYPE1##_nil(src[x])) {			\
+				nils++;					\
+				dst[i] = TYPE2##_nil;			\
+			} else {					\
+				dst[i] = FUNC(src[x]);			\
+			}						\
+		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+	} while (0)
+
+#define UNARY_2TYPE_FUNC_nilcheck(TYPE1, TYPE2, FUNC, on_overflow)	\
+	do {								\
+		const TYPE1 *restrict src = (const TYPE1 *) bi.base;	\
+		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {		\
+			x = canditer_next(&ci) - bhseqbase;		\
+			if (is_##TYPE1##_nil(src[x])) {			\
+				nils++;					\
+				dst[i] = TYPE2##_nil;			\
+			} else {					\
+				dst[i] = FUNC(src[x]);			\
+				if (is_##TYPE2##_nil(dst[i])) {		\
+					on_overflow;			\
+				}					\
+			}						\
+		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC(TYPE1, TYPE2, TYPE3, FUNC)			\
+	do {								\
+		i = j = 0;						\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		} else {						\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		}							\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC_nilcheck(TYPE1, TYPE2, TYPE3, FUNC, on_overflow) \
+	do {								\
+		i = j = 0;						\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+					if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
+						on_overflow;		\
+				}					\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		} else {						\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+					if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
+						on_overflow;		\
+				}					\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		}							\
+	} while (0)
+
+/* special case for EQ and NE where we have a nil_matches flag for
+ * when it is set */
+#define BINARY_3TYPE_FUNC_nilmatch(TYPE1, TYPE2, TYPE3, FUNC)		\
+	do {								\
+		i = j = 0;						\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		} else {						\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		}							\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC_nonil(TYPE1, TYPE2, TYPE3, FUNC)		\
+	do {								\
+		i = j = 0;						\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		} else {						\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		}							\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC_nonil_nilcheck(TYPE1, TYPE2, TYPE3, FUNC, on_overflow) \
+	do {								\
+		i = j = 0;						\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
+					on_overflow;			\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		} else {						\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
+					on_overflow;			\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		}							\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC_CHECK(TYPE1, TYPE2, TYPE3, FUNC, CHECK)	\
+	do {								\
+		i = j = 0;						\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else if (CHECK(v1, v2)) {		\
+					if (abort_on_error) {		\
+						GDKerror("%s: shift operand too large in " \
+							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+							 func,		\
+							 CST##TYPE1 v1,	\
+							 CST##TYPE2 v2); \
+						goto checkfail;		\
+					}				\
+					((TYPE3 *)dst)[k] = TYPE3##_nil; \
+					nils++;				\
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		} else {						\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else if (CHECK(v1, v2)) {		\
+					if (abort_on_error) {		\
+						GDKerror("%s: shift operand too large in " \
+							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+							 func,		\
+							 CST##TYPE1 v1,	\
+							 CST##TYPE2 v2); \
+						goto checkfail;		\
+					}				\
+					((TYPE3 *)dst)[k] = TYPE3##_nil; \
+					nils++;				\
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+		}							\
+	} while (0)
+
+#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
+/* with Intel compiler on Windows, avoid using roundl and llroundl: they
+ * cause a mysterious crash; long double is the same size as double
+ * anyway */
+typedef double ldouble;
+#ifdef TRUNCATE_NUMBERS
+#define rounddbl(x)	(x)
+#else
+#define rounddbl(x)	round(x)
+#endif
+#else
+typedef long double ldouble;
+#ifdef TRUNCATE_NUMBERS
+#define rounddbl(x)	(x)
+#else
+#define rounddbl(x)	roundl(x)
+#endif
+#endif

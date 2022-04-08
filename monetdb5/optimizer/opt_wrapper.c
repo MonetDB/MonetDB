@@ -226,8 +226,11 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	BBPkeepref( *nme = n->batCacheid);
-	BBPkeepref( *cnt = c->batCacheid);
-	BBPkeepref( *time = t->batCacheid);
+	*nme = n->batCacheid;
+	BBPkeepref(n);
+	*cnt = c->batCacheid;
+	BBPkeepref(c);
+	*time = t->batCacheid;
+	BBPkeepref(t);
 	return MAL_SUCCEED;
 }

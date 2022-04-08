@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 DROP FUNCTION fGetUrlExpEq
 
 statement ok
@@ -367,3 +370,5 @@ DROP FUNCTION  fField
 statement ok
 DROP FUNCTION fObj
 
+statement ok
+COMMIT

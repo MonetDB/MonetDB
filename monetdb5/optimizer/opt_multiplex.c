@@ -96,7 +96,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* resB := new(refBat) */
 	for (i = 0; i < pci->retc; i++) {
-		q = newFcnCallArgs(mb, batRef, newRef, 2);
+		q = newFcnCallArgs(mb, batRef, newRef, 3);
 		resB[i] = getArg(q, 0);
 
 		tt = getBatType(getArgType(mb, pci, i));

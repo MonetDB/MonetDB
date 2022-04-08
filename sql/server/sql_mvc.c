@@ -62,7 +62,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 
 		r = rel_parse(m, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(m, r, 0, 0, 0);
+			r = sql_processrelation(m, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(m, r);
 			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
@@ -290,7 +290,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 
 		for (int i = 0; i < 9; i++) {
 			sql_column *col = NULL;
-			
+
 			mvc_create_column_(&col, m, t, tview[i].name, tview[i].type, tview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);
@@ -630,7 +630,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
-		if (!tr) {
+		if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
 			msg = createException(SQL, "sql.rollback", SQLSTATE(42000) "ROLLBACK TO SAVEPOINT: no such savepoint: '%s'", name);
 			m->session->status = -1;
 			return msg;
@@ -642,14 +642,15 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 				tr->status = 1;
 			tr = sql_trans_destroy(tr);
 		}
-		m->session->tr = tr;	/* restart at savepoint */
-		m->session->status = tr->status;
-		if (tr->name) {
-			_DELETE(tr->name);
-			tr->name = NULL;
+		/* start a new transaction after rolling back */
+		if (!(m->session->tr = tr = sql_trans_create(m->store, tr, name))) {
+			msg = createException(SQL, "sql.rollback", SQLSTATE(HY013) "ROLLBACK TO SAVEPOINT: allocation failure while restarting savepoint");
+			m->session->status = -1;
+			return msg;
 		}
-		if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
-			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found on the current transaction");
+		m->session->status = tr->parent->status;
+		if (!(m->session->schema = find_sql_schema(tr, m->session->schema_name))) {
+			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK TO SAVEPOINT: finished successfully, but the session's schema could not be found on the current transaction");
 			m->session->status = -1;
 			return msg;
 		}
@@ -691,12 +692,10 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 str
 mvc_release(mvc *m, const char *name)
 {
-	int ok = SQL_OK;
 	sql_trans *tr = m->session->tr;
 	str msg = MAL_SUCCEED;
 
-	assert(tr);
-	assert(m->session->tr->active);	/* only release active transactions */
+	assert(tr && tr->active);	/* only release active transactions */
 
 	TRC_DEBUG(SQL_TRANS, "Release: %s\n", (name) ? name : "");
 
@@ -708,20 +707,20 @@ mvc_release(mvc *m, const char *name)
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
 	if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
-		msg = createException(SQL, "sql.release", SQLSTATE(42000) "Release savepoint %s doesn't exist", name);
+		msg = createException(SQL, "sql.release", SQLSTATE(42000) "RELEASE: no such savepoint: '%s'", name);
 		m->session->status = -1;
 		return msg;
 	}
 	tr = m->session->tr;
-	while (ok == SQL_OK && (!tr->name || strcmp(tr->name, name) != 0)) {
+	while (!tr->name || strcmp(tr->name, name) != 0) {
 		/* commit all intermediate savepoints */
 		if (sql_trans_commit(tr) != SQL_OK)
 			GDKfatal("release savepoints should not fail");
 		tr = sql_trans_destroy(tr);
 	}
-	_DELETE(tr->name);
-	tr->name = NULL;
+	_DELETE(tr->name); /* name will no longer be used */
 	m->session->tr = tr;
+	m->session->status = tr->status;
 	if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
 		msg = createException(SQL, "sql.release", SQLSTATE(40000) "RELEASE: finished successfully, but the session's schema could not be found on the current transaction");
 		m->session->status = -1;
@@ -785,6 +784,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 
 	m->role_id = m->user_id = -1;
 	m->timezone = 0;
+	m->sql_optimizer = INT_MAX;
 	m->clientid = clientid;
 
 	m->emode = m_normal;
@@ -794,6 +794,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 
 	m->label = 0;
 	m->cascade_action = NULL;
+	m->runs = NULL;
 
 	if (!(m->schema_path = list_create((fdestroy)_free))) {
 		qc_destroy(m->qc);
@@ -867,12 +868,16 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	if (m->timezone != 0)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "current_timezone"), 0);
 	m->timezone = 0;
+	if (m->sql_optimizer != INT_MAX)
+		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "sql_optimizer"), INT_MAX);
+	m->sql_optimizer = INT_MAX;
 	if (m->debug != debug)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "debug"), debug);
 	m->debug = debug;
 
 	m->label = 0;
 	m->cascade_action = NULL;
+	m->runs = NULL;
 	m->type = Q_PARSE;
 
 	scanner_init(&m->scanner, rs, ws);
@@ -994,10 +999,9 @@ mvc_first_column(mvc *m, sql_table *t)
 sql_key *
 mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 {
-	sql_base *b = os_find_name(s->keys, m->session->tr, kname);
-	sql_key *k = (sql_key*)b;
+	sql_key *k = schema_find_key(m->session->tr, s, kname);
 
-	if (!b)
+	if (!k)
 		return NULL;
 	TRC_DEBUG(SQL_TRANS, "Bind key: %s.%s\n", s->base.name, kname);
 	return k;
@@ -1006,11 +1010,10 @@ mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 sql_idx *
 mvc_bind_idx(mvc *m, sql_schema *s, const char *iname)
 {
-	sql_base *b = os_find_name(s->idxs, m->session->tr, iname);
+	sql_idx *i = schema_find_idx(m->session->tr, s, iname);
 
-	if (!b)
+	if (!i)
 		return NULL;
-	sql_idx *i = (sql_idx*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind index: %s.%s\n", s->base.name, iname);
 	return i;
 }
@@ -1055,13 +1058,12 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 sql_trigger *
 mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 {
-	sql_base *b = os_find_name(s->triggers, m->session->tr, tname);
+	sql_trigger *t = schema_find_trigger(m->session->tr, s, tname);
 
-	if (!b)
+	if (!t)
 		return NULL;
-	sql_trigger *trigger = (sql_trigger*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind trigger: %s.%s\n", s->base.name, tname);
-	return trigger;
+	return t;
 }
 
 int
@@ -1076,7 +1078,7 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 {
 	TRC_DEBUG(SQL_TRANS, "Drop type: %s %s\n", s->base.name, t->base.name);
 	if (t)
-		return sql_trans_drop_type(m->session->tr, s, t->base.id, drop_action);
+		return sql_trans_drop_type(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 	return 0;
 }
 
@@ -1563,12 +1565,12 @@ mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres)
 }
 
 sql_rel *
-sql_processrelation(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt)
+sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
 	if (rel)
 		rel = rel_unnest(sql, rel);
 	if (rel)
-		rel = rel_optimizer(sql, rel, instantiate, value_based_opt, storage_based_opt);
+		rel = rel_optimizer(sql, rel, profile, instantiate, value_based_opt, storage_based_opt);
 	return rel;
 }
 

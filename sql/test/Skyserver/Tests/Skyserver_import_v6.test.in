@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 SET SCHEMA "skyserver"
 
 statement ok
@@ -184,3 +187,5 @@ COPY 53 RECORDS INTO XCRedShift FROM '$QTSTSRCDIR/../microsky_v6/XCRedShift.dat.
 statement ok
 COPY 91 RECORDS INTO Zone FROM '$QTSTSRCDIR/../microsky_v6/Zone.dat.bz2' USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
 
+statement ok
+COMMIT

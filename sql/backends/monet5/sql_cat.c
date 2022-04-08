@@ -571,7 +571,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			}
 			r = rel_parse(sql, s, buf, m_deps);
 			if (r)
-				r = sql_processrelation(sql, r, 0, 0, 0);
+				r = sql_processrelation(sql, r, 0, 0, 0, 0);
 			if (r) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
@@ -936,9 +936,9 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 	} else if (fid == -2) { /* if exists option */
 		return MAL_SUCCEED;
 	} else { /* fid == -1 */
-		list *list_func = sql_find_funcs_by_name(sql, s->base.name, name, type);
+		list *list_func = sql_find_funcs_by_name(sql, s->base.name, name, type, false);
 
-		if (list_func)
+		if (!list_empty(list_func))
 			for (node *n = list_func->h; n; n = n->next) {
 				sql_func *func = n->data;
 
@@ -999,7 +999,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			}
 		}
 
-		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type)) != NULL) {
+		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type, false)) != NULL) {
 			sql_func *sff = sf->func;
 
 			if (!sff->s || sff->system)
@@ -1060,7 +1060,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 		}
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0, 0, 0);
+			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			node *n;
 			list *blist = rel_dependencies(sql, r);
@@ -1467,7 +1467,7 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s->system)
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for '%s'", sname);
 	if (sql_schema_has_user(sql, s))
-		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
+		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database users using it as session's default schema)", sname);
 	if (!action /* RESTRICT */ && (
 		os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr)))
 		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);

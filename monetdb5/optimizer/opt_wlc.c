@@ -46,6 +46,8 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			( getFunctionId(p) == appendRef  ||
 			  getFunctionId(p) == updateRef  ||
 			  getFunctionId(p) == claimRef  ||
+			  getFunctionId(p) == dependRef ||
+			  getFunctionId(p) == predicateRef ||
 			  getFunctionId(p) == deleteRef  ||
 			  getFunctionId(p) == clear_tableRef ))
 			query = 0;
@@ -113,6 +115,8 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			( getFunctionId(p) == appendRef  ||
 			  getFunctionId(p) == updateRef  ||
 			  getFunctionId(p) == claimRef  ||
+			  getFunctionId(p) == dependRef ||
+			  getFunctionId(p) == predicateRef ||
 			  getFunctionId(p) == deleteRef  ||
 			  getFunctionId(p) == clear_tableRef ) &&
 			strcmp( getVarConstant(mb,getArg(p,2+(getFunctionId(p) == claimRef))).val.sval, "tmp") != 0 ){

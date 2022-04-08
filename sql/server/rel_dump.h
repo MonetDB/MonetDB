@@ -14,7 +14,6 @@
 
 extern void rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
 extern void rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int decorate);
-extern const char *op2string(operator_type op);
 
 extern sql_rel *rel_read(mvc *sql, char *ra, int *pos, list *refs);
 
