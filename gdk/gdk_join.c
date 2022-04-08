@@ -2757,7 +2757,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  "existing hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
-	} else if (BATtdense(r)) {
+	} else if (BATtdensebi(&ri)) {
 		/* no hash, just dense lookup */
 		MT_thread_setalgorithm(swapped ? "hashjoin on dense (swapped)" : "hashjoin on dense");
 	} else {
@@ -2776,7 +2776,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		GDKerror("Hash disappeared for "ALGOBATFMT"\n", ALGOBATPAR(r));
 		goto bailout;
 	}
-	assert(hsh != NULL || BATtdense(r));
+	assert(hsh != NULL || BATtdensebi(&ri));
 	if (hsh) {
 		TRC_DEBUG(ALGO, "hash for " ALGOBATFMT ": nbucket " BUNFMT ", nunique " BUNFMT ", nheads " BUNFMT "\n", ALGOBATPAR(r), hsh->nbucket, hsh->nunique, hsh->nheads);
 	}
@@ -2800,7 +2800,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						       false, false, __func__, t0);
 				}
 			}
-		} else if (!BATtdense(r)) {
+		} else if (!BATtdensebi(&ri)) {
 			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
 			     rb != BUN_NONE;
 			     rb = HASHgetlink(hsh, rb)) {
@@ -2850,7 +2850,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			lo = canditer_next(lci);
-			if (BATtdense(l))
+			if (BATtdensebi(&li))
 				lval = lo - l->hseqbase + l->tseqbase;
 			else if (li.type != TYPE_void)
 				v = VALUE(l, lo - l->hseqbase);
@@ -2877,7 +2877,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						break;
 				}
 			} else if (hsh == NULL) {
-				assert(BATtdense(r));
+				assert(BATtdensebi(&ri));
 				ro = *(const oid *) v;
 				if (ro >= r->tseqbase &&
 				    ro < r->tseqbase + r->batCount) {
@@ -3432,7 +3432,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	}
 
 	if (BATtvoid(l)) {
-		if (!BATtdense(l)) {
+		if (!BATtdensebi(&li)) {
 			/* trivial: nils don't match anything */
 			bat_iterator_end(&li);
 			bat_iterator_end(&ri);
@@ -3442,7 +3442,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 		loff = (lng) l->tseqbase - (lng) l->hseqbase;
 	}
 	if (BATtvoid(r)) {
-		if (!BATtdense(r)) {
+		if (!BATtdensebi(&ri)) {
 			/* trivial: nils don't match anything */
 			bat_iterator_end(&li);
 			bat_iterator_end(&ri);

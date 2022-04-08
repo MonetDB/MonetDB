@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "rel_physical.h"
+#include "rel_optimizer_private.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
 
@@ -65,23 +66,20 @@ rel_find_aggr_exp(mvc *sql, sql_rel *rel, list *exps, sql_exp *e, char *name)
 static sql_exp *
 find_aggr_exp(mvc *sql, list *exps, char *name)
 {
-        node *n;
+	node *n;
 
-        for( n = exps->h; n; n = n->next) {
-                sql_exp *a = n->data;
+	for( n = exps->h; n; n = n->next) {
+		sql_exp *a = n->data;
 
-                if (a->type == e_aggr) {
-                        sql_subfunc *af = a->f;
+		if (a->type == e_aggr) {
+			sql_subfunc *af = a->f;
 
-                        if (strcmp(af->func->base.name, name) == 0)
-                                return exp_ref(sql, a);
-                }
-        }
-        return NULL;
+			if (strcmp(af->func->base.name, name) == 0)
+				return exp_ref(sql, a);
+		}
+	}
+	return NULL;
 }
-
-#define rewrite_gt_zero_used (1 << 0)
-#define is_rewrite_gt_zero_used(X) ((X & rewrite_gt_zero_used) == rewrite_gt_zero_used)
 
 static sql_rel *
 rel_count_gt_zero(visitor *v, sql_rel *rel)

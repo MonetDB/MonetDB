@@ -6,24 +6,14 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
-/*#define DEBUG*/
-
 #include "monetdb_config.h"
+#include "rel_optimizer_private.h"
 #include "sql_decimal.h"
 #include "rel_unnest.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
-
-/* some unnesting steps use the 'used' flag to avoid further rewrites. List them here, so only one reset flag iteration will be used */
-#define rewrite_fix_count_used (1 << 0)
-#define rewrite_values_used    (1 << 1)
-#define rewrite_outer_used     (1 << 2)
-
-#define is_rewrite_fix_count_used(X) ((X & rewrite_fix_count_used) == rewrite_fix_count_used)
-#define is_rewrite_values_used(X)    ((X & rewrite_values_used) == rewrite_values_used)
-#define is_rewrite_outer_used(X)     ((X & rewrite_outer_used) == rewrite_outer_used)
 
 static void
 exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
@@ -3861,7 +3851,7 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !is_rewrite_outer_used(rel->used) && rel->flag != MERGE_LEFT) {
+	if (is_outerjoin(rel->op) && rel->flag != MERGE_LEFT) {
 		int nrcols = rel->nrcols;
 
 		nrcols = include_tid(rel->l);
@@ -4116,10 +4106,6 @@ rel_unnest_simplify(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_unnest_projects(visitor *v, sql_rel *rel)
 {
-	/* The rewriters 'rewrite_values', 'rewrite_fix_count' and 'rewrite_outer2inner_union' use
-	   'used' property from sql_rel, reset it, so make sure rewrite_reset_used is called first */
-	if (rel)
-		rel = rewrite_reset_used(v, rel);
 	if (rel)
 		rel = rewrite_remove_xp(v, rel);	/* remove crossproducts with project [ atom ] */
 	if (rel)

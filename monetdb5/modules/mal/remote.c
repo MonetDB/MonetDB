@@ -1559,7 +1559,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			vi.sorted, vi.revsorted,
 			vi.key,
 			vi.nonil,
-			BATtdense(v),
+			BATtdensebi(&vi),
 			vi.count,
 			sendtheap ? (size_t)vi.count << vi.shift : 0,
 			sendtvheap && vi.count > 0 ? vi.vhfree : 0
