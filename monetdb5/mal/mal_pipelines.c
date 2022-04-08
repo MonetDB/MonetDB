@@ -187,9 +187,9 @@ PIPELINEworker(void *T)
 		MalStkPtr stk = stack_copy(s->stk, s->start);
 
 		p->p = s;
-		p->wid = ATOMIC_INC(&s->workers);
+		p->wid = (int) ATOMIC_INC(&s->workers);
 		p->wls = NULL;
-		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = ATOMIC_INC(&s->counter);
+		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = (int) ATOMIC_INC(&s->counter);
 		stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
 		/* the maxparts (arg 3) is generated ie constant value on the stack */
 		str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);
@@ -274,10 +274,10 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->stop = stoppc;
 	s->stk = stk;
 	s->maxparts = maxparts;
-	s->counter = -1;
+	ATOMIC_INIT(&s->counter, -1);
 	s->nr_workers = GDKnr_threads;
-	ATOMIC_SET(&s->workers, -1);
-	s->error = NULL;
+	ATOMIC_INIT(&s->workers, -1);
+	ATOMIC_PTR_INIT(&s->error, NULL);
 
 	s->mb = nmb;
 	/* fix endless call of runMALpipelines but use as loop for parts */
@@ -300,8 +300,11 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 		MT_sema_down(&s->s);
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
-	str err = s->error;
+	str err = ATOMIC_PTR_GET(&s->error);
 	freeMalBlk(s->mb);
+	ATOMIC_DESTROY(&s->counter);
+	ATOMIC_DESTROY(&s->workers);
+	ATOMIC_PTR_DESTROY(&s->error);
 	GDKfree(s);
 	return err;
 }

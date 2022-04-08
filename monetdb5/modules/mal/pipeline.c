@@ -180,7 +180,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *res = getArgReference_int(stk, pci, 0);
 	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 1);
 
-    *res = ATOMIC_INC(&p->p->counter);
+	*res = (int) ATOMIC_INC(&p->p->counter);
 	(void)cntxt; (void)mb;
 	return MAL_SUCCEED;
 }
@@ -352,8 +352,12 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!err) {
 			BATnegateprops(b);
 			BBPkeepref(b);
-		} else
+			BATnegateprops(c);
+			BBPkeepref(c);
+		} else {
 			BBPunfix(b->batCacheid);
+			BBPunfix(c->batCacheid);
+		}
 	} else {
 			err = createException(SQL, "aggr.avg",	"Result is not initialized");
 	}
