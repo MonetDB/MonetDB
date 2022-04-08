@@ -3720,7 +3720,7 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
 		complex_aggr = true;
 
-	if (avg && pipeline)
+	if (avg && restype == TYPE_dbl && pipeline)
 		mod = putName("batcalc");
 	if (!pipeline && restype == TYPE_dbl)
 		avg = 0;
@@ -3815,7 +3815,7 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		q = pushBit(mb, q, no_nil);
 	} else if (!nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
-	} else if (avg && !pipeline) { /* push candidates */
+	} else if (avg && (restype != TYPE_dbl || !pipeline)) { /* push candidates */
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, no_nil);
 	}
