@@ -3851,7 +3851,7 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !is_rewrite_outer_used(rel->used) && rel->flag != MERGE_LEFT) {
+	if (is_outerjoin(rel->op) && rel->flag != MERGE_LEFT) {
 		int nrcols = rel->nrcols;
 
 		nrcols = include_tid(rel->l);
