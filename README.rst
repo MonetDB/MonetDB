@@ -86,7 +86,6 @@ WITH_LZMA       Include lzma support
 WITH_PCRE       Include pcre support
 WITH_PROJ       Include proj support
 WITH_READLINE   Include readline support
-WITH_UUID       Include uuid support
 WITH_VALGRIND   Include valgrind support
 WITH_XML2       Include xml2 support
 WITH_ZLIB       Include zlib support
@@ -99,7 +98,7 @@ On Fedora, the following packages are required:
 ``bison``, ``cmake``, ``gcc``, ``pkgconf``, ``python3``.
 
 The following packages are optional but recommended:
-``bzip2-devel``, ``libuuid-devel``, ``pcre-devel``, ``readline-devel``,
+``bzip2-devel``, ``pcre-devel``, ``readline-devel``,
 ``xz-devel``, ``zlib-devel``.
 
 The following packages are optional:
@@ -109,11 +108,10 @@ The following packages are optional:
 ``unixODBC-devel``, ``valgrind-devel``.
 
 On Ubuntu and Debian the following packages are required:
-``bison``, ``cmake``, ``gcc``, ``libssl-dev``, ``pkg-config``,
-``python3``.
+``bison``, ``cmake``, ``gcc``, ``pkg-config``, ``python3``.
 
 The following packages are optional but recommended:
-``libbz2-dev``, ``uuid-dev``, ``libpcre3-dev``, ``libreadline-dev``,
+``libbz2-dev``, ``libpcre3-dev``, ``libreadline-dev``,
 ``liblzma-dev``, ``zlib1g-dev``.
 
 The following packages are optional:

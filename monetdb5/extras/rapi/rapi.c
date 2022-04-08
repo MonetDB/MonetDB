@@ -64,7 +64,7 @@
 		retsxp = PROTECT(newfun(bati.count));							\
 		if (!retsxp) break;												\
 		valptr = ptrfun(retsxp);										\
-		if (bat->tnonil && !bat->tnil) {								\
+		if (bati.nonil && !bati.nil) {								\
 			if (memcopy) {												\
 				memcpy(valptr, p,										\
 					   bati.count * sizeof(tpe));						\
@@ -145,7 +145,7 @@ bat_to_sexp(BAT* b, int type)
 	SEXP varvalue = NULL;
 	BATiter bi = bat_iterator(b);
 	// TODO: deal with SQL types (DECIMAL/TIME/TIMESTAMP)
-	switch (ATOMstorage(b->ttype)) {
+	switch (ATOMstorage(bi.type)) {
 	case TYPE_void: {
 		size_t i = 0;
 		varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
@@ -238,7 +238,7 @@ bat_to_sexp(BAT* b, int type)
 			GDKfree(sexp_ptrs);
 		}
 		else {
-			if (b->tnonil) {
+			if (bi.nonil) {
 				BATloop(b, p, q) {
 					SET_STRING_ELT(varvalue, j++, RSTR(
 									   (const char *) BUNtvar(bi, p)));
@@ -353,7 +353,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 
 	if (b) {
 		BATsetcount(b, cnt);
-		BBPkeepref(b->batCacheid);
+		BBPkeepref(b);
 	}
 	return b;
 }
@@ -582,7 +582,8 @@ bailout:
 				if (b && msg) {
 					BBPreclaim(b);
 				} else if (b) {
-					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+					*getArgReference_bat(stk, pci, i) = b->batCacheid;
+					BBPkeepref(b);
 				}
 			} else if (msg) {
 				ValPtr pt = ((ValPtr*)res)[i];
@@ -642,13 +643,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 			  "Embedded R initialization has failed");
 	}
 
-	if (!grouped) {
-		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc+has_card_arg));
-		if (sqlmorefun) sqlfun = sqlmorefun->func;
-	} else {
-		sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc+has_card_arg);
-	}
-
+	sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc+has_card_arg);
 	args = (str*) GDKzalloc(sizeof(str) * pci->argc);
 	if (args == NULL) {
 		throw(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);

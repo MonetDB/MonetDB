@@ -156,10 +156,9 @@ create view v1(c0, c1) as (select distinct (((t0.c0)=(((1357695262)^(-922564194)
 statement ok
 create view v2(c0) as (select distinct coalesce(abs(interval '-1976292283' month), cast(greatest('Dnwxjm4btQ9cp&\c''a_', '(y7,{q?][NHU,') as interval month)) from t1, t0 where ((upper(''))not ilike(lower('''wAg_ z ''PPxXßgrd⍮G'))))
 
-query T rowsort
+statement error 42000!SELECT: cannot use non GROUP BY column 'v2.c0' in query results without an aggregate function
 select all v2.c0 from v2 right outer join v1 on (('8*By1q)*Oc<n')like(substr('', 1151312829, 406714197)))
 where (case v1.c0 when v1.c0 then interval '104279220' second end) in (interval '2129103763' second) group by timestamp '1970-01-21 14:05:46'
-----
 
 statement ok
 ROLLBACK
@@ -394,10 +393,10 @@ COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.6184216877785851
 0.6479886625655562
 
-statement error 42S22!SELECT: no such column 't1.c1'
+statement error 42000!SELECT: cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
 select max(coalesce(interval '5' month, interval '2' month)) from t1 order by t1.c1 desc nulls last
 
-statement error 42S22!SELECT: no such column 't1.c1'
+statement error 42000!SELECT: cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
 select sum(coalesce(coalesce(interval '5' month, interval '3' month), interval '2' month, coalesce(abs(interval '5' month), interval '2' month,
 case timestamp '1970-01-15 22:17:17' when timestamp '1970-01-03 22:17:36' then interval '5' month else interval '5' month end, interval '3' month), interval '3' month)) from t1 order by t1.c1 desc nulls last
 
@@ -641,9 +640,9 @@ case 1108638173 when 1 then 'PS	' when 0.480478635864931780119491122604813426733
 statement ok
 create view v40(vc0) as (values ((true) not in (false, false)), ("isauuid"(case 8 when 4 then 'F&' when 0 then '&' end)))
 
-query I rowsort
+statement error 42000!SELECT: cannot use non GROUP BY column 'v20.vc0' in query results without an aggregate function
 select cast(sum(count) as bigint) from (select cast(greatest(false, true) as int) as count from v37 full outer join
-(select all ((((1074663557)%(0.8367095941704169)))%(scale_up(v20.vc0, 0.25281408194923194))), 0.573499282341099
+(select all ((((1074663557)%(0.8367095941704169)))%(v20.vc0 * 0.25281408194923194)), 0.573499282341099
 from v20 where ((((true)or(true)))or(true)) group by 2) as sub0 on
 ((case 0.28276833606549456323620006514829583466053009033203125 when 1 then v37.vc0 when 1436332976 then 'FALSE'
 when 0.4573545 then v37.vc0 else 'G1hw7' end)not ilike(sql_min('46', v37.vc0))) inner join (select (case v3.vc0
@@ -653,8 +652,6 @@ then 0.78255921469665923329017687137820757925510406494140625 end) is null, + (ca
 then 0.8350239383024128 when '6r' then 932574625 when '[]' then 9 when '' then 5 when 'LnP/Amb9' then 2 end)
 from v40, v3 where (0.4906208915598539999081140194903127849102020263671875) not in (1654919043, 6)) as sub1
 on ((trim(v37.vc0))>=(substr(v37.vc0, 9, 8)))) as res
-----
-8
 
 statement ok
 ROLLBACK
@@ -753,7 +750,7 @@ cast(-1695180722 as bigint)))
 
 query I rowsort
 SELECT v3.vc0 FROM v3, v6 CROSS JOIN (SELECT ALL ((sign(0.9241489178039545))*
-(scale_down(0.74460343372682225027148206208948977291584014892578125, 0.33816958610011738084466514919768087565898895263671875)))
+(2))
 FROM t0 LEFT OUTER JOIN (SELECT DISTINCT upper('bŀ') WHERE FALSE) AS sub0 ON TRUE WHERE greatest(t0.c0, TRUE)) AS sub0
 LEFT OUTER JOIN (SELECT DISTINCT 5688 FROM v4 WHERE (v4.vc0) IN (-2081865947, 30436)) AS sub1 ON least(FALSE, TRUE)
 RIGHT OUTER JOIN (VALUES (CAST(greatest('77', 0.10216334194461484941029993933625519275665283203125) AS STRING(478)))) AS sub2
@@ -764,8 +761,7 @@ ON ((greatest('', '32228'))NOT ILIKE(CAST(30792 AS STRING(381)))) WHERE (((v6.vc
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((((v6.vc1)-(v6.vc1))) IS NOT NULL AS INT) as count FROM v3, v6 CROSS JOIN
-(SELECT ((sign(0.9241489178039545))*(scale_down(0.74460343372682225027148206208948977291584014892578125,
-0.33816958610011738084466514919768087565898895263671875))) FROM t0 LEFT OUTER JOIN (SELECT DISTINCT upper('bŀ') WHERE FALSE)
+(SELECT ((sign(0.9241489178039545))*(3)) FROM t0 LEFT OUTER JOIN (SELECT DISTINCT upper('bŀ') WHERE FALSE)
 AS sub0 ON TRUE WHERE greatest(t0.c0, TRUE)) AS sub0 LEFT OUTER JOIN (SELECT DISTINCT 5688 FROM v4
 WHERE (v4.vc0) IN (-2081865947, 30436)) AS sub1 ON least(FALSE, TRUE) RIGHT OUTER JOIN (VALUES (CAST(greatest('77',
 0.10216334194461484941029993933625519275665283203125) AS STRING(478)))) AS sub2 ON ((greatest('', '32228'))NOT

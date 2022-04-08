@@ -780,7 +780,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 			return -1;
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
-		if (!(escaped_q = sql_escape_str(m->ta, (char*) query))) {
+		if (!(escaped_q = sql_escape_str(m->ta, query))) {
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
@@ -984,7 +984,7 @@ monet5_freecode(const char *mod, int clientid, const char *name)
 
 /* the function 'f' may not have the 'imp' field set yet */
 int
-monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bit *side_effect)
+monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 {
 	Client c;
 	Module m;
@@ -1016,7 +1016,7 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bit *side_effect)
 			int argc = sig->argc - sig->retc, nfargs = list_length(f->ops), nfres = list_length(f->res);
 
 			if ((sig->varargs & VARARGS) == VARARGS || f->vararg || f->varres) {
-				*side_effect = (bit) s->def->unsafeProp;
+				*side_effect = (bool) s->def->unsafeProp;
 				MT_lock_unset(&sql_gencodeLock);
 				return 1;
 			} else if (nfargs == argc && (nfres == sig->retc || (sig->retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
@@ -1053,7 +1053,7 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bit *side_effect)
 					}
 				}
 				if (all_match)*/
-				*side_effect = (bit) s->def->unsafeProp;
+				*side_effect = (bool) s->def->unsafeProp;
 				MT_lock_unset(&sql_gencodeLock);
 				return 1;
 			}
@@ -1145,7 +1145,7 @@ int
 backend_create_mal_func(mvc *m, sql_func *f)
 {
 	char *F = NULL, *fn = NULL;
-	bit old_side_effect = f->side_effect, new_side_effect = 0;
+	bool old_side_effect = f->side_effect, new_side_effect = 0;
 	int clientid = m->clientid;
 	str fimp = NULL;
 
@@ -1206,7 +1206,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r)
-		r = sql_processrelation(m, r, 1, 1, 0);
+		r = sql_processrelation(m, r, 0, 1, 1, 0);
 	if (!r)
 		return -1;
 

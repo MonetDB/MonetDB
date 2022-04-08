@@ -19,6 +19,8 @@ static void
 BATnegateprops(BAT *b)
 {
 	/* disable all properties here */
+	b->tnonil = false;
+	b->tnil = false;
 	b->tsorted = false;
 	b->trevsorted = false;
 	b->tnosorted = 0;
@@ -146,11 +148,11 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 			}
 		}
 		BATsetcount(o, BATcount(b));
-		o->tsorted = (u->tsorted && b->tsorted);
+		o->tsorted = (u->tsorted && bi.sorted);
 		o->trevsorted = false;
-		o->tnil = b->tnil;
-		o->tnonil = b->tnonil;
-		o->tkey = b->tkey;
+		o->tnil = bi.nil;
+		o->tnonil = bi.nonil;
+		o->tkey = bi.key;
 
 		BATmaxminpos_bte(o, (bte) (BATcount(u)-1));
 	} else {
@@ -162,11 +164,11 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 			}
 		}
 		BATsetcount(o, BATcount(b));
-		o->tsorted = (u->tsorted && b->tsorted);
+		o->tsorted = (u->tsorted && bi.sorted);
 		o->trevsorted = false;
-		o->tnil = b->tnil;
-		o->tnonil = b->tnonil;
-		o->tkey = b->tkey;
+		o->tnil = bi.nil;
+		o->tnonil = bi.nonil;
+		o->tkey = bi.key;
 
 		BATmaxminpos_sht(o, (sht) (BATcount(u)-1));
 	}
@@ -193,8 +195,10 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = DICTcompress_intern(&O, &V, c, false, false, false /*output type matches input*/);
 	bat_destroy(c);
 	if (msg == MAL_SUCCEED) {
-		BBPkeepref(*RO = O->batCacheid);
-		BBPkeepref(*RV = V->batCacheid);
+		*RO = O->batCacheid;
+		BBPkeepref(O);
+		*RV = V->batCacheid;
+		BBPkeepref(V);
 	}
 	return msg;
 }
@@ -386,7 +390,8 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(u);
 	if (!b)
 		throw(SQL, "dict.decompress", GDK_EXCEPTION);
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -395,15 +400,16 @@ convert_oid( BAT *o, int rt)
 {
 	BUN p, q;
 	BATiter oi = bat_iterator(o);
-	BAT *b = COLnew(o->hseqbase, rt, BATcount(o), TRANSIENT);
+	BAT *b = COLnew(o->hseqbase, rt, oi.count, TRANSIENT);
 	int brokenrange = 0, nil = 0;
-	bool osorted = o->tsorted, okey = o->tkey;
 
-	if (!b)
+	if (!b) {
+		bat_iterator_end(&oi);
 		return NULL;
+	}
 	if (rt == TYPE_bte) {
 		unsigned char *rp = Tloc(b, 0);
-		if (o->ttype == TYPE_void) {
+		if (oi.type == TYPE_void) {
 			BATloop(o, p, q) {
 				rp[p] = (unsigned char) (p+o->tseqbase);
 				brokenrange |= ((bte)rp[p] < 0);
@@ -419,7 +425,7 @@ convert_oid( BAT *o, int rt)
 		}
 	} else if (rt == TYPE_sht) {
 		unsigned short *rp = Tloc(b, 0);
-		if (o->ttype == TYPE_void) {
+		if (oi.type == TYPE_void) {
 			BATloop(o, p, q) {
 				rp[p] = (unsigned short) (p+o->tseqbase);
 				brokenrange |= ((short)rp[p] < 0);
@@ -436,12 +442,11 @@ convert_oid( BAT *o, int rt)
 	} else {
 		assert(0);
 	}
-	bat_iterator_end(&oi);
-	BATsetcount(b, BATcount(o));
+	BATsetcount(b, oi.count);
 	BATnegateprops(b);
 	if (!brokenrange)
-		b->tsorted = osorted;
-	b->tkey = okey;
+		b->tsorted = oi.sorted;
+	b->tkey = oi.key;
 	if (nil) {
 		b->tnil = true;
 		b->tnonil = false;
@@ -449,6 +454,7 @@ convert_oid( BAT *o, int rt)
 		b->tnil = false;
 		b->tnonil = true;
 	}
+	bat_iterator_end(&oi);
 	return b;
 }
 
@@ -471,7 +477,8 @@ DICTconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "dict.convert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BBPkeepref(b);
 	bat_destroy(o);
 	return MAL_SUCCEED;
 }
@@ -485,13 +492,15 @@ static BAT *
 DICTrenumber_intern( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 {
 	BAT *olc = lc, *orc = rc, *no = NULL;
-	BUN cnt = BATcount(o);
+	BATiter oi = bat_iterator(o);
+	BUN cnt = oi.count;
 
 	if (!lc->tsorted) {
 		BAT *nlc = NULL, *nrc = NULL;
 		int ret = BATsort(&nlc, &nrc, NULL, lc, NULL, NULL, false, false, false);
 
 		if (ret != GDK_SUCCEED || !nlc || !nrc) {
+			bat_iterator_end(&oi);
 			bat_destroy(nlc);
 			bat_destroy(nrc);
 			return no;
@@ -503,6 +512,7 @@ DICTrenumber_intern( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 	if (!BATtdense(lc) && !(lc->tsorted && lc->tkey && BATcount(lc) == offcnt && *(oid*)Tloc(lc, offcnt-1) == offcnt-1)) {
 		BAT *nrc = COLnew(0, ATOMtype(rc->ttype), offcnt, TRANSIENT);
 		if (!nrc) {
+			bat_iterator_end(&oi);
 			if (lc != olc)
 				bat_destroy(lc);
 			if (rc != orc)
@@ -541,45 +551,41 @@ DICTrenumber_intern( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 		rc = nrc;
 	}
 
-	no = COLnew(o->hseqbase, o->ttype, cnt, TRANSIENT);
+	no = COLnew(o->hseqbase, oi.type, cnt, TRANSIENT);
 	if (!no) {
+		bat_iterator_end(&oi);
 		if (lc != olc)
 			bat_destroy(lc);
 		if (rc != orc)
 			bat_destroy(rc);
 		return no;
 	}
-	if (o->ttype == TYPE_bte) {
+	if (oi.type == TYPE_bte) {
 		bte *op = Tloc(no, 0);
 		oid *c = Tloc(rc, 0);
-		BATiter oi = bat_iterator(o);
-		unsigned char *ip = Tloc(o, 0);
-		bool otkey = o->tkey;
+		unsigned char *ip = (unsigned char *) oi.base;
 
 		for(BUN i = 0; i<cnt; i++) {
 			op[i] = (bte) ((BUN)ip[i]==offcnt?offcnt:c[ip[i]]);
 		}
-		bat_iterator_end(&oi);
 		BATsetcount(no, cnt);
 		BATnegateprops(no);
-		no->tkey = otkey;
-	} else if (o->ttype == TYPE_sht) {
+		no->tkey = oi.key;
+	} else if (oi.type == TYPE_sht) {
 		sht *op = Tloc(no, 0);
 		oid *c = Tloc(rc, 0);
-		BATiter oi = bat_iterator(o);
-		unsigned short *ip = Tloc(o, 0);
-		bool otkey = o->tkey;
+		unsigned short *ip = (unsigned short *) oi.base;
 
 		for(BUN i = 0; i<cnt; i++) {
 			op[i] = (sht) ((BUN)ip[i]==offcnt?offcnt:c[ip[i]]);
 		}
-		bat_iterator_end(&oi);
 		BATsetcount(no, cnt);
 		BATnegateprops(no);
-		no->tkey = otkey;
+		no->tkey = oi.key;
 	} else {
 		assert(0);
 	}
+	bat_iterator_end(&oi);
 	if (olc != lc)
 		bat_destroy(lc);
 	if (orc != rc)
@@ -664,10 +670,14 @@ DICTjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(rv);
 	bat_destroy(lc);
 	bat_destroy(rc);
-	if (r0)
-		BBPkeepref(*R0 = r0->batCacheid);
-	if (r1)
-		BBPkeepref(*R1 = r1->batCacheid);
+	if (r0) {
+		*R0 = r0->batCacheid;
+		BBPkeepref(r0);
+	}
+	if (r1) {
+		*R1 = r1->batCacheid;
+		BBPkeepref(r1);
+	}
 	if (err)
 		throw(MAL, "BATjoin", GDK_EXCEPTION);
 	return res;
@@ -688,45 +698,76 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *lc = NULL, *bn = NULL;
 	BAT *lo = BATdescriptor(LO);
 	BAT *lv = BATdescriptor(LV);
+	BATiter loi = bat_iterator(lo);
+	BATiter lvi = bat_iterator(lv);
 
 	if (!is_bat_nil(LC))
 		lc = BATdescriptor(LC);
 	if (!lo || !lv || (!is_bat_nil(LC) && !lc)) {
+		bat_iterator_end(&loi);
+		bat_iterator_end(&lvi);
 		bat_destroy(lo);
 		bat_destroy(lv);
 		bat_destroy(lc);
 		throw(SQL, "dict.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	BUN max_cnt = lv->ttype == TYPE_bte?256:(64*1024);
-	if ((lv->tkey && (op[0] == '=' || op[0] == '!')) || ((op[0] == '<' || op[0] == '>') && lv->tsorted && BATcount(lv) < (max_cnt/2))) {
+	BUN max_cnt = lvi.type == TYPE_bte?256:(64*1024);
+	if ((lvi.key && (op[0] == '=' || op[0] == '!')) || ((op[0] == '<' || op[0] == '>') && lvi.sorted && BATcount(lv) < (max_cnt/2))) {
 		BUN p = BUN_NONE;
-		if (ATOMextern(lv->ttype))
+		if (ATOMextern(lvi.type))
 			v = *(ptr*)v;
 		if (op[0] == '=' || op[0] == '!') {
 			p =  BUNfnd(lv, v);
 		} else if (op[0] == '<' || op[0] == '>') {
 			p = SORTfndfirst(lv, v);
+			if (p != BUN_NONE && op[0] == '<' && op[1] == '=') {
+				if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
+					p--;
+			}
 		}
 		if (p != BUN_NONE) {
-			if (lo->ttype == TYPE_bte) {
+			if (loi.type == TYPE_bte) {
 				bte val = (bte)p;
 				bn =  BATthetaselect(lo, lc, &val, op);
-			} else if (lo->ttype == TYPE_sht) {
+			} else if (loi.type == TYPE_sht) {
 				sht val = (sht)p;
 				bn =  BATthetaselect(lo, lc, &val, op);
 			} else
 				assert(0);
+		} else if (op[0] == '!') {
+			if (!lvi.nonil || lvi.nil) { /* find a possible NULL value */
+				const void *nilp = ATOMnilptr(lvi.type);
+				p = BUNfnd(lv, nilp);
+			} else {
+				p = BUN_NONE;
+			}
+
+			if (p != BUN_NONE) { /* filter the NULL value out */
+				if (loi.type == TYPE_bte) {
+					bte val = (bte)p;
+					bn =  BATthetaselect(lo, lc, &val, op);
+				} else if (loi.type == TYPE_sht) {
+					sht val = (sht)p;
+					bn =  BATthetaselect(lo, lc, &val, op);
+				} else
+					assert(0);
+			} else if (lc) { /* all rows pass, use input candidate list */
+				bn = lc;
+				BBPfix(lc->batCacheid); /* give one extra physical reference to keep the count in the end */
+			} else { /* otherwise return all rows */
+				bn = BATdense(0, 0, BATcount(lo));
+			}
 		} else {
-			bn = BATdense(0, 0, op[0] == '!' ? BATcount(lo) : 0); /* for '!' if it didn't find, then all are different */
+			bn = BATdense(0, 0, 0);
 		}
 	} else { /* select + intersect */
-		if (ATOMextern(lv->ttype))
+		if (ATOMextern(lvi.type))
 			v = *(ptr*)v;
 		bn = BATthetaselect(lv, NULL, v, op);
 		/* call dict convert */
 		if (bn) {
-			BAT *c = convert_oid(bn, lo->ttype);
+			BAT *c = convert_oid(bn, loi.type);
 			bat_destroy(bn);
 			bn = c;
 		}
@@ -736,12 +777,15 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = n;
 		}
 	}
+	bat_iterator_end(&loi);
+	bat_iterator_end(&lvi);
 	bat_destroy(lo);
 	bat_destroy(lv);
 	bat_destroy(lc);
 	if (!bn)
 		throw(SQL, "dict.thetaselect", GDK_EXCEPTION);
-	BBPkeepref(*R0 = bn->batCacheid);
+	*R0 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -771,37 +815,41 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *lc = NULL, *bn = NULL;
 	BAT *lo = BATdescriptor(LO);
 	BAT *lv = BATdescriptor(LV);
+	BATiter loi = bat_iterator(lo);
+	BATiter lvi = bat_iterator(lv);
 
 	if (!is_bat_nil(LC))
 		lc = BATdescriptor(LC);
 	if (!lo || !lv || (!is_bat_nil(LC) && !lc)) {
+		bat_iterator_end(&loi);
+		bat_iterator_end(&lvi);
 		bat_destroy(lo);
 		bat_destroy(lv);
 		bat_destroy(lc);
 		throw(SQL, "dict.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	if (ATOMextern(lv->ttype)) {
+	if (ATOMextern(lvi.type)) {
 		l = *(ptr*)l;
 		h = *(ptr*)h;
 	}
 
 	/* here we don't need open ended parts with nil */
 	if (!anti) {
-		const void *nilptr = ATOMnilptr(lv->ttype);
-		if (li == 1 && ATOMcmp(lv->ttype, l, nilptr) == 0) {
+		const void *nilptr = ATOMnilptr(lvi.type);
+		if (li == 1 && ATOMcmp(lvi.type, l, nilptr) == 0) {
 			l = h;
 			li = 0;
 		}
-		if (hi == 1 && ATOMcmp(lv->ttype, h, nilptr) == 0) {
+		if (hi == 1 && ATOMcmp(lvi.type, h, nilptr) == 0) {
 			h = l;
 			hi = 0;
 		}
-		if (ATOMcmp(lv->ttype, l, h) == 0 && ATOMcmp(lv->ttype, h, nilptr) == 0) /* ugh sql nil != nil */
+		if (ATOMcmp(lvi.type, l, h) == 0 && ATOMcmp(lvi.type, h, nilptr) == 0) /* ugh sql nil != nil */
 			anti = 1;
 	}
-	BUN max_cnt = lv->ttype == TYPE_bte?256:(64*1024);
-	if (!anti && lv->tkey && lv->tsorted && BATcount(lv) < (max_cnt/2)) { /* ie select(lo, lc, find(lv, l), find(lv, h), ...) */
+	BUN max_cnt = lvi.type == TYPE_bte?256:(64*1024);
+	if (!anti && lvi.key && lvi.sorted && BATcount(lv) < (max_cnt/2)) { /* ie select(lo, lc, find(lv, l), find(lv, h), ...) */
 		BUN p = li?SORTfndfirst(lv, l):SORTfndlast(lv, l);
 		BUN q = SORTfnd(lv, h);
 
@@ -811,11 +859,11 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		if (p != BUN_NONE) {
-			if (lo->ttype == TYPE_bte) {
+			if (loi.type == TYPE_bte) {
 				bte lpos = (bte)p;
 				bte hpos = (bte)q;
 				bn =  BATselect(lo, lc, &lpos, &hpos, 1, hi, anti);
-			} else if (lo->ttype == TYPE_sht) {
+			} else if (loi.type == TYPE_sht) {
 				sht lpos = (sht)p;
 				sht hpos = (sht)q;
 				bn =  BATselect(lo, lc, &lpos, &hpos, 1, hi, anti);
@@ -829,7 +877,7 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* call dict convert */
 		if (bn) {
-			BAT *c = convert_oid(bn, lo->ttype);
+			BAT *c = convert_oid(bn, loi.type);
 			bat_destroy(bn);
 			bn = c;
 		}
@@ -839,12 +887,15 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = n;
 		}
 	}
+	bat_iterator_end(&loi);
+	bat_iterator_end(&lvi);
 	bat_destroy(lo);
 	bat_destroy(lv);
 	bat_destroy(lc);
 	if (!bn)
 		throw(SQL, "dict.select", GDK_EXCEPTION);
-	BBPkeepref(*R0 = bn->batCacheid);
+	*R0 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -932,7 +983,8 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_destroy(o);
 	bat_destroy(m);
-	BBPkeepref(*R = n->batCacheid);
+	*R = n->batCacheid;
+	BBPkeepref(n);
 	return MAL_SUCCEED;
 }
 

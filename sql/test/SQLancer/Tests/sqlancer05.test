@@ -184,7 +184,7 @@ SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0
 ----
 0
 
-statement error 42S22!SELECT: no such column 'v0.c0'
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.c0' in query results without an aggregate function
 SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0 ORDER BY v0.c0 ASC NULLS LAST, v0.c0 DESC NULLS FIRST, v0.c0 DESC NULLS LAST
 
 statement ok
@@ -693,8 +693,7 @@ select t2.c1 from v0, t2 right outer join (values (least(ifthenelse(false, '', '
 case cast(interval '-165227345' month as string) when "insert"('f3', 0.57506007, -1550051844, '0.06527867754732408')
 then 'u' when '2033856974' then case when true then '' when false then '-1543387917' when true then '0.4055556886118663'
 when false then 'c' else 'E\n' end end)) as sub0 on nullif(not (false), (t2.c1) not between asymmetric (t2.c1) and (t2.c1))
-where case ((50)*(1836147184)) when least(5110, 1303739364) then (false) = false when scale_down(0.07871449894764926,
-0.26471586054989171277185278086108155548572540283203125) then least(true, true) when
+where case ((50)*(1836147184)) when least(5110, 1303739364) then (false) = false when 3 then least(true, true) when
 cast(0.92609287116711858089956876938231289386749267578125 as double) then greatest(true, false) end
 ----
 

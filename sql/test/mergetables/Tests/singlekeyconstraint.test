@@ -62,8 +62,8 @@ INSERT INTO part2 VALUES(2.0, 0.0, 1.0)
 statement error
 INSERT INTO part1 VALUES(0.0, 0.0, 2.0)
 
-statement error
-INSERT INTO part2 VALUES(0.0, 0.0, 3.0)
+#statement error
+#INSERT INTO part2 VALUES(0.0, 0.0, 3.0)
 
 statement error
 INSERT INTO complete VALUES(4.0, 0.0, 4.0)
@@ -74,9 +74,6 @@ SELECT * FROM complete
 0.000
 0.000
 0.000
-0.000
-0.000
-3.000
 1.000
 0.000
 0.000

@@ -810,6 +810,8 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	for ( ; rt_triggers->cur_row < rt_triggers->nr_rows; rt_triggers->cur_row++) {
 		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "table_id"));
 
+		if (ntid < t->base.id && instore(ntid)) /* skip triggers on system tables ugh */
+			continue;
 		if (ntid != t->base.id)
 			break;
 		sql_trigger *k = load_trigger(tr, t, rt_triggers, rt_triggercols);
@@ -924,11 +926,11 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->lang = (sql_flang) store->table_api.column_find_int(tr, find_sql_column(funcs, "language"), rid);
 	t->instantiated = t->lang != FUNC_LANG_SQL && t->lang != FUNC_LANG_MAL;
 	t->type = (sql_ftype) store->table_api.column_find_int(tr, find_sql_column(funcs, "type"), rid);
-	t->side_effect = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "side_effect"), rid);
-	t->varres = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "varres"), rid);
-	t->vararg = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "vararg"), rid);
-	t->system = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "system"), rid);
-	t->semantics = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "semantics"), rid);
+	t->side_effect = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "side_effect"), rid);
+	t->varres = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "varres"), rid);
+	t->vararg = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "vararg"), rid);
+	t->system = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "system"), rid);
+	t->semantics = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "semantics"), rid);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
@@ -1451,8 +1453,11 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 		sql_func *f = n->data;
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
+		bit se = f->side_effect, vares = f->varres, varg = f->vararg, system = f->system, sem = f->semantics;
 
-		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &f->side_effect, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics)))
+		if (f->private) /* don't serialize private functions because they cannot be seen by users */
+			continue;
+		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &vares, &varg, &next_schema, &system, &sem)))
 			return res;
 		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
 			return res;
@@ -1811,6 +1816,11 @@ store_load(sqlstore *store, sql_allocator *pa)
 	store->depchanges = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
 	store->sequences = hash_new(NULL, 32, (fkeyvalue)&seq_hash);
 	store->seqchanges = list_create(NULL);
+	if (!store->active || !store->dependencies || !store->depchanges || !store->sequences || !store->seqchanges) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
+		sql_trans_destroy(tr);
+		return NULL;
+	}
 
 	s = bootstrap_create_schema(tr, "sys", 2000, ROLE_SYSADMIN, USER_MONETDB);
 	if (!store->first)
@@ -2088,8 +2098,8 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
 		MT_lock_init(&store->column_locks[i], "sqlstore_column");
 
-	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
+	MT_lock_set(&store->lock);
 
 	/* initialize empty bats */
 	switch (store_tpe) {
@@ -2129,43 +2139,13 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	return store;
 }
 
-// All this must only be accessed while holding the store->flush.
-// The exception is flush_now, which can be set by anyone at any
-// time and therefore needs some special treatment.
-static struct {
-	// These two are inputs, set from outside the store_manager
-	bool enabled;
-	ATOMIC_TYPE flush_now;
-	// These are state set from within the store_manager
-	bool working;
-	int countdown_ms;
-	unsigned int cycle;
-	char *reason_to;
-	char *reason_not_to;
-} flusher = {
-	.flush_now = ATOMIC_VAR_INIT(0),
-	.enabled = true,
-};
-
-static void
-flusher_new_cycle(void)
-{
-	int cycle_time = GDKdebug & FORCEMITOMASK ? 500 : 50000;
-
-	// do not touch .enabled and .flush_now, those are inputs
-	flusher.working = false;
-	flusher.countdown_ms = cycle_time;
-	flusher.cycle += 1;
-	flusher.reason_to = NULL;
-	flusher.reason_not_to = NULL;
-}
-
 void
 store_exit(sqlstore *store)
 {
 	sql_allocator *sa = store->sa;
-	MT_lock_set(&store->lock);
+	MT_lock_set(&store->commit);
 	MT_lock_set(&store->flush);
+	MT_lock_set(&store->lock);
 
 	TRC_DEBUG(SQL_STORE, "Store locked\n");
 
@@ -2174,11 +2154,12 @@ store_exit(sqlstore *store)
 			const int sleeptime = 100;
 			MT_lock_unset(&store->flush);
 			MT_lock_unset(&store->lock);
+			MT_lock_unset(&store->commit);
 			MT_sleep_ms(sleeptime);
+			MT_lock_set(&store->commit);
 			MT_lock_set(&store->lock);
 			MT_lock_set(&store->flush);
 		}
-		MT_lock_set(&store->commit);
 		if (!list_empty(store->changes)) {
 			ulng oldest = store_timestamp(store)+1;
 			for(node *n=store->changes->h; n; n = n->next) {
@@ -2221,14 +2202,11 @@ store_apply_deltas(sqlstore *store)
 {
 	int res = LOG_OK;
 
-	flusher.working = true;
-
 	store_lock(store);
 	ulng oldest = store_oldest_pending(store);
 	store_unlock(store);
 	if (oldest)
 	    res = store->logger_api.flush(store, oldest-1);
-	flusher.working = false;
 	return res;
 }
 
@@ -2236,7 +2214,6 @@ void
 store_suspend_log(sqlstore *store)
 {
 	MT_lock_set(&store->lock);
-	flusher.enabled = false;
 	MT_lock_unset(&store->lock);
 }
 
@@ -2244,7 +2221,6 @@ void
 store_resume_log(sqlstore *store)
 {
 	MT_lock_set(&store->flush);
-	flusher.enabled = true;
 	MT_lock_unset(&store->flush);
 }
 
@@ -2288,9 +2264,7 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			node *next = n->next;
 			sql_change *c = n->data;
 
-			if (!c->cleanup) {
-				_DELETE(c);
-			} else if (c->cleanup && c->cleanup(store, c, oldest)) {
+			if (c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
 			} else if (c->ts < oldest_changes) {
@@ -2342,10 +2316,13 @@ store_manager(sqlstore *store)
 		const int sleeptime = 100;
 		MT_lock_unset(&store->flush);
 		MT_sleep_ms(sleeptime);
-		flusher.countdown_ms -= sleeptime;
+		MT_lock_set(&store->commit);
 		MT_lock_set(&store->flush);
-		if (store->logger_api.changes(store) <= 0)
+		if (store->logger_api.changes(store) <= 0) {
+			MT_lock_unset(&store->commit);
 			continue;
+		}
+		MT_lock_unset(&store->commit);
 		if (GDKexiting())
 			break;
 
@@ -2359,7 +2336,6 @@ store_manager(sqlstore *store)
 
 		if (GDKexiting())
 			break;
-		flusher_new_cycle();
 		MT_thread_setworking("sleeping");
 		TRC_DEBUG(SQL_STORE, "Store flusher done\n");
 	}
@@ -3017,9 +2993,8 @@ part_dup(sql_trans *tr, sql_part *op, sql_table *mt, sql_part **pres)
 			list_append(p->part.values, nextv);
 		}
 	}
-	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base)))) {
+	if (isGlobal(mt) && (res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 		return res;
-	}
 	*pres = p;
 	return res;
 }
@@ -3052,9 +3027,8 @@ trigger_dup(sql_trans *tr, sql_trigger *i, sql_table *t, sql_trigger **tres)
 
 		list_append(nt->columns, kc_dup(tr, okc, t));
 	}
-	if (isGlobal(t) && (res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base)))) {
+	if (isGlobal(t) && (res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
 		return res;
-	}
 	*tres = nt;
 	return res;
 }
@@ -3072,7 +3046,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	t->type = ot->type;
 	t->system = ot->system;
 	t->bootstrap = ot->bootstrap;
-	t->persistence = ot->persistence;
+	t->persistence = s?ot->persistence:SQL_LOCAL_TEMP;
 	t->commit_action = ot->commit_action;
 	t->access = ot->access;
 	t->query = (ot->query) ? SA_STRDUP(sa, ot->query) : NULL;
@@ -3086,7 +3060,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 		t->members = list_new(sa, (fdestroy) &part_destroy);
 
 	t->pkey = NULL;
-	t->s = s;
+	t->s = s?s:tr->tmp;
 	t->sz = ot->sz;
 	ATOMIC_PTR_INIT(&t->data, NULL);
 
@@ -3160,6 +3134,15 @@ cleanup:
 	return res;
 }
 
+sql_table *
+globaltmp_instantiate(sql_trans *tr, sql_table *ot)
+{
+	sql_table *t = NULL;
+	if (table_dup(tr, ot, NULL, NULL, &t) == LOG_OK)
+		return t;
+	return NULL;
+}
+
 static int
 new_table(sql_trans *tr, sql_table *t, sql_table **tres)
 {
@@ -3202,6 +3185,7 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 	f->vararg = of->vararg;
 	f->fix_scale = of->fix_scale;
 	f->system = of->system;
+	f->private = of->private;
 	f->query = (of->query)?SA_STRDUP(sa, of->query):NULL;
 	f->s = s;
 	f->sa = sa;
@@ -3387,7 +3371,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	if ((res = ol_add(t->idxs, &ni->base)))
 		return res;
 
-	if ((res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
+	if (isGlobal(t) && (res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
 		return res;
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
@@ -3458,7 +3442,7 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigg
 	if ((res = ol_add(t->triggers, &nt->base)))
 		return res;
 
-	if ((res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
+	if (isGlobal(t) && (res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
 		return res;
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
@@ -3593,7 +3577,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		for(node *n=tr->localtmps.dset->h; n; ) {
 			node *next = n->next;
 			sql_table *tt = n->data;
-			if (!isNew(tt))
+			if (!isNew(tt)) /* TODO this is prepending without re-hashing? */
 				list_prepend(tr->localtmps.set, dup_base(&tt->base));
 			n = next;
 		}
@@ -3654,7 +3638,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (tr->localtmps.nelm) {
 			for(node *n=tr->localtmps.nelm; n; ) {
 				node *next = n->next;
-				list_remove_node(tr->localtmps.set, store, n);
+				(void) cs_del(&tr->localtmps, store, n, true);
 				n = next;
 			}
 			tr->localtmps.nelm = NULL;
@@ -3691,22 +3675,16 @@ sql_trans_destroy(sql_trans *tr)
 	sql_trans *res = tr->parent;
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", tr);
-	if (tr->name) {
-		_DELETE(tr->name);
-		tr->name = NULL;
-	}
+	_DELETE(tr->name);
 	if (!list_empty(tr->changes))
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
 	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
-	struct os_iter oi;
-	os_iterator(&oi, tr->tmp->tables, tr, NULL);
-	for (sql_table *t = (sql_table *) oi_next(&oi); t; t = (sql_table *) oi_next(&oi)) {
-		store->storage_api.temp_del_tab(tr, t);
-	}
 	store_unlock(store);
 	MT_lock_destroy(&tr->lock);
+	if (!list_empty(tr->dropped))
+		list_destroy(tr->dropped);
 	_DELETE(tr);
 	return res;
 }
@@ -3718,7 +3696,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 
 	if (!tr)
 		return NULL;
-	cs_new(&tr->localtmps, tr->sa, (fdestroy) &table_destroy);
+	cs_new(&tr->localtmps, NULL, (fdestroy) &table_destroy, (fkeyvalue)&base_key);
 	MT_lock_init(&tr->lock, "trans_lock");
 	tr->parent = parent;
 	if (name) {
@@ -3726,7 +3704,8 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 			sql_trans_destroy(tr);
 			return NULL;
 		}
-		parent->name = SA_STRDUP(parent->sa, name);
+		_DELETE(parent->name);
+		parent->name = _STRDUP(name);
 	}
 
 	store_lock(store);
@@ -3896,7 +3875,7 @@ sql_trans_commit(sql_trans *tr)
 
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
-		ulng commit_ts = 0, oldest = 0;
+		ulng commit_ts = 0, oldest = 0, log_file_id = 0;
 
 		MT_lock_set(&store->commit);
 
@@ -3909,7 +3888,9 @@ sql_trans_commit(sql_trans *tr)
 			}
 		}
 
-		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
+		if (!tr->parent &&
+			ATOMIC_GET(&store->nr_active) == 1 &&
+			(!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
 			ok = transaction_check_dependencies_and_removals(tr);
 			if (ok != LOG_OK) {
 				sql_trans_rollback(tr, true);
@@ -3919,12 +3900,17 @@ sql_trans_commit(sql_trans *tr)
 		}
 
 		/* log changes should only be done if there is something to log */
-		if (!tr->parent && tr->logchanges > 0) {
-			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
-			flush = (tr->logchanges > min_changes && list_empty(store->changes));
-			if (flush)
-				MT_lock_set(&store->flush);
-			ok = store->logger_api.log_tstart(store, flush);
+		const bool log = !tr->parent && tr->logchanges > 0;
+
+		if (log) {
+			const int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
+			flush = log && (tr->logchanges > min_changes && list_empty(store->changes));
+		}
+
+		if (flush)
+			MT_lock_set(&store->flush);
+		if (log) {
+			ok = store->logger_api.log_tstart(store, flush, &log_file_id); /* wal start */
 			/* log */
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 				sql_change *c = n->data;
@@ -3932,32 +3918,28 @@ sql_trans_commit(sql_trans *tr)
 				if (c->log && ok == LOG_OK)
 					ok = c->log(tr, c);
 			}
-			if (ok == LOG_OK) {
-				if (!list_empty(store->seqchanges)) {
-					sequences_lock(store);
-					for(node *n = store->seqchanges->h; n; n = n->next) {
-						log_store_sequence(store, n->data);
-					}
-					list_destroy(store->seqchanges);
-					store->seqchanges = list_create(NULL);
-					sequences_unlock(store);
+			if (ok == LOG_OK && !list_empty(store->seqchanges)) {
+				sequences_lock(store);
+				for(node *n = store->seqchanges->h; n; ) {
+					node *next = n->next;
+					log_store_sequence(store, n->data);
+					list_remove_node(store->seqchanges, NULL, n);
+					n = next;
 				}
+				sequences_unlock(store);
 			}
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
 			store->prev_oid = store->obj_id;
-			if (ok == LOG_OK && !flush)
-				ok = store->logger_api.log_tend(store); /* flush/sync */
-			store_lock(store);
-			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-			if (ok == LOG_OK && !flush)					/* mark as done */
-				ok = store->logger_api.log_tdone(store, commit_ts);
-		} else {
-			store_lock(store);
-			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-			if (tr->parent)
-				tr->parent->logchanges += tr->logchanges;
+
+
+			if (ok == LOG_OK)
+				ok = store->logger_api.log_tend(store); /* wal end */
 		}
+		store_lock(store);
+		commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
+		if (tr->parent)
+			tr->parent->logchanges += tr->logchanges;
 		oldest = tr->parent ? commit_ts : store_oldest(store);
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
@@ -3973,15 +3955,6 @@ sql_trans_commit(sql_trans *tr)
 			else
 				c->obj->new = 0;
 			c->ts = commit_ts;
-		}
-		/* when directly flushing: flush logger after changes got applied */
-		if (flush) {
-			if (ok == LOG_OK) {
-				ok = store->logger_api.log_tend(store); /* flush/sync */
-				if (ok == LOG_OK)
-					ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
-			}
-			MT_lock_unset(&store->flush);
 		}
 		/* propagate transaction dependencies to the storage only if other transactions are running */
 		if (ok == LOG_OK && !tr->parent && ATOMIC_GET(&store->nr_active) > 1) {
@@ -4014,6 +3987,17 @@ sql_trans_commit(sql_trans *tr)
 		}
 		tr->ts = commit_ts;
 		store_unlock(store);
+		/* flush the log structure */
+		if (log) {
+			if (!flush)
+				MT_lock_unset(&store->commit); /* release the commit log when flushing to disk */
+			if (ok == LOG_OK)
+				ok = store->logger_api.log_tflush(store, log_file_id, commit_ts); /* flush/sync */
+			if (!flush)
+				MT_lock_set(&store->commit); /* release the commit log when flushing to disk */
+			if (flush)
+				MT_lock_unset(&store->flush);
+		}
 		MT_lock_unset(&store->commit);
 		list_destroy(tr->changes);
 		tr->changes = NULL;
@@ -4045,6 +4029,20 @@ sql_trans_commit(sql_trans *tr)
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
+}
+
+static sql_table *
+find_table_by_columnid(sql_trans *tr, const char *schema, sqlid id)
+{
+	sqlstore *store = tr->store;
+	sql_table *syscolumn = find_sql_table(tr, find_sql_schema(tr, schema), "_columns");
+
+	oid rid = store->table_api.column_find_row(tr, find_sql_column(syscolumn, "id"), &id, NULL);
+	if (!is_oid_nil(rid)) {
+		sqlid tid = store->table_api.column_find_sqlid(tr, find_sql_column(syscolumn, "table_id"), rid);
+		return sql_trans_find_table(tr, tid);
+	}
+	return NULL;
 }
 
 static int
@@ -4080,7 +4078,9 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 				case COLUMN_DEPENDENCY: {
 					if ((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
 						sql_table *t = sql_trans_find_table(tr, dep_id);
-						if (t)
+						if (t && ol_length(t->columns) == 1) /* only column left, drop the table instead */
+							res = sql_trans_drop_table_id(tr, t->s, t->base.id, DROP_CASCADE);
+						else if (t)
 							res = sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
 					}
 					} break;
@@ -4103,11 +4103,24 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 				case PROC_DEPENDENCY:
 				case FUNC_DEPENDENCY: {
 					sql_func *f = sql_trans_find_func(tr, dep_id);
-					res = sql_trans_drop_func(tr, f->s, dep_id, DROP_CASCADE);
+					if (f)
+						res = sql_trans_drop_func(tr, f->s, dep_id, DROP_CASCADE);
 					} break;
 				case TYPE_DEPENDENCY: {
-					sql_type *t = sql_trans_find_type(tr, NULL, dep_id);
-					res = sql_trans_drop_type(tr, t->s, dep_id, DROP_CASCADE);
+					/* Unlike other dependencies, for type dependencies,
+					   the dependent object depends on the type, rather the other way around.
+					   At this moment, only functions or columns depend on types, so try both */
+					sql_table *t = NULL;
+					sql_func *f = sql_trans_find_func(tr, dep_id);
+					if (f) {
+						res = sql_trans_drop_func(tr, f->s, dep_id, DROP_CASCADE);
+					} else if ((t = find_table_by_columnid(tr, "sys", dep_id)) ||
+							   (t = find_table_by_columnid(tr, "tmp", dep_id))) {
+						if (ol_length(t->columns) == 1) /* only column left, drop the table instead */
+							res = sql_trans_drop_table_id(tr, t->s, t->base.id, DROP_CASCADE);
+						else
+							res = sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
+					}
 					} break;
 				case USER_DEPENDENCY:  /*TODO schema and users dependencies*/
 					break;
@@ -4206,7 +4219,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 			return res;
 	}
 
-	/* remove idx from schema and table*/
+	/* remove idx from schema and table */
 	if (isGlobal(i->t))
 		if ((res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
 			return res;
@@ -4425,7 +4438,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 
 	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, col->base.id, COLUMN_DEPENDENCY)))
 		return res;
-	if (col->type.type->s && (res = sql_trans_drop_dependency(tr, col->base.id, col->type.type->base.id, TYPE_DEPENDENCY)))
+	if (col->type.type->s && (res = sql_trans_drop_dependency(tr, col->type.type->base.id, col->base.id, TYPE_DEPENDENCY)))
 		return res;
 	return res;
 }
@@ -4689,6 +4702,22 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 
 	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY)))
 		return res;
+	if (!func->vararg && func->ops) {
+		for (node *n = func->ops->h; n; n = n->next) {
+			sql_arg *a = n->data;
+
+			if (a->type.type->s && (res = sql_trans_drop_dependency(tr, a->type.type->base.id, func->base.id, TYPE_DEPENDENCY)))
+				return res;
+		}
+	}
+	if (!func->varres && func->res) {
+		for (node *n = func->res->h; n; n = n->next) {
+			sql_arg *a = n->data;
+
+			if (a->type.type->s && (res = sql_trans_drop_dependency(tr, a->type.type->base.id, func->base.id, TYPE_DEPENDENCY)))
+				return res;
+		}
+	}
 	return res;
 }
 
@@ -4788,10 +4817,31 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	sql_type *t = sql_trans_find_type(tr, s, id);
 	int res = LOG_OK;
 
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		sqlid* local_id = MNEW(sqlid);
+		if (!local_id)
+			return -1;
+
+		if (!tr->dropped) {
+			tr->dropped = list_create((fdestroy) &id_destroy);
+			if (!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
+		*local_id = t->base.id;
+		list_append(tr->dropped, local_id);
+	}
+
 	if ((res = sys_drop_type(tr, t, drop_action)))
 		return res;
 	if ((res = os_del(s->types, tr, t->base.name, dup_base(&t->base))))
 		return res;
+
+	if (drop_action == DROP_CASCADE_START && tr->dropped) {
+		list_destroy(tr->dropped);
+		tr->dropped = NULL;
+	}
 	return res;
 }
 
@@ -4830,6 +4880,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	sql_table *sysarg = find_sql_table(tr, find_sql_schema(tr, "sys"), "args");
 	node *n;
 	int number = 0, ftype = (int) type, flang = (int) lang, res = LOG_OK;
+	bit semantics = TRUE;
 
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	base_init(tr->sa, &t->base, next_oid(tr->store), true, func);
@@ -4839,7 +4890,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	t->type = type;
 	t->lang = lang;
 	t->instantiated = lang != FUNC_LANG_SQL && lang != FUNC_LANG_MAL;
-	t->semantics = TRUE;
+	t->semantics = semantics;
 	t->side_effect = side_effect;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -4858,8 +4909,8 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
-	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
-			&t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics)))
+	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &side_effect,
+			&varres, &vararg, &s->base.id, &system, &semantics)))
 		return res;
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
@@ -4934,22 +4985,17 @@ build_drop_func_list_item(sql_trans *tr, sql_schema *s, sqlid id)
 int
 sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action)
 {
-	node *n = NULL;
-	sql_func *func = NULL;
-	list* to_drop = NULL;
+	list *to_drop = NULL;
 	int res = LOG_OK;
 
 	(void) drop_action;
+	if (!tr->dropped && !(tr->dropped = list_create((fdestroy) &id_destroy)))
+		return -1;
 
-	if (!tr->dropped) {
-		tr->dropped = list_create((fdestroy) &id_destroy);
-		if (!tr->dropped)
-			return -1;
-	}
-	for (n = list_func->h; n ; n = n->next ) {
-		func = (sql_func *) n->data;
+	for (node *n = list_func->h; n ; n = n->next ) {
+		sql_func *func = (sql_func *) n->data;
 
-		if (! list_find_id(tr->dropped, func->base.id)){
+		if (!list_find_id(tr->dropped, func->base.id)) {
 			sqlid *local_id = MNEW(sqlid);
 			if (!local_id) {
 				list_destroy(tr->dropped);
@@ -4958,33 +5004,32 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_
 					list_destroy(to_drop);
 				return -1;
 			}
-			if (!to_drop) {
-				to_drop = list_create(NULL);
-				if (!to_drop) {
-					list_destroy(tr->dropped);
-					return -1;
-				}
+			if (!to_drop && !(to_drop = list_create(NULL))) {
+				list_destroy(tr->dropped);
+				tr->dropped = NULL;
+				return -1;
 			}
 			*local_id = func->base.id;
 			list_append(tr->dropped, local_id);
 			list_append(to_drop, func);
-			//sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
 		}
 	}
 
 	if (to_drop) {
-		for (n = to_drop->h; n ; n = n->next ) {
-			func = (sql_func *) n->data;
-			if ((res = build_drop_func_list_item(tr, s, func->base.id)))
+		for (node *n = to_drop->h; n ; n = n->next ) {
+			sql_func *func = (sql_func *) n->data;
+			if ((res = build_drop_func_list_item(tr, s, func->base.id))) {
+				list_destroy(tr->dropped);
+				tr->dropped = NULL;
+				list_destroy(to_drop);
 				return res;
+			}
 		}
 		list_destroy(to_drop);
 	}
 
-	if ( tr->dropped) {
-		list_destroy(tr->dropped);
-		tr->dropped = NULL;
-	}
+	list_destroy(tr->dropped);
+	tr->dropped = NULL;
 	return res;
 }
 
@@ -5477,15 +5522,15 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 			return res;
 	} else {
 		node *n = cs_find_id(&tr->localtmps, t->base.id);
-		if (n)
-			cs_del(&tr->localtmps, tr->store, n, t->base.new);
+		if (n && !cs_del(&tr->localtmps, tr->store, n, t->base.new))
+			return -1;
 	}
 
 	if ((res = table_dup(tr, t, t->s, new_name, &dup)))
 		return res;
 	t = dup;
-	if (!isGlobal(t))
-		cs_add(&tr->localtmps, t, true);
+	if (!isGlobal(t) && !cs_add(&tr->localtmps, t, true))
+		return -1;
 	return res;
 }
 
@@ -5568,8 +5613,9 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 	if (isGlobal(t)) {
 		if ((res = os_add(s->tables, tr, t->base.name, &t->base)))
 			return res;
-	} else
-		cs_add(&tr->localtmps, t, true);
+	} else if (!cs_add(&tr->localtmps, t, true)) {
+		return -1;
+	}
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 
@@ -5718,6 +5764,7 @@ create_sql_ic(sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c)
 sql_idx *
 create_sql_idx_done(sql_trans *tr, sql_idx *i)
 {
+	(void) tr;
 	if (i && i->key && hash_index(i->type)) {
 		int ncols = list_length(i->columns);
 		for (node *n = i->columns->h ; n ; n = n->next) {
@@ -5726,9 +5773,6 @@ create_sql_idx_done(sql_trans *tr, sql_idx *i)
 			kc->c->unique = (ncols == 1) ? 2 : MAX(kc->c->unique, 1);
 		}
 	}
-	/* should we switch to oph_idx ? */
-	if (i->type == hash_idx && list_length(i->columns) == 1 && sql_trans_is_sorted(tr, ((sql_kc*)i->columns->h->data)->c))
-		i->type = no_idx;
 	return i;
 }
 
@@ -5761,11 +5805,16 @@ create_sql_column(sqlstore *store, sql_allocator *sa, sql_table *t, const char *
 int
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action)
 {
-	sql_table *t = find_sql_table(tr, s, name);
+	sql_table *t = find_sql_table(tr, s, name), *gt = NULL;
+	if (t && isTempTable(t)) {
+		gt = find_sql_table_id(tr, s, t->base.id);
+		if (gt)
+			t = gt;
+	}
 	int is_global = isGlobal(t), res = LOG_OK;
 	node *n = NULL;
 
-	if (!is_global)
+	if (!is_global || gt)
 		n = cs_find_id(&tr->localtmps, t->base.id);
 
 	if ((drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) &&
@@ -5796,8 +5845,9 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 	if (is_global) {
 		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
 			return res;
-	} else if (n)
-		cs_del(&tr->localtmps, tr->store, n, 0);
+	}
+	if (n && !cs_del(&tr->localtmps, tr->store, n, 0))
+		return -1;
 
 	sqlstore *store = tr->store;
 	if (isTable(t) && !isNew(t))
@@ -6472,9 +6522,8 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		sqlid *local_id = MNEW(sqlid);
-		if (!local_id) {
+		if (!local_id)
 			return -1;
-		}
 
 		if (!tr->dropped) {
 			tr->dropped = list_create((fdestroy) &id_destroy);
@@ -6492,7 +6541,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
 
-	if (!isTempTable(k->t) && (res = sys_drop_key(tr, k, drop_action)))
+	if ((res = sys_drop_key(tr, k, drop_action)))
 		return res;
 
 	/*Clean the key from the keys*/
@@ -6582,9 +6631,8 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		sqlid *local_id = MNEW(sqlid);
-		if (!local_id) {
+		if (!local_id)
 			return -1;
-		}
 
 		if (!tr->dropped) {
 			tr->dropped = list_create((fdestroy) &id_destroy);
@@ -6597,7 +6645,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if (!isTempTable(i->t) && (res = sys_drop_idx(tr, i, drop_action)))
+	if ((res = sys_drop_idx(tr, i, drop_action)))
 		return res;
 	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql functions depending on the table */
 		return res;
@@ -6761,10 +6809,31 @@ sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int dro
 {
 	int res = LOG_OK;
 
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		sqlid* local_id = MNEW(sqlid);
+		if (!local_id)
+			return -1;
+
+		if (!tr->dropped) {
+			tr->dropped = list_create((fdestroy) &id_destroy);
+			if (!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
+		*local_id = seq->base.id;
+		list_append(tr->dropped, local_id);
+	}
+
 	if ((res = sys_drop_sequence(tr, seq, drop_action)))
 		return res;
 	if ((res = os_del(s->seqs, tr, seq->base.name, dup_base(&seq->base))))
 		return res;
+
+	if (drop_action == DROP_CASCADE_START && tr->dropped) {
+		list_destroy(tr->dropped);
+		tr->dropped = NULL;
+	}
 	return res;
 }
 
@@ -6911,9 +6980,9 @@ sql_trans_begin(sql_session *s)
 	(void) ATOMIC_INC(&store->nr_active);
 	list_append(store->active, s);
 
-	s->status = 0;
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	store_unlock(store);
+	s->status = tr->status = 0;
 	return 0;
 }
 
@@ -6928,6 +6997,7 @@ sql_trans_end(sql_session *s, int ok)
 	}
 	assert(s->tr->active);
 	s->tr->active = 0;
+	s->tr->status = 0;
 	s->auto_commit = s->ac_on_commit;
 	sqlstore *store = s->tr->store;
 	store_lock(store);

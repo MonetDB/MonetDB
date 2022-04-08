@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 DROP FUNCTION fDocColumnsWithRank
 
 statement ok
@@ -329,3 +332,5 @@ DROP FUNCTION fIndexName
 statement ok
 DROP FUNCTION fTileFileName
 
+statement ok
+COMMIT

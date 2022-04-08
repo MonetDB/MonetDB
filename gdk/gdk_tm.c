@@ -103,8 +103,10 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			BAT *b = BBP_cache(bid);
 			if (b) {
 				/* check mmap modes */
+				MT_lock_set(&b->theaplock);
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
 					TRC_WARNING(GDK, "BATcheckmodes failed\n");
+				MT_lock_unset(&b->theaplock);
 			}
 		}
 		if (!locked)
@@ -243,72 +245,4 @@ TMsubcommit(BAT *b)
 	ret = TMsubcommit_list(subcommit, NULL, cnt, getBBPlogno(), getBBPtransid());
 	GDKfree(subcommit);
 	return ret;
-}
-
-/*
- * @- TMabort
- * Transaction abort is cheap. We use the delta statuses to go back to
- * the previous version of each BAT. Also for BATs that are currently
- * swapped out. Persistent BATs that were made transient in this
- * transaction become persistent again.
- */
-void
-TMabort(void)
-{
-	int i;
-
-	BBPlock();
-	for (i = 1; i < getBBPsize(); i++) {
-		if (BBP_status(i) & BBPNEW) {
-			BAT *b = BBPquickdesc(i);
-
-			if (b) {
-				if (!b->batTransient)
-					BBPrelease(i);
-				b->batTransient = true;
-				b->batDirtydesc = true;
-			}
-		}
-	}
-	for (i = 1; i < getBBPsize(); i++) {
-		if (BBP_status(i) & (BBPPERSISTENT | BBPDELETED | BBPSWAPPED)) {
-			BAT *b = BBPquickdesc(i);
-
-			if (b == NULL)
-				continue;
-
-			BBPfix(i);
-			if (BATdirty(b) || DELTAdirty(b)) {
-				/* BUN move-backes need a real BAT! */
-				/* Stefan:
-				 * Actually, in case DELTAdirty(b),
-				 * i.e., a BAT with differences that
-				 * is saved/swapped-out but not yet
-				 * committed, we (AFAIK) don't have to
-				 * load the BAT and apply the undo,
-				 * but rather could simply discard the
-				 * delta and revive the backup;
-				 * however, I don't know how to do
-				 * this (yet), hence we stick with
-				 * this solution for the time being
-				 * --- it should be correct though it
-				 * might not be the most efficient
-				 * way...
-				 */
-				b = BBPdescriptor(i);
-				BATundo(b);
-			}
-			if (BBP_status(i) & BBPDELETED) {
-				BBP_status_on(i, BBPEXISTING);
-				if (b->batTransient)
-					BBPretain(i);
-				b->batTransient = false;
-				b->batDirtydesc = true;
-			}
-			BBPunfix(i);
-		}
-		BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW);
-	}
-	BBPunlock();
-	GDKclrerr();
 }

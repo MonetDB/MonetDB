@@ -139,7 +139,7 @@ gdk_export const char *BATgroupaggrinit(
 	BAT *b, BAT *g, BAT *e, BAT *s,
 	/* outputs: */
 	oid *minp, oid *maxp, BUN *ngrpp,
-	struct canditer *ci, BUN *ncand);
+	struct canditer *ci);
 
 gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty);
 gdk_export gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty);

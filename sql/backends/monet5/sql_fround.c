@@ -32,7 +32,8 @@ finalize_ouput_copy_sorted_property(bat *res, BAT *bn, str msg, bool nils, BUN q
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = istsorted || BATcount(bn) <= 1;
 		bn->trevsorted = istrevsorted || BATcount(bn) <= 1;
-		BBPkeepref(*res = bn->batCacheid);
+		*res = bn->batCacheid;
+		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
 }

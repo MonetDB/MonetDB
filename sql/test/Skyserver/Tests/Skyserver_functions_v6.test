@@ -1,4 +1,7 @@
 statement ok
+START TRANSACTION
+
+statement ok
 CREATE FUNCTION fSkyVersion(ObjID bigint)
 RETURNS INT
 BEGIN
@@ -2259,3 +2262,5 @@ begin
                 || ltrim(cast (round(ra,6) as varchar(10))) || '&"dec"=' || ltrim(cast(round("dec",6)  as varchar(10)));
 end
 
+statement ok
+COMMIT

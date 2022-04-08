@@ -351,7 +351,9 @@ isUpdateInstruction(InstrPtr p){
 		getFunctionId(p) == claimRef ||
 		getFunctionId(p) == growRef ||
 		getFunctionId(p) == clear_tableRef ||
-		getFunctionId(p) == setVariableRef))
+		getFunctionId(p) == setVariableRef ||
+		getFunctionId(p) == dependRef ||
+		getFunctionId(p) == predicateRef))
 			return TRUE;
 	if ( getModuleId(p) == batRef &&
 	   ( getFunctionId(p) == appendRef ||
@@ -519,7 +521,7 @@ isOrderDepenent(InstrPtr p)
 {
 	if( getModuleId(p) != batsqlRef)
 		return 0;
-	if ( getFunctionId(p) == differenceRef ||
+	if (getFunctionId(p) == differenceRef ||
 		getFunctionId(p) == window_boundRef ||
 		getFunctionId(p) == row_numberRef ||
 		getFunctionId(p) == rankRef ||
@@ -531,7 +533,8 @@ isOrderDepenent(InstrPtr p)
 		getFunctionId(p) == last_valueRef ||
 		getFunctionId(p) == nth_valueRef ||
 		getFunctionId(p) == lagRef ||
-		getFunctionId(p) == leadRef)
+		getFunctionId(p) == leadRef ||
+		getFunctionId(p) == corrRef)
 		return 1;
 	return 0;
 }
@@ -544,7 +547,7 @@ inline int isMapOp(InstrPtr p){
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
+		 (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
 		 getModuleId(p) != batpyapi3Ref &&
 		 getModuleId(p) != batcapiRef;
@@ -558,7 +561,7 @@ inline int isMap2Op(InstrPtr p){
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
+		 (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
 		 getModuleId(p) != batpyapi3Ref &&
 		 getModuleId(p) != batcapiRef;

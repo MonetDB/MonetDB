@@ -174,7 +174,8 @@ static str RMTresolve(bat *ret, str *pat) {
 	}
 	free(or);
 
-	BBPkeepref(*ret = list->batCacheid);
+	*ret = list->batCacheid;
+	BBPkeepref(list);
 	return(MAL_SUCCEED);
 #endif
 }
@@ -888,7 +889,7 @@ static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		v->val.bval = b->batCacheid;
 		v->vtype = TYPE_bat;
-		BBPkeepref(b->batCacheid);
+		BBPkeepref(b);
 
 		mapi_close_handle(mhdl);
 		MT_lock_unset(&c->lock);
@@ -927,7 +928,7 @@ static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		v->val.bval = b->batCacheid;
 		v->vtype = TYPE_bat;
-		BBPkeepref(b->batCacheid);
+		BBPkeepref(b);
 
 		MT_lock_unset(&c->lock);
 	} else {
@@ -1404,6 +1405,7 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				}
 
 				results[i].id = b->batCacheid;
+				BBPkeepref(b);
 				results[i].colname = mapi_get_name(mhdl, i);
 				results[i].tpename = mapi_get_type(mhdl, i);
 				results[i].digits = mapi_get_digits(mhdl, i);
@@ -1412,10 +1414,8 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 			if (tmp != MAL_SUCCEED) {
 				for (int j = 0; j < i; j++)
-					BBPunfix(results[j].id);
+					BBPrelease(results[j].id);
 			} else {
-				for (int j = 0; j < i; j++)
-					BBPkeepref(results[j].id);
 				assert(rcb->context);
 				tmp = rcb->call(rcb->context, mapi_get_table(mhdl, 0), results, fields);
 				for (int j = 0; j < i; j++)
@@ -1500,7 +1500,7 @@ static str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	v->val.bval = b->batCacheid;
 	v->vtype = TYPE_bat;
-	BBPkeepref(b->batCacheid);
+	BBPkeepref(b);
 
 	return msg;
 }
@@ -1525,7 +1525,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
 	sendtheap = b->ttype != TYPE_void;
-	sendtvheap = sendtheap && b->tvarsized;
+	sendtvheap = sendtheap && b->tvheap;
 	if (isVIEW(b) && sendtvheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);
@@ -1539,6 +1539,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
+	BATiter vi = bat_iterator(v);
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
 			"\"version\":1,"
 			"\"ttype\":%d,"
@@ -1553,26 +1554,25 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			"\"tailsize\":%zu,"
 			"\"theapsize\":%zu"
 			"}\n",
-			v->ttype,
+			vi.type,
 			v->hseqbase, v->tseqbase,
-			v->tsorted, v->trevsorted,
-			v->tkey,
-			v->tnonil,
-			BATtdense(v),
-			v->batCount,
-			sendtheap ? (size_t)v->batCount << v->tshift : 0,
-			sendtvheap && v->batCount > 0 ? v->tvheap->free : 0
+			vi.sorted, vi.revsorted,
+			vi.key,
+			vi.nonil,
+			BATtdensebi(&vi),
+			vi.count,
+			sendtheap ? (size_t)vi.count << vi.shift : 0,
+			sendtvheap && vi.count > 0 ? vi.vhfree : 0
 			);
 
-	if (sendtheap && v->batCount > 0) {
-		BATiter vi = bat_iterator(v);
+	if (sendtheap && vi.count > 0) {
 		mnstr_write(cntxt->fdout, /* tail */
 					vi.base, vi.count * vi.width, 1);
 		if (sendtvheap)
 			mnstr_write(cntxt->fdout, /* theap */
 						vi.vh->base, vi.vhfree, 1);
-		bat_iterator_end(&vi);
 	}
+	bat_iterator_end(&vi);
 	/* flush is done by the calling environment (MAL) */
 
 	if (b != v)
@@ -1612,7 +1612,7 @@ static str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	v = &stk->stk[pci->argv[0]];
 	v->val.bval = b->batCacheid;
 	v->vtype = TYPE_bat;
-	BBPkeepref(b->batCacheid);
+	BBPkeepref(b);
 
 	return(MAL_SUCCEED);
 }

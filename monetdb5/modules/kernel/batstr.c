@@ -49,7 +49,8 @@ finalize_ouput(bat *res, BAT *bn, str msg, bool nils, BUN q)
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*res = bn->batCacheid);
+		*res = bn->batCacheid;
+		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
 }
@@ -79,7 +80,6 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	int *restrict vals;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -98,8 +98,8 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -108,7 +108,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *restrict x = BUNtvar(bi, p1);
 
@@ -120,7 +120,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *restrict x = BUNtvar(bi, p1);
 
@@ -134,7 +134,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -156,7 +156,6 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	int *restrict vals, next;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -175,8 +174,8 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -185,7 +184,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *restrict x = BUNtvar(bi, p1);
 
@@ -195,7 +194,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nils |= is_int_nil(next);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *restrict x = BUNtvar(bi, p1);
 
@@ -208,7 +207,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout1:
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -217,7 +216,6 @@ static str
 STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = MAX(strlen(str_nil) + 1, 8);
 	int *restrict vals, x;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -242,8 +240,8 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.unicode", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -252,7 +250,7 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = b->hseqbase;
 	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			x = vals[p1];
 
@@ -276,7 +274,7 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			x = vals[p1];
 
@@ -303,7 +301,7 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -312,12 +310,11 @@ static str
 STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict vals, x;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
-	char space[]= " ", *s = space;
+	const char space[]= " ", *s = space;
 	struct canditer ci1 = {0};
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
@@ -338,8 +335,8 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.search", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -348,7 +345,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			x = vals[p1];
 
@@ -368,7 +365,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			x = vals[p1];
 
@@ -391,7 +388,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -401,7 +398,6 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
@@ -424,8 +420,8 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -433,7 +429,7 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *restrict x = BUNtvar(bi, p1);
 
@@ -453,7 +449,7 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *restrict x = BUNtvar(bi, p1);
 
@@ -477,7 +473,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -490,7 +486,6 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	const char *y = *getArgReference_str(stk, pci, 2);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
@@ -513,8 +508,8 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -522,7 +517,7 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -542,7 +537,7 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -566,7 +561,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -579,7 +574,6 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	const char *x = *getArgReference_str(stk, pci, 1);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
@@ -602,8 +596,8 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -611,7 +605,7 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *y = BUNtvar(bi, p1);
 
@@ -631,7 +625,7 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *y = BUNtvar(bi, p1);
 
@@ -655,7 +649,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -668,7 +662,6 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	BUN q = 0;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0}, ci2 = {0};
@@ -692,12 +685,13 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, lefts);
-	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, lefts);
+	canditer_init(&ci2, right, rights);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -707,7 +701,7 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -728,7 +722,7 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -754,7 +748,7 @@ bailout1:
 	bat_iterator_end(&righti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -767,7 +761,6 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	int y = *getArgReference_int(stk, pci, 2);
@@ -791,8 +784,8 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -800,7 +793,7 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -820,7 +813,7 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -844,7 +837,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -856,7 +849,6 @@ static str
 do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, str (*func)(str*, size_t*, const char*, int))
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *x = *getArgReference_str(stk, pci, 1);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -882,8 +874,8 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -892,7 +884,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	bi = bat_iterator(b);
 	inputs = bi.base;
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			y = inputs[p1];
 
@@ -912,7 +904,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			y = inputs[p1];
 
@@ -935,7 +927,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -948,7 +940,6 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
@@ -976,12 +967,13 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, ls);
-	if (canditer_init(&ci2, right, rs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, ls);
+	canditer_init(&ci2, right, rs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -992,7 +984,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	bi = bat_iterator(right);
 	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -1013,7 +1005,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -1039,7 +1031,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -1052,7 +1044,6 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *z = *getArgReference_str(stk, pci, 3);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -1077,8 +1068,8 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1086,7 +1077,7 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -1106,7 +1097,7 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -1130,7 +1121,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -1143,7 +1134,6 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *z = *getArgReference_str(stk, pci, 3);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -1172,12 +1162,13 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, ls);
-	if (canditer_init(&ci2, right, rs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, ls);
+	canditer_init(&ci2, right, rs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1188,7 +1179,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bi = bat_iterator(right);
 	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -1209,7 +1200,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -1235,7 +1226,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -1248,7 +1239,6 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
@@ -1275,12 +1265,13 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, ls);
-	if (canditer_init(&ci2, right, rs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, ls);
+	canditer_init(&ci2, right, rs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1290,7 +1281,7 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *z = BUNtvar(righti, p2);
@@ -1311,7 +1302,7 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *z = BUNtvar(righti, p2);
@@ -1337,7 +1328,7 @@ bailout1:
 	bat_iterator_end(&righti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -1350,7 +1341,6 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 {
 	BATiter arg1i, arg3i, bi;
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL, *arg2s = NULL, *arg3 = NULL, *arg3s = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
@@ -1378,12 +1368,14 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, arg1, arg1s);
-	if (canditer_init(&ci2, arg2, arg2s) != q || ci1.hseq != ci2.hseq || canditer_init(&ci3, arg3, arg3s) != q || ci2.hseq != ci3.hseq) {
+	canditer_init(&ci1, arg1, arg1s);
+	canditer_init(&ci2, arg2, arg2s);
+	canditer_init(&ci3, arg3, arg3s);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand || ci2.hseq != ci3.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1396,7 +1388,7 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	arg2i = bi.base;
 	arg3i = bat_iterator(arg3);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2), p3 = (canditer_next_dense(&ci3) - off3);
 			const char *x = BUNtvar(arg1i, p1);
 			y = arg2i[p2];
@@ -1418,7 +1410,7 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2), p3 = (canditer_next(&ci3) - off3);
 			const char *x = BUNtvar(arg1i, p1);
 			y = arg2i[p2];
@@ -1446,7 +1438,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
 }
@@ -1642,7 +1634,6 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	BUN q = 0;
 	bit *restrict vals;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -1663,12 +1654,13 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, lefts);
-	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, lefts);
+	canditer_init(&ci2, right, rights);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_bit, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1679,7 +1671,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -1692,7 +1684,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -1708,7 +1700,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -1730,7 +1722,6 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	bit *restrict vals;
 	const char *y = *getArgReference_str(stk, pci, 2);
 	str msg = MAL_SUCCEED;
@@ -1750,8 +1741,8 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_bit, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1760,7 +1751,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -1772,7 +1763,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -1786,7 +1777,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -1808,7 +1799,6 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	bit *restrict vals;
 	const char *x = *getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED;
@@ -1828,8 +1818,8 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_bit, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1838,7 +1828,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *y = BUNtvar(bi, p1);
 
@@ -1850,7 +1840,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *y = BUNtvar(bi, p1);
 
@@ -1864,7 +1854,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -1886,7 +1876,6 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	BUN q = 0;
 	int *restrict vals;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -1907,12 +1896,13 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, lefts);
-	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, lefts);
+	canditer_init(&ci2, right, rights);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1923,7 +1913,7 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -1936,7 +1926,7 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -1952,7 +1942,7 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -1974,7 +1964,6 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	int *restrict vals;
 	const char *y = *getArgReference_str(stk, pci, 2);
 	str msg = MAL_SUCCEED;
@@ -1994,8 +1983,8 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2004,7 +1993,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -2016,7 +2005,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -2030,7 +2019,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2052,7 +2041,6 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	int *restrict vals;
 	const char *x = *getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED;
@@ -2072,8 +2060,8 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2082,7 +2070,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *y = BUNtvar(bi, p1);
 
@@ -2094,7 +2082,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *y = BUNtvar(bi, p1);
 
@@ -2108,7 +2096,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2130,7 +2118,6 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti, bi;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, *restrict vals, next, y;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -2156,12 +2143,13 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, lefts);
-	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, lefts);
+	canditer_init(&ci2, right, rights);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.unicodeAt", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2173,7 +2161,7 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	righti = bi.base;
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -2184,7 +2172,7 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nils |= is_int_nil(next);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -2200,7 +2188,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -2210,7 +2198,6 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), *restrict vals, next;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -2234,8 +2221,8 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2244,7 +2231,7 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -2254,7 +2241,7 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nils |= is_int_nil(next);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -2268,7 +2255,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2277,7 +2264,6 @@ static str
 STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y, *restrict vals, *restrict input, next;
 	const char *x = *getArgReference_str(stk, pci, 1);
@@ -2303,8 +2289,8 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2314,7 +2300,7 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	input = bi.base;
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			y = input[p1];
 
@@ -2324,7 +2310,7 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nils |= is_int_nil(next);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			y = input[p1];
 
@@ -2338,7 +2324,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2348,7 +2334,6 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -2372,8 +2357,8 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2381,7 +2366,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -2401,7 +2386,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -2425,7 +2410,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2459,7 +2444,6 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -2483,8 +2467,8 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2492,7 +2476,7 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -2512,7 +2496,7 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -2536,7 +2520,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2545,7 +2529,6 @@ static str
 do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, str (*func)(str*, size_t*, const char*, int))
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict vals, y;
 	const char *x = *getArgReference_str(stk, pci, 1);
@@ -2571,8 +2554,8 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2581,7 +2564,7 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	bi = bat_iterator(b);
 	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			y = vals[p1];
 
@@ -2601,7 +2584,7 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			y = vals[p1];
 
@@ -2625,7 +2608,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2658,7 +2641,6 @@ static str
 STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict vals, y;
 	const char *x = *getArgReference_str(stk, pci, 1);
@@ -2684,8 +2666,8 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2694,7 +2676,7 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			y = vals[p1];
 
@@ -2714,7 +2696,7 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			y = vals[p1];
 
@@ -2738,7 +2720,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2748,7 +2730,6 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, y;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -2775,12 +2756,13 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, lefts);
-	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, lefts);
+	canditer_init(&ci2, right, rights);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2791,7 +2773,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 	bi = bat_iterator(right);
 	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -2812,7 +2794,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -2838,7 +2820,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -2872,7 +2854,6 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, y;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -2899,12 +2880,13 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, lefts);
-	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, lefts);
+	canditer_init(&ci2, right, rights);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.repeat", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2915,7 +2897,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(right);
 	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -2936,7 +2918,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			y = righti[p2];
@@ -2962,7 +2944,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -2972,7 +2954,6 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *y = *getArgReference_str(stk, pci, 2), *z = *getArgReference_str(stk, pci, 3);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -2995,8 +2976,8 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3006,7 +2987,7 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -3026,7 +3007,7 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -3050,7 +3031,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3067,7 +3048,6 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter arg1i, arg2i, arg3i;
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL, *arg2s = NULL, *arg3 = NULL, *arg3s = NULL, *arg4 = NULL, *arg4s = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
@@ -3096,13 +3076,16 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.substritute", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, arg1, arg1s);
-	if (canditer_init(&ci2, arg2, arg2s) != q || ci1.hseq != ci2.hseq || canditer_init(&ci3, arg3, arg3s) != q ||
-		ci2.hseq != ci3.hseq || canditer_init(&ci4, arg4, arg4s) != q || ci3.hseq != ci4.hseq) {
+	canditer_init(&ci1, arg1, arg1s);
+	canditer_init(&ci2, arg2, arg2s);
+	canditer_init(&ci3, arg3, arg3s);
+	canditer_init(&ci4, arg4, arg4s);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand ||
+		ci2.hseq != ci3.hseq || ci4.ncand != ci1.ncand || ci3.hseq != ci4.hseq) {
 		msg = createException(MAL, "batstr.substritute", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3119,7 +3102,7 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(arg4);
 	arg4i = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense && ci4.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3), p4 = (canditer_next_dense(&ci4) - off4);
 			const char *x = BUNtvar(arg1i, p1);
@@ -3143,7 +3126,7 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3), p4 = (canditer_next(&ci4) - off4);
 			const char *x = BUNtvar(arg1i, p1);
@@ -3174,7 +3157,7 @@ bailout1:
 	bat_iterator_end(&arg3i);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, arg1, arg1, arg2, arg2s, arg3, arg3s, arg4, arg4s);
 	return msg;
 }
@@ -3184,7 +3167,6 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int z = *getArgReference_int(stk, pci, 3);
 	const char *y = *getArgReference_str(stk, pci, 2);
@@ -3209,8 +3191,8 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3218,7 +3200,7 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -3238,7 +3220,7 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -3262,7 +3244,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3272,7 +3254,6 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	BATiter bi, fi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *f = NULL, *fs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict field, z;
 	const char *y = *getArgReference_str(stk, pci, 2);
@@ -3297,12 +3278,13 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (canditer_init(&ci2, f, fs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, b, bs);
+	canditer_init(&ci2, f, fs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.splitpart", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3315,7 +3297,7 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	fi = bat_iterator(f);
 	field = fi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(bi, p1);
 			z = field[p2];
@@ -3336,7 +3318,7 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(bi, p1);
 			z = field[p2];
@@ -3362,7 +3344,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, f, fs);
 	return msg;
 }
@@ -3372,7 +3354,6 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 {
 	BATiter bi, ni;
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *n = NULL, *ns = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int z = *getArgReference_int(stk, pci, 3);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -3398,12 +3379,13 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (canditer_init(&ci2, n, ns) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, b, bs);
+	canditer_init(&ci2, n, ns);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.splitpart", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3413,7 +3395,7 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bi = bat_iterator(b);
 	ni = bat_iterator(n);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(bi, p1);
 			const char *y = BUNtvar(ni, p2);
@@ -3434,7 +3416,7 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(bi, p1);
 			const char *y = BUNtvar(ni, p2);
@@ -3460,7 +3442,7 @@ bailout1:
 	bat_iterator_end(&ni);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, n, ns);
 	return msg;
 }
@@ -3470,7 +3452,6 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter arg1i, arg2i;
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL, *arg2s = NULL, *arg3 = NULL, *arg3s = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict arg3i, z;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -3499,12 +3480,14 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, arg1, arg1s);
-	if (canditer_init(&ci2, arg2, arg2s) != q || ci1.hseq != ci2.hseq || canditer_init(&ci3, arg3, arg3s) != q || ci2.hseq != ci3.hseq) {
+	canditer_init(&ci1, arg1, arg1s);
+	canditer_init(&ci2, arg2, arg2s);
+	canditer_init(&ci3, arg3, arg3s);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand || ci2.hseq != ci3.hseq) {
 		msg = createException(MAL, "batstr.splitpart", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3517,7 +3500,7 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(arg3);
 	arg3i = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2), p3 = (canditer_next_dense(&ci3) - off3);
 			const char *x = BUNtvar(arg1i, p1);
 			const char *y = BUNtvar(arg2i, p2);
@@ -3539,7 +3522,7 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2), p3 = (canditer_next(&ci3) - off3);
 			const char *x = BUNtvar(arg1i, p1);
 			const char *y = BUNtvar(arg2i, p2);
@@ -3567,7 +3550,7 @@ bailout1:
 	bat_iterator_end(&arg2i);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
 }
@@ -3585,7 +3568,6 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter arg1i, arg2i, arg3i;
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL, *arg2s = NULL, *arg3 = NULL, *arg3s = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
@@ -3612,12 +3594,14 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.replace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, arg1, arg1s);
-	if (canditer_init(&ci2, arg2, arg2s) != q || ci1.hseq != ci2.hseq || canditer_init(&ci3, arg3, arg3s) != q || ci2.hseq != ci3.hseq) {
+	canditer_init(&ci1, arg1, arg1s);
+	canditer_init(&ci2, arg2, arg2s);
+	canditer_init(&ci3, arg3, arg3s);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand || ci2.hseq != ci3.hseq) {
 		msg = createException(MAL, "batstr.replace", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.replace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3629,7 +3613,7 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	arg2i = bat_iterator(arg2);
 	arg3i = bat_iterator(arg3);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2), p3 = (canditer_next_dense(&ci3) - off3);
 			const char *x = BUNtvar(arg1i, p1);
 			const char *y = BUNtvar(arg2i, p2);
@@ -3651,7 +3635,7 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2), p3 = (canditer_next(&ci3) - off3);
 			const char *x = BUNtvar(arg1i, p1);
 			const char *y = BUNtvar(arg2i, p2);
@@ -3679,7 +3663,7 @@ bailout1:
 	bat_iterator_end(&arg3i);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
 }
@@ -3689,7 +3673,6 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti, righti, starti, ncharsi;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *start = NULL, *ss = NULL, *nchars = NULL, *ns = NULL, *right = NULL, *rs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *sval, *lval, y, z;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -3719,13 +3702,16 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.insert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, ls);
-	if (canditer_init(&ci2, start, ss) != q || ci1.hseq != ci2.hseq || canditer_init(&ci3, nchars, ns) != q ||
-		ci2.hseq != ci3.hseq || canditer_init(&ci4, right, rs) != q || ci3.hseq != ci4.hseq) {
+	canditer_init(&ci1, left, ls);
+	canditer_init(&ci2, start, ss);
+	canditer_init(&ci3, nchars, ns);
+	canditer_init(&ci4, right, rs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand ||
+		ci2.hseq != ci3.hseq || ci4.ncand != ci1.ncand || ci3.hseq != ci4.hseq) {
 		msg = createException(MAL, "batstr.insert", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3741,7 +3727,7 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lval = ncharsi.base;
 	righti = bat_iterator(right);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense && ci4.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3), p4 = (canditer_next_dense(&ci4) - off4);
 			const char *x = BUNtvar(lefti, p1);
@@ -3765,7 +3751,7 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3), p4 = (canditer_next(&ci4) - off4);
 			const char *x = BUNtvar(lefti, p1);
@@ -3796,7 +3782,7 @@ bailout1:
 	bat_iterator_end(&righti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, left, ls, start, ss, nchars, ns, right, rs);
 	return msg;
 }
@@ -3806,7 +3792,6 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), z = *getArgReference_int(stk, pci, 3);
 	const char *w = *getArgReference_str(stk, pci, 4);
@@ -3831,8 +3816,8 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.insert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3840,7 +3825,7 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -3860,7 +3845,7 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -3884,7 +3869,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3897,7 +3882,6 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), z = *getArgReference_int(stk, pci, 3);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -3921,8 +3905,8 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -3930,7 +3914,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -3950,7 +3934,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -3974,7 +3958,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3983,7 +3967,6 @@ static str
 STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), z, *restrict input;
 	const char *x = *getArgReference_str(stk, pci, 1);
@@ -4009,8 +3992,8 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4019,7 +4002,7 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	bi = bat_iterator(b);
 	input = bi.base;
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			z = input[p1];
 
@@ -4039,7 +4022,7 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			z = input[p1];
 
@@ -4063,7 +4046,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4072,7 +4055,6 @@ static str
 STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y, z = *getArgReference_int(stk, pci, 3), *restrict input;
 	const char *x = *getArgReference_str(stk, pci, 1);
@@ -4098,8 +4080,8 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4108,7 +4090,7 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	bi = bat_iterator(b);
 	input = bi.base;
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			y = input[p1];
 
@@ -4128,7 +4110,7 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			y = input[p1];
 
@@ -4152,7 +4134,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4161,7 +4143,6 @@ static str
 STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y, z, *vals1, *vals2;
 	const char *x = *getArgReference_str(stk, pci, 1);
@@ -4190,12 +4171,13 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (canditer_init(&ci2, lb, lbs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, b, bs);
+	canditer_init(&ci2, lb, lbs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4207,7 +4189,7 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vals1 = bi.base;
 	vals2 = lbi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			y = vals1[p1];
 			z = vals2[p2];
@@ -4228,7 +4210,7 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			y = vals1[p1];
 			z = vals2[p2];
@@ -4254,7 +4236,7 @@ bailout1:
 	bat_iterator_end(&lbi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4265,7 +4247,6 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter bi;
 	BATiter lbi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), *len, z;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -4291,12 +4272,13 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (canditer_init(&ci2, lb, lbs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, b, bs);
+	canditer_init(&ci2, lb, lbs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4307,7 +4289,7 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lbi = bat_iterator(lb);
 	len = lbi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(bi, p1);
 			z = len[p2];
@@ -4328,7 +4310,7 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(bi, p1);
 			z = len[p2];
@@ -4354,7 +4336,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4364,7 +4346,6 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi, lbi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *start, y, z = *getArgReference_int(stk, pci, 3);
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -4390,12 +4371,13 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (canditer_init(&ci2, lb, lbs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, b, bs);
+	canditer_init(&ci2, lb, lbs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4406,7 +4388,7 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lbi = bat_iterator(lb);
 	start = lbi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(bi, p1);
 			y = start[p2];
@@ -4427,7 +4409,7 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(bi, p1);
 			y = start[p2];
@@ -4453,7 +4435,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4463,7 +4445,6 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti, starti, lengthi;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *start = NULL, *ss = NULL, *length = NULL, *lens = NULL;
-	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *svals, *lvals, y, z;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
@@ -4491,12 +4472,14 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, ls);
-	if (canditer_init(&ci2, start, ss) != q || ci1.hseq != ci2.hseq || canditer_init(&ci3, length, lens) != q || ci2.hseq != ci3.hseq) {
+	canditer_init(&ci1, left, ls);
+	canditer_init(&ci2, start, ss);
+	canditer_init(&ci3, length, lens);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand || ci2.hseq != ci3.hseq) {
 		msg = createException(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4510,7 +4493,7 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	svals = starti.base;
 	lvals = lengthi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2), p3 = (canditer_next_dense(&ci3) - off3);
 			const char *x = BUNtvar(lefti, p1);
 			y = svals[p2];
@@ -4532,7 +4515,7 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2), p3 = (canditer_next(&ci3) - off3);
 			const char *x = BUNtvar(lefti, p1);
 			y = svals[p2];
@@ -4560,7 +4543,7 @@ bailout1:
 	bat_iterator_end(&lengthi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, left, ls, start, ss, length, lens);
 	return msg;
 }
@@ -4570,7 +4553,6 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	int *restrict vals;
 	const char *y = *getArgReference_str(stk, pci, 2);
 	str msg = MAL_SUCCEED;
@@ -4590,8 +4572,8 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.locate", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.locate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4600,7 +4582,7 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -4612,7 +4594,7 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -4626,7 +4608,7 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4636,7 +4618,6 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	int *restrict vals;
 	const char *x = *getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED;
@@ -4656,8 +4637,8 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.locate", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.locate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4666,7 +4647,7 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *y = BUNtvar(bi, p1);
 
@@ -4678,7 +4659,7 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *y = BUNtvar(bi, p1);
 
@@ -4692,7 +4673,7 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4702,7 +4683,6 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
-	BUN q = 0;
 	int *restrict vals;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -4724,12 +4704,13 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.locate", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, ls);
-	if (canditer_init(&ci2, right, rs) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, ls);
+	canditer_init(&ci2, right, rs);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.locate", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.locate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4740,7 +4721,7 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -4753,7 +4734,7 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -4769,7 +4750,7 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -4779,7 +4760,6 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	int *restrict vals, z = *getArgReference_int(stk, pci, 3);
 	const char *y = *getArgReference_str(stk, pci, 2);
 	str msg = MAL_SUCCEED;
@@ -4799,8 +4779,8 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.locate2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.locate2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4809,7 +4789,7 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -4821,7 +4801,7 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			const char *x = BUNtvar(bi, p1);
 
@@ -4835,7 +4815,7 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4845,7 +4825,6 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti, righti, starti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL, *start = NULL, *ss = NULL;
-	BUN q = 0;
 	int *restrict vals, *restrict svals, z;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -4868,12 +4847,14 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "batstr.locate2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, ls);
-	if (canditer_init(&ci2, right, rs) != q || ci1.hseq != ci2.hseq || canditer_init(&ci3, start, ss) != q || ci2.hseq != ci3.hseq) {
+	canditer_init(&ci1, left, ls);
+	canditer_init(&ci2, right, rs);
+	canditer_init(&ci3, start, ss);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand || ci2.hseq != ci3.hseq) {
 		msg = createException(MAL, "batstr.locate2", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "batstr.locate2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -4887,7 +4868,7 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	svals = starti.base;
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2), p3 = (canditer_next_dense(&ci3) - off3);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -4901,7 +4882,7 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2), p3 = (canditer_next(&ci3) - off3);
 			const char *x = BUNtvar(lefti, p1);
 			const char *y = BUNtvar(righti, p2);
@@ -4919,7 +4900,7 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
-	finalize_ouput(res, bn, msg, nils, q);
+	finalize_ouput(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, left, ls, right, rs, start, ss);
 	return msg;
 }

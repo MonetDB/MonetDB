@@ -12,7 +12,6 @@
 #include "pytypes.h"
 #include "type_conversion.h"
 #include "unicode.h"
-#include "blob.h"
 #include "gdk_interprocess.h"
 
 //! Wrapper to get eclass of SQL type
@@ -43,19 +42,19 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 #endif
 			break;
 		case TYPE_oid:
-			vararray = PyInt_FromLong((long)(*(oid *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(oid *)inp->dataptr));
 			break;
 		case TYPE_bit:
-			vararray = PyInt_FromLong((long)(*(bit *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(bit *)inp->dataptr));
 			break;
 		case TYPE_bte:
-			vararray = PyInt_FromLong((long)(*(bte *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(bte *)inp->dataptr));
 			break;
 		case TYPE_sht:
-			vararray = PyInt_FromLong((long)(*(sht *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(sht *)inp->dataptr));
 			break;
 		case TYPE_int:
-			vararray = PyInt_FromLong((long)(*(int *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(int *)inp->dataptr));
 			break;
 		case TYPE_lng:
 			vararray = PyLong_FromLongLong((*(lng *)inp->dataptr));
@@ -109,10 +108,13 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	// element is NULL, and 'False' otherwise
 	// if we know for sure that the BAT has no NULL values, we can skip the construction
 	// of this masked array. Otherwise, we create it.
-	if (b->tnil || !b->tnonil) {
+	MT_lock_set(&b->theaplock);
+	bool bnonil = b->tnonil;
+	MT_lock_unset(&b->theaplock);
+	if (!bnonil) {
 		PyObject *mask;
 		PyObject *mafunc = PyObject_GetAttrString(
-			PyImport_Import(PyString_FromString("numpy.ma")), "masked_array");
+			PyImport_Import(PyUnicode_FromString("numpy.ma")), "masked_array");
 		PyObject *nullmask = PyNullMask_FromBAT(b, t_start, t_end);
 
 		if (!nullmask) {
@@ -351,7 +353,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								const char *t = (const char *)BUNtvar(li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
-									pyptrs[offset] = PyString_FromString(t);
+									pyptrs[offset] = PyUnicode_FromString(t);
 								} else {
 									Py_INCREF(pyptrs[offset]);
 								}
@@ -362,7 +364,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							BATloop(b, p, q)
 							{
 								const char *t = (const char *)BUNtvar(li, p);
-								obj = PyString_FromString(t);
+								obj = PyUnicode_FromString(t);
 								if (obj == NULL) {
 									bat_iterator_end(&li);
 									msg = createException(
@@ -635,7 +637,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 					SQLSTATE(PY000) "Unsupported result object. Expected either a list, "
 					"dictionary, a numpy array, a numpy masked array or a "
 					"pandas data frame, but received an object of type \"%s\"",
-					PyString_AsString(PyObject_Str(PyObject_Type(data))));
+					PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(data))));
 				goto wrapup;
 			}
 

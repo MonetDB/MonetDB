@@ -26,7 +26,6 @@ BAT *
 BATunique(BAT *b, BAT *s)
 {
 	BAT *bn;
-	BUN cnt;
 	const void *v;
 	const char *vals;
 	const char *vars;
@@ -49,11 +48,15 @@ BATunique(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
-	cnt = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 
-	if (b->tkey || cnt <= 1 || BATtdense(b)) {
+	(void) BATordered(b);
+	(void) BATordered_rev(b);
+	BATiter bi = bat_iterator(b);
+	if (bi.key || ci.ncand <= 1 || BATtdensebi(&bi)) {
 		/* trivial: already unique */
-		bn = canditer_slice(&ci, 0, cnt);
+		bn = canditer_slice(&ci, 0, ci.ncand);
+		bat_iterator_end(&bi);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 			  " (already unique, slice candidates -- "
@@ -63,10 +66,11 @@ BATunique(BAT *b, BAT *s)
 		return bn;
 	}
 
-	if ((BATordered(b) && BATordered_rev(b)) ||
-	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
+	if ((bi.sorted && bi.revsorted) ||
+	    (bi.type == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
 		bn = BATdense(0, ci.seq, 1);
+		bat_iterator_end(&bi);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 			  " (all equal -- "
@@ -76,9 +80,8 @@ BATunique(BAT *b, BAT *s)
 		return bn;
 	}
 
-	assert(b->ttype != TYPE_void);
+	assert(bi.type != TYPE_void);
 
-	BATiter bi = bat_iterator(b);
 	BUN initsize = BUN_NONE;
 	if (s == NULL) {
 		MT_rwlock_rdlock(&b->thashlock);
@@ -96,7 +99,7 @@ BATunique(BAT *b, BAT *s)
 		return NULL;
 	}
 	vals = bi.base;
-	if (b->tvarsized && bi.type)
+	if (bi.vh && bi.type)
 		vars = bi.vh->base;
 	else
 		vars = NULL;
@@ -113,7 +116,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: byte-sized atoms";
 		uint32_t seen[256 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			o = canditer_next(&ci);
 			val = ((const uint8_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -139,7 +142,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: short-sized atoms";
 		uint32_t seen[65536 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			o = canditer_next(&ci);
 			val = ((const uint16_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -156,10 +159,10 @@ BATunique(BAT *b, BAT *s)
 		}
 		TIMEOUT_CHECK(timeoffset,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
-	} else if (BATordered(b) || BATordered_rev(b)) {
+	} else if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
@@ -171,8 +174,8 @@ BATunique(BAT *b, BAT *s)
 		TIMEOUT_CHECK(timeoffset,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	} else if (BATcheckhash(b) ||
-		   (!b->batTransient &&
-		    cnt == bi.count &&
+		   (!bi.transient &&
+		    ci.ncand == bi.count &&
 		    BAThash(b) == GDK_SUCCEED)) {
 		BUN lo = 0;
 
@@ -186,7 +189,7 @@ BATunique(BAT *b, BAT *s)
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
 		}
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			BUN p;
 
 			o = canditer_next(&ci);
@@ -230,7 +233,7 @@ BATunique(BAT *b, BAT *s)
 			mask = (BUN) 1 << 16;
 			cmp = NULL; /* no compare needed, "hash" is perfect */
 		} else {
-			mask = HASHmask(cnt);
+			mask = HASHmask(ci.ncand);
 			if (mask < ((BUN) 1 << 16))
 				mask = (BUN) 1 << 16;
 		}
@@ -242,13 +245,13 @@ BATunique(BAT *b, BAT *s)
 		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
 		    snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
 		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
-		    HASHnew(hs, bi.type, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(hs, bi.type, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			prb = HASHprobe(hs, v);

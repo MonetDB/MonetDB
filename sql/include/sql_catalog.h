@@ -207,6 +207,7 @@ extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, con
 typedef struct changeset {
 	sql_allocator *sa;
 	fdestroy destroy;
+	fkeyvalue fkeyvalue;
 	struct list *set;
 	struct list *dset;
 	node *nelm;
@@ -266,10 +267,10 @@ extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
 #define ol_last_node(ol) (ol->l->t)
 #define ol_fetch(ol,nr) (list_fetch(ol->l, nr))
 
-extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
+extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy, fkeyvalue hfunc);
 extern void cs_destroy(changeset * cs, void *data);
-extern void cs_add(changeset * cs, void *elm, bool isnew);
-extern void cs_del(changeset * cs, void *gdata, node *elm, bool isnew);
+extern changeset *cs_add(changeset * cs, void *elm, bool isnew);
+extern changeset *cs_del(changeset * cs, void *gdata, node *n, bool force);
 extern int cs_size(changeset * cs);
 extern node *cs_find_id(changeset * cs, sqlid id);
 
@@ -474,7 +475,7 @@ typedef enum sql_flang {
 } sql_flang;
 
 #define LANG_EXT(l)  ((l)>FUNC_LANG_SQL)
-#define UDF_LANG(l)  ((l)>=FUNC_LANG_SQL)
+#define UDF_LANG(l)  ((l)!=FUNC_LANG_INT)
 
 typedef struct sql_func {
 	sql_base base;
@@ -491,12 +492,14 @@ typedef struct sql_func {
 	list *res;	/* list of results */
 	sql_flang lang;
 	char *query;	/* sql code */
-	bit semantics; /*When set to true, function incorporates some kind of null semantics.*/
-	bit side_effect;
-	bit varres;	/* variable output result */
-	bit vararg;	/* variable input arguments */
-	bit system;	/* system function */
-	bit instantiated; /* if the function is instantiated */
+	bool
+	semantics:1, /* When set to true, function incorporates some kind of null semantics */
+	side_effect:1, /* if the function has side-effects */
+	varres:1,	/* variable output result */
+	vararg:1,	/* variable input arguments */
+	system:1,	/* system function */
+	instantiated:1,	/* if the function is instantiated */
+	private:1;	/* certain functions cannot be bound from user queries */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing
@@ -763,9 +766,11 @@ extern node *list_find_base_id(list *l, sqlid id);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
 extern sql_key *sql_trans_find_key(sql_trans *tr, sqlid id);
+extern sql_key *schema_find_key(sql_trans *tr, sql_schema *s, const char *name);
 
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
+extern sql_idx *schema_find_idx(sql_trans *tr, sql_schema *s, const char *name);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
@@ -783,6 +788,7 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *n
 extern sql_type *sql_trans_find_type(sql_trans *tr, sql_schema *s /*optional */, sqlid id);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
 extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
+extern sql_trigger *schema_find_trigger(sql_trans *tr, sql_schema *s, const char *name);
 
 extern void find_partition_type(sql_subtype *tpe, sql_table *mt);
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res);

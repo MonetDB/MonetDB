@@ -81,7 +81,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jan2022/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jan2022-SP2/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -114,7 +114,6 @@ BuildRequires: geos-devel >= 3.4.0
 %endif
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
-BuildRequires: pkgconfig(uuid)
 BuildRequires: pkgconfig(libxml-2.0)
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre) >= 4.5
@@ -796,7 +795,6 @@ fi
 	-DWITH_PROJ=OFF \
 	-DWITH_READLINE=ON \
 	-DWITH_SNAPPY=OFF \
-	-DWITH_UUID=ON \
 	-DWITH_VALGRIND=OFF \
 	-DWITH_XML2=ON \
 	-DWITH_ZLIB=ON
@@ -850,6 +848,77 @@ fi
 %endif
 
 %changelog
+* Fri Apr 01 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
+- Rebuilt.
+- GH#7278: BUG when there is more than one field/filter in the having
+  clause
+
+* Fri Apr  1 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
+- gdk: Improved speed of BATappend to empty varsized bat: we now just copy
+  the heaps instead of inserting individual values.
+
+* Fri Apr  1 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
+- monetdb5: Improved parsing speed of blob values, especially on Windows.
+  On Windows, using the locale-aware functions isdigit and isxdigit is
+  comparatively very slow, so we avoid them.
+
+* Tue Mar 29 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
+- gdk: Improved speed of projection (BATproject) on varsized bats by sharing
+  the data heap (vheap).
+
+* Fri Mar 25 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.11-20220325
+- Rebuilt.
+- GH#7252: Segmentation fault on second run
+- GH#7253: Extremely slow INSERT INTO <table> SELECT
+- GH#7254: Commit with deletions is very slow
+- GH#7263: PRIMARY KEY constraint is not persistent through server restarts
+- GH#7267: Update after delete does not update some rows
+
+* Fri Mar 18 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.11-20220325
+- gdk: Fixed a race condition which could cause a too large size being written
+  for a .theap file to the BBP.dir file after the correct size file had
+  been saved to disk.
+- gdk: We now ignore the size and capacity columns in the BBP.dir file.
+  These values are essential during run time, but not useful in the
+  on-disk image of the database.
+
+* Wed Mar  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.11-20220325
+- gdk: Fixed a bug in the append code for msk (bit mask) bats.
+- gdk: Conversions from floating point types to integral types that involve
+  multiplication now use the "long double" as intermediate type, thereby
+  loosing as few significant bits as is feasible.
+- gdk: Found and fixed another source for the now infamous BBPcheckbats error
+  that sometimes occurs at startup of the server.
+
+* Wed Feb 16 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.11-20220325
+- clients: Improved the handling of the \r (internal pager) command in mclient.
+  It now properly counts the header of table, and when a (very) long
+  table is being printed and aborted part way in the built-in pager, not
+  all data is transferred to the client (and then discarded).  Instead
+  at most 1000 rows are transferred.
+
+* Mon Feb 07 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.9-20220207
+- Rebuilt.
+- GH#7237: SELECT with concurrent writes rarely returns corrupt data
+- GH#7238: query with system function: "index"(varchar, boolean) fails
+  with GDK error or assertion failure.
+- GH#7241: Replacing a view by a query on the view itself crashes the
+  server.
+
+* Thu Feb 03 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.7-20220203
+- Rebuilt.
+- GH#7228: COMMIT: transaction is aborted because of concurrency
+  conflicts, will ROLLBACK instead
+- GH#7230: Prepared statement of INSERT with SELECT fails when types difer
+- GH#7232: False conflicts when inserting in a not null field
+
+* Mon Jan 24 2022 svetlin <svetlin.stalinov@monetdbsolutions.com> - 11.43.7-20220203
+- sql: [This feature was already released in Jan2022 (11.43), but the ChangeLog was missing]
+  Added SQL procedures sys.vacuum(sname string, tname string, cname string),
+  sys.vacuum(sname string, tname string, cname string, interval int),
+  sys.stop_vacuum(sname string, tname string, cname string).
+  These can be used to vacuum string columns.
+
 * Tue Jan 18 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.5-20220118
 - Rebuilt.
 

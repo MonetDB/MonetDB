@@ -35,12 +35,12 @@
 # include <sys/resource.h>
 #endif
 
-static int
+static inline int
 pseudo(bat *ret, bat *ret2, BAT *bn, BAT *b) {
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	*ret2 = b->batCacheid;
-	BBPkeepref(*ret2);
+	BBPkeepref(b);
 	return 0;
 }
 
@@ -363,9 +363,9 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 
 	BBPunlock();
 	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	*ret2 = b->batCacheid;
-	BBPkeepref(b->batCacheid);
+	BBPkeepref(b);
 
 	return MAL_SUCCEED;
 
@@ -458,9 +458,9 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 
 	BBPunlock();
 	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	*ret2 = b->batCacheid;
-	BBPkeepref(b->batCacheid);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 
   bailout:

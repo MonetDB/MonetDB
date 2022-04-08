@@ -646,7 +646,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 				q = newAssignment(mb);
 				getArg(q, 0) = getArg(p, 0);
-				(void) addArgument(mb, q, getArg(p, 2));
+				q = addArgument(mb, q, getArg(p, 2));
 				if (nvars[getArg(p, 2)] > 0)
 					getArg(q, 1) = nvars[getArg(p, 2)];
 				oclean[i] = 1;

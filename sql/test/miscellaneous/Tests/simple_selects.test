@@ -238,15 +238,13 @@ NULL
 NULL
 NULL
 
-query RTIIIIII rowsort
+query RTIIIII rowsort
 select avg(10), avg(NULL),
-       patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL),
-       "hash"(null)
+       patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL)
 ----
 10.000
 NULL
 2
-NULL
 NULL
 NULL
 NULL
@@ -668,7 +666,7 @@ plan select x as z, 2 from (select 1) as x(x) group by z, z
 project (
 | group by (
 | | project (
-| | |  [ boolean(1) "true" ]
+| | |  [ boolean(1) "true" as "%1"."%1" ]
 | | ) [ tinyint(1) "1" as "x"."x" ]
 | ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
 ) [ "z" NOT NULL, tinyint(2) "2" ]
@@ -898,3 +896,60 @@ select dosomething()
 statement ok
 drop function dosomething
 
+statement ok
+create global temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop table x
+
+statement ok
+create global temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop index tmp.ups
+
+statement ok
+drop table x
+
+statement ok
+create local temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop table x
+
+statement ok
+create local temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop index tmp.ups
+
+statement ok
+drop table x
+
+# some private functions related errors
+statement error 42000!SELECT: no such binary operator 'scale_up'(decimal,tinyint)
+select scale_up(12.1, 10)
+
+statement error 42000!SELECT: no such unary operator 'sql_exists'(tinyint)
+select sql_exists(1)
+
+statement error 42000!CREATE FUNCTION: name 'scale_down' cannot be used
+create function scale_down(x decimal(8,2), y int) returns decimal(8,2) return 1
+
+statement error 42000!CREATE FUNCTION: name 'scale_down' cannot be used
+create or replace function scale_down(x decimal(8,2), y int) returns decimal(8,2) return 1
+
+statement error 42000!DROP FUNCTION: no such function 'any' (boolean, boolean, boolean)
+drop function "any"(boolean, boolean, boolean)

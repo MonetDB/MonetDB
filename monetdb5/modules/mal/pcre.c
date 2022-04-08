@@ -1029,7 +1029,7 @@ static const char *pcre_specials = ".+?*()[]{}|^$\\";
 #else
 /* special characters in POSIX basic regular expressions that need to
  * be escaped */
-static const char *pcre_specials = ".*[]^$\\";
+static const char *pcre_specials = "^.[$()|*+?{\\";
 #endif
 
 /* change SQL LIKE pattern into PCRE pattern */
@@ -1174,7 +1174,7 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, true);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
-		BBPkeepref(*res);
+		BBPkeepref(bn);
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -1191,7 +1191,7 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const str *pat, const str *r
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, false);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
-		BBPkeepref(*res);
+		BBPkeepref(bn);
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -1445,18 +1445,10 @@ re_like_clean(struct RE **re, uint32_t **wpat)
 	}
 }
 
+#ifdef HAVE_LIBPCRE
 static inline str
-pcre_like_build(
-#ifdef HAVE_LIBPCRE
-	pcre **res,
-	pcre_extra **ex
-#else
-	regex_t *res,
-	void *ex
-#endif
-, const char *ppat, bool caseignore, BUN count)
+pcre_like_build(pcre **res, pcre_extra **ex, const char *ppat, bool caseignore, BUN count)
 {
-#ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	int errpos = 0;
 	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_MULTILINE | PCRE_DOTALL;
@@ -1464,47 +1456,42 @@ pcre_like_build(
 
 	*res = NULL;
 	*ex = NULL;
-#else
-	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
-	int errcode;
-
-	*res = (regex_t) {0};
-	(void) count;
-#endif
 
 	if (caseignore) {
-#ifdef HAVE_LIBPCRE
 		options |= PCRE_CASELESS;
-#else
-		options |= REG_ICASE;
-#endif
 	}
-	if (
-#ifdef HAVE_LIBPCRE
-		(*res = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL
-#else
-		(errcode = regcomp(res, ppat, options)) != 0
-#endif
-		)
+	if ((*res = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL)
 		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
 								": compilation of regular expression (%s) failed"
-#ifdef HAVE_LIBPCRE
-								" at %d with '%s'", ppat, errpos, err_p
-#else
-								, ppat
-#endif
-			);
-#ifdef HAVE_LIBPCRE
+								" at %d with '%s'", ppat, errpos, err_p);
 	*ex = pcre_study(*res, pcrestopt, &err_p);
 	if (err_p != NULL)
 		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
 								": pcre study of pattern (%s) "
 								"failed with '%s'", ppat, err_p);
-#else
-	(void) ex;
-#endif
 	return MAL_SUCCEED;
 }
+#else
+static inline str
+pcre_like_build(regex_t *res, void *ex, const char *ppat, bool caseignore, BUN count)
+{
+	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
+	int errcode;
+
+	*res = (regex_t) {0};
+	(void) count;
+
+	if (caseignore) {
+		options |= REG_ICASE;
+	}
+	if ((errcode = regcomp(res, ppat, options)) != 0)
+		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
+							   ": compilation of regular expression (%s) failed",
+							   ppat);
+	(void) ex;
+	return MAL_SUCCEED;
+}
+#endif
 
 #define PCRE_LIKE_BODY(LOOP_BODY, RES1, RES2) \
 	do { \
@@ -1714,7 +1701,8 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		BBPkeepref(*r = bn->batCacheid);
+		*r = bn->batCacheid;
+		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
 	if (b)
@@ -1937,7 +1925,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 					q = b->hseqbase + BATcount(b);
 			} else {
 				p = b->hseqbase;
-				q = BUNlast(b) + b->hseqbase;
+				q = BATcount(b) + b->hseqbase;
 			}
 		}
 
@@ -1953,7 +1941,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 			bn->tkey = true;
 			bn->tnil = false;
 			bn->tnonil = true;
-			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 || rcnt == b->batCount ? b->hseqbase : oid_nil;
+			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
 		}
 	}
 
@@ -1963,9 +1951,10 @@ bailout:
 	if (s)
 		BBPunfix(s->batCacheid);
 	GDKfree(ppat);
-	if (bn && !msg)
-		BBPkeepref(*ret = bn->batCacheid);
-	else if (bn)
+	if (bn && !msg) {
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
+	} else if (bn)
 		BBPreclaim(bn);
 	return msg;
 }
@@ -1990,7 +1979,7 @@ bailout:
 /* nested loop implementation for PCRE join */
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND) \
 	do { \
-		for (BUN ridx = 0; ridx < nrcand; ridx++) { \
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) { \
 			GDK_CHECK_TIMEOUT(timeoffset, counter, \
 					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			ro = canditer_next(&rci); \
@@ -2004,13 +1993,13 @@ bailout:
 					if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 						goto bailout; \
 				} else if (pcrepat) { \
-					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, nlcand)) != MAL_SUCCEED) \
+					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
 						goto bailout; \
 					GDKfree(pcrepat); \
 					pcrepat = NULL; \
 				} \
 				canditer_reset(&lci); \
-				for (BUN lidx = 0; lidx < nlcand; lidx++) { \
+				for (BUN lidx = 0; lidx < lci.ncand; lidx++) { \
 					lo = canditer_next(&lci); \
 					vl = VALUE(l, lo - lbase); \
 					if (strNil(vl)) { \
@@ -2030,7 +2019,7 @@ bailout:
 						if (PCRE_COND) \
 							continue; \
 					} \
-					if (BUNlast(r1) == BATcapacity(r1)) { \
+					if (BATcount(r1) == BATcapacity(r1)) { \
 						newcap = BATgrows(r1); \
 						BATsetcount(r1, BATcount(r1)); \
 						if (r2) \
@@ -2089,7 +2078,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
 	int rskipped = 0;			/* whether we skipped values in r */
 	oid lbase, rbase, lo, ro, lastl = 0;		/* last value inserted into r1 */
-	BUN nl, newcap, nlcand, nrcand;
+	BUN nl, newcap;
 	char *pcrepat = NULL, *msg = MAL_SUCCEED;
 	struct RE *re = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
@@ -2129,8 +2118,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
 
-	nlcand = canditer_init(&lci, l, sl);
-	nrcand = canditer_init(&rci, r, sr);
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
 
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
@@ -2138,7 +2127,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	rbase = r->hseqbase;
 	lvals = (const char *) li.base;
 	rvals = (const char *) ri.base;
-	assert(r->tvarsized && r->ttype);
+	assert(ri.vh && r->ttype);
 	lvars = li.vh->base;
 	rvars = ri.vh->base;
 
@@ -2267,7 +2256,7 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 		goto fail;
 	}
 	bi = bat_iterator(caseignore);
-	ci = *(bit*)BUNtail(bi, 0);
+	ci = *(bit*)BUNtloc(bi, 0);
 	bat_iterator_end(&bi);
 	bi = bat_iterator(escape);
 	esc = BUNtvar(bi, 0);
@@ -2276,10 +2265,10 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 	if (msg)
 		goto fail;
 	*r1 = result1->batCacheid;
-	BBPkeepref(*r1);
+	BBPkeepref(result1);
 	if (r2) {
 		*r2 = result2->batCacheid;
-		BBPkeepref(*r2);
+		BBPkeepref(result2);
 	}
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);

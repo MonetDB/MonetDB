@@ -61,7 +61,7 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -93,7 +93,7 @@ CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, bool abort_on_error,
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -362,7 +362,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
 bailout:
@@ -473,7 +473,7 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
 bailout:
@@ -561,7 +561,7 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
 bailout:
@@ -980,7 +980,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (bn == NULL)
 		return mythrow(MAL, "batcalc.between", OPERATION_FAILED);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
   bailout:
@@ -1075,7 +1075,7 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 		return mythrow(MAL, buf, OPERATION_FAILED);
 	}
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1369,7 +1369,8 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (bn == NULL) {
 		return mythrow(MAL, "batcalc.ifthenelse", OPERATION_FAILED);
 	}
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 

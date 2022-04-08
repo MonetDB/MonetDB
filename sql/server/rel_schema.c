@@ -122,6 +122,7 @@ view_rename_columns(mvc *sql, const char *name, sql_rel *sq, dlist *column_spec)
 		p->next = 0;
 	if (n || m)
 		return sql_error(sql, 02, SQLSTATE(M0M03) "Column lists do not match");
+	list_hash_clear(sq->exps);
 	set_processed(sq);
 	return sq;
 }
@@ -133,10 +134,6 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 
 	if (!r)
 		return 0;
-
-	if (is_topn(r->op) || is_sample(r->op))
-		r = sq->l;
-
 	if (column_spec) {
 		dnode *n = column_spec->h;
 		node *m = r->exps->h;
@@ -1374,6 +1371,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		sq = rel_selects(query, subquery);
 		if (!sq)
 			return NULL;
+		if (!is_project(sq->op)) /* make sure sq is a projection */
+			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 
 		if (tt != tt_table && with_data)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot create %s 'with data'", action,
@@ -1409,6 +1408,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 	int instantiate = (sql->emode == m_instantiate || !persistent);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
+	sqlid pfoundid = 0, foundid = 0;
 	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
 
 	(void) check;		/* Stefan: unused!? */
@@ -1417,23 +1417,38 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
-	if (create && !replace && mvc_bind_table(sql, s, name) != NULL)
-		return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
+	if (create && (t = mvc_bind_table(sql, s, name))) {
+		if (!replace)
+			return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
+		if (!isView(t))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: '%s' is not a view", base, name);
+		if (t->system)
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot replace system view '%s'", base, name);
+		foundid = t->base.id; /* when recreating a view, the view itself can't be found */
+	}
 
 	if (ast) {
 		sql_rel *sq = NULL;
 		char *q = QUERY(sql->scanner);
+		symbol *sym = ast;
 
-		if (ast->token == SQL_SELECT) {
-			SelectNode *sn = (SelectNode *) ast;
+		if (sym->token == SQL_WITH)
+			sym = sym->data.lval->h->next->data.sym;
+		if (sym->token == SQL_SELECT) {
+			SelectNode *sn = (SelectNode *) sym;
 
 			if (sn->limit || sn->sample)
 				return sql_error(sql, 01, SQLSTATE(42000) "%s: %s not supported", base, sn->limit ? "LIMIT" : "SAMPLE");
 		}
 
+		pfoundid = sql->objid;
+		sql->objid = foundid; /* when recreating a view, the view itself can't be found */
 		sq = schema_selects(query, s, ast);
+		sql->objid = pfoundid;
 		if (!sq)
 			return NULL;
+		if (!is_project(sq->op)) /* make sure sq is a projection */
+			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 
 		if (!create) {
 			if (column_spec) {
@@ -1469,7 +1484,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 		}
 		if (!persistent && column_spec)
 			sq = view_rename_columns(sql, name, sq, column_spec);
-		if (sq && sq->op == op_project && sq->l && sq->exps && sq->card == CARD_AGGR) {
+		if (sq && is_simple_project(sq->op) && sq->l && sq->exps && sq->card == CARD_AGGR) {
 			exps_setcard(sq->exps, CARD_MULTI);
 			sq->card = CARD_MULTI;
 		}

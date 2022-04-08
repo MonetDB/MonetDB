@@ -772,7 +772,7 @@ end:
 				bat id = b->batCacheid;
 				if (msg == MAL_SUCCEED) {
 					BATcount(b) = line_count;
-					BBPkeepref(id);
+					BBPkeepref(b);
 					*getArgReference_bat(stk, pci, i) = id;
 				}
 				else {
@@ -899,7 +899,7 @@ end:
 	if (b) {
 		if (msg == MAL_SUCCEED) {
 			*bat_id = b->batCacheid;
-			BBPkeepref(*bat_id);
+			BBPkeepref(b);
 		} else {
 			BBPunfix(b->batCacheid);
 		}

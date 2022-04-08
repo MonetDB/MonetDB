@@ -68,7 +68,7 @@ end:
 	if (ret) {
 		if (msg == MAL_SUCCEED) {
 			*getArgReference_bat(stk, pci, 0) = ret->batCacheid;
-			BBPkeepref(ret->batCacheid);
+			BBPkeepref(ret);
 		}
 		else
 			BBPunfix(ret->batCacheid);
@@ -119,7 +119,7 @@ end:
 	if (parsed_bat) {
 		if (msg == MAL_SUCCEED) {
 			*ret = parsed_bat->batCacheid;
-			BBPkeepref(parsed_bat->batCacheid);
+			BBPkeepref(parsed_bat);
 		} else {
 			BBPunfix(parsed_bat->batCacheid);
 		}

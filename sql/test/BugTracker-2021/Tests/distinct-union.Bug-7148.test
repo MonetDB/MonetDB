@@ -159,7 +159,7 @@ union all select 'B', 'e', 0
 a
 0
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'c1' in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 't.c1' in query results without an aggregate function
 select
 c1, min(c2)
 from (
@@ -185,7 +185,7 @@ union all select 'A', 'd', 9
 union all select 'B', 'e', 0
 ) T
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'c1' in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 't.c1' in query results without an aggregate function
 select
 c1, min(c2)
 from (
@@ -212,7 +212,7 @@ except all select 'A', 'a', 2
 a
 1
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'c1' in query results without an aggregate function
+statement error 42000!SELECT: cannot use non GROUP BY column 't.c1' in query results without an aggregate function
 select
 c1, min(c2)
 from (

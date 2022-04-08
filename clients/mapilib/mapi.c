@@ -3591,7 +3591,6 @@ mapi_param_store(MapiHdl hdl)
 						free(val);
 						return;
 					}
-					hdl->query = q;
 				}
 				snprintf(hdl->query + k, lim - k, "'%s'", val);
 				free(val);
@@ -3608,7 +3607,6 @@ mapi_param_store(MapiHdl hdl)
 						free(val);
 						return;
 					}
-					hdl->query = q;
 				}
 				snprintf(hdl->query + k, lim - k, "'%s'", val);
 				free(val);
@@ -4360,7 +4358,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	for (;;) {
 		line = read_line(mid);
 		if (line == NULL) {
-			if (mnstr_eof(mid->from)) {
+			if (mid->from && mnstr_eof(mid->from)) {
 				mapi_log_record(mid, "unexpected end of file");
 				mapi_log_record(mid, __func__);
 				close_connection(mid);

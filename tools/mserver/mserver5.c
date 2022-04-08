@@ -306,7 +306,7 @@ main(int argc, char **av)
 	char *dbtrace = NULL;
 	bool inmemory = false;
 	bool readpwdxit = false;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbextra", required_argument, NULL, 0 },
 		{ "dbpath", required_argument, NULL, 0 },
@@ -607,13 +607,13 @@ main(int argc, char **av)
 		GDKfree(dbtrace);
 	}
 
+	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	if (monet_init(set, setlen, false) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
 			fprintf(stderr, "%s\n", GDKerrbuf);
 		exit(1);
 	}
-	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	mo_free_options(set, setlen);
 
 	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED ||
