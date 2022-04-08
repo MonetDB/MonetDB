@@ -1088,6 +1088,37 @@ bind_updates(sql_trans *tr, sql_column *c) {
 	return upd;
 }
 
+static void*
+bind_updates_idx(sql_trans *tr, sql_idx *i) {
+	sql_updates* upd = GDKmalloc(sizeof(sql_updates));
+	if (!upd)
+		return NULL;
+
+	lock_column(tr->store, i->base.id);
+	size_t cnt = count_idx(tr, i, 0);
+	sql_delta *d = idx_timestamp_delta(tr, i);
+	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
+
+	if (!d) {
+		unlock_column(tr->store, i->base.id);
+		GDKfree(upd);
+		return NULL;
+	}
+
+	upd->ui = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_ID, type, cnt);
+	upd->uv = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_VAL, type, cnt);
+
+	unlock_column(tr->store, i->base.id);
+
+	if (upd->ui == NULL || upd->uv == NULL) {
+		bat_destroy(upd->ui);
+		bat_destroy(upd->uv);
+		GDKfree(upd);
+		return NULL;
+	}
+	return upd;
+}
+
 static void *					/* BAT * */
 bind_col(sql_trans *tr, sql_column *c, int access)
 {
@@ -4895,6 +4926,7 @@ bat_storage_init( store_functions *sf)
 {
 	sf->bind_col = &bind_col;
 	sf->bind_updates = &bind_updates;
+	sf->bind_updates_idx = &bind_updates_idx;
 	sf->bind_idx = &bind_idx;
 	sf->bind_cands = &bind_cands;
 
