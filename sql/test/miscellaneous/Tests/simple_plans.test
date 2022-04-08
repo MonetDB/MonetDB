@@ -599,7 +599,7 @@ project (
 | | select (
 | | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
 | | ) [ ("x"."x") > (tinyint(2) "2") ]
-| ) [ "x"."x" ] [ "x"."x" NOT NULL ]
+| ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -610,7 +610,7 @@ project (
 | | select (
 | | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
 | | ) [ ("x"."x") > (tinyint(2) "2") ]
-| ) [ "x"."x" ] [ "sys"."max" no nil ("x"."x" NOT NULL) NOT NULL as "%5"."%5" ]
+| ) [ "x"."x" NOT NULL ] [ "sys"."max" no nil ("x"."x" NOT NULL) NOT NULL as "%5"."%5" ]
 ) [ "%5"."%5" NOT NULL as "x"."y" ]
 
 # here the select cannot be pushed down
