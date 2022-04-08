@@ -2831,8 +2831,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     try:
                         sql.connect(username=user or 'monetdb',
                                     password=passwd or 'monetdb',
-                                    hostname='localhost',
-                                    port=int(env['MAPIPORT']),
+                                    hostname=HOST,
+                                    port=int(pSrvr.port),
                                     database=TSTDB,
                                     language=lang,
                                     timeout=TIMEOUT)
