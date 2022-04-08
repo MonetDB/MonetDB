@@ -38,17 +38,22 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
 	be->mvc->errstr[0] = '\0';
 }
 
-static int
+static void
 add_to_rowcount_accumulator(backend *be, int nr)
 {
-	int prev = be->rowcount;
-	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
+	if (be->silent)
+		return;
 
-	getArg(q, 0) = be->rowcount = newTmpVariable(be->mb, TYPE_lng);
-	q = pushArgument(be->mb, q, prev);
+	if (be->rowcount == 0) {
+		be->rowcount = nr;
+		return;
+	}
+
+	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
+	q = pushArgument(be->mb, q, be->rowcount);
 	q = pushArgument(be->mb, q, nr);
 
-	return getDestVar(q);
+	be->rowcount = getDestVar(q);
 }
 
 static stmt *
@@ -4381,10 +4386,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return stmt_list(be, l);
 	} else {
 		ret = cnt;
-		if (!be->silent) {
-			/* if there are multiple update statements, update total count, otherwise use the the current count */
-			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
-		}
+		add_to_rowcount_accumulator(be, ret->nr);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
 			stmt_add_dependency_change(be, t, ret);
 		return ret;
@@ -5242,10 +5244,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 
 	if (!be->silent || (t->s && isGlobal(t) && !isGlobalTemp(t)))
 		cnt = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
-	if (!be->silent) {
-		/* if there are multiple update statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
-	}
+	add_to_rowcount_accumulator(be, cnt->nr);
 	if (t->s && isGlobal(t) && !isGlobalTemp(t))
 		stmt_add_dependency_change(be, t, cnt);
 /* cascade ?? */
@@ -5366,10 +5365,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		cnt = stmt_list(be, l);
 	} else {
 		cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
-		if (!be->silent) {
-			/* if there are multiple update statements, update total count, otherwise use the the current count */
-			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
-		}
+		add_to_rowcount_accumulator(be, cnt->nr);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
 			stmt_add_dependency_change(be, t, cnt);
 	}
@@ -5584,10 +5580,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 1, 1, 3))
 		return sql_error(sql, 10, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 
-	if (!be->silent) {
-		/* if there are multiple update statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, s->nr) : s->nr;
-	}
+	add_to_rowcount_accumulator(be, s->nr);
 	if (t->s && isGlobal(t) && !isGlobalTemp(t))
 		stmt_add_dependency_change(be, t, s);
 	return s;
@@ -5754,10 +5747,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			goto finalize;
 		}
 
-		if (!be->silent) {
-			/* if there are multiple update statements, update total count, otherwise use the the current count */
-			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, other->nr) : other->nr;
-		}
+		add_to_rowcount_accumulator(be, other->nr);
 		if (next->s && isGlobal(next) && !isGlobalTemp(next))
 			stmt_add_dependency_change(be, next, other);
 	}
@@ -5834,10 +5824,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	} else {
 		res = stmt_atom_lng(be, 1);
 	}
-	if (!be->silent) {
-		/* if there are multiple output statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, res->nr) : res->nr;
-	}
+	add_to_rowcount_accumulator(be, res->nr);
 	return res;
 }
 

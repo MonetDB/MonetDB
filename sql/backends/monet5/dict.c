@@ -22,7 +22,6 @@ BATnegateprops(BAT *b)
 	b->tnonil = false;
 	b->tnil = false;
 	b->tsorted = false;
-	b->tsorted = false;
 	b->trevsorted = false;
 	b->tnosorted = 0;
 	b->tnorevsorted = 0;
