@@ -60,6 +60,12 @@ select * from t2606b
 32
 33
 
+statement ok
+analyze sys.t2606a
+
+statement ok
+analyze sys.t2606b
+
 query T nosort
 PLAN   select * from t2606a   union   select * from t2606b   order by a
 ----
@@ -67,16 +73,16 @@ project (
 | distinct union (
 | | project (
 | | | group by (
-| | | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" UNIQUE as "%1"."a" ],
+| | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | | ) [ "t2606a"."a" NOT NULL UNIQUE ] [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
 | | | group by (
-| | | | table("sys"."t2606b") [ "t2606b"."a" ]
-| | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "%5"."a" ]
-) [ "%5"."a" UNIQUE ] [ "%5"."a" ASC UNIQUE ]
+| | | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | | ) [ "t2606b"."a" NOT NULL UNIQUE ] [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "%5"."a" ]
+) [ "%5"."a" NOT NULL UNIQUE ] [ "%5"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
        select * from t2606a   union   select * from t2606b   order by a
@@ -98,16 +104,16 @@ project (
 | distinct union (
 | | project (
 | | | group by (
-| | | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" UNIQUE as "%1"."a" ],
+| | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | | ) [ "t2606a"."a" NOT NULL UNIQUE ] [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
 | | | group by (
-| | | | table("sys"."t2606b") [ "t2606b"."a" ]
-| | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "%5"."a" ]
-) [ "%5"."a" UNIQUE ] [ "%5"."a" ASC UNIQUE ]
+| | | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | | ) [ "t2606b"."a" NOT NULL UNIQUE ] [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "%5"."a" ]
+) [ "%5"."a" NOT NULL UNIQUE ] [ "%5"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
      ( select * from t2606a   union   select * from t2606b ) order by a
@@ -129,16 +135,16 @@ project (
 | distinct union (
 | | project (
 | | | group by (
-| | | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" UNIQUE as "%1"."a" ],
+| | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | | ) [ "t2606a"."a" NOT NULL UNIQUE ] [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
 | | | group by (
-| | | | table("sys"."t2606b") [ "t2606b"."a" ]
-| | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "%5"."a" ]
-) [ "%5"."a" UNIQUE ] [ "%5"."a" ASC UNIQUE ]
+| | | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | | ) [ "t2606b"."a" NOT NULL UNIQUE ] [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "%5"."a" ]
+) [ "%5"."a" NOT NULL UNIQUE ] [ "%5"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
      ( select * from t2606a ) union ( select * from t2606b ) order by a
@@ -159,13 +165,13 @@ PLAN   select * from t2606a   except   select * from t2606b   order by a
 project (
 | distinct except (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" as "%1"."a" ],
+| | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" ]
-| | ) [ "t2606b"."a" as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "%5"."a" ]
-) [ "%5"."a" UNIQUE ] [ "%5"."a" ASC UNIQUE ]
+| | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "%5"."a" ]
+) [ "%5"."a" NOT NULL UNIQUE ] [ "%5"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
        select * from t2606a   except   select * from t2606b   order by a
@@ -180,13 +186,13 @@ PLAN ( select * from t2606a   except   select * from t2606b ) order by a
 project (
 | distinct except (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" as "%1"."a" ],
+| | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" UNIQUE ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "%5"."a" ]
-) [ "%5"."a" UNIQUE ] [ "%5"."a" ASC UNIQUE ]
+| | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "%5"."a" ]
+) [ "%5"."a" NOT NULL UNIQUE ] [ "%5"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
      ( select * from t2606a   except   select * from t2606b ) order by a
@@ -201,13 +207,13 @@ PLAN ( select * from t2606a ) except ( select * from t2606b ) order by a
 project (
 | distinct except (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" as "%1"."a" ],
+| | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" UNIQUE ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "%5"."a" ]
-) [ "%5"."a" UNIQUE ] [ "%5"."a" ASC UNIQUE ]
+| | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "%5"."a" ]
+) [ "%5"."a" NOT NULL UNIQUE ] [ "%5"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
      ( select * from t2606a ) except ( select * from t2606b ) order by a
@@ -222,13 +228,13 @@ PLAN   select * from t2606a   intersect   select * from t2606b   order by a
 project (
 | distinct intersect (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" as "%1"."a" ],
+| | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" UNIQUE ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "%5"."a" ]
-) [ "%5"."a" UNIQUE ] [ "%5"."a" ASC UNIQUE ]
+| | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "%5"."a" ]
+) [ "%5"."a" NOT NULL UNIQUE ] [ "%5"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
        select * from t2606a   intersect   select * from t2606b   order by a
@@ -243,13 +249,13 @@ PLAN ( select * from t2606a   intersect   select * from t2606b ) order by a
 project (
 | distinct intersect (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" as "%1"."a" ],
+| | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" UNIQUE ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "%5"."a" ]
-) [ "%5"."a" UNIQUE ] [ "%5"."a" ASC UNIQUE ]
+| | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "%5"."a" ]
+) [ "%5"."a" NOT NULL UNIQUE ] [ "%5"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
      ( select * from t2606a   intersect   select * from t2606b ) order by a
@@ -264,13 +270,13 @@ PLAN ( select * from t2606a ) intersect ( select * from t2606b ) order by a
 project (
 | distinct intersect (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" as "%1"."a" ],
+| | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" UNIQUE ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "%5"."a" ]
-) [ "%5"."a" UNIQUE ] [ "%5"."a" ASC UNIQUE ]
+| | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "%5"."a" ]
+) [ "%5"."a" NOT NULL UNIQUE ] [ "%5"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
      ( select * from t2606a ) intersect ( select * from t2606b ) order by a
@@ -286,16 +292,16 @@ project (
 | distinct union (
 | | project (
 | | | group by (
-| | | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" UNIQUE as "%1"."a" ],
+| | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | | ) [ "t2606a"."a" NOT NULL UNIQUE ] [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
 | | | group by (
-| | | | table("sys"."t2606b") [ "t2606b"."a" UNIQUE ]
-| | | ) [ "t2606b"."a" UNIQUE ] [ "t2606b"."a" UNIQUE ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "t"."a" ]
-) [ "t"."a" UNIQUE ] [ "t"."a" ASC UNIQUE ]
+| | | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | | ) [ "t2606b"."a" NOT NULL UNIQUE ] [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "t"."a" ]
+) [ "t"."a" NOT NULL UNIQUE ] [ "t"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
      select * from (select * from t2606a union select * from t2606b) as t order by a
@@ -316,13 +322,13 @@ PLAN select * from (select * from t2606a except select * from t2606b) as t order
 project (
 | distinct except (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" as "%1"."a" ],
+| | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" UNIQUE ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "t"."a" ]
-) [ "t"."a" UNIQUE ] [ "t"."a" ASC UNIQUE ]
+| | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "t"."a" ]
+) [ "t"."a" NOT NULL UNIQUE ] [ "t"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
      select * from (select * from t2606a except select * from t2606b) as t order by a
@@ -337,13 +343,13 @@ PLAN select * from (select * from t2606a intersect select * from t2606b) as t or
 project (
 | distinct intersect (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ]
-| | ) [ "t2606a"."a" as "%1"."a" ],
+| | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" UNIQUE ]
-| | ) [ "t2606b"."a" UNIQUE as "%2"."a" ]
-| ) [ "%1"."a" UNIQUE as "t"."a" ]
-) [ "t"."a" UNIQUE ] [ "t"."a" ASC UNIQUE ]
+| | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
+| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| ) [ "%1"."a" NOT NULL UNIQUE as "t"."a" ]
+) [ "t"."a" NOT NULL UNIQUE ] [ "t"."a" ASC NOT NULL UNIQUE ]
 
 query I rowsort
      select * from (select * from t2606a intersect select * from t2606b) as t order by a
