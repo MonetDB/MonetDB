@@ -1145,7 +1145,7 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error
 			dbl avg;
 			BUN cnt;
 
-			if (BATcalcavg(b, s, &avg, &cnt, 0) != GDK_SUCCEED)
+			if (BATcalcavg(b, s, &avg, &cnt, 0, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 			if (cnt == 0) {
 				avg = nil_if_empty ? dbl_nil : 0;
@@ -2970,25 +2970,28 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	do {								\
 		TYPE x, a;						\
 									\
-		/* first try to calculate the sum of all values into a */ \
-		/* lng/hge */						\
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
-			i = canditer_next(&ci) - b->hseqbase;		\
-			x = ((const TYPE *) src)[i];			\
-			if (is_##TYPE##_nil(x))				\
-				continue;				\
-			ADD_WITH_CHECK(x, sum,				\
-				       lng_hge, sum,			\
-				       GDK_##lng_hge##_max,		\
-				       goto overflow##TYPE);		\
-			/* don't count value until after overflow check */ \
-			n++;						\
-		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
-		/* the sum fit, so now we can calculate the average */	\
-		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
-		if (0) {						\
+		if (!inout) {						\
+			/* first try to calculate the sum of all */	\
+			/* values into a lng/hge */			\
+			TIMEOUT_LOOP(ci.ncand, timeoffset) {		\
+				i = canditer_next(&ci) - b->hseqbase;	\
+				x = ((const TYPE *) src)[i];		\
+				if (is_##TYPE##_nil(x))			\
+					continue;			\
+				ADD_WITH_CHECK(x, sum,			\
+					       lng_hge, sum,		\
+					       GDK_##lng_hge##_max,	\
+					       goto overflow##TYPE);	\
+				/* don't count value until after */	\
+				/* overflow check */			\
+				n++;					\
+			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			/* the sum fits, so now we can calculate the */	\
+			/* average */					\
+			*avg = n > 0 ? (dbl) sum / n : dbl_nil;		\
+		} else {						\
 		  overflow##TYPE:					\
 			/* we get here if sum(x[0],...,x[i]) doesn't */	\
 			/* fit in a lng/hge but sum(x[0],...,x[i-1]) did */ \
@@ -2999,17 +3002,21 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			/* note that n necessarily is > 0 (else no */	\
 			/* overflow possible) */			\
 			assert(n > 0);					\
-			if (sum >= 0) {					\
-				a = (TYPE) (sum / n); /* this fits */	\
-				r = (lng) (sum % n);			\
-			} else {					\
-				sum = -sum;				\
-				a = - (TYPE) (sum / n); /* this fits */ \
-				r = (lng) (sum % n);			\
-				if (r) {				\
-					a--;				\
-					r = n - r;			\
+			if (!inout) {					\
+				if (sum >= 0) {				\
+					a = (TYPE) (sum / n); /* this fits */ \
+					r = (lng) (sum % n);		\
+				} else {				\
+					sum = -sum;			\
+					a = - (TYPE) (sum / n); /* this fits */ \
+					r = (lng) (sum % n);		\
+					if (r) {			\
+						a--;			\
+						r = n - r;		\
+					}				\
 				}					\
+			} else {					\
+				a = (TYPE) sum;				\
 			}						\
 			CAND_LOOP(&ci) {				\
 				/* loop invariant: */			\
@@ -3048,7 +3055,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	} while (0)
 
 gdk_return
-BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
+BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 {
 	lng n = 0, r = 0;
 	BUN i = 0;
@@ -3062,6 +3069,50 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	/* these two needed for ADD_WITH_CHECK macro */
 	bool abort_on_error = true;
 	BUN nils = 0;
+
+	if (inout) {
+		double iprt, fprt; /* integer and fraction parts */
+		n = (lng) *vals;
+		if (n > 0) {
+			double a = *avg;
+			assert(!is_dbl_nil(a));
+			if (scale != 0)
+				a *= pow(10.0, (double) scale);
+			if (a < 0) {
+				fprt = modf(-a, &iprt);
+				if (fprt > 0) {
+					iprt = -iprt - 1;
+					fprt = 1.0 - fprt;
+				} else {
+					iprt = -iprt;
+				}
+			} else {
+				fprt = modf(a, &iprt);
+			}
+			/* in case fprt * n is just a fraction less than
+			 * a whole integer, we need to do proper
+			 * rounding */
+			r = (lng) (fprt * n + 0.5);
+#ifdef HAVE_HGE
+			sum = (hge) iprt;
+			if (sum < 0) {
+				if ((GDK_hge_max - r) / n > -sum) {
+					sum = sum * n + r;
+					inout = false;
+				}
+			} else {
+				if ((GDK_hge_max - r) / n > sum) {
+					sum = sum * n + r;
+					inout = false;
+				}
+			}
+#else
+			sum = (lng) iprt;
+#endif
+		} else {
+			inout = false;
+		}
+	}
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
