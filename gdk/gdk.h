@@ -1854,6 +1854,7 @@ gdk_export bool BATcheckorderidx(BAT *b);
 gdk_export gdk_return HISTOGRAMcreate(BAT *b);
 gdk_export str HISTOGRAMprint(BAT *b);
 gdk_export void HISTOGRAMdestroy(BAT *b);
+gdk_export gdk_return HISTOGRAMrecreate(BAT *b);
 
 #include "gdk_delta.h"
 #include "gdk_hash.h"
