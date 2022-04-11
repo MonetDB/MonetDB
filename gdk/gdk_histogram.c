@@ -347,7 +347,7 @@ HISTOGRAMcreate(BAT *b)
 		return GDK_FAIL;
 	}
 
-	if (BATcount(b) == 0) { /* no histograms on empty BATs */
+	if (bi.count == 0) { /* no histograms on empty BATs */
 		bat_iterator_end(&bi);
 		return GDK_SUCCEED;
 	}
