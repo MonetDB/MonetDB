@@ -1292,6 +1292,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b); 	/* TODO: use STRMPappendBitstring */
+	HISTOGRAMdestroy(b);
 	return GDK_SUCCEED;
 }
 
