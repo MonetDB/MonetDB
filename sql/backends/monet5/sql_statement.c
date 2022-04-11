@@ -336,20 +336,41 @@ stmt_none(backend *be)
 	return stmt_create(be->mvc->sa, st_none);
 }
 
-static int
-create_bat(MalBlkPtr mb, int tt)
+InstrPtr
+stmt_bat_new(backend *be, int tt, lng estimate)
 {
-	InstrPtr q = newStmt(mb, batRef, newRef);
+	InstrPtr q = newStmt(be->mb, batRef, newRef);
 
 	if (q == NULL)
-		return -1;
-	setVarType(mb, getArg(q, 0), newBatType(tt));
-	q = pushType(mb, q, tt);
-	return getDestVar(q);
+		//return -1;
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	if (estimate > 0)
+		q = pushInt(be->mb, q, (int)estimate);
+	//return getDestVar(q);
+	return q;
+}
+
+InstrPtr
+stmt_hash_new(backend *be, int tt, lng estimate, int parent)
+{
+	InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
+
+	if (q == NULL)
+		//return -1;
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	q = pushInt(be->mb, q, (int)estimate);
+	if (parent)
+		q = pushArgument(be->mb, q, parent);
+	//return getDestVar(q);
+	return q;
 }
 
 static int *
-dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
+dump_table(sql_allocator *sa, backend *be, sql_table *t)
 {
 	int i = 0;
 	node *n;
@@ -359,13 +380,13 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 		return NULL;
 
 	/* tid column */
-	if ((l[i++] = create_bat(mb, TYPE_oid)) < 0)
+	if ((l[i++] = getDestVar(stmt_bat_new(be, TYPE_oid, -1))) < 0)
 		return NULL;
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
-		if ((l[i++] = create_bat(mb, c->type.type->localtype)) < 0)
+		if ((l[i++] = getDestVar(stmt_bat_new(be, c->type.type->localtype, -1))) < 0)
 			return NULL;
 	}
 	return l;
@@ -446,13 +467,12 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 stmt *
 stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level)
 {
-	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int *l;
 
 	(void)varname;
 	/* declared table */
-	if ((l = dump_table(be->mvc->sa, mb, t)) != NULL) {
+	if ((l = dump_table(be->mvc->sa, be, t)) != NULL) {
 		stmt *s = stmt_create(be->mvc->sa, st_var);
 
 		if (s == NULL) {
@@ -3720,7 +3740,7 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
 		complex_aggr = true;
 
-	if (avg && restype == TYPE_dbl && pipeline)
+	if (avg && restype == TYPE_dbl && pipeline_mod)
 		mod = putName("batcalc");
 	if (!pipeline && restype == TYPE_dbl)
 		avg = 0;
@@ -3740,7 +3760,8 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4);
 		if (!aggrF)
 			return NULL;
-		stpcpy(stpcpy(aggrF, "sub"), aggrfunc);
+		if (!pipeline)
+			stpcpy(stpcpy(aggrF, "sub"), aggrfunc);
 		aggrfunc = aggrF;
 		if (grp && (grp->nr < 0 || ext->nr < 0))
 			return NULL;
