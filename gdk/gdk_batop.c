@@ -694,6 +694,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
+	HISTOGRAMdestroy(b);
 	MT_lock_set(&b->theaplock);
 	b->batDirtydesc = true;
 
@@ -1113,6 +1114,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	STRMPdestroy(b);
+	HISTOGRAMdestroy(b);
 	MT_lock_set(&b->theaplock);
 	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
 		MT_lock_unset(&b->theaplock);

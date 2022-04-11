@@ -391,6 +391,7 @@ VIEWdestroy(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
+	HISTOGRAMdestroy(b);
 	PROPdestroy(b);
 	VIEWunlink(b);
 
