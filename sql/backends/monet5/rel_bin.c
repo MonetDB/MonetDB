@@ -38,17 +38,22 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
 	be->mvc->errstr[0] = '\0';
 }
 
-static int
+static void
 add_to_rowcount_accumulator(backend *be, int nr)
 {
-	int prev = be->rowcount;
-	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
+	if (be->silent)
+		return;
 
-	getArg(q, 0) = be->rowcount = newTmpVariable(be->mb, TYPE_lng);
-	q = pushArgument(be->mb, q, prev);
+	if (be->rowcount == 0) {
+		be->rowcount = nr;
+		return;
+	}
+
+	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
+	q = pushArgument(be->mb, q, be->rowcount);
 	q = pushArgument(be->mb, q, nr);
 
-	return getDestVar(q);
+	be->rowcount = getDestVar(q);
 }
 
 static stmt *
@@ -1291,9 +1296,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
-		stmt* args = stmt_list(be, l);
-		args->argument_independence = e->argument_independence;
-		if (!(s = stmt_Nop(be, args, sel, f, rows)))
+		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f, rows)))
 			return NULL;
 	} 	break;
 	case e_aggr: {
@@ -4095,20 +4098,37 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
 
+    stmt *nonil_rows = NULL;
 	for (node *m = k->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
 		/* foreach column add predicate */
 		stmt_add_column_predicate(be, c->c);
+	    
+        // foreach column aggregate the nonil (literally 'null') values.
+        // mind that null values are valid fkeys with undefined value so
+        // we won't have an entry for them in the idx_inserts col
+		s = list_fetch(inserts, c->c->colnr);
+		nonil_rows = stmt_selectnonil(be, s, nonil_rows);
 	}
 
-	if (pin && list_length(pin->op4.lval))
+	if (!s && pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
+    
+    // we want to make sure that the data column(s) has the same number
+    // of (nonil) rows as the index column. if that is **not** the case
+    // then we are obviously dealing with an invalid foreign key 
 	if (s->key && s->nrcols == 0) {
-		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 1), NULL, ne);
+		s = stmt_binop(be, 
+		        stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1), 
+		        stmt_aggr(be, const_column(be, nonil_rows), NULL, NULL, cnt, 1, 1, 1), 
+		        NULL, ne);
 	} else {
-		/* releqjoin.count <> inserts[col1].count */
-		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, column(be, s), NULL, NULL, cnt, 1, 0, 1), NULL, ne);
+		/* relThetaJoin.notNull.count <> inserts[notNull(col1) && ... && notNull(colN)].count */
+		s = stmt_binop(be, 
+		        stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1), 
+		        stmt_aggr(be, column(be, nonil_rows), NULL, NULL, cnt, 1, 1, 1), 
+		        NULL, ne);
 	}
 
 	/* s should be empty */
@@ -4365,10 +4385,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return stmt_list(be, l);
 	} else {
 		ret = cnt;
-		if (!be->silent) {
-			/* if there are multiple update statements, update total count, otherwise use the the current count */
-			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
-		}
+		add_to_rowcount_accumulator(be, ret->nr);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
 			stmt_add_dependency_change(be, t, ret);
 		return ret;
@@ -5226,10 +5243,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 
 	if (!be->silent || (t->s && isGlobal(t) && !isGlobalTemp(t)))
 		cnt = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
-	if (!be->silent) {
-		/* if there are multiple update statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
-	}
+	add_to_rowcount_accumulator(be, cnt->nr);
 	if (t->s && isGlobal(t) && !isGlobalTemp(t))
 		stmt_add_dependency_change(be, t, cnt);
 /* cascade ?? */
@@ -5350,10 +5364,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		cnt = stmt_list(be, l);
 	} else {
 		cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
-		if (!be->silent) {
-			/* if there are multiple update statements, update total count, otherwise use the the current count */
-			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
-		}
+		add_to_rowcount_accumulator(be, cnt->nr);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
 			stmt_add_dependency_change(be, t, cnt);
 	}
@@ -5568,10 +5579,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 1, 1, 3))
 		return sql_error(sql, 10, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 
-	if (!be->silent) {
-		/* if there are multiple update statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, s->nr) : s->nr;
-	}
+	add_to_rowcount_accumulator(be, s->nr);
 	if (t->s && isGlobal(t) && !isGlobalTemp(t))
 		stmt_add_dependency_change(be, t, s);
 	return s;
@@ -5738,10 +5746,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			goto finalize;
 		}
 
-		if (!be->silent) {
-			/* if there are multiple update statements, update total count, otherwise use the the current count */
-			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, other->nr) : other->nr;
-		}
+		add_to_rowcount_accumulator(be, other->nr);
 		if (next->s && isGlobal(next) && !isGlobalTemp(next))
 			stmt_add_dependency_change(be, next, other);
 	}
@@ -5818,10 +5823,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	} else {
 		res = stmt_atom_lng(be, 1);
 	}
-	if (!be->silent) {
-		/* if there are multiple output statements, update total count, otherwise use the the current count */
-		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, res->nr) : res->nr;
-	}
+	add_to_rowcount_accumulator(be, res->nr);
 	return res;
 }
 
