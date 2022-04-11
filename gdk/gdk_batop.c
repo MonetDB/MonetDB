@@ -736,7 +736,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		/* b does not have storage, keep it that way if we can */
 		HASHdestroy(b);	/* we're not maintaining the hash here */
 		MT_lock_set(&b->theaplock);
-		if (BATtdense(n) && ci.tpe == cand_dense &&
+		if (BATtdensebi(&ni) && ci.tpe == cand_dense &&
 		    (BATcount(b) == 0 ||
 		     (BATtdense(b) &&
 		      b->tseqbase + BATcount(b) == n->tseqbase + ci.seq - hseq))) {
@@ -776,7 +776,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		if (ci.tpe == cand_dense) {
 			b->tnosorted = ci.seq - hseq <= n->tnosorted && n->tnosorted < ci.seq + ci.ncand - hseq ? n->tnosorted + hseq - ci.seq : 0;
 			b->tnorevsorted = ci.seq - hseq <= n->tnorevsorted && n->tnorevsorted < ci.seq + ci.ncand - hseq ? n->tnorevsorted + hseq - ci.seq : 0;
-			if (BATtdense(n)) {
+			if (BATtdensebi(&ni)) {
 				b->tseqbase = n->tseqbase + ci.seq - hseq;
 			}
 		} else {
@@ -812,7 +812,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			BATkey(b, false);
 		}
 		if (b->ttype != TYPE_void && b->tsorted && BATtdense(b) &&
-		    (!BATtdense(n) ||
+		    (!BATtdensebi(&ni) ||
 		     ci.tpe != cand_dense ||
 		     1 + *(oid *) BUNtloc(bi, last) != BUNtoid(n, ci.seq - hseq))) {
 			b->tseqbase = oid_nil;
@@ -1471,7 +1471,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * properties */
 			bi.minpos = ni.minpos;
 			bi.maxpos = ni.maxpos;
-			if (BATtdense(n)) {
+			if (BATtdensebi(&ni)) {
 				/* replaced all of b with a dense sequence */
 				MT_lock_set(&b->theaplock);
 				BATtseqbase(b, ni.tseq);
@@ -1756,7 +1756,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		BUN p = l;
 		BUN q = h;
 
-		bn = COLnew((oid) (b->hseqbase + low), BATtdense(b) ? TYPE_void : b->ttype, h - l, TRANSIENT);
+		bn = COLnew((oid) (b->hseqbase + low), BATtdensebi(&bi) ? TYPE_void : b->ttype, h - l, TRANSIENT);
 		if (bn == NULL)
 			goto doreturn;
 
@@ -1805,7 +1805,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	bn->tnosorted = 0;
 	bn->tnokey[0] = bn->tnokey[1] = 0;
 	bni = bat_iterator_nolock(bn);
-	if (BATtdense(b)) {
+	if (BATtdensebi(&bi)) {
 		BATtseqbase(bn, (oid) (bi.tseq + low));
 	} else if (bn->ttype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
@@ -2920,7 +2920,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 	t = ATOMbasetype(bi.type);
 	switch (t) {
 	case TYPE_void:
-		cnt = ci.ncand * BATtdense(b);
+		cnt = ci.ncand * BATtdensebi(&bi);
 		break;
 	case TYPE_msk:
 		cnt = ci.ncand;

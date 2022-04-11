@@ -33,6 +33,18 @@ typedef struct sql_optimizer {
 	run_optimizer (*bind_optimizer)(visitor *v, global_props *gp); /* if cannot run (disabled or not needed) returns NULL */
 } sql_optimizer;
 
+/* For every rewriter that cannot run twice on a relation, use the 'used' flag from the relation to mark when visited.
+   Please update this list accordingly when new rewriters are added */
+#define rewrite_fix_count_used    (1 << 0)
+#define rewrite_values_used       (1 << 1)
+#define rel_merge_select_rse_used (1 << 2)
+#define rel_remote_func_used      (1 << 3)
+
+#define is_rewrite_fix_count_used(X)    ((X & rewrite_fix_count_used) == rewrite_fix_count_used)
+#define is_rewrite_values_used(X)       ((X & rewrite_values_used) == rewrite_values_used)
+#define is_rel_merge_select_rse_used(X) ((X & rel_merge_select_rse_used) == rel_merge_select_rse_used)
+#define is_rel_remote_func_used(X)      ((X & rel_remote_func_used) == rel_remote_func_used)
+
 /* At the moment the follwowing optimizers 'packs' can be disabled,
    later we could disable individual optimizers from the 'pack' */
 #define split_select                        (1 << 0)

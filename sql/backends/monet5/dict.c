@@ -19,6 +19,8 @@ static void
 BATnegateprops(BAT *b)
 {
 	/* disable all properties here */
+	b->tnonil = false;
+	b->tnil = false;
 	b->tsorted = false;
 	b->trevsorted = false;
 	b->tnosorted = 0;
