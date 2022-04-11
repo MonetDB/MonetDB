@@ -1389,7 +1389,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					ngrp = stmt_result(be, g, 0);
 					next = stmt_result(be, g, 1);
 					if (cnt || !be->pipeline)
-					ncnt = stmt_result(be, g, 2);
+						ncnt = stmt_result(be, g, 2);
 				}
 				for (en = l->h; en; en = en->next) {
 					stmt *as = en->data;
