@@ -328,11 +328,81 @@ create_generic_histogram(BAT *sam, Histogram *h, ValPtr min, ValPtr max)
 	return h;
 }
 
+static gdk_return
+HISTOGRAMcreate_nolock(BAT *b, BATiter *bi)
+{
+	BAT *sids, *sam;
+	Histogram *h;
+	bool perfect_histogram = false;
+	ValRecord min = {.vtype = bi->type}, max = {.vtype = bi->type};
+
+	if (bi->count == 0) /* no histograms on empty BATs */
+		return GDK_SUCCEED;
+
+	if (!(sids = BATsample_with_seed(b, SAMPLE_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid)))
+		return GDK_FAIL;
+	sam = BATproject(sids, b);
+	BBPreclaim(sids);
+	if (!sam)
+		return GDK_FAIL;
+
+	if (ATOMbasetype(bi->type) != TYPE_str) {
+		ValRecord diff = {.vtype = VAR_TPE}, conv = {.vtype = VAR_TPE}, nbuckets = {.vtype = VAR_TPE}, truth = {.vtype = TYPE_bit};
+
+		if (bi->type == TYPE_bit) {
+			VALinit(&min, TYPE_bit, &(bit){0});
+			VALinit(&max, TYPE_bit, &(bit){1});
+			perfect_histogram = true;
+		} else {
+			min_and_max_values(bi, &min, &max);
+			if (VARcalcsub(&diff, &max, &min, true) == GDK_SUCCEED) {
+				if (VARconvert(&conv, &diff, true, 0, 0, 0) == GDK_SUCCEED) {
+					VAR_UPCAST v = (VAR_UPCAST) NBUCKETS;
+					VALinit(&nbuckets, VAR_TPE, &v);
+					/* if the number of buckets is greater than max and min difference, then there is a 'perfect' histogram */
+					if (VARcalcgt(&truth, &nbuckets, &conv) == GDK_SUCCEED) {
+						perfect_histogram = truth.val.btval == 1;
+					} else {
+						GDKclrerr();
+					}
+				} else {
+					GDKclrerr();
+				}
+			} else {
+				GDKclrerr();
+			}
+		}
+	}
+
+	if (!(b->thistogram = GDKmalloc(sizeof(struct Histogram)))) {
+		BBPreclaim(sam);
+		return GDK_FAIL;
+	}
+
+	h = b->thistogram;
+	h->nulls = 0;
+	h->size = (int) BATcount(sam); /* it should fit */
+	if (perfect_histogram) {
+		h = create_perfect_histogram(sam, h, &min, &max);
+	} else {
+		h = create_generic_histogram(sam, h, &min, &max);
+	}
+
+	BBPreclaim(sam);
+	if (!h) {
+		GDKfree(b->thistogram);
+		b->thistogram = NULL;
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
 gdk_return
 HISTOGRAMcreate(BAT *b)
 {
 	lng t0 = 0;
 	BATiter bi = {0};
+	gdk_return res = GDK_SUCCEED;
 
 	MT_thread_setalgorithm("create histogram");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
@@ -347,84 +417,16 @@ HISTOGRAMcreate(BAT *b)
 		return GDK_FAIL;
 	}
 
-	if (bi.count == 0) { /* no histograms on empty BATs */
-		bat_iterator_end(&bi);
-		return GDK_SUCCEED;
-	}
-
 	if (b->thistogram == NULL) {
 		MT_lock_set(&b->batIdxLock);
 		if (b->thistogram == NULL) {
-			BAT *sids, *sam;
-			Histogram *h;
-			bool perfect_histogram = false;
-			ValRecord min = {.vtype = bi.type}, max = {.vtype = bi.type};
-
-			if (!(sids = BATsample_with_seed(b, SAMPLE_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid)))
-				goto fail;
-			sam = BATproject(sids, b);
-			BBPreclaim(sids);
-			if (!sam)
-				goto fail;
-
-			if (ATOMbasetype(bi.type) != TYPE_str) {
-				ValRecord diff = {.vtype = VAR_TPE}, conv = {.vtype = VAR_TPE}, nbuckets = {.vtype = VAR_TPE}, truth = {.vtype = TYPE_bit};
-
-				if (bi.type == TYPE_bit) {
-					VALinit(&min, TYPE_bit, &(bit){0});
-					VALinit(&max, TYPE_bit, &(bit){1});
-					perfect_histogram = true;
-				} else {
-					min_and_max_values(&bi, &min, &max);
-					if (VARcalcsub(&diff, &max, &min, true) == GDK_SUCCEED) {
-						if (VARconvert(&conv, &diff, true, 0, 0, 0) == GDK_SUCCEED) {
-							VAR_UPCAST v = (VAR_UPCAST) NBUCKETS;
-							VALinit(&nbuckets, VAR_TPE, &v);
-							/* if the number of buckets is greater than max and min difference, then there is a 'perfect' histogram */
-							if (VARcalcgt(&truth, &nbuckets, &conv) == GDK_SUCCEED) {
-								perfect_histogram = truth.val.btval == 1;
-							} else {
-								GDKclrerr();
-							}
-						} else {
-							GDKclrerr();
-						}
-					} else {
-						GDKclrerr();
-					}
-				}
-			}
-
-			if (!(b->thistogram = GDKmalloc(sizeof(struct Histogram)))) {
-				BBPreclaim(sam);
-				goto fail;
-			}
-
-			h = b->thistogram;
-			h->nulls = 0;
-			h->size = (int) BATcount(sam); /* it should fit */
-			if (perfect_histogram) {
-				h = create_perfect_histogram(sam, h, &min, &max);
-			} else {
-				h = create_generic_histogram(sam, h, &min, &max);
-			}
-
-			BBPreclaim(sam);
-			if (!h) {
-				GDKfree(b->thistogram);
-				b->thistogram = NULL;
-				goto fail;
-			}
+			res = HISTOGRAMcreate_nolock(b, &bi);
 		}
 		MT_lock_unset(&b->batIdxLock);
 	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ACCELERATOR, "histogram creation took " LLFMT " usec\n", GDKusec()-t0);
-	return GDK_SUCCEED;
-fail:
-	MT_lock_unset(&b->batIdxLock);
-	bat_iterator_end(&bi);
-	return GDK_FAIL;
+	return res;
 }
 
 #define histogram_print_loop(TPE) \
@@ -525,9 +527,38 @@ HISTOGRAMdestroy(BAT *b)
 {
 	if (b && b->thistogram) {
 		MT_lock_set(&b->batIdxLock);
-		GDKfree(b->thistogram->histogram);
-		GDKfree(b->thistogram);
+		if (b->thistogram) {
+			GDKfree(b->thistogram->histogram);
+			GDKfree(b->thistogram);
+		}
 		b->thistogram = NULL;
 		MT_lock_unset(&b->batIdxLock);
 	}
+}
+
+gdk_return
+HISTOGRAMrecreate(BAT *b)
+{
+	lng t0 = 0;
+	gdk_return res = GDK_SUCCEED;
+
+	MT_thread_setalgorithm("re-create histogram");
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+
+	if (VIEWtparent(b)) /* don't create histograms on views */
+		b = BBP_cache(VIEWtparent(b));
+
+	if (b && b->thistogram) {
+		BATiter	bi = bat_iterator(b);
+		MT_lock_set(&b->batIdxLock);
+		if (b->thistogram) {
+			GDKfree(b->thistogram->histogram);
+			GDKfree(b->thistogram);
+		}
+		res = HISTOGRAMcreate_nolock(b, &bi);
+		MT_lock_unset(&b->batIdxLock);
+		bat_iterator_end(&bi);
+	}
+	TRC_DEBUG(ACCELERATOR, "histogram re-creation took " LLFMT " usec\n", GDKusec()-t0);
+	return res;
 }
