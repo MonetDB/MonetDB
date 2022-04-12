@@ -303,6 +303,8 @@ def remove(file):
         os.remove(file)
     except FileNotFoundError:
         pass
+    except IsADirectoryError:
+        shutil.rmtree(file)
     except:
         Warn('could not remove {}'.format(file))
 
