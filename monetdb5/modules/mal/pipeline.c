@@ -2143,6 +2143,18 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+//LALGavg(bat *rid, [bat *rremainer,] bat *rcnt, bat *gid, bat *bid, const ptr *H, bat *pid)
+//LALGavg(bat *rid, [bat *rremainer,] bat *rcnt, bat *gid, bat *bid, [bat *remainder,] bat *cnt, const ptr *H, bat *pid)
+LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
+	return MAL_SUCCEED;
+}
+
 /* TODO handle nil based on argument 'skipnil' */
 #define gfunc(Type, f) \
 	if (tt == TYPE_##Type) { \
@@ -2680,6 +2692,10 @@ static mel_func pipeline_init_funcs[] = {
  command("aggr", "count", LALGcount, false, "Count per group.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("aggr", "sum", LALGsum, false, "sum per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg per group.", args(2,6, batargany("",1), batarg("rcnt", lng), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,7, batargany("",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg per group.", args(2,7, batargany("",1), batarg("rcnt", lng), batarg("gid", oid), batargany("", 2), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,9, batargany("",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 2), batarg("remainder", lng), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "min", LALGmin, false, "Min per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "max", LALGmax, false, "Max per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("sink",1),argany("tt",1),arg("size",int))),
