@@ -255,12 +255,21 @@ rel_groupby_partition_safe(sql_rel *rel)
 
 		if (is_aggr(e->type)) {
 			sql_subfunc *sf = e->f;
+			int sum = 0;
 
 			if ((e->l && exps_are_atoms(e->l)) || !(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
 			    strcmp(sf->func->base.name, "avg") == 0 ||
-			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 /*||
-			    strcmp(sf->func->base.name, "prod") == 0*/)) {
+			    (sum = (strcmp(sf->func->base.name, "sum") == 0)) || strcmp(sf->func->base.name, "count") == 0 /*||
+			    strcmp(sf->func->base.name, "prod") == 0*/))
 				return false;
+			if (sum && list_length(e->l) == 1) {
+				list *l = e->l;
+				sql_exp *i = l->h->data;
+				sql_subtype *t = exp_subtype(i);
+
+				if (EC_APPNUM(t->type->eclass))
+					/* TODO in case of a safe range (to be defined) or user override we could still do simple dbl/float sums * */
+					return false;
 			}
 		}
 	}
