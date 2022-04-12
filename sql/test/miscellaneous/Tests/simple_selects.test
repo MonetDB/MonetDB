@@ -896,6 +896,36 @@ select dosomething()
 statement ok
 drop function dosomething
 
+query II rowsort
+SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+1
+1
+2
+2
+3
+3
+
+# remove 'x1' from grouping columns list
+query T nosort
+plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+project (
+| group by (
+| |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x", "x"."x" as "x1" ]
+| ) [ "x"."x" ] [ "x"."x", "x1" ]
+) [ "x"."x", "x1" ]
+
+query II rowsort
+SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+1
+2
+2
+3
+3
+4
+
 statement ok
 create global temp table x(x int, y int)
 

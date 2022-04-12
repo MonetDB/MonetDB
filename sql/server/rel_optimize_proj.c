@@ -1333,6 +1333,55 @@ rel_project_cse(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+/* remove identical grouping columns */
+static inline sql_rel *
+rel_groupby_cse(visitor *v, sql_rel *rel)
+{
+	if (is_groupby(rel->op) && !list_empty(rel->r)) {
+		sql_rel *l = rel->l;
+		int needed = 0;
+
+		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
+			sql_exp *e = n->data;
+			e->used = 0; /* we need to use this flag, clean it first */
+		}
+		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
+			sql_exp *e1 = n->data;
+			/* TODO maybe cover more cases? Here I only look at the left relation */
+			sql_exp *e3 = e1->type == e_column ? (e1->l ? exps_bind_column2(l->exps, e1->l, e1->r, NULL) : exps_bind_column(l->exps, e1->r, NULL, NULL, 0)) : NULL;
+
+			for (node *m=n->next; m; m = m->next) {
+				sql_exp *e2 = m->data;
+				sql_exp *e4 = e2->type == e_column ? (e2->l ? exps_bind_column2(l->exps, e2->l, e2->r, NULL) : exps_bind_column(l->exps, e2->r, NULL, NULL, 0)) : NULL;
+
+				if (exp_match_exp(e1, e2) || exp_refers(e1, e2) || (e3 && e4 && (exp_match_exp(e3, e4) || exp_refers(e3, e4)))) {
+					e2->used = 1; /* flag it as being removed */
+					needed = 1;
+				}
+			}
+		}
+
+		if (!needed)
+			return rel;
+
+		if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l) || is_single(l))
+			rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+
+		for (node *n=((list*)rel->r)->h; n ; ) {
+			node *next = n->next;
+			sql_exp *e = n->data;
+
+			if (e->used) { /* remove unecessary grouping columns */
+				e->used = 0;
+				list_append(l->exps, e);
+				list_remove_node(rel->r, NULL, n);
+			}
+			n = next;
+		}
+	}
+	return rel;
+}
+
 sql_exp *list_exps_uses_exp(list *exps, const char *rname, const char *name);
 
 static sql_exp*
@@ -2466,6 +2515,7 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	if (!rel || !is_groupby(rel->op))
 		return rel;
 
+	rel = rel_groupby_cse(v, rel);
 	rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_groupby_order(v, rel);
