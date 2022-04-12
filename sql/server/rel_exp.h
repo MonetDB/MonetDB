@@ -15,6 +15,8 @@
 #include "sql_semantic.h"
 #include "rel_prop.h"
 
+#define LANG_INT_OR_MAL(l)  ((l)==FUNC_LANG_INT || (l)==FUNC_LANG_MAL)
+
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
 
