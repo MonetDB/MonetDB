@@ -3994,10 +3994,12 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 
 			if (e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0) {
 				/* remainder and count */
-				cc = const_column(be, stmt_atom_lng(be, 0));
-				if (!cc)
-					return NULL;
-				append(shared, &cc->nr);
+				if (!EC_APPNUM(t->type->eclass)) {
+					cc = const_column(be, stmt_atom_lng(be, 0));
+					if (!cc)
+						return NULL;
+					append(shared, &cc->nr);
+				}
 
 				cc = const_column(be, stmt_atom_lng(be, 0));
 				if (!cc)
@@ -4074,11 +4076,13 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			append(*aggrresults, q->argv);
 
 			if (e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0) {
-				q = stmt_bat_new(be, TYPE_lng, estimate*1.1);
-				if (q == NULL)
-					return NULL;
-				append(shared, q->argv);
-				append(*aggrresults, q->argv);
+				if (!EC_APPNUM(t->type->eclass)) {
+					q = stmt_bat_new(be, TYPE_lng, estimate*1.1);
+					if (q == NULL)
+						return NULL;
+					append(shared, q->argv);
+					append(*aggrresults, q->argv);
+				}
 
 				q = stmt_bat_new(be, TYPE_lng, estimate*1.1);
 				if (q == NULL)

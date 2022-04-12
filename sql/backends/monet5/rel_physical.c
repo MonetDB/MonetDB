@@ -126,6 +126,9 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 		list *aexps = new_exp_list(sql->sa); /* alias list */
 		node *m, *n;
 
+		if (list_empty(rel->r) || mvc_debug_on(sql, 64))
+			return rel;
+
 		/* Find all avg's */
 		for (m = rel->exps->h; m; m = m->next) {
 			sql_exp *e = m->data;
@@ -271,7 +274,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	if (!mvc_debug_on(sql, 64))	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
+	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
 	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero); /* the select > 0 should be done before using the values */
 	return rel;
 }
