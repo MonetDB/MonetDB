@@ -2033,7 +2033,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		dbl fac = pow(10.0, (double) scale);
 		for (i = 0; i < ngrp; i++) {
 			if (!is_dbl_nil(dbls[i]))
-				dbls[i] *= fac;
+				dbls[i] /= fac;
 		}
 	}
 	BATsetcount(bn, ngrp);
@@ -3105,7 +3105,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	}
 	bat_iterator_end(&bi);
 	if (scale != 0 && !is_dbl_nil(*avg))
-		*avg *= pow(10.0, (double) scale);
+		*avg /= pow(10.0, (double) scale);
 	if (vals)
 		*vals = (BUN) n;
 	return GDK_SUCCEED;

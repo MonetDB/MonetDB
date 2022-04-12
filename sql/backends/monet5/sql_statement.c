@@ -3716,8 +3716,7 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	const char *mod, *aggrfunc;
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
-	bool complex_aggr = false;
-	bool abort_on_error;
+	bool complex_aggr = false, abort_on_error = false;
 	int *stmt_nr = NULL;
 	int avg = 0;
 	int pipeline_mod = (pipeline && !grp);
@@ -3729,25 +3728,27 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	mod = sql_func_mod(op->func);
 	aggrfunc = backend_function_imp(be, op->func);
 
-	if (strcmp(aggrfunc, "avg") == 0)
-		avg = 1;
+	if (LANG_INT_OR_MAL(op->func->lang)) {
+		if (strcmp(aggrfunc, "avg") == 0)
+			avg = 1;
 
-	if (pipeline_mod && (strcmp(aggrfunc, "count") == 0 ||
+		if (pipeline_mod && (strcmp(aggrfunc, "count") == 0 ||
 						 strcmp(aggrfunc, "min") == 0 ||
 						 strcmp(aggrfunc, "max") == 0)) /* incremental versions TODO do for other aggr functions */
-		mod = putName("iaggr");
-	else if (pipeline_mod && avg && restype == TYPE_dbl)
-		mod = putName("batcalc");
+			mod = putName("iaggr");
+		else if (pipeline_mod && avg && restype == TYPE_dbl)
+			mod = putName("batcalc");
 
-	if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
-		|| strcmp(aggrfunc, "str_group_concat") == 0)
-		complex_aggr = true;
+		if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
+			|| strcmp(aggrfunc, "str_group_concat") == 0)
+			complex_aggr = true;
 
-	if (!pipeline && restype == TYPE_dbl)
-		avg = 0;
-	/* some "sub" aggregates have an extra argument "abort_on_error" */
-	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
-					strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
+		if (!pipeline && restype == TYPE_dbl)
+			avg = 0;
+		/* some "sub" aggregates have an extra argument "abort_on_error" */
+		abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
+						strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
+	}
 
 	int argc = 1
 		+ 2 * avg
@@ -3831,20 +3832,22 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		if (!pipeline) {
 			q = pushArgument(mb, q, grp->nr);
 			q = pushArgument(mb, q, ext->nr);
-			if (avg) /* push nil candidates */
-				q = pushNil(mb, q, TYPE_bat);
+				if (LANG_INT_OR_MAL(op->func->lang) && avg) /* push nil candidates */
+					q = pushNil(mb, q, TYPE_bat);
 		}
-		if (!pipeline || (grp != op1 && strncmp(aggrfunc, "count", 5) == 0))
-			q = pushBit(mb, q, no_nil);
-		if (!pipeline) {
-			if (!avg && abort_on_error)
-				q = pushBit(mb, q, TRUE);
+		if (LANG_INT_OR_MAL(op->func->lang)) {
+			if (!pipeline || (grp != op1 && strncmp(aggrfunc, "count", 5) == 0))
+				q = pushBit(mb, q, no_nil);
+			if (!pipeline) {
+				if (!avg && abort_on_error)
+					q = pushBit(mb, q, TRUE);
+			}
 		}
-	} else if (no_nil && strncmp(aggrfunc, "count", 5) == 0) {
+	} else if (LANG_INT_OR_MAL(op->func->lang) && no_nil && strncmp(aggrfunc, "count", 5) == 0) {
 		q = pushBit(mb, q, no_nil);
-	} else if (!nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
+	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
-	} else if (avg && (restype != TYPE_dbl || !pipeline)) { /* push candidates */
+	} else if (LANG_INT_OR_MAL(op->func->lang) && avg && (restype != TYPE_dbl || !pipeline)) { /* push candidates */
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, no_nil);
 	}
