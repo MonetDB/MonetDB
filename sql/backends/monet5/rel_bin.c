@@ -1377,8 +1377,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					return NULL;
 				append(l, as);
 			}
-			/* TODO move this pipeline case handing into stmt_* */
-			if (need_distinct(e) && (/*grp ||*/ list_length(l) > 1)){
+			if (need_distinct(e) && list_length(l) > 1){
 				list *nl = sa_list(sql->sa);
 				stmt *ngrp = grp;
 				stmt *next = ext;
@@ -1410,19 +1409,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				}
 				l = sa_list(sql->sa);
 				if (be->pipeline && grp) {
-					append(l, stmt_project(be, u, grp));
-					grp = NULL;
-					ext = NULL;
-					cnt = NULL;
+					//append(l, stmt_project(be, u, grp));
+					grp = stmt_project(be, u, grp);
 				}
 				append(l, stmt_project(be, u, a));
-			} else if (grp) {
-				if (be->pipeline) {
-					list_prepend(l, grp);
-					grp = NULL;
-					ext = NULL;
-					cnt = NULL;
-				}
 			}
 			as = stmt_list(be, l);
 		} else {
@@ -1430,8 +1420,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			   and/or an attribute to count */
 			if (grp) {
 				as = grp;
-				if (be->pipeline)
-					grp = ext = NULL;
 			} else if (left) {
 				as = bin_find_smallest_column(be, left);
 				as = exp_count_no_nil_arg(e, ext, NULL, as);
@@ -1443,8 +1431,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		s = stmt_aggr(be, as, grp, ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e) );
 		if (pipeline) { /* pipeline grouping with groups */
-			    if (getModuleId(s->q)[0] == 'i' || getModuleId(s->q)[0] == 'b') /* ugh, TODO integrate into stmt_aggr properly */
-					getModuleId(s->q) = aggrRef;
 				s->q = pushArgument(be->mb, s->q, pipeline);
 				s->q = pushArgument(be->mb, s->q, ogrp);
 				s->q->inout = 0;

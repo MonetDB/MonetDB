@@ -3729,19 +3729,20 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	mod = sql_func_mod(op->func);
 	aggrfunc = backend_function_imp(be, op->func);
 
+	if (strcmp(aggrfunc, "avg") == 0)
+		avg = 1;
+
 	if (pipeline_mod && (strcmp(aggrfunc, "count") == 0 ||
 						 strcmp(aggrfunc, "min") == 0 ||
 						 strcmp(aggrfunc, "max") == 0)) /* incremental versions TODO do for other aggr functions */
 		mod = putName("iaggr");
+	else if (pipeline_mod && avg && restype == TYPE_dbl)
+		mod = putName("batcalc");
 
-	if (strcmp(aggrfunc, "avg") == 0)
-		avg = 1;
 	if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
 		complex_aggr = true;
 
-	if (avg && restype == TYPE_dbl && pipeline_mod)
-		mod = putName("batcalc");
 	if (!pipeline && restype == TYPE_dbl)
 		avg = 0;
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
@@ -3756,14 +3757,15 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		+ (op1->type != st_list ? 1 : list_length(op1->op4.lval))
 		+ (grp ? 4 : avg + 1);
 
-	if (ext) {
-		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4);
+	if (grp) {
+		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4), *end = aggrF;
 		if (!aggrF)
 			return NULL;
 		if (!pipeline)
-			stpcpy(stpcpy(aggrF, "sub"), aggrfunc);
+				end = stpcpy(aggrF, "sub");
+		stpcpy(end, aggrfunc);
 		aggrfunc = aggrF;
-		if (grp && (grp->nr < 0 || ext->nr < 0))
+		if ((grp && grp->nr < 0) || (ext && ext->nr < 0))
 			return NULL;
 
 		q = newStmtArgs(mb, mod, aggrfunc, argc);
@@ -3807,6 +3809,9 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
  		q = pushStr(mb, q, op->func->query);
 	}
 
+	if (grp && grp != op1 && pipeline)
+		q = pushArgument(mb, q, grp->nr);
+
 	if (op1->type != st_list) {
 		q = pushArgument(mb, q, op1->nr);
 	} else {
@@ -3823,15 +3828,18 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		}
 	}
 	if (grp) {
-		q = pushArgument(mb, q, grp->nr);
-		q = pushArgument(mb, q, ext->nr);
-		if (!pipeline && avg) /* push nil candidates */
-			q = pushNil(mb, q, TYPE_bat);
-		if (q == NULL)
-			return NULL;
-		q = pushBit(mb, q, no_nil);
-		if (!avg && abort_on_error)
-			q = pushBit(mb, q, TRUE);
+		if (!pipeline) {
+			q = pushArgument(mb, q, grp->nr);
+			q = pushArgument(mb, q, ext->nr);
+			if (avg) /* push nil candidates */
+				q = pushNil(mb, q, TYPE_bat);
+		}
+		if (!pipeline || (grp != op1 && strncmp(aggrfunc, "count", 5) == 0))
+			q = pushBit(mb, q, no_nil);
+		if (!pipeline) {
+			if (!avg && abort_on_error)
+				q = pushBit(mb, q, TRUE);
+		}
 	} else if (no_nil && strncmp(aggrfunc, "count", 5) == 0) {
 		q = pushBit(mb, q, no_nil);
 	} else if (!nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
@@ -3840,6 +3848,8 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, no_nil);
 	}
+	if (pipeline)
+		q->inout = 0;
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_aggr);
 		if(!s) {
