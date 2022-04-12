@@ -775,6 +775,7 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *bid, *sid;
 	bit *skip_nils;
 	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
+	bool inout = pci->inout >= 0;
 
 	gdk_return rc;
 	(void)cntxt;
@@ -796,7 +797,18 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	rc = BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils);
+	if (inout) {
+		avgs = BATconstant(0, b->ttype, getArgReference(stk, pci, 0), 1, TRANSIENT);
+		rems = BATconstant(0, TYPE_lng, rest, 1, TRANSIENT);
+		cnts = BATconstant(0, TYPE_lng, cnt, 1, TRANSIENT);
+		if (avgs == NULL || rems == NULL || cnts == NULL) {
+			BBPreclaim(avgs);
+			BBPreclaim(rems);
+			BBPreclaim(cnts);
+			throw(MAL, "aggr.avg", GDK_EXCEPTION);
+		}
+	}
+	rc = BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils, inout);
 	if (avgs && BATcount(avgs) == 1) {
 		/* only type bte, sht, int, lng and hge */
 		ptr res = VALget(ret);

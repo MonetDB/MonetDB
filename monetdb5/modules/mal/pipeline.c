@@ -298,38 +298,199 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define avg_aggr(T)  \
-	if (type == TYPE_##T) {								\
-		T val = *getArgReference_##T(stk, pci, 3);		\
-		lng cnt = *getArgReference_lng(stk, pci, 4);	\
-		if (cnt > 0 && !is_##T##_nil(val) && BATcount(b)) {		\
-			T *t = Tloc(b, 0);							\
-			lng *tcnt = Tloc(c, 0);						\
-			if (is_##T##_nil(t[0])) {					\
-				t[0] = val;								\
-				tcnt[0] = cnt;							\
-			} else {									\
-			    dbl tt = (tcnt[0] + cnt);				\
+#define avg_aggr(T)														\
+	if (type == TYPE_##T) {												\
+		T val = *getArgReference_##T(stk, pci, pci->retc + 1);			\
+		lng cnt = *getArgReference_lng(stk, pci, pci->retc + 2);		\
+		if (cnt > 0 && !is_##T##_nil(val) && BATcount(b)) {				\
+			T *t = Tloc(b, 0);											\
+			lng *tcnt = Tloc(c, 0);										\
+			if (is_##T##_nil(t[0])) {									\
+				t[0] = val;												\
+				tcnt[0] = cnt;											\
+			} else {													\
+			    dbl tt = (tcnt[0] + cnt);								\
 				t[0] = (t[0]*((dbl)tcnt[0]/tt)) + (val*((dbl)cnt/tt));	\
-				tcnt[0] += cnt;							\
-			}											\
-			b->tnil = false;							\
-			b->tnonil = true;							\
-		} else if (cnt > 0 && BATcount(b) == 0) {		\
-			if (BUNappend(b, &val, true) != GDK_SUCCEED)\
-				err = createException(SQL, "aggr.avg",	\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		}												\
+				tcnt[0] += cnt;											\
+			}															\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+		} else if (cnt > 0 && BATcount(b) == 0) {						\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
+				err = createException(SQL, "aggr.avg",					\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+		}																\
 	}
+
+/* return (a * b) % c without intermediate overflow */
+static inline lng
+mulmod(lng a, lng b, lng c)
+{
+	lng res = 0;
+	a %= c;
+	while (b) {
+		if (b & 1)
+			res = (res + a) % c;
+		a = (2 * a) % c;
+		b >>= 1;
+	}
+	return res;
+}
+
+#ifdef HAVE___INT128
+#define avg_aggr_acc(T)													\
+	do {																\
+		T a1 = *getArgReference_##T(stk, pci, pci->retc + 1);			\
+		lng r1 = *getArgReference_lng(stk, pci, pci->retc + 2);			\
+		lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);			\
+		T a2 = *(T*)Tloc(b, 0);											\
+		lng r2 = *(lng*)Tloc(r, 0);										\
+		lng n2 = *(lng*)Tloc(c, 0);										\
+		if (is_##T##_nil(a2)) {											\
+			a2 = a1;													\
+			r2 = r1;													\
+			n2 = n1;													\
+		} else {														\
+			/* calculate: */											\
+			/* n = n1 + n2 */											\
+			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
+			/* r = (a1*n1 + r1 + a2*n2 + r2) % (n1 + n2) */				\
+			/* where / and % follow the rule that x==x/y*y + x%y */		\
+			/* but x/y is rounded down, so x%y >= 0 */					\
+			lng n = n1 + n2;											\
+			T a = (T) ((a1 / n) * n1 + ((a1 % n) * (__int128) n1) / n + \
+					   (a2 / n) * n2 + ((a2 % n) * (__int128) n2) / n + \
+					   (r1 + r2) / n);									\
+			lng r = mulmod(a1, n1, n) + mulmod(a2, n2, n) + (r1 + r2) % n; \
+			while (r >= n) {											\
+				r -= n;													\
+				a++;													\
+			}															\
+			while (r < 0) {												\
+				r += n;													\
+				a--;													\
+			}															\
+			a2 = a;														\
+			r2 = r;														\
+			n2 = n;														\
+		}																\
+		*(T*)Tloc(b, 0) = a2;											\
+		*(lng*)Tloc(r, 0) = r2;											\
+		*(lng*)Tloc(c, 0) = n2;											\
+	} while (0)
+#else
+#if defined(_MSC_VER) && _MSC_VER >= 1920
+#include <intrin.h>
+#pragma intrinsic(_mul128)
+#pragma intrinsic(_div128)
+#define avg_aggr_acc(T)													\
+	do {																\
+		T a1 = *getArgReference_##T(stk, pci, pci->retc + 1);			\
+		lng r1 = *getArgReference_lng(stk, pci, pci->retc + 2);			\
+		lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);			\
+		T a2 = *(T*)Tloc(b, 0);											\
+		lng r2 = *(lng*)Tloc(r, 0);										\
+		lng n2 = *(lng*)Tloc(c, 0);										\
+		if (is_##T##_nil(a2)) {											\
+			a2 = a1;													\
+			r2 = r1;													\
+			n2 = n1;													\
+		} else {														\
+			/* calculate: */											\
+			/* n = n1 + n2 */											\
+			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
+			/* r = (a1*n1 + r1 + a2*n2 + r2) % (n1 + n2) */				\
+			/* where / and % follow the rule that x==x/y*y + x%y */		\
+			/* but x/y is rounded down, so x%y >= 0 */					\
+			lng n = n1 + n2;											\
+			T a = (T) ((a1 / n) * n1 +  (a2 / n) * n2 + (r1 + r2) / n);	\
+			__int64 xlo, xhi;											\
+			xlo = _mul128((__int64) (a1 % n), n1, &xhi);				\
+			a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
+			xlo = _mul128((__int64) (a2 % n), n2, &xhi);				\
+			a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
+			lng r = mulmod(a1, n1, n) + mulmod(a2, n2, n) + (r1 + r2) % n; \
+			while (r >= n) {											\
+				r -= n;													\
+				a++;													\
+			}															\
+			while (r < 0) {												\
+				r += n;													\
+				a--;													\
+			}															\
+			a2 = a;														\
+			r2 = r;														\
+			n2 = n;														\
+		}																\
+		*(T*)Tloc(b, 0) = a2;											\
+		*(lng*)Tloc(r, 0) = r2;											\
+		*(lng*)Tloc(c, 0) = n2;											\
+	} while (0)
+#else
+#define avg_aggr_acc(T)													\
+	do {																\
+		T a1 = *getArgReference_##T(stk, pci, pci->retc + 1);			\
+		lng r1 = *getArgReference_lng(stk, pci, pci->retc + 2);			\
+		lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);			\
+		T a2 = *(T*)Tloc(b, 0);											\
+		lng r2 = *(lng*)Tloc(r, 0);										\
+		lng n2 = *(lng*)Tloc(c, 0);										\
+		if (is_##T##_nil(a2)) {											\
+			a2 = a1;													\
+			r2 = r1;													\
+			n2 = n1;													\
+		} else {														\
+			/* calculate: */											\
+			/* n = n1 + n2 */											\
+			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
+			/* r = (a1*n1 + r1 + a2*n2 + r2) % (n1 + n2) */				\
+			/* where / and % follow the rule that x==x/y*y + x%y */		\
+			/* but x/y is rounded down, so x%y >= 0 */					\
+			lng n = n1 + n2;											\
+			lng x1 = a1 % n;											\
+			lng x2 = a2 % n;											\
+			if ((n1 != 0 &&												\
+				 (x1 > GDK_lng_max / n1 || x1 < -GDK_lng_max / n1)) ||	\
+				(n2 != 0 &&												\
+				 (x2 > GDK_lng_max / n2 || x2 < -GDK_lng_max / n2))) {	\
+				BBPunfix(b->batCacheid);								\
+				BBPunfix(c->batCacheid);								\
+				BBPunfix(r->batCacheid);								\
+				throw(SQL, "aggr.avg",									\
+					  SQLSTATE(22003) "overflow in calculation");		\
+			}															\
+			T a = (T) ((a1 / n) * n1 + x1 / n +							\
+					   (a2 / n) * n2 + x2 / n +							\
+					   (r1 + r2) / n);									\
+			lng r = mulmod(a1, n1, n) + mulmod(a2, n2, n) + (r1 + r2) % n; \
+			while (r >= n) {											\
+				r -= n;													\
+				a++;													\
+			}															\
+			while (r < 0) {												\
+				r += n;													\
+				a--;													\
+			}															\
+			a2 = a;														\
+			r2 = r;														\
+			n2 = n;														\
+		}																\
+		*(T*)Tloc(b, 0) = a2;											\
+		*(lng*)Tloc(r, 0) = r2;											\
+		*(lng*)Tloc(c, 0) = n2;											\
+	} while (0)
+#endif
+#endif
 
 static str
 LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
 	bat *res = getArgReference_bat(stk, pci, 0);
-	bat *rcnt = getArgReference_bat(stk, pci, 1);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
-	int type = getArgType(mb, pci, 3);
+	bat *rcnt = getArgReference_bat(stk, pci, pci->retc - 1);
+	bat *rrem = pci->retc == 3 ? getArgReference_bat(stk, pci, 1) : NULL;
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, pci->retc);
+	int type = getArgType(mb, pci, pci->retc + 1);
 	str err = NULL;
 
 	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
@@ -341,22 +502,51 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *b = BATdescriptor(*res);
 		BAT *c = BATdescriptor(*rcnt);
 
-		assert(b->ttype == TYPE_dbl);
-		avg_aggr(hge);
-		avg_aggr(lng);
-		avg_aggr(int);
-		avg_aggr(sht);
-		avg_aggr(bte);
-		avg_aggr(flt);
-		avg_aggr(dbl);
-		if (!err) {
+		if (pci->retc == 3) {
+			BAT *r = BATdescriptor(*rrem);
+			switch (b->ttype) {
+			case TYPE_bte:
+				avg_aggr_acc(bte);
+				break;
+			case TYPE_sht:
+				avg_aggr_acc(sht);
+				break;
+			case TYPE_int:
+				avg_aggr_acc(int);
+				break;
+			case TYPE_lng:
+				avg_aggr_acc(lng);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				avg_aggr_acc(hge);
+				break;
+#endif
+			}
 			BATnegateprops(b);
-			BBPkeepref(b);
+			BATnegateprops(r);
 			BATnegateprops(c);
+			BBPkeepref(b);
+			BBPkeepref(r);
 			BBPkeepref(c);
 		} else {
-			BBPunfix(b->batCacheid);
-			BBPunfix(c->batCacheid);
+			assert(b->ttype == TYPE_dbl);
+			avg_aggr(hge);
+			avg_aggr(lng);
+			avg_aggr(int);
+			avg_aggr(sht);
+			avg_aggr(bte);
+			avg_aggr(flt);
+			avg_aggr(dbl);
+			if (!err) {
+				BATnegateprops(b);
+				BBPkeepref(b);
+				BATnegateprops(c);
+				BBPkeepref(c);
+			} else {
+				BBPunfix(b->batCacheid);
+				BBPunfix(c->batCacheid);
+			}
 		}
 	} else {
 			err = createException(SQL, "aggr.avg",	"Result is not initialized");

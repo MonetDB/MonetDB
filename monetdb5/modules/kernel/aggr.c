@@ -671,7 +671,7 @@ AGGRavg3(bat *retval1, bat *retval2, bat *retval3, const bat *bid, const bat *gi
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	rc = BATgroupavg3(&avgs, &rems, &cnts, b, g, e, s, *skip_nils);
+	rc = BATgroupavg3(&avgs, &rems, &cnts, b, g, e, s, *skip_nils, false);
 
 	BBPunfix(b->batCacheid);
 	if (g)
