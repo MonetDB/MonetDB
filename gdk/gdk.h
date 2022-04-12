@@ -798,8 +798,9 @@ typedef struct BAT {
 	bool
 	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1,	/* once written */
-	 batDirtyflushed:1,	/* was dirty before commit started? */
 	 batDirtydesc:1;	/* bat descriptor dirty marker */
+	/* not part of bitfields since not in BATiter */
+	bool batDirtyflushed;	/* was dirty before commit started? */
 	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
