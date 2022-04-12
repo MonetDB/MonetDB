@@ -155,22 +155,22 @@
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
 #else
-#if defined(HAVE__MUL128)
+#if defined(_MSC_VER)
 #include <intrin.h>
 #pragma intrinsic(_mul128)
-#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)		\
-	do {							\
-		lng clo, chi;					\
-		clo = _mul128((lng) (lft), (lng) (rgt), &chi);	\
-		if ((chi == 0 && clo >= 0 && clo <= (max)) ||	\
-		    (chi == -1 && clo < 0 && clo >= -(max))) {	\
-			(dst) = clo;				\
-		} else {					\
-			if (abort_on_error)			\
-				on_overflow;			\
-			(dst) = lng_nil;			\
-			nils++;					\
-		}						\
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
+	do {								\
+		__int64 clo, chi;					\
+		clo = _mul128((__int64) (lft), (__int64) (rgt), &chi);	\
+		if ((chi == 0 && clo >= 0 && clo <= (max)) ||		\
+		    (chi == -1 && clo < 0 && clo >= -(max))) {		\
+			(dst) = (lng) clo;				\
+		} else {						\
+			if (abort_on_error)				\
+				on_overflow;				\
+			(dst) = lng_nil;				\
+			nils++;						\
+		}							\
 	} while (0)
 #else
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
