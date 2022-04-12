@@ -1377,7 +1377,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					return NULL;
 				append(l, as);
 			}
-			if (need_distinct(e) && list_length(l) > 1){
+			if (need_distinct(e) && ((grp && !be->pipeline) || list_length(l) > 1)){
 				list *nl = sa_list(sql->sa);
 				stmt *ngrp = grp;
 				stmt *next = ext;
@@ -4375,7 +4375,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (!sub)
 			return NULL;
 	}
-	pp = get_pipeline(be);
+	if (df2)
+		pp = get_pipeline(be);
 	if (df2 && !pp) {
 		(void)get_need_pipeline(be);
 		set_pipeline(be, pp = pp_create(be, SLICES*GDKnr_threads));
@@ -4516,7 +4517,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt_set_nrcols(cursub);
 	if (pp)
 		cursub = rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp, shared, _2phases);
-	set_pipeline(be, NULL);
 	if (neededpp) {
 		set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
 		cursub = rel2bin_slicer(be, cursub, 1);
