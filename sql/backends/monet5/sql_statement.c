@@ -1143,6 +1143,7 @@ stmt_result(backend *be, stmt *s, int nr)
 	return ns;
 }
 
+
 /* limit maybe atom nil */
 stmt *
 stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order)
@@ -3452,6 +3453,8 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 	return r;
 }
 
+#define LANG_INT_OR_MAL(l)  ((l)==FUNC_LANG_INT || (l)==FUNC_LANG_MAL)
+
 stmt *
 stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 {
@@ -3580,7 +3583,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			}
 		}
 		/* special case for round function on decimals */
-		if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
+		if (LANG_INT_OR_MAL(f->func->lang) && strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
 			q = pushInt(mb, q, tpe->digits);
 			q = pushInt(mb, q, tpe->scale);
 		}
@@ -3742,7 +3745,6 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 			|| strcmp(aggrfunc, "str_group_concat") == 0)
 			complex_aggr = true;
-
 		if (!pipeline && restype == TYPE_dbl)
 			avg = 0;
 		/* some "sub" aggregates have an extra argument "abort_on_error" */
