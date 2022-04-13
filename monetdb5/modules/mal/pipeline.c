@@ -350,7 +350,7 @@ mulmod(lng a, lng b, lng c)
 			a2 = a1;													\
 			r2 = r1;													\
 			n2 = n1;													\
-		} else {														\
+		} else if (!is_##T##_nil(a1)) {									\
 			/* calculate: */											\
 			/* n = n1 + n2 */											\
 			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
@@ -395,7 +395,7 @@ mulmod(lng a, lng b, lng c)
 			a2 = a1;													\
 			r2 = r1;													\
 			n2 = n1;													\
-		} else {														\
+		} else if (!is_##T##_nil(a1)) {									\
 			/* calculate: */											\
 			/* n = n1 + n2 */											\
 			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
@@ -439,7 +439,7 @@ mulmod(lng a, lng b, lng c)
 			a2 = a1;													\
 			r2 = r1;													\
 			n2 = n1;													\
-		} else {														\
+		} else if (!is_##T##_nil(a1)) {									\
 			/* calculate: */											\
 			/* n = n1 + n2 */											\
 			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
