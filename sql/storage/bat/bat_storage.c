@@ -4863,7 +4863,7 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	assert(d && d->cs.ts == tr->tid);
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
-		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, &log_update_col);
+		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, isUnloggedTable(col->t)?NULL:&log_update_col);
 	if (d->cs.bid)
 		temp_destroy(d->cs.bid);
 	if (d->cs.uibid)
