@@ -1376,7 +1376,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		if (!is_project(sq->op)) /* make sure sq is a projection */
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 
-		if (tt != tt_table && with_data)
+		if ((tt != tt_table && tt != tt_unlogged_table) && with_data)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot create %s 'with data'", action,
 							 TABLE_TYPE_DESCRIPTION(tt, properties));
 
