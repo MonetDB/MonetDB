@@ -1006,6 +1006,18 @@ drop index tmp.ups
 statement ok
 drop table x
 
+statement ok
+START TRANSACTION
+
+statement ok
+create temp table foo (i int primary key) on commit preserve rows
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables
+create table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
+
 # some private functions related errors
 statement error 42000!SELECT: no such binary operator 'scale_up'(decimal,tinyint)
 select scale_up(12.1, 10)
