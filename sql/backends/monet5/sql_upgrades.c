@@ -4591,7 +4591,7 @@ sql_update_jan2022(Client c, mvc *sql)
 static str
 sql_update_default(Client c, mvc *sql)
 {
-	size_t bufsize = 8192, pos = 0;
+	size_t bufsize = 65536, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	res_table *output;
 	BAT *b;
@@ -4625,6 +4625,8 @@ sql_update_default(Client c, mvc *sql)
 		pos += snprintf(buf + pos, bufsize - pos,
 			/* drop dependent stuff from 76_dump.sql */
 			"drop function sys.dump_database(boolean);\n"
+			"drop procedure sys.dump_table_data();\n"
+			"drop procedure sys.dump_table_data(string, string);\n"
 			"drop view sys.dump_partition_tables;\n"
 			"drop view sys.describe_partition_tables;\n"
 			"drop view sys.dump_sequences;\n"
@@ -4722,14 +4724,65 @@ sql_update_default(Client c, mvc *sql)
 			"    sch schema_name,\n"
 			"    seq sequence_name\n"
 			"    FROM sys.describe_sequences;\n"
+			"CREATE PROCEDURE sys.dump_table_data(sch STRING, tbl STRING)\n"
+			"BEGIN\n"
+			"  DECLARE tid INT;\n"
+			"  SET tid = (SELECT MIN(t.id) FROM sys.tables t, sys.schemas s WHERE t.name = tbl AND t.schema_id = s.id AND s.name = sch);\n"
+			"  IF tid IS NOT NULL THEN\n"
+			"    DECLARE k INT;\n"
+			"    DECLARE m INT;\n"
+			"    SET k = (SELECT MIN(c.id) FROM sys.columns c WHERE c.table_id = tid);\n"
+			"    SET m = (SELECT MAX(c.id) FROM sys.columns c WHERE c.table_id = tid);\n"
+			"    IF k IS NOT NULL AND m IS NOT NULL THEN\n"
+			"      DECLARE cname STRING;\n"
+			"      DECLARE ctype STRING;\n"
+			"      DECLARE _cnt INT;\n"
+			"      SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);\n"
+			"      SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);\n"
+			"      SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));\n"
+			"      IF _cnt > 0 THEN\n"
+			"        DECLARE COPY_INTO_STMT STRING;\n"
+			"        DECLARE SELECT_DATA_STMT STRING;\n"
+			"        SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);\n"
+			"        SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);\n"
+			"        WHILE (k < m) DO\n"
+			"          SET k = (SELECT MIN(c.id) FROM sys.columns c WHERE c.table_id = tid AND c.id > k);\n"
+			"          SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);\n"
+			"          SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);\n"
+			"          SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));\n"
+			"          SET SELECT_DATA_STMT = (SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype));\n"
+			"        END WHILE;\n"
+			"        SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\\\n'',''\"'';');\n"
+			"        SET SELECT_DATA_STMT = (SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl));\n"
+			"        INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);\n"
+			"        CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');\n"
+			"      END IF;\n"
+			"    END IF;\n"
+			"  END IF;\n"
+			"END;\n"
+			"CREATE PROCEDURE sys.dump_table_data()\n"
+			"BEGIN\n"
+			"  DECLARE i INT;\n"
+			"  SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);\n"
+			"  IF i IS NOT NULL THEN\n"
+			"    DECLARE M INT;\n"
+			"    SET M = (SELECT MAX(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);\n"
+			"    DECLARE sch STRING;\n"
+			"    DECLARE tbl STRING;\n"
+			"    WHILE i IS NOT NULL AND i <= M DO\n"
+			"      SET sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);\n"
+			"      SET tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);\n"
+			"      CALL sys.dump_table_data(sch, tbl);\n"
+			"      SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system AND t.id > i);\n"
+			"    END WHILE;\n"
+			"  END IF;\n"
+			"END;\n"
 			"CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)\n"
 			"BEGIN\n"
-			"\n"
 			"SET SCHEMA sys;\n"
 			"TRUNCATE sys.dump_statements;\n"
-			"\n"
 			"INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');\n"
-			"INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA \"sys\";');\n"
+			"INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA \"sys\";');\n"
 			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;\n"
 			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;\n"
 			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;\n"
@@ -4742,7 +4795,7 @@ sql_update_default(Client c, mvc *sql)
 			"INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s\n"
 			"					FROM (\n"
 			"					SELECT f.o, f.stmt FROM sys.dump_functions f\n"
-			"					UNION\n"
+			"					UNION ALL\n"
 			"					SELECT t.o, t.stmt FROM sys.dump_tables t\n"
 			"					) AS stmts(o, s);\n"
 			"\n"
@@ -4774,6 +4827,8 @@ sql_update_default(Client c, mvc *sql)
 
 		pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences') AND schema_id = 2000;\n");
+		pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where system <> true and name in ('dump_table_data') and schema_id = 2000 and type = %d;\n", F_PROC);
 		pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = %d;\n", F_UNION);
 

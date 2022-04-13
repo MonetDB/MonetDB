@@ -26,9 +26,9 @@ project (
 | group by (
 | | project (
 | | | table("sys"."groupings") [ "groupings"."aa" ]
-| | ) [ bigint(33)["groupings"."aa"] as "%2"."%2", "sys"."sql_add"("%2"."%2", bigint(33) "1") as "%1"."%1" ]
-| ) [ "%1"."%1" ] [ "%1"."%1" ]
-) [ "%1"."%1" UNIQUE ]
+| | ) [ bigint(33)["groupings"."aa"] as "%3"."%3", "sys"."sql_add"("%3"."%3", bigint(33) "1") as "%1"."%1", "groupings"."aa" as "%4"."%4" ]
+| ) [ "%4"."%4" ] [ "%1"."%1" ]
+) [ "%1"."%1" ]
 
 query I rowsort
 select cast(("aa"+1) + ("bb"+1) as bigint) from "groupings" group by "aa"+1, "bb"+1

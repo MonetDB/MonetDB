@@ -1866,10 +1866,10 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		           ((unsigned short) BATtdensebi(bi) << 9) |
 			   ((unsigned short) bi->nonil << 10) |
 			   ((unsigned short) bi->nil << 11),
-		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[0],
-		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[1],
-		       b->tnosorted >= size ? 0 : b->tnosorted,
-		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
+		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[0],
+		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[1],
+		       bi->nosorted >= size ? 0 : bi->nosorted,
+		       bi->norevsorted >= size ? 0 : bi->norevsorted,
 		       bi->tseq,
 		       free,
 		       bi->minpos < size ? (uint64_t) bi->minpos : (uint64_t) oid_nil,
@@ -2829,46 +2829,6 @@ incref(bat i, bool logical, bool lock)
 	return refs;
 }
 
-BAT *
-BATdescriptor(bat i)
-{
-	BAT *b = NULL;
-
-	if (BBPcheck(i)) {
-		b = BBP_desc(i);
-		MT_lock_set(&b->theaplock);
-		int tp = b->theap->parentid;
-		int tvp = b->tvheap ? b->tvheap->parentid : 0;
-		MT_lock_unset(&b->theaplock);
-		if (tp != b->batCacheid &&
-		    BATdescriptor(tp) == NULL) {
-			return NULL;
-		}
-		if (tvp != 0 &&
-		    tvp != b->batCacheid &&
-		    BATdescriptor(tvp) == NULL) {
-			if (tp != b->batCacheid)
-				BBPunfix(tp);
-			return NULL;
-		}
-		for (;;) {
-			MT_lock_set(&GDKswapLock(i));
-			if (!(BBP_status(i) & (BBPUNSTABLE|BBPLOADING)))
-				break;
-			/* the BATs is "unstable", try again */
-			MT_lock_unset(&GDKswapLock(i));
-			BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
-		}
-		if (incref(i, false, false) <= 0)
-			return NULL;
-		b = BBP_cache(i);
-		if (b == NULL)
-			b = getBBPdescriptor(i);
-		MT_lock_unset(&GDKswapLock(i));
-	}
-	return b;
-}
-
 /* increment the physical reference counter for the given bat
  * returns the new reference count
  * also increments the physical reference count of the parent bat(s) (if
@@ -2915,7 +2875,7 @@ BBPshare(bat parent)
 }
 
 static inline int
-decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
+decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const char *func)
 {
 	int refs = 0, lrefs;
 	bool swap = false;
@@ -3062,23 +3022,25 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			BBP_status_off(i, BBPUNLOADING);
 		}
 	}
-	if (tp)
-		decref(tp, false, false, lock, func);
-	if (tvp)
-		decref(tvp, false, false, lock, func);
+	if (recurse) {
+		if (tp)
+			decref(tp, false, false, true, lock, func);
+		if (tvp)
+			decref(tvp, false, false, true, lock, func);
+	}
 	return refs;
 }
 
 int
 BBPunfix(bat i)
 {
-	return decref(i, false, false, true, __func__);
+	return decref(i, false, false, true, true, __func__);
 }
 
 int
 BBPrelease(bat i)
 {
-	return decref(i, true, false, true, __func__);
+	return decref(i, true, false, true, true, __func__);
 }
 
 /*
@@ -3105,16 +3067,60 @@ BBPkeepref(BAT *b)
 	if (BATsetaccess(b, BAT_READ) == NULL)
 		return;		/* already decreffed */
 
-	refs = decref(i, false, false, lock, __func__);
+	refs = decref(i, false, false, true, lock, __func__);
 	(void) refs;
 	assert(refs >= 0);
+}
+
+BAT *
+BATdescriptor(bat i)
+{
+	BAT *b = NULL;
+
+	if (BBPcheck(i)) {
+		for (;;) {
+			MT_lock_set(&GDKswapLock(i));
+			if (!(BBP_status(i) & (BBPUNSTABLE|BBPLOADING)))
+				break;
+			/* the BATs is "unstable", try again */
+			MT_lock_unset(&GDKswapLock(i));
+			BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
+		}
+		if (incref(i, false, false) <= 0)
+			return NULL;
+		b = BBP_cache(i);
+		if (b == NULL)
+			b = getBBPdescriptor(i);
+		MT_lock_unset(&GDKswapLock(i));
+		if (b != NULL) {
+			MT_lock_set(&b->theaplock);
+			int tp = b->theap->parentid;
+			int tvp = b->tvheap ? b->tvheap->parentid : 0;
+			MT_lock_unset(&b->theaplock);
+			if (tp != b->batCacheid &&
+			    BATdescriptor(tp) == NULL) {
+				decref(i, false, false, false, false, __func__);
+				return NULL;
+			}
+			if (tvp != 0 &&
+			    tvp != b->batCacheid &&
+			    BATdescriptor(tvp) == NULL) {
+				if (tp != b->batCacheid)
+					decref(tp, false, false, true, true, __func__);
+
+				decref(i, false, false, false, false, __func__);
+				return NULL;
+			}
+		}
+	}
+	return b;
 }
 
 static inline void
 GDKunshare(bat parent)
 {
-	(void) decref(parent, false, true, true, __func__);
-	(void) decref(parent, true, false, true, __func__);
+	(void) decref(parent, false, true, true, true, __func__);
+	(void) decref(parent, true, false, true, true, __func__);
 }
 
 void
@@ -3144,7 +3150,7 @@ BBPreclaim(BAT *b)
 
 	assert(BBP_refs(i) == 1);
 
-	return decref(i, false, false, lock, __func__) <0;
+	return decref(i, false, false, true, lock, __func__) <0;
 }
 
 /*
@@ -3348,8 +3354,7 @@ BBPquickdesc(bat bid)
 		}
 		return NULL;
 	}
-	if ((b = BBP_cache(bid)) != NULL)
-		return b;	/* already cached */
+	BBPspin(bid, __func__, BBPWAITING);
 	b = BBP_desc(bid);
 	if (b && b->ttype < 0) {
 		const char *aname = ATOMunknown_name(b->ttype);
@@ -3896,7 +3901,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
-					decref(-i, false, false, locked_by == 0 || locked_by != MT_getpid(), __func__);
+					decref(-i, false, false, true, locked_by == 0 || locked_by != MT_getpid(), __func__);
 					break;
 				}
 				bi = bat_iterator(BBP_desc(i));
@@ -3934,7 +3939,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			bat_iterator_end(&bi);
 			/* can't use BBPunfix because of the "lock"
 			 * argument: locked_by may be set here */
-			decref(i, false, false, lock, __func__);
+			decref(i, false, false, true, lock, __func__);
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
