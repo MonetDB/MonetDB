@@ -435,6 +435,14 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (!rt)
 			return SQL_ERR;
+		if (!rt->s) { /* disable foreign key on declared table */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key with declared tables");
+			return res;
+		}
+		if (isTempSchema(t->s) != isTempSchema(rt->s)) { /* disable foreign key between temp and non temp */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
+			return res;
+		}
 		if (!ns || !*ns) { /* add this to be safe */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key name name cannot be empty");
 			return res;
@@ -681,6 +689,14 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 		int ref_actions = n->next->next->next->next->data.i_val;
 
 		assert(n->next->next->next->next->type == type_int);
+		if (!ft->s) { /* disable foreign key on declared table */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key with declared tables");
+			return SQL_ERR;
+		}
+		if (isTempSchema(t->s) != isTempSchema(ft->s)) { /* disable foreign key between temp and non temp */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
+			return SQL_ERR;
+		}
 		if (!ns || !*ns) { /* add this to be safe */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key name name cannot be empty");
 			return SQL_ERR;
