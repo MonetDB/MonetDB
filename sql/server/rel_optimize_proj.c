@@ -1375,6 +1375,7 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 				e->used = 0;
 				list_append(l->exps, e);
 				list_remove_node(rel->r, NULL, n);
+				v->changes++;
 			}
 			n = next;
 		}
