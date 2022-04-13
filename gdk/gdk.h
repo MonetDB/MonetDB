@@ -778,6 +778,7 @@ typedef enum {
  * tsorted, trevsorted, twidth, tshift, tnonil, tnil, tnokey, tnosorted,
  * tnorevsorted, tminpos, tmaxpos, and tunique_est; in addition, the
  * value should be set if the BBP field BBP_logical(bid) is changed.
+ * This corresponds with any field that gets saved in the BBP.dir file.
  *
  * theaplock: this lock should be held when reading or writing any of
  * the fields mentioned above for batDirtydesc, and also when reading or
@@ -797,8 +798,9 @@ typedef struct BAT {
 	bool
 	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1,	/* once written */
-	 batDirtyflushed:1,	/* was dirty before commit started? */
 	 batDirtydesc:1;	/* bat descriptor dirty marker */
+	/* not part of bitfields since not in BATiter */
+	bool batDirtyflushed;	/* was dirty before commit started? */
 	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
@@ -962,6 +964,8 @@ typedef struct BATiter {
 	int8_t type;
 	oid tseq;
 	BUN hfree, vhfree;
+	BUN nokey[2];
+	BUN nosorted, norevsorted;
 	BUN minpos, maxpos;
 	double unique_est;
 	bool key:1,
@@ -1008,6 +1012,10 @@ bat_iterator_nolock(BAT *b)
 				  (size_t) b->batCount << b->tshift :
 				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
+			.nokey[0] = b->tnokey[0],
+			.nokey[1] = b->tnokey[1],
+			.nosorted = b->tnosorted,
+			.norevsorted = b->tnorevsorted,
 			.minpos = isview ? BUN_NONE : b->tminpos,
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
@@ -1297,17 +1305,15 @@ gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
 gdk_export restrict_t BATgetaccess(BAT *b);
 
 
-#define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
-			 (b)->batDirtydesc ||				\
+#define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
+#define BATdirty(b)	(BATdirtydata(b) ||	\
+			 (b)->batDirtydesc)
 #define BATdirtybi(bi)	(!(bi).copiedtodisk ||	\
 			 (bi).dirtydesc ||	\
 			 (bi).hdirty ||		\
 			 (bi).vhdirty)
-#define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
-			 (b)->theap->dirty ||				\
-			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 
 #define BATcapacity(b)	(b)->batCapacity
 /*

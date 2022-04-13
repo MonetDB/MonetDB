@@ -896,6 +896,74 @@ select dosomething()
 statement ok
 drop function dosomething
 
+query II rowsort
+SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+1
+1
+2
+2
+3
+3
+
+# remove 'x1' from grouping columns list
+query T nosort
+plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+project (
+| group by (
+| |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x", "x"."x" as "x1" ]
+| ) [ "x"."x" ] [ "x"."x", "x1" ]
+) [ "x"."x", "x1" ]
+
+query II rowsort
+SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+1
+2
+2
+3
+3
+4
+
+# remove 'x1' from grouping columns list. This one is more complex
+query T nosort
+plan SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+project (
+| group by (
+| | project (
+| | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
+| | ) [ "x"."x", "sys"."sql_add"("x"."x", tinyint(2) "1") as "x1" ]
+| ) [ "x"."x" ] [ "x"."x", "x1" ]
+) [ "x"."x", "x1" ]
+
+query II rowsort
+SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
+----
+1
+-7
+2
+-5
+3
+-3
+4
+-1
+5
+1
+
+# remove 'x1' from grouping columns list. This one is even more complex
+query T nosort
+plan SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
+----
+project (
+| group by (
+| | project (
+| | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
+| | ) [ "x"."x", "sys"."sql_add"("x"."x", tinyint(5) "10") as "%7"."%7", "sys"."sql_mul"("%7"."%7", tinyint(2) "2") as "%10"."%10", "sys"."sql_sub"("%10"."%10", smallint(10) "29") as "x1" ]
+| ) [ "x"."x" ] [ "x"."x", "x1" ]
+) [ "x"."x", "x1" ]
+
 statement ok
 create global temp table x(x int, y int)
 
