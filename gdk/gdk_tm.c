@@ -55,13 +55,8 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 		bat bid = subcommit ? subcommit[i] : i;
 
 		if (BBP_status(bid) & BBPPERSISTENT) {
-			BAT *b = BBP_cache(bid);
+			BAT *b = BBPquickdesc(bid);
 
-			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
-				b = BBPquickdesc(bid);
-				if (b == NULL)
-					return GDK_FAIL;
-			}
 			if (b) {
 				MT_lock_set(&b->theaplock);
 				assert(!isVIEW(b));

@@ -39,17 +39,6 @@
 #else
 # define stream_export extern
 #endif
-#ifndef HAVE_HGE
-# ifdef HAVE___INT128
-#  define HAVE_HGE 1
-typedef __int128 hge;
-# else
-#  ifdef HAVE___INT128_T
-#   define HAVE_HGE 1
-typedef __int128_t hge;
-#  endif
-# endif
-#endif
 
 /* Defines to help the compiler check printf-style format arguments.
  * These defines are also in our config.h, but we repeat them here so
