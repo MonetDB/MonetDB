@@ -939,3 +939,15 @@ CREATE INDEX ups ON tmp.x (x)
 
 statement ok
 drop table x
+
+statement ok
+START TRANSACTION
+
+statement ok
+create temp table foo (i int primary key) on commit preserve rows
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables
+create table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
