@@ -42,9 +42,6 @@ BATcommit(BAT *b, BUN size)
 	if (!BATdirty(b)) {
 		b->batDirtyflushed = false;
 	}
-	if (DELTAdirty(b)) {
-		b->batDirtydesc = true;
-	}
 	b->batInserted = size < BATcount(b) ? size : BATcount(b);
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);

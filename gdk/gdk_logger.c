@@ -162,7 +162,7 @@ log_find(BAT *b, BAT *d, int val)
 static log_bid
 internal_find_bat(logger *lg, log_id id, int tid)
 {
-	BATiter cni = bat_iterator_nolock(lg->catalog_id);
+	BATiter cni = bat_iterator(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
@@ -172,6 +172,7 @@ internal_find_bat(logger *lg, log_id id, int tid)
 				oid pos = p;
 				if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 					MT_rwlock_rdunlock(&cni.b->thashlock);
+					bat_iterator_end(&cni);
 					return *(log_bid *) Tloc(lg->catalog_bid, p);
 				}
 			}
@@ -186,11 +187,13 @@ internal_find_bat(logger *lg, log_id id, int tid)
 			}
 			if (cp != BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
+				bat_iterator_end(&cni);
 				return *(log_bid *) Tloc(lg->catalog_bid, cp);
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
+	bat_iterator_end(&cni);
 	return 0;
 }
 
@@ -2227,7 +2230,9 @@ logger_cleanup_range(logger *lg)
 {
 	logged_range *p = lg->pending;
 	if (p) {
+		logger_lock(lg);
 		lg->pending = p->next;
+		logger_unlock(lg);
 		GDKfree(p);
 	}
 }
@@ -2267,11 +2272,14 @@ logger_flush(logger *lg, ulng ts)
 	}
 	if (lg->saved_id >= lid)
 		return GDK_SUCCEED;
-	if (lg->saved_id+1 >= lg->id) /* logger should first release the file */
+	MT_lock_set(&lg->rotation_lock);
+	ulng lgid = lg->id;
+	MT_lock_unset(&lg->rotation_lock);
+	if (lg->saved_id+1 >= lgid) /* logger should first release the file */
 		return GDK_SUCCEED;
 	log_return res = LOG_OK;
 	while(lg->saved_id < lid && res == LOG_OK) {
-		if (lg->saved_id >= lg->id)
+		if (lg->saved_id >= lgid)
 			break;
 		if (!lg->input_log) {
 			char *filename;
@@ -3070,7 +3078,9 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 		if (flushnow) {
 			while (lg->saved_id+1 < lg->id) {
 				logger_unlock(lg);
+				MT_lock_unset(&lg->rotation_lock);
 				logger_flush(lg, (1ULL<<63));
+				MT_lock_set(&lg->rotation_lock);
 				logger_lock(lg);
 			}
 			lg->flushnow = flushnow;

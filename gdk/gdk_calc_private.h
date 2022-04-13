@@ -319,13 +319,14 @@ BUN dofsum(const void *restrict values, oid seqb,
 		    bool nil_if_empty)
 	__attribute__((__visibility__("hidden")));
 
-/* format strings for the seven/eight basic types we deal with */
+/* format strings for the seven/eight basic types we deal with
+ * these are only used in error messages */
 #define FMTbte	"%d"
 #define FMTsht	"%d"
 #define FMTint	"%d"
 #define FMTlng	LLFMT
 #ifdef HAVE_HGE
-#define FMThge	"%.40g"
+#define FMThge	"%.40Lg (approx. value)"
 #endif
 #define FMTflt	"%.9g"
 #define FMTdbl	"%.17g"
@@ -338,7 +339,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 #define CSTint
 #define CSTlng
 #ifdef HAVE_HGE
-#define CSThge  (dbl)
+#define CSThge  (long double)
 #endif
 #define CSTflt
 #define CSTdbl

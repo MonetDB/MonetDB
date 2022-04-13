@@ -281,6 +281,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
+	b->batDirtydesc = true;
 	MT_lock_unset(&b->theaplock);
 
 	uint32_t *restrict dst;
@@ -321,7 +322,6 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				assert(lnr==0);
 			}
 			MT_lock_set(&b->theaplock);
-			b->batDirtydesc = true;
 			b->theap->dirty = true;
 			MT_lock_unset(&b->theaplock);
 			size_t lnr = s->end-s->start;

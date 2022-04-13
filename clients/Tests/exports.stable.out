@@ -775,7 +775,6 @@ void MSresetInstructions(MalBlkPtr mb, int start);
 void MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb);
 void MSresetVariables(MalBlkPtr mb);
 void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize);
-str MSserveClient(Client cntxt);
 str OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces);
 str OIDXdropImplementation(Client cntxt, BAT *b);
 str QLOGcalls(BAT **r);

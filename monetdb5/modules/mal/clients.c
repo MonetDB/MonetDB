@@ -198,7 +198,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.quit", "Illegal session id");
 
-	/* A user can only quite a session under the same id */
+	/* A user can only quit a session under the same id */
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.stop","Session not active anymore");
