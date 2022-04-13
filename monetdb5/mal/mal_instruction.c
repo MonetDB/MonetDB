@@ -810,9 +810,7 @@ getVarName(MalBlkPtr mb, int idx)
 	if( getVarKind(mb,idx) == 0)
 		setVarKind(mb,idx, REFMARKER);
 
-	if( *s &&  s[1] != '_' && (s[0] != 'X' && s[0] != 'C'))
-		return s;
-	if ( *s == 0)
+	if (*s == 0)
 		(void) snprintf(s, IDLENGTH,"%c_%d", getVarKind(mb, idx), mb->vid++);
 	return s;
 }

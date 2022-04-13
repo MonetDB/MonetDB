@@ -1111,20 +1111,15 @@ exp_cmp( sql_exp *e1, sql_exp *e2)
 	return (e1 == e2)?0:-1;
 }
 
-#define alias_cmp(e1, e2) \
-	do { \
-		if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0) \
-			return strcmp(e1->alias.name, e2->alias.name); \
-		if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name) \
-			return strcmp(e1->alias.name, e2->alias.name); \
-	} while (0);
-
 int
 exp_equal( sql_exp *e1, sql_exp *e2)
 {
 	if (e1 == e2)
 		return 0;
-	alias_cmp(e1, e2);
+	if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0)
+		return strcmp(e1->alias.name, e2->alias.name);
+	if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name)
+		return strcmp(e1->alias.name, e2->alias.name);
 	return -1;
 }
 
@@ -1395,27 +1390,6 @@ exps_any_match(list *l, sql_exp *e)
 	for (node *n = l->h; n ; n = n->next) {
 		sql_exp *ne = (sql_exp *) n->data;
 		if (exp_match_exp(ne, e))
-			return ne;
-	}
-	return NULL;
-}
-
-static int
-exp_no_alias(sql_exp *e1, sql_exp *e2)
-{
-	alias_cmp(e1, e2);
-	/* at least one of the expressions don't have an alias, so there's a match */
-	return 0;
-}
-
-sql_exp *
-exps_any_match_same_or_no_alias(list *l, sql_exp *e)
-{
-	if (!l)
-		return NULL;
-	for (node *n = l->h; n ; n = n->next) {
-		sql_exp *ne = (sql_exp *) n->data;
-		if ((exp_match(ne, e) || exp_refers(ne, e) || exp_match_exp(ne, e)) && exp_no_alias(e, ne) == 0)
 			return ne;
 	}
 	return NULL;

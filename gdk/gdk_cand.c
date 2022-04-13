@@ -1330,7 +1330,6 @@ BATnegcands(BUN nr, BAT *odels)
 		memcpy(r, (const oid *) bi.base + lo, sizeof(oid) * (hi - lo));
 	}
 	bat_iterator_end(&bi);
-	bn->batDirtydesc = true;
 	assert(bn->tvheap == NULL);
 	bn->tvheap = dels;
 	BATsetcount(bn, bn->batCount - (hi - lo));
@@ -1430,7 +1429,6 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		HEAPfree(msks, true);
 		GDKfree(msks);
 	}
-	bn->batDirtydesc = true;
 	BATsetcount(bn, cnt);
 	TRC_DEBUG(ALGO, "hseq=" OIDFMT ", masked=" ALGOBATFMT ", selected=%s"
 		  " -> " ALGOBATFMT "\n",

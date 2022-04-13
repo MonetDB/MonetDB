@@ -1333,6 +1333,171 @@ rel_project_cse(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+/* optimize group by x+1,(y-2)*3,2-z into group by x,y,z */
+static inline sql_rel *
+rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
+{
+	if (is_groupby(rel->op) && !list_empty(rel->r)) {
+		sql_rel *l = rel->l;
+
+		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
+			sql_exp *e = n->data;
+			e->used = 0; /* we need to use this flag, clean it first */
+		}
+		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->type == e_column) {
+				bool searching = true;
+				sql_rel *efrel = NULL;
+				sql_exp *exp = rel_find_exp_and_corresponding_rel(l, e, false, &efrel, NULL), *col = NULL;
+
+				while (searching && !col) {
+					sql_exp *exp_col = exp;
+
+					if (exp && is_numeric_upcast(exp))
+						exp = exp->l;
+					if (exp && exp->type == e_func) {
+						list *el = exp->l;
+						sql_subfunc *sf = exp->f;
+						/* At the moment look only at injective math functions */
+						if (sf->func->type == F_FUNC && !sf->func->s &&
+							(!strcmp(sf->func->base.name, "sql_sub") || !strcmp(sf->func->base.name, "sql_add") || !strcmp(sf->func->base.name, "sql_mul"))) {
+							sql_exp *e1 = (sql_exp*) el->h->data, *e2 = (sql_exp*) el->h->next->data;
+							/* the optimization cannot be done if side-effect calls (e.g. rand()) are present */
+							int e1ok = exp_is_atom(e1) && !exp_unsafe(e1, 1) && !exp_has_sideeffect(e1), e2ok = exp_is_atom(e2) && !exp_unsafe(e2, 1) && !exp_has_sideeffect(e2);
+
+							if ((!e1ok && e2ok) || (e1ok && !e2ok)) {
+								sql_exp *c = e1ok ? e2 : e1;
+								bool done = false;
+
+								while (!done) {
+									if (is_numeric_upcast(c))
+										c = c->l;
+									if (c->type == e_column) {
+										if (is_simple_project(efrel->op) || is_groupby(efrel->op)) {
+											/* in a simple projection, self-references may occur */
+											sql_exp *nc = (c->l ? exps_bind_column2(efrel->exps, c->l, c->r, NULL) : exps_bind_column(efrel->exps, c->r, NULL, NULL, 0));
+											if (nc && list_position(efrel->exps, nc) < list_position(efrel->exps, exp_col)) {
+												exp_col = c;
+												c = nc;
+												continue;
+											}
+										}
+										col = c; /* 'c' is a column reference from the left relation */
+										done = true;
+									} else {
+										exp = c; /* maybe a nested function call, let's continue searching */
+										done = true;
+									}
+								}
+							} else {
+								searching = false;
+							}
+						} else {
+							searching = false;
+						}
+					} else {
+						searching = false;
+					}
+				}
+				if (col) { /* a column reference was found */
+					const char *rname = exp_relname(e), *name = exp_name(e);
+
+					/* the grouping column has an alias, we have to keep it */
+					if ((rname && name && (strcmp(rname, e->l) != 0 || strcmp(name, e->r) != 0)) || (!rname && name && strcmp(name, e->r) != 0)) {
+						if (!has_label(e)) /* dangerous to merge, skip it */
+							continue;
+						if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l) || is_single(l))
+							rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+						list_append(l->exps, e);
+						n->data = e = exp_ref(v->sql, e);
+						list_hash_clear(rel->r);
+					}
+
+					sql_exp *f = (col->l ? exps_bind_column2(rel->r, col->l, col->r, NULL) : exps_bind_column(rel->r, col->r, NULL, NULL, 0));
+
+					if (f && list_position(rel->r, f) < list_position(rel->r, e)) { /* if already present, remove it */
+						e->used = 1;
+					} else {
+						/* Use an unique reference to the column found. If there's another grouping column label pointing into it,
+						   rel_groupby_cse will hopefully remove it */
+						sql_exp *ne = exp_ref(v->sql, col);
+						if (!has_label(ne))
+							exp_label(v->sql->sa, ne, ++v->sql->label);
+
+						if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l) || is_single(l))
+							rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+						list_append(l->exps, ne);
+						n->data = exp_ref(v->sql, ne);
+						list_hash_clear(rel->r);
+					}
+					v->changes++;
+				}
+			}
+		}
+		for (node *n=((list*)rel->r)->h; n ; ) {
+			node *next = n->next;
+			sql_exp *e = n->data;
+
+			if (e->used) /* remove unecessary grouping columns */
+				list_remove_node(rel->r, NULL, n);
+			n = next;
+		}
+	}
+	return rel;
+}
+
+/* remove identical grouping columns */
+static inline sql_rel *
+rel_groupby_cse(visitor *v, sql_rel *rel)
+{
+	if (is_groupby(rel->op) && !list_empty(rel->r)) {
+		sql_rel *l = rel->l;
+		int needed = 0;
+
+		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
+			sql_exp *e = n->data;
+			e->used = 0; /* we need to use this flag, clean it first */
+		}
+		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
+			sql_exp *e1 = n->data;
+			/* TODO maybe cover more cases? Here I only look at the left relation */
+			sql_exp *e3 = e1->type == e_column ? (e1->l ? exps_bind_column2(l->exps, e1->l, e1->r, NULL) : exps_bind_column(l->exps, e1->r, NULL, NULL, 0)) : NULL;
+
+			for (node *m=n->next; m; m = m->next) {
+				sql_exp *e2 = m->data;
+				sql_exp *e4 = e2->type == e_column ? (e2->l ? exps_bind_column2(l->exps, e2->l, e2->r, NULL) : exps_bind_column(l->exps, e2->r, NULL, NULL, 0)) : NULL;
+
+				if (exp_match_exp(e1, e2) || exp_refers(e1, e2) || (e3 && e4 && (exp_match_exp(e3, e4) || exp_refers(e3, e4)))) {
+					e2->used = 1; /* flag it as being removed */
+					needed = 1;
+				}
+			}
+		}
+
+		if (!needed)
+			return rel;
+
+		if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l) || is_single(l))
+			rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+
+		for (node *n=((list*)rel->r)->h; n ; ) {
+			node *next = n->next;
+			sql_exp *e = n->data;
+
+			if (e->used) { /* remove unecessary grouping columns */
+				e->used = 0;
+				list_append(l->exps, e);
+				list_remove_node(rel->r, NULL, n);
+				v->changes++;
+			}
+			n = next;
+		}
+	}
+	return rel;
+}
+
 sql_exp *list_exps_uses_exp(list *exps, const char *rname, const char *name);
 
 static sql_exp*
@@ -2367,6 +2532,9 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	if (!rel || !is_groupby(rel->op))
 		return rel;
 
+	if (v->value_based_opt)
+		rel = rel_simplify_groupby_columns(v, rel);
+	rel = rel_groupby_cse(v, rel);
 	rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
