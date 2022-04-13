@@ -1732,7 +1732,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 }
 
 gdk_return
-BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
+BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1740,8 +1740,15 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
+#ifdef HAVE_HGE
+	hge result = 0;
+#else
+	lng result = 0;
+#endif
+	void *res = &result;
 
-	(void)inout;
+	if (!inout)
+		res = resout;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
@@ -1784,6 +1791,54 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		      bi.type, tp, &min, false, min, max,
 		      skip_nils, abort_on_error, nil_if_empty, __func__);
 	bat_iterator_end(&bi);
+	if (inout) {
+		switch (tp) {
+		case TYPE_bte:
+			if (is_bte_nil(*(bte*)resout))
+				* (bte *) resout = *(bte*) res;
+			else if (!is_bte_nil(*(bte*)res))
+				* (bte *) resout += *(bte*) res;
+			break;
+		case TYPE_sht:
+			if (is_sht_nil(*(sht*)resout))
+				* (sht *) resout = *(sht*) res;
+			else if (!is_sht_nil(*(sht*)res))
+				* (sht *) resout += *(sht*) res;
+			break;
+		case TYPE_int:
+			if (is_int_nil(*(int*)resout))
+				* (int *) resout = *(int*) res;
+			else if (!is_int_nil(*(int*)res))
+				* (int *) resout += *(int*) res;
+			break;
+		case TYPE_flt:
+			if (is_flt_nil(*(flt*)resout))
+				* (flt *) resout = *(flt*) res;
+			else if (!is_flt_nil(*(flt*)res))
+				* (flt *) resout += *(flt*) res;
+			break;
+		case TYPE_lng:
+			if (is_lng_nil(*(lng*)resout))
+				* (lng *) resout = *(lng*) res;
+			else if (!is_lng_nil(*(lng*)res))
+				* (lng *) resout += *(lng*) res;
+			break;
+		case TYPE_dbl:
+			if (is_dbl_nil(*(dbl*)resout))
+				* (dbl *) resout = *(dbl*) res;
+			else if (!is_dbl_nil(*(dbl*)res))
+				* (dbl *) resout += *(dbl*) res;
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			if (is_hge_nil(*(hge*)resout))
+				* (hge *) resout = *(hge*) res;
+			else if (!is_hge_nil(*(hge*)res))
+				* (hge *) resout += *(hge*) res;
+			break;
+#endif
+		}
+	}
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
 		  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),

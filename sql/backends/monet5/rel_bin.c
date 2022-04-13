@@ -3942,9 +3942,8 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 			if (need_distinct(e) && !global)
 				return false;
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
-			    strcmp(sf->func->base.name, "avg") == 0 ||
-			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 /*||
-			    strcmp(sf->func->base.name, "prod") == 0*/)) {
+			    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
 				return false;
 			}
 		}
@@ -4165,7 +4164,8 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 			if (strcmp(sf->func->base.name, "min") == 0 ||
 			    strcmp(sf->func->base.name, "max") == 0 ||
 			    (avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
-			    strcmp(sf->func->base.name, "sum") == 0) {
+			    strcmp(sf->func->base.name, "sum") == 0 ||
+			    strcmp(sf->func->base.name, "prod") == 0) {
 				name = sf->func->base.name;
 			} else {
 				assert(strcmp(sf->func->base.name, "count") == 0);
@@ -4240,7 +4240,8 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 				if (strcmp(sf->func->base.name, "min") == 0 ||
 					strcmp(sf->func->base.name, "max") == 0 ||
 					(avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
-					strcmp(sf->func->base.name, "sum") == 0) {
+					strcmp(sf->func->base.name, "sum") == 0 ||
+					strcmp(sf->func->base.name, "prod") == 0) {
 					name = sf->func->base.name;
 				} else {
 					assert(strcmp(sf->func->base.name, "count") == 0);
@@ -4332,9 +4333,8 @@ rel_groupby_pp(sql_rel *rel, bool _2phases)
 			sql_subfunc *sf = e->f;
 
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
-			    strcmp(sf->func->base.name, "avg") == 0 ||
-			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 /*||
-			    strcmp(sf->func->base.name, "prod") == 0*/)) {
+			    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
 				return false;
 			}
 		}
