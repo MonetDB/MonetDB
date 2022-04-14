@@ -200,7 +200,7 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	setArgType(mb, q, 0, TYPE_bit);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
-	q = pushInt(mb, q, 0);
+	q = pushInt(mb, q, -1);
 	int var_loop = getArg(q, 0);
 	int var_iter_id = getArg(q, 1);
 	// int var_handle = getArg(q, 2);
