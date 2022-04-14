@@ -4263,13 +4263,11 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	list *l;
 	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL;
-	int idx_ins = 0, constraint = 1, len = 0;
+	int idx_ins = 0, len = 0;
 	node *n, *m, *idx_m = NULL;
 	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
 
-	if ((rel->flag&UPD_NO_CONSTRAINT))
-		constraint = 0;
 	if ((rel->flag&UPD_COMP)) {  /* special case ! */
 		idx_ins = 1;
 		prel = rel->l;
@@ -4297,7 +4295,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	if (constraint && !sql_insert_check_null(be, t, inserts->op4.lval))
+	if (!sql_insert_check_null(be, t, inserts->op4.lval))
 		return NULL;
 
 	l = sa_list(sql->sa);
@@ -4331,7 +4329,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 				continue;
 			if (hash_index(i->type) && list_length(i->columns) <= 1)
 				is = NULL;
-			if (i->key && constraint) {
+			if (i->key) {
 				stmt *ckeys = sql_insert_key(be, inserts->op4.lval, i->key, is, pin);
 
 				list_append(l, ckeys);
