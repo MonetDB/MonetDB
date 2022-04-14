@@ -443,6 +443,10 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
 			return res;
 		}
+		if (isUnloggedTable(t) != isUnloggedTable(rt)) { /* disable foreign key between logged and unlogged */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables");
+			return res;
+		}
 		if (!ns || !*ns) { /* add this to be safe */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key name name cannot be empty");
 			return res;
@@ -695,6 +699,10 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 		}
 		if (isTempSchema(t->s) != isTempSchema(ft->s)) { /* disable foreign key between temp and non temp */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
+			return SQL_ERR;
+		}
+		if (isUnloggedTable(t) != isUnloggedTable(ft)) { /* disable foreign key between logged and unlogged */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables");
 			return SQL_ERR;
 		}
 		if (!ns || !*ns) { /* add this to be safe */
