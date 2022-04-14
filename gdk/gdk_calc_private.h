@@ -154,8 +154,10 @@
 #ifdef HAVE_HGE
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
-#else
-#if defined(_MSC_VER) && defined(_M_AMD64)
+#elif HAVE___INT128
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
+	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, __int128, on_overflow)
+#elif defined(_MSC_VER) && defined(_M_AMD64)
 #include <intrin.h>
 #pragma intrinsic(_mul128)
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
@@ -205,7 +207,6 @@
 			nils++;						\
 		}							\
 	} while (0)
-#endif
 #endif	/* HAVE_HGE */
 #endif
 #define MULF4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
