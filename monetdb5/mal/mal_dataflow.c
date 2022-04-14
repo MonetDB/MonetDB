@@ -300,6 +300,7 @@ DFLOWworker(void *T)
 	srand((unsigned int) GDKusec());
 #endif
 	assert(t->errbuf != NULL);
+	t->errbuf[0] = 0;
 	GDKsetbuf(t->errbuf);		/* where to leave errors */
 	t->errbuf = NULL;
 

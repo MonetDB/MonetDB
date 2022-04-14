@@ -63,6 +63,7 @@ typedef struct expression {
 	 used:1,	/* used for quick dead code removal */
 	 symmetric:1; /* compare between symmetric */
 	sql_subtype	tpe;
+	int shared;		/* shared variable */
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 
@@ -77,7 +78,6 @@ typedef struct expression {
 #define UPD_NO_CONSTRAINT	4
 
 #define LEFT_JOIN		4
-#define REL_PARTITION		8
 #define MERGE_LEFT		16 /* used by merge statements */
 #define OUTER_ZERO		32
 
@@ -294,7 +294,11 @@ typedef struct relation {
 	 processed:1,   /* fully processed or still in the process of building */
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
-	 single:1;
+	 single:1,
+
+	 parallel:1,		/* parallel block */
+	 partition:2,		/* partitioned using table slices (1 left/2 right) */
+	 spb:1;				/* start a parallel block */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly

@@ -195,6 +195,7 @@ BATmaterialize(BAT *b, BUN cap)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
+	TSKdestroy(b);
 
 	*tail = (Heap) {
 		.farmid = BBPselectfarm(b->batRole, TYPE_oid, offheap),
@@ -322,6 +323,7 @@ VIEWunlink(BAT *b)
 			IMPSdecref(b->timprints, false);
 			b->timprints = NULL;
 		}
+		TSKdestroy(b);
 		MT_lock_unset(&b->batIdxLock);
 	}
 }
@@ -393,6 +395,7 @@ VIEWdestroy(BAT *b)
 	STRMPdestroy(b);
 	PROPdestroy(b);
 	VIEWunlink(b);
+	TSKdestroy(b);
 
 	MT_lock_set(&b->theaplock);
 	if (b->theap) {

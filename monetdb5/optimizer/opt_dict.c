@@ -28,6 +28,18 @@ allConstExcept(MalBlkPtr mb, InstrPtr p, int except)
 		return 1;
 }
 
+static int
+findPipelines(MalBlkPtr mb)
+{
+	for(int i = 0; i<mb->stop;i++) {
+		InstrPtr p = mb->stmt[i];
+
+		if (blockStart(p) && getModuleId(p) == languageRef && getFunctionId(p) == pipelinesRef)
+			return 1;
+	}
+	return 0;
+}
+
 str
 OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -41,7 +53,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-	if (mb->inlineProp)
+	if (mb->inlineProp || findPipelines(mb))
 		goto wrapup;
 
 	varisdict = GDKzalloc(2 * mb->vtop * sizeof(int));

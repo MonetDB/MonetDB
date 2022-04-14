@@ -30,6 +30,7 @@
 #include "rel_exp.h"
 #include "rel_dump.h"
 #include "rel_bin.h"
+#include "rel_physical.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -130,9 +131,11 @@ sql_symbol2relation(backend *be, symbol *sym)
 	if (rel)
 		rel = sql_processrelation(be->mvc, rel, profile, 1, extra_opts, extra_opts);
 	if (rel)
-		rel = rel_partition(be->mvc, rel);
+		rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
+	if (rel && (be->mvc->emode != m_plan || (GDKdebug & FORCEMITOMASK) == 0))
+		rel = rel_physical(be->mvc, rel);
 	be->reloptimizer = GDKusec() - Tbegin;
 	return rel;
 }
@@ -5089,7 +5092,6 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	return MAL_SUCCEED;
 }
-
 
 #include "wlr.h"
 #include "sql_cat.h"

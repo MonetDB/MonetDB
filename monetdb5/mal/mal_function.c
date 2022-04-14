@@ -535,7 +535,7 @@ void traceFunction(component_t comp, MalBlkPtr mb, MalStkPtr stk, int flg)
 void
 setVariableScope(MalBlkPtr mb)
 {
-	int pc, k, depth=0, dflow= -1;
+	int pc, k, depth=0, dflow= -1, jump = 0, pp = -1;
 	InstrPtr p;
 
 	/* reset the scope admin */
@@ -558,10 +558,13 @@ setVariableScope(MalBlkPtr mb)
 			continue;
 
 		if( blockStart(p)){
-			if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")==0){
+			if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 &&
+					(strcmp(getFunctionId(p),"dataflow")==0 || (pp=(strcmp(getFunctionId(p),"pipelines")==0)))){
 				if( dflow != -1)
 					addMalException(mb,"setLifeSpan nested dataflow blocks not allowed" );
+				pp = pc;
 				dflow= depth;
+				jump= p->jump;
 			} else
 				depth++;
 		}
@@ -577,10 +580,10 @@ setVariableScope(MalBlkPtr mb)
 			}
 			if (k < p->retc )
 				setVarUpdated(mb,v, pc);
-			if ( getVarScope(mb,v) == depth )
-				setVarEolife(mb,v,pc);
+			if (getVarEolife(mb,v) < pc && getVarScope(mb,v) == depth )
+				setVarEolife(mb,v, (((k >= p->retc && getVarDeclared(mb, v) < pp) || (k >= p->inout && k < p->retc)) && jump > 0)?jump:pc);
 
-			if ( k >= p->retc && getVarScope(mb,v) < depth )
+			if ( k >= p->retc && getVarScope(mb,v) < depth)
 				setVarEolife(mb,v,-1);
 		}
 		/*
@@ -595,8 +598,11 @@ setVariableScope(MalBlkPtr mb)
 			else if ( getVarEolife(mb,k) == -1 )
 				setVarEolife(mb,k,pc);
 
-			if( dflow == depth)
+			if( dflow == depth) {
 				dflow= -1;
+				jump = -1;
+				pp = -1;
+			}
 			else depth--;
 		}
 		if( blockReturn(p)){
@@ -695,13 +701,14 @@ str
 chkDeclarations(MalBlkPtr mb){
 	int pc,i, k,l;
 	InstrPtr p, sig;
-	short blks[MAXDEPTH], top= 0, blkId=1;
+	short blks[MAXDEPTH], top= 0, blkId=1, curBlk;
 	int dflow = -1;
 	str msg = MAL_SUCCEED;
 
 	if( mb->errors)
 		return GDKstrdup(mb->errors);
 	blks[top] = blkId;
+	curBlk = blkId;
 
 	/* initialize the scope */
 	for(i=0; i< mb->vtop; i++)
@@ -710,7 +717,7 @@ chkDeclarations(MalBlkPtr mb){
 	/* all signature variables are declared at outer level */
 	sig= getInstrPtr(mb,0);
 	for(k=0; k<sig->argc; k++)
-		setVarScope(mb, getArg(sig, k), blkId);
+		setVarScope(mb, getArg(sig, k), curBlk);
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
@@ -773,15 +780,17 @@ chkDeclarations(MalBlkPtr mb){
 				if( top == MAXDEPTH-2)
 					throw(MAL,"chkFlow",  "%s.%s too deeply nested  MAL program",  getModuleId(sig), getFunctionId(sig));
 				blkId++;
-				if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")== 0){
+				if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 &&
+					(strcmp(getFunctionId(p),"dataflow")==0 || strcmp(getFunctionId(p),"pipelines")==0)){
 					if( dflow != -1)
 						throw(MAL,"chkFlow",  "%s.%s setLifeSpan nested dataflow blocks not allowed", getModuleId(sig), getFunctionId(sig));
 					dflow= blkId;
 				}
 				blks[++top]= blkId;
+				curBlk = blkId;
 			}
 			if( blockExit(p) && top > 0 ){
-				if( dflow == blkId){
+				if( dflow == curBlk){
 					dflow = -1;
 				} else
 				/*
@@ -795,6 +804,7 @@ chkDeclarations(MalBlkPtr mb){
 					clrVarInit(mb,l);
 				}
 			    top--;
+				curBlk=blks[top];
 			}
 		}
 	}

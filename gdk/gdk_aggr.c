@@ -1031,7 +1031,7 @@ mskCountOnes(BAT *b, struct canditer *ci)
 }
 
 gdk_return
-BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
+BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1039,7 +1039,15 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	const char *err;
 	const char *algo = NULL;
 	lng t0 = 0;
+#ifdef HAVE_HGE
+	hge result = 0;
+#else
+	lng result = 0;
+#endif
+	void *res = &result;
 
+	if (!inout)
+		res = resout;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
@@ -1195,6 +1203,54 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 			 res, true, bi.type, tp, &min, min, max,
 			 skip_nils, abort_on_error, nil_if_empty, __func__, &algo);
 	bat_iterator_end(&bi);
+	if (inout) {
+		switch (tp) {
+		case TYPE_bte:
+			if (is_bte_nil(*(bte*)resout))
+				* (bte *) resout = *(bte*) res;
+			else if (!is_bte_nil(*(bte*)res))
+				* (bte *) resout += *(bte*) res;
+			break;
+		case TYPE_sht:
+			if (is_sht_nil(*(sht*)resout))
+				* (sht *) resout = *(sht*) res;
+			else if (!is_sht_nil(*(sht*)res))
+				* (sht *) resout += *(sht*) res;
+			break;
+		case TYPE_int:
+			if (is_int_nil(*(int*)resout))
+				* (int *) resout = *(int*) res;
+			else if (!is_int_nil(*(int*)res))
+				* (int *) resout += *(int*) res;
+			break;
+		case TYPE_flt:
+			if (is_flt_nil(*(flt*)resout))
+				* (flt *) resout = *(flt*) res;
+			else if (!is_flt_nil(*(flt*)res))
+				* (flt *) resout += *(flt*) res;
+			break;
+		case TYPE_lng:
+			if (is_lng_nil(*(lng*)resout))
+				* (lng *) resout = *(lng*) res;
+			else if (!is_lng_nil(*(lng*)res))
+				* (lng *) resout += *(lng*) res;
+			break;
+		case TYPE_dbl:
+			if (is_dbl_nil(*(dbl*)resout))
+				* (dbl *) resout = *(dbl*) res;
+			else if (!is_dbl_nil(*(dbl*)res))
+				* (dbl *) resout += *(dbl*) res;
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			if (is_hge_nil(*(hge*)resout))
+				* (hge *) resout = *(hge*) res;
+			else if (!is_hge_nil(*(hge*)res))
+				* (hge *) resout += *(hge*) res;
+			break;
+#endif
+		}
+	}
 	if (algo)
 		MT_thread_setalgorithm(algo);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
@@ -1676,7 +1732,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 }
 
 gdk_return
-BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
+BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1685,6 +1741,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	const char *err;
 	lng t0 = 0;
 
+	(void)inout;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
@@ -3689,7 +3746,7 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 /* return pointer to smallest non-nil value in b, or pointer to nil if
  * there is no such value (no values at all, or only nil) */
 void *
-BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
+BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 {
 	const void *res = NULL;
 	size_t s;
@@ -3831,8 +3888,13 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	} else {
 		s = ATOMsize(ATOMtype(bi.type));
 	}
-	if (aggr != NULL)	/* else: malloc error */
-		memcpy(aggr, res, s);
+	if (aggr != NULL) {	/* else: malloc error */
+		if (!inout ||
+		    ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
+		    (ATOMcmp(b->ttype, res, ATOMnilptr(b->ttype)) != 0 &&
+		    ATOMcmp(b->ttype, res, aggr) < 0))
+			memcpy(aggr, res, s);
+	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
@@ -3842,7 +3904,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 void *
 BATmin(BAT *b, void *aggr)
 {
-	return BATmin_skipnil(b, aggr, 1);
+	return BATmin_skipnil(b, aggr, 1, false);
 }
 
 BAT *
@@ -3854,7 +3916,7 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 }
 
 void *
-BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
+BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 {
 	const void *res = NULL;
 	size_t s;
@@ -3983,8 +4045,13 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 	} else {
 		s = ATOMsize(ATOMtype(bi.type));
 	}
-	if (aggr != NULL)	/* else: malloc error */
-		memcpy(aggr, res, s);
+	if (aggr != NULL) {	/* else: malloc error */
+		if (!inout ||
+		    ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
+		    (ATOMcmp(b->ttype, res, ATOMnilptr(b->ttype)) != 0 &&
+		    ATOMcmp(b->ttype, res, aggr) > 0))
+			memcpy(aggr, res, s);
+	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
@@ -3994,7 +4061,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 void *
 BATmax(BAT *b, void *aggr)
 {
-	return BATmax_skipnil(b, aggr, 1);
+	return BATmax_skipnil(b, aggr, 1, false);
 }
 
 

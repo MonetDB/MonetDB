@@ -595,6 +595,7 @@ BATclear(BAT *b, bool force)
 	OIDXdestroy(b);
 	STRMPdestroy(b);
 	PROPdestroy(b);
+	TSKdestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	MT_lock_set(&b->theaplock);

@@ -26,10 +26,10 @@ set optimizer='sequential_pipe'
 query T python .explain.function_histogram
 explain select count(*) from tables
 ----
-aggr.count
-2
 aggr.sum
 1
+algebra.fetch
+3
 algebra.thetaselect
 2
 bat.append
@@ -37,8 +37,18 @@ bat.append
 bat.new
 1
 bat.single
-1
+4
+iaggr.count
+2
+language.pipelines
+3
+lockedaggr.sum
+3
+pipeline.counter
+3
 querylog.define
+1
+slicer.slice
 1
 sql.bind
 2

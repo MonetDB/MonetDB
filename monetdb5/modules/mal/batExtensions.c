@@ -105,8 +105,10 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 		throw(MAL, "bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	*ret = b->batCacheid;
-	BBPkeepref(b);
+	//BBPkeepref(*ret = b->batCacheid);
+	//leave writable
+	BBPretain(*ret = b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

@@ -44,7 +44,7 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		return;
 	}
 
-	if (!rel)
+	if (!rel || rel_is_ref(rel))
 		return;
 	switch (rel->op) {
 	case op_basetable: {
@@ -78,6 +78,7 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 	case op_semi:
 	case op_anti:
 	case op_groupby:
+		return ;
 	case op_project:
 	case op_select:
 	case op_topn:
@@ -100,12 +101,100 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 	}
 }
 
-static sql_rel *
+#define REL_PARTITION 1
+#define SPB 2
+#define EPB 3
+#define NPB 4
+
+static int
+rel_mark_partition(sql_rel *rel)
+{
+	int res = 0;
+
+	if (!rel)
+		return 0;
+	switch (rel->op) {
+	case op_basetable: {
+	case op_table:
+		return rel->partition;
+	}
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_union:
+	case op_inter:
+	case op_except:
+	case op_insert:
+	case op_update:
+	case op_delete:
+	case op_merge:
+		if (rel->l) {
+			res = rel_mark_partition(rel->l);
+			if (res == REL_PARTITION)
+				rel->spb = 1;
+			if (res) {
+				rel->partition = 1;
+				res = EPB;
+			}
+		}
+		if (!res && rel->r) {
+			res = rel_mark_partition(rel->r);
+			if (res == REL_PARTITION)
+				rel->spb = 1;
+			if (res) {
+				rel->partition = 2;
+				res = EPB;
+			}
+		}
+		break;
+	case op_semi:
+	case op_anti:
+	case op_groupby:
+	case op_project:
+	case op_select:
+	case op_topn:
+	case op_sample:
+	case op_truncate:
+		if ((is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1))
+			return 0;
+		if (rel->l)
+			res = rel_mark_partition(rel->l);
+		if (res == REL_PARTITION || res == EPB) {
+			rel->partition = 1;
+			if (is_semi(rel->op) && res == REL_PARTITION)
+				rel->spb = 1;
+		}
+		break;
+	case op_ddl:
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq/* || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
+			if (rel->l) {
+				res = rel_mark_partition(rel->l);
+				if (res)
+					rel->partition = res;
+			}
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l) {
+				res = rel_mark_partition(rel->l);
+				if (res)
+					rel->partition = res;
+			} else if (!res && rel->r) {
+				res = rel_mark_partition(rel->r);
+				if (res)
+					rel->partition = 2;
+			}
+		}
+		break;
+	}
+	return res;
+}
+
+static int
 _rel_partition(mvc *sql, sql_rel *rel)
 {
 	list *tables = sa_list(sql->sa);
 	/* find basetable relations */
-	/* mark one (largest) with REL_PARTITION */
+	/* mark one (largest) with partition */
 	find_basetables(sql, rel, tables);
 	if (list_length(tables)) {
 		sql_rel *r;
@@ -125,9 +214,9 @@ _rel_partition(mvc *sql, sql_rel *rel)
 			;
 		r = n->data;
 		/*  TODO, we now pick first (okay?)! In case of self joins we need to pick the correct table */
-		r->flag = REL_PARTITION;
+		r->partition = 1;
 	}
-	return rel;
+	return rel_mark_partition(rel);
 }
 
 static int
@@ -154,48 +243,151 @@ has_groupby(sql_rel *rel)
 	return 0;
 }
 
-sql_rel *
-rel_partition(mvc *sql, sql_rel *rel)
+/*
+ * REL_PARTITION (need partition via bind).
+ */
+
+static bool
+rel_groupby_partition_safe(sql_rel *rel)
 {
-	if (mvc_highwater(sql))
-		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+	for(node *n = rel->exps->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (is_aggr(e->type)) {
+			sql_subfunc *sf = e->f;
+
+			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "avg") == 0 ||
+			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "count") == 0 /*||
+			    strcmp(sf->func->base.name, "prod") == 0*/)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+static int
+rel_partition_(mvc *sql, sql_rel *rel, int pb)
+{
+	int res = 0, lres = 0, rres = 0;
+	if (mvc_highwater(sql)) {
+		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return 0;
+	}
+	if (rel_is_ref(rel))
+		pb = 0;
 
 	if (is_basetable(rel->op)) {
-		rel->flag = REL_PARTITION;
-	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_groupby(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
+		if (pb) {
+			rel->partition = 1;
+			res = REL_PARTITION;
+		}
+	} else if (is_groupby(rel->op)) {
+		bool safe = rel_groupby_partition_safe(rel);
 		if (rel->l)
-			rel_partition(sql, rel->l);
-	} else if (is_semi(rel->op) || is_set(rel->op) || is_merge(rel->op)) {
+			res = rel_partition_(sql, rel->l, safe?SPB:pb);
+		if (safe) {
+			rel->parallel = 1;
+			if (res == REL_PARTITION)
+				rel->spb = 1;
+			if (pb) {
+				rel->partition = 1;
+				if (res)
+					res = SPB;
+			} else
+				res = EPB;
+		}
+	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
+		if (pb && is_simple_project(rel->op) && rel->r)
+			return 0;
+		//if (pb && exps_have_unsafe(rel->exps, 1))
+		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1))
+			return 0;
 		if (rel->l)
-			rel_partition(sql, rel->l);
-		if (rel->r)
-			rel_partition(sql, rel->r);
+			res = rel_partition_(sql, rel->l, pb);
+		if (res == SPB)
+			rel->spb = 1;
+		if (res == REL_PARTITION)
+			rel->partition = 1;
+	} else if (is_semi(rel->op)) {
+		//if (rel->op == op_anti) /* no partitioning for anti joins jet */
+			//return 0;
+		if (rel->l)
+			res = rel_partition_(sql, rel->l, pb);
+		if (!res)
+			return 0;
+		if (res == EPB || res == REL_PARTITION) {
+			rel->partition = 1;
+			if (pb && res == REL_PARTITION)
+				rel->spb = 1;
+		}
+		sql_rel *r = rel->r;
+		if (!is_basetable(r->op))
+		   return 0;
+	} else if (is_set(rel->op) || is_merge(rel->op)) {
+		if (rel->l)
+			lres = rel_partition_(sql, rel->l, 0);
+		if (rel->r && !is_semi(rel->op))
+			rres = rel_partition_(sql, rel->r, 0);
+		if (lres == EPB)
+			rel->partition = 1;
+		if (rres == EPB)
+			rel->partition = 1;
+		if (pb)
+			rel->spb = 1;
+		if (!lres || !rres)
+			return 0;
+		res = pb;
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
 		if (rel->r && rel->card <= CARD_AGGR)
-			rel_partition(sql, rel->r);
+			res = rel_partition_(sql, rel->r, pb);
 	} else if (is_join(rel->op)) {
-		if (has_groupby(rel->l) || has_groupby(rel->r)) {
-			if (rel->l)
-				rel_partition(sql, rel->l);
-			if (rel->r)
-				rel_partition(sql, rel->r);
-		} else
-			_rel_partition(sql, rel);
+		if (pb && is_outerjoin(rel->op))
+			return 0;
+		/* TODo also move this into rel_partition_ */
+		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
+		if (0 && (l || r)) {
+			int lres = rel_partition_(sql, rel->l, 0);
+			int rres = rel_partition_(sql, rel->r, 0);
+			if (!lres || !rres)
+				return 0;
+			if (l && lres == EPB && !r && rres == REL_PARTITION)
+				res = SPB;
+			if (pb) {
+				rel->partition = l?1:2;
+				rel->spb = 1;
+			}
+		} else {
+			if (is_left(rel->op))
+				return rel_partition_(sql, rel->l, pb);
+			if (pb)
+				res =_rel_partition(sql, rel);
+		}
 	} else if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
-				rel_partition(sql, rel->l);
+				res = rel_partition_(sql, rel->l, pb);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				rel_partition(sql, rel->l);
+				res = rel_partition_(sql, rel->l, pb);
 			if (rel->r)
-				rel_partition(sql, rel->r);
+				res = rel_partition_(sql, rel->r, pb);
 		}
 	} else if (rel->op == op_table) {
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
-			rel_partition(sql, rel->l);
+			res = rel_partition_(sql, rel->l, pb);
+		return 0;
 	} else {
 		assert(0);
 	}
-	return rel;
+	if (rel_is_ref(rel))
+		return 0;
+	return res;
+}
+
+int
+rel_partition(mvc *sql, sql_rel *rel)
+{
+	return rel_partition_(sql, rel, 0);
 }

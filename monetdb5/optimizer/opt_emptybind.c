@@ -101,6 +101,12 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			continue;
 		}
 
+		if (p && p->inout >= 0) {
+			for (int i = p->inout; i < p->retc; i++)
+				empty[getArg(p,i)] = 0;
+			continue;
+		}
+
 		// any of these instructions leave a non-empty BAT behind
 		if(p && getModuleId(p) == sqlRef && isUpdateInstruction(p)){
 			if ( etop == esize){

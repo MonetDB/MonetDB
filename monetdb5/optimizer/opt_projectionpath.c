@@ -230,7 +230,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				/* inject the complete sub-path */
 
 				if ( getFunctionId(p) == projectionRef){
-					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){
+					if( r &&  getModuleId(r)== algebraRef && ( (getFunctionId(r)== projectionRef && r->argc == 3)  || getFunctionId(r)== projectionpathRef) ){
 						for(k= r->retc; k<r->argc; k++)
 							q = addArgument(mb,q,getArg(r,k));
 					} else

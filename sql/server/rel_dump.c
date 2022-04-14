@@ -389,6 +389,11 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 
 	print_indent(sql, fout, depth, decorate);
 
+	if ((GDKdebug & FORCEMITOMASK) == 0 && rel->spb)
+			mnstr_printf(fout, " start ");
+	if ((GDKdebug & FORCEMITOMASK) == 0 && rel->parallel)
+			mnstr_printf(fout, " || ");
+
 	if (is_single(rel))
 		mnstr_printf(fout, "single ");
 
@@ -582,13 +587,17 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	default:
 		assert(0);
 	}
+	if ((GDKdebug & FORCEMITOMASK) == 0 && rel->partition)
+			mnstr_printf(fout, " %c PARTITION", rel->partition==1?'L':rel->partition == 2?'R':' ');
 	if (rel->p) {
 		prop *p = rel->p;
 		char *pv;
 
 		for (; p; p = p->p) {
-			pv = propvalue2string(sql->ta, p);
-			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			if (p->kind != PROP_COUNT || (GDKdebug & FORCEMITOMASK) == 0) {
+				pv = propvalue2string(sql->ta, p);
+				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			}
 		}
 	}
 }

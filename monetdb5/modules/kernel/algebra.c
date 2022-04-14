@@ -151,9 +151,9 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil);
+			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil, false);
 		} else {
-			p = BATmin_skipnil(b, result, *skipnil);
+			p = BATmin_skipnil(b, result, *skipnil, false);
 			if ( p != result )
 				msg = createException(MAL, "algebra.min", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
@@ -187,9 +187,9 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil);
+			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil, false);
 		} else {
-			p = BATmax_skipnil(b, result, *skipnil);
+			p = BATmax_skipnil(b, result, *skipnil, false);
 			if ( p != result )
 				msg = createException(MAL, "algebra.max", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
@@ -1009,7 +1009,7 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (b->ttype == TYPE_msk || mask_cand(b)) {
-		BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false);
+		BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false, false);
 	} else if (*ignore_nils) {
 		*result = (lng) BATcount_no_nil(b, s);
 	} else {

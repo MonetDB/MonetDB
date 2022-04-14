@@ -6,11 +6,12 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
-#ifndef _REL_PARTITION_H_
-#define _REL_PARTITION_H_
+#ifndef _REL_PHYSICAL_H_
+#define _REL_PHYSICAL_H_
 
-#include "rel_semantic.h"
+#include "sql_relation.h"
+#include "sql_mvc.h"
 
-extern int rel_partition(mvc *sql, sql_rel *rel);
+extern sql_rel *rel_physical(mvc *sql, sql_rel *rel);
 
-#endif /*_REL_PARTITION_H_*/
+#endif /*_REL_PHYSICAL_H_*/
