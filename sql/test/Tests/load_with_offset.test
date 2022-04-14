@@ -136,6 +136,10 @@ NULL
 a
 b
 
+statement error 42000!syntax error in: "copy 9 records into my_test from stdin using delimiters '|',E'\n' null as '' no"
+COPY 9 RECORDS INTO my_test FROM stdin USING DELIMITERS '|',E'\n' NULL as '' NO CONSTRAINT
+<COPY_INTO_DATA>
+
 statement ok
 DROP   TABLE my_test 
 

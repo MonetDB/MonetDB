@@ -1527,7 +1527,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 }
 
 static sql_rel *
-copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int best_effort, int constraint, dlist *fwf_widths, int onclient, int escape)
+copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int best_effort, dlist *fwf_widths, int onclient, int escape)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL;
@@ -1711,13 +1711,11 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			return NULL;
 	}
 	rel = rel_insert_table(query, t, tname, rel);
-	if (rel && !constraint)
-		rel->flag |= UPD_NO_CONSTRAINT;
 	return rel;
 }
 
 static sql_rel *
-bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int constraint, int onclient, endianness endian)
+bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int onclient, endianness endian)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -1793,8 +1791,6 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
 	res = rel_insert_table(query, t, t->base.name, res);
-	if (res && !constraint)
-		res->flag |= UPD_NO_CONSTRAINT;
 	return res;
 }
 
@@ -2012,10 +2008,9 @@ rel_updates(sql_query *query, symbol *s)
 				l->h->next->next->next->next->next->data.lval,
 				l->h->next->next->next->next->next->next->data.sval,
 				l->h->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->data.lval,
-				l->h->next->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->next->data.i_val);
+				l->h->next->next->next->next->next->next->next->next->data.lval,
+				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -2023,7 +2018,7 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val, (endianness) l->h->next->next->next->next->next->data.i_val);
+		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, (endianness) l->h->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;
