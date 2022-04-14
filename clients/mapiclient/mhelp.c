@@ -115,9 +115,9 @@ SQLhelp sqlhelp1[] = {
 	{"COPY INTO",
 	 "Parse a csv file into a table or write a query result to a csv file",
 	 "COPY [nrofrecords] INTO qname [column_list] FROM string [',' ...] [headerlist] [ON { CLIENT | SERVER }] [ separators]\n"
-	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [FWF '(' integer [',' ...] ')'\n"
+	 " [NULL [AS] string] [BEST EFFORT] [FWF '(' integer [',' ...] ')'\n"
 	 "COPY [nrofrecords] INTO qname [column_list] FROM STDIN [headerlist] [ separators]\n"
-	 " [NULL [AS] string] [LOCKED] [BEST EFFORT]\n"
+	 " [NULL [AS] string] [BEST EFFORT]\n"
 	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [separators] [NULL [AS] string]",
 	 "nrofrecords,qname,column_list,headerlist,separators",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/"},
