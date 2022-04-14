@@ -939,6 +939,38 @@ end:
 	return msg;
 }
 
+static struct timeval start_time = { 0 };
+
+static double
+elapsed_ms(void)
+{
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	double sec = now.tv_sec - start_time.tv_sec;
+	double usec = now.tv_usec - start_time.tv_usec;
+	return sec + usec / 1000000;
+}
+
+static str
+COPYreset_clock(bit *ret)
+{
+	gettimeofday(&start_time, NULL);
+	fprintf(stderr, "RESET CLOCK\n");
+	return MAL_SUCCEED;
+}
+
+static str
+COPYwork(bit *ret, lng *sleep, str *msg, int *iter)
+{
+	const char *name = MT_thread_getname();
+	int ticks = (int) (*sleep * 1000);
+	fprintf(stderr, "START time=%08.3f thread='%s' %s iter=%d\n", elapsed_ms(), name, *msg, *iter);
+	MT_sleep_ms(ticks);
+	fprintf(stderr, "STOP  time=%08.3f thread='%s' %s iter=%d\n", elapsed_ms(), name, *msg, *iter);
+	*ret = true;
+	return MAL_SUCCEED;
+}
+
 
 static mel_func copy_init_funcs[] = {
  command("copy", "read", COPYread, true, "Clear the BAT and read 'block_size' bytes into it from 's'",
@@ -1047,6 +1079,14 @@ static mel_func copy_init_funcs[] = {
  command("copy", "buf2str", COPYbuf2str, false, "turn bat[:bte] into str", args(1, 2,
 	arg("str", str),
 	batarg("", bte),
+ )),
+
+ command("copy", "reset_clock", COPYreset_clock, true, "reset the work clock", args(1, 1,
+	arg("", bit)
+ )),
+ command("copy", "work", COPYwork, true, "pretend to do some work", args(1, 4,
+	arg("", bit),
+	arg("sleep", lng), arg("msg", str), arg("arg", int)
  )),
 
  { .imp=NULL }

@@ -187,10 +187,62 @@ emit_onserver(
 	emit_send(mb, var_block_channel, bte_bat_type, var_next_block);
 }
 
+static stmt *
+rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+	q = newStmt(mb, "copy", "reset_clock");
+
+	q = newStmt(mb, languageRef, pipelinesRef);
+	q->barrier = BARRIERsymbol;
+	setArgType(mb, q, 0, TYPE_bit);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+	q = pushInt(mb, q, 0);
+	int var_loop = getArg(q, 0);
+	int var_iter_id = getArg(q, 1);
+	// int var_handle = getArg(q, 2);
+
+	q = newStmt(mb, "copy", "work");
+	q = pushLng(mb, q, 1);
+	q = pushStr(mb, q, "FOO");
+	q = pushArgument(mb, q, var_iter_id);
+
+	q = newStmt(mb, "copy", "work");
+	q = pushLng(mb, q, 3);
+	q = pushStr(mb, q, "BAR");
+	q = pushArgument(mb, q, var_iter_id);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	getDestVar(q) = var_loop;
+
+	q = newAssignment(mb);
+	q = pushLng(mb, q, 2);
+	int var_total_row_count = getDestVar(q);
+
+	add_to_rowcount_accumulator(be, var_total_row_count);
+	stmt *dummy_stmt = stmt_none(be);
+	return dummy_stmt;
+}
 
 stmt *
 rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
+	switch (parallel_copy_level()) {
+		case 0:
+			assert(0 /* how did we get here, then? */);
+			return NULL;
+		case 1:
+			break; // main case, below
+		case 2:
+			return rel2bin_dummy_loop(be, rel, refs, copyfrom);
+		default:
+			assert(0 /* invalid parallel level */);
+			return NULL;
+	}
 	(void)rel;
 	(void)refs;
 	const int block_size = get_copy_blocksize();
