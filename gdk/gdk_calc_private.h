@@ -155,22 +155,22 @@
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
 #else
-#if defined(HAVE__MUL128)
+#if defined(_MSC_VER)
 #include <intrin.h>
 #pragma intrinsic(_mul128)
-#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)		\
-	do {							\
-		lng clo, chi;					\
-		clo = _mul128((lng) (lft), (lng) (rgt), &chi);	\
-		if ((chi == 0 && clo >= 0 && clo <= (max)) ||	\
-		    (chi == -1 && clo < 0 && clo >= -(max))) {	\
-			(dst) = clo;				\
-		} else {					\
-			if (abort_on_error)			\
-				on_overflow;			\
-			(dst) = lng_nil;			\
-			nils++;					\
-		}						\
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
+	do {								\
+		__int64 clo, chi;					\
+		clo = _mul128((__int64) (lft), (__int64) (rgt), &chi);	\
+		if ((chi == 0 && clo >= 0 && clo <= (max)) ||		\
+		    (chi == -1 && clo < 0 && clo >= -(max))) {		\
+			(dst) = (lng) clo;				\
+		} else {						\
+			if (abort_on_error)				\
+				on_overflow;				\
+			(dst) = lng_nil;				\
+			nils++;						\
+		}							\
 	} while (0)
 #else
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
@@ -319,13 +319,14 @@ BUN dofsum(const void *restrict values, oid seqb,
 		    bool nil_if_empty)
 	__attribute__((__visibility__("hidden")));
 
-/* format strings for the seven/eight basic types we deal with */
+/* format strings for the seven/eight basic types we deal with
+ * these are only used in error messages */
 #define FMTbte	"%d"
 #define FMTsht	"%d"
 #define FMTint	"%d"
 #define FMTlng	LLFMT
 #ifdef HAVE_HGE
-#define FMThge	"%.40g"
+#define FMThge	"%.40Lg (approx. value)"
 #endif
 #define FMTflt	"%.9g"
 #define FMTdbl	"%.17g"
@@ -338,7 +339,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 #define CSTint
 #define CSTlng
 #ifdef HAVE_HGE
-#define CSThge  (dbl)
+#define CSThge  (long double)
 #endif
 #define CSTflt
 #define CSTdbl

@@ -336,20 +336,41 @@ stmt_none(backend *be)
 	return stmt_create(be->mvc->sa, st_none);
 }
 
-static int
-create_bat(MalBlkPtr mb, int tt)
+InstrPtr
+stmt_bat_new(backend *be, int tt, lng estimate)
 {
-	InstrPtr q = newStmt(mb, batRef, newRef);
+	InstrPtr q = newStmt(be->mb, batRef, newRef);
 
 	if (q == NULL)
-		return -1;
-	setVarType(mb, getArg(q, 0), newBatType(tt));
-	q = pushType(mb, q, tt);
-	return getDestVar(q);
+		//return -1;
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	if (estimate > 0)
+		q = pushInt(be->mb, q, (int)estimate);
+	//return getDestVar(q);
+	return q;
+}
+
+InstrPtr
+stmt_hash_new(backend *be, int tt, lng estimate, int parent)
+{
+	InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
+
+	if (q == NULL)
+		//return -1;
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	q = pushInt(be->mb, q, (int)estimate);
+	if (parent)
+		q = pushArgument(be->mb, q, parent);
+	//return getDestVar(q);
+	return q;
 }
 
 static int *
-dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
+dump_table(sql_allocator *sa, backend *be, sql_table *t)
 {
 	int i = 0;
 	node *n;
@@ -359,13 +380,13 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 		return NULL;
 
 	/* tid column */
-	if ((l[i++] = create_bat(mb, TYPE_oid)) < 0)
+	if ((l[i++] = getDestVar(stmt_bat_new(be, TYPE_oid, -1))) < 0)
 		return NULL;
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
-		if ((l[i++] = create_bat(mb, c->type.type->localtype)) < 0)
+		if ((l[i++] = getDestVar(stmt_bat_new(be, c->type.type->localtype, -1))) < 0)
 			return NULL;
 	}
 	return l;
@@ -446,13 +467,12 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 stmt *
 stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level)
 {
-	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int *l;
 
 	(void)varname;
 	/* declared table */
-	if ((l = dump_table(be->mvc->sa, mb, t)) != NULL) {
+	if ((l = dump_table(be->mvc->sa, be, t)) != NULL) {
 		stmt *s = stmt_create(be->mvc->sa, st_var);
 
 		if (s == NULL) {
@@ -1122,6 +1142,7 @@ stmt_result(backend *be, stmt *s, int nr)
 	ns->aggr = s->aggr;
 	return ns;
 }
+
 
 /* limit maybe atom nil */
 stmt *
@@ -3432,6 +3453,8 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 	return r;
 }
 
+#define LANG_INT_OR_MAL(l)  ((l)==FUNC_LANG_INT || (l)==FUNC_LANG_MAL)
+
 stmt *
 stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 {
@@ -3560,7 +3583,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			}
 		}
 		/* special case for round function on decimals */
-		if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
+		if (LANG_INT_OR_MAL(f->func->lang) && strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
 			q = pushInt(mb, q, tpe->digits);
 			q = pushInt(mb, q, tpe->scale);
 		}
@@ -3696,8 +3719,7 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	const char *mod, *aggrfunc;
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
-	bool complex_aggr = false;
-	bool abort_on_error;
+	bool complex_aggr = false, abort_on_error = false;
 	int *stmt_nr = NULL;
 	int avg = 0;
 	int pipeline_mod = (pipeline && !grp);
@@ -3709,24 +3731,26 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	mod = sql_func_mod(op->func);
 	aggrfunc = backend_function_imp(be, op->func);
 
-	if (pipeline_mod && (strcmp(aggrfunc, "count") == 0 ||
+	if (LANG_INT_OR_MAL(op->func->lang)) {
+		if (strcmp(aggrfunc, "avg") == 0)
+			avg = 1;
+
+		if (pipeline_mod && (strcmp(aggrfunc, "count") == 0 ||
 						 strcmp(aggrfunc, "min") == 0 ||
 						 strcmp(aggrfunc, "max") == 0)) /* incremental versions TODO do for other aggr functions */
-		mod = putName("iaggr");
+			mod = putName("iaggr");
+		else if (pipeline_mod && avg && restype == TYPE_dbl)
+			mod = putName("batcalc");
 
-	if (strcmp(aggrfunc, "avg") == 0)
-		avg = 1;
-	if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
-		|| strcmp(aggrfunc, "str_group_concat") == 0)
-		complex_aggr = true;
-
-	if (avg && pipeline)
-		mod = putName("batcalc");
-	if (!pipeline && restype == TYPE_dbl)
-		avg = 0;
-	/* some "sub" aggregates have an extra argument "abort_on_error" */
-	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
-					strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
+		if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
+			|| strcmp(aggrfunc, "str_group_concat") == 0)
+			complex_aggr = true;
+		if (!pipeline && restype == TYPE_dbl)
+			avg = 0;
+		/* some "sub" aggregates have an extra argument "abort_on_error" */
+		abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
+						strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
+	}
 
 	int argc = 1
 		+ 2 * avg
@@ -3736,13 +3760,15 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		+ (op1->type != st_list ? 1 : list_length(op1->op4.lval))
 		+ (grp ? 4 : avg + 1);
 
-	if (ext) {
-		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4);
+	if (grp) {
+		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4), *end = aggrF;
 		if (!aggrF)
 			return NULL;
-		stpcpy(stpcpy(aggrF, "sub"), aggrfunc);
+		if (!pipeline)
+				end = stpcpy(aggrF, "sub");
+		stpcpy(end, aggrfunc);
 		aggrfunc = aggrF;
-		if (grp && (grp->nr < 0 || ext->nr < 0))
+		if ((grp && grp->nr < 0) || (ext && ext->nr < 0))
 			return NULL;
 
 		q = newStmtArgs(mb, mod, aggrfunc, argc);
@@ -3786,6 +3812,9 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
  		q = pushStr(mb, q, op->func->query);
 	}
 
+	if (grp && grp != op1 && pipeline)
+		q = pushArgument(mb, q, grp->nr);
+
 	if (op1->type != st_list) {
 		q = pushArgument(mb, q, op1->nr);
 	} else {
@@ -3802,23 +3831,30 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		}
 	}
 	if (grp) {
-		q = pushArgument(mb, q, grp->nr);
-		q = pushArgument(mb, q, ext->nr);
-		if (!pipeline && avg) /* push nil candidates */
-			q = pushNil(mb, q, TYPE_bat);
-		if (q == NULL)
-			return NULL;
+		if (!pipeline) {
+			q = pushArgument(mb, q, grp->nr);
+			q = pushArgument(mb, q, ext->nr);
+				if (LANG_INT_OR_MAL(op->func->lang) && avg) /* push nil candidates */
+					q = pushNil(mb, q, TYPE_bat);
+		}
+		if (LANG_INT_OR_MAL(op->func->lang)) {
+			if (!pipeline || (grp != op1 && strncmp(aggrfunc, "count", 5) == 0))
+				q = pushBit(mb, q, no_nil);
+			if (!pipeline) {
+				if (!avg && abort_on_error)
+					q = pushBit(mb, q, TRUE);
+			}
+		}
+	} else if (LANG_INT_OR_MAL(op->func->lang) && no_nil && strncmp(aggrfunc, "count", 5) == 0) {
 		q = pushBit(mb, q, no_nil);
-		if (!avg && abort_on_error)
-			q = pushBit(mb, q, TRUE);
-	} else if (no_nil && strncmp(aggrfunc, "count", 5) == 0) {
-		q = pushBit(mb, q, no_nil);
-	} else if (!nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
+	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
-	} else if (avg && !pipeline) { /* push candidates */
+	} else if (LANG_INT_OR_MAL(op->func->lang) && avg && (restype != TYPE_dbl || !pipeline)) { /* push candidates */
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, no_nil);
 	}
+	if (pipeline)
+		q->inout = 0;
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_aggr);
 		if(!s) {

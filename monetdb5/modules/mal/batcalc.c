@@ -1010,6 +1010,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, *s = NULL;
 	gdk_return ret;
 	int scale = 0;
+	bool inout = pci->inout >= 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -1030,7 +1031,16 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		stk->stk[pci->argv[pci->argc - 1]].vtype == TYPE_int) {
 		scale = *getArgReference_int(stk, pci, pci->argc - 1);
 	}
-	ret = BATcalcavg(b, s, &avg, &vals, scale);
+	if (inout) {
+		assert(pci->retc == 2);
+		avg = *getArgReference_dbl(stk, pci, 0);
+		lng lvals = *getArgReference_lng(stk, pci, 1);
+		if (is_lng_nil(lvals))
+			vals = 0;
+		else
+			vals = (BUN) lvals;
+	}
+	ret = BATcalcavg(b, s, &avg, &vals, scale, inout);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);

@@ -8,3 +8,4 @@ pkey-restart.Bug-7263
 delete-update.Bug-7267
 having-clauses.Bug-7278
 dump-table-data.Bug-7282
+NOT_WIN32?cudf-grouped-aggr.Bug-7285

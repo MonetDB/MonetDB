@@ -21,8 +21,8 @@ typedef struct Pipelines {
 	MT_Sema s;	/* threads wait on empty queues */
 	MT_Lock l;
 	int maxparts;
-	int counter;
 	int nr_workers;
+	ATOMIC_TYPE counter;
 	ATOMIC_TYPE workers;
 } Pipelines;
 

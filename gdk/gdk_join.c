@@ -4462,6 +4462,23 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				break;
 			}
 #else
+#ifdef HAVE___INT128_T
+			case TYPE_lng: {
+				if (is_lng_nil(*(const lng *) vr))
+					continue;
+				__int128_t v1 = (__int128_t) *(const lng *) vr, v2;
+				v2 = v1;
+				v1 -= *(const lng *)c1;
+				if (*(const lng *)vl <= v1 &&
+				    (!linc || *(const lng *)vl != v1))
+					continue;
+				v2 += *(const lng *)c2;
+				if (*(const lng *)vl >= v2 &&
+				    (!hinc || *(const lng *)vl != v2))
+					continue;
+				break;
+			}
+#else
 			case TYPE_lng: {
 				if (is_lng_nil(*(const lng *) vr))
 					continue;
@@ -4489,6 +4506,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				  nolmatch:
 				continue;
 			}
+#endif
 #endif
 #endif
 #ifdef HAVE_HGE

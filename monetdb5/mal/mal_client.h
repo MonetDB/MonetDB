@@ -43,7 +43,7 @@ typedef struct CLIENT_INPUT {
 } ClientInput;
 
 typedef struct CLIENT {
-	int idx;        /* entry in mal_clients */
+	int idx;        /* entry in mal_clients (-1 if free) */
 	oid user;       /* user id in the auth administration */
 	str username;	/* for event processor */
 	/*
