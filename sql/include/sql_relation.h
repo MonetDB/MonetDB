@@ -75,7 +75,6 @@ typedef struct expression {
 
 /* or-ed with the above TABLE_PROD_FUNC */
 #define UPD_COMP		2
-#define UPD_NO_CONSTRAINT	4
 
 #define LEFT_JOIN		4
 #define REL_PARTITION		8
