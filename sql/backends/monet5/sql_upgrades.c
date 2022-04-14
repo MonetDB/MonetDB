@@ -1208,7 +1208,7 @@ sql_update_jun2020(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop view sys.sessions;\n"
 			"drop function sys.sessions;\n"
- 			"create function sys.sessions()\n"
+			"create function sys.sessions()\n"
 			"returns table(\n"
 				"\"sessionid\" int,\n"
 				"\"username\" string,\n"
@@ -1219,7 +1219,7 @@ sql_update_jun2020(Client c, mvc *sql)
 				"\"querytimeout\" int,\n"
 				"\"workerlimit\" int,\n"
 				"\"memorylimit\" int)\n"
- 			" external name sql.sessions;\n"
+			" external name sql.sessions;\n"
 			"create view sys.sessions as select * from sys.sessions();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -4844,6 +4844,32 @@ sql_update_default(Client c, mvc *sql)
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	res_table_destroy(output);
+	output = NULL;
+
+	/* 10_sys_schema_extensions */
+	/* if the keyword LOCKED is in the list of keywords, upgrade */
+	pos = snprintf(buf, bufsize, "select keyword from sys.keywords where keyword = 'LOCKED';\n");
+	assert(pos < bufsize);
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)))
+		goto bailout;
+	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
+		pos = snprintf(buf, bufsize,
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"DELETE FROM sys.keywords WHERE keyword IN ('LOCKED');\n");
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		if (err == MAL_SUCCEED) {
+			pos = snprintf(buf, bufsize, "ALTER TABLE sys.keywords SET READ ONLY;\n");
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		}
+	}
+
+bailout:
+	if (output)
+		res_table_destroy(output);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
