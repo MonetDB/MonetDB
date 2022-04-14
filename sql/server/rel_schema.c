@@ -217,7 +217,8 @@ mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *t
 	sql_table *t = NULL;
 	table_types tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_MERGE_TABLE)?tt_merge_table:
-		(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+		(temp == SQL_REPLICA_TABLE)?tt_replica_table:
+		(temp == SQL_UNLOGGED_TABLE)?tt_unlogged_table:tt_table;
 
 	switch (mvc_create_table(&t, sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0)) {
 		case -1:
@@ -440,6 +441,10 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (isTempSchema(t->s) != isTempSchema(rt->s)) { /* disable foreign key between temp and non temp */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
+			return res;
+		}
+		if (isUnloggedTable(t) != isUnloggedTable(rt)) { /* disable foreign key between logged and unlogged */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables");
 			return res;
 		}
 		if (!ns || !*ns) { /* add this to be safe */
@@ -694,6 +699,10 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 		}
 		if (isTempSchema(t->s) != isTempSchema(ft->s)) { /* disable foreign key between temp and non temp */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
+			return SQL_ERR;
+		}
+		if (isUnloggedTable(t) != isUnloggedTable(ft)) { /* disable foreign key between logged and unlogged */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables");
 			return SQL_ERR;
 		}
 		if (!ns || !*ns) { /* add this to be safe */
@@ -1296,7 +1305,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 	mvc *sql = query->sql;
 	int tt = (temp == SQL_REMOTE)?tt_remote:
 		 (temp == SQL_MERGE_TABLE)?tt_merge_table:
-		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:
+		 (temp == SQL_UNLOGGED_TABLE)?tt_unlogged_table:tt_table;
 	bit properties = partition_def ? (bit) partition_def->data.lval->h->next->next->data.i_val : 0;
 	sql_table *t = NULL;
 	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
@@ -1390,7 +1400,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		if (!is_project(sq->op)) /* make sure sq is a projection */
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 
-		if (tt != tt_table && with_data)
+		if ((tt != tt_table && tt != tt_unlogged_table) && with_data)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot create %s 'with data'", action,
 							 TABLE_TYPE_DESCRIPTION(tt, properties));
 
