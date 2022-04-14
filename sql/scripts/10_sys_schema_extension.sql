@@ -158,7 +158,6 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('LOCAL'),
   ('LOCALTIME'),
   ('LOCALTIMESTAMP'),
-  ('LOCKED'),
   ('MATCH'),
   ('MATCHED'),
   ('MAXVALUE'),
