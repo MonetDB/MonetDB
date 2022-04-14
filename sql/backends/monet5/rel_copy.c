@@ -14,10 +14,10 @@
 #include "opt_prelude.h"
 
 
-bool
-parallel_copy_enabled(void)
+int
+parallel_copy_level(void)
 {
-	return GDKgetenv_istrue(COPY_PARALLEL_SETTING);
+	return GDKgetenv_int(COPY_PARALLEL_SETTING, 0);
 }
 
 static int

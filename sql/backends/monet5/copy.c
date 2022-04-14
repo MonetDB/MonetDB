@@ -865,18 +865,19 @@ COPYget_blocksize(int *blocksize)
 }
 
 static str
-COPYset_parallel(bit *dummy, bit *parallel)
+COPYset_parallel(bit *dummy, int *level)
 {
 	(void)dummy;
-	char *value = *parallel ? "true" : "false";
-	GDKsetenv(COPY_PARALLEL_SETTING, value);
+	char buf[20];
+	snprintf(buf, sizeof(buf), "%d", *level);
+	GDKsetenv(COPY_PARALLEL_SETTING, buf);
 	return MAL_SUCCEED;
 }
 
 static str
-COPYget_parallel(bit *parallel)
+COPYget_parallel(int *level)
 {
-	*parallel = GDKgetenv_istrue(COPY_PARALLEL_SETTING);
+	*level = GDKgetenv_int(COPY_PARALLEL_SETTING, 0);
 	return MAL_SUCCEED;
 }
 
@@ -1009,15 +1010,15 @@ static mel_func copy_init_funcs[] = {
  command("copy", "set_blocksize", COPYset_blocksize, true, "set the COPY block size", args(1, 2,
 	arg("blocksize", int)
  )),
- command("copy", "get_blocksize", COPYget_blocksize, true, "set the COPY block size", args(1, 1,
+ command("copy", "get_blocksize", COPYget_blocksize, true, "get the COPY block size", args(1, 1,
 	arg("", int)
  )),
 
- command("copy", "set_parallel", COPYset_parallel, true, "set the COPY block size", args(1, 2,
-	arg("blocksize", bit)
+ command("copy", "set_parallel", COPYset_parallel, true, "switch between different COPY INTO implementations", args(1, 2,
+	arg("", bit), arg("level", int)
  )),
- command("copy", "get_parallel", COPYget_parallel, true, "set the COPY block size", args(1, 1,
-	arg("", bit)
+ command("copy", "get_parallel", COPYget_parallel, true, "get the id of the current COPY INTO implementation", args(1, 1,
+	arg("", int)
  )),
 
  // temporary

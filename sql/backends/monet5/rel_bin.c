@@ -5282,13 +5282,10 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	dump_code_state.mb = be->mb;
 	// dump_code(0);
 
-	// If can_use_appendfrom doesn't return NULL, short circuit to
-	// the temporary dedicated code generator
-	if (parallel_copy_enabled()) {
+	if (parallel_copy_level() > 0) {
 		sql_exp *copyfrom = can_use_copyparpipe(rel);
-		if (copyfrom != NULL) {
+		if (copyfrom != NULL)
 			return rel2bin_copyparpipe(be, rel, refs, copyfrom);
-		}
 	}
 
 	mvc *sql = be->mvc;

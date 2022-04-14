@@ -20,7 +20,7 @@
 
 
 extern stmt *rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom);
-extern bool parallel_copy_enabled(void);
+extern int parallel_copy_level(void);
 
 
 #endif /*_REL_COPY_H_*/

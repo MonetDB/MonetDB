@@ -14,8 +14,8 @@ create procedure sys.copy_blocksize(size int)
 external name "copy".set_blocksize;
 
 create function sys.copy_parallel()
-returns bool
+returns int
 external name "copy".get_parallel;
 
-create procedure sys.copy_parallel(parallel bool)
+create procedure sys.copy_parallel(level int)
 external name "copy".set_parallel;
