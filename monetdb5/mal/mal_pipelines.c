@@ -189,7 +189,7 @@ PIPELINEworker(void *T)
 		p->p = s;
 		p->wid = (int) ATOMIC_INC(&s->workers);
 		p->wls = NULL;
-		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = (int) ATOMIC_INC(&s->counter);
+		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = PIPELINEnext_counter(p);
 		stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
 		/* the maxparts (arg 3) is generated ie constant value on the stack */
 		str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);
@@ -274,7 +274,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->stop = stoppc;
 	s->stk = stk;
 	s->maxparts = maxparts;
-	ATOMIC_INIT(&s->counter, -1);
+	ATOMIC_INIT(&s->master_counter, -1);
 	s->nr_workers = GDKnr_threads;
 	ATOMIC_INIT(&s->workers, -1);
 	ATOMIC_PTR_INIT(&s->error, NULL);
@@ -331,4 +331,11 @@ stopMALpipelines(void)
 		}
 	}
 	MT_lock_unset(&pipelineLock);
+}
+
+int
+PIPELINEnext_counter(Pipeline *p)
+{
+	p->cur = (int) ATOMIC_INC(&p->p->master_counter);
+	return p->cur;
 }

@@ -180,7 +180,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *res = getArgReference_int(stk, pci, 0);
 	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 1);
 
-	*res = (int) ATOMIC_INC(&p->p->counter);
+	*res = PIPELINEnext_counter(p);
 	(void)cntxt; (void)mb;
 	return MAL_SUCCEED;
 }
