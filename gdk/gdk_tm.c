@@ -19,7 +19,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_tm.h"
 
 /*
  * The physical (disk) commit protocol is handled mostly by
