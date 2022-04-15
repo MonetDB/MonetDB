@@ -261,6 +261,48 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t0 (c0 INT)
+
+statement ok rowcount 1
+INSERT INTO t0 VALUES (NULL)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c0', true)
+
+query I nosort
+SELECT 1 FROM t0 WHERE t0.c0 < 1
+----
+
+query I nosort
+SELECT 1 FROM t0 WHERE t0.c0 <= 1
+----
+
+query I nosort
+SELECT 1 FROM t0 WHERE t0.c0 > -1
+----
+
+query I nosort
+SELECT 1 FROM t0 WHERE t0.c0 >= -1
+----
+
+query I nosort
+SELECT 1 FROM t0 WHERE t0.c0 = 1
+----
+
+query I nosort
+SELECT 1 FROM t0 WHERE t0.c0 <> 1
+----
+
+statement ok
+DROP TABLE t0
+
+statement ok
+START TRANSACTION
+
+statement ok
 DROP ALL PROCEDURE "sys"."dict_compress"
 
 statement ok
