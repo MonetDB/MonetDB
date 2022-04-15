@@ -640,9 +640,7 @@ PLAN SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),
 project (
 | project (
 | | group by (
-| | | project (
-| | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
-| | | ) [ "x"."x" ]
+| | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
 | | ) [  ] [ "sys"."sum" no nil ("x"."x") as "%7"."%7", "%7"."%7" as "%20"."%20", "%7"."%7" as "%22"."%22", "%7"."%7" as "%24"."%24", "sys"."count"() NOT NULL as "%16"."%16" ]
 | ) [ "%7"."%7", "sys"."sql_add"("%20"."%20", "sys"."sql_mul"(tinyint(2) "1", "%16"."%16" NOT NULL) NOT NULL) as "%10"."%10", "sys"."sql_add"("%22"."%22", "sys"."sql_mul"(tinyint(3) "2", "%16"."%16" NOT NULL) NOT NULL) as "%11"."%11", "sys"."sql_add"("%24"."%24", "sys"."sql_mul"(tinyint(3) "3", "%16"."%16" NOT NULL) NOT NULL) as "%12"."%12" ]
 ) [ "%7"."%7", "%10"."%10", "%11"."%11", "%12"."%12" ]
@@ -660,9 +658,7 @@ PLAN SELECT 10*sum(5 - x) as aa, sum(x + 12) * 2 as bb, count(*) as cc FROM (VAL
 project (
 | project (
 | | group by (
-| | | project (
-| | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
-| | | ) [ "x"."x" ]
+| | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
 | | ) [  ] [ "sys"."sum" no nil ("x"."x") as "%15"."%15", "%15"."%15" as "%17"."%17", "sys"."count"() NOT NULL as "%11"."%11" ]
 | ) [ "%11"."%11" NOT NULL, "sys"."sql_sub"("sys"."sql_mul"(tinyint(4) "5", "%11"."%11" NOT NULL) NOT NULL, "%15"."%15") as "%7"."%7", "sys"."sql_add"("%17"."%17", "sys"."sql_mul"(tinyint(5) "12", "%11"."%11" NOT NULL) NOT NULL) as "%10"."%10" ]
 ) [ "sys"."sql_mul"(tinyint(4) "10", "%7"."%7") as "aa", "sys"."sql_mul"("%10"."%10", tinyint(2) "2") as "bb", "%11"."%11" NOT NULL as "cc" ]
