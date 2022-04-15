@@ -376,6 +376,10 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
+		if (ol_find_name(t->idxs, name) || mvc_bind_idx(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
+			return res;
+		}
 		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -453,6 +457,10 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name)) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
+			return res;
+		}
+		if (ol_find_name(t->idxs, name) || mvc_bind_idx(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: an index named '%s' already exists, and it would conflict with the key", name);
 			return res;
 		}
 
@@ -709,6 +717,10 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return SQL_ERR;
 		}
+		if (ol_find_name(t->idxs, name) || mvc_bind_idx(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: an index named '%s' already exists, and it would conflict with the key", name);
+			return SQL_ERR;
+		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
 			dnode *rnms = n->next->next->data.lval->h;
 			list *cols = sa_list(sql->sa);
@@ -813,6 +825,10 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 		}
 		if (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name)) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key '%s' already exists", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
+			return SQL_ERR;
+		}
+		if (ol_find_name(t->idxs, name) || mvc_bind_idx(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
 
@@ -2185,6 +2201,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: index name cannot contain just digit characters (0 through 9)");
 	if ((i = mvc_bind_idx(sql, t->s, iname)))
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
+	if (ol_find_name(t->keys, iname) || mvc_bind_key(sql, t->s, iname))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: a key named '%s' already exists, and it would conflict with the index", iname);
 	if (!isTable(t))
 		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", TABLE_TYPE_DESCRIPTION(t->type, t->properties), tname);
 	nt = dup_sql_table(sql->sa, t);
