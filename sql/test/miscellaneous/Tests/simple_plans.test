@@ -686,7 +686,7 @@ SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 40
 
 query T nosort
-SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+PLAN SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
 project (
 | project (
