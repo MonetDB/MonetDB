@@ -155,7 +155,7 @@
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
 #else
-#if defined(_MSC_VER) && defined(_M_AMD64)
+#if defined(_MSC_VER) && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #pragma intrinsic(_mul128)
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
