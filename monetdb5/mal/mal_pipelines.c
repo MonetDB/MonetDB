@@ -15,6 +15,8 @@
 #include "mal_resource.h"
 #include "mal_function.h"
 
+#include "gdk_system.h"
+
 typedef struct queue {
 	int size;	/* size of queue */
 	int last;	/* last element in the queue */
@@ -193,6 +195,7 @@ PIPELINEworker(void *T)
 		stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
 		/* the maxparts (arg 3) is generated ie constant value on the stack */
 		str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);
+		PIPELINEclear_counter(p);
 		if (error) {
 			void *null = NULL;
 			/* only collect one error (from one thread, needed for stable testing) */
@@ -274,7 +277,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->stop = stoppc;
 	s->stk = stk;
 	s->maxparts = maxparts;
-	ATOMIC_INIT(&s->master_counter, -1);
+	s->master_counter = 0;
 	s->nr_workers = GDKnr_threads;
 	ATOMIC_INIT(&s->workers, -1);
 	ATOMIC_PTR_INIT(&s->error, NULL);
@@ -290,6 +293,8 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	snprintf(name, sizeof(name), "PIPELINE%d", cntxt->idx);
 	MT_sema_init(&s->s, 0, name);
 	MT_lock_init(&s->l, name);
+	for (size_t i = 0; i < sizeof(s->counters) / sizeof(s->counters[0]); i++)
+		s->counters[i] = -1;
 	/* somehow get number of workers from statement/barrier */
 	for (int i = 0; i < s->nr_workers; i++)
 		q_enqueue(workers[i].q, s);
@@ -336,6 +341,17 @@ stopMALpipelines(void)
 int
 PIPELINEnext_counter(Pipeline *p)
 {
-	p->cur = (int) ATOMIC_INC(&p->p->master_counter);
-	return p->cur;
+	MT_lock_set(&p->p->l);
+	int n = (int) p->p->master_counter++;
+	p->p->counters[p->wid] = n;
+	MT_lock_unset(&p->p->l);
+	return n;
+}
+
+void
+PIPELINEclear_counter(Pipeline *p)
+{
+	MT_lock_set(&p->p->l);
+	p->p->counters[p->wid] = -1;
+	MT_lock_unset(&p->p->l);
 }
