@@ -203,7 +203,7 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushInt(mb, q, -1);
 	int var_loop = getArg(q, 0);
 	int var_iter_id = getArg(q, 1);
-	// int var_handle = getArg(q, 2);
+	int var_handle = getArg(q, 2);
 
 	q = newStmt(mb, "copy", "work");
 	q = pushLng(mb, q, 1);
@@ -214,6 +214,16 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushLng(mb, q, 3);
 	q = pushStr(mb, q, "BAR");
 	q = pushArgument(mb, q, var_iter_id);
+
+	q = newStmt(mb, "pipeline", "counter");
+	q = pushArgument(mb, q, var_handle);
+	getDestVar(q) = var_iter_id;
+
+	q = newStmt(mb, "calc", "<");
+	q->barrier = REDOsymbol;
+	q = pushArgument(mb, q, var_iter_id);
+	q = pushInt(mb, q, 3);
+	getDestVar(q) = var_loop;
 
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
