@@ -26,3 +26,4 @@ NOT_ASSERT?sqlfuncnames
 sequences
 analyze_test
 blobs
+temp_tables

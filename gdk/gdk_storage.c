@@ -651,9 +651,11 @@ DESCload(int i)
 		return NULL;
 	}
 
+	MT_lock_set(&b->theaplock);
 	tt = b->ttype;
 	if (tt < 0) {
 		if ((tt = ATOMindex(s = ATOMunknown_name(tt))) < 0) {
+			MT_lock_unset(&b->theaplock);
 			GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
 			return NULL;
 		}
@@ -665,6 +667,7 @@ DESCload(int i)
 	b->batTransient = (BBP_status(b->batCacheid) & BBPPERSISTENT) == 0;
 	b->batCopiedtodisk = true;
 	DESCclean(b);
+	MT_lock_unset(&b->theaplock);
 	return b;
 }
 

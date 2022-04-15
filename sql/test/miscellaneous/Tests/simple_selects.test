@@ -1034,6 +1034,42 @@ statement ok
 START TRANSACTION
 
 statement ok
+create table x (x int primary key)
+
+statement ok
+create table y (y int)
+
+statement ok
+create index ups on y(y)
+
+statement error 42000!CONSTRAINT FOREIGN KEY: an index named 'ups' already exists, and it would conflict with the key
+alter table y add constraint ups foreign key (y) references x (x)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table x (x int primary key)
+
+statement ok
+create table y (y int)
+
+statement ok
+alter table y add constraint ups2 foreign key (y) references x (x)
+
+statement error 42S11!CREATE INDEX: name 'ups2' already in use
+create index ups2 on y(y)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 create unlogged table foo (i int primary key)
 
 statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables

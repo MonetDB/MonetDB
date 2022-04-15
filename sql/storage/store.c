@@ -411,9 +411,9 @@ load_key(sql_trans *tr, sql_table *t, res_table *rt_keys, res_table *rt_keycols/
 	}
 
 	/* find idx with same name */
-	sql_base *i = os_find_name(nk->t->s->idxs, tr, nk->base.name);
-	if (i) {
-		nk->idx = (sql_idx*)i;
+	node *n = ol_find_name(t->idxs, nk->base.name);
+	if (n) {
+		nk->idx = (sql_idx*)n->data;
 		nk->idx->key = nk;
 	}
 	return nk;
@@ -2885,12 +2885,9 @@ key_dup(sql_trans *tr, sql_key *k, sql_table *t, sql_key **kres)
 	nk->idx = NULL;
 
 	if (k->idx) {
-		sql_base *b = os_find_name(nk->t->s->idxs, tr, nk->base.name);
-
-		if (b) {
-			nk->idx = (sql_idx *)b;
-			nk->idx->key = nk;
-		}
+		node *n = ol_find_name(t->idxs, nk->base.name);
+		nk->idx = (sql_idx *)n->data;
+		nk->idx->key = nk;
 	}
 
 	if (nk->type != fkey) {
