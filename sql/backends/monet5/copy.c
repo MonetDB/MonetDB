@@ -963,10 +963,10 @@ static str
 COPYwork(bit *ret, lng *sleep, str *msg, int *iter)
 {
 	const char *name = MT_thread_getname();
-	int ticks = (int) (*sleep * 1000);
-	fprintf(stderr, "START time=%08.3f thread='%s' %s iter=%d\n", elapsed_ms(), name, *msg, *iter);
+	int ticks = (int) (*sleep * 100);
+	fprintf(stderr, "%08.3f %s start %d/%s\n", elapsed_ms(), name, *iter, *msg);
 	MT_sleep_ms(ticks);
-	fprintf(stderr, "STOP  time=%08.3f thread='%s' %s iter=%d\n", elapsed_ms(), name, *msg, *iter);
+	fprintf(stderr, "%08.3f %s stop  %d/%s\n", elapsed_ms(), name, *iter, *msg);
 	*ret = true;
 	return MAL_SUCCEED;
 }
