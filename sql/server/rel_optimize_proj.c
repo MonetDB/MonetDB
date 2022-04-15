@@ -1550,6 +1550,7 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 						/* propagate alias and add new expression */
 						exp_prop_alias(v->sql->sa, newop, e);
 						list_append(upper->exps, newop);
+						v->changes++;
 					}
 				}
 			}
