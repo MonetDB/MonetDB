@@ -1361,7 +1361,7 @@ exp_is_const_op(sql_exp *exp, sql_exp *tope, sql_rel *expr)
 		if (f->func->side_effect || IS_ANALYTIC(f->func))
 			return 0;
 		return exps_are_const_op(exp->l, tope, expr);
-	}	
+	}
 	case e_cmp:
 		if (exp->flag == cmp_or || exp->flag == cmp_filter)
 			return exps_are_const_op(exp->l, tope, expr) && exps_are_const_op(exp->r, tope, expr);
@@ -2516,7 +2516,49 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 				needed++;
 		}
 		if (needed) {
-			if (list_empty(rel->r) && list_length(rel->exps) == needed) { /* all are const */
+			if (!list_empty(rel->r)) {
+				int atoms = 0;
+				/* corner case, all grouping columns are atoms */
+				for (node *n = ((list*)rel->r)->h; n; n = n->next) {
+					sql_exp *exp = (sql_exp*) n->data;
+
+					if (exp_is_atom(exp))
+						atoms++;
+				}
+				if (atoms == list_length(rel->r)) {
+					list *nexps = sa_list(v->sql->sa);
+					for (node *n = rel->exps->h; n; ) {
+						node *next = n->next;
+						sql_exp *e = (sql_exp*) n->data;
+
+						/* remove references to constant group by columns */
+						if (e->type == e_column) {
+							sql_exp *found = NULL;
+							const char *nrname = (const char*) e->l, *nename = (const char*) e->r;
+							if (nrname && nename) {
+								found = exps_bind_column2(rel->r, nrname, nename, NULL);
+							} else if (nename) {
+								found = exps_bind_column(rel->r, nename, NULL, NULL, 1);
+							}
+							if (found) {
+								list_append(nexps, found);
+								list_remove_node(rel->exps, NULL, n);
+							}
+						}
+						n = next;
+					}
+					rel->r = NULL; /* transform it into a global aggregate */
+					rel->exps = list_merge(nexps, rel->exps, (fdup) NULL); /* add grouping columns back as projections */
+					/* global aggregates may return 1 row, so filter it based on the count */
+					sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+					sql_exp *count = exp_aggr(v->sql->sa, NULL, cf, 0, 1, CARD_ATOM, 0);
+					count = rel_groupby_add_aggr(v->sql, rel, count);
+					sql_exp *cp = exp_compare(v->sql->sa, exp_ref(v->sql, count), exp_atom(v->sql->sa, atom_int(v->sql->sa, exp_subtype(count), 0)), cmp_notequal);
+					rel = rel_select(v->sql->sa, rel, cp);
+					set_processed(rel);
+					return rel;
+				}
+			} else if (list_length(rel->exps) == needed) { /* all are const */
 				sql_rel *ll = rel->l;
 				rel->op = op_project;
 				/* TODO check if l->l == const, else change that */
