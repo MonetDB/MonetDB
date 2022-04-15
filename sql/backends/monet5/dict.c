@@ -735,7 +735,7 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bn =  BATthetaselect(lo, lc, &val, op);
 			} else
 				assert(0);
-			if (bn && (op[0] == '<' || op[0] == '>') && (!lvi.nonil || lvi.nil)) { /* filter the NULL value out */
+			if (bn && (op[0] == '<' || op[0] == '>' || op[0] == '!') && (!lvi.nonil || lvi.nil)) { /* filter the NULL value out */
 				p = BUNfnd(lv, ATOMnilptr(lvi.type));
 				if (p != BUN_NONE) {
 					BAT *nbn = NULL;
