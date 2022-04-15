@@ -2896,11 +2896,8 @@ key_dup(sql_trans *tr, sql_key *k, sql_table *t, sql_key **kres)
 
 	if (k->idx) {
 		node *n = ol_find_name(t->idxs, nk->base.name);
-
-		if (n) {
-			nk->idx = (sql_idx *)n->data;
-			nk->idx->key = nk;
-		}
+		nk->idx = (sql_idx *)n->data;
+		nk->idx->key = nk;
 	}
 
 	if (nk->type != fkey) {
