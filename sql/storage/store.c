@@ -5616,6 +5616,10 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 	} else if (!cs_add(&tr->localtmps, t, true)) {
 		return -1;
 	}
+
+	if (isUnloggedTable(t))
+		t->persistence = SQL_PERSIST; // It's not a temporary
+
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 

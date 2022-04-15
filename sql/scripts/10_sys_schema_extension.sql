@@ -158,7 +158,6 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('LOCAL'),
   ('LOCALTIME'),
   ('LOCALTIMESTAMP'),
-  ('LOCKED'),
   ('MATCH'),
   ('MATCHED'),
   ('MAXVALUE'),
@@ -333,6 +332,7 @@ INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES
   (3, 'MERGE TABLE'),
   (5, 'REMOTE TABLE'),
   (6, 'REPLICA TABLE'),
+  (7, 'UNLOGGED TABLE'),
 -- synthetically constructed system obj variants (added 10 to
 -- sys._tables.type value when sys._tables.system is true).
   (10, 'SYSTEM TABLE'),
