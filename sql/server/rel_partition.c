@@ -293,7 +293,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			res = REL_PARTITION;
 		}
 	} else if (is_groupby(rel->op)) {
-		bool safe = rel_groupby_partition_safe(rel);
+		bool safe = rel_groupby_partition_safe(rel) && !rel_is_ref(rel);
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, safe?SPB:pb);
 		if (safe) {
