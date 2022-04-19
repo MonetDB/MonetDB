@@ -466,8 +466,9 @@ mulmod(lng a, lng b, lng c)
 		*(lng*)Tloc(c, 0) = n2;											\
 	} while (0)
 #else
-#if defined(_MSC_VER) && _MSC_VER >= 1920
+#if defined(_MSC_VER) && _MSC_VER >= 1920 && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
+#include <immintrin.h>
 #pragma intrinsic(_mul128)
 #pragma intrinsic(_div128)
 #define avg_aggr_acc(T)													\
