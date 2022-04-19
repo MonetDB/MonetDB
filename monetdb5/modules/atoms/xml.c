@@ -623,10 +623,9 @@ XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 int TYPE_xml;
 
-str
-XMLprelude(void *ret)
+static str
+XMLprelude(void)
 {
-	(void) ret;
 	TYPE_xml = ATOMindex("xml");
 	xmlMemSetup(GDKfree, GDKmalloc, GDKrealloc, GDKstrdup);
 	xmlInitParser();
@@ -849,7 +848,6 @@ mel_func xml_init_funcs[] = {
  command("xml", "concat", XMLconcat, false, "Concatenate the xml values", args(1,3, arg("",xml),arg("val1",xml),arg("val2",xml))),
  pattern("xml", "forest", XMLforest, false, "Construct an element list", args(1,2, arg("",xml),vararg("val",xml))),
  command("xml", "isdocument", XMLisdocument, false, "Validate the string as a document", args(1,2, arg("",bit),arg("val",str))),
- command("xml", "prelude", XMLprelude, false, "", args(1,1, arg("",void))),
  command("xml", "epilogue", XMLepilogue, false, "", args(1,1, arg("",void))),
  command("calc", "xml", XMLstr2xml, false, "", args(1,2, arg("",xml),arg("src",str))),
  command("calc", "xml", XMLxml2xml, false, "", args(1,2, arg("",xml),arg("src",xml))),
@@ -861,4 +859,4 @@ mel_func xml_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_xml_mal)
-{ mal_module("xml", xml_init_atoms, xml_init_funcs); }
+{ mal_module2("xml", xml_init_atoms, xml_init_funcs, XMLprelude, NULL); }

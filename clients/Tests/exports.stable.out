@@ -1461,7 +1461,6 @@ str PYAPI3PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 str PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str PYAPI3PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str PYAPI3PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str PYAPI3PyAPIprelude(void *ret);
 PyObject *PyArrayObject_FromBAT(PyInput *input_bat, size_t start, size_t end, char **return_message, bool copy);
 PyObject *PyArrayObject_FromScalar(PyInput *input_scalar, char **return_message);
 PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns, char **retcol_names, char **return_message);
