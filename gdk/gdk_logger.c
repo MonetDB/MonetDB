@@ -2338,7 +2338,10 @@ logger_flush(logger *lg, ulng ts)
 lng
 logger_changes(logger *lg)
 {
-	return (lg->id - lg->saved_id - 1);
+	MT_lock_set(&lg->rotation_lock);
+	lng changes = lg->id - lg->saved_id - 1;
+	MT_lock_unset(&lg->rotation_lock);
+	return changes;
 }
 
 int

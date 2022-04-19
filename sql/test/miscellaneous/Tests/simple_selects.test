@@ -1006,6 +1006,90 @@ drop index tmp.ups
 statement ok
 drop table x
 
+statement ok
+START TRANSACTION
+
+statement ok
+create table foo (i int primary key)
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables
+create temp table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create temp table foo (i int primary key) on commit preserve rows
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables
+create table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table x (x int primary key)
+
+statement ok
+create table y (y int)
+
+statement ok
+create index ups on y(y)
+
+statement error 42000!CONSTRAINT FOREIGN KEY: an index named 'ups' already exists, and it would conflict with the key
+alter table y add constraint ups foreign key (y) references x (x)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table x (x int primary key)
+
+statement ok
+create table y (y int)
+
+statement ok
+alter table y add constraint ups2 foreign key (y) references x (x)
+
+statement error 42S11!CREATE INDEX: name 'ups2' already in use
+create index ups2 on y(y)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create unlogged table foo (i int primary key)
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables
+create table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table foo (i int primary key)
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables
+create unlogged table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
+
 # some private functions related errors
 statement error 42000!SELECT: no such binary operator 'scale_up'(decimal,tinyint)
 select scale_up(12.1, 10)
