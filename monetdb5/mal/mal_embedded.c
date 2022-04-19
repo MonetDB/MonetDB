@@ -41,7 +41,7 @@
 static bool embeddedinitialized = false;
 
 str
-malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiontimeout, int with_mapi_server)
+malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiontimeout, bool with_mapi_server)
 {
 	Client c;
 	str msg = MAL_SUCCEED;

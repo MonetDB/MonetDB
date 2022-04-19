@@ -29,13 +29,9 @@
  * for any unresolved references to the MALoptimizer and set the
  * callback function.
 */
-str
-optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+static str
+optimizer_prelude(void)
 {
-	(void) cntxt;
-	(void) stk;
-	(void) mb;
-	(void) p;
 	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
 	optimizerInit();
 	//return compileAllOptimizers(cntxt); causes problems
@@ -108,7 +104,6 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("minimalfast", "Fast compound minimal optimizer pipe"),
  optwrapper_pattern("defaultfast", "Fast compound default optimizer pipe"),
  optwrapper_pattern("wrapper", "Fake optimizer"),
- pattern("optimizer", "prelude", optimizer_prelude, false, "Initialize the optimizer", noargs),
  command("optimizer", "epilogue", optimizer_epilogue, false, "release the resources held by the optimizer module", args(1,1, arg("",void))),
  pattern("optimizer", "optimize", QOToptimize, false, "Optimize a specific operation", args(0,2, arg("mod",str),arg("fcn",str))),
  optwrapper_pattern("inline", "Expand inline functions"),
@@ -143,4 +138,4 @@ static mel_func optimizer_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_optimizer_mal)
-{ mal_module("optimizer", NULL, optimizer_init_funcs); }
+{ mal_module2("optimizer", NULL, optimizer_init_funcs, optimizer_prelude, NULL); }

@@ -15,7 +15,6 @@
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-extern str optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 extern str optimizer_epilogue(void *ret);
 extern str QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 

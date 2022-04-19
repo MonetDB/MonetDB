@@ -27,7 +27,7 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(char *modules[], int embedded)
+malBootstrap(char *modules[], bool embedded)
 {
 	Client c;
 	str msg = MAL_SUCCEED;

@@ -530,10 +530,9 @@ RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query) {
 	return(MAL_SUCCEED);
 }
 
-static str RMTprelude(void *ret) {
+static str RMTprelude(void) {
 	unsigned int type = 0;
 
-	(void)ret;
 #ifdef WORDS_BIGENDIAN
 	type |= RMTT_B_ENDIAN;
 #else
@@ -1683,7 +1682,6 @@ RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid) {
 
 #include "mel.h"
 mel_func remote_init_funcs[] = {
- command("remote", "prelude", RMTprelude, false, "initialise the remote module", args(1,1, arg("",void))),
  command("remote", "epilogue", RMTepilogue, false, "release the resources held by the remote module", args(1,1, arg("",void))),
  command("remote", "resolve", RMTresolve, false, "resolve a pattern against Merovingian and return the URIs", args(1,2, batarg("",str),arg("pattern",str))),
  pattern("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
@@ -1713,6 +1711,6 @@ mel_func remote_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_remote_mal)
-{ mal_module("remote", NULL, remote_init_funcs); }
+{ mal_module2("remote", NULL, remote_init_funcs, RMTprelude, NULL); }
 
 #endif

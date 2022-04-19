@@ -804,7 +804,7 @@ main(int argc, char **av)
 	}
 
 	modules[mods++] = 0;
-	if (mal_init(modules, 0)) {
+	if (mal_init(modules, false)) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();

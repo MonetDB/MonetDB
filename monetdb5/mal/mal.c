@@ -51,7 +51,7 @@ mal_version(void)
  */
 
 int
-mal_init(char *modules[], int embedded)
+mal_init(char *modules[], bool embedded)
 {
 /* Any error encountered here terminates the process
  * with a message sent to stderr
