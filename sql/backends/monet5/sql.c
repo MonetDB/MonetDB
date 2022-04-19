@@ -4080,19 +4080,19 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
 							/*printf("\n"); */
 							bitval = bsi.sorted;
-							if (!bitval && bs->tnosorted == 0)
+							if (!bitval && bsi.nosorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
 								goto bailout;
 
 							bitval = bsi.revsorted;
-							if (!bitval && bs->tnorevsorted == 0)
+							if (!bitval && bsi.norevsorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
 								goto bailout;
 
 							bitval = BATtkey(bs);
-							if (!bitval && bs->tnokey[0] == 0 && bs->tnokey[1] == 0)
+							if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 								bitval = bit_nil;
 							if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
 								goto bailout;
@@ -4176,17 +4176,17 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
 								/*printf("\n"); */
 								bitval = bsi.sorted;
-								if (!bitval && bs->tnosorted == 0)
+								if (!bitval && bsi.nosorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
 								bitval = bsi.revsorted;
-								if (!bitval && bs->tnorevsorted == 0)
+								if (!bitval && bsi.norevsorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
 								bitval = BATtkey(bs);
-								if (!bitval && bs->tnokey[0] == 0 && bs->tnokey[1] == 0)
+								if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 									bitval = bit_nil;
 								if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
 									goto bailout;

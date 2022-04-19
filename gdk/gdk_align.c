@@ -263,7 +263,6 @@ BATmaterialize(BAT *b, BUN cap)
 	b->tunique_est = is_oid_nil(t) ? 1.0 : (double) b->batCount;
 	b->ttype = TYPE_oid;
 	BATsetdims(b, 0);
-	b->batDirtydesc = true;
 	BATsetcount(b, b->batCount);
 	BATsetcapacity(b, cap);
 	MT_lock_unset(&b->theaplock);

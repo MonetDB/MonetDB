@@ -624,3 +624,80 @@ project (
 | | ) [  ] [ "sys"."min" no nil ("x"."x") as "%11"."%11" ]
 | ) [ ("%11"."%11") > (tinyint(8) "0") ]
 ) [ "%11"."%11" as "x"."x" ]
+
+# optimize sum(x + 2) into sum(x) + 2*count(*)
+query IIII nosort
+SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+----
+15
+20
+25
+30
+
+query T nosort
+PLAN SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+----
+project (
+| project (
+| | group by (
+| | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
+| | ) [  ] [ "sys"."sum" no nil ("x"."x") as "%7"."%7", "%7"."%7" as "%20"."%20", "%7"."%7" as "%22"."%22", "%7"."%7" as "%24"."%24", "sys"."count"() NOT NULL as "%16"."%16" ]
+| ) [ "%7"."%7", "sys"."sql_add"("%20"."%20", "sys"."sql_mul"(tinyint(2) "1", "%16"."%16" NOT NULL) NOT NULL) as "%10"."%10", "sys"."sql_add"("%22"."%22", "sys"."sql_mul"(tinyint(3) "2", "%16"."%16" NOT NULL) NOT NULL) as "%11"."%11", "sys"."sql_add"("%24"."%24", "sys"."sql_mul"(tinyint(3) "3", "%16"."%16" NOT NULL) NOT NULL) as "%12"."%12" ]
+) [ "%7"."%7", "%10"."%10", "%11"."%11", "%12"."%12" ]
+
+query III nosort
+SELECT 10*sum(5 - x) as aa, sum(x + 12) + 15 as bb, count(*) as cc FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+----
+100
+90
+5
+
+query T nosort
+PLAN SELECT 10*sum(5 - x) as aa, sum(x + 12) * 2 as bb, count(*) as cc FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+----
+project (
+| project (
+| | group by (
+| | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
+| | ) [  ] [ "sys"."sum" no nil ("x"."x") as "%15"."%15", "%15"."%15" as "%17"."%17", "sys"."count"() NOT NULL as "%11"."%11" ]
+| ) [ "%11"."%11" NOT NULL, "sys"."sql_sub"("sys"."sql_mul"(tinyint(4) "5", "%11"."%11" NOT NULL) NOT NULL, "%15"."%15") as "%7"."%7", "sys"."sql_add"("%17"."%17", "sys"."sql_mul"(tinyint(5) "12", "%11"."%11" NOT NULL) NOT NULL) as "%10"."%10" ]
+) [ "sys"."sql_mul"(tinyint(4) "10", "%7"."%7") as "aa", "sys"."sql_mul"("%10"."%10", tinyint(2) "2") as "bb", "%11"."%11" NOT NULL as "cc" ]
+
+query II nosort
+SELECT sum(5 - x), count(*) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+----
+10
+5
+
+query III nosort
+SELECT 10*sum(5 - x), sum(x), count(*) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+----
+100
+15
+5
+
+query I nosort
+SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+----
+40
+
+query T nosort
+PLAN SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+----
+project (
+| project (
+| | group by (
+| | | project (
+| | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
+| | | ) [ smallint(9)["sys"."sql_add"("x"."x", "x"."x")] as "%11"."%11" ]
+| | ) [  ] [ "sys"."sum" no nil ("%11"."%11") as "%14"."%14", "sys"."count"() NOT NULL as "%12"."%12" ]
+| ) [ "sys"."sql_add"("%14"."%14", "sys"."sql_mul"(smallint(9) "2", "%12"."%12" NOT NULL) NOT NULL) as "%7"."%7" ]
+) [ "%7"."%7" ]
+
+query I nosort
+SELECT sum(CASE x.x WHEN 1 THEN 1 END + 2) FROM (select distinct 1) x(x)
+UNION ALL
+SELECT sum(CASE x.x WHEN 1 THEN 1 END + 2) FROM (select distinct 1) x(x)
+----
+3
+3
