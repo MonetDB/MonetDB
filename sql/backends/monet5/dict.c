@@ -717,48 +717,20 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN p = BUN_NONE;
 		if (ATOMextern(lvi.type))
 			v = *(ptr*)v;
-		if (op[0] == '=' || op[0] == '!') {
-			p =  BUNfnd(lv, v);
-		} else if (op[0] == '<' || op[0] == '>') {
-			p = SORTfndfirst(lv, v);
-			if (p != BUN_NONE && op[0] == '<' && op[1] == '=') {
-				if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
-					p--;
-			}
-		}
-		if (p != BUN_NONE) {
-			if (loi.type == TYPE_bte) {
-				bte val = (bte)p;
-				bn =  BATthetaselect(lo, lc, &val, op);
-			} else if (loi.type == TYPE_sht) {
-				sht val = (sht)p;
-				bn =  BATthetaselect(lo, lc, &val, op);
-			} else
-				assert(0);
-			if (bn && (op[0] == '<' || op[0] == '>' || op[0] == '!') && (!lvi.nonil || lvi.nil)) { /* filter the NULL value out */
-				p = BUNfnd(lv, ATOMnilptr(lvi.type));
-				if (p != BUN_NONE) {
-					BAT *nbn = NULL;
-					if (loi.type == TYPE_bte) {
-						bte val = (bte)p;
-						nbn =  BATthetaselect(lo, bn, &val, "<>");
-					} else if (loi.type == TYPE_sht) {
-						sht val = (sht)p;
-						nbn =  BATthetaselect(lo, bn, &val, "<>");
-					} else
-						assert(0);
-					BBPreclaim(bn);
-					bn = nbn;
+		if (ATOMcmp(lvi.type, v,  ATOMnilptr(lvi.type)) == 0) {
+			/* corner case, if v is NULL skip any calculations */
+			bn = BATdense(0, 0, 0);
+		} else {
+			if (op[0] == '=' || op[0] == '!') {
+				p =  BUNfnd(lv, v);
+			} else if (op[0] == '<' || op[0] == '>') {
+				p = SORTfndfirst(lv, v);
+				if (p != BUN_NONE && op[0] == '<' && op[1] == '=') {
+					if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
+						p--;
 				}
 			}
-		} else if (op[0] == '!') {
-			if (!lvi.nonil || lvi.nil) { /* find a possible NULL value */
-				p = BUNfnd(lv, ATOMnilptr(lvi.type));
-			} else {
-				p = BUN_NONE;
-			}
-
-			if (p != BUN_NONE) { /* filter the NULL value out */
+			if (p != BUN_NONE) {
 				if (loi.type == TYPE_bte) {
 					bte val = (bte)p;
 					bn =  BATthetaselect(lo, lc, &val, op);
@@ -767,14 +739,47 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bn =  BATthetaselect(lo, lc, &val, op);
 				} else
 					assert(0);
-			} else if (lc) { /* all rows pass, use input candidate list */
-				bn = lc;
-				BBPfix(lc->batCacheid); /* give one extra physical reference to keep the count in the end */
-			} else { /* otherwise return all rows */
-				bn = BATdense(0, 0, BATcount(lo));
+				if (bn && (op[0] == '<' || op[0] == '>' || op[0] == '!') && (!lvi.nonil || lvi.nil)) { /* filter the NULL value out */
+					p = BUNfnd(lv, ATOMnilptr(lvi.type));
+					if (p != BUN_NONE) {
+						BAT *nbn = NULL;
+						if (loi.type == TYPE_bte) {
+							bte val = (bte)p;
+							nbn =  BATthetaselect(lo, bn, &val, "<>");
+						} else if (loi.type == TYPE_sht) {
+							sht val = (sht)p;
+							nbn =  BATthetaselect(lo, bn, &val, "<>");
+						} else
+							assert(0);
+						BBPreclaim(bn);
+						bn = nbn;
+					}
+				}
+			} else if (op[0] == '!') {
+				if (!lvi.nonil || lvi.nil) { /* find a possible NULL value */
+					p = BUNfnd(lv, ATOMnilptr(lvi.type));
+				} else {
+					p = BUN_NONE;
+				}
+
+				if (p != BUN_NONE) { /* filter the NULL value out */
+					if (loi.type == TYPE_bte) {
+						bte val = (bte)p;
+						bn =  BATthetaselect(lo, lc, &val, op);
+					} else if (loi.type == TYPE_sht) {
+						sht val = (sht)p;
+						bn =  BATthetaselect(lo, lc, &val, op);
+					} else
+						assert(0);
+				} else if (lc) { /* all rows pass, use input candidate list */
+					bn = lc;
+					BBPfix(lc->batCacheid); /* give one extra physical reference to keep the count in the end */
+				} else { /* otherwise return all rows */
+					bn = BATdense(0, 0, BATcount(lo));
+				}
+			} else {
+				bn = BATdense(0, 0, 0);
 			}
-		} else {
-			bn = BATdense(0, 0, 0);
 		}
 	} else { /* select + intersect */
 		if (ATOMextern(lvi.type))
