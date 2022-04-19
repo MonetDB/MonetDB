@@ -2287,7 +2287,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 	bool bakdirty;
 
 	BATcheck(b, NULL);
-	if ((isVIEW(b) || b->batSharecnt) && newmode != BAT_READ) {
+	if (newmode != BAT_READ && (isVIEW(b) || b->batSharecnt)) {
 		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
 		BBPunfix(b->batCacheid);
 		if (bn == NULL)
@@ -2498,10 +2498,10 @@ BATmode(BAT *b, bool transient)
  * For a view, we cannot check all properties, since it is possible with
  * the way the SQL layer works, that a parent BAT gets changed, changing
  * the properties, while there is a view.  The view is supposed to look
- * at only at the non-changing part of the BAT (through candidate
- * lists), but this means that the properties of the view might not be
- * correct.  For this reason, for views, we skip all property checking
- * that looks at the BAT content.
+ * at only the non-changing part of the BAT (through candidate lists),
+ * but this means that the properties of the view might not be correct.
+ * For this reason, for views, we skip all property checking that looks
+ * at the BAT content.
  */
 
 void
@@ -2513,7 +2513,7 @@ BATassertProps(BAT *b)
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
 	char filename[sizeof(b->theap->filename)];
-	bool isview;
+	bool isview1, isview2;
 
 	/* do the complete check within a lock */
 	MT_lock_set(&b->theaplock);
@@ -2527,7 +2527,8 @@ BATassertProps(BAT *b)
 	assert(b->hseqbase <= GDK_oid_max); /* non-nil seqbase */
 	assert(b->hseqbase + BATcount(b) <= GDK_oid_max);
 
-	isview = isVIEW(b);
+	isview1 = b->theap->parentid != b->batCacheid;
+	isview2 = b->tvheap && b->tvheap->parentid != b->batCacheid;
 
 	bbpstatus = BBP_status(b->batCacheid);
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
@@ -2538,37 +2539,39 @@ BATassertProps(BAT *b)
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
-	assert(isview ||
+	assert(isview1 ||
 	       b->ttype == TYPE_void ||
 	       BBPfarms[b->theap->farmid].roles & (1 << b->batRole));
-	assert(isview ||
+	assert(isview2 ||
 	       b->tvheap == NULL ||
 	       (BBPfarms[b->tvheap->farmid].roles & (1 << b->batRole)));
 
 	cmpf = ATOMcompare(b->ttype);
 	nilp = ATOMnilptr(b->ttype);
 
-	assert(b->theap->free >= tailsize(b, BATcount(b)));
+	assert(isview1 || b->theap->free >= tailsize(b, BATcount(b)));
 	if (b->ttype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
-		assert(b->theap->size >= b->theap->free);
+		assert(isview1 || b->theap->size >= b->theap->free);
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			/* 32 values per 4-byte word (that's not the
 			 * same as 8 values per byte...) */
-			assert(b->theap->size >= 4 * ((b->batCapacity + 31) / 32));
+			assert(isview1 || b->theap->size >= 4 * ((b->batCapacity + 31) / 32));
 		} else
-			assert(b->theap->size >> b->tshift >= b->batCapacity);
+			assert(isview1 || b->theap->size >> b->tshift >= b->batCapacity);
 	}
-	strconcat_len(filename, sizeof(filename),
-		      BBP_physical(b->theap->parentid),
-		      b->ttype == TYPE_str ? b->twidth == 1 ? ".tail1" : b->twidth == 2 ? ".tail2" :
+	if (!isview1) {
+		strconcat_len(filename, sizeof(filename),
+			      BBP_physical(b->theap->parentid),
+			      b->ttype == TYPE_str ? b->twidth == 1 ? ".tail1" : b->twidth == 2 ? ".tail2" :
 #if SIZEOF_VAR_T == 8
-		      b->twidth == 4 ? ".tail4" :
+			      b->twidth == 4 ? ".tail4" :
 #endif
-		      ".tail" : ".tail",
-		      NULL);
-	assert(strcmp(b->theap->filename, filename) == 0);
-	if (b->tvheap) {
+			      ".tail" : ".tail",
+			      NULL);
+		assert(strcmp(b->theap->filename, filename) == 0);
+	}
+	if (!isview2 && b->tvheap) {
 		strconcat_len(filename, sizeof(filename),
 			      BBP_physical(b->tvheap->parentid),
 			      ".theap",
@@ -2659,7 +2662,8 @@ BATassertProps(BAT *b)
 		       (b->tnosorted > 0 &&
 			b->tnosorted < b->batCount));
 		assert(!b->tsorted || b->tnosorted == 0);
-		if (!isview &&
+		if (!isview1 &&
+		    !isview2 &&
 		    !b->tsorted &&
 		    b->tnosorted > 0 &&
 		    b->tnosorted < b->batCount)
@@ -2669,7 +2673,8 @@ BATassertProps(BAT *b)
 		       (b->tnorevsorted > 0 &&
 			b->tnorevsorted < b->batCount));
 		assert(!b->trevsorted || b->tnorevsorted == 0);
-		if (!isview &&
+		if (!isview1 &&
+		    !isview2 &&
 		    !b->trevsorted &&
 		    b->tnorevsorted > 0 &&
 		    b->tnorevsorted < b->batCount)
@@ -2678,7 +2683,10 @@ BATassertProps(BAT *b)
 	}
 	/* if tkey property set, both tnokey values must be 0 */
 	assert(!b->tkey || (b->tnokey[0] == 0 && b->tnokey[1] == 0));
-	if (!isview && !b->tkey && (b->tnokey[0] != 0 || b->tnokey[1] != 0)) {
+	if (!isview1 &&
+	    !isview2 &&
+	    !b->tkey &&
+	    (b->tnokey[0] != 0 || b->tnokey[1] != 0)) {
 		/* if tkey not set and tnokey indicates a proof of
 		 * non-key-ness, make sure the tnokey values are in
 		 * range and indeed provide a proof */
@@ -2700,7 +2708,7 @@ BATassertProps(BAT *b)
 
 	/* only do a scan if property checking is requested and the bat
 	 * is not a view */
-	if (!isview && GDKdebug & PROPMASK) {
+	if (!isview1 && !isview2 && GDKdebug & PROPMASK) {
 		const void *maxval = NULL;
 		const void *minval = NULL;
 		bool seenmax = false, seenmin = false;

@@ -922,10 +922,9 @@ retryRead:
 			m = 0;
 			break;
 		case 'e':
-		{
 			/* terminate the execution for ordinary functions only */
 			if (strncmp("exit", b, 4) == 0) {
-			case 'x':
+		case 'x':
 				if (!(getInstrPtr(mb, 0)->token == FACcall)) {
 					stk->cmd = 'x';
 					cntxt->prompt = oldprompt;
@@ -933,7 +932,6 @@ retryRead:
 				}
 			}
 			return;
-		}
 		case 'q':
 		{
 			MalStkPtr su;
@@ -977,8 +975,7 @@ retryRead:
 				modname = b;
 				fcnname = strchr(b, '.');
 				if (fcnname) {
-					*fcnname = 0;
-					fcnname++;
+					*fcnname++ = 0;
 				}
 				fsym = findModule(cntxt->usermodule, putName(modname));
 
@@ -1024,9 +1021,12 @@ retryRead:
 				skipBlanc(cntxt, b);
 				mod = b;
 				skipWord(cntxt, b);
-				*b = 0;
-				fcn = b + 1;
-				if ((w = strchr(b + 1, '\n')))
+				if (*b) {
+					*b = 0;
+					fcn = b + 1;
+				} else
+					fcn = b;
+				if ((w = strchr(fcn, '\n')))
 					*w = 0;
 				mnstr_printf(out, "#trap %s.%s\n", mod, fcn);
 			}
@@ -1224,11 +1224,12 @@ retryRead:
 			skipWord(cntxt, b);
 			t = b;
 			skipNonBlanc(cntxt, t);
-			*t = 0;
-			/* you can identify a start and length */
-			t++;
-			skipBlanc(cntxt, t);
-			if (isdigit((unsigned char) *t)) {
+			if (*t) {
+				*t++ = 0;
+				/* you can identify a start and length */
+				skipBlanc(cntxt, t);
+			}
+			if (*t && isdigit((unsigned char) *t)) {
 				size = (BUN) atol(t);
 				skipWord(cntxt, t);
 				if (isdigit((unsigned char) *t))
