@@ -25,6 +25,6 @@ main(void)
     char *modules[2];
     modules[0] = "sql";
     modules[1] = 0;
-    mal_init(modules, 1);
+    mal_init(modules, true);
     return 0;
 }

@@ -472,7 +472,7 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 }
 
 str
-malIncludeModules(Client c, char *modules[], int listing, int no_mapi_server)
+malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server)
 {
 	str msg;
 	int sql = -1, mapi = -1;
