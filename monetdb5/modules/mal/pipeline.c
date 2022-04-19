@@ -2207,6 +2207,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 				Type bpi = BUNtvar(bi, i); \
 				o[v[i]]+= cmp(bpi, nil)!=0; \
 			} \
+			bat_iterator_end(&bi); \
 	}
 
 static str
