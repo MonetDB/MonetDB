@@ -651,18 +651,23 @@ DESCload(int i)
 		return NULL;
 	}
 
+	MT_lock_set(&b->theaplock);
 	tt = b->ttype;
-	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
-		GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
-		return NULL;
+	if (tt < 0) {
+		if ((tt = ATOMindex(s = ATOMunknown_name(tt))) < 0) {
+			MT_lock_unset(&b->theaplock);
+			GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
+			return NULL;
+		}
+		b->ttype = tt;
 	}
-	b->ttype = tt;
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
 	b->batTransient = (BBP_status(b->batCacheid) & BBPPERSISTENT) == 0;
 	b->batCopiedtodisk = true;
 	DESCclean(b);
+	MT_lock_unset(&b->theaplock);
 	return b;
 }
 

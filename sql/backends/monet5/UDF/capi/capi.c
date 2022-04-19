@@ -454,11 +454,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	str *output_names = NULL;
 	char *msg = MAL_SUCCEED;
 	node *argnode;
-	int seengrp = FALSE;
+	int seengrp = 0;
 	FILE *f = NULL;
 	void *handle = NULL;
 	jitted_function func = NULL;
-	int ret;
+	int ret, limit_argc = 0;
 
 	FILE *compiler = NULL;
 	int compiler_return_code;
@@ -579,7 +579,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 	// the first unknown argument is the group, we don't really care for the
 	// rest.
-	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
+	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc && !seengrp; i++) {
 		if (args[i] == NULL) {
 			if (!seengrp && grouped) {
 				args[i] = GDKstrdup("aggr_group");
@@ -587,7 +587,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
-				seengrp = TRUE;
+				seengrp = i; /* Don't be interested in the extents BAT */
 			} else {
 				snprintf(argbuf, sizeof(argbuf), "arg%zu", i - pci->retc - 1);
 				args[i] = GDKstrdup(argbuf);
@@ -598,12 +598,14 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	}
+	// the first index where input arguments are not relevant for the C UDF
+	limit_argc = i;
 	// non-grouped aggregates don't have the group list
 	// to allow users to write code for both grouped and non-grouped aggregates
 	// we create an "aggr_group" BAT for non-grouped aggregates
 	non_grouped_aggregate = grouped && !seengrp;
 
-	input_count = pci->argc - (pci->retc + ARG_OFFSET);
+	input_count = limit_argc - (pci->retc + ARG_OFFSET);
 	output_count = pci->retc;
 
 	// begin the compilation phase
@@ -613,7 +615,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	funcname_hash = strHash(funcname);
 	funcname_hash = funcname_hash % FUNCTION_CACHE_SIZE;
 	j = 0;
-	for (i = 0; i < (size_t)pci->argc; i++) {
+	for (i = 0; i < (size_t)limit_argc; i++) {
 		if (args[i]) {
 			j += strlen(args[i]);
 		}
@@ -644,7 +646,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 	}
 	j = input_count + output_count;
-	for (i = 0; i < (size_t)pci->argc; i++) {
+	for (i = 0; i < (size_t)limit_argc; i++) {
 		if (args[i]) {
 			size_t len = strlen(args[i]);
 			memcpy(function_parameters + j, args[i], len);
@@ -826,7 +828,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// input/output
 		// of the function
 		// first convert the input
-		for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
+		for (i = pci->retc + ARG_OFFSET; i < (size_t)limit_argc; i++) {
 			bat_type = !isaBatType(getArgType(mb, pci, i))
 							   ? getArgType(mb, pci, i)
 							   : getBatType(getArgType(mb, pci, i));
@@ -988,7 +990,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 	// create the inputs
 	argnode = sqlfun ? sqlfun->ops->h : NULL;
-	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
+	for (i = pci->retc + ARG_OFFSET; i < (size_t)limit_argc; i++) {
 		index = i - (pci->retc + ARG_OFFSET);
 		bat_type = getArgType(mb, pci, i);
 		if (!isaBatType(bat_type)) {
@@ -1040,6 +1042,17 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			GENERATE_BAT_INPUT(input_bats[index], int);
 		} else if (bat_type == TYPE_oid) {
 			GENERATE_BAT_INPUT(input_bats[index], oid);
+			// Hack for groups BAT, the count should reflect on the number of groups and not the number
+			// of rows, so use extents BAT
+			if (i == (size_t)seengrp) {
+				struct cudf_data_struct_oid *t = inputs[index];
+				BAT *ex = BBPquickdesc(*getArgReference_bat(stk, pci, i + 1));
+				if (!ex) {
+					msg = createException(MAL, "cudf.eval", RUNTIME_OBJECT_MISSING);
+					goto wrapup;
+				}
+				t->count = BATcount(ex);
+			}
 		} else if (bat_type == TYPE_lng) {
 			GENERATE_BAT_INPUT(input_bats[index], lng);
 		} else if (bat_type == TYPE_flt) {
@@ -1602,7 +1615,7 @@ wrapup:
 	}
 	// argument names (input)
 	if (args) {
-		for (i = 0; i < (size_t)pci->argc; i++) {
+		for (i = 0; i < (size_t)limit_argc; i++) {
 			if (args[i]) {
 				GDKfree(args[i]);
 			}

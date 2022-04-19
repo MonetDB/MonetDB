@@ -27,8 +27,10 @@ GROUP BY cods, elrik, ether, jaelen, sora
 ----
 project (
 | group by (
-| | table("sys"."t2a") [ "t2a"."tib0" ]
-| ) [ tinyint(8) "0" as "sora" ] [ tinyint(8) "0" as "cods", tinyint(8) "0" as "elrik", tinyint(8) "0" as "ether", tinyint(8) "0" as "jaelen", "sora" NOT NULL, "sys"."min" no nil ("t2a"."tib0") as "%1"."%1" ]
+| | project (
+| | | table("sys"."t2a") [ "t2a"."tib0" ]
+| | ) [ "t2a"."tib0", tinyint(8) "0" as "elrik", tinyint(8) "0" as "ether", tinyint(8) "0" as "jaelen", tinyint(8) "0" as "sora" ]
+| ) [ tinyint(8) "0" as "cods" ] [ "cods" NOT NULL, "elrik" NOT NULL, "ether" NOT NULL, "jaelen" NOT NULL, "sora" NOT NULL, "sys"."min" no nil ("t2a"."tib0") as "%1"."%1" ]
 ) [ "cods" NOT NULL, "elrik" NOT NULL, "ether" NOT NULL, "jaelen" NOT NULL, "sora" NOT NULL, "%1"."%1" ]
 
 statement ok
