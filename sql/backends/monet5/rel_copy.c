@@ -187,6 +187,7 @@ emit_onserver(
 	emit_send(mb, var_block_channel, bte_bat_type, var_next_block);
 }
 
+void dump_code(int);
 static stmt *
 rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
@@ -194,6 +195,10 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	InstrPtr q;
 
 	q = newStmt(mb, "copy", "reset_clock");
+
+	q = newStmt(mb, "pipeline", "channel");
+	q = pushInt(mb, q, 100);
+	int var_channel = getDestVar(q);
 
 	q = newStmt(mb, languageRef, pipelinesRef);
 	q->barrier = BARRIERsymbol;
@@ -205,25 +210,31 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	int var_iter_id = getArg(q, 1);
 	int var_handle = getArg(q, 2);
 
+	q = newStmt(mb, "calc", ">");
+	q->barrier = LEAVEsymbol;
+	q = pushArgument(mb, q, var_iter_id);
+	q = pushInt(mb, q, 2);
+	getDestVar(q) = var_loop;
+
+	q = newStmt(mb, "pipeline", "recv");
+	q = pushArgument(mb, q, var_handle);
+	q = pushArgument(mb, q, var_channel);
+	int var_token = getDestVar(q);
+
+	q = newStmt(mb, "calc", "+");
+	q = pushArgument(mb, q, var_token);
+	q = pushInt(mb, q, 1);
+	getDestVar(q) = var_token;
+
 	q = newStmt(mb, "copy", "work");
 	q = pushLng(mb, q, 1);
 	q = pushStr(mb, q, "FOO");
-	q = pushArgument(mb, q, var_iter_id);
+	q = pushArgument(mb, q, var_token);
 
-	q = newStmt(mb, "copy", "work");
-	q = pushLng(mb, q, 3);
-	q = pushStr(mb, q, "BAR");
-	q = pushArgument(mb, q, var_iter_id);
-
-	q = newStmt(mb, "pipeline", "counter");
+	q = newStmt(mb, "pipeline", "send");
 	q = pushArgument(mb, q, var_handle);
-	getDestVar(q) = var_iter_id;
-
-	q = newStmt(mb, "calc", "<");
-	q->barrier = REDOsymbol;
-	q = pushArgument(mb, q, var_iter_id);
-	q = pushInt(mb, q, 3);
-	getDestVar(q) = var_loop;
+	q = pushArgument(mb, q, var_channel);
+	q = pushArgument(mb, q, var_token);
 
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
@@ -234,6 +245,7 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	int var_total_row_count = getDestVar(q);
 
 	add_to_rowcount_accumulator(be, var_total_row_count);
+	dump_code(-1);
 	stmt *dummy_stmt = stmt_none(be);
 	return dummy_stmt;
 }
