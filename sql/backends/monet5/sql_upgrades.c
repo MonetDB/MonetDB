@@ -4911,6 +4911,9 @@ sql_update_default(Client c, mvc *sql)
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
+	res_table_destroy(output);
+	output = NULL;
+
 	/* if the table type UNLOGGED TABLE is not in the list of table
 	 * types, upgrade */
 	pos = snprintf(buf, bufsize, "select table_type_name from sys.table_types where table_type_name = 'UNLOGGED TABLE';\n");
