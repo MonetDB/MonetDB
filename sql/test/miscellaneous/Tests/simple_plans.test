@@ -693,3 +693,11 @@ project (
 | | ) [  ] [ "sys"."sum" no nil ("%11"."%11") as "%14"."%14", "sys"."count"() NOT NULL as "%12"."%12" ]
 | ) [ "sys"."sql_add"("%14"."%14", "sys"."sql_mul"(smallint(9) "2", "%12"."%12" NOT NULL) NOT NULL) as "%7"."%7" ]
 ) [ "%7"."%7" ]
+
+query I nosort
+SELECT sum(CASE x.x WHEN 1 THEN 1 END + 2) FROM (select distinct 1) x(x)
+UNION ALL
+SELECT sum(CASE x.x WHEN 1 THEN 1 END + 2) FROM (select distinct 1) x(x)
+----
+3
+3

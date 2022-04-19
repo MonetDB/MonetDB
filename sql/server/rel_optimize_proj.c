@@ -1471,13 +1471,10 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 								add_col = false;
 							}
 						}
-						/* 'col' is not in the under relation, so add it */
-						if (add_col) {
-							ocol = exp_ref(v->sql, ocol);
-							exp_label(v->sql->sa, ocol, ++v->sql->label);
-						}
-
 						colref = exp_ref(v->sql, ocol);
+						if (add_col) /* if 'col' will be added, then make sure it has an unique label */
+							exp_label(v->sql->sa, colref, ++v->sql->label);
+
 						/* 'oexp' contains the type for the input for the 'sum' aggregate */
 						if (!(colref = exp_check_type(v->sql, exp_subtype(oexp), groupby, colref, type_equal))) {
 							v->sql->session->status = 0;
