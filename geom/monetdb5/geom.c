@@ -2091,10 +2091,9 @@ geoGetType(char **res, int *info, int *flag)
 /* returns a pointer to a nil-mbr. */
 static mbr mbrNIL;		/* to be filled in */
 
-str
-geom_prelude(void *ret)
+static str
+geom_prelude(void)
 {
-	(void) ret;
 	mbrNIL.xmin = flt_nil;
 	mbrNIL.xmax = flt_nil;
 	mbrNIL.ymin = flt_nil;
@@ -6544,7 +6543,6 @@ static mel_func geom_init_funcs[] = {
  command("geom", "mbrDistance", mbrDistance, false, "Returns the distance of the centroids of the two boxes", args(1,3, arg("",dbl),arg("box1",mbr),arg("box2",mbr))),
  command("geom", "coordinateFromWKB", wkbCoordinateFromWKB, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, arg("",dbl),arg("",wkb),arg("",int))),
  command("geom", "coordinateFromMBR", wkbCoordinateFromMBR, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, arg("",dbl),arg("",mbr),arg("",int))),
- command("geom", "prelude", geom_prelude, false, "", args(1,1, arg("",void))),
  command("geom", "epilogue", geom_epilogue, false, "", args(1,1, arg("",void))),
  command("batgeom", "FromText", wkbFromText_bat, false, "", args(1,4, batarg("",wkb),batarg("wkt",str),arg("srid",int),arg("type",int))),
  command("batgeom", "ToText", wkbAsText_bat, false, "", args(1,3, batarg("",str),batarg("w",wkb),arg("withSRID",int))),
@@ -6591,4 +6589,4 @@ static mel_func geom_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_geom_mal)
-{ mal_module2("geom", geom_init_atoms, geom_init_funcs, NULL, (const char*)geom_functions); }
+{ mal_module2("geom", geom_init_atoms, geom_init_funcs, geom_prelude, (const char*)geom_functions); }
