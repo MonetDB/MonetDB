@@ -964,6 +964,11 @@ project (
 | ) [ "x"."x" ] [ "x"."x", "x1" ]
 ) [ "x"."x" UNIQUE, "x1" ]
 
+query I nosort
+SELECT count(1) FROM (SELECT 0.642700575141694319114549216465093195438385009765 % 3) x(x) GROUP BY 2+(0+round(x.x, 1))
+----
+1
+
 statement ok
 create global temp table x(x int, y int)
 

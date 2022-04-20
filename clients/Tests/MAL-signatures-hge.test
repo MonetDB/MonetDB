@@ -58194,11 +58194,6 @@ pattern capi.eval_aggr(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any...
 CUDFevalAggr;
 grouped aggregates through CUDF
 capi
-prelude
-command capi.prelude():void 
-CUDFprelude;
-(empty)
-capi
 subeval_aggr
 pattern capi.subeval_aggr(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any... 
 CUDFevalAggr;
@@ -59784,11 +59779,6 @@ command geom.mbrRight(X_0:wkb, X_1:wkb):bit
 mbrRight_wkb;
 Returns true if the mbr of geom1 is right of the mbr of geom2
 geom
-prelude
-command geom.prelude():void 
-geom_prelude;
-(empty)
-geom
 setSRID
 command geom.setSRID(X_0:wkb, X_1:int):wkb 
 wkbSetSRID;
@@ -59983,11 +59973,6 @@ identifier
 command identifier.identifier(X_0:str):identifier 
 IDentifier;
 Cast a string to an identifer 
-identifier
-prelude
-command identifier.prelude():void 
-IDprelude;
-Initialize the module
 inet
 !=
 command inet.!=(X_0:inet, X_1:inet):bit 
@@ -60429,11 +60414,6 @@ command json.number(X_0:json):dbl
 JSONjson2number;
 Convert simple JSON values to a double, return nil upon error.
 json
-prelude
-command json.prelude():void 
-JSONprelude;
-(empty)
-json
 renderarray
 pattern json.renderarray(X_0:any...):json 
 JSONrenderarray;
@@ -60818,11 +60798,6 @@ ping
 command mapi.ping(X_0:int):int 
 SERVERping;
 Test availability of an Mserver.
-mapi
-prelude
-command mapi.prelude():int 
-SERVERlisten_default;
-(empty)
 mapi
 prepare
 command mapi.prepare(X_0:int, X_1:str):int 
@@ -61318,11 +61293,6 @@ pow
 command mmath.pow(X_0:flt, X_1:flt):flt 
 MATHbinary_POWflt;
 (empty)
-mmath
-prelude
-command mmath.prelude():void 
-MATHprelude;
-initilize mmath module
 mmath
 radians
 command mmath.radians(X_0:dbl):dbl 
@@ -62039,11 +62009,6 @@ pattern optimizer.postfix(X_0:str, X_1:str):str
 OPTwrapper;
 Postfix the plan,e.g. pushing projections
 optimizer
-prelude
-pattern optimizer.prelude():void 
-optimizer_prelude;
-Initialize the optimizer
-optimizer
 profiler
 pattern optimizer.profiler():str 
 OPTwrapper;
@@ -62199,11 +62164,6 @@ command pcre.pcre_quote(X_0:str):str
 PCREquote;
 Return a PCRE pattern string that matches the argument exactly.
 pcre
-prelude
-command pcre.prelude():void 
-pcre_init;
-Initialize pcre
-pcre
 replace
 command pcre.replace(X_0:str, X_1:str, X_2:str, X_3:str):str 
 PCREreplace_wrap;
@@ -62334,11 +62294,6 @@ unsafe pattern pyapi3.eval_loader(X_0:ptr, X_1:str, X_2:any...):any...
 PYAPI3PyAPIevalLoader;
 loader functions through Python
 pyapi3
-prelude
-command pyapi3.prelude():void 
-PYAPI3PyAPIprelude;
-(empty)
-pyapi3
 subeval_aggr
 unsafe pattern pyapi3.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
 PYAPI3PyAPIevalAggr;
@@ -62423,11 +62378,6 @@ eval_aggr
 pattern rapi.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
 RAPIevalAggr;
 grouped aggregates through R
-rapi
-prelude
-command rapi.prelude():void 
-RAPIprelude;
-(empty)
 rapi
 subeval_aggr
 pattern rapi.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
@@ -62518,11 +62468,6 @@ isalive
 command remote.isalive(X_0:str):int 
 RMTisalive;
 check if conn is still valid and connected
-remote
-prelude
-command remote.prelude():void 
-RMTprelude;
-initialise the remote module
 remote
 put
 pattern remote.put(X_0:str, X_1:any):str 
@@ -64224,11 +64169,6 @@ command str.prefix(X_0:str, X_1:int):str
 STRprefix;
 Extract the prefix of a given length
 str
-prelude
-command str.prelude():void 
-STRprelude;
-(empty)
-str
 r_search
 command str.r_search(X_0:str, X_1:str):int 
 STRReverseStrSearch;
@@ -65473,11 +65413,6 @@ pi
 command xml.pi(X_0:str, X_1:str):xml 
 XMLpi;
 Construct a processing instruction
-xml
-prelude
-command xml.prelude():void 
-XMLprelude;
-(empty)
 xml
 root
 command xml.root(X_0:xml, X_1:str, X_2:str):xml 
