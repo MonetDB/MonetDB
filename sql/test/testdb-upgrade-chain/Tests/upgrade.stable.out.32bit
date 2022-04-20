@@ -2602,12 +2602,6 @@ insert into sys.functions values (904, 'sys_update_schemas', 'update_schemas', '
 insert into sys.functions values (905, 'sys_update_tables', 'update_tables', 'sql', 0, 2, true, false, false, 2000, true, true);
 
 Running database upgrade commands:
-create procedure SHPattach(fname string) external name shp.attach;
-create procedure SHPload(fid integer) external name shp.import;
-create procedure SHPload(fid integer, filter geometry) external name shp.import;
-update sys.functions set system = true where schema_id = 2000 and name in ('shpattach', 'shpload');
-
-Running database upgrade commands:
 drop function sys.dump_database(boolean);
 drop procedure sys.dump_table_data();
 drop procedure sys.dump_table_data(string, string);
