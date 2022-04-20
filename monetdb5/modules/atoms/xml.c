@@ -817,9 +817,11 @@ size_t XMLunquotestring(const char **p, char q, char *buf) {
 	(void) buf;
 	return 0;
 }
-str XMLprelude(void) {
+static str
+XMLprelude(void) {
 	return MAL_SUCCEED; /* to not break init */
 }
+
 str XMLepilogue(void *ret) {
 	(void)ret;
 	return MAL_SUCCEED;
