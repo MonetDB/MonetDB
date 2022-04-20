@@ -1367,7 +1367,7 @@ exp_is_const_op(sql_exp *exp, sql_exp *tope, sql_rel *expr)
 			return exps_are_const_op(exp->l, tope, expr) && exps_are_const_op(exp->r, tope, expr);
 		if (exp->flag == cmp_in || exp->flag == cmp_notin)
 			return exp_is_const_op(exp->l, tope, expr) && exps_are_const_op(exp->r, tope, expr);
-		return exp_is_const_op(exp->l, tope, expr)&& exp_is_const_op(exp->r, tope, expr) && (!exp->f || exp_is_const_op(exp->f, tope, expr));
+		return exp_is_const_op(exp->l, tope, expr) && exp_is_const_op(exp->r, tope, expr) && (!exp->f || exp_is_const_op(exp->f, tope, expr));
 	case e_column: {
 		if (is_simple_project(expr->op) || is_groupby(expr->op)) {
 			/* in a simple projection, self-references may occur */
