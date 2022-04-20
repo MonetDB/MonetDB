@@ -4658,7 +4658,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.keywords",	"LOCAL"	]
 [ "sys.keywords",	"LOCALTIME"	]
 [ "sys.keywords",	"LOCALTIMESTAMP"	]
-[ "sys.keywords",	"LOCKED"	]
 [ "sys.keywords",	"MATCH"	]
 [ "sys.keywords",	"MATCHED"	]
 [ "sys.keywords",	"MAXVALUE"	]

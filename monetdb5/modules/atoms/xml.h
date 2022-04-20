@@ -44,7 +44,6 @@ extern str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 extern size_t XMLquotestring(const char *s, char *buf, size_t len);
 extern size_t XMLunquotestring(const char **p, char q, char *buf);
 
-extern str XMLprelude(void *ret);
 extern str XMLepilogue(void *ret);
 
 #endif /* XML_H */
