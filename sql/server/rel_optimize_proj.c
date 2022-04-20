@@ -1461,13 +1461,12 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 						while (is_numeric_upcast(col))
 							col = col->l;
 						if (col->type == e_column) {
-							sql_rel *crel = NULL;
-							sql_exp *colref = rel_find_exp_and_corresponding_rel(l, col, false, &crel, NULL);
+							sql_exp *colf = exps_find_exp(l->exps, col);
 
 							/* col is already found in the inner relation. Also look for a new reference for col, eg sql_add(col, 1), 1 as col */
-							if (colref && l == crel && list_position(l->exps, colref) < list_position(l->exps, oexp)) {
+							if (colf && list_position(l->exps, colf) < list_position(l->exps, oexp)) {
 								add_col = false;
-							} else if (!colref && is_simple_project(l->op) && list_empty(l->r) && !rel_is_ref(l) && !need_distinct(l)) {
+							} else if (!colf && is_simple_project(l->op) && list_empty(l->r) && !rel_is_ref(l) && !need_distinct(l)) {
 								list_prepend(l->exps, exp_ref(v->sql, col));
 								add_col = false;
 							}
@@ -1601,7 +1600,7 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 									if (c->type == e_column) {
 										if (is_simple_project(efrel->op) || is_groupby(efrel->op)) {
 											/* in a simple projection, self-references may occur */
-											sql_exp *nc = (c->l ? exps_bind_column2(efrel->exps, c->l, c->r, NULL) : exps_bind_column(efrel->exps, c->r, NULL, NULL, 0));
+											sql_exp *nc = exps_find_exp(efrel->exps, c);
 											if (nc && list_position(efrel->exps, nc) < list_position(efrel->exps, exp_col)) {
 												exp_col = c;
 												c = nc;
@@ -1639,18 +1638,17 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 						list_hash_clear(rel->r);
 					}
 
-					sql_exp *f = (col->l ? exps_bind_column2(rel->r, col->l, col->r, NULL) : exps_bind_column(rel->r, col->r, NULL, NULL, 0));
+					sql_exp *f = exps_find_exp(rel->r, col);
 
 					if (f && list_position(rel->r, f) < list_position(rel->r, e)) { /* if already present, remove it */
 						e->used = 1;
 					} else {
 						/* Use an unique reference to the column found. If there's another grouping column label pointing into it,
 						   rel_groupby_cse will hopefully remove it */
-						sql_rel *crel = NULL;
-						sql_exp *colf = rel_find_exp_and_corresponding_rel(l, col, false, &crel, NULL);
+						sql_exp *colf = exps_find_exp(l->exps, col);
 
 						/* col is already found in the inner relation. Also look for a new reference for col, eg sql_add(col, 1), 1 as col */
-						if (colf && l == crel && list_position(l->exps, colf) < list_position(l->exps, tope)) {
+						if (colf && list_position(l->exps, colf) < list_position(l->exps, tope)) {
 							n->data = exp_ref(v->sql, col);
 						} else if (!colf && is_simple_project(l->op) && list_empty(l->r) && !rel_is_ref(l) && !need_distinct(l)) { /* trivial case, it can be added */
 							sql_exp *ne = exp_ref(v->sql, col);
@@ -1699,11 +1697,11 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
 			sql_exp *e1 = n->data;
 			/* TODO maybe cover more cases? Here I only look at the left relation */
-			sql_exp *e3 = e1->type == e_column ? (e1->l ? exps_bind_column2(l->exps, e1->l, e1->r, NULL) : exps_bind_column(l->exps, e1->r, NULL, NULL, 0)) : NULL;
+			sql_exp *e3 = e1->type == e_column ? exps_find_exp(l->exps, e1) : NULL;
 
 			for (node *m=n->next; m; m = m->next) {
 				sql_exp *e2 = m->data;
-				sql_exp *e4 = e2->type == e_column ? (e2->l ? exps_bind_column2(l->exps, e2->l, e2->r, NULL) : exps_bind_column(l->exps, e2->r, NULL, NULL, 0)) : NULL;
+				sql_exp *e4 = e2->type == e_column ? exps_find_exp(l->exps, e2) : NULL;
 
 				if (exp_match_exp(e1, e2) || exp_refers(e1, e2) || (e3 && e4 && (exp_match_exp(e3, e4) || exp_refers(e3, e4)))) {
 					e2->used = 1; /* flag it as being removed */
