@@ -16,6 +16,7 @@
 #include "mal_function.h"
 
 #include "gdk_system.h"
+#include "gdk_posix.h"
 
 typedef struct queue {
 	int size;	/* size of queue */
@@ -162,6 +163,34 @@ stack_copy(MalStkPtr stk, int start)
 	return n;
 }
 
+// only call this while holding the lock
+void
+PIPELINEwait(Pipeline *p)
+{
+	Pipelines *pp = p->p;
+	// we MUST be holding the lock at this point!
+#ifdef HAVE_PTHREAD_H
+	pthread_cond_wait(&pp->cond, &pp->l.lock);
+#else
+	MT_lock_unset(&pp->l);
+	MT_sleep_ms(1);
+	MT_lock_set(&pp->l);
+#endif
+	fprintf(stderr, "Iteration %d woke up\n", pp->counters[p->wid]);
+}
+
+// only call this while holding the lock
+void
+PIPELINEnotify(Pipeline *p, const char *msg)
+{
+	Pipelines *pp = p->p;
+
+	fprintf(stderr, "iteration %d notifying receivers: %s\n", p->p->counters[p->wid], msg);
+#ifdef HAVE_PTHREAD_H
+	pthread_cond_broadcast(&pp->cond);
+#endif
+}
+
 static void
 PIPELINEworker(void *T)
 {
@@ -295,6 +324,10 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	MT_lock_init(&s->l, name);
 	for (size_t i = 0; i < sizeof(s->counters) / sizeof(s->counters[0]); i++)
 		s->counters[i] = -1;
+	if (pthread_cond_init(&s->cond, NULL) != 0)
+		throw(MAL, "language.pipelines", "could not initialize condvar: %s",
+			strerror_r(errno, (char[200]){0}, 200)
+		);
 	/* somehow get number of workers from statement/barrier */
 	for (int i = 0; i < s->nr_workers; i++)
 		q_enqueue(workers[i].q, s);
@@ -310,6 +343,9 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	ATOMIC_DESTROY(&s->counter);
 	ATOMIC_DESTROY(&s->workers);
 	ATOMIC_PTR_DESTROY(&s->error);
+#ifdef HAVE_PTHREAD_H
+	pthread_cond_destroy(&s->cond);
+#endif
 	GDKfree(s);
 	return err;
 }
@@ -342,6 +378,7 @@ int
 PIPELINEnext_counter(Pipeline *p)
 {
 	MT_lock_set(&p->p->l);
+	PIPELINEnotify(p, "next counter");
 	int n = (int) p->p->master_counter++;
 	p->p->counters[p->wid] = n;
 	MT_lock_unset(&p->p->l);
@@ -352,6 +389,7 @@ void
 PIPELINEclear_counter(Pipeline *p)
 {
 	MT_lock_set(&p->p->l);
+	PIPELINEnotify(p, "clear counter");
 	p->p->counters[p->wid] = -1;
 	MT_lock_unset(&p->p->l);
 }

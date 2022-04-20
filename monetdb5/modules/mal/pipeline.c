@@ -257,6 +257,8 @@ PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	assert(BATcount(ch) == 1);
 
+	PIPELINEnotify(p, "send");
+
 bailout:
 	if (locked)
 		MT_lock_unset(&p->p->l);
@@ -320,10 +322,9 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			prev_log_state = log_state;
 			fprintf(stderr, "Iteration %d waiting to recv from channel %s [%d for %d]\n", p->p->counters[p->wid], ch_name, (int)BATcount(ch), (int)ch->hseqbase);
 		}
-		// we could use a condition variable here. for now, busy wait.
-		MT_lock_unset(&p->p->l);
-		MT_sleep_ms(10);
-		MT_lock_unset(&p->p->l);
+
+		// Wait until something changes
+		PIPELINEwait(p);
 	}
 
 bailout:
