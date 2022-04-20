@@ -964,6 +964,21 @@ project (
 | ) [ "x"."x" ] [ "x"."x", "x1" ]
 ) [ "x"."x", "x1" ]
 
+query I nosort
+SELECT count(1) FROM (SELECT 0.642700575141694319114549216465093195438385009765 % 3) x(x) GROUP BY 2+(0+round(x.x, 1))
+----
+1
+
+query I nosort
+SELECT min(1) FROM (SELECT DISTINCT 1) x(x) GROUP BY 3 IS NOT NULL, 1 - CASE WHEN FALSE THEN 1 ELSE x.x END, 2 IS NULL
+----
+1
+
+query T nosort
+SELECT DISTINCT sql_sub(TIME '14:50:49', x.x) FROM (SELECT 1) y(y) CROSS JOIN (SELECT vx.x FROM (SELECT interval '7200' second) vx(x)) x(x)
+----
+12:50:49
+
 statement ok
 create global temp table x(x int, y int)
 

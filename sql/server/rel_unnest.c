@@ -937,6 +937,9 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 							rel_bind_var(sql, rel->l, e);
 							if (is_left(rel->op)) { /* add ifthenelse */
 								/* if id is NULL then NULL else e */
+								sql_subtype *tp = exp_subtype(e);
+								if (!tp)
+									return sql_error(sql, 10, SQLSTATE(42000) "Query projection must have at least one parameter with known SQL type");
 								if (!id) {
 									sql_rel *l = r->l;
 									if (is_join(l->op))
@@ -946,7 +949,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 								}
 								sql_exp *ne = rel_unop_(sql, NULL, exp_ref(sql, id), "sys", "isnull", card_value);
 								set_has_no_nil(ne);
-								ne = rel_nop_(sql, NULL, ne, exp_null(sql->sa, exp_subtype(e)), e, NULL, "sys", "ifthenelse", card_value);
+								ne = rel_nop_(sql, NULL, ne, exp_null(sql->sa, tp), e, NULL, "sys", "ifthenelse", card_value);
 								exp_prop_alias(sql->sa, ne, e);
 								e = ne;
 							}
