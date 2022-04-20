@@ -51,12 +51,15 @@ sql_add_propagate_statistics(mvc *sql, sql_exp *e)
 					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
 				}
 			} else if (strcmp(f->func->imp, "time_add_msec_interval") == 0) {
-				daytime sub1 = time_add_msec_interval((daytime)lmax->data.val.lval, rmax->data.val.lval),
-						sub2 = time_add_msec_interval((daytime)lmin->data.val.lval, rmin->data.val.lval);
+				daytime v1 = (daytime)lmax->data.val.lval, v2 = (daytime)lmin->data.val.lval,
+						sub1 = time_add_msec_interval(v1, rmax->data.val.lval),
+						sub2 = time_add_msec_interval(v2, rmin->data.val.lval);
 
-				sql_find_subtype(&tp, "time", 0, 0);
-				res1 = atom_general_ptr(sql->sa, &tp, &sub1);
-				res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				if (sub1 >= v1 && sub2 >= v2) { /* look for overflows */
+					sql_find_subtype(&tp, "time", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
 			} else if (strcmp(f->func->imp, "timestamp_add_msec_interval") == 0) {
 				timestamp sub1, sub2;
 
@@ -144,12 +147,15 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
 				}
 			} else if (strcmp(f->func->imp, "time_sub_msec_interval") == 0) {
-				daytime sub1 = time_sub_msec_interval((daytime)lmax->data.val.lval, rmin->data.val.lval),
-						sub2 = time_sub_msec_interval((daytime)lmin->data.val.lval, rmax->data.val.lval);
+				daytime v1 = (daytime)lmax->data.val.lval, v2 = (daytime)lmin->data.val.lval,
+						sub1 = time_sub_msec_interval(v1, rmin->data.val.lval),
+						sub2 = time_sub_msec_interval(v2, rmax->data.val.lval);
 
-				sql_find_subtype(&tp, "time", 0, 0);
-				res1 = atom_general_ptr(sql->sa, &tp, &sub1);
-				res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				if (sub1 <= v1 && sub2 <= v2) { /* look for overflows */
+					sql_find_subtype(&tp, "time", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
 			} else if (strcmp(f->func->imp, "timestamp_sub_msec_interval") == 0) {
 				timestamp sub1, sub2;
 
