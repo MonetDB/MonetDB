@@ -95,6 +95,7 @@ exps_push_down_prj(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 		narg = exp_push_down_prj(sql, arg, f, t);
 		if (!narg)
 			return NULL;
+		narg = exp_propagate(sql->sa, narg, arg);
 		append(nl, narg);
 	}
 	return nl;
@@ -103,7 +104,7 @@ exps_push_down_prj(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 sql_exp *
 exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 {
-	sql_exp *ne = NULL, *l, *r, *r2;
+	sql_exp *ne = NULL, *l = NULL, *r = NULL, *r2 = NULL;
 
 	assert(is_project(f->op));
 
@@ -152,29 +153,27 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		return exp_propagate(sql->sa, e, ne);
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			list *l = exps_push_down_prj(sql, e->l, f, t);
-			list *r = exps_push_down_prj(sql, e->r, f, t);
+			list *l = NULL, *r = NULL;
 
-			if (!l || !r)
+			if (!(l = exps_push_down_prj(sql, e->l, f, t)) || !(r = exps_push_down_prj(sql, e->r, f, t)))
 				return NULL;
-			if (e->flag == cmp_filter)
-				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
-			return exp_or(sql->sa, l, r, is_anti(e));
+			if (e->flag == cmp_filter) {
+				ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
+			} else {
+				ne = exp_or(sql->sa, l, r, is_anti(e));
+			}
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			sql_exp *l = exp_push_down_prj(sql, e->l, f, t);
-			list *r = exps_push_down_prj(sql, e->r, f, t);
+			list *r = NULL;
 
-			if (!l || !r)
+			if (!(l = exp_push_down_prj(sql, e->l, f, t)) || !(r = exps_push_down_prj(sql, e->r, f, t)))
 				return NULL;
-			return exp_in(sql->sa, l, r, e->flag);
+			ne = exp_in(sql->sa, l, r, e->flag);
 		} else {
-			l = exp_push_down_prj(sql, e->l, f, t);
-			r = exp_push_down_prj(sql, e->r, f, t);
+			if (!(l = exp_push_down_prj(sql, e->l, f, t)) || !(r = exp_push_down_prj(sql, e->r, f, t)) || (e->f && !(r2 = exp_push_down_prj(sql, e->f, f, t))))
+				return NULL;
 			if (e->f) {
-				r2 = exp_push_down_prj(sql, e->f, f, t);
-				if (l && r && r2)
-					ne = exp_compare2(sql->sa, l, r, r2, e->flag, is_symmetric(e));
-			} else if (l && r) {
+				ne = exp_compare2(sql->sa, l, r, r2, e->flag, is_symmetric(e));
+			} else {
 				ne = exp_compare(sql->sa, l, r, e->flag);
 			}
 		}
@@ -182,10 +181,10 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			return NULL;
 		return exp_propagate(sql->sa, ne, e);
 	case e_convert:
-		l = exp_push_down_prj(sql, e->l, f, t);
-		if (l)
-			return exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
-		return NULL;
+		if (!(l = exp_push_down_prj(sql, e->l, f, t)))
+			return NULL;
+		ne = exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
+		return exp_propagate(sql->sa, ne, e);
 	case e_aggr:
 	case e_func: {
 		list *l = e->l, *nl = NULL;

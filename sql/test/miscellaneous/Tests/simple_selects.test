@@ -974,6 +974,11 @@ SELECT min(1) FROM (SELECT DISTINCT 1) x(x) GROUP BY 3 IS NOT NULL, 1 - CASE WHE
 ----
 1
 
+query T nosort
+SELECT DISTINCT sql_sub(TIME '14:50:49', x.x) FROM (SELECT 1) y(y) CROSS JOIN (SELECT vx.x FROM (SELECT interval '7200' second) vx(x)) x(x)
+----
+12:50:49
+
 statement ok
 create global temp table x(x int, y int)
 
