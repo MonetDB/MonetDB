@@ -176,7 +176,7 @@ PIPELINEwait(Pipeline *p)
 	MT_sleep_ms(1);
 	MT_lock_set(&pp->l);
 #endif
-	fprintf(stderr, "Iteration %d woke up\n", pp->counters[p->wid]);
+	// fprintf(stderr, "Iteration %d woke up\n", pp->counters[p->wid]);
 }
 
 // only call this while holding the lock
@@ -185,7 +185,7 @@ PIPELINEnotify(Pipeline *p, const char *msg)
 {
 	Pipelines *pp = p->p;
 
-	fprintf(stderr, "iteration %d notifying receivers: %s\n", p->p->counters[p->wid], msg);
+	// fprintf(stderr, "iteration %d notifying receivers: %s\n", p->p->counters[p->wid], msg);
 #ifdef HAVE_PTHREAD_H
 	pthread_cond_broadcast(&pp->cond);
 #endif

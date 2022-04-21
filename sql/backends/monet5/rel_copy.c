@@ -196,13 +196,16 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	q = newStmt(mb, "copy", "reset_clock");
 
-	q = newAssignment(mb);
-	q = pushLng(mb, q, 42);
+	q = newStmt(mb, "bat", "new");
+	q = pushNil(mb, q, TYPE_bte);
+	q = pushLng(mb, q, 2015);
 	int var_item = getDestVar(q);
 
 	q = newStmt(mb, "pipeline", "channel");
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
 	q = pushArgument(mb, q, var_item);
-	int var_channel = getDestVar(q);
+	int var_mailbox = getArg(q, 0);
+	int var_channel = getArg(q, 1);
 
 	q = newStmt(mb, languageRef, pipelinesRef);
 	q->barrier = BARRIERsymbol;
@@ -222,6 +225,7 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	q = newStmt(mb, "pipeline", "recv");
 	q = pushArgument(mb, q, var_handle);
+	q = pushArgument(mb, q, var_mailbox);
 	q = pushArgument(mb, q, var_channel);
 	int var_token = getDestVar(q);
 
@@ -232,6 +236,7 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	q = newStmt(mb, "pipeline", "send");
 	q = pushArgument(mb, q, var_handle);
+	q = pushArgument(mb, q, var_mailbox);
 	q = pushArgument(mb, q, var_channel);
 	q = pushArgument(mb, q, var_token);
 

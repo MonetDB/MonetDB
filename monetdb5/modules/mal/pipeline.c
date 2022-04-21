@@ -185,38 +185,27 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-// 	 batargany("",1) <- argany("value", 1)
+// 	 (mailbox:T, metadata:int) := pipeline.channel(initial_value:T)
 static str
 PPchannel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *ret = getArgReference_bat(stk, pci, 0);
-	void *value = getArgReference(stk, pci, 1);
-	int tpe = getArgGDKType(mb, pci, 1);
+	void *mailbox = getArgReference(stk, pci, 0);
+	int *metadata = getArgReference_int(stk, pci, 1);
+	void *value = getArgReference(stk, pci, 2);
+	int tpe = getArgGDKType(mb, pci, 2);
 
 	if (ATOMvarsized(tpe))
 		throw(MAL, "pipeline.chanel", SQLSTATE(42000)"cannot make channel for varsized items");
 
-	int hseqbase = 0; // means destination is iter 0.
-	BAT *ch = COLnew(hseqbase, tpe, 1, TRANSIENT);
-	if (!ch)
-		throw(MAL, "pipeline.channel",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if (bunfastapp(ch, value) != GDK_SUCCEED) {
-		BBPunfix(ch->batCacheid);
-		throw(MAL, "pipeline.channel", GDK_EXCEPTION);
+	if (ATOMputFIX(tpe, mailbox, value) != GDK_SUCCEED) {
+		throw(MAL, "pipeline.send", GDK_EXCEPTION);
 	}
+	*metadata = 0;
 
-	const char *ch_name = mb->var[getArg(pci, 0)].name;
-	void *val = Tloc(ch, 0);
-	char *formatted = ATOMformat(tpe, val);
-	fprintf(stderr, "Created channel %s with initial value %s\n", ch_name, formatted);
-	GDKfree(formatted);
-
-	BBPkeepref(ch);
-	*ret = ch->batCacheid;
 	return MAL_SUCCEED;
 }
 
-// 	 arg("", bit) <- arg("handle", ptr),batargany("channel",1),argany("value", 1)
+// 	 dummy := pipeline.send(handle:ptr, mailbox:T, metadata:int, value:T)
 static str
 PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -224,82 +213,81 @@ PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	ptr handle = *getArgReference_ptr(stk, pci, 1);
 	Pipeline *p = (Pipeline*)handle;
+	Pipelines *pp = p->p;
+
+	// Note: these point into the master stack frame not the worker stack frame
+	void *mailbox = getArgReference(pp->stk, pci, 2);
+	int *metadata = getArgReference_int(pp->stk, pci, 3);
+
+	void *value = getArgReference(stk, pci, 4);
+	int tpe = getArgGDKType(mb, pci, 4);
+
+	MT_lock_set(&pp->l);
 
 	const char *ch_name = mb->var[getArg(pci, 2)].name;
-	bat ch_id = *getArgReference_bat(stk, pci, 2);
-
-	void *value = getArgReference(stk, pci, 3);
-	int tpe = getArgGDKType(mb, pci, 3);
-
-	bool locked = false;
-
 	char *formatted = ATOMformat(tpe, value);
-	fprintf(stderr, "Iteration %d sending value %s on channel %s\n", p->p->counters[p->wid], formatted, ch_name);
+	fprintf(stderr, "Iteration %d sending value %s on channel %s\n", pp->counters[p->wid], formatted, ch_name);
 	GDKfree(formatted);
 
-	BAT *ch = BATdescriptor(ch_id);
-	if (ch == NULL)
-		goto bailout;
-
-	MT_lock_set(&p->p->l);
-	locked = true;
-
-	if (BATcount(ch) > 0) {
-		msg = createException(MAL, "pipeline.send", SQLSTATE(42000)"causality violation detected in iteration %d: %d has already sent",
-			p->p->counters[p->wid], (int)ch->hseqbase);
+	if (!is_int_nil(*metadata)) {
+		msg = createException(MAL, "pipeline.send", SQLSTATE(42000)"causality violation detected in iteration %d: %d has sent already",
+			pp->counters[p->wid], *metadata);
 		goto bailout;
 	}
 
-	ch->hseqbase = p->p->counters[p->wid] + 1;
-	if (bunfastapp(ch, value) != GDK_SUCCEED) {
+	ATOMunfix(tpe, mailbox);
+	if (ATOMputFIX(tpe, mailbox, value) != GDK_SUCCEED) {
 		msg = createException(MAL, "pipeline.send", GDK_EXCEPTION);
 		goto bailout;
 	}
-	assert(BATcount(ch) == 1);
+	*metadata = p->p->counters[p->wid] + 1;
 
 	PIPELINEnotify(p, "send");
-
 bailout:
-	if (locked)
-		MT_lock_unset(&p->p->l);
-	if (ch)
-		BBPunfix(ch->batCacheid);
+	MT_lock_unset(&pp->l);
 	return msg;
 }
 
-// 	 argany("", 1) <- arg("handle", ptr), batargany("channel",1)
+// 	 value:T := pipeline.recv(handle, mailbox:T, metadata:int)
 static str
 PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	void *ret = getArgReference(stk, pci, 0);
-	ptr handle = *getArgReference_ptr(stk, pci, 1);
-	bat ch_id = *getArgReference_bat(stk, pci, 2);
-	Pipeline *p = (Pipeline*)handle;
-	BAT *ch = NULL;
 	bool locked = false;
-	int prev_log_state = -1, log_state;
 
-	int tpe = getArgGDKType(mb, pci, 0);
+	void *ret = getArgReference(stk, pci, 0);
+
+	ptr handle = *getArgReference_ptr(stk, pci, 1);
+	Pipeline *p = (Pipeline*)handle;
+	Pipelines *pp = p->p;
+
+	// Note: these point into the master stack frame not the worker stack frame
+	void *mailbox = getArgReference(pp->stk, pci, 2);
+	int *metadata = getArgReference_int(pp->stk, pci, 3);
+	int prev = int_nil;
+
+	int tpe = getArgGDKType(mb, pci, 2);
 	const char *ch_name = mb->var[getArg(pci, 2)].name;
 
-	ch = BATdescriptor(ch_id);
-	if (ch == NULL)
-		goto bailout;
-
-	MT_lock_set(&p->p->l);
+	MT_lock_set(&pp->l);
 	locked = true;
+	prev = *metadata ^1; // different but no overflow
 	while (true) {
-		BUN occupied = BATcount(ch);
-		int myself = p->p->counters[p->wid];
-		int tgt = (int)ch->hseqbase;
-		if (occupied == 1 && tgt == myself) {
+		int myself = pp->counters[p->wid];
+		if (*metadata == myself) {
 			// found it, drop out
-			void *src = Tloc(ch, 0);
-			memcpy(ret, src, ATOMlen(tpe, src));
-			BATsetcount(ch, 0);
+			if (ATOMputFIX(tpe, ret, mailbox) != GDK_SUCCEED) {
+				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
+				goto bailout;
+			}
+			if (ATOMputFIX(tpe, mailbox, ATOMnilptr(tpe)) != GDK_SUCCEED) {
+				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
+				goto bailout;
+			}
+			*metadata = int_nil;
+			//
 			char *formatted = ATOMformat(tpe, ret);
-			fprintf(stderr, "Iteration %d recv'd %s from channel %s\n", p->p->counters[p->wid], formatted, ch_name);
+			fprintf(stderr, "Iteration %d recv'd %s from channel %s\n", pp->counters[p->wid], formatted, ch_name);
 			GDKfree(formatted);
 			break;
 		}
@@ -317,10 +305,13 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		}
 
-		log_state = 835 * BATcount(ch) + ch->hseqbase;
-		if (log_state != prev_log_state) {
-			prev_log_state = log_state;
-			fprintf(stderr, "Iteration %d waiting to recv from channel %s [%d for %d]\n", p->p->counters[p->wid], ch_name, (int)BATcount(ch), (int)ch->hseqbase);
+		if (*metadata != prev) {
+			prev = *metadata;
+			fprintf(stderr, "Iteration %d waiting to recv from channel %s [currently ", p->p->counters[p->wid], ch_name);
+			if (is_int_nil(*metadata))
+				fprintf(stderr, "empty]\n");
+			else
+				fprintf(stderr, "for %d]\n", *metadata);
 		}
 
 		// Wait until something changes
@@ -330,8 +321,6 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	if (locked)
 		MT_lock_unset(&p->p->l);
-	if (ch)
-		BBPunfix(ch->batCacheid);
 	return msg;
 }
 
@@ -3196,19 +3185,19 @@ ALGmaxany(ptr result, const bat *bid)
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return next atomic number [0..n>", args(1,2, arg("", int), arg("pipeline", ptr))),
- pattern("pipeline", "channel", PPchannel, true, "create a new channel", args(1,2,
-	 batargany("",1),
-	 argany("value", 1)
+ pattern("pipeline", "channel", PPchannel, true, "create a new channel", args(2,3,
+	argany("mailbox", 1), arg("channel", int),
+	 argany("initial", 1)
  )),
- pattern("pipeline", "recv", PPrecv, true, "receive from channel", args(1,3,
+ pattern("pipeline", "recv", PPrecv, true, "receive from channel", args(1,4,
 	 argany("", 1),
-	 arg("handle", ptr),
-	 batargany("channel",1)
+	 arg("handle", ptr), argany("mailbox", 1), arg("channel", int)
  )),
- pattern("pipeline", "send", PPsend, true, "send through channel", args(1,4,
+ pattern("pipeline", "send", PPsend, true, "send through channel", args(1,5,
 	 arg("", bit),
 	 arg("handle", ptr),
-	 batargany("channel",1),
+	 argany("mailbox",1),
+	 arg("channel",int),
 	 argany("value", 1)
  )),
 
