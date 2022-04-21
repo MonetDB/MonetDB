@@ -2457,7 +2457,7 @@ BATmode(BAT *b, bool transient)
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
 #undef assert
-#define assert(test)	((void) ((test) || (TRC_CRITICAL_ENDIF(BAT_, "Assertion `%s' failed\n", #test), 0)))
+#define assert(test)	((void) ((test) || (TRC_CRITICAL_ENDIF(CHECK, "Assertion `%s' failed\n", #test), 0)))
 #endif
 
 /* Assert that properties are set correctly.
@@ -2706,9 +2706,8 @@ BATassertProps(BAT *b)
 		return;
 	}
 
-	/* only do a scan if property checking is requested and the bat
-	 * is not a view */
-	if (!isview1 && !isview2 && GDKdebug & PROPMASK) {
+	/* only do a scan if the bat is not a view */
+	if (!isview1 && !isview2) {
 		const void *maxval = NULL;
 		const void *minval = NULL;
 		bool seenmax = false, seenmin = false;

@@ -524,7 +524,7 @@ main(int argc, char **av)
 					usage(prog, -1);
 				}
 			} else {
-				debug |= 1;
+				debug |= CHECKMASK;
 			}
 			break;
 		case 'r':

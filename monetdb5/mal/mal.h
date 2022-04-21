@@ -57,7 +57,7 @@ mal_export stream	*maleventstream;
 */
 #define GRPthreads (THRDMASK | PARMASK)
 #define GRPmemory (ALLOCMASK )
-#define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
+#define GRPproperties (CHECKMASK )
 #define GRPio (IOMASK | PERFMASK )
 #define GRPheaps (HEAPMASK)
 #define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
