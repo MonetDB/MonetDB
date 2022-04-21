@@ -54,7 +54,7 @@ def main():
 
         # Check the long running query, but lets first wait for a moment for the
         #   workers to start with their queries
-        mstcur.execute('call sys.sleep(500)')
+        mstcur.execute('call sys.sleep(1000)')
         query = 'select username, status, query from sys.queue() where query like \'call sys.sleep(5000)%\' order by query'
         expected_res = [
         ('monetdb', 'running', 'call sys.sleep('+SLEEP_TIME+')\n;'),
