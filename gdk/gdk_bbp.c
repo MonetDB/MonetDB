@@ -3062,7 +3062,7 @@ BBPkeepref(BAT *b)
 		BATsettrivprop(b);
 		MT_lock_unset(&b->theaplock);
 	}
-	if (GDKdebug & (CHECKMASK | PROPMASK))
+	if (GDKdebug & CHECKMASK)
 		BATassertProps(b);
 	if (BATsetaccess(b, BAT_READ) == NULL)
 		return;		/* already decreffed */

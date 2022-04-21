@@ -1116,7 +1116,7 @@ logger_read_transaction(logger *lg)
 	int dbg = GDKdebug;
 
 	if (!lg->flushing)
-		GDKdebug &= ~(CHECKMASK|PROPMASK);
+		GDKdebug &= ~CHECKMASK;
 
 	while (err == LOG_OK && (ok=log_read_format(lg, &l))) {
 		if (l.flag == 0 && l.id == 0) {
@@ -2001,7 +2001,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		needcommit = true;
 	}
 	dbg = GDKdebug;
-	GDKdebug &= ~(CHECKMASK|PROPMASK);
+	GDKdebug &= ~CHECKMASK;
 	if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
 		GDKerror("Logger_new: commit failed");
 		goto error;
@@ -2026,7 +2026,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 			}
 		}
 		dbg = GDKdebug;
-		GDKdebug &= ~(CHECKMASK|PROPMASK);
+		GDKdebug &= ~CHECKMASK;
 		if (logger_commit(lg) != GDK_SUCCEED) {
 			goto error;
 		}
