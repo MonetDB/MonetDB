@@ -1444,7 +1444,25 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 
 					if ((!e1ok && e2ok) || (e1ok && !e2ok)) {
 						sql_exp *ocol = e1ok ? e2 : e1, *constant = e1ok ? e1 : e2, *mul, *colref, *naggr, *newop, *col = ocol, *match;
-						bool add_col = true;
+						bool add_col = true, prepend = false;
+
+						/* if 'col' is a projection from the under relation, then use it */
+						while (is_numeric_upcast(col))
+							col = col->l;
+						if (col->type == e_column) {
+							sql_exp *colf = exps_find_exp(l->exps, col);
+
+							/* col is already found in the inner relation. Also look for a new reference for col, eg sql_add(col, 1), 1 as col */
+							if (colf && list_position(l->exps, colf) < list_position(l->exps, oexp)) {
+								add_col = false;
+							} else if (!colf && is_simple_project(l->op) && list_empty(l->r) && !rel_is_ref(l) && !need_distinct(l)) {
+								prepend = true;
+								add_col = false;
+							} else if (!colf && (is_simple_project(l->op) || is_groupby(l->op)))  {
+								/* on these scenarios the new column expression will be ordered/(grouped for distinct) or create potential ambiguity (multiple ref), so skip */
+								continue;
+							}
+						}
 
 						/* add count star */
 						count_star_exp = rel_groupby_add_count_star(v->sql, groupby, count_star_exp, &count_added);
@@ -1457,20 +1475,6 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 						if (!has_label(mul))
 							exp_label(v->sql->sa, mul, ++v->sql->label);
 
-						/* if 'col' is a projection from the under relation, then use it */
-						while (is_numeric_upcast(col))
-							col = col->l;
-						if (col->type == e_column) {
-							sql_exp *colf = exps_find_exp(l->exps, col);
-
-							/* col is already found in the inner relation. Also look for a new reference for col, eg sql_add(col, 1), 1 as col */
-							if (colf && list_position(l->exps, colf) < list_position(l->exps, oexp)) {
-								add_col = false;
-							} else if (!colf && is_simple_project(l->op) && list_empty(l->r) && !rel_is_ref(l) && !need_distinct(l)) {
-								list_prepend(l->exps, exp_ref(v->sql, col));
-								add_col = false;
-							}
-						}
 						colref = exp_ref(v->sql, ocol);
 						if (add_col) /* if 'col' will be added, then make sure it has an unique label */
 							exp_label(v->sql->sa, colref, ++v->sql->label);
@@ -1504,6 +1508,10 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 							v->sql->errstr[0] = '\0';
 							continue;
 						}
+
+						/* a column reference can be prepended to the inner relation, add it after all the check type calls succeed */
+						if (prepend)
+							list_prepend(l->exps, exp_ref(v->sql, col));
 
 						/* the new generate function calls are valid, update relations */
 						/* we need a new relation for the multiplication and addition/subtraction */
@@ -1654,6 +1662,9 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 							sql_exp *ne = exp_ref(v->sql, col);
 							list_prepend(l->exps, ne);
 							n->data = exp_ref(v->sql, ne);
+						} else if (!colf && (is_simple_project(l->op) || is_groupby(l->op)))  {
+							/* on these scenarios the new column expression will be ordered/(grouped for distinct) or create potential ambiguity (multiple ref), so skip */
+							continue;
 						} else {
 							sql_exp *ne = exp_ref(v->sql, col);
 
@@ -1713,7 +1724,7 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 		if (!needed)
 			return rel;
 
-		if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l) || is_single(l))
+		if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l))
 			rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
 
 		for (node *n=((list*)rel->r)->h; n ; ) {
