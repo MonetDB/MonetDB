@@ -1462,6 +1462,8 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 								/* on these scenarios the new column expression will be ordered/(grouped for distinct) or create potential ambiguity (multiple ref), so skip */
 								continue;
 							}
+						} else if ((is_simple_project(l->op) && (!list_empty(l->r) || rel_is_ref(l) || need_distinct(l))) || is_groupby(l->op)) {
+							continue;
 						}
 
 						/* add count star */
