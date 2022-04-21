@@ -196,8 +196,12 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	q = newStmt(mb, "copy", "reset_clock");
 
+	q = newAssignment(mb);
+	q = pushLng(mb, q, 42);
+	int var_item = getDestVar(q);
+
 	q = newStmt(mb, "pipeline", "channel");
-	q = pushInt(mb, q, 100);
+	q = pushArgument(mb, q, var_item);
 	int var_channel = getDestVar(q);
 
 	q = newStmt(mb, languageRef, pipelinesRef);
@@ -221,15 +225,10 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushArgument(mb, q, var_channel);
 	int var_token = getDestVar(q);
 
-	q = newStmt(mb, "calc", "+");
-	q = pushArgument(mb, q, var_token);
-	q = pushInt(mb, q, 1);
-	getDestVar(q) = var_token;
-
 	q = newStmt(mb, "copy", "work");
 	q = pushLng(mb, q, 1);
 	q = pushStr(mb, q, "FOO");
-	q = pushArgument(mb, q, var_token);
+	q = pushArgument(mb, q, var_iter_id);
 
 	q = newStmt(mb, "pipeline", "send");
 	q = pushArgument(mb, q, var_handle);
