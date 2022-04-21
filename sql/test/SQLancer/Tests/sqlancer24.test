@@ -35,10 +35,10 @@ SELECT 1 FROM (SELECT CAST(NULL AS INT)) x(x) WHERE sql_max(TRUE, EXISTS ((SELEC
 ----
 1
 
-#query I nosort
-#SELECT 1 FROM (SELECT 1) x(x) CROSS JOIN LATERAL (SELECT 1 WHERE x.x BETWEEN x.x AND x.x) y(y)
-#----
-#1
+query I nosort
+SELECT 1 FROM (SELECT 1) x(x) CROSS JOIN LATERAL (SELECT 1 WHERE x.x BETWEEN x.x AND x.x) y(y)
+----
+1
 
 query I nosort
 SELECT 1 FROM (SELECT 1) x(x) HAVING min((SELECT x.x)) = 1
