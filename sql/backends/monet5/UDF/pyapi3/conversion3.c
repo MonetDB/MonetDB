@@ -108,7 +108,10 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	// element is NULL, and 'False' otherwise
 	// if we know for sure that the BAT has no NULL values, we can skip the construction
 	// of this masked array. Otherwise, we create it.
-	if (b->tnil || !b->tnonil) {
+	MT_lock_set(&b->theaplock);
+	bool bnonil = b->tnonil;
+	MT_lock_unset(&b->theaplock);
+	if (!bnonil) {
 		PyObject *mask;
 		PyObject *mafunc = PyObject_GetAttrString(
 			PyImport_Import(PyUnicode_FromString("numpy.ma")), "masked_array");

@@ -146,10 +146,12 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 		memorypool -= argclaim;
 		stk->workers++;
 		stk->memory += argclaim;
+		MT_lock_set(&mal_delayLock);
 		if( mb->workers < stk->workers)
 			mb->workers = stk->workers;
 		if( mb->memory < stk->memory)
 			mb->memory = stk->memory;
+		MT_lock_unset(&mal_delayLock);
 		MT_lock_unset(&admissionLock);
 		return 0;
 	}

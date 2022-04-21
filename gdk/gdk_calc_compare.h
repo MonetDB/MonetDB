@@ -873,7 +873,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 				b2i.width,
 				&ci1, &ci2,
 				b1->hseqbase, b2->hseqbase,
-				b1->tnonil && b2->tnonil,
+				b1i.nonil && b2i.nonil,
 				ci1.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,
@@ -913,7 +913,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
 				&ci,
 				&(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				b->hseqbase, 0,
-				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,
@@ -952,7 +952,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s
 				&(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				&ci,
 				0, b->hseqbase,
-				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,

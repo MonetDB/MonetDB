@@ -1365,9 +1365,8 @@ wrapup:
 	return msg;
 }
 
-str
-PYAPI3PyAPIprelude(void *ret) {
-	(void) ret;
+static str
+PYAPI3PyAPIprelude(void) {
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
 		wchar_t* program = Py_DecodeLocale("mserver5", NULL);
@@ -1716,7 +1715,6 @@ static mel_func pyapi3_init_funcs[] = {
  pattern("pyapi3", "eval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,3, varargany("",0),arg("fptr",ptr),arg("expr",str))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- command("pyapi3", "prelude", PYAPI3PyAPIprelude, false, "", args(1,1, arg("",void))),
  pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr", ptr), arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batpyapi3", "subeval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
@@ -1738,4 +1736,4 @@ static mel_func pyapi3_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pyapi3_mal)
-{ mal_module("pyapi3", NULL, pyapi3_init_funcs); }
+{ mal_module2("pyapi3", NULL, pyapi3_init_funcs, PYAPI3PyAPIprelude, NULL); }

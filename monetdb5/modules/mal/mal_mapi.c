@@ -849,16 +849,22 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
  * be notified.
  */
 static str
-SERVERlisten_default(int *ret)
+MAPIprelude(void)
 {
 	int port = MAPI_PORT;
 	const char* p = GDKgetenv("mapi_port");
 
-	(void) ret;
 	if (p)
 		port = (int) strtol(p, NULL, 10);
 	p = GDKgetenv("mapi_usock");
 	return SERVERlisten(port, p, SERVERMAXUSERS);
+}
+
+static str
+SERVERlisten_default(int *ret)
+{
+	(void)ret;
+	return MAPIprelude();
 }
 
 static str
@@ -1984,7 +1990,6 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 #include "mel.h"
 mel_func mal_mapi_init_funcs[] = {
- command("mapi", "prelude", SERVERlisten_default, false, "", args(1,1, arg("",int))),
  command("mapi", "listen", SERVERlisten_default, false, "Start a Mapi server with the default settings.", args(1,1, arg("",int))),
  command("mapi", "listen", SERVERlisten_port, false, "Start a Mapi listener on the port given.", args(1,2, arg("",int),arg("port",int))),
  command("mapi", "listen", SERVERlisten_usock, false, "Start a Mapi listener on the unix socket file given.", args(1,2, arg("",int),arg("unixsocket",str))),
@@ -2047,7 +2052,7 @@ mel_func mal_mapi_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_mal_mapi_mal)
-{ mal_module("mapi", NULL, mal_mapi_init_funcs); }
+{ mal_module2("mapi", NULL, mal_mapi_init_funcs, MAPIprelude, NULL); }
 
 #else
 // this avoids a compiler warning w.r.t. empty compilation units.

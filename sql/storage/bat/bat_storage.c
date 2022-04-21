@@ -281,10 +281,12 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
+	b->batDirtydesc = true;
 	MT_lock_unset(&b->theaplock);
 
 	uint32_t *restrict dst;
 	BUN cnt = BATcount(b);
+	MT_rwlock_wrlock(&b->thashlock);
 	for (; s ; s=s->next) {
 		if (s->start >= nr)
 			break;
@@ -319,8 +321,9 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				}
 				assert(lnr==0);
 			}
-			b->batDirtydesc = true;
+			MT_lock_set(&b->theaplock);
 			b->theap->dirty = true;
+			MT_lock_unset(&b->theaplock);
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
 			dst = (uint32_t *) Tloc(b, 0) + (pos/32);
@@ -378,8 +381,12 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				cnt = s->end;
 		}
 	}
-	if (nr > BATcount(b))
+	MT_rwlock_wrunlock(&b->thashlock);
+	if (nr > BATcount(b)) {
+		MT_lock_set(&b->theaplock);
 		BATsetcount(b, nr);
+		MT_lock_unset(&b->theaplock);
+	}
 
 	bat_destroy(b);
 	return LOG_OK;
@@ -552,9 +559,51 @@ timestamp_delta( sql_trans *tr, sql_delta *d)
 	return d;
 }
 
+static sql_table *
+find_tmp_table(sql_trans *tr, sql_table *t)
+{
+	assert(isGlobal(t));
+	assert(tr->tmp == t->s);
+	node *n = cs_find_id(&tr->localtmps, t->base.id);
+	sql_table *lt = NULL;
+
+	if (n)
+		lt = (sql_table*)n->data;
+	if (!lt) {
+		lt = globaltmp_instantiate(tr, t);
+		/* TODO prepend to not mark as new */
+		if (lt)
+			cs_add(&tr->localtmps, lt, true);
+	}
+	return lt;
+}
+
+static sql_column *
+find_tmp_column(sql_trans *tr, sql_column *c)
+{
+	assert(isGlobal(c->t));
+	sql_table *lt = find_tmp_table(tr, c->t);
+	if (lt)
+		return find_sql_column(lt, c->base.name);
+	return NULL;
+}
+
+static sql_idx *
+find_tmp_idx(sql_trans *tr, sql_idx *i)
+{
+	assert(isGlobal(i->t));
+	sql_table *lt = find_tmp_table(tr, i->t);
+	if (lt)
+		return find_sql_idx(lt, i->base.name);
+	return NULL;
+}
+
 static sql_delta *
 temp_col_timestamp_delta( sql_trans *tr, sql_column *c)
 {
+	if (isGlobal(c->t))
+		c = find_tmp_column(tr, c);
+	assert (!isGlobal(c->t));
 	assert(isTempTable(c->t));
 	sql_delta *d = temp_delta(ATOMIC_PTR_GET(&c->data), tr->tid);
 	if (!d) {
@@ -613,6 +662,9 @@ timestamp_storage( sql_trans *tr, storage *d)
 static storage *
 temp_tab_timestamp_storage( sql_trans *tr, sql_table *t)
 {
+	if (isGlobal(t))
+		t = find_tmp_table(tr, t);
+	assert(!isGlobal(t));
 	assert(isTempTable(t));
 	storage *d = temp_storage(ATOMIC_PTR_GET(&t->data), tr->tid);
 	if (!d) {
@@ -827,9 +879,9 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	oid *uipt = NULL, *oipt = NULL;
 	BATiter uii = bat_iterator(ui);
 	BATiter oii = bat_iterator(oi);
-	if (!BATtdense(ui))
+	if (!BATtdensebi(&uii))
 		uipt = uii.base;
-	if (!BATtdense(oi))
+	if (!BATtdensebi(&oii))
 		oipt = oii.base;
 	while (uip < uie && oip < oie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
@@ -901,7 +953,7 @@ older_delta( sql_delta *d, sql_trans *tr)
 }
 
 static BAT *
-bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
+bind_ubat(sql_trans *tr, sql_delta *d, bool temp, int access, int type, size_t cnt)
 {
 	assert(tr->active);
 	sql_delta *o = NULL;
@@ -915,22 +967,24 @@ bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
 			return NULL;
 		}
 	}
-	while ((o = older_delta(d, tr)) != NULL) {
-		BAT *oui = NULL, *ouv = NULL;
-		if (!oui)
-			oui = cs_bind_ubat(&o->cs, RD_UPD_ID, type, cnt);
-		if (access == RD_UPD_VAL)
-			ouv = cs_bind_ubat(&o->cs, RD_UPD_VAL, type, cnt);
-		if (!ui || !oui || (access == RD_UPD_VAL && (!uv || !ouv))) {
-			bat_destroy(ui);
-			bat_destroy(uv);
-			bat_destroy(oui);
-			bat_destroy(ouv);
-			return NULL;
+	if (!temp) {
+		while ((o = older_delta(d, tr)) != NULL) {
+			BAT *oui = NULL, *ouv = NULL;
+			if (!oui)
+				oui = cs_bind_ubat(&o->cs, RD_UPD_ID, type, cnt);
+			if (access == RD_UPD_VAL)
+				ouv = cs_bind_ubat(&o->cs, RD_UPD_VAL, type, cnt);
+			if (!ui || !oui || (access == RD_UPD_VAL && (!uv || !ouv))) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(oui);
+				bat_destroy(ouv);
+				return NULL;
+			}
+			if ((ui = merge_updates(ui, &uv, oui, ouv)) == NULL)
+				return NULL;
+			d = o;
 		}
-		if ((ui = merge_updates(ui, &uv, oui, ouv)) == NULL)
-			return NULL;
-		d = o;
 	}
 	if (uv) {
 		bat_destroy(ui);
@@ -955,7 +1009,7 @@ bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
 
 		type = b->ttype;
 	}
-	BAT *bn = bind_ubat(tr, d, access, type, cnt);
+	BAT *bn = bind_ubat(tr, d, isTempTable(c->t), access, type, cnt);
 	unlock_column(tr->store, c->base.id);
 	return bn;
 }
@@ -971,7 +1025,7 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access, size_t cnt)
 		unlock_column(tr->store, i->base.id);
 		return NULL;
 	}
-	BAT *bn = bind_ubat(tr, d, access, type, cnt);
+	BAT *bn = bind_ubat(tr, d, isTempTable(i->t), access, type, cnt);
 	unlock_column(tr->store, i->base.id);
 	return bn;
 }
@@ -996,6 +1050,63 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 	BAT *s = BATslice(b, 0, cnt);
 	bat_destroy(b);
 	return s;
+}
+
+static int
+bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
+{
+	lock_column(tr->store, c->base.id);
+	size_t cnt = count_col(tr, c, 0);
+	sql_delta *d = col_timestamp_delta(tr, c);
+	int type = c->type.type->localtype;
+
+	if (!d) {
+		unlock_column(tr->store, c->base.id);
+		return LOG_ERR;
+	}
+	if (d->cs.st == ST_DICT) {
+		BAT *b = quick_descriptor(d->cs.bid);
+
+		type = b->ttype;
+	}
+
+	*ui = bind_ubat(tr, d, isTempTable(c->t), RD_UPD_ID, type, cnt);
+	*uv = bind_ubat(tr, d, isTempTable(c->t), RD_UPD_VAL, type, cnt);
+
+	unlock_column(tr->store, c->base.id);
+
+	if (*ui == NULL || *uv == NULL) {
+		bat_destroy(*ui);
+		bat_destroy(*uv);
+		return LOG_ERR;
+	}
+	return LOG_OK;
+}
+
+static int
+bind_updates_idx(sql_trans *tr, sql_idx *i, BAT **ui, BAT **uv)
+{
+	lock_column(tr->store, i->base.id);
+	size_t cnt = count_idx(tr, i, 0);
+	sql_delta *d = idx_timestamp_delta(tr, i);
+	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
+
+	if (!d) {
+		unlock_column(tr->store, i->base.id);
+		return LOG_ERR;
+	}
+
+	*ui = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_ID, type, cnt);
+	*uv = bind_ubat(tr, d, isTempTable(i->t), RD_UPD_VAL, type, cnt);
+
+	unlock_column(tr->store, i->base.id);
+
+	if (*ui == NULL || *uv == NULL) {
+		bat_destroy(*ui);
+		bat_destroy(*uv);
+		return LOG_ERR;
+	}
+	return LOG_OK;
 }
 
 static void *					/* BAT * */
@@ -1556,9 +1667,9 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 						oid *uipt = NULL, *nipt = NULL;
 						BATiter uii = bat_iterator(ui);
 						BATiter tidsi = bat_iterator(tids);
-						if (!BATtdense(ui))
+						if (!BATtdensebi(&uii))
 							uipt = uii.base;
-						if (!BATtdense(tids))
+						if (!BATtdensebi(&tidsi))
 							nipt = tidsi.base;
 						while (uip < uie && nip < nie && res == LOG_OK) {
 							oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
@@ -1995,6 +2106,9 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
+	if (isTempTable(c->t) && isGlobal(c->t))
+		c = find_tmp_column(tr, c);
+
 	if (tpe == TYPE_bat) {
 		BAT *t = tids;
 		if (!BATcount(t))
@@ -2006,7 +2120,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 
 	assert(delta && delta->cs.ts == tr->tid);
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
-		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
+		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t) || isUnloggedTable(c->t) ? NULL : &log_update_col);
 
 	odelta = delta;
 	if ((res = update_col_execute(tr, &delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat)) != LOG_OK)
@@ -2064,6 +2178,9 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
+	if (isTempTable(i->t) && isGlobal(i->t))
+		i = find_tmp_idx(tr, i);
+
 	if (tpe == TYPE_bat) {
 		BAT *t = tids;
 		if (!BATcount(t))
@@ -2075,7 +2192,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 
 	assert(delta && delta->cs.ts == tr->tid);
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
-		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t) || isUnloggedTable(i->t) ? NULL : &log_update_idx);
 
 	odelta = delta;
 	res = update_col_execute(tr, &delta, i->t, isNew(i), tids, upd, tpe == TYPE_bat);
@@ -2264,6 +2381,9 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 			return LOG_OK;
 	}
 
+	if (isTempTable(c->t) && isGlobal(c->t))
+		c = find_tmp_column(tr, c);
+
 	if ((delta = bind_col_data(tr, c, NULL)) == NULL)
 		return LOG_ERR;
 
@@ -2271,7 +2391,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 	assert(delta && (!isTempTable(c->t) || delta->cs.ts == tr->tid));
 	if (isTempTable(c->t))
 	if ((!inTransaction(tr, c->t) && (odelta != delta || !segments_in_transaction(tr, c->t) || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
-		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
+		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t) || isUnloggedTable(c->t) ? NULL : &log_update_col);
 
 	odelta = delta;
 	if ((res = append_col_execute(tr, &delta, c->base.id, offset, offsets, data, cnt, tpe, c->storage_type)) != LOG_OK)
@@ -2301,6 +2421,9 @@ append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN 
 			return LOG_OK;
 	}
 
+	if (isTempTable(i->t) && isGlobal(i->t))
+		i = find_tmp_idx(tr, i);
+
 	if ((delta = bind_idx_data(tr, i, NULL)) == NULL)
 		return LOG_ERR;
 
@@ -2308,7 +2431,7 @@ append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN 
 	assert(delta && (!isTempTable(i->t) || delta->cs.ts == tr->tid));
 	if (isTempTable(i->t))
 	if ((!inTransaction(tr, i->t) && (odelta != delta || !segments_in_transaction(tr, i->t) || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
-		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t) || isUnloggedTable(i->t) ? NULL : &log_update_idx);
 
 	odelta = delta;
 	res = append_col_execute(tr, &delta, i->base.id, offset, offsets, data, cnt, tpe, NULL);
@@ -2362,7 +2485,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 	}
 	unlock_table(tr->store, t->base.id);
 	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
+		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t) || isUnloggedTable(t) ? NULL : &log_update_del);
 	return LOG_OK;
 }
 
@@ -2442,7 +2565,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			}
 			unlock_table(tr->store, t->base.id);
 		} else {
-			if (!BATtordered(i)) {
+			if (!i->tsorted) {
 				assert(oi == i);
 				BAT *ni = NULL;
 				if (BATsort(&ni, NULL, NULL, i, NULL, NULL, false, false, false) != GDK_SUCCEED)
@@ -2450,7 +2573,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 				if (ni)
 					i = ni;
 			}
-			assert(BATtordered(i));
+			assert(i->tsorted);
 			BUN icnt = BATcount(i);
 			BATiter ii = bat_iterator(i);
 			oid *o = ii.base, n = o[0]+1;
@@ -2480,7 +2603,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 	if (i != oi)
 		bat_destroy(i);
 	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
+		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t) || isUnloggedTable(t) ? NULL : &log_update_del);
 	return ok;
 }
 
@@ -2588,6 +2711,9 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	int ok = LOG_OK;
 	BAT *b = ib;
 	storage *bat;
+
+	if (isTempTable(t) && isGlobal(t))
+		t = find_tmp_table(tr, t);
 
 	if (tpe == TYPE_bat && !BATcount(b))
 		return ok;
@@ -2715,7 +2841,7 @@ sorted_col(sql_trans *tr, sql_column *col)
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b)
-			sorted = BATtordered(b) || BATtrevordered(b);
+			sorted = b->tsorted || b->trevsorted;
 	}
 	return sorted;
 }
@@ -2895,8 +3021,8 @@ create_col(sql_trans *tr, sql_column *c)
 		size_t cnt = 0;
 
 		/* alter ? */
-		if (ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL) {
-			storage *s = ATOMIC_PTR_GET(&fc->t->data);
+		if (!isTempTable(c->t) && ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL) {
+			storage *s = tab_timestamp_storage(tr, fc->t);
 			cnt = segs_end(s->segs, tr, c->t);
 		}
 		if (cnt && fc != c) {
@@ -2939,7 +3065,7 @@ create_col(sql_trans *tr, sql_column *c)
 		bat->cs.ucnt = 0;
 
 		if (new /*&& !isTempTable(c->t)*/ && !isNew(c->t) /* alter */)
-			trans_add(tr, &c->base, bat, &tc_gc_col, &commit_create_col, isTempTable(c->t)?NULL:&log_create_col);
+			trans_add(tr, &c->base, bat, &tc_gc_col, &commit_create_col, isTempTable(c->t) ? NULL : &log_create_col);
 	}
 	return ok;
 }
@@ -3045,7 +3171,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		}
 		bat->cs.ucnt = 0;
 		if (new && !isNew(ni->t) /* alter */)
-			trans_add(tr, &ni->base, bat, &tc_gc_idx, &commit_create_idx, isTempTable(ni->t)?NULL:&log_create_idx);
+			trans_add(tr, &ni->base, bat, &tc_gc_idx, &commit_create_idx, isTempTable(ni->t) ? NULL : &log_create_idx);
 	}
 	return ok;
 }
@@ -3117,7 +3243,7 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 			size_t cnt = BATcount(b);
 			ok = delete_range(tr, t, s, start, cnt);
 		} else {
-			assert(BATtordered(b));
+			assert(b->tsorted);
 			BUN icnt = BATcount(b);
 			BATiter bi = bat_iterator(b);
 			size_t lcnt = 1;
@@ -3223,7 +3349,7 @@ create_del(sql_trans *tr, sql_table *t)
 			ok = LOG_ERR;
 		}
 		if (new)
-			trans_add(tr, &t->base, bat, &tc_gc_del, &commit_create_del, isTempTable(t)?NULL:&log_create_del);
+			trans_add(tr, &t->base, bat, &tc_gc_del, &commit_create_del, isTempTable(t) ? NULL : &log_create_del);
 	}
 	return ok;
 }
@@ -3482,7 +3608,7 @@ drop_del(sql_trans *tr, sql_table *t)
 
 	if (!isNew(t) && !isTempTable(t)) {
 		storage *bat = ATOMIC_PTR_GET(&t->data);
-		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_destroy_del, &log_destroy_del);
+		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_destroy_del, isUnloggedTable(t) ? NULL : &log_destroy_del);
 	}
 	return ok;
 }
@@ -3492,7 +3618,7 @@ drop_col(sql_trans *tr, sql_column *c)
 {
 	assert(!isNew(c) && !isTempTable(c->t));
 	sql_delta *d = ATOMIC_PTR_GET(&c->data);
-	trans_add(tr, &c->base, d, &tc_gc_drop_col, &commit_destroy_del, &log_destroy_col);
+	trans_add(tr, &c->base, d, &tc_gc_drop_col, &commit_destroy_del, isUnloggedTable(c->t) ? NULL : &log_destroy_col);
 	return LOG_OK;
 }
 
@@ -3501,7 +3627,7 @@ drop_idx(sql_trans *tr, sql_idx *i)
 {
 	assert(!isNew(i) && !isTempTable(i->t));
 	sql_delta *d = ATOMIC_PTR_GET(&i->data);
-	trans_add(tr, &i->base, d, &tc_gc_drop_idx, &commit_destroy_del, &log_destroy_idx);
+	trans_add(tr, &i->base, d, &tc_gc_drop_idx, &commit_destroy_del, isUnloggedTable(i->t) ? NULL : &log_destroy_idx);
 	return LOG_OK;
 }
 
@@ -3568,7 +3694,7 @@ clear_col(sql_trans *tr, sql_column *c, bool renew)
 	if ((delta = bind_col_data(tr, c, renew?&update_conflict:NULL)) == NULL)
 		return update_conflict ? BUN_NONE - 1 : BUN_NONE;
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
-		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
+		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t) || isUnloggedTable(c->t) ? NULL : &log_update_col);
 	if (delta)
 		return clear_cs(tr, &delta->cs, renew, isTempTable(c->t));
 	return 0;
@@ -3585,7 +3711,7 @@ clear_idx(sql_trans *tr, sql_idx *i, bool renew)
 	if ((delta = bind_idx_data(tr, i, renew?&update_conflict:NULL)) == NULL)
 		return update_conflict ? BUN_NONE - 1 : BUN_NONE;
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
-		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t) || isUnloggedTable(i->t) ? NULL : &log_update_idx);
 	if (delta)
 		return clear_cs(tr, &delta->cs, renew, isTempTable(i->t));
 	return 0;
@@ -3627,7 +3753,7 @@ clear_del(sql_trans *tr, sql_table *t, int in_transaction)
 		unlock_table(tr->store, t->base.id);
 	}
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
-		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
+		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isTempTable(t) || isUnloggedTable(t) ? NULL : &log_update_del);
 	if (clear && ok == LOG_OK)
 		return clear_storage(tr, t, bat);
 	if (ok == LOG_ERR)
@@ -4438,10 +4564,10 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
 	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
+		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t) || isUnloggedTable(t) ? NULL : &log_update_del);
 		in_transaction = true;
 	}
-	if (in_transaction && !isTempTable(t))
+	if (in_transaction && !isTempTable(t) && !isUnloggedTable(t))
 		tr->logchanges += (int) total;
 	if (*offsets) {
 		BAT *pos = *offsets;
@@ -4514,10 +4640,10 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
 	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
+		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t) || isUnloggedTable(t) ? NULL : &log_update_del);
 		in_transaction = true;
 	}
-	if (in_transaction && !isTempTable(t))
+	if (in_transaction && !isTempTable(t) && !isUnloggedTable(t))
 		tr->logchanges += (int) cnt;
 	if (ok == LOG_OK) {
 		*offset = slot;
@@ -4537,6 +4663,9 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets)
 {
 	storage *s;
 
+	if (isTempTable(t) && isGlobal(t))
+		t = find_tmp_table(tr, t);
+
 	/* we have a single segment structure for each persistent table
 	 * for temporary tables each has its own */
 	if ((s = bind_del_data(tr, t, NULL)) == NULL)
@@ -4551,6 +4680,9 @@ key_claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offset
 {
 	storage *s;
 	int res = 0;
+
+	if (isTempTable(t) && isGlobal(t))
+		t = find_tmp_table(tr, t);
 
 	/* we have a single segment structure for each persistent table
 	 * for temporary tables each has its own */
@@ -4717,51 +4849,6 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 	return segments2cands(s, tr, t, start, end);
 }
 
-static void
-temp_del_tab(sql_trans *tr, sql_table *t)
-{
-	ulng tid = tr->tid;
-	lock_table(tr->store, t->base.id);
-  table_retry:
-	for (storage *d = ATOMIC_PTR_GET(&t->data), *p = NULL, *n = NULL; d; d = n) {
-		n = d->next;
-		if (d->cs.ts == tid) {
-			if (p == NULL) {
-				if (!ATOMIC_PTR_CAS(&t->data, (void **) &d, n))
-					goto table_retry;
-			} else {
-				p->next = n;
-			}
-			d->next = NULL;
-			destroy_storage(d);
-		} else {
-			p = d;
-		}
-	}
-	unlock_table(tr->store, t->base.id);
-	for (node *nd = t->columns->l->h; nd; nd = nd->next) {
-		sql_column *c = nd->data;
-		lock_column(tr->store, c->base.id);
-	  column_retry:
-		for (sql_delta *d = ATOMIC_PTR_GET(&c->data), *p = NULL, *n = NULL; d; d = n) {
-			n = d->next;
-			if (d->cs.ts == tid) {
-				if (p == NULL) {
-					if (!ATOMIC_PTR_CAS(&c->data, (void **) &d, n))
-						goto column_retry;
-				} else {
-					p->next = n;
-				}
-				d->next = NULL;
-				destroy_delta(d, false);
-			} else {
-				p = d;
-			}
-		}
-		unlock_column(tr->store, c->base.id);
-	}
-}
-
 static int
 swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 {
@@ -4776,7 +4863,7 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	assert(d && d->cs.ts == tr->tid);
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
-		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, &log_update_col);
+		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, isUnloggedTable(col->t)?NULL:&log_update_col);
 	if (d->cs.bid)
 		temp_destroy(d->cs.bid);
 	if (d->cs.uibid)
@@ -4808,7 +4895,7 @@ col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	assert(d && d->cs.ts == tr->tid);
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
-		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, isTempTable(col->t)?NULL:&log_update_col);
+		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, isTempTable(col->t) || isUnloggedTable(col->t) ? NULL : &log_update_col);
 
 	d->cs.st = st;
 	d->cs.cleared = true;
@@ -4824,11 +4911,12 @@ col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 	return LOG_OK;
 }
 
-
 void
 bat_storage_init( store_functions *sf)
 {
 	sf->bind_col = &bind_col;
+	sf->bind_updates = &bind_updates;
+	sf->bind_updates_idx = &bind_updates_idx;
 	sf->bind_idx = &bind_idx;
 	sf->bind_cands = &bind_cands;
 
@@ -4871,7 +4959,6 @@ bat_storage_init( store_functions *sf)
 
 	sf->clear_table = &clear_table;
 
-	sf->temp_del_tab = &temp_del_tab;
 	sf->swap_bats = &swap_bats;
 	sf->col_compress = &col_compress;
 }
