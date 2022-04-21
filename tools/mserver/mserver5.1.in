@@ -136,7 +136,7 @@ The
 together with the
 .B =
 sign is optional.  If not specified, it defaults to
-.BR 1 .
+.BR 2 .
 In the short form \fB\-d\fP, the value, if present, must immediately
 (i.e. without space) follow the option.
 The values of multiple instances of this flag are OR-ed together.
@@ -147,11 +147,7 @@ The value is an integer, which can be (a bit-wise OR of):
 (THRDMASK) thread-specific debug output
 .TP
 .B 2
-(CHECKMASK) property enforcing on new BATs
-.TP
-.B 8
-(PROPMASK) property checking on all values:
-tells about wrongly set properties
+(CHECKMASK) property checking on new BATs
 .TP
 .B 16
 (IOMASK) major IO activity
@@ -245,7 +241,7 @@ Equivalent to \fB\-\-debug=\fP\fI(LOADMASK)\fP.
 Equivalent to \fB\-\-debug=\fP\fI(DEADBEEFMASK)\fP.
 .TP
 .B \-\-properties
-Equivalent to \fB\-\-debug=\fP\fI(CHECKMASK | PROPMASK | BATMASK)\fP.
+Equivalent to \fB\-\-debug=\fP\fI(CHECKMASK)\fP.
 .TP
 .B \-\-threads
 Equivalent to \fB\-\-debug=\fP\fI(THRDMASK | PARMASK)\fP.
