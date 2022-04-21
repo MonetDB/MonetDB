@@ -85,3 +85,14 @@ PREPARE WITH y(a,b) AS (SELECT 1, ?) SELECT "json"."filter"(JSON '"a"', y.b) FRO
 PREPARE WITH y(a,b) AS (SELECT 1, ?) SELECT "json"."filter"(JSON '"a"', y.b) FROM ((SELECT 1, 4) EXCEPT (SELECT 1,2)) x(x,y) CROSS JOIN y;
 
 PREPARE SELECT 1 FROM (SELECT 1) x(x) LEFT OUTER JOIN (SELECT DISTINCT ?) y(y) ON (SELECT TRUE FROM (SELECT 1) z(z)); --error while unnesting because of unknown type
+
+START TRANSACTION;
+create or replace function mybooludf(a bool) returns bool return a;
+PREPARE (SELECT ?) EXCEPT (SELECT 'a' FROM (SELECT 1) x(x) JOIN ((SELECT FALSE) EXCEPT (SELECT ?)) y(y) ON sys.mybooludf(y.y));
+EXEC **('b',true);
+ROLLBACK;
+
+-- TODO it requires some internal changes to be able to set types on parameters used as freevars
+PREPARE SELECT 1 FROM (SELECT ?) x(x) CROSS JOIN LATERAL (SELECT 1 FROM ((SELECT 1) INTERSECT (SELECT 2)) vx(vx) JOIN (SELECT 1) z(z) ON x.x) w(w); --error, Could not determine type for argument number 1
+
+PREPARE SELECT 2 FROM (SELECT DISTINCT 1) z(z) LEFT OUTER JOIN LATERAL (SELECT z.z, ? WHERE TRUE) a(a,b) ON TRUE; --error, push_up_project requires a type

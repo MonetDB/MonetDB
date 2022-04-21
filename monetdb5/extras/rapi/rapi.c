@@ -64,7 +64,7 @@
 		retsxp = PROTECT(newfun(bati.count));							\
 		if (!retsxp) break;												\
 		valptr = ptrfun(retsxp);										\
-		if (bat->tnonil && !bat->tnil) {								\
+		if (bati.nonil && !bati.nil) {								\
 			if (memcopy) {												\
 				memcpy(valptr, p,										\
 					   bati.count * sizeof(tpe));						\
@@ -145,7 +145,7 @@ bat_to_sexp(BAT* b, int type)
 	SEXP varvalue = NULL;
 	BATiter bi = bat_iterator(b);
 	// TODO: deal with SQL types (DECIMAL/TIME/TIMESTAMP)
-	switch (ATOMstorage(b->ttype)) {
+	switch (ATOMstorage(bi.type)) {
 	case TYPE_void: {
 		size_t i = 0;
 		varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
@@ -238,7 +238,7 @@ bat_to_sexp(BAT* b, int type)
 			GDKfree(sexp_ptrs);
 		}
 		else {
-			if (b->tnonil) {
+			if (bi.nonil) {
 				BATloop(b, p, q) {
 					SET_STRING_ELT(varvalue, j++, RSTR(
 									   (const char *) BUNtvar(bi, p)));
@@ -902,9 +902,7 @@ RAPIloopback(void *query) {
 	return ScalarLogical(1);
 }
 
-static str RAPIprelude(void *ret) {
-	(void) ret;
-
+static str RAPIprelude(void) {
 	if (RAPIEnabled()) {
 		MT_lock_set(&rapiLock);
 		/* startup internal R environment  */
@@ -931,7 +929,6 @@ static mel_func rapi_init_funcs[] = {
  pattern("rapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("rapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("rapi", "eval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- command("rapi", "prelude", RAPIprelude, false, "", args(1,1, arg("",void))),
  pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batrapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
@@ -944,4 +941,4 @@ static mel_func rapi_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_rapi_mal)
-{ mal_module("rapi", NULL, rapi_init_funcs); }
+{ mal_module2("rapi", NULL, rapi_init_funcs, RAPIprelude, NULL); }

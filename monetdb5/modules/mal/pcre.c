@@ -928,13 +928,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 }
 
 static str
-pcre_init(void *ret)
-{
-	(void) ret;
-	return NULL;
-}
-
-static str
 pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *flags)
 {
 	int pos;
@@ -2127,7 +2120,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	rbase = r->hseqbase;
 	lvals = (const char *) li.base;
 	rvals = (const char *) ri.base;
-	assert(r->tvarsized && r->ttype);
+	assert(ri.vh && r->ttype);
 	lvars = li.vh->base;
 	rvars = ri.vh->base;
 
@@ -2333,7 +2326,6 @@ mel_func pcre_init_funcs[] = {
  command("pcre", "replace_first", PCREreplace_wrap, false, "Replace _the first_ match of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
  command("pcre", "pcre_quote", PCREquote, false, "Return a PCRE pattern string that matches the argument exactly.", args(1,2, arg("",str),arg("s",str))),
  command("pcre", "sql2pcre", PCREsql2pcre, false, "Convert a SQL like pattern with the given escape character into a PCRE pattern.", args(1,3, arg("",str),arg("pat",str),arg("esc",str))),
- command("pcre", "prelude", pcre_init, false, "Initialize pcre", args(1,1, arg("",void))),
  command("str", "replace", PCREreplace_wrap, false, "", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
  command("batpcre", "replace", PCREreplace_bat_wrap, false, "", args(1,5, batarg("",str),batarg("orig",str),arg("pat",str),arg("repl",str),arg("flag",str))),
  command("batpcre", "replace_first", PCREreplacefirst_bat_wrap, false, "", args(1,5, batarg("",str),batarg("orig",str),arg("pat",str),arg("repl",str),arg("flag",str))),

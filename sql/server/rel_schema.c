@@ -217,7 +217,8 @@ mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *t
 	sql_table *t = NULL;
 	table_types tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_MERGE_TABLE)?tt_merge_table:
-		(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+		(temp == SQL_REPLICA_TABLE)?tt_replica_table:
+		(temp == SQL_UNLOGGED_TABLE)?tt_unlogged_table:tt_table;
 
 	switch (mvc_create_table(&t, sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0)) {
 		case -1:
@@ -377,6 +378,10 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
+		if (ol_find_name(t->idxs, name) || mvc_bind_idx(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
+			return res;
+		}
 		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -434,6 +439,18 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (!rt)
 			return SQL_ERR;
+		if (!rt->s) { /* disable foreign key on declared table */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key with declared tables");
+			return res;
+		}
+		if (isTempSchema(t->s) != isTempSchema(rt->s)) { /* disable foreign key between temp and non temp */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
+			return res;
+		}
+		if (isUnloggedTable(t) != isUnloggedTable(rt)) { /* disable foreign key between logged and unlogged */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables");
+			return res;
+		}
 		if (!ns || !*ns) { /* add this to be safe */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key name name cannot be empty");
 			return res;
@@ -446,6 +463,10 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name)) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
+			return res;
+		}
+		if (ol_find_name(t->idxs, name) || mvc_bind_idx(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: an index named '%s' already exists, and it would conflict with the key", name);
 			return res;
 		}
 
@@ -680,6 +701,18 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 		int ref_actions = n->next->next->next->next->data.i_val;
 
 		assert(n->next->next->next->next->type == type_int);
+		if (!ft->s) { /* disable foreign key on declared table */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key with declared tables");
+			return SQL_ERR;
+		}
+		if (isTempSchema(t->s) != isTempSchema(ft->s)) { /* disable foreign key between temp and non temp */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
+			return SQL_ERR;
+		}
+		if (isUnloggedTable(t) != isUnloggedTable(ft)) { /* disable foreign key between logged and unlogged */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables");
+			return SQL_ERR;
+		}
 		if (!ns || !*ns) { /* add this to be safe */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key name name cannot be empty");
 			return SQL_ERR;
@@ -692,6 +725,10 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 		}
 		if (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name)) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
+			return SQL_ERR;
+		}
+		if (ol_find_name(t->idxs, name) || mvc_bind_idx(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: an index named '%s' already exists, and it would conflict with the key", name);
 			return SQL_ERR;
 		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
@@ -798,6 +835,10 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 		}
 		if (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name)) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key '%s' already exists", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
+			return SQL_ERR;
+		}
+		if (ol_find_name(t->idxs, name) || mvc_bind_idx(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
 
@@ -1280,7 +1321,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 	mvc *sql = query->sql;
 	int tt = (temp == SQL_REMOTE)?tt_remote:
 		 (temp == SQL_MERGE_TABLE)?tt_merge_table:
-		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:
+		 (temp == SQL_UNLOGGED_TABLE)?tt_unlogged_table:tt_table;
 	bit properties = partition_def ? (bit) partition_def->data.lval->h->next->next->data.i_val : 0;
 	sql_table *t = NULL;
 	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
@@ -1374,7 +1416,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		if (!is_project(sq->op)) /* make sure sq is a projection */
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 
-		if (tt != tt_table && with_data)
+		if ((tt != tt_table && tt != tt_unlogged_table) && with_data)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot create %s 'with data'", action,
 							 TABLE_TYPE_DESCRIPTION(tt, properties));
 
@@ -2174,6 +2216,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: index name cannot contain just digit characters (0 through 9)");
 	if ((i = mvc_bind_idx(sql, t->s, iname)))
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
+	if (ol_find_name(t->keys, iname) || mvc_bind_key(sql, t->s, iname))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: a key named '%s' already exists, and it would conflict with the index", iname);
 	if (!isTable(t))
 		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", TABLE_TYPE_DESCRIPTION(t->type, t->properties), tname);
 	nt = dup_sql_table(sql->sa, t);

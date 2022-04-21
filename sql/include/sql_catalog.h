@@ -147,7 +147,8 @@ typedef enum temp_t {
 	SQL_MERGE_TABLE = 4,
 	/* SQL_STREAM = 5, stream tables are not used anymore */
 	SQL_REMOTE = 6,
-	SQL_REPLICA_TABLE = 7
+	SQL_REPLICA_TABLE = 7,
+	SQL_UNLOGGED_TABLE = 8
 } temp_t;
 
 typedef enum comp_type {
@@ -634,16 +635,20 @@ typedef enum table_types {
 	tt_merge_table = 3,	/* multiple tables form one table */
 	/* tt_stream = 4, stream tables are not used anymore */
 	tt_remote = 5,		/* stored on a remote server */
-	tt_replica_table = 6	/* multiple replica of the same table */
+	tt_replica_table = 6,	/* multiple replica of the same table */
+	tt_unlogged_table = 7
 } table_types;
 
-#define TABLE_TYPE_DESCRIPTION(tt, properties)                                                                      \
-((tt) == tt_table)?"TABLE":((tt) == tt_view)?"VIEW":((tt) == tt_merge_table && !(properties))?"MERGE TABLE":                \
-((tt) == tt_remote)?"REMOTE TABLE":                                                  \
-((tt) == tt_merge_table && ((properties) & PARTITION_LIST) == PARTITION_LIST)?"LIST PARTITION TABLE":                   \
-((tt) == tt_merge_table && ((properties) & PARTITION_RANGE) == PARTITION_RANGE)?"RANGE PARTITION TABLE":"REPLICA TABLE"
+#define TABLE_TYPE_DESCRIPTION(tt, properties)                                                                                           \
+	((tt) == tt_table) ? "TABLE" : ((tt) == tt_view)														   ? "VIEW"                  \
+							   : ((tt) == tt_merge_table && !(properties))									   ? "MERGE TABLE"           \
+							   : ((tt) == tt_remote)														   ? "REMOTE TABLE"          \
+							   : ((tt) == tt_merge_table && ((properties)&PARTITION_LIST) == PARTITION_LIST)   ? "LIST PARTITION TABLE"  \
+							   : ((tt) == tt_merge_table && ((properties)&PARTITION_RANGE) == PARTITION_RANGE) ? "RANGE PARTITION TABLE" \
+							   : ((tt) == tt_unlogged_table)												   ? "UNLOGGED TABLE"        \
+																											   : "REPLICA TABLE"
 
-#define isTable(x)                        ((x)->type==tt_table)
+#define isTable(x)                        ((x)->type==tt_table || (x)->type==tt_unlogged_table)
 #define isView(x)                         ((x)->type==tt_view)
 #define isNonPartitionedTable(x)          ((x)->type==tt_merge_table && !(x)->properties)
 #define isRangePartitionTable(x)          ((x)->type==tt_merge_table && ((x)->properties & PARTITION_RANGE) == PARTITION_RANGE)
@@ -653,7 +658,8 @@ typedef enum table_types {
 #define isMergeTable(x)                   ((x)->type==tt_merge_table)
 #define isRemote(x)                       ((x)->type==tt_remote)
 #define isReplicaTable(x)                 ((x)->type==tt_replica_table)
-#define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
+#define isUnloggedTable(x)				  ((x)->type==tt_unlogged_table)
+#define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x) || isUnloggedTable(x))
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
@@ -766,9 +772,11 @@ extern node *list_find_base_id(list *l, sqlid id);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
 extern sql_key *sql_trans_find_key(sql_trans *tr, sqlid id);
+extern sql_key *schema_find_key(sql_trans *tr, sql_schema *s, const char *name);
 
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
+extern sql_idx *schema_find_idx(sql_trans *tr, sql_schema *s, const char *name);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
@@ -786,6 +794,7 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *n
 extern sql_type *sql_trans_find_type(sql_trans *tr, sql_schema *s /*optional */, sqlid id);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
 extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
+extern sql_trigger *schema_find_trigger(sql_trans *tr, sql_schema *s, const char *name);
 
 extern void find_partition_type(sql_subtype *tpe, sql_table *mt);
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res);

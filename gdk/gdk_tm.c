@@ -19,7 +19,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_tm.h"
 
 /*
  * The physical (disk) commit protocol is handled mostly by
@@ -55,13 +54,8 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 		bat bid = subcommit ? subcommit[i] : i;
 
 		if (BBP_status(bid) & BBPPERSISTENT) {
-			BAT *b = BBP_cache(bid);
+			BAT *b = BBPquickdesc(bid);
 
-			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
-				b = BBPquickdesc(bid);
-				if (b == NULL)
-					return GDK_FAIL;
-			}
 			if (b) {
 				MT_lock_set(&b->theaplock);
 				assert(!isVIEW(b));
@@ -103,8 +97,10 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			BAT *b = BBP_cache(bid);
 			if (b) {
 				/* check mmap modes */
+				MT_lock_set(&b->theaplock);
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
 					TRC_WARNING(GDK, "BATcheckmodes failed\n");
+				MT_lock_unset(&b->theaplock);
 			}
 		}
 		if (!locked)

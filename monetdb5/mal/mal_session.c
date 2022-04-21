@@ -27,7 +27,7 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(char *modules[], int embedded)
+malBootstrap(char *modules[], bool embedded)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
@@ -168,6 +168,8 @@ is_exiting(void *data)
 	(void) data;
 	return GDKexiting();
 }
+
+static str MSserveClient(Client cntxt);
 
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
@@ -497,7 +499,7 @@ MSresetVariables(MalBlkPtr mb)
  * for the global variables.  Thereafter it is up to the scenario
  * interpreter to process input.
  */
-str
+static str
 MSserveClient(Client c)
 {
 	MalBlkPtr mb;
@@ -515,7 +517,7 @@ MSserveClient(Client c)
 	if (c->glb == NULL)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
-		c->mode = RUNCLIENT;
+		MCcloseClient(c);
 		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
@@ -525,7 +527,7 @@ MSserveClient(Client c)
 	if (c->scenario == 0)
 		msg = defaultScenario(c);
 	if (msg) {
-		c->mode = RUNCLIENT;
+		MCcloseClient(c);
 		return msg;
 	} else {
 		do {
@@ -563,10 +565,6 @@ MSserveClient(Client c)
 	*/
 
 	MCcloseClient(c);
-	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
-		freeModule(c->usermodule);
-		c->usermodule = NULL;
-	}
 	return MAL_SUCCEED;
 }
 

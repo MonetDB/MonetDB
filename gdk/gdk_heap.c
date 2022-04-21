@@ -72,7 +72,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 }
 
 static gdk_return HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc);
-static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free);
+static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free, MT_Lock *lock);
 
 static char *
 decompose_filename(str nme)
@@ -86,16 +86,15 @@ decompose_filename(str nme)
 	return ext;
 }
 
+/* this function is called with the theaplock held */
 gdk_return
-HEAPgrow(MT_Lock *lock, Heap **hp, size_t size, bool mayshare)
+HEAPgrow(Heap **hp, size_t size, bool mayshare)
 {
 	Heap *new;
 
-	MT_lock_set(lock);
 	ATOMIC_BASE_TYPE refs = ATOMIC_GET(&(*hp)->refs);
 	if ((refs & HEAPREFS) == 1) {
 		gdk_return rc = HEAPextend((*hp), size, mayshare);
-		MT_lock_unset(lock);
 		return rc;
 	}
 	new = GDKmalloc(sizeof(Heap));
@@ -126,7 +125,6 @@ HEAPgrow(MT_Lock *lock, Heap **hp, size_t size, bool mayshare)
 			new = NULL;
 		}
 	}
-	MT_lock_unset(lock);
 	return new ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -318,7 +316,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
 				/* couldn't allocate, now first save data to
 				 * file */
-				if (HEAPsave_intern(&bak, nme, ext, ".tmp", false, bak.free) != GDK_SUCCEED) {
+				if (HEAPsave_intern(&bak, nme, ext, ".tmp", false, bak.free, NULL) != GDK_SUCCEED) {
 					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
 					goto failed;
 				}
@@ -850,7 +848,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
  * safe on stable storage.
  */
 static gdk_return
-HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free)
+HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free, MT_Lock *lock)
 {
 	storage_t store = h->newstorage;
 	long_str extension;
@@ -862,7 +860,11 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	}
 	if (free == 0) {
 		/* nothing to see, please move on */
+		if (lock)
+			MT_lock_set(lock);
 		h->wasempty = true;
+		if (lock)
+			MT_lock_unset(lock);
 		TRC_DEBUG(HEAP,
 			  "not saving: "
 			  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
@@ -883,19 +885,24 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
 		  nme?nme:"", ext, (int) h->newstorage, free, h->size,
 		  dosync?"true":"false");
-	h->dirty = free != h->free;
 	rc = GDKsave(h->farmid, nme, ext, h->base, free, store, dosync);
-	if (rc == GDK_SUCCEED)
+	if (lock)
+		MT_lock_set(lock);
+	if (rc == GDK_SUCCEED) {
+		h->dirty = free != h->free;
 		h->wasempty = false;
-	else
+	} else {
 		h->dirty = true;
+	}
+	if (lock)
+		MT_lock_unset(lock);
 	return rc;
 }
 
 gdk_return
-HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free)
+HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 {
-	return HEAPsave_intern(h, nme, ext, ".new", dosync, free);
+	return HEAPsave_intern(h, nme, ext, ".new", dosync, free, lock);
 }
 
 int
@@ -1098,18 +1105,25 @@ HEAP_malloc(BAT *b, size_t nbytes)
 		size_t newsize;
 
 		assert(heap->free + MAX(heap->free, nbytes) <= VAR_MAX);
+#if SIZEOF_SIZE_T == 4
 		newsize = MIN(heap->free, (size_t) 1 << 20);
+#else
+		newsize = MIN(heap->free, (size_t) 1 << 30);
+#endif
 		newsize = (size_t) roundup_8(heap->free + MAX(newsize, nbytes));
 		assert(heap->free <= VAR_MAX);
 		block = (size_t) heap->free;	/* current end-of-heap */
 
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
-		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, false) != GDK_SUCCEED) {
+		MT_lock_set(&b->theaplock);
+		if (HEAPgrow(&b->tvheap, newsize, false) != GDK_SUCCEED) {
+			MT_lock_unset(&b->theaplock);
 			return (var_t) -1;
 		}
 		heap = b->tvheap;
 		heap->free = newsize;
+		MT_lock_unset(&b->theaplock);
 		hheader = HEAP_index(heap, 0, HEADER);
 
 		blockp = HEAP_index(heap, block, CHUNK);

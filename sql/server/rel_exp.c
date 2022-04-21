@@ -704,7 +704,6 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_unique(ne);
 	if (is_basecol(oe))
 		set_basecol(ne);
-	ne->flag = oe->flag; /* needed if the referenced column is a parameter without type set yet */
 	ne->p = prop_copy(sa, oe->p);
 	return ne;
 }
@@ -1109,20 +1108,15 @@ exp_cmp( sql_exp *e1, sql_exp *e2)
 	return (e1 == e2)?0:-1;
 }
 
-#define alias_cmp(e1, e2) \
-	do { \
-		if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0) \
-			return strcmp(e1->alias.name, e2->alias.name); \
-		if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name) \
-			return strcmp(e1->alias.name, e2->alias.name); \
-	} while (0);
-
 int
 exp_equal( sql_exp *e1, sql_exp *e2)
 {
 	if (e1 == e2)
 		return 0;
-	alias_cmp(e1, e2);
+	if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0)
+		return strcmp(e1->alias.name, e2->alias.name);
+	if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name)
+		return strcmp(e1->alias.name, e2->alias.name);
 	return -1;
 }
 
@@ -1393,27 +1387,6 @@ exps_any_match(list *l, sql_exp *e)
 	for (node *n = l->h; n ; n = n->next) {
 		sql_exp *ne = (sql_exp *) n->data;
 		if (exp_match_exp(ne, e))
-			return ne;
-	}
-	return NULL;
-}
-
-static int
-exp_no_alias(sql_exp *e1, sql_exp *e2)
-{
-	alias_cmp(e1, e2);
-	/* at least one of the expressions don't have an alias, so there's a match */
-	return 0;
-}
-
-sql_exp *
-exps_any_match_same_or_no_alias(list *l, sql_exp *e)
-{
-	if (!l)
-		return NULL;
-	for (node *n = l->h; n ; n = n->next) {
-		sql_exp *ne = (sql_exp *) n->data;
-		if ((exp_match(ne, e) || exp_refers(ne, e) || exp_match_exp(ne, e)) && exp_no_alias(e, ne) == 0)
 			return ne;
 	}
 	return NULL;
@@ -3080,6 +3053,10 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
 	else if (upcast && type->type->eclass == EC_FLT)
 		type = sql_bind_localtype("dbl");
 
+	/* TODO we could use the sql_query* struct to set paremeters used as freevars,
+	   but it requires to change a lot of interfaces */
+	/* if (is_freevar(exp))
+		rel = query_fetch_outer(query, is_freevar(exp)-1); */
 	return set_exp_type(sql, type, rel, exp);
 }
 
@@ -3246,7 +3223,7 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		return 0;
 
 	const char *nrname = relname, *nename = expname;
-	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->exps)) {
+	if (is_project(rel->op) && !list_empty(rel->exps)) {
 		sql_exp *e = NULL;
 
 		if (nrname && nename) { /* find the column reference and propagate type setting */
@@ -3256,6 +3233,10 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		}
 		if (!e)
 			return 0; /* not found */
+		if (is_set(rel->op)) { /* TODO for set relations this needs further improvement */
+			(void) sql_error(sql, 10, SQLSTATE(42000) "Cannot set parameter types under set relations at the moment");
+			return -1;
+		}
 		/* set order by column types */
 		if (is_simple_project(rel->op) && !list_empty(rel->r)) {
 			sql_exp *ordere = NULL;

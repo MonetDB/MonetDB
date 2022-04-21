@@ -692,7 +692,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           bool   tkey;             // tail values are unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
- *           bool   tvarsized;        // for speed: tail type is varsized?
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
@@ -726,8 +725,7 @@ typedef struct {
 	uint16_t width;		/* byte-width of the atom array */
 	int8_t type;		/* type id. */
 	uint8_t shift;		/* log2 of bun width */
-	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
-		key:1,		/* no duplicate values present */
+	bool key:1,		/* no duplicate values present */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
@@ -774,22 +772,36 @@ typedef enum {
 	BAT_APPEND,		  /* only reads and appends allowed */
 } restrict_t;
 
+/* batDirtydesc: should be set (true) if any of the following fields
+ * have changed since the bat was last saved: hseqbase, batRestricted,
+ * batTransient, batCount, and the theap properties tkey, tseqbase,
+ * tsorted, trevsorted, twidth, tshift, tnonil, tnil, tnokey, tnosorted,
+ * tnorevsorted, tminpos, tmaxpos, and tunique_est; in addition, the
+ * value should be set if the BBP field BBP_logical(bid) is changed.
+ * This corresponds with any field that gets saved in the BBP.dir file.
+ *
+ * theaplock: this lock should be held when reading or writing any of
+ * the fields mentioned above for batDirtydesc, and also when reading or
+ * writing any of the following fields: batDirtydesc, theap, tvheap,
+ * batInserted, batCapacity.  There is no need for the lock if the bat
+ * cannot possibly be modified concurrently, e.g. when it is new and not
+ * yet returned to the interpreter or during system initialization. */
 typedef struct BAT {
 	/* static bat properties */
 	oid hseqbase;		/* head seq base */
 	MT_Id creator_tid;	/* which thread created it */
 	bat batCacheid;		/* index into BBP */
+	role_t batRole;		/* role of the bat */
 
 	/* dynamic bat properties */
-	restrict_t batRestricted; /* access privileges */
-	bool batTransient;	/* should the BAT persist on disk? */
+	restrict_t batRestricted:2; /* access privileges */
 	bool
+	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1,	/* once written */
-	 batDirtyflushed:1,	/* was dirty before commit started? */
 	 batDirtydesc:1;	/* bat descriptor dirty marker */
-	uint16_t /* adjacent bit fields are packed together (if they fit) */
-	 selcnt:10;		/* how often used in equi select without hash */
-	role_t batRole;		/* role of the bat */
+	/* not part of bitfields since not in BATiter */
+	bool batDirtyflushed;	/* was dirty before commit started? */
+	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
 
@@ -808,7 +820,6 @@ typedef struct BAT {
 /* macros to hide complexity of the BAT structure */
 #define ttype		T.type
 #define tkey		T.key
-#define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
@@ -947,20 +958,34 @@ typedef struct BATiter {
 	void *base;
 	Heap *vh;
 	BUN count;
+	BUN baseoff;
 	uint16_t width;
 	uint8_t shift;
 	int8_t type;
 	oid tseq;
 	BUN hfree, vhfree;
+	BUN nokey[2];
+	BUN nosorted, norevsorted;
 	BUN minpos, maxpos;
 	double unique_est;
+	bool key:1,
+		nonil:1,
+		nil:1,
+		sorted:1,
+		revsorted:1,
+		hdirty:1,
+		vhdirty:1,
+		dirtydesc:1,
+		copiedtodisk:1,
+		transient:1;
+	restrict_t restricted:2;
+#ifndef NDEBUG
+	bool locked:1;
+#endif
 	union {
 		oid tvid;
 		bool tmsk;
 	};
-#ifndef NDEBUG
-	bool locked;
-#endif
 } BATiter;
 
 static inline BATiter
@@ -973,6 +998,7 @@ bat_iterator_nolock(BAT *b)
 			.b = b,
 			.h = b->theap,
 			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
+			.baseoff = b->tbaseoff,
 			.vh = b->tvheap,
 			.count = b->batCount,
 			.width = b->twidth,
@@ -986,9 +1012,26 @@ bat_iterator_nolock(BAT *b)
 				  (size_t) b->batCount << b->tshift :
 				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
+			.nokey[0] = b->tnokey[0],
+			.nokey[1] = b->tnokey[1],
+			.nosorted = b->tnosorted,
+			.norevsorted = b->tnorevsorted,
 			.minpos = isview ? BUN_NONE : b->tminpos,
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
+			.key = b->tkey,
+			.nonil = b->tnonil,
+			.nil = b->tnil,
+			.sorted = b->tsorted,
+			.revsorted = b->trevsorted,
+			/* only look at heap dirty flag if we own it */
+			.hdirty = b->theap->parentid == b->batCacheid && b->theap->dirty,
+			/* also, if there is no vheap, it's not dirty */
+			.vhdirty = b->tvheap && b->tvheap->parentid == b->batCacheid && b->tvheap->dirty,
+			.dirtydesc = b->batDirtydesc,
+			.copiedtodisk = b->batCopiedtodisk,
+			.transient = b->batTransient,
+			.restricted = b->batRestricted,
 #ifndef NDEBUG
 			.locked = false,
 #endif
@@ -1021,6 +1064,20 @@ bat_iterator(BAT *b)
 		};
 	}
 	return bi;
+}
+
+/* return a copy of a BATiter instance; needs to be released with
+ * bat_iterator_end */
+static inline BATiter
+bat_iterator_copy(BATiter *bip)
+{
+	assert(bip);
+	assert(bip->locked);
+	if (bip->h)
+		HEAPincref(bip->h);
+	if (bip->vh)
+		HEAPincref(bip->vh);
+	return *bip;
 }
 
 static inline void
@@ -1176,8 +1233,8 @@ typedef var_t stridx_t;
 #define BUNtmsk(bi,p)	Tmsk(&(bi), (p))
 #define BUNtloc(bi,p)	(assert((bi).type != TYPE_msk), ((void *) ((char *) (bi).base + ((p) << (bi).shift))))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
-#define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
-#define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
+#define BUNtvar(bi,p)	(assert((bi).type && (bi).vh), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
+#define BUNtail(bi,p)	((bi).type?(bi).vh?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 #define BATcount(b)	((b)->batCount)
 
@@ -1248,13 +1305,15 @@ gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
 gdk_export restrict_t BATgetaccess(BAT *b);
 
 
-#define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
-			 (b)->batDirtydesc ||				\
-			 (b)->theap->dirty ||				\
-			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 #define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
+#define BATdirty(b)	(BATdirtydata(b) ||	\
+			 (b)->batDirtydesc)
+#define BATdirtybi(bi)	(!(bi).copiedtodisk ||	\
+			 (bi).dirtydesc ||	\
+			 (bi).hdirty ||		\
+			 (bi).vhdirty)
 
 #define BATcapacity(b)	(b)->batCapacity
 /*
@@ -1359,16 +1418,17 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 
 gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
 
-#define BATtordered(b)	((b)->tsorted)
-#define BATtrevordered(b) ((b)->trevsorted)
 /* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
 #define BATtdense(b)	(!is_oid_nil((b)->tseqbase) &&			\
 			 ((b)->tvheap == NULL || (b)->tvheap->free == 0))
+#define BATtdensebi(bi)	(!is_oid_nil((bi)->tseq) &&			\
+			 ((bi)->vh == NULL || (bi)->vhfree == 0))
 /* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
 #define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
 #define BATtkey(b)	((b)->tkey || BATtdense(b))
 
-/* set some properties that are trivial to deduce */
+/* set some properties that are trivial to deduce; called with theaplock
+ * held */
 static inline void
 BATsettrivprop(BAT *b)
 {
@@ -1417,7 +1477,7 @@ BATsettrivprop(BAT *b)
 		}
 	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
 		int c;
-		if (b->tvarsized)
+		if (b->tvheap)
 			c = ATOMcmp(b->ttype,
 				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
 				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 1, b->twidth));
@@ -1679,7 +1739,7 @@ tfastins_nocheck(BAT *b, BUN p, const void *v)
 		;
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 		mskSetVal(b, p, * (msk *) v);
-	} else if (b->tvarsized) {
+	} else if (b->tvheap) {
 		return tfastins_nocheckVAR(b, p, v);
 	} else {
 		return tfastins_nocheckFIX(b, p, v);

@@ -188,14 +188,17 @@ strPut(BAT *b, var_t *dst, const void *V)
 	BUN off;
 
 	if (h->free == 0) {
+		MT_lock_set(&b->theaplock);
 		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
-			if (HEAPgrow(&b->theaplock, &b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
 		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		h->dirty = true;
+		MT_lock_unset(&b->theaplock);
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
 #else
@@ -279,10 +282,13 @@ strPut(BAT *b, var_t *dst, const void *V)
 			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, true) != GDK_SUCCEED) {
+		MT_lock_set(&b->theaplock);
+		if (HEAPgrow(&b->tvheap, newsize, true) != GDK_SUCCEED) {
+			MT_lock_unset(&b->theaplock);
 			return (var_t) -1;
 		}
 		h = b->tvheap;
+		MT_lock_unset(&b->theaplock);
 
 		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
@@ -294,8 +300,10 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (pad > 0)
 		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
+	MT_lock_set(&b->theaplock);
 	h->free += pad + len;
 	h->dirty = true;
+	MT_lock_unset(&b->theaplock);
 
 	/* maintain hash table */
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
@@ -1368,12 +1376,12 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	BATiter sepi = bat_iterator(sep);
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
-	oid i = 0, j = 0, k = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base;
+	oid i = 0, j = 0, k = 0, cnt = bi.count, *restrict start = si.base, *restrict end = ei.base;
 	bit *np = pi.base, *op = oi.base;
 	str single_str = NULL, next_single_str;
 	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
 
-	assert((sep && !separator && BATcount(b) == BATcount(sep)) || (!sep && separator));
+	assert((sep && !separator && bi.count == sepi.count) || (!sep && separator));
 	if (b->ttype != TYPE_str || r->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
 		GDKerror("only string type is supported\n");
 		bat_iterator_end(&pi);
@@ -1384,7 +1392,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 		bat_iterator_end(&ei);
 		return GDK_FAIL;
 	}
-	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
+	if (sep && sepi.count == 1) { /* Only one element in sep */
 		separator = BUNtvar(sepi, 0);
 		sep = NULL;
 	}

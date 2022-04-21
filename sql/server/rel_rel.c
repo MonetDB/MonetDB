@@ -909,10 +909,16 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 		list *gexps = sa_list(sql->sa);
 
 		for (en = groupbyexps->h; en; en = en->next) {
-			sql_exp *e = en->data;
+			sql_exp *e = en->data, *ne = exps_find_exp(gexps, e);
 
-			if (!exps_any_match_same_or_no_alias(gexps, e))
-				append(gexps, e);
+			if (!ne) {
+				list_append(gexps, e);
+			} else {
+				const char *ername = exp_relname(e), *nername = exp_relname(ne), *ename = exp_name(e), *nename = exp_name(ne);
+				if ((ername && !nername) || (!ername && nername) || 
+					(ername && nername && strcmp(ername,nername) != 0) || strcmp(ename,nename) != 0)
+					list_append(gexps, e);
+			}
 		}
 		groupbyexps = gexps;
 	}

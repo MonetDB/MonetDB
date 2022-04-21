@@ -231,14 +231,6 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 	return try_remove_empty_select(v, rel);
 }
 
-sql_rel *
-rewrite_reset_used(visitor *v, sql_rel *rel)
-{
-	(void) v;
-	rel->used = 0;
-	return rel;
-}
-
 int
 find_member_pos(list *l, sql_table *t)
 {
