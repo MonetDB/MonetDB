@@ -189,6 +189,7 @@ PIPELINEnotify(Pipeline *p, const char *msg)
 #ifdef HAVE_PTHREAD_H
 	pthread_cond_broadcast(&pp->cond);
 #endif
+	(void)msg;
 }
 
 static void
