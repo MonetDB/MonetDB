@@ -13,6 +13,7 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
+void dump_code(int);
 
 int
 parallel_copy_level(void)
@@ -56,35 +57,57 @@ extract_parameter(backend *be, list *stmts, sql_exp *copyfrom, int argno)
 	return st->nr;
 }
 
-static int
-emit_receive(MalBlkPtr mb, int var_channel, int tpe)
+static InstrPtr
+emit_channel(MalBlkPtr mb, int var_initial_value)
 {
-	InstrPtr q = newStmt(mb, "copy", "recv");
-	q = pushReturn(mb, q, var_channel);
+	InstrPtr q = newStmt(mb, "pipeline", "channel");
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
+	q = pushArgument(mb, q, var_initial_value);
+	return q;
+}
+
+static int
+emit_receive(MalBlkPtr mb, int var_handle, InstrPtr channel_stmt)
+{
+	assert(0 == strcmp("pipeline", channel_stmt->modname));
+	assert(0 == strcmp("channel", channel_stmt->fcnname));
+	int var_mailbox = getArg(channel_stmt, 0);
+	int var_channel = getArg(channel_stmt, 1);
+
+	InstrPtr q = newStmt(mb, "pipeline", "recv");
+	q = pushArgument(mb, q, var_handle);
+	q = pushArgument(mb, q, var_mailbox);
 	q = pushArgument(mb, q, var_channel);
-	q = pushNil(mb, q, tpe);
 	return getDestVar(q);
 }
 
 static void
-emit_send(MalBlkPtr mb, int var_channel, int tpe, int var_msg)
+emit_send(MalBlkPtr mb, int var_handle, InstrPtr channel_stmt, int var_value)
 {
-	InstrPtr q = newStmt(mb, "copy", "send");
-	setReturnArgument(q, var_channel);
-	q = pushReturn(mb, q, var_msg);
-	q = pushArgument(mb, q, var_msg);
-	q = pushNil(mb, q, tpe);
+	assert(0 == strcmp("pipeline", channel_stmt->modname));
+	assert(0 == strcmp("channel", channel_stmt->fcnname));
+	int var_mailbox = getArg(channel_stmt, 0);
+	int var_channel = getArg(channel_stmt, 1);
+
+	InstrPtr q = newStmt(mb, "pipeline", "send");
+	q = pushArgument(mb, q, var_handle);
+	q = pushArgument(mb, q, var_mailbox);
+	q = pushArgument(mb, q, var_channel);
+	q = pushArgument(mb, q, var_value);
 }
+
 
 struct loop_vars {
 	int loop_barrier;
+	int loop_iter;
+	int loop_handle;
 	int our_block;
 	int our_line_count;
 };
 
 
 static void
-emit_onserver(
+emit_onserver_loop(
 	MalBlkPtr mb, struct loop_vars *loop_vars,
 	int var_fname, int block_size,
 	int var_line_sep, int var_quote_char, int var_escape)
@@ -94,23 +117,31 @@ emit_onserver(
 	int bte_bat_type = newBatType(TYPE_bte);
 	int alloc = allocation_size(block_size);
 
+	// set up the stream channel
 	q = newStmt(mb, "streams", "openRead");
 	q = pushArgument(mb, q, var_fname);
-	int var_stream_channel = getDestVar(q);
+	InstrPtr stream_channel_stmt = emit_channel(mb, getDestVar(q));
 
+	// set up the block channel
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
 	q = pushLng(mb, q, alloc);
-	int var_block_channel = getDestVar(q);
+	InstrPtr block_channel_stmt = emit_channel(mb, getDestVar(q));
 
 
 	// START LOOP
-	q = newAssignment(mb);
+	q = newStmt(mb, languageRef, pipelinesRef);
 	q->barrier = BARRIERsymbol;
-	q = pushBit(mb, q, true);
-	loop_vars->loop_barrier = getDestVar(q);
+	setArgType(mb, q, 0, TYPE_bit);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+	q = pushInt(mb, q, -1);
+	// int var_iter_id = getArg(q, 1);
+	loop_vars->loop_barrier = getArg(q, 0);
+	loop_vars->loop_iter = getArg(q, 1);
+	loop_vars->loop_handle = getArg(q, 2);
 
-	int var_s = emit_receive(mb, var_stream_channel, streams_type);
+	int var_s = emit_receive(mb, loop_vars->loop_handle, stream_channel_stmt);
 
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
@@ -129,6 +160,7 @@ emit_onserver(
 	q = pushArgument(mb, q, var_next_block);
 	int var_nread = getDestVar(q);
 
+	// can't we just move the LEAVE to the previous stmt?
 	q = newStmt(mb, "calc", ">");
 	q->barrier = LEAVEsymbol;
 	setReturnArgument(q, var_read_barrier);
@@ -147,9 +179,9 @@ emit_onserver(
 	q->barrier = EXITsymbol;
 	getDestVar(q) = var_read_barrier;
 
-	emit_send(mb, var_stream_channel, streams_type, var_s);
+	emit_send(mb, loop_vars->loop_handle, stream_channel_stmt, var_s);
 
-	loop_vars->our_block = emit_receive(mb, var_block_channel, bte_bat_type);
+	loop_vars->our_block = emit_receive(mb, loop_vars->loop_handle, block_channel_stmt);
 
 	q = newStmt(mb, "aggr", "count");
 	q = pushArgument(mb, q, loop_vars->our_block);
@@ -165,10 +197,24 @@ emit_onserver(
 	int var_total_count = getDestVar(q);
 
 	q = newStmt(mb, "calc", "==");
-	q->barrier = LEAVEsymbol;
-	setReturnArgument(q, loop_vars->loop_barrier);
+	q->barrier = BARRIERsymbol;
 	q = pushArgument(mb, q, var_total_count);
 	q = pushLng(mb, q, 0);
+	int var_quit_barrier = getDestVar(q);
+
+	// Before we exit the main loop we make sure to unblock the next
+	// thread.
+
+	emit_send(mb, loop_vars->loop_handle, block_channel_stmt, var_next_block);
+
+	q = newAssignment(mb);
+	q->barrier = LEAVEsymbol;
+	setReturnArgument(q, loop_vars->loop_barrier);
+	q = pushBit(mb, q, true);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	getDestVar(q) = var_quit_barrier;
 
 	q = newStmt(mb, "copy", "fixlines");
 	setArgType(mb, q, 0, bte_bat_type);
@@ -184,10 +230,29 @@ emit_onserver(
 	var_next_block = getArg(q, 1);
 	loop_vars->our_line_count = getArg(q, 2);
 
-	emit_send(mb, var_block_channel, bte_bat_type, var_next_block);
+	emit_send(mb, loop_vars->loop_handle, block_channel_stmt, var_next_block);
 }
 
-void dump_code(int);
+static void
+emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
+{
+	InstrPtr q;
+
+	q = newStmt(mb, "pipeline", "counter");
+	setReturnArgument(q, loop_vars->loop_iter);
+	q = pushArgument(mb, q, loop_vars->loop_handle);
+
+	q = newAssignment(mb);
+	q->barrier = REDOsymbol;
+	pushBit(mb, q, true);
+	getDestVar(q) = loop_vars->loop_barrier;
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	getDestVar(q) = loop_vars->loop_barrier;
+}
+
+
 static stmt *
 rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
@@ -327,12 +392,11 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	q = newAssignment(mb);
 	q = pushNil(mb, q, TYPE_bit);
-	int var_claim_channel = getDestVar(q);
+	InstrPtr claim_channel_stmt = emit_channel(mb, getDestVar(q));
 
+	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape);
 
-	emit_onserver(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape);
-
-	int var_claim_token = emit_receive(mb, var_claim_channel, TYPE_bit);
+	int var_claim_token = emit_receive(mb, loop_vars.loop_handle, claim_channel_stmt);
 
 	q = newStmt(mb, "sql", "claim");
 	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid)));
@@ -343,13 +407,13 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	int var_position = getArg(q, 0);
 	int var_positions = getArg(q, 1);
 
-	emit_send(mb, var_claim_channel, TYPE_bit, var_claim_token);
+	emit_send(mb, loop_vars.loop_handle, claim_channel_stmt, var_claim_token);
 
-	q = newStmt(mb, "calc", "==");
-	q->barrier = REDOsymbol;
-	getDestVar(q) = loop_vars.loop_barrier;
-	q = pushArgument(mb, q, loop_vars.our_line_count);
-	q = pushLng(mb, q, 0);
+	// q = newStmt(mb, "calc", "==");
+	// q->barrier = REDOsymbol;
+	// getDestVar(q) = loop_vars.loop_barrier;
+	// q = pushArgument(mb, q, loop_vars.our_line_count);
+	// q = pushLng(mb, q, 0);
 
 	assert(column_count > 0);
 	q = newStmt(mb, "copy", "splitlines");
@@ -416,16 +480,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 
 	// END LOOP
-	q = newAssignment(mb);
-	q->barrier = REDOsymbol;
-	pushBit(mb, q, true);
-	getDestVar(q) = loop_vars.loop_barrier;
-
-
-	q = newAssignment(mb);
-	q->barrier = EXITsymbol;
-	getDestVar(q) = loop_vars.loop_barrier;
-
+	emit_loop_end(mb, &loop_vars);
 	add_to_rowcount_accumulator(be, var_total_row_count);
 	// dump_code(-1);
 
