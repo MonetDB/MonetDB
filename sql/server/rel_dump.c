@@ -17,6 +17,7 @@
 #include "rel_updates.h"
 #include "rel_select.h"
 #include "rel_remote.h"
+#include "rel_rewriter.h"
 #include "rel_optimizer.h"
 #include "sql_privileges.h"
 
@@ -323,7 +324,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " NOT NULL");
 	if (e->type != e_atom && e->type != e_cmp && is_unique(e))
 		mnstr_printf(fout, " UNIQUE");
-	if (e->p && !exp_is_atom(e)) {
+	if (e->p && e->type != e_atom && !exp_is_atom(e)) { /* don't show properties on value lists */
 		for (prop *p = e->p; p; p = p->p) {
 			/* Don't show min/max/unique est on atoms, or when running tests with forcemito */
 			if ((GDKdebug & FORCEMITOMASK) == 0 || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
@@ -954,6 +955,8 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 
 		if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
 			(*pos)+= (int) strlen("COUNT");
+			if (!find_prop(exp->p, PROP_COUNT))
+				exp->p = prop_create(sql->sa, PROP_COUNT, exp->p);
 			skipWS(r,pos);
 			found = true;
 		} else if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
@@ -1634,6 +1637,25 @@ rel_set_types(mvc *sql, sql_rel *rel)
 	return 0;
 }
 
+static void
+rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
+{
+	void *ptr = NULL;
+	size_t nbytes = 0;
+	sql_subtype *tpe = sql_bind_localtype("oid");
+
+	(*pos)+= (int) strlen("COUNT");
+	skipWS(r, pos);
+
+	if (ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true) < 0)
+		return;
+
+	set_count_prop(sql->sa, rel, *(BUN*)ptr);
+	(*pos) += nbytes;
+	GDKfree(ptr);
+	skipWS(r, pos);
+}
+
 static sql_rel*
 read_rel_properties(mvc *sql, sql_rel *rel, char *r, int *pos)
 {
@@ -1642,8 +1664,7 @@ read_rel_properties(mvc *sql, sql_rel *rel, char *r, int *pos)
 		found = false;
 
 		if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
-			(*pos)+= (int) strlen("COUNT");
-			skipWS(r,pos);
+			rel_read_count(sql, rel, r, pos);
 			found = true;
 		} else if (strncmp(r+*pos, "REMOTE", strlen("REMOTE")) == 0) { /* Remote tables under remote tables not supported, so remove REMOTE property */
 			(*pos)+= (int) strlen("REMOTE");
