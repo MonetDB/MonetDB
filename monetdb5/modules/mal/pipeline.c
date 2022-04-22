@@ -189,6 +189,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 PPchannel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void)cntxt;
 	void *mailbox = getArgReference(stk, pci, 0);
 	int *metadata = getArgReference_int(stk, pci, 1);
 	void *value = getArgReference(stk, pci, 2);
@@ -209,6 +210,7 @@ PPchannel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void)cntxt;
 	str msg = MAL_SUCCEED;
 
 	ptr handle = *getArgReference_ptr(stk, pci, 1);
@@ -252,6 +254,7 @@ bailout:
 static str
 PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void)cntxt;
 	str msg = MAL_SUCCEED;
 	bool locked = false;
 

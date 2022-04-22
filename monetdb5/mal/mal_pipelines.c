@@ -183,6 +183,7 @@ PIPELINEwait(Pipeline *p)
 void
 PIPELINEnotify(Pipeline *p, const char *msg)
 {
+	(void)msg;
 	Pipelines *pp = p->p;
 
 	// fprintf(stderr, "iteration %d notifying receivers: %s\n", p->p->counters[p->wid], msg);

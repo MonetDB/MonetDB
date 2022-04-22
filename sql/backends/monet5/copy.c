@@ -954,6 +954,7 @@ elapsed_ms(void)
 static str
 COPYreset_clock(bit *ret)
 {
+	(void)ret;
 	gettimeofday(&start_time, NULL);
 	fprintf(stderr, "RESET CLOCK\n");
 	return MAL_SUCCEED;

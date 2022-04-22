@@ -256,6 +256,9 @@ emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
 static stmt *
 rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
+	(void)rel;
+	(void)refs;
+	(void)copyfrom;
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
