@@ -898,7 +898,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 	return exps;
 }
 
-static void
+static sql_exp*
 exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_str, rel_prop kind)
 {
 	atom *a;
@@ -913,7 +913,7 @@ exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_
 	} else {
 		void *ptr = readAtomString(tpe->type->localtype, r, pos);
 		if (!ptr)
-			return ;
+			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 		a = atom_general_ptr(sql->sa, tpe, ptr);
 		GDKfree(ptr);
 	}
@@ -922,9 +922,10 @@ exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_
 		p->value.pval = a;
 	}
 	skipWS(r, pos);
+	return exp;
 }
 
-static void
+static sql_exp*
 exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 {
 	void *ptr = NULL;
@@ -935,8 +936,10 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 	(*pos)+= (int) strlen("NUNIQUES");
 	skipWS(r, pos);
 
-	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0)
-		return;
+	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
+		GDKfree(ptr);
+		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
+	}
 
 	if (!find_prop(exp->p, PROP_NUNIQUES)) {
 		prop *p = exp->p = prop_create(sql->sa, PROP_NUNIQUES, exp->p);
@@ -945,6 +948,7 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 	(*pos) += (int) res; /* it should always fit */
 	GDKfree(ptr);
 	skipWS(r, pos);
+	return exp;
 }
 
 static sql_exp*
@@ -973,13 +977,16 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 			skipWS(r,pos);
 			found = true;
 		} else if (strncmp(r+*pos, "MIN",  strlen("MIN")) == 0) {
-			exp_read_min_or_max(sql, exp, r, pos, "MIN", PROP_MIN);
+			if (!exp_read_min_or_max(sql, exp, r, pos, "MIN", PROP_MIN))
+				return NULL;
 			found = true;
 		} else if (strncmp(r+*pos, "MAX",  strlen("MAX")) == 0) {
-			exp_read_min_or_max(sql, exp, r, pos, "MAX", PROP_MAX);
+			if (!exp_read_min_or_max(sql, exp, r, pos, "MAX", PROP_MAX))
+				return NULL;
 			found = true;
 		} else if (strncmp(r+*pos, "NUNIQUES",  strlen("NUNIQUES")) == 0) {
-			exp_read_nuniques(sql, exp, r, pos);
+			if (!exp_read_nuniques(sql, exp, r, pos))
+				return NULL;
 			found = true;
 		}
 		if (!read_prop(sql, exp, r, pos, &found))
@@ -1332,7 +1339,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				skipWS(r, pos);
 				exp = exp_convert(sql->sa, exp, exp_subtype(exp), &tpe);
 			} else {
-				exp = parse_atom(sql, r, pos, &tpe);
+				if (!(exp = parse_atom(sql, r, pos, &tpe)))
+					return NULL;
 				skipWS(r, pos);
 			}
 		}
@@ -1348,7 +1356,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
 				sql_init_subtype(&tpe, t, 0, 0);
 			}
-			exp = parse_atom(sql, r, pos, &tpe);
+			if (!(exp = parse_atom(sql, r, pos, &tpe)))
+				return NULL;
 			skipWS(r, pos);
 		}
 		break;
@@ -1638,7 +1647,7 @@ rel_set_types(mvc *sql, sql_rel *rel)
 	return 0;
 }
 
-static void
+static sql_rel*
 rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
 {
 	void *ptr = NULL;
@@ -1649,13 +1658,16 @@ rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
 	(*pos)+= (int) strlen("COUNT");
 	skipWS(r, pos);
 
-	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0)
-		return;
+	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
+		GDKfree(ptr);
+		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
+	}
 
 	set_count_prop(sql->sa, rel, *(BUN*)ptr);
 	(*pos) += (int) res; /* it should always fit */
 	GDKfree(ptr);
 	skipWS(r, pos);
+	return rel;
 }
 
 static sql_rel*
@@ -1666,7 +1678,8 @@ read_rel_properties(mvc *sql, sql_rel *rel, char *r, int *pos)
 		found = false;
 
 		if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
-			rel_read_count(sql, rel, r, pos);
+			if (!rel_read_count(sql, rel, r, pos))
+				return NULL;
 			found = true;
 		} else if (strncmp(r+*pos, "REMOTE", strlen("REMOTE")) == 0) { /* Remote tables under remote tables not supported, so remove REMOTE property */
 			(*pos)+= (int) strlen("REMOTE");
