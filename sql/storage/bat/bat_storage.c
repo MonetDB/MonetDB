@@ -2314,15 +2314,13 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, void *i,
 	if (cnt) {
 		if (BATcount(b) < offset) { /* add space */
 			const void *tv = ATOMnilptr(b->ttype);
-			lng j, d = offset - BATcount(b);
-			for(j=0;j<d;j++) {
-				if (BUNappend(b, tv, true) != GDK_SUCCEED) {
-					bat_destroy(b);
-					if (i != oi)
-						GDKfree(i);
-					unlock_column(tr->store, id);
-					return LOG_ERR;
-				}
+			lng d = offset - BATcount(b);
+			if (BUNappendmulti(b, tv, d, true) != GDK_SUCCEED) {
+				bat_destroy(b);
+				if (i != oi)
+					GDKfree(i);
+				unlock_column(tr->store, id);
+				return LOG_ERR;
 			}
 		}
 		if (BUNappendmulti(b, i, cnt, true) != GDK_SUCCEED) {
