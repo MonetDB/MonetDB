@@ -45,6 +45,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	size_t querylen;
 	size_t pos = 0;
 	char *sch = NULL, *tab = NULL;
+	char *sysORtmp = "sys";
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
@@ -60,6 +61,12 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
+	if (NameLength3 == 0) {
+		/* Invalid string or buffer length */
+		addStmtError(stmt, "HY090", NULL, 0);
+		return SQL_ERROR;
+	}
+
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
 		(int) NameLength1, CatalogName ? (char *) CatalogName : "",
@@ -106,6 +113,9 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	if (query == NULL)
 		goto nomem;
 
+	if (SchemaName != NULL && strcmp((const char *) SchemaName, "tmp") == 0)
+		sysORtmp = "tmp";
+
 	/* SQLPrimaryKeys returns a table with the following columns:
 	   VARCHAR      table_cat
 	   VARCHAR      table_schem
@@ -121,13 +131,14 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		      "kc.name as column_name, "
 		      "cast(kc.nr + 1 as smallint) as key_seq, "
 		      "k.name as pk_name "
-	       "from sys.schemas s, sys.tables t, "
-		    "sys.keys k, sys.objects kc "
+	       "from sys.schemas s, %s._tables t, "
+		    "%s.keys k, %s.objects kc "
 	       "where k.id = kc.id and "
 		     "k.table_id = t.id and "
 		     "t.schema_id = s.id and "
 		     "k.type = 0",
-		stmt->Dbc->dbname);
+		stmt->Dbc->dbname,
+		sysORtmp, sysORtmp, sysORtmp);
 	assert(pos < 800);
 
 	/* Construct the selection condition query part */
