@@ -957,6 +957,7 @@ COPYreset_clock(bit *ret)
 	(void)ret;
 	gettimeofday(&start_time, NULL);
 	fprintf(stderr, "RESET CLOCK\n");
+	*ret = true;
 	return MAL_SUCCEED;
 }
 

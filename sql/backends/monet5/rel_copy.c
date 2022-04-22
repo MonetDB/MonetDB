@@ -319,6 +319,7 @@ rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	add_to_rowcount_accumulator(be, var_total_row_count);
 	dump_code(-1);
 	stmt *dummy_stmt = stmt_none(be);
+	(void)rel; (void)refs; (void)copyfrom;
 	return dummy_stmt;
 }
 

@@ -203,6 +203,7 @@ PPchannel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*metadata = 0;
 
+	(void)cntxt;
 	return MAL_SUCCEED;
 }
 
@@ -245,6 +246,7 @@ PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*metadata = p->p->counters[p->wid] + 1;
 
 	PIPELINEnotify(p, "send");
+	(void)cntxt;
 bailout:
 	MT_lock_unset(&pp->l);
 	return msg;
@@ -320,6 +322,7 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		// Wait until something changes
 		PIPELINEwait(p);
 	}
+	(void)cntxt;
 
 bailout:
 	if (locked)
