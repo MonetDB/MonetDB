@@ -2904,7 +2904,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 	assert(tr->active);
 	*nonil = false;
 	*unique = false;
-	*unique_est = 0;
+	*unique_est = 0.0;
 	if (!c || !isTable(c->t) || !c->t->s)
 		return ok;
 

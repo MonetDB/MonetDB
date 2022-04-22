@@ -64,7 +64,7 @@ statistics_atom_min(mvc *sql, atom *v1, atom *v2)
 }
 
 static inline void
-set_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
+set_minmax_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 {
 	sql_subtype *tpe = exp_subtype(e);
 	prop *found = find_prop(e->p, kind);
@@ -75,10 +75,10 @@ set_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 			return;
 	}
 	if (found) {
-		found->value = val;
+		found->value.pval = val;
 	} else {
 		prop *p = e->p = prop_create(sql->sa, kind, e->p);
-		p->value = val;
+		p->value.pval = val;
 	}
 }
 

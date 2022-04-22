@@ -41,12 +41,14 @@ typedef struct sql_optimizer {
 #define rel_merge_select_rse_used (1 << 2)
 #define statistics_gathered       (1 << 3)
 #define rel_remote_func_used      (1 << 4)
+#define rewrite_gt_zero_used      (1 << 5)
 
 #define is_rewrite_fix_count_used(X)    ((X & rewrite_fix_count_used) == rewrite_fix_count_used)
 #define is_rewrite_values_used(X)       ((X & rewrite_values_used) == rewrite_values_used)
 #define is_rel_merge_select_rse_used(X) ((X & rel_merge_select_rse_used) == rel_merge_select_rse_used)
-#define are_statistics_gathered(X) ((X & statistics_gathered) == statistics_gathered)
+#define are_statistics_gathered(X)      ((X & statistics_gathered) == statistics_gathered)
 #define is_rel_remote_func_used(X)      ((X & rel_remote_func_used) == rel_remote_func_used)
+#define is_rewrite_gt_zero_used(X)      ((X & rewrite_gt_zero_used) == rewrite_gt_zero_used)
 
 /* At the moment the follwowing optimizers 'packs' can be disabled,
    later we could disable individual optimizers from the 'pack' */
