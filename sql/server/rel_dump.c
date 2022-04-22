@@ -323,7 +323,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " NOT NULL");
 	if (e->type != e_atom && e->type != e_cmp && is_unique(e))
 		mnstr_printf(fout, " UNIQUE");
-	if (e->p && e->type != e_atom) {
+	if (e->p && !exp_is_atom(e)) {
 		for (prop *p = e->p; p; p = p->p) {
 			/* Don't show min/max/unique est on atoms, or when running tests with forcemito */
 			if ((GDKdebug & FORCEMITOMASK) == 0 || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
@@ -923,6 +923,28 @@ exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_
 	skipWS(r, pos);
 }
 
+static void
+exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
+{
+	void *ptr = NULL;
+	size_t nbytes = 0;
+	sql_subtype *tpe = sql_bind_localtype("dbl");
+
+	(*pos)+= (int) strlen("NUNIQUES");
+	skipWS(r, pos);
+
+	if (ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true) < 0)
+		return;
+
+	if (!find_prop(exp->p, PROP_NUNIQUES)) {
+		prop *p = exp->p = prop_create(sql->sa, PROP_NUNIQUES, exp->p);
+		p->value.dval = *(dbl*)ptr;
+	}
+	(*pos) += nbytes;
+	GDKfree(ptr);
+	skipWS(r, pos);
+}
+
 static sql_exp*
 read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 {
@@ -951,6 +973,9 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 			found = true;
 		} else if (strncmp(r+*pos, "MAX",  strlen("MAX")) == 0) {
 			exp_read_min_or_max(sql, exp, r, pos, "MAX", PROP_MAX);
+			found = true;
+		} else if (strncmp(r+*pos, "NUNIQUES",  strlen("NUNIQUES")) == 0) {
+			exp_read_nuniques(sql, exp, r, pos);
 			found = true;
 		}
 		if (!read_prop(sql, exp, r, pos, &found))
