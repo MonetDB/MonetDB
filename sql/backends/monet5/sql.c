@@ -4892,11 +4892,11 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 	if (c->storage_type)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vaccum compressed column");
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
 	return do_str_column_vacuum(tr, c, sname, tname, cname);
 }
@@ -5029,11 +5029,11 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 	if (c->storage_type)
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vaccum compressed column");
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
 	if (!(sname_copy = GDKstrdup(sname)) || !(tname_copy = GDKstrdup(tname)) || !(cname_copy = GDKstrdup(cname))) {
 		GDKfree(sname_copy);
@@ -5084,7 +5084,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
