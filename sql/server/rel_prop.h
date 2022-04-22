@@ -25,7 +25,7 @@ typedef enum rel_prop {
 typedef struct prop {
 	rel_prop kind;  /* kind of property */
 	union {
-		lng lval; /* property with simple counts */
+		BUN lval; /* property with simple counts */
 		dbl dval; /* property with estimate */
 		void *pval; /* property value */
 	} value;

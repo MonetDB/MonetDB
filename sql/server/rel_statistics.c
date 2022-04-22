@@ -596,12 +596,12 @@ set_setop_side(visitor *v, sql_rel *rel, sql_rel *side)
 	return side;
 }
 
-static lng
+static BUN
 trivial_project_exp_card(sql_exp *e)
 {
 	if (e->type == e_convert)
 		return trivial_project_exp_card(e->l);
-	return e->type == e_atom && e->f ? list_length(e->f) : 1;
+	return e->type == e_atom && e->f ? (BUN) list_length(e->f) : 1;
 }
 
 static sql_rel *
@@ -628,7 +628,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		}
 		/* set table row count */
 		/* TODO look for remote/replica tables */
-		set_count_prop(v->sql->sa, rel, isTable(t) ? (lng)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 0) : 500000);
+		if (isTable(t))
+			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 0));
 	} break;
 	case op_union:
 	case op_inter:
@@ -662,7 +663,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		r = rel->r;
 		/* propagate row count */
 		if (is_union(rel->op)) {
-			lng lv = get_rel_count(l), rv = get_rel_count(r);
+			BUN lv = get_rel_count(l), rv = get_rel_count(r);
 
 			if (lv == 0 && rv == 0) { /* both sides empty */
 				if (can_be_pruned)
@@ -673,13 +674,15 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				rel = set_setop_side(v, rel, r);
 			} else if (can_be_pruned && rv == 0 && !rel_is_ref(rel)) { /* right side empty */
 				rel = set_setop_side(v, rel, l);
-			} else if ((lv + rv) < lv) {
-				set_count_prop(v->sql->sa, rel, MAX(lv, rv));
-			} else {
-				set_count_prop(v->sql->sa, rel, lv + rv);
-			}
+			} else if (lv != BUN_NONE && rv != BUN_NONE) {
+				if ((lv + rv) < lv) {
+					set_count_prop(v->sql->sa, rel, MAX(lv, rv));
+				} else {
+					set_count_prop(v->sql->sa, rel, lv + rv);
+				}
+			} 
 		} else if (is_inter(rel->op) || is_except(rel->op)) {
-			lng lv = get_rel_count(l), rv = get_rel_count(r);
+			BUN lv = get_rel_count(l), rv = get_rel_count(r);
 
 			if (lv == 0) { /* left side empty */
 				if (can_be_pruned)
@@ -735,7 +738,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			rel->exps = rel_prune_predicates(v, rel);
 			if (v->changes > changes) {
 				rel = rewrite_simplify(v, 0, v->value_based_opt, rel);
-				if (is_select(rel->op) && get_rel_count(rel->l) == -1) /* hack, set generated projection count */
+				if (is_select(rel->op) && get_rel_count(rel->l) == BUN_NONE) /* hack, set generated projection count */
 					set_count_prop(v->sql->sa, rel->l, 0);
 			}
 		}
@@ -747,7 +750,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_left:
 		case op_right:
 		case op_full: {
-			lng lv = get_rel_count(l), rv = get_rel_count(r), uniques_estimate = GDK_lng_max, join_idx_estimate = GDK_lng_max;
+			BUN lv = get_rel_count(l), rv = get_rel_count(r), uniques_estimate = BUN_NONE, join_idx_estimate = BUN_NONE;
 
 			if (!list_empty(rel->exps)) {
 				for (node *n = rel->exps->h ; n ; n = n->next) {
@@ -759,15 +762,15 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						/* if one of the sides is unique, the cardinality will be that exact number, but look for nulls */
 						if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
 							if (is_unique(el)) {
-								lng ncount = (is_right(rel->op) || is_full(rel->op)) ? MAX(lv, rv) : lv;
+								BUN ncount = (is_right(rel->op) || is_full(rel->op)) ? MAX(lv, rv) : lv;
 								uniques_estimate = MIN(uniques_estimate, ncount);
 							} else if (is_unique(er)) {
-								lng ncount = (is_left(rel->op) || is_full(rel->op)) ? MAX(lv, rv) : rv;
+								BUN ncount = (is_left(rel->op) || is_full(rel->op)) ? MAX(lv, rv) : rv;
 								uniques_estimate = MIN(uniques_estimate, ncount);
 							}
 						}
 						if ((p = find_prop(el->p, PROP_NUNIQUES)) && (p2 = find_prop(er->p, PROP_NUNIQUES))) {
-							lng pv = (lng) p->value.dval, pv2 = (lng) p2->value.dval, mul = pv * pv2;
+							BUN pv = (BUN) p->value.dval, pv2 = (BUN) p2->value.dval, mul = pv * pv2;
 							mul = mul < pv ? MAX(pv, pv2) : mul; /* check for overflows */
 
 							if (is_left(rel->op))
@@ -782,29 +785,31 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					}
 				}
 			}
-			if (join_idx_estimate != GDK_lng_max) {
+			if (join_idx_estimate != BUN_NONE) {
 				set_count_prop(v->sql->sa, rel, join_idx_estimate);
-			} else if (uniques_estimate != GDK_lng_max) {
+			} else if (uniques_estimate != BUN_NONE) {
 				set_count_prop(v->sql->sa, rel, uniques_estimate);
-			} else if (list_empty(rel->exps) && is_outerjoin(rel->op)) { /* outer joins without conditions, sum cardinalities instead of multiply */
-				if ((lv + rv) < lv) {
+			} else if (lv != BUN_NONE && rv != BUN_NONE) {
+				if (list_empty(rel->exps) && is_outerjoin(rel->op)) { /* outer joins without conditions, sum cardinalities instead of multiply */
+					if ((lv + rv) < lv) {
+						set_count_prop(v->sql->sa, rel, MAX(lv, rv));
+					} else {
+						set_count_prop(v->sql->sa, rel, lv + rv);
+					}
+				} else if ((lv * rv) < lv) {
 					set_count_prop(v->sql->sa, rel, MAX(lv, rv));
 				} else {
-					set_count_prop(v->sql->sa, rel, lv + rv);
-				}
-			} else if ((lv * rv) < lv) {
-				set_count_prop(v->sql->sa, rel, MAX(lv, rv));
-			} else {
-				lng mul = lv * rv;
+					BUN mul = lv * rv;
 
-				if (is_left(rel->op))
-					set_count_prop(v->sql->sa, rel, MAX(mul, lv));
-				else if (is_right(rel->op))
-					set_count_prop(v->sql->sa, rel, MAX(mul, rv));
-				else if (is_full(rel->op))
-					set_count_prop(v->sql->sa, rel, MAX(MAX(mul, lv), rv));
-				else
-					set_count_prop(v->sql->sa, rel, lv * rv);
+					if (is_left(rel->op))
+						set_count_prop(v->sql->sa, rel, MAX(mul, lv));
+					else if (is_right(rel->op))
+						set_count_prop(v->sql->sa, rel, MAX(mul, rv));
+					else if (is_full(rel->op))
+						set_count_prop(v->sql->sa, rel, MAX(MAX(mul, lv), rv));
+					else
+						set_count_prop(v->sql->sa, rel, lv * rv);
+				}
 			}
 		} break;
 		case op_semi:
@@ -817,7 +822,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			if (l) {
 				set_count_prop(v->sql->sa, rel, get_rel_count(l));
 			} else {
-				lng card = 1;
+				BUN card = 1;
 
 				if (!list_empty(rel->exps)) {
 					for (node *n = rel->exps->h ; n ; n = n->next) {
@@ -837,7 +842,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				if (e->type == e_column && is_unique(e) && name_find_column(rel, e->l, e->r, -1, &bt) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
 					set_count_prop(v->sql->sa, rel, p->value.lval);
 				} else if ((p = find_prop(e->p, PROP_NUNIQUES))) {
-					set_count_prop(v->sql->sa, rel, (lng) p->value.dval);
+					set_count_prop(v->sql->sa, rel, (BUN) p->value.dval);
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
@@ -847,39 +852,42 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			break;
 		}
 	} break;
-	case op_table: {
-		set_count_prop(v->sql->sa, rel, 1); /* TODO later we can tune it */
-	} break;
 	case op_topn: {
-		sql_exp *le = rel->exps->h->data, *oe = list_length(rel->exps) > 1 ? rel->exps->h->next->data : NULL;
-		lng lv = get_rel_count(rel->l);
+		BUN lv = get_rel_count(rel->l);
 
-		if (oe && oe->l && !exp_is_null(oe)) { /* no parameters */
-			lng offset = ((atom*)oe->l)->data.val.lval;
-			lv = offset > lv ? 0 : lv - offset;
+		if (lv != BUN_NONE) {
+			sql_exp *le = rel->exps->h->data, *oe = list_length(rel->exps) > 1 ? rel->exps->h->next->data : NULL;
+			if (oe && oe->l && !exp_is_null(oe)) { /* no parameters */
+				BUN offset = (BUN) ((atom*)oe->l)->data.val.lval;
+				lv = offset > lv ? 0 : lv - offset;
+			}
+			if (le->l && !exp_is_null(le)) {
+				BUN limit = (BUN) ((atom*)le->l)->data.val.lval;
+				lv = MIN(lv, limit);
+			}
+			set_count_prop(v->sql->sa, rel, lv);
 		}
-		if (le->l && !exp_is_null(le)) {
-			lng limit = ((atom*)le->l)->data.val.lval;
-			lv = MIN(lv, limit);
-		}
-		set_count_prop(v->sql->sa, rel, lv);
 	} break;
 	case op_sample: {
-		sql_exp *se = rel->exps->h->data;
-		sql_subtype *tp = exp_subtype(se);
-		lng lv = get_rel_count(rel->l);
+		BUN lv = get_rel_count(rel->l);
 
-		if (se->l && tp->type->eclass == EC_NUM) { /* sample is a number of rows */
-			lng sample = ((atom*)se->l)->data.val.lval;
-			lv = MIN(lv, sample);
-		} else if (se->l) { /* sample is a percentage of rows */
-			dbl percent = ((atom*)se->l)->data.val.dval;
-			assert(tp->type->eclass == EC_FLT);
-			lv = (lng) ceil((dbl)lv * percent);
+		if (lv != BUN_NONE) {
+			sql_exp *se = rel->exps->h->data;
+			sql_subtype *tp = exp_subtype(se);
+
+			if (se->l && tp->type->eclass == EC_NUM) { /* sample is a number of rows */
+				BUN sample = (BUN) ((atom*)se->l)->data.val.lval;
+				lv = MIN(lv, sample);
+			} else if (se->l) { /* sample is a percentage of rows */
+				dbl percent = ((atom*)se->l)->data.val.dval;
+				assert(tp->type->eclass == EC_FLT);
+				lv = (BUN) ceil((dbl)lv * percent);
+			}
+			set_count_prop(v->sql->sa, rel, lv);
 		}
-		set_count_prop(v->sql->sa, rel, lv);
 	} break;
 	/*These relations are less important for now
+	case op_table: TODO later we can tune it
 	case op_insert:
 	case op_update:
 	case op_delete:

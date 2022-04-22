@@ -118,7 +118,7 @@ propvalue2string(sql_allocator *sa, prop *p)
 
 	switch(p->kind) {
 	case PROP_COUNT: {
-		snprintf(buf, BUFSIZ, LLFMT, p->value.lval);
+		snprintf(buf, BUFSIZ, BUNFMT, p->value.lval);
 		return sa_strdup(sa, buf);
 	}
 	case PROP_NUNIQUES: {

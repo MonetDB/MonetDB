@@ -499,16 +499,18 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 	return 0;
 }
 
-lng
+BUN
 get_rel_count(sql_rel *rel)
 {
 	prop *found = find_prop(rel->p, PROP_COUNT);
-	return found ? found->value.lval : -1;
+	return found ? found->value.lval : BUN_NONE;
 }
 
 void
-set_count_prop(sql_allocator *sa, sql_rel *rel, lng val)
+set_count_prop(sql_allocator *sa, sql_rel *rel, BUN val)
 {
-	prop *p = rel->p = prop_create(sa, PROP_COUNT, rel->p);
-	p->value.lval = val;
+	if (val != BUN_NONE) {
+		prop *p = rel->p = prop_create(sa, PROP_COUNT, rel->p);
+		p->value.lval = val;
+	}
 }
