@@ -675,11 +675,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			} else if (can_be_pruned && rv == 0 && !rel_is_ref(rel)) { /* right side empty */
 				rel = set_setop_side(v, rel, l);
 			} else if (lv != BUN_NONE && rv != BUN_NONE) {
-				if ((lv + rv) < lv) {
-					set_count_prop(v->sql->sa, rel, MAX(lv, rv));
-				} else {
-					set_count_prop(v->sql->sa, rel, lv + rv);
-				}
+				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
 			} 
 		} else if (is_inter(rel->op) || is_except(rel->op)) {
 			BUN lv = get_rel_count(l), rv = get_rel_count(r);
@@ -750,7 +746,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_left:
 		case op_right:
 		case op_full: {
-			BUN lv = get_rel_count(l), rv = get_rel_count(r), uniques_estimate = BUN_NONE, join_idx_estimate = BUN_NONE;
+			BUN lv = get_rel_count(l), rv = get_rel_count(r), uniques_estimate = BUN_MAX, join_idx_estimate = BUN_MAX;
 
 			if (!list_empty(rel->exps)) {
 				for (node *n = rel->exps->h ; n ; n = n->next) {
@@ -770,8 +766,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 							}
 						}
 						if ((p = find_prop(el->p, PROP_NUNIQUES)) && (p2 = find_prop(er->p, PROP_NUNIQUES))) {
-							BUN pv = (BUN) p->value.dval, pv2 = (BUN) p2->value.dval, mul = pv * pv2;
-							mul = mul < pv ? MAX(pv, pv2) : mul; /* check for overflows */
+							BUN pv = (BUN) p->value.dval, pv2 = (BUN) p2->value.dval,
+								mul = (pv == 0 || pv2 == 0) ? 0 : ((pv2 > (BUN_MAX / pv)) ? BUN_MAX : (pv * pv2)); /* check for overflows */
 
 							if (is_left(rel->op))
 								mul = MAX(mul, lv);
@@ -785,38 +781,42 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					}
 				}
 			}
-			if (join_idx_estimate != BUN_NONE) {
+			if (join_idx_estimate != BUN_MAX) {
 				set_count_prop(v->sql->sa, rel, join_idx_estimate);
-			} else if (uniques_estimate != BUN_NONE) {
+			} else if (uniques_estimate != BUN_MAX) {
 				set_count_prop(v->sql->sa, rel, uniques_estimate);
 			} else if (lv != BUN_NONE && rv != BUN_NONE) {
-				if (list_empty(rel->exps) && is_outerjoin(rel->op)) { /* outer joins without conditions, sum cardinalities instead of multiply */
-					if ((lv + rv) < lv) {
-						set_count_prop(v->sql->sa, rel, MAX(lv, rv));
+				if (list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
+					/* corner cases for outer joins */
+					if (is_left(rel->op)) {
+						set_count_prop(v->sql->sa, rel, lv);
+					} else if (is_right(rel->op)) {
+						set_count_prop(v->sql->sa, rel, rv);
+					} else if (is_full(rel->op)) {
+						set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
 					} else {
-						set_count_prop(v->sql->sa, rel, lv + rv);
+						set_count_prop(v->sql->sa, rel, 0);
 					}
-				} else if ((lv * rv) < lv) {
-					set_count_prop(v->sql->sa, rel, MAX(lv, rv));
+				} else if (lv == 0) {
+					set_count_prop(v->sql->sa, rel, (is_right(rel->op) || is_full(rel->op)) ? rv : 0);
+				} else if (rv == 0) {
+					set_count_prop(v->sql->sa, rel, (is_left(rel->op) || is_full(rel->op)) ? lv : 0);
 				} else {
-					BUN mul = lv * rv;
-
-					if (is_left(rel->op))
-						set_count_prop(v->sql->sa, rel, MAX(mul, lv));
-					else if (is_right(rel->op))
-						set_count_prop(v->sql->sa, rel, MAX(mul, rv));
-					else if (is_full(rel->op))
-						set_count_prop(v->sql->sa, rel, MAX(MAX(mul, lv), rv));
-					else
-						set_count_prop(v->sql->sa, rel, lv * rv);
+					set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
 				}
 			}
 		} break;
-		case op_semi:
 		case op_anti:
+			set_count_prop(v->sql->sa, rel, get_rel_count(l));
+			break;
+		case op_semi:
 		case op_select: {
 			/* TODO calculate cardinalities using selectivities */
-			set_count_prop(v->sql->sa, rel, get_rel_count(l));
+			if (list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
+				set_count_prop(v->sql->sa, rel, 0);
+			} else {
+				set_count_prop(v->sql->sa, rel, get_rel_count(l));
+			}
 		} break;
 		case op_project: {
 			if (l) {
@@ -859,7 +859,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			sql_exp *le = rel->exps->h->data, *oe = list_length(rel->exps) > 1 ? rel->exps->h->next->data : NULL;
 			if (oe && oe->l && !exp_is_null(oe)) { /* no parameters */
 				BUN offset = (BUN) ((atom*)oe->l)->data.val.lval;
-				lv = offset > lv ? 0 : lv - offset;
+				lv = offset >= lv ? 0 : lv - offset;
 			}
 			if (le->l && !exp_is_null(le)) {
 				BUN limit = (BUN) ((atom*)le->l)->data.val.lval;
