@@ -929,19 +929,20 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 {
 	void *ptr = NULL;
 	size_t nbytes = 0;
+	ssize_t res = 0;
 	sql_subtype *tpe = sql_bind_localtype("dbl");
 
 	(*pos)+= (int) strlen("NUNIQUES");
 	skipWS(r, pos);
 
-	if (ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true) < 0)
+	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0)
 		return;
 
 	if (!find_prop(exp->p, PROP_NUNIQUES)) {
 		prop *p = exp->p = prop_create(sql->sa, PROP_NUNIQUES, exp->p);
 		p->value.dval = *(dbl*)ptr;
 	}
-	(*pos) += nbytes;
+	(*pos) += (int) res; /* it should always fit */
 	GDKfree(ptr);
 	skipWS(r, pos);
 }
@@ -1642,16 +1643,17 @@ rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
 {
 	void *ptr = NULL;
 	size_t nbytes = 0;
+	ssize_t res = 0;
 	sql_subtype *tpe = sql_bind_localtype("oid");
 
 	(*pos)+= (int) strlen("COUNT");
 	skipWS(r, pos);
 
-	if (ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true) < 0)
+	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0)
 		return;
 
 	set_count_prop(sql->sa, rel, *(BUN*)ptr);
-	(*pos) += nbytes;
+	(*pos) += (int) res; /* it should always fit */
 	GDKfree(ptr);
 	skipWS(r, pos);
 }
