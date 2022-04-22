@@ -225,6 +225,7 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 			/* make sure the single expression is false, so the generate NULL values won't match */
 			rel->exps->h->data = exp_atom_bool(v->sql->sa, 0);
 			rel->l = rel_project(v->sql->sa, NULL, nexps);
+			set_count_prop(v->sql->sa, rel, 0);
 			rel->card = CARD_ATOM;
 			v->changes++;
 		}
@@ -510,7 +511,13 @@ void
 set_count_prop(sql_allocator *sa, sql_rel *rel, BUN val)
 {
 	if (val != BUN_NONE) {
-		prop *p = rel->p = prop_create(sa, PROP_COUNT, rel->p);
-		p->value.lval = val;
+		prop *found = find_prop(rel->p, PROP_COUNT);
+
+		if (found) {
+			found->value.lval = val;
+		} else {
+			prop *p = rel->p = prop_create(sa, PROP_COUNT, rel->p);
+			p->value.lval = val;
+		}
 	}
 }

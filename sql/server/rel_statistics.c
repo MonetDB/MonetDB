@@ -732,11 +732,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		if (can_be_pruned && (is_join(rel->op) || is_select(rel->op)) && !list_empty(rel->exps)) {
 			int changes = v->changes;
 			rel->exps = rel_prune_predicates(v, rel);
-			if (v->changes > changes) {
+			if (v->changes > changes)
 				rel = rewrite_simplify(v, 0, v->value_based_opt, rel);
-				if (is_select(rel->op) && get_rel_count(rel->l) == BUN_NONE) /* hack, set generated projection count */
-					set_count_prop(v->sql->sa, rel->l, 0);
-			}
 		}
 
 		/* propagate row count */
@@ -806,9 +803,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				}
 			}
 		} break;
-		case op_anti:
+		case op_anti: {
 			set_count_prop(v->sql->sa, rel, get_rel_count(l));
-			break;
+		} break;
 		case op_semi:
 		case op_select: {
 			/* TODO calculate cardinalities using selectivities */
