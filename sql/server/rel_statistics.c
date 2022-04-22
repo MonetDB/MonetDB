@@ -609,7 +609,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 {
 	/* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
 	uint8_t has_special_modify = *(uint8_t*) v->data;
-	prop *p, *p2;
+	prop *p;
 	bool can_be_pruned = !has_special_modify && v->storage_based_opt;
 
 	/* Don't look at the same relation twice */
@@ -761,19 +761,6 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 								BUN ncount = (is_left(rel->op) || is_full(rel->op)) ? MAX(lv, rv) : rv;
 								uniques_estimate = MIN(uniques_estimate, ncount);
 							}
-						}
-						if ((p = find_prop(el->p, PROP_NUNIQUES)) && (p2 = find_prop(er->p, PROP_NUNIQUES))) {
-							BUN pv = (BUN) p->value.dval, pv2 = (BUN) p2->value.dval,
-								mul = (pv == 0 || pv2 == 0) ? 0 : ((pv2 > (BUN_MAX / pv)) ? BUN_MAX : (pv * pv2)); /* check for overflows */
-
-							if (is_left(rel->op))
-								mul = MAX(mul, lv);
-							else if (is_right(rel->op))
-								mul = MAX(mul, rv);
-							else if (is_full(rel->op))
-								mul = MAX(MAX(mul, lv), rv);
-
-							uniques_estimate = MIN(uniques_estimate, mul);
 						}
 					}
 				}
