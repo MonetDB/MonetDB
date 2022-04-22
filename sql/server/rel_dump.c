@@ -323,10 +323,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " NOT NULL");
 	if (e->type != e_atom && e->type != e_cmp && is_unique(e))
 		mnstr_printf(fout, " UNIQUE");
-	if (e->p) {
+	if (e->p && e->type != e_atom) {
 		for (prop *p = e->p; p; p = p->p) {
-			/* Don't show min/max on atoms, or when running tests with forcemito */
-			if (e->type != e_atom && (!(GDKdebug & FORCEMITOMASK) || (p->kind != PROP_MIN && p->kind != PROP_MAX))) {
+			/* Don't show min/max/unique est on atoms, or when running tests with forcemito */
+			if ((GDKdebug & FORCEMITOMASK) == 0 || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
@@ -584,8 +584,10 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	}
 	if (rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
-			char *pv = propvalue2string(sql->ta, p);
-			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			if (p->kind != PROP_COUNT || (GDKdebug & FORCEMITOMASK) == 0) {
+				char *pv = propvalue2string(sql->ta, p);
+				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			}
 		}
 	}
 }
@@ -841,7 +843,7 @@ read_prop(mvc *sql, sql_exp *exp, char *r, int *pos, bool *found)
 			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s missing\n", sname);
 		if (!find_prop(exp->p, PROP_JOINIDX)) {
 			p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
-			if (!(p->value = mvc_bind_idx(sql, s, iname)))
+			if (!(p->value.pval = mvc_bind_idx(sql, s, iname)))
 				return sql_error(sql, -1, SQLSTATE(42000) "Index %s missing\n", iname);
 		}
 		skipWS(r,pos);
@@ -916,7 +918,7 @@ exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_
 	}
 	if (!find_prop(exp->p, kind)) {
 		prop *p = exp->p = prop_create(sql->sa, kind, exp->p);
-		p->value = a;
+		p->value.pval = a;
 	}
 	skipWS(r, pos);
 }

@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "rel_rewriter.h"
 #include "rel_exp.h"
+#include "rel_dump.h"
 #include "rel_basetable.h"
 
 /* simplify expressions, such as not(not(x)) */
@@ -468,7 +469,7 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 		if (!is_unique(e)) { /* ignore unique columns */
 			need_check++;
 			if (!k && (p = find_prop(e->p, PROP_HASHCOL))) /* at the moment, use only one k */
-				k = p->value;
+				k = p->value.pval;
 		}
 	}
 	if (!need_check) /* all have unique property return */
@@ -496,4 +497,18 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 			return rel_is_unique(rel);
 	}
 	return 0;
+}
+
+lng
+get_rel_count(sql_rel *rel)
+{
+	prop *found = find_prop(rel->p, PROP_COUNT);
+	return found ? found->value.lval : -1;
+}
+
+void
+set_count_prop(sql_allocator *sa, sql_rel *rel, lng val)
+{
+	prop *p = rel->p = prop_create(sa, PROP_COUNT, rel->p);
+	p->value.lval = val;
 }

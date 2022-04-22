@@ -2418,7 +2418,7 @@ exp_unsafe(sql_exp *e, int allow_identity)
 	case e_func: {
 		sql_subfunc *f = e->f;
 
-		if (IS_ANALYTIC(f->func) || (!allow_identity && is_identity(e, NULL)))
+		if (IS_ANALYTIC(f->func) || !LANG_INT_OR_MAL(f->func->lang) || f->func->side_effect || (!allow_identity && is_identity(e, NULL)))
 			return 1;
 		return exps_have_unsafe(e->l, allow_identity);
 	} break;

@@ -10,7 +10,8 @@
 #define _REL_PROP_H_
 
 typedef enum rel_prop {
-	PROP_COUNT,
+	PROP_COUNT,     /* Number of expect rows for the relation */
+	PROP_NUNIQUES,  /* Estimated number of distinct rows for the expression */
 	PROP_MIN,       /* min value if available */
 	PROP_MAX,       /* max value if available */
 	PROP_JOINIDX,   /* could use join idx */
@@ -23,7 +24,11 @@ typedef enum rel_prop {
 
 typedef struct prop {
 	rel_prop kind;  /* kind of property */
-	void *value;    /* property value */
+	union {
+		lng lval; /* property with simple counts */
+		dbl dval; /* property with estimate */
+		void *pval; /* property value */
+	} value;
 	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
 } prop;
 

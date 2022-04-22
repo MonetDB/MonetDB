@@ -2539,7 +2539,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 				/* handle possible index lookups, expressions are in index order! */
 				if (!join && (p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
-					sql_idx *i = p->value;
+					sql_idx *i = p->value.pval;
 					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
 					join = s = rel2bin_hash_lookup(be, rel, left, right, i, en);
@@ -3642,7 +3642,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		prop *p;
 
 		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
-			sql_idx *i = p->value;
+			sql_idx *i = p->value.pval;
 			int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
 			if (!(sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en))) {

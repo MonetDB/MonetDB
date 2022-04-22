@@ -2006,7 +2006,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 					djn->data = je;
 				}
 				je->p = p = prop_create(sql->sa, PROP_JOINIDX, je->p);
-				p->value = idx;
+				p->value.pval = idx;
 			}
 		}
 	}
@@ -2451,9 +2451,13 @@ bind_join_order(visitor *v, global_props *gp)
 run_optimizer
 bind_join_order2(visitor *v, global_props *gp)
 {
-	int flag = v->sql->sql_optimizer;
+	/*int flag = v->sql->sql_optimizer;
 	return gp->opt_level == 1 && !gp->has_special_modify && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
-		   gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;
+		   gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;*/
+	/* TODO we have to propagate count statistics here */
+	(void) v;
+	(void) gp;
+	return NULL;
 }
 
 
@@ -3352,7 +3356,7 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 
 		if ((p = find_prop(e->p, PROP_HASHIDX)) != NULL) {
 			list *exps, *cols;
-			sql_idx *i = p->value;
+			sql_idx *i = p->value.pval;
 			fcmp cmp = (fcmp)&sql_column_kc_cmp;
 
 			/* join indices are only interesting for joins */
@@ -3436,7 +3440,7 @@ rel_use_index(visitor *v, sql_rel *rel)
 				p = find_prop(e->p, PROP_HASHCOL);
 				if (!p)
 					e->p = p = prop_create(v->sql->sa, PROP_HASHCOL, e->p);
-				p->value = i;
+				p->value.pval = i;
 			}
 		}
 		/* add the remaining exps to the new exp list */
