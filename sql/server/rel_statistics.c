@@ -820,7 +820,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_groupby: {
 			if (list_empty(rel->r)) {
 				set_count_prop(v->sql->sa, rel, 1);
-			} else {
+			} else if (list_length(rel->r) == 1) {
 				sql_exp *e = ((list*)rel->r)->h->data;
 				sql_rel *bt = NULL;
 				if (e->type == e_column && is_unique(e) && name_find_column(rel, e->l, e->r, -1, &bt) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
@@ -830,6 +830,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
+			} else {
+				set_count_prop(v->sql->sa, rel, get_rel_count(l));
 			}
 		} break;
 		default:
