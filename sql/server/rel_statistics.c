@@ -82,16 +82,16 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 									if (symmetric) {
 										prop *p1 = find_prop(e->p, PROP_MIN), *p2 = find_prop(e->p, PROP_MAX);
 										atom *nmin = statistics_atom_min(sql, rval_min, fval_min), *nmax = statistics_atom_max(sql, rval_max, fval_max);
-										/* min is max from le and (min from re and fe min) */
-										set_minmax_property(sql, e, PROP_MIN, p1 ? statistics_atom_max(sql, nmin, p1->value.pval) : nmin);
 										/* max is min from le and (max from re and fe max) */
 										set_minmax_property(sql, e, PROP_MAX, p2 ? statistics_atom_min(sql, nmax, p2->value.pval) : nmax);
+										/* min is max from le and (min from re and fe min) */
+										set_minmax_property(sql, e, PROP_MIN, p1 ? statistics_atom_max(sql, nmin, p1->value.pval) : nmin);
 									} else {
 										prop *p1 = find_prop(e->p, PROP_MIN), *p2 = find_prop(e->p, PROP_MAX);
-										/* min is max from le and re min */
-										set_minmax_property(sql, e, PROP_MIN, p1 ? statistics_atom_max(sql, rval_min, p1->value.pval) : rval_min);
 										/* max is min from le and fe max */
 										set_minmax_property(sql, e, PROP_MAX, p2 ? statistics_atom_min(sql, fval_max, p2->value.pval) : fval_max);
+										/* min is max from le and re min */
+										set_minmax_property(sql, e, PROP_MIN, p1 ? statistics_atom_max(sql, rval_min, p1->value.pval) : rval_min);
 									}
 								} else if (rne) {
 									if (symmetric && int1 && int2) { /* min is max from le and (min from re and fe min) */
@@ -240,19 +240,19 @@ rel_basetable_column_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 			prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 			p->value.dval = unique_est;
 		}
-		if ((ok & 1) == 1) {
-			if (!VALisnil(&min)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-				p->value.pval = atom_from_valptr(sql->sa, &c->type, &min);
-			}
-			VALclear(&min);
-		}
 		if ((ok & 2) == 2) {
 			if (!VALisnil(&max)) {
 				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
 				p->value.pval = atom_from_valptr(sql->sa, &c->type, &max);
 			}
 			VALclear(&max);
+		}
+		if ((ok & 1) == 1) {
+			if (!VALisnil(&min)) {
+				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
+				p->value.pval = atom_from_valptr(sql->sa, &c->type, &min);
+			}
+			VALclear(&min);
 		}
 	}
 }
@@ -270,14 +270,6 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 		((rval_max && lval_min && atom_cmp(rval_max, lval_min) < 0) || (rval_min && lval_max && atom_cmp(rval_min, lval_max) > 0)))
 		return true;
 
-	if (lval_min && rval_min) {
-		if (is_union(rel->op))
-			set_minmax_property(sql, e, PROP_MIN, statistics_atom_min(sql, lval_min, rval_min)); /* for union the new min will be the min of the two */
-		else if (is_inter(rel->op))
-			set_minmax_property(sql, e, PROP_MIN, statistics_atom_max(sql, lval_min, rval_min)); /* for intersect the new min will be the max of the two */
-		else /* except */
-			set_minmax_property(sql, e, PROP_MIN, lval_min);
-	}
 	if (lval_max && rval_max) {
 		if (is_union(rel->op))
 			set_minmax_property(sql, e, PROP_MAX, statistics_atom_max(sql, lval_max, rval_max)); /* for union the new max will be the max of the two */
@@ -285,6 +277,14 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 			set_minmax_property(sql, e, PROP_MAX, statistics_atom_min(sql, lval_max, rval_max)); /* for intersect the new max will be the min of the two */
 		else /* except */
 			set_minmax_property(sql, e, PROP_MAX, lval_max);
+	}
+	if (lval_min && rval_min) {
+		if (is_union(rel->op))
+			set_minmax_property(sql, e, PROP_MIN, statistics_atom_min(sql, lval_min, rval_min)); /* for union the new min will be the min of the two */
+		else if (is_inter(rel->op))
+			set_minmax_property(sql, e, PROP_MIN, statistics_atom_max(sql, lval_min, rval_min)); /* for intersect the new min will be the max of the two */
+		else /* except */
+			set_minmax_property(sql, e, PROP_MIN, lval_min);
 	}
 
 	if (is_union(rel->op)) {
@@ -626,9 +626,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			for (node *n = rel->exps->h ; n ; n = n->next)
 				rel_basetable_column_get_statistics(v->sql, rel, n->data);
 		}
-		/* set table row count */
-		/* TODO look for remote/replica tables */
-		if (isTable(t))
+		/* Set table row count. TODO? look for remote/replica tables. Don't look at storage for declared tables, because it won't be cleaned */
+		if (isTable(t) && t->s && !isDeclaredTable(t))
 			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 0));
 	} break;
 	case op_union:
