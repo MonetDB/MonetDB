@@ -616,8 +616,12 @@ trivial_project_exp_card(sql_exp *e)
 }
 
 static BUN
-rel_calc_nuniques(sql_rel *rel, sql_rel *l, list *exps)
+rel_calc_nuniques(sql_rel *l, list *exps)
 {
+	BUN lv = get_rel_count(l);
+
+	if (lv == 0)
+		return 0;
 	if (!list_empty(exps)) {
 		BUN nuniques = 0;
 		/* compute the highest number of unique values */
@@ -626,18 +630,18 @@ rel_calc_nuniques(sql_rel *rel, sql_rel *l, list *exps)
 			sql_rel *bt = NULL;
 			prop *p = NULL;
 
-			if (e->type == e_column && is_unique(e) &&
-				name_find_column(rel, e->l, e->r, -1, &bt) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
-				nuniques = MAX(nuniques, p->value.lval);
-			} else if ((p = find_prop(e->p, PROP_NUNIQUES))) {
+			if ((p = find_prop(e->p, PROP_NUNIQUES))) {
 				nuniques = MAX(nuniques, (BUN) p->value.dval);
+			} else if (rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
+				nuniques = MAX(nuniques, p->value.lval);
 			} else {
 				nuniques = BUN_NONE;
 			}
 		}
-		return nuniques != BUN_NONE ? nuniques : get_rel_count(l);
+		if (nuniques != BUN_NONE)
+			return nuniques;
 	}
-	return get_rel_count(l);
+	return lv;
 }
 
 static sql_rel *
@@ -695,8 +699,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 
 		/* propagate row count */
 		if (is_union(rel->op)) {
-			BUN lv = need_distinct(rel) ? rel_calc_nuniques(rel, pl, pl->exps) : get_rel_count(pl),
-				rv = need_distinct(rel) ? rel_calc_nuniques(rel, pr, pr->exps) : get_rel_count(pr);
+			BUN lv = need_distinct(rel) ? rel_calc_nuniques(pl, pl->exps) : get_rel_count(pl),
+				rv = need_distinct(rel) ? rel_calc_nuniques(pr, pr->exps) : get_rel_count(pr);
 
 			if (lv == 0 && rv == 0) { /* both sides empty */
 				if (can_be_pruned)
@@ -711,8 +715,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
 			} 
 		} else if (is_inter(rel->op) || is_except(rel->op)) {
-			BUN lv = need_distinct(rel) ? rel_calc_nuniques(rel, pl, pl->exps) : get_rel_count(pl),
-				rv = need_distinct(rel) ? rel_calc_nuniques(rel, pr, pr->exps) : get_rel_count(pr);
+			BUN lv = need_distinct(rel) ? rel_calc_nuniques(pl, pl->exps) : get_rel_count(pl),
+				rv = need_distinct(rel) ? rel_calc_nuniques(pr, pr->exps) : get_rel_count(pr);
 
 			if (lv == 0) { /* left side empty */
 				if (can_be_pruned)
@@ -841,7 +845,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_project: {
 			if (l) {
 				if (need_distinct(rel)) {
-					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(rel, l, rel->exps));
+					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(l, rel->exps));
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
@@ -861,7 +865,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			if (list_empty(rel->r)) {
 				set_count_prop(v->sql->sa, rel, 1);
 			} else {
-				set_count_prop(v->sql->sa, rel, rel_calc_nuniques(rel, l, rel->r));
+				set_count_prop(v->sql->sa, rel, rel_calc_nuniques(l, rel->r));
 			}
 		} break;
 		default:
