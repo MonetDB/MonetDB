@@ -5064,16 +5064,16 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 21,	1,	1 # length
-% .%11,	.%10,	.tables # table_name
-% %11,	%10,	id # name
+% .%12,	sys.%10,	sys.tables # table_name
+% %12,	%10,	id # name
 % char,	bigint,	int # type
 % 20,	1,	1 # length
 % .%2,	sys.%1,	sys._columns # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 22,	1,	1 # length
-% .%7,	.%6,	.columns # table_name
-% %7,	%6,	id # name
+% .%10,	sys.%6,	sys.columns # table_name
+% %10,	%6,	id # name
 % char,	bigint,	int # type
 % 21,	1,	1 # length
 % .%2,	sys.%1,	sys.functions # table_name
@@ -5204,8 +5204,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 22,	1,	1 # length
-% .%171,	.%170,	.ids # table_name
-% %171,	%170,	id # name
+% .%176,	.%170,	.ids # table_name
+% %176,	%170,	id # name
 % char,	bigint,	int # type
 % 17,	1,	1 # length
 % .%105,	.%104,	.var_values # table_name
@@ -5240,32 +5240,32 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	schema_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 21,	1,	1,	0 # length
-% .%11,	.%10,	.tables,	.tables # table_name
-% %11,	%10,	schema_id,	name # name
+% .%12,	sys.%10,	sys.tables,	sys.tables # table_name
+% %12,	%10,	schema_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 20,	1,	1,	0 # length
 % .%2,	sys.%1,	sys._columns,	sys._columns # table_name
 % %2,	%1,	table_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 22,	1,	1,	0 # length
-% .%7,	.%6,	.columns,	.columns # table_name
-% %7,	%6,	table_id,	name # name
+% .%10,	sys.%6,	sys.columns,	sys.columns # table_name
+% %10,	%6,	table_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 21,	1,	1,	0 # length
 % .%2,	sys.%1,	sys._columns,	sys._columns # table_name
 % %2,	%1,	table_id,	number # name
 % char,	bigint,	int,	int # type
 % 22,	1,	1,	1 # length
-% .%7,	.%6,	.columns,	.columns # table_name
-% %7,	%6,	table_id,	number # name
+% .%10,	sys.%6,	sys.columns,	sys.columns # table_name
+% %10,	%6,	table_id,	number # name
 % char,	bigint,	int,	int # type
 % 21,	1,	1,	1 # length
 % .%21,	.%20,	.t # table_name
 % %21,	%20,	id # name
 % char,	bigint,	int # type
 % 161,	1,	1 # length
-% .%35,	.%34,	.t # table_name
-% %35,	%34,	id # name
+% .%37,	.%34,	.t # table_name
+% %37,	%34,	id # name
 % char,	bigint,	int # type
 % 159,	1,	1 # length
 % .%2,	sys.%1,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.a # table_name
@@ -5364,7 +5364,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %5,	schema_id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
 % char,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 38,	1,	1,	0,	1,	0,	1,	5,	1,	1 # length
-% .%14,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%14,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %14,	schema_id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 37,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
@@ -5372,7 +5372,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %5,	type,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
 % char,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 33,	1,	1,	0,	1,	0,	1,	5,	1,	1 # length
-% .%14,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%14,	.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %14,	type,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 32,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
@@ -5380,7 +5380,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %5,	table_id,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % char,	int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 38,	1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%21,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns # table_name
+% .%21,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns # table_name
 % %21,	table_id,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % char,	int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 37,	1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
@@ -5388,7 +5388,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %5,	type,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % char,	varchar,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 34,	0,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%12,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns # table_name
+% .%12,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	sys.columns # table_name
 % %12,	type,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % char,	varchar,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 33,	0,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
@@ -5420,12 +5420,12 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %5,	schema_id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % char,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 36,	1,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%174,	sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
-% %174,	id,	id,	name,	nr,	sub # name
+% .%201,	sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% %201,	id,	id,	name,	nr,	sub # name
 % char,	int,	int,	varchar,	int,	int # type
 % 31,	1,	1,	0,	1,	1 # length
-% .%233,	.ids,	.ids,	.ids,	.ids,	.ids,	.ids,	.ids,	.ids,	.ids # table_name
-% %233,	id,	id,	name,	schema_id,	table_id,	table_name,	obj_type,	sys_table,	system # name
+% .%240,	.ids,	.ids,	.ids,	.ids,	.ids,	.ids,	.ids,	.ids,	.ids # table_name
+% %240,	id,	id,	name,	schema_id,	table_id,	table_name,	obj_type,	sys_table,	system # name
 % char,	int,	int,	varchar,	int,	int,	varchar,	char,	char,	boolean # type
 % 27,	1,	1,	0,	1,	1,	0,	44,	13,	5 # length
 % .%5,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
@@ -5476,24 +5476,24 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %14,	table_id,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % char,	int,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
 % 38,	1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
-% .%174,	sys.comments,	sys.comments,	sys.comments # table_name
-% %174,	id,	id,	remark # name
+% .%201,	sys.comments,	sys.comments,	sys.comments # table_name
+% %201,	id,	id,	remark # name
 % char,	int,	int,	varchar # type
 % 32,	1,	1,	0 # length
-% .%174,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
-% %174,	id,	id,	depend_id,	depend_type # name
+% .%201,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% %201,	id,	id,	depend_id,	depend_type # name
 % char,	int,	int,	int,	smallint # type
 % 36,	1,	1,	1,	1 # length
-% .%174,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
-% %174,	depend_id,	id,	depend_id,	depend_type # name
+% .%201,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% %201,	depend_id,	id,	depend_id,	depend_type # name
 % char,	int,	int,	int,	smallint # type
 % 43,	1,	1,	1,	1 # length
 % .%5,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
 % %5,	depend_type,	id,	depend_id,	depend_type # name
 % char,	smallint,	int,	int,	smallint # type
 % 45,	1,	1,	1,	1 # length
-% .%371,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
-% %371,	id,	depend_id,	depend_type,	id,	depend_id,	depend_type # name
+% .%403,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% %403,	id,	depend_id,	depend_type,	id,	depend_id,	depend_type # name
 % char,	int,	int,	smallint,	int,	int,	smallint # type
 % 60,	1,	1,	1,	1,	1,	1 # length
 % .%5,	sys.auths,	sys.auths,	sys.auths,	sys.auths # table_name
@@ -6240,31 +6240,31 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	table_type_name,	table_type_id,	table_type_name # name
 % char,	varchar,	smallint,	varchar # type
 % 35,	0,	1,	0 # length
-% .%12,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%12,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %12,	id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 17,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%12,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%12,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %12,	name,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	varchar,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 19,	0,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%12,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%12,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %12,	schema_id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 24,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%12,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%12,	.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %12,	type,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 19,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%12,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%12,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %12,	system,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	boolean,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 21,	5,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%12,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%12,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %12,	commit_action,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 28,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%12,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%12,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %12,	access,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 21,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
