@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021-SP5/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP6/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -846,6 +846,15 @@ else
 fi
 
 %changelog
+* Mon Apr 25 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.23-20220425
+- Rebuilt.
+
+* Mon Apr 25 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.23-20220425
+- sql: GLOBAL TEMPORARY tables are now treated like LOCAL TEMPORARY tables
+  as far as the table content is concerned.  The schema information
+  stays global.  This fixes an issue with concurrent access and cleanup
+  of stale data.
+
 * Tue Mar 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.21-20220322
 - Rebuilt.
 
