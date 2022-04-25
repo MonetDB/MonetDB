@@ -177,6 +177,8 @@ GDKlockstatistics(int what)
 
 #endif	/* LOCK_STATS */
 
+static void MT_thread_setcondwait(MT_Cond *cond);
+
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 static struct winthread {
 	struct winthread *next;
@@ -186,6 +188,7 @@ static struct winthread {
 	void *data;
 	MT_Lock *lockwait;	/* lock we're waiting for */
 	MT_Sema *semawait;	/* semaphore we're waiting for */
+	MT_Cond *condwait;	/* condition variable we're waiting for */
 	struct winthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
 	char algorithm[512];	/* the algorithm used in the last operation */
@@ -213,6 +216,7 @@ dump_threads(void)
 					w->threadname,
 					w->lockwait ? w->lockwait->name :
 					w->semawait ? w->semawait->name :
+					w->condwait ? w->condwait->name :
 					w->joinwait ? w->joinwait->threadname :
 					"nothing",
 					ATOMIC_GET(&w->exited) ? "exiting" :
@@ -326,6 +330,17 @@ MT_thread_setsemawait(MT_Sema *sema)
 
 	if (w)
 		w->semawait = sema;
+}
+
+static void
+MT_thread_setcondwait(MT_Cond *cond)
+{
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
+	struct winthread *w = TlsGetValue(threadslot);
+
+	if (w)
+		w->condwait = cond;
 }
 
 void
@@ -591,6 +606,7 @@ static struct posthread {
 	void *data;
 	MT_Lock *lockwait;	/* lock we're waiting for */
 	MT_Sema *semawait;	/* semaphore we're waiting for */
+	MT_Cond *condwait;	/* condition variable we're waiting for */
 	struct posthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
 	char algorithm[512];	/* the algorithm used in the last operation */
@@ -623,6 +639,7 @@ dump_threads(void)
 					p->threadname,
 					p->lockwait ? p->lockwait->name :
 					p->semawait ? p->semawait->name :
+					p->condwait ? p->condwait->name :
 					p->joinwait ? p->joinwait->threadname :
 					"nothing",
 					ATOMIC_GET(&p->exited) ? "exiting" :
@@ -735,6 +752,17 @@ MT_thread_setsemawait(MT_Sema *sema)
 
 	if (p)
 		p->semawait = sema;
+}
+
+void
+MT_thread_setcondwait(MT_Cond *cond)
+{
+	if (!thread_initialized)
+		return;
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	if (p)
+		p->condwait = cond;
 }
 
 void
@@ -1107,4 +1135,58 @@ MT_check_nr_cores(void)
 #endif
 
 	return ncpus;
+}
+
+
+void
+MT_cond_init(MT_Cond *cond)
+{
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	InitializeConditionVariable(&cond->cv);
+#else
+	pthread_cond_init(&cond->cv, NULL);
+#endif
+}
+
+
+void
+MT_cond_destroy(MT_Cond *cond)
+{
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	/* no need */
+#else
+	pthread_cond_destroy(&cond->cv);
+#endif
+}
+
+void
+MT_cond_wait(MT_Cond *cond, MT_Lock *lock)
+{
+	MT_thread_setcondwait(cond);
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	SleepConditionVariableCS(&cond->cv, &lock->lock);
+#else
+	pthread_cond_wait(&cond->cv, &lock->lock);
+#endif
+	MT_thread_setcondwait(NULL);
+}
+
+void
+MT_cond_signal(MT_Cond *cond)
+{
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	WakeConditionVariable(&cond->cv);
+#else
+	pthread_cond_signal(&cond->cv);
+#endif
+}
+
+void
+MT_cond_broadcast(MT_Cond *cond)
+{
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	WakeAllConditionVariable(&cond->cv);
+#else
+	pthread_cond_broadcast(&cond->cv);
+#endif
 }
