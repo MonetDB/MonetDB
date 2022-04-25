@@ -699,8 +699,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 
 		/* propagate row count */
 		if (is_union(rel->op)) {
-			BUN lv = need_distinct(rel) ? rel_calc_nuniques(pl, pl->exps) : get_rel_count(pl),
-				rv = need_distinct(rel) ? rel_calc_nuniques(pr, pr->exps) : get_rel_count(pr);
+			BUN lv = need_distinct(rel) ? rel_calc_nuniques(l, l->exps) : get_rel_count(l),
+				rv = need_distinct(rel) ? rel_calc_nuniques(r, r->exps) : get_rel_count(r);
 
 			if (lv == 0 && rv == 0) { /* both sides empty */
 				if (can_be_pruned)
@@ -717,8 +717,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
 			} 
 		} else if (is_inter(rel->op) || is_except(rel->op)) {
-			BUN lv = need_distinct(rel) ? rel_calc_nuniques(pl, pl->exps) : get_rel_count(pl),
-				rv = need_distinct(rel) ? rel_calc_nuniques(pr, pr->exps) : get_rel_count(pr);
+			BUN lv = need_distinct(rel) ? rel_calc_nuniques(l, l->exps) : get_rel_count(l),
+				rv = need_distinct(rel) ? rel_calc_nuniques(r, r->exps) : get_rel_count(r);
 
 			if (lv == 0) { /* left side empty */
 				if (can_be_pruned)
