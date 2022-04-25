@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -74,6 +74,9 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "mutils.h"
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 
 #ifndef F_OK
 #define F_OK 0
@@ -104,25 +107,27 @@ struct BBPfarm_t BBPfarms[MAXFARMS];
  * tuned for perfect hashing (1 lookup). The bucket chain uses the
  * 'next' field in the BBPrec records.
  */
-bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
-bat BBP_mask = 0;		/* number of buckets = & mask */
+static MT_Lock BBPnameLock = MT_LOCK_INITIALIZER(BBPnameLock);
+static bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
+static bat BBP_mask = 0;		/* number of buckets = & mask */
+static MT_Lock GDKcacheLock = MT_LOCK_INITIALIZER(GDKcacheLock);
+static bat BBP_free;
 
 static gdk_return BBPfree(BAT *b);
 static void BBPdestroy(BAT *b);
 static void BBPuncacheit(bat bid, bool unloaddesc);
 static gdk_return BBPprepare(bool subcommit);
-static BAT *getBBPdescriptor(bat i, bool lock);
+static BAT *getBBPdescriptor(bat i);
 static gdk_return BBPbackup(BAT *b, bool subcommit);
-static gdk_return BBPdir(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);
+static gdk_return BBPdir_init(void);
+static void BBPcallbacks(void);
 
-static lng BBPlogno;		/* two lngs of extra info in BBP.dir */
-static lng BBPtransid;
+/* two lngs of extra info in BBP.dir */
+/* these two need to be atomic because of their use in AUTHcommit() */
+static ATOMIC_TYPE BBPlogno = ATOMIC_VAR_INIT(0);
+static ATOMIC_TYPE BBPtransid = ATOMIC_VAR_INIT(0);
 
-#ifdef HAVE_HGE
-/* start out by saying we have no hge, but as soon as we've seen one,
- * we'll always say we do have it */
-static bool havehge = false;
-#endif
+#define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
 
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? strtol((s) + 4, NULL, 8) : 0)
 
@@ -159,13 +164,13 @@ getBBPsize(void)
 lng
 getBBPlogno(void)
 {
-	return BBPlogno;
+	return (lng) ATOMIC_GET(&BBPlogno);
 }
 
 lng
 getBBPtransid(void)
 {
-	return BBPtransid;
+	return (lng) ATOMIC_GET(&BBPtransid);
 }
 
 
@@ -230,6 +235,8 @@ getBBPtransid(void)
  */
 static volatile MT_Id locked_by = 0;
 
+/* use a lock instead of atomic instructions so that we wait for
+ * BBPlock/BBPunlock */
 #define BBP_unload_inc()			\
 	do {					\
 		MT_lock_set(&GDKunloadLock);	\
@@ -261,10 +268,8 @@ BBPlock(void)
 		MT_lock_set(&GDKunloadLock);
 	}
 
-	for (i = 0; i <= BBP_THREADMASK; i++)
-		MT_lock_set(&GDKtrimLock(i));
-	for (i = 0; i <= BBP_THREADMASK; i++)
-		MT_lock_set(&GDKcacheLock(i));
+	MT_lock_set(&GDKtmLock);
+	MT_lock_set(&GDKcacheLock);
 	for (i = 0; i <= BBP_BATMASK; i++)
 		MT_lock_set(&GDKswapLock(i));
 	locked_by = MT_getpid();
@@ -279,41 +284,33 @@ BBPunlock(void)
 
 	for (i = BBP_BATMASK; i >= 0; i--)
 		MT_lock_unset(&GDKswapLock(i));
-	for (i = BBP_THREADMASK; i >= 0; i--)
-		MT_lock_unset(&GDKcacheLock(i));
+	MT_lock_unset(&GDKcacheLock);
 	locked_by = 0;
-	for (i = BBP_THREADMASK; i >= 0; i--)
-		MT_lock_unset(&GDKtrimLock(i));
+	MT_lock_unset(&GDKtmLock);
 }
 
 
 static gdk_return
-BBPinithash(int j)
+BBPinithash(bat size)
 {
-	bat i = (bat) ATOMIC_GET(&BBPsize);
-
-	assert(j >= 0 && j <= BBP_THREADMASK);
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
 	BBP_hash = (bat *) GDKzalloc(BBP_mask * sizeof(bat));
 	if (BBP_hash == NULL) {
-		GDKerror("cannot allocate memory\n");
 		return GDK_FAIL;
 	}
 	BBP_mask--;
 
-	while (--i > 0) {
-		const char *s = BBP_logical(i);
+	while (--size > 0) {
+		const char *s = BBP_logical(size);
 
 		if (s) {
-			if (*s != '.' && BBPtmpcheck(s) == 0) {
-				BBP_insert(i);
+			if (*s != '.' && !BBPtmpcheck(s)) {
+				BBP_insert(size);
 			}
 		} else {
-			BBP_next(i) = BBP_free(j);
-			BBP_free(j) = i;
-			if (++j > BBP_THREADMASK)
-				j = 0;
+			BBP_next(size) = BBP_free;
+			BBP_free = size;
 		}
 	}
 	return GDK_SUCCEED;
@@ -346,21 +343,17 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	return -1;
 }
 
-/*
- * BBPextend must take the trimlock, as it is called when other BBP
- * locks are held and it will allocate memory.
- */
 static gdk_return
-BBPextend(int idx, bool buildhash)
+BBPextend(bool buildhash, bat newsize)
 {
-	if ((bat) ATOMIC_GET(&BBPsize) >= N_BBPINIT * BBPINIT) {
+	if (newsize >= N_BBPINIT * BBPINIT) {
 		GDKerror("trying to extend BAT pool beyond the "
 			 "limit (%d)\n", N_BBPINIT * BBPINIT);
 		return GDK_FAIL;
 	}
 
 	/* make sure the new size is at least BBPsize large */
-	while (BBPlimit < (bat) ATOMIC_GET(&BBPsize)) {
+	while (BBPlimit < newsize) {
 		BUN limit = BBPlimit >> BBPINITLOG;
 		assert(BBP[limit] == NULL);
 		BBP[limit] = GDKzalloc(BBPINIT * sizeof(BBPrec));
@@ -368,19 +361,18 @@ BBPextend(int idx, bool buildhash)
 			GDKerror("failed to extend BAT pool\n");
 			return GDK_FAIL;
 		}
-		for (BUN i = 0; i < BBPINIT; i++)
+		for (BUN i = 0; i < BBPINIT; i++) {
 			ATOMIC_INIT(&BBP[limit][i].status, 0);
+			BBP[limit][i].pid = ~(MT_Id)0;
+		}
 		BBPlimit += BBPINIT;
 	}
 
 	if (buildhash) {
-		int i;
-
 		GDKfree(BBP_hash);
 		BBP_hash = NULL;
-		for (i = 0; i <= BBP_THREADMASK; i++)
-			BBP_free(i) = 0;
-		if (BBPinithash(idx) != GDK_SUCCEED)
+		BBP_free = 0;
+		if (BBPinithash(newsize) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -402,6 +394,59 @@ recover_dir(int farmid, bool direxists)
 static gdk_return BBPrecover(int farmid);
 static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
+
+static int
+vheapinit(BAT *b, const char *buf, bat bid, unsigned bbpversion, const char *filename, int lineno)
+{
+	int n = 0;
+	uint64_t free, size;
+	uint16_t storage;
+
+	(void) bbpversion;	/* could be used to implement compatibility */
+
+	size = 0;			      /* for GDKLIBRARY_HSIZE case */
+	storage = STORE_INVALID;	      /* for GDKLIBRARY_HSIZE case */
+	if (bbpversion <= GDKLIBRARY_HSIZE ?
+	    sscanf(buf,
+		   " %" SCNu64 " %" SCNu64 " %" SCNu16
+		   "%n",
+		   &free, &size, &storage, &n) < 3 :
+	    sscanf(buf,
+		   " %" SCNu64
+		   "%n",
+		   &free, &n) < 1) {
+		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
+		return -1;
+	}
+	b->tvheap = GDKmalloc(sizeof(Heap));
+	if (b->tvheap == NULL) {
+		TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
+		return -1;
+	}
+	if (b->ttype >= 0 &&
+	    ATOMstorage(b->ttype) == TYPE_str &&
+	    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
+		size = GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN;
+	else if (free < 512)
+		size = 512;
+	else
+		size = free;
+	*b->tvheap = (Heap) {
+		.free = (size_t) free,
+		.size = (size_t) size,
+		.base = NULL,
+		.storage = STORE_INVALID,
+		.cleanhash = true,
+		.newstorage = STORE_INVALID,
+		.dirty = false,
+		.parentid = bid,
+		.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
+	};
+	strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
+		      filename, ".theap", NULL);
+	ATOMIC_INIT(&b->tvheap->refs, 1);
+	return n;
+}
 
 static int
 heapinit(BAT *b, const char *buf,
@@ -429,6 +474,8 @@ heapinit(BAT *b, const char *buf,
 	(void) bbpversion;	/* could be used to implement compatibility */
 
 	minpos = maxpos = (uint64_t) oid_nil; /* for GDKLIBRARY_MINMAX_POS case */
+	size = 0;			      /* for GDKLIBRARY_HSIZE case */
+	storage = STORE_INVALID;	      /* for GDKLIBRARY_HSIZE case */
 	if (bbpversion <= GDKLIBRARY_MINMAX_POS ?
 	    sscanf(buf,
 		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
@@ -439,6 +486,7 @@ heapinit(BAT *b, const char *buf,
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &free, &size, &storage,
 		   &n) < 12 :
+	    bbpversion <= GDKLIBRARY_HSIZE ?
 	    sscanf(buf,
 		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
@@ -447,7 +495,16 @@ heapinit(BAT *b, const char *buf,
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &free, &size, &storage, &minpos, &maxpos,
-		   &n) < 14) {
+		   &n) < 14 :
+	    sscanf(buf,
+		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
+		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
+		   " %" SCNu64 " %" SCNu64 " %" SCNu64
+		   "%n",
+		   type, &width, &var, &properties, &nokey0,
+		   &nokey1, &nosorted, &norevsorted, &base,
+		   &free, &minpos, &maxpos,
+		   &n) < 12) {
 		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 		return -1;
 	}
@@ -460,10 +517,6 @@ heapinit(BAT *b, const char *buf,
 	*hashash = var & 2;
 #endif
 	var &= ~2;
-#ifdef HAVE_HGE
-	if (strcmp(type, "hge") == 0)
-		havehge = true;
-#endif
 	if ((t = ATOMindex(type)) < 0) {
 		if ((t = ATOMunknown_find(type)) == 0) {
 			TRC_CRITICAL(GDK, "no space for atom %s", type);
@@ -485,7 +538,6 @@ heapinit(BAT *b, const char *buf,
 	}
 	b->ttype = t;
 	b->twidth = width;
-	b->tvarsized = var != 0;
 	b->tshift = ATOMelmshift(width);
 	assert_shift_width(b->tshift,b->twidth);
 	b->tnokey[0] = (BUN) nokey0;
@@ -497,64 +549,38 @@ heapinit(BAT *b, const char *buf,
 	b->tnil = (properties & 0x0800) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
+	b->tunique_est = 0.0;
 	/* (properties & 0x0200) is the old tdense flag */
 	b->tseqbase = (properties & 0x0200) == 0 || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
 	b->theap->free = (size_t) free;
-	b->theap->size = (size_t) size;
+	/* set heap size to match capacity */
+	if (b->ttype == TYPE_msk) {
+		/* round up capacity to multiple of 32 */
+		b->batCapacity = (b->batCapacity + 31) & ~((BUN) 31);
+		b->theap->size = b->batCapacity / 8;
+	} else {
+		b->theap->size = (size_t) b->batCapacity << b->tshift;
+	}
 	b->theap->base = NULL;
 	settailname(b->theap, filename, t, width);
-	b->theap->storage = (storage_t) storage;
-	b->theap->newstorage = (storage_t) storage;
+	b->theap->storage = STORE_INVALID;
+	b->theap->newstorage = STORE_INVALID;
 	b->theap->farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
 	b->theap->dirty = false;
 	b->theap->parentid = b->batCacheid;
 	if (minpos < b->batCount)
-		BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){(oid)minpos});
+		b->tminpos = (BUN) minpos;
+	else
+		b->tminpos = BUN_NONE;
 	if (maxpos < b->batCount)
-		BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){(oid)maxpos});
-	if (b->theap->free > b->theap->size) {
-		TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in heap of bat %d on line %d\n", (int) bid, lineno);
-		return -1;
-	}
-	return n;
-}
-
-static int
-vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
-{
-	int n = 0;
-	uint64_t free, size;
-	uint16_t storage;
-
-	if (b->tvarsized && b->ttype != TYPE_void) {
-		b->tvheap = GDKzalloc(sizeof(Heap));
-		if (b->tvheap == NULL) {
-			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
-			return -1;
-		}
-		if (sscanf(buf,
-			   " %" SCNu64 " %" SCNu64 " %" SCNu16
-			   "%n",
-			   &free, &size, &storage, &n) < 3) {
-			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-			return -1;
-		}
-		b->tvheap->free = (size_t) free;
-		b->tvheap->size = (size_t) size;
-		b->tvheap->base = NULL;
-		strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
-			      filename, ".theap", NULL);
-		b->tvheap->storage = (storage_t) storage;
-		b->tvheap->cleanhash = true;
-		b->tvheap->newstorage = (storage_t) storage;
-		b->tvheap->dirty = false;
-		b->tvheap->parentid = bid;
-		b->tvheap->farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap);
-		ATOMIC_INIT(&b->tvheap->refs, 1);
-		if (b->tvheap->free > b->tvheap->size) {
-			TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in var heap of bat %d on line %d\n", (int) bid, lineno);
-			return -1;
-		}
+		b->tmaxpos = (BUN) maxpos;
+	else
+		b->tmaxpos = BUN_NONE;
+	if (t && var) {
+		t = vheapinit(b, buf + n, bid, bbpversion, filename, lineno);
+		if (t < 0)
+			return t;
+		n += t;
 	}
 	return n;
 }
@@ -584,7 +610,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		int nread, n;
 		char *s, *options = NULL;
 		char logical[1024];
-		uint64_t count, capacity, base = 0;
+		uint64_t count, capacity = 0, base = 0;
 #ifdef GDKLIBRARY_HASHASH
 		int Thashash;
 #endif
@@ -594,27 +620,34 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			/* convert \r\n into just \n */
 			if (s[1] != '\n') {
 				TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			*s++ = '\n';
 			*s = 0;
 		}
 
-		if (sscanf(buf,
+		if (bbpversion <= GDKLIBRARY_HSIZE ?
+		    sscanf(buf,
 			   "%" SCNu64 " %" SCNu16 " %128s %19s %u %" SCNu64
 			   " %" SCNu64 " %" SCNu64
 			   "%n",
 			   &batid, &status, headname, filename,
-			   &properties,
-			   &count, &capacity, &base,
-			   &nread) < 8) {
+			   &properties, &count, &capacity, &base,
+			   &nread) < 8 :
+		    sscanf(buf,
+			   "%" SCNu64 " %" SCNu16 " %128s %19s %u %" SCNu64
+			   " %" SCNu64
+			   "%n",
+			   &batid, &status, headname, filename,
+			   &properties, &count, &base,
+			   &nread) < 7) {
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 
 		if (batid >= N_BBPINIT * BBPINIT) {
 			TRC_CRITICAL(GDK, "bat ID (%" PRIu64 ") too large to accomodate (max %d), on line %d.", batid, N_BBPINIT * BBPINIT - 1, lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 
 		/* convert both / and \ path separators to our own DIR_SEP */
@@ -631,34 +664,51 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		bid = (bat) batid;
 		if (batid >= (uint64_t) ATOMIC_GET(&BBPsize)) {
-			ATOMIC_SET(&BBPsize, batid + 1);
-			if ((bat) ATOMIC_GET(&BBPsize) >= BBPlimit)
-				BBPextend(0, false);
+			if ((bat) ATOMIC_GET(&BBPsize) + 1 >= BBPlimit &&
+			    BBPextend(false, bid + 1) != GDK_SUCCEED)
+				goto bailout;
+			ATOMIC_SET(&BBPsize, bid + 1);
 		}
 		if (BBP_desc(bid) != NULL) {
 			TRC_CRITICAL(GDK, "duplicate entry in BBP.dir (ID = "
 				     "%" PRIu64 ") on line %d.", batid, lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		if ((bn = GDKzalloc(sizeof(BAT))) == NULL ||
 		    (bn->theap = GDKzalloc(sizeof(Heap))) == NULL) {
 			GDKfree(bn);
 			TRC_CRITICAL(GDK, "cannot allocate memory for BAT.");
-			return GDK_FAIL;
+			goto bailout;
 		}
 		bn->batCacheid = bid;
 		if (BATroles(bn, NULL) != GDK_SUCCEED) {
 			GDKfree(bn->theap);
 			GDKfree(bn);
 			TRC_CRITICAL(GDK, "BATroles failed.");
-			return GDK_FAIL;
+			goto bailout;
 		}
 		bn->batTransient = false;
 		bn->batCopiedtodisk = true;
-		bn->batRestricted = (properties & 0x06) >> 1;
+		switch ((properties & 0x06) >> 1) {
+		case 0:
+			bn->batRestricted = BAT_WRITE;
+			break;
+		case 1:
+			bn->batRestricted = BAT_READ;
+			break;
+		case 2:
+			bn->batRestricted = BAT_APPEND;
+			break;
+		default:
+			GDKfree(bn->theap);
+			GDKfree(bn);
+			TRC_CRITICAL(GDK, "incorrect batRestricted value");
+			goto bailout;
+		}
 		bn->batCount = (BUN) count;
 		bn->batInserted = bn->batCount;
-		bn->batCapacity = (BUN) capacity;
+		/* set capacity to at least count */
+		bn->batCapacity = (BUN) count <= BATTINY ? BATTINY : (BUN) count;
 		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
 		MT_lock_init(&bn->theaplock, name);
@@ -671,7 +721,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		if (base > (uint64_t) GDK_oid_max) {
 			BATdestroy(bn);
 			TRC_CRITICAL(GDK, "head seqbase out of range (ID = %" PRIu64 ", seq = %" PRIu64 ") on line %d.", batid, base, lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		bn->hseqbase = (oid) base;
 		n = heapinit(bn, buf + nread,
@@ -681,13 +731,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			     bbpversion, bid, filename, lineno);
 		if (n < 0) {
 			BATdestroy(bn);
-			return GDK_FAIL;
-		}
-		nread += n;
-		n = vheapinit(bn, buf + nread, bid, filename, lineno);
-		if (n < 0) {
-			BATdestroy(bn);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		nread += n;
 #ifdef GDKLIBRARY_HASHASH
@@ -695,9 +739,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			assert(bbpversion <= GDKLIBRARY_HASHASH);
 			bat *sb = GDKrealloc(hbats, ++nhbats * sizeof(bat));
 			if (sb == NULL) {
-				GDKfree(hbats);
 				BATdestroy(bn);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			hbats = sb;
 			hbats[nhbats - 1] = bn->batCacheid;
@@ -707,7 +750,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		if (buf[nread] != '\n' && buf[nread] != ' ') {
 			BATdestroy(bn);
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		if (buf[nread] == ' ')
 			options = buf + nread + 1;
@@ -715,7 +758,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		if (snprintf(BBP_bak(bid), sizeof(BBP_bak(bid)), "tmp_%o", (unsigned) bid) >= (int) sizeof(BBP_bak(bid))) {
 			BATdestroy(bn);
 			TRC_CRITICAL(GDK, "BBP logical filename directory is too large, on line %d\n", lineno);
-			return GDK_FAIL;
+			goto bailout;
 		}
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
 			/* sizeof(logical) > sizeof(BBP_bak(bid)), so
@@ -733,7 +776,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			if (BBP_logical(bid) == NULL) {
 				BATdestroy(bn);
 				TRC_CRITICAL(GDK, "GDKstrdup failed\n");
-				return GDK_FAIL;
+				goto bailout;
 			}
 		}
 		/* tailname is ignored */
@@ -748,12 +791,13 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			if (BBP_options(bid) == NULL) {
 				BATdestroy(bn);
 				TRC_CRITICAL(GDK, "GDKstrdup failed\n");
-				return GDK_FAIL;
+				goto bailout;
 			}
 		}
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
+		BBP_pid(bid) = 0;
 		BBP_status_set(bid, BBPEXISTING);	/* do we need other status bits? */
 	}
 #ifdef GDKLIBRARY_HASHASH
@@ -761,6 +805,12 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 	*nhashbats = nhbats;
 #endif
 	return GDK_SUCCEED;
+
+  bailout:
+#ifdef GDKLIBRARY_HASHASH
+	GDKfree(hbats);
+#endif
+	return GDK_FAIL;
 }
 
 /* check that the necessary files for all BATs exist and are large
@@ -769,7 +819,7 @@ static gdk_return
 BBPcheckbats(unsigned bbpversion)
 {
 	(void) bbpversion;
-	for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+	for (bat bid = 1, size = (bat) ATOMIC_GET(&BBPsize); bid < size; bid++) {
 		struct stat statb;
 		BAT *b;
 		char *path;
@@ -782,45 +832,76 @@ BBPcheckbats(unsigned bbpversion)
 			/* no files needed */
 			continue;
 		}
-		path = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
-		if (path == NULL)
-			return GDK_FAIL;
+		if (b->theap->free > 0) {
+			path = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
+			if (path == NULL)
+				return GDK_FAIL;
+#if 1
+			/* first check string offset heap with width,
+			 * then without */
+			if (MT_stat(path, &statb) < 0) {
 #ifdef GDKLIBRARY_TAILN
-		/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
-		 * exist with either name .tail1 (etc) or .tail, if <=
-		 * GDKLIBRARY_TAILN, only with .tail */
-		char tailsave = 0;
-		size_t taillen = 0;
-		if (b->ttype == TYPE_str &&
-		    b->twidth < SIZEOF_VAR_T) {
-			/* old version: .tail, not .tail1, .tail2, .tail4 */
-			taillen = strlen(path) - 1;
-			tailsave = path[taillen];
-			path[taillen] = 0;
-		}
+				if (b->ttype == TYPE_str &&
+				    b->twidth < SIZEOF_VAR_T) {
+					size_t taillen = strlen(path) - 1;
+					char tailsave = path[taillen];
+					path[taillen] = 0;
+					if (MT_stat(path, &statb) < 0) {
+						GDKsyserror("cannot stat file %s%c or %s (expected size %zu)\n",
+							    path, tailsave, path, b->theap->free);
+						GDKfree(path);
+						return GDK_FAIL;
+					}
+				} else
 #endif
-		if (MT_stat(path, &statb) < 0
+				{
+					GDKsyserror("cannot stat file %s (expected size %zu)\n",
+						    path, b->theap->free);
+					GDKfree(path);
+					return GDK_FAIL;
+				}
+			}
+#else
+			/* first check string offset heap without width,
+			 * then with */
 #ifdef GDKLIBRARY_TAILN
-		    && bbpversion > GDKLIBRARY_TAILN
-		    && b->ttype == TYPE_str
-		    && b->twidth < SIZEOF_VAR_T
-		    && (path[taillen] = tailsave) != 0
-		    && MT_stat(path, &statb) < 0
+			/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
+			 * exist with either name .tail1 (etc) or .tail, if <=
+			 * GDKLIBRARY_TAILN, only with .tail */
+			char tailsave = 0;
+			size_t taillen = 0;
+			if (b->ttype == TYPE_str &&
+			    b->twidth < SIZEOF_VAR_T) {
+				/* old version: .tail, not .tail1, .tail2, .tail4 */
+				taillen = strlen(path) - 1;
+				tailsave = path[taillen];
+				path[taillen] = 0;
+			}
 #endif
-			) {
+			if (MT_stat(path, &statb) < 0
+#ifdef GDKLIBRARY_TAILN
+			    && bbpversion > GDKLIBRARY_TAILN
+			    && b->ttype == TYPE_str
+			    && b->twidth < SIZEOF_VAR_T
+			    && (path[taillen] = tailsave) != 0
+			    && MT_stat(path, &statb) < 0
+#endif
+				) {
 
-			GDKsyserror("cannot stat file %s (expected size %zu)\n",
-				    path, b->theap->free);
+				GDKsyserror("cannot stat file %s (expected size %zu)\n",
+					    path, b->theap->free);
+				GDKfree(path);
+				return GDK_FAIL;
+			}
+#endif
+			if ((size_t) statb.st_size < b->theap->free) {
+				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
+				GDKfree(path);
+				return GDK_FAIL;
+			}
 			GDKfree(path);
-			return GDK_FAIL;
 		}
-		if ((size_t) statb.st_size < b->theap->free) {
-			GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
-			GDKfree(path);
-			return GDK_FAIL;
-		}
-		GDKfree(path);
-		if (b->tvheap != NULL) {
+		if (b->tvheap != NULL && b->tvheap->free > 0) {
 			path = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "theap");
 			if (path == NULL)
 				return GDK_FAIL;
@@ -848,7 +929,7 @@ BBPcheckbats(unsigned bbpversion)
 #endif
 
 static unsigned
-BBPheader(FILE *fp, int *lineno)
+BBPheader(FILE *fp, int *lineno, bat *bbpsize)
 {
 	char buf[BUFSIZ];
 	int sz, ptrsize, oidsize, intsize;
@@ -866,6 +947,7 @@ BBPheader(FILE *fp, int *lineno)
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_HSIZE &&
 	    bbpversion != GDKLIBRARY_HASHASH &&
 	    bbpversion != GDKLIBRARY_TAILN &&
 	    bbpversion != GDKLIBRARY_MINMAX_POS) {
@@ -905,18 +987,20 @@ BBPheader(FILE *fp, int *lineno)
 		TRC_CRITICAL(GDK, "no BBPsize value found\n");
 		return 0;
 	}
-	sz = (int) (sz * BATMARGIN);
-	if (sz > (bat) ATOMIC_GET(&BBPsize))
-		ATOMIC_SET(&BBPsize, sz);
+	if (sz > *bbpsize)
+		*bbpsize = sz;
 	if (bbpversion > GDKLIBRARY_MINMAX_POS) {
 		if (fgets(buf, sizeof(buf), fp) == NULL) {
 			TRC_CRITICAL(GDK, "short BBP");
 			return 0;
 		}
-		if (sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &BBPlogno, &BBPtransid) != 2) {
+		lng logno, transid;
+		if (sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &logno, &transid) != 2) {
 			TRC_CRITICAL(GDK, "no info value found\n");
 			return 0;
 		}
+		ATOMIC_SET(&BBPlogno, logno);
+		ATOMIC_SET(&BBPtransid, transid);
 	}
 	return bbpversion;
 }
@@ -1048,6 +1132,7 @@ fixhashashbat(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
+	STRMPdestroy(b);
 
 	/* make backup of heaps */
 	const char *t;
@@ -1205,7 +1290,7 @@ fixhashashbat(BAT *b)
 	/* cleanup */
 	HEAPfree(&h1, false);
 	HEAPfree(&vh1, false);
-	if (HEAPsave(h2, nme, gettailname(b), true) != GDK_SUCCEED) {
+	if (HEAPsave(h2, nme, gettailname(b), true, h2->free, NULL) != GDK_SUCCEED) {
 		HEAPdecref(h2, false);
 		HEAPdecref(b->tvheap, false);
 		b->tvheap = ovh;
@@ -1213,7 +1298,7 @@ fixhashashbat(BAT *b)
 		TRC_CRITICAL(GDK, "saving heap failed\n");
 		return GDK_FAIL;
 	}
-	if (HEAPsave(b->tvheap, nme, "theap", true) != GDK_SUCCEED) {
+	if (HEAPsave(b->tvheap, nme, "theap", true, b->tvheap->free, &b->theaplock) != GDK_SUCCEED) {
 		HEAPfree(b->tvheap, false);
 		b->tvheap = ovh;
 		GDKfree(srcdir);
@@ -1256,26 +1341,112 @@ movestrbats(void)
 			/* not a valid BAT */
 			continue;
 		}
-		if (b->ttype != TYPE_str || b->twidth == SIZEOF_VAR_T)
+		if (b->ttype != TYPE_str || b->twidth == SIZEOF_VAR_T || b->batCount == 0)
 			continue;
 		char *oldpath = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "tail");
 		char *newpath = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
-		struct stat st;
 		int ret = -1;
 		if (oldpath != NULL && newpath != NULL) {
-			if (MT_stat(oldpath, &st) == -1 && MT_stat(newpath, &st) == 0)
-				ret = 0; /* new exists, old doesn't: that's ok */
-			else
+			struct stat oldst, newst;
+			bool oldexist = MT_stat(oldpath, &oldst) == 0;
+			bool newexist = MT_stat(newpath, &newst) == 0;
+			if (newexist) {
+				if (oldexist) {
+					if (oldst.st_mtime > newst.st_mtime) {
+						GDKerror("both %s and %s exist with %s unexpectedly newer: manual intervention required\n", oldpath, newpath, oldpath);
+						ret = -1;
+					} else {
+						TRC_WARNING(GDK, "both %s and %s exist, removing %s\n", oldpath, newpath, oldpath);
+						ret = MT_remove(oldpath);
+					}
+				} else {
+					/* already good */
+					ret = 0;
+				}
+			} else if (oldexist) {
+				TRC_DEBUG(IO_, "rename %s to %s\n", oldpath, newpath);
 				ret = MT_rename(oldpath, newpath);
+			} else {
+				/* neither file exists: may be ok, but
+				 * will be checked later */
+				ret = 0;
+			}
 		}
 		GDKfree(oldpath);
 		GDKfree(newpath);
-		if (ret < 0)
+		if (ret == -1)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
 #endif
+
+static void
+BBPtrim(bool aggressive)
+{
+	int n = 0;
+	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
+	if (!aggressive)
+		flag |= BBPHOT;
+	for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
+		MT_lock_set(&GDKswapLock(bid));
+		BAT *b = NULL;
+		bool swap = false;
+		if (BBP_refs(bid) == 0 &&
+		    BBP_lrefs(bid) != 0 &&
+		    (b = BBP_cache(bid)) != NULL) {
+			MT_lock_set(&b->theaplock);
+			if (b->batSharecnt == 0 &&
+			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
+			    !(BBP_status(bid) & flag) /*&&
+			    (BBP_status(bid) & BBPPERSISTENT ||
+			    (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
+				BBP_status_on(bid, BBPUNLOADING);
+				swap = true;
+			}
+			MT_lock_unset(&b->theaplock);
+		}
+		MT_lock_unset(&GDKswapLock(bid));
+		if (swap) {
+			TRC_DEBUG(BAT_, "unload and free bat %d\n", bid);
+			if (BBPfree(b) != GDK_SUCCEED)
+				GDKerror("unload failed for bat %d", bid);
+			n++;
+		}
+	}
+	TRC_DEBUG(BAT_, "unloaded %d bats%s\n", n, aggressive ? " (also hot)" : "");
+}
+
+static void
+BBPmanager(void *dummy)
+{
+	(void) dummy;
+
+	for (;;) {
+		int n = 0;
+		for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
+			MT_lock_set(&GDKswapLock(bid));
+			if (BBP_refs(bid) == 0 && BBP_lrefs(bid) != 0) {
+				n += (BBP_status(bid) & BBPHOT) != 0;
+				BBP_status_off(bid, BBPHOT);
+			}
+			MT_lock_unset(&GDKswapLock(bid));
+		}
+		TRC_DEBUG(BAT_, "cleared HOT bit from %d bats\n", n);
+		size_t cur = GDKvm_cursize();
+		for (int i = 0, n = cur > GDK_vm_maxsize / 2 ? 1 : cur > GDK_vm_maxsize / 4 ? 10 : 100; i < n; i++) {
+			MT_sleep_ms(100);
+			if (GDKexiting())
+				return;
+		}
+		BBPtrim(false);
+		BBPcallbacks();
+		if (GDKexiting())
+			return;
+	}
+}
+
+static MT_Id manager;
 
 gdk_return
 BBPinit(void)
@@ -1288,7 +1459,11 @@ BBPinit(void)
 #ifdef GDKLIBRARY_HASHASH
 	bat *hashbats = NULL;
 	bat nhashbats = 0;
+	gdk_return res = GDK_SUCCEED;
 #endif
+	int dbg = GDKdebug;
+
+	GDKdebug &= ~TAILCHKMASK;
 
 	/* the maximum number of BATs allowed in the system and the
 	 * size of the "physical" array are linked in a complicated
@@ -1302,14 +1477,20 @@ BBPinit(void)
 	if (!GDKinmemory(0)) {
 		str bbpdirstr, backupbbpdirstr;
 
+		MT_lock_set(&GDKtmLock);
+
 		if (!(bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir"))) {
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
+			MT_lock_unset(&GDKtmLock);
+			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
 
 		if (!(backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir"))) {
 			GDKfree(bbpdirstr);
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
+			MT_lock_unset(&GDKtmLock);
+			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
 
@@ -1317,6 +1498,8 @@ BBPinit(void)
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot remove directory %s\n", TEMPDIR);
+			MT_lock_unset(&GDKtmLock);
+			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
 
@@ -1324,6 +1507,8 @@ BBPinit(void)
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot remove directory %s\n", DELDIR);
+			MT_lock_unset(&GDKtmLock);
+			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
 
@@ -1331,7 +1516,9 @@ BBPinit(void)
 		if (BBPrecover_subdir() != GDK_SUCCEED) {
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
-			TRC_CRITICAL(GDK, "cannot properly recover_subdir process %s. Please check whether your disk is full or write-protected", SUBDIR);
+			TRC_CRITICAL(GDK, "cannot properly recover_subdir process %s.", SUBDIR);
+			MT_lock_unset(&GDKtmLock);
+			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
 
@@ -1341,12 +1528,15 @@ BBPinit(void)
 			if (recover_dir(0, MT_stat(bbpdirstr, &st) == 0) != GDK_SUCCEED) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
+				MT_lock_unset(&GDKtmLock);
 				goto bailout;
 			}
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
 				TRC_CRITICAL(GDK, "cannot open recovered BBP.dir.");
+				MT_lock_unset(&GDKtmLock);
+				GDKdebug = dbg;
 				return GDK_FAIL;
 			}
 		} else if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
@@ -1356,64 +1546,177 @@ BBPinit(void)
 				/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 				 * create a new one */
 				TRC_DEBUG(IO_, "initializing BBP.\n");
-				if (BBPdir(0, NULL, NULL, LL_CONSTANT(0), LL_CONSTANT(0)) != GDK_SUCCEED) {
+				if (BBPdir_init() != GDK_SUCCEED) {
 					GDKfree(bbpdirstr);
 					GDKfree(backupbbpdirstr);
+					MT_lock_unset(&GDKtmLock);
 					goto bailout;
 				}
 			} else if (GDKmove(0, BATDIR, "BBP", "bak", BATDIR, "BBP", "dir", true) == GDK_SUCCEED)
 				TRC_DEBUG(IO_, "reverting to dir saved in BBP.bak.\n");
 
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
+				GDKsyserror("cannot open BBP.dir");
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
+				MT_lock_unset(&GDKtmLock);
 				goto bailout;
 			}
 		}
 		assert(fp != NULL);
 		GDKfree(bbpdirstr);
 		GDKfree(backupbbpdirstr);
+		MT_lock_unset(&GDKtmLock);
 	}
 
 	/* scan the BBP.dir to obtain current size */
 	BBPlimit = 0;
 	memset(BBP, 0, sizeof(BBP));
-	ATOMIC_SET(&BBPsize, 1);
 
+	bat bbpsize;
+	bbpsize = 1;
 	if (GDKinmemory(0)) {
 		bbpversion = GDKLIBRARY;
 	} else {
-		bbpversion = BBPheader(fp, &lineno);
-		if (bbpversion == 0)
+		bbpversion = BBPheader(fp, &lineno, &bbpsize);
+		if (bbpversion == 0) {
+			GDKdebug = dbg;
 			return GDK_FAIL;
+		}
 	}
 
-	BBPextend(0, false);		/* allocate BBP records */
+	/* allocate BBP records */
+	if (BBPextend(false, bbpsize) != GDK_SUCCEED) {
+		GDKdebug = dbg;
+		return GDK_FAIL;
+	}
+	ATOMIC_SET(&BBPsize, bbpsize);
 
 	if (!GDKinmemory(0)) {
-		ATOMIC_SET(&BBPsize, 1);
 		if (BBPreadEntries(fp, bbpversion, lineno
 #ifdef GDKLIBRARY_HASHASH
 				   , &hashbats, &nhashbats
 #endif
-			    ) != GDK_SUCCEED)
+			    ) != GDK_SUCCEED) {
+			GDKdebug = dbg;
 			return GDK_FAIL;
+		}
 		fclose(fp);
 	}
 
-	if (BBPinithash(0) != GDK_SUCCEED) {
+	MT_lock_set(&BBPnameLock);
+	if (BBPinithash((bat) ATOMIC_GET(&BBPsize)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "BBPinithash failed");
+		MT_lock_unset(&BBPnameLock);
+#ifdef GDKLIBRARY_HASHASH
+		GDKfree(hashbats);
+#endif
+		GDKdebug = dbg;
 		return GDK_FAIL;
 	}
+	MT_lock_unset(&BBPnameLock);
 
 	/* will call BBPrecover if needed */
-	if (!GDKinmemory(0) && BBPprepare(false) != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
+	if (!GDKinmemory(0)) {
+		MT_lock_set(&GDKtmLock);
+		gdk_return rc = BBPprepare(false);
+		MT_lock_unset(&GDKtmLock);
+		if (rc != GDK_SUCCEED) {
+#ifdef GDKLIBRARY_HASHASH
+			GDKfree(hashbats);
+#endif
+			TRC_CRITICAL(GDK, "cannot properly prepare process %s.", BAKDIR);
+			GDKdebug = dbg;
+			return rc;
+		}
+	}
+
+	if (BBPcheckbats(bbpversion) != GDK_SUCCEED) {
+#ifdef GDKLIBRARY_HASHASH
+		GDKfree(hashbats);
+#endif
+		GDKdebug = dbg;
 		return GDK_FAIL;
 	}
 
-	if (BBPcheckbats(bbpversion) != GDK_SUCCEED)
+#ifdef GDKLIBRARY_TAILN
+	char *needstrbatmove;
+	if (GDKinmemory(0)) {
+		needstrbatmove = NULL;
+	} else {
+		needstrbatmove = GDKfilepath(0, BATDIR, "needstrbatmove", NULL);
+		if (bbpversion <= GDKLIBRARY_TAILN) {
+			/* create signal file that we need to rename string
+			 * offset heaps */
+			int fd = MT_open(needstrbatmove, O_WRONLY | O_CREAT);
+			if (fd < 0) {
+				TRC_CRITICAL(GDK, "cannot create signal file needstrbatmove.\n");
+				GDKfree(needstrbatmove);
+#ifdef GDKLIBRARY_HASHASH
+				GDKfree(hashbats);
+#endif
+				GDKdebug = dbg;
+				return GDK_FAIL;
+			}
+			close(fd);
+		} else {
+			/* check signal file whether we need to rename string
+			 * offset heaps */
+			int fd = MT_open(needstrbatmove, O_RDONLY);
+			if (fd >= 0) {
+				/* yes, we do */
+				close(fd);
+			} else if (errno == ENOENT) {
+				/* no, we don't: set var to NULL */
+				GDKfree(needstrbatmove);
+				needstrbatmove = NULL;
+			} else {
+				GDKsyserror("unexpected error opening %s\n", needstrbatmove);
+				GDKfree(needstrbatmove);
+#ifdef GDKLIBRARY_HASHASH
+				GDKfree(hashbats);
+#endif
+				GDKdebug = dbg;
+				return GDK_FAIL;
+			}
+		}
+	}
+#endif
+
+#ifdef GDKLIBRARY_HASHASH
+	if (nhashbats > 0)
+		res = fixhashash(hashbats, nhashbats);
+	GDKfree(hashbats);
+	if (res != GDK_SUCCEED)
+		return res;
+#endif
+
+	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "TMcommit failed\n");
+		GDKdebug = dbg;
 		return GDK_FAIL;
+	}
+
+#ifdef GDKLIBRARY_TAILN
+	/* we rename the offset heaps after the above commit: in this
+	 * version we accept both the old and new names, but we want to
+	 * convert so that future versions only have the new name */
+	if (needstrbatmove) {
+		/* note, if renaming fails, nothing is lost: a next
+		 * invocation will just try again; an older version of
+		 * mserver will not work because of the TMcommit
+		 * above */
+		if (movestrbats() != GDK_SUCCEED) {
+			GDKfree(needstrbatmove);
+			GDKdebug = dbg;
+			return GDK_FAIL;
+		}
+		MT_remove(needstrbatmove);
+		GDKfree(needstrbatmove);
+		needstrbatmove = NULL;
+	}
+#endif
+	GDKdebug = dbg;
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
 	for (i = 0; i < MAXFARMS && BBPfarms[i].dirname != NULL; i++) {
@@ -1435,33 +1738,12 @@ BBPinit(void)
 		}
 	}
 
-#ifdef GDKLIBRARY_HASHASH
-	if (nhashbats > 0 && fixhashash(hashbats, nhashbats) != GDK_SUCCEED)
-		return GDK_FAIL;
-#endif
-
-	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "TMcommit failed\n");
-		return GDK_FAIL;
-	}
-#ifdef GDKLIBRARY_TAILN
-	/* we rename the offset heaps after the above commit: in this
-	 * version we accept both the old and new names, but we want to
-	 * convert so that future versions only have the new name */
-	if (bbpversion <= GDKLIBRARY_TAILN) {
-		/* note, if renaming fails, nothing is lost: a next
-		 * invocation will just try again; an older version of
-		 * mserver will not work because of the TMcommit
-		 * above */
-		if (movestrbats() != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
-#endif
+	manager = THRcreate(BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager");
 	return GDK_SUCCEED;
 
   bailout:
 	/* now it is time for real panic */
-	TRC_CRITICAL(GDK, "could not write %s%cBBP.dir. Please check whether your disk is full or write-protected", BATDIR, DIR_SEP);
+	TRC_CRITICAL(GDK, "could not write %s%cBBP.dir.", BATDIR, DIR_SEP);
 	return GDK_FAIL;
 }
 
@@ -1481,7 +1763,7 @@ BBPexit(void)
 	bat i;
 	bool skipped;
 
-	BBPlock();	/* stop all threads ever touching more descriptors */
+	//BBPlock();	/* stop all threads ever touching more descriptors */
 
 	/* free all memory (just for leak-checking in Purify) */
 	do {
@@ -1518,6 +1800,7 @@ BBPexit(void)
 						BATfree(b);
 					}
 				}
+				BBP_pid(i) = 0;
 				BBPuncacheit(i, true);
 				if (BBP_logical(i) != BBP_bak(i))
 					GDKfree(BBP_logical(i));
@@ -1526,7 +1809,7 @@ BBPexit(void)
 		}
 	} while (skipped);
 	GDKfree(BBP_hash);
-	BBP_hash = 0;
+	BBP_hash = NULL;
 	// these need to be NULL, otherwise no new ones get created
 	backup_files = 0;
 	backup_dir = 0;
@@ -1543,83 +1826,110 @@ BBPexit(void)
  * reclaimed as well.
  */
 static inline int
-heap_entry(FILE *fp, BAT *b, BUN size)
+heap_entry(FILE *fp, BATiter *bi, BUN size)
 {
-	const ValRecord *minprop, *maxprop;
-	minprop = BATgetprop(b, GDK_MIN_POS);
-	maxprop = BATgetprop(b, GDK_MAX_POS);
-	size_t free = b->theap->free;
+	BAT *b = bi->b;
+	size_t free = bi->hfree;
 	if (size < BUN_NONE) {
-		if ((b->ttype >= 0 && ATOMstorage(b->ttype) == TYPE_msk)) {
-			BUN bytes = ((size + 31) / 32) * 4;
-			if (free > bytes)
-				free = bytes;
-		} else if (b->twidth > 0 && free / b->twidth > size)
-			free = size * b->twidth;
+		if ((bi->type >= 0 && ATOMstorage(bi->type) == TYPE_msk))
+			free = ((size + 31) / 32) * 4;
+		else if (bi->width > 0)
+			free = size << bi->shift;
+		else
+			free = 0;
 	}
+
+	if ((GDKdebug & TAILCHKMASK) && free > 0) {
+		char *fname = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), gettailnamebi(bi));
+		if (fname != NULL) {
+			struct stat stb;
+			if (stat(fname, &stb) == -1) {
+				assert(0);
+				TRC_WARNING(GDK, "file %s not found (expected size %zu)\n", fname, free);
+			} else {
+				assert((size_t) stb.st_size >= free);
+				if ((size_t) stb.st_size < free)
+					TRC_WARNING(GDK, "file %s too small (expected %zu, actual %zu)\n", fname, free, (size_t) stb.st_size);
+			}
+			GDKfree(fname);
+		}
+	}
+
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
-		       BUNFMT " " OIDFMT " %zu %zu %d " OIDFMT " " OIDFMT,
-		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
-		       b->twidth,
-		       b->tvarsized,
-		       (unsigned short) b->tsorted |
-			   ((unsigned short) b->trevsorted << 7) |
-			   (((unsigned short) b->tkey & 0x01) << 8) |
-		           ((unsigned short) BATtdense(b) << 9) |
-			   ((unsigned short) b->tnonil << 10) |
-			   ((unsigned short) b->tnil << 11),
-		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[0],
-		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[1],
-		       b->tnosorted >= size ? 0 : b->tnosorted,
-		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
-		       b->tseqbase,
+		       BUNFMT " " OIDFMT " %zu %" PRIu64" %" PRIu64,
+		       bi->type >= 0 ? BATatoms[bi->type].name : ATOMunknown_name(bi->type),
+		       bi->width,
+		       bi->type == TYPE_void || bi->vh != NULL,
+		       (unsigned short) bi->sorted |
+			   ((unsigned short) bi->revsorted << 7) |
+			   ((unsigned short) bi->key << 8) |
+		           ((unsigned short) BATtdensebi(bi) << 9) |
+			   ((unsigned short) bi->nonil << 10) |
+			   ((unsigned short) bi->nil << 11),
+		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[0],
+		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[1],
+		       bi->nosorted >= size ? 0 : bi->nosorted,
+		       bi->norevsorted >= size ? 0 : bi->norevsorted,
+		       bi->tseq,
 		       free,
-		       b->theap->size,
-		       (int) b->theap->newstorage,
-		       minprop ? minprop->val.oval : oid_nil,
-		       maxprop ? maxprop->val.oval : oid_nil);
+		       bi->minpos < size ? (uint64_t) bi->minpos : (uint64_t) oid_nil,
+		       bi->maxpos < size ? (uint64_t) bi->maxpos : (uint64_t) oid_nil);
 }
 
 static inline int
-vheap_entry(FILE *fp, Heap *h)
+vheap_entry(FILE *fp, BATiter *bi, BUN size)
 {
-	if (h == NULL)
+	(void) size;
+	if (bi->vh == NULL)
 		return 0;
-	return fprintf(fp, " %zu %zu %d",
-		       h->free, h->size, (int) h->newstorage);
+	if ((GDKdebug & TAILCHKMASK) && size > 0) {
+		char *fname = GDKfilepath(0, BATDIR, BBP_physical(bi->vh->parentid), "theap");
+		if (fname != NULL) {
+			struct stat stb;
+			if (stat(fname, &stb) == -1) {
+				assert(0);
+				TRC_WARNING(GDK, "file %s not found (expected size %zu)\n", fname, bi->vhfree);
+			} else if ((size_t) stb.st_size < bi->vhfree) {
+				/* no assert since this can actually happen */
+				TRC_WARNING(GDK, "file %s too small (expected %zu, actual %zu)\n", fname, bi->vhfree, (size_t) stb.st_size);
+			}
+			GDKfree(fname);
+		}
+	}
+	return fprintf(fp, " %zu", bi->vhfree);
 }
 
 static gdk_return
-new_bbpentry(FILE *fp, bat i, BUN size)
+new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 {
 #ifndef NDEBUG
 	assert(i > 0);
 	assert(i < (bat) ATOMIC_GET(&BBPsize));
-	assert(BBP_desc(i));
-	assert(BBP_desc(i)->batCacheid == i);
-	assert(BBP_desc(i)->batRole == PERSISTENT);
-	assert(0 <= BBP_desc(i)->theap->farmid && BBP_desc(i)->theap->farmid < MAXFARMS);
-	assert(BBPfarms[BBP_desc(i)->theap->farmid].roles & (1U << PERSISTENT));
-	if (BBP_desc(i)->tvheap) {
-		assert(0 <= BBP_desc(i)->tvheap->farmid && BBP_desc(i)->tvheap->farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(i)->tvheap->farmid].roles & (1U << PERSISTENT));
+	assert(bi->b);
+	assert(bi->b->batCacheid == i);
+	assert(bi->b->batRole == PERSISTENT);
+	assert(0 <= bi->h->farmid && bi->h->farmid < MAXFARMS);
+	assert(BBPfarms[bi->h->farmid].roles & (1U << PERSISTENT));
+	if (bi->vh) {
+		assert(0 <= bi->vh->farmid && bi->vh->farmid < MAXFARMS);
+		assert(BBPfarms[bi->vh->farmid].roles & (1U << PERSISTENT));
 	}
+	assert(size <= bi->count || size == BUN_NONE);
 #endif
 
-	if (size > BBP_desc(i)->batCount)
-		size = BBP_desc(i)->batCount;
-	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " BUNFMT " " OIDFMT,
+	if (size > bi->count)
+		size = bi->count;
+	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " OIDFMT,
 		    /* BAT info */
 		    (int) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
 		    BBP_physical(i),
-		    BBP_desc(i)->batRestricted << 1,
+		    (unsigned) bi->restricted << 1,
 		    size,
-		    BBP_desc(i)->batCapacity,
-		    BBP_desc(i)->hseqbase) < 0 ||
-	    heap_entry(fp, BBP_desc(i), size) < 0 ||
-	    vheap_entry(fp, BBP_desc(i)->tvheap) < 0 ||
+		    bi->b->hseqbase) < 0 ||
+	    heap_entry(fp, bi, size) < 0 ||
+	    vheap_entry(fp, bi, size) < 0 ||
 	    (BBP_options(i) && fprintf(fp, " %s", BBP_options(i)) < 0) ||
 	    fprintf(fp, "\n") < 0) {
 		GDKsyserror("new_bbpentry: Writing BBP.dir entry failed\n");
@@ -1635,9 +1945,11 @@ BBPdir_header(FILE *f, int n, lng logno, lng transid)
 	if (fprintf(f, "BBP.dir, GDKversion %u\n%d %d %d\nBBPsize=%d\nBBPinfo=" LLFMT " " LLFMT "\n",
 		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID,
 #ifdef HAVE_HGE
-		    havehge ? SIZEOF_HGE :
+		    SIZEOF_HGE
+#else
+		    SIZEOF_LNG
 #endif
-		    SIZEOF_LNG, n, logno, transid) < 0 ||
+		    , n, logno, transid) < 0 ||
 	    ferror(f)) {
 		GDKsyserror("Writing BBP.dir header failed\n");
 		return GDK_FAIL;
@@ -1646,98 +1958,244 @@ BBPdir_header(FILE *f, int n, lng logno, lng transid)
 }
 
 static gdk_return
-BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid)
+BBPdir_first(bool subcommit, lng logno, lng transid,
+	     FILE **obbpfp, FILE **nbbpfp)
 {
-	FILE *obbpf, *nbbpf;
-	bat j = 1;
-	char buf[3000];
-	int n;
+	FILE *obbpf = NULL, *nbbpf = NULL;
+	int n = 0;
 	lng ologno, otransid;
 
-#ifndef NDEBUG
-	assert(subcommit != NULL);
-	for (n = 2; n < cnt; n++)
-		assert(subcommit[n - 1] < subcommit[n]);
-#endif
+	if (obbpfp)
+		*obbpfp = NULL;
+	*nbbpfp = NULL;
 
-	if ((nbbpf = GDKfilelocate(0, "BBP", "w", "dir")) == NULL)
+	if ((nbbpf = GDKfilelocate(0, "BBP", "w", "dir")) == NULL) {
 		return GDK_FAIL;
+	}
 
-	/* we need to copy the backup BBP.dir to the new, but
-	 * replacing the entries for the subcommitted bats */
-	if ((obbpf = GDKfileopen(0, SUBDIR, "BBP", "dir", "r")) == NULL &&
-	    (obbpf = GDKfileopen(0, BAKDIR, "BBP", "dir", "r")) == NULL) {
-		GDKsyserror("subcommit attempted without backup BBP.dir.");
-		goto bailout;
+	if (subcommit) {
+		char buf[512];
+
+		assert(obbpfp != NULL);
+		/* we need to copy the backup BBP.dir to the new, but
+		 * replacing the entries for the subcommitted bats */
+		if ((obbpf = GDKfileopen(0, SUBDIR, "BBP", "dir", "r")) == NULL &&
+		    (obbpf = GDKfileopen(0, BAKDIR, "BBP", "dir", "r")) == NULL) {
+			GDKsyserror("subcommit attempted without backup BBP.dir.");
+			goto bailout;
+		}
+		/* read first three lines */
+		if (fgets(buf, sizeof(buf), obbpf) == NULL || /* BBP.dir, GDKversion %d */
+		    fgets(buf, sizeof(buf), obbpf) == NULL || /* SIZEOF_SIZE_T SIZEOF_OID SIZEOF_MAX_INT */
+		    fgets(buf, sizeof(buf), obbpf) == NULL) { /* BBPsize=%d */
+			GDKerror("subcommit attempted with invalid backup BBP.dir.");
+			goto bailout;
+		}
+		/* third line contains BBPsize */
+		if (sscanf(buf, "BBPsize=%d", &n) != 1) {
+			GDKerror("cannot read BBPsize in backup BBP.dir.");
+			goto bailout;
+		}
+		/* fourth line contains BBPinfo */
+		if (fgets(buf, sizeof(buf), obbpf) == NULL ||
+		    sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &ologno, &otransid) != 2) {
+			GDKerror("cannot read BBPinfo in backup BBP.dir.");
+			goto bailout;
+		}
 	}
-	/* read first three lines */
-	if (fgets(buf, sizeof(buf), obbpf) == NULL || /* BBP.dir, GDKversion %d */
-	    fgets(buf, sizeof(buf), obbpf) == NULL || /* SIZEOF_SIZE_T SIZEOF_OID SIZEOF_MAX_INT */
-	    fgets(buf, sizeof(buf), obbpf) == NULL) { /* BBPsize=%d */
-		GDKerror("subcommit attempted with invalid backup BBP.dir.");
-		goto bailout;
-	}
-	/* third line contains BBPsize */
-	if (sscanf(buf, "BBPsize=%d", &n) != 1) {
-		GDKerror("cannot read BBPsize in backup BBP.dir.");
-		goto bailout;
-	}
+
 	if (n < (bat) ATOMIC_GET(&BBPsize))
 		n = (bat) ATOMIC_GET(&BBPsize);
-	/* fourth line contains BBPinfo */
-	if (fgets(buf, sizeof(buf), obbpf) == NULL ||
-	    sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &ologno, &otransid) != 2) {
-		GDKerror("cannot read BBPinfo in backup BBP.dir.");
-		goto bailout;
-	}
 
 	TRC_DEBUG(IO_, "writing BBP.dir (%d bats).\n", n);
 
 	if (BBPdir_header(nbbpf, n, logno, transid) != GDK_SUCCEED) {
 		goto bailout;
 	}
-	n = 0;
-	for (;;) {
-		/* but for subcommits, all except the bats in the list
-		 * retain their existing mode */
-		if (n == 0 && obbpf != NULL) {
-			if (fgets(buf, sizeof(buf), obbpf) == NULL) {
-				fclose(obbpf);
-				obbpf = NULL;
-			} else if (sscanf(buf, "%d", &n) != 1 || n <= 0) {
+
+	if (obbpfp)
+		*obbpfp = obbpf;
+	*nbbpfp = nbbpf;
+
+	return GDK_SUCCEED;
+
+  bailout:
+	if (obbpf != NULL)
+		fclose(obbpf);
+	if (nbbpf != NULL)
+		fclose(nbbpf);
+	return GDK_FAIL;
+}
+
+static bat
+BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
+	    FILE **obbpfp, FILE *nbbpf, bool subcommit, BATiter *bi)
+{
+	if (n < -1)		/* safety catch */
+		return n;
+	while (n >= 0 && n < bid) {
+		if (n > 0) {
+			if (GDKdebug & TAILCHKMASK) {
+				uint64_t batid, free, vfree;
+				char filename[sizeof(BBP_physical(0))];
+				char type[33];
+				uint16_t width;
+				char *fname;
+				struct stat stb;
+				switch (sscanf(buf, "%" SCNu64 " %*u %*s %19s %*u %*u %*u %*u %10s %" SCNu16 " %*u %*u %*u %*u %*u %*u %*u %" SCNu64 " %*u %*u %*u %*u %" SCNu64 " %*u %*u",
+					       &batid, filename, type, &width, &free, &vfree)) {
+				case 5:
+					vfree = 0;
+					/* fall through */
+				case 6:
+					assert(batid == (uint64_t) n);
+					if (free == 0)
+						break;
+					const char *tailname = "tail";
+					if (strcmp(type, "str") == 0) {
+						switch (width) {
+						case 1:
+							tailname = "tail1";
+							break;
+						case 2:
+							tailname = "tail2";
+							break;
+#if SIZEOF_VAR_T == 8
+						case 4:
+							tailname = "tail4";
+							break;
+#endif
+						}
+					}
+					if (subcommit) {
+						char base[32];
+						snprintf(base, sizeof(base), "%" PRIo64, batid);
+						fname = GDKfilepath(0, BAKDIR, base, tailname);
+					} else {
+						fname = GDKfilepath(0, BATDIR, filename, tailname);
+					}
+					if (fname == NULL)
+						break;
+					bool found = true;
+					if (stat(fname, &stb) == -1) {
+						if (subcommit) {
+							char *fname1 = GDKfilepath(0, BATDIR, filename, tailname);
+							if (fname1 == NULL) {
+								GDKfree(fname);
+								break;
+							}
+							if (stat(fname1, &stb) == -1) {
+								assert(0);
+								found = false;
+								GDKfree(fname1);
+							} else {
+								GDKfree(fname);
+								fname = fname1;
+							}
+						} else {
+							assert(0);
+							found = false;
+						}
+					}
+					if (!found) {
+						TRC_WARNING(GDK, "file %s not found (expected size %" PRIu64 ")\n", fname, free);
+					} else {
+						assert((uint64_t) stb.st_size >= free);
+						if ((uint64_t) stb.st_size < free)
+							TRC_WARNING(GDK, "file %s too small (expected %" PRIu64 ", actual %zu)\n", fname, free, (size_t) stb.st_size);
+					}
+					GDKfree(fname);
+					if (vfree == 0)
+						break;
+					if (subcommit) {
+						char base[32];
+						snprintf(base, sizeof(base), "%" PRIo64, batid);
+						fname = GDKfilepath(0, BAKDIR, base, "theap");
+					} else {
+						fname = GDKfilepath(0, BATDIR, filename, "theap");
+					}
+					if (fname == NULL)
+						break;
+					if (stat(fname, &stb) == -1) {
+						if (subcommit) {
+							GDKfree(fname);
+							fname = GDKfilepath(0, BATDIR, filename, "theap");
+							if (fname == NULL)
+								break;
+							if (stat(fname, &stb) == -1)
+								assert(0);
+						} else {
+							assert(0);
+						}
+					}
+					assert((uint64_t) stb.st_size >= vfree);
+					if ((uint64_t) stb.st_size < vfree)
+						TRC_WARNING(GDK, "file %s too small (expected %" PRIu64 ", actual %zu)\n", fname, vfree, (size_t) stb.st_size);
+					GDKfree(fname);
+					break;
+				}
+			}
+			if (fputs(buf, nbbpf) == EOF) {
+				GDKerror("Writing BBP.dir file failed.\n");
+				goto bailout;
+			}
+		}
+		if (fgets(buf, (int) bufsize, *obbpfp) == NULL) {
+			if (ferror(*obbpfp)) {
+				GDKerror("error reading backup BBP.dir.");
+				goto bailout;
+			}
+			n = -1;
+			if (fclose(*obbpfp) == EOF) {
+				GDKsyserror("Closing backup BBP.dir file failed.\n");
+				GDKclrerr(); /* ignore error */
+			}
+			*obbpfp = NULL;
+		} else {
+			if (sscanf(buf, "%d", &n) != 1 || n <= 0 || n >= N_BBPINIT * BBPINIT) {
 				GDKerror("subcommit attempted with invalid backup BBP.dir.");
 				goto bailout;
 			}
-			/* at this point, obbpf == NULL, or n > 0 */
-		}
-		if (j == cnt && n == 0) {
-			assert(obbpf == NULL);
-			break;
-		}
-		if (j < cnt && (n == 0 || subcommit[j] <= n || obbpf == NULL)) {
-			bat i = subcommit[j];
-			/* BBP.dir consists of all persistent bats only */
-			if (BBP_status(i) & BBPPERSISTENT) {
-				if (new_bbpentry(nbbpf, i, sizes ? sizes[j] : BUN_NONE) != GDK_SUCCEED) {
-					goto bailout;
-				}
-			}
-			if (i == n)
-				n = 0;	/* read new entry (i.e. skip this one from old BBP.dir */
-			do
-				/* go to next, skipping duplicates */
-				j++;
-			while (j < cnt && subcommit[j] == i);
-		} else {
-			if (fprintf(nbbpf, "%s", buf) < 0) {
-				GDKsyserror("Copying BBP.dir entry failed\n");
-				goto bailout;
-			}
-			TRC_DEBUG(IO_, "%s", buf);
-			n = 0;
 		}
 	}
+	if (BBP_status(bid) & BBPPERSISTENT) {
+		if (new_bbpentry(nbbpf, bid, size, bi) != GDK_SUCCEED)
+			goto bailout;
+	}
+	return n == -1 ? -1 : n == bid ? 0 : n;
 
+  bailout:
+	if (*obbpfp)
+		fclose(*obbpfp);
+	fclose(nbbpf);
+	return -2;
+}
+
+static gdk_return
+BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf, FILE *nbbpf)
+{
+	if (n > 0 && fputs(buf, nbbpf) == EOF) {
+		GDKerror("Writing BBP.dir file failed.\n");
+		goto bailout;
+	}
+	while (obbpf) {
+		if (fgets(buf, (int) bufsize, obbpf) == NULL) {
+			if (ferror(obbpf)) {
+				GDKerror("error reading backup BBP.dir.");
+				goto bailout;
+			}
+			if (fclose(obbpf) == EOF) {
+				GDKsyserror("Closing backup BBP.dir file failed.\n");
+				GDKclrerr(); /* ignore error */
+			}
+			obbpf = NULL;
+		} else {
+			if (fputs(buf, nbbpf) == EOF) {
+				GDKerror("Writing BBP.dir file failed.\n");
+				goto bailout;
+			}
+		}
+	}
 	if (fflush(nbbpf) == EOF ||
 	    (!(GDKdebug & NOSYNCMASK)
 #if defined(NATIVE_WIN32)
@@ -1753,6 +2211,7 @@ BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logn
 	}
 	if (fclose(nbbpf) == EOF) {
 		GDKsyserror("Closing BBP.dir file failed\n");
+		nbbpf = NULL;	/* can't close again */
 		goto bailout;
 	}
 
@@ -1769,74 +2228,26 @@ BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logn
 }
 
 gdk_return
-BBPdir(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid)
+BBPdir_init(void)
 {
 	FILE *fp;
-	bat i;
+	gdk_return rc;
 
-	if (subcommit)
-		return BBPdir_subcommit(cnt, subcommit, sizes, logno, transid);
-
-	TRC_DEBUG(IO_, "writing BBP.dir (%d bats).\n", (int) (bat) ATOMIC_GET(&BBPsize));
-	if ((fp = GDKfilelocate(0, "BBP", "w", "dir")) == NULL) {
-		goto bailout;
-	}
-
-	if (BBPdir_header(fp, (bat) ATOMIC_GET(&BBPsize), logno, transid) != GDK_SUCCEED) {
-		goto bailout;
-	}
-
-	for (i = 1; i < (bat) ATOMIC_GET(&BBPsize); i++) {
-		/* write the entry
-		 * BBP.dir consists of all persistent bats */
-		if (BBP_status(i) & BBPPERSISTENT) {
-			if (new_bbpentry(fp, i, BUN_NONE) != GDK_SUCCEED) {
-				goto bailout;
-			}
-		}
-	}
-
-	if (fflush(fp) == EOF ||
-	    (!(GDKdebug & NOSYNCMASK)
-#if defined(NATIVE_WIN32)
-	     && _commit(_fileno(fp)) < 0
-#elif defined(HAVE_FDATASYNC)
-	     && fdatasync(fileno(fp)) < 0
-#elif defined(HAVE_FSYNC)
-	     && fsync(fileno(fp)) < 0
-#endif
-		    )) {
-		GDKsyserror("Syncing BBP.dir file failed\n");
-		goto bailout;
-	}
-	if (fclose(fp) == EOF) {
-		GDKsyserror("Closing BBP.dir file failed\n");
-		return GDK_FAIL;
-	}
-
-	TRC_DEBUG(IO_, "end\n");
-
-	if (i < (bat) ATOMIC_GET(&BBPsize))
-		return GDK_FAIL;
-
-	return GDK_SUCCEED;
-
-  bailout:
-	if (fp != NULL)
-		fclose(fp);
-	return GDK_FAIL;
+	rc = BBPdir_first(false, 0, 0, NULL, &fp);
+	if (rc == GDK_SUCCEED)
+		rc = BBPdir_last(-1, NULL, 0, NULL, fp);
+	return rc;
 }
 
 /* function used for debugging */
 void
 BBPdump(void)
 {
-	bat i;
 	size_t mem = 0, vm = 0;
 	size_t cmem = 0, cvm = 0;
 	int n = 0, nc = 0;
 
-	for (i = 0; i < (bat) ATOMIC_GET(&BBPsize); i++) {
+	for (bat i = 0; i < (bat) ATOMIC_GET(&BBPsize); i++) {
 		if (BBP_refs(i) == 0 && BBP_lrefs(i) == 0)
 			continue;
 		BAT *b = BBP_desc(i);
@@ -1851,6 +2262,10 @@ BBPdump(void)
 			BBP_lrefs(i),
 			status,
 			BBP_cache(i) ? "" : " not cached");
+		if (b == NULL) {
+			fprintf(stderr, ", no descriptor\n");
+			continue;
+		}
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
 		if (b->batDirtydesc)
@@ -1860,10 +2275,11 @@ BBPdump(void)
 				fprintf(stderr, " Theap -> %d", b->theap->parentid);
 			} else {
 				fprintf(stderr,
-					" Theap=[%zu,%zu,f=%d]%s",
-					HEAPmemsize(b->theap),
-					HEAPvmsize(b->theap),
+					" Theap=[%zu,%zu,f=%d]%s%s",
+					b->theap->free,
+					b->theap->size,
 					b->theap->farmid,
+					b->theap->base == NULL ? "X" : b->theap->storage == STORE_MMAP ? "M" : "",
 					status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->theap);
@@ -1883,10 +2299,11 @@ BBPdump(void)
 					b->tvheap->parentid);
 			} else {
 				fprintf(stderr,
-					" Tvheap=[%zu,%zu,f=%d]%s",
-					HEAPmemsize(b->tvheap),
-					HEAPvmsize(b->tvheap),
+					" Tvheap=[%zu,%zu,f=%d]%s%s",
+					b->tvheap->free,
+					b->tvheap->size,
 					b->tvheap->farmid,
+					b->tvheap->base == NULL ? "X" : b->tvheap->storage == STORE_MMAP ? "M" : "",
 					b->tvheap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->tvheap);
@@ -1897,19 +2314,22 @@ BBPdump(void)
 				}
 			}
 		}
-		if (b->thash && b->thash != (Hash *) 1) {
-			size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
-			size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
-			fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
-				b->thash->heaplink.farmid,
-				b->thash->heapbckt.farmid);
-			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += m;
-				cvm += v;
-			} else {
-				mem += m;
-				vm += v;
+		if (MT_rwlock_rdtry(&b->thashlock)) {
+			if (b->thash && b->thash != (Hash *) 1) {
+				size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
+				size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
+				fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
+					b->thash->heaplink.farmid,
+					b->thash->heapbckt.farmid);
+				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
+					cmem += m;
+					cvm += v;
+				} else {
+					mem += m;
+					vm += v;
+				}
 			}
+			MT_rwlock_rdunlock(&b->thashlock);
 		}
 		fprintf(stderr, " role: %s\n",
 			b->batRole == PERSISTENT ? "persistent" : "transient");
@@ -1945,13 +2365,13 @@ BBP_find(const char *nme, bool lock)
 	} else if (*nme != '.') {
 		/* must lock since hash-lookup traverses other BATs */
 		if (lock)
-			MT_lock_set(&GDKnameLock);
+			MT_lock_set(&BBPnameLock);
 		for (i = BBP_hash[strHash(nme) & BBP_mask]; i; i = BBP_next(i)) {
 			if (strcmp(BBP_logical(i), nme) == 0)
 				break;
 		}
 		if (lock)
-			MT_lock_unset(&GDKnameLock);
+			MT_lock_unset(&BBPnameLock);
 	}
 	return i;
 }
@@ -1995,65 +2415,26 @@ BBPgetsubdir(str s, bat i)
 	*s = 0;
 }
 
-/* There are BBP_THREADMASK+1 (64) free lists, and ours (idx) is
- * empty.  Here we find a longish free list (at least 20 entries), and
- * if we can find one, we take one entry from that list.  If no long
- * enough list can be found, we create a new entry by either just
+/* The free list is empty.  We create a new entry by either just
  * increasing BBPsize (up to BBPlimit) or extending the BBP (which
- * increases BBPlimit).  Every time this function is called we start
- * searching in a following free list (variable "last"). */
+ * increases BBPlimit).
+ *
+ * Note that this is the only place in normal, multi-threaded operation
+ * where BBPsize is assigned a value (never decreasing), that the
+ * assignment happens after any necessary memory was allocated and
+ * initialized, and that this happens when the BBPnameLock is held. */
 static gdk_return
-maybeextend(int idx)
+maybeextend(void)
 {
-	int t, m;
-	int n, l;
-	bat i;
-	static int last = 0;
-
-	l = 0;			/* length of longest list */
-	m = 0;			/* index of longest list */
-	/* find a longish free list */
-	for (t = 0; t <= BBP_THREADMASK && l <= 20; t++) {
-		n = 0;
-		for (i = BBP_free((t + last) & BBP_THREADMASK);
-		     i != 0 && n <= 20;
-		     i = BBP_next(i))
-			n++;
-		if (n > l) {
-			m = (t + last) & BBP_THREADMASK;
-			l = n;
-		}
-	}
-	if (l > 20) {
-		/* list is long enough, get an entry from there */
-		i = BBP_free(m);
-		BBP_free(m) = BBP_next(i);
-		BBP_next(i) = 0;
-		BBP_free(idx) = i;
+	bat size = (bat) ATOMIC_GET(&BBPsize);
+	if (size >= BBPlimit &&
+	    BBPextend(true, size + 1) != GDK_SUCCEED) {
+		/* nothing available */
+		return GDK_FAIL;
 	} else {
-		/* let the longest list alone, get a fresh entry */
-		if ((bat) ATOMIC_ADD(&BBPsize, 1) >= BBPlimit) {
-			if (BBPextend(idx, true) != GDK_SUCCEED) {
-				/* undo add */
-				ATOMIC_SUB(&BBPsize, 1);
-				/* couldn't extend; if there is any
-				 * free entry, take it from the
-				 * longest list after all */
-				if (l > 0) {
-					i = BBP_free(m);
-					BBP_free(m) = BBP_next(i);
-					BBP_next(i) = 0;
-					BBP_free(idx) = i;
-				} else {
-					/* nothing available */
-					return GDK_FAIL;
-				}
-			}
-		} else {
-			BBP_free(idx) = (bat) ATOMIC_GET(&BBPsize) - 1;
-		}
+		ATOMIC_SET(&BBPsize, size + 1);
+		BBP_free = size;
 	}
-	last = (last + 1) & BBP_THREADMASK;
 	return GDK_SUCCEED;
 }
 
@@ -2065,52 +2446,37 @@ BBPinsert(BAT *bn)
 	bool lock = locked_by == 0 || locked_by != pid;
 	char dirname[24];
 	bat i;
-	int idx = threadmask(pid), len = 0;
+	int len = 0;
 
 	/* critical section: get a new BBP entry */
 	if (lock) {
-		MT_lock_set(&GDKtrimLock(idx));
-		MT_lock_set(&GDKcacheLock(idx));
+		MT_lock_set(&GDKcacheLock);
 	}
 
 	/* find an empty slot */
-	if (BBP_free(idx) <= 0) {
+	if (BBP_free <= 0) {
 		/* we need to extend the BBP */
 		gdk_return r = GDK_SUCCEED;
-		if (lock) {
-			/* we must take all locks in a consistent
-			 * order so first unset the one we've already
-			 * got */
-			MT_lock_unset(&GDKcacheLock(idx));
-			for (i = 0; i <= BBP_THREADMASK; i++)
-				MT_lock_set(&GDKcacheLock(i));
-		}
-		MT_lock_set(&GDKnameLock);
+		MT_lock_set(&BBPnameLock);
 		/* check again in case some other thread extended
 		 * while we were waiting */
-		if (BBP_free(idx) <= 0) {
-			r = maybeextend(idx);
+		if (BBP_free <= 0) {
+			r = maybeextend();
 		}
-		MT_lock_unset(&GDKnameLock);
-		if (lock)
-			for (i = BBP_THREADMASK; i >= 0; i--)
-				if (i != idx)
-					MT_lock_unset(&GDKcacheLock(i));
+		MT_lock_unset(&BBPnameLock);
 		if (r != GDK_SUCCEED) {
 			if (lock) {
-				MT_lock_unset(&GDKcacheLock(idx));
-				MT_lock_unset(&GDKtrimLock(idx));
+				MT_lock_unset(&GDKcacheLock);
 			}
 			return 0;
 		}
 	}
-	i = BBP_free(idx);
+	i = BBP_free;
 	assert(i > 0);
-	BBP_free(idx) = BBP_next(i);
+	BBP_free = BBP_next(i);
 
 	if (lock) {
-		MT_lock_unset(&GDKcacheLock(idx));
-		MT_lock_unset(&GDKtrimLock(idx));
+		MT_lock_unset(&GDKcacheLock);
 	}
 	/* rest of the work outside the lock */
 
@@ -2119,21 +2485,21 @@ BBPinsert(BAT *bn)
 	bn->batCacheid = i;
 	bn->creator_tid = MT_getpid();
 
+	MT_lock_set(&GDKswapLock(i));
 	BBP_status_set(i, BBPDELETING|BBPHOT);
 	BBP_cache(i) = NULL;
-	BBP_desc(i) = NULL;
+	BBP_desc(i) = bn;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
-
-#ifdef HAVE_HGE
-	if (bn->ttype == TYPE_hge)
-		havehge = true;
-#endif
+	BBP_pid(i) = MT_getpid();
+	MT_lock_unset(&GDKswapLock(i));
 
 	if (*BBP_bak(i) == 0)
 		len = snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (unsigned) i);
-	if (len == -1 || len >= FILENAME_MAX)
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKerror("impossible error\n");
 		return 0;
+	}
 	BBP_logical(i) = BBP_bak(i);
 
 	/* Keep the physical location around forever */
@@ -2149,7 +2515,7 @@ BBPinsert(BAT *bn)
 		if (len == -1 || len >= FILENAME_MAX)
 			return 0;
 
-		TRC_DEBUG(BAT_, "%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bn->ttype));
+		TRC_DEBUG(BAT_, "%d = new %s(%s)\n", (int) i, BBP_logical(i), ATOMname(bn->ttype));
 	}
 
 	return i;
@@ -2175,16 +2541,15 @@ BBPcacheit(BAT *bn, bool lock)
 		if (bn->tvheap)
 			bn->tvheap->parentid = i;
 	}
-	assert(bn->batCacheid > 0);
 
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING | BBPDELETING | BBPSWAPPED);
-	BBP_status_set(i, mode);
-	BBP_desc(i) = bn;
 
 	/* cache it! */
 	BBP_cache(i) = bn;
+
+	BBP_status_set(i, mode);
 
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
@@ -2202,17 +2567,19 @@ BBPuncacheit(bat i, bool unloaddesc)
 {
 	if (i < 0)
 		i = -i;
-	if (BBPcheck(i, "BBPuncacheit")) {
+	if (BBPcheck(i)) {
 		BAT *b = BBP_desc(i);
+
+		assert(unloaddesc || BBP_refs(i) == 0);
 
 		if (b) {
 			if (BBP_cache(i)) {
-				TRC_DEBUG(BAT_, "uncache %d (%s)\n", (int) i, BBPname(i));
-
-				BBP_cache(i) = NULL;
+				TRC_DEBUG(BAT_, "uncache %d (%s)\n", (int) i, BBP_logical(i));
 
 				/* clearing bits can be done without the lock */
 				BBP_status_off(i, BBPLOADED);
+
+				BBP_cache(i) = NULL;
 			}
 			if (unloaddesc) {
 				BBP_desc(i) = NULL;
@@ -2227,40 +2594,45 @@ BBPuncacheit(bat i, bool unloaddesc)
  * BBPclear removes a BAT from the BBP directory forever.
  */
 static inline void
-bbpclear(bat i, int idx, bool lock)
+bbpclear(bat i, bool lock)
 {
-	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBPname(i));
+	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
+	if (lock)
+		MT_lock_set(&GDKcacheLock);
+
 	BBP_status_set(i, BBPUNLOADING);
+	if (lock)
+		MT_lock_set(&GDKswapLock(i));
 	BBP_refs(i) = 0;
 	BBP_lrefs(i) = 0;
 	if (lock)
-		MT_lock_set(&GDKcacheLock(idx));
-
-	if (BBPtmpcheck(BBP_logical(i)) == 0) {
-		MT_lock_set(&GDKnameLock);
+		MT_lock_unset(&GDKswapLock(i));
+	if (!BBPtmpcheck(BBP_logical(i))) {
+		MT_lock_set(&BBPnameLock);
 		BBP_delete(i);
-		MT_lock_unset(&GDKnameLock);
+		MT_lock_unset(&BBPnameLock);
 	}
 	if (BBP_logical(i) != BBP_bak(i))
 		GDKfree(BBP_logical(i));
 	BBP_status_set(i, 0);
 	BBP_logical(i) = NULL;
-	BBP_next(i) = BBP_free(idx);
-	BBP_free(idx) = i;
+	BBP_next(i) = BBP_free;
+	BBP_free = i;
+	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
 	if (lock)
-		MT_lock_unset(&GDKcacheLock(idx));
+		MT_lock_unset(&GDKcacheLock);
 }
 
 void
-BBPclear(bat i)
+BBPclear(bat i, bool lock)
 {
 	MT_Id pid = MT_getpid();
-	bool lock = locked_by == 0 || locked_by != pid;
 
-	if (BBPcheck(i, "BBPclear")) {
-		bbpclear(i, threadmask(pid), lock);
+	lock &= locked_by == 0 || locked_by != pid;
+	if (BBPcheck(i)) {
+		bbpclear(i, lock);
 	}
 }
 
@@ -2286,12 +2658,11 @@ BBPclear(bat i)
  * see them anymore in new repositories).
  */
 int
-BBPrename(bat bid, const char *nme)
+BBPrename(BAT *b, const char *nme)
 {
-	BAT *b = BBPdescriptor(bid);
 	char dirname[24];
+	bat bid = b->batCacheid;
 	bat tmpid = 0, i;
-	int idx;
 
 	if (b == NULL)
 		return 0;
@@ -2321,13 +2692,10 @@ BBPrename(bat bid, const char *nme)
 		return BBPRENAME_LONG;
 	}
 
-	idx = threadmask(MT_getpid());
-	MT_lock_set(&GDKtrimLock(idx));
-	MT_lock_set(&GDKnameLock);
+	MT_lock_set(&BBPnameLock);
 	i = BBP_find(nme, false);
 	if (i != 0) {
-		MT_lock_unset(&GDKnameLock);
-		MT_lock_unset(&GDKtrimLock(idx));
+		MT_lock_unset(&BBPnameLock);
 		GDKerror("name is in use: '%s'.\n", nme);
 		return BBPRENAME_ALREADY;
 	}
@@ -2338,14 +2706,13 @@ BBPrename(bat bid, const char *nme)
 	} else {
 		nnme = GDKstrdup(nme);
 		if (nnme == NULL) {
-			MT_lock_unset(&GDKnameLock);
-			MT_lock_unset(&GDKtrimLock(idx));
+			MT_lock_unset(&BBPnameLock);
 			return BBPRENAME_MEMORY;
 		}
 	}
 
 	/* carry through the name change */
-	if (BBP_logical(bid) && BBPtmpcheck(BBP_logical(bid)) == 0) {
+	if (BBP_logical(bid) && !BBPtmpcheck(BBP_logical(bid))) {
 		BBP_delete(bid);
 	}
 	if (BBP_logical(bid) != BBP_bak(bid))
@@ -2354,8 +2721,11 @@ BBPrename(bat bid, const char *nme)
 	if (tmpid == 0) {
 		BBP_insert(bid);
 	}
+	MT_lock_set(&b->theaplock);
 	b->batDirtydesc = true;
-	if (!b->batTransient) {
+	bool transient = b->batTransient;
+	MT_lock_unset(&b->theaplock);
+	if (!transient) {
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
 
 		if (lock)
@@ -2364,8 +2734,7 @@ BBPrename(bat bid, const char *nme)
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
 	}
-	MT_lock_unset(&GDKnameLock);
-	MT_lock_unset(&GDKtrimLock(idx));
+	MT_lock_unset(&BBPnameLock);
 	return 0;
 }
 
@@ -2383,7 +2752,7 @@ BBPrename(bat bid, const char *nme)
 static inline void
 BBPspin(bat i, const char *s, unsigned event)
 {
-	if (BBPcheck(i, "BBPspin") && (BBP_status(i) & event)) {
+	if (BBPcheck(i) && (BBP_status(i) & event)) {
 		lng spin = LL_CONSTANT(0);
 
 		do {
@@ -2407,44 +2776,15 @@ BBPcold(bat i)
 }
 
 /* This function can fail if the input parameter (i) is incorrect
- * (unlikely), of if the bat is a view, this is a physical (not
- * logical) incref (i.e. called through BBPfix(), and it is the first
- * reference (refs was 0 and should become 1).  It can fail in this
- * case if the parent bat cannot be loaded.
- * This means the return value of BBPfix should be checked in these
- * circumstances, but not necessarily in others. */
+ * (unlikely). */
 static inline int
 incref(bat i, bool logical, bool lock)
 {
 	int refs;
-	bat tp, tvp;
 	BAT *b, *pb = NULL, *pvb = NULL;
-	bool load = false;
 
-	if (!BBPcheck(i, logical ? "BBPretain" : "BBPfix"))
+	if (!BBPcheck(i))
 		return 0;
-
-	/* Before we get the lock and before we do all sorts of
-	 * things, make sure we can load the parent bats if there are
-	 * any.  If we can't load them, we can still easily fail.  If
-	 * this is indeed a view, but not the first physical
-	 * reference, getting the parent BAT descriptor is
-	 * superfluous, but not too expensive, so we do it anyway. */
-	if (!logical && (b = BBP_desc(i)) != NULL) {
-		if (b->theap && b->theap->parentid != i) {
-			pb = BATdescriptor(b->theap->parentid);
-			if (pb == NULL)
-				return 0;
-		}
-		if (b->tvheap && b->tvheap->parentid != i) {
-			pvb = BATdescriptor(b->tvheap->parentid);
-			if (pvb == NULL) {
-				if (pb)
-					BBPunfix(pb->batCacheid);
-				return 0;
-			}
-		}
-	}
 
 	if (lock) {
 		for (;;) {
@@ -2453,7 +2793,7 @@ incref(bat i, bool logical, bool lock)
 				break;
 			/* the BATs is "unstable", try again */
 			MT_lock_unset(&GDKswapLock(i));
-			MT_sleep_ms(KITTENNAP);
+			BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
 		}
 	}
 	/* we have the lock */
@@ -2469,43 +2809,16 @@ incref(bat i, bool logical, bool lock)
 	assert(BBP_refs(i) + BBP_lrefs(i) ||
 	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
 	if (logical) {
-		/* parent BATs are not relevant for logical refs */
-		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
+		BBP_pid(i) = 0;
 	} else {
-		tp = b->theap == NULL || b->theap->parentid == i ? 0 : b->theap->parentid;
-		assert(tp >= 0);
-		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
 		refs = ++BBP_refs(i);
-		unsigned flag = BBPHOT;
-		if (refs == 1 && (tp || tvp)) {
-			/* If this is a view, we must load the parent
-			 * BATs, but we must do that outside of the
-			 * lock.  Set the BBPLOADING flag so that
-			 * other threads will wait until we're
-			 * done. */
-			flag |= BBPLOADING;
-			load = true;
-		}
-		BBP_status_on(i, flag);
+		BBP_status_on(i, BBPHOT);
 	}
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
 
-	if (load) {
-		/* load the parent BATs */
-		assert(!logical);
-		if (tp) {
-			assert(pb != NULL);
-			if (b->theap != pb->theap) {
-				HEAPincref(pb->theap);
-				HEAPdecref(b->theap, false);
-			}
-			b->theap = pb->theap;
-		}
-		/* done loading, release descriptor */
-		BBP_status_off(i, BBPLOADING);
-	} else if (!logical) {
+	if (!logical && refs > 1) {
 		/* this wasn't the first physical reference, so undo
 		 * the fixes on the parent bats */
 		if (pb)
@@ -2516,15 +2829,27 @@ incref(bat i, bool logical, bool lock)
 	return refs;
 }
 
-/* see comment for incref */
+/* increment the physical reference counter for the given bat
+ * returns the new reference count
+ * also increments the physical reference count of the parent bat(s) (if
+ * any) */
 int
 BBPfix(bat i)
 {
 	bool lock = locked_by == 0 || locked_by != MT_getpid();
 
+	BAT *b = BBP_desc(i);
+	if (b) {
+		if (b->theap->parentid != b->batCacheid)
+			(void) BBPfix(b->theap->parentid);
+		if (b->tvheap && b->tvheap->parentid != b->batCacheid)
+			(void) BBPfix(b->tvheap->parentid);
+	}
 	return incref(i, false, lock);
 }
 
+/* increment the logical reference count for the given bat
+ * returns the new reference count */
 int
 BBPretain(bat i)
 {
@@ -2546,23 +2871,30 @@ BBPshare(bat parent)
 	assert(BBP_refs(parent) > 0);
 	if (lock)
 		MT_lock_unset(&GDKswapLock(parent));
-	(void) incref(parent, false, lock);
+	BBPfix(parent);
 }
 
 static inline int
-decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
+decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const char *func)
 {
-	int refs = 0;
+	int refs = 0, lrefs;
 	bool swap = false;
 	bat tp = 0, tvp = 0;
+	int farmid = 0;
 	BAT *b;
 
+	if (is_bat_nil(i))
+		return -1;
 	assert(i > 0);
+	if (BBPcheck(i) == 0)
+		return -1;
+
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
+		assert(BBP_lrefs(i) > 0);
 		if (BBP_desc(i)->batSharecnt == 0) {
-			GDKerror("%s: %s does not have any shares.\n", func, BBPname(i));
+			GDKerror("%s: %s does not have any shares.\n", func, BBP_logical(i));
 			assert(0);
 		} else {
 			--BBP_desc(i)->batSharecnt;
@@ -2585,14 +2917,16 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	/* decrement references by one */
 	if (logical) {
 		if (BBP_lrefs(i) == 0) {
-			GDKerror("%s: %s does not have logical references.\n", func, BBPname(i));
+			GDKerror("%s: %s does not have logical references.\n", func, BBP_logical(i));
 			assert(0);
 		} else {
 			refs = --BBP_lrefs(i);
 		}
+		/* cannot release last logical ref if still shared */
+		assert(BBP_desc(i)->batSharecnt == 0 || refs > 0);
 	} else {
 		if (BBP_refs(i) == 0) {
-			GDKerror("%s: %s does not have pointer fixes.\n", func, BBPname(i));
+			GDKerror("%s: %s does not have pointer fixes.\n", func, BBP_logical(i));
 			assert(0);
 		} else {
 			assert(b == NULL || b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
@@ -2606,67 +2940,107 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			}
 		}
 	}
+	if (b) {
+		MT_lock_set(&b->theaplock);
+#if 0
+		if (b->batCount > b->batInserted && !isVIEW(b)) {
+			/* if batCount is larger than batInserted and
+			 * the dirty bits are off, it may be that a
+			 * (sub)commit happened in parallel to an
+			 * update; we must undo the turning off of the
+			 * dirty bits */
+			b->batDirtydesc = true;
+			if (b->theap && b->theap->parentid == i)
+				b->theap->dirty = true;
+			if (b->tvheap && b->tvheap->parentid == i)
+				b->tvheap->dirty = true;
+		}
+#endif
+		if (b->theap)
+			farmid = b->theap->farmid;
+		MT_lock_unset(&b->theaplock);
+	}
 
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
-	if (BBP_refs(i) > 0 ||
-	    (BBP_lrefs(i) > 0 &&
-	     (b == NULL ||
-	      (BATdirty(b) && (BBP_status(i) & BBPHOT)) ||
-	      (BBP_status(i) & BBPSYNCING) || /* no swap during (sub)commit */
-	      (BBP_status(i) & (BBPPERSISTENT | BBPHOT)) == BBPHOT ||
-	      GDKinmemory(b->theap->farmid)))) {
-		/* bat cannot be swapped out */
-	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
+	unsigned chkflag = BBPSYNCING;
+	if (GDKvm_cursize() < GDK_vm_maxsize &&
+	     ((b && b->theap ? b->theap->size : 0) + (b && b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
+		chkflag |= BBPHOT;
+	/* only consider unloading if refs is 0; if, in addition, lrefs
+	 * is 0, we can definitely unload, else only if some more
+	 * conditions are met */
+	if (b)
+		MT_lock_set(&b->theaplock);
+	if (BBP_refs(i) == 0 &&
+	    (BBP_lrefs(i) == 0 ||
+	     (b != NULL && b->theap != NULL
+	      ? (!BATdirty(b) &&
+		 !(BBP_status(i) & chkflag) &&
+		 (BBP_status(i) & BBPPERSISTENT) &&
+		 /* cannot unload in-memory data */
+		 !GDKinmemory(farmid) &&
+		 /* do not unload views or parents of views */
+		 b->batSharecnt == 0 &&
+		 b->batCacheid == b->theap->parentid &&
+		 (b->tvheap == NULL || b->batCacheid == b->tvheap->parentid))
+	      : (BBP_status(i) & BBPTMP)))) {
 		/* bat will be unloaded now. set the UNLOADING bit
 		 * while locked so no other thread thinks it's
 		 * available anymore */
 		assert((BBP_status(i) & BBPUNLOADING) == 0);
-		TRC_DEBUG(BAT_, "%s set to unloading BAT %d\n", func, i);
+		TRC_DEBUG(BAT_, "%s set to unloading BAT %d (status %u, lrefs %d)\n", func, i, BBP_status(i), BBP_lrefs(i));
 		BBP_status_on(i, BBPUNLOADING);
 		swap = true;
-	}
+	} /* else: bat cannot be swapped out */
+	lrefs = BBP_lrefs(i);
+	if (b)
+		MT_lock_unset(&b->theaplock);
 
 	/* unlock before re-locking in unload; as saving a dirty
 	 * persistent bat may take a long time */
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
 
-	if (swap && b != NULL) {
-		if (BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0) {
-			/* free memory (if loaded) and delete from
-			 * disk (if transient but saved) */
-			BBPdestroy(b);
+	if (swap) {
+		if (b != NULL) {
+			if (lrefs == 0 && (BBP_status(i) & BBPDELETED) == 0) {
+				/* free memory (if loaded) and delete from
+				 * disk (if transient but saved) */
+				BBPdestroy(b);
+			} else {
+				TRC_DEBUG(BAT_, "%s unload and free bat %d\n", func, i);
+				/* free memory of transient */
+				if (BBPfree(b) != GDK_SUCCEED)
+					return -1;	/* indicate failure */
+			}
+		} else if (lrefs == 0 && (BBP_status(i) & BBPDELETED) == 0) {
+			if ((b = BBP_desc(i)) != NULL)
+				BATdelete(b);
+			BBPclear(i, true);
 		} else {
-			TRC_DEBUG(BAT_, "%s unload and free bat %d\n", func, i);
-			/* free memory of transient */
-			if (BBPfree(b) != GDK_SUCCEED)
-				return -1;	/* indicate failure */
+			BBP_status_off(i, BBPUNLOADING);
 		}
 	}
-	if (tp)
-		decref(tp, false, false, lock, func);
-	if (tvp)
-		decref(tvp, false, false, lock, func);
+	if (recurse) {
+		if (tp)
+			decref(tp, false, false, true, lock, func);
+		if (tvp)
+			decref(tvp, false, false, true, lock, func);
+	}
 	return refs;
 }
 
 int
 BBPunfix(bat i)
 {
-	if (BBPcheck(i, "BBPunfix") == 0) {
-		return -1;
-	}
-	return decref(i, false, false, true, "BBPunfix");
+	return decref(i, false, false, true, true, __func__);
 }
 
 int
 BBPrelease(bat i)
 {
-	if (BBPcheck(i, "BBPrelease") == 0) {
-		return -1;
-	}
-	return decref(i, true, false, true, "BBPrelease");
+	return decref(i, true, false, true, true, __func__);
 }
 
 /*
@@ -2677,32 +3051,76 @@ BBPrelease(bat i)
  * [first step, initiate code change]
  */
 void
-BBPkeepref(bat i)
+BBPkeepref(BAT *b)
 {
-	if (is_bat_nil(i))
-		return;
-	if (BBPcheck(i, "BBPkeepref")) {
-		bool lock = locked_by == 0 || locked_by != MT_getpid();
-		BAT *b;
-
-		if ((b = BBPdescriptor(i)) != NULL) {
-			BATsetaccess(b, BAT_READ);
-			BATsettrivprop(b);
-			if (GDKdebug & (CHECKMASK | PROPMASK))
-				BATassertProps(b);
-		}
-
-		incref(i, true, lock);
-		assert(BBP_refs(i));
-		decref(i, false, false, lock, "BBPkeepref");
+	assert(b != NULL);
+	bool lock = locked_by == 0 || locked_by != MT_getpid();
+	int i = b->batCacheid;
+	int refs = incref(i, true, lock);
+	if (refs == 1) {
+		MT_lock_set(&b->theaplock);
+		BATsettrivprop(b);
+		MT_lock_unset(&b->theaplock);
 	}
+	if (GDKdebug & CHECKMASK)
+		BATassertProps(b);
+	if (BATsetaccess(b, BAT_READ) == NULL)
+		return;		/* already decreffed */
+
+	refs = decref(i, false, false, true, lock, __func__);
+	(void) refs;
+	assert(refs >= 0);
+}
+
+BAT *
+BATdescriptor(bat i)
+{
+	BAT *b = NULL;
+
+	if (BBPcheck(i)) {
+		for (;;) {
+			MT_lock_set(&GDKswapLock(i));
+			if (!(BBP_status(i) & (BBPUNSTABLE|BBPLOADING)))
+				break;
+			/* the BATs is "unstable", try again */
+			MT_lock_unset(&GDKswapLock(i));
+			BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
+		}
+		if (incref(i, false, false) <= 0)
+			return NULL;
+		b = BBP_cache(i);
+		if (b == NULL)
+			b = getBBPdescriptor(i);
+		MT_lock_unset(&GDKswapLock(i));
+		if (b != NULL) {
+			MT_lock_set(&b->theaplock);
+			int tp = b->theap->parentid;
+			int tvp = b->tvheap ? b->tvheap->parentid : 0;
+			MT_lock_unset(&b->theaplock);
+			if (tp != b->batCacheid &&
+			    BATdescriptor(tp) == NULL) {
+				decref(i, false, false, false, false, __func__);
+				return NULL;
+			}
+			if (tvp != 0 &&
+			    tvp != b->batCacheid &&
+			    BATdescriptor(tvp) == NULL) {
+				if (tp != b->batCacheid)
+					decref(tp, false, false, true, true, __func__);
+
+				decref(i, false, false, false, false, __func__);
+				return NULL;
+			}
+		}
+	}
+	return b;
 }
 
 static inline void
 GDKunshare(bat parent)
 {
-	(void) decref(parent, false, true, true, "GDKunshare");
-	(void) decref(parent, true, false, true, "GDKunshare");
+	(void) decref(parent, false, true, true, true, __func__);
+	(void) decref(parent, true, false, true, true, __func__);
 }
 
 void
@@ -2732,7 +3150,7 @@ BBPreclaim(BAT *b)
 
 	assert(BBP_refs(i) == 1);
 
-	return decref(i, false, false, lock, "BBPreclaim") <0;
+	return decref(i, false, false, true, lock, __func__) <0;
 }
 
 /*
@@ -2741,26 +3159,23 @@ BBPreclaim(BAT *b)
  * this.
  */
 static BAT *
-getBBPdescriptor(bat i, bool lock)
+getBBPdescriptor(bat i)
 {
 	bool load = false;
 	BAT *b = NULL;
 
 	assert(i > 0);
-	if (!BBPcheck(i, "BBPdescriptor")) {
+	if (!BBPcheck(i)) {
+		GDKerror("BBPcheck failed for bat id %d\n", i);
 		return NULL;
 	}
 	assert(BBP_refs(i));
-	if ((b = BBP_cache(i)) == NULL) {
+	if ((b = BBP_cache(i)) == NULL || BBP_status(i) & BBPWAITING) {
 
-		if (lock)
-			MT_lock_set(&GDKswapLock(i));
 		while (BBP_status(i) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
-			if (lock)
-				MT_lock_unset(&GDKswapLock(i));
-			MT_sleep_ms(KITTENNAP);
-			if (lock)
-				MT_lock_set(&GDKswapLock(i));
+			MT_lock_unset(&GDKswapLock(i));
+			BBPspin(i, __func__, BBPWAITING);
+			MT_lock_set(&GDKswapLock(i));
 		}
 		if (BBPvalid(i)) {
 			b = BBP_cache(i);
@@ -2770,13 +3185,11 @@ getBBPdescriptor(bat i, bool lock)
 				BBP_status_on(i, BBPLOADING);
 			}
 		}
-		if (lock)
-			MT_lock_unset(&GDKswapLock(i));
 	}
 	if (load) {
-		TRC_DEBUG(IO_, "load %s\n", BBPname(i));
+		TRC_DEBUG(IO_, "load %s\n", BBP_logical(i));
 
-		b = BATload_intern(i, lock);
+		b = BATload_intern(i, false);
 
 		/* clearing bits can be done without the lock */
 		BBP_status_off(i, BBPLOADING);
@@ -2784,14 +3197,6 @@ getBBPdescriptor(bat i, bool lock)
 			BATassertProps(b);
 	}
 	return b;
-}
-
-BAT *
-BBPdescriptor(bat i)
-{
-	bool lock = locked_by == 0 || locked_by != MT_getpid();
-
-	return getBBPdescriptor(i, lock);
 }
 
 /*
@@ -2806,13 +3211,18 @@ BBPsave(BAT *b)
 	bat bid = b->batCacheid;
 	gdk_return ret = GDK_SUCCEED;
 
+	MT_lock_set(&b->theaplock);
 	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirtydata(b)) {
 		/* do nothing */
+		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash && b->thash != (Hash *) 1 &&
 		    (b->thash->heaplink.dirty || b->thash->heapbckt.dirty))
 			BAThashsave(b, (BBP_status(bid) & BBPPERSISTENT) != 0);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return GDK_SUCCEED;
 	}
+	MT_lock_unset(&b->theaplock);
 	if (lock)
 		MT_lock_set(&GDKswapLock(bid));
 
@@ -2820,17 +3230,19 @@ BBPsave(BAT *b)
 		/* wait until save in other thread completes */
 		if (lock)
 			MT_lock_unset(&GDKswapLock(bid));
-		BBPspin(bid, "BBPsave", BBPSAVING);
+		BBPspin(bid, __func__, BBPSAVING);
 	} else {
 		/* save it */
 		unsigned flags = BBPSAVING;
 
+		MT_lock_set(&b->theaplock);
 		if (DELTAdirty(b)) {
 			flags |= BBPSWAPPED;
 		}
 		if (b->batTransient) {
 			flags |= BBPTMP;
 		}
+		MT_lock_unset(&b->theaplock);
 		BBP_status_on(bid, flags);
 		if (lock)
 			MT_lock_unset(&GDKswapLock(bid));
@@ -2868,7 +3280,7 @@ BBPdestroy(BAT *b)
 		assert(b->batSharecnt == 0);
 		if (tunfix) {
 			BUN p, q;
-			BATiter bi = bat_iterator(b);
+			BATiter bi = bat_iterator_nolock(b);
 
 			BATloop(b, p, q) {
 				/* ignore errors */
@@ -2877,7 +3289,7 @@ BBPdestroy(BAT *b)
 		}
 		BATdelete(b);	/* handles persistent case also (file deletes) */
 	}
-	BBPclear(b->batCacheid);	/* if destroyed; de-register from BBP */
+	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
 
 	/* parent released when completely done with child */
 	if (tp)
@@ -2928,39 +3340,31 @@ BBPfree(BAT *b)
  * this costs performance, and because getting into memory shortage
  * during a commit is extremely dangerous. Loading a BAT tends not to
  * be required, since the commit actions mostly involve moving some
- * pointers in the BAT descriptor. However, some column types do
- * require loading the full bat. This is tested by the complexatom()
- * routine. Such columns are those of which the type has a fix/unfix
- * method, or those that have HeapDelete methods. The HeapDelete
- * actions are not always required and therefore the BBPquickdesc is
- * parametrized.
+ * pointers in the BAT descriptor.
  */
-static bool
-complexatom(int t, bool delaccess)
-{
-	if (t >= 0 && (BATatoms[t].atomFix || (delaccess && BATatoms[t].atomDel))) {
-		return true;
-	}
-	return false;
-}
-
 BAT *
-BBPquickdesc(bat bid, bool delaccess)
+BBPquickdesc(bat bid)
 {
 	BAT *b;
 
-	if (is_bat_nil(bid))
-		return NULL;
-	if (bid < 0) {
-		GDKerror("called with negative batid.\n");
-		assert(0);
+	if (!BBPcheck(bid)) {
+		if (!is_bat_nil(bid)) {
+			GDKerror("called with invalid batid.\n");
+			assert(0);
+		}
 		return NULL;
 	}
-	if ((b = BBP_cache(bid)) != NULL)
-		return b;	/* already cached */
+	BBPspin(bid, __func__, BBPWAITING);
 	b = BBP_desc(bid);
-	if (complexatom(b->ttype, delaccess)) {
-		b = BATload_intern(bid, true);
+	if (b && b->ttype < 0) {
+		const char *aname = ATOMunknown_name(b->ttype);
+		int tt = ATOMindex(aname);
+		if (tt < 0) {
+			TRC_WARNING(GDK, "atom '%s' unknown in bat '%s'.\n",
+				    aname, BBP_physical(bid));
+		} else {
+			b->ttype = tt;
+		}
 	}
 	return b;
 }
@@ -2973,19 +3377,29 @@ dirty_bat(bat *i, bool subcommit)
 {
 	if (BBPvalid(*i)) {
 		BAT *b;
-		BBPspin(*i, "dirty_bat", BBPSAVING);
+		BBPspin(*i, __func__, BBPSAVING);
 		b = BBP_cache(*i);
 		if (b != NULL) {
+			MT_lock_set(&b->theaplock);
 			if ((BBP_status(*i) & BBPNEW) &&
 			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
-				*i = 0;	/* error */
+				*i = -*i;	/* error */
 			if ((BBP_status(*i) & BBPPERSISTENT) &&
-			    (subcommit || BATdirty(b)))
+			    (subcommit || BATdirty(b))) {
+				MT_lock_unset(&b->theaplock);
 				return b;	/* the bat is loaded, persistent and dirty */
+			}
+			MT_lock_unset(&b->theaplock);
 		} else if (BBP_status(*i) & BBPSWAPPED) {
-			b = (BAT *) BBPquickdesc(*i, true);
-			if (b && (subcommit || b->batDirtydesc))
-				return b;	/* only the desc is loaded & dirty */
+			b = (BAT *) BBPquickdesc(*i);
+			if (b) {
+				MT_lock_set(&b->theaplock);
+				if (subcommit || b->batDirtydesc) {
+					MT_lock_unset(&b->theaplock);
+					return b;	/* only the desc is loaded & dirty */
+				}
+				MT_lock_unset(&b->theaplock);
+			}
 		}
 	}
 	return NULL;
@@ -3107,16 +3521,13 @@ BBPprepare(bool subcommit)
 	str bakdirpath, subdirpath;
 	gdk_return ret = GDK_SUCCEED;
 
-	if(!(bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL)))
-		return GDK_FAIL;
-	if(!(subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL))) {
+	bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
+	subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
+	if (bakdirpath == NULL || subdirpath == NULL) {
 		GDKfree(bakdirpath);
+		GDKfree(subdirpath);
 		return GDK_FAIL;
 	}
-
-	/* tmLock is only used here, helds usually very shortly just
-	 * to protect the file counters */
-	MT_lock_set(&GDKtmLock);
 
 	start_subcommit = (subcommit && backup_subdir == 0);
 	if (start_subcommit) {
@@ -3155,7 +3566,6 @@ BBPprepare(bool subcommit)
 		backup_subdir += subcommit;
 		backup_files++;
 	}
-	MT_lock_unset(&GDKtmLock);
 	GDKfree(bakdirpath);
 	GDKfree(subdirpath);
 	return ret;
@@ -3168,6 +3578,10 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 	gdk_return ret = GDK_SUCCEED;
 	char extnew[16];
 	bool istail = strncmp(ext, "tail", 4) == 0;
+
+	if (h->wasempty) {
+		return GDK_SUCCEED;
+	}
 
 	/* direct mmap is unprotected (readonly usage, or has WAL
 	 * protection); however, if we're backing up for subcommit
@@ -3321,46 +3735,38 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 static gdk_return
 BBPbackup(BAT *b, bool subcommit)
 {
-	char *srcdir;
-	long_str nme;
-	const char *s = BBP_physical(b->batCacheid);
-	size_t slen;
+	gdk_return rc;
 
-	if (BBPprepare(subcommit) != GDK_SUCCEED) {
-		return GDK_FAIL;
+	if ((rc = BBPprepare(subcommit)) != GDK_SUCCEED) {
+		return rc;
 	}
-	if (!b->batCopiedtodisk || b->batTransient) {
+	BATiter bi = bat_iterator(b);
+	if (!bi.copiedtodisk || bi.transient) {
+		bat_iterator_end(&bi);
 		return GDK_SUCCEED;
 	}
 	/* determine location dir and physical suffix */
-	if (!(srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL)))
-		goto fail;
-	s = strrchr(srcdir, DIR_SEP);
-	if (!s)
-		goto fail;
+	char *srcdir;
+	if ((srcdir = GDKfilepath(NOFARM, BATDIR, BBP_physical(b->batCacheid), NULL)) != NULL) {
+		char *nme = strrchr(srcdir, DIR_SEP);
+		assert(nme != NULL);
+		*nme++ = '\0';	/* split into directory and file name */
 
-	slen = strlen(++s);
-	if (slen >= sizeof(nme))
-		goto fail;
-	memcpy(nme, s, slen + 1);
-	srcdir[s - srcdir] = 0;
-
-	if (b->ttype != TYPE_void &&
-	    do_backup(srcdir, nme, gettailname(b), b->theap,
-		      b->batDirtydesc || b->theap->dirty,
-		      subcommit) != GDK_SUCCEED)
-		goto fail;
-	if (b->tvheap &&
-	    do_backup(srcdir, nme, "theap", b->tvheap,
-		      b->batDirtydesc || b->tvheap->dirty,
-		      subcommit) != GDK_SUCCEED)
-		goto fail;
+		if (bi.type != TYPE_void) {
+			rc = do_backup(srcdir, nme, gettailnamebi(&bi), bi.h,
+				       bi.dirtydesc || bi.hdirty,
+				       subcommit);
+			if (rc == GDK_SUCCEED && bi.vh != NULL)
+				rc = do_backup(srcdir, nme, "theap", bi.vh,
+					       bi.dirtydesc || bi.vhdirty,
+					       subcommit);
+		}
+	} else {
+		rc = GDK_FAIL;
+	}
+	bat_iterator_end(&bi);
 	GDKfree(srcdir);
-	return GDK_SUCCEED;
-  fail:
-	if(srcdir)
-		GDKfree(srcdir);
-	return GDK_FAIL;
+	return rc;
 }
 
 /*
@@ -3381,6 +3787,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	int t0 = 0, t1 = 0;
 	str bakdir, deldir;
 	const bool lock = locked_by == 0 || locked_by != MT_getpid();
+	char buf[3000];
+	int n = subcommit ? 0 : -1;
+	FILE *obbpf, *nbbpf;
 
 	if(!(bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL)))
 		return GDK_FAIL;
@@ -3403,7 +3812,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				MT_lock_set(&GDKswapLock(i));
 			/* set flag that we're syncing, i.e. that we'll
 			 * be between moving heap to backup dir and
-			 * saving the new version */
+			 * saving the new version, in other words, the
+			 * heap may not exist in the usual location */
 			BBP_status_on(i, BBPSYNCING);
 			/* wait until unloading is finished before
 			 * attempting to make a backup */
@@ -3421,38 +3831,46 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				break;
 			}
 			if (BBP_status(i) & BBPEXISTING) {
-				if (b != NULL && BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
+				if (b != NULL) {
+					if (BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
+						BBP_status_off(i, BBPSYNCING);
+						if (lock)
+							MT_lock_unset(&GDKswapLock(i));
+						break;
+					}
+				} else {
+					/* file has not been moved to
+					 * backup dir, so no need for
+					 * other threads to wait */
 					BBP_status_off(i, BBPSYNCING);
-					if (lock)
-						MT_lock_unset(&GDKswapLock(i));
-					break;
 				}
-			} else if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
-				char o[10];
-				char *f;
-				snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
-				f = GDKfilepath(b->theap->farmid, BAKDIR, o, gettailname(b));
-				if (f == NULL) {
-					BBP_status_off(i, BBPSYNCING);
-					if (lock)
-						MT_lock_unset(&GDKswapLock(i));
-					ret = GDK_FAIL;
-					goto bailout;
+			} else {
+				BBP_status_off(i, BBPSYNCING);
+				if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
+					char o[10];
+					char *f;
+					snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
+					f = GDKfilepath(b->theap->farmid, BAKDIR, o, gettailname(b));
+					if (f == NULL) {
+						if (lock)
+							MT_lock_unset(&GDKswapLock(i));
+						ret = GDK_FAIL;
+						goto bailout;
+					}
+					if (MT_access(f, F_OK) == 0)
+						file_move(b->theap->farmid, BAKDIR, SUBDIR, o, gettailname(b));
+					GDKfree(f);
+					f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap");
+					if (f == NULL) {
+						if (lock)
+							MT_lock_unset(&GDKswapLock(i));
+						ret = GDK_FAIL;
+						goto bailout;
+					}
+					if (MT_access(f, F_OK) == 0)
+						file_move(b->theap->farmid, BAKDIR, SUBDIR, o, "theap");
+					GDKfree(f);
 				}
-				if (MT_access(f, F_OK) == 0)
-					file_move(b->theap->farmid, BAKDIR, SUBDIR, o, gettailname(b));
-				GDKfree(f);
-				f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap");
-				if (f == NULL) {
-					BBP_status_off(i, BBPSYNCING);
-					if (lock)
-						MT_lock_unset(&GDKswapLock(i));
-					ret = GDK_FAIL;
-					goto bailout;
-				}
-				if (MT_access(f, F_OK) == 0)
-					file_move(b->theap->farmid, BAKDIR, SUBDIR, o, "theap");
-				GDKfree(f);
 			}
 			if (lock)
 				MT_lock_unset(&GDKswapLock(i));
@@ -3462,20 +3880,68 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	}
 	TRC_DEBUG(PERF, "move time %d, %d files\n", (t1 = GDKms()) - t0, backup_files);
 
-	/* PHASE 2: save the repository */
+	/* PHASE 2: save the repository and write new BBP.dir file */
+	if (ret == GDK_SUCCEED) {
+		ret = BBPdir_first(subcommit != NULL, logno, transid,
+				   &obbpf, &nbbpf);
+	}
+
 	if (ret == GDK_SUCCEED) {
 		int idx = 0;
+		bool lock = locked_by == 0 || locked_by != MT_getpid();
 
 		while (++idx < cnt) {
 			bat i = subcommit ? subcommit[idx] : idx;
+			/* BBP_desc(i) may be NULL */
+			BUN size = sizes ? sizes[idx] : BUN_NONE;
+			BATiter bi;
 
+			/* add a fix so that BBPmanager doesn't interfere */
+			BBPfix(i);
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
-				if (i <= 0)
+				if (i <= 0) {
+					decref(-i, false, false, true, locked_by == 0 || locked_by != MT_getpid(), __func__);
 					break;
-				if (b != NULL && BATsave(b) != GDK_SUCCEED)
-					break;	/* write error */
+				}
+				bi = bat_iterator(BBP_desc(i));
+				if (b) {
+					/* wait for BBPSAVING so that we
+					 * can set it, wait for
+					 * BBPUNLOADING before
+					 * attempting to save */
+					for (;;) {
+						if (lock)
+							MT_lock_set(&GDKswapLock(i));
+						if (!(BBP_status(i) & (BBPSAVING|BBPUNLOADING)))
+							break;
+						if (lock)
+							MT_lock_unset(&GDKswapLock(i));
+						BBPspin(i, __func__, BBPSAVING|BBPUNLOADING);
+					}
+					BBP_status_on(i, BBPSAVING);
+					if (lock)
+						MT_lock_unset(&GDKswapLock(i));
+					assert(size <= bi.count || size == BUN_NONE);
+					if (size > bi.count)
+						size = bi.count;
+					MT_rwlock_rdlock(&b->thashlock);
+					ret = BATsave_locked(b, &bi, size);
+					MT_rwlock_rdunlock(&b->thashlock);
+					BBP_status_off(i, BBPSAVING);
+				}
+			} else {
+				bi = bat_iterator(NULL);
 			}
+			if (ret == GDK_SUCCEED) {
+				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, subcommit != NULL, &bi);
+			}
+			bat_iterator_end(&bi);
+			/* can't use BBPunfix because of the "lock"
+			 * argument: locked_by may be set here */
+			decref(i, false, false, true, lock, __func__);
+			if (n == -2)
+				break;
 			/* we once again have a saved heap */
 			BBP_status_off(i, BBPSYNCING);
 		}
@@ -3486,7 +3952,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	TRC_DEBUG(PERF, "write time %d\n", (t0 = GDKms()) - t1);
 
 	if (ret == GDK_SUCCEED) {
-		ret = BBPdir(cnt, subcommit, sizes, logno, transid);
+		ret = BBPdir_last(n, buf, sizeof(buf), obbpf, nbbpf);
 	}
 
 	TRC_DEBUG(PERF, "dir time %d, %d bats\n", (t1 = GDKms()) - t0, (bat) ATOMIC_GET(&BBPsize));
@@ -3510,8 +3976,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 	/* AFTERMATH */
 	if (ret == GDK_SUCCEED) {
-		BBPlogno = logno;	/* the new value */
-		BBPtransid = transid;
+		ATOMIC_SET(&BBPlogno, logno);	/* the new value */
+		ATOMIC_SET(&BBPtransid, transid);
 		backup_files = subcommit ? (backup_files - backup_subdir) : 0;
 		backup_dir = backup_subdir = 0;
 		if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
@@ -3715,7 +4181,7 @@ BBPrecover(int farmid)
 		TRC_DEBUG(IO_, "rmdir %s = %d\n", bakdirpath, (int) ret);
 	}
 	if (ret != GDK_SUCCEED)
-		GDKerror("recovery failed. Please check whether your disk is full or write-protected.\n");
+		GDKerror("recovery failed.\n");
 
 	TRC_DEBUG(IO_, "end\n");
 	GDKfree(bakdirpath);
@@ -3771,7 +4237,7 @@ BBPrecover_subdir(void)
 	TRC_DEBUG(IO_, "end = %d\n", (int) ret);
 
 	if (ret != GDK_SUCCEED)
-		GDKerror("recovery failed. Please check whether your disk is full or write-protected.\n");
+		GDKerror("recovery failed.\n");
 	return ret;
 }
 
@@ -3811,7 +4277,7 @@ getdesc(bat bid)
 	if (bid < (bat) ATOMIC_GET(&BBPsize) && BBP_logical(bid))
 		b = BBP_desc(bid);
 	if (b == NULL)
-		BBPclear(bid);
+		BBPclear(bid, true);
 	return b;
 }
 
@@ -3885,6 +4351,28 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "tail", 4) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->ttype || !b->batCopiedtodisk);
+				if (!delete) {
+					if (b->ttype == TYPE_str) {
+						switch (b->twidth) {
+						case 1:
+							delete = strcmp(p + 1, "tail1") != 0;
+							break;
+						case 2:
+							delete = strcmp(p + 1, "tail2") != 0;
+							break;
+#if SIZEOF_VAR_T == 8
+						case 4:
+							delete = strcmp(p + 1, "tail4") != 0;
+							break;
+#endif
+						default:
+							delete = strcmp(p + 1, "tail") != 0;
+							break;
+						}
+					} else {
+						delete = strcmp(p + 1, "tail") != 0;
+					}
+				}
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk);
@@ -3920,6 +4408,11 @@ BBPdiskscan(const char *parent, size_t baseoff)
 #else
 				delete = true;
 #endif
+			} else if (strncmp(p + 1, "tstrimps", 8) == 0) {
+				BAT *b = getdesc(bid);
+				delete = b == NULL;
+				if (!delete)
+					b->tstrimps = (Strimps *)1;
 			} else if (strncmp(p + 1, "new", 3) != 0) {
 				ok = false;
 			}
@@ -3947,6 +4440,7 @@ gdk_bbp_reset(void)
 {
 	int i;
 
+	BBP_free = 0;
 	while (BBPlimit > 0) {
 		BBPlimit -= BBPINIT;
 		assert(BBPlimit >= 0);
@@ -3957,7 +4451,8 @@ gdk_bbp_reset(void)
 	for (i = 0; i < MAXFARMS; i++)
 		GDKfree((void *) BBPfarms[i].dirname); /* loose "const" */
 	memset(BBPfarms, 0, sizeof(BBPfarms));
-	BBP_hash = 0;
+	GDKfree(BBP_hash);
+	BBP_hash = NULL;
 	BBP_mask = 0;
 
 	locked_by = 0;
@@ -3965,4 +4460,133 @@ gdk_bbp_reset(void)
 	backup_files = 0;
 	backup_dir = 0;
 	backup_subdir = 0;
+}
+
+static MT_Lock GDKCallbackListLock = MT_LOCK_INITIALIZER(GDKCallbackListLock);
+
+static struct {
+	int cnt;
+	gdk_callback *head;
+} callback_list = {
+	.cnt = 0,
+	.head = NULL,
+};
+
+/*
+ * @- Add a callback
+ * Adds new callback to the callback list.
+ */
+gdk_return
+gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
+		interval)
+{
+
+	gdk_callback *callback = NULL;
+	gdk_callback *p = callback_list.head;
+
+	if (!(callback = GDKmalloc(sizeof(gdk_callback) + sizeof(void *) * argc))) {
+		TRC_CRITICAL(GDK, "Failed to allocate memory!");
+		return GDK_FAIL;
+	}
+
+	*callback = (gdk_callback) {
+		.name = name,
+		.argc = argc,
+		.interval = interval,
+		.func = f,
+	};
+
+	for (int i=0; i < argc; i++) {
+		callback->argv[i] = argv[i];
+	}
+
+	MT_lock_set(&GDKCallbackListLock);
+	if (p) {
+		int cnt = 1;
+		do {
+			// check if already added
+			if (strcmp(callback->name, p->name) == 0) {
+				MT_lock_unset(&GDKCallbackListLock);
+				GDKfree(callback);
+				return GDK_FAIL;
+			}
+			if (p->next == NULL) {
+			   	p->next = callback;
+				p = callback->next;
+			} else {
+				p = p->next;
+			}
+			cnt += 1;
+		} while(p);
+		callback_list.cnt = cnt;
+	} else {
+		callback_list.cnt = 1;
+		callback_list.head = callback;
+	}
+	MT_lock_unset(&GDKCallbackListLock);
+	return GDK_SUCCEED;
+}
+
+/*
+ * @- Remove a callback
+ * Removes a callback from the callback list with a given name as an argument.
+ */
+gdk_return
+gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
+{
+	gdk_callback *curr = callback_list.head;
+	gdk_callback *prev = NULL;
+	gdk_return res = GDK_FAIL;
+	while(curr) {
+		if (strcmp(cb_name, curr->name) == 0) {
+			MT_lock_set(&GDKCallbackListLock);
+			if (curr == callback_list.head && prev == NULL) {
+				callback_list.head = curr->next;
+			} else {
+				prev->next = curr->next;
+			}
+			if (argsfree)
+			       	argsfree(curr->argc, curr->argv);
+			GDKfree(curr);
+			curr = NULL;
+			callback_list.cnt -=1;
+			res = GDK_SUCCEED;
+			MT_lock_unset(&GDKCallbackListLock);
+		} else {
+			prev = curr;
+			curr = curr->next;
+		}
+	}
+	return res;
+}
+
+static gdk_return
+do_callback(gdk_callback *cb)
+{
+	cb->last_called = GDKusec();
+	return cb->func(cb->argc, cb->argv);
+}
+
+static bool
+should_call(gdk_callback *cb)
+{
+	if (cb->last_called && cb->interval) {
+		return (cb->last_called + cb->interval * 1000 * 1000) <
+			GDKusec();
+	}
+	return true;
+}
+
+static void
+BBPcallbacks(void)
+{
+	gdk_callback *next = callback_list.head;
+
+	MT_lock_set(&GDKCallbackListLock);
+	while (next) {
+		if(should_call(next))
+			do_callback(next);
+		next = next->next;
+	}
+	MT_lock_unset(&GDKCallbackListLock);
 }

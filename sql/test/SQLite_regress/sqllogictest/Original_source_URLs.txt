@@ -7,15 +7,15 @@ The *.test files were next converted into *.test.sql variants which
 They are placed in the Tests/ subdir with an All file such that they can be run using Mtest.py
 
 The following issues where detected (and fixed in Jul2015 SP1 release) using the 5 select*.test.sql tests:
- https://www.monetdb.org/bugzilla/show_bug.cgi?id=3705
- https://www.monetdb.org/bugzilla/show_bug.cgi?id=3706
- https://www.monetdb.org/bugzilla/show_bug.cgi?id=3719
- https://www.monetdb.org/bugzilla/show_bug.cgi?id=3760
- https://www.monetdb.org/bugzilla/show_bug.cgi?id=3798
- https://www.monetdb.org/bugzilla/show_bug.cgi?id=3799
- https://www.monetdb.org/bugzilla/show_bug.cgi?id=3803
- https://www.monetdb.org/bugzilla/show_bug.cgi?id=3809
- https://www.monetdb.org/bugzilla/show_bug.cgi?id=3819
+ https://github.com/MonetDB/MonetDB/issues/3705
+ https://github.com/MonetDB/MonetDB/issues/3706
+ https://github.com/MonetDB/MonetDB/issues/3719
+ https://github.com/MonetDB/MonetDB/issues/3760
+ https://github.com/MonetDB/MonetDB/issues/3798
+ https://github.com/MonetDB/MonetDB/issues/3799
+ https://github.com/MonetDB/MonetDB/issues/3803
+ https://github.com/MonetDB/MonetDB/issues/3809
+ https://github.com/MonetDB/MonetDB/issues/3819
 
 
 Note: we currently do not use the sqllogictest test program to do the tests.

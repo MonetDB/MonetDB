@@ -1,0 +1,22 @@
+query TT nosort
+select s.name, c.remark from sys.schemas s left outer join sys.comments c on s.id = c.id where not s.system order by name
+----
+schema_a
+set by super user
+schema_b
+set by super user
+
+statement error
+COMMENT ON SCHEMA schema_b IS 'set by user_a'
+
+statement ok
+COMMENT ON SCHEMA schema_a IS 'set by user_a'
+
+query TT nosort
+select s.name, c.remark from sys.schemas s left outer join sys.comments c on s.id = c.id where not s.system order by name
+----
+schema_a
+set by user_a
+schema_b
+set by super user
+

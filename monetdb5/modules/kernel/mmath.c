@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -251,9 +251,8 @@ random_state_engine mmath_rse;
 MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER(mmath_rse_lock);
 
 static str
-MATHprelude(void *ret)
+MATHprelude(void)
 {
-	(void) ret;
 	init_random_state_engine(mmath_rse, (uint64_t) GDKusec());
 	return MAL_SUCCEED;
 }
@@ -376,7 +375,6 @@ mel_func mmath_init_funcs[] = {
  command("mmath", "srand", MATHsrandint, false, "initialize the rand() function with a seed", args(1,2, arg("",void),arg("seed",int))),
  command("mmath", "sqlrand", MATHsqlrandint, false, "initialize the rand() function with a seed and call rand()", args(1,2, arg("",int),arg("seed",int))),
  command("mmath", "pi", MATHpi, false, "return an important mathematical value", args(1,1, arg("",dbl))),
- command("mmath", "prelude", MATHprelude, false, "initilize mmath module", args(1,1, arg("",void))),
  { .imp=NULL }
 };
 #include "mal_import.h"
@@ -385,4 +383,4 @@ mel_func mmath_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_mmath_mal)
-{ mal_module("mmath", NULL, mmath_init_funcs); }
+{ mal_module2("mmath", NULL, mmath_init_funcs, MATHprelude, NULL); }

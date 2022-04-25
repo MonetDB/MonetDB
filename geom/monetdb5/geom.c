@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -1719,9 +1719,11 @@ wkbDump(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
-		BBPkeepref(*idBAT_id = idBAT->batCacheid);
+		*idBAT_id = idBAT->batCacheid;
+		BBPkeepref(idBAT);
 
-		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+		*geomBAT_id = geomBAT->batCacheid;
+		BBPkeepref(geomBAT);
 
 		return MAL_SUCCEED;
 	}
@@ -1750,8 +1752,10 @@ wkbDump(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 		return err;
 	}
 
-	BBPkeepref(*idBAT_id = idBAT->batCacheid);
-	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+	*idBAT_id = idBAT->batCacheid;
+	BBPkeepref(idBAT);
+	*geomBAT_id = geomBAT->batCacheid;
+	BBPkeepref(geomBAT);
 	return MAL_SUCCEED;
 }
 
@@ -1952,9 +1956,11 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
-		BBPkeepref(*idBAT_id = idBAT->batCacheid);
+		*idBAT_id = idBAT->batCacheid;
+		BBPkeepref(idBAT);
 
-		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+		*geomBAT_id = geomBAT->batCacheid;
+		BBPkeepref(geomBAT);
 
 		return MAL_SUCCEED;
 	}
@@ -1985,8 +1991,10 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 		return err;
 	}
 
-	BBPkeepref(*idBAT_id = idBAT->batCacheid);
-	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+	*idBAT_id = idBAT->batCacheid;
+	BBPkeepref(idBAT);
+	*geomBAT_id = geomBAT->batCacheid;
+	BBPkeepref(geomBAT);
 	return MAL_SUCCEED;
 }
 
@@ -2083,12 +2091,9 @@ geoGetType(char **res, int *info, int *flag)
 /* returns a pointer to a nil-mbr. */
 static mbr mbrNIL;		/* to be filled in */
 
-#include "gdk_geomlogger.h"
-
-str
-geom_prelude(void *ret)
+static str
+geom_prelude(void)
 {
-	(void) ret;
 	mbrNIL.xmin = flt_nil;
 	mbrNIL.xmax = flt_nil;
 	mbrNIL.ymin = flt_nil;
@@ -3279,8 +3284,6 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
 		throw(MAL, "geom.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	//iterator over the BATs
-	inBAT_iter = bat_iterator(inBAT);
 
 	/* TODO: what should be returned if the input BAT is less than
 	 * two rows? --sjoerd */
@@ -3290,8 +3293,11 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 			throw(MAL, "geom.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
+	//iterator over the BATs
+	inBAT_iter = bat_iterator(inBAT);
 	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
+		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
@@ -3314,6 +3320,7 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 		GDKfree(aWKB);
 	}
 
+	bat_iterator_end(&inBAT_iter);
 	BBPunfix(inBAT->batCacheid);
 
 	return err;
@@ -4245,6 +4252,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 
 	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
+		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
@@ -4265,6 +4273,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 		GDKfree(aWKB);
 	}
 
+	bat_iterator_end(&inBAT_iter);
 	BBPunfix(inBAT->batCacheid);
 
 	return err;
@@ -5243,7 +5252,7 @@ wkbPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkb_size(val->len));
 	base = b->tvheap->base;
-	if (*bun) {
+	if (*bun != (var_t) -1) {
 		memcpy(&base[*bun], val, wkb_size(val->len));
 		b->tvheap->dirty = true;
 	}
@@ -5265,10 +5274,10 @@ wkbLENGTH(const void *P)
 	return (size_t) len;
 }
 
-static void
+static gdk_return
 wkbHEAP(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
 /***********************************************/
@@ -5698,7 +5707,7 @@ wkbaPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkba_size(val->itemsNum));
 	base = b->tvheap->base;
-	if (*bun) {
+	if (*bun != (var_t) -1) {
 		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
 		b->tvheap->dirty = true;
 	}
@@ -5720,10 +5729,10 @@ wkbaLENGTH(const void *P)
 	return (size_t) len;
 }
 
-static void
+static gdk_return
 wkbaHEAP(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
 geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
@@ -5770,8 +5779,10 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	px = (dbl *) Tloc(bpx, 0);
-	py = (dbl *) Tloc(bpy, 0);
+	BATiter bpxi = bat_iterator(bpx);
+	BATiter bpyi = bat_iterator(bpy);
+	px = (dbl *) bpxi.base;
+	py = (dbl *) bpyi.base;
 
 	nv = nvert - 1;
 	cnt = BATcount(bpx);
@@ -5791,13 +5802,15 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 		}
 		*cs++ = wn & 1;
 	}
-
+	bat_iterator_end(&bpxi);
+	bat_iterator_end(&bpyi);
+	BATsetcount(bo, cnt);
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
-	BATsetcount(bo, cnt);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
-	BBPkeepref(*out = bo->batCacheid);
+	*out = bo->batCacheid;
+	BBPkeepref(bo);
 	return MAL_SUCCEED;
 }
 
@@ -5834,8 +5847,10 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	px = (dbl *) Tloc(bpx, 0);
-	py = (dbl *) Tloc(bpy, 0);
+	BATiter bpxi = bat_iterator(bpx);
+	BATiter bpyi = bat_iterator(bpy);
+	px = (dbl *) bpxi.base;
+	py = (dbl *) bpyi.base;
 	cnt = BATcount(bpx);
 	cs = (bit *) Tloc(bo, 0);
 	for (i = 0; i < cnt; i++) {
@@ -5880,12 +5895,15 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 		}
 		*cs++ = wn & 1;
 	}
+	bat_iterator_end(&bpxi);
+	bat_iterator_end(&bpyi);
+	BATsetcount(bo, cnt);
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
-	BATsetcount(bo, cnt);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
-	BBPkeepref(*out = bo->batCacheid);
+	*out = bo->batCacheid;
+	BBPkeepref(bo);
 	return MAL_SUCCEED;
 }
 
@@ -6525,7 +6543,6 @@ static mel_func geom_init_funcs[] = {
  command("geom", "mbrDistance", mbrDistance, false, "Returns the distance of the centroids of the two boxes", args(1,3, arg("",dbl),arg("box1",mbr),arg("box2",mbr))),
  command("geom", "coordinateFromWKB", wkbCoordinateFromWKB, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, arg("",dbl),arg("",wkb),arg("",int))),
  command("geom", "coordinateFromMBR", wkbCoordinateFromMBR, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, arg("",dbl),arg("",mbr),arg("",int))),
- command("geom", "prelude", geom_prelude, false, "", args(1,1, arg("",void))),
  command("geom", "epilogue", geom_epilogue, false, "", args(1,1, arg("",void))),
  command("batgeom", "FromText", wkbFromText_bat, false, "", args(1,4, batarg("",wkb),batarg("wkt",str),arg("srid",int),arg("type",int))),
  command("batgeom", "ToText", wkbAsText_bat, false, "", args(1,3, batarg("",str),batarg("w",wkb),arg("withSRID",int))),
@@ -6562,7 +6579,8 @@ static mel_func geom_init_funcs[] = {
  command("calc", "mbr", mbrFromMBR, false, "", args(1,2, arg("",mbr),arg("v",mbr))),
  command("calc", "wkb", wkbFromWKB, false, "It is called when adding a new geometry column to an existing table", args(1,2, arg("",wkb),arg("v",wkb))),
  command("calc", "wkb", geom_2_geom, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1,4, arg("",wkb),arg("geo",wkb),arg("columnType",int),arg("columnSRID",int))),
- command("batcalc", "wkb", geom_2_geom_bat, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1,4, batarg("",wkb),batarg("geo",wkb),arg("columnType",int),arg("columnSRID",int))),
+ command("batcalc", "wkb", geom_2_geom_bat, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1,5, batarg("",wkb),batarg("geo",wkb),batarg("s",oid),arg("columnType",int),arg("columnSRID",int))),
+ command("batcalc", "wkb", wkbFromText_bat_cand, false, "", args(1,5, batarg("",wkb),batarg("wkt",str),batarg("s",oid),arg("srid",int),arg("type",int))),
  { .imp=NULL }
 };
 #include "mal_import.h"
@@ -6571,4 +6589,4 @@ static mel_func geom_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_geom_mal)
-{ mal_module2("geom", geom_init_atoms, geom_init_funcs, NULL, (const char*)geom_functions); }
+{ mal_module2("geom", geom_init_atoms, geom_init_funcs, geom_prelude, (const char*)geom_functions); }

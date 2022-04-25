@@ -136,13 +136,13 @@ ALTER TABLE subt1 ADD FOREIGN KEY (a) REFERENCES referenceme (mememe)
 statement error 3F000!ALTER RANGE PARTITION TABLE: to be added table column NULL check doesn't match RANGE PARTITION TABLE definition
 ALTER TABLE checkkeys ADD TABLE subt2 AS PARTITION FROM 101 TO 200
 
-statement error 42000!ALTER TABLE: cannot drop constraint from MERGE TABLE 'checkkeys' while it has partitions
+statement error 42000!ALTER TABLE: cannot drop constraint from RANGE PARTITION TABLE 'checkkeys' while it has partitions
 ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_b_fkey
 
-statement error 42000!ALTER TABLE: cannot add constraint to MERGE TABLE 'checkkeys' while it has partitions
+statement error 42000!ALTER TABLE: cannot add constraint to RANGE PARTITION TABLE 'checkkeys' while it has partitions
 ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe)
 
-statement error 42000!ALTER TABLE: cannot add constraint to MERGE TABLE 'checkkeys' while it has partitions
+statement error 42000!ALTER TABLE: cannot add constraint to RANGE PARTITION TABLE 'checkkeys' while it has partitions
 ALTER TABLE checkkeys ADD FOREIGN KEY (b) REFERENCES otherref (othermeme)
 
 statement ok

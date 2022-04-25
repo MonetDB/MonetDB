@@ -138,7 +138,7 @@ SELECT f1, extract(second from f1) FROM TIMETZ_TBL
 NULL
 NULL
 
-query TI rowsort
+query TR rowsort
 SELECT f1, extract(epoch from f1) FROM TIMETZ_TBL
 ----
 NULL

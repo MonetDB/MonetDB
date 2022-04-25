@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -170,6 +170,8 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 		return TYPE_timestamp;
 	else if (len == 4 && strncmp(nme, "uuid", len) == 0)
 		return TYPE_uuid;
+	else if (len == 4 && strncmp(nme, "blob", len) == 0)
+		return TYPE_blob;
 	for (i = TYPE_str; i < GDKatomcnt; i++)
 		if (BATatoms[i].name[0] == nme[0] &&
 			strncmp(nme, BATatoms[i].name, len) == 0 &&

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -23,13 +23,13 @@
  * can be used to check for this.
  */
 int
-optimizerIsApplied(MalBlkPtr mb, str optname)
+optimizerIsApplied(MalBlkPtr mb, const char *opt)
 {
 	InstrPtr p;
 	int i;
 	for( i = mb->stop; i < mb->ssize; i++){
 		p = getInstrPtr(mb,i);
-		if (p && getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0)
+		if (p && getModuleId(p) == optimizerRef && p->token == REMsymbol && getFunctionId(p) == opt)
 			return 1;
 	}
 	return 0;
@@ -40,7 +40,7 @@ optimizerIsApplied(MalBlkPtr mb, str optname)
  * requires inspection of the pipeline attached to a MAL block.
  */
 int
-isOptimizerEnabled(MalBlkPtr mb, str opt)
+isOptimizerEnabled(MalBlkPtr mb, const char *opt)
 {
 	int i;
 	InstrPtr q;
@@ -49,41 +49,28 @@ isOptimizerEnabled(MalBlkPtr mb, str opt)
 		q= getInstrPtr(mb,i);
 		if ( q->token == ENDsymbol)
 			break;
-		if ( getModuleId(q) == optimizerRef && getFunctionId(q) == opt)
+		if ( q->token != REMsymbol && getModuleId(q) == optimizerRef && getFunctionId(q) == opt)
 			return 1;
 	}
 	return 0;
 }
 
 /*
- * Optimizers leave behind information on the number of actions taken.
- * This information can be handy to avoid steps further down the pipeline.
+ * Find if an optimizer 'opt' has run before the instruction 'p'.
  */
 int
-isOptimizerUsed(MalBlkPtr mb, str opt)
+isOptimizerUsed(MalBlkPtr mb, InstrPtr p, const char *opt)
 {
-	int i, cnt;
-	char *s, *haystack;
-	InstrPtr q;
+	bool p_found = false;
 
-	for (i= mb->stop-1; i > 0; i--){
-		q= getInstrPtr(mb,i);
-		if ( q->token == ENDsymbol)
-			break;
-		if (q && q->token == REMsymbol && getModuleId(q) == 0 && q->argc > 0){
-			//decompose the message
-			haystack = getVarConstant(mb,getArg(q,0)).val.sval;
-			if ( ! haystack)
-				continue;
-			s = strstr(haystack, opt);
-			if( !s)
-				continue;
-			s = strstr(haystack, "actions=");
-			if( s){
-				cnt = atoi(s + 8);
-				return cnt;
-			}
-		}
+	for (int i= mb->stop-1; i > 0; i--) {
+		InstrPtr q = getInstrPtr(mb,i);
+
+		p_found |= q == p; /* the optimizer to find must come before p */
+		if (q && q->token == ENDsymbol)
+			return 0;
+		if (p_found && q && q != p && getModuleId(q) == optimizerRef && getFunctionId(q) == opt)
+			return 1;
 	}
 	return 0;
 }
@@ -92,26 +79,20 @@ isOptimizerUsed(MalBlkPtr mb, str opt)
 int
 isSimpleSQL(MalBlkPtr mb)
 {
-        int cnt = 0;
-        int i;
-        InstrPtr p;
+	int cnt = 0;
 
-        for(i = 0; i < mb->stop; i++) {
-                p = getInstrPtr(mb,i);
-                if (p &&  getModuleId(p) == sqlRef && getFunctionId(p) == appendRef ){
-                        cnt ++;
-                }
-		if (p && getModuleId(p) == sqlRef && getFunctionId(p) == setVariableRef ){
-                        return 1;
-                }
-		if (p && getModuleId(p) == sqlcatalogRef ){
-                        return 1;
-                }
+	for (int i = 0; i < mb->stop; i++) {
+		InstrPtr p = getInstrPtr(mb,i);
 
-        }
-        return cnt > 0.63 * mb->stop;
+		if (p && getModuleId(p) == sqlRef && getFunctionId(p) == appendRef)
+			cnt ++;
+		if (p && getModuleId(p) == sqlRef && getFunctionId(p) == setVariableRef)
+			return 1;
+		if (p && getModuleId(p) == sqlcatalogRef)
+			return 1;
+	}
+	return cnt > 0.63 * mb->stop;
 }
-
 
 /* Hypothetical, optimizers may massage the plan in such a way
  * that multiple passes are needed.
@@ -128,7 +109,6 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	int cnt = 0;
 	int actions = 0;
 	lng clk = GDKusec();
-	char buf[256];
 
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
@@ -141,7 +121,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	// strong defense line, assure that MAL plan is initially correct
 	if( mb->errors == 0 && mb->stop > 1){
-		resetMalBlk(mb, mb->stop);
+		resetMalTypes(mb, mb->stop);
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
@@ -189,8 +169,10 @@ wrapup:
 	/* Keep the total time spent on optimizing the plan for inspection */
 	if(actions > 0 && msg == MAL_SUCCEED){
 		mb->optimize = GDKusec() - clk;
-		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total", actions, mb->optimize);
-		newComment(mb, buf);
+		p = newStmt(mb, optimizerRef, totalRef);
+		p->token = REMsymbol;
+		p = pushInt(mb, p, actions);
+		p = pushLng(mb, p, mb->optimize);
 	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", SQLSTATE(42000) OPTIMIZER_CYCLE);
@@ -369,7 +351,9 @@ isUpdateInstruction(InstrPtr p){
 		getFunctionId(p) == claimRef ||
 		getFunctionId(p) == growRef ||
 		getFunctionId(p) == clear_tableRef ||
-		getFunctionId(p) == setVariableRef))
+		getFunctionId(p) == setVariableRef ||
+		getFunctionId(p) == dependRef ||
+		getFunctionId(p) == predicateRef))
 			return TRUE;
 	if ( getModuleId(p) == batRef &&
 	   ( getFunctionId(p) == appendRef ||
@@ -404,7 +388,7 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 
 	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
-	     (getFunctionId(p) == setAccessRef ||
+		 (getFunctionId(p) == setAccessRef ||
 	 	  getFunctionId(p) == setWriteModeRef ))
 		return TRUE;
 
@@ -462,8 +446,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 
 	if ( getModuleId(p) == sqlcatalogRef)
-		return TRUE;
-	if ( getModuleId(p) == oltpRef)
 		return TRUE;
 	if ( getModuleId(p) == wlrRef)
 		return TRUE;
@@ -539,7 +521,7 @@ isOrderDepenent(InstrPtr p)
 {
 	if( getModuleId(p) != batsqlRef)
 		return 0;
-	if ( getFunctionId(p) == differenceRef ||
+	if (getFunctionId(p) == differenceRef ||
 		getFunctionId(p) == window_boundRef ||
 		getFunctionId(p) == row_numberRef ||
 		getFunctionId(p) == rankRef ||
@@ -551,7 +533,8 @@ isOrderDepenent(InstrPtr p)
 		getFunctionId(p) == last_valueRef ||
 		getFunctionId(p) == nth_valueRef ||
 		getFunctionId(p) == lagRef ||
-		getFunctionId(p) == leadRef)
+		getFunctionId(p) == leadRef ||
+		getFunctionId(p) == corrRef)
 		return 1;
 	return 0;
 }
@@ -564,7 +547,7 @@ inline int isMapOp(InstrPtr p){
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
+		 (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
 		 getModuleId(p) != batpyapi3Ref &&
 		 getModuleId(p) != batcapiRef;
@@ -578,7 +561,7 @@ inline int isMap2Op(InstrPtr p){
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
+		 (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
 		 getModuleId(p) != batpyapi3Ref &&
 		 getModuleId(p) != batcapiRef;
@@ -631,7 +614,7 @@ inline int
 isMatLeftJoinOp(InstrPtr p)
 {
 	return (getModuleId(p) == algebraRef &&
-		getFunctionId(p) == leftjoinRef);
+		(getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef));
 }
 
 inline int isDelta(InstrPtr p){
@@ -692,4 +675,3 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== mirrorRef
 			));
 }
-

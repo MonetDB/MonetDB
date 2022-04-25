@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _MAL_CLIENT_H_
@@ -43,7 +43,7 @@ typedef struct CLIENT_INPUT {
 } ClientInput;
 
 typedef struct CLIENT {
-	int idx;        /* entry in mal_clients */
+	int idx;        /* entry in mal_clients (-1 if free) */
 	oid user;       /* user id in the auth administration */
 	str username;	/* for event processor */
 	/*
@@ -145,13 +145,6 @@ typedef struct CLIENT {
 	Symbol      curprg;     /* container for the malparser */
 	Symbol      backup;     /* saving the parser context for functions,commands/patterns */
 	MalStkPtr   glb;        /* global variable stack */
-	/*
-	 * Some statistics on client behavior becomes relevant for server
-	 * maintenance. The scenario loop is used as a frame of reference.
-	 * We measure the elapsed time after a request has been received and
-	 * we have to wait for the next one.
-	 */
-	int		actions;
 
 	/*
 	 * Here are pointers to scenario backends contexts.  For the time

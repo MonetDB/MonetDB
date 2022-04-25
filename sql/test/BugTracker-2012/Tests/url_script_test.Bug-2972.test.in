@@ -90,27 +90,27 @@ http://www.cwi.nl/robots.txt
 http://www.monetdb.com/robots.txt
 http://www.monetdb.org:8080/robots.txt
 
-query T rowsort
+query I rowsort
 select isaURL(u) from t2972
 ----
-True
-True
-True
+1
+1
+1
 
-query T rowsort
+query I rowsort
 select isaURL('http://www.monetdb.org')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select isaURL('http://www.monetdb.org')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select isaURL('htp:///www.monetdb.org')
 ----
-True
+1
 
 query T rowsort
 select newurl('https','www.monetdb.org',8080,'blah')
@@ -139,3 +139,4 @@ drop table t2972
 
 statement ok
 rollback
+

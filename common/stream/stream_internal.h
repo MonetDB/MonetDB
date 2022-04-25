@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 // All this used to be at the top of stream.c. Much of it is probably
@@ -151,6 +151,7 @@ struct stream {
 	bool readonly;		/* only reading or only writing */
 	bool isutf8;		/* known to be UTF-8 due to BOM */
 	bool binary;		/* text/binary */
+	bool eof;			/* we've seen end-of-file (i.e. not block end) */
 	unsigned int timeout;	/* timeout in ms */
 	bool (*timeout_func)(void *); /* callback function: NULL/true -> return */
 	void *timeout_data;	/* data for the above */

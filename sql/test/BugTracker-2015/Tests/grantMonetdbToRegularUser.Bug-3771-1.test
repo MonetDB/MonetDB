@@ -1,0 +1,12 @@
+statement ok
+CREATE USER user_with_many_rights with password 'ThisIsAS3m1S3cur3P4ssw0rd' name 'user gets monetdb rights' schema sys
+
+statement ok
+CREATE SCHEMA a_brand_new_schema_with_a_longer_name_than_usual
+
+statement ok
+CREATE table a_brand_new_schema_with_a_longer_name_than_usual.testTable(v1 int, v2 int)
+
+statement ok
+GRANT sysadmin to user_with_many_rights
+

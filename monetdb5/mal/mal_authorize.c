@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -27,22 +27,6 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#ifdef HAVE_OPENSSL
-#ifdef HAVE_MD5_UPDATE
-#include <openssl/md5.h>
-#endif
-#if defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA1_UPDATE)
-#include <openssl/sha.h>
-#endif
-#ifdef HAVE_RIPEMD160_UPDATE
-#include <openssl/ripemd.h>
-#endif
-#else
-#ifdef HAVE_COMMONCRYPTO
-#define COMMON_DIGEST_FOR_OPENSSL
-#include <CommonCrypto/CommonDigest.h>
-#endif
 #endif
 
 static str AUTHdecypherValue(str *ret, const char *value);
@@ -85,15 +69,17 @@ AUTHfindUser(const char *username)
 
 	if (BAThash(user) == GDK_SUCCEED) {
 		MT_rwlock_rdlock(&user->thashlock);
-		HASHloop_str(cni, cni.b->thash, p, username) {
+		HASHloop_str(cni, user->thash, p, username) {
 			oid pos = p;
 			if (BUNfnd(duser, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&user->thashlock);
+				bat_iterator_end(&cni);
 				return p;
 			}
 		}
 		MT_rwlock_rdunlock(&user->thashlock);
 	}
+	bat_iterator_end(&cni);
 	return BUN_NONE;
 }
 
@@ -203,7 +189,7 @@ AUTHinitTables(const char *passwd) {
 			throw(MAL, "initTables.user", SQLSTATE(HY013) MAL_MALLOC_FAIL " user table");
 
 		if (BATkey(user, true) != GDK_SUCCEED ||
-			BBPrename(user->batCacheid, "M5system_auth_user") != 0 ||
+			BBPrename(user, "M5system_auth_user") != 0 ||
 			BATmode(user, false) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
@@ -226,7 +212,7 @@ AUTHinitTables(const char *passwd) {
 		if (pass == NULL)
 			throw(MAL, "initTables.passwd", SQLSTATE(HY013) MAL_MALLOC_FAIL " password table");
 
-		if (BBPrename(pass->batCacheid, "M5system_auth_passwd_v2") != 0 ||
+		if (BBPrename(pass, "M5system_auth_passwd_v2") != 0 ||
 			BATmode(pass, false) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
@@ -249,7 +235,7 @@ AUTHinitTables(const char *passwd) {
 		if (duser == NULL)
 			throw(MAL, "initTables.duser", SQLSTATE(HY013) MAL_MALLOC_FAIL " deleted user table");
 
-		if (BBPrename(duser->batCacheid, "M5system_auth_deleted") != 0 ||
+		if (BBPrename(duser, "M5system_auth_deleted") != 0 ||
 			BATmode(duser, false) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
@@ -273,7 +259,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_key == NULL)
 			throw(MAL, "initTables.rt_key", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table key bat");
 
-		if (BBPrename(rt_key->batCacheid, "M5system_auth_rt_key") != 0 ||
+		if (BBPrename(rt_key, "M5system_auth_rt_key") != 0 ||
 			BATmode(rt_key, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_key", GDK_EXCEPTION);
 	}
@@ -297,7 +283,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_uri == NULL)
 			throw(MAL, "initTables.rt_uri", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table uri bat");
 
-		if (BBPrename(rt_uri->batCacheid, "M5system_auth_rt_uri") != 0 ||
+		if (BBPrename(rt_uri, "M5system_auth_rt_uri") != 0 ||
 			BATmode(rt_uri, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_uri", GDK_EXCEPTION);
 	}
@@ -321,7 +307,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_remoteuser == NULL)
 			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
-		if (BBPrename(rt_remoteuser->batCacheid, "M5system_auth_rt_remoteuser") != 0 ||
+		if (BBPrename(rt_remoteuser, "M5system_auth_rt_remoteuser") != 0 ||
 			BATmode(rt_remoteuser, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_remoteuser", GDK_EXCEPTION);
 	}
@@ -345,7 +331,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_hashedpwd == NULL)
 			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
-		if (BBPrename(rt_hashedpwd->batCacheid, "M5system_auth_rt_hashedpwd") != 0 ||
+		if (BBPrename(rt_hashedpwd, "M5system_auth_rt_hashedpwd") != 0 ||
 			BATmode(rt_hashedpwd, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_hashedpwd", GDK_EXCEPTION);
 	}
@@ -369,7 +355,7 @@ AUTHinitTables(const char *passwd) {
 		if (rt_deleted == NULL)
 			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
-		if (BBPrename(rt_deleted->batCacheid, "M5system_auth_rt_deleted") != 0 ||
+		if (BBPrename(rt_deleted, "M5system_auth_rt_deleted") != 0 ||
 			BATmode(rt_deleted, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_deleted", GDK_EXCEPTION);
 		/* If the database is not new, but we just created this BAT,
@@ -472,7 +458,10 @@ AUTHcheckCredentials(
 	tmp = (str)BUNtvar(passi, p);
 	assert (tmp != NULL);
 	/* decypher the password (we lose the original tmp here) */
-	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, tmp));
+	tmp = AUTHdecypherValue(&pwd, tmp);
+	bat_iterator_end(&passi);
+	if (tmp)
+		return tmp;
 
 	/* generate the hash as the client should have done */
 	hash = mcrypt_hashPassword(algo, pwd, challenge);
@@ -497,6 +486,7 @@ AUTHcheckCredentials(
 		if (encrypted == NULL)
 			throw(MAL, "checkCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		hash = mcrypt_hashPassword(algo, encrypted, challenge);
+		free(encrypted);
 		if (hash && strcmp(passwd, hash) == 0) {
 			*uid = p;
 			free(hash);
@@ -666,6 +656,7 @@ AUTHchangePassword(Client cntxt, const char *oldpass, const char *passwd)
 	assert (tmp != NULL);
 	/* decypher the password */
 	msg = AUTHdecypherValue(&hash, tmp);
+	bat_iterator_end(&passi);
 	if (msg)
 		return msg;
 	if (strcmp(hash, oldpass) != 0){
@@ -722,17 +713,24 @@ AUTHsetPassword(Client cntxt, const char *username, const char *passwd)
 	useri = bat_iterator(user);
 	tmp = BUNtvar(useri, p);
 	assert (tmp != NULL);
-	if (strcmp(tmp, username) == 0)
+	if (strcmp(tmp, username) == 0) {
+		bat_iterator_end(&useri);
 		throw(INVCRED, "setPassword", "The administrator cannot set its own password, use changePassword instead");
+	}
 
 	/* see if the user is valid */
 	p = AUTHfindUser(username);
-	if (p == BUN_NONE)
+	if (p == BUN_NONE) {
+		bat_iterator_end(&useri);
 		throw(MAL, "setPassword", "no such user '%s'", username);
+	}
 	id = p;
 
 	/* cypher the password */
-	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
+	tmp = AUTHcypherValue(&hash, passwd);
+	bat_iterator_end(&useri);
+	if (tmp)
+		return tmp;
 	/* ok, just overwrite the password field for this user */
 	assert (p != BUN_NONE);
 	assert(id == p);
@@ -764,7 +762,9 @@ AUTHresolveUser(str *username, oid uid)
 
 	assert(username != NULL);
 	useri = bat_iterator(user);
-	if ((*username = GDKstrdup((str)(BUNtvar(useri, p)))) == NULL)
+	*username = GDKstrdup((str)(BUNtvar(useri, p)));
+	bat_iterator_end(&useri);
+	if (*username == NULL)
 		throw(MAL, "resolveUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
@@ -788,7 +788,9 @@ AUTHgetUsername(str *username, Client cntxt)
 	assert(p < BATcount(user));
 
 	useri = bat_iterator(user);
-	if ((*username = GDKstrdup( BUNtvar(useri, p))) == NULL)
+	*username = GDKstrdup( BUNtvar(useri, p));
+	bat_iterator_end(&useri);
+	if (*username == NULL)
 		throw(MAL, "getUsername", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
@@ -845,13 +847,14 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 	p = AUTHfindUser(username);
 	if (p == BUN_NONE)
 		throw(MAL, "getPasswordHash", "user '%s' does not exist", username);
-	i = bat_iterator(user);
-	assert(p != BUN_NONE);
 	i = bat_iterator(pass);
 	tmp = BUNtvar(i, p);
 	assert (tmp != NULL);
 	/* decypher the password */
-	rethrow("changePassword", tmp, AUTHdecypherValue(&passwd, tmp));
+	tmp = AUTHdecypherValue(&passwd, tmp);
+	bat_iterator_end(&i);
+	if (tmp)
+		return tmp;
 
 	*ret = passwd;
 	return(NULL);
@@ -993,7 +996,6 @@ AUTHcypherValue(str *ret, const char *value)
 static str
 AUTHverifyPassword(const char *passwd)
 {
-#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	const char *p = passwd;
 	size_t len = strlen(p);
 
@@ -1013,13 +1015,6 @@ AUTHverifyPassword(const char *passwd)
 	}
 
 	return(MAL_SUCCEED);
-#else
-	if (GDKembedded())
-		return(MAL_SUCCEED);
-	(void) passwd;
-	throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
-		  MONETDB5_PASSWDHASH);
-#endif
 }
 
 static BUN
@@ -1037,11 +1032,13 @@ lookupRemoteTableKey(const char *key)
 			oid pos = p;
 			if (BUNfnd(rt_deleted, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
+				bat_iterator_end(&cni);
 				return p;
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
+	bat_iterator_end(&cni);
 
 	return BUN_NONE;
 
@@ -1052,12 +1049,14 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 {
 	BUN p;
 	BATiter i;
-	str tmp;
-	str pwhash;
+	str tmp, pwhash;
 
-	if (strNil(local_table)) {
+	*uri = NULL;
+	*username = NULL;
+	*password = NULL;
+
+	if (strNil(local_table))
 		throw(ILLARG, "getRemoteTableCredentials", "local table should not be nil");
-	}
 
 	p = lookupRemoteTableKey(local_table);
 	if (p == BUN_NONE) {
@@ -1072,14 +1071,32 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 
 	assert(p != BUN_NONE);
 	i = bat_iterator(rt_uri);
-	*uri = BUNtvar(i, p);
+	*uri = GDKstrdup(BUNtvar(i, p));
+	bat_iterator_end(&i);
 
 	i = bat_iterator(rt_remoteuser);
-	*username = BUNtvar(i, p);
+	*username = GDKstrdup(BUNtvar(i, p));
+	bat_iterator_end(&i);
+
+	if (!*uri || !*username) {
+		GDKfree(*uri);
+		GDKfree(*username);
+		*uri = NULL;
+		*username = NULL;
+		throw(MAL, "getRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	i = bat_iterator(rt_hashedpwd);
 	tmp = BUNtvar(i, p);
-	rethrow("getRemoteTableCredentials", tmp, AUTHdecypherValue(&pwhash, tmp));
+	tmp = AUTHdecypherValue(&pwhash, tmp);
+	bat_iterator_end(&i);
+	if (tmp) {
+		GDKfree(*uri);
+		GDKfree(*username);
+		*uri = NULL;
+		*username = NULL;
+		return tmp;
+	}
 
 	*password = pwhash;
 

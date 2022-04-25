@@ -1,0 +1,21 @@
+statement ok
+create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2
+
+query I rowsort
+select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"()
+----
+2
+
+statement ok
+drop function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+statement ok
+create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3
+
+query I rowsort
+select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"()
+----
+3
+
+statement ok
+drop function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"

@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 CREATE TYPE url EXTERNAL NAME url;
 
@@ -53,3 +53,6 @@ CREATE function newurl(protocol STRING, hostname STRING, file STRING)
 	RETURNS url
 	EXTERNAL NAME url."new";
 GRANT EXECUTE ON FUNCTION newurl(STRING, STRING, STRING) TO PUBLIC;
+CREATE function sys.url_extract_host(url string, no_www bool) RETURNS STRING
+	EXTERNAL NAME url."extractURLHost";
+GRANT EXECUTE ON FUNCTION url_extract_host(string, bool) TO PUBLIC;

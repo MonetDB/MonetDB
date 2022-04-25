@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _SQL_PRIV_H_
@@ -32,7 +32,6 @@ extern int execute_priv(mvc *m, sql_func *f);
 extern int sql_privilege(mvc *m, sqlid auth_id, sqlid obj_id, int privs);
 extern int sql_grantable(mvc *m, sqlid grantorid, sqlid obj_id, int privs);
 extern sqlid sql_find_auth(mvc *m, str auth);
-extern sqlid sql_find_schema(mvc *m, str schema);
 
 extern char *sql_create_role(mvc *m, str auth, int grantor);
 extern char *sql_drop_role(mvc *m, str auth);

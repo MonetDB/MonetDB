@@ -121,7 +121,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT 1001;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 6,	3,	1,	0,	7,	17 # length
 [ "date",	0,	0,	"",	"",	"first-projection"	]
 [ "char",	100,	0,	"",	"mytable",	"twentieth"	]
@@ -149,7 +149,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT ?;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 6,	5,	1,	0,	7,	17 # length
 [ "date",	0,	0,	"",	"",	"first-projection"	]
 [ "char",	100,	0,	"",	"mytable",	"twentieth"	]
@@ -196,7 +196,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT 1001;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 6,	3,	1,	0,	7,	17 # length
 [ "date",	0,	0,	"",	"",	"first-projection"	]
 [ "char",	100,	0,	"",	"mytable",	"twentieth"	]
@@ -224,7 +224,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT ?;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 6,	5,	1,	0,	7,	17 # length
 [ "date",	0,	0,	"",	"",	"first-projection"	]
 [ "char",	100,	0,	"",	"mytable",	"twentieth"	]
@@ -287,7 +287,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #LIMIT 1001 OFFSET 0;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	3,	1,	0,	8,	7 # length
 [ "varchar",	256,	0,	"",	"mytable2",	"'col26'"	]
 #SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
@@ -311,7 +311,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #LIMIT 1001 OFFSET 0;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	3,	1,	0,	8,	7 # length
 [ "varchar",	256,	0,	"",	"mytable2",	"'col26'"	]
 #exec 35 ();
@@ -323,7 +323,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #prepare select 1;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 #exec  6 (); 
@@ -336,7 +336,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #prepare select cast(? as interval second);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 12,	3,	1,	0,	2,	2 # length
 [ "sec_interval",	13,	0,	"",	"%2",	"%2"	]
 [ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]
@@ -344,7 +344,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #prepare select cast(? as interval second);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 12,	3,	1,	0,	2,	2 # length
 [ "sec_interval",	13,	0,	"",	"%2",	"%2"	]
 [ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]

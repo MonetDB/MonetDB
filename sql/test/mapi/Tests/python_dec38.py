@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 import pymonetdb
 import sys
@@ -22,3 +22,5 @@ if cursor.fetchall() != [(Decimal('12345678901234567899876543210987654321'), Dec
     sys.stderr.write("Result set [(Decimal('12345678901234567899876543210987654321'), Decimal('1234567890123456789.9876543210987654321'), Decimal('0.12345678901234567899876543210987654321'))] expected")
 
 cursor.execute('DROP TABLE python_dec38;')
+cursor.close()
+dbh.close()

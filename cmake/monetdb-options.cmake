@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 option(RELEASE_VERSION
@@ -39,6 +39,10 @@ option(FITS
   "Enable support for FITS (default=ON)"
   ON)
 
+option(FORCE_COLORED_OUTPUT
+  "Force colored compiler output (GCC and Clang only; default=OFF)"
+  OFF)
+
 option(GEOM
   "Enable support for geom module (default=ON)"
   ON)
@@ -63,6 +67,10 @@ cmake_dependent_option(SHP
 
 option(SANITIZER
   "Enable support for the GCC address sanitizer (default=OFF)"
+  OFF)
+
+option(UNDEFINED
+  "Enable support for the GCC undefined sanitizer (default=OFF)"
   OFF)
 
 option(STRICT
@@ -113,10 +121,6 @@ option(WITH_SNAPPY
   "Include snappy support"
   ON)
 
-option(WITH_UUID
-  "Include uuid support"
-  ON)
-
 option(WITH_VALGRIND
   "Include valgrind support"
   ON)
@@ -132,7 +136,3 @@ option(CMAKE_SUMMARY
 option(CMAKE_UNITTESTS
   "Build and run the unittest for the build system"
   OFF)
-
-option(WITH_CRYPTO
-  "Only in very some special cases we build without crypto dependencies"
-  ON)

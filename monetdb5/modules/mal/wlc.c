@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -563,7 +563,7 @@ WLCpreparewrite(Client cntxt)
 
 	if( wlc_state != WLC_RUN){
 		trimMalVariables(cntxt->wlc, NULL);
-		resetMalBlk(cntxt->wlc, 0);
+		resetMalTypes(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
 		return MAL_SUCCEED;
 	}
@@ -585,7 +585,7 @@ WLCpreparewrite(Client cntxt)
 
 		MT_lock_unset(&wlc_lock);
 		trimMalVariables(cntxt->wlc, NULL);
-		resetMalBlk(cntxt->wlc, 0);
+		resetMalTypes(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
 	} else
 		throw(MAL,"wlc.write","WLC log path missing ");
@@ -723,8 +723,8 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #define bulk(TPE1, TPE2)\
-{	TPE1 *p = (TPE1 *) Tloc(b,0);\
-	TPE1 *q = (TPE1 *) Tloc(b, BUNlast(b));\
+{	TPE1 *p = (TPE1 *) bi.base;\
+	TPE1 *q = (TPE1 *) bi.base + BATcount(b);\
 	int k=0; \
 	for( ; p < q; p++, k++){\
 		if( k % 32 == 31){\
@@ -738,8 +738,8 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 } }
 
 #define updateBatch(TPE1,TPE2)\
-{	TPE1 *x = (TPE1 *) Tloc(bval,0);\
-	TPE1 *y = (TPE1 *) Tloc(bval, BUNlast(b));\
+{	TPE1 *x = (TPE1 *) bvali.base;\
+	TPE1 *y = (TPE1 *) bvali.base + BATcount(b);\
 	int k=0; \
 	for( ; x < y; x++, k++){\
 		p = newStmt(cntxt->wlc, "wlr","update");\
@@ -753,6 +753,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 {	BAT *b;
+	BATiter bi;
 	str sch, tbl, col;
 	str msg = MAL_SUCCEED;
 	(void) mb;
@@ -775,6 +776,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 	}
 	if (cntxt->wlc_kind < WLC_UPDATE)
 		cntxt->wlc_kind = WLC_UPDATE;
+	bi = bat_iterator(b);
 	switch( ATOMstorage(b->ttype)){
 	case TYPE_bit: bulk(bit,Bit); break;
 	case TYPE_bte: bulk(bte,Bte); break;
@@ -787,10 +789,8 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 	case TYPE_hge: bulk(hge,Hge); break;
 #endif
 	case TYPE_str:
-		{	BATiter bi;
-			BUN p,q;
+		{	BUN p,q;
 			int k=0;
-			bi= bat_iterator(b);
 			BATloop(b,p,q){
 				if( k % 32 == 31){
 					pci = newStmt(cntxt->wlc, "wlr",getFunctionId(pci));
@@ -800,12 +800,14 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 				}
 				k++;
 				pci = pushStr(cntxt->wlc, pci ,(str) BUNtvar(bi,p));
-		} }
+			}
+		}
 		break;
 	default:
 		TRC_ERROR(MAL_WLC, "Non-supported type: %d\n", ATOMstorage(b->ttype));
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
+	bat_iterator_end(&bi);
 finish:
 	BBPunfix(b->batCacheid);
 	if (sch)
@@ -867,14 +869,11 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) mb;
-	b= BBPquickdesc(bid, false);
+	b= BBPquickdesc(bid);
 	if( BATcount(b) == 0)
 		return MAL_SUCCEED;
-	msg = WLCstart(cntxt, "wlr.delete");
-	if(msg) {
-		BBPunfix(b->batCacheid);
+	if ((msg = WLCstart(cntxt, "wlr.delete")))
 		return msg;
-	}
 	cntxt->wlc_kind = WLC_UPDATE;
 	p = newStmt(cntxt->wlc, "wlr","delete");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
@@ -897,7 +896,8 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = pushOid(cntxt->wlc,p, o);
 			}
 		} else {
-			ol = (oid*) Tloc(b,0);
+			BATiter bi = bat_iterator(b);
+			ol = (oid*) bi.base;
 			for( ; o < last; o++, k++, ol++){
 				if( k % 32 == 31){
 					p = newStmt(cntxt->wlc, "wlr","delete");
@@ -906,6 +906,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				p = pushOid(cntxt->wlc,p, *ol);
 			}
+			bat_iterator_end(&bi);
 		}
 		BBPunfix(b->batCacheid);
 	} else
@@ -943,10 +944,12 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(bval->batCacheid);
 			throw(MAL, "wlr.update", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
+		BATiter bi = bat_iterator(b);
 		if( b->ttype == TYPE_void)
 			o = b->tseqbase;
 		else
-			ol = (oid*) Tloc(b,0);
+			ol = (oid*) bi.base;
+		BATiter bvali = bat_iterator(bval);
 		switch( ATOMstorage(bval->ttype)){
 		case TYPE_bit: updateBatch(bit,Bit); break;
 		case TYPE_bte: updateBatch(bte,Bte); break;
@@ -959,10 +962,8 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_hge: updateBatch(hge,Hge); break;
 #endif
 		case TYPE_str:
-		{	BATiter bi;
-			int k=0;
+		{	int k=0;
 			BUN x,y;
-			bi = bat_iterator(bval);
 			BATloop(bval,x,y){
 				p = newStmt(cntxt->wlc, "wlr","update");
 				p = pushStr(cntxt->wlc, p, sch);
@@ -971,12 +972,16 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = pushOid(cntxt->wlc, p, (ol? *ol++ : o++));
 				p = pushStr(cntxt->wlc, p , BUNtvar(bi,x));
 				k++;
-		} }
+			}
+		}
 		/* fall through */
 		default:
 			cntxt->wlc_kind = WLC_CATALOG;
 		}
+		bat_iterator_end(&bi);
+		bat_iterator_end(&bvali);
 		BBPunfix(b->batCacheid);
+		BBPunfix(bval->batCacheid);
 	} else {
 		p = newStmt(cntxt->wlc, "wlr","update");
 		p = pushStr(cntxt->wlc, p, sch);
@@ -1009,6 +1014,7 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = newStmt(cntxt->wlc, "wlr","clear_table");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+	p = pushInt(cntxt->wlc, p, getVarConstant(mb, getArg(pci,3)).val.ival);
 	if( cntxt->wlc_kind < WLC_UPDATE)
 		cntxt->wlc_kind = WLC_UPDATE;
 
@@ -1065,11 +1071,11 @@ WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 mel_func wlc_init_funcs[] = {
  pattern("wlc", "init", WLCinitCmd, false, "Test for running as master", noargs),
  command("wlc", "epilogue", WLCepilogue, false, "release the resources held by the wlc module", args(1,1, arg("",void))),
- pattern("wlc", "master", WLCmaster, false, "Activate the workload-capture-replay process", noargs),
- pattern("wlc", "master", WLCmaster, false, "Activate the workload-capture-replay process. Use a different location for the logs.", args(0,1, arg("path",str))),
- pattern("wlc", "stop", WLCstop, false, "Stop capturing the logs", noargs),
- pattern("wlc", "flush", WLCflush, false, "Flush current log buffer", noargs),
- pattern("wlc", "setbeat", WLCsetbeat, false, "Maximal delay for transaction log flushing", args(0,1, arg("duration",int))),
+ pattern("wlc", "master", WLCmaster, true, "Activate the workload-capture-replay process", noargs),
+ pattern("wlc", "master", WLCmaster, true, "Activate the workload-capture-replay process. Use a different location for the logs.", args(0,1, arg("path",str))),
+ pattern("wlc", "stop", WLCstop, true, "Stop capturing the logs", noargs),
+ pattern("wlc", "flush", WLCflush, true, "Flush current log buffer", noargs),
+ pattern("wlc", "setbeat", WLCsetbeat, true, "Maximal delay for transaction log flushing", args(0,1, arg("duration",int))),
  pattern("wlc", "getbeat", WLCgetbeat, false, "Maximal delay for transaction log flushing", args(1,2, arg("",str),arg("duration",int))),
  pattern("wlc", "getclock", WLCgetclock, false, "Timestamp of last update transaction", args(1,1, arg("",str))),
  pattern("wlc", "gettick", WLCgettick, false, "Transaction identifier of the last committed transaction", args(1,1, arg("",lng))),
@@ -1081,7 +1087,7 @@ mel_func wlc_init_funcs[] = {
  pattern("wlc", "append", WLCappend, false, "Keep the insertions in the workload-capture-replay list", args(1,5, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
  pattern("wlc", "update", WLCupdate, false, "Keep the update in the workload-capture-replay list", args(1,6, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("tid",0),argany("val",0))),
  pattern("wlc", "delete", WLCdelete, false, "Keep the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),argany("b",0))),
- pattern("wlc", "clear_table", WLCclear_table, false, "Keep the deletions in the workload-capture-replay list", args(1,3, arg("",int),arg("sname",str),arg("tname",str))),
+ pattern("wlc", "clear_table", WLCclear_table, false, "Keep the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
  pattern("wlc", "commit", WLCcommitCmd, false, "Commit the workload-capture-replay record", noargs),
  pattern("wlc", "rollback", WLCcommitCmd, false, "Rollback the workload-capture-replay record", noargs),
  pattern("wlc", "create_seq", WLCgeneric, false, "Catalog operation create_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("action",int))),
@@ -1091,7 +1097,7 @@ mel_func wlc_init_funcs[] = {
  pattern("wlc", "create_schema", WLCgeneric, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
  pattern("wlc", "drop_schema", WLCgeneric, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("wlc", "create_table", WLCgeneric, false, "Catalog operation create_table", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
- pattern("wlc", "create_view", WLCgeneric, false, "Catalog operation create_view", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
+ pattern("wlc", "create_view", WLCgeneric, false, "Catalog operation create_view", args(0,4, arg("sname",str),arg("tname",str),arg("temp",int),arg("replace",int))),
  pattern("wlc", "drop_table", WLCgeneric, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlc", "drop_view", WLCgeneric, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlc", "drop_constraint", WLCgeneric, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
@@ -1114,8 +1120,8 @@ mel_func wlc_init_funcs[] = {
  pattern("wlc", "drop_role", WLCgeneric, false, "Catalog operation drop_role", args(0,2, arg("role",str),arg("action",int))),
  pattern("wlc", "drop_index", WLCgeneric, false, "Catalog operation drop_index", args(0,3, arg("sname",str),arg("iname",str),arg("action",int))),
  pattern("wlc", "drop_function", WLCgeneric, false, "Catalog operation drop_function", args(0,5, arg("sname",str),arg("fname",str),arg("fid",int),arg("type",int),arg("action",int))),
- pattern("wlc", "create_function", WLCgeneric, false, "Catalog operation create_function", args(0,2, arg("sname",str),arg("fname",str))),
- pattern("wlc", "create_trigger", WLCgeneric, false, "Catalog operation create_trigger", args(0,10, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str))),
+ pattern("wlc", "create_function", WLCgeneric, false, "Catalog operation create_function", args(0,3, arg("sname",str),arg("fname",str),arg("replace",int))),
+ pattern("wlc", "create_trigger", WLCgeneric, false, "Catalog operation create_trigger", args(0,11, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str),arg("replace",int))),
  pattern("wlc", "drop_trigger", WLCgeneric, false, "Catalog operation drop_trigger", args(0,3, arg("sname",str),arg("nme",str),arg("ifexists",int))),
  pattern("wlc", "alter_add_table", WLCgeneric, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
  pattern("wlc", "alter_del_table", WLCgeneric, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),

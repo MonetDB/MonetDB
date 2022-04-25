@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _SQL_SEMANTIC_H_
@@ -31,16 +31,17 @@ extern sql_trigger *find_trigger_on_scope(mvc *sql, const char *sname, const cha
 extern bool find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *error);
 
 /* These functions find catalog functions according to scoping rules */
-extern sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, sql_subfunc *prev);
-extern sql_subfunc *sql_bind_member(mvc *sql, const char *sname, const char *fname, sql_subtype *tp, sql_ftype type, int nrargs, sql_subfunc *prev);
-extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type);
-extern sql_subfunc *sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type);
-extern sql_subfunc *sql_bind_func_result(mvc *sql, const char *sname, const char *fname, sql_ftype type, sql_subtype *res, int nargs, ...);
-extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type);
-extern sql_subfunc *sql_resolve_function_with_undefined_parameters(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type);
+/* The private flag tells to attempt to bind functions that cannot be seen by users */
+extern sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev);
+extern sql_subfunc *sql_bind_member(mvc *sql, const char *sname, const char *fname, sql_subtype *tp, sql_ftype type, int nrargs, bool private, sql_subfunc *prev);
+extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private);
+extern sql_subfunc *sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type, bool private);
+extern sql_subfunc *sql_bind_func_result(mvc *sql, const char *sname, const char *fname, sql_ftype type, bool private, sql_subtype *res, int nargs, ...);
+extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private);
+extern sql_subfunc *sql_resolve_function_with_undefined_parameters(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private);
 
-extern list *sql_find_funcs(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type);
-extern list *sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type);
+extern list *sql_find_funcs(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private);
+extern list *sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private);
 
 extern char *qname_schema(dlist *qname);
 extern char *qname_schema_object(dlist *qname);

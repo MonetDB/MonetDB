@@ -1,0 +1,3 @@
+statement error 42000!UPDATE: insufficient privileges for user 'user_update' to update table 'testtable' on column 'v1'
+UPDATE testTable set v1 = 666 where v2 = 666
+

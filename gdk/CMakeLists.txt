@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 set(gdk_public_headers
@@ -18,6 +18,8 @@ set(gdk_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_utils.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_cand.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_calc.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_strimps.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_time.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_system.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_posix.h>
@@ -28,7 +30,9 @@ set(gdk_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_bbp.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_utils.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_calc.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_cand.h>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_cand.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_strimps.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_time.h>)
 
 add_library(bat SHARED)
 
@@ -36,6 +40,7 @@ target_sources(bat
   PRIVATE
   gdk_select.c
   gdk_calc.c gdk_calc.h
+  gdk_calc_addsub.c gdk_calc_muldiv.c gdk_calc_convert.c gdk_calc_compare.c
   gdk_calc_compare.h gdk_calc_private.h
   gdk_ssort.c gdk_ssort_impl.h
   gdk_aggr.c
@@ -43,7 +48,7 @@ target_sources(bat
   gdk_cand.h gdk_cand.c
   gdk_search.c
   gdk_hash.c gdk_hash.h
-  gdk_tm.c gdk_tm.h
+  gdk_tm.c
   gdk_orderidx.c
   gdk_align.c
   gdk_bbp.c gdk_bbp.h
@@ -76,9 +81,11 @@ target_sources(bat
   gdk_firstn.c
   gdk_subquery.c gdk_subquery.h
   gdk_analytic_bounds.c
+  gdk_analytic_statistics.c
   gdk_analytic_func.c
   gdk_analytic.h
   gdk_tracer.c gdk_tracer.h
+  gdk_strimps.c
   PUBLIC
   ${gdk_public_headers})
 
@@ -148,3 +155,10 @@ install(EXPORT gdkTargets
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:bat>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()

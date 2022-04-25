@@ -5,7 +5,7 @@ name varchar(100)
 )
 
 statement ok
-copy 56 records into foo from stdin
+copy 55 records into foo from stdin
 <COPY_INTO_DATA>
 2001|schemas
 2007|types
@@ -62,7 +62,6 @@ copy 56 records into foo from stdin
 8040|rg
 8052|pg
 8065|export
-8147|systemfunctions
 
 query T rowsort
 select name from (select name, id from foo order by id) as x
@@ -113,7 +112,6 @@ statistics
 storage
 storagemodel
 storagemodelinput
-systemfunctions
 table_types
 tables
 tablestoragemodel

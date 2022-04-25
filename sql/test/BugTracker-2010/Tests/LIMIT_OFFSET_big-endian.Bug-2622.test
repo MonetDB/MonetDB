@@ -20,7 +20,7 @@ query T nosort
    PLAN select * from oblo
 ----
 project (
-| table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| table("sys"."oblo") [ "oblo"."a" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -28,8 +28,8 @@ query T nosort
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
-| ) [ bigint "NULL", bigint "2" ]
+| | table("sys"."oblo") [ "oblo"."a" ]
+| ) [ bigint(64) NULL, bigint(64) "2" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -37,8 +37,8 @@ query T nosort
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
-| ) [ bigint "2" ]
+| | table("sys"."oblo") [ "oblo"."a" ]
+| ) [ bigint(64) "2" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -46,8 +46,8 @@ query T nosort
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
-| ) [ bigint "1", bigint "2" ]
+| | table("sys"."oblo") [ "oblo"."a" ]
+| ) [ bigint(64) "1", bigint(64) "2" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -55,15 +55,15 @@ query T nosort
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
-| ) [ bigint "2", bigint "1" ]
+| | table("sys"."oblo") [ "oblo"."a" ]
+| ) [ bigint(64) "2", bigint(64) "1" ]
 ) [ "oblo"."a" ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a
 ----
 project (
-| table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| table("sys"."oblo") [ "oblo"."a" ]
 ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 
 query T nosort
@@ -71,36 +71,36 @@ query T nosort
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
-) [ bigint "NULL", bigint "2" ]
+) [ bigint(64) NULL, bigint(64) "2" ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 2
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
-) [ bigint "2" ]
+) [ bigint(64) "2" ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
-) [ bigint "2", bigint "1" ]
+) [ bigint(64) "2", bigint(64) "1" ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
-) [ bigint "1", bigint "2" ]
+) [ bigint(64) "1", bigint(64) "2" ]
 
 query T python .explain.function_histogram
 EXPLAIN select * from oblo
@@ -112,10 +112,6 @@ bat.pack
 querylog.define
 1
 sql.bind
-1
-sql.delta
-1
-sql.emptybind
 1
 sql.mvc
 1
@@ -139,10 +135,6 @@ querylog.define
 1
 sql.bind
 1
-sql.delta
-1
-sql.emptybind
-1
 sql.mvc
 1
 sql.resultSet
@@ -164,10 +156,6 @@ bat.pack
 querylog.define
 1
 sql.bind
-1
-sql.delta
-1
-sql.emptybind
 1
 sql.mvc
 1
@@ -191,10 +179,6 @@ querylog.define
 1
 sql.bind
 1
-sql.delta
-1
-sql.emptybind
-1
 sql.mvc
 1
 sql.resultSet
@@ -217,10 +201,6 @@ querylog.define
 1
 sql.bind
 1
-sql.delta
-1
-sql.emptybind
-1
 sql.mvc
 1
 sql.resultSet
@@ -242,10 +222,6 @@ bat.pack
 querylog.define
 1
 sql.bind
-1
-sql.delta
-1
-sql.emptybind
 1
 sql.mvc
 1
@@ -270,10 +246,6 @@ bat.pack
 querylog.define
 1
 sql.bind
-1
-sql.delta
-1
-sql.emptybind
 1
 sql.mvc
 1
@@ -301,10 +273,6 @@ querylog.define
 1
 sql.bind
 1
-sql.delta
-1
-sql.emptybind
-1
 sql.mvc
 1
 sql.resultSet
@@ -331,10 +299,6 @@ querylog.define
 1
 sql.bind
 1
-sql.delta
-1
-sql.emptybind
-1
 sql.mvc
 1
 sql.resultSet
@@ -360,10 +324,6 @@ bat.pack
 querylog.define
 1
 sql.bind
-1
-sql.delta
-1
-sql.emptybind
 1
 sql.mvc
 1

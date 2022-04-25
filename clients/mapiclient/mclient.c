@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -95,6 +95,7 @@ enum formatters {
 static enum formatters formatter = NOformatter;
 char *separator = NULL;		/* column separator for CSV/TAB format */
 bool csvheader = false;		/* include header line in CSV format */
+bool noquote = false;		/* don't use quotes in CSV format */
 
 #define DEFWIDTH 80
 
@@ -942,7 +943,7 @@ CSVrenderer(MapiHdl hdl)
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
-			if (s != NULL && s[strcspn(s, specials)] != '\0') {
+			if (!noquote && s != NULL && s[strcspn(s, specials)] != '\0') {
 				mnstr_printf(toConsole, "%s\"",
 					     i == 0 ? "" : separator);
 				while (*s) {
@@ -1319,9 +1320,10 @@ RAWrenderer(MapiHdl hdl)
 	}
 }
 
-static void
+static int
 SQLheader(MapiHdl hdl, int *len, int fields, char more)
 {
+	int rows = 1;				/* start with the separator row */
 	SQLseparator(len, fields, '-');
 	if (mapi_get_name(hdl, 0)) {
 		int i;
@@ -1338,11 +1340,13 @@ SQLheader(MapiHdl hdl, int *len, int fields, char more)
 			names[i] = mapi_get_name(hdl, i);
 			numeric[i] = 0;
 		}
-		SQLrow(len, numeric, names, fields, 1, more);
+		rows += SQLrow(len, numeric, names, fields, 1, more);
+		rows++;					/* add a separator row */
 		SQLseparator(len, fields, '=');
 		free(names);
 		free(numeric);
 	}
+	return rows;
 }
 
 static void
@@ -1559,7 +1563,7 @@ SQLrenderer(MapiHdl hdl)
 			break;
 	}
 
-	SQLheader(hdl, len, printfields, fields != printfields);
+	rows = SQLheader(hdl, len, printfields, fields != printfields);
 
 	while ((rfields = fetch_row(hdl)) != 0) {
 		if (mnstr_errnr(toConsole))
@@ -1602,8 +1606,10 @@ SQLrenderer(MapiHdl hdl)
 		if (ps > 0 && rows >= ps && fromConsole != NULL) {
 			SQLpagemove(len, printfields, &ps, &silent);
 			rows = 0;
-			if (silent)
-				continue;
+			if (silent) {
+				mapi_finish(hdl);
+				break;
+			}
 		}
 
 		rows += SQLrow(len, numeric, rest, printfields, 2, 0);
@@ -1647,6 +1653,7 @@ setFormatter(const char *s)
 		free(separator);
 	separator = NULL;
 	csvheader = false;
+	noquote = false;
 #ifdef _TWO_DIGIT_EXPONENT
 	if (formatter == TESTformatter)
 		_set_output_format(0);
@@ -1672,6 +1679,29 @@ setFormatter(const char *s)
 				separator[strlen(separator) - 1] = 0;
 		} else
 			separator = strdup(s + 4);
+		csvheader = true;
+	} else if (strcmp(s, "csv-noquote") == 0) {
+		noquote = true;
+		formatter = CSVformatter;
+		separator = strdup(",");
+	} else if (strncmp(s, "csv-noquote=", 12) == 0) {
+		noquote = true;
+		formatter = CSVformatter;
+		if (s[12] == '"') {
+			separator = strdup(s + 13);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 12);
+	} else if (strncmp(s, "csv-noquote+", 12) == 0) {
+		noquote = true;
+		formatter = CSVformatter;
+		if (s[12] == '"') {
+			separator = strdup(s + 13);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 12);
 		csvheader = true;
 	} else if (strcmp(s, "tab") == 0) {
 		formatter = CSVformatter;
@@ -1808,7 +1838,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter) {
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
-			} else if (formatter != TRASHformatter) {
+			} else if (formatter != TRASHformatter && formatter != CSVformatter) {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				mnstr_printf(toConsole,
@@ -2490,7 +2520,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						start_pager(&saveFD);
 #endif
 						if (x & MD_TABLE || x & MD_VIEW)
-							describe_table(mid, NULL, line, toConsole, 1, false);
+							dump_table(mid, NULL, line, toConsole, true, true, false, false, false);
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
@@ -2585,6 +2615,11 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						}
 						q += snprintf(q, endq - q, " ORDER BY fullname, type, remark");
 
+#ifdef HAVE_POPEN
+						stream *saveFD;
+						start_pager(&saveFD);
+#endif
+
 						hdl = mapi_query(mid, query);
 						free(query);
 						CHECK_RESULT(mid, hdl, buf, fp);
@@ -2617,6 +2652,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
+#ifdef HAVE_POPEN
+						end_pager(saveFD);
+#endif
 					}
 					continue;
 				}
@@ -2643,7 +2681,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false, false);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
-						dump_database(mid, toConsole, 0, useinserts, false);
+						dump_database(mid, toConsole, false, useinserts, false);
 #ifdef HAVE_POPEN
 					end_pager(saveFD);
 #endif
@@ -2712,8 +2750,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					continue;
 #ifdef HAVE_POPEN
 				case '|':
-					if (pager)
-						free(pager);
+					free(pager);
 					pager = NULL;
 					setWidth();	/* reset to system default */
 
@@ -2901,7 +2938,7 @@ struct privdata {
 #define READSIZE	(1 << 16)
 //#define READSIZE	(1 << 20)
 
-static char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+static const char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz";
 
 static char *
@@ -3111,7 +3148,7 @@ main(int argc, char **argv)
 	bool autocommit = true;	/* autocommit mode default on */
 	bool user_set_as_flag = false;
 	bool passwd_set_as_flag = false;
-	static struct option long_options[] = {
+	static const struct option long_options[] = {
 		{"autocommit", 0, 0, 'a'},
 		{"database", 1, 0, 'd'},
 		{"dump", 0, 0, 'D'},
@@ -3472,18 +3509,18 @@ main(int argc, char **argv)
 		free(dbname);
 	dbname = NULL;
 
-	mapi_cache_limit(mid, -1);
-	mapi_setAutocommit(mid, autocommit);
-	if (mode == SQL && !settz)
-		mapi_set_time_zone(mid, 0);
-
-	if (mid && mapi_error(mid) == MOK)
-		mapi_reconnect(mid);	/* actually, initial connect */
-
 	if (mid == NULL) {
 		mnstr_printf(stderr_stream, "failed to allocate Mapi structure\n");
 		exit(2);
 	}
+
+	mapi_cache_limit(mid, 1000);
+	mapi_setAutocommit(mid, autocommit);
+	if (mode == SQL && !settz)
+		mapi_set_time_zone(mid, 0);
+
+	if (mapi_error(mid) == MOK)
+		mapi_reconnect(mid);	/* actually, initial connect */
 
 	if (mapi_error(mid)) {
 		if (trace)
@@ -3494,7 +3531,7 @@ main(int argc, char **argv)
 	}
 	if (dump) {
 		if (mode == SQL) {
-			exit(dump_database(mid, toConsole, 0, useinserts, false));
+			exit(dump_database(mid, toConsole, false, useinserts, false));
 		} else {
 			mnstr_printf(stderr_stream, "Dump only supported for SQL\n");
 			exit(1);

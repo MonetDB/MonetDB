@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -14,17 +14,31 @@
  */
 
 #include "monetdb_config.h"
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
+#endif
 #include "mal.h"
 #include "mal_exception.h"
-#include "mal_atom.h"			/* for malAtomSize */
-#ifndef HAVE_UUID
-#ifdef HAVE_OPENSSL
-# include <openssl/rand.h>
-#else
-#ifdef HAVE_COMMONCRYPTO
-#include <CommonCrypto/CommonRandom.h>
-#endif
-#endif
+#include "mal_interpreter.h"
+
+#if !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+static inline bool
+generate_uuid(uuid *U)
+{
+	union {
+		unsigned int randbuf[4];
+		unsigned char uuid[16];
+	} u;
+	for (int i = 0; i < 4; i++)
+		if (rand_s(&u.randbuf[i]) != 0)
+			return false;
+	/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+	u.uuid[8] = (u.uuid[8] & 0x3F) | 0x80;
+	/* make sure this is version 4 (random UUID) */
+	u.uuid[6] = (u.uuid[6] & 0x0F) | 0x40;
+	memcpy(U->u, u.uuid, 16);
+	return true;
+}
 #endif
 
 /**
@@ -35,27 +49,30 @@
 static inline void
 UUIDgenerateUuid_internal(uuid *u)
 {
-#ifdef HAVE_UUID
-	uuid_generate(u->u);
-#else
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes(u->u, 16) < 0)
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(u->u, 16) != kCCSuccess)
+#if defined(HAVE_GETENTROPY)
+	if (getentropy(u->u, 16) == 0) {
+		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+		u->u[8] = (u->u[8] & 0x3F) | 0x80;
+		/* make sure this is version 4 (random UUID) */
+		u->u[6] = (u->u[6] & 0x0F) | 0x40;
+	} else
+#elif defined(HAVE_RAND_S)
+	if (!generate_uuid(u))
 #endif
-#endif
-		/* if it failed, use rand */
-		for (int i = 0; i < UUID_SIZE;) {
+	{
+		/* generate something like this:
+		 * cefa7a9c-1dd2-41b2-8350-880020adbeef
+		 * ("%08x-%04x-%04x-%04x-%012x") */
+		for (int i = 0; i < 16; i++) {
 			int r = rand();
 			u->u[i++] = (unsigned char) (r >> 8);
 			u->u[i++] = (unsigned char) r;
 		}
-	/* make sure this is a variant 1 UUID */
-	u->u[8] = (u->u[8] & 0x3F) | 0x80;
-	/* make sure this is version 4 (random UUID) */
-	u->u[6] = (u->u[6] & 0x0F) | 0x40;
-#endif
+		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+		u->u[8] = (u->u[8] & 0x3F) | 0x80;
+		/* make sure this is version 4 (random UUID) */
+		u->u[6] = (u->u[6] & 0x0F) | 0x40;
+	}
 }
 
 static str
@@ -88,37 +105,39 @@ isaUUID(const char *s)
 }
 
 static str
-UUIDgenerateUuidInt_bulk(bat *ret, const bat *bid)
+UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b = NULL, *bn = NULL;
 	BUN n = 0;
 	str msg = MAL_SUCCEED;
 	uuid *restrict bnt = NULL;
+	bat *ret = getArgReference_bat(stk, pci, 0);
 
-	if ((b = BBPquickdesc(*bid, false)) == NULL)	{
-		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+	(void) cntxt;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *bid = getArgReference_bat(stk, pci, 1);
+		if (!(b = BBPquickdesc(*bid))) {
+			throw(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		n = BATcount(b);
+	} else {
+		n = (BUN) *getArgReference_lng(stk, pci, 1);
 	}
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_uuid, n, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+
+	if ((bn = COLnew(b ? b->hseqbase : 0, TYPE_uuid, n, TRANSIENT)) == NULL) {
+		throw(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bnt = Tloc(bn, 0);
 	for (BUN i = 0 ; i < n ; i++)
 		UUIDgenerateUuid_internal(&(bnt[i]));
+	BATsetcount(bn, n);
 	bn->tnonil = true;
 	bn->tnil = false;
-	BATsetcount(bn, n);
 	bn->tsorted = n <= 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = n <= 1;
-
-bailout:
-	if (msg && bn)
-		BBPreclaim(bn);
-	else if (bn)
-		BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return msg;
 }
 
@@ -126,6 +145,8 @@ static str
 UUIDisaUUID(bit *retval, str *s)
 {
 	*retval = isaUUID(*s);
+	if (*retval == false)
+		GDKclrerr();
 	return MAL_SUCCEED;
 }
 
@@ -151,18 +172,20 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 	bi = bat_iterator(b);
 	for (BUN p = 0 ; p < q ; p++)
 		dst[p] = isaUUID(BUNtvar(bi, p));
-	bn->tnonil = b->tnonil;
-	bn->tnil = b->tnil;
+	GDKclrerr(); /* Not interested in atomFromStr errors */
 	BATsetcount(bn, q);
+	bn->tnonil = bi.nonil;
+	bn->tnil = bi.nil;
 	bn->tsorted = bn->trevsorted = q < 2;
 	bn->tkey = false;
+	bat_iterator_end(&bi);
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
-	if (msg && bn)
-		BBPreclaim(bn);
-	else if (bn)
-		BBPkeepref(*ret = bn->batCacheid);
+	if (bn) {					/* implies msg==MAL_SUCCEED */
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
+	}
 	return msg;
 }
 
@@ -180,34 +203,35 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	uuid *restrict bv, *restrict dv;
 	str msg = NULL;
 	struct canditer ci;
-	BUN q = 0;
 	oid off;
-	bool nils = false;
+	bool nils = false, btsorted = false, btrevsorted = false, btkey = false;
+	BATiter bi;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
 	if (sid && !is_bat_nil(*sid)) {
 		if ((s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 	} else {
-		BBPkeepref(*res = b->batCacheid); /* nothing to convert, return */
+		BBPretain(*res = *bid); /* nothing to convert, return */
 		return MAL_SUCCEED;
 	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
 	off = b->hseqbase;
-	bv = Tloc(b, 0);
-	q = canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_uuid, q, TRANSIENT))) {
+	canditer_init(&ci, b, s);
+	if (!(dst = COLnew(ci.hseq, TYPE_uuid, ci.ncand, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
+	bi = bat_iterator(b);
+	bv = bi.base;
 	dv = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			uuid v = bv[p];
 
@@ -215,7 +239,7 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= is_uuid_nil(v);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
 			uuid v = bv[p];
 
@@ -223,22 +247,26 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			nils |= is_uuid_nil(v);
 		}
 	}
+	btkey = bi.key;
+	btsorted = bi.sorted;
+	btrevsorted = bi.revsorted;
+	bat_iterator_end(&bi);
 
 bailout:
-	if (dst && !msg) {
-		BATsetcount(dst, q);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
-		dst->tsorted = b->tsorted;
-		dst->trevsorted = b->trevsorted;
-		BBPkeepref(*res = dst->batCacheid);
-	} else if (dst)
-		BBPreclaim(dst);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (dst) {					/* implies msg==MAL_SUCCEED */
+		BATsetcount(dst, ci.ncand);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = btkey;
+		dst->tsorted = btsorted;
+		dst->trevsorted = btrevsorted;
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
+	}
 	return msg;
 }
 
@@ -261,70 +289,74 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	str msg = NULL;
 	uuid *restrict vals;
 	struct canditer ci;
-	BUN q = 0;
 	oid off;
-	bool nils = false;
+	bool nils = false, btkey = false;
 	size_t l = UUID_SIZE;
 	ssize_t (*conv)(const char *, size_t *, void **, bool) = BATatoms[TYPE_uuid].atomFromStr;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
-	q = canditer_init(&ci, b, s);
-	bi = bat_iterator(b);
-	if (!(dst = COLnew(ci.hseq, TYPE_uuid, q, TRANSIENT))) {
+	canditer_init(&ci, b, s);
+	if (!(dst = COLnew(ci.hseq, TYPE_uuid, ci.ncand, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
+	bi = bat_iterator(b);
 	vals = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(42000) "Not a UUID");
+				bat_iterator_end(&bi);
 				goto bailout;
 			}
 			nils |= strNil(v);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			str v = (str) BUNtvar(bi, p);
+			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(42000) "Not a UUID");
+				bat_iterator_end(&bi);
 				goto bailout;
 			}
 			nils |= strNil(v);
 		}
 	}
+	btkey = bi.key;
+	bat_iterator_end(&bi);
 
 bailout:
-	if (dst && !msg) {
-		BATsetcount(dst, q);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
-		dst->tsorted = BATcount(dst) <= 1;
-		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*res = dst->batCacheid);
-	} else if (dst)
-		BBPreclaim(dst);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (dst && !msg) {
+		BATsetcount(dst, ci.ncand);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = btkey;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
+	} else if (dst)
+		BBPreclaim(dst);
 	return msg;
 }
 
@@ -344,85 +376,94 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 	uuid *restrict vals;
-	BUN q = 0;
 	struct canditer ci;
 	oid off;
-	bool nils = false;
+	bool nils = false, btkey = false;
 	char buf[UUID_STRLEN + 2], *pbuf = buf;
 	size_t l = sizeof(buf);
 	ssize_t (*conv)(char **, size_t *, const void *, bool) = BATatoms[TYPE_uuid].atomToStr;
+	BATiter bi;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
-	vals = Tloc(b, 0);
-	q = canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_str, q, TRANSIENT))) {
+	canditer_init(&ci, b, s);
+	if (!(dst = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
+	bi = bat_iterator(b);
+	vals = bi.base;
 	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			uuid v = vals[p];
 
 			if (conv(&pbuf, &l, &v, false) < 0) { /* it should never be reallocated */
 				msg = createException(MAL, "batcalc.uuid2strbulk", GDK_EXCEPTION);
+				bat_iterator_end(&bi);
 				goto bailout;
 			}
-			if (tfastins_nocheckVAR(dst, i, buf, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				bat_iterator_end(&bi);
 				goto bailout;
 			}
 			nils |= strNil(buf);
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
 			uuid v = vals[p];
 
 			if (conv(&pbuf, &l, &v, false) < 0) { /* it should never be reallocated */
 				msg = createException(MAL, "batcalc.uuid2strbulk", GDK_EXCEPTION);
+				bat_iterator_end(&bi);
 				goto bailout;
 			}
-			if (tfastins_nocheckVAR(dst, i, buf, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				bat_iterator_end(&bi);
 				goto bailout;
 			}
 			nils |= strNil(buf);
 		}
 	}
+	btkey = bi.key;
+	bat_iterator_end(&bi);
 
 bailout:
-	if (dst && !msg) {
-		BATsetcount(dst, q);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = b->tkey;
-		dst->tsorted = BATcount(dst) <= 1;
-		dst->trevsorted = BATcount(dst) <= 1;
-		BBPkeepref(*res = dst->batCacheid);
-	} else if (dst)
-		BBPreclaim(dst);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (dst && !msg) {
+		BATsetcount(dst, ci.ncand);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = btkey;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
+		*res = dst->batCacheid;
+		BBPkeepref(dst);
+	} else if (dst)
+		BBPreclaim(dst);
 	return msg;
 }
 
 #include "mel.h"
 mel_func uuid_init_funcs[] = {
  command("uuid", "new", UUIDgenerateUuid, true, "Generate a new uuid", args(1,1, arg("",uuid))),
- command("uuid", "new", UUIDgenerateUuidInt, true, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, arg("",uuid),arg("d",int))),
- command("batuuid", "new", UUIDgenerateUuidInt_bulk, true, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),batarg("d",int))),
+ command("uuid", "new", UUIDgenerateUuidInt, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, arg("",uuid),arg("d",int))),
+ pattern("batuuid", "new", UUIDgenerateUuidInt_bulk, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),batarg("d",int))),
+ pattern("batuuid", "new", UUIDgenerateUuidInt_bulk, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),arg("card",lng))), /* version with cardinality input */
  command("uuid", "uuid", UUIDstr2uuid, false, "Coerce a string to a uuid, validating its format", args(1,2, arg("",uuid),arg("s",str))),
  command("uuid", "str", UUIDuuid2str, false, "Coerce a uuid to its string type", args(1,2, arg("",str),arg("u",uuid))),
  command("uuid", "isaUUID", UUIDisaUUID, false, "Test a string for a UUID format", args(1,2, arg("",bit),arg("u",str))),

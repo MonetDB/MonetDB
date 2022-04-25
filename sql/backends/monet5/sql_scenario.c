@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -76,16 +76,6 @@ static sql_store SQLstore = NULL;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
-
-static void
-monet5_freecode(int clientid, const char *name)
-{
-	str msg;
-
-	msg = SQLCacheRemove(MCgetClient(clientid), name);
-	if (msg)
-		freeException(msg);	/* do something with error? */
-}
 
 static str SQLinit(Client c);
 
@@ -201,19 +191,19 @@ SQLexit(Client c)
 str
 SQLepilogue(void *ret)
 {
-	char *s = "sql", *m = "msql";
-	str res;
+	char *s = "sql", *m = "msql", *msg;
 
 	(void) ret;
-	(void) SQLexit(NULL);
+	msg = SQLexit(NULL);
+	freeException(msg);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
 	if (!GDKinmemory(0) && !GDKembedded()) {
-		res = msab_retreatScenario(m);
+		str res = msab_retreatScenario(m);
 		if (!res)
 			res = msab_retreatScenario(s);
 		if (res != NULL) {
-			char *err = createException(MAL, "sql.start", "%s", res);
+			char *err = createException(MAL, "sql.epilogue", "%s", res);
 			free(res);
 			return err;
 		}
@@ -239,12 +229,12 @@ SQLprepareClient(Client c, int login)
 		sql_allocator *sa = sa_create(NULL);
 		if (sa == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout2;
 		}
 		m = mvc_create(SQLstore, sa, c->idx, SQLdebug, c->fdin, c->fdout);
 		if (m == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout2;
 		}
 		if (c->scenario && strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
@@ -252,7 +242,7 @@ SQLprepareClient(Client c, int login)
 		if ( be == NULL) {
 			mvc_destroy(m);
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout2;
 		}
 	} else {
 		assert(0);
@@ -273,10 +263,18 @@ SQLprepareClient(Client c, int login)
 	}
 	MT_lock_unset(&sql_contextLock);
 	if (login) {
-		str schema = monet5_user_set_def_schema(m, c->user);
-		if (!schema) {
-			msg = createException(PERMD,"sql.initClient", SQLSTATE(08004) "Schema authorization error");
-			goto bailout;
+		switch (monet5_user_set_def_schema(m, c->user)) {
+			case -1:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout1;
+			case -2:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
+				goto bailout1;
+			case -3:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				goto bailout1;
+			default:
+				break;
 		}
 	}
 
@@ -292,7 +290,7 @@ SQLprepareClient(Client c, int login)
 			} else if (sscanf(tok, "reply_size=%d", &value) == 1) {
 				if (value < -1) {
 					msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "Reply_size cannot be negative");
-					goto bailout;
+					goto bailout1;
 				}
 				m->reply_size = value;
 			} else if (sscanf(tok, "size_header=%d", &value) == 1) {
@@ -304,11 +302,12 @@ SQLprepareClient(Client c, int login)
 				sql_var *var = find_global_var(m, s, "current_timezone");
 				ValRecord val;
 				VALinit(&val, TYPE_lng, &(lng){1000 * value});
-				sql_update_var(m, s, "current_timezone", &val);
+				if ((msg = sql_update_var(m, s, "current_timezone", &val)))
+					goto bailout1;
 				sqlvar_set(var, &val);
 			} else {
 				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);
-				goto bailout;
+				goto bailout1;
 			}
 
 			tok = strtok_r(NULL, ",", &strtok_state);
@@ -316,8 +315,9 @@ SQLprepareClient(Client c, int login)
 	}
 
 
-bailout:
+bailout1:
 	MT_lock_set(&sql_contextLock);
+bailout2:
 	/* expect SQL text first */
 	if (be)
 		be->language = 'S';
@@ -382,7 +382,6 @@ SQLinit(Client c)
 	static int maybeupgrade = 1;
 	backend *be = NULL;
 	mvc *m = NULL;
-	sql_allocator *sa = NULL;
 	const char *opt_pipe;
 
 	if ((opt_pipe = GDKgetenv("sql_optimizer")) && !isOptimizerPipe(opt_pipe))
@@ -395,11 +394,9 @@ SQLinit(Client c)
 		return MAL_SUCCEED;
 	}
 
-	be_funcs = (backend_functions) {
-		.fcode = &monet5_freecode,
-		.fresolve_function = &monet5_resolve_function,
-		.fhas_module_function = &monet5_has_module,
-	};
+	be_funcs.fcode = &monet5_freecode,
+	be_funcs.fresolve_function = &monet5_resolve_function,
+	be_funcs.fhas_module_function = &monet5_has_module,
 	monet5_user_init(&be_funcs);
 
 	if (debug_str)
@@ -409,11 +406,7 @@ SQLinit(Client c)
 	if (readonly)
 		SQLdebug |= 32;
 
-	if (!(sa = sa_create(NULL))) {
-		MT_lock_unset(&sql_contextLock);
-		throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	if ((SQLstore = mvc_init(sa, SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) == NULL) {
+	if ((SQLstore = mvc_init(SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) == NULL) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -426,6 +419,8 @@ SQLinit(Client c)
 		bstream *fdin;
 
 		if ( b == NULL || cbuf == NULL) {
+			mvc_exit(SQLstore);
+			SQLstore = NULL;
 			MT_lock_unset(&sql_contextLock);
 			GDKfree(b);
 			GDKfree(cbuf);
@@ -435,6 +430,8 @@ SQLinit(Client c)
 		buffer_init(b, cbuf, len);
 		buf = buffer_rastream(b, "si");
 		if ( buf == NULL) {
+			mvc_exit(SQLstore);
+			SQLstore = NULL;
 			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
 			throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -442,6 +439,8 @@ SQLinit(Client c)
 
 		fdin = bstream_create(buf, b->len);
 		if ( fdin == NULL) {
+			mvc_exit(SQLstore);
+			SQLstore = NULL;
 			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
 			throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -452,6 +451,8 @@ SQLinit(Client c)
 			TRC_ERROR(SQL_PARSER, "Could not switch client input stream\n");
 	}
 	if ((msg = SQLprepareClient(c, 0)) != NULL) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
 		MT_lock_unset(&sql_contextLock);
 		TRC_INFO(SQL_PARSER, "%s\n", msg);
 		return msg;
@@ -461,14 +462,19 @@ SQLinit(Client c)
 	/* initialize the database with predefined SQL functions */
 	sqlstore *store = SQLstore;
 	if (store->first == 0) {
-		/* check whether table sys.systemfunctions exists: if
-		 * it doesn't, this is probably a restart of the
+		/* check whether last created object trigger sys.system_update_tables (from 99_system.sql) exists.
+		 * if it doesn't, this is probably a restart of the
 		 * server after an incomplete initialization */
 		if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
-			sql_schema *s = mvc_bind_schema(m, "sys");
-			sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
-			if (t == NULL)
+			/* TODO there's a going issue with loading triggers due to system tables,
+			   so at the moment check for existence of 'json' schema from 40_json.sql */
+			if (!mvc_bind_schema(m, "json"))
 				store->first = 1;
+			msg = mvc_rollback(m, 0, NULL, false);
+		}
+		if (msg) {
+			freeException(msg);
+			msg = MAL_SUCCEED;
 		}
 	}
 	if (store->first > 0) {
@@ -483,21 +489,22 @@ SQLinit(Client c)
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
-
 		}
 		/* 99_system.sql */
 		if (!msg) {
-			const char *createdb_inline = " \
-				create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); \
-				create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); \
-				update sys.functions set system = true; \
-				create view sys.systemfunctions as select id as function_id from sys.functions where system; \
-				grant select on sys.systemfunctions to public; \
-				update sys._tables set system = true; \
-				update sys.schemas set system = true; \
-				UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
-				UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
-				";
+			const char *createdb_inline =
+				"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
+				"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n"
+				/* only system functions until now */
+				"update sys.functions set system = true;\n"
+				/* only system tables until now */
+				"update sys._tables set system = true;\n"
+				/* only system schemas until now */
+				"update sys.schemas set system = true;\n"
+				/* correct invalid FK schema ids, set them to schema id 2000
+				 * (the "sys" schema) */
+				"update sys.types set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n"
+				"update sys.functions set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n";
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
@@ -545,22 +552,36 @@ SQLinit(Client c)
 	}
 
 	other = SQLresetClient(c);
-	MT_lock_unset(&sql_contextLock);
 	if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
 		msg = other;
 	else if (other)
 		freeException(other);
-	if (msg != MAL_SUCCEED)
+	if (msg != MAL_SUCCEED) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
+		MT_lock_unset(&sql_contextLock);
 		return msg;
+	}
 
-	if (GDKinmemory(0))
-		return MAL_SUCCEED;
+	if (GDKinmemory(0)) {
+		MT_lock_unset(&sql_contextLock);
+		return msg;
+	}
 
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager")) == 0) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
+		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
-	if ( wlc_state == WLC_STARTUP)
-		return WLCinit();
+	if (wlc_state == WLC_STARTUP && GDKgetenv_istrue("wlc_enabled") && (msg = WLCinit()) != MAL_SUCCEED) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
+		MT_lock_unset(&sql_contextLock);
+		return msg;
+	}
+
+	MT_lock_unset(&sql_contextLock);
 	return MAL_SUCCEED;
 }
 
@@ -615,18 +636,33 @@ SQLtrans(mvc *m)
 	if (!m->session->tr->active) {
 		sql_session *s;
 
-		if (mvc_trans(m) < 0)
-			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		switch (mvc_trans(m)) {
+			case -1:
+				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -3:
+				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this transaction won't start");
+			default:
+				break;
+		}
 		s = m->session;
 		if (!s->schema) {
-			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
-			if (!s->schema_name) {
-				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			switch (monet5_user_get_def_schema(m, m->user_id, &s->schema_name)) {
+				case -1:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
+				case -3:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				default:
+					break;
 			}
-			assert(s->schema_name);
-			s->schema = find_sql_schema(s->tr, s->schema_name);
-			assert(s->schema);
+			if (!(s->schema = find_sql_schema(s->tr, s->schema_name))) {
+				mvc_cancel_session(m);
+				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this session is going to terminate");
+			}
 		}
 	}
 	return MAL_SUCCEED;
@@ -658,6 +694,8 @@ SQLinitClientFromMAL(Client c)
 	}
 
 	mvc* m = ((backend*) c->sqlcontext)->mvc;
+	if (c->glb)
+		c->glb->keepTmps = true;
 
 	/* Crucial step:
 	 * MAL scripts that interact with the sql module
@@ -684,7 +722,9 @@ SQLexitClient(Client c)
 	MT_lock_unset(&sql_contextLock);
 	if (err != MAL_SUCCEED)
 		return err;
-	MALexitClient(c);
+	err = MALexitClient(c);
+	if (err != MAL_SUCCEED)
+		return err;
 	return MAL_SUCCEED;
 }
 
@@ -922,7 +962,7 @@ SQLparser(Client c)
 	str msg = NULL;
 	backend *be;
 	mvc *m;
-	int oldvtop, oldstop, oldvid;
+	int oldvtop, oldstop, oldvid, ok;
 	int pstatus = 0;
 	int err = 0, opt, preparedid = -1;
 
@@ -979,8 +1019,8 @@ SQLparser(Client c)
 		if (n == 2 || n == 3) {
 			if (n == 2)
 				len = m->reply_size;
-			if (mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) {
-				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed");
+			if ((ok = mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) < 0) {
+				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
 				goto finalize;
 			}
 
@@ -1080,7 +1120,6 @@ SQLparser(Client c)
 		sqlcleanup(be, err);
 		goto finalize;
 	}
-	assert(m->session->schema);
 	/*
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).
@@ -1134,10 +1173,21 @@ SQLparser(Client c)
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
-			if (backend_dumpstmt(be, c->curprg->def, r, 1, 0, c->query) < 0)
+			if (be->subbackend && be->subbackend->check(be->subbackend, r)) {
+				res_table *rt = NULL;
+				if (be->subbackend->exec(be->subbackend, r, be->result_id++, &rt) == NULL) { /* on error fall back */
+					if (rt) {
+						rt->next = be->results;
+						be->results = rt;
+					}
+					return NULL;
+				}
+			}
+
+			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
-				opt = 1;
+				opt = (m->emod & mod_exec) == 0;//1;
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1165,6 +1215,7 @@ SQLparser(Client c)
 			/* passed over to query cache, used during dumpproc */
 			m->sa = NULL;
 			m->sym = NULL;
+			m->runs = NULL;
 			m->params = NULL;
 			/* register name in the namespace */
 			if (be->q) {
@@ -1189,39 +1240,46 @@ SQLparser(Client c)
 				qc_clean(m->qc);
 			}
 			/* For deallocate statements just export a simple output */
-			if (!GDKembedded())
-				err = mvc_export_operation(be, c->fdout, "", c->curprg->def->starttime, c->curprg->def->optimize);
+			if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->curprg->def->starttime, c->curprg->def->optimize)) < 0) {
+				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				goto finalize;
+			}
 		} else if (be->q) {
 			assert(m->emode == m_prepare);
 			/* For prepared queries, return a table with result set structure*/
 			/* optimize the code block and rename it */
-			err = mvc_export_prepare(be, c->fdout, "");
+			if ((err = mvc_export_prepare(be, c->fdout)) < 0) {
+				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				goto finalize;
+			}
 		}
 
-		if (!err) {
-			pushEndInstruction(c->curprg->def);
-			/* check the query wrapper for errors */
-			if( msg == MAL_SUCCEED)
-				msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
+		pushEndInstruction(c->curprg->def);
+		/* check the query wrapper for errors */
+		if( msg == MAL_SUCCEED)
+			msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
-			/* in case we had produced a non-cachable plan, the optimizer should be called */
-			if (msg == MAL_SUCCEED && opt ) {
-				msg = SQLoptimizeQuery(c, c->curprg->def);
+		/* in case we had produced a non-cachable plan, the optimizer should be called */
+		if (msg == MAL_SUCCEED && opt ) {
+			msg = SQLoptimizeQuery(c, c->curprg->def);
 
-				if (msg != MAL_SUCCEED) {
-					str other = c->curprg->def->errors;
-					/* In debugging mode you may want to assess what went wrong in the optimizers*/
+			if (msg != MAL_SUCCEED) {
+				str other = c->curprg->def->errors;
+				/* In debugging mode you may want to assess what went wrong in the optimizers*/
 #ifndef NDEBUG
-					if( m->emod & mod_debug)
-						runMALDebugger(c, c->curprg->def);
+				if( m->emod & mod_debug)
+					runMALDebugger(c, c->curprg->def);
 #endif
-					c->curprg->def->errors = 0;
-					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-					if (other != msg)
-						freeException(other);
-					goto finalize;
-				}
+				c->curprg->def->errors = 0;
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				if (other != msg)
+					freeException(other);
+				goto finalize;
 			}
 		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
@@ -1239,8 +1297,7 @@ SQLparser(Client c)
 					msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
 				*m->errstr = 0;
 			} else if (msg) {
-				str newmsg;
-				newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
+				str newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
 				freeException(msg);
 				msg = newmsg;
 			}
@@ -1258,19 +1315,9 @@ str
 SQLengine(Client c)
 {
 	backend *be = (backend *) c->sqlcontext;
+	if (be && be->subbackend)
+		be->subbackend->reset(be->subbackend);
 	return SQLengineIntern(c, be);
-}
-
-str
-SQLCacheRemove(Client c, const char *nme)
-{
-	Symbol s;
-
-	s = findSymbolInModule(c->usermodule, nme);
-	if (s == NULL)
-		throw(MAL, "cache.remove", SQLSTATE(42000) "internal error, symbol missing\n");
-	deleteSymbol(c->usermodule, s);
-	return MAL_SUCCEED;
 }
 
 str

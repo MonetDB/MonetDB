@@ -1,8 +1,8 @@
 statement ok
 function foo();
-X_5:=32;
-X_5:=23;
-io.print(X_5);
+GLB_5:=32;
+GLB_5:=23;
+io.print(GLB_5);
 end foo;
 
 query T rowsort

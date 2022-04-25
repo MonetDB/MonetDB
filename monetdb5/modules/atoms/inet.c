@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -61,7 +61,7 @@ typedef struct _inet {
 #endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
-static inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
+static const inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
 
 /**
  * Creates a new inet from the given string.
@@ -803,12 +803,6 @@ mel_func inet_init_funcs[] = {
  command("inet", "abbrev", INETabbrev, false, "Abbreviated display format as text", args(1,2, arg("",str),arg("",inet))),
  command("calc", "inet", INET_inet, false, "Convert a inet to an inet", args(1,2, arg("",inet),arg("s",inet))),
  command("calc", "inet", INET_fromstr, false, "Convert a string to an inet", args(1,2, arg("",inet),arg("s",str))),
- command("calc", "==", INET_comp_EQ, false, "Equality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", "!=", INET_comp_NEQ, false, "Inequality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", "<", INET_comp_LT, false, "Whether v is less than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", ">", INET_comp_GT, false, "Whether v is greater than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", "<=", INET_comp_LE, false, "Whether v is less than or equal to w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", ">=", INET_comp_GE, false, "Whether v is equal to or greater than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
  { .imp=NULL }
 };
 #include "mal_import.h"

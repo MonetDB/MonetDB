@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -21,7 +21,6 @@
 #include "mal_stack.h"
 #include "mal_linker.h"
 #include "gdk.h"
-#include "blob.h"
 #include "sql_catalog.h"
 #include "sql_scenario.h"
 #include "sql_cast.h"
@@ -65,16 +64,6 @@
 #else
 #define pyapi_export extern
 #endif
-
-#define PyString_FromString PyUnicode_FromString
-#define PyString_Check PyUnicode_Check
-#define PyString_CheckExact PyUnicode_CheckExact
-#define PyString_AsString PyUnicode_AsUTF8
-#define PyString_AS_STRING PyUnicode_AsUTF8
-#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_Check PyLong_Check
-#define PythonUnicodeType Py_UNICODE
 
 #define utf8string_minlength 256
 

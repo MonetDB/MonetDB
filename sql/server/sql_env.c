@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -50,7 +50,7 @@ str
 sql_update_var(mvc *m, sql_schema *s, const char *name, ValPtr ptr)
 {
 	if (strcmp(s->base.name, "sys") == 0) {
-		if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0) {
+		if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0 || strcmp(name, "sql_optimizer") == 0) {
 			VAR_UPCAST sgn = val_get_number(ptr);
 
 			if (VALisnil(ptr))
@@ -60,10 +60,13 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, ValPtr ptr)
 			if (sgn > (VAR_UPCAST) GDK_int_max)
 				throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too large for '%s.%s'\n", s->base.name, name);
 
-			if (/* DISABLES CODE */ (0) && strcmp(name, "debug") == 0)
+			if (/* DISABLES CODE */ (0) && strcmp(name, "debug") == 0) {
 				m->debug = (int) sgn;
-			else if (strcmp(name, "current_timezone") == 0)
+			} else if (strcmp(name, "current_timezone") == 0) {
 				m->timezone = (int) sgn;
+			} else {
+				m->sql_optimizer = (int) sgn;
+			}
 		} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
 			if (VALisnil(ptr))
 				throw(SQL,"sql.update_var", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL\n", s->base.name, name);
@@ -80,6 +83,7 @@ int
 sql_create_env(mvc *m, sql_schema *s)
 {
 	list *res, *ops;
+	sql_func *f = NULL;
 
 	res = sa_list(m->sa);
 	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));
@@ -87,7 +91,9 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_SQL, "inspect", "getEnvironment", "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";", FALSE, FALSE, TRUE);
+	mvc_create_func(&f, m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_MAL, "inspect", "getEnvironment", "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";", FALSE, FALSE, TRUE, FALSE);
+	if (f)
+		f->instantiated = TRUE;
 
 	res = sa_list(m->sa);
 	list_append(res, sql_create_arg(m->sa, "schema", sql_bind_localtype("str"), ARG_OUT));
@@ -97,6 +103,8 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_variables", "create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE);
+	mvc_create_func(&f, m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "sql_variables", "create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE, FALSE);
+	if (f)
+		f->instantiated = TRUE;
 	return 0;
 }

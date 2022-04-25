@@ -19,7 +19,7 @@ create table mtcars (
 statement ok
 copy into mtcars from E'$QTSTSRCDIR/mtcars' using delimiters 'a','b','c' null as '' fwf (4, 2, 6, 4, 5, 6, 6, 2, 2, 2, 2)
 
-query I
+query I nosort
 select count(*) from mtcars
 ----
 32

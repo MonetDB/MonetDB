@@ -1,7 +1,8 @@
+unlogged
 column_aliases
 declared_tables
 trace_test
-simple_selects
+HAVE_LIBPCRE?simple_selects
 update_delete_aliases
 groupby_expressions
 values
@@ -17,7 +18,12 @@ deallocate
 table_udf_missing_var
 create_func_temp
 simple_plans
+unique_keys
 vessels
 prepare
-transaction_isolation
-transaction_isolation2
+rel_push_count_down
+NOT_ASSERT?sqlfuncnames
+sequences
+analyze_test
+blobs
+temp_tables

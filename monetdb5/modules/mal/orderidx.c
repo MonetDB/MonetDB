@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -223,6 +223,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	newstk->stk[arg].vtype= TYPE_bat;
 	newstk->stk[arg].val.bval= b->batCacheid;
 	BBPretain(newstk->stk[arg].val.bval);
+	smb->starttime = GDKusec();
 	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 	freeStack(newstk);
 	/* get rid of temporary MAL block */
@@ -304,7 +305,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tnil = false;
 	bn->tnonil = true;
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -326,7 +327,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 		throw(MAL, "algebra.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*ret = *bid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -359,8 +360,10 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (b->torderidx )
+	if (b->torderidx) {
+		BBPunfix(bid);
 		throw(MAL, "bat.orderidx", SQLSTATE(HY002) "INTERNAL ERROR, torderidx already set");
+	}
 
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:

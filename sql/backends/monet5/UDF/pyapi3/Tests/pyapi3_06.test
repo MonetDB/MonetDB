@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE rval(groupcol integer,datacol integer)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO rval VALUES (1,42), (1,84), (2,42), (2,21)
 
 statement ok
@@ -47,7 +47,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE rval(groupcol integer, secondgroupcol integer, datacol integer)
 
-statement ok
+statement ok rowcount 8
 INSERT INTO rval VALUES (0, 0, 1), (0, 0, 2), (0, 1, 3), (0, 1, 4), (1, 0, 5), (1, 0, 6), (1, 1, 7), (1, 1, 8)
 
 statement ok

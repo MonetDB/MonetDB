@@ -12,10 +12,10 @@ from
               on (ref_102.io = ref_103.id )
             on (ref_86.table_id = ref_102.cpu )
           right join sys.privileges as ref_111
-              left join sys.systemfunctions as ref_112
+              left join sys.functions as ref_112
                 left join sys.querylog_calls as ref_113
-                on (ref_112.function_id = ref_113.cpu )
-              on (ref_111.privileges = ref_112.function_id )
+                on (ref_112.id = ref_113.cpu )
+              on (ref_111.privileges = ref_112.id )
             right join sys.schemas as ref_114
               inner join sys.geometry_columns as ref_115
                 right join sys.users as ref_116

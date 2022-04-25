@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -14,7 +14,7 @@
 #include "mal_exception.h"
 #include "mal_private.h"
 
-static char *exceptionNames[] = {
+static const char *exceptionNames[] = {
 /* 0 */	"MALException",
 /* 1 */	"IllegalArgumentException",
 /* 2 */	"OutOfBoundsException",
@@ -29,7 +29,8 @@ static char *exceptionNames[] = {
 /*11 */	"ArithmeticException",
 /*12 */	"PermissionDeniedException",
 /*13 */	"SQLException",
-/*14 */	"Deprecated operation",
+/*14 */	"RemoteException",
+/*15 */	"Deprecated operation",
 /*EOE*/	NULL
 };
 
@@ -120,27 +121,27 @@ str
 createException(enum malexception type, const char *fcn, const char *format, ...)
 {
 	va_list ap;
-	str ret = NULL;
+	str ret = NULL, localGDKerrbuf = GDKerrbuf;
 
-	if (GDKerrbuf &&
+	if (localGDKerrbuf &&
 		(ret = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
 		ret[strlen(MAL_MALLOC_FAIL)] != ':' &&
-		(strncmp(GDKerrbuf, "GDKmalloc", 9) == 0 ||
-		 strncmp(GDKerrbuf, "GDKrealloc", 10) == 0 ||
-		 strncmp(GDKerrbuf, "GDKzalloc", 9) == 0 ||
-		 strncmp(GDKerrbuf, "GDKstrdup", 9) == 0 ||
-		 strncmp(GDKerrbuf, "allocating too much virtual address space", 41) == 0)) {
+		(strncmp(localGDKerrbuf, "GDKmalloc", 9) == 0 ||
+		 strncmp(localGDKerrbuf, "GDKrealloc", 10) == 0 ||
+		 strncmp(localGDKerrbuf, "GDKzalloc", 9) == 0 ||
+		 strncmp(localGDKerrbuf, "GDKstrdup", 9) == 0 ||
+		 strncmp(localGDKerrbuf, "allocating too much virtual address space", 41) == 0)) {
 		/* override errors when the underlying error is memory
 		 * exhaustion, but include whatever it is that the GDK level
 		 * reported */
-		ret = createException(type, fcn, SQLSTATE(HY013) MAL_MALLOC_FAIL ": %s", GDKerrbuf);
+		ret = createException(type, fcn, SQLSTATE(HY013) MAL_MALLOC_FAIL ": %s", localGDKerrbuf);
 		GDKclrerr();
 		assert(ret);
 		return ret;
 	}
-	if (strcmp(format, GDK_EXCEPTION) == 0 && GDKerrbuf[0]) {
+	if (localGDKerrbuf && localGDKerrbuf[0] && strcmp(format, GDK_EXCEPTION) == 0) {
 		/* for GDK errors, report the underlying error */
-		char *p = GDKerrbuf;
+		char *p = localGDKerrbuf;
 		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0) {
 			/* error is "!ERROR: function_name: STATE!error message"
 			 * we need to skip everything up to the STATE */

@@ -16,20 +16,20 @@ with SQLTestCase() as mdb:
         tc.connect(username="mydummyuser", password="mydummyuser")
         tc.execute("set role sysadmin;").assertFailed(err_code="42000", err_message="Role (sysadmin) missing")
 
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertDataResultMatch([(0,)])
+        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(0,)])
         mdb.execute("grant sysadmin to mydummyuser;").assertSucceeded()
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertDataResultMatch([(1,)])
+        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(1,)])
 
         tc.execute("set role sysadmin;").assertSucceeded()
 
         mdb.execute("grant sysadmin to mydummyuser;").assertFailed(err_code="M1M05", err_message="GRANT: User 'mydummyuser' already has ROLE 'sysadmin'")
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertDataResultMatch([(1,)])
+        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(1,)])
 
         mdb.execute("revoke sysadmin from mydummyuser;").assertSucceeded()
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertDataResultMatch([(0,)])
+        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(0,)])
 
         mdb.execute("revoke sysadmin from mydummyuser;").assertFailed(err_code="01006", err_message="REVOKE: User 'mydummyuser' does not have ROLE 'sysadmin'")
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertDataResultMatch([(0,)])
+        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(0,)])
 
     # clean up
     mdb.execute("drop user mydummyuser;").assertSucceeded()

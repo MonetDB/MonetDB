@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* Generic stream handling code such as init and close */
@@ -186,8 +186,10 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #endif
 		break;
 	}
-	if (nr == 0)
+	if (nr == 0) {
+		s->eof = true;
 		return 0;	/* end of file */
+	}
 	if (elmsize > 1) {
 		while ((size_t) nr % elmsize != 0) {
 			/* if elmsize > 1, we really expect that "the

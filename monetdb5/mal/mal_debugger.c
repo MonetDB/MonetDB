@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -89,7 +89,7 @@ printBATproperties(stream *f, BAT *b)
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
 	if (b->theap->parentid != b->batCacheid)
-		mnstr_printf(f, "view on %s ", BBPname(b->theap->parentid));
+		mnstr_printf(f, "view on %s ", BBP_logical(b->theap->parentid));
 }
 
 static void
@@ -138,7 +138,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 	if (v && v->vtype == TYPE_bat) {
 		bat i = v->val.bval;
-		BAT *b = BBPquickdesc(i, true);
+		BAT *b = BBPquickdesc(i);
 
 		if (b) {
 			nme = getTypeName(newBatType(b->ttype));
@@ -334,13 +334,14 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	if (b->batTransient) {
+	BATiter bi = bat_iterator(b);
+	if (bi.transient) {
 		mode = "transient";
 	} else {
 		mode = "persistent";
 	}
 
-	switch (b->batRestricted) {
+	switch (bi.restricted) {
 	case BAT_READ:
 		accessmode = "read-only";
 		break;
@@ -359,17 +360,17 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "batCacheid", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) b->batCacheid, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tparentid", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->theap->parentid, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) bi.h->parentid, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batSharecnt", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) b->batSharecnt, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCount", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa((size_t) b->batCount, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa((size_t) bi.count, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCapacity", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa((size_t) b->batCapacity, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "head", false) != GDK_SUCCEED ||
 	    BUNappend(bv, ATOMname(TYPE_void), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tail", false) != GDK_SUCCEED ||
-	    BUNappend(bv, ATOMname(b->ttype), false) != GDK_SUCCEED ||
+	    BUNappend(bv, ATOMname(bi.type), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batPersistence", false) != GDK_SUCCEED ||
 	    BUNappend(bv, mode, false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batRestricted", false) != GDK_SUCCEED ||
@@ -379,7 +380,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "batLRefcnt", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) BBP_lrefs(b->batCacheid), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batDirty", false) != GDK_SUCCEED ||
-	    BUNappend(bv, BATdirty(b) ? "dirty" : "clean", false) != GDK_SUCCEED ||
+	    BUNappend(bv, BATdirtybi(bi) ? "dirty" : "clean", false) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "hseqbase", false) != GDK_SUCCEED ||
 	    BUNappend(bv, oidtostr(b->hseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
@@ -387,55 +388,64 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tident", false) != GDK_SUCCEED ||
 	    BUNappend(bv, b->tident, false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tdense", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtdense(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) BATtdensebi(&bi), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tseqbase", false) != GDK_SUCCEED ||
-	    BUNappend(bv, oidtostr(b->tseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
+	    BUNappend(bv, oidtostr(bi.tseq, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtordered(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) bi.sorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "trevsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtrevordered(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) bi.revsorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tkey", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->tkey, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) bi.key, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tvarsized", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->tvarsized, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) (bi.type == TYPE_void || bi.vh != NULL), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnosorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnosorted, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nosorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnorevsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnorevsorted, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.norevsorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnokey[0]", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnokey[0], buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nokey[0], buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnokey[1]", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnokey[1], buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nokey[1], buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnonil", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnonil, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nonil, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnil", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnil, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nil, buf), false) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "batInserted", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->batInserted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "ttop", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->theap->free, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.hfree, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->batCopiedtodisk, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) bi.copiedtodisk, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batDirtydesc", false) != GDK_SUCCEED ||
-	    BUNappend(bv, b->batDirtydesc ? "dirty" : "clean", false) != GDK_SUCCEED ||
+	    BUNappend(bv, bi.dirtydesc ? "dirty" : "clean", false) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "theap.dirty", false) != GDK_SUCCEED ||
-	    BUNappend(bv, b->theap->dirty ? "dirty" : "clean", false) != GDK_SUCCEED ||
-		infoHeap(bk, bv, b->theap, "tail.") != GDK_SUCCEED ||
+	    BUNappend(bv, bi.hdirty ? "dirty" : "clean", false) != GDK_SUCCEED ||
+		infoHeap(bk, bv, bi.h, "tail.") != GDK_SUCCEED ||
 
 	    BUNappend(bk, "tvheap->dirty", false) != GDK_SUCCEED ||
-	    BUNappend(bv, (b->tvheap && b->tvheap->dirty) ? "dirty" : "clean", false) != GDK_SUCCEED ||
-		infoHeap(bk, bv, b->tvheap, "theap.") != GDK_SUCCEED ||
-
-		/* dump index information */
-		(b->thash &&
-		 HASHinfo(bk, bv, b->thash, "thash->") != GDK_SUCCEED)) {
+	    BUNappend(bv, bi.vhdirty ? "dirty" : "clean", false) != GDK_SUCCEED ||
+		infoHeap(bk, bv, bi.vh, "theap.") != GDK_SUCCEED) {
+		bat_iterator_end(&bi);
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	/* dump index information */
+	MT_rwlock_rdlock(&b->thashlock);
+	if (b->thash && HASHinfo(bk, bv, b->thash, "thash->") != GDK_SUCCEED) {
+		MT_rwlock_rdunlock(&b->thashlock);
+		bat_iterator_end(&bi);
+		BBPreclaim(bk);
+		BBPreclaim(bv);
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	MT_rwlock_rdunlock(&b->thashlock);
+	bat_iterator_end(&bi);
 	*key = bk;
 	*val = bv;
 	assert(BATcount(bk) == BATcount(bv));
@@ -803,6 +813,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		if (p != BUN_NONE) {
 			BATiter bi = bat_iterator(b[1]);
 			mnstr_printf(f, " %s\n", (str) BUNtvar(bi, p));
+			bat_iterator_end(&bi);
 		} else {
 			mnstr_printf(f, " not found\n");
 		}
@@ -911,10 +922,9 @@ retryRead:
 			m = 0;
 			break;
 		case 'e':
-		{
 			/* terminate the execution for ordinary functions only */
 			if (strncmp("exit", b, 4) == 0) {
-			case 'x':
+		case 'x':
 				if (!(getInstrPtr(mb, 0)->token == FACcall)) {
 					stk->cmd = 'x';
 					cntxt->prompt = oldprompt;
@@ -922,7 +932,6 @@ retryRead:
 				}
 			}
 			return;
-		}
 		case 'q':
 		{
 			MalStkPtr su;
@@ -966,8 +975,7 @@ retryRead:
 				modname = b;
 				fcnname = strchr(b, '.');
 				if (fcnname) {
-					*fcnname = 0;
-					fcnname++;
+					*fcnname++ = 0;
 				}
 				fsym = findModule(cntxt->usermodule, putName(modname));
 
@@ -1013,9 +1021,12 @@ retryRead:
 				skipBlanc(cntxt, b);
 				mod = b;
 				skipWord(cntxt, b);
-				*b = 0;
-				fcn = b + 1;
-				if ((w = strchr(b + 1, '\n')))
+				if (*b) {
+					*b = 0;
+					fcn = b + 1;
+				} else
+					fcn = b;
+				if ((w = strchr(fcn, '\n')))
 					*w = 0;
 				mnstr_printf(out, "#trap %s.%s\n", mod, fcn);
 			}
@@ -1090,7 +1101,7 @@ retryRead:
 				/* watchout, you don't want to wait for locks by others */
 				mnstr_printf(out, "BBP contains %d entries\n", limit);
 				for (; i < limit; i++)
-					if ((BBP_lrefs(i) || BBP_refs(i)) && BBP_cache(i)) {
+					if (BBPcheck(i) && (BBP_lrefs(i) || BBP_refs(i)) && BBP_cache(i)) {
 						mnstr_printf(out, "#[%d] %-15s", i, BBP_logical(i));
 						if (BBP_cache(i))
 							printBATproperties(out, BBP_cache(i));
@@ -1103,19 +1114,20 @@ retryRead:
 							mnstr_printf(out, " dirty");
 						if (*BBP_logical(i) == '.')
 							mnstr_printf(out, " zombie ");
-						if (BBPstatus(i) & BBPLOADED)
+						unsigned status = BBP_status(i);
+						if (status & BBPLOADED)
 							mnstr_printf(out, " loaded ");
-						if (BBPstatus(i) & BBPSWAPPED)
+						if (status & BBPSWAPPED)
 							mnstr_printf(out, " swapped ");
-						if (BBPstatus(i) & BBPTMP)
+						if (status & BBPTMP)
 							mnstr_printf(out, " tmp ");
-						if (BBPstatus(i) & BBPDELETED)
+						if (status & BBPDELETED)
 							mnstr_printf(out, " deleted ");
-						if (BBPstatus(i) & BBPEXISTING)
+						if (status & BBPEXISTING)
 							mnstr_printf(out, " existing ");
-						if (BBPstatus(i) & BBPNEW)
+						if (status & BBPNEW)
 							mnstr_printf(out, " new ");
-						if (BBPstatus(i) & BBPPERSISTENT)
+						if (status & BBPPERSISTENT)
 							mnstr_printf(out, " persistent ");
 						mnstr_printf(out, "\n");
 					}
@@ -1212,11 +1224,12 @@ retryRead:
 			skipWord(cntxt, b);
 			t = b;
 			skipNonBlanc(cntxt, t);
-			*t = 0;
-			/* you can identify a start and length */
-			t++;
-			skipBlanc(cntxt, t);
-			if (isdigit((unsigned char) *t)) {
+			if (*t) {
+				*t++ = 0;
+				/* you can identify a start and length */
+				skipBlanc(cntxt, t);
+			}
+			if (*t && isdigit((unsigned char) *t)) {
 				size = (BUN) atol(t);
 				skipWord(cntxt, t);
 				if (isdigit((unsigned char) *t))
@@ -1330,7 +1343,7 @@ partial:
 					mnstr_printf(out, "#'%s' not resolved\n", c);
 					break;
 				}
-			} 
+			}
 			showMalBlkHistory(out, mb);
 			break;
 		}

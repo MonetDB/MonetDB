@@ -32,7 +32,7 @@ ALTER TABLE complete ADD TABLE cpart1
 statement ok
 ALTER TABLE complete ADD TABLE cpart2
 
-statement error 42S02!ALTER TABLE: read only MERGE TABLES are not supported
+statement error 42000!ALTER TABLE: access changes on MERGE TABLES not supported
 ALTER TABLE complete SET READ ONLY
 
 statement ok

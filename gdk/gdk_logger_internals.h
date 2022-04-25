@@ -3,11 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _LOGGER_INTERNALS_H_
 #define _LOGGER_INTERNALS_H_
+
+#define FLUSH_QUEUE_SIZE 2048 /* maximum size of the flush queue, i.e. maximum number of transactions committing simultaneously */
 
 typedef struct logged_range_t {
 	ulng id;			/* log file id */
@@ -26,6 +28,7 @@ struct logger {
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 	bool flushing;
 	bool flushnow;
+	bool request_rotation;
 	logged_range *pending;
 	logged_range *current;
 
@@ -39,9 +42,11 @@ struct logger {
 	postversionfix_fptr postfuncp;
 	void *funcdata;
 	stream *output_log;
-	stream *input_log;	/* current stream too flush */
+	stream *input_log;	/* current stream to flush */
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 
+	ATOMIC_TYPE refcount; /* Number of active writers and flushers in the logger */ // TODO check refcount in c->log and c->end
+	MT_Lock rotation_lock;
 	MT_Lock lock;
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog_bid;	/* int bid column */
@@ -56,13 +61,21 @@ struct logger {
 	BAT *seqs_val;		/* lng value column */
 	BAT *dseqs;		/* deleted from seqs table */
 
-	/* we map type names into internal log ids, split in 2 ranges (0-127 fixed size types and 128 - 254 varsized) */
-	BAT *type_id;		/* id of a type */
-	BAT *type_nme;		/* names of types */
-	BAT *type_nr;		/* atom number of this type (transient) */
+	/* we map type names into internal log ids, split in 2 ranges
+	 * (0-127 fixed size types and 129 - 255 varsized) */
+	uint8_t type_nr[256];	/* mapping from logger type id to GDK type nr */
+	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
 	void *buf;
 	size_t bufsize;
+
+	/* flush variables */
+	int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
+	int flush_queue_begin; /* start index of the queue */
+	int flush_queue_length; /* length of the queue */
+	MT_Sema flush_queue_semaphore; /*to protect the queue against ring buffer overflows */
+	MT_Lock flush_queue_lock; /* to protect the queue against concurrent reads and writes */
+	MT_Lock flush_lock; /* so only one transaction can flush to disk at any given time */
 };
 
 struct old_logger {
@@ -96,6 +109,6 @@ struct old_logger {
 	BAT *del;		/* bat ids of bats being deleted by upgrade */
 };
 
-gdk_return logger_create_types_file(logger *lg, const char *filename);
+gdk_return logger_create_types_file(logger *lg, const char *filename, bool append);
 
 #endif /* _LOGGER_INTERNALS_H_ */

@@ -19,119 +19,119 @@ insert into t3220 values (-0.2,-0.2)
 statement ok
 insert into t3220 values (0.2,0.2)
 
-query RT rowsort
+query RR rowsort
 select * from t3220
 ----
 -0.100
--0.1
+-0.100
 -0.200
--0.2
+-0.200
 0.000
-0.0
+0.000
 0.100
-0.1
+0.100
 0.200
-0.2
+0.200
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where y = 0
 ----
 0.000
-0.0
+0.000
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where z = 0
 ----
 0.000
-0.0
+0.000
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where y < 0
 ----
 -0.100
--0.1
+-0.100
 -0.200
--0.2
+-0.200
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where z < 0
 ----
 -0.100
--0.1
+-0.100
 -0.200
--0.2
+-0.200
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where y > 0
 ----
 0.100
-0.1
+0.100
 0.200
-0.2
+0.200
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where z > 0
 ----
 0.100
-0.1
+0.100
 0.200
-0.2
+0.200
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where y <> 0
 ----
 -0.100
--0.1
+-0.100
 -0.200
--0.2
+-0.200
 0.100
-0.1
+0.100
 0.200
-0.2
+0.200
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where z <> 0
 ----
 -0.100
--0.1
+-0.100
 -0.200
--0.2
+-0.200
 0.100
-0.1
+0.100
 0.200
-0.2
+0.200
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where y > 0.1
 ----
 0.200
-0.2
+0.200
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where y < 0.1
 ----
 -0.100
--0.1
+-0.100
 -0.200
--0.2
+-0.200
 0.000
-0.0
+0.000
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where y < -0.1
 ----
 -0.200
--0.2
+-0.200
 
-query RT rowsort
+query RR rowsort
 select * from t3220 where y > -0.1
 ----
 0.000
-0.0
+0.000
 0.100
-0.1
+0.100
 0.200
-0.2
+0.200
 
 statement ok
 rollback

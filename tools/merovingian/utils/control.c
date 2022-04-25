@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -194,24 +194,12 @@ control_setup(
 				char *shash = NULL;
 				char *phash = NULL;
 				char *algsv[] = {
-#ifdef HAVE_RIPEMD160_UPDATE
 					"RIPEMD160",
-#endif
-#ifdef HAVE_SHA512_UPDATE
 					"SHA512",
-#endif
-#ifdef HAVE_SHA384_UPDATE
 					"SHA384",
-#endif
-#ifdef HAVE_SHA256_UPDATE
 					"SHA256",
-#endif
-#ifdef HAVE_SHA224_UPDATE
 					"SHA224",
-#endif
-#ifdef HAVE_SHA1_UPDATE
 					"SHA1",
-#endif
 					NULL
 				};
 				(void)algsv;
@@ -278,37 +266,20 @@ control_setup(
 
 				/* we first need to hash our password in the form the
 				 * server stores it too */
-#ifdef HAVE_RIPEMD160_UPDATE
 				if (strcmp(shash, "RIPEMD160") == 0) {
 					phash = mcrypt_RIPEMD160Sum(pass, strlen(pass));
-				} else
-#endif
-#ifdef HAVE_SHA512_UPDATE
-				if (strcmp(shash, "SHA512") == 0) {
+				} else if (strcmp(shash, "SHA512") == 0) {
 					phash = mcrypt_SHA512Sum(pass, strlen(pass));
 				} else
-#endif
-#ifdef HAVE_SHA384_UPDATE
 				if (strcmp(shash, "SHA384") == 0) {
 					phash = mcrypt_SHA384Sum(pass, strlen(pass));
-				} else
-#endif
-#ifdef HAVE_SHA256_UPDATE
-				if (strcmp(shash, "SHA256") == 0) {
+				} else if (strcmp(shash, "SHA256") == 0) {
 					phash = mcrypt_SHA256Sum(pass, strlen(pass));
-				} else
-#endif
-#ifdef HAVE_SHA224_UPDATE
-				if (strcmp(shash, "SHA224") == 0) {
+				} else if (strcmp(shash, "SHA224") == 0) {
 					phash = mcrypt_SHA224Sum(pass, strlen(pass));
-				} else
-#endif
-#ifdef HAVE_SHA1_UPDATE
-				if (strcmp(shash, "SHA1") == 0) {
+				} else if (strcmp(shash, "SHA1") == 0) {
 					phash = mcrypt_SHA1Sum(pass, strlen(pass));
-				} else
-#endif
-				{
+				} else {
 					(void)phash; (void)algos;
 					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
 							"monetdbd server requires unknown hash: %s", shash);
@@ -316,7 +287,6 @@ control_setup(
 					close_stream(control->fdin);
 					return(strdup(control->sbuf));
 				}
-#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
 				if (!phash) {
 					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
 							"allocation failure while establishing connection");
@@ -352,7 +322,6 @@ control_setup(
 					close_stream(control->fdin);
 					return(strdup(control->sbuf));
 				}
-#endif
 			}
 		}
 
@@ -509,7 +478,7 @@ char* control_send(
 		int port,
 		const char *database,
 		const char *command,
-		char wait,
+		bool wait,
 		const char *pass)
 {
 	char *msg;
@@ -670,7 +639,7 @@ char *
 control_ping(const char *host, int port, const char *pass) {
 	char *res;
 	char *err;
-	if ((err = control_send(&res, host, port, "", "ping", 0, pass)) == NULL) {
+	if ((err = control_send(&res, host, port, "", "ping", false, pass)) == NULL) {
 		if (res != NULL)
 			free(res);
 	}

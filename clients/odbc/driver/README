@@ -1,7 +1,7 @@
 This README describes the implementation of the ODBC driver code
 (clients/odbc/driver/*) for the MonetDB SQL frontend.
 It is available from
-http://dev.monetdb.org/hg/MonetDB/file/default/clients/odbc/driver
+https://dev.monetdb.org/hg/MonetDB/file/default/clients/odbc/driver
 
 This file maybe a little out of date.
 

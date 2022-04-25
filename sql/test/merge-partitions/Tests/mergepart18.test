@@ -16,15 +16,15 @@ ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '1' TO '100'
 statement ok
 ALTER TABLE updateme ADD TABLE subt1 AS PARTITION FROM '1' TO '100'
 
-query TTT rowsort
+query TTI rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 1
 100
-False
+0
 201
 300
-False
+0
 
 statement ok rowcount 1
 INSERT INTO updateme VALUES (1, 'first')
@@ -61,15 +61,15 @@ DELETE FROM updateme
 statement ok
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0'
 
-query TTT rowsort
+query TTI rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 -100
 0
-False
+0
 201
 300
-False
+0
 
 statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO updateme VALUES (1, 'ups')
@@ -89,15 +89,15 @@ START TRANSACTION
 statement ok
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-1' TO '200'
 
-query TTT rowsort
+query TTI rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 -1
 200
-False
+0
 201
 300
-False
+0
 
 statement ok rowcount 1
 INSERT INTO updateme VALUES (199, 'third')
@@ -108,15 +108,15 @@ INSERT INTO updateme VALUES (301, 'wrong')
 statement ok
 ROLLBACK
 
-query TTT rowsort
+query TTI rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 -100
 0
-False
+0
 201
 300
-False
+0
 
 statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO updateme VALUES (150, 'fourth')

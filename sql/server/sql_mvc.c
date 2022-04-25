@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -31,25 +31,26 @@
 static void
 sql_create_comments(mvc *m, sql_schema *s)
 {
-	sql_table *t;
-	sql_column *c;
-	sql_key *k;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+	sql_key *k = NULL;
 
-	t = mvc_create_table(m, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1, 0);
-	c = mvc_create_column_(m, t, "id", "int", 32);
-	k = sql_trans_create_ukey(m->session->tr, t, "comments_id_pkey", pkey);
-	k = sql_trans_create_kc(m->session->tr, k, c);
-	k = sql_trans_key_done(m->session->tr, k);
+	mvc_create_table(&t, m, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1, 0);
+	mvc_create_column_(&c, m, t, "id", "int", 32);
+	sql_trans_create_ukey(&k, m->session->tr, t, "comments_id_pkey", pkey);
+	sql_trans_create_kc(m->session->tr, k, c);
+	sql_trans_key_done(m->session->tr, k);
 	sql_trans_create_dependency(m->session->tr, c->base.id, k->idx->base.id, INDEX_DEPENDENCY);
-	c = mvc_create_column_(m, t, "remark", "varchar", 65000);
+	mvc_create_column_(&c, m, t, "remark", "varchar", 65000);
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
 
 sql_table *
 mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 {
-	sql_table *t = mvc_create_view(m, s, name, SQL_PERSIST, query, 1);
+	sql_table *t = NULL;
 
+	mvc_create_view(&t, m, s, name, SQL_PERSIST, query, 1);
 	if (t) {
 		char *buf;
 		sql_rel *r = NULL;
@@ -61,10 +62,14 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 
 		r = rel_parse(m, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(m, r, 0, 0);
+			r = sql_processrelation(m, r, 0, 0, 0, 0);
 		if (r) {
-			list *id_l = rel_dependencies(m, r);
-			mvc_create_dependencies(m, id_l, t->base.id, VIEW_DEPENDENCY);
+			list *blist = rel_dependencies(m, r);
+			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
+				sa_reset(m->ta);
+				(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return NULL;
+			}
 		}
 		sa_reset(m->ta);
 		assert(r);
@@ -81,10 +86,11 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 			sql_column *col = mvc_bind_column(m, t, VIEW[i].name); \
 			VIEW[i].oldid = col->base.id;			\
 		}							\
-		if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
+		if ((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
 			mvc_destroy(m);					\
+			mvc_exit(store);	\
 			TRC_CRITICAL(SQL_TRANS,				\
-				     "Initialization: %s\n", output);	\
+				     "Initialization error: %s\n", output);	\
 			freeException(output);				\
 			return NULL;					\
 		}							\
@@ -117,7 +123,7 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 }
 
 sql_store
-mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
+mvc_init(int debug, store_type store_tpe, int ro, int su)
 {
 	sqlstore *store = NULL;
 	sql_schema *s;
@@ -127,18 +133,20 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 
 	TRC_DEBUG(SQL_TRANS, "Initialization\n");
 	keyword_init();
-	if(scanner_init_keywords() != 0) {
+	if (scanner_init_keywords() != 0) {
 		TRC_CRITICAL(SQL_TRANS, "Malloc failure\n");
 		return NULL;
 	}
 
-	if ((store = store_init(pa, debug, store_tpe, ro, su)) == NULL) {
+	if ((store = store_init(debug, store_tpe, ro, su)) == NULL) {
+		keyword_exit();
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
 	}
 
-	m = mvc_create((sql_store)store, pa, 0, 0, NULL, NULL);
+	m = mvc_create((sql_store)store, store->sa, 0, 0, NULL, NULL);
 	if (!m) {
+		mvc_exit(store);
 		TRC_CRITICAL(SQL_TRANS, "Malloc failure\n");
 		return NULL;
 	}
@@ -147,6 +155,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 	m->sa = sa_create(m->pa);
 	if (!m->sa) {
 		mvc_destroy(m);
+		mvc_exit(store);
 		TRC_CRITICAL(SQL_TRANS, "Malloc failure\n");
 		return NULL;
 	}
@@ -259,6 +268,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 		};
 		if (mvc_trans(m) < 0) {
 			mvc_destroy(m);
+			mvc_exit(store);
 			TRC_CRITICAL(SQL_TRANS, "Failed to start transaction\n");
 			return NULL;
 		}
@@ -266,24 +276,25 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 		assert(m->session->schema != NULL);
 
 		if (!store->first) {
-			MVC_INIT_DROP_TABLE(tid,  "tables", tview, 9);
-			MVC_INIT_DROP_TABLE(cid,  "columns", cview, 10);
+			MVC_INIT_DROP_TABLE(tid, "tables", tview, 9);
+			MVC_INIT_DROP_TABLE(cid, "columns", cview, 10);
 		}
 
 		t = mvc_init_create_view(m, s, "tables", "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";");
 		if (!t) {
 			mvc_destroy(m);
+			mvc_exit(store);
 			TRC_CRITICAL(SQL_TRANS, "Failed to create 'tables' view\n");
 			return NULL;
 		}
 
 		for (int i = 0; i < 9; i++) {
-			sql_column *col = mvc_create_column_(m, t,
-							     tview[i].name,
-							     tview[i].type,
-							     tview[i].digits);
+			sql_column *col = NULL;
+
+			mvc_create_column_(&col, m, t, tview[i].name, tview[i].type, tview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);
+				mvc_exit(store);
 				TRC_CRITICAL(SQL_TRANS,
 					     "Initialization: creation of sys.tables column %s failed\n", tview[i].name);
 				return NULL;
@@ -308,16 +319,17 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 		t = mvc_init_create_view(m, s, "columns", "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;");
 		if (!t) {
 			mvc_destroy(m);
+			mvc_exit(store);
 			TRC_CRITICAL(SQL_TRANS, "Failed to create 'columns' view\n");
 			return NULL;
 		}
 		for (int i = 0; i < 10; i++) {
-			sql_column *col = mvc_create_column_(m, t,
-							     cview[i].name,
-							     cview[i].type,
-							     cview[i].digits);
+			sql_column *col = NULL;
+
+			mvc_create_column_(&col, m, t, cview[i].name, cview[i].type, cview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);
+				mvc_exit(store);
 				TRC_CRITICAL(SQL_TRANS,
 					     "Initialization: creation of sys.tables column %s failed\n", cview[i].name);
 				return NULL;
@@ -346,12 +358,15 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 		if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
 			TRC_CRITICAL(SQL_TRANS, "Unable to commit system tables: %s\n", (msg + 6));
 			freeException(msg);
+			mvc_destroy(m);
+			mvc_exit(store);
 			return NULL;
 		}
 	}
 
 	if (mvc_trans(m) < 0) {
 		mvc_destroy(m);
+		mvc_exit(store);
 		TRC_CRITICAL(SQL_TRANS, "Failed to start transaction\n");
 		return NULL;
 	}
@@ -371,6 +386,8 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 				if ((err = initialize_sql_parts(m, tt)) != NULL) {
 					TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
 					freeException(err);
+					mvc_destroy(m);
+					mvc_exit(store);
 					return NULL;
 				}
 			}
@@ -380,6 +397,8 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 	if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "Unable to commit system tables: %s\n", (msg + 6));
 		freeException(msg);
+		mvc_destroy(m);
+		mvc_exit(store);
 		return NULL;
 	}
 
@@ -441,31 +460,29 @@ mvc_debug_on(mvc *m, int flg)
 void
 mvc_cancel_session(mvc *m)
 {
-	(void)sql_trans_end(m->session, 0);
+	(void)sql_trans_end(m->session, SQL_ERR);
 }
 
 int
 mvc_trans(mvc *m)
 {
-	int schema_changed = 0, err = m->session->status;
+	int res = 0, err = m->session->status;
 	assert(!m->session->tr->active);	/* can only start a new transaction */
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
-	schema_changed = sql_trans_begin(m->session);
-	if (m->qc && (schema_changed || err)){
-		if (schema_changed || err) {
-			int seqnr = m->qc->id;
-			if (m->qc)
-				qc_destroy(m->qc);
-			/* TODO Change into recreate all */
-			m->qc = qc_create(m->pa, m->clientid, seqnr);
-			if (!m->qc) {
-				(void)sql_trans_end(m->session, 0);
-				return -1;
-			}
+	res = sql_trans_begin(m->session);
+	if (m->qc && (res || err)) {
+		int seqnr = m->qc->id;
+		if (m->qc)
+			qc_destroy(m->qc);
+		/* TODO Change into recreate all */
+		if (!(m->qc = qc_create(m->pa, m->clientid, seqnr))) {
+			if (m->session->tr->active)
+				(void)sql_trans_end(m->session, SQL_ERR);
+			return -1;
 		}
 	}
-	return 0;
+	return res;
 }
 
 str
@@ -473,7 +490,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 {
 	sql_trans *tr = m->session->tr;
 	int ok = SQL_OK;
-	str msg = NULL, other;
+	str msg = MAL_SUCCEED, other;
 	char operation[BUFSIZ];
 
 	assert(tr);
@@ -497,24 +514,28 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	if (name && name[0] != '\0') {
 		sql_trans *tr = m->session->tr;
 		TRC_DEBUG(SQL_TRANS, "Savepoint\n");
-		m->session->tr = sql_trans_create(m->store, tr, name);
-		if (!m->session->tr) {
-			msg = createException(SQL, "sql.commit", SQLSTATE(HY013) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
-			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				freeException(other);
-			return msg;
+		if (!(m->session->tr = sql_trans_create(m->store, tr, name)))
+			return createException(SQL, "sql.commit", SQLSTATE(HY013) "%s allocation failure while creating savepoint", operation);
+
+		if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
+			m->session->tr = sql_trans_destroy(m->session->tr);
+			return createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found on the current transaction", operation);
 		}
 		m->type = Q_TRANS;
-		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		TRC_INFO(SQL_TRANS, "Savepoint commit '%s' done\n", name);
 		return msg;
 	}
 
 	if (!tr->parent && !name) {
-		if (sql_trans_end(m->session, 1) != SQL_OK) {
-			/* transaction conflict */
-			msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
-			return msg;
+		switch (sql_trans_end(m->session, ok)) {
+			case SQL_ERR:
+				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
+				break;
+			case SQL_CONFLICT:
+				/* transaction conflict */
+				return createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+			default:
+				break;
 		}
 		msg = WLCcommit(m->clientid);
 		if (msg != MAL_SUCCEED) {
@@ -522,52 +543,74 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 				freeException(other);
 			return msg;
 		}
+		if (chain) {
+			if (sql_trans_begin(m->session) < 0)
+				return createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
+			m->session->auto_commit = 0; /* disable auto-commit while chaining */
+		}
+		m->type = Q_TRANS;
+		TRC_INFO(SQL_TRANS,
+			"Commit done\n");
 		return msg;
 	}
+
+	/* save points only */
+	assert(name || tr->parent);
 
 	/* commit and cleanup nested transactions */
 	if (tr->parent) {
 		while (tr->parent != NULL && ok == SQL_OK) {
-			if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-				GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-			}
+			if ((ok = sql_trans_commit(tr)) == SQL_ERR)
+				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
 			tr = sql_trans_destroy(tr);
 		}
+		while (tr->parent != NULL)
+			tr = sql_trans_destroy(tr);
 		m->session->tr = tr;
+		if (ok != SQL_OK)
+			msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 	}
 
 	/* if there is nothing to commit reuse the current transaction */
-	if (tr->changes == NULL) {
-		if (!chain)
-			(void)sql_trans_end(m->session, 1);
-		m->type = Q_TRANS;
-		/* save points not handled by WLC...
-		msg = WLCcommit(m->clientid);
-		if (msg != MAL_SUCCEED) {
-			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				freeException(other);
-			return msg;
+	if (list_empty(tr->changes)) {
+		if (!chain) {
+			switch (sql_trans_end(m->session, ok)) {
+				case SQL_ERR:
+					GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
+					break;
+				case SQL_CONFLICT:
+					if (!msg)
+						msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+					break;
+				default:
+					break;
+			}
 		}
-		*/
+		m->type = Q_TRANS;
 		TRC_INFO(SQL_TRANS,
 			"Commit done (no changes)\n");
 		return msg;
 	}
 
-	if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-		GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
+	switch (sql_trans_end(m->session, ok)) {
+		case SQL_ERR:
+			GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
+			break;
+		case SQL_CONFLICT:
+			if (!msg)
+				msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+			return msg;
+		default:
+			break;
 	}
-	/*
-	msg = WLCcommit(m->clientid);
-	if (msg != MAL_SUCCEED) {
-		if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			freeException(other);
-		return msg;
+	if (chain) {
+		if (sql_trans_begin(m->session) < 0) {
+			if (!msg)
+				msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
+			return msg;
+		}
+		m->session->auto_commit = 0; /* disable auto-commit while chaining */
 	}
-	*/
-	(void)sql_trans_end(m->session, 1);
-	if (chain)
-		sql_trans_begin(m->session);
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
 		"Commit done\n");
@@ -577,7 +620,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 str
 mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 {
-	str msg;
+	str msg = MAL_SUCCEED;
 
 	TRC_DEBUG(SQL_TRANS, "Rollback: %s\n", (name) ? name : "");
 	(void) disabling_auto_commit;
@@ -587,7 +630,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
-		if (!tr) {
+		if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
 			msg = createException(SQL, "sql.rollback", SQLSTATE(42000) "ROLLBACK TO SAVEPOINT: no such savepoint: '%s'", name);
 			m->session->status = -1;
 			return msg;
@@ -595,30 +638,42 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		tr = m->session->tr;
 		while (!tr->name || strcmp(tr->name, name) != 0) {
 			/* make sure we do not reuse changed data */
-			if (tr->changes)
+			if (!list_empty(tr->changes))
 				tr->status = 1;
 			tr = sql_trans_destroy(tr);
 		}
-		m->session->tr = tr;	/* restart at savepoint */
-		m->session->status = tr->status;
-		if (tr->name) {
-			_DELETE(tr->name);
-			tr->name = NULL;
+		/* start a new transaction after rolling back */
+		if (!(m->session->tr = tr = sql_trans_create(m->store, tr, name))) {
+			msg = createException(SQL, "sql.rollback", SQLSTATE(HY013) "ROLLBACK TO SAVEPOINT: allocation failure while restarting savepoint");
+			m->session->status = -1;
+			return msg;
 		}
-		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
+		m->session->status = tr->parent->status;
+		if (!(m->session->schema = find_sql_schema(tr, m->session->schema_name))) {
+			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK TO SAVEPOINT: finished successfully, but the session's schema could not be found on the current transaction");
+			m->session->status = -1;
+			return msg;
+		}
 	} else {
 		/* first release all intermediate savepoints */
 		while (tr->parent != NULL)
 			tr = sql_trans_destroy(tr);
 		m->session-> tr = tr;
 		/* make sure we do not reuse changed data */
-		if (tr->changes)
+		if (!list_empty(tr->changes))
 			tr->status = 1;
-		(void)sql_trans_end(m->session, 0);
-		if (chain)
-			sql_trans_begin(m->session);
+		(void)sql_trans_end(m->session, SQL_ERR);
+		if (chain) {
+			if (sql_trans_begin(m->session) < 0) {
+				msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found while starting the next transaction");
+				m->session->status = -1;
+				return msg;
+			}
+			m->session->auto_commit = 0; /* disable auto-commit while chaining */
+		}
 	}
-	msg = WLCrollback(m->clientid);
+	if (msg == MAL_SUCCEED)
+		msg = WLCrollback(m->clientid);
 	if (msg != MAL_SUCCEED) {
 		m->session->status = -1;
 		return msg;
@@ -627,7 +682,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	TRC_INFO(SQL_TRANS,
 		"Commit%s%s rolled back%s\n",
 		name ? " " : "", name ? name : "",
-		!tr->changes ? " (no changes)" : "");
+		list_empty(tr->changes) ? " (no changes)" : "");
 	return msg;
 }
 
@@ -637,12 +692,10 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 str
 mvc_release(mvc *m, const char *name)
 {
-	int ok = SQL_OK;
 	sql_trans *tr = m->session->tr;
 	str msg = MAL_SUCCEED;
 
-	assert(tr);
-	assert(m->session->tr->active);	/* only release active transactions */
+	assert(tr && tr->active);	/* only release active transactions */
 
 	TRC_DEBUG(SQL_TRANS, "Release: %s\n", (name) ? name : "");
 
@@ -654,21 +707,25 @@ mvc_release(mvc *m, const char *name)
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
 	if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
-		msg = createException(SQL, "sql.release", SQLSTATE(42000) "Release savepoint %s doesn't exist", name);
+		msg = createException(SQL, "sql.release", SQLSTATE(42000) "RELEASE: no such savepoint: '%s'", name);
 		m->session->status = -1;
 		return msg;
 	}
 	tr = m->session->tr;
-	while (ok == SQL_OK && (!tr->name || strcmp(tr->name, name) != 0)) {
+	while (!tr->name || strcmp(tr->name, name) != 0) {
 		/* commit all intermediate savepoints */
 		if (sql_trans_commit(tr) != SQL_OK)
 			GDKfatal("release savepoints should not fail");
 		tr = sql_trans_destroy(tr);
 	}
-	_DELETE(tr->name);
-	tr->name = NULL;
+	_DELETE(tr->name); /* name will no longer be used */
 	m->session->tr = tr;
-	m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
+	m->session->status = tr->status;
+	if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
+		msg = createException(SQL, "sql.release", SQLSTATE(40000) "RELEASE: finished successfully, but the session's schema could not be found on the current transaction");
+		m->session->status = -1;
+		return msg;
+	}
 
 	m->type = Q_TRANS;
 	return msg;
@@ -727,6 +784,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 
 	m->role_id = m->user_id = -1;
 	m->timezone = 0;
+	m->sql_optimizer = INT_MAX;
 	m->clientid = clientid;
 
 	m->emode = m_normal;
@@ -736,6 +794,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 
 	m->label = 0;
 	m->cascade_action = NULL;
+	m->runs = NULL;
 
 	if (!(m->schema_path = list_create((fdestroy)_free))) {
 		qc_destroy(m->qc);
@@ -809,12 +868,16 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	if (m->timezone != 0)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "current_timezone"), 0);
 	m->timezone = 0;
+	if (m->sql_optimizer != INT_MAX)
+		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "sql_optimizer"), INT_MAX);
+	m->sql_optimizer = INT_MAX;
 	if (m->debug != debug)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "debug"), debug);
 	m->debug = debug;
 
 	m->label = 0;
 	m->cascade_action = NULL;
+	m->runs = NULL;
 	m->type = Q_PARSE;
 
 	scanner_init(&m->scanner, rs, ws);
@@ -830,7 +893,7 @@ mvc_destroy(mvc *m)
 	tr = m->session->tr;
 	if (tr) {
 		if (m->session->tr->active)
-			(void)sql_trans_end(m->session, 0);
+			(void)sql_trans_end(m->session, SQL_ERR);
 		while (tr->parent)
 			tr = sql_trans_destroy(tr);
 	}
@@ -936,10 +999,9 @@ mvc_first_column(mvc *m, sql_table *t)
 sql_key *
 mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 {
-	sql_base *b = os_find_name(s->keys, m->session->tr, kname);
-	sql_key *k = (sql_key*)b;
+	sql_key *k = schema_find_key(m->session->tr, s, kname);
 
-	if (!b)
+	if (!k)
 		return NULL;
 	TRC_DEBUG(SQL_TRANS, "Bind key: %s.%s\n", s->base.name, kname);
 	return k;
@@ -948,11 +1010,10 @@ mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 sql_idx *
 mvc_bind_idx(mvc *m, sql_schema *s, const char *iname)
 {
-	sql_base *b = os_find_name(s->idxs, m->session->tr, iname);
+	sql_idx *i = schema_find_idx(m->session->tr, s, iname);
 
-	if (!b)
+	if (!i)
 		return NULL;
-	sql_idx *i = (sql_idx*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind index: %s.%s\n", s->base.name, iname);
 	return i;
 }
@@ -997,13 +1058,12 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 sql_trigger *
 mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 {
-	sql_base *b = os_find_name(s->triggers, m->session->tr, tname);
+	sql_trigger *t = schema_find_trigger(m->session->tr, s, tname);
 
-	if (!b)
+	if (!t)
 		return NULL;
-	sql_trigger *trigger = (sql_trigger*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind trigger: %s.%s\n", s->base.name, tname);
-	return trigger;
+	return t;
 }
 
 int
@@ -1018,22 +1078,23 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 {
 	TRC_DEBUG(SQL_TRANS, "Drop type: %s %s\n", s->base.name, t->base.name);
 	if (t)
-		return sql_trans_drop_type(m->session->tr, s, t->base.id, drop_action);
+		return sql_trans_drop_type(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 	return 0;
 }
 
-sql_func *
-mvc_create_func(mvc *m, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
+int
+mvc_create_func(sql_func **f, mvc *m, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
+				const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
 {
-	sql_func *f = NULL;
+	int lres = LOG_OK;
 
 	TRC_DEBUG(SQL_TRANS, "Create function: %s\n", name);
 	if (sa) {
-		f = create_sql_func(m->store, sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
-		f->s = s;
+		*f = create_sql_func(m->store, sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect);
+		(*f)->s = s;
 	} else
-		f = sql_trans_create_func(m->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
-	return f;
+		lres = sql_trans_create_func(f, m->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect);
+	return lres;
 }
 
 int
@@ -1050,14 +1111,11 @@ mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 	return sql_trans_drop_all_func(m->session->tr, s, list_func, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
-sql_schema *
+int
 mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner)
 {
-	sql_schema *s = NULL;
-
 	TRC_DEBUG(SQL_TRANS, "Create schema: %s %d %d\n", name, auth_id, owner);
-	s = sql_trans_create_schema(m->session->tr, name, auth_id, owner);
-	return s;
+	return sql_trans_create_schema(m->session->tr, name, auth_id, owner);
 }
 
 int
@@ -1067,53 +1125,67 @@ mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 	return sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
-sql_ukey *
-mvc_create_ukey(mvc *m, sql_table *t, const char *name, key_type kt)
+int
+mvc_create_ukey(sql_key **kres, mvc *m, sql_table *t, const char *name, key_type kt)
 {
+	int res = LOG_OK;
+
 	TRC_DEBUG(SQL_TRANS, "Create ukey: %s %u\n", t->base.name, (unsigned) kt);
 	if (t->persistence == SQL_DECLARED_TABLE)
-		return create_sql_ukey(m->store, m->sa, t, name, kt);
+		*kres = create_sql_ukey(m->store, m->sa, t, name, kt);
 	else
-		return (sql_ukey*)sql_trans_create_ukey(m->session->tr, t, name, kt);
+		res = sql_trans_create_ukey(kres, m->session->tr, t, name, kt);
+	return res;
 }
 
-sql_key *
-mvc_create_ukey_done(mvc *m, sql_key *k)
+int
+mvc_create_key_done(mvc *m, sql_key *k)
 {
+	int res = LOG_OK;
+
 	if (k->t->persistence == SQL_DECLARED_TABLE)
-		return key_create_done(m->store, m->sa, k);
+		key_create_done(m->session->tr, m->sa, k);
 	else
-		return sql_trans_key_done(m->session->tr, k);
+		res = sql_trans_key_done(m->session->tr, k);
+	return res;
 }
 
-sql_fkey *
-mvc_create_fkey(mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
+int
+mvc_create_fkey(sql_fkey **kres, mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
 {
+	int res = LOG_OK;
+
 	TRC_DEBUG(SQL_TRANS, "Create fkey: %s %u %p\n", t->base.name, (unsigned) kt, rkey);
 	if (t->persistence == SQL_DECLARED_TABLE)
-		return create_sql_fkey(m->store, m->sa, t, name, kt, rkey, on_delete, on_update);
+		*kres = create_sql_fkey(m->store, m->sa, t, name, kt, rkey, on_delete, on_update);
 	else
-		return sql_trans_create_fkey(m->session->tr, t, name, kt, rkey, on_delete, on_update);
+		res = sql_trans_create_fkey(kres, m->session->tr, t, name, kt, rkey, on_delete, on_update);
+	return res;
 }
 
-sql_key *
+int
 mvc_create_kc(mvc *m, sql_key *k, sql_column *c)
 {
+	int res = LOG_OK;
+
 	if (k->t->persistence == SQL_DECLARED_TABLE)
-		return create_sql_kc(m->store, m->sa, k, c);
+		create_sql_kc(m->store, m->sa, k, c);
 	else
-		return sql_trans_create_kc(m->session->tr, k, c);
+		res = sql_trans_create_kc(m->session->tr, k, c);
+	return res;
 }
 
-sql_fkey *
+int
 mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c)
 {
+	int res = LOG_OK;
 	sql_key *k = (sql_key*)fk;
 
 	if (k->t->persistence == SQL_DECLARED_TABLE)
-		return (sql_fkey*)create_sql_kc(m->store, m->sa, k, c);
+		create_sql_kc(m->store, m->sa, k, c);
 	else
-		return sql_trans_create_fkc(m->session->tr, fk, c);
+		res = sql_trans_create_fkc(m->session->tr, fk, c);
+	return res;
 }
 
 int
@@ -1127,28 +1199,41 @@ mvc_drop_key(mvc *m, sql_schema *s, sql_key *k, int drop_action)
 		return sql_trans_drop_key(m->session->tr, s, k->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
-sql_idx *
-mvc_create_idx(mvc *m, sql_table *t, const char *name, idx_type it)
+int
+mvc_create_idx(sql_idx **i, mvc *m, sql_table *t, const char *name, idx_type it)
 {
-	sql_idx *i;
+	int res = LOG_OK;
 
 	TRC_DEBUG(SQL_TRANS, "Create index: %s %u\n", t->base.name, (unsigned) it);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
-		return create_sql_idx(m->store, m->sa, t, name, it);
+		*i = create_sql_idx(m->store, m->sa, t, name, it);
 	else
-		i = sql_trans_create_idx(m->session->tr, t, name, it);
-	return i;
+		res = sql_trans_create_idx(i, m->session->tr, t, name, it);
+	return res;
 }
 
-sql_idx *
-mvc_create_ic(mvc *m, sql_idx * i, sql_column *c)
+int
+mvc_create_ic(mvc *m, sql_idx *i, sql_column *c)
 {
+	int res = LOG_OK;
+
 	if (i->t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
-		return create_sql_ic(m->store, m->sa, i, c);
+		create_sql_ic(m->store, m->sa, i, c);
 	else
-		return sql_trans_create_ic(m->session->tr, i, c);
+		res = sql_trans_create_ic(m->session->tr, i, c);
+	return res;
+}
+
+int
+mvc_create_idx_done(mvc *m, sql_idx *i)
+{
+	int res = LOG_OK;
+
+	(void) m;
+	(void) create_sql_idx_done(m->session->tr, i);
+	return res;
 }
 
 int
@@ -1163,15 +1248,12 @@ mvc_drop_idx(mvc *m, sql_schema *s, sql_idx *i)
 		return sql_trans_drop_idx(m->session->tr, s, i->base.id, DROP_RESTRICT);
 }
 
-sql_trigger *
-mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement )
+int
+mvc_create_trigger(sql_trigger **tri, mvc *m, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name,
+				   const char *new_name, const char *condition, const char *statement)
 {
-	sql_trigger *i;
-
 	TRC_DEBUG(SQL_TRANS, "Create trigger: %s %d %d %d\n", t->base.name, time, orientation, event);
-	i = sql_trans_create_trigger(m->session->tr, t, name, time, orientation,
-			event, old_name, new_name, condition, statement);
-	return i;
+	return sql_trans_create_trigger(tri, m->session->tr, t, name, time, orientation, event, old_name, new_name, condition, statement);
 }
 
 int
@@ -1181,66 +1263,59 @@ mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 	return sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
 
-sql_table *
-mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties)
+int
+mvc_create_table(sql_table **t, mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties)
 {
-	sql_table *t = NULL;
 	char *err = NULL;
-	int check = 0;
+	int res = LOG_OK;
 
 	assert(s);
 	TRC_DEBUG(SQL_TRANS, "Create table: %s %s %d %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action, (int)properties);
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->store, m->sa, name, tt, system, persistence, commit_action, properties);
-		t->s = s;
+		*t = create_sql_table(m->store, m->sa, name, tt, system, persistence, commit_action, properties);
+		(*t)->s = s;
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, properties);
-		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, t, 1))) {
+		res = sql_trans_create_table(t, m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, properties);
+		if (res == LOG_OK && isPartitionedByExpressionTable(*t) && (err = bootstrap_partition_expression(m, *t, 1))) {
 			(void) sql_error(m, 02, "%s", err);
-			return NULL;
+			return -5;
 		}
-		check = sql_trans_set_partition_table(m->session->tr, t);
-		if(check == -1) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
-			return NULL;
-		} else if (check) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
-			return NULL;
-		}
+		if (res == LOG_OK)
+			res = sql_trans_set_partition_table(m->session->tr, *t);
 	}
-	return t;
+	return res;
 }
 
-sql_table *
-mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const char *sql, bit system)
+int
+mvc_create_view(sql_table **t, mvc *m, sql_schema *s, const char *name, int persistence, const char *sql, bit system)
 {
-	sql_table *t = NULL;
+	int res = LOG_OK;
 
 	TRC_DEBUG(SQL_TRANS, "Create view: %s %s %s\n", s->base.name, name, sql);
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->store, m->sa, name, tt_view, system, persistence, 0, 0);
-		t->s = s;
-		t->query = sa_strdup(m->sa, sql);
+		*t = create_sql_table(m->store, m->sa, name, tt_view, system, persistence, 0, 0);
+		(*t)->s = s;
+		(*t)->query = sa_strdup(m->sa, sql);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0);
+		res = sql_trans_create_table(t, m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0);
 	}
-	return t;
+	return res;
 }
 
-sql_table *
-mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, const char *loc)
+int
+mvc_create_remote(sql_table **t, mvc *m, sql_schema *s, const char *name, int persistence, const char *loc)
 {
-	sql_table *t = NULL;
+	int res = LOG_OK;
 
 	TRC_DEBUG(SQL_TRANS, "Create remote: %s %s %s\n", s->base.name, name, loc);
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->store, m->sa, name, tt_remote, 0, persistence, 0, 0);
-		t->s = s;
-		t->query = sa_strdup(m->sa, loc);
+		*t = create_sql_table(m->store, m->sa, name, tt_remote, 0, persistence, 0, 0);
+		(*t)->s = s;
+		(*t)->query = sa_strdup(m->sa, loc);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
+		res = sql_trans_create_table(t, m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
 	}
-	return t;
+	return res;
 }
 
 str
@@ -1278,26 +1353,29 @@ mvc_clear_table(mvc *m, sql_table *t)
 	return sql_trans_clear_table(m->session->tr, t);
 }
 
-sql_column *
-mvc_create_column_(mvc *m, sql_table *t, const char *name, const char *type, unsigned int digits)
+int
+mvc_create_column_(sql_column **col, mvc *m, sql_table *t, const char *name, const char *type, unsigned int digits)
 {
 	sql_subtype tpe;
 
 	if (!sql_find_subtype(&tpe, type, digits, 0))
-		return NULL;
+		return -1;
 
-	return sql_trans_create_column(m->session->tr, t, name, &tpe);
+	return sql_trans_create_column(col, m->session->tr, t, name, &tpe);
 }
 
-sql_column *
-mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
+int
+mvc_create_column(sql_column **col, mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
+	int res = LOG_OK;
+
 	TRC_DEBUG(SQL_TRANS, "Create column: %s %s %s\n", t->base.name, name, tpe->type->base.name);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
-		return create_sql_column(m->store, m->sa, t, name, tpe);
+		*col = create_sql_column(m->store, m->sa, t, name, tpe);
 	else
-		return sql_trans_create_column(m->session->tr, t, name, tpe);
+		res = sql_trans_create_column(col, m->session->tr, t, name, tpe);
+	return res;
 }
 
 int
@@ -1311,30 +1389,41 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 		return sql_trans_drop_column(m->session->tr, t, col->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
-void
-mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type)
+int
+mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type)
 {
-	TRC_DEBUG(SQL_TRANS, "Create dependency: %d %d %d\n", id, depend_id, (int) depend_type);
-	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
-		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
-}
+	int res = LOG_OK;
 
-void
-mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dependency dep_type)
-{
-	node *n = id_l->h;
-	int i;
-
-	TRC_DEBUG(SQL_TRANS, "Create dependencies on '%d' of type: %d\n", depend_id, (int) dep_type);
-	for (i = 0; i < list_length(id_l); i++)
-	{
-		mvc_create_dependency(m, *(sqlid *) n->data, depend_id, dep_type);
-		n = n->next;
+	TRC_DEBUG(SQL_TRANS, "Create dependency: %d %d %d\n", b->id, depend_id, (int) depend_type);
+	if ( (b->id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) ) {
+		if (!b->new)
+			res = sql_trans_add_dependency(m->session->tr, b->id, ddl);
+		if (res == LOG_OK)
+			res = sql_trans_create_dependency(m->session->tr, b->id, depend_id, depend_type);
 	}
+	return res;
 }
 
 int
-mvc_check_dependency(mvc * m, sqlid id, sql_dependency type, list *ignore_ids)
+mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type)
+{
+	int res = LOG_OK;
+
+	TRC_DEBUG(SQL_TRANS, "Create dependencies on '%d' of type: %d\n", depend_id, (int) dep_type);
+	if (!list_empty(blist)) {
+		for (node *n = blist->h ; n && res == LOG_OK ; n = n->next) {
+			sql_base *b = n->data;
+			if (!b->new) /* only add old objects to the transaction dependency list */
+				res = sql_trans_add_dependency(m->session->tr, b->id, ddl);
+			if (res == LOG_OK)
+				res = mvc_create_dependency(m, b, depend_id, dep_type);
+		}
+	}
+	return res;
+}
+
+int
+mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids)
 {
 	list *dep_list = NULL;
 
@@ -1476,12 +1565,12 @@ mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres)
 }
 
 sql_rel *
-sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt, int storage_based_opt)
+sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
 	if (rel)
 		rel = rel_unnest(sql, rel);
 	if (rel)
-		rel = rel_optimizer(sql, rel, value_based_opt, storage_based_opt);
+		rel = rel_optimizer(sql, rel, profile, instantiate, value_based_opt, storage_based_opt);
 	return rel;
 }
 

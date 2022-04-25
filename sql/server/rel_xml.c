@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -247,7 +247,7 @@ rel_xmlpi(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	return rel_binop_(query->sql, rel ? *rel : NULL, target_st, val_st, NULL, "pi", card_value);
 }
 
-/* cast string too xml */
+/* cast string to xml */
 static sql_exp *
 rel_xmltext(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
@@ -302,4 +302,3 @@ rel_xml(sql_query *query, sql_rel **rel, symbol *s, int f, exp_kind knd)
 	}
 	return ret;
 }
-

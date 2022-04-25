@@ -1,0 +1,20 @@
+statement ok
+CREATE TABLE rmt_test (id int, name varchar(20))
+
+statement ok
+CREATE REMOTE TABLE rmt_tbl (id int, name varchar(20)) ON 'mapi:monetdb://localhost:50000/rmt_test'
+
+statement ok
+BEGIN TRANSACTION
+
+statement ok
+DROP TABLE rmt_tbl
+
+statement ok
+ROLLBACK
+
+statement ok
+DROP TABLE rmt_tbl
+
+statement ok
+DROP TABLE rmt_test

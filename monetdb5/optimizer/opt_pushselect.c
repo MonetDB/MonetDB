@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -139,19 +139,16 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 {
 	int i, j, limit, slimit, actions=0, *vars, *nvars = NULL, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0, no_mito = 0;
 	char *rslices = NULL, *oclean = NULL;
-	InstrPtr p, *old;
+	InstrPtr p, *old = NULL;
 	subselect_t subselects;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	subselects = (subselect_t) {0};
 	if( mb->errors)
-		return MAL_SUCCEED;
+		throw(MAL, "optimizer.pushselect", "%s", mb->errors);
 
-	no_mito = !isOptimizerEnabled(mb, "mitosis");
+	no_mito = !isOptimizerEnabled(mb, mitosisRef);
 	(void) stk;
-	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL)
 		throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -198,9 +195,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				int Qsname = getArg(q, 2), Qtname = getArg(q, 3);
 
 				if (no_updates(old, vars, getArg(q,1), getArg(p,1)) &&
-				    ((sname == Qsname && tname == Qtname) ||
-				    (/* DISABLES CODE */ (0) && strcmp(getVarConstant(mb, sname).val.sval, getVarConstant(mb, Qsname).val.sval) == 0 &&
-				     strcmp(getVarConstant(mb, tname).val.sval, getVarConstant(mb, Qtname).val.sval) == 0))) {
+					((sname == Qsname && tname == Qtname) ||
+					(/* DISABLES CODE */ (0) && strcmp(getVarConstant(mb, sname).val.sval, getVarConstant(mb, Qsname).val.sval) == 0 &&
+					 strcmp(getVarConstant(mb, tname).val.sval, getVarConstant(mb, Qtname).val.sval) == 0))) {
 					clrFunction(p);
 					p->retc = 1;
 					p->argc = 2;
@@ -246,7 +243,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 		/* left hand side */
-		if ( (GDKdebug & (1<<15)) &&
+		if ( (GDKdebug & PUSHCANDMASK) &&
 		     isMatJoinOp(p) && p->retc == 2) {
 			int i1 = getArg(p, 2), tid = 0;
 			InstrPtr q = old[vars[i1]];
@@ -276,7 +273,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 		/* right hand side */
-		if ( (GDKdebug & (1<<15)) &&
+		if ( (GDKdebug & PUSHCANDMASK) &&
 		     isMatJoinOp(p) && p->retc == 2) {
 			int i1 = getArg(p, 3), tid = 0;
 			InstrPtr q = old[vars[i1]];
@@ -320,25 +317,29 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			/* rewrite batalgebra.like + [theta]select -> likeselect */
 			if (getModuleId(p) == algebraRef && p->retc == 1 &&
-					(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)) {
+				(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)) {
 				int var = getArg(p, 1);
 				InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
 
 				if (isLikeOp(q) &&
-						!isaBatType(getArgType(mb, q, 2)) && /* pattern is a value */
-						!isaBatType(getArgType(mb, q, 3)) && /* escape is a value */
-						!isaBatType(getArgType(mb, q, 4)) && /* isensitive flag is a value */
-						strcmp(getVarName(mb, getArg(q,0)), getVarName(mb, getArg(p,1))) == 0 /* the output variable from batalgebra.like is the input one for [theta]select */) {
+					!isaBatType(getArgType(mb, q, 2)) && isVarConstant(mb, getArg(q, 2)) && /* pattern is a value */
+					isVarConstant(mb, getArg(q, 3)) && /* escape is a value */
+					isVarConstant(mb, getArg(q, 4)) && /* isensitive flag is a value */
+					getArg(q,0) == getArg(p,1) /* the output variable from batalgebra.like is the input one for [theta]select */) {
 					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0, anti = (getFunctionId(q)[0] == 'n');
 					bit ignore_case = *(bit*)getVarValue(mb, getArg(q, 4)), selectok = TRUE;
 
 					/* TODO at the moment we cannot convert if the select statement has NULL semantics
 						we can convert it into VAL is NULL or PATTERN is NULL or ESCAPE is NULL
 					*/
-					if (getFunctionId(p) == selectRef) {
+					if (getFunctionId(p) == selectRef && isVarConstant(mb, getArg(p, 2 + has_cand)) &&
+						isVarConstant(mb, getArg(p, 3 + has_cand)) && isVarConstant(mb, getArg(p, 4 + has_cand)) &&
+						isVarConstant(mb, getArg(p, 5 + has_cand)) && isVarConstant(mb, getArg(p, 6 + has_cand)) &&
+						(p->argc < (has_cand ? 9 : 8) || isVarConstant(mb, getArg(p, 7 + has_cand)))) {
 						bit low = *(bit*)getVarValue(mb, getArg(p, 2 + has_cand)), high = *(bit*)getVarValue(mb, getArg(p, 3 + has_cand));
 						bit li = *(bit*)getVarValue(mb, getArg(p, 4 + has_cand)), hi = *(bit*)getVarValue(mb, getArg(p, 5 + has_cand));
-						bit santi = *(bit*)getVarValue(mb, getArg(p, 6 + has_cand)), sunknown = (p->argc == (has_cand ? 9 : 8)) ? 0 : *(bit*)getVarValue(mb, getArg(p, 7 + has_cand));
+						bit santi = *(bit*)getVarValue(mb, getArg(p, 6 + has_cand));
+						bit sunknown = (p->argc == (has_cand ? 9 : 8)) ? 0 : *(bit*)getVarValue(mb, getArg(p, 7 + has_cand));
 
 						/* semantic or not symmetric cases, it cannot be converted */
 						if (is_bit_nil(low) || is_bit_nil(li) || is_bit_nil(santi) || low != high || li != hi || sunknown)
@@ -351,7 +352,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 							anti = !anti;
 						if (santi)
 							anti = !anti;
-					} else if (getFunctionId(p) == thetaselectRef) {
+					} else if (getFunctionId(p) == thetaselectRef &&
+							   isVarConstant(mb, getArg(p, 3)) && isVarConstant(mb, getArg(p, 4))) {
 						bit truth_value = *(bit*)getVarValue(mb, getArg(p, 3));
 						str comparison = (str)getVarValue(mb, getArg(p, 4));
 
@@ -364,6 +366,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 							anti = !anti;
 						else if (strcmp(comparison, "==") != 0)
 							selectok = FALSE;
+					} else {
+						selectok = FALSE;
 					}
 
 					if (selectok) {
@@ -408,16 +412,16 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					/* make sure to resolve again */
 					p->token = ASSIGNsymbol;
 					p->typechk = TYPE_UNKNOWN;
-        				p->fcn = NULL;
-        				p->blk = NULL;
+					p->fcn = NULL;
+					p->blk = NULL;
 					actions++;
 				}
-			} else if ( (GDKdebug & (1<<15)) && isMatJoinOp(p) && p->retc == 2) {
+			} else if ( (GDKdebug & PUSHCANDMASK) && isMatJoinOp(p) && p->retc == 2) {
 				int ltid = 0, rtid = 0, done = 0;
 				int range = 0;
 
 				if ((ltid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0 &&
-			    	    (rtid = subselect_find_tids(&subselects, getArg(p, 1))) >= 0) {
+						(rtid = subselect_find_tids(&subselects, getArg(p, 1))) >= 0) {
 					p = PushArgument(mb, p, ltid, 4+range);
 					p = PushArgument(mb, p, rtid, 5+range);
 					done = 1;
@@ -437,8 +441,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					/* make sure to resolve again */
 					p->token = ASSIGNsymbol;
 					p->typechk = TYPE_UNKNOWN;
-        				p->fcn = NULL;
-        				p->blk = NULL;
+					p->fcn = NULL;
+					p->blk = NULL;
 					actions++;
 				}
 			}
@@ -572,7 +576,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* slice the candidates */
 				setFunctionId(r, sliceRef);
 				nvars[getArg(p,0)] =  getArg(r, 0) =
-				    newTmpVariable(mb, getArgType(mb, r, 0));
+				newTmpVariable(mb, getArgType(mb, r, 0));
 				slices[getArg(q, 1)] = getArg(p, 0);
 
 				setVarCList(mb,getArg(r,0));
@@ -580,7 +584,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				pushInstruction(mb,r);
 
 				nvars[getArg(q,0)] =  getArg(s, 0) =
-				    newTmpVariable(mb, getArgType(mb, s, 0));
+				newTmpVariable(mb, getArgType(mb, s, 0));
 				getArg(s, 1) = getArg(r, 0); /* use result of slice */
 				pushInstruction(mb, s);
 				oclean[i] = 1;
@@ -623,7 +627,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						getArg(t, 1) = nvars[getArg(r, 0)]; /* use result of slice */
 						rslices[col] = 1;
 						nvars[getArg(s,0)] =  getArg(t, 0) =
-				    			newTmpVariable(mb, getArgType(mb, t, 0));
+						newTmpVariable(mb, getArgType(mb, t, 0));
 						pushInstruction(mb, t);
 						if (u) { /* add again */
 							if((t = copyInstruction(u)) == NULL) {
@@ -642,7 +646,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 				q = newAssignment(mb);
 				getArg(q, 0) = getArg(p, 0);
-				(void) addArgument(mb, q, getArg(p, 2));
+				q = addArgument(mb, q, getArg(p, 2));
 				if (nvars[getArg(p, 2)] > 0)
 					getArg(q, 1) = nvars[getArg(p, 2)];
 				oclean[i] = 1;
@@ -747,8 +751,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol;
 				s->typechk = TYPE_UNKNOWN;
-        			s->fcn = NULL;
-        			s->blk = NULL;
+				s->fcn = NULL;
+				s->blk = NULL;
 				pushInstruction(mb,s);
 
 				setFunctionId(u, subdeltaRef);
@@ -759,8 +763,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				u = pushArgument(mb, u, getArg(s,0)); /* selected updated values ids */
 				u->token = ASSIGNsymbol;
 				u->typechk = TYPE_UNKNOWN;
-        			u->fcn = NULL;
-        			u->blk = NULL;
+				u->fcn = NULL;
+				u->blk = NULL;
 				pushInstruction(mb,u);
 				oclean[i] = 1;
 				continue;
@@ -773,7 +777,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			if (no_mito &&
 				getModuleId(q) == matRef && getFunctionId(q) == packRef && q->argc == 3 &&
-			    getModuleId(s) == matRef && getFunctionId(s) == packRef && s->argc == 3) {
+				getModuleId(s) == matRef && getFunctionId(s) == packRef && s->argc == 3) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr t = copyInstruction(p);
 
@@ -871,8 +875,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol;
 				s->typechk = TYPE_UNKNOWN;
-        		s->fcn = NULL;
-        		s->blk = NULL;
+				s->fcn = NULL;
+				s->blk = NULL;
 				pushInstruction(mb,s);
 
 				setFunctionId(u, subdeltaRef);
@@ -896,7 +900,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			freeInstruction(old[j]);
 	for (; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(vars);
 	GDKfree(nvars);
 	GDKfree(slices);
@@ -911,13 +915,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			msg = chkFlow(mb);
 		if( msg == MAL_SUCCEED)
 			msg = chkDeclarations(mb);
-    	}
+	}
 wrapup:
-	/* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions, usec);
-	newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

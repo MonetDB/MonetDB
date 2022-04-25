@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 add_executable(monetdb)
@@ -43,5 +43,12 @@ install(FILES
   monetdb.1
   DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
   COMPONENT sql)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:monetdb>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    OPTIONAL)
+endif()
 
 # vim: set ts=2:sw=2:et

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -32,7 +32,11 @@
 #endif
 
 #ifndef O_CLOEXEC
+#ifdef _O_NOINHERIT
+#define O_CLOEXEC _O_NOINHERIT	/* Windows */
+#else
 #define O_CLOEXEC 0
+#endif
 #endif
 
 /* GDKfilepath returns a newly allocated string containing the path
@@ -308,6 +312,7 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 		GDKfree(path);
 		return GDK_SUCCEED;
 	}
+	GDKerror("no name specified");
 	return GDK_FAIL;
 }
 
@@ -559,6 +564,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					/* we couldn't read all, error
 					 * already generated */
 					GDKfree(ret);
+					GDKerror("short read from heap %s%s%s, expected %zu, missing %zd\n", nme, ext ? "." : "", ext ? ext : "", size, n_expected);
 					ret = NULL;
 				}
 #ifndef NDEBUG
@@ -640,168 +646,62 @@ DESCload(int i)
 
 	b = BBP_desc(i);
 
-	if (b == NULL)
-		return NULL;
-
-	tt = b->ttype;
-	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
-		GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
+	if (b == NULL) {
+		GDKerror("no descriptor for BAT %d\n", i);
 		return NULL;
 	}
-	b->ttype = tt;
+
+	MT_lock_set(&b->theaplock);
+	tt = b->ttype;
+	if (tt < 0) {
+		if ((tt = ATOMindex(s = ATOMunknown_name(tt))) < 0) {
+			MT_lock_unset(&b->theaplock);
+			GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
+			return NULL;
+		}
+		b->ttype = tt;
+	}
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
 	b->batTransient = (BBP_status(b->batCacheid) & BBPPERSISTENT) == 0;
 	b->batCopiedtodisk = true;
 	DESCclean(b);
+	MT_lock_unset(&b->theaplock);
 	return b;
 }
 
-/* spawning the background msync should be done carefully
- * because there is a (small) chance that the BAT has been
- * deleted by the time you issue the msync.
- * This leaves you with possibly deadbeef BAT descriptors.
- */
-
-/* #define DISABLE_MSYNC */
-#define MSYNC_BACKGROUND
-
-#ifndef DISABLE_MSYNC
-#ifndef MS_ASYNC
-struct msync {
-	bat id;
-	Heap *h;
-};
-
-static void
-BATmsyncImplementation(void *arg)
-{
-	Heap *h = ((struct msync *) arg)->h;
-
-	(void) MT_msync(h->base, h->size);
-	BBPunfix(((struct msync *) arg)->id);
-	GDKfree(arg);
-}
-#endif
-#endif
-
-void
-BATmsync(BAT *b)
-{
-	/* we don't sync views or if we're told not to */
-	if (GDKinmemory(b->theap->farmid) || isVIEW(b) || (GDKdebug & NOSYNCMASK))
-		return;
-	/* we don't sync transients */
-	if (b->theap->farmid != 0 ||
-	    (b->tvheap != NULL && b->tvheap->farmid != 0))
-		return;
-#ifndef DISABLE_MSYNC
-#ifdef MS_ASYNC
-	if (b->theap->storage == STORE_MMAP &&
-	    msync(b->theap->base, b->theap->free, MS_ASYNC) < 0)
-		GDKsyserror("msync heap of bat %d failed\n", b->batCacheid);
-	if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
-	    msync(b->tvheap->base, b->tvheap->free, MS_ASYNC) < 0)
-		GDKsyserror("msync vheap of bat %d failed\n", b->batCacheid);
-#else
-	{
-		struct msync *arg;
-
-		assert(!b->batTransient);
-		if (b->theap->storage == STORE_MMAP &&
-		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-			arg->id = b->batCacheid;
-			arg->h = b->theap;
-			BBPfix(b->batCacheid);
-#ifdef MSYNC_BACKGROUND
-			char name[MT_NAME_LEN];
-			MT_Id tid;
-			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
-					     MT_THR_DETACHED, name) < 0) {
-				/* don't bother if we can't create a thread */
-				BBPunfix(b->batCacheid);
-				GDKfree(arg);
-			}
-#else
-			BATmsyncImplementation(arg);
-#endif
-		}
-
-		if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
-		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-			arg->id = b->batCacheid;
-			arg->h = b->tvheap;
-			BBPfix(b->batCacheid);
-#ifdef MSYNC_BACKGROUND
-			char name[MT_NAME_LEN];
-			MT_Id tid;
-			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
-					     MT_THR_DETACHED, name) < 0) {
-				/* don't bother if we can't create a thread */
-				BBPunfix(b->batCacheid);
-				GDKfree(arg);
-			}
-#else
-			BATmsyncImplementation(arg);
-#endif
-		}
-	}
-#endif
-#else
-	(void) b;
-#endif	/* DISABLE_MSYNC */
-}
-
 gdk_return
-BATsave(BAT *bd)
+BATsave_locked(BAT *b, BATiter *bi, BUN size)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
-	bool dosync = (BBP_status(bd->batCacheid) & BBPPERSISTENT) != 0;
+	bool dosync;
 
-	assert(!GDKinmemory(bd->theap->farmid));
-	BATcheck(bd, GDK_FAIL);
+	BATcheck(b, GDK_FAIL);
 
-	assert(bd->batCacheid > 0);
+	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
+	assert(!GDKinmemory(bi->h->farmid));
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
-	if (isVIEW(bd)) {
-		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(bd), BBPname(VIEWtparent(bd)));
+	if (isVIEW(b)) {
+		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
-	if (!BATdirty(bd)) {
+	if (!BATdirtybi(*bi)) {
 		return GDK_SUCCEED;
-	}
-
-	/* copy the descriptor to a local variable in order to let our
-	 * messing in the BAT descriptor not affect other threads that
-	 * only read it. */
-	MT_lock_set(&bd->theaplock);
-	MT_rwlock_rdlock(&bd->thashlock);
-	BAT bs = *bd;
-	BAT *b = &bs;
-	Heap hs = *bd->theap;
-	HEAPincref(&hs);
-	b->theap = &hs;
-	Heap vhs;
-	if (b->tvheap) {
-		vhs = *bd->tvheap;
-		HEAPincref(&vhs);
-		b->tvheap = &vhs;
 	}
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (b->ttype != TYPE_void && b->theap->base == NULL) {
-		assert(BBP_status(bd->batCacheid) & BBPSWAPPED);
+	const char *tail = gettailnamebi(bi);
+	if (bi->type != TYPE_void && bi->base == NULL) {
+		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
-			int fd = GDKfdlocate(b->theap->farmid, nme, "rb+", gettailname(b));
+			int fd = GDKfdlocate(bi->h->farmid, nme, "rb+", tail);
 			if (fd < 0) {
-				GDKsyserror("cannot open file %s.%s for sync\n", nme,
-					    gettailname(b));
+				GDKsyserror("cannot open file %s.%s for sync\n",
+					    nme, tail);
 				err = GDK_FAIL;
 			} else {
 				if (
@@ -813,12 +713,12 @@ BATsave(BAT *bd)
 					fsync(fd) < 0
 #endif
 					)
-					GDKsyserror("sync failed for %s.%s\n", nme,
-						    gettailname(b));
+					GDKsyserror("sync failed for %s.%s\n",
+						    nme, tail);
 				close(fd);
 			}
-			if (b->tvheap) {
-				fd = GDKfdlocate(b->tvheap->farmid, nme, "rb+", "theap");
+			if (bi->vh) {
+				fd = GDKfdlocate(bi->vh->farmid, nme, "rb+", "theap");
 				if (fd < 0) {
 					GDKsyserror("cannot open file %s.theap for sync\n",
 						    nme);
@@ -839,31 +739,58 @@ BATsave(BAT *bd)
 			}
 		}
 	} else {
-		if (!b->batCopiedtodisk || b->batDirtydesc || b->theap->dirty)
-			if (err == GDK_SUCCEED && b->ttype)
-				err = HEAPsave(b->theap, nme, gettailname(b), dosync);
-		if (b->tvheap
-		    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
-		    && b->ttype
-		    && b->tvarsized
+		if (!bi->copiedtodisk || bi->dirtydesc || bi->hdirty)
+			if (err == GDK_SUCCEED && bi->type)
+				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
+		if (bi->vh
+		    && (!bi->copiedtodisk || bi->dirtydesc || bi->vhdirty)
+		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
-			err = HEAPsave(b->tvheap, nme, "theap", dosync);
+			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, &b->theaplock);
 	}
 
-	HEAPdecref(b->theap, false);
-	if (b->tvheap)
-		HEAPdecref(b->tvheap, false);
 	if (err == GDK_SUCCEED) {
-		bd->batCopiedtodisk = true;
-		DESCclean(bd);
+		MT_lock_set(&b->theaplock);
+		if (b->theap != bi->h) {
+			assert(b->theap->dirty);
+			b->theap->wasempty = bi->h->wasempty;
+		}
+		if (b->tvheap && b->tvheap != bi->vh) {
+			assert(b->tvheap->dirty);
+			b->tvheap->wasempty = bi->vh->wasempty;
+		}
+		if (size != b->batCount || b->batInserted < b->batCount) {
+			/* if the sizes don't match, the BAT must be dirty */
+			b->batCopiedtodisk = false;
+			b->batDirtyflushed = true;
+			b->batDirtydesc = true;
+			b->theap->dirty = true;
+			if (b->tvheap)
+				b->tvheap->dirty = true;
+		} else {
+			b->batCopiedtodisk = true;
+			b->batDirtyflushed = DELTAdirty(b);
+			b->batDirtydesc = false;
+		}
+		MT_lock_unset(&b->theaplock);
 		if (b->thash && b->thash != (Hash *) 1)
 			BAThashsave(b, dosync);
 	}
-	MT_rwlock_rdunlock(&bd->thashlock);
-	MT_lock_unset(&bd->theaplock);
 	return err;
 }
 
+gdk_return
+BATsave(BAT *b)
+{
+	gdk_return rc;
+
+	BATiter bi = bat_iterator(b);
+	MT_rwlock_rdlock(&b->thashlock);
+	rc = BATsave_locked(b, &bi, bi.count);
+	MT_rwlock_rdunlock(&b->thashlock);
+	bat_iterator_end(&bi);
+	return rc;
+}
 
 /*
  * TODO: move to gdk_bbp.c
@@ -887,6 +814,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
+		b->theap->storage = b->theap->newstorage = STORE_INVALID;
 		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;
@@ -903,6 +831,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
+		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);
@@ -949,7 +878,6 @@ void
 BATdelete(BAT *b)
 {
 	bat bid = b->batCacheid;
-	const char *o = BBP_physical(bid);
 	BAT *loaded = BBP_cache(bid);
 
 	assert(bid > 0);
@@ -960,24 +888,10 @@ BATdelete(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
-	if (b->batCopiedtodisk || (b->theap->storage != STORE_MEM)) {
-		if (b->ttype != TYPE_void &&
-		    HEAPdelete(b->theap, o, gettailname(b)) != GDK_SUCCEED &&
-		    b->batCopiedtodisk)
-			TRC_DEBUG(IO_, "BATdelete(%s): bun heap\n", BATgetId(b));
-	} else if (b->theap->base) {
-		HEAPfree(b->theap, true);
-	}
-	if (b->tvheap) {
-		assert(b->tvheap->parentid == bid);
-		if (b->batCopiedtodisk || (b->tvheap->storage != STORE_MEM)) {
-			if (HEAPdelete(b->tvheap, o, "theap") != GDK_SUCCEED &&
-			    b->batCopiedtodisk)
-				TRC_DEBUG(IO_, "BATdelete(%s): tail heap\n", BATgetId(b));
-		} else {
-			HEAPfree(b->tvheap, true);
-		}
-	}
+	STRMPdestroy(b);
+	HEAPfree(b->theap, true);
+	if (b->tvheap)
+		HEAPfree(b->tvheap, true);
 	b->batCopiedtodisk = false;
 }
 
@@ -997,6 +911,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	char *buf;
 	size_t buflen = 0;
 	ssize_t len;
+	gdk_return rc = GDK_SUCCEED;
 
 	/* error checking */
 	for (i = 0; i < argc; i++) {
@@ -1025,16 +940,16 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		buf = argv[i]->tident;
-		mnstr_write(s, buf, 1, strlen(buf));
+		const char *nm = argv[i]->tident;
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # name\n", 1, 9);
 	mnstr_write(s, "# ", 1, 2);
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		buf = ATOMname(argv[i]->ttype);
-		mnstr_write(s, buf, 1, strlen(buf));
+		const char *nm = ATOMname(argv[i]->ttype);
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # type\n", 1, 9);
 	mnstr_write(s, "#--------------------------#\n", 1, 29);
@@ -1045,9 +960,8 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		for (i = 0; i < argc; i++) {
 			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n), true);
 			if (len < 0) {
-				GDKfree(buf);
-				GDKfree(colinfo);
-				return GDK_FAIL;
+				rc = GDK_FAIL;
+				goto bailout;
 			}
 			if (i > 0)
 				mnstr_write(s, ",\t", 1, 2);
@@ -1056,10 +970,14 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		mnstr_write(s, "  ]\n", 1, 4);
 	}
 
+  bailout:
+	for (i = 0; i < argc; i++) {
+		bat_iterator_end(&colinfo[i].i);
+	}
 	GDKfree(buf);
 	GDKfree(colinfo);
 
-	return GDK_SUCCEED;
+	return rc;
 }
 
 gdk_return
@@ -1068,6 +986,8 @@ BATprint(stream *fdout, BAT *b)
 	if (complex_cand(b)) {
 		struct canditer ci;
 		canditer_init(&ci, NULL, b);
+		oid hseq = ci.hseq;
+
 		mnstr_printf(fdout,
 			     "#--------------------------#\n"
 			     "# h\t%s  # name\n"
@@ -1078,7 +998,7 @@ BATprint(stream *fdout, BAT *b)
 			oid o = canditer_next(&ci);
 			mnstr_printf(fdout,
 				     "[ " OIDFMT "@0,\t" OIDFMT "@0  ]\n",
-				     (oid) (i + ci.hseq), o);
+				     (oid) (i + hseq), o);
 		}
 		return GDK_SUCCEED;
 	}

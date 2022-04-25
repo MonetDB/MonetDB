@@ -1,0 +1,28 @@
+statement ok
+set schema schemaForOwner
+
+statement ok
+set role sysadmin
+
+statement ok
+DROP TABLE testTable
+
+statement ok
+CREATE TABLE testTable(v1 INT)
+
+statement ok
+ALTER TABLE testTable ADD COLUMN v2 INT
+
+query II nosort
+SELECT * FROM testTable
+----
+
+statement ok
+INSERT INTO testTable VALUES (3, 3)
+
+statement ok
+UPDATE testTable SET v1 = 2 WHERE v2 = 7
+
+statement ok
+DELETE FROM testTable WHERE v1 = 2
+

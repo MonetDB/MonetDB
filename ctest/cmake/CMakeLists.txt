@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 # For now these tests only work on special docker containers.
@@ -17,8 +17,6 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-iconv.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-pthreadh.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-pcre.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/detect-openssl.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/detect-commoncrypto.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-bz2.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-curl.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-lzma.cmake)
@@ -31,7 +29,6 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/detect-readline.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-libr.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-snappy.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-fits.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/detect-uuid.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-valgrind.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-geos.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-gdal.cmake)

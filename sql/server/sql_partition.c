@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -15,10 +15,25 @@
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_updates.h"
 #include "mal_exception.h"
+
+list *
+partition_find_mergetables(mvc *sql, sql_table *t)
+{
+	sql_trans *tr = sql->session->tr;
+	list *res = NULL;
+	sql_part *pt = NULL;
+
+	for (; t; t = pt?pt->t:NULL) {
+		if ((pt=partition_find_part(tr, t, NULL))) {
+			if (!res)
+				res = sa_list(sql->sa);
+			list_append(res, pt);
+		}
+	}
+	return res;
+}
 
 static int
 key_column_colnr(sql_kc *pkey)
@@ -89,7 +104,7 @@ static void exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *col
 static void
 rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
@@ -157,7 +172,7 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 static void
 exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
@@ -276,16 +291,17 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 		}
 	}
 
-	if (instantiate) {
+	if (instantiate && !msg) {
 		r = rel_project(sql->sa, r, NULL);
 		sql_rel *base = r->l, *nr = r;
 		r->l = NULL; /* omit table from list of dependencies */
 		(void) rel_project_add_exp(sql, r, exp);
 
-		nr = sql_processrelation(sql, nr, 0, 0);
+		nr = sql_processrelation(sql, nr, 0, 0, 0, 0);
 		if (nr) {
-			list *id_l = rel_dependencies(sql, nr);
-			mvc_create_dependencies(sql, id_l, mt->base.id, FUNC_DEPENDENCY);
+			list *blist = rel_dependencies(sql, nr);
+			if (mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY))
+				msg = createException(SQL, "sql.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		r->l = base;
 	}

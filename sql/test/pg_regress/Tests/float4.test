@@ -82,265 +82,265 @@ SELECT cast('Infinity' as real) / cast('Infinity' as real)
 statement error
 SELECT cast('nan' as real) / cast('nan' as real)
 
-query TT rowsort
+query TR rowsort
 SELECT '' AS five, FLOAT4_TBL.* FROM FLOAT4_TBL
 ----
 (empty)
--1e-39
+-0.000
 (empty)
--34.84
+-34.840
 (empty)
-0.0
+0.000
 (empty)
-1.2345679e+20
+0.000
 (empty)
-1.2345679e-20
+0.000
 (empty)
-1004.3
+1004.300
 (empty)
-1e-39
+123456790000000008192.000
 
-query TT rowsort
+query TR rowsort
 SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3'
 ----
 (empty)
--1e-39
+-0.000
 (empty)
--34.84
+-34.840
 (empty)
-0.0
+0.000
 (empty)
-1.2345679e+20
+0.000
 (empty)
-1.2345679e-20
+0.000
 (empty)
-1e-39
+123456790000000008192.000
 
-query TT rowsort
+query TR rowsort
 SELECT '' AS one, f.* FROM FLOAT4_TBL f WHERE f.f1 = '1004.3'
 ----
 (empty)
-1004.3
+1004.300
 
-query TT rowsort
+query TR rowsort
 SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE '1004.3' > f.f1
 ----
 (empty)
--1e-39
+-0.000
 (empty)
--34.84
+-34.840
 (empty)
-0.0
+0.000
 (empty)
-1.2345679e-20
+0.000
 (empty)
-1e-39
+0.000
 
-query TT rowsort
+query TR rowsort
 SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE  f.f1 < '1004.3'
 ----
 (empty)
--1e-39
+-0.000
 (empty)
--34.84
+-34.840
 (empty)
-0.0
+0.000
 (empty)
-1.2345679e-20
+0.000
 (empty)
-1e-39
+0.000
 
-query TT rowsort
+query TR rowsort
 SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1
 ----
 (empty)
--1e-39
+-0.000
 (empty)
--34.84
+-34.840
 (empty)
-0.0
+0.000
 (empty)
-1.2345679e-20
+0.000
 (empty)
-1004.3
+0.000
 (empty)
-1e-39
+1004.300
 
-query TT rowsort
+query TR rowsort
 SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3'
 ----
 (empty)
--1e-39
+-0.000
 (empty)
--34.84
+-34.840
 (empty)
-0.0
+0.000
 (empty)
-1.2345679e-20
+0.000
 (empty)
-1004.3
+0.000
 (empty)
-1e-39
+1004.300
 
-query TTT rowsort
+query TRR rowsort
 SELECT '' AS three, f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0'
 ----
 (empty)
-1.2345679e+20
--1.2345678e+21
+0.000
+-0.000
 (empty)
-1.2345679e-20
--1.2345678e-19
+0.000
+-0.000
 (empty)
-1004.3
--10043.0
+1004.300
+-10043.000
 (empty)
-1e-39
--1.0000002e-38
+123456790000000008192.000
+-1234567800000000032768.000
 
-query TTT rowsort
+query TRR rowsort
 SELECT '' AS three, f.f1, f.f1 + '-10' AS x FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0'
 ----
 (empty)
-1.2345679e+20
-1.2345679e+20
+0.000
+-10.000
 (empty)
-1.2345679e-20
--10.0
+0.000
+-10.000
 (empty)
-1004.3
-994.3
+1004.300
+994.300
 (empty)
-1e-39
--10.0
+123456790000000008192.000
+123456790000000008192.000
 
-query TTT rowsort
+query TRR rowsort
 SELECT '' AS three, f.f1, f.f1 / '-10' AS x FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0'
 ----
 (empty)
-1.2345679e+20
--1.2345679e+19
+0.000
+-0.000
 (empty)
-1.2345679e-20
--1.2345679e-21
+0.000
+-0.000
 (empty)
-1004.3
--100.43
+1004.300
+-100.430
 (empty)
-1e-39
--1e-40
+123456790000000008192.000
+-12345679000000000000.000
 
-query TTT rowsort
+query TRR rowsort
 SELECT '' AS three, f.f1, f.f1 - '-10' AS x FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0'
 ----
 (empty)
-1.2345679e+20
-1.2345679e+20
+0.000
+10.000
 (empty)
-1.2345679e-20
-10.0
+0.000
+10.000
 (empty)
-1004.3
-1014.3
+1004.300
+1014.300
 (empty)
-1e-39
-10.0
+123456790000000008192.000
+123456790000000008192.000
 
 statement error
 SELECT '' AS bad, f.f1 / '0.0' from FLOAT4_TBL f
 
-query TTT rowsort
+query TRR rowsort
 SELECT '' AS five, f.f1, abs(f1) AS abs_f1
    FROM FLOAT4_TBL f
 ----
 (empty)
--1e-39
-1e-39
+-0.000
+0.000
 (empty)
--34.84
-34.84
+-34.840
+34.840
 (empty)
-0.0
-0.0
+0.000
+0.000
 (empty)
-1.2345679e+20
-1.2345679e+20
+0.000
+0.000
 (empty)
-1.2345679e-20
-1.2345679e-20
+0.000
+0.000
 (empty)
-1004.3
-1004.3
+1004.300
+1004.300
 (empty)
-1e-39
-1e-39
+123456790000000008192.000
+123456790000000008192.000
 
 statement error
 SELECT '' AS five, f.f1, truncate(f1) AS trunc_f1
    FROM FLOAT4_TBL f
 
-query TTT rowsort
+query TRR rowsort
 SELECT '' AS five, f.f1, round(f.f1, 0) AS round_f1
    FROM FLOAT4_TBL f
 ----
 (empty)
--1e-39
--0.0
+-0.000
+-0.000
 (empty)
--34.84
--35.0
+-34.840
+-35.000
 (empty)
-0.0
-0.0
+0.000
+0.000
 (empty)
-1.2345679e+20
-1.2345679e+20
+0.000
+0.000
 (empty)
-1.2345679e-20
-0.0
+0.000
+0.000
 (empty)
-1004.3
-1004.0
+1004.300
+1004.000
 (empty)
-1e-39
-0.0
+123456790000000008192.000
+123456790000000008192.000
 
-query T rowsort
+query R rowsort
 select ceil(f1) as ceil_f1 from float4_tbl f
 ----
--0.0
--34.0
-0.0
-1.0
-1.0
-1.2345679e+20
-1005.0
+-0.000
+-34.000
+0.000
+1.000
+1.000
+1005.000
+123456790000000008192.000
 
-query T rowsort
+query R rowsort
 select ceiling(f1) as ceiling_f1 from float4_tbl f
 ----
--0.0
--34.0
-0.0
-1.0
-1.0
-1.2345679e+20
-1005.0
+-0.000
+-34.000
+0.000
+1.000
+1.000
+1005.000
+123456790000000008192.000
 
-query T rowsort
+query R rowsort
 select floor(f1) as floor_f1 from float4_tbl f
 ----
--1.0
--35.0
-0.0
-0.0
-0.0
-1.2345679e+20
-1004.0
+-1.000
+-35.000
+0.000
+0.000
+0.000
+1004.000
+123456790000000008192.000
 
 query I rowsort
 select sign(f1) as sign_f1 from float4_tbl f
@@ -358,64 +358,64 @@ SELECT sqrt(cast('64' as double)) AS eight
 ----
 8.000
 
-query TTT rowsort
+query TRR rowsort
 SELECT '' AS three, f.f1, sqrt(f.f1) AS sqrt_f1
    FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0'
 ----
 (empty)
-1.2345679e+20
-11111111000.0
+0.000
+0.000
 (empty)
-1.2345679e-20
-1.11111106e-10
+0.000
+0.000
 (empty)
-1004.3
-31.690693
+1004.300
+31.691
 (empty)
-1e-39
-3.162278e-20
+123456790000000008192.000
+11111111000.000
 
 query R rowsort
 SELECT power(cast('144' as double), cast('0.5' as double))
 ----
 12.000
 
-query TTT rowsort
+query TRR rowsort
 SELECT '' AS three, f.f1, exp(ln(f.f1)) AS exp_ln_f1
    FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0'
 ----
 (empty)
-1.2345679e+20
-1.2345698e+20
+0.000
+0.000
 (empty)
-1.2345679e-20
-1.2345683e-20
+0.000
+0.000
 (empty)
-1004.3
-1004.29987
+1004.300
+1004.300
 (empty)
-1e-39
-9.99999e-40
+123456790000000008192.000
+123456980000000000000.000
 
-query TT rowsort
+query TR rowsort
 SELECT '' AS five, * FROM FLOAT4_TBL
 ----
 (empty)
--1e-39
+-0.000
 (empty)
--34.84
+-34.840
 (empty)
-0.0
+0.000
 (empty)
-1.2345679e+20
+0.000
 (empty)
-1.2345679e-20
+0.000
 (empty)
-1004.3
+1004.300
 (empty)
-1e-39
+123456790000000008192.000
 
 statement error
 SELECT '' AS five, f.f1, @f.f1 AS abs_f1 FROM FLOAT4_TBL f
@@ -425,23 +425,23 @@ UPDATE FLOAT4_TBL
    SET f1 = FLOAT4_TBL.f1 * '-1'
    WHERE FLOAT4_TBL.f1 > '0.0'
 
-query TT rowsort
+query TR rowsort
 SELECT '' AS five, * FROM FLOAT4_TBL
 ----
 (empty)
--1.2345679e+20
+-0.000
 (empty)
--1.2345679e-20
+-0.000
 (empty)
--1004.3
+-0.000
 (empty)
--1e-39
+-1004.300
 (empty)
--1e-39
+-123456790000000008192.000
 (empty)
--34.84
+-34.840
 (empty)
-0.0
+0.000
 
 statement ok
 DROP TABLE FLOAT4_TBL

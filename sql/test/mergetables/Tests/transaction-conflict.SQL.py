@@ -22,6 +22,8 @@ class MergeTableWriter(threading.Thread):
             barrier2.wait()
             self._wcursor.execute('ROLLBACK;')
             i += 1
+        self._wcursor.close()
+        self._wconn.close()
 
 conn = pymonetdb.connect(port = int(os.getenv('MAPIPORT', '50000')), database = os.getenv('TSTDB', 'demo'), hostname = os.getenv('MAPIHOST', 'localhost'), autocommit=True)
 cursor = conn.cursor()
@@ -44,8 +46,10 @@ mtwriter.start()
 i = 0
 while i < 3:
     barrier1.wait()
+    cursor.execute('START TRANSACTION;')
     cursor.execute('CREATE TABLE "dummy"(col1 int);')
     cursor.execute('DROP TABLE "dummy";')
+    cursor.execute('COMMIT;')
     barrier2.wait()
     barrier1.reset()
     barrier2.reset()
@@ -59,3 +63,5 @@ DROP TABLE "mt";
 DROP TABLE "part";
 COMMIT;
 """)
+cursor.close()
+conn.close()

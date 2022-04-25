@@ -14,7 +14,7 @@ CREATE TABLE "sys"."mytables" (
 )
 
 statement ok
-COPY 96 RECORDS INTO "sys"."mytables" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+COPY 95 RECORDS INTO "sys"."mytables" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 2001	"schemas"	2000	NULL	0	true	0	0
 2007	"types"	2000	NULL	0	true	0	0
@@ -108,7 +108,6 @@ COPY 96 RECORDS INTO "sys"."mytables" FROM stdin USING DELIMITERS E'\t',E'\n','"
 9324	"tablestoragemodel"	2000	"create view sys.tablestoragemodel as\nselect ""schema"", ""table"",\n max(""count"") as ""rowcount"",\n count(*) as ""storages"",\n sum(sys.columnsize(""type"", ""count"")) as columnsize,\n sum(sys.heapsize(""type"", ""count"", ""distinct"", ""atomwidth"")) as heapsize,\n sum(sys.hashsize(""reference"", ""count"")) as hashsize,\n sum(case when isacolumn then sys.imprintsize(""type"", ""count"") else 0 end) as imprintsize,\n sum(case when (isacolumn and not sorted) then cast(8 * ""count"" as bigint) else 0 end) as orderidxsize\n from sys.storagemodelinput\ngroup by ""schema"", ""table""\norder by ""schema"", ""table"";"	1	true	0	0
 9338	"statistics"	2000	NULL	0	true	0	0
 9421	"compinfo"	9385	"create view logging.compinfo as select * from logging.compinfo();"	1	true	0	0
-9505	"systemfunctions"	2000	"create view sys.systemfunctions as select id as function_id from sys.functions where system;"	1	true	0	0
 9588	"integers"	2000	NULL	0	false	0	0
 9594	"tbl_productsales"	2000	NULL	0	false	0	0
 9604	"another_t"	2000	NULL	0	false	0	0

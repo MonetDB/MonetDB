@@ -3,19 +3,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "rel_propagate.h"
-#include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
-#include "rel_dump.h"
 #include "rel_select.h"
 #include "rel_updates.h"
-#include "sql_mvc.h"
 #include "sql_partition.h"
 
 extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);
@@ -38,6 +34,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
 		if (!(res = rel_parse_val(sql, mt->s, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
+		set_processed(*anti_rel);
 	} else {
 		assert(0);
 	}
@@ -169,7 +166,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp = NULL, *anti_le, *e1, *e2, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
@@ -214,9 +211,11 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	}
 
 	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
+	set_processed(anti_rel);
 	anti_rel = rel_groupby(sql, anti_rel, NULL);
 	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
 	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+	set_processed(anti_rel);
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	/* generate the exception */
@@ -233,7 +232,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
@@ -256,9 +255,11 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	}
 
 	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
+	set_processed(anti_rel);
 	anti_rel = rel_groupby(sql, anti_rel, NULL);
 	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
 	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+	set_processed(anti_rel);
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	/* generate the exception */
@@ -446,7 +447,7 @@ static sql_rel* rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, s
 static sql_exp*
 exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 {
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e)
@@ -522,7 +523,7 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 static sql_rel*
 rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 {
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
@@ -630,6 +631,7 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		}
 		(*changes)++;
 	}
+	rel_destroy(rel);
 	return sel;
 }
 
@@ -644,6 +646,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1, *dup = NULL;
 		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
+		sql_rel *bt = rel_basetable(sql, sub, sub->base.name);
 
 		if (!update_allowed(sql, sub, sub->base.name, "UPDATE", "update", 0))
 			return NULL;
@@ -652,11 +655,12 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 			sql_exp *e = (sql_exp *) n->data;
 			const char *cname = exp_name(e);
 
-			if (strcmp(cname, TID) != 0) { /* Skip TID column */
+			if (cname[0] != '%') { /* Skip TID column */
 				sql_column *c = mvc_bind_column(sql, sub, cname);
 
 				if (!c)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", sub->base.name, cname);
+				rel_base_use(sql, bt, c->colnr);
 				if (!(e = update_check_column(sql, sub, c, e, rel, c->base.name, "UPDATE")))
 					return NULL;
 			}
@@ -671,7 +675,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		for (node *ne = checked_updates->h ; ne ; ne = ne->next)
 			ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
 
-		s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, checked_updates);
+		s1 = rel_update(sql, bt, dup, NULL, checked_updates);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {
@@ -680,7 +684,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		}
 		(*changes)++;
 	}
-
+	rel_destroy(rel);
 	return sel;
 }
 
@@ -693,7 +697,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 	sql_rel *new_table = NULL, *sel = NULL, *anti_rel = NULL;
 	sql_exp *anti_exp = NULL, *anti_le = NULL, *anti_nils = NULL, *accum = NULL, *aggr = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 	char buf[BUFSIZ];
 	sql_subtype tp;
 
@@ -776,8 +780,10 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			} else if (range) {
 				accum = exp_copy(sql, range);
 			}
-			if (full_range)
+			if (full_range) {
 				dup = rel_select(sql->sa, dup, full_range);
+				set_processed(dup);
+			}
 		} else if (isListPartitionTable(t)) {
 			sql_exp *ein = NULL;
 
@@ -807,11 +813,14 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				found_nils = 1;
 			}
 			dup = rel_select(sql->sa, dup, ein);
+			set_processed(dup);
 		} else {
 			assert(0);
 		}
 
 		new_table = rel_basetable(sql, sub, sub->base.name);
+		rel_base_use_all(query->sql, new_table);
+		new_table = rewrite_basetable(query->sql, new_table);
 		new_table->p = prop_create(sql->sa, PROP_USED, new_table->p); /* don't create infinite loops in the optimizer */
 
 		if (isPartitionedByExpressionTable(t)) {
@@ -858,9 +867,11 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		}
 		/* generate a count aggregation for the values not present in any of the partitions */
 		anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
+		set_processed(anti_rel);
 		anti_rel = rel_groupby(sql, anti_rel, NULL);
 		aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
 		(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+		set_processed(anti_rel);
 		exp_label(sql->sa, aggr, ++sql->label);
 
 		aggr = exp_ref(sql, aggr);
@@ -870,6 +881,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		sql_exp *exception = exp_exception(sql->sa, aggr, buf);
 		sel = rel_exception(query->sql->sa, sel, anti_rel, list_append(new_exp_list(query->sql->sa), exception));
 	}
+	rel_destroy(rel);
 	return sel;
 }
 
@@ -946,7 +958,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper->t), *aggr = NULL,
 			*exception = NULL, *anti_nils = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 	char buf[BUFSIZ];
 	bool found_nils = false, found_all_range_values = false;
 	sql_subtype tp;
@@ -1031,10 +1043,12 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	if (!found_all_range_values || !found_nils) {
 		/* generate a count aggregation for the values not present in any of the partitions */
 		anti_dup = rel_select(sql->sa, anti_dup, anti_exp);
+		set_processed(anti_dup);
 		anti_dup = rel_groupby(sql, anti_dup, NULL);
 		aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_dup->card, 0);
 		(void) rel_groupby_add_aggr(sql, anti_dup, aggr);
 		exp_label(sql->sa, aggr, ++sql->label);
+		set_processed(anti_dup);
 
 		/* generate the exception */
 		aggr = exp_ref(sql, aggr);

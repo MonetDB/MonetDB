@@ -1,10 +1,10 @@
 statement ok
 CREATE TABLE sys.abc (a INT, b VARCHAR(10))
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sys.abc VALUES (1, 'one')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sys.abc VALUES (2, 'two')
 
 query IT rowsort
@@ -16,62 +16,49 @@ one
 two
 
 statement ok
-DELETE FROM sys.statistics
-
-statement ok
 ANALYZE sys.abc
 
-query TIIIIITTII rowsort
-SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics
+query TTIIITTII nosort
+SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics ORDER BY "column"
 ----
+a
 int
 4
-2
-2
-2
+1
 0
 1
 2
 1
 0
+b
 varchar
 1
-2
-2
-2
+1
 0
 one
 two
 1
 0
 
-query TIIIIITTII rowsort
--- expected 2 rows
-SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics where column_id not in (select id from sys.columns)
+query TTIIITTII nosort
+SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics WHERE "column" NOT IN (select "name" from sys.columns) ORDER BY "column"
 ----
 
 statement ok
--- expected 0 rows
 ALTER TABLE sys.abc DROP COLUMN b
 
-query TIIIIITTII rowsort
-SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics where column_id not in (select id from sys.columns)
+query TTIIITTII nosort
+SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics WHERE "column" NOT IN (select "name" from sys.columns) ORDER BY "column"
 ----
 
 statement ok
--- expected 0 rows but found 1 row !
 DROP TABLE sys.abc CASCADE
 
-query TIIIIITTII rowsort
-SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics where column_id not in (select id from sys.columns)
+query TTIIITTII nosort
+SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics WHERE "column" NOT IN (select "name" from sys.columns) ORDER BY "column"
 ----
 
-query TIIIIITTII rowsort
--- expected 0 rows but found 2 rows !
-SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics
+query TTIIITTII rowsort
+SELECT "column", "type", "width", "unique", "nils", "minval", "maxval", "sorted", "revsorted" FROM sys.statistics
 ----
-
-statement ok
--- expected 0 rows but found 2 rows !
-DELETE FROM sys.statistics
 

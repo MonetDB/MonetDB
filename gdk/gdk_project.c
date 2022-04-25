@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -22,7 +22,7 @@
 
 #define project1_loop(TYPE)						\
 static gdk_return							\
-project1_##TYPE(BAT *restrict bn, BAT *restrict l, BAT *restrict r1)	\
+project1_##TYPE(BAT *restrict bn, BATiter *restrict li, BATiter *restrict r1i) \
 {									\
 	BUN lo, hi;							\
 	const TYPE *restrict r1t;					\
@@ -30,24 +30,24 @@ project1_##TYPE(BAT *restrict bn, BAT *restrict l, BAT *restrict r1)	\
 	oid r1seq, r1end;						\
 									\
 	MT_thread_setalgorithm(__func__);				\
-	r1t = (const TYPE *) Tloc(r1, 0);				\
+	r1t = (const TYPE *) r1i->base;					\
 	bt = (TYPE *) Tloc(bn, 0);					\
-	r1seq = r1->hseqbase;						\
-	r1end = r1seq + BATcount(r1);					\
-	if (BATtdense(l)) {						\
-		if (l->tseqbase < r1seq ||				\
-		   (l->tseqbase+BATcount(l)) >= r1end) {		\
+	r1seq = r1i->b->hseqbase;					\
+	r1end = r1seq + r1i->count;					\
+	if (BATtdensebi(li)) {						\
+		if (li->tseq < r1seq ||					\
+		    (li->tseq + li->count) >= r1end) {			\
 			GDKerror("does not match always\n");		\
 			return GDK_FAIL;				\
 		}							\
-		oid off = l->tseqbase - r1seq;				\
+		oid off = li->tseq - r1seq;				\
 		r1t += off;						\
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) 		\
+		for (lo = 0, hi = li->count; lo < hi; lo++) 		\
 			bt[lo] = r1t[lo];				\
 	} else {							\
-		assert(l->ttype);\
-		const oid *restrict ot = (const oid *) Tloc(l, 0);	\
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {		\
+		assert(li->type);					\
+		const oid *restrict ot = (const oid *) li->base;	\
+		for (lo = 0, hi = li->count; lo < hi; lo++) {		\
 			oid o = ot[lo];					\
 			if (o < r1seq || o >= r1end) {			\
 				GDKerror("does not match always\n");	\
@@ -74,9 +74,9 @@ project1_loop(uuid)
 
 #define project_loop(TYPE)						\
 static gdk_return							\
-project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
+project_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 	       struct canditer *restrict ci,				\
-	       BAT *restrict r1, BAT *restrict r2)			\
+	       BATiter *restrict r1i, BATiter *restrict r2i)		\
 {									\
 	BUN lo, hi;							\
 	const TYPE *restrict r1t;					\
@@ -86,20 +86,21 @@ project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
 	oid r1seq, r1end;						\
 	oid r2seq, r2end;						\
 									\
-	if (r2 == NULL &&						\
-	    (!ci || (ci->tpe == cand_dense && BATtdense(l))) &&		\
-	    l->tnonil && r1->ttype && !BATtdense(r1))			\
-		return project1_##TYPE(bn, l, r1);			\
+	if (r2i == NULL &&						\
+	    (ci == NULL || (ci->tpe == cand_dense && BATtdensebi(li))) && \
+	    li->nonil && r1i->type && !BATtdensebi(r1i))		\
+		return project1_##TYPE(bn, li, r1i);			\
 	MT_thread_setalgorithm(__func__);				\
-	r1t = (const TYPE *) Tloc(r1, 0);				\
-	r2t = r2 ? (const TYPE *) Tloc(r2, 0) : NULL;			\
+	r1t = (const TYPE *) r1i->base;					\
 	bt = (TYPE *) Tloc(bn, 0);					\
-	r1seq = r1->hseqbase;						\
-	r1end = r1seq + BATcount(r1);					\
-	if (r2) {							\
-		r2seq = r2->hseqbase;					\
-		r2end = r2seq + BATcount(r2);				\
+	r1seq = r1i->b->hseqbase;					\
+	r1end = r1seq + r1i->count;					\
+	if (r2i) {							\
+		r2t = (const TYPE *) r2i->base;				\
+		r2seq = r2i->b->hseqbase;				\
+		r2end = r2seq + r2i->count;				\
 	} else {							\
+		r2t = NULL;						\
 		r2seq = r2end = r1end;					\
 	}								\
 	if (ci) {							\
@@ -115,9 +116,9 @@ project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
 				v = r2t[o - r2seq];			\
 			bt[lo] = v;					\
 		}							\
-	} else if (BATtdense(l)) {					\
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {		\
-			oid o = l->tseqbase + lo;			\
+	} else if (BATtdensebi(li)) {					\
+		for (lo = 0, hi = li->count; lo < hi; lo++) {		\
+			oid o = li->tseq + lo;				\
 			if (o < r1seq || o >= r2end) {			\
 				GDKerror("does not match always\n");	\
 				return GDK_FAIL;			\
@@ -129,8 +130,8 @@ project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
 			bt[lo] = v;					\
 		}							\
 	} else {							\
-		const oid *restrict ot = (const oid *) Tloc(l, 0);	\
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {		\
+		const oid *restrict ot = (const oid *) li->base;	\
+		for (lo = 0, hi = li->count; lo < hi; lo++) {		\
 			oid o = ot[lo];					\
 			if (is_oid_nil(o)) {				\
 				bt[lo] = v = TYPE##_nil;		\
@@ -165,8 +166,9 @@ project_loop(hge)
 project_loop(uuid)
 
 static gdk_return
-project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
-	    BAT *restrict r1, BAT *restrict r2)
+project_oid(BAT *restrict bn, BATiter *restrict li,
+	    struct canditer *restrict lci,
+	    BATiter *restrict r1i, BATiter *restrict r2i)
 {
 	BUN lo, hi;
 	oid *restrict bt;
@@ -176,26 +178,26 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	const oid *restrict r2t = NULL;
 	struct canditer r1ci = {0}, r2ci = {0};
 
-	if ((!lci || (lci->tpe == cand_dense && BATtdense(l))) && r1->ttype && !BATtdense(r1) && !r2 &&	l->tnonil) {
+	if ((!lci || (lci->tpe == cand_dense && BATtdensebi(li))) && r1i->type && !BATtdensebi(r1i) && !r2i && li->nonil) {
 		if (sizeof(oid) == sizeof(lng))
-			return project1_lng(bn, l, r1);
+			return project1_lng(bn, li, r1i);
 		else
-			return project1_int(bn, l, r1);
+			return project1_int(bn, li, r1i);
 	}
 	MT_thread_setalgorithm(__func__);
-	if (complex_cand(r1))
-		canditer_init(&r1ci, NULL, r1);
-	else if (!BATtdense(r1))
-		r1t = (const oid *) Tloc(r1, 0);
-	r1seq = r1->hseqbase;
-	r1end = r1seq + BATcount(r1);
-	if (r2) {
-		if (complex_cand(r2))
-			canditer_init(&r2ci, NULL, r2);
-		else if (!BATtdense(r2))
-			r2t = (const oid *) Tloc(r2, 0);
-		r2seq = r2->hseqbase;
-		r2end = r2seq + BATcount(r2);
+	if (complex_cand(r1i->b))
+		canditer_init(&r1ci, NULL, r1i->b);
+	else if (!BATtdensebi(r1i))
+		r1t = (const oid *) r1i->base;
+	r1seq = r1i->b->hseqbase;
+	r1end = r1seq + r1i->count;
+	if (r2i) {
+		if (complex_cand(r2i->b))
+			canditer_init(&r2ci, NULL, r2i->b);
+		else if (!BATtdensebi(r2i))
+			r2t = (const oid *) r2i->base;
+		r2seq = r2i->b->hseqbase;
+		r2end = r2seq + r2i->count;
 	} else {
 		r2seq = r2end = r1end;
 	}
@@ -204,8 +206,7 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 		for (lo = 0, hi = lci->ncand; lo < hi; lo++) {
 			oid o = canditer_next(lci);
 			if (o < r1seq || o >= r2end) {
-				GDKerror("does not match always\n");
-				return GDK_FAIL;
+				goto nomatch;
 			}
 			if (o < r1end) {
 				if (r1ci.s)
@@ -213,22 +214,21 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 				else if (r1t)
 					bt[lo] = r1t[o - r1seq];
 				else
-					bt[lo] = o - r1seq + r1->tseqbase;
+					bt[lo] = o - r1seq + r1i->tseq;
 			} else {
 				if (r2ci.s)
 					bt[lo] = canditer_idx(&r2ci, o - r2seq);
 				else if (r2t)
 					bt[lo] = r2t[o - r2seq];
 				else
-					bt[lo] = o - r2seq + r2->tseqbase;
+					bt[lo] = o - r2seq + r2i->tseq;
 			}
 		}
-	} else if (BATtdense(l)) {
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
-			oid o = l->tseqbase + lo;
+	} else if (BATtdensebi(li)) {
+		for (lo = 0, hi = li->count; lo < hi; lo++) {
+			oid o = li->tseq + lo;
 			if (o < r1seq || o >= r2end) {
-				GDKerror("does not match always\n");
-				return GDK_FAIL;
+				goto nomatch;
 			}
 			if (o < r1end) {
 				if (r1ci.s)
@@ -236,67 +236,67 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 				else if (r1t)
 					bt[lo] = r1t[o - r1seq];
 				else
-					bt[lo] = o - r1seq + r1->tseqbase;
+					bt[lo] = o - r1seq + r1i->tseq;
 			} else {
 				if (r2ci.s)
 					bt[lo] = canditer_idx(&r2ci, o - r2seq);
 				else if (r2t)
 					bt[lo] = r2t[o - r2seq];
 				else
-					bt[lo] = o - r2seq + r2->tseqbase;
+					bt[lo] = o - r2seq + r2i->tseq;
 			}
 		}
 	} else {
-		const oid *ot = (const oid *) Tloc(l, 0);
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+		const oid *ot = (const oid *) li->base;
+		for (lo = 0, hi = li->count; lo < hi; lo++) {
 			oid o = ot[lo];
 			if (is_oid_nil(o)) {
 				bt[lo] = oid_nil;
 				bn->tnonil = false;
 				bn->tnil = true;
 			} else if (o < r1seq || o >= r2end) {
-				GDKerror("does not match always\n");
-				return GDK_FAIL;
+				goto nomatch;
 			} else if (o < r1end) {
 				if (r1ci.s)
 					bt[lo] = canditer_idx(&r1ci, o - r1seq);
 				else if (r1t)
 					bt[lo] = r1t[o - r1seq];
 				else
-					bt[lo] = o - r1seq + r1->tseqbase;
+					bt[lo] = o - r1seq + r1i->tseq;
 			} else {
 				if (r2ci.s)
 					bt[lo] = canditer_idx(&r2ci, o - r2seq);
 				else if (r2t)
 					bt[lo] = r2t[o - r2seq];
 				else
-					bt[lo] = o - r2seq + r2->tseqbase;
+					bt[lo] = o - r2seq + r2i->tseq;
 			}
 		}
 	}
 	BATsetcount(bn, lo);
 	return GDK_SUCCEED;
+  nomatch:
+	GDKerror("does not match always\n");
+	return GDK_FAIL;
 }
 
 static gdk_return
-project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
-	    BAT *restrict r1, BAT *restrict r2)
+project_any(BAT *restrict bn, BATiter *restrict li,
+	    struct canditer *restrict ci,
+	    BATiter *restrict r1i, BATiter *restrict r2i)
 {
 	BUN lo, hi;
-	BATiter r1i, r2i;
-	const void *nil = ATOMnilptr(r1->ttype);
+	const void *nil = ATOMnilptr(r1i->type);
 	const void *v;
 	oid r1seq, r1end;
 	oid r2seq, r2end;
 
 	MT_thread_setalgorithm(__func__);
-	r1i = bat_iterator(r1);
-	r1seq = r1->hseqbase;
-	r1end = r1seq + BATcount(r1);
-	r2i = bat_iterator(r2);
-	if (r2) {
-		r2seq = r2->hseqbase;
-		r2end = r2seq + BATcount(r2);
+	r1seq = r1i->b->hseqbase;
+	r1end = r1seq + r1i->count;
+	if (r2i) {
+		r2seq = r2i->b->hseqbase;
+		r2end = r2seq + r2i->count;
 	} else {
 		r2seq = r2end = r1end;
 	}
@@ -308,30 +308,32 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 				return GDK_FAIL;
 			}
 			if (o < r1end)
-				v = BUNtail(r1i, o - r1seq);
+				v = BUNtail(*r1i, o - r1seq);
 			else
-				v = BUNtail(r2i, o - r2seq);
-			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
+				v = BUNtail(*r2i, o - r2seq);
+			if (tfastins_nocheck(bn, lo, v) != GDK_SUCCEED) {
 				return GDK_FAIL;
+			}
 		}
-	} else if (BATtdense(l)) {
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
-			oid o = l->tseqbase + lo;
+	} else if (BATtdensebi(li)) {
+		for (lo = 0, hi = li->count; lo < hi; lo++) {
+			oid o = li->tseq + lo;
 			if (o < r1seq || o >= r2end) {
 				GDKerror("does not match always\n");
 				return GDK_FAIL;
 			}
 			if (o < r1end)
-				v = BUNtail(r1i, o - r1seq);
+				v = BUNtail(*r1i, o - r1seq);
 			else
-				v = BUNtail(r2i, o - r2seq);
-			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
+				v = BUNtail(*r2i, o - r2seq);
+			if (tfastins_nocheck(bn, lo, v) != GDK_SUCCEED) {
 				return GDK_FAIL;
+			}
 		}
 	} else {
-		const oid *restrict ot = (const oid *) Tloc(l, 0);
+		const oid *restrict ot = (const oid *) li->base;
 
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+		for (lo = 0, hi = li->count; lo < hi; lo++) {
 			oid o = ot[lo];
 			if (is_oid_nil(o)) {
 				v = nil;
@@ -340,12 +342,13 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 				GDKerror("does not match always\n");
 				return GDK_FAIL;
 			} else if (o < r1end) {
-				v = BUNtail(r1i, o - r1seq);
+				v = BUNtail(*r1i, o - r1seq);
 			} else {
-				v = BUNtail(r2i, o - r2seq);
+				v = BUNtail(*r2i, o - r2seq);
 			}
-			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
+			if (tfastins_nocheck(bn, lo, v) != GDK_SUCCEED) {
 				return GDK_FAIL;
+			}
 		}
 	}
 	BATsetcount(bn, lo);
@@ -354,57 +357,58 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 }
 
 static BAT *
-project_str(BAT *restrict l, struct canditer *restrict ci,
-	    BAT *restrict r1, BAT *restrict r2, lng t0)
+project_str(BATiter *restrict li, struct canditer *restrict ci, int tpe,
+	    BATiter *restrict r1i, BATiter *restrict r2i,
+	    lng t0)
 {
 	BAT *bn;
 	BUN lo, hi;
 	oid r1seq, r1end;
 	oid r2seq, r2end;
 	BUN h1off;
-	BAT *r;
 	BUN off;
 	oid seq;
 	var_t v;
+	BATiter *ri;
 
-	if ((bn = COLnew(l->hseqbase, TYPE_str, ci ? ci->ncand : BATcount(l),
+	if ((bn = COLnew(li->b->hseqbase, tpe, ci ? ci->ncand : li->count,
 			 TRANSIENT)) == NULL)
 		return NULL;
 
-	v = (var_t) r1->tvheap->free;
-	if (r1->tvheap == r2->tvheap) {
+	v = (var_t) r1i->vhfree;
+	if (r1i->vh == r2i->vh) {
 		h1off = 0;
-		BBPshare(bn->tvheap->parentid);
-		HEAPfree(bn->tvheap, true);
-		GDKfree(bn->tvheap);
-		bn->tvheap = r1->tvheap;
+		BBPshare(r1i->vh->parentid);
+		HEAPdecref(bn->tvheap, true);
+		HEAPincref(r1i->vh);
+		bn->tvheap = r1i->vh;
 	} else {
 		v = (v + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		h1off = (BUN) v;
-		v += ((var_t) r2->tvheap->free + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
+		v += ((var_t) r2i->vhfree + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		if (HEAPextend(bn->tvheap, v, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			return NULL;
 		}
-		memcpy(bn->tvheap->base, r1->tvheap->base, r1->tvheap->free);
+		memcpy(bn->tvheap->base, r1i->vh->base, r1i->vhfree);
 #ifndef NDEBUG
-		if (h1off > r1->tvheap->free)
-			memset(bn->tvheap->base + r1->tvheap->free, 0, h1off - r1->tvheap->free);
+		if (h1off > r1i->vhfree)
+			memset(bn->tvheap->base + r1i->vhfree, 0, h1off - r1i->vhfree);
 #endif
-		memcpy(bn->tvheap->base + h1off, r2->tvheap->base, r2->tvheap->free);
-		bn->tvheap->free = h1off + r2->tvheap->free;
+		memcpy(bn->tvheap->base + h1off, r2i->vh->base, r2i->vhfree);
+		bn->tvheap->free = h1off + r2i->vhfree;
 	}
 
-	if (v >= ((var_t) 1 << (8 * bn->twidth)) &&
-	    GDKupgradevarheap(bn, v, false, false) != GDK_SUCCEED) {
+	if (v >= ((var_t) 1 << (8 << bn->tshift)) &&
+	    GDKupgradevarheap(bn, v, false, 0) != GDK_SUCCEED) {
 		BBPreclaim(bn);
 		return NULL;
 	}
 
-	r1seq = r1->hseqbase;
-	r1end = r1seq + BATcount(r1);
-	r2seq = r2->hseqbase;
-	r2end = r2seq + BATcount(r2);
+	r1seq = r1i->b->hseqbase;
+	r1end = r1seq + r1i->count;
+	r2seq = r2i->b->hseqbase;
+	r2end = r2seq + r2i->count;
 	if (ci) {
 		for (lo = 0, hi = ci->ncand; lo < hi; lo++) {
 			oid o = canditer_next(ci);
@@ -414,26 +418,26 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 				return NULL;
 			}
 			if (o < r1end) {
-				r = r1;
+				ri = r1i;
 				off = 0;
 				seq = r1seq;
 			} else {
-				r = r2;
+				ri = r2i;
 				off = h1off;
 				seq = r2seq;
 			}
-			switch (r->twidth) {
+			switch (ri->width) {
 			case 1:
-				v = (var_t) ((uint8_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint8_t *) ri->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 2:
-				v = (var_t) ((uint16_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint16_t *) ri->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 4:
-				v = (var_t) ((uint32_t *) r->theap->base)[o - seq];
+				v = (var_t) ((uint32_t *) ri->base)[o - seq];
 				break;
 			case 8:
-				v = (var_t) ((uint64_t *) r->theap->base)[o - seq];
+				v = (var_t) ((uint64_t *) ri->base)[o - seq];
 				break;
 			}
 			v += off;
@@ -452,35 +456,35 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 				break;
 			}
 		}
-	} else if (BATtdense(l)) {
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
-			oid o = l->tseqbase + lo;
+	} else if (BATtdensebi(li)) {
+		for (lo = 0, hi = li->count; lo < hi; lo++) {
+			oid o = li->tseq + lo;
 			if (o < r1seq || o >= r2end) {
 				GDKerror("does not match always\n");
 				BBPreclaim(bn);
 				return NULL;
 			}
 			if (o < r1end) {
-				r = r1;
+				ri = r1i;
 				off = 0;
 				seq = r1seq;
 			} else {
-				r = r2;
+				ri = r2i;
 				off = h1off;
 				seq = r2seq;
 			}
-			switch (r->twidth) {
+			switch (ri->width) {
 			case 1:
-				v = (var_t) ((uint8_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint8_t *) ri->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 2:
-				v = (var_t) ((uint16_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint16_t *) ri->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 4:
-				v = (var_t) ((uint32_t *) r->theap->base)[o - seq];
+				v = (var_t) ((uint32_t *) ri->base)[o - seq];
 				break;
 			case 8:
-				v = (var_t) ((uint64_t *) r->theap->base)[o - seq];
+				v = (var_t) ((uint64_t *) ri->base)[o - seq];
 				break;
 			}
 			v += off;
@@ -500,8 +504,8 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			}
 		}
 	} else {
-		const oid *restrict ot = (const oid *) Tloc(l, 0);
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+		const oid *restrict ot = (const oid *) li->base;
+		for (lo = 0, hi = li->count; lo < hi; lo++) {
 			oid o = ot[lo];
 			if (o < r1seq || o >= r2end) {
 				GDKerror("does not match always\n");
@@ -509,26 +513,26 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 				return NULL;
 			}
 			if (o < r1end) {
-				r = r1;
+				ri = r1i;
 				off = 0;
 				seq = r1seq;
 			} else {
-				r = r2;
+				ri = r2i;
 				off = h1off;
 				seq = r2seq;
 			}
-			switch (r->twidth) {
+			switch (ri->width) {
 			case 1:
-				v = (var_t) ((uint8_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint8_t *) ri->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 2:
-				v = (var_t) ((uint16_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint16_t *) ri->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 4:
-				v = (var_t) ((uint32_t *) r->theap->base)[o - seq];
+				v = (var_t) ((uint32_t *) ri->base)[o - seq];
 				break;
 			case 8:
-				v = (var_t) ((uint64_t *) r->theap->base)[o - seq];
+				v = (var_t) ((uint64_t *) ri->base)[o - seq];
 				break;
 			}
 			v += off;
@@ -551,13 +555,13 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 	BATsetcount(bn, lo);
 	bn->tsorted = bn->trevsorted = false;
 	bn->tnil = false;
-	bn->tnonil = r1->tnonil & r2->tnonil;
+	bn->tnonil = r1i->nonil & r2i->nonil;
 	bn->tkey = false;
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r1=" ALGOBATFMT " r2=" ALGOBATFMT
 		  " -> " ALGOBATFMT "%s " LLFMT "us\n",
-		  ALGOBATPAR(l), ALGOBATPAR(r1), ALGOBATPAR(r2),
+		  ALGOBATPAR(li->b), ALGOBATPAR(r1i->b), ALGOBATPAR(r2i->b),
 		  ALGOBATPAR(bn),
-		  bn && bn->ttype == TYPE_str && bn->tvheap == r1->tvheap ? " sharing string heap" : "",
+		  bn && bn->ttype == TYPE_str && bn->tvheap == r1i->vh ? " sharing string heap" : "",
 		  GDKusec() - t0);
 	return bn;
 }
@@ -569,30 +573,45 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	BAT *or1 = r1, *or2 = r2, *ol = l;
 	oid lo, hi;
 	gdk_return res;
-	int tpe = ATOMtype(r1->ttype);
+	int tpe = ATOMtype(r1->ttype), otpe = tpe;
 	bool stringtrick = false;
-	BUN lcount = BATcount(l);
 	struct canditer ci, *lci = NULL;
 	const char *msg = "";
 	lng t0 = 0;
+	BATiter li = bat_iterator(l);
+	BATiter r1i = bat_iterator(r1);
+	BATiter r2i = bat_iterator(r2);
+	BUN lcount = li.count;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	assert(ATOMtype(l->ttype) == TYPE_oid || l->ttype == TYPE_msk);
-	assert(r2 == NULL || tpe == ATOMtype(r2->ttype));
-	assert(r2 == NULL || r1->hseqbase + r1->batCount == r2->hseqbase);
+	assert(ATOMtype(li.type) == TYPE_oid || li.type == TYPE_msk);
+	assert(r2 == NULL || tpe == ATOMtype(r2i.type));
+	assert(r2 == NULL || r1->hseqbase + r1i.count == r2->hseqbase);
 
-	if (BATtdense(l) && lcount > 0) {
+	if (r2 && r1i.count == 0) {
+		/* unlikely special case: r1 is empty, so we just have r2 */
+		r1 = r2;
+		r2 = NULL;
+		bat_iterator_end(&r1i);
+		r1i = r2i;
+		r2i = bat_iterator(NULL);
+	}
+
+	if (BATtdensebi(&li) && lcount > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + lcount;
-		if (lo >= r1->hseqbase && hi <= r1->hseqbase + r1->batCount) {
+		if (lo >= r1->hseqbase && hi <= r1->hseqbase + r1i.count) {
 			bn = BATslice(r1, lo - r1->hseqbase, hi - r1->hseqbase);
 			BAThseqbase(bn, l->hseqbase);
 			msg = " (slice)";
 			goto doreturn;
 		}
-		if (lo < r1->hseqbase || r2 == NULL || hi > r2->hseqbase + r2->batCount) {
+		if (lo < r1->hseqbase || r2 == NULL || hi > r2->hseqbase + r2i.count) {
 			GDKerror("does not match always\n");
+			bat_iterator_end(&li);
+			bat_iterator_end(&r1i);
+			bat_iterator_end(&r2i);
 			return NULL;
 		}
 		if (lo >= r2->hseqbase) {
@@ -604,23 +623,29 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	}
 	if (complex_cand(l)) {
 		/* l is candidate list with exceptions or is a bitmask */
-		assert(l->ttype == TYPE_msk || !is_oid_nil(l->tseqbase));
-		lcount = canditer_init(&ci, NULL, l);
+		assert(li.type == TYPE_msk || !is_oid_nil(l->tseqbase));
+		canditer_init(&ci, NULL, l);
+		lcount = ci.ncand;
 		lci = &ci;
-	} else if (l->ttype == TYPE_msk) {
+	} else if (li.type == TYPE_msk) {
 		l = BATunmask(l);
 		if (l == NULL)
 			goto doreturn;
+		if (complex_cand(l)) {
+			canditer_init(&ci, NULL, l);
+			lcount = ci.ncand;
+			lci = &ci;
+		}
 	}
 	if (lcount == 0 ||
-	    (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)) ||
-	    (r1->ttype == TYPE_void && is_oid_nil(r1->tseqbase) &&
+	    (li.type == TYPE_void && is_oid_nil(l->tseqbase)) ||
+	    (r1i.type == TYPE_void && is_oid_nil(r1->tseqbase) &&
 	     (r2 == NULL ||
-	      (r2->ttype == TYPE_void && is_oid_nil(r2->tseqbase))))) {
+	      (r2i.type == TYPE_void && is_oid_nil(r2->tseqbase))))) {
 		/* trivial: all values are nil (includes no entries at all) */
-		const void *nil = r1->ttype == TYPE_msk ? &oid_nil : ATOMnilptr(r1->ttype);
+		const void *nil = r1i.type == TYPE_msk ? &oid_nil : ATOMnilptr(r1i.type);
 
-		bn = BATconstant(l->hseqbase, r1->ttype == TYPE_oid || r1->ttype == TYPE_msk ? TYPE_void : r1->ttype,
+		bn = BATconstant(l->hseqbase, r1i.type == TYPE_oid || r1i.type == TYPE_msk ? TYPE_void : r1i.type,
 				 nil, lcount, TRANSIENT);
 		if (bn != NULL &&
 		    ATOMtype(bn->ttype) == TYPE_oid &&
@@ -632,11 +657,11 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	}
 
 	if (ATOMstorage(tpe) == TYPE_str) {
-		if (l->tnonil &&
+		if (li.nonil &&
 		    r2 == NULL &&
-		    (r1->batCount == 0 ||
-		     lcount > (r1->batCount >> 3) ||
-		     r1->batRestricted == BAT_READ)) {
+		    (r1i.count == 0 ||
+		     lcount > (r1i.count >> 3) ||
+		     r1i.restricted == BAT_READ)) {
 			/* insert strings as ints, we need to copy the
 			 * string heap whole sale; we can't do this if
 			 * there are nils in the left column, and we
@@ -644,19 +669,31 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			 * the right and the right is writable (meaning
 			 * we have to actually copy the right string
 			 * heap) */
-			tpe = r1->twidth == 1 ? TYPE_bte : (r1->twidth == 2 ? TYPE_sht : (r1->twidth == 4 ? TYPE_int : TYPE_lng));
+			tpe = r1i.width == 1 ? TYPE_bte : (r1i.width == 2 ? TYPE_sht : (r1i.width == 4 ? TYPE_int : TYPE_lng));
 			stringtrick = true;
-		} else if (l->tnonil &&
+		} else if (li.nonil &&
 			   r2 != NULL &&
-			   (r1->tvheap == r2->tvheap ||
-			    (!GDK_ELIMDOUBLES(r1->tvheap) /* && size tests */))) {
+			   (r1i.vh == r2i.vh ||
+			    (!GDK_ELIMDOUBLES(r1i.vh) /* && size tests */))) {
 			/* r1 and r2 may explicitly share their vheap,
 			 * if they do, the result will also share the
 			 * vheap; this also means that for this case we
 			 * don't care about duplicate elimination: it
 			 * will remain the same */
-			return project_str(l, lci, r1, r2, t0);
+			bn = project_str(&li, lci, tpe, &r1i, &r2i, t0);
+			bat_iterator_end(&li);
+			bat_iterator_end(&r1i);
+			bat_iterator_end(&r2i);
+			return bn;
 		}
+	} else if (ATOMvarsized(tpe) &&
+		   li.nonil &&
+		   r2 == NULL &&
+		   (r1i.count == 0 ||
+		    lcount > (r1i.count >> 3) ||
+		    r1i.restricted == BAT_READ)) {
+		tpe = r1i.width == 4 ? TYPE_int : TYPE_lng;
+		stringtrick = true;
 	} else if (tpe == TYPE_msk || mask_cand(r1)) {
 		r1 = BATunmask(r1);
 		if (r1 == NULL)
@@ -667,62 +704,68 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 				goto doreturn;
 		}
 		tpe = TYPE_oid;
+		bat_iterator_end(&r1i);
+		bat_iterator_end(&r2i);
+		r1i = bat_iterator(r1);
+		r2i = bat_iterator(r2);
 	}
-	bn = COLnew_intern(l->hseqbase, ATOMtype(r1->ttype), lcount, TRANSIENT, stringtrick ? r1->twidth : 0);
+	bn = COLnew2(l->hseqbase, ATOMtype(r1i.type), lcount, TRANSIENT, stringtrick ? r1i.width : 0);
 	if (bn == NULL) {
 		goto doreturn;
 	}
 	bn->tnil = false;
 	if (r2) {
-		bn->tnonil = l->tnonil & r1->tnonil & r2->tnonil;
-		bn->tsorted = l->batCount <= 1;
-		bn->trevsorted = l->batCount <= 1;
-		bn->tkey = l->batCount <= 1;
+		bn->tnonil = li.nonil & r1i.nonil & r2i.nonil;
+		bn->tsorted = li.count <= 1;
+		bn->trevsorted = li.count <= 1;
+		bn->tkey = li.count <= 1;
 	} else {
-		bn->tnonil = l->tnonil & r1->tnonil;
-		bn->tsorted = l->batCount <= 1
-			|| (l->tsorted & r1->tsorted)
-			|| (l->trevsorted & r1->trevsorted);
-		bn->trevsorted = l->batCount <= 1
-			|| (l->tsorted & r1->trevsorted)
-			|| (l->trevsorted & r1->tsorted);
-		bn->tkey = l->batCount <= 1 || (l->tkey & r1->tkey);
+		bn->tnonil = li.nonil & r1i.nonil;
+		bn->tsorted = li.count <= 1
+			|| (li.sorted & r1i.sorted)
+			|| (li.revsorted & r1i.revsorted)
+			|| r1i.count <= 1;
+		bn->trevsorted = li.count <= 1
+			|| (li.sorted & r1i.revsorted)
+			|| (li.revsorted & r1i.sorted)
+			|| r1i.count <= 1;
+		bn->tkey = li.count <= 1 || (li.key & r1i.key);
 	}
 
 	if (!stringtrick && tpe != TYPE_oid)
 		tpe = ATOMbasetype(tpe);
 	switch (tpe) {
 	case TYPE_bte:
-		res = project_bte(bn, l, lci, r1, r2);
+		res = project_bte(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 	case TYPE_sht:
-		res = project_sht(bn, l, lci, r1, r2);
+		res = project_sht(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 	case TYPE_int:
-		res = project_int(bn, l, lci, r1, r2);
+		res = project_int(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 	case TYPE_flt:
-		res = project_flt(bn, l, lci, r1, r2);
+		res = project_flt(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 	case TYPE_dbl:
-		res = project_dbl(bn, l, lci, r1, r2);
+		res = project_dbl(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 	case TYPE_lng:
-		res = project_lng(bn, l, lci, r1, r2);
+		res = project_lng(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		res = project_hge(bn, l, lci, r1, r2);
+		res = project_hge(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 #endif
 	case TYPE_oid:
-		res = project_oid(bn, l, lci, r1, r2);
+		res = project_oid(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 	case TYPE_uuid:
-		res = project_uuid(bn, l, lci, r1, r2);
+		res = project_uuid(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 	default:
-		res = project_any(bn, l, lci, r1, r2);
+		res = project_any(bn, &li, lci, &r1i, r2 ? &r2i : NULL);
 		break;
 	}
 
@@ -731,36 +774,32 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 
 	/* handle string trick */
 	if (stringtrick) {
-		assert(r1->tvheap);
-		if (r1->batRestricted == BAT_READ) {
+		assert(r1i.vh);
+		if (r1i.restricted == BAT_READ || VIEWvtparent(r1)) {
 			/* really share string heap */
-			MT_lock_set(&r1->theaplock);
-			/* no need to lock bn, it's ours */
-			assert(r1->tvheap->parentid > 0);
-			BBPshare(r1->tvheap->parentid);
+			assert(r1i.vh->parentid > 0);
+			BBPshare(r1i.vh->parentid);
 			/* there is no file, so we don't need to remove it */
 			HEAPdecref(bn->tvheap, false);
-			bn->tvheap = r1->tvheap;
-			HEAPincref(r1->tvheap);
-			MT_lock_unset(&r1->theaplock);
+			bn->tvheap = r1i.vh;
+			HEAPincref(r1i.vh);
 		} else {
 			/* make copy of string heap */
 			bn->tvheap->parentid = bn->batCacheid;
-			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
+			bn->tvheap->farmid = BBPselectfarm(bn->batRole, otpe, varheap);
 			strconcat_len(bn->tvheap->filename,
 				      sizeof(bn->tvheap->filename),
 				      BBP_physical(bn->batCacheid), ".theap",
 				      NULL);
-			if (HEAPcopy(bn->tvheap, r1->tvheap, 0) != GDK_SUCCEED)
+			if (HEAPcopy(bn->tvheap, r1i.vh, 0) != GDK_SUCCEED)
 				goto bailout;
 		}
-		bn->ttype = r1->ttype;
-		bn->tvarsized = true;
-		bn->twidth = r1->twidth;
-		bn->tshift = r1->tshift;
+		bn->ttype = r1i.type;
+		bn->twidth = r1i.width;
+		bn->tshift = r1i.shift;
 	}
 
-	if (!BATtdense(r1) || (r2 && !BATtdense(r2)))
+	if (!BATtdensebi(&r1i) || (r2 && !BATtdensebi(&r2i)))
 		BATtseqbase(bn, oid_nil);
 
   doreturn:
@@ -768,8 +807,11 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		  " -> " ALGOOPTBATFMT "%s%s " LLFMT "us\n",
 		  ALGOBATPAR(l), ALGOBATPAR(or1), ALGOOPTBATPAR(or2),
 		  ALGOOPTBATPAR(bn),
-		  bn && bn->ttype == TYPE_str && bn->tvheap == r1->tvheap ? " sharing string heap" : "",
+		  bn && bn->ttype == TYPE_str && bn->tvheap == r1i.vh ? " sharing string heap" : "",
 		  msg, GDKusec() - t0);
+	bat_iterator_end(&li);
+	bat_iterator_end(&r1i);
+	bat_iterator_end(&r2i);
 	if (l != ol)
 		BBPreclaim(l);
 	if (r1 != or1)
@@ -801,6 +843,11 @@ BATproject(BAT *restrict l, BAT *restrict r)
  * return bn;
  * where none of the intermediates are actually produced (and bats[n]==NULL).
  * Note that all BATs except the last must have type oid/void or msk.
+ *
+ * We assume that all but the last BAT in the chain is temporary and
+ * therefore there is no chance that another thread will modify it while
+ * we're busy.  This is not necessarily the case for that last BAT, so
+ * it uses a BAT iterator.
  */
 BAT *
 BATprojectchain(BAT **bats)
@@ -817,6 +864,7 @@ BATprojectchain(BAT **bats)
 	int ndelete = 0;
 	int n, i;
 	BAT *b = NULL, *bn = NULL;
+	BATiter bi;
 	bool allnil = false;
 	bool issorted = true;
 	bool nonil = true;
@@ -913,16 +961,27 @@ BATprojectchain(BAT **bats)
 		return bn;
 	}
 
-	if (nonil && ATOMstorage(tpe) == TYPE_str && b->batRestricted == BAT_READ) {
+	bi = bat_iterator(b);
+	if (nonil && ATOMstorage(tpe) == TYPE_str && bi.restricted == BAT_READ) {
 		stringtrick = true;
-		tpe = b->twidth == 1 ? TYPE_bte : (b->twidth == 2 ? TYPE_sht : (b->twidth == 4 ? TYPE_int : TYPE_lng));
+		bn = COLnew2(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT, bi.width);
+		if (bn && bn->tvheap) {
+			/* no need to remove any files since they were
+			 * never created for this bat */
+			HEAPdecref(bn->tvheap, false);
+			bn->tvheap = NULL;
+		}
+		tpe = bi.width == 1 ? TYPE_bte : (bi.width == 2 ? TYPE_sht : (bi.width == 4 ? TYPE_int : TYPE_lng));
+	} else {
+		bn = COLnew(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT);
 	}
-
-	bn = COLnew(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT);
 	if (bn == NULL) {
+		bat_iterator_end(&bi);
 		goto bunins_failed;
 	}
 
+	assert(ba[n - 1].b == b);
+	ba[n - 1].t = bi.base;
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		/* oid all the way */
 		oid *d = (oid *) Tloc(bn, 0);
@@ -936,6 +995,7 @@ BATprojectchain(BAT **bats)
 				}
 				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
+					bat_iterator_end(&bi);
 					goto bunins_failed;
 				}
 				o -= ba[i].hlo;
@@ -962,6 +1022,7 @@ BATprojectchain(BAT **bats)
 				}
 				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
+					bat_iterator_end(&bi);
 					goto bunins_failed;
 				}
 				o -= ba[i].hlo;
@@ -976,32 +1037,32 @@ BATprojectchain(BAT **bats)
 				v = nil;
 			} else if (o < ba[n].hlo || o >= ba[n].hhi) {
 				GDKerror("does not match always\n");
+				bat_iterator_end(&bi);
 				goto bunins_failed;
 			} else {
 				o -= ba[n].hlo;
-				v = Tloc(b, o);
+				v = (const char *) bi.base + (o << bi.shift);
 			}
-			if (ATOMputFIX(tpe, d, v) != GDK_SUCCEED)
+			if (ATOMputFIX(tpe, d, v) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
 				goto bunins_failed;
-			d += b->twidth;
+			}
+			d += bi.width;
 		}
 		if (stringtrick) {
 			bn->tnil = false;
 			bn->tnonil = b->tnonil;
 			bn->tkey = false;
-			MT_lock_set(&b->theaplock);
-			BBPshare(b->tvheap->parentid);
-			bn->tvheap = b->tvheap;
-			HEAPincref(b->tvheap);
-			MT_lock_unset(&b->theaplock);
-			bn->ttype = b->ttype;
-			bn->tvarsized = true;
-			assert(bn->twidth == b->twidth);
-			assert(bn->tshift == b->tshift);
+			BBPshare(bi.vh->parentid);
+			assert(bn->tvheap == NULL);
+			bn->tvheap = bi.vh;
+			HEAPincref(bi.vh);
+			assert(bn->ttype == b->ttype);
+			assert(bn->twidth == bi.width);
+			assert(bn->tshift == bi.shift);
 		}
 		n++;		/* undo for debug print */
 	} else {
-		BATiter bi = bat_iterator(b);
 		const void *v;
 
 		assert(!stringtrick);
@@ -1016,6 +1077,7 @@ BATprojectchain(BAT **bats)
 				}
 				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
+					bat_iterator_end(&bi);
 					goto bunins_failed;
 				}
 				o -= ba[i].hlo;
@@ -1029,16 +1091,20 @@ BATprojectchain(BAT **bats)
 				v = nil;
 			} else if (o < ba[n].hlo || o >= ba[n].hhi) {
 				GDKerror("does not match always\n");
+				bat_iterator_end(&bi);
 				goto bunins_failed;
 			} else {
 				o -= ba[n].hlo;
 				v = BUNtail(bi, o);
 			}
-			if (bunfastapp(bn, v) != GDK_SUCCEED)
+			if (bunfastapp(bn, v) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
 				goto bunins_failed;
+			}
 		}
 		n++;		/* undo for debug print */
 	}
+	bat_iterator_end(&bi);
 	BATsetcount(bn, ba[0].cnt);
 	bn->tsorted = (ba[0].cnt <= 1) | issorted;
 	bn->trevsorted = ba[0].cnt <= 1;

@@ -1,0 +1,7 @@
+# ChangeLog file for sql
+# This file is updated with Maddlog
+
+* Thu Apr 14 2022 Sjoerd Mullender <sjoerd@acm.org>
+- The NO CONSTRAINT option of the COPY INTO query has been removed.
+  It didn't work and it was never a good idea anyway.
+

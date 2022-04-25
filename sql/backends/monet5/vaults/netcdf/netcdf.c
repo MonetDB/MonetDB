@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -209,7 +209,8 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 	bn->tsorted = (cnt <= 1 || (series == 1 && step > 0));
 	bn->trevsorted = (cnt <= 1 || (series == 1 && step < 0));
 	bn->tnonil = true;
-	BBPkeepref(*bid= bn->batCacheid);
+	*bid = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -667,7 +668,8 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	res->tsorted = false;
 	res->trevsorted = false;
 	BATkey(res, false);
-	BBPkeepref(vbid = res->batCacheid);
+	vbid = res->batCacheid;
+	BBPkeepref(res);
 
 	res = NULL;
 
@@ -694,7 +696,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 		sermsg = NCDFARRAYseries(&dim_bids[i], 0, 1, dlen[i], val_rep[i], grp_rep[i]);
 
 		if (sermsg != MAL_SUCCEED) {
-			BBPrelease(vbid); /* undo the BBPkeepref(vbid) above */
+			BBPrelease(vbid); /* undo the BBPkeepref(res) above */
 			for ( j = 0; j < i; j++) /* undo log. ref of previous dimensions */
 				BBPrelease(dim_bids[j]);
 			GDKfree(dlen);
@@ -771,25 +773,32 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(fname);
 
 	/* Get info for variable vname from NetCDF file */
-	if ( (retval = nc_inq_varid(ncid, vname, &varid)) )
+	if ( (retval = nc_inq_varid(ncid, vname, &varid)) ) {
+		nc_close(ncid);
 		return createException(MAL, "netcdf.importvar",
 			   SQLSTATE(NC000) "Cannot read variable %s: %s",
 			   vname, nc_strerror(retval));
-	if ( (retval = nc_inq_var(ncid, varid, vname, &vtype, &vndims, vdims, &vnatts)))
+	}
+	if ( (retval = nc_inq_var(ncid, varid, vname, &vtype, &vndims, vdims, &vnatts))) {
+		nc_close(ncid);
 		return createException(MAL, "netcdf.importvar",
 				SQLSTATE(NC000) "Cannot read variable %d : %s",
 				varid, nc_strerror(retval));
+	}
 
 	/* compose 'create table' statement in the buffer */
 	dname = (char **) GDKzalloc( sizeof(char *) * vndims);
-	if (dname == NULL)
+	if (dname == NULL) {
+		nc_close(ncid);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	for (i = 0; i < vndims; i++) {
 		dname[i] = (char *) GDKzalloc(NC_MAX_NAME + 1);
 		if(!dname[i]) {
 			for (j = 0; j < i; j++)
 				GDKfree(dname[j]);
 			GDKfree(dname);
+			nc_close(ncid);
 			throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
@@ -800,7 +809,10 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 0; i < vndims; i++){
 		if ((retval = nc_inq_dim(ncid, vdims[i], dname[i], &dlen))) {
+			for (j = 0; j < vndims; j++)
+				GDKfree(dname[j]);
 			GDKfree(dname);
+			nc_close(ncid);
 			return createException(MAL, "netcdf.importvar",
 								   SQLSTATE(NC000) "Cannot read dimension %d : %s",
 								   vdims[i], nc_strerror(retval));
@@ -822,21 +834,30 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* execute 'create table ' */
 	msg = SQLstatementIntern(cntxt, s, "netcdf.importvar", TRUE, FALSE, NULL);
 	if (msg != MAL_SUCCEED){
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
+		nc_close(ncid);
 		return msg;
 	}
 
 /* load variable data */
 	dim_bids = (bat *)GDKmalloc(sizeof(bat) * vndims);
 	if (dim_bids == NULL){
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
+		nc_close(ncid);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	msg = NCDFloadVar(&dim_bids, &vbatid, ncid, varid, vtype, vndims, vdims);
 	if ( msg != MAL_SUCCEED ) {
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
+		nc_close(ncid);
 		return msg;
 	}
 
@@ -844,29 +865,57 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	aname_sys = toLower(aname);
 	arr_table = mvc_bind_table(m, sch, aname_sys);
 	if (arr_table == NULL){
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
-		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "netcdf table %s missing\n", aname_sys);
+		nc_close(ncid);
+		throw(MAL, "netcdf.importvar", SQLSTATE(NC000) "netcdf table %s missing\n", aname_sys);
 	}
 
 	col = mvc_bind_column(m, arr_table, "value");
 	if (col == NULL){
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
-		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.value\n", aname_sys);
+		nc_close(ncid);
+		throw(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.value\n", aname_sys);
 	}
 
 	vbat = BATdescriptor(vbatid);
 	if(vbat == NULL) {
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
-		return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		nc_close(ncid);
+		throw(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	BAT *pos = store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(vbat));
-	if (!pos)
+	BUN offset;
+	BAT *pos = NULL;
+	if (store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(vbat), &offset, &pos) != LOG_OK) {
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
+		GDKfree(dname);
+		GDKfree(dim_bids);
+		BBPunfix(vbatid);
+		BBPrelease(vbatid);
+		nc_close(ncid);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	store->storage_api.append_col(m->session->tr, col, pos, vbat, TYPE_bat);
-	bat_destroy(pos);
+	}
+	if (!isNew(arr_table) && sql_trans_add_dependency_change(m->session->tr, arr_table->base.id, dml) != LOG_OK) {
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
+		GDKfree(dname);
+		GDKfree(dim_bids);
+		BBPunfix(vbatid);
+		BBPrelease(vbatid);
+		bat_destroy(pos);
+		nc_close(ncid);
+		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	store->storage_api.append_col(m->session->tr, col, offset, pos, vbat, BATcount(vbat), TYPE_bat);
 	BBPunfix(vbatid);
 	BBPrelease(vbatid);
 	vbat = NULL;
@@ -875,43 +924,46 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < vndims; i++){
 		col = mvc_bind_column(m, arr_table, dname[i]);
 		if (col == NULL){
+			for (i = 0; i < vndims; i++)
+				GDKfree(dname[i]);
 			GDKfree(dname);
 			GDKfree(dim_bids);
+			bat_destroy(pos);
+			nc_close(ncid);
 			throw(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.%s\n", aname_sys, dname[i]);
 		}
 
 		dimbat = BATdescriptor(dim_bids[i]);
 		if(dimbat == NULL) {
+			for (i = 0; i < vndims; i++)
+				GDKfree(dname[i]);
 			GDKfree(dname);
 			GDKfree(dim_bids);
-			return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			bat_destroy(pos);
+			nc_close(ncid);
+			throw(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		pos = store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(dimbat));
-		if (!pos)
-			throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		store->storage_api.append_col(m->session->tr, col, pos, dimbat, TYPE_bat);
-		bat_destroy(pos);
+		store->storage_api.append_col(m->session->tr, col, offset, pos, dimbat, BATcount(dimbat), TYPE_bat);
 		BBPunfix(dim_bids[i]); /* phys. ref from BATdescriptor */
 		BBPrelease(dim_bids[i]); /* log. ref. from loadVar */
 		dimbat = NULL;
 	}
 
 	for (i = 0; i < vndims; i++)
-        	GDKfree(dname[i]);
+		GDKfree(dname[i]);
 	GDKfree(dname);
 	GDKfree(dim_bids);
-
+	bat_destroy(pos);
 	nc_close(ncid);
-
 	return msg;
 }
 
 #include "mel.h"
 static mel_func netcdf_init_funcs[] = {
  command("netcdf", "test", NCDFtest, false, "Returns number of variables in a given NetCDF dataset (file)", args(1,2, arg("",int),arg("filename",str))),
- pattern("netcdf", "attach", NCDFattach, false, "Register a NetCDF file in the vault", args(1,2, arg("",void),arg("filename",str))),
- command("netcdf", "importvar", NCDFimportVarStmt, false, "Import variable: compose create array string", args(1,3, arg("",str),arg("filename",str),arg("varid",int))),
- pattern("netcdf", "importvariable", NCDFimportVariable, false, "Import variable: create array and load data from variable varname of file fileid", args(1,3, arg("",void),arg("fileid",int),arg("varname",str))),
+ pattern("netcdf", "attach", NCDFattach, true, "Register a NetCDF file in the vault", args(1,2, arg("",void),arg("filename",str))),
+ command("netcdf", "importvar", NCDFimportVarStmt, true, "Import variable: compose create array string", args(1,3, arg("",str),arg("filename",str),arg("varid",int))),
+ pattern("netcdf", "importvariable", NCDFimportVariable, true, "Import variable: create array and load data from variable varname of file fileid", args(1,3, arg("",void),arg("fileid",int),arg("varname",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

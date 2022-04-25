@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -41,7 +41,7 @@ broadcast(char *msg)
 	if (sendto(_mero_broadcastsock, msg, len, 0,
 				(struct sockaddr *)&_mero_broadcastaddr,
 				sizeof(_mero_broadcastaddr)) != len)
-		Mfprintf(_mero_discerr, "error while sending broadcast "
+		Mlevelfprintf(ERROR, _mero_discerr, "error while sending broadcast "
 				"message: %s\n", strerror(errno));
 }
 
@@ -72,7 +72,7 @@ removeRemoteDB(const char *dbname, const char *conn)
 			/* inform multiplex-funnels about this removal */
 			multiplexNotifyRemovedDB(rdb->fullname);
 
-			Mfprintf(_mero_discout,
+			Mlevelfprintf(INFORMATION, _mero_discout,
 					"removed neighbour database %s%s\n",
 					conn, rdb->fullname);
 			free(rdb->dbname);
@@ -178,7 +178,7 @@ getRemoteDB(const char *database)
 	pdb = &dummy;
 	while (rdb != NULL) {
 		snprintf(mfullname, sizeof(mfullname), "%s/", rdb->fullname);
-		if (db_glob(mdatabase, mfullname) == 1) {
+		if (db_glob(mdatabase, mfullname)) {
 			/* create a fake sabdb struct, chain where necessary */
 			if (walk != NULL) {
 				walk = walk->next = malloc(sizeof(sabdb));
@@ -336,7 +336,7 @@ discoveryRunner(void *d)
 
 			/* list all known databases */
 			if ((e = msab_getStatus(&stats, NULL)) != NULL) {
-				Mfprintf(_mero_discerr, "msab_getStatus error: %s, "
+				Mlevelfprintf(ERROR, _mero_discerr, "msab_getStatus error: %s, "
 						"discovery services disabled\n", e);
 				free(e);
 				free(ckv);
@@ -392,7 +392,7 @@ discoveryRunner(void *d)
 				} else {
 					prv->next = rdb->next;
 				}
-				Mfprintf(_mero_discout, "neighbour database %s%s "
+				Mlevelfprintf(WARNING, _mero_discout, "neighbour database %s%s "
 						"has expired\n", rdb->conn, rdb->fullname);
 				free(rdb->dbname);
 				free(rdb->conn);
@@ -463,7 +463,7 @@ discoveryRunner(void *d)
 				peer_addr_len, host, 128,
 				service, 8, NI_NUMERICSERV);
 		if (s != 0) {
-			Mfprintf(_mero_discerr, "cannot retrieve name info: %s\n",
+			Mlevelfprintf(ERROR, _mero_discerr, "cannot retrieve name info: %s\n",
 					gai_strerror(s));
 			continue; /* skip this message */
 		}
@@ -486,7 +486,7 @@ discoveryRunner(void *d)
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */
-			Mfprintf(_mero_discout, "new neighbour %s (%s)\n", buf + 5, host);
+			Mlevelfprintf(INFORMATION, _mero_discout, "new neighbour %s (%s)\n", buf + 5, host);
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
 #ifndef __COVERITY__			/* hide rand() from Coverity */
@@ -509,7 +509,7 @@ discoveryRunner(void *d)
 				continue;
 
 			if (!removeRemoteDB(dbname, conn))
-				Mfprintf(_mero_discout,
+				Mlevelfprintf(WARNING, _mero_discout,
 						"received leave request for unknown database "
 						"%s%s from %s\n", conn, dbname, host);
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
@@ -529,16 +529,16 @@ discoveryRunner(void *d)
 
 			if (addRemoteDB(dbname, conn, atoi(ttl)) == 1) {
 				if (strcmp(dbname, "*") == 0) {
-					Mfprintf(_mero_discout, "registered neighbour %s\n",
+					Mlevelfprintf(INFORMATION, _mero_discout, "registered neighbour %s\n",
 							conn);
 				} else {
-					Mfprintf(_mero_discout, "new database "
+					Mlevelfprintf(INFORMATION, _mero_discout, "new database "
 							"%s%s (ttl=%ss)\n",
 							conn, dbname, ttl);
 				}
 			}
 		} else {
-			Mfprintf(_mero_discout, "ignoring unknown message from "
+			Mlevelfprintf(WARNING, _mero_discout, "ignoring unknown message from "
 					"%s:%s: '%s'\n", host, service, buf);
 		}
 	}
@@ -557,7 +557,7 @@ discoveryRunner(void *d)
 
 	/* list all known databases */
 	if ((e = msab_getStatus(&stats, NULL)) != NULL) {
-		Mfprintf(_mero_discerr, "msab_getStatus error: %s, "
+		Mlevelfprintf(ERROR, _mero_discerr, "msab_getStatus error: %s, "
 				"discovery services disabled\n", e);
 		free(e);
 		free(ckv);

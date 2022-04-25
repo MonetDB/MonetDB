@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* // TODO: Complete it when documentation is accepted
@@ -211,16 +211,16 @@ gdk_export log_level_t lvl_per_component[];
 #define TRC_CRITICAL_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
 
-#define TRC_ERROR_ENDIF(COMP, MSG, ...)				\
+#define TRC_ERROR_ENDIF(COMP, MSG, ...)					\
 	GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_WARNING_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)
 
-#define TRC_INFO_ENDIF(COMP, MSG, ...)				\
+#define TRC_INFO_ENDIF(COMP, MSG, ...)					\
 	GDK_TRACER_LOG_BODY(M_INFO, COMP, MSG, ## __VA_ARGS__)
 
-#define TRC_DEBUG_ENDIF(COMP, MSG, ...)				\
+#define TRC_DEBUG_ENDIF(COMP, MSG, ...)					\
 	GDK_TRACER_LOG_BODY(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
 
 
@@ -258,7 +258,5 @@ gdk_export void GDKtracer_log(const char *file, const char *func,
 	__attribute__((__format__(__printf__, 7, 8)));
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);
-
-gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
 #endif /* _GDK_TRACER_H_ */

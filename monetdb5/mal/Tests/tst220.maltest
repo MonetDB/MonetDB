@@ -40,7 +40,7 @@ statement ok
 query T rowsort
 	io.printf("refcount =%d[1]\n",i)
 ----
-refcount =2[1]
+refcount =1[1]
 
 statement ok
 	b2:= b
@@ -51,7 +51,7 @@ statement ok
 query T rowsort
 	io.printf("after assignment refcount =%d[2]\n",i)
 ----
-after assignment refcount =3[2]
+after assignment refcount =2[2]
 
 statement ok
 	b3:= b
@@ -65,7 +65,7 @@ statement ok
 query T rowsort
 	io.printf("after 2nd assignment refcount =%d[3]\n",i)
 ----
-after 2nd assignment refcount =4[3]
+after 2nd assignment refcount =3[3]
 
 statement ok
 	b3:= user.createone()
@@ -76,7 +76,7 @@ statement ok
 query T rowsort
 	io.printf("after 3rd assignment refcount =%d[2]\n",i)
 ----
-after 3rd assignment refcount =3[2]
+after 3rd assignment refcount =2[2]
 
 statement ok
 	i:= bbp.getLRefCount(b3)
@@ -102,7 +102,7 @@ statement ok
 query T rowsort
 	io.printf("after 4rd assignment refcount =%d[2]\n",i)
 ----
-after 4rd assignment refcount =3[2]
+after 4rd assignment refcount =2[2]
 
 statement ok
 	b2:= b3
@@ -113,7 +113,7 @@ statement ok
 query T rowsort
 	io.printf("after 5rd assignment refcount =%d[1]\n",i)
 ----
-after 5rd assignment refcount =2[1]
+after 5rd assignment refcount =1[1]
 
 query T rowsort
 	io.printf("call function\n")
@@ -123,7 +123,7 @@ call function
 query T rowsort
 	d:= user.steal(b)
 ----
-local in function refcount =4[3,4]
+local in function refcount =3[3,4]
 
 statement ok
 	i:= bbp.getLRefCount(b)
@@ -131,7 +131,7 @@ statement ok
 query T rowsort
 	io.printf("return from function refcount =%d[2]\n",i)
 ----
-return from function refcount =3[2]
+return from function refcount =2[2]
 
 query T rowsort
 	io.printf("check self replacement, overrule refcount!\n")
@@ -141,7 +141,7 @@ check self replacement, overrule refcount!
 query T rowsort
 	b:= user.steal(b)
 ----
-local in function refcount =5[3,4]
+local in function refcount =4[3,4]
 
 statement ok
 	i:= bbp.getLRefCount(b)
@@ -149,5 +149,5 @@ statement ok
 query T rowsort
 	io.printf("return from function refcount =%d[2]\n",i)
 ----
-return from function refcount =3[2]
+return from function refcount =2[2]
 

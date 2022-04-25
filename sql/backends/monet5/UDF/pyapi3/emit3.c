@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -60,7 +60,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			if (this_size < 0) {
 				PyErr_Format(
 					PyExc_TypeError, "Unsupported Python Object %s",
-					PyString_AsString(PyObject_Str(PyObject_Type(dictEntry))));
+					PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(dictEntry))));
 				Py_DECREF(items);
 				return NULL;
 			}
@@ -71,7 +71,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				PyErr_Format(
 					PyExc_TypeError, "Element %s has size %zd, but expected an "
 									 "element with size %zd",
-					PyString_AsString(PyObject_Str(key)), this_size, el_count);
+					PyUnicode_AsUTF8(PyObject_Str(key)), this_size, el_count);
 				Py_DECREF(items);
 				return NULL;
 			}
@@ -110,7 +110,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					PyErr_Format(
 						PyExc_TypeError,
 						"Could not convert object type %s to a string: %s",
-						PyString_AsString(PyObject_Str(PyObject_Type(key))),
+						PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(key))),
 						msg);
 					free(val);
 					goto loop_end;
@@ -167,7 +167,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				PyErr_Format(
 					PyExc_TypeError,
 					"Could not convert object type %s to a string: %s",
-					PyString_AsString(PyObject_Str(PyObject_Type(key))), msg);
+					PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(key))), msg);
 				error = true;
 				Py_DECREF(keys);
 				free(val);

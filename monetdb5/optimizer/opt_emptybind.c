@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* author M.Kersten
@@ -39,28 +39,26 @@ str
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, actions =0, extras= 0;
-	int *empty;
+	int *empty = NULL;
 	int limit = mb->stop, slimit = mb->ssize;
-	InstrPtr p, q, *old = mb->stmt, *updated;
-	char buf[256];
-	lng usec = GDKusec();
+	InstrPtr p, q, *old = NULL, *updated = NULL;
 	str sch,tbl;
 	int etop= 0, esize= 256;
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
 	(void) cntxt;
-	(void) pci;
 
-	//if ( optimizerIsApplied(mb,"emptybind") )
-		//return 0;
 	// use an instruction reference table to keep
 
-	for( i=0; i< mb->stop; i++)
-		if( getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef)
-			extras += getInstrPtr(mb,i)->argc;
-	if (extras == 0)
+	for( i=0; i< mb->stop; i++) {
+		p = getInstrPtr(mb,i);
+		if( getModuleId(p) == sqlRef && (getFunctionId(p) == emptybindRef || getFunctionId(p) == emptybindidxRef))
+			extras += p->argc;
+	}
+	if (extras == 0){
 		goto wrapup;
+	}
 
 	// track of where 'emptybind' results are produced
 	// reserve space for maximal number of emptybat variables created
@@ -71,9 +69,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	updated= (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
 	if( updated == 0){
 		GDKfree(empty);
-		return 0;
+		throw(MAL,"optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
+	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(empty);
 		GDKfree(updated);
@@ -133,8 +132,9 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			for(j= 0; j< etop; j++){
 				q= updated[j];
 				if(q && getModuleId(q) == sqlRef && isUpdateInstruction(q)){
-					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
-						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
+					int c = getFunctionId(q) == claimRef;  /* claim has 2 results */
+					if ( strcmp(getVarConstant(mb,getArg(q,2+c)).val.sval, sch) == 0 &&
+						 strcmp(getVarConstant(mb,getArg(q,3+c)).val.sval, tbl) == 0 ){
 						empty[getArg(p,0)] = 0;
 						if( p->retc == 2){
 							empty[getArg(p,1)] = 0;
@@ -210,24 +210,42 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			}
 			continue;
 		}
-		if (getModuleId(p)== algebraRef){
-			if( getFunctionId(p) == projectionRef) {
-				if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
-					actions++;
-					emptyresult(0);
-				}
-			}
-			if( getFunctionId(p) == thetaselectRef || getFunctionId(p) == selectRef) {
-				if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
-					actions++;
-					emptyresult(0);
-				}
-			}
-		}
-		if( getModuleId(p) == batstrRef){
+		if (getModuleId(p)== algebraRef && getFunctionId(p) == projectionRef) {
 			if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
 				actions++;
 				emptyresult(0);
+			}
+		}
+		if ((getModuleId(p)== algebraRef || getModuleId(p) == dictRef) && (getFunctionId(p) == thetaselectRef || getFunctionId(p) == selectRef)) {
+			if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
+				actions++;
+				emptyresult(0);
+			}
+		}
+		if (getModuleId(p) == forRef && getFunctionId(p) == decompressRef){
+			if (empty[getArg(p,1)]){
+				actions++;
+				emptyresult(0);
+			}
+		}
+		if (getModuleId(p) == dictRef){
+			if (getFunctionId(p) == decompressRef && (empty[getArg(p,1)] || empty[getArg(p,2)])){
+				actions++;
+				emptyresult(0);
+			}
+			if (getFunctionId(p) == compressRef && empty[getArg(p,2)]){
+				actions++;
+				emptyresult(0);
+			}
+		}
+		if (getModuleId(p) == batmkeyRef || getModuleId(p) == batstrRef || getModuleId(p) == batmtimeRef ||
+			getModuleId(p) == batmmathRef || getModuleId(p) == batcalcRef || (getModuleId(p) == algebraRef && getFunctionId(p) == projectionpathRef)) {
+			for (int j = p->retc; j < p->argc; j++) {
+				if( empty[getArg(p,j)]){
+					actions++;
+					emptyresult(0);
+					break;
+				}
 			}
 		}
 		if (getModuleId(p)== batRef && isUpdateInstruction(p)){
@@ -243,22 +261,19 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for(; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
 	GDKfree(empty);
 	GDKfree(updated);
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
 	if (!msg)
 		msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
+	/* keep all actions taken as a post block comment */
 wrapup:
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

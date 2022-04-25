@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -96,9 +96,9 @@
  * high-performance hash-lookup (all code inlined).
  */
 
-/* These tables were generated from the Unicode 12.1.0 spec. */
-struct UTF8_lower_upper {
-	unsigned int from, to;
+/* These tables were generated from the Unicode 13.0.0 spec. */
+const struct UTF8_lower_upper {
+	const unsigned int from, to;
 } UTF8_toUpper[] = { /* code points with non-null uppercase conversion */
 	{ 0x0061, 0x0041, },
 	{ 0x0062, 0x0042, },
@@ -1175,6 +1175,9 @@ struct UTF8_lower_upper {
 	{ 0xA7BD, 0xA7BC, },
 	{ 0xA7BF, 0xA7BE, },
 	{ 0xA7C3, 0xA7C2, },
+	{ 0xA7C8, 0xA7C7, },
+	{ 0xA7CA, 0xA7C9, },
+	{ 0xA7F6, 0xA7F5, },
 	{ 0xAB53, 0xA7B3, },
 	{ 0xAB70, 0x13A0, },
 	{ 0xAB71, 0x13A1, },
@@ -2647,6 +2650,9 @@ struct UTF8_lower_upper {
 	{ 0xA7C4, 0xA794, },
 	{ 0xA7C5, 0x0282, },
 	{ 0xA7C6, 0x1D8E, },
+	{ 0xA7C7, 0xA7C8, },
+	{ 0xA7C9, 0xA7CA, },
+	{ 0xA7F5, 0xA7F6, },
 	{ 0xFF21, 0xFF41, },
 	{ 0xFF22, 0xFF42, },
 	{ 0xFF23, 0xFF43, },
@@ -2904,39 +2910,68 @@ static BAT *UTF8_toUpperFrom = NULL, *UTF8_toUpperTo = NULL,
 	*UTF8_toLowerFrom = NULL, *UTF8_toLowerTo = NULL;
 
 static str
-STRprelude(void *ret)
+STRprelude(void)
 {
-	(void) ret;
 	if (UTF8_toUpperFrom == NULL) {
 		size_t i;
 
-		UTF8_toUpperFrom = COLnew(0, TYPE_int, 1500, TRANSIENT);
-		UTF8_toUpperTo = COLnew(0, TYPE_int, 1500, TRANSIENT);
-		UTF8_toLowerFrom = COLnew(0, TYPE_int, 1500, TRANSIENT);
-		UTF8_toLowerTo = COLnew(0, TYPE_int, 1500, TRANSIENT);
+		UTF8_toUpperFrom = COLnew(0, TYPE_int, sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]), TRANSIENT);
+		UTF8_toUpperTo = COLnew(0, TYPE_int, sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]), TRANSIENT);
+		UTF8_toLowerFrom = COLnew(0, TYPE_int, sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]), TRANSIENT);
+		UTF8_toLowerTo = COLnew(0, TYPE_int, sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]), TRANSIENT);
 		if (UTF8_toUpperFrom == NULL || UTF8_toUpperTo == NULL ||
 			UTF8_toLowerFrom == NULL || UTF8_toLowerTo == NULL) {
 			goto bailout;
 		}
 
+		int *fp = (int *) Tloc(UTF8_toUpperFrom, 0);
+		int *tp = (int *) Tloc(UTF8_toUpperTo, 0);
 		for (i = 0; i < sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]); i++) {
-			if (BUNappend(UTF8_toUpperFrom, &UTF8_toUpper[i].from, false) != GDK_SUCCEED ||
-				BUNappend(UTF8_toUpperTo, &UTF8_toUpper[i].to, false) != GDK_SUCCEED)
-				goto bailout;
+			fp[i] = UTF8_toUpper[i].from;
+			tp[i] = UTF8_toUpper[i].to;
 		}
+		BATsetcount(UTF8_toUpperFrom, i);
+		UTF8_toUpperFrom->tkey = true;
+		UTF8_toUpperFrom->tsorted = true;
+		UTF8_toUpperFrom->trevsorted = false;
+		UTF8_toUpperFrom->tnil = false;
+		UTF8_toUpperFrom->tnonil = true;
+		BATsetcount(UTF8_toUpperTo, i);
+		UTF8_toUpperTo->tkey = false;
+		UTF8_toUpperTo->tsorted = false;
+		UTF8_toUpperTo->trevsorted = false;
+		UTF8_toUpperTo->tnil = false;
+		UTF8_toUpperTo->tnonil = true;
 
+		fp = (int *) Tloc(UTF8_toLowerFrom, 0);
+		tp = (int *) Tloc(UTF8_toLowerTo, 0);
 		for (i = 0; i < sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]); i++) {
-			if (BUNappend(UTF8_toLowerFrom, &UTF8_toLower[i].from, false) != GDK_SUCCEED ||
-				BUNappend(UTF8_toLowerTo, &UTF8_toLower[i].to, false) != GDK_SUCCEED)
-				goto bailout;
+			fp[i] = UTF8_toLower[i].from;
+			tp[i] = UTF8_toLower[i].to;
 		}
+		BATsetcount(UTF8_toLowerFrom, i);
+		UTF8_toLowerFrom->tkey = true;
+		UTF8_toLowerFrom->tsorted = true;
+		UTF8_toLowerFrom->trevsorted = false;
+		UTF8_toLowerFrom->tnil = false;
+		UTF8_toLowerFrom->tnonil = true;
+		BATsetcount(UTF8_toLowerTo, i);
+		UTF8_toLowerTo->tkey = false;
+		UTF8_toLowerTo->tsorted = false;
+		UTF8_toLowerTo->trevsorted = false;
+		UTF8_toLowerTo->tnil = false;
+		UTF8_toLowerTo->tnonil = true;
 
-		if (BBPrename(UTF8_toUpperFrom->batCacheid, "monet_unicode_upper_from") != 0 ||
-			BBPrename(UTF8_toUpperTo->batCacheid, "monet_unicode_upper_to") != 0 ||
-			BBPrename(UTF8_toLowerFrom->batCacheid, "monet_unicode_lower_from") != 0 ||
-			BBPrename(UTF8_toLowerTo->batCacheid, "monet_unicode_lower_to") != 0) {
+		if (BBPrename(UTF8_toUpperFrom, "monet_unicode_upper_from") != 0 ||
+			BBPrename(UTF8_toUpperTo, "monet_unicode_upper_to") != 0 ||
+			BBPrename(UTF8_toLowerFrom, "monet_unicode_lower_from") != 0 ||
+			BBPrename(UTF8_toLowerTo, "monet_unicode_lower_to") != 0) {
 			goto bailout;
 		}
+		BBP_pid(UTF8_toUpperFrom->batCacheid) = 0;
+		BBP_pid(UTF8_toUpperTo->batCacheid) = 0;
+		BBP_pid(UTF8_toLowerFrom->batCacheid) = 0;
+		BBP_pid(UTF8_toLowerTo->batCacheid) = 0;
 	}
 	return MAL_SUCCEED;
 
@@ -3161,23 +3196,39 @@ UTF8_offset(char *restrict s, int n)
 	return s;
 }
 
-static str
+str
+str_case_hash_lock(bool upper)
+{
+	BAT *b = upper ? UTF8_toUpperFrom : UTF8_toLowerFrom;
+
+	if (BAThash(b) != GDK_SUCCEED)
+		throw(MAL, "str.str_case_hash_lock", GDK_EXCEPTION);
+	MT_rwlock_rdlock(&b->thashlock);
+	return MAL_SUCCEED;
+}
+
+void
+str_case_hash_unlock(bool upper)
+{
+	BAT *b = upper ? UTF8_toUpperFrom : UTF8_toLowerFrom;
+	MT_rwlock_rdunlock(&b->thashlock);
+}
+
+static inline str
 convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const char *malfunc)
 {
 	size_t len = strlen(src);
 	char *dst;
 	const char *end = src + len;
 	bool lower_to_upper = from == UTF8_toUpperFrom;
-	Hash *h;
-	size_t nextlen = len + 1;
+	const Hash *h = from->thash;
+	const int *restrict fromb = (const int *restrict) from->theap->base;
+	const int *restrict tob = (const int *restrict) to->theap->base;
 
 	/* the from and to bats are not views */
 	assert(from->tbaseoff == 0);
 	assert(to->tbaseoff == 0);
-	if (BAThash(from) != GDK_SUCCEED)
-		throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	h = from->thash;
-	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, malfunc);
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, len + 1, malfunc);
 	dst = *buf;
 	while (src < end) {
 		int c;
@@ -3195,10 +3246,10 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 		} else {
 			/* use hash, even though BAT is sorted */
 			for (BUN hb = HASHget(h, hash_int(h, &c));
-					hb != HASHnil(h);
+					hb != BUN_NONE;
 					hb = HASHgetlink(h, hb)) {
-				if (c == ((int *) from->theap->base)[hb]) {
-					c = ((int *) to->theap->base)[hb];
+				if (c == fromb[hb]) {
+					c = tob[hb];
 					break;
 				}
 			}
@@ -3210,7 +3261,16 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 			size_t off = dst - *buf;
 			size_t nextlen = (len += 4 + (end - src)) + 1;
 
-			CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, malfunc);
+			/* Don't use CHECK_STR_BUFFER_LENGTH here, because it
+			 * does GDKmalloc instead of GDKrealloc and data could be lost */
+			if (nextlen > *buflen) {
+				size_t newlen = ((nextlen + 1023) & ~1023); /* align to a multiple of 1024 bytes */
+				str newbuf = GDKrealloc(*buf, newlen);
+				if (!newbuf)
+					throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				*buf = newbuf;
+				*buflen = newlen;
+			}
 			dst = *buf + off;
 		}
 		UTF8_PUTCHAR(c, dst);
@@ -3302,32 +3362,30 @@ STRtostr(str *res, const str *src)
 static str
 STRLength(int *res, const str *arg1)
 {
-	str s = *arg1;
+	const char *s = *arg1;
 
 	*res = strNil(s) ? int_nil : UTF8_strlen(s);
 	return MAL_SUCCEED;
 }
 
-
-
 static str
 STRBytes(int *res, const str *arg1)
 {
-	str s = *arg1;
+	const char *s = *arg1;
 
 	*res = strNil(s) ? int_nil : str_strlen(s);
 	return MAL_SUCCEED;
 }
 
 str
-str_tail(str *buf, size_t *buflen, str s, int off)
+str_tail(str *buf, size_t *buflen, const char *s, int off)
 {
 	if (off < 0) {
 		off += UTF8_strlen(s);
 		if (off < 0)
 			off = 0;
 	}
-	str tail = UTF8_strtail(s, off);
+	char *tail = UTF8_strtail(s, off);
 	size_t nextlen = strlen(tail) + 1;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, "str.tail");
 	strcpy(*buf, tail);
@@ -3337,7 +3395,8 @@ str_tail(str *buf, size_t *buflen, str s, int off)
 static str
 STRTail(str *res, const str *arg1, const int *offset)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 	int off = *offset;
 
 	if (strNil(s) || is_int_nil(off)) {
@@ -3362,7 +3421,7 @@ STRTail(str *res, const str *arg1, const int *offset)
 }
 
 str
-str_Sub_String(str *buf, size_t *buflen, str s, int off, int l)
+str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 {
 	size_t len;
 
@@ -3388,7 +3447,8 @@ str_Sub_String(str *buf, size_t *buflen, str s, int off, int l)
 static str
 STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 	int off = *offset, len = *length;
 
 	if (strNil(s) || is_int_nil(off) || is_int_nil(len)) {
@@ -3453,7 +3513,7 @@ STRFromWChr(str *res, const int *c)
 
 /* return the Unicode code point of arg1 at position at */
 str
-str_wchr_at(int *res, str s, int at)
+str_wchr_at(int *res, const char *s, int at)
 {
 	/* 64bit: should have lng arg */
 	if (strNil(s) || is_int_nil(at) || at < 0) {
@@ -3479,7 +3539,7 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 
 /* returns whether arg1 starts with arg2 */
 bit
-str_is_prefix(str s, str prefix)
+str_is_prefix(const char *s, const char *prefix)
 {
 	return strncmp(s, prefix, strlen(prefix)) == 0;
 }
@@ -3487,14 +3547,14 @@ str_is_prefix(str s, str prefix)
 static str
 STRPrefix(bit *res, const str *arg1, const str *arg2)
 {
-	str s = *arg1, prefix = *arg2;
+	const char *s = *arg1, *prefix = *arg2;
 
 	*res = (strNil(s) || strNil(prefix)) ? bit_nil : str_is_prefix(s, prefix);
 	return MAL_SUCCEED;
 }
 
 bit
-str_is_suffix(str s, str suffix)
+str_is_suffix(const char *s, const char *suffix)
 {
 	size_t sl = strlen(s), sul = strlen(suffix);
 
@@ -3508,14 +3568,14 @@ str_is_suffix(str s, str suffix)
 static str
 STRSuffix(bit *res, const str *arg1, const str *arg2)
 {
-	str s = *arg1, suffix = *arg2;
+	const char *s = *arg1, *suffix = *arg2;
 
 	*res = (strNil(s) || strNil(suffix)) ? bit_nil : str_is_suffix(s, suffix);
 	return MAL_SUCCEED;
 }
 
 str
-str_lower(str *buf, size_t *buflen, str s)
+str_lower(str *buf, size_t *buflen, const char *s)
 {
 	return convertCase(UTF8_toLowerFrom, UTF8_toLowerTo, buf, buflen, s, "str.lower");
 }
@@ -3523,7 +3583,8 @@ str_lower(str *buf, size_t *buflen, str s)
 static str
 STRLower(str *res, const str *arg1)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 
 	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
@@ -3533,7 +3594,13 @@ STRLower(str *res, const str *arg1)
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = str_lower(&buf, &buflen, s)) != MAL_SUCCEED) {
+		if ((msg = str_case_hash_lock(false))) {
+			GDKfree(buf);
+			return msg;
+		}
+		msg = str_lower(&buf, &buflen, s);
+		str_case_hash_unlock(false);
+		if (msg != MAL_SUCCEED) {
 			GDKfree(buf);
 			return msg;
 		}
@@ -3547,7 +3614,7 @@ STRLower(str *res, const str *arg1)
 }
 
 str
-str_upper(str *buf, size_t *buflen, str s)
+str_upper(str *buf, size_t *buflen, const char *s)
 {
 	return convertCase(UTF8_toUpperFrom, UTF8_toUpperTo, buf, buflen, s, "str.upper");
 }
@@ -3555,7 +3622,8 @@ str_upper(str *buf, size_t *buflen, str s)
 static str
 STRUpper(str *res, const str *arg1)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 
 	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
@@ -3565,7 +3633,13 @@ STRUpper(str *res, const str *arg1)
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = str_upper(&buf, &buflen, s)) != MAL_SUCCEED) {
+		if ((msg = str_case_hash_lock(true))) {
+			GDKfree(buf);
+			return msg;
+		}
+		msg = str_upper(&buf, &buflen, s);
+		str_case_hash_unlock(true);
+		if (msg != MAL_SUCCEED) {
 			GDKfree(buf);
 			return msg;
 		}
@@ -3579,7 +3653,7 @@ STRUpper(str *res, const str *arg1)
 }
 
 int
-str_search(str s, str s2)
+str_search(const char *s, const char *s2)
 {
 	/* 64bit: should return lng */
 	if ((s2 = strstr(s, s2)) != NULL)
@@ -3592,14 +3666,14 @@ str_search(str s, str s2)
 static str
 STRstrSearch(int *res, const str *haystack, const str *needle)
 {
-	str s = *haystack, s2 = *needle;
+	const char *s = *haystack, *s2 = *needle;
 
 	*res = (strNil(s) || strNil(s2)) ? int_nil : str_search(s, s2);
 	return MAL_SUCCEED;
 }
 
 int
-str_reverse_str_search(str s, str s2)
+str_reverse_str_search(const char *s, const char *s2)
 {
 	/* 64bit: should return lng */
 	size_t len = strlen(s), slen = strlen(s2);
@@ -3621,14 +3695,14 @@ str_reverse_str_search(str s, str s2)
 static str
 STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
 {
-	str s = *arg1, s2 = *arg2;
+	const char *s = *arg1, *s2 = *arg2;
 
 	*res = (strNil(s) || strNil(s2)) ? int_nil : str_reverse_str_search(s, s2);
 	return MAL_SUCCEED;
 }
 
 str
-str_splitpart(str *buf, size_t *buflen, str s, str s2, int f)
+str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f)
 {
 	size_t len;
 	char *p = NULL;
@@ -3664,7 +3738,8 @@ str_splitpart(str *buf, size_t *buflen, str s, str s2, int f)
 static str
 STRsplitpart(str *res, str *haystack, str *needle, int *field)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *haystack, s2 = *needle;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *haystack, *s2 = *needle;
 	int f = *field;
 
 	if (strNil(s) || strNil(s2) || is_int_nil(f)) {
@@ -3763,7 +3838,7 @@ const int whitespace[] = {
 #define NSPACES		(sizeof(whitespace) / sizeof(whitespace[0]))
 
 str
-str_strip(str *buf, size_t *buflen, str s)
+str_strip(str *buf, size_t *buflen, const char *s)
 {
 	size_t len = strlen(s);
 	size_t n = lstrip(s, len, whitespace, NSPACES);
@@ -3781,7 +3856,8 @@ str_strip(str *buf, size_t *buflen, str s)
 static str
 STRStrip(str *res, const str *arg1)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 
 	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
@@ -3805,7 +3881,7 @@ STRStrip(str *res, const str *arg1)
 }
 
 str
-str_ltrim(str *buf, size_t *buflen, str s)
+str_ltrim(str *buf, size_t *buflen, const char *s)
 {
 	size_t len = strlen(s);
 	size_t n = lstrip(s, len, whitespace, NSPACES);
@@ -3820,7 +3896,8 @@ str_ltrim(str *buf, size_t *buflen, str s)
 static str
 STRLtrim(str *res, const str *arg1)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 
 	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
@@ -3844,7 +3921,7 @@ STRLtrim(str *res, const str *arg1)
 }
 
 str
-str_rtrim(str *buf, size_t *buflen, str s)
+str_rtrim(str *buf, size_t *buflen, const char *s)
 {
 	size_t len = strlen(s);
 	size_t n = rstrip(s, len, whitespace, NSPACES);
@@ -3859,7 +3936,8 @@ str_rtrim(str *buf, size_t *buflen, str s)
 static str
 STRRtrim(str *res, const str *arg1)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 
 	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
@@ -3904,7 +3982,7 @@ illegal:
 }
 
 str
-str_strip2(str *buf, size_t *buflen, str s, str s2)
+str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
 {
 	str msg = MAL_SUCCEED;
 	size_t len, n, n2, n3;
@@ -3935,7 +4013,8 @@ str_strip2(str *buf, size_t *buflen, str s, str s2)
 static str
 STRStrip2(str *res, const str *arg1, const str *arg2)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1, s2 = *arg2;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1, *s2 = *arg2;
 
 	if (strNil(s) || strNil(s2)) {
 		*res = GDKstrdup(str_nil);
@@ -3959,7 +4038,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 }
 
 str
-str_ltrim2(str *buf, size_t *buflen, str s, str s2)
+str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 {
 	str msg = MAL_SUCCEED;
 	size_t len, n, n2, n3, nallocate;
@@ -3987,7 +4066,8 @@ str_ltrim2(str *buf, size_t *buflen, str s, str s2)
 static str
 STRLtrim2(str *res, const str *arg1, const str *arg2)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1, s2 = *arg2;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1, *s2 = *arg2;
 
 	if (strNil(s) || strNil(s2)) {
 		*res = GDKstrdup(str_nil);
@@ -4011,7 +4091,7 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 }
 
 str
-str_rtrim2(str *buf, size_t *buflen, str s, str s2)
+str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 {
 	str msg = MAL_SUCCEED;
 	size_t len, n, n2, n3;
@@ -4039,7 +4119,8 @@ str_rtrim2(str *buf, size_t *buflen, str s, str s2)
 static str
 STRRtrim2(str *res, const str *arg1, const str *arg2)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1, s2 = *arg2;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1, *s2 = *arg2;
 
 	if (strNil(s) || strNil(s2)) {
 		*res = GDKstrdup(str_nil);
@@ -4121,7 +4202,7 @@ pad(str *buf, size_t *buflen, const char *s, const char *pad, int len, int left,
 }
 
 str
-str_lpad(str *buf, size_t *buflen, str s, int len)
+str_lpad(str *buf, size_t *buflen, const char *s, int len)
 {
 	return pad(buf, buflen, s, " ", len, 1, "str.lpad");
 }
@@ -4136,7 +4217,8 @@ str_lpad(str *buf, size_t *buflen, str s, int len)
 static str
 STRLpad(str *res, const str *arg1, const int *len)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 	int l = *len;
 
 	if (strNil(s) || is_int_nil(l)) {
@@ -4161,7 +4243,7 @@ STRLpad(str *res, const str *arg1, const int *len)
 }
 
 str
-str_rpad(str *buf, size_t *buflen, str s, int len)
+str_rpad(str *buf, size_t *buflen, const char *s, int len)
 {
 	return pad(buf, buflen, s, " ", len, 0, "str.lpad");
 }
@@ -4176,7 +4258,8 @@ str_rpad(str *buf, size_t *buflen, str s, int len)
 static str
 STRRpad(str *res, const str *arg1, const int *len)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 	int l = *len;
 
 	if (strNil(s) || is_int_nil(l)) {
@@ -4201,7 +4284,7 @@ STRRpad(str *res, const str *arg1, const int *len)
 }
 
 str
-str_lpad3(str *buf, size_t *buflen, str s, int len, str s2)
+str_lpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
 {
 	return pad(buf, buflen, s, s2, len, 1, "str.lpad2");
 }
@@ -4216,7 +4299,8 @@ str_lpad3(str *buf, size_t *buflen, str s, int len, str s2)
 static str
 STRLpad3(str *res, const str *arg1, const int *len, const str *arg2)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1, s2 = *arg2;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1, *s2 = *arg2;
 	int l = *len;
 
 	if (strNil(s) || strNil(s2) || is_int_nil(l)) {
@@ -4241,7 +4325,7 @@ STRLpad3(str *res, const str *arg1, const int *len, const str *arg2)
 }
 
 str
-str_rpad3(str *buf, size_t *buflen, str s, int len, str s2)
+str_rpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
 {
 	return pad(buf, buflen, s, s2, len, 0, "str.rpad2");
 }
@@ -4256,7 +4340,8 @@ str_rpad3(str *buf, size_t *buflen, str s, int len, str s2)
 static str
 STRRpad3(str *res, const str *arg1, const int *len, const str *arg2)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1, s2 = *arg2;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1, *s2 = *arg2;
 	int l = *len;
 
 	if (strNil(s) || strNil(s2) || is_int_nil(l)) {
@@ -4281,7 +4366,7 @@ STRRpad3(str *res, const str *arg1, const int *len, const str *arg2)
 }
 
 str
-str_substitute(str *buf, size_t *buflen, str s, str src, str dst, bit repeat)
+str_substitute(str *buf, size_t *buflen, const char *s, const char *src, const char *dst, bit repeat)
 {
 	size_t lsrc = strlen(src), ldst = strlen(dst), n, l = strlen(s);
 	char *b, *fnd;
@@ -4326,7 +4411,8 @@ str_substitute(str *buf, size_t *buflen, str s, str src, str dst, bit repeat)
 static str
 STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const bit *g)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1, s2 = *arg2, s3 = *arg3;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1, *s2 = *arg2, *s3 = *arg3;
 
 	if (strNil(s) || strNil(s2) || strNil(s3)) {
 		*res = GDKstrdup(str_nil);
@@ -4356,7 +4442,7 @@ STRascii(int *ret, const str *s)
 }
 
 str
-str_substring_tail(str *buf, size_t *buflen, str s, int start)
+str_substring_tail(str *buf, size_t *buflen, const char *s, int start)
 {
 	if( start <1) start =1;
 	start--;
@@ -4366,7 +4452,8 @@ str_substring_tail(str *buf, size_t *buflen, str s, int start)
 static str
 STRsubstringTail(str *res, const str *arg1, const int *start)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 	int st = *start;
 
 	if (strNil(s) || is_int_nil(st)) {
@@ -4391,7 +4478,7 @@ STRsubstringTail(str *res, const str *arg1, const int *start)
 }
 
 str
-str_sub_string(str *buf, size_t *buflen, str s, int start, int l)
+str_sub_string(str *buf, size_t *buflen, const char *s, int start, int l)
 {
 	if( start <1) start =1;
 	start--;
@@ -4401,7 +4488,8 @@ str_sub_string(str *buf, size_t *buflen, str s, int start, int l)
 static str
 STRsubstring(str *res, const str *arg1, const int *start, const int *ll)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 	int st = *start, l = *ll;
 
 	if (strNil(s) || is_int_nil(st) || is_int_nil(l)) {
@@ -4428,7 +4516,8 @@ STRsubstring(str *res, const str *arg1, const int *start, const int *ll)
 static str
 STRprefix(str *res, const str *arg1, const int *ll)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 	int l = *ll;
 
 	if (strNil(s) || is_int_nil(l)) {
@@ -4453,7 +4542,7 @@ STRprefix(str *res, const str *arg1, const int *ll)
 }
 
 str
-str_suffix(str *buf, size_t *buflen, str s, int l)
+str_suffix(str *buf, size_t *buflen, const char *s, int l)
 {
 	int start = (int) (strlen(s) - l);
 	return str_Sub_String(buf, buflen, s, start, l);
@@ -4462,7 +4551,8 @@ str_suffix(str *buf, size_t *buflen, str s, int l)
 static str
 STRsuffix(str *res, const str *arg1, const int *ll)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 	int l = *ll;
 
 	if (strNil(s) || is_int_nil(l)) {
@@ -4487,7 +4577,7 @@ STRsuffix(str *res, const str *arg1, const int *ll)
 }
 
 int
-str_locate2(str needle, str haystack, int start)
+str_locate2(const char *needle, const char *haystack, int start)
 {
 	int off, res;
 	char *s;
@@ -4501,7 +4591,7 @@ str_locate2(str needle, str haystack, int start)
 static str
 STRlocate3(int *ret, const str *needle, const str *haystack, const int *start)
 {
-	str s = *needle, s2 = *haystack;
+	const char *s = *needle, *s2 = *haystack;
 	int st = *start;
 
 	*ret = (strNil(s) || strNil(s2) || is_int_nil(st)) ? int_nil : str_locate2(s, s2, st);
@@ -4510,15 +4600,15 @@ STRlocate3(int *ret, const str *needle, const str *haystack, const int *start)
 
 static str
 STRlocate(int *ret, const str *needle, const str *haystack)
-{	
-	str s = *needle, s2 = *haystack;
+{
+	const char *s = *needle, *s2 = *haystack;
 
 	*ret = (strNil(s) || strNil(s2)) ? int_nil : str_locate2(s, s2, 1);
 	return MAL_SUCCEED;
 }
 
 str
-str_insert(str *buf, size_t *buflen, str s, int strt, int l, str s2)
+str_insert(str *buf, size_t *buflen, const char *s, int strt, int l, const char *s2)
 {
 	str v;
 	int l1 = UTF8_strlen(s);
@@ -4549,7 +4639,8 @@ str_insert(str *buf, size_t *buflen, str s, int strt, int l, str s2)
 static str
 STRinsert(str *res, const str *input, const int *start, const int *nchars, const str *input2)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *input, s2 = *input2;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *input, *s2 = *input2;
 	int st = *start, n = *nchars;
 
 	if (strNil(s) || is_int_nil(st) || is_int_nil(n) || strNil(s2)) {
@@ -4581,7 +4672,7 @@ STRreplace(str *ret, const str *s1, const str *s2, const str *s3)
 }
 
 str
-str_repeat(str *buf, size_t *buflen, str s, int c)
+str_repeat(str *buf, size_t *buflen, const char *s, int c)
 {
 	size_t l = strlen(s), nextlen;
 
@@ -4600,7 +4691,8 @@ str_repeat(str *buf, size_t *buflen, str s, int c)
 static str
 STRrepeat(str *res, const str *arg1, const int *c)
 {
-	str buf = NULL, msg = MAL_SUCCEED, s = *arg1;
+	str buf = NULL, msg = MAL_SUCCEED;
+	const char *s = *arg1;
 	int cc = *c;
 
 	if (strNil(s) || is_int_nil(cc) || cc < 0) {
@@ -4633,7 +4725,7 @@ STRspace(str *res, const int *ll)
 	if (is_int_nil(l) || l < 0) {
 		*res = GDKstrdup(str_nil);
 	} else {
-		char space[] = " ", *s= space;
+		const char space[] = " ", *s= space;
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
 		*res = NULL;
@@ -4694,7 +4786,6 @@ mel_func str_init_funcs[] = {
  command("str", "replace", STRreplace, false, "Insert a string into another", args(1,4, arg("",str),arg("s",str),arg("pat",str),arg("s2",str))),
  command("str", "repeat", STRrepeat, false, "", args(1,3, arg("",str),arg("s2",str),arg("c",int))),
  command("str", "space", STRspace, false, "", args(1,2, arg("",str),arg("l",int))),
- command("str", "prelude", STRprelude, false, "", args(1,1, arg("",void))),
  command("str", "epilogue", STRepilogue, false, "", args(1,1, arg("",void))),
  { .imp=NULL }
 };
@@ -4704,4 +4795,4 @@ mel_func str_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_str_mal)
-{ mal_module("str", NULL, str_init_funcs); }
+{ mal_module2("str", NULL, str_init_funcs, STRprelude, NULL); }

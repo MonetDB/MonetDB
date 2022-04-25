@@ -206,13 +206,13 @@ SELECT DISTINCT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, inte
 ----
 36
 
-query T rowsort
+query I rowsort
 SELECT NOT EXISTS(SELECT i1.i) from integers i1
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 query II rowsort
 SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = NOT EXISTS (SELECT i2.i)
@@ -282,10 +282,10 @@ NULL
 3
 NULL
 
-query T rowsort
+query I rowsort
 SELECT 1 IN ((SELECT MIN(col2)), (SELECT SUM(col4))) FROM another_t
 ----
-False
+0
 
 query I rowsort
 SELECT 1 FROM another_t WHERE (1,col1) IN ((SELECT MIN(i1.i), SUM(i1.i) FROM integers i1))
@@ -368,7 +368,7 @@ SELECT col4 FROM another_T
 186
 26
 
-statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
+statement error 42000!SELECT: cannot use non GROUP BY column 'another_t.col5' in query results without an aggregate function
 UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT AVG(col2))
 
 statement ok rowcount 0
@@ -383,7 +383,7 @@ UPDATE another_T SET col7 = 1 WHERE col5 = (SELECT 1 FROM integers i2 WHERE AVG(
 statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
 DELETE FROM another_T WHERE col1 = COUNT(col2)
 
-statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
+statement error 42000!SELECT: cannot use non GROUP BY column 'another_t.col7' in query results without an aggregate function
 DELETE FROM another_T WHERE col7 = (SELECT MIN(col3))
 
 statement ok rowcount 0
@@ -454,7 +454,7 @@ SELECT col5, col6 FROM another_T
 10
 5555
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error 21000!Cardinality violation, scalar value expected
 UPDATE another_T SET (col7, col8) = (SELECT 1,2 UNION ALL SELECT 1,2)
 
 statement error 42000!UPDATE: The number of specified columns between the SET clause and the right side don't match (2 != 1)
@@ -660,11 +660,11 @@ BEGIN
 	RETURN n;
 END
 
-query TT rowsort
+query II rowsort
 SELECT debugme(1), debugme(2)
 ----
-False
-True
+0
+1
 
 statement ok
 DROP FUNCTION debugme
@@ -707,5 +707,4 @@ DROP TABLE another_T
 
 statement ok
 DROP TABLE integers
-
 

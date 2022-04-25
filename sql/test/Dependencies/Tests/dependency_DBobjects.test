@@ -233,6 +233,9 @@ DEP_VIEW
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c, sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
 ----
+action_id
+fkey_actions_action_id_pkey
+DEP_KEY
 dependency_type_id
 dependency_types_dependency_type_id_pkey
 DEP_KEY
@@ -298,7 +301,7 @@ DEP_INDEX
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-273 values hashing to 5f62003db3521c560782b24e0f07db0d
+279 values hashing to 4c42714c4678cb65faf29e6a113e146b
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.triggers as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -328,6 +331,9 @@ DEP_FUNC
 dump_column_defaults
 dump_database
 DEP_FUNC
+dump_column_grants
+dump_database
+DEP_FUNC
 dump_comments
 dump_database
 DEP_FUNC
@@ -343,6 +349,9 @@ DEP_FUNC
 dump_foreign_keys
 dump_database
 DEP_FUNC
+dump_function_grants
+dump_database
+DEP_FUNC
 dump_functions
 dump_database
 DEP_FUNC
@@ -355,9 +364,6 @@ DEP_FUNC
 dump_partition_tables
 dump_database
 DEP_FUNC
-dump_privileges
-dump_database
-DEP_FUNC
 dump_sequences
 dump_database
 DEP_FUNC
@@ -365,6 +371,9 @@ dump_start_sequences
 dump_database
 DEP_FUNC
 dump_table_constraint_type
+dump_database
+DEP_FUNC
+dump_table_grants
 dump_database
 DEP_FUNC
 dump_tables
@@ -395,9 +404,6 @@ describe_type
 describe_columns
 DEP_FUNC
 dq
-fqn
-DEP_FUNC
-dq
 get_merge_table_partition_expressions
 DEP_FUNC
 dq
@@ -408,9 +414,6 @@ dump_database
 DEP_FUNC
 f1
 f2
-DEP_FUNC
-fqn
-alter_table
 DEP_FUNC
 fqn
 schema_guard

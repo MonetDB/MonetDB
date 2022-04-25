@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef LIST_H
@@ -24,7 +24,6 @@ typedef void (*fdestroy) (void *gdata, void *ndata); /* gdata is passed to the l
 typedef struct list {
 	sql_allocator *sa;
 	sql_hash *ht;
-	MT_Lock ht_lock;	/* latch protecting ht */
 	fdestroy destroy;
 	node *h;
 	node *t;
@@ -53,7 +52,7 @@ extern list *list_prepend(list *l, void *data);
 extern node *list_remove_node(list *l, void *gdata, node *n);
 extern void list_remove_data(list *l, void *gdata, void *data);
 extern void list_remove_list(list *l, void *gdata, list *data);
-extern void list_move_data(list *l, list *d, void *data);
+extern list *list_move_data(list *l, list *d, void *data);
 
 
 extern int list_traverse(list *l, traverse_func f, void *clientdata);

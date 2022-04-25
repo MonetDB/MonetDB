@@ -1,7 +1,6 @@
-query ITTIII rowsort
-select sessionid, s."username", s."optimizer", s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+query TTIII rowsort
+select s."username", s."optimizer", s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
-0
 monetdb
 default_pipe
 0
@@ -20,20 +19,15 @@ call setquerytimeout(123)
 statement ok
 call setworkerlimit(12)
 
-statement ok
-call setmemorylimit(8000)
-
-query ITTIIII rowsort
-select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+query TTIIII rowsort
+select s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
-0
 monetdb
 minimal_pipe
 5000
 123
 12
-8000
-
+0
 
 statement error
 call setoptimizer('')
@@ -47,46 +41,38 @@ call setquerytimeout(-1)
 statement error
 call setworkerlimit( -1)
 
-statement ok
-call setmemorylimit(10)
-
-query ITTIIII rowsort
-select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+query TTIIII rowsort
+select s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
-0
 monetdb
 minimal_pipe
 5000
 123
 12
-10
-
-statement ok
-call setoptimizer(0, 'sequential_pipe')
-
-statement ok
-call setsessiontimeout(0, 1000)
-
-statement ok
-call setquerytimeout(0, 60)
-
-statement ok
-call setworkerlimit(0,8)
-
-statement ok
-call setmemorylimit(2000)
-
-query ITTIIII rowsort
-select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
-----
 0
+
+statement ok
+call setoptimizer('sequential_pipe')
+
+statement ok
+call setsessiontimeout(1000)
+
+statement ok
+call setquerytimeout(60)
+
+statement ok
+call setworkerlimit(8)
+
+query TTIIII rowsort
+select s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+----
 monetdb
 sequential_pipe
 1000
 60
 8
-2000
+0
 
 statement ok
-call setoptimizer(0, 'default_pipe')
+call setoptimizer('default_pipe')
 

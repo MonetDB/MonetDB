@@ -1,0 +1,14 @@
+[ 3	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 3,	2,	1,	0,	2,	2 # length
+[ "int",	32,	0,	"",	"%1",	"%1"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]

@@ -58,4 +58,3 @@ select python_sum4(i) from integers where i = 1 group by i
 statement ok
 ROLLBACK
 
-

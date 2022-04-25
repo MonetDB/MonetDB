@@ -1,0 +1,9 @@
+statement ok
+create user test with password 'test' name 'Test User' schema sys
+
+statement ok
+create schema test authorization test
+
+statement ok
+alter user test set schema test
+

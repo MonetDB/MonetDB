@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -71,7 +71,9 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 		if (BATcount(q) == 0) {
 			qvalue = 0.5;
 		} else {
+			MT_lock_set(&q->theaplock);
 			qvalue = ((const dbl *)Tloc(q, 0))[0];
+			MT_lock_unset(&q->theaplock);
 			if (qvalue < 0 || qvalue > 1) {
 				BBPunfix(b->batCacheid);
 				if (g)
@@ -102,10 +104,10 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	*retval1 = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	if (retval2) {
 		*retval2 = cnts->batCacheid;
-		BBPkeepref(cnts->batCacheid);
+		BBPkeepref(cnts);
 	}
 	return MAL_SUCCEED;
 }
@@ -654,11 +656,11 @@ AGGRavg3(bat *retval1, bat *retval2, bat *retval3, const bat *bid, const bat *gi
 	if (rc != GDK_SUCCEED)
 		throw(MAL, "aggr.subavg", GDK_EXCEPTION);
 	*retval1 = avgs->batCacheid;
-	BBPkeepref(avgs->batCacheid);
+	BBPkeepref(avgs);
 	*retval2 = rems->batCacheid;
-	BBPkeepref(rems->batCacheid);
+	BBPkeepref(rems);
 	*retval3 = cnts->batCacheid;
-	BBPkeepref(cnts->batCacheid);
+	BBPkeepref(cnts);
 	return MAL_SUCCEED;
 }
 
@@ -703,7 +705,7 @@ AGGRavg3comb(bat *retval1, const bat *bid, const bat *rid, const bat *cid, const
 	if (bn == NULL)
 		throw(MAL, "aggr.subavg", GDK_EXCEPTION);
 	*retval1 = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1032,7 +1034,7 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *ei
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	*retval1 = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1129,7 +1131,7 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	*retval = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 

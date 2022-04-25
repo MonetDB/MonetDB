@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef SQL_RELATION_H
@@ -56,6 +56,7 @@ typedef struct expression {
 	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
 	 need_no_nil:1,
 	 has_no_nil:1,
+	 unique:1,	/* expression has unique values, but it may have multiple NULL values! */
 
 	 base:1,
 	 ref:1,		/* used to indicate an other expression may reference this one */
@@ -73,11 +74,11 @@ typedef struct expression {
 
 /* or-ed with the above TABLE_PROD_FUNC */
 #define UPD_COMP		2
-#define UPD_NO_CONSTRAINT	4
 
 #define LEFT_JOIN		4
 #define REL_PARTITION		8
 #define MERGE_LEFT		16 /* used by merge statements */
+#define OUTER_ZERO		32
 
 /* We need bit wise exclusive numbers as we merge the level also in the flag */
 #define PSM_SET 1
@@ -229,7 +230,10 @@ typedef enum operator_type {
 #define set_nulls_first(e) 	((e)->nulls_last=0)
 #define set_direction(e, dir) 	((e)->ascending = (dir&1), (e)->nulls_last = (dir&2)?1:0)
 
-#define is_anti(e) 		((e)->anti)
+#define is_unique(e)		((e)->unique)
+#define set_unique(e)		(e)->unique = 1
+#define set_not_unique(e)	(e)->unique = 0
+#define is_anti(e) 			((e)->anti)
 #define set_anti(e)  		(e)->anti = 1
 #define is_semantics(e) 	((e)->semantics)
 #define set_semantics(e) 	(e)->semantics = 1
@@ -244,8 +248,8 @@ typedef enum operator_type {
 
 /* used for expressions and relations */
 #define need_distinct(er) 	((er)->distinct)
-#define set_distinct(er) 	(er)->distinct = 1;
-#define set_nodistinct(er)	(er)->distinct = 0;
+#define set_distinct(er) 	(er)->distinct = 1
+#define set_nodistinct(er)	(er)->distinct = 0
 
 #define is_processed(rel) 	((rel)->processed)
 #define set_processed(rel) 	(rel)->processed = 1
@@ -273,6 +277,13 @@ typedef struct relation {
 	void *l;
 	void *r;
 	list *exps;
+	list *attr; /* attributes: mark-joins return extra attributes */
+				/* later put all 'projection' attributes in here, ie for set ops, project/group/table/basetable by
+				 * select/ (semi/anti/left/outer/right)join will use exps for predicates
+				 * groupby will use exps for group by exps
+				 * project can use exps for the order by bits
+				 * topn/sample use exps for the input arguments of the limit/sample
+				 */
 	int nrcols;	/* nr of cols */
 	unsigned int
 	 flag:16,
@@ -282,8 +293,12 @@ typedef struct relation {
 	 processed:1,   /* fully processed or still in the process of building */
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
-	 single:1,
-	 used:2;	/* used by rewriters at rel_unnest and rel_dce, so a relation is not modified twice */
+	 single:1;
+	/*
+	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
+	 * The list is kept at rel_optimizer_private.h Please update it accordingly
+	 */
+	uint8_t used;
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

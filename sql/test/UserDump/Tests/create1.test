@@ -1,0 +1,9 @@
+statement ok
+create user voc with password 'voc' name 'VOC Explorer' schema sys
+
+statement ok
+create schema voc authorization voc
+
+statement ok
+alter user voc set schema voc
+

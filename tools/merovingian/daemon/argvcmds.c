@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -29,7 +29,7 @@ command_help(int argc, char *argv[])
 	int exitcode = 0;
 
 	if (argc < 2) {
-		printf("usage: monetdbd [ command [ command-options ] ] <dbfarm>\n");
+		printf("usage: monetdbd command [ command-options ] <dbfarm>\n");
 		printf("  where command is one of:\n");
 		printf("    create, start, stop, get, set, version or help\n");
 		printf("  use the help command to get help for a particular command\n");
@@ -221,7 +221,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				kv = findConfKey(ckv, "port");
 				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 						value, kv->ival);
-				value = control_send(&res, buf, -1, "", "mserver", 1, NULL);
+				value = control_send(&res, buf, -1, "", "mserver", true, NULL);
 				if (value != NULL) {
 					free(value);
 					value = "unknown (failed to connect to monetdbd)";
@@ -277,7 +277,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 						value, kv->ival);
 				freeConfFile(cport);
-				value = control_send(&res, buf, -1, "", "version", 1, NULL);
+				value = control_send(&res, buf, -1, "", "version", true, NULL);
 				if (value != NULL) {
 					free(value);
 					value = NULL;
@@ -316,7 +316,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				continue;
 			}
 			if (kv->val == NULL) {
-				value = "<unknown>";
+				value = "<unset>";
 			} else {
 				value = kv->val;
 			}
@@ -393,7 +393,7 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 				if (strcmp(p + 1, MONETDB5_PASSWDHASH) != 0) {
 					fprintf(stderr, "set: passphrase hash '%s' incompatible, "
 							"expected '%s'\n",
-							h, MONETDB5_PASSWDHASH);
+							p + 1, MONETDB5_PASSWDHASH);
 					return(1);
 				}
 				*q = '}';

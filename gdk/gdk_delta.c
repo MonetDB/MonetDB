@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -33,17 +33,16 @@
 void
 BATcommit(BAT *b, BUN size)
 {
+	/* called with theaplock held (or otherwise save from concurrent use) */
 	if (b == NULL)
 		return;
+	assert(size <= BATcount(b) || size == BUN_NONE);
 	TRC_DEBUG(DELTA, "BATcommit1 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
 	if (!BATdirty(b)) {
 		b->batDirtyflushed = false;
 	}
-	if (DELTAdirty(b)) {
-		b->batDirtydesc = true;
-	}
-	b->batInserted = size < BUNlast(b) ? size : BUNlast(b);
+	b->batInserted = size < BATcount(b) ? size : BATcount(b);
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
 }
@@ -72,11 +71,12 @@ BATfakeCommit(BAT *b)
 void
 BATundo(BAT *b)
 {
-	BATiter bi = bat_iterator(b);
 	BUN p, bunlast, bunfirst;
 
 	if (b == NULL)
 		return;
+	MT_lock_set(&b->theaplock);
+	BATiter bi = bat_iterator_nolock(b);
 	assert(b->theap->parentid == b->batCacheid);
 	TRC_DEBUG(DELTA, "BATundo: %s \n", BATgetId(b));
 	if (b->batDirtyflushed) {
@@ -87,14 +87,13 @@ BATundo(BAT *b)
 			b->tvheap->dirty = false;
 	}
 	bunfirst = b->batInserted;
-	bunlast = BUNlast(b) - 1;
+	bunlast = BATcount(b) - 1;
 	if (bunlast >= b->batInserted) {
 		BUN i = bunfirst;
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
-		if (b->thash)
-			HASHdestroy(b);
+		HASHdestroy(b);
 		if (tunfix || tatmdel) {
 			for (p = bunfirst; p <= bunlast; p++, i++) {
 				if (tunfix)
@@ -107,4 +106,5 @@ BATundo(BAT *b)
 	b->theap->free = tailsize(b, b->batInserted);
 
 	BATsetcount(b, b->batInserted);
+	MT_lock_unset(&b->theaplock);
 }

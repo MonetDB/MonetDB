@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 import os
 import sys
 import unittest
@@ -481,6 +481,7 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
             self.lineno = lineno
             if query:
                 self.query = query
+                crs = None
                 try:
                     conn = self.test_case.conn_ctx.connect()
                     crs = conn.cursor()
@@ -495,6 +496,9 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
                     self.err_code, self.err_message = self._parse_error(e.args[0])
                 except (OSError, ValueError) as e:
                     self.test_run_error = e
+                finally:
+                    if crs is not None:
+                        crs.close()
             self.did_run = True
         return self
 

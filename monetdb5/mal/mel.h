@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _MEL_H_
@@ -16,8 +16,6 @@
 
 #define MEL_OK 0
 #define MEL_ERR 1
-
-typedef void* (*fptr)(void*);
 
 typedef struct __attribute__((__designated_init__)) mel_atom {
 	char name[14];
@@ -34,7 +32,7 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 	var_t (*put) (BAT *, var_t *, const void *);
 	void (*del) (Heap *, var_t *);
 	size_t (*length) (const void *);
-	void (*heap) (Heap *, size_t);
+	gdk_return (*heap) (Heap *, size_t);
 	gdk_return (*fix) (const void *);
 	gdk_return (*unfix) (const void *);
 	int (*storage) (void);
@@ -43,8 +41,8 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 /*strings */
 #ifdef MEL_STR
 
-#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS }
-#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS }
+#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .pimp=IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
 
 /* ARGC = arg-count + ret-count */
 //#define args(RETC,ARGC,...) (mel_arg[ARGC?ARGC:1]){__VA_ARGS__}, .retc=RETC, .argc=ARGC
@@ -68,29 +66,32 @@ typedef struct __attribute__((__designated_init__)) mel_arg {
 		nr:4;
 } mel_arg;
 
+#include "mal_client.h"
 typedef struct __attribute__((__designated_init__)) mel_func {
-	char mod[14];
+	char mod[16];
 	char fcn[30];
 	const char *cname;
 	uint16_t command:1,
 		unsafe:1,
 		retc:6,
 		argc:6;
-//#ifdef NDEBUG
-	//char *comment;
-//#endif
-	fptr imp;
+// comment on MAL instructions should also be available when TRACEing the queries
+	char *comment;
+	union {
+		MALfcn imp;
+		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
+	};
 	const mel_arg *args;
 } mel_func;
 
 #else
 
 //#ifdef NDEBUG
-#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .args=ARGS }
-#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .args=ARGS }
+#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .pimp=IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
 //#else
-//#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS }
-//#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS }
+//#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS, .comment=COMMENT }
+//#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .pimp=IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS, .comment=COMMENT }
 //#endif
 
 #define args(RETC,ARGC,...) {__VA_ARGS__}, .retc=RETC, .argc=ARGC
@@ -118,10 +119,12 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 		unsafe:1,
 		retc:6,
 		argc:6;
-//#ifdef NDEBUG
-	//char *comment;
-//#endif
-	fptr imp;
+// comment on MAL instructions should also be available when TRACEing the queries
+	char *comment;
+	union {
+		MALfcn imp;
+		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
+	};
 	mel_arg args[20];
 } mel_func;
 
@@ -137,11 +140,14 @@ typedef struct __attribute__((__designated_init__)) mel_func_arg {
 } mel_func_arg;
 
 /* var arg of arguments of type mel_func_arg */
-int melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ...);
+int melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ...);
 
 #ifdef SPECS
 typedef struct __attribute__((__designated_init__)) mal_spec{
-	fptr imp;
+	union {
+		MALfcn imp;
+		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
+	};
 	char *mal;
 } mal_spec;
 #endif

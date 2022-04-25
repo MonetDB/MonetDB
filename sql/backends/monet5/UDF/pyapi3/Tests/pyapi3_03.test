@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE rval(i integer)
 
-statement ok
+statement ok rowcount 6
 INSERT INTO rval VALUES (1),(2),(3),(4),(-1),(0)
 
 statement ok

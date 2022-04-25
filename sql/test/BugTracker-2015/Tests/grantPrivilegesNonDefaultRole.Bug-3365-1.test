@@ -1,0 +1,15 @@
+statement ok
+create role hr_role
+
+statement ok
+create schema hr authorization hr_role
+
+statement ok
+create user blake with password 'password' name 'Blake' schema "hr"
+
+statement ok
+create user clark with password 'password' name 'Clark' schema "hr"
+
+statement ok
+grant hr_role to blake
+

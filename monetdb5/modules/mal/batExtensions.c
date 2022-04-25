@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -75,10 +75,9 @@ CMDBATdup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat input = *getArgReference_bat(stk, pci, 2);
 
 	(void)cntxt;
-	if ((i = BATdescriptor(input)) == NULL)
+	if ((i = BBPquickdesc(input)) == NULL)
 		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
 	b = COLnew(i->hseqbase, tt, BATcount(i), TRANSIENT);
-	BBPunfix(i->batCacheid);
 	if (b == 0)
 		throw(MAL,"bat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = b->batCacheid;
@@ -101,12 +100,13 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == 0)
 		throw(MAL,"bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (ATOMextern(b->ttype))
-		u = (ptr) *(str *)u;
+		u = (ptr) *(ptr *)u;
 	if (BUNappend(b, u, false) != GDK_SUCCEED) {
 		BBPreclaim(b);
 		throw(MAL, "bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BBPkeepref(*ret = b->batCacheid);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -143,7 +143,8 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAThseqbase(bn, lval);
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
 		ret= getArgReference_bat(stk,pci,i);
-		BBPkeepref(*ret = bn->batCacheid);
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -184,7 +185,8 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);
 	}
 	ret= getArgReference_bat(stk,pci,0);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -241,11 +243,20 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(b->batCacheid);
 					throw(MAL, "bat.append_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				}
+				if (mask_cand(d)) {
+					BAT *du = d;
+					d = BATunmask(d);
+					BBPunfix(du->batCacheid);
+					if (!d) {
+						BBPunfix(b->batCacheid);
+						throw(MAL, "bat.append_bulk", GDK_EXCEPTION);
+					}
+				}
 				rt = BATappend(b, d, NULL, force);
 				BBPunfix(d->batCacheid);
 				if (rt != GDK_SUCCEED) {
 					BBPunfix(b->batCacheid);
-					throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
 				}
 			}
 		} else {
@@ -253,7 +264,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			total = number_existing + inputs;
 			if (BATextend(b, total) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
-				throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
 			}
 			for (int i = 3, args = pci->argc; i < args; i++) {
 				ptr u = getArgReference(stk,pci,i);
@@ -261,7 +272,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					u = (ptr) *(ptr *) u;
 				if (BUNappend(b, u, force) != GDK_SUCCEED) {
 					BBPunfix(b->batCacheid);
-					throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
 				}
 			}
 		}
@@ -270,6 +281,24 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*r = b->batCacheid;
 	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+CMDBATvacuum(bat *r, const bat *bid)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bat.vacuum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.vacuum", GDK_EXCEPTION);
+	}
+
+	*r = bn->batCacheid;
+	BBPkeepref(bn);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -303,6 +332,7 @@ mel_func batExtensions_init_funcs[] = {
 #endif
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),varargany("ins",1))),
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
+ command("bat", "vacuum", CMDBATvacuum, false, "", args(1,2, batarg("",str),batarg("b",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

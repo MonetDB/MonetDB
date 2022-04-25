@@ -55,13 +55,13 @@ plan select * from test where id between 1 and 10000
 union (
 | project (
 | | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
+| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "10000") ]
 | ) [ "test"."id", "test"."posx" ],
 | project (
 | | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
+| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "10000") ]
 | ) [ "test"."id", "test"."posx" ]
 ) [ "test"."id", "test"."posx" ]
 
@@ -70,8 +70,8 @@ plan select * from test where id between 1 and 1000
 ----
 project (
 | select (
-| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| ) [ bigint "1" <= "test"."id" <= bigint "1000" BETWEEN  ]
+| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
+| ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "1000") ]
 ) [ "test"."id", "test"."posx" ]
 
 query T nosort
@@ -80,13 +80,13 @@ plan select * from test where id between 1 and 10000
 union (
 | project (
 | | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
+| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "10000") ]
 | ) [ "test"."id", "test"."posx" ],
 | project (
 | | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
+| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "10000") ]
 | ) [ "test"."id", "test"."posx" ]
 ) [ "test"."id", "test"."posx" ]
 
@@ -95,8 +95,8 @@ plan select * from test where id between 1 and 1000
 ----
 project (
 | select (
-| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| ) [ bigint "1" <= "test"."id" <= bigint "1000" BETWEEN  ]
+| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
+| ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "1000") ]
 ) [ "test"."id", "test"."posx" ]
 
 query T nosort
@@ -105,13 +105,13 @@ plan select * from test where id between 1 and 1000*10
 union (
 | project (
 | | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint["sys"."sql_mul"(smallint "1000", tinyint "10") NOT NULL] NOT NULL BETWEEN  ]
+| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64)["sys"."sql_mul"(smallint(10) "1000", tinyint(4) "10") NOT NULL] NOT NULL) ]
 | ) [ "test"."id", "test"."posx" ],
 | project (
 | | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint["sys"."sql_mul"(smallint "1000", tinyint "10") NOT NULL] NOT NULL BETWEEN  ]
+| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64)["sys"."sql_mul"(smallint(10) "1000", tinyint(4) "10") NOT NULL] NOT NULL) ]
 | ) [ "test"."id", "test"."posx" ]
 ) [ "test"."id", "test"."posx" ]
 
@@ -121,13 +121,13 @@ plan select * from test where id between 1 and 100*10
 union (
 | project (
 | | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint["sys"."sql_mul"(tinyint "100", tinyint "10") NOT NULL] NOT NULL BETWEEN  ]
+| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64)["sys"."sql_mul"(tinyint(7) "100", tinyint(4) "10") NOT NULL] NOT NULL) ]
 | ) [ "test"."id", "test"."posx" ],
 | project (
 | | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint["sys"."sql_mul"(tinyint "100", tinyint "10") NOT NULL] NOT NULL BETWEEN  ]
+| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64)["sys"."sql_mul"(tinyint(7) "100", tinyint(4) "10") NOT NULL] NOT NULL) ]
 | ) [ "test"."id", "test"."posx" ]
 ) [ "test"."id", "test"."posx" ]
 
@@ -137,13 +137,13 @@ plan select * from test where id in (1, 1022)
 union (
 | project (
 | | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
-| | ) [ "test"."id" in (bigint "1", bigint "1022") ]
+| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
+| | ) [ ("test"."id") in (bigint(64) "1", bigint(64) "1022") ]
 | ) [ "test"."id", "test"."posx" ],
 | project (
 | | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| | ) [ "test"."id" in (bigint "1", bigint "1022") ]
+| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
+| | ) [ ("test"."id") in (bigint(64) "1", bigint(64) "1022") ]
 | ) [ "test"."id", "test"."posx" ]
 ) [ "test"."id", "test"."posx" ]
 
@@ -152,8 +152,8 @@ plan select * from test where id in (1, 1000)
 ----
 project (
 | select (
-| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| ) [ "test"."id" in (bigint "1", bigint "1000") ]
+| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
+| ) [ ("test"."id") in (bigint(64) "1", bigint(64) "1000") ]
 ) [ "test"."id", "test"."posx" ]
 
 statement ok

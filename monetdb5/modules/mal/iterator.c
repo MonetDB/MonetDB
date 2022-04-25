@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -67,7 +67,7 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	 *granule, MIN(cnt,(BUN) *granule)); */
 	VIEWbounds(b, view, 0, MIN(cnt, (BUN) * granule));
 	*vid = view->batCacheid;
-	BBPkeepref(view->batCacheid);
+	BBPkeepref(view);
 	BBPunfix(b->batCacheid);
 	*res = 0;
 	return MAL_SUCCEED;
@@ -92,7 +92,7 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
 	}
 	i = (BUN) (*res + BATcount(view));
-	if (i >= BUNlast(b)) {
+	if (i >= BATcount(b)) {
 		*res = lng_nil;
 		*vid = 0;
 		BBPunfix(view->batCacheid);
@@ -101,9 +101,13 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	}
 	/* printf("set bat chunk bound to " BUNFMT " - " BUNFMT " \n",
 	   i, i+(BUN) *granule-1); */
-	VIEWbounds(b, view, i, i + (BUN) * granule);
+	VIEWbounds(b, view, i, i + (BUN) *granule);
+	MT_lock_set(&b->theaplock);
+	view->tkey = b->tkey | (*granule <= 1);
+	MT_lock_unset(&b->theaplock);
 	BAThseqbase(view, is_oid_nil(b->hseqbase) ? oid_nil : b->hseqbase + i);
-	BBPkeepref(*vid = view->batCacheid);
+	*vid = view->batCacheid;
+	BBPkeepref(view);
 	BBPunfix(b->batCacheid);
 	*res = i;
 	return MAL_SUCCEED;
@@ -145,10 +149,12 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*head = 0;
 
  	bi = bat_iterator(b);
-	if (VALinit(tail, b->ttype, BUNtail(bi, *head)) == NULL) {
+	if (VALinit(tail, ATOMtype(b->ttype), BUNtail(bi, *head)) == NULL) {
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "iterator.nextChunk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -173,16 +179,18 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	*head = *head + 1;
-	if (*head >= BUNlast(b)) {
+	if (*head >= BATcount(b)) {
 		*head = oid_nil;
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
  	bi = bat_iterator(b);
-	if (VALinit(tail, b->ttype, BUNtail(bi, *head)) == NULL) {
+	if (VALinit(tail, ATOMtype(b->ttype), BUNtail(bi, *head)) == NULL) {
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "iterator.nextChunk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -10,9 +10,9 @@ PLAN select quantile(y, 0.0) from x
 project (
 | group by (
 | | project (
-| | | table("sys"."x") [ "x"."y" ] COUNT 
-| | ) [ "x"."y", double "0" as "%2"."%2" ]
-| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2" NOT NULL) as "%1"."%1" ]
+| | | table("sys"."x") [ "x"."y" ]
+| | ) [ "x"."y", double(53) "0" as "%2"."%2" ]
+| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"], "%2"."%2" NOT NULL) as "%1"."%1" ]
 ) [ "%1"."%1" ]
 
 query T nosort
@@ -21,9 +21,9 @@ PLAN select quantile(y, 0) from x
 project (
 | group by (
 | | project (
-| | | table("sys"."x") [ "x"."y" ] COUNT 
-| | ) [ "x"."y", double "0" as "%2"."%2" ]
-| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2" NOT NULL) as "%1"."%1" ]
+| | | table("sys"."x") [ "x"."y" ]
+| | ) [ "x"."y", double(53) "0" as "%2"."%2" ]
+| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"], "%2"."%2" NOT NULL) as "%1"."%1" ]
 ) [ "%1"."%1" ]
 
 statement ok

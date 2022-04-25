@@ -1,0 +1,754 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create procedure "sys"."dict_compress"(sname string, tname string, cname string) external name "dict"."compress"
+
+statement ok
+create procedure "sys"."dict_compress"(sname string, tname string, cname string, ordered_values bool) external name "dict"."compress"
+
+statement ok
+create procedure "sys"."for_compress"(sname string, tname string, cname string) external name "for"."compress"
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "mct20" ("c0" INTERVAL DAY,"c1" BIGINT,CONSTRAINT "mct20_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+INSERT INTO "mct20" VALUES (INTERVAL '0' SECOND, 0), (INTERVAL '777600' SECOND, 1), (INTERVAL '604800' SECOND, 2)
+
+statement ok
+CREATE TABLE "mct21" ("c0" INTERVAL DAY,"c1" BIGINT,CONSTRAINT "mct21_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+INSERT INTO "mct21" VALUES (INTERVAL '-2' SECOND, -6), (INTERVAL '86400' SECOND, 7), (INTERVAL '-2' SECOND, 8)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."for_compress"('sys','mct20','c1')
+
+statement error GDK reported error: BATsubcross: more than one match
+UPDATE mct20 SET c1 = mct20.c1 FROM mct21
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE "mct20"
+
+statement ok
+DROP TABLE "mct21"
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" UUID,"c1" SMALLINT NOT NULL)
+
+statement ok rowcount 9
+COPY 9 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+c036a4cf-ecec-57d1-9aca-6dce4eb8d12b	5
+df1bcbac-01e3-81bc-a7c2-c2769fc9751a	0
+NULL	7
+NULL	9
+NULL	1
+NULL	3
+bb4fb0da-aff1-1919-f4eb-abaaf9e6b1f7	6
+648be74d-ccff-ea44-fd64-dfcb3a8c5b6c	8
+fb7c955a-defd-1b91-0aca-aecfc8a0c5aa	2
+
+statement ok
+CREATE TABLE "t0" ("c0" BIGINT NOT NULL)
+
+statement ok rowcount 11
+COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1
+5
+3
+8
+-1
+9
+4
+2
+6
+0
+7
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c0',false)
+
+statement ok rowcount 11
+INSERT INTO t1(c0, c1)(SELECT UUID '7A4A6b8b-e7f9-FA09-5650-6d1c83B1fc69', t0.c0 FROM t0)
+
+query I rowsort
+SELECT c0 FROM t0
+----
+-1
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+query TI rowsort
+SELECT c0,c1 FROM t1
+----
+648be74d-ccff-ea44-fd64-dfcb3a8c5b6c
+8
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+-1
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+0
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+1
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+2
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+3
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+4
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+5
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+6
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+7
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+8
+7a4a6b8b-e7f9-fa09-5650-6d1c83b1fc69
+9
+NULL
+1
+NULL
+3
+NULL
+7
+NULL
+9
+bb4fb0da-aff1-1919-f4eb-abaaf9e6b1f7
+6
+c036a4cf-ecec-57d1-9aca-6dce4eb8d12b
+5
+df1bcbac-01e3-81bc-a7c2-c2769fc9751a
+0
+fb7c955a-defd-1b91-0aca-aecfc8a0c5aa
+2
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE "t0"
+
+statement ok
+DROP TABLE "t1"
+
+statement ok
+COMMIT
+
+statement ok
+CREATE TABLE t2(c0 INTERVAL DAY)
+
+statement ok
+CALL "sys"."dict_compress"('sys','t2','c0')
+
+statement ok rowcount 3
+INSERT INTO t2(c0) VALUES(INTERVAL '1586894108' DAY), (INTERVAL '-1000818987' DAY), (INTERVAL '1839469049' DAY)
+
+statement ok rowcount 3
+DELETE FROM t2
+
+statement ok rowcount 1
+INSERT INTO t2(c0) VALUES(INTERVAL '744537356' DAY)
+
+query T nosort
+SELECT c0 FROM t2
+----
+744537356
+
+statement ok
+DROP TABLE "t2"
+
+statement ok
+CREATE TABLE t2(c0 JSON, c1 BIGINT, c2 CHAR(71))
+
+statement ok
+CALL "sys"."dict_compress"('sys','t2','c1')
+
+statement ok rowcount 2
+INSERT INTO t2(c2, c0) VALUES('', JSON '["aa","tyu"]'), ('a', JSON '0.4')
+
+statement ok rowcount 2
+INSERT INTO t2(c0) VALUES(JSON '[false,false]'), (JSON 'null')
+
+statement ok rowcount 4
+UPDATE t2 SET c1 = 1
+
+query TIT rowsort
+SELECT c0, c1, c2 FROM t2
+----
+0.4
+1
+a
+["aa","tyu"]
+1
+(empty)
+[false,false]
+1
+NULL
+null
+1
+NULL
+
+statement ok
+DROP TABLE "t2"
+
+statement ok
+CREATE TABLE t1(c0 VARCHAR(263))
+
+statement ok
+CALL "sys"."dict_compress"('sys','t1','c0',true)
+
+statement ok rowcount 2
+INSERT INTO t1(c0) VALUES('2104954476'), ('-1781832249')
+
+statement ok
+ALTER TABLE t1 ADD CONSTRAINT con2 UNIQUE(c0)
+
+query T rowsort
+SELECT c0 FROM t1
+----
+-1781832249
+2104954476
+
+statement ok
+DROP TABLE "t1"
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE SEQUENCE "sys"."seq_8393" AS INTEGER
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3),"c1" BIGINT DEFAULT next value for "sys"."seq_8393")
+
+statement ok rowcount 35
+COPY 35 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.869	-1519170928
+0.755	34
+0.690	-500094807
+NULL	-1007149659
+NULL	-1182606787
+0.978	2141158291
+0.734	1
+0.757	2
+0.685	3
+0.876	4
+0.237	5
+NULL	6
+0.998	643115392
+0.395	-1477930933
+0.163	7
+0.049	-1127189901
+0.069	-1127508051
+6.000	1895794951
+0.963	-711543940
+0.808	-1
+0.722	-9223372036854775807
+0.616	8
+NULL	1896254920
+0.352	9
+0.135	0
+0.306	10
+NULL	44
+NULL	-68731387
+NULL	-259682535
+NULL	-413188411
+NULL	2060626791
+NULL	-1819302001
+0.353	1671526830
+NULL	49
+NULL	5989
+
+statement ok
+ALTER SEQUENCE "sys"."seq_8393" RESTART WITH 11 NO CYCLE
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c1',true)
+
+statement ok rowcount 2
+INSERT INTO t0(c1) VALUES(1419068893), (least(json."integer"(JSON 'null'), sqrt((SELECT DISTINCT 421689172 WHERE TRUE))))
+
+statement ok rowcount 37
+UPDATE t0 SET c1 = DEFAULT
+
+statement ok rowcount 24
+INSERT INTO t0(c1) VALUES(718095040), (-598203097), (0), (447346516), (1872246785), (-401674441), (-1541029518),(541285281),(-2111339894),(-2131974587),(-4855319),
+(776811174),(419815752),(-872811856), (-1283391645),(1459537807), (716010206), (NULL), (131493150), (326028168), (-1959786633),(1432852950), (21), (-1830329263)
+
+statement ok rowcount 35
+INSERT INTO t0(c0) VALUES(3), (0.686), (0.454), (0.868),(0.686),(0.5), (0.353), (0.454), (0.54), (0.54), (0.342), (-969122634),(0.2), (0.5), (4),(0.342),
+(0.7), (0.9), (0.57), (0.99), (0.5645),(0.342),(0.78), (0.86),(2), (0.46),(0.242), (0.66), (0.11),(0.686), (0.65), (0.65), (1), (0.53), (0.454)
+
+statement ok rowcount 12
+INSERT INTO t0(c0, c1) VALUES(0.2342, 1313410006), (2, 1669659098), (0.45, 512732037), (0.768, -1635964182), (0.68, 2),(0.9, DEFAULT), (0.354, -860428240),
+(0.45, -2077612165),(0.54, 114),(0.585, -766044021), (0.646, -760724786), (0.33, 519176898)
+
+statement ok rowcount 5
+INSERT INTO t0(c1, c0) VALUES(-1226601715, 0.545), (313, 0.68),(1613852187, 0.234),(1296111754, 0.75),(-1806857005, 0.767)
+
+statement ok
+UPDATE t0 SET c1 = DEFAULT FROM (SELECT 1) x(x)
+
+statement ok
+DROP TABLE t0
+
+statement ok
+CREATE TABLE t1(c0 STRING, c1 boolean)
+
+statement ok
+CALL "sys"."dict_compress"('sys','t1','c1')
+
+statement ok rowcount 8
+INSERT INTO "sys"."t1" VALUES ('488630434', true),('7', NULL),('-', NULL),('1663155929', NULL),('0.513881723571404', NULL),('_', false),('8277e0910d750195b448797616e091ad', NULL),('16:57:59', NULL)
+
+query T nosort
+SELECT t1.c0 FROM t1 WHERE NOT (t1.c1)
+----
+_
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT (t1.c1) AS INT) as count FROM t1) as res
+----
+1
+
+statement ok
+DROP TABLE t1
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rmct20(c0 BIGINT)
+
+statement ok
+CREATE TABLE rmct21(c0 BIGINT)
+
+statement ok rowcount 3
+INSERT INTO rmct20(c0) VALUES(40000), (26857000), (127117816000)
+
+statement ok rowcount 9
+INSERT INTO rmct21(c0) VALUES(1510153480000),(1054357633000),(93000),(542168641000),(1963352769000),(855906053000),(1937466219000),(27000),(875025185000)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','rmct21','c0',true)
+
+statement ok rowcount 4
+INSERT INTO rmct21(c0) VALUES(1829991355000),(2073175664000),(1969480299000),(1534889714000)
+
+query I rowsort
+(SELECT greatest(rmct21.c0, rmct21.c0) FROM rmct21) INTERSECT ALL (SELECT DISTINCT sql_max(737555899, rmct21.c0) FROM rmct21)
+----
+1054357633000
+1510153480000
+1534889714000
+1829991355000
+1937466219000
+1963352769000
+1969480299000
+2073175664000
+542168641000
+855906053000
+875025185000
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE rmct20
+
+statement ok
+DROP TABLE rmct21
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" INET)
+
+statement ok rowcount 18
+INSERT INTO "t0" VALUES ('164.82.81.89'),('113.147.23.38'),('86.149.73.111'),('181.250.179.49/28'),('194.195.10.124/2'),('73.161.236.158'),('10.30.207.106'),
+('70.12.16.242/26'),('202.52.196.246/20'),('208.167.107.137'),('31.108.174.206'),('103.74.10.64/29'),('230.91.255.3/25'),('128.184.144.74'),('72.63.75.16/22'),
+('23.39.29.46/31'),('35.154.241.4/10'),('97.134.228.106/31')
+
+statement ok
+CREATE TABLE "t1" ("c0" INET)
+
+statement ok rowcount 13
+INSERT INTO "t1" VALUES ('58.166.167.234/4'),('17.41.170.78'),(NULL),('125.66.199.214'),('31.72.22.103/13'),('177.199.200.115'),('140.247.168.238/24'),
+('175.250.175.86/17'),('16.63.246.44'),('54.110.196.2/0'),('208.9.31.24/0'),('119.47.128.18'),('5.250.95.199/28')
+
+statement ok
+COMMIT
+
+statement ok
+CALL "dict_compress"('sys','t1','c0',false)
+
+statement error MERGE DELETE: Multiple rows in the input relation match the same row in the target table 'sys.t1'
+MERGE INTO t1 USING (SELECT DISTINCT 0.3, sys."network"(t1.c0) FROM t1) AS mergejoined(c0,c1) ON TRUE WHEN MATCHED THEN UPDATE SET c0 = INET '56.157.166.36'
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+statement ok
+COMMIT
+
+statement ok
+CREATE TABLE t0(c0 boolean PRIMARY KEY)
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(TRUE)
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c0')
+
+statement ok rowcount 1
+MERGE INTO t0 USING (SELECT INTERVAL '9' MONTH FROM t0) AS mergejoined(c0) ON t0.c0 WHEN MATCHED THEN UPDATE SET c0 = TRUE WHEN NOT MATCHED THEN INSERT (c0) VALUES (FALSE)
+
+statement ok
+DROP TABLE t0
+
+statement ok
+CREATE TABLE t0(c0 BIGINT PRIMARY KEY)
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c0')
+
+statement ok rowcount 2
+INSERT INTO t0(c0) VALUES(15), (-5)
+
+statement ok rowcount 0
+MERGE INTO t0 USING (SELECT 133 WHERE FALSE) AS x(c0) ON (x.c0 < 1) WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT (c0) VALUES (29)
+
+statement ok
+DROP TABLE t0
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" INET,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
+
+statement ok rowcount 129
+COPY 129 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+244.251.30.168/0
+193.58.12.111/28
+158.2.228.30
+118.242.29.246/29
+174.39.40.194
+208.45.38.50
+220.145.178.72/22
+37.110.85.132/21
+221.223.1.58
+243.28.234.146
+187.69.18.92/11
+130.172.253.124
+255.240.0.0
+172.50.129.0
+200.128.177.91/10
+184.200.70.44
+57.62.68.42/22
+205.225.61.215
+231.115.0.197/19
+174.61.68.50/16
+141.129.216.103/9
+108.84.161.160/31
+137.165.188.75
+199.26.192.124
+174.68.206.106/23
+11.2.62.238
+66.224.214.249/2
+81.8.45.173/3
+73.172.64.132
+91.184.252.105/16
+100.156.229.124/26
+241.34.172.174
+52.75.201.208
+72.33.200.34/20
+149.58.152.233/14
+163.157.18.154
+16.162.85.103
+80.150.119.142/5
+64.115.93.35/12
+134.84.52.212
+198.239.13.153
+75.90.188.227/9
+127.173.86.133
+96.191.239.22
+44.19.57.31
+42.83.211.64/12
+67.222.110.126
+6.28.187.158/8
+4.164.150.42
+177.177.109.39
+43.255.132.67
+99.240.226.248
+122.247.146.195/7
+243.30.227.197
+52.116.29.248/27
+72.168.179.208/0
+54.108.165.101
+189.68.182.218
+90.92.102.202/27
+255.255.255.255
+164.112.94.4
+35.63.255.255/10
+0.0.0.0
+54.247.69.155/6
+113.82.122.97/23
+198.227.220.13
+60.206.6.192
+42.192.224.37/2
+77.244.112.123
+208.212.132.51
+193.74.102.197
+116.0.0.0/11
+153.67.141.129/15
+233.61.200.140
+177.131.7.227/26
+156.22.8.58
+159.160.47.101/17
+155.246.9.74/21
+255.224.0.0
+144.131.92.109/1
+137.143.79.226/20
+16.81.247.195
+205.85.68.188/9
+64.200.193.148
+76.142.3.173
+30.49.11.98
+131.27.2.236
+129.114.99.141
+247.96.154.225
+239.2.126.60/25
+111.240.192.169/13
+35.104.201.99/30
+165.129.226.128
+188.104.25.178
+29.238.93.100
+0.0.3.255
+21.123.155.53
+224.51.151.165/2
+215.179.184.102/11
+235.229.251.151/1
+140.201.45.9
+250.232.23.250/3
+58.232.99.255/22
+208.97.50.1
+189.35.212.255
+118.18.132.7
+189.41.224.21/11
+58.73.178.65/26
+154.224.206.125/21
+219.152.46.200
+154.83.83.156/19
+117.246.249.67/0
+92.72.126.121/21
+152.97.247.53
+31.50.28.172
+40.142.170.50/29
+252.63.99.51
+37.205.166.213
+24.181.57.208/31
+249.245.158.205
+175.168.8.208
+42.128.114.58
+240.111.92.8
+21.94.9.180
+240.0.0.0/6
+85.218.27.188
+207.13.128.93
+10.51.76.216
+240.86.221.30
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c0',true)
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(INET '218.80.18.11/2')
+
+statement ok
+DROP TABLE t0
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 BIGINT NOT NULL)
+
+statement ok rowcount 3
+INSERT INTO t0(c0) VALUES(14173), (115), (12)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."for_compress"('sys','t0','c0')
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(1)
+
+statement ok
+DROP TABLE t0
+
+statement ok
+CREATE TABLE sys.t2(c0 UUID NULL, c1 smallint)
+
+statement ok rowcount 5
+INSERT INTO sys.t2(c1) VALUES(9739), (1), (NULL), (22505), (26325)
+
+statement ok rowcount 5
+DELETE FROM sys.t2
+
+statement ok
+CALL "sys"."dict_compress"('sys','t2','c0')
+
+statement ok
+ANALYZE sys.t2(c0, c1)
+
+statement ok
+DROP TABLE t2
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" INET,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"))
+
+statement ok
+CREATE TABLE "t1" ("c0" INET,CONSTRAINT "con2" UNIQUE ("c0"))
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES ('25.170.105.65/11'),('50.132.219.7/25'),('83.196.168.47'),('201.118.197.112/24')
+
+statement ok
+create view v1(vc0) as (select blob 'b0' from t1, t0)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','t1','c0')
+
+statement ok rowcount 0
+UPDATE t1 SET c0 = least(INET '110.84.240.170', t1.c0) FROM v1 WHERE (0.4) IN (2, 0.8)
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP VIEW v1
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+statement ok
+COMMIT
+
+statement ok
+CREATE TABLE "t1" ("c0" BIGINT NOT NULL)
+
+statement ok
+INSERT INTO "t1" VALUES (-1981639662)
+
+statement ok
+CALL "sys"."for_compress"('sys','t1','c0')
+
+statement ok rowcount 0
+UPDATE t1 SET c0 = 1 FROM t1 tx WHERE -t1.c0 = 2
+
+statement ok
+DROP TABLE t1
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t0(c0 INT) ON COMMIT PRESERVE ROWS
+
+statement ok rowcount 3
+INSERT INTO t0 VALUES (1),(2),(3)
+
+statement ok
+COMMIT
+
+query I rowsort
+SELECT c0 FROM t0
+----
+1
+2
+3
+
+statement error 42000!columns from temporary tables cannot be compressed
+CALL "sys"."dict_compress"('tmp','t0','c0',false)
+
+query I rowsort
+SELECT c0 FROM t0
+----
+1
+2
+3
+
+statement ok
+DROP TABLE t0
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP ALL PROCEDURE "sys"."dict_compress"
+
+statement ok
+DROP ALL PROCEDURE "sys"."for_compress"
+
+statement ok
+COMMIT
+

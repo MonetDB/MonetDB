@@ -16,8 +16,8 @@ stdout of test 'analytics20` in directory 'sql/test/analytics` itself:
 #prepare select count(*) over (rows ? preceding) from analytics;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
-% 6,	3,	1,	0,	2,	2 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 6,	2,	1,	0,	2,	2 # length
 [ "bigint",	64,	0,	"",	"%1",	"%1"	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #exec  0(2);
@@ -39,8 +39,8 @@ stdout of test 'analytics20` in directory 'sql/test/analytics` itself:
 #prepare select max(aa) over (rows between 5 preceding and ? following) from stressme;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
-% 7,	3,	1,	0,	2,	2 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	2,	1,	0,	2,	2 # length
 [ "varchar",	64,	0,	"",	"%1",	"%1"	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #exec  1(2);
@@ -61,8 +61,8 @@ stdout of test 'analytics20` in directory 'sql/test/analytics` itself:
 #prepare select max(aa) over (order by bb range between ? preceding and 10 following) from stressme;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
-% 7,	3,	1,	0,	2,	2 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	2,	1,	0,	2,	2 # length
 [ "varchar",	64,	0,	"",	"%2",	"%2"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #exec  2(2);

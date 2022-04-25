@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -58,12 +58,12 @@ ol_add(objlist *ol, sql_base *data)
 		ol->h = hash_new(ol->l->sa, 4*sz, (fkeyvalue)&node_key);
 		for (node *n = ol->l->h; n; n = n->next) {
 			if (hash_add(ol->h, base_key(n->data), n) == NULL)
-				/* No need too clean, ie expect a full transaction rollback */
+				/* No need to clean, ie expect a full transaction rollback */
 				return -1;
 		}
 	} else {
 		if (hash_add(ol->h, base_key(data), n) == NULL)
-			/* No need too clean, ie expect a full transaction rollback */
+			/* No need to clean, ie expect a full transaction rollback */
 			return -1;
 	}
 	return 0;

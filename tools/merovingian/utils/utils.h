@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _SEEN_UTILS_H
@@ -21,8 +21,17 @@ enum valtype {
 	STR,
 	MURI,
 	LADDR,
+	LOGLEVEL,
+	MODS,						/* list of mserver5 modules */
 	OTHER
 };
+
+typedef enum loglevel_t {
+	ERROR = 1,
+	WARNING,
+	INFORMATION,
+	DEBUG
+} loglevel;
 
 typedef struct _confkeyval {
 	char *key;

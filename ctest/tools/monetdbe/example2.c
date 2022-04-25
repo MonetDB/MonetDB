@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdbe.h"
@@ -157,7 +157,7 @@ main(void)
 		error(err)
 
 	monetdbe_statement *stmt = NULL;
-	if ((err = monetdbe_prepare(mdbe, "SELECT b, t FROM test where t = ?; ", &stmt)) != NULL)
+	if ((err = monetdbe_prepare(mdbe, "SELECT b, t FROM test where t = ?; ", &stmt, NULL)) != NULL)
 		error(err)
 	char s = 42;
 	if ((err = monetdbe_bind(stmt, &s, 0)) != NULL)
@@ -170,10 +170,38 @@ main(void)
 	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
 		error(err)
 
-	if ((err = monetdbe_prepare(mdbe, "SELECT b, y FROM test where y = ?; ", &stmt)) != NULL)
+	/* NULL value version */
+	if ((err = monetdbe_prepare(mdbe, "SELECT b, t FROM test where t = ?; ", &stmt, NULL)) != NULL)
+		error(err)
+	char *s2 = NULL;
+	if ((err = monetdbe_bind(stmt, s2, 0)) != NULL)
+		error(err)
+	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
+		error(err)
+	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
+	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
+		error(err)
+	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
+		error(err)
+
+	if ((err = monetdbe_prepare(mdbe, "SELECT b, y FROM test where y = ?; ", &stmt, NULL)) != NULL)
 		error(err)
 	char *y = "Hello";
 	if ((err = monetdbe_bind(stmt, y, 0)) != NULL)
+		error(err)
+	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
+		error(err)
+	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
+	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
+		error(err)
+	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
+		error(err)
+
+	/* NULL value version */
+	if ((err = monetdbe_prepare(mdbe, "SELECT b, y FROM test where y = ?; ", &stmt, NULL)) != NULL)
+		error(err)
+	char *y2 = NULL;
+	if ((err = monetdbe_bind(stmt, y2, 0)) != NULL)
 		error(err)
 	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
 		error(err)

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -158,19 +158,12 @@ typedef struct logformat_t {
 
 typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 
-#include "gdk_geomlogger.h"
-
-/* When reading an old format database, we may need to read the geom
- * Well-known Binary (WKB) type differently.  This variable is used to
- * indicate that to the function wkbREAD during reading of the log. */
-static bool geomisoldversion;
-
 static gdk_return tr_grow(trans *tr);
 
 static BUN
 log_find(BAT *b, BAT *d, int val)
 {
-	BATiter cni = bat_iterator(b);
+	BATiter cni = bat_iterator_nolock(b);
 	BUN p;
 
 	assert(b->ttype == TYPE_int);
@@ -189,11 +182,12 @@ log_find(BAT *b, BAT *d, int val)
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
 
-		for (p = 0, q = BUNlast(b); p < q; p++) {
+		for (p = 0, q = BATcount(b); p < q; p++) {
 			if (t[p] == val) {
 				oid pos = p;
-				if (BUNfnd(d, &pos) == BUN_NONE)
+				if (BUNfnd(d, &pos) == BUN_NONE) {
 					return p;
+				}
 			}
 		}
 	}
@@ -296,7 +290,7 @@ log_bid
 old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 {
 	if (!tpe || !lg->with_ids) {
-		BATiter cni = bat_iterator(lg->catalog_nme);
+		BATiter cni = bat_iterator_nolock(lg->catalog_nme);
 		BUN p;
 
 		if (BAThash(lg->catalog_nme) == GDK_SUCCEED) {
@@ -314,7 +308,7 @@ old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
 	} else {
-		BATiter cni = bat_iterator(lg->catalog_oid);
+		BATiter cni = bat_iterator_nolock(lg->catalog_oid);
 		BUN p;
 
 		if (BAThash(lg->catalog_oid) == GDK_SUCCEED) {
@@ -350,7 +344,7 @@ la_bat_clear(old_logger *lg, logaction *la)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		restrict_t access = (restrict_t) b->batRestricted;
+		restrict_t access = b->batRestricted;
 		b->batRestricted = BAT_WRITE;
 		BATclear(b, true);
 		b->batRestricted = access;
@@ -659,21 +653,25 @@ la_bat_updates(old_logger *lg, logaction *la)
 					while (b->hseqbase + b->batCount < h) {
 						if (BUNappend(b, tv, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
+							bat_iterator_end(&vi);
 							return GDK_FAIL;
 						}
 					}
 				}
 				if (BUNappend(b, t, true) != GDK_SUCCEED) {
 					logbat_destroy(b);
+					bat_iterator_end(&vi);
 					return GDK_FAIL;
 				}
 			} else {
 				if (BUNreplace(b, h, t, true) != GDK_SUCCEED) {
 					logbat_destroy(b);
+					bat_iterator_end(&vi);
 					return GDK_FAIL;
 				}
 			}
 		}
+		bat_iterator_end(&vi);
 	}
 	logbat_destroy(b);
 	return GDK_SUCCEED;
@@ -784,9 +782,11 @@ la_bat_create(old_logger *lg, logaction *la)
 	if (la->tt < 0)
 		BATtseqbase(b, 0);
 
-	if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED ||
-	    logger_add_bat(lg, b, la->name, la->tpe, la->cid) != GDK_SUCCEED)
+	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
+	    logger_add_bat(lg, b, la->name, la->tpe, la->cid) != GDK_SUCCEED) {
+		logbat_destroy(b);
 		return GDK_FAIL;
+	}
 	logbat_destroy(b);
 	return GDK_SUCCEED;
 }
@@ -1016,7 +1016,7 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 	int dbg = GDKdebug;
 	int fd;
 
-	GDKdebug &= ~(CHECKMASK|PROPMASK);
+	GDKdebug &= ~CHECKMASK;
 
 	if (lg->lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
@@ -1377,7 +1377,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	if (t == NULL) {
 		t = logbat_new(TYPE_bte, BATSIZE, TRANSIENT);
 		if (t == NULL
-		    ||BBPrename(t->batCacheid, bak) < 0) {
+		    ||BBPrename(t, bak) < 0) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(n->batCacheid);
 			if (t)
@@ -1403,7 +1403,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	if (o == NULL) {
 		o = logbat_new(TYPE_lng, BATSIZE, TRANSIENT);
 		if (o == NULL
-		    ||BBPrename(o->batCacheid, bak) < 0) {
+		    ||BBPrename(o, bak) < 0) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(n->batCacheid);
 			BBPunfix(t->batCacheid);
@@ -1440,7 +1440,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 			BBPunfix(o->batCacheid);
 			goto error;
 		}
-		if (BBPrename(d->batCacheid, bak) < 0) {
+		if (BBPrename(d, bak) < 0) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(n->batCacheid);
 			BBPunfix(t->batCacheid);
@@ -1480,10 +1480,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
 	if (lg->freed == NULL) {
 		GDKerror("Logger_new: failed to create freed bat");
-		goto error;
-	}
-	strconcat_len(bak, sizeof(bak), fn, "_freed", NULL);
-	if (BBPrename(lg->freed->batCacheid, bak) < 0) {
 		goto error;
 	}
 	snapshots_bid = old_logger_find_bat(lg, "snapshots_bid", 0, 0);
@@ -1556,17 +1552,17 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
-		if (BBPrename(lg->seqs_id->batCacheid, bak) < 0) {
+		if (BBPrename(lg->seqs_id, bak) < 0) {
 			goto error;
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
-		if (BBPrename(lg->seqs_val->batCacheid, bak) < 0) {
+		if (BBPrename(lg->seqs_val, bak) < 0) {
 			goto error;
 		}
 
 		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
-		if (BBPrename(lg->dseqs->batCacheid, bak) < 0) {
+		if (BBPrename(lg->dseqs, bak) < 0) {
 			goto error;
 		}
 		if (BUNappend(lg->add, &lg->seqs_id->batCacheid, false) != GDK_SUCCEED)
@@ -1604,9 +1600,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	if (BUNappend(lg->add, &lg->lg->dcatalog->batCacheid, false) != GDK_SUCCEED)
 		goto error;
 	BBPretain(lg->lg->dcatalog->batCacheid);
-
-	/* done reading the log, revert to "normal" behavior */
-	geomisoldversion = false;
 
 	return GDK_SUCCEED;
   error:
@@ -1722,6 +1715,13 @@ old_logger_destroy(old_logger *lg)
 	BATloop(lg->add, p, q) {
 		b = BATdescriptor(bids[p]);
 		if (b) {
+			if (b != lg->lg->catalog_bid &&
+			    b != lg->lg->catalog_id &&
+			    b != lg->lg->dcatalog &&
+			    b != lg->lg->seqs_id &&
+			    b != lg->lg->seqs_val &&
+			    b != lg->lg->dseqs)
+				b = BATsetaccess(b, BAT_READ);
 			BATmode(b, false);
 			BBPunfix(bids[p]);
 		}
@@ -1739,20 +1739,20 @@ old_logger_destroy(old_logger *lg)
 	/* give the catalog bats names so we can find them
 	 * next time */
 	char bak[IDLENGTH];
-	if (BBPrename(lg->catalog_bid->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->catalog_nme->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->catalog_tpe->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->catalog_oid->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->dcatalog->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->snapshots_bid->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->snapshots_tid->batCacheid, NULL) < 0 ||
-	    BBPrename(lg->dsnapshots->batCacheid, NULL) < 0 ||
+	if (BBPrename(lg->catalog_bid, NULL) < 0 ||
+	    BBPrename(lg->catalog_nme, NULL) < 0 ||
+	    BBPrename(lg->catalog_tpe, NULL) < 0 ||
+	    BBPrename(lg->catalog_oid, NULL) < 0 ||
+	    BBPrename(lg->dcatalog, NULL) < 0 ||
+	    BBPrename(lg->snapshots_bid, NULL) < 0 ||
+	    BBPrename(lg->snapshots_tid, NULL) < 0 ||
+	    BBPrename(lg->dsnapshots, NULL) < 0 ||
 	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_catalog_bid", NULL) >= sizeof(bak) ||
-	    BBPrename(lg->lg->catalog_bid->batCacheid, bak) < 0 ||
+	    BBPrename(lg->lg->catalog_bid, bak) < 0 ||
 	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_catalog_id", NULL) >= sizeof(bak) ||
-	    BBPrename(lg->lg->catalog_id->batCacheid, bak) < 0 ||
+	    BBPrename(lg->lg->catalog_id, bak) < 0 ||
 	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_dcatalog", NULL) >= sizeof(bak) ||
-	    BBPrename(lg->lg->dcatalog->batCacheid, bak) < 0) {
+	    BBPrename(lg->lg->dcatalog, bak) < 0) {
 		GDKfree(subcommit);
 		return GDK_FAIL;
 	}
@@ -1761,7 +1761,7 @@ old_logger_destroy(old_logger *lg)
 		GDKfree(subcommit);
 		return rc;
 	}
-	if ((rc = logger_create_types_file(lg->lg, lg->filename)) != GDK_SUCCEED) {
+	if ((rc = logger_create_types_file(lg->lg, lg->filename, true)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		GDKfree(subcommit);
 		return rc;
@@ -1979,43 +1979,4 @@ logger_del_bat(old_logger *lg, log_bid bid)
 	pos = (oid) p;
 	return BUNappend(lg->dcatalog, &pos, false);
 /*assert(BBP_lrefs(bid) == 0);*/
-}
-
-static geomcatalogfix_fptr geomcatalogfix = NULL;
-static geomsqlfix_fptr geomsqlfix = NULL;
-
-void
-geomcatalogfix_set(geomcatalogfix_fptr f)
-{
-	geomcatalogfix = f;
-}
-
-geomcatalogfix_fptr
-geomcatalogfix_get(void)
-{
-	return geomcatalogfix;
-}
-
-void
-geomsqlfix_set(geomsqlfix_fptr f)
-{
-	geomsqlfix = f;
-}
-
-geomsqlfix_fptr
-geomsqlfix_get(void)
-{
-	return geomsqlfix;
-}
-
-void
-geomversion_set(void)
-{
-	geomisoldversion = true;
-}
-
-bool
-geomversion_get(void)
-{
-	return geomisoldversion;
 }

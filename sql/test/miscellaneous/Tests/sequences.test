@@ -1,0 +1,137 @@
+statement ok
+start transaction
+
+statement ok
+create sequence ups START WITH 0 INCREMENT BY 1 MINVALUE 0 MAXVALUE 10 CYCLE
+
+query I nosort
+select next value for ups from generate_series(1,20)
+----
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+0
+1
+2
+3
+4
+5
+6
+7
+
+statement ok
+create sequence ups2 START WITH -10 INCREMENT BY 1 MINVALUE -10 MAXVALUE 0 CYCLE
+
+query I nosort
+select next value for ups2 from generate_series(1,20)
+----
+-10
+-9
+-8
+-7
+-6
+-5
+-4
+-3
+-2
+-1
+0
+-10
+-9
+-8
+-7
+-6
+-5
+-4
+-3
+
+statement ok
+create sequence ups3 START WITH -10 INCREMENT BY -1 MINVALUE -20 MAXVALUE -10 CYCLE
+
+query I nosort
+select next value for ups3 from generate_series(1,20)
+----
+-10
+-11
+-12
+-13
+-14
+-15
+-16
+-17
+-18
+-19
+-20
+-10
+-11
+-12
+-13
+-14
+-15
+-16
+-17
+
+statement ok
+create sequence ups4 START WITH 10 INCREMENT BY -1 MINVALUE 0 MAXVALUE 10 CYCLE
+
+query I nosort
+select next value for ups4 from generate_series(1,20)
+----
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+10
+9
+8
+7
+6
+5
+4
+3
+
+# 9223372036854775807 is the 64-bit highest value, so this case is tricky, but I expect this to be fine
+statement ok
+create sequence ups5 START WITH 9223372036854775800 INCREMENT BY 1 MINVALUE 9223372036854775800 CYCLE
+
+query I nosort
+SELECT next value for ups5 from generate_series(1,20)
+----
+9223372036854775800
+9223372036854775801
+9223372036854775802
+9223372036854775803
+9223372036854775804
+9223372036854775805
+9223372036854775806
+9223372036854775807
+9223372036854775800
+9223372036854775801
+9223372036854775802
+9223372036854775803
+9223372036854775804
+9223372036854775805
+9223372036854775806
+9223372036854775807
+9223372036854775800
+9223372036854775801
+9223372036854775802
+
+statement ok
+rollback
+

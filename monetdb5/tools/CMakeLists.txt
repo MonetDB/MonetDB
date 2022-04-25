@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 add_library(monetdb5 SHARED
@@ -23,7 +23,6 @@ target_link_libraries(monetdb5
     ${SOCKET_LIBRARIES}
     $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
     $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
-    $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
     bat)
 
 set_target_properties(monetdb5
@@ -34,12 +33,6 @@ set_target_properties(monetdb5
 if (NOT WIN32)
   if(LibXml2_FOUND)
     set(PKG_LIBXML2 "libxml-2.0")
-  endif()
-
-  if(OPENSSL_FOUND)
-    # In OpenSSL case, we link only to the crypto library, so it will be
-    # always one library to link to
-    set(PKG_CRYPTO "libcrypto")
   endif()
 
   if(PCRE_FOUND)
@@ -75,5 +68,12 @@ install(EXPORT monetdb5Targets
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT serverdev)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:monetdb5>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)
+endif()
 
 # vim: set ts=2:sw=2:et

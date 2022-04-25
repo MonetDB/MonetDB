@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -25,9 +25,8 @@ typedef str identifier;
 
 static int TYPE_identifier;
 
-static str IDprelude(void *ret)
+static str IDprelude(void)
 {
-	(void) ret;
 	TYPE_identifier = ATOMindex("identifier");
 	return MAL_SUCCEED;
 }
@@ -104,7 +103,6 @@ mel_atom identifier_init_atoms[] = {
 };
 mel_func identifier_init_funcs[] = {
  command("identifier", "identifier", IDentifier, false, "Cast a string to an identifer ", args(1,2, arg("",identifier),arg("s",str))),
- command("identifier", "prelude", IDprelude, false, "Initialize the module", args(1,1, arg("",void))),
  { .imp=NULL }
 };
 #include "mal_import.h"
@@ -113,4 +111,4 @@ mel_func identifier_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_identifier_mal)
-{ mal_module("identifier", identifier_init_atoms, identifier_init_funcs); }
+{ mal_module2("identifier", identifier_init_atoms, identifier_init_funcs, IDprelude, NULL); }

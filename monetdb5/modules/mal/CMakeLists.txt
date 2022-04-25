@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 add_library(malmodules OBJECT)
@@ -28,8 +28,6 @@ target_sources(malmodules
   mdb.c
   pcre.c
   mat.c
-  transaction.c
-  oltp.c
   wlc.c
   mal_mapi.c
   remote.c remote.h
@@ -53,8 +51,6 @@ target_include_directories(malmodules
   $<TARGET_PROPERTY:mapi,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
-  $<$<BOOL:${COMMONCRYPTO_FOUND}>:${COMMONCRYPTO_INCLUDE_DIR}>
-  $<$<BOOL:${OPENSSL_FOUND}>:$<TARGET_PROPERTY:OpenSSL::Crypto,INTERFACE_INCLUDE_DIRECTORIES>>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
