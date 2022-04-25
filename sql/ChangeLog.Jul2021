@@ -1,9 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Mon Apr 25 2022 Sjoerd Mullender <sjoerd@acm.org>
-- GLOBAL TEMPORARY tables are now treated like LOCAL TEMPORARY tables
-  as far as the table content is concerned.  The schema information
-  stays global.  This fixes an issue with concurrent access and cleanup
-  of stale data.
-

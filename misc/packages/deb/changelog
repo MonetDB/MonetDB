@@ -1,3 +1,18 @@
+monetdb (11.41.23) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 25 Apr 2022 13:18:19 +0200
+
+monetdb (11.41.23) unstable; urgency=low
+
+  * sql: GLOBAL TEMPORARY tables are now treated like LOCAL TEMPORARY tables
+    as far as the table content is concerned.  The schema information
+    stays global.  This fixes an issue with concurrent access and cleanup
+    of stale data.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 25 Apr 2022 13:18:19 +0200
+
 monetdb (11.41.21) unstable; urgency=low
 
   * Rebuilt.
