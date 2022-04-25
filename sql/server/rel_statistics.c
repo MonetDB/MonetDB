@@ -632,7 +632,7 @@ rel_calc_nuniques(sql_rel *l, list *exps)
 
 			if ((p = find_prop(e->p, PROP_NUNIQUES))) {
 				nuniques = MAX(nuniques, (BUN) p->value.dval);
-			} else if (rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
+			} else if (e->type == e_column && rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
 				nuniques = MAX(nuniques, p->value.lval);
 			} else {
 				nuniques = BUN_NONE;
