@@ -53,6 +53,8 @@ def monetSchema(tbl, host = os.getenv('MAPIHOST', 'localhost'),
             else:
                 break
             time.sleep(0.5)
+    cursor.close()
+    dbh.close()
 
 class Client(threading.Thread):
     def __init__(self, tbl, host = os.getenv('MAPIHOST', 'localhost'),

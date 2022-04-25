@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 # skipif <system>
 # onlyif <system>
@@ -173,7 +173,7 @@ class SQLLogic:
     def drop(self):
         if self.language != 'sql':
             return
-        self.crs.execute('select s.name, t.name, tt.table_type_name from sys.tables t, sys.schemas s, sys.table_types tt where not t.system and t.schema_id = s.id and t.type = tt.table_type_id')
+        self.crs.execute('select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like \'%VIEW%\') then \'VIEW\' else \'TABLE\' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id')
         for row in self.crs.fetchall():
             try:
                 self.crs.execute('drop {} "{}"."{}" cascade'.format(row[2], row[0].replace('"', '""'), row[1].replace('"', '""')))
@@ -218,12 +218,15 @@ class SQLLogic:
                        expected_err_code=None,
                        expected_err_msg=None,
                        expected_rowcount=None,
-                       conn=None):
+                       conn=None,
+                       verbose=False):
         crs = conn.cursor() if conn else self.crs
         if skipidx.search(statement) is not None:
             # skip creation of ascending or descending index
             return ['statement', 'ok']
         try:
+            if verbose:
+                print(f'Executing:\n{err_stmt or statement}')
             affected_rowcount = crs.execute(statement)
         except (pymonetdb.Error, ValueError) as e:
             msg = e.args[0]
@@ -352,10 +355,12 @@ class SQLLogic:
                     sep = '|'
                 print('', file=self.out)
 
-    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None) -> bool:
+    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
         err = False
         crs = conn.cursor() if conn else self.crs
         try:
+            if verbose:
+                print(f'Executing:\n{query}')
             crs.execute(query)
         except (pymonetdb.Error, ValueError) as e:
             self.query_error(query, 'query failed', e.args[0])
@@ -598,7 +603,7 @@ class SQLLogic:
                 self.raise_error('invalid connection parameters definition, username or password missing!')
         return res
 
-    def parse(self, f, approve=None):
+    def parse(self, f, approve=None, verbose=False):
         self.approve = approve
         self.initfile(f)
         if self.language == 'sql':
@@ -636,6 +641,7 @@ class SQLLogic:
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
                 self.writeline(line)
+                self.writeline()
             elif words[0] == 'statement':
                 expected_err_code = None
                 expected_err_msg = None
@@ -659,9 +665,9 @@ class SQLLogic:
                 if not skipping:
                     if is_copyfrom_stmt(statement):
                         stmt, stmt_less_data = prepare_copyfrom_stmt(statement)
-                        result = self.exec_statement(stmt, expectok, err_stmt=stmt_less_data, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn)
+                        result = self.exec_statement(stmt, expectok, err_stmt=stmt_less_data, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn, verbose=verbose)
                     else:
-                        result = self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn)
+                        result = self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn, verbose=verbose)
                     self.writeline(' '.join(result))
                 else:
                     self.writeline(stline)
@@ -707,7 +713,7 @@ class SQLLogic:
                         line = self.readline()
                     nresult = len(expected)
                 if not skipping:
-                    result1, result2 = self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=conn)
+                    result1, result2 = self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=conn, verbose=verbose)
                     self.writeline(' '.join(result1))
                     for line in query:
                         self.writeline(line)
@@ -736,6 +742,10 @@ if __name__ == '__main__':
                         help='port the server listens on')
     parser.add_argument('--database', action='store', default='demo',
                         help='name of the database')
+    parser.add_argument('--user', action='store', default='monetdb',
+                        help='user name to login to the database with')
+    parser.add_argument('--password', action='store', default='monetdb',
+                        help='password to use to login to the database with')
     parser.add_argument('--language', action='store', default='sql',
                         help='language to use for testing')
     parser.add_argument('--nodrop', action='store_true',
@@ -755,7 +765,7 @@ if __name__ == '__main__':
     args = opts.tests
     sql = SQLLogic(report=opts.report)
     sql.res = opts.results
-    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language)
+    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language, username=opts.user, password=opts.password)
     for test in args:
         try:
             if not opts.nodrop:
@@ -763,7 +773,7 @@ if __name__ == '__main__':
             if opts.verbose:
                 print('now testing {}'. format(test))
             try:
-                sql.parse(test, approve=opts.approve)
+                sql.parse(test, approve=opts.approve, verbose=opts.verbose)
             except SQLLogicSyntaxError:
                 pass
         except BrokenPipeError:

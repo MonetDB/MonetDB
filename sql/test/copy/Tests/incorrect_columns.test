@@ -30,16 +30,16 @@ maan
 query IITT rowsort
 select * from sys.rejects()
 ----
+2
 1
-0
 Column value missing
 2@
-2
-0
+3
+1
 Column value missing
 no tag@
+4
 3
-2
 Leftover data 'xyz'
 3,too much@
 

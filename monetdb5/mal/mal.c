@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -39,7 +39,6 @@ MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER(mal_remoteLock);
 MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
 MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
 MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
-MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER(mal_oltpLock);
 
 const char *
 mal_version(void)
@@ -52,7 +51,7 @@ mal_version(void)
  */
 
 int
-mal_init(char *modules[], int embedded)
+mal_init(char *modules[], bool embedded)
 {
 /* Any error encountered here terminates the process
  * with a message sent to stderr
@@ -86,7 +85,6 @@ mal_init(char *modules[], int embedded)
 #endif
 	initNamespace();
 	initParser();
-	initHeartbeat();
 
 	err = malBootstrap(modules, embedded);
 	if (err != MAL_SUCCEED) {
@@ -99,6 +97,7 @@ mal_init(char *modules[], int embedded)
 		return -1;
 	}
 	initProfiler();
+	initHeartbeat();
 	return 0;
 }
 

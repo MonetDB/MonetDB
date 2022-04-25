@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -300,6 +300,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("REMOTE", REMOTE);
 	failed += keywords_insert("MERGE", MERGE);
 	failed += keywords_insert("REPLICA", REPLICA);
+	failed += keywords_insert("UNLOGGED", UNLOGGED);
 	failed += keywords_insert("TO", TO);
 	failed += keywords_insert("UNION", UNION);
 	failed += keywords_insert("EXCEPT", EXCEPT);
@@ -375,6 +376,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("UNCOMMITTED", UNCOMMITTED);
 	failed += keywords_insert("COMMITTED", COMMITTED);
 	failed += keywords_insert("REPEATABLE", sqlREPEATABLE);
+	failed += keywords_insert("SNAPSHOT", SNAPSHOT);
 	failed += keywords_insert("SERIALIZABLE", SERIALIZABLE);
 	failed += keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	failed += keywords_insert("SIZE", sqlSIZE);
@@ -528,6 +530,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 		.rs = rs,
 		.ws = ws,
 		.mode = LINE_N,
+		.raw_string_mode = GDKgetenv_istrue("raw_strings"),
 	};
 }
 
@@ -587,7 +590,7 @@ U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
    utf8chkmsk[n] should be non-zero (else the encoding could be
    shorter).
 */
-static int utf8chkmsk[] = {
+static const int utf8chkmsk[] = {
 	0x0000007f,
 	0x00000780,
 	0x0000f800,
@@ -894,53 +897,88 @@ static int
 number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
-	int token = sqlINT;
-	int before_cur = EOF;
+	int token = cur == '0' ? sqlINT : 0;
 
+	/* a number has one of these forms (expressed in regular expressions):
+	 * 0x[0-9A-Fa-f]+                   -- (hexadecimal) INTEGER
+	 * \.[0-9]+                         -- DECIMAL
+	 * [0-9]+\.[0-9]*                   -- DECIMAL
+	 * [0-9]+@0                         -- OID
+	 * [0-9]*\.[0-9]+[eE][-+]?[0-9]+    -- REAL
+	 * [0-9]+(\.[0-9]*)?[eE][-+]?[0-9]+ -- REAL
+	 * [0-9]+                           -- (decimal) INTEGER
+	 */
 	lc->started = 1;
+	/* after this block, cur contains the first character after the
+	 * parsed number (which may be the first causing it not to be a number);
+	 * it token == 0 after this block, a parse error was detected */
 	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
-		while ((cur = scanner_getc(lc)) != EOF &&
-		       (iswdigit(cur) ||
-				 (cur >= 'A' && cur <= 'F') ||
-				 (cur >= 'a' && cur <= 'f')))
+		cur = scanner_getc(lc);
+		while (cur != EOF && iswxdigit(cur)) {
 			token = HEXADECIMAL;
-		if (token == sqlINT)
-			before_cur = 'x';
+			cur = scanner_getc(lc);
+		}
+		if (token != HEXADECIMAL) {
+			/* 0x not followed by a hex digit: show 'x' as erroneous */
+			utf8_putchar(lc, cur);
+			cur = 'x';
+			token = 0;
+		}
 	} else {
-		if (iswdigit(cur))
-			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
-				;
+		while (cur != EOF && iswdigit(cur)) {
+			token = sqlINT;
+			cur = scanner_getc(lc);
+		}
 		if (cur == '@') {
-			token = OIDNUM;
-			cur = scanner_getc(lc);
-			if (cur == '0')
+			if (token == sqlINT) {
 				cur = scanner_getc(lc);
-		}
-
-		if (cur == '.') {
-			token = INTNUM;
-
-			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
-				;
-		}
-		if (cur == 'e' || cur == 'E') {
-			token = APPROXNUM;
-			cur = scanner_getc(lc);
-			if (cur == '-' || cur == '+')
-				token = 0;
-			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
-				token = APPROXNUM;
+				if (cur == '0') {
+					cur = scanner_getc(lc);
+					token = OIDNUM;
+				} else {
+					/* number + '@' not followed by 0: show '@' as erroneous */
+					utf8_putchar(lc, cur);
+					cur = '@';
+					token = 0;
+				}
+			}
+		} else {
+			if (cur == '.') {
+				cur = scanner_getc(lc);
+				if (token == sqlINT || iswdigit(cur)) {
+					token = INTNUM;
+					while (iswdigit(cur))
+						cur = scanner_getc(lc);
+				} else {
+					token = 0;
+				}
+			}
+			if (cur == 'e' || cur == 'E') {
+				if (token != 0) {
+					cur = scanner_getc(lc);
+					if (cur == '+' || cur == '-')
+						cur = scanner_getc(lc);
+					while (cur != EOF && iswdigit(cur)) {
+						token = APPROXNUM;
+						cur = scanner_getc(lc);
+					}
+					if (token != APPROXNUM)
+						token = 0;
+				}
+			}
 		}
 	}
 
 	if (cur == EOF && lc->rs->buf == NULL) /* malloc failure */
 		return EOF;
 
+	if (cur != EOF) {
+		if (iswalnum(cur) || cur == '_' /* || cur == '"' || cur == '\'' */)
+			token = 0;
+		utf8_putchar(lc, cur);
+	}
+
 	if (token) {
-		if (cur != EOF)
-			utf8_putchar(lc, cur);
-		if (before_cur != EOF)
-			utf8_putchar(lc, before_cur);
 		return scanner_token(lc, token);
 	} else {
 		(void)sql_error( c, 2, SQLSTATE(42000) "Unexpected symbol %lc", (wint_t) cur);
@@ -985,11 +1023,9 @@ int scanner_symbol(mvc * c, int cur)
 			return cur;
 		return tokenize(c, cur);
 	case '\'':
-#ifdef SQL_STRINGS_USE_ESCAPES
-		if (lc->next_string_is_raw || GDKgetenv_istrue("raw_strings"))
+		if (lc->raw_string_mode || lc->next_string_is_raw)
 			return scanner_string(c, cur, false);
 		return scanner_string(c, cur, true);
-#endif
 	case '"':
 		return scanner_string(c, cur, false);
 	case '{':
@@ -1206,9 +1242,10 @@ tokenize(mvc * c, int cur)
 /* SQL 'quoted' idents consist of a set of any character of
  * the source language character set other than a 'quote'
  *
- * MonetDB has 2 restrictions:
+ * MonetDB has 3 restrictions:
  * 	1 we disallow '%' as the first character.
  * 	2 the length is limited to 1024 characters
+ * 	3 the identifier 'TID%' is not allowed
  */
 static bool
 valid_ident(const char *restrict s, char *restrict dst)
@@ -1272,9 +1309,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	if (token == IDENT || token == COMPARISON ||
 	    token == RANK || token == aTYPE || token == ALIAS) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
-#ifdef SQL_STRINGS_USE_ESCAPES
 		lc->next_string_is_raw = false;
-#endif
 	} else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
@@ -1307,9 +1342,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			strcpy(str, yylval->sval + 3);
 			token = yylval->sval[2] == '\'' ? USTRING : UIDENT;
 			quote = yylval->sval[2];
-#ifdef SQL_STRINGS_USE_ESCAPES
 			lc->next_string_is_raw = true;
-#endif
 			break;
 		case 'x':
 		case 'X':
@@ -1321,9 +1354,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			*dst = 0;
 			quote = '\'';
 			token = XSTRING;
-#ifdef SQL_STRINGS_USE_ESCAPES
 			lc->next_string_is_raw = true;
-#endif
 			break;
 		case 'r':
 		case 'R':
@@ -1336,9 +1367,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			*dst = 0;
 			break;
 		default:
-#ifdef SQL_STRINGS_USE_ESCAPES
-			if (GDKgetenv_istrue("raw_strings") ||
-			    lc->next_string_is_raw) {
+			if (lc->raw_string_mode || lc->next_string_is_raw) {
 				dst = str;
 				for (char *src = yylval->sval + 1; *src; dst++)
 					if ((*dst = *src++) == '\'' && *src == '\'')
@@ -1349,23 +1378,14 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 					      (unsigned char *)yylval->sval + 1,
 					      lc->yycur - lc->yysval - 1);
 			}
-#else
-			dst = str;
-			for (char *src = yylval->sval + 1; *src; dst++)
-				if ((*dst = *src++) == '\'' && *src == '\'')
-					src++;
-			*dst = 0;
-#endif
 			break;
 		}
 		yylval->sval = str;
 
 		/* reset original */
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = quote;
-#ifdef SQL_STRINGS_USE_ESCAPES
 	} else {
 		lc->next_string_is_raw = false;
-#endif
 	}
 
 	return(token);
@@ -1392,6 +1412,8 @@ sqllex(YYSTYPE * yylval, void *parm)
 
 		if (next == NOT) {
 			return sqllex(yylval, parm);
+		} else if (next == EXISTS) {
+			token = NOT_EXISTS;
 		} else if (next == BETWEEN) {
 			token = NOT_BETWEEN;
 		} else if (next == sqlIN) {

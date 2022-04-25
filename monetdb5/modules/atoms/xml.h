@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -44,7 +44,6 @@ extern str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 extern size_t XMLquotestring(const char *s, char *buf, size_t len);
 extern size_t XMLunquotestring(const char **p, char q, char *buf);
 
-extern str XMLprelude(void *ret);
 extern str XMLepilogue(void *ret);
 
 #endif /* XML_H */

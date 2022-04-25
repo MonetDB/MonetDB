@@ -67,12 +67,12 @@ project (
 | distinct union (
 | | project (
 | | | group by (
-| | | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
 | | | group by (
-| | | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "%5"."a" ]
@@ -98,12 +98,12 @@ project (
 | distinct union (
 | | project (
 | | | group by (
-| | | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
 | | | group by (
-| | | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "%5"."a" ]
@@ -129,12 +129,12 @@ project (
 | distinct union (
 | | project (
 | | | group by (
-| | | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
 | | | group by (
-| | | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "%5"."a" ]
@@ -159,10 +159,10 @@ PLAN   select * from t2606a   except   select * from t2606b   order by a
 project (
 | distinct except (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "%5"."a" ]
 ) [ "%5"."a" ] [ "%5"."a" ASC ]
@@ -180,10 +180,10 @@ PLAN ( select * from t2606a   except   select * from t2606b ) order by a
 project (
 | distinct except (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "%5"."a" ]
 ) [ "%5"."a" ] [ "%5"."a" ASC ]
@@ -201,10 +201,10 @@ PLAN ( select * from t2606a ) except ( select * from t2606b ) order by a
 project (
 | distinct except (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "%5"."a" ]
 ) [ "%5"."a" ] [ "%5"."a" ASC ]
@@ -222,10 +222,10 @@ PLAN   select * from t2606a   intersect   select * from t2606b   order by a
 project (
 | distinct intersect (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "%5"."a" ]
 ) [ "%5"."a" ] [ "%5"."a" ASC ]
@@ -243,10 +243,10 @@ PLAN ( select * from t2606a   intersect   select * from t2606b ) order by a
 project (
 | distinct intersect (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "%5"."a" ]
 ) [ "%5"."a" ] [ "%5"."a" ASC ]
@@ -264,10 +264,10 @@ PLAN ( select * from t2606a ) intersect ( select * from t2606b ) order by a
 project (
 | distinct intersect (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "%5"."a" ]
 ) [ "%5"."a" ] [ "%5"."a" ASC ]
@@ -286,12 +286,12 @@ project (
 | distinct union (
 | | project (
 | | | group by (
-| | | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
 | | | group by (
-| | | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "t"."a" ]
@@ -316,10 +316,10 @@ PLAN select * from (select * from t2606a except select * from t2606b) as t order
 project (
 | distinct except (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "t"."a" ]
 ) [ "t"."a" ] [ "t"."a" ASC ]
@@ -337,10 +337,10 @@ PLAN select * from (select * from t2606a intersect select * from t2606b) as t or
 project (
 | distinct intersect (
 | | project (
-| | | table("sys"."t2606a") [ "t2606a"."a" ] COUNT 
+| | | table("sys"."t2606a") [ "t2606a"."a" ]
 | | ) [ "t2606a"."a" as "%1"."a" ],
 | | project (
-| | | table("sys"."t2606b") [ "t2606b"."a" ] COUNT 
+| | | table("sys"."t2606b") [ "t2606b"."a" ]
 | | ) [ "t2606b"."a" as "%2"."a" ]
 | ) [ "%1"."a" as "t"."a" ]
 ) [ "t"."a" ] [ "t"."a" ASC ]

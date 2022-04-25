@@ -1,0 +1,5 @@
+query T nosort
+select current_schema
+----
+voc
+

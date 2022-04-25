@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -108,7 +108,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		if (nobat) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
-			mnstr_printf(fp, "<%s>", BBPname(b->batCacheid));
+			mnstr_printf(fp, "<%s>", BBP_logical(b->batCacheid));
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
 		} else {
@@ -120,8 +120,8 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	if (hd)
 		mnstr_printf(fp, "%s", hd);
 
-	if (ATOMvarsized(tpe))
-		ATOMprint(tpe, *(str *) val, fp);
+	if (ATOMextern(tpe))
+		ATOMprint(tpe, *(ptr *) val, fp);
 	else
 		ATOMprint(tpe, val, fp);
 
@@ -210,9 +210,9 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 
-static char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
-static char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
-static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
+static const char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
+static const char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
+static const char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 
 #define return_error(x)							\
 	do {										\
@@ -221,7 +221,7 @@ static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 		throw(MAL,"io.printf", x,argc);			\
 	} while (0)
 
-static char niltext[4] = "nil";
+static const char niltext[4] = "nil";
 
 static str
 IOprintf_(str *res, str format, ...)
@@ -488,6 +488,9 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case 9: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8));
 		break;
 	case 10: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8),G(9));
+		break;
+	default:
+		throw(MAL, "io.printf", "Too many arguments to io.printf");
 	}
 	if (msg== MAL_SUCCEED) {
 		mnstr_printf(cntxt->fdout,"%s",fmt2);
@@ -522,6 +525,9 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	case 10: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9));
 		break;
 	case 11: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9),G(10));
+		break;
+	default:
+		throw(MAL, "io.printf", "Too many arguments to io.printf");
 	}
 	if (msg== MAL_SUCCEED){
 		mnstr_printf(f,"%s",fmt2);

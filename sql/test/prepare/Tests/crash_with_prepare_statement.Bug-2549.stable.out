@@ -32,7 +32,7 @@ stdout of test 'crash_with_prepare_statement.Bug-2549` in directory 'sql/test/Bu
 #WHERE S_W_ID = ? AND S_I_ID = ?;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	2,	1,	0,	0,	0 # length
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "decimal",	9,	0,	NULL,	NULL,	NULL	]

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _REL_REL_H_
@@ -51,6 +51,12 @@
 #define is_sql_or(X)           ((X & sql_or) == sql_or)
 #define is_sql_merge(X)        ((X & sql_merge) == sql_merge)
 
+#define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
+#define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
+#define is_exists_func(sf) (strcmp(sf->func->base.name, "sql_exists") == 0 || strcmp(sf->func->base.name, "sql_not_exists") == 0)
+#define is_exists(sf) (strcmp(sf->func->base.name, "sql_exists") == 0)
+
+
 extern void rel_set_exps(sql_rel *rel, list *exps);
 extern int project_unsafe(sql_rel *rel, int allow_identity);
 extern const char *rel_name( sql_rel *r );
@@ -66,14 +72,17 @@ extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int 
 extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f );
 extern sql_exp *rel_first_column(mvc *sql, sql_rel *rel);
 
+extern sql_rel *rel_inplace_basetable(sql_rel *rel, sql_rel *bt);
 extern sql_rel *rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps);
 extern sql_rel *rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e);
+extern sql_rel *rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps);
 extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps );
+extern sql_rel *rel_dup_copy(sql_allocator *sa, sql_rel *rel);
 
 extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe);
 extern sql_rel *rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
-extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps);
+extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
 /* in case e is an constant and rel is a simple project of only e, free rel */
@@ -91,7 +100,7 @@ extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
 sql_export sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
-extern sql_rel *rel_project_exp(sql_allocator *sa, sql_exp *e);
+extern sql_rel *rel_project_exp(mvc *sql, sql_exp *e);
 extern sql_rel *rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps);
 
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
@@ -106,7 +115,7 @@ extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oex
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
-extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
+extern sql_exp *rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
 extern sql_rel *rel_parent(sql_rel *rel);

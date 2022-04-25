@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -27,34 +27,30 @@ res_table *
 res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t type, res_table *next, void *O)
 {
 	BAT *order = (BAT*)O;
-	res_table *t = ZNEW(res_table);
-	if(!t)
-		return NULL;
+	res_table *t = MNEW(res_table);
+	res_col *tcols = ZNEW_ARRAY(res_col, nr_cols);
 
 	(void) tr;
-	t->id = res_id;
-	t->query_id = query_id;
-	t->query_type = type;
-	t->nr_cols = nr_cols;
-	t->nr_rows = 0;
-	t->cur_col = 0;
-	t->cur_row = 0;
-	t->cols = NEW_ARRAY(res_col, nr_cols);
-	if(!t->cols) {
+	if (!t || !tcols) {
 		_DELETE(t);
+		_DELETE(tcols);
 		return NULL;
 	}
 
-	memset((char*) t->cols, 0, nr_cols * sizeof(res_col));
-	t->tsep = t->rsep = t->ssep = t->ns = NULL;
+	*t = (res_table) {
+		.id = res_id,
+		.query_id = query_id,
+		.query_type = type,
+		.cols = tcols,
+		.nr_cols = nr_cols,
+		.next = next,
+	};
 
-	t->order = 0;
 	if (order) {
 		t->order = order->batCacheid;
 		bat_incref(t->order);
 		t->nr_rows = BATcount(order);
 	}
-	t->next = next;
 	return t;
 }
 
@@ -103,8 +99,9 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 			}
 			t->order = o->batCacheid;
 			t->nr_rows = 1;
-			BBPkeepref(t->order);
+			BBPkeepref(o);
 		}
+		cached = true; /* simply keep memory pointer for this small bat */
 	}
 	c->b = b->batCacheid;
 	c->cached = cached;
@@ -112,8 +109,6 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		c->p = (void*)b;
 	else
 		bat_incref(c->b);
-	if (mtype != TYPE_bat)
-		BBPunfix(c->b);
 	t->cur_col++;
 	assert(t->cur_col <= t->nr_cols);
 	return c;
@@ -141,7 +136,8 @@ res_table_destroy(res_table *t)
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		res_col_destroy(c);
+		if (c)
+			res_col_destroy(c);
 	}
 	if (t->order)
 		bat_decref(t->order);

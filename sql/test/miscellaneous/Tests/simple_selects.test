@@ -238,15 +238,13 @@ NULL
 NULL
 NULL
 
-query RTIIIIII rowsort
+query RTIIIII rowsort
 select avg(10), avg(NULL),
-       patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL),
-       "hash"(null)
+       patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL)
 ----
 10.000
 NULL
 2
-NULL
 NULL
 NULL
 NULL
@@ -294,7 +292,7 @@ select cast(cast(1 as interval second) as boolean)
 statement error
 select cast(cast(1 as interval month) as boolean)
 
-query T rowsort
+query I rowsort
 select cast(null as blob) > cast(null as blob)
 ----
 NULL
@@ -334,7 +332,7 @@ select md5(null)
 ----
 NULL
 
-query TTTTTTTTTTTT rowsort
+query IIIIIIIIIIII rowsort
 select 'a' like null, null like 'a', null like null, 'a' ilike null, null ilike 'a', null ilike null,
        'a' not like null, null not like 'a', null not like null, 'a' not ilike null, null not ilike 'a', null not ilike null; --all NULL
 ----
@@ -357,7 +355,7 @@ create table x (x varchar(32))
 statement ok
 insert into x values (null), ('a')
 
-query TTTTTTTTTTTT rowsort
+query IIIIIIIIIIII rowsort
 select x like null, null like x, null like null, x ilike null, null ilike x, null ilike null,
        x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x
 ----
@@ -386,23 +384,23 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query I rowsort
 select x like null from x
 ----
 NULL
 NULL
 
-query TTTT rowsort
+query IIII rowsort
 select x like x, x ilike x, x not like x, x not ilike x from x
 ----
+1
+1
+0
+0
 NULL
 NULL
 NULL
 NULL
-True
-True
-False
-False
 
 query T rowsort
 select x1.x from x x1 inner join x x2 on x1.x not like x2.x
@@ -668,10 +666,10 @@ plan select x as z, 2 from (select 1) as x(x) group by z, z
 project (
 | group by (
 | | project (
-| | |  [ boolean "true" ]
-| | ) [ tinyint "1" as "x"."x" ]
+| | |  [ boolean(1) "true" as "%1"."%1" ]
+| | ) [ tinyint(1) "1" as "x"."x" ]
 | ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
-) [ "z" NOT NULL, tinyint "2" ]
+) [ "z" NOT NULL, tinyint(2) "2" ]
 
 statement error
 select x as z, y as z from (select 1, 2) as x(x,y) group by z
@@ -753,7 +751,7 @@ select ups()
 2
 
 statement ok
-create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; end
+create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; return 1; end
 
 query I rowsort
 select ups()
@@ -761,7 +759,7 @@ select ups()
 1
 
 statement ok
-create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; end
+create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; return 3; end
 
 query I rowsort
 select ups()
@@ -792,9 +790,6 @@ select "😀"()
 1
 
 statement ok
-rollback
-
-statement ok
 CREATE FUNCTION ups() RETURNS INT
 BEGIN
 	DECLARE "nononononononononononononononononononononononononononononononono" int;
@@ -804,16 +799,324 @@ END;  -- error for now
 statement error
 select ups()
 
-statement error
-create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2
+statement ok
+rollback
+
+statement ok
+create table thisnamewontconflict(y int, z int)
+
+statement ok rowcount 3
+insert into thisnamewontconflict values (1, 2), (9, 8), (5, 4)
+
+statement ok
+start transaction
+
+statement ok
+alter table thisnamewontconflict drop column y
+
+statement ok
+rollback
+
+statement ok
+drop table thisnamewontconflict
+
+statement ok
+start transaction
+
+statement ok
+CREATE OR REPLACE FUNCTION nasty() RETURNS BIGINT
+BEGIN
+	DECLARE TABLE atest (a int);
+	DECLARE res BIGINT;
+	INSERT INTO atest VALUES (1),(2),(3);
+	SELECT count(*) INTO res FROM atest;
+	RETURN res;
+END
+
+query I rowsort
+select nasty()
+----
+3
+
+statement ok
+create view v0(c0) as (select 1)
+
+statement ok
+create view v1(c0) as (select 1 + c0 from v0)
+
+statement error 42000!CREATE OR REPLACE VIEW: cannot replace VIEW 'v0', there are database objects which depend on it
+create or replace view v0(c0) as (select 'nope')
+
+statement ok
+rollback
+
+statement error CREATE FUNCTION: missing return statement
+CREATE FUNCTION wrongfunc() RETURNS INT
+BEGIN
+	WHILE (FALSE) DO
+		RETURN 1;
+	END WHILE;
+END
+
+statement error 42000!Null step size not allowed
+select * from generate_series(timestamp '2010-01-01', timestamp '2010-01-01', null)
 
 statement error
-select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"()
+select json 'iamwrongjson'
 
 statement error
-create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3
+select inet '192.168.1.0/26 thisstringshouldnotbehere'
 
-statement error
-select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"()
+statement error 42000!CREATE TABLE: any type (plain null value) not allowed as a column type, use an explicit cast
+create table x as (select null as sname)
 
+statement ok
+create function dosomething() returns int begin return 1; end
 
+query I rowsort
+select dosomething()
+----
+1
+
+statement ok
+start transaction
+
+statement ok
+drop function dosomething
+
+statement ok
+rollback
+
+# make sure the function has backend set if the transaction has to rollback
+query I rowsort
+select dosomething()
+----
+1
+
+statement ok
+drop function dosomething
+
+query II rowsort
+SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+1
+1
+2
+2
+3
+3
+
+# remove 'x1' from grouping columns list
+query T nosort
+plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+project (
+| group by (
+| |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x", "x"."x" as "x1" ]
+| ) [ "x"."x" ] [ "x"."x", "x1" ]
+) [ "x"."x", "x1" ]
+
+query II rowsort
+SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+1
+2
+2
+3
+3
+4
+
+# remove 'x1' from grouping columns list. This one is more complex
+query T nosort
+plan SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+----
+project (
+| group by (
+| | project (
+| | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
+| | ) [ "x"."x", "sys"."sql_add"("x"."x", tinyint(2) "1") as "x1" ]
+| ) [ "x"."x" ] [ "x"."x", "x1" ]
+) [ "x"."x", "x1" ]
+
+query II rowsort
+SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
+----
+1
+-7
+2
+-5
+3
+-3
+4
+-1
+5
+1
+
+# remove 'x1' from grouping columns list. This one is even more complex
+query T nosort
+plan SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
+----
+project (
+| group by (
+| | project (
+| | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
+| | ) [ "x"."x", "sys"."sql_add"("x"."x", tinyint(5) "10") as "%7"."%7", "sys"."sql_mul"("%7"."%7", tinyint(2) "2") as "%10"."%10", "sys"."sql_sub"("%10"."%10", smallint(10) "29") as "x1" ]
+| ) [ "x"."x" ] [ "x"."x", "x1" ]
+) [ "x"."x", "x1" ]
+
+query I nosort
+SELECT count(1) FROM (SELECT 0.642700575141694319114549216465093195438385009765 % 3) x(x) GROUP BY 2+(0+round(x.x, 1))
+----
+1
+
+query I nosort
+SELECT min(1) FROM (SELECT DISTINCT 1) x(x) GROUP BY 3 IS NOT NULL, 1 - CASE WHEN FALSE THEN 1 ELSE x.x END, 2 IS NULL
+----
+1
+
+query T nosort
+SELECT DISTINCT sql_sub(TIME '14:50:49', x.x) FROM (SELECT 1) y(y) CROSS JOIN (SELECT vx.x FROM (SELECT interval '7200' second) vx(x)) x(x)
+----
+12:50:49
+
+statement ok
+create global temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop table x
+
+statement ok
+create global temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop index tmp.ups
+
+statement ok
+drop table x
+
+statement ok
+create local temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop table x
+
+statement ok
+create local temp table x(x int, y int)
+
+statement ok
+CREATE INDEX ups ON tmp.x (x)
+
+statement ok
+drop index tmp.ups
+
+statement ok
+drop table x
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table foo (i int primary key)
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables
+create temp table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create temp table foo (i int primary key) on commit preserve rows
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables
+create table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table x (x int primary key)
+
+statement ok
+create table y (y int)
+
+statement ok
+create index ups on y(y)
+
+statement error 42000!CONSTRAINT FOREIGN KEY: an index named 'ups' already exists, and it would conflict with the key
+alter table y add constraint ups foreign key (y) references x (x)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table x (x int primary key)
+
+statement ok
+create table y (y int)
+
+statement ok
+alter table y add constraint ups2 foreign key (y) references x (x)
+
+statement error 42S11!CREATE INDEX: name 'ups2' already in use
+create index ups2 on y(y)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create unlogged table foo (i int primary key)
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables
+create table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table foo (i int primary key)
+
+statement error 42000!CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables
+create unlogged table bar (i int, FOREIGN KEY (i) REFERENCES foo(i))
+
+statement ok
+ROLLBACK
+
+# some private functions related errors
+statement error 42000!SELECT: no such binary operator 'scale_up'(decimal,tinyint)
+select scale_up(12.1, 10)
+
+statement error 42000!SELECT: no such unary operator 'sql_exists'(tinyint)
+select sql_exists(1)
+
+statement error 42000!CREATE FUNCTION: name 'scale_down' cannot be used
+create function scale_down(x decimal(8,2), y int) returns decimal(8,2) return 1
+
+statement error 42000!CREATE FUNCTION: name 'scale_down' cannot be used
+create or replace function scale_down(x decimal(8,2), y int) returns decimal(8,2) return 1
+
+statement error 42000!DROP FUNCTION: no such function 'any' (boolean, boolean, boolean)
+drop function "any"(boolean, boolean, boolean)

@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 DH_VERBOSE=1
 
@@ -13,6 +13,7 @@ DH_VERBOSE=1
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
+	-DPYTHON3_LIBDIR=lib/python3/dist-packages
 	-DCMAKE_INSTALL_RUNSTATEDIR=/run \
 	-DRELEASE_VERSION=ON \
 	-DASSERT=OFF \
@@ -30,7 +31,6 @@ override_dh_auto_configure:
 	-DTESTING=ON \
 	-DWITH_BZ2=ON \
 	-DWITH_CMOCKA=OFF \
-	-DWITH_CRYPTO=ON \
 	-DWITH_CURL=ON \
 	-DWITH_LZ4=ON \
 	-DWITH_LZMA=ON \
@@ -38,7 +38,6 @@ override_dh_auto_configure:
 	-DWITH_PROJ=OFF \
 	-DWITH_READLINE=ON \
 	-DWITH_SNAPPY=OFF \
-	-DWITH_UUID=ON \
 	-DWITH_VALGRIND=OFF \
 	-DWITH_XML2=ON \
 	-DWITH_ZLIB=ON

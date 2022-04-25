@@ -31,16 +31,16 @@ PREPARE SELECT ?, CASE 'weHtU' WHEN (values (?)) THEN 'G' END;
 PREPARE SELECT DISTINCT ?, CAST(CASE least(?, r'weHtU') WHEN ? THEN ? WHEN ? THEN ? WHEN (VALUES (?)) THEN r'G' ELSE ? END AS DATE) WHERE (?) IS NOT NULL LIMIT 519007555986016405;
 	-- cannot have a parameter for IS NOT NULL operator
 
-PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS l0t0(c0);
+PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * 2 FROM (select 1) AS l0t0(c0);
 
-PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
+PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(3)) FROM (select 1) AS l0t0(c0);
 
 PREPARE SELECT round(-'b', ?);
 PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
-PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second); -- error, types decimal(2,1) and sec_interval(13,0) are not equal
+PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second); -- error, cast integer to interval
 
 PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(' THEN NULL WHEN r')''CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
-WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);
+WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (12) IS NULL);
 
 PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
 
@@ -67,3 +67,32 @@ ROLLBACK;
 
 PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
 PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
+
+PREPARE SELECT 1 FROM idontexist(?,16); --error, function doesn't exist
+
+PREPARE WITH x(a) AS (SELECT ?) SELECT x.a FROM x; --error, cannot define type for the parameter
+PREPARE WITH x(a) AS (SELECT ?) SELECT CAST(x.a AS INT) FROM x;
+EXEC **(1);
+
+START TRANSACTION;
+CREATE TABLE t0 (c0 INT);
+-- In order to compute the OR, an identity function call is needed, but the projection only contains parameters
+PREPARE WITH x(x) AS (SELECT ?) SELECT 1 FROM x WHERE COALESCE(FALSE, TRUE) OR (SELECT TRUE FROM t0); --error
+ROLLBACK;
+
+PREPARE WITH y(a,b) AS (SELECT 1, ?) SELECT "json"."filter"(JSON '"a"', y.b) FROM y CROSS JOIN ((SELECT 1, 4) EXCEPT (SELECT 1,2)) x(x,y);
+
+PREPARE WITH y(a,b) AS (SELECT 1, ?) SELECT "json"."filter"(JSON '"a"', y.b) FROM ((SELECT 1, 4) EXCEPT (SELECT 1,2)) x(x,y) CROSS JOIN y;
+
+PREPARE SELECT 1 FROM (SELECT 1) x(x) LEFT OUTER JOIN (SELECT DISTINCT ?) y(y) ON (SELECT TRUE FROM (SELECT 1) z(z)); --error while unnesting because of unknown type
+
+START TRANSACTION;
+create or replace function mybooludf(a bool) returns bool return a;
+PREPARE (SELECT ?) EXCEPT (SELECT 'a' FROM (SELECT 1) x(x) JOIN ((SELECT FALSE) EXCEPT (SELECT ?)) y(y) ON sys.mybooludf(y.y));
+EXEC **('b',true);
+ROLLBACK;
+
+-- TODO it requires some internal changes to be able to set types on parameters used as freevars
+PREPARE SELECT 1 FROM (SELECT ?) x(x) CROSS JOIN LATERAL (SELECT 1 FROM ((SELECT 1) INTERSECT (SELECT 2)) vx(vx) JOIN (SELECT 1) z(z) ON x.x) w(w); --error, Could not determine type for argument number 1
+
+PREPARE SELECT 2 FROM (SELECT DISTINCT 1) z(z) LEFT OUTER JOIN LATERAL (SELECT z.z, ? WHERE TRUE) a(a,b) ON TRUE; --error, push_up_project requires a type

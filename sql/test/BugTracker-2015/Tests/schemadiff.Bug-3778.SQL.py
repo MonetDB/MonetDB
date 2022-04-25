@@ -4,7 +4,7 @@ Test if server doesn't crash when remote and local table definitions do not matc
 Current result is an mal error (compilation failed)
 """
 
-import os, sys, socket, pymonetdb, threading, tempfile
+import os, sys, pymonetdb, threading, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -28,13 +28,6 @@ tabledata = """
 INSERT INTO %SHARD% VALUES (42);
 """
 
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
 # load data (in parallel)
 def worker_load(workerrec):
     c = workerrec['conn'].cursor()
@@ -45,37 +38,34 @@ def worker_load(workerrec):
     c.execute(tabledata.replace("%SHARD%", stable))
 
 
-masterport = freeport()
-
 with tempfile.TemporaryDirectory() as tmpdir:
     os.mkdir(os.path.join(tmpdir, 'master'))
 
-    with process.server(mapiport=masterport, dbname="master",
+    with process.server(mapiport='0', dbname="master",
                         dbfarm=os.path.join(tmpdir, 'master'),
                         stdin=process.PIPE, stdout=process.PIPE) as masterproc:
-        masterconn = pymonetdb.connect(database='', port=masterport, autocommit=True)
+        masterconn = pymonetdb.connect(database='', port=masterproc.dbport, autocommit=True)
 
         try:
             # setup and start workers
             workers = []
             for i in range(nworkers):
-                workerport = freeport()
                 workerdbname = 'worker_' + str(i)
                 workerrec = {
                     'no'       : i,
-                    'port'     : workerport,
                     'dbname'   : workerdbname,
                     'dbfarm'   : os.path.join(tmpdir, workerdbname),
-                    'mapi'     : 'mapi:monetdb://localhost:{}/{}'.format(workerport, workerdbname),
                     'tpf'      : '_{}'.format(i)
                 }
                 workers.append(workerrec)
                 os.mkdir(workerrec['dbfarm'])
-                workerrec['proc'] = process.server(mapiport=workerrec['port'],
+                workerrec['proc'] = process.server(mapiport='0',
                                                    dbname=workerrec['dbname'],
                                                    dbfarm=workerrec['dbfarm'],
                                                    stdin=process.PIPE,
                                                    stdout=process.PIPE)
+                workerrec['port'] = workerrec['proc'].dbport
+                workerrec['mapi'] = 'mapi:monetdb://localhost:{}/{}'.format(workerrec['port'], workerdbname)
                 workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'],
                                                       port=workerrec['port'],
                                                       autocommit=True)
@@ -101,17 +91,20 @@ with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 c.execute("select * from " + shardtable + workers[0]['tpf'] )
                 sys.stderr.write('Exception expected')
-            except pymonetdb.OperationalError as e:
-                if 'Parameter 1 has wrong SQL type, expected int, but got bigint instead' not in str(e):
+            except pymonetdb.DatabaseError as e:
+                if 'Exception occurred in the remote server, please check the log there' not in str(e):
                    print(str(e))
             else:
                 print(str(c.fetchall()))
 
+            c.close()
             masterproc.communicate()
             for worker in workers:
                 workerrec['proc'].communicate()
         finally:
             for worker in workers:
+                workerrec['conn'].close()
                 p = workerrec.get('proc')
                 if p is not None:
                     p.terminate()
+            masterconn.close()

@@ -11,7 +11,7 @@ CREATE TABLE "t2664" (
 )
 
 statement ok
-COPY 30 RECORDS INTO "t2664" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+COPY 29 RECORDS INTO "t2664" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 2001	"schemas"	2000	NULL	0	true	0	false
 2006	"types"	2000	NULL	0	true	0	false
@@ -42,7 +42,6 @@ COPY 30 RECORDS INTO "t2664" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 5201	"queryhistory"	2000	NULL	0	true	0	false
 5215	"callhistory"	2000	NULL	0	true	0	false
 5232	"querylog"	2000	"create view querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;"	1	true	0	false
-5465	"systemfunctions"	2000	NULL	0	true	0	false
 
 query I rowsort
 with t(id) as (select id from "t2664")
@@ -80,7 +79,6 @@ select id from "t2664"
 5201
 5215
 5232
-5465
 
 query I rowsort
 with t(id) as (select id from "t2664"),
@@ -117,7 +115,6 @@ order by id
 5201
 5215
 5232
-5465
 
 statement ok
 drop table "t2664"

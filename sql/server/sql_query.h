@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _SQL_QUERY_H_
@@ -17,6 +17,7 @@ typedef struct stacked_query {
 	sql_rel *rel;
 	int sql_state;
 	sql_exp *last_used;
+	sql_exp *prev;
 	int used_card;
 	int grouped;
 	int groupby;
@@ -25,15 +26,21 @@ typedef struct stacked_query {
 typedef struct sql_query {
 	mvc *sql;
 	sql_stack *outer;
+	sql_rel *last_rel;
+	sql_exp *last_exp;
+	sql_exp *prev;
+	int last_state;
+	int last_card;
 } sql_query;
 
+extern void query_processed(sql_query *query);
 extern sql_query *query_create(mvc *sql);
 extern void query_push_outer(sql_query *q, sql_rel *r, int sql_state);
 extern sql_rel *query_pop_outer(sql_query *q);
 extern sql_rel *query_fetch_outer(sql_query *q, int i);
 extern int query_fetch_outer_state(sql_query *q, int i);
 extern void query_update_outer(sql_query *q, sql_rel *r, int i);
-extern int query_has_outer(sql_query *q); /* returns number of outer relations */
+extern unsigned int query_has_outer(sql_query *q); /* returns number of outer relations */
 
 extern int query_outer_used_exp(sql_query *q, int i, sql_exp *e, int f);
 extern void query_outer_pop_last_used(sql_query *q, int i);

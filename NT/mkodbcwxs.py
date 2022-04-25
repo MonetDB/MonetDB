@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 # python mkodbcwxs.py VERSION BITS PREFIX > PREFIX/MonetDB-ODBC-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB-ODBC-Installer.wxs
@@ -34,21 +34,27 @@ def main():
     if sys.argv[2] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
-        libcrypto = '-x64'
         vcpkg = r'C:\vcpkg\installed\x64-windows\{}'
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
-        libcrypto = ''
         vcpkg = r'C:\vcpkg\installed\x86-windows\{}'
-    with open('CMakeCache.txt') as cache:
-        for line in cache:
-            if line.startswith('CMAKE_GENERATOR_INSTANCE:INTERNAL='):
-                comdir = line.split('=', 1)[1].strip().replace('/', '\\')
-                break
+    vcdir = os.getenv('VCINSTALLDIR')
+    if vcdir is None:
+        vsdir = os.getenv('VSINSTALLDIR')
+        if vsdir is not None:
+            vcdir = os.path.join(vsdir, 'VC')
+    if vcdir is None:
+        if os.path.exists(r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'):
+            vcdir = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'
+        elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
+            vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'
+        elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'):
+            vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'
         else:
-            comdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community'
-    msvc = os.path.join(comdir, r'VC\Redist\MSVC')
+            print(r"Don't know which visual studio directory to use")
+            return 1
+    msvc = os.path.join(vcdir, r'Redist\MSVC')
     features = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
@@ -76,16 +82,15 @@ def main():
     id = 1
     print(r'            <Directory Id="lib" Name="lib">')
     id = comp(features, id, 14,
-              [r'bin\mapi.dll', # r'lib\mapi.pdb',
-               r'lib\MonetODBC.dll', # r'lib\MonetODBC.pdb',
-               r'lib\MonetODBCs.dll', # r'lib\MonetODBCs.pdb',
-               r'bin\stream.dll', # r'lib\stream.pdb',
+              [r'bin\mapi.dll', r'lib\mapi.pdb',
+               r'lib\MonetODBC.dll', r'lib\MonetODBC.pdb',
+               r'lib\MonetODBCs.dll', r'lib\MonetODBCs.pdb',
+               r'bin\stream.dll', r'lib\stream.pdb',
                vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
-               vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\lz4.dll'),
-               vcpkg.format(r'bin\lzma.dll'),
+               vcpkg.format(r'bin\liblzma.dll'),
                vcpkg.format(r'bin\zlib1.dll')])
     print(r'            </Directory>')
     id = comp(features, id, 12,

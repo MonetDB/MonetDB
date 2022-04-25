@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -169,7 +169,7 @@ ssize_t
 bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	ssize_t ret = bs_read_internal(ss, buf, elmsize, cnt);
-	if (ret != 0)
+	if (ret != 0 || ss->eof)
 		return ret;
 
 	bs *b = (bs*) ss-> stream_data.p;
@@ -222,6 +222,7 @@ bs_read_internal(stream *restrict ss, void *restrict buf, size_t elmsize, size_t
 			mnstr_copy_error(ss, ss->inner);
 			return -1;
 		case 0:
+			ss->eof |= ss->inner->eof;
 			return 0;
 		case 1:
 			break;
@@ -251,6 +252,7 @@ bs_read_internal(stream *restrict ss, void *restrict buf, size_t elmsize, size_t
 			ssize_t m = ss->inner->read(ss->inner, buf, 1, n);
 
 			if (m <= 0) {
+				ss->eof |= ss->inner->eof;
 				mnstr_copy_error(ss, ss->inner);
 				return -1;
 			}
@@ -288,6 +290,7 @@ bs_read_internal(stream *restrict ss, void *restrict buf, size_t elmsize, size_t
 				mnstr_copy_error(ss, ss->inner);
 				return -1;
 			case 0:
+				ss->eof |= ss->inner->eof;
 				return 0;
 			case 1:
 				break;

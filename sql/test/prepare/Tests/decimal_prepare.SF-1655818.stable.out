@@ -21,7 +21,7 @@ stdout of test 'decimal_prepare.SF-1655818` in directory 'sql/test/BugTracker` i
 #PREPARE insert into P1655818 (time,x,y) values (?,?,?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 9,	1,	1,	0,	0,	0 # length
 [ "timestamp",	7,	0,	NULL,	NULL,	NULL	]
 [ "decimal",	5,	2,	NULL,	NULL,	NULL	]

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -248,17 +248,10 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 static str
 OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str modnme;
-	str fcnnme;
-	str msg= MAL_SUCCEED;
-	Symbol s= NULL;
-	char buf[256];
-	lng clk= GDKusec();
+	str modnme, fcnnme, msg = MAL_SUCCEED;
+	Symbol s = NULL;
 	int actions = 0;
 
-	(void) cntxt;
-	if( p )
-		removeInstruction(mb, p);
 #ifdef DEBUG_OPT_OPTIMIZERS
 	mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER sql_append\n");
 #endif
@@ -279,11 +272,8 @@ OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		}
 		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
-		if( s == NULL) {
-			char buf[1024];
-			snprintf(buf,1024, "%s.%s",modnme,fcnnme);
-			throw(MAL, "optimizer.sql_append", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
-		}
+		if( s == NULL)
+			throw(MAL, "optimizer.sql_append", RUNTIME_OBJECT_UNDEFINED ":%s.%s",modnme,fcnnme);
 		mb = s->def;
 		stk= 0;
 	}
@@ -292,21 +282,21 @@ OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		addtoMalBlkHistory(mb);
 		return MAL_SUCCEED;
 	}
-	actions= OPTsql_appendImplementation(cntxt, mb,stk,p);
+	actions = OPTsql_appendImplementation(cntxt, mb,stk,p);
 
-    /* Defense line against incorrect plans */
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
-	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+	/* Defense line against incorrect plans */
+	if( actions > 0 && msg == MAL_SUCCEED){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if( msg == MAL_SUCCEED) msg = chkFlow(mb);
+		if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+	}
 #ifdef DEBUG_OPT_OPTIMIZERS
-		mnstr_printf(cntxt->fdout,"=FINISHED sql_append %d\n",actions);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL );
-		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
+	mnstr_printf(cntxt->fdout,"=FINISHED sql_append %d\n",actions);
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL );
+	mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
 #endif
-	clk = GDKusec()- clk;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","optimizer.sql_append",actions, clk);
-    newComment(mb,buf);
-	addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, p, actions);
 	return msg;
 }
 

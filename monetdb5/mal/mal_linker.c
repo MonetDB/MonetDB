@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -45,7 +45,11 @@ static int maxfiles = MAXMODULES;
 static int lastfile = 0;
 
 #ifndef O_CLOEXEC
+#ifdef _O_NOINHERIT
+#define O_CLOEXEC _O_NOINHERIT	/* Windows */
+#else
 #define O_CLOEXEC 0
+#endif
 #endif
 
 /*
@@ -264,7 +268,30 @@ loadLibrary(const char *filename, int flag)
 	}
 
 	if (handle == NULL) {
-		if (flag)
+		if (strcmp(filename, "monetdb5") != 0 && strcmp(filename, "sql") != 0
+			&& strcmp(filename, "generator") != 0
+#ifdef HAVE_GEOM
+			&& strcmp(filename, "geom") != 0
+#endif
+#ifdef HAVE_LIBR
+			&& strcmp(filename, "rapi") != 0
+#endif
+#ifdef HAVE_LIBPY3
+			&& strcmp(filename, "pyapi3") != 0
+#endif
+#ifdef HAVE_CUDF
+			&& strcmp(filename, "capi") != 0
+#endif
+#ifdef HAVE_FITS
+			&& strcmp(filename, "fits") != 0
+#endif
+#ifdef HAVE_NETCDF
+			&& strcmp(filename, "netcdf") != 0
+#endif
+#ifdef HAVE_SHP
+			&& strcmp(filename, "shp") != 0
+#endif
+			)
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not locate library %s (from within file '%s'): %s", s, filename, dlerror());
 	}
 

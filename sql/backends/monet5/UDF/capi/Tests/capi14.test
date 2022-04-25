@@ -31,7 +31,7 @@ CREATE TABLE vals(i INTEGER, j REAL, k DOUBLE)
 statement ok
 INSERT INTO vals VALUES (1, NULL, 1), (NULL, 2, 2), (3, 3, NULL), (NULL, NULL, NULL), (5, 5, 5)
 
-query ITRR rowsort
+query IRRR rowsort
 SELECT i, j, k, capi14(i, j, k) FROM vals
 ----
 1
@@ -39,15 +39,15 @@ NULL
 1.000
 1.000
 3
-3.0
+3.000
 NULL
 5.000
 5
-5.0
+5.000
 5.000
 15.000
 NULL
-2.0
+2.000
 2.000
 3.000
 NULL

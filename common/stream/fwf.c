@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -55,13 +55,14 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 				if (actually_read < 0) {
 					return actually_read;	/* this is an error */
 				}
-				fsd->eof = true;
+				fsd->eof |= fsd->s->eof;
 				return (ssize_t) buf_written;	/* skip last line */
 			}
 			/* consume to next newline */
 			while (fsd->s->read(fsd->s, &nl_buf, 1, 1) == 1 &&
 			       nl_buf != '\n')
 				;
+			fsd->eof |= fsd->s->eof;
 
 			for (field_idx = 0; field_idx < fsd->num_fields; field_idx++) {
 				char *val_start, *val_end;
@@ -148,21 +149,18 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 	}
 	fsd->in_buf = malloc(fsd->line_len);
 	if (fsd->in_buf == NULL) {
-		close_stream(fsd->s);
 		free(fsd);
 		mnstr_set_open_error(STREAM_FWF_NAME, errno, NULL);
 		return NULL;
 	}
 	fsd->out_buf = malloc(fsd->line_len * 3);
 	if (fsd->out_buf == NULL) {
-		close_stream(fsd->s);
 		free(fsd->in_buf);
 		free(fsd);
 		mnstr_set_open_error(STREAM_FWF_NAME, errno, NULL);
 		return NULL;
 	}
 	if ((ns = create_stream(STREAM_FWF_NAME)) == NULL) {
-		close_stream(fsd->s);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
 		free(fsd);

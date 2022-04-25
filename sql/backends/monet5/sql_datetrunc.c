@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -67,7 +67,8 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 		throw(SQL, "sql.truncate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	bt = (const timestamp *) Tloc(b, 0);
+	BATiter bi = bat_iterator(b);
+	bt = (const timestamp *) bi.base;
 	dt = (timestamp *) Tloc(bn, 0);
 
 	lo = 0;
@@ -165,15 +166,18 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
+	bool btnonil = bi.nonil, btnil = bi.nil, btsorted = bi.sorted, btrevsorted = bi.revsorted;
+	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
 	BATsetcount(bn, (BUN) lo);
 	/* we can inherit most properties */
-	bn->tnonil = b->tnonil;
-	bn->tnil = b->tnil;
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
+	bn->tnonil = btnonil;
+	bn->tnil = btnil;
+	bn->tsorted = btsorted;
+	bn->trevsorted = btrevsorted;
 	bn->tkey = false;	/* can't be sure */
-	BBPkeepref(*res = bn->batCacheid);
-	BBPunfix(b->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return msg;
 }
 

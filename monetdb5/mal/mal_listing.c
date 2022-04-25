@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -142,7 +142,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb,varid)) && stk->stk[varid].val.bval ){
-				BAT *d= BBPquickdesc(stk->stk[varid].val.bval, true);
+				BAT *d= BBPquickdesc(stk->stk[varid].val.bval);
 				if( d)
 					len += snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
 			}
@@ -617,23 +617,26 @@ printSignature(stream *fd, Symbol s, int flg)
 void showMalBlkHistory(stream *out, MalBlkPtr mb)
 {
 	MalBlkPtr m=mb;
-	InstrPtr p,sig;
-	int j=0;
+	InstrPtr p = NULL,sig;
+	int i, j=0;
 	str msg;
 
 	sig = getInstrPtr(mb,0);
 	m= m->history;
 	while(m){
-		p= getInstrPtr(m,m->stop-1);
-		if( p->token == REMsymbol){
-			msg= instruction2str(m, 0, p, FALSE);
-			if (msg ) {
-				mnstr_printf(out,"%s.%s[%2d] %s\n",
-					getModuleId(sig), getFunctionId(sig),j++,msg+3);
-				GDKfree(msg);
-			} else {
-				mnstr_printf(out,"#failed instruction2str()\n");
-			}
+		// find the last optimizer step
+		for( i= m->stop -1; i>0; i--){
+			p= getInstrPtr(m,i);
+			if( p->argc > 1)
+				break;
+		}
+		msg= instruction2str(m, 0, p, FALSE);
+		if (msg ) {
+			mnstr_printf(out,"%s.%s[%2d] %s\n",
+				getModuleId(sig), getFunctionId(sig),j++,msg+3);
+			GDKfree(msg);
+		} else {
+			mnstr_printf(out,"#failed instruction2str()\n");
 		}
 		m= m->history;
 	}

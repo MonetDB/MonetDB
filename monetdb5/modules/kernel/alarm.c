@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -49,11 +49,13 @@ ALARMusec(lng *ret)
 	do { \
 		for (i = 0; i < j ; i++) { \
 			if (is_##TPE##_nil(bb[i])) { \
+				bat_iterator_end(&bi); \
 				BBPreclaim(r); \
 				BBPunfix(b->batCacheid); \
 				throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
 			} \
 			if (bb[i] < 0) { \
+				bat_iterator_end(&bi); \
 				BBPreclaim(r); \
 				BBPunfix(b->batCacheid); \
 				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
@@ -81,10 +83,12 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(b = BATdescriptor(*bid)))
 			throw(MAL, "alarm.sleepr", SQLSTATE(HY005) "Cannot access column descriptor");
 
-		j = BATcount(b);
-		bb = Tloc(b, 0);
+		BATiter bi = bat_iterator(b);
+		j = bi.count;
+		bb = bi.base;
 
 		if (!(r = COLnew(0, tpe, j, TRANSIENT))) {
+			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 			throw(MAL, "alarm.sleepr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -101,14 +105,17 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				SLEEP_MULTI(int);
 				break;
 			default: {
+				bat_iterator_end(&bi);
 				BBPreclaim(r);
 				BBPunfix(b->batCacheid);
 				throw(MAL, "alarm.sleepr", SQLSTATE(42000) "Sleep function not available for type %s", ATOMname(tpe));
 			}
 		}
+		bat_iterator_end(&bi);
 
 		BBPunfix(b->batCacheid);
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else {
 		switch (getArgType(mb, pci, 1)) {
 			case TYPE_bte:

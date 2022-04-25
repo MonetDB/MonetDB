@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef SQL_HASH_H
@@ -30,10 +30,14 @@ typedef struct sql_hash {
 	int size; /* power of 2 */
 	sql_hash_e **buckets;
 	fkeyvalue key;
+	int entries;
 } sql_hash;
 
 extern sql_hash *hash_new(sql_allocator *sa, int size, fkeyvalue key);
+extern int hash_entries(sql_hash *h);
+extern int hash_empty(sql_hash *h);
 extern void hash_del(sql_hash *ht, int key, void *value);
+extern void hash_clear(sql_hash *h);
 extern void hash_destroy(sql_hash *h);
 
 static inline sql_hash_e*
@@ -47,6 +51,7 @@ hash_add(sql_hash *h, int key, void *value)
 	h->buckets[key&(h->size-1)] = e;
 	e->key = key;
 	e->value = value;
+	h->entries++;
 	return e;
 }
 

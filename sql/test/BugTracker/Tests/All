@@ -14,10 +14,11 @@ intersect_in_subquery.SF-1339411
 rows_affected.SF-1377180
 broken_join.SF-1373391
 insert_not_exists.SF-1380287
-authorization.SF-1430616
+authorization.SF-1430616-1
+USER=voc&PASSWD=voc?authorization.SF-1430616-2
+authorization.SF-1430616-3
 mapi_connect_errors_vanish.SF-1432134
 create_column_name_data.SF-1440214
-connect_crash.SF-1436626
 drop_schema_crash.SF-1504794
 set_session_vars.SF-1505987
 reset_session_vars.SF-1505987

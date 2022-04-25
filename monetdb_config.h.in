@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 /* monetdb_config.h.in.  Generated from CMakeLists.txt  */
 
@@ -13,7 +13,7 @@
 #ifdef _MSC_VER
 
 #if _MSC_VER < 1900
-#error Versions bellow Visual Studio 2015 are no longer supported
+#error Versions below Visual Studio 2015 are no longer supported
 #endif
 
 /* Prevent pollution through excessive inclusion of include files by Windows.h. */
@@ -25,6 +25,9 @@
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
+
+#define _CRT_RAND_S				/* for Windows rand_s, before stdlib.h */
+#define HAVE_RAND_S 1
 
 #endif
 
@@ -97,6 +100,7 @@
 #cmakedefine HAVE_SYS_SYSCTL_H 1
 #cmakedefine HAVE_SYS_MMAN_H 1
 #cmakedefine HAVE_SYS_PARAM_H 1
+#cmakedefine HAVE_SYS_RANDOM_H 1
 #cmakedefine HAVE_SYS_RESOURCE_H 1
 #cmakedefine HAVE_SYS_TIME_H 1
 #cmakedefine HAVE_SYS_TIMES_H 1
@@ -105,7 +109,6 @@
 #cmakedefine HAVE_SYS_WAIT_H 1
 #cmakedefine HAVE_TERMIOS_H 1
 #cmakedefine HAVE_UNISTD_H 1
-#cmakedefine HAVE_UUID_UUID_H 1
 #cmakedefine HAVE_WINSOCK_H 1
 #cmakedefine HAVE_SEMAPHORE_H 1
 #cmakedefine HAVE_GETOPT_H 1
@@ -127,6 +130,7 @@
 #cmakedefine HAVE_FORK 1
 #cmakedefine HAVE_FSYNC 1
 #cmakedefine HAVE_FTIME 1
+#cmakedefine HAVE_GETENTROPY 1
 #cmakedefine HAVE_GETEXECNAME 1
 #cmakedefine HAVE_GETLOGIN 1
 #cmakedefine HAVE_GETOPT_LONG 1
@@ -176,8 +180,6 @@
 #cmakedefine HAVE_ICONV 1
 #cmakedefine HAVE_PTHREAD_H 1
 #cmakedefine HAVE_LIBPCRE 1
-#cmakedefine HAVE_OPENSSL 1
-#cmakedefine HAVE_COMMONCRYPTO 1
 #cmakedefine HAVE_LIBBZ2 1
 #cmakedefine HAVE_CURL 1
 #cmakedefine HAVE_LIBLZMA 1
@@ -187,7 +189,6 @@
 #cmakedefine HAVE_PROJ 1
 #cmakedefine HAVE_SNAPPY 1
 #cmakedefine HAVE_FITS 1
-#cmakedefine HAVE_UUID 1
 #cmakedefine HAVE_VALGRIND 1
 #cmakedefine HAVE_NETCDF 1
 #cmakedefine HAVE_READLINE 1
@@ -251,6 +252,10 @@
 #define STREAM_VERSION_MAJOR @STREAM_VERSION_MAJOR@
 #define STREAM_VERSION_MINOR @STREAM_VERSION_MINOR@
 #define STREAM_VERSION_PATCH @STREAM_VERSION_PATCH@
+#define SQL_VERSION "@SQL_VERSION@"
+#define SQL_VERSION_MAJOR @SQL_VERSION_MAJOR@
+#define SQL_VERSION_MINOR @SQL_VERSION_MINOR@
+#define SQL_VERSION_PATCH @SQL_VERSION_PATCH@
 
 /* Host identifier */
 #cmakedefine HOST "@HOST@"
@@ -261,24 +266,26 @@
 /* The used password hash algorithm */
 #define MONETDB5_PASSWDHASH_TOKEN @PASSWORD_BACKEND@
 
-#cmakedefine HAVE_MD5_UPDATE 1
-#cmakedefine HAVE_RIPEMD160_UPDATE 1
-#cmakedefine HAVE_SHA1_UPDATE 1
-#cmakedefine HAVE_SHA224_UPDATE 1
-#cmakedefine HAVE_SHA256_UPDATE 1
-#cmakedefine HAVE_SHA384_UPDATE 1
-#cmakedefine HAVE_SHA512_UPDATE 1
-
 #ifndef _Noreturn
+#ifdef __cplusplus
+#define _Noreturn
+#else
 #cmakedefine _Noreturn @_Noreturn@
 #endif
-#ifndef __cplusplus
+#endif
 /* Does your compiler support `inline' keyword? (C99 feature) */
 #ifndef inline
+#ifdef __cplusplus
+#define inline
+#else
 #cmakedefine inline @inline@
+#endif
 #endif
 /* Does your compiler support `restrict' keyword? (C99 feature) */
 #ifndef restrict
+#ifdef __cplusplus
+#define restrict
+#else
 #cmakedefine restrict @restrict@
 #endif
 #endif
@@ -295,7 +302,7 @@
 #cmakedefine SIZEOF_SHORT @SIZEOF_SHORT@
 #cmakedefine SIZEOF_INT @SIZEOF_INT@
 #cmakedefine SIZEOF_LONG @SIZEOF_LONG@
-#cmakedefine SIZEOF_LONG_INT @SIZEOF_LONG_INT@
+#cmakedefine SIZEOF_LONG_LONG @SIZEOF_LONG_LONG@
 #cmakedefine SIZEOF_DOUBLE @SIZEOF_DOUBLE@
 #cmakedefine SIZEOF_WCHAR_T @SIZEOF_WCHAR_T@
 #define HAVE_LONG_LONG 1	/* for ODBC include files */
@@ -327,16 +334,21 @@
 /* The size of `__uint128_t', as computed by sizeof. */
 #cmakedefine SIZEOF___UINT128_T @SIZEOF___UINT128_T@
 
-#ifdef SIZEOF___INT128
+#cmakedefine HAVE___INT128 1
+#cmakedefine HAVE___INT128_T 1
+#cmakedefine HAVE___UINT128_T 1
+#cmakedefine HAVE_HGE 1
+
+#ifdef HAVE_HGE
+#ifdef HAVE___INT128
 typedef __int128 hge;
 typedef unsigned __int128 uhge;
-#define HAVE_HGE 1
 #define SIZEOF_HGE SIZEOF___INT128
-#elif defined(SIZEOF___INT128_T) && defined(SIZEOF___UINT128_T)
+#elif defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t hge;
 typedef __uint128_t uhge;
-#define HAVE_HGE 1
 #define SIZEOF_HGE SIZEOF___INT128_T
+#endif
 #endif
 
 // End Section: monetdb configure sizes
@@ -454,7 +466,7 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #endif
 #else
 #define LIB_STARTUP_FUNC(f) \
-        static void f(void) __attribute__((constructor)); \
+        static void f(void) __attribute__((__constructor__)); \
         static void f(void)
 #endif
 

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -24,24 +24,6 @@ _list_find_name(list *l, const char *name)
 	node *n;
 
 	if (l) {
-		MT_lock_set(&l->ht_lock);
-		if ((!l->ht || l->ht->size*16 < list_length(l)) && list_length(l) > HASH_MIN_SIZE && l->sa) {
-			l->ht = hash_new(l->sa, list_length(l), (fkeyvalue)&base_key);
-			if (l->ht == NULL) {
-				MT_lock_unset(&l->ht_lock);
-				return NULL;
-			}
-
-			for (n = l->h; n; n = n->next ) {
-				sql_base *b = n->data;
-				int key = base_key(b);
-
-				if (hash_add(l->ht, key, b) == NULL) {
-					MT_lock_unset(&l->ht_lock);
-					return NULL;
-				}
-			}
-		}
 		if (l->ht) {
 			int key = hash_key(name);
 			sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)];
@@ -50,14 +32,11 @@ _list_find_name(list *l, const char *name)
 				sql_base *b = he->value;
 
 				if (b->name && strcmp(b->name, name) == 0) {
-					MT_lock_unset(&l->ht_lock);
 					return b;
 				}
 			}
-			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
-		MT_lock_unset(&l->ht_lock);
 		for (n = l->h; n; n = n->next) {
 			sql_base *b = n->data;
 
@@ -73,12 +52,15 @@ _list_find_name(list *l, const char *name)
 void
 trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
 {
-	sql_change *change = SA_ZNEW(tr->sa, sql_change);
-	change->obj = b;
-	change->data = data;
-	change->cleanup = cleanup;
-	change->commit = commit;
-	change->log = log;
+	sql_change *change = SA_NEW(tr->sa, sql_change);
+
+	*change = (sql_change) {
+		.obj = b,
+		.data = data,
+		.cleanup = cleanup,
+		.commit = commit,
+		.log = log,
+	};
 	MT_lock_set(&tr->lock);
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	if (log)
@@ -184,6 +166,22 @@ sql_trans_find_key(sql_trans *tr, sqlid id)
 	return NULL;
 }
 
+sql_key *
+schema_find_key(sql_trans *tr, sql_schema *s, const char *name)
+{
+	sql_base *b = os_find_name(s->keys, tr, name);
+
+	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
+		for(node *n = tr->localtmps.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			sql_key *o = find_sql_key(t, name);
+			if (o)
+				return o;
+		}
+	}
+	return (sql_key*)b;
+}
+
 sql_idx *
 find_sql_idx(sql_table *t, const char *iname)
 {
@@ -205,6 +203,22 @@ sql_trans_find_idx(sql_trans *tr, sqlid id)
 			return (sql_idx*)bi;
 	}
 	return NULL;
+}
+
+sql_idx *
+schema_find_idx(sql_trans *tr, sql_schema *s, const char *name)
+{
+	sql_base *b = os_find_name(s->idxs, tr, name);
+
+	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
+		for(node *n = tr->localtmps.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			sql_idx *o = find_sql_idx(t, name);
+			if (o)
+				return o;
+		}
+	}
+	return (sql_idx*)b;
 }
 
 sql_column *
@@ -329,6 +343,15 @@ sql_trans_find_func(sql_trans *tr, sqlid id)
 	return NULL;
 }
 
+static sql_trigger *
+find_sql_trigger(sql_table *t, const char *tname)
+{
+	node *n = ol_find_name(t->triggers, tname);
+	if (n)
+		return n->data;
+	return NULL;
+}
+
 sql_trigger *
 sql_trans_find_trigger(sql_trans *tr, sqlid id)
 {
@@ -341,6 +364,22 @@ sql_trans_find_trigger(sql_trans *tr, sqlid id)
 			return (sql_trigger*)bt;
 	}
 	return NULL;
+}
+
+sql_trigger *
+schema_find_trigger(sql_trans *tr, sql_schema *s, const char *name)
+{
+	sql_base *b = os_find_name(s->triggers, tr, name);
+
+	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
+		for(node *n = tr->localtmps.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			sql_trigger *o = find_sql_trigger(t, name);
+			if (o)
+				return o;
+		}
+	}
+	return (sql_trigger*)b;
 }
 
 void*
@@ -494,4 +533,66 @@ nested_mergetable(sql_trans *tr, sql_table *mt, const char *sname, const char *t
 			return 1;
 	}
 	return 0;
+}
+
+bool
+is_column_unique(sql_column *c)
+{
+	/* is it a primary key column itself? */
+	if (c->t->pkey && list_length(c->t->pkey->k.columns) == 1 && ((sql_kc*)c->t->pkey->k.columns->h->data)->c->base.id == c->base.id)
+		return true;
+	/* is it a unique key itself */
+	return c->unique == 2;
+}
+
+ValPtr
+SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
+{
+	if (sa == NULL)
+		return VALcopy(d, s);
+	if (!ATOMextern(s->vtype)) {
+		*d = *s;
+	} else if (s->val.pval == 0) {
+		const void *p = ATOMnilptr(s->vtype);
+		d->vtype = s->vtype;
+		d->len = ATOMlen(d->vtype, p);
+		d->val.pval = sa_alloc(sa, d->len);
+		if (d->val.pval == NULL)
+			return NULL;
+		memcpy(d->val.pval, p, d->len);
+	} else if (s->vtype == TYPE_str) {
+		const char *p = s->val.sval;
+		d->vtype = TYPE_str;
+		d->len = strLen(p);
+		d->val.sval = sa_alloc(sa, d->len);
+		if (d->val.sval == NULL)
+			return NULL;
+		memcpy(d->val.sval, p, d->len);
+	} else {
+		const void *p = s->val.pval;
+		d->vtype = s->vtype;
+		d->len = ATOMlen(d->vtype, p);
+		d->val.pval = sa_alloc(sa, d->len);
+		if (d->val.pval == NULL)
+			return NULL;
+		memcpy(d->val.pval, p, d->len);
+	}
+	return d;
+}
+
+atom *
+atom_copy(sql_allocator *sa, atom *a)
+{
+	atom *r = sa ?SA_NEW(sa, atom):MNEW(atom);
+	if (!r)
+		return NULL;
+
+	*r = (atom) {
+		.isnull = a->isnull,
+		.tpe = a->tpe,
+		.data = (ValRecord) {.vtype = TYPE_void,},
+	};
+	if (!a->isnull)
+		SA_VALcopy(sa, &r->data, &a->data);
+	return r;
 }

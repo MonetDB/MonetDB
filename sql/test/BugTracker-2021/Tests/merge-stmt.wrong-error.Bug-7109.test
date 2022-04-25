@@ -27,4 +27,3 @@ b
 statement ok
 rollback
 
-

@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 add_executable(mserver5)
@@ -35,8 +35,6 @@ configure_file(monet_version.c.in
 target_include_directories(mserver5
   PRIVATE
   $<$<BOOL:${LibXml2_FOUND}>:$<TARGET_PROPERTY:LibXml2::LibXml2,INTERFACE_INCLUDE_DIRECTORIES>>
-  $<$<BOOL:${COMMONCRYPTO_FOUND}>:${COMMONCRYPTO_INCLUDE_DIR}>
-  $<$<BOOL:${OPENSSL_FOUND}>:$<TARGET_PROPERTY:OpenSSL::Crypto,INTERFACE_INCLUDE_DIRECTORIES>>
   $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:sql,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
@@ -52,6 +50,7 @@ target_link_libraries(mserver5
   monetdb5
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
+  $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>
   Threads::Threads)
 
 add_executable(shutdowntest)
@@ -81,6 +80,7 @@ target_link_libraries(shutdowntest
   bat
   stream
   monetdb5
+  $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   Threads::Threads)
 
@@ -126,5 +126,13 @@ install(FILES
   DESTINATION
   ${CMAKE_INSTALL_DOCDIR}
   COMPONENT server)
+
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:mserver5>
+    $<TARGET_PDB_FILE:shutdowntest>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    OPTIONAL)
+endif()
 
 # vim: set ts=2:sw=2:et

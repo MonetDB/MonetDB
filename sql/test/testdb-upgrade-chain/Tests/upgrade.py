@@ -16,7 +16,7 @@ xit = 0
 # find zipped database
 dbfarm = os.environ['GDK_DBFARM']
 db = os.path.join(dbfarm, os.environ['TSTDB'])
-archive = os.path.join(dbfarm, 'prevchainrel.zip')
+archive = os.path.join(dbfarm, 'lastchainrel.zip')
 if not os.path.exists(archive):
     print('file "{}" not found'.format(archive), file=sys.stderr)
     sys.exit(1)

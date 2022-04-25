@@ -82,3 +82,6 @@ try:
             sys.stderr.write('2 rows inserted expected')
 finally:
     cursor.execute('drop table python_table')
+
+cursor.close()
+dbh.close()

@@ -1,0 +1,12 @@
+statement ok
+REVOKE DELETE on schemaTest.testTable from user_delete
+
+statement ok
+REVOKE INSERT on schemaTest.testTable from user_insert
+
+statement ok
+REVOKE UPDATE on schemaTest.testTable from user_update
+
+statement ok
+REVOKE SELECT on schemaTest.testTable from user_select
+

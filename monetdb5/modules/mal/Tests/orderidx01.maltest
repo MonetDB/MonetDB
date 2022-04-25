@@ -1,7 +1,4 @@
 statement ok
-include orderidx
-
-statement ok
 bv:= bat.new(:int)
 
 statement ok

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -29,12 +29,12 @@ static int
 pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
-	if ((BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0) || BATroles(b,X2) != GDK_SUCCEED) {
+	if ((BBPindex(buf) <= 0 && BBPrename(b, buf) != 0) || BATroles(b,X2) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return -1;
 	}
 	*ret = b->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 	return -0;
 }
 
@@ -77,7 +77,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.bind", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	BBPkeepref(b->batCacheid);
+	BBPkeepref(b);
 	lhs->vtype = TYPE_bat;
 	lhs->val.bval = i;
 	return MAL_SUCCEED;
@@ -419,7 +419,7 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCA
 	}
 	for (i = 1; i < sz; i++) {
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-			bn = BATdescriptor(i);
+			bn = BBP_desc(i);
 			if (bn) {
 				lng l = BATcount(bn);
 				int heat_ = 0, len;
@@ -437,34 +437,43 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCA
 				}
 				if (BUNappend(id, &i, false) != GDK_SUCCEED ||
 					BUNappend(ns, BBP_logical(i), false) != GDK_SUCCEED ||
-					BUNappend(tt, BATatoms[BATttype(bn)].name, false) != GDK_SUCCEED ||
+					BUNappend(tt, BATatoms[bn->ttype].name, false) != GDK_SUCCEED ||
 					BUNappend(cnt, &l, false) != GDK_SUCCEED ||
 					BUNappend(refcnt, &refs, false) != GDK_SUCCEED ||
 					BUNappend(lrefcnt, &lrefs, false) != GDK_SUCCEED ||
 					BUNappend(location, buf, false) != GDK_SUCCEED ||
 					BUNappend(heat, &heat_, false) != GDK_SUCCEED ||
-					BUNappend(dirty, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED ||
+					BUNappend(dirty, BBP_cache(i) ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED ||
 					BUNappend(status, loc, false) != GDK_SUCCEED ||
 					BUNappend(kind, mode, false) != GDK_SUCCEED) {
-					BBPunfix(bn->batCacheid);
 					msg = createException(MAL, "catalog.bbp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
-				BBPunfix(bn->batCacheid);
 			}
 		}
 	}
-	BBPkeepref(*ID = id->batCacheid);
-	BBPkeepref(*NS = ns->batCacheid);
-	BBPkeepref(*TT = tt->batCacheid);
-	BBPkeepref(*CNT = cnt->batCacheid);
-	BBPkeepref(*REFCNT = refcnt->batCacheid);
-	BBPkeepref(*LREFCNT = lrefcnt->batCacheid);
-	BBPkeepref(*LOCATION = location->batCacheid);
-	BBPkeepref(*HEAT = heat->batCacheid);
-	BBPkeepref(*DIRTY = dirty->batCacheid);
-	BBPkeepref(*STATUS = status->batCacheid);
-	BBPkeepref(*KIND = kind->batCacheid);
+	*ID = id->batCacheid;
+	BBPkeepref(id);
+	*NS = ns->batCacheid;
+	BBPkeepref(ns);
+	*TT = tt->batCacheid;
+	BBPkeepref(tt);
+	*CNT = cnt->batCacheid;
+	BBPkeepref(cnt);
+	*REFCNT = refcnt->batCacheid;
+	BBPkeepref(refcnt);
+	*LREFCNT = lrefcnt->batCacheid;
+	BBPkeepref(lrefcnt);
+	*LOCATION = location->batCacheid;
+	BBPkeepref(location);
+	*HEAT = heat->batCacheid;
+	BBPkeepref(heat);
+	*DIRTY = dirty->batCacheid;
+	BBPkeepref(dirty);
+	*STATUS = status->batCacheid;
+	BBPkeepref(status);
+	*KIND = kind->batCacheid;
+	BBPkeepref(kind);
 	return MAL_SUCCEED;
 
   bailout:
@@ -489,7 +498,7 @@ CMDsetName(str *rname, const bat *bid, str *name)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bbp.setName", INTERNAL_BAT_ACCESS);
 	}
-	if (BBPrename(b->batCacheid, *name) != 0) {
+	if (BBPrename(b, *name) != 0) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bbp.setName", GDK_EXCEPTION);
 	}

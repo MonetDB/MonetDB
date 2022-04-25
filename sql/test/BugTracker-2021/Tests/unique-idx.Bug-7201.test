@@ -1,0 +1,55 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE T1 (x1 int NOT NULL, x2 int NOT NULL, y int NOT NULL)
+
+statement ok
+CREATE INDEX T1_x1_x2 ON T1 (x1, x2)
+
+statement ok
+CREATE INDEX T1_x2 ON T1 (x2)
+
+statement ok
+CREATE TABLE T2 (x1 int NOT NULL, x2 int NOT NULL, z int NOT NULL)
+
+statement ok
+CREATE INDEX T2_x1_x2 ON T2 (x1, x2)
+
+statement ok rowcount 2
+INSERT INTO T1 VALUES (1, 0, 1), (1, 2, 1)
+
+statement ok rowcount 2
+INSERT INTO T2 VALUES (1, 0, 3), (1, 2, 100)
+
+query IIIII rowsort
+SELECT T1.*, T2.x1 as t2_x1, z
+FROM T1
+LEFT JOIN T2 ON T1.x1 = T2.x1 AND T1.x2 = T2.x2
+WHERE 10 <= T2.z OR T2.z IS NULL
+----
+1
+2
+1
+1
+100
+
+query IIIII rowsort
+SELECT *
+FROM (
+    SELECT T1.*, T2.x1 as t2_x1, z
+    FROM T1
+    LEFT JOIN T2 ON T1.x1 = T2.x1 AND T1.x2 = T2.x2
+    WHERE 10 <= T2.z OR T2.z IS NULL
+) T
+WHERE T.x1 = 1
+----
+1
+2
+1
+1
+100
+
+statement ok
+ROLLBACK
+

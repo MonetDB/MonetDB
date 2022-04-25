@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -64,6 +64,8 @@ getModules(void)
 	int i;
 	Module s,n;
 
+	if (!b)
+		return NULL;
 	for( i = 0; i< MODULE_HASH_SIZE; i++){
 		s = moduleIndex[i];
 		while(s){
@@ -272,11 +274,13 @@ void freeModule(Module m)
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
 		InstrPtr pci = getInstrPtr(s->def,0);
 		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
-			int ret = 0;
+			int status = 0;
+			str ret = MAL_SUCCEED;
 
 			assert(pci->fcn != NULL);
-			(*pci->fcn)(&ret);
-			(void)ret;
+			ret = (*pci->fcn)(&status);
+			freeException(ret);
+			(void)status;
 		}
 	}
 	freeSubScope(m);

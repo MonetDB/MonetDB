@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -67,32 +67,32 @@ OIDTreeMaybeInsert(struct oidtreenode *tree, oid o, BUN allocated)
 
 /* inorder traversal, gives us a sorted BAT */
 static void
-OIDTreeToBAT(struct oidtreenode *node, BAT *bat)
+OIDTreeToBAT(struct oidtreenode *node, BAT *bn)
 {
 	if (node->left != NULL)
-		OIDTreeToBAT(node->left, bat);
-	((oid *) bat->theap->base)[bat->batCount++] = node->o;
+		OIDTreeToBAT(node->left, bn);
+	((oid *) bn->theap->base)[bn->batCount++] = node->o;
 	if (node->right != NULL )
-		OIDTreeToBAT(node->right, bat);
+		OIDTreeToBAT(node->right, bn);
 }
 
 /* Antiset traversal, give us all values but the ones in the tree */
 static void
-OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, oid start, oid stop)
+OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bn, oid start, oid stop)
 {
 	oid noid;
 
 	if (node->left != NULL)
-        	OIDTreeToBATAntiset(node->left, bat, start, node->o);
+        	OIDTreeToBATAntiset(node->left, bn, start, node->o);
 	else
 		for (noid = start; noid < node->o; noid++)
-			((oid *) bat->theap->base)[bat->batCount++] = noid;
+			((oid *) bn->theap->base)[bn->batCount++] = noid;
 
         if (node->right != NULL)
- 		OIDTreeToBATAntiset(node->right, bat, node->o + 1, stop);
+ 		OIDTreeToBATAntiset(node->right, bn, node->o + 1, stop);
 	else
 		for (noid = node->o+1; noid < stop; noid++)
-                        ((oid *) bat->theap->base)[bat->batCount++] = noid;
+                        ((oid *) bn->theap->base)[bn->batCount++] = noid;
 }
 
 static BAT *

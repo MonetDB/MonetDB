@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -198,8 +198,7 @@ WLRgetMaster(void)
  */
 
 #define cleanup(){\
-	resetMalBlkAndFreeInstructions(mb, 1);\
-	trimMalVariables(mb, NULL);\
+	resetMalBlk(mb);\
 	}
 
 static str
@@ -212,13 +211,11 @@ WLRprocessBatch(Client cntxt)
 	size_t sz;
 	MalBlkPtr mb;
 	InstrPtr q;
-	str other;
 	mvc *sql;
 	Symbol prev = NULL;
 	lng tag;
 	char tag_read[26];			// stop re-processing transactions when time limit is reached
-	str action= NULL;
-	str msg= MAL_SUCCEED, msg2= MAL_SUCCEED;
+	str action= NULL, msg= MAL_SUCCEED, msg2= MAL_SUCCEED, other;
 
 	msg = WLRgetConfig();
 	tag = wlr_tag;
@@ -261,13 +258,15 @@ WLRprocessBatch(Client cntxt)
 		return msg;
 	}
 	if ((msg = getSQLContext(c, mb, &sql, NULL))) {
-		SQLexitClient(c);
+		other = SQLexitClient(c);
+		freeException(other);
 		MCcloseClient(c);
 		freeSymbol(prev);
 		return msg;
 	}
 	if ((msg = checkSQLContext(c)) != NULL) {
-		SQLexitClient(c);
+		other = SQLexitClient(c);
+		freeException(other);
 		MCcloseClient(c);
 		freeSymbol(prev);
 		return msg;
@@ -320,7 +319,9 @@ WLRprocessBatch(Client cntxt)
 			}
 			q= getInstrPtr(mb, mb->stop - 1);
 			if( getModuleId(q) != wlrRef){
-				msg =createException(MAL,"wlr.process", "batch %d:improper wlr instruction: %s\n", i, instruction2str(mb,0, q, LIST_MAL_CALL));
+				char *s = instruction2str(mb,0, q, LIST_MAL_CALL);
+				msg = createException(MAL,"wlr.process", "batch %d:improper wlr instruction: %s\n", i, s);
+				GDKfree(s);
 				cleanup();
 				break;
 			}
@@ -355,13 +356,14 @@ WLRprocessBatch(Client cntxt)
 					msg = chkFlow(mb);
 				if (!msg)
 					msg = chkDeclarations(mb);
+				if (!msg)
+					setVariableScope(mb);
 				wlr_tag =  tag; // remember which transaction we executed
 				snprintf(wlr_read, sizeof(wlr_read), "%s", tag_read);
 				if(!msg && mb->errors == 0){
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
-					sql->session->level = 0;
-					if(mvc_trans(sql) < 0) {
+					if (mvc_trans(sql) < 0) {
 						TRC_ERROR(SQL_TRANS, "Allocation failure while starting the transaction\n");
 					} else {
 						msg= runMAL(c,mb,0,0);
@@ -421,7 +423,8 @@ WLRprocessBatch(Client cntxt)
 	}
 
 	close_stream(c->fdout);
-	SQLexitClient(c);
+	other = SQLexitClient(c);
+	freeException(other);
 	MCcloseClient(c);
 	if (prev)
 		freeSymbol(prev);
@@ -839,7 +842,7 @@ WLRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * (variable msg and tag cleanup will not be defined).
  */
 #define WLRcolumn(TPE) \
-	for( i = 4; i < pci->argc; i++){                                \
+	for( i = 6; i < pci->argc; i++){                                \
 		TPE val = *getArgReference_##TPE(stk,pci,i);            \
 		if (BUNappend(ins, (void*) &val, false) != GDK_SUCCEED) { \
 			msg = createException(MAL, "WLRappend", "BUNappend failed"); \
@@ -859,13 +862,15 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_idx *idx;
 	BAT *ins = NULL, *pos = NULL;
 	str msg = MAL_SUCCEED;
+	BUN cnt = 1;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
 	cname = *getArgReference_str(stk,pci,3);
-	bat Pos = *getArgReference_bat(stk,pci,4);
+	BUN offset = *(BUN*)getArgReference_oid(stk,pci,4);
+	bat Pos = *getArgReference_bat(stk,pci,5);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -883,8 +888,10 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
 			sname,tname,cname);
 	// get the data into local BAT
+	if (pos)
+		cnt = BATcount(pos);
 
-	tpe= getArgType(mb,pci,5);
+	tpe= getArgType(mb,pci,7);
 	ins = COLnew(0, tpe, 0, TRANSIENT);
 	if( ins == NULL){
 		bat_destroy(pos);
@@ -905,7 +912,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_hge: WLRcolumn(hge); break;
 #endif
 	case TYPE_str:
-		for( i = 5; i < pci->argc; i++){
+		for( i = 6; i < pci->argc; i++){
 			str val = *getArgReference_str(stk,pci,i);
 			if (BUNappend(ins, (void*) val, false) != GDK_SUCCEED) {
 				msg = createException(MAL, "WLRappend", "BUNappend failed");
@@ -916,9 +923,9 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.append_col(m->session->tr, c, pos, ins, TYPE_bat);
+		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, TYPE_bat);
 	} else if (cname[0] == '%' && (idx = mvc_bind_idx(m, s, cname + 1)) != NULL) {
-		log_res = store->storage_api.append_idx(m->session->tr, idx, pos, ins, tpe);
+		log_res = store->storage_api.append_idx(m->session->tr, idx, offset, pos, ins, cnt, tpe);
 	}
 	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
 		msg = createException(MAL, "WLRappend", SQLSTATE(42000) "Append failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -1067,8 +1074,6 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TRC_ERROR(SQL_TRANS, "Missing type in WLRupdate\n");
 	}
 
-	BATmsync(tids);
-	BATmsync(upd);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
@@ -1091,6 +1096,7 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg= MAL_SUCCEED;
 	str *sname = getArgReference_str(stk, pci, 1);
 	str *tname = getArgReference_str(stk, pci, 2);
+	int restart_sequences = *getArgReference_int(stk, pci, 3);
 	BUN res;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
@@ -1108,5 +1114,38 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	res = mvc_clear_table(m, t);
 	if (res >= BUN_NONE - 1)
 		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
+	if (restart_sequences) { /* restart the sequences if it's the case */
+		sql_trans *tr = m->session->tr;
+		const char *next_value_for = "next value for ";
+
+		for (node *n = ol_first_node(t->columns); n; n = n->next) {
+			sql_column *col = n->data;
+
+			if (col->def && !strncmp(col->def, next_value_for, strlen(next_value_for))) {
+				sql_schema *seqs = NULL;
+				sql_sequence *seq = NULL;
+				char *schema = NULL, *seq_name = NULL;
+
+				extract_schema_and_sequence_name(m->ta, col->def + strlen(next_value_for), &schema, &seq_name);
+				if (!schema || !seq_name || !(seqs = find_sql_schema(tr, schema)))
+					continue;
+
+				/* TODO - At the moment the sequence may not be stored in the same schema as the table itself */
+				if ((seq = find_sql_sequence(tr, seqs, seq_name))) {
+					switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
+						case -1:
+							throw(SQL, "sql.clear_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						case -2:
+						case -3:
+							throw(SQL, "sql.clear_table", SQLSTATE(HY005) "RESTART SEQUENCE: transaction conflict detected");
+						case -4:
+							throw(SQL, "sql.clear_table", SQLSTATE(HY005) "Could not restart sequence %s.%s", seqs->base.name, seq_name);
+						default:
+							break;
+					}
+				}
+			}
+		}
+	}
 	return MAL_SUCCEED;
 }

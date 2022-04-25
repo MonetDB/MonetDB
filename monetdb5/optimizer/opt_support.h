@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _OPT_SUPPORT_H
@@ -22,7 +22,7 @@ mal_export str MALoptimizer(Client c);
 mal_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 
 extern int isSimpleSQL(MalBlkPtr mb);
-extern int optimizerIsApplied(MalBlkPtr mb, str name);
+extern int optimizerIsApplied(MalBlkPtr mb, const char *opt);
 extern int isUnsafeInstruction(InstrPtr q);
 extern int isUnsafeFunction(InstrPtr q);
 extern int safetyBarrier(InstrPtr p, InstrPtr q);
@@ -49,8 +49,8 @@ extern int isOrderby(InstrPtr q);
 extern int isSelect(InstrPtr q);
 extern int isSubJoin(InstrPtr q);
 extern int isMultiplex(InstrPtr q);
-extern int isOptimizerEnabled(MalBlkPtr mb, str opt);
-extern int isOptimizerUsed(MalBlkPtr mb, str opt);
+extern int isOptimizerEnabled(MalBlkPtr mb, const char *opt);
+extern int isOptimizerUsed(MalBlkPtr mb, InstrPtr p, const char *opt);
 
 #endif /* _OPT_SUPPORT_H */
 

@@ -1,0 +1,98 @@
+statement ok
+START TRANSACTION
+
+statement ok
+COMMIT AND CHAIN
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE x (x int)
+
+query I nosort
+SELECT x FROM x
+----
+
+statement ok
+COMMIT AND CHAIN
+
+query I nosort
+SELECT x FROM x
+----
+
+statement ok rowcount 1
+INSERT INTO x VALUES (1)
+
+query I nosort
+SELECT x FROM x
+----
+1
+
+statement ok
+COMMIT
+
+query I nosort
+SELECT x FROM x
+----
+1
+
+statement ok
+START TRANSACTION
+
+query I nosort
+SELECT x FROM x
+----
+1
+
+statement ok rowcount 1
+INSERT INTO x VALUES (2)
+
+query I rowsort
+SELECT x FROM x
+----
+1
+2
+
+statement ok
+ROLLBACK AND CHAIN
+
+query I nosort
+SELECT x FROM x
+----
+1
+
+statement ok rowcount 1
+INSERT INTO x VALUES (3)
+
+query I rowsort
+SELECT x FROM x
+----
+1
+3
+
+statement ok
+COMMIT
+
+query I rowsort
+SELECT x FROM x
+----
+1
+3
+
+statement ok rowcount 1
+INSERT INTO x VALUES (4)
+
+query I rowsort
+SELECT x FROM x
+----
+1
+3
+4
+
+statement ok
+DROP TABLE x
+

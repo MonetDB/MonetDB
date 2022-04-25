@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* streams working on a disk file */
@@ -92,6 +92,7 @@ console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		c->rd = 0;
 		if (c->len > 0 && c->wbuf[0] == 26) {	/* control-Z */
 			c->len = 0;
+			s->eof = true;
 			return 0;
 		}
 		if (c->len > 0 && c->wbuf[0] == 0xFEFF)
@@ -302,8 +303,10 @@ pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	for (;;) {
 		DWORD ret = PeekNamedPipe(h, NULL, 0, NULL, &nread, NULL);
 		if (ret == 0) {
-			if (GetLastError() == ERROR_BROKEN_PIPE)
+			if (GetLastError() == ERROR_BROKEN_PIPE) {
+				s->eof = true;
 				return 0;
+			}
 			mnstr_set_error(s, MNSTR_READ_ERROR, "PeekNamedPipe failed");
 			return -1;
 		}

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -75,6 +75,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 		HASHloop_str(bi, b->thash, p, part) {
 			if (BUNtoid(bidx, p) == *prv) {
 				MT_rwlock_rdunlock(&b->thashlock);
+				bat_iterator_end(&bi);
 				*prv = (oid) p;
 				return TRUE;
 			}
@@ -87,11 +88,13 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 		BATloop(b, p, q) {
 			if (BUNtoid(bidx, p) == *prv &&
 				strcmp(BUNtail(bi, p), part) == 0) {
+				bat_iterator_end(&bi);
 				*prv = (oid) p;
 				return TRUE;
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 	return FALSE;
 }
 
@@ -403,8 +406,10 @@ TKNZRdepositFile(void *r, str *fnme)
 		throw(MAL, "tokenizer.depositFile", "%s", mnstr_peek_error(NULL));
 	}
 	bs = bstream_create(fs, SIZE);
-	if (bs == NULL)
+	if (bs == NULL) {
+		close_stream(fs);
 		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	while (bstream_read(bs, bs->size - (bs->len - bs->pos)) != 0 &&
 		   !mnstr_errnr(bs->s))
 	{
@@ -502,6 +507,7 @@ takeOid(oid id, str *val)
 {
 	int i, depth;
 	str parts[MAX_TKNZR_DEPTH];
+	BATiter iters[MAX_TKNZR_DEPTH];
 	size_t lngth = 0;
 	str s;
 
@@ -515,15 +521,18 @@ takeOid(oid id, str *val)
 	id = GET_h(id);
 
 	for (i = depth - 1; i >= 0; i--) {
-		BATiter bi = bat_iterator(tokenBAT[i].val);
-		parts[i] = (str) BUNtvar(bi, id);
+		iters[i] = bat_iterator(tokenBAT[i].val);
+		parts[i] = (str) BUNtvar(iters[i], id);
 		id = BUNtoid(tokenBAT[i].idx, id);
 		lngth += strlen(parts[i]);
 	}
 
 	*val = (str) GDKmalloc(lngth+depth+1);
-	if( *val == NULL)
+	if (*val == NULL) {
+		for (i = 0; i < depth; i++)
+			bat_iterator_end(&iters[i]);
 		throw(MAL, "tokenizer.takeOid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	s = *val;
 
 	for (i = 0; i < depth; i++) {
@@ -532,6 +541,8 @@ takeOid(oid id, str *val)
 		*s++ = '/';
 	}
 	*s = '\0';
+	for (i = 0; i < depth; i++)
+		bat_iterator_end(&iters[i]);
 
 	return MAL_SUCCEED;
 }
@@ -578,7 +589,7 @@ TKNZRgetLevel(bat *r, int *level)
 		throw(MAL, "tokenizer.getLevel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*r = view->batCacheid;
 
-	BBPkeepref(*r);
+	BBPkeepref(view);
 	return MAL_SUCCEED;
 }
 
@@ -603,7 +614,7 @@ TKNZRgetCount(bat *r)
 	}
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
-	BBPkeepref(*r);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -612,7 +623,7 @@ TKNZRgetCardinality(bat *r)
 {
 	BAT *b, *en;
 	int i;
-	lng cnt;
+	struct canditer ci;
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
@@ -624,9 +635,9 @@ TKNZRgetCardinality(bat *r)
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", GDK_EXCEPTION);
 		}
-		cnt = (lng) canditer_init(&(struct canditer){0}, NULL, en);
+		canditer_init(&ci, NULL, en);
 		BBPunfix(en->batCacheid);
-		if (BUNappend(b, &cnt, false) != GDK_SUCCEED) {
+		if (BUNappend(b, &(lng){ci.ncand}, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -634,7 +645,7 @@ TKNZRgetCardinality(bat *r)
 
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
-	BBPkeepref(*r);
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 

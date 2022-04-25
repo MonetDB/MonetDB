@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _GDK_CAND_H_
@@ -33,6 +33,13 @@ typedef struct {
 #define ccand_first(b)	((b)->tvheap->base + sizeof(ccand_t))
 #define ccand_free(b)	((b)->tvheap->free - sizeof(ccand_t))
 
+enum cand_type {
+	cand_dense,	/* simple dense BAT, i.e. no look ups */
+	cand_materialized, /* simple materialized OID list */
+	cand_except,	/* list of exceptions in vheap */
+	cand_mask,	/* bitmask (TYPE_msk) bat as candidate list */
+};
+
 struct canditer {
 	BAT *s;			/* candidate BAT the iterator is based on */
 	union {
@@ -55,13 +62,15 @@ struct canditer {
 	BUN nvals;		/* number of values in .oids/.mask */
 	BUN ncand;		/* number of candidates */
 	BUN next;		/* next BUN to return value for */
-	enum {
-		cand_dense,	/* simple dense BAT, i.e. no look ups */
-		cand_materialized, /* simple materialized OID list */
-		cand_except,	/* list of exceptions in vheap */
-		cand_mask,	/* bitmask (TYPE_msk) bat as candidate list */
-	} tpe;
+	enum cand_type tpe;
 };
+
+/* iterate CI->ncand times using an anonymous index variable, and
+ * evaluating the loop count only once */
+#define CAND_LOOP(CI)	for (BUN CCTR = 0, CREPS = (CI)->ncand; CCTR < CREPS; CCTR++)
+/* iterate CI->ncand times using the given index variable, and
+ * evaluating the loop count only once */
+#define CAND_LOOP_IDX(CI, IDX)	for (BUN CREPS = (IDX = 0, (CI)->ncand); IDX < CREPS; IDX++)
 
 /* returns the position of the lowest order bit in x, i.e. the
  * smallest n such that (x & (1<<n)) != 0; must not be called with 0 */
@@ -161,17 +170,15 @@ canditer_next(struct canditer *ci)
 	case cand_except:
 		return canditer_next_except(ci);
 	case cand_mask:
-		/* work around compiler error: control reaches end of
-		 * non-void function */
-		break;
+		return canditer_next_mask(ci);
+	default:
+		MT_UNREACHABLE();
 	}
-	assert(ci->tpe == cand_mask);
-	return canditer_next_mask(ci);
 }
 
 #define canditer_search_dense(ci, o, next) ((o) < (ci)->seq ? next ? 0 : BUN_NONE : (o) >= (ci)->seq + (ci)->ncand ? next ? (ci)->ncand : BUN_NONE : (o) - (ci)->seq)
 
-gdk_export BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
+gdk_export void canditer_init(struct canditer *ci, BAT *b, BAT *s);
 gdk_export oid canditer_peek(struct canditer *ci);
 gdk_export oid canditer_last(const struct canditer *ci);
 gdk_export oid canditer_prev(struct canditer *ci);

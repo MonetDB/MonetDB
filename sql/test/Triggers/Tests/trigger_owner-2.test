@@ -1,0 +1,6 @@
+statement error CREATE TRIGGER: access denied for user_test to schema 'sys'
+create trigger test_6_1 after insert on t_6_1 insert into t_6_1 values(12)
+
+statement error CREATE TABLE: insufficient privileges for user 'user_test' in schema 'sys'
+create table t_6_2(age int)
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -183,10 +183,9 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg == MAL_SUCCEED && aggr->last > 1)
 		do {
 			/* early break when there are as many groups as entries */
-			b = BATdescriptor(*hist);
+			b = BBPquickdesc(*hist);
 			if (b) {
 				j = BATcount(b) == count;
-				BBPunfix(*hist);
 				if (j)
 					break;
 			}

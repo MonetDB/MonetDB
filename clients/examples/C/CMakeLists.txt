@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 if(TESTING)
@@ -80,6 +80,20 @@ if(TESTING)
     DESTINATION
     ${CMAKE_INSTALL_BINDIR}
     COMPONENT clienttest)
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:sample0>
+      $<TARGET_PDB_FILE:sample1>
+      $<TARGET_PDB_FILE:sample4>
+      $<TARGET_PDB_FILE:smack00>
+      $<TARGET_PDB_FILE:smack01>
+      $<TARGET_PDB_FILE:streamcat>
+      $<TARGET_PDB_FILE:bincopydata>
+      $<TARGET_PDB_FILE:bincopyloops>
+      DESTINATION ${CMAKE_INSTALL_BINDIR}
+      OPTIONAL)
+  endif()
 endif()
 
 # vim: set ts=2:sw=2:et

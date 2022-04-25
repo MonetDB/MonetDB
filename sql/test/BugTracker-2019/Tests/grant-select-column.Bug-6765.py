@@ -27,24 +27,24 @@ with SQLTestCase() as mdb:
 
         # 'myuser' can SELECT test(id)
         mdb.execute("GRANT SELECT (id) ON test TO myuser;").assertSucceeded()
-        tc.execute("select id from test").assertDataResultMatch([(1,),(2,)])
+        tc.execute("select id from test").assertSucceeded().assertDataResultMatch([(1,),(2,)])
         tc.execute("select name from test").assertFailed(err_code='42000', err_message="SELECT: identifier 'name' unknown")
         tc.execute("select address from test").assertFailed(err_code='42000', err_message="SELECT: identifier 'address' unknown")
-        tc.execute("select * from test").assertDataResultMatch([(1,),(2,)])
+        tc.execute("select * from test").assertSucceeded().assertDataResultMatch([(1,),(2,)])
 
         # 'myuser' can SELECT test(id, address)
         mdb.execute("GRANT SELECT (address) ON test TO myuser;").assertSucceeded()
-        tc.execute("select id from test").assertDataResultMatch([(1,),(2,)])
+        tc.execute("select id from test").assertSucceeded().assertDataResultMatch([(1,),(2,)])
         tc.execute("select name from test").assertFailed(err_code='42000', err_message="SELECT: identifier 'name' unknown")
-        tc.execute("select address from test").assertDataResultMatch([('planet',),('earth',)])
-        tc.execute("select * from test").assertDataResultMatch([(1,'planet'),(2,'earth')])
+        tc.execute("select address from test").assertSucceeded().assertDataResultMatch([('planet',),('earth',)])
+        tc.execute("select * from test").assertSucceeded().assertDataResultMatch([(1,'planet'),(2,'earth')])
 
         # 'myuser' can only SELECT test(address)
         mdb.execute("REVOKE SELECT (id) ON test FROM myuser;").assertSucceeded()
         tc.execute("select id from test").assertFailed(err_code='42000', err_message="SELECT: identifier 'id' unknown")
         tc.execute("select name from test").assertFailed(err_code='42000', err_message="SELECT: identifier 'name' unknown")
-        tc.execute("select address from test").assertDataResultMatch([('planet',),('earth',)])
-        tc.execute("select * from test").assertDataResultMatch([('planet',),('earth',)])
+        tc.execute("select address from test").assertSucceeded().assertDataResultMatch([('planet',),('earth',)])
+        tc.execute("select * from test").assertSucceeded().assertDataResultMatch([('planet',),('earth',)])
 
     # clean up
     mdb.execute("SET SCHEMA sys;").assertSucceeded()

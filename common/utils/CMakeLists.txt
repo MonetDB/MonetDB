@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 configure_file(monetdb_hgversion.h.in
@@ -45,7 +45,13 @@ target_sources(mcrypt
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/mcrypt.h
   PRIVATE
-  mcrypt.c)
+  mcrypt.c
+  ripemd160.c
+  rmd160.c
+  sha.c
+  sha224-256.c
+  sha384-512.c
+  md5.c)
 
 target_include_directories(mcrypt
   PUBLIC
@@ -53,8 +59,6 @@ target_include_directories(mcrypt
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_link_libraries(mcrypt
-  PRIVATE
-  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
   monetdb_config_header)
 
 target_compile_definitions(mcrypt
@@ -88,8 +92,6 @@ target_include_directories(msabaoth
 
 target_link_libraries(msabaoth
   PRIVATE
-  $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
-  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
   mutils
   monetdb_config_header)
 

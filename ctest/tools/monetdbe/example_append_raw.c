@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdbe.h"
@@ -73,6 +73,13 @@ main(void)
 	monetdbe_column* dcol[6] = { &col0, &col1, &col2, &col3, &col4, &col5 };
 	if ((err = monetdbe_append(mdbe, "sys", "test", (monetdbe_column**) &dcol, 6)) != NULL)
 		error(err)
+
+	// str with wrong utf8
+	char* dstr2[2] = { "\xc3\x28", "\xe2\x28\xa1" };
+	monetdbe_column col12 = { .type = monetdbe_str, .data = &dstr2, .count = 2 };
+	monetdbe_column* dcol2[6] = { &col0, &col12, &col2, &col3, &col4, &col5 };
+	if ((err = monetdbe_append(mdbe, "sys", "test", (monetdbe_column**) &dcol2, 6)) == NULL)
+		error("Invalid UTF-8 string expected")
 
 	if ((err = monetdbe_query(mdbe, "SELECT * FROM test; ", &result, NULL)) != NULL)
 		error(err)

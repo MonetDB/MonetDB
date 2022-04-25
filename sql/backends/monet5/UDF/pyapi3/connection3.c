@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -16,7 +16,7 @@
 static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
 	char *query = NULL;
-	if (PyString_CheckExact(args)) {
+	if (PyUnicode_CheckExact(args)) {
 		query = GDKstrdup(PyUnicode_AsUTF8(args));
 	} else {
 		PyErr_Format(PyExc_TypeError,
@@ -75,7 +75,7 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 					return NULL;
 				}
 				PyDict_SetItem(result,
-							   PyString_FromString(output->cols[i].name),
+							   PyUnicode_FromString(output->cols[i].name),
 							   numpy_array);
 				Py_DECREF(numpy_array);
 				BBPunfix(input.bat->batCacheid);

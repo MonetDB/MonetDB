@@ -1,0 +1,21 @@
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'voc' (there are database users using it as session's default schema)
+DROP SCHEMA voc
+
+statement error M1M05!DROP USER: 'voc' owns a schema
+DROP USER voc
+
+statement ok
+START TRANSACTION
+
+statement ok
+ALTER USER voc SET SCHEMA sys
+
+statement ok
+DROP SCHEMA voc
+
+statement ok
+DROP USER voc
+
+statement ok
+COMMIT
+

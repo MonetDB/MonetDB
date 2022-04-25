@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -41,13 +41,16 @@ main(void)
 
 	/* open file stream */
 	stream *fd = open_wastream("/tmp/backup");
-
-	if (dump_database(mid, fd, 0, 0, false)) {
-		if (mid->msg)
-			error(mid->msg)
-		fprintf(stderr, "database backup failed\n");
+	if (fd) {
+		if (dump_database(mid, fd, 0, 0, false)) {
+			if (mid->msg)
+				error(mid->msg)
+			error("database backup failed\n");
+		}
+		close_stream(fd);
+	} else {
+		fprintf(stderr, "Failure: unable to open file /tmp/backup: %s", mnstr_peek_error(NULL));
 	}
-	close_stream(fd);
 
 	if ((mid->msg = monetdbe_close(mid->mdbe)) != NULL)
 		error(mid->msg);

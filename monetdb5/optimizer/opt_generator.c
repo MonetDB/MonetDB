@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -32,20 +32,20 @@ pushInstruction(mb,P);
 			p->argc = p->retc;\
 			q= newInstruction(0,calcRef, TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
-			addArgument(mb,q,getArg(series[k],1));\
+			q = addArgument(mb,q,getArg(series[k],1));\
 			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
 			p = addArgument(mb,p, getArg(q,0));\
 			pushInstruction(mb,q);\
 			q= newInstruction(0,calcRef,TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
-			addArgument(mb,q,getArg(series[k],2));\
+			q = addArgument(mb,q,getArg(series[k],2));\
 			pushInstruction(mb,q);\
 			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
 			p = addArgument(mb,p, getArg(q,0));\
 			if( p->argc == 4){\
 				q= newInstruction(0,calcRef,TPE##Ref);\
 				setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
-				addArgument(mb,q,getArg(series[k],3));\
+				q = addArgument(mb,q,getArg(series[k],3));\
 				typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
 				p = addArgument(mb,p, getArg(q,0));\
 				pushInstruction(mb,q);\
@@ -66,13 +66,10 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	const char *lngRef = getName("lng");
 	const char *fltRef = getName("flt");
 	const char *dblRef = getName("dbl");
-	char buf[256];
-	lng usec= GDKusec();
 	str msg = MAL_SUCCEED;
 	int needed = 0;
 
 	(void) stk;
-	(void) pci;
 
 	old = mb->stmt;
 	limit = mb->stop;
@@ -83,11 +80,14 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		p = old[i];
 		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef)
 			needed = 1;
-		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol)
-			return 0;
+		/* avoid error in table-udf-column-descriptor */
+		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol){
+			old = NULL;
+			goto wrapup;
+		}
 	}
 	if (!needed)
-		return 0;
+		goto wrapup;
 
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
 	if(series == NULL)
@@ -153,25 +153,24 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 	}
 	for (i++; i < limit; i++)
-        	pushInstruction(mb, old[i]);
-	for (; i < slimit; i++)
+		pushInstruction(mb, old[i]);
+	for (; i < slimit; i++) {
 		if (old[i])
-        		freeInstruction(old[i]);
-    	GDKfree(old);
-    	GDKfree(series);
+			pushInstruction(mb, old[i]);
+	}
+	GDKfree(old);
+	GDKfree(series);
 
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	/* all new/modified statements are already checked */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if (!msg)
 	// 	msg = chkFlow(mb);
 	// if (!msg)
 	// 	msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep all actions taken as a post block comment */
+wrapup:
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

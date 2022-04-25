@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -34,12 +34,12 @@ static int
 pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
-	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
+	if (BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
 		return -1;
 	if (BATroles(b,X2) != GDK_SUCCEED)
 		return -1;
 	*ret = b->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(b);
 	return 0;
 }
 
@@ -498,8 +498,10 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 	if (GDKcopyenv(&k, &v, false) != GDK_SUCCEED)
 		throw(MAL, "inspect.getEnvironment", GDK_EXCEPTION);
 
-	BBPkeepref(*ret = k->batCacheid);
-	BBPkeepref(*ret2 = v->batCacheid);
+	*ret = k->batCacheid;
+	BBPkeepref(k);
+	*ret2 = v->batCacheid;
+	BBPkeepref(v);
 	return MAL_SUCCEED;
 }
 
@@ -670,10 +672,9 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (isaBatType(getArgType(mb,pci,1) ) ){
 		bat *bid= getArgReference_bat(stk,pci,1);
 		BAT *b;
-		if ((b = BATdescriptor(*bid)) ) {
+		if ((b = BBPquickdesc(*bid)))
 			*hn = getTypeName(newBatType(b->ttype));
-			BBPunfix(b->batCacheid);
-		} else
+		else
 			*hn = getTypeName(getArgType(mb, pci, 1));
 	} else
 		*hn = getTypeName(getArgType(mb, pci, 1));

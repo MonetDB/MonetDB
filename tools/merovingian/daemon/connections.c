@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -96,13 +96,13 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 			}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 			if (fcntl(sock, F_SETFD, FD_CLOEXEC) < 0)
-					Mfprintf(log, "fcntl FD_CLOEXEC: %s", strerror(e));
+					Mlevelfprintf(ERROR, log, "fcntl FD_CLOEXEC: %s", strerror(e));
 #endif
 
 			if (rp->ai_family == AF_INET6 &&
 				setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
 						   (const char *) &(int){0}, sizeof(int)) == -1)
-				Mfprintf(log, "setsockopt IPV6_V6ONLY: %s", strerror(e));
+				Mlevelfprintf(ERROR, log, "setsockopt IPV6_V6ONLY: %s", strerror(e));
 
 			if (!udp) {
 				if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
@@ -114,12 +114,12 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 #ifdef SO_EXCLUSIVEADDRUSE
 				if (setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
 							   (const char *) &on, sizeof on) < 0)
-					Mfprintf(log, "setsockopt SO_EXCLUSIVEADDRUSE: %s", strerror(e));
+					Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLUSIVEADDRUSE: %s", strerror(e));
 #endif
 #ifdef SO_EXCLBIND
 				if (setsockopt(sock, SOL_SOCKET, SO_EXCLBIND,
 							   (const char *) &on, sizeof on) < 0)
-					Mfprintf(log, "setsockopt SO_EXCLBIND: %s", strerror(e));
+					Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLBIND: %s", strerror(e));
 #endif
 			}
 
@@ -148,9 +148,9 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 				snprintf(sport, sizeof(sport), "%hu", port);
 			}
 			if (udp)
-				Mfprintf(log, "listening for UDP messages on %s:%s\n", host, sport);
+				Mlevelfprintf(INFORMATION, log, "listening for UDP messages on %s:%s\n", host, sport);
 			else
-				Mfprintf(log, "accepting connections on TCP socket %s:%s\n", host, sport);
+				Mlevelfprintf(INFORMATION, log, "accepting connections on TCP socket %s:%s\n", host, sport);
 			socks[nsock++] = sock;
 			break;					/* working */
 		}
@@ -215,13 +215,13 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	umask(omask);
 
 	/* keep queue of 5 */
-	if(listen(sock, 5) == -1) {
+	if (listen(sock, 5) == -1) {
 		closesocket(sock);
 		return(newErr("setting UNIX stream socket at %s to listen failed: %s",
 					  path, strerror(errno)));
 	}
 
-	Mfprintf(log, "accepting connections on UNIX domain socket %s\n", path);
+	Mlevelfprintf(INFORMATION, log, "accepting connections on UNIX domain socket %s\n", path);
 
 	*ret = sock;
 	return(NO_ERR);

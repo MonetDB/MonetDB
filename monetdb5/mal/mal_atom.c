@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -77,7 +77,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(tpe)), ATOMsize(tpe));
-			BATatoms[tpe].atomHeap = (void (*)(Heap *, size_t))pci->fcn;
+			BATatoms[tpe].atomHeap = (gdk_return (*)(Heap *, size_t))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}

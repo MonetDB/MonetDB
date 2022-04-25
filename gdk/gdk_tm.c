@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -19,7 +19,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_tm.h"
 
 /*
  * The physical (disk) commit protocol is handled mostly by
@@ -55,17 +54,14 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 		bat bid = subcommit ? subcommit[i] : i;
 
 		if (BBP_status(bid) & BBPPERSISTENT) {
-			BAT *b = BBP_cache(bid);
+			BAT *b = BBPquickdesc(bid);
 
-			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
-				b = BBPquickdesc(bid, true);
-				if (b == NULL)
-					return GDK_FAIL;
-			}
 			if (b) {
+				MT_lock_set(&b->theaplock);
 				assert(!isVIEW(b));
 				assert(b->batRole == PERSISTENT);
 				BATcommit(b, sizes ? sizes[i] : BUN_NONE);
+				MT_lock_unset(&b->theaplock);
 			}
 		}
 	}
@@ -78,7 +74,7 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
  * destroyed.
  */
 static void
-epilogue(int cnt, bat *subcommit)
+epilogue(int cnt, bat *subcommit, bool locked)
 {
 	int i = 0;
 
@@ -101,27 +97,27 @@ epilogue(int cnt, bat *subcommit)
 			BAT *b = BBP_cache(bid);
 			if (b) {
 				/* check mmap modes */
+				MT_lock_set(&b->theaplock);
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
 					TRC_WARNING(GDK, "BATcheckmodes failed\n");
+				MT_lock_unset(&b->theaplock);
 			}
 		}
+		if (!locked)
+			MT_lock_set(&GDKswapLock(bid));
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
-			BAT *b = BBPquickdesc(bid, true);
+			BAT *b = BBPquickdesc(bid);
 
 			/* the unloaded ones are deleted without
 			 * loading deleted disk images */
 			if (b) {
 				BATdelete(b);
-				if (BBP_cache(bid)) {
-					/* those that quickdesc
-					 * decides to load => free
-					 * memory */
-					BATfree(b);
-				}
 			}
-			BBPclear(bid);	/* clear with locking */
+			BBPclear(bid, false);
 		}
 		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
+		if (!locked)
+			MT_lock_unset(&GDKswapLock(bid));
 	}
 	GDKclrerr();
 }
@@ -140,7 +136,7 @@ TMcommit(void)
 	BBPlock();
 	if (prelude(getBBPsize(), NULL, NULL) == GDK_SUCCEED &&
 	    BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED) {
-		epilogue(getBBPsize(), NULL);
+		epilogue(getBBPsize(), NULL, true);
 		ret = GDK_SUCCEED;
 	}
 	BBPunlock();
@@ -205,16 +201,13 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 		}
 	}
 	if (prelude(cnt, subcommit, sizes) == GDK_SUCCEED) {	/* save the new bats outside the lock */
-		/* lock just prevents BBPtrims, and other global
-		 * (sub-)commits */
-		for (xx = 0; xx <= BBP_THREADMASK; xx++)
-			MT_lock_set(&GDKtrimLock(xx));
+		/* lock just prevents other global (sub-)commits */
+		MT_lock_set(&GDKtmLock);
 		if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
-			epilogue(cnt, subcommit);
+			epilogue(cnt, subcommit, false);
 			ret = GDK_SUCCEED;
 		}
-		for (xx = BBP_THREADMASK; xx >= 0; xx--)
-			MT_lock_unset(&GDKtrimLock(xx));
+		MT_lock_unset(&GDKtmLock);
 	}
 	return ret;
 }
@@ -226,12 +219,12 @@ TMsubcommit(BAT *b)
 	gdk_return ret = GDK_FAIL;
 	bat *subcommit;
 	BUN p, q;
-	BATiter bi = bat_iterator(b);
 
 	subcommit = GDKmalloc((BATcount(b) + 1) * sizeof(bat));
 	if (subcommit == NULL)
 		return GDK_FAIL;
 
+	BATiter bi = bat_iterator(b);
 	subcommit[0] = 0;	/* BBP artifact: slot 0 in the array will be ignored */
 	/* collect the list and save the new bats outside any
 	 * locking */
@@ -241,76 +234,9 @@ TMsubcommit(BAT *b)
 		if (bid)
 			subcommit[cnt++] = bid;
 	}
+	bat_iterator_end(&bi);
 
 	ret = TMsubcommit_list(subcommit, NULL, cnt, getBBPlogno(), getBBPtransid());
 	GDKfree(subcommit);
 	return ret;
-}
-
-/*
- * @- TMabort
- * Transaction abort is cheap. We use the delta statuses to go back to
- * the previous version of each BAT. Also for BATs that are currently
- * swapped out. Persistent BATs that were made transient in this
- * transaction become persistent again.
- */
-void
-TMabort(void)
-{
-	int i;
-
-	BBPlock();
-	for (i = 1; i < getBBPsize(); i++) {
-		if (BBP_status(i) & BBPNEW) {
-			BAT *b = BBPquickdesc(i, false);
-
-			if (b) {
-				if (!b->batTransient)
-					BBPrelease(i);
-				b->batTransient = true;
-				b->batDirtydesc = true;
-			}
-		}
-	}
-	for (i = 1; i < getBBPsize(); i++) {
-		if (BBP_status(i) & (BBPPERSISTENT | BBPDELETED | BBPSWAPPED)) {
-			BAT *b = BBPquickdesc(i, true);
-
-			if (b == NULL)
-				continue;
-
-			BBPfix(i);
-			if (BATdirty(b) || DELTAdirty(b)) {
-				/* BUN move-backes need a real BAT! */
-				/* Stefan:
-				 * Actually, in case DELTAdirty(b),
-				 * i.e., a BAT with differences that
-				 * is saved/swapped-out but not yet
-				 * committed, we (AFAIK) don't have to
-				 * load the BAT and apply the undo,
-				 * but rather could simply discard the
-				 * delta and revive the backup;
-				 * however, I don't know how to do
-				 * this (yet), hence we stick with
-				 * this solution for the time being
-				 * --- it should be correct though it
-				 * might not be the most efficient
-				 * way...
-				 */
-				b = BBPdescriptor(i);
-				BATundo(b);
-			}
-			if (BBP_status(i) & BBPDELETED) {
-				BBP_status_on(i, BBPEXISTING);
-				if (b->batTransient)
-					BBPretain(i);
-				b->batTransient = false;
-				b->batDirtydesc = true;
-			}
-			BBPunfix(i);
-		}
-		BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW);
-	}
-	BBPunlock();
-	GDKclrerr();
 }

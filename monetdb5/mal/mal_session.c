@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten
@@ -27,7 +27,7 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(char *modules[], int embedded)
+malBootstrap(char *modules[], bool embedded)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
@@ -169,6 +169,8 @@ is_exiting(void *data)
 	return GDKexiting();
 }
 
+static str MSserveClient(Client cntxt);
+
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
@@ -273,20 +275,23 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		return;
 	} else {
 		str err;
-		oid uid;
+		oid uid = 0;
 		sabdb *stats = NULL;
 
-		/* access control: verify the credentials supplied by the user,
-		 * no need to check for database stuff, because that is done per
-		 * database itself (one gets a redirect) */
-		err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
-		if (err != MAL_SUCCEED) {
-			mnstr_printf(fout, "!%s\n", err);
-			exit_streams(fin, fout);
-			freeException(err);
-			GDKfree(command);
-			return;
+		if (!GDKembedded()) {
+			/* access control: verify the credentials supplied by the user,
+			* no need to check for database stuff, because that is done per
+			* database itself (one gets a redirect) */
+			err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
+			if (err != MAL_SUCCEED) {
+				mnstr_printf(fout, "!%s\n", err);
+				exit_streams(fin, fout);
+				freeException(err);
+				GDKfree(command);
+				return;
+			}
 		}
+
 
 		if (!GDKinmemory(0) && !GDKembedded()) {
 			err = msab_getMyStatus(&stats);
@@ -430,33 +435,63 @@ MSresetInstructions(MalBlkPtr mb, int start)
 }
 
 /*
- * Determine the variables being used and clear non-used onces.
+ * MAL instructions generate variables.
+ * The values of temporary variables should be cleaned at the end of a call
+ * The values of global variables are retained.
+ * Global variables should not start with C_ or X_
  */
 void
-MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
+MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 {
-	int i;
+	InstrPtr sig = getInstrPtr(mb, 0);
+	int i, k = sig->argc;
 
-	for (i = 0; i < start && i < mb->vtop ; i++)
-		setVarUsed(mb,i);
-	if (mb->errors == MAL_SUCCEED)
-		for (i = start; i < mb->vtop; i++) {
-			if (isVarUsed(mb,i) || !isTmpVar(mb,i)){
-				assert(!mb->var[i].value.vtype || isVarConstant(mb, i));
-				setVarUsed(mb,i);
-			}
-			if (glb && i < glb->stktop && !isVarUsed(mb,i)) {
-				if (isVarConstant(mb, i))
-					garbageElement(cntxt, &glb->stk[i]);
+	if (mb->errors == MAL_SUCCEED){
+		for (i = sig->argc; i < mb->vtop; i++) {
+			if (glb && i < glb->stktop && isTmpVar(mb,i) && !glb->keepTmps) {
 				/* clean stack entry */
+				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;
 				glb->stk[i].len = 0;
 				glb->stk[i].val.pval = 0;
+				if (isVarConstant(mb, i))
+					garbageElement(cntxt, &mb->var[i].value);
+			} else {
+				/* compress the global variable list and stack */
+				mb->var[k] = mb->var[i];
+				glb->stk[k] = glb->stk[i];
+				setVarUsed(mb, k);
+				setVarInit(mb, k);
+				if( i != k){
+					glb->stk[i].vtype = TYPE_int;
+					glb->stk[i].len = 0;
+					glb->stk[i].val.pval = 0;
+					clrVarConstant(mb,i);
+					clrVarCleanup(mb,i);
+				}
+				k++;
 			}
 		}
+	}
+	mb->vtop = k;
+}
+
+/* The symbol table be become filled with constant values to be garbage collected
+* The signature is always left behind.
+*/
+
+void
+MSresetVariables(MalBlkPtr mb)
+{
+	InstrPtr sig = getInstrPtr(mb, 0);
+	int i;
 
 	if (mb->errors == MAL_SUCCEED)
-		trimMalVariables_(mb, glb);
+		for (i = sig->argc; i < mb->vtop; i++)
+			if( isVarConstant(mb,i)){
+				VALclear(&getVarConstant(mb,i));
+				clrVarConstant(mb, i);
+			}
 }
 
 /*
@@ -464,7 +499,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
  * for the global variables.  Thereafter it is up to the scenario
  * interpreter to process input.
  */
-str
+static str
 MSserveClient(Client c)
 {
 	MalBlkPtr mb;
@@ -482,7 +517,7 @@ MSserveClient(Client c)
 	if (c->glb == NULL)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
-		c->mode = RUNCLIENT;
+		MCcloseClient(c);
 		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
@@ -492,7 +527,7 @@ MSserveClient(Client c)
 	if (c->scenario == 0)
 		msg = defaultScenario(c);
 	if (msg) {
-		c->mode = RUNCLIENT;
+		MCcloseClient(c);
 		return msg;
 	} else {
 		do {
@@ -520,6 +555,8 @@ MSserveClient(Client c)
 		c->backup = 0;
 	}
 
+	if( c->curprg && c->curprg->def)
+		resetMalBlk(c->curprg->def);
 	/*
 	if (c->curprg) {
 		freeSymbol(c->curprg);
@@ -528,10 +565,6 @@ MSserveClient(Client c)
 	*/
 
 	MCcloseClient(c);
-	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
-		freeModule(c->usermodule);
-		c->usermodule = NULL;
-	}
 	return MAL_SUCCEED;
 }
 
@@ -587,16 +620,37 @@ MALreader(Client c)
 	return MAL_SUCCEED;
 }
 
+/* Before compiling a large string, it makes sense to allocate
+ * approximately enough space to keep the intermediate
+ * code. Otherwise, we end up with a repeated extend on the MAL block,
+ * which really consumes a lot of memcpy resources. The average MAL
+ * string length could been derived from the test cases. An error in
+ * the estimate is more expensive than just counting the lines.
+ */
+static int
+prepareMalBlk(MalBlkPtr mb, str s)
+{
+	int cnt = STMT_INCREMENT;
+
+	while (s) {
+		s = strchr(s, '\n');
+		if (s) {
+			s++;
+			cnt++;
+		}
+	}
+	cnt = (int) (cnt * 1.1);
+	return resizeMalBlk(mb, cnt);
+}
+
 str
 MALparser(Client c)
 {
 	InstrPtr p;
-	MalBlkRecord oldstate;
 	str msg= MAL_SUCCEED;
 
 	assert(c->curprg->def->errors == NULL);
 	c->curprg->def->errors = 0;
-	oldstate = *c->curprg->def;
 
 	if( prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
 		throw(MAL, "mal.parser", "Failed to prepare");
@@ -620,16 +674,16 @@ MALparser(Client c)
 	if (p->token != FUNCTIONsymbol) {
 		msg =c->curprg->def->errors;
 		c->curprg->def->errors = 0;
-		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def, 1);
+		MSresetStack(c, c->curprg->def, c->glb);
+		resetMalTypes(c->curprg->def, 1);
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if (msg !=MAL_SUCCEED || (msg =c->curprg->def->errors) ){
 		c->curprg->def->errors = 0;
-		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def, 1);
+		MSresetStack(c, c->curprg->def, c->glb);
+		resetMalTypes(c->curprg->def, 1);
 		return msg;
 	}
 	return MAL_SUCCEED;
@@ -674,8 +728,6 @@ MALengine(Client c)
 {
 	Symbol prg;
 	str msg = MAL_SUCCEED;
-	MalBlkRecord oldstate = *c->curprg->def;
-	oldstate.stop = 0;
 
 	if (c->blkmode)
 		return MAL_SUCCEED;
@@ -688,8 +740,8 @@ MALengine(Client c)
 	if (prg->def->errors != MAL_SUCCEED) {
 		msg = prg->def->errors;
 		prg->def->errors = NULL;
-		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def, 1);
+		MSresetStack(c, c->curprg->def, c->glb);
+		resetMalTypes(c->curprg->def, 1);
 		return msg;
 	}
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
@@ -723,15 +775,15 @@ MALengine(Client c)
 			msg = MAL_SUCCEED;
 		}
 	}
-	MSresetVariables(c, prg->def, c->glb, 0);
-	resetMalBlk(prg->def, 1);
+	MSresetStack(c, prg->def, c->glb);
+	resetMalTypes(prg->def, 1);
 	if (c->glb) {
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
 	}
 
 	if (prg->def->errors)
-		GDKfree(prg->def->errors);
+		freeException(prg->def->errors);
 	prg->def->errors = NULL;
 	if (c->itrace)
 		mnstr_printf(c->fdout, "mdb>#EOD\n");

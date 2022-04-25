@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -12,7 +12,6 @@
 #include "pytypes.h"
 #include "type_conversion.h"
 #include "unicode.h"
-#include "blob.h"
 #include "gdk_interprocess.h"
 
 //! Wrapper to get eclass of SQL type
@@ -43,19 +42,19 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 #endif
 			break;
 		case TYPE_oid:
-			vararray = PyInt_FromLong((long)(*(oid *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(oid *)inp->dataptr));
 			break;
 		case TYPE_bit:
-			vararray = PyInt_FromLong((long)(*(bit *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(bit *)inp->dataptr));
 			break;
 		case TYPE_bte:
-			vararray = PyInt_FromLong((long)(*(bte *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(bte *)inp->dataptr));
 			break;
 		case TYPE_sht:
-			vararray = PyInt_FromLong((long)(*(sht *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(sht *)inp->dataptr));
 			break;
 		case TYPE_int:
-			vararray = PyInt_FromLong((long)(*(int *)inp->dataptr));
+			vararray = PyLong_FromLong((long)(*(int *)inp->dataptr));
 			break;
 		case TYPE_lng:
 			vararray = PyLong_FromLongLong((*(lng *)inp->dataptr));
@@ -109,36 +108,37 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	// element is NULL, and 'False' otherwise
 	// if we know for sure that the BAT has no NULL values, we can skip the construction
 	// of this masked array. Otherwise, we create it.
-	if (b->tnil || !b->tnonil) {
+	MT_lock_set(&b->theaplock);
+	bool bnonil = b->tnonil;
+	MT_lock_unset(&b->theaplock);
+	if (!bnonil) {
 		PyObject *mask;
 		PyObject *mafunc = PyObject_GetAttrString(
-			PyImport_Import(PyString_FromString("numpy.ma")), "masked_array");
-		PyObject *maargs;
+			PyImport_Import(PyUnicode_FromString("numpy.ma")), "masked_array");
 		PyObject *nullmask = PyNullMask_FromBAT(b, t_start, t_end);
 
 		if (!nullmask) {
 			msg = createException(MAL, "pyapi3.eval", "Failed to create mask for some reason");
 			goto wrapup;
 		} else if (nullmask == Py_None) {
-			maargs = PyTuple_New(1);
-			PyTuple_SetItem(maargs, 0, vararray);
+			Py_DECREF(nullmask);
 		} else {
-			maargs = PyTuple_New(2);
+			PyObject *maargs = PyTuple_New(2);
 			PyTuple_SetItem(maargs, 0, vararray);
-			PyTuple_SetItem(maargs, 1, (PyObject *)nullmask);
-		}
+			PyTuple_SetItem(maargs, 1, nullmask);
 
-		// Now we will actually construct the mask by calling the masked array
-		// constructor
-		mask = PyObject_CallObject(mafunc, maargs);
-		if (!mask) {
-			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to create mask");
-			goto wrapup;
+			// Now we will actually construct the mask by calling the masked
+			// array constructor
+			mask = PyObject_CallObject(mafunc, maargs);
+			if (!mask) {
+				msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to create mask");
+				goto wrapup;
+			}
+			Py_DECREF(maargs);
+
+			vararray = mask;
 		}
-		Py_DECREF(maargs);
 		Py_DECREF(mafunc);
-
-		vararray = mask;
 	}
 	return vararray;
 wrapup:
@@ -197,7 +197,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		data = PyArray_DATA((PyArrayObject *)vararray);
 		BATloop(b, p, q)
 		{
-			blob *t = (blob *)BUNtvar(li, p);
+			const blob *t = (const blob *)BUNtvar(li, p);
 			if (t->nitems == ~(size_t)0) {
 				data[p] = Py_None;
 				Py_INCREF(Py_None);
@@ -205,6 +205,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 				data[p] = PyByteArray_FromStringAndSize(t->data, t->nitems);
 			}
 		}
+		bat_iterator_end(&li);
 	} else {
 		switch (inp->bat_type) {
 			case TYPE_void:
@@ -251,7 +252,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				BATloop(b, p, q)
 				{
-					char *t = (char *)BUNtvar(li, p);
+					const char *t = (const char *)BUNtvar(li, p);
 					for (; *t != 0; t++) {
 						if (*t & 0x80) {
 							unicode = true;
@@ -273,6 +274,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							PyObject **pyptrs =
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
+								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
 													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
@@ -296,6 +298,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 											PyUnicode_FromString(t);
 									}
 									if (!pyptrs[offset]) {
+										bat_iterator_end(&li);
 										msg = createException(
 											MAL, "pyapi3.eval",
 											SQLSTATE(PY000) "Failed to create string.");
@@ -310,7 +313,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtvar(li, p);
+								const char *t = (const char *)BUNtvar(li, p);
 								if (strNil(t)) {
 									// str_nil isn't a valid UTF-8 character
 									// (it's 0x80), so we can't decode it as
@@ -323,6 +326,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								}
 
 								if (obj == NULL) {
+									bat_iterator_end(&li);
 									msg = createException(
 										MAL, "pyapi3.eval",
 										SQLSTATE(PY000) "Failed to create string.");
@@ -338,6 +342,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							PyObject **pyptrs =
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
+								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
 													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
@@ -348,7 +353,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								const char *t = (const char *)BUNtvar(li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
-									pyptrs[offset] = PyString_FromString(t);
+									pyptrs[offset] = PyUnicode_FromString(t);
 								} else {
 									Py_INCREF(pyptrs[offset]);
 								}
@@ -358,9 +363,10 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtvar(li, p);
-								obj = PyString_FromString(t);
+								const char *t = (const char *)BUNtvar(li, p);
+								obj = PyUnicode_FromString(t);
 								if (obj == NULL) {
+									bat_iterator_end(&li);
 									msg = createException(
 										MAL, "pyapi3.eval",
 										SQLSTATE(PY000) "Failed to create string.");
@@ -371,6 +377,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						}
 					}
 				}
+				bat_iterator_end(&li);
 			} break;
 #ifdef HAVE_HGE
 			case TYPE_hge: {
@@ -381,10 +388,12 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				j = 0;
 				npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject *)vararray);
-				const hge *vals = (const hge *) Tloc(b, 0);
+				BATiter bi = bat_iterator(b);
+				const hge *vals = (const hge *) bi.base;
 				BATloop(b, p, q) {
 					data[j++] = (npy_float64)vals[p];
 				}
+				bat_iterator_end(&bi);
 				break;
 			}
 #endif
@@ -474,6 +483,7 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 
 	if (!found_nil) {
 		Py_DECREF(nullmask);
@@ -604,6 +614,8 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			if (PyType_IsNumpyArray(data)) {
 				if (PyArray_NDIM((PyArrayObject *)data) != 1) {
 					IsSingleArray = FALSE;
+				} else if (PyArray_SIZE((PyArrayObject *)data) == 0) {
+					IsSingleArray = TRUE;
 				} else {
 					pColO = PyArray_GETITEM(
 						(PyArrayObject *)data,
@@ -611,8 +623,12 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 					IsSingleArray = PyType_IsPyScalar(pColO);
 				}
 			} else if (PyList_Check(data)) {
-				pColO = PyList_GetItem(data, 0);
-				IsSingleArray = PyType_IsPyScalar(pColO);
+				if (PyList_Size(data) == 0) {
+					IsSingleArray = TRUE;
+				} else {
+					pColO = PyList_GetItem(data, 0);
+					IsSingleArray = PyType_IsPyScalar(pColO);
+				}
 			} else if (!PyType_IsNumpyMaskedArray(data)) {
 				// it is neither a python array, numpy array or numpy masked
 				// array, thus the result is unsupported! Throw an exception!
@@ -621,7 +637,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 					SQLSTATE(PY000) "Unsupported result object. Expected either a list, "
 					"dictionary, a numpy array, a numpy masked array or a "
 					"pandas data frame, but received an object of type \"%s\"",
-					PyString_AsString(PyObject_Str(PyObject_Type(data))));
+					PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(data))));
 				goto wrapup;
 			}
 
@@ -1078,7 +1094,6 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 	}
 
 	if (conv_type == TYPE_str) {
-		BATiter li = bat_iterator(b);
 		BUN p = 0, q = 0;
 		char *result = NULL;
 		size_t length = 0;
@@ -1090,19 +1105,23 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 			return createException(MAL, "pyapi3.eval",
 								   SQLSTATE(HY013) MAL_MALLOC_FAIL " string conversion BAT.");
 		}
+		BATiter li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			void *element = (void *)BUNtail(li, p);
+			const void *element = (const void*)BUNtail(li, p);
 			if (strConversion(&result, &length, element, false) < 0) {
+				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);
 				return createException(MAL, "pyapi3.eval",
 									   SQLSTATE(PY000) "Failed to convert element to string.");
 			}
 			if (BUNappend(*ret_bat, result, false) != GDK_SUCCEED) {
+				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);
 				throw(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
+		bat_iterator_end(&li);
 		if (result) {
 			GDKfree(result);
 		}

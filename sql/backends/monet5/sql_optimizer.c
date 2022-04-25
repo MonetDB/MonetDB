@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -83,7 +83,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				continue;
 
 			/* we have to sum the cost of all three components of a BAT */
-			if (c && (!isRemote(c->t) && !isMergeTable(c->t)) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
+			if (c && isTable(c->t) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
 				size = SQLgetColumnSize(tr, c, access);
 				space += size;	// accumulate once per table
 				//lasttable = tname;	 invalidate this attempt
@@ -102,7 +102,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			if (getFunctionId(p) == bindidxRef) {
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
 
-				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+				if (i && isTable(i->t)) {
 					size = SQLgetIdxSize(tr, i, access);
 
 					if( !prepare && size == 0 && ! i->t->system){
@@ -198,13 +198,9 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	backend *be;
 	str msg = 0, pipe = 0;
 	bool free_pipe = false;
+	InstrPtr p = mb->stmt[mb->stop -1];
 
-	if (mb->stop > 0 &&
-	    mb->stmt[mb->stop-1]->token == REMsymbol &&
-	    mb->stmt[mb->stop-1]->argc > 0 &&
-	    mb->var[mb->stmt[mb->stop-1]->argv[0]].value.vtype == TYPE_str &&
-	    mb->var[mb->stmt[mb->stop-1]->argv[0]].value.val.sval &&
-	    strncmp(mb->var[mb->stmt[mb->stop-1]->argv[0]].value.val.sval, "total", 5) == 0)
+	if (p && mb->stop > 0 && getModuleId(p) == optimizerRef)
 		return MAL_SUCCEED; /* already optimized */
 
 	be = (backend *) c->sqlcontext;

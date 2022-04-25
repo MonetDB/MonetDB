@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* streams working on a lzma/xz-compressed disk file */
@@ -161,9 +161,9 @@ xz_stream(stream *inner, int preset)
 		ret = lzma_easy_encoder(&xz->strm, preset, LZMA_CHECK_CRC64);
 	}
 
-	stream *s = pump_stream(inner, state);
+	stream *s;
 
-	if (ret != LZMA_OK || s == NULL) {
+	if (ret != LZMA_OK || (s = pump_stream(inner, state)) == NULL) {
 		lzma_end(&xz->strm);
 		free(xz);
 		free(state);

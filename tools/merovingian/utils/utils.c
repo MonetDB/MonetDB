@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /**
  * utils
  * Fabian Groffen
- * Shared utility functions between merovingian and monetdb
+ * Shared utility functions between merovingian/monetdbd and monetdb
  */
 
 /* NOTE: for this file to work correctly, the random number generator
@@ -26,13 +26,8 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#ifdef HAVE_OPENSSL
-#include <openssl/rand.h>		/* RAND_bytes */
-#else
-#ifdef HAVE_COMMONCRYPTO
-#include <CommonCrypto/CommonCrypto.h>
-#include <CommonCrypto/CommonRandom.h>
-#endif
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
@@ -290,6 +285,29 @@ setConfVal(confkeyval *ckv, const char *val) {
 				return(strdup(buf));
 			}
 		}; break;
+		case LOGLEVEL: {
+			if (strcasecmp(val, "error") == 0) {
+				val = "error";
+				ival = ERROR;
+			} else if (strcasecmp(val, "warning") == 0) {
+				val = "warning";
+				ival = WARNING;
+			} else if (strcasecmp(val, "information") == 0) {
+				val = "information";
+				ival = INFORMATION;
+			} else if (strcasecmp(val, "debug") == 0) {
+				val = "debug";
+				ival = DEBUG;
+			} else {
+				return(strdup("allowed loglevel values are: error or warning or information or debug\n"));
+			}
+		}; break;
+		case MODS:
+			for (size_t i = 0; val[i]; i++) {
+				if (val[i] < ' ' || val[i] == '\\' || val[i] == '/' || val[i] >= 0177)
+					return strdup("only printable ASCII character other than \\ and / allowed");
+			}
+			/* fall through */
 		case STR:
 		case OTHER:
 			/* leave as is, not much to check */
@@ -403,7 +421,7 @@ abbreviateString(char *ret, const char *in, size_t width)
 	}
 }
 
-static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+static const char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
 	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
 	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -421,29 +439,18 @@ generateSalt(char *buf, unsigned int len)
 	unsigned int fill;
 	unsigned int min;
 
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
-#endif
+#ifdef HAVE_GETENTROPY
+	if (getentropy(&size, sizeof(size)) < 0)
 #endif
 		size = (unsigned int)rand();
 	fill = len * 0.75;
 	min = len * 0.42;
 	size = (size % (fill - min)) + min;
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
+#ifdef HAVE_GETENTROPY
+	if (getentropy(buf, size) == 0) {
 		for (c = 0; c < size; c++)
 			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
 	} else
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(buf, size) >= 0) {
-		for (c = 0; c < size; c++)
-			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
-	} else
-#endif
 #endif
 		for (c = 0; c < size; c++) {
 			buf[c] = seedChars[rand() % 62];

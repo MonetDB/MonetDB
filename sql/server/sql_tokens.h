@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef SQL_TOKENS_H
@@ -49,7 +49,6 @@ typedef enum tokens {
 	SQL_CREATE_TYPE,
 	SQL_CREATE_USER,
 	SQL_CREATE_VIEW,
-	SQL_CROSS,
 	SQL_CUBE,
 	SQL_CURRENT_ROW,
 	SQL_CYCLE,
@@ -181,7 +180,8 @@ typedef enum jt {
 	jt_inner = 0,
 	jt_left = 1,
 	jt_right = 2,
-	jt_full = 3
+	jt_full = 3,
+	jt_cross = 4
 } jt;
 
 typedef enum {

@@ -34,7 +34,7 @@ stdout of test 'prepared-select-with-error-causes-hang.Bug-6761` in directory 's
 #PREPARE SELECT "'ResellerName'" FROM abacus WHERE  ( ( ("'InstallationsproviderName'"='Bienz Pius Treuhand- und Revisions AG')) AND  ( ("'validuntil'"='2018-01-01' AND "'description'"='ABEA 2' AND (EXTRACT(YEAR FROM "'Zeitachse'")*100 + EXTRACT(MONTH FROM "'Zeitachse'"))/100.0='2019.010' AND "'UserName'"='AL - Astrid Lincke (Delphys)' AND "'validfrom'"='2016-12-01')) AND  ( ("'IFJ'"='ohne IFJ')) AND  ( ("'InlineCalc_Year_Zeitachse'"='2019'))) GROUP BY "'ResellerName'" LIMIT 1001 OFFSET 0;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	3,	1,	0,	6,	14 # length
 [ "varchar",	256,	0,	"",	"abacus",	"'ResellerName'"	]
 #exec 11(); -- hang in Apr2019-SP1, error in Nov2019

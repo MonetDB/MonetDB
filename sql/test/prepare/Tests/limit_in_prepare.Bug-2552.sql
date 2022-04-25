@@ -9,7 +9,7 @@ CREATE TABLE "sys"."tbls" (
 	"readonly"      BOOLEAN,
 	"temporary"     SMALLINT
 );
-COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+COPY 39 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 2001	"schemas"	2000	NULL	0	true	0	false	0
 2007	"types"	2000	NULL	0	true	0	false	0
 2016	"functions"	2000	NULL	0	true	0	false	0
@@ -49,7 +49,6 @@ COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 6428	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false	0
 6438	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(""imprints"") as ""imprints"",\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	false	0
 6453	"statistics"	2000	NULL	0	true	0	false	0
-6616	"systemfunctions"	2000	NULL	0	true	0	false	0
 
 create table rr (id int);
 insert into rr values (1),(2),(3);

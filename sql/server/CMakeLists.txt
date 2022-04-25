@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 BISON_TARGET(sqlparser
@@ -46,6 +46,10 @@ target_sources(sqlserver
   rel_rewriter.c
   rel_unnest.c
   rel_optimizer.c
+  rel_optimize_exps.c
+  rel_optimize_others.c
+  rel_optimize_proj.c
+  rel_optimize_sel.c
   rel_partition.c
   rel_planner.c rel_planner.h
   rel_distribute.c
@@ -56,10 +60,11 @@ target_sources(sqlserver
   rel_dump.c
   rel_dump.h rel_exp.h rel_rel.h
   rel_basetable.h
+  rel_rewriter.h
   rel_unnest.h
   rel_optimizer.h
+  rel_optimizer_private.h
   rel_partition.h
-  rel_distribute.h
   rel_prop.h
   rel_schema.h
   rel_select.h

@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 cmake_minimum_required(VERSION 3.12)
@@ -24,10 +24,6 @@ set(CMAKE_PROJECT_HOMEPAGE_URL "https://www.monetdb.org/")
 set(C_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
-  cmake_policy(SET CMP0076 OLD)
-endif()
-
 # We give precedence to UNIX include directories over
 # OS X Frameworks directories
 set(CMAKE_FIND_FRAMEWORK LAST)
@@ -36,6 +32,7 @@ set(CMAKE_FIND_APPBUNDLE LAST)
 include(CheckCSourceCompiles REQUIRED)
 include(CheckCCompilerFlag REQUIRED)
 include(CheckIncludeFile REQUIRED)
+include(CheckIncludeFiles REQUIRED)
 include(CMakePushCheckState REQUIRED)
 include(CheckStructHasMember REQUIRED)
 include(CheckSymbolExists REQUIRED)
@@ -52,8 +49,7 @@ test_big_endian(IS_BIG_ENDIAN)
 include(monetdb-functions)
 include(monetdb-findpackages)
 include(monetdb-toolchain)
-monetdb_default_toolchain()
-#monetdb_default_compiler_options()
+monetdb_default_compiler_options()
 
 include(monetdb-defines)
 monetdb_hg_revision()
@@ -76,7 +72,6 @@ if(NOT HAVE_SYS_SOCKET_H)
 endif()
 set(CMAKE_REQUIRED_INCLUDES "/usr/include")
 
-monetdb_configure_crypto()
 monetdb_configure_sizes()
 
 include(GNUInstallDirs)
@@ -93,12 +88,16 @@ monetdb_configure_misc()
 # Some custom target will need these setting.
 include(monetdb-custom-targets)
 
-SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR};${CMAKE_INSTALL_FULL_LIBDIR}/monetdb5")
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+if(NOT ${CMAKE_INSTALL_PREFIX} STREQUAL "/usr")
+  SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+  SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
+  SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#else()
+#  SET(CMAKE_SKIP_RPATH TRUE)
+endif()
 
-# required for some instalation files
+# required for some installation files
 set(PROGRAM_PERMISSIONS_DEFAULT
   OWNER_WRITE
   OWNER_READ

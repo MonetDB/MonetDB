@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -17,7 +17,7 @@
 qc *
 qc_create(sql_allocator *sa, int clientid, int seqnr)
 {
-	qc *r = SA_ZNEW(sa, qc);
+	qc *r = SA_NEW(sa, qc);
 	if (!r)
 		return NULL;
 	*r = (qc) {
@@ -31,7 +31,7 @@ static void
 cq_delete(int clientid, cq *q)
 {
 	if (q->name)
-		backend_freecode(clientid, q->name);
+		backend_freecode(NULL, clientid, q->name);
 	/* q, params and name are allocated using sa, ie need to be delete last */
 	if (q->sa)
 		sa_destroy(q->sa);
@@ -109,7 +109,7 @@ cq *
 qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *cmd, int no_mitosis)
 {
 	int namelen;
-	sql_func *f = SA_ZNEW(sa, sql_func);
+	sql_func *f = SA_NEW(sa, sql_func);
 	cq *n = SA_ZNEW(sa, cq);
 	list *res = NULL;
 
@@ -154,13 +154,16 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	*f = (sql_func) {
 		.mod = sql_private_module_name,
 		.type = F_PROC,
+		.lang = FUNC_LANG_INT,
 		.query = cmd,
 		.ops = params,
 		.res = res,
 	};
-	base_init(sa, &f->base, 0, TR_NEW, NULL);
+	base_init(sa, &f->base, 0, true, NULL);
+	f->base.new = 1;
 	f->base.id = n->id;
 	f->base.name = f->imp = name;
+	f->instantiated = TRUE;
 	n->f = f;
 	return n;
 }

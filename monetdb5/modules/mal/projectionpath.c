@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -34,6 +34,8 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			while (--i >= pci->retc)
 				BBPunfix(joins[i - pci->retc]->batCacheid);
 			GDKfree(joins);
+			if (b)
+				BBPunfix(b->batCacheid);
 			throw(MAL, "algebra.projectionpath", "%s", b ? SEMANTIC_TYPE_MISMATCH : INTERNAL_BAT_ACCESS);
 		}
 		joins[i - pci->retc] = b;
@@ -43,9 +45,10 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc; i < pci->argc; i++)
 		BBPunfix(joins[i - pci->retc]->batCacheid);
 	GDKfree(joins);
-	if ( b)
-		BBPkeepref( *r = b->batCacheid);
-	else
+	if ( b) {
+		*r = b->batCacheid;
+		BBPkeepref(b);
+	} else
 		throw(MAL, "algebra.projectionpath", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

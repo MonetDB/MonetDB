@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -38,7 +38,6 @@ geom_export str geoHasZ(int* res, int* info);
 geom_export str geoHasM(int* res, int* info);
 geom_export str geoGetType(char** res, int* info, int* flag);
 
-geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
 
 geom_export str mbrFromString(mbr **w, const char **src);
@@ -60,6 +59,7 @@ geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
 
 geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
 geom_export str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe);
+geom_export str wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *tpe);
 
 geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str *geomWKT, int* srid, int* flag);
 
@@ -236,7 +236,7 @@ geom_export str wkbUnion_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id);
 
 geom_export str wkbSetSRID_bat(bat* outBAT_id, bat* inBAT_id, int* srid);
 
-geom_export str geom_2_geom_bat(bat* outBAT_id, bat* inBAT_id, int* columnType, int* columnSRID);
+geom_export str geom_2_geom_bat(bat* outBAT_id, bat* inBAT_id, bat* cand, int* columnType, int* columnSRID);
 
 geom_export str wkbMBR_bat(bat* outBAT_id, bat* inBAT_id);
 

@@ -4,7 +4,7 @@ SET TIME ZONE INTERVAL '+00:00' HOUR TO MINUTE
 query T rowsort
 select epoch (1087488000)
 ----
-2004-06-17 16:00:00
+2004-06-17 16:00:00+00:00
 
 query I rowsort
 select epoch (timestamp '2004-06-17 16:00:00.000000')
@@ -31,12 +31,12 @@ select * from t10
 query T rowsort
 select epoch(1203170400)
 ----
-2008-02-16 14:00:00
+2008-02-16 14:00:00+00:00
 
 query T rowsort
 select epoch(time1) from t10
 ----
-2008-02-13 11:08:36
+2008-02-13 11:08:36+00:00
 
 query I rowsort
 select epoch(time2) from t10

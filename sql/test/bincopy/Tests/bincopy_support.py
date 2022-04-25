@@ -94,19 +94,19 @@ INTS = ("""
 CREATE TABLE foo(id INT NOT NULL);
 COPY BINARY INTO foo(id) FROM @ints@ @ON@;
 SELECT COUNT(DISTINCT id) FROM foo;
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 MORE_INTS = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT);
 COPY BINARY INTO foo(id, i) FROM @ints@, @more_ints@ @ON@;
 SELECT COUNT(id) FROM foo WHERE i = id + 1;
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s VARCHAR(20));
 COPY BINARY INTO foo(id, s) FROM @ints@, @strings@ @ON@;
 SELECT COUNT(id) FROM foo WHERE s = ('int' || id);
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 NULL_INTS = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT);
@@ -114,7 +114,7 @@ COPY BINARY INTO foo(id, i) FROM @ints@, @null_ints@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 2 = 0 AND i IS NULL)
 OR    (id % 2 = 1 AND i = id);
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 LARGE_STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
@@ -122,20 +122,20 @@ COPY BINARY INTO foo(id, s) FROM @ints@, @large_strings@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 10000 <> 0 AND LENGTH(s) = 9)
 OR    (id % 10000 = 0 AND LENGTH(s) = 280000 + 9);
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 BROKEN_STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
-""", (None, "!GDK reported error: strPut: incorrectly encoded UTF-8"))
+""", (None, "!malformed utf-8 byte sequence"))
 
 # note that the \r\n has been normalized to \n but the lone \r has been
 # left alone.
 NEWLINE_STRINGS = (r"""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = (E'rn\nr\r' || id);
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+SELECT COUNT(id) FROM foo WHERE s = (E'RN\nR\r' || id);
+""", [f"{NRECS}"])
 
 NULL_STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
@@ -143,7 +143,7 @@ COPY BINARY INTO foo(id, s) FROM @ints@, @null_strings@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 2 = 0 AND s IS NULL)
 OR    (id % 2 = 1 AND s = 'banana');
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 TIMESTAMPS = ("""
 CREATE TABLE foo(
@@ -212,19 +212,19 @@ SELECT * FROM foo
     WHERE 1000000 * CAST(EXTRACT(SECOND FROM tm) AS DECIMAL(13,6)) <> 1000000 * "second" + ms
     LIMIT 4;
 
-""", [f"{NRECS} affected rows"])
+""", [])
 
 PARTIAL = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT, j INT NULL);
 COPY BINARY INTO foo(id, i) FROM @ints@, @more_ints@ @ON@;
 SELECT COUNT(id) FROM foo WHERE i = id + 1 AND j IS NULL;
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 BOOLS = ("""
 CREATE TABLE foo(id INT NOT NULL, b BOOL);
 COPY BINARY INTO foo(id, b) FROM @ints@, @bools@ @ON@;
 SELECT COUNT(id) FROM foo WHERE b = (id % 2 <> 0);
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 INCONSISTENT_LENGTH = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT);
@@ -237,13 +237,13 @@ FLOATS = ("""
 CREATE TABLE foo(id INT NOT NULL, r REAL);
 COPY BINARY INTO foo(id, r) FROM @ints@, @floats@ @ON@;
 SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = r;
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 DOUBLES = ("""
 CREATE TABLE foo(id INT NOT NULL, d DOUBLE);
 COPY BINARY INTO foo(id, d) FROM @ints@, @doubles@ @ON@;
 SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = d;
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 INTEGER_TYPES = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT);
@@ -281,7 +281,7 @@ FROM verified
 GROUP BY t_s, s_i, i_b
 ORDER BY t_s, s_i, i_b
 ;
-""", [f"{NRECS} affected rows", f"true,true,true,{NRECS}"])
+""", [f"true,true,true,{NRECS}"])
 
 HUGE_INTS = ("""
 CREATE TABLE foo(b BIGINT, h HUGEINT);
@@ -314,7 +314,7 @@ FROM verified
 GROUP BY b_h
 ORDER BY b_h
 ;
-""", [f"{NRECS} affected rows", f"true,{NRECS}"])
+""", [f"true,{NRECS}"])
 
 DECIMALS = ("""
 -- 1..2 TINYINT
@@ -366,7 +366,7 @@ SELECT
 FROM verified
 GROUP BY d1_1_ok, d2_1_ok, d3_2_ok, d4_2_ok, d5_2_ok, d9_2_ok, d10_2_ok, d18_2_ok
 ;
-""", [f"{NRECS} affected rows", f"true,true,true,true,true,true,true,true,{NRECS}"])
+""", [f"true,true,true,true,true,true,true,true,{NRECS}"])
 
 HUGE_DECIMALS = ("""
 -- 19..38 HUGEINT
@@ -385,7 +385,7 @@ SELECT
 FROM foo
 GROUP BY d19_ok, d38_ok
 ;
-""", [f"{NRECS} affected rows", f"true,true{NRECS}"])
+""", [f"true,true{NRECS}"])
 
 URLS = ("""
 -- currently every string is accepted as a url
@@ -393,7 +393,7 @@ URLS = ("""
 CREATE TABLE foo(u URL);
 COPY BINARY INTO foo FROM @strings@ @ON@;
 SELECT COUNT(*) FROM foo;
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 JSON_OBJECTS = ("""
 CREATE TABLE foo(i INT, j JSON);
@@ -402,7 +402,7 @@ SELECT COUNT(*) FROM foo
 WHERE (i % 100 = 99 AND j IS NULL)
 OR (i % 100 <> 99 AND j IS NOT NULL)
 ;
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 UUIDS = ("""
 CREATE TABLE foo(t CHAR(16), u UUID);
@@ -411,7 +411,7 @@ SELECT COUNT(*) FROM foo
 WHERE t = CAST(u AS TEXT)
 OR    u IS NULL
 ;
-""", [f"{NRECS} affected rows", f"{NRECS}"])
+""", [f"{NRECS}"])
 
 LITTLE_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
@@ -454,7 +454,7 @@ FROM verified
 GROUP BY t_s, s_i, i_b, f_d
 ORDER BY t_s, s_i, i_b, f_d
 ;
-""", [f"{NRECS} affected rows", f"true,true,true,true,{NRECS}"])
+""", [f"true,true,true,true,{NRECS}"])
 
 BIG_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
@@ -497,7 +497,7 @@ FROM verified
 GROUP BY t_s, s_i, i_b, f_d
 ORDER BY t_s, s_i, i_b, f_d
 ;
-""", [f"{NRECS} affected rows", f"true,true,true,true,{NRECS}"])
+""", [f"true,true,true,true,{NRECS}"])
 
 NATIVE_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
@@ -541,4 +541,4 @@ GROUP BY t_s, s_i, i_b, f_d
 ORDER BY t_s, s_i, i_b, f_d
 LIMIT 4;
 ;
-""", [f"{NRECS} affected rows", f"true,true,true,true,{NRECS}"])
+""", [f"true,true,true,true,{NRECS}"])

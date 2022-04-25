@@ -1,0 +1,53 @@
+statement ok
+create replica table t1 (a int)
+
+statement ok
+create replica table t2 (a int)
+
+statement ok
+create table t3 (a int)
+
+statement ok rowcount 3
+insert into t3 values (1), (2), (3)
+
+statement ok
+alter table t1 add table t2
+
+statement error 42000!The REPLICA TABLE 'sys.t2' should have at least one table associated
+select a from t1
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+select a from t2
+
+statement ok
+alter table t2 add table t3
+
+query I rowsort
+select a from t1
+----
+1
+2
+3
+
+query I rowsort
+select a from t2
+----
+1
+2
+3
+
+statement ok
+alter table t2 drop table t3
+
+statement ok
+alter table t1 drop table t2
+
+statement ok
+drop table t1
+
+statement ok
+drop table t2
+
+statement ok
+drop table t3
+

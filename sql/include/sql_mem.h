@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _SQL_MEM_H_
@@ -14,6 +14,7 @@
 
 #define SQL_OK 	1
 #define SQL_ERR 0
+#define SQL_CONFLICT 2
 
 #ifdef WIN32
 #ifdef LIBSQL
@@ -28,6 +29,7 @@
 #define MNEW( type ) (type*)GDKmalloc(sizeof(type) )
 #define ZNEW( type ) (type*)GDKzalloc(sizeof(type) )
 #define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))
+#define ZNEW_ARRAY( type, size ) (type*)GDKzalloc((size)*sizeof(type))
 #define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
 
 #define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
@@ -61,7 +63,7 @@ sql_export void *sa_zalloc( sql_allocator *sa,  size_t sz );
 extern void *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
 extern void sa_destroy( sql_allocator *sa );
 extern char *sa_strndup( sql_allocator *sa, const char *s, size_t l);
-extern char *sa_strdup( sql_allocator *sa, const char *s);
+sql_export char *sa_strdup( sql_allocator *sa, const char *s);
 extern char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2);
 extern size_t sa_size( sql_allocator *sa );
 

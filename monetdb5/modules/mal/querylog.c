@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -167,14 +167,18 @@ QLOGcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "querylog_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b)
-		return b;
+	if (b) {
+		/* make append-only in case this wasn't done when created */
+		return BATsetaccess(b, BAT_APPEND);
+	}
 
 	b = COLnew(0, tt, 1 << 16, PERSISTENT);
 	if (b == NULL)
 		return NULL;
+	if ((b = BATsetaccess(b, BAT_APPEND)) == NULL)
+		return NULL;
 
-	if (BBPrename(b->batCacheid, buf) != 0 ||
+	if (BBPrename(b, buf) != 0 ||
 		BATmode(b, false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
@@ -184,7 +188,15 @@ QLOGcreate(str hnme, str tnme, int tt)
 	return b;
 }
 
-#define cleanup(X)  if (X) { (X)->batTransient = true; BBPrename((X)->batCacheid,"_"); BBPunfix((X)->batCacheid); } (X) = NULL;
+#define cleanup(X)								\
+	do {										\
+		if (X) {								\
+			(X)->batTransient = true;			\
+			BBPrename((X), NULL);				\
+			BBPunfix((X)->batCacheid);			\
+		}										\
+		(X) = NULL;								\
+	} while (0)
 
 static void
 _QLOGcleanup(void)

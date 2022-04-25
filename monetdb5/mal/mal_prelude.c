@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten, N. Nes
@@ -26,7 +26,7 @@
 #define MAX_MAL_MODULES 128
 static int mel_modules = 0;
 static struct mel_module {
-	char *name;
+	const char *name;
 	mel_atom *atoms;
 	mel_func *funcs;
 	mel_init inits;
@@ -47,7 +47,7 @@ mal_startup(void)
  */
 
 void
-mal_module2(str name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code)
+mal_module2(const char *name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code)
 {
 	assert (mel_modules < MAX_MAL_MODULES);
 	mel_module[mel_modules].name = name;
@@ -59,7 +59,7 @@ mal_module2(str name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const
 }
 
 void
-mal_module(str name, mel_atom *atoms, mel_func *funcs)
+mal_module(const char *name, mel_atom *atoms, mel_func *funcs)
 {
 	assert (mel_modules < MAX_MAL_MODULES);
 	mel_module[mel_modules].name = name;
@@ -71,7 +71,7 @@ mal_module(str name, mel_atom *atoms, mel_func *funcs)
 }
 
 static char *
-initModule(Client c, char *name)
+initModule(Client c, const char *name)
 {
 	char *msg = MAL_SUCCEED;
 
@@ -225,17 +225,24 @@ addFunctions(mel_func *fcn){
 		if ( s == NULL)
 			throw(LOADER, "addFunctions", "Can not create symbol for %s.%s missing", fcn->mod, fcn->fcn);
 		mb = s->def;
-		if( mb == NULL)
+		if( mb == NULL) {
+			freeSymbol(s);
 			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
+		}
+
 		if (fcn->cname && fcn->cname[0])
-			strcpy(mb->binding, fcn->cname);
+			strcpy_len(mb->binding, fcn->cname, sizeof(mb->binding));
+		/* keep the comment around, setting the static avoid freeing the string accidentally , saving on duplicate documentation in the code. */
+		mb->statichelp = mb->help = fcn->comment;
+
 		sig= newInstructionArgs(mb, fcn->mod, fcn->fcn, fcn->argc + (fcn->retc == 0));
 		sig->retc = 0;
 		sig->argc = 0;
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
-		sig->fcn = (MALfcn)fcn->imp;
+		sig->fcn = fcn->imp;
 		if( fcn->unsafe)
 			mb->unsafeProp = 1;
+
 		/* add the return variables */
 		if(fcn->retc == 0){
 			int idx = newTmpVariable(mb, TYPE_void);
@@ -311,7 +318,7 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 }
 
 int
-melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ... )
+melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ... )
 {
 	int i, idx;
 	Module c;
@@ -335,7 +342,7 @@ melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char
 	mb = s->def;
 	(void)comment;
 	if (fname)
-		strcpy(mb->binding, fname);
+		strcpy_len(mb->binding, fname, sizeof(mb->binding));
 	if (mb == NULL) {
 		freeSymbol(s);
 		return MEL_ERR;
@@ -344,7 +351,7 @@ melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char
 	sig->retc = 0;
 	sig->argc = 0;
 	sig->token = command ? COMMANDsymbol:PATTERNsymbol;
-	sig->fcn = (MALfcn)imp;
+	sig->fcn = imp;
 	if (unsafe)
 		mb->unsafeProp = 1;
 	/* add the return variables */
@@ -410,7 +417,7 @@ melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char
 }
 
 static str
-malPrelude(Client c, int listing, int no_mapi_server)
+malPrelude(Client c, int listing, int *sql, int *mapi)
 {
 	int i;
 	str msg = MAL_SUCCEED;
@@ -427,6 +434,7 @@ malPrelude(Client c, int listing, int no_mapi_server)
 
 	/* Add the signatures, where we now have access to all atoms */
 	for(i = 0; i<mel_modules; i++) {
+		(void) putName(mel_module[i].name);
 		if (!malLibraryEnabled(mel_module[i].name))
 			continue;
 		if (mel_module[i].funcs) {
@@ -436,9 +444,15 @@ malPrelude(Client c, int listing, int no_mapi_server)
 			if (msg)
 				return msg;
 
-			/* skip sql should be last to startup and mapi if configured without mapi server */
-			if (strcmp(mel_module[i].name, "sql") == 0 || (no_mapi_server && strcmp(mel_module[i].name, "mapi") == 0))
+			/* mapi should be last, and sql last before mapi */
+			if (strcmp(mel_module[i].name, "sql") == 0) {
+				*sql = i;
 				continue;
+			}
+			if (strcmp(mel_module[i].name, "mapi") == 0) {
+				*mapi = i;
+				continue;
+			}
 			if (!mel_module[i].inits) {
 				msg = initModule(c, mel_module[i].name);
 				if (msg)
@@ -446,13 +460,10 @@ malPrelude(Client c, int listing, int no_mapi_server)
 			}
 		}
 		if (mel_module[i].inits) {
-			msg = mel_module[i].inits();
-			if (msg)
-				return msg;
-			/* skip sql should be last to startup and mapi if configured without mapi server */
-			if (strcmp(mel_module[i].name, "sql") == 0 || (no_mapi_server && strcmp(mel_module[i].name, "mapi") == 0))
+			/* mapi should be last, and sql last before mapi */
+			if (strcmp(mel_module[i].name, "sql") == 0 || strcmp(mel_module[i].name, "mapi") == 0)
 				continue;
-			msg = initModule(c, mel_module[i].name);
+			msg = mel_module[i].inits();
 			if (msg)
 				return msg;
 		}
@@ -461,12 +472,12 @@ malPrelude(Client c, int listing, int no_mapi_server)
 }
 
 str
-malIncludeModules(Client c, char *modules[], int listing, int no_mapi_server)
+malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server)
 {
-	int i;
 	str msg;
+	int sql = -1, mapi = -1;
 
-	for(i = 0; modules[i]; i++) {
+	for (int i = 0; modules[i]; i++) {
 		/* load library */
 		if (!malLibraryEnabled(modules[i]))
 			continue;
@@ -474,13 +485,24 @@ malIncludeModules(Client c, char *modules[], int listing, int no_mapi_server)
 			return msg;
 	}
 	/* load the mal code for these modules and execute preludes */
-	if ((msg = malPrelude(c, listing, no_mapi_server)) != NULL)
+	if ((msg = malPrelude(c, listing, &sql, &mapi)) != NULL)
 		return msg;
-	for(int i = 0; modules[i]; i++) {
-		if (strcmp(modules[i], "sql") == 0) { /* start now */
-			initModule(c, modules[i]);
-			break;
-		}
+	/* mapi should be last, and sql last before mapi */
+	if (sql >= 0) {
+		if (mel_module[sql].inits)
+			msg = mel_module[sql].inits();
+		else
+			msg = initModule(c, "sql");
+		if (msg)
+			return msg;
+	}
+	if (!no_mapi_server && mapi >= 0) {
+		if (mel_module[mapi].inits)
+			msg = mel_module[mapi].inits();
+		else
+			msg = initModule(c, "mapi");
+		if (msg)
+			return msg;
 	}
 	return MAL_SUCCEED;
 }

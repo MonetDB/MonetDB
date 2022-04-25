@@ -41,9 +41,19 @@ select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "u
 query ITTI rowsort
 select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 group by "eId"
 ----
-12 values hashing to 9b51a17c04ac8f571381d727e7d991a2
+1000761
+2012-11-02 09:53:57
+2012-12-18 19:12:38
+11603
+1000763
+2012-11-21 17:42:25
+2012-12-18 07:48:32
+4985
+1000807
+2012-12-10 17:22:59
+2012-12-10 17:22:59
+1
 
 statement ok
 drop table t3225
-
 

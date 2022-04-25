@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -95,6 +95,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 	size_t querylen;
 	size_t pos = 0;
 	char *sch = NULL, *tab = NULL;
+	char *sysORtmp = "sys";
 
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
 	fixODBCstring(SchemaName, NameLength2, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
@@ -204,6 +205,9 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		if (query == NULL)
 			goto nomem;
 
+		if (SchemaName != NULL && strcmp((const char *) SchemaName, "tmp") == 0)
+			sysORtmp = "tmp";
+
 		/* Note: SCOPE is SQL_SCOPE_TRANSACTION */
 		/* Note: PSEUDO_COLUMN is SQL_PC_NOT_PSEUDO */
 		pos += snprintf(query + pos, querylen - pos,
@@ -218,10 +222,10 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			DECIMAL_DIGITS(c) ", "
 			       "cast(%d as smallint) as pseudo_column "
 			 "from sys.schemas s, "
-			      "sys.tables t, "
-			      "sys.columns c, "
-			      "sys.keys k, "
-			      "sys.objects kc "
+			      "%s._tables t, "
+			      "%s._columns c, "
+			      "%s.keys k, "
+			      "%s.objects kc "
 			 "where s.id = t.schema_id and "
 			       "t.id = c.table_id and "
 			       "t.id = k.table_id and "
@@ -246,7 +250,8 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			DECIMAL_DIGITS_ARGS,
 #endif
 			/* pseudo_column: */
-			SQL_PC_NOT_PSEUDO);
+			SQL_PC_NOT_PSEUDO,
+			sysORtmp, sysORtmp, sysORtmp, sysORtmp);
 		assert(pos < 4300);
 		/* TODO: improve the SQL to get the correct result:
 		   - only one set of columns should be returned, also
@@ -285,11 +290,11 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			pos += strcpy_len(query + pos, " and c.\"null\" = false", querylen - pos);
 		}
 
-		pos += strcpy_len(query + pos,
+		pos += snprintf(query + pos, querylen - pos,
 		       "), "
 			"tid as ("
 			   "select t.id as tid "
-			    "from sys._tables t, sys.keys k "
+			    "from %s._tables t, %s.keys k "
 			    "where t.id = k.table_id and k.type = 0"
 		       ") "
 			"select sc.scope, sc.column_name, sc.data_type, "
@@ -301,7 +306,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			       "sc.table_id in (select tid from tid)) or "
 			      "(sc.type = 1 and "
 			       "sc.table_id not in (select tid from tid))",
-			querylen - pos);
+			sysORtmp, sysORtmp);
 
 		/* ordering on SCOPE not needed (since it is constant) */
 	} else {

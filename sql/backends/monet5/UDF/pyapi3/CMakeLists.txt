@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 if(HAVE_LIBPY3)
@@ -61,8 +61,8 @@ if(HAVE_LIBPY3)
     LIBPYAPI3)
 
   set_target_properties(pyapi3
-    PROPERTIES 
-    OUTPUT_NAME 
+    PROPERTIES
+    OUTPUT_NAME
     _pyapi3)
 
   install(TARGETS
@@ -80,7 +80,10 @@ if(HAVE_LIBPY3)
     configure_file(pyapi_locatepython3.bat.in
       ${CMAKE_CURRENT_BINARY_DIR}/pyapi_locatepython3.bat @ONLY)
 
-    install(FILES $<TARGET_PDB_FILE:pyapi3> DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5 OPTIONAL)
+    install(FILES
+      $<TARGET_PDB_FILE:pyapi3>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      OPTIONAL)
     install(FILES
       ${CMAKE_CURRENT_BINARY_DIR}/pyapi_locatepython3.bat
       DESTINATION "."

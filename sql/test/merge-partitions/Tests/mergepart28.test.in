@@ -60,4 +60,3 @@ DROP TABLE ratings
 statement ok
 DROP LOADER tryaloader
 
-

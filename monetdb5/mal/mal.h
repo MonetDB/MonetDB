@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -57,7 +57,7 @@ mal_export stream	*maleventstream;
 */
 #define GRPthreads (THRDMASK | PARMASK)
 #define GRPmemory (ALLOCMASK )
-#define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
+#define GRPproperties (CHECKMASK )
 #define GRPio (IOMASK | PERFMASK )
 #define GRPheaps (HEAPMASK)
 #define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
@@ -71,9 +71,8 @@ mal_export MT_Lock  mal_remoteLock;
 mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
-mal_export MT_Lock  mal_oltpLock ;
 
-mal_export int mal_init(char *modules[], int embedded);
+mal_export int mal_init(char *modules[], bool embedded);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
 mal_export const char *mal_version(void);
@@ -172,6 +171,7 @@ typedef struct {
 typedef struct MALBLK {
 	char binding[IDLENGTH];	/* related C-function */
 	str help;				/* supportive commentary */
+	str statichelp;			/* static help string should not be freed */
 	oid tag;				/* unique block tag */
 	struct MALBLK *alternative;
 	int vtop;				/* next free slot */
@@ -211,7 +211,8 @@ typedef struct MALSTK {
 	int stkbot;			/* the first variable to be initialized */
 	int stkdepth;		/* to protect against runtime stack overflow */
 	int calldepth;		/* to protect against runtime stack overflow */
-	short keepAlive;	/* do not garbage collect when set */
+	bool keepAlive:1,	/* do not garbage collect when set */
+		 keepTmps:1;	/* also do not garbage collect tmps (needed for interactive debugging only) */
 	/*
 	 * Parallel processing is mostly driven by dataflow, but within this context
 	 * there may be different schemes to take instructions into execution.
@@ -236,10 +237,5 @@ typedef struct MALSTK {
 	struct MALBLK *blk;		/* associated definition */
 	ValRecord stk[FLEXIBLE_ARRAY_MEMBER];
 } MalStack, *MalStkPtr;
-
-#define MAXOLTPLOCKS  1024
-typedef unsigned char OLTPlocks[MAXOLTPLOCKS];
-
-#define OLTPclear(X)  memset((char*)X, 0, sizeof(X))
 
 #endif /*  _MAL_H*/

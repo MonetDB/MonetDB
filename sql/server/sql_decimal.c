@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -12,7 +12,7 @@
 
 
 DEC_TPE
-decimal_from_str(char *dec, int* digits, int* scale, int* has_errors)
+decimal_from_str(const char *dec, int* digits, int* scale, int* has_errors)
 {
 
 #ifdef HAVE_HGE

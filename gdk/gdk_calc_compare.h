@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* this file is included multiple times by gdk_calc.c */
@@ -831,18 +831,17 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 	)
 {
 	struct canditer ci1, ci2;
-	BUN ncand;
 
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	ncand = canditer_init(&ci1, b1, s1);
-	if (canditer_init(&ci2, b2, s2) != ncand ||
-	    ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, b1, s1);
+	canditer_init(&ci2, b2, s2);
+	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
-	if (ncand == 0)
+	if (ci1.ncand == 0)
 		return COLnew(ci1.hseq, TYPE_TPE, 0, TRANSIENT);
 
 	if (BATtvoid(b1) && BATtvoid(b2) && ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
@@ -857,27 +856,32 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 		else
 			res = OP(b1->tseqbase + ci1.seq, b2->tseqbase + ci2.seq);
 
-		return BATconstant(b1->hseqbase, TYPE_TPE, &res, ncand, TRANSIENT);
+		return BATconstant(b1->hseqbase, TYPE_TPE, &res, ci1.ncand, TRANSIENT);
 	}
 
-	return BATcalcop_intern(b1->ttype == TYPE_void ? (const void *) &b1->tseqbase : (const void *) Tloc(b1, 0),
-				ATOMtype(b1->ttype) == TYPE_oid ? b1->ttype : ATOMbasetype(b1->ttype),
+	BATiter b1i = bat_iterator(b1);
+	BATiter b2i = bat_iterator(b2);
+	BAT *bn = BATcalcop_intern(b1i.type == TYPE_void ? (const void *) &b1->tseqbase : (const void *) b1i.base,
+				ATOMtype(b1i.type) == TYPE_oid ? b1i.type : ATOMbasetype(b1i.type),
 				true,
 				b1->tvheap ? b1->tvheap->base : NULL,
-				b1->twidth,
-				b2->ttype == TYPE_void ? (const void *) &b2->tseqbase : (const void *) Tloc(b2, 0),
-				ATOMtype(b2->ttype) == TYPE_oid ? b2->ttype : ATOMbasetype(b2->ttype),
+				b1i.width,
+				b2i.type == TYPE_void ? (const void *) &b2->tseqbase : (const void *) b2i.base,
+				ATOMtype(b2i.type) == TYPE_oid ? b2i.type : ATOMbasetype(b2i.type),
 				true,
 				b2->tvheap ? b2->tvheap->base : NULL,
-				b2->twidth,
+				b2i.width,
 				&ci1, &ci2,
 				b1->hseqbase, b2->hseqbase,
-				b1->tnonil && b2->tnonil,
+				b1i.nonil && b2i.nonil,
 				ci1.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,
 #endif
 				__func__);
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
+	return bn;
 }
 
 BAT *
@@ -888,33 +892,35 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
 	)
 {
 	struct canditer ci;
-	BUN ncand;
 
 	BATcheck(b, NULL);
 
-	ncand = canditer_init(&ci, b, s);
-	if (ncand == 0)
+	canditer_init(&ci, b, s);
+	if (ci.ncand == 0)
 		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
 
-	return BATcalcop_intern(b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
-				ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
+	BATiter bi = bat_iterator(b);
+	BAT *bn = BATcalcop_intern(bi.type == TYPE_void ? (const void *) &b->tseqbase : (const void *) bi.base,
+				ATOMtype(bi.type) == TYPE_oid ? bi.type : ATOMbasetype(bi.type),
 				true,
-				b->tvheap ? b->tvheap->base : NULL,
-				b->twidth,
+				bi.vh ? bi.vh->base : NULL,
+				bi.width,
 				VALptr(v),
 				ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
 				false,
 				NULL,
 				0,
 				&ci,
-				&(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				&(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				b->hseqbase, 0,
-				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,
 #endif
 				__func__);
+	bat_iterator_end(&bi);
+	return bn;
 }
 
 BAT *
@@ -925,33 +931,35 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s
 	)
 {
 	struct canditer ci;
-	BUN ncand;
 
 	BATcheck(b, NULL);
 
-	ncand = canditer_init(&ci, b, s);
-	if (ncand == 0)
+	canditer_init(&ci, b, s);
+	if (ci.ncand == 0)
 		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
 
-	return BATcalcop_intern(VALptr(v),
+	BATiter bi = bat_iterator(b);
+	BAT *bn = BATcalcop_intern(VALptr(v),
 				ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
 				false,
 				NULL,
 				0,
-				b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
-				ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
+				bi.type == TYPE_void ? (const void *) &b->tseqbase : (const void *) bi.base,
+				ATOMtype(bi.type) == TYPE_oid ? bi.type : ATOMbasetype(bi.type),
 				true,
-				b->tvheap ? b->tvheap->base : NULL,
-				b->twidth,
-				&(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				bi.vh ? bi.vh->base : NULL,
+				bi.width,
+				&(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				&ci,
 				0, b->hseqbase,
-				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,
 #endif
 				__func__);
+	bat_iterator_end(&bi);
+	return bn;
 }
 
 gdk_return

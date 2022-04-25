@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /**
@@ -163,11 +163,11 @@ command_help(int argc, char *argv[])
 		printf("  prints the version of this monetdb utility\n");
 	} else if (strcmp(argv[1], "snapshot") == 0) {
 		if (argc > 2 && strcmp(argv[2], "list") == 0) {
-			printf("Usage: monetdb snapshot list [<dbname>...]\n");
-			printf("  List snapshots for the given database, or all databases\n");
+			printf("Usage: monetdb snapshot list [<dbname> ...]\n");
+			printf("  List snapshots for the given database(s), or all databases\n");
 			printf("  if none given.\n");
 		} else if (argc > 2 && strcmp(argv[2], "create") == 0) {
-			printf("Usage: monetdb snapshot create [-t <targetfile>] <dbname> [<dbname>..]\n");
+			printf("Usage: monetdb snapshot create [-t <targetfile>] <dbname> [<dbname> ...]\n");
 			printf("  Take a snapshot of the listed databases. Unless -t is given, the snapshots\n");
 			printf("  are written to files named\n");
 			printf("  <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC<snapshotcompression>.\n");
@@ -175,14 +175,14 @@ command_help(int argc, char *argv[])
 			printf("  -t <targetfile>  File on the server to write the snapshot to.\n");
 		} else if (argc > 2 && strcmp(argv[2], "restore") == 0) {
 			printf("Usage: monetdb snapshot restore [-f] <snapid> [dbname]\n");
-			printf("  Create a database from the given snapshot, where  <snapid> is either\n");
+			printf("  Create a database from the given snapshot, where <snapid> is either\n");
 			printf("  a path on the server or <dbname>@<num> as produced by\n");
 			printf("  'monetdb snapshot list'\n");
 			printf("Options:\n");
 			printf("  -f  do not ask for confirmation\n");
 		} else if (argc > 2 && strcmp(argv[2], "destroy") == 0) {
-			printf("Usage: monetdb snapshot destroy [-f] <snapid>...\n");
-			printf("       monetdb snapshot destroy [-f] -r <N> <dbname>...\n");
+			printf("Usage: monetdb snapshot destroy [-f] <snapid> [<snapid> ...]\n");
+			printf("       monetdb snapshot destroy [-f] -r <N> <dbname> [<dbname> ...]\n");
 			printf("  Destroy one or more database snapshots, identified by a database name\n");
 			printf("  and a sequence number as given by 'monetdb snapshot list'.\n");
 			printf("  In the first form, the sequence numbers are part of the <snapid>.\n");
@@ -195,8 +195,9 @@ command_help(int argc, char *argv[])
 			printf("Usage: monetdb snapshot write <dbname>\n");
 			printf("  Write a snapshot of database <dbname> to standard out.\n");
 		} else {
-			printf("Usage: monetdb <create|list|restore|destroy|write> [arguments]\n");
-			printf("  Manage database snapshots\n");
+			printf("Usage: monetdb snapshot subcommand [arguments]\n");
+			printf("  where subcommand is one of:\n");
+			printf("    create, list, restore, destroy or write\n");
 		}
 	} else {
 		printf("help: unknown command: %s\n", argv[1]);
@@ -248,7 +249,7 @@ MEROgetStatus(sabdb **ret, char *database)
 		database = "#all";
 
 	e = control_send(&buf, mero_host, mero_port,
-			database, "status", 1, mero_pass);
+			database, "status", true, mero_pass);
 	if (e != NULL)
 		return(e);
 
@@ -593,7 +594,7 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 		}
 
 		ret = control_send(&out, mero_host, mero_port,
-				dbs->dbname, merocmd, 0, mero_pass);
+				dbs->dbname, merocmd, false, mero_pass);
 
 		if (ret != NULL) {
 			if (premsg != NULL && !monetdb_quiet)
@@ -954,7 +955,7 @@ command_discover(int argc, char *argv[])
 	 * which help each other, just like merovingians do among each
 	 * other. */
 	p = control_send(&buf, mero_host, mero_port,
-			"anelosimus", "eximius", 1, mero_pass);
+			"anelosimus", "eximius", true, mero_pass);
 	if (p != NULL) {
 		printf("%s: %s\n", argv[0], p);
 		free(p);
@@ -1245,7 +1246,7 @@ command_set(int argc, char *argv[], meroset type)
 		}
 
 		out = control_send(&res, mero_host, mero_port,
-				orig->dbname, p, 0, mero_pass);
+				orig->dbname, p, false, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1263,7 +1264,7 @@ command_set(int argc, char *argv[], meroset type)
 			p = property;
 		}
 		out = control_send(&res, mero_host, mero_port,
-				stats->dbname, p, 0, mero_pass);
+				stats->dbname, p, false, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1364,7 +1365,7 @@ command_get(int argc, char *argv[])
 	}
 
 	e = control_send(&buf, mero_host, mero_port,
-			"#defaults", "get", 1, mero_pass);
+			"#defaults", "get", true, mero_pass);
 	if (e != NULL) {
 		fprintf(stderr, "get: %s\n", e);
 		free(e);
@@ -1392,7 +1393,7 @@ command_get(int argc, char *argv[])
 	stats = orig;
 	while (stats != NULL) {
 		e = control_send(&buf, mero_host, mero_port,
-				stats->dbname, "get", 1, mero_pass);
+				stats->dbname, "get", true, mero_pass);
 		if (e != NULL) {
 			fprintf(stderr, "get: %s\n", e);
 			free(e);
@@ -1420,7 +1421,7 @@ command_get(int argc, char *argv[])
 		} else {
 			/* check validity of properties before printing them */
 			if (stats == orig) {
-				char *sp;
+				char *sp = NULL;
 				snprintf(vbuf, sizeof(vbuf), "%s", property);
 				buf = vbuf;
 				while ((p = strtok_r(buf, ",", &sp)) != NULL) {
@@ -1474,7 +1475,7 @@ command_get(int argc, char *argv[])
 					char *y = NULL;
 					kv = findConfKey(defprops, p);
 					source = "default";
-					y = kv != NULL && kv->val != NULL ? kv->val : "<unknown>";
+					y = kv != NULL && kv->val != NULL ? kv->val : "<unset>";
 					if (twidth > 0) {
 						abbreviateString(value, y, twidth);
 					} else {
@@ -1667,7 +1668,7 @@ command_destroy(int argc, char *argv[])
 		for (stats = orig; stats != NULL; stats = stats->next) {
 			if (stats->state == SABdbRunning || stats->state == SABdbStarting) {
 				ret = control_send(&out, mero_host, mero_port,
-						stats->dbname, "stop", 0, mero_pass);
+						stats->dbname, "stop", false, mero_pass);
 				if (ret != NULL)
 					free(ret);
 				else
@@ -1741,7 +1742,7 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 {
 	int ninitial = *nsnapshots;
 	char *out = NULL;
-	char *ret = control_send(&out, mero_host, mero_port, "", "snapshot list", 1, mero_pass);
+	char *ret = control_send(&out, mero_host, mero_port, "", "snapshot list", true, mero_pass);
 	if (ret != NULL)
 		return ret;
 
@@ -1907,7 +1908,7 @@ snapshot_restore_file(char *sourcefile, char *dbname)
 	}
 
 	sprintf(merocmd, "snapshot restore adhoc %s", sourcefile);
-	ret = control_send(&out, mero_host, mero_port, dbname, merocmd, 0, mero_pass);
+	ret = control_send(&out, mero_host, mero_port, dbname, merocmd, false, mero_pass);
 	free(merocmd);
 
 	if (ret != NULL) {
@@ -1934,7 +1935,7 @@ snapshot_destroy_file(char *path)
 	char *merocmd = malloc(100 + strlen(path));
 
 	sprintf(merocmd, "snapshot destroy %s", path);
-	ret = control_send(&out, mero_host, mero_port, "", merocmd, 0, mero_pass);
+	ret = control_send(&out, mero_host, mero_port, "", merocmd, false, mero_pass);
 	if (ret != NULL) {
 		fprintf(stderr, "snapshot destroy %s failed: %s", path, ret);
 		exit(2);

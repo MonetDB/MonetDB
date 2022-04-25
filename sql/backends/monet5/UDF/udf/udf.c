@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* monetdb_config.h must be the first include in each .c file */
@@ -141,28 +141,30 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	li = bat_iterator(src);
 	/* the core of the algorithm */
 	for (p = 0; p < q ; p++) {
-		str x = (str) BUNtvar(li, p);
+		const char *x = BUNtvar(li, p);
 
 		if (strNil(x)) {
 			/* if the input string is null, then append directly */
-			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(bn, p, str_nil) != GDK_SUCCEED) {
 				msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				goto bailout1;
 			}
 			nils = true;
 		} else {
 			/* revert tail value */
 			if ((msg = UDFreverse_(&buf, &buflen, x)) != MAL_SUCCEED)
-				goto bailout;
+				goto bailout1;
 			/* assert logical sanity */
 			assert(buf && x);
 			/* append to the output BAT. We are using a faster route, because we know what we are doing */
-			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(bn, p, buf) != GDK_SUCCEED) {
 				msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				goto bailout1;
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&li);
 
 bailout:
 	GDKfree(buf);
@@ -173,7 +175,6 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap->dirty = true;
 	} else if (bn) {
 		BBPreclaim(bn);
 		bn = NULL;
@@ -204,7 +205,8 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 	if (msg == MAL_SUCCEED) {
 		/* register result BAT in buffer pool */
-		BBPkeepref((*ret = res->batCacheid));
+		*ret = res->batCacheid;
+		BBPkeepref(res);
 	}
 
 	return msg;
@@ -252,7 +254,7 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 /* actual implementation */
 static char *
-UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
+UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 {
 	BAT *bres = NULL;
 	bit two_tail_sorted_unsigned = FALSE;
@@ -350,12 +352,12 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 		 * second/right tail values are either all >= 0 or all < 0;
 		 * otherwise, we cannot tell.
 		 */
-		if (BATtordered(bone)
+		if (bone->tsorted
 		    && (BATtkey(bone) || two_tail_sorted_unsigned))
 			bres->tsorted = true;
 		else
 			bres->tsorted = (BATcount(bres) <= 1);
-		if (BATtrevordered(bone)
+		if (bone->trevsorted
 		    && (BATtkey(bone) || two_tail_revsorted_unsigned))
 			bres->trevsorted = true;
 		else
@@ -398,7 +400,8 @@ UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 
 	if (msg == MAL_SUCCEED) {
 		/* register result BAT in buffer pool */
-		BBPkeepref((*ires = bres->batCacheid));
+		*ires = bres->batCacheid;
+		BBPkeepref(bres);
 	}
 
 	return msg;

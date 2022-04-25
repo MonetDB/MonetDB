@@ -3,7 +3,7 @@ Load the "dump" from the sql/test/testdb test and dump it.  Load that
 dump into a fresh database and check the result of dumping that.
 '''
 
-import os, sys, socket, shutil
+import os, sys, shutil
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -83,7 +83,7 @@ if len(sys.argv) == 2 and sys.argv[1] == 'reload':
     output = ''.join(d2out).splitlines(keepends=True)
     while len(output) > 0 and output[0].startswith('--'):
         del output[0]
-    stableout = os.path.join(tstsrcdir, '../../testdb/Tests/dump-nogeom.stable.out')
+    stableout = os.path.join(tstsrcdir, '..', '..', 'testdb', 'Tests', 'dump-nogeom.stable.out')
     stable = open(stableout, encoding='utf-8').readlines()
     import difflib
     for line in difflib.unified_diff(stable, output, fromfile='test', tofile=stableout):

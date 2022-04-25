@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -73,7 +73,7 @@ qualifier2multiplier( int sk )
 }
 
 static int
-parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, lng *i)
+parse_interval_(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int ep, lng *i)
 {
 	char *n = NULL, sep = ':';
 	lng val = 0, mul;
@@ -175,7 +175,7 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 #define MABS(a) (((a) < 0) ? -(a) : (a))
 
 int
-parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, lng *i)
+parse_interval(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int ep, lng *i)
 {
 	char *n = NULL, sep = ':';
 	lng val = 0, mul, msec = 0;
@@ -280,7 +280,7 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	}
 }
 
-int interval_from_str(char *str, int d, int p, lng *val)
+int interval_from_str(const char *str, int d, int p, lng *val)
 {
 	int sk = digits2sk(d);
 	int ek = digits2ek(d);
@@ -394,4 +394,3 @@ int digits2ek( int digits)
 		ek = isec;
 	return ek;
 }
-

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -14,7 +14,7 @@
 
 #define DEFAULT_ADAPTER BASIC
 #define DEFAULT_LOG_LEVEL M_ERROR
-#define DEFAULT_FLUSH_LEVEL M_INFO
+#define DEFAULT_FLUSH_LEVEL M_DEBUG
 
 #define FILE_NAME "mdbtrace.log"
 
@@ -454,9 +454,6 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	      const char *syserr,
 	      const char *fmt, ...)
 {
-	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
-		return;
-
 	int bytes_written;
 	char buffer[512];	/* should be plenty big enough for a message */
 	va_list va;
@@ -501,7 +498,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	}
 	va_end(va);
 	if (bytes_written < 0) {
-		GDK_TRACER_EXCEPTION("Failed to write logs\n");
+		if ((adapter_t) ATOMIC_GET(&cur_adapter) != MBEDDED)
+			GDK_TRACER_EXCEPTION("Failed to write logs\n");
 		return;
 	}
 	char *p;
@@ -521,11 +519,15 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		}
 	}
 
-	if (level <= M_WARNING) {
-		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
+	/* don't write to file on embedded case, but set the GDK error buffer */
+	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
+		return;
+
+	if (level <= M_WARNING || (GDKdebug & FORCEMITOMASK)) {
+		fprintf(stderr, "#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
-			MT_thread_getname(), func, GDKERROR,
+			MT_thread_getname(), func, level_str[level] + 2,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
 		if (active_tracer == NULL || active_tracer == stderr)

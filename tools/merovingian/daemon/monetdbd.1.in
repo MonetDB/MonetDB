@@ -150,6 +150,13 @@ to reload the properties file (if running).
 For an explanation of the properties, see the
 .I CONFIGURATION
 section below.
+.TP
+\fBhelp\fP [ \fIcommand\fP ]
+Shows general help, or short help for a given command.
+.TP
+.B version
+Shows the version and release information of
+.IR monetdbd .
 .SH CONFIGURATION
 .I Monetdbd
 reads its properties from the
@@ -169,6 +176,15 @@ This property points to the file where all log messages are written to.
 It is relative to the dbfarm directory, but can be absolute to point
 to e.g. another medium.
 Changing this property takes effect immediately at runtime.
+.TP
+.B loglevel
+This property defines the level of what messages should be logged.
+It can be: error or warning or information or debug. Defaut is information.
+When loglevel is error, only errors are logged.
+When loglevel is warning, errors and warnings are logged.
+When loglevel is information, errors and warnings and information
+messages are logged.
+When loglevel is debug, all messages are logged.
 .TP
 .B pidfile
 .I Monetdbd
@@ -198,6 +214,11 @@ Defaults to 50000.
 .B listenaddr
 This property specifies an address that is allowed to connect to the
 server.
+This property is ignored if the property
+.B forward
+is set to
+.B proxy
+(the default).
 The following possibilities exist:
 .RS
 .TP
@@ -358,6 +379,9 @@ Hence, in practice it is only relevant for connections to remote
 databases to use redirects instead of proxies.
 Changing this property takes effect immediately at runtime.
 .SH REMOTE DATABASES
+.B Deprecation notice:
+This feature is deprecated and may be removed in the future.
+.P
 The neighbor discovery capabilities of
 .I monetdbd
 allow a user to contact a remote database transparently, as if it were
@@ -398,10 +422,13 @@ Consider for instance the following three databases with their tag:
 .PP
 .RS 0
 dbX/master/tableQ
+.RE
 .RS 0
 dbY/slave/tableQ
+.RE
 .RS 0
 dbZ/slave/tableQ
+.RE
 .PP
 A default match has implicit `/*' added to the search, making more
 generic search strings match more specific ones.
@@ -436,10 +463,13 @@ The previous example could hence also be setup like this:
 .PP
 .RS 0
 tableQ/master
+.RE
 .RS 0
 tableQ/slave
+.RE
 .RS 0
 tableQ/slave
+.RE
 .PP
 Connecting to
 .I tableQ/slave
@@ -457,6 +487,9 @@ or
 and use the necessary pattern to match them.
 It is up to the user to decide how to use the tags.
 .SH MULTIPLEX-FUNNELS
+.B Deprecation notice:
+This feature is deprecated and may be removed in the future.
+.P
 .I Monetdbd
 implements multiplex-funnel capabilities.
 As the name suggests two techniques are combined, the multiplexer and

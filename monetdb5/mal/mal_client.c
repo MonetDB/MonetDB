@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -85,6 +85,7 @@ MCinit(void)
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+		mal_clients[i].idx = -1; /* indicate it's available */
 	}
 	return true;
 }
@@ -138,14 +139,15 @@ MCnewClient(void)
 	Client c;
 
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
-		if (c->mode == FREECLIENT) {
-			c->mode = RUNCLIENT;
+		if (c->idx == -1)
 			break;
-		}
 	}
 
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
+
+	assert(c->mode == FREECLIENT);
+	c->mode = RUNCLIENT;
 	c->idx = (int) (c - mal_clients);
 	return c;
 }
@@ -188,6 +190,9 @@ void
 MCexitClient(Client c)
 {
 	MCresetProfiler(c->fdout);
+	// Remove any left over constant symbols
+	if( c->curprg)
+		resetMalBlk(c->curprg->def);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
 			close_stream(c->fdout);
@@ -219,6 +224,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
 		c->mode = FREECLIENT;
+		c->idx = -1;
 		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
 		return NULL;
 	}
@@ -252,13 +258,13 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		if (fin == NULL) {
 			c->fdin->s = NULL;
 			bstream_destroy(c->fdin);
-			c->mode = FREECLIENT;
 		}
+		c->mode = FREECLIENT;
+		c->idx = -1;
 		return NULL;
 	}
 	c->promptlength = strlen(prompt);
 
-	c->actions = 0;
 	c->profticks = c->profstmt = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
@@ -385,6 +391,16 @@ MCforkClient(Client father)
 	return son;
 }
 
+static bool shutdowninprogress = false;
+
+bool
+MCshutdowninprogress(void){
+	MT_lock_set(&mal_contextLock);
+	bool ret = shutdowninprogress;
+	MT_lock_unset(&mal_contextLock);
+	return ret;
+}
+
 /*
  * When a client needs to be terminated then the file descriptors for
  * its input/output are simply closed.  This leads to a graceful
@@ -399,9 +415,13 @@ MCforkClient(Client father)
 void
 MCfreeClient(Client c)
 {
-	if( c->mode == FREECLIENT)
+	if( c->mode == FREECLIENT) {
+		assert(c->idx == -1);
 		return;
+	}
+	MT_lock_set(&mal_contextLock);
 	c->mode = FINISHCLIENT;
+	MT_lock_unset(&mal_contextLock);
 
 	MCexitClient(c);
 
@@ -461,7 +481,14 @@ MCfreeClient(Client c)
 	free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_sema_destroy(&c->s);
-	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
+	MT_lock_set(&mal_contextLock);
+	if (shutdowninprogress) {
+		c->mode = BLOCKCLIENT;
+	} else {
+		c->mode = FREECLIENT;
+		c->idx = -1;
+	}
+	MT_lock_unset(&mal_contextLock);
 }
 
 /*
@@ -479,27 +506,23 @@ MCfreeClient(Client c)
  * When the server is about to shutdown, we should softly terminate
  * all outstanding session.
  */
-static volatile int shutdowninprogress = 0;
-
-int
-MCshutdowninprogress(void){
-	return shutdowninprogress;
-}
-
 void
 MCstopClients(Client cntxt)
 {
-	Client c = mal_clients;
-
 	MT_lock_set(&mal_contextLock);
-	for(c = mal_clients;  c < mal_clients+MAL_MAXCLIENTS; c++)
-	if (cntxt != c){
-		if (c->mode == RUNCLIENT)
-			c->mode = FINISHCLIENT;
-		else if (c->mode == FREECLIENT)
-			c->mode = BLOCKCLIENT;
+	for (int i = 0; i < MAL_MAXCLIENTS; i++) {
+		Client c = mal_clients + i;
+		if (cntxt != c) {
+			if (c->mode == RUNCLIENT)
+				c->mode = FINISHCLIENT;
+			else if (c->mode == FREECLIENT) {
+				assert(c->idx == -1);
+				c->idx = i;
+				c->mode = BLOCKCLIENT;
+			}
+		}
 	}
-	shutdowninprogress =1;
+	shutdowninprogress = true;
 	MT_lock_unset(&mal_contextLock);
 }
 
@@ -542,7 +565,6 @@ MCmemoryClaim(void)
 void
 MCcloseClient(Client c)
 {
-	/* free resources of a single thread */
 	MCfreeClient(c);
 }
 
@@ -597,7 +619,7 @@ MCreadClient(Client c)
 		in->pos++;
 
 	if (in->pos >= in->len || in->mode) {
-		ssize_t rd, sum = 0;
+		ssize_t rd;
 
 		if (in->eof || !isa_block_stream(c->fdout)) {
 			if (!isa_block_stream(c->fdout) && c->promptlength > 0)
@@ -606,7 +628,6 @@ MCreadClient(Client c)
 			in->eof = false;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
-			sum += rd;
 			if (!in->mode) /* read one line at a time in line mode */
 				break;
 		}

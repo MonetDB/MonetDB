@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 import subprocess
 import os
@@ -95,7 +95,7 @@ class _BufferedPipe:
         w = 0
         first = True
         while True:
-            c = fh.read(1024)
+            c = fh.readline()
             if first:
                 if type(c) is type(b''):
                     self._empty = b''
@@ -167,7 +167,7 @@ class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
         self.isserver = False
-        if sys.version[:3] < '3.7':
+        if sys.version_info.major == 3 and sys.version_info.minor < 7:
             kw = kwargs.copy()
             if 'text' in kw:
                 kw['universal_newlines'] = kw['text']

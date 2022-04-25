@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -31,7 +31,8 @@ finalize_output(bat *res, BAT *r, str msg)
 		r->tsorted = BATcount(r) <= 1;
 		r->trevsorted = BATcount(r) <= 1;
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 }
@@ -225,13 +226,15 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = createException(SQL, "sql.row_number", SQLSTATE(HY005) "Cannot access column descriptor");
 				goto bailout;
 			}
-			np = (bit*)Tloc(p, 0);
+			BATiter pi = bat_iterator(p);
+			np = (bit*)pi.base;
 			end = rp + cnt;
 			for(j=1; rp<end; j++, np++, rp++) {
 				if (*np)
 					j=1;
 				*rp = j;
 			}
+			bat_iterator_end(&pi);
 		} else { /* single value, ie no partitions, order info not used */
 			int icnt = (int) cnt;
 			for(j=1; j<=icnt; j++, rp++)
@@ -252,7 +255,8 @@ bailout:
 	unfix_inputs(2, b, p);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
@@ -296,8 +300,10 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
-				no = (bit*)Tloc(o, 0);
+				BATiter pi = bat_iterator(p);
+				BATiter oi = bat_iterator(o);
+				np = (bit*)pi.base;
+				no = (bit*)oi.base;
 				for(j=1,k=1; rp<end; k++, np++, no++, rp++) {
 					if (*np)
 						j=k=1;
@@ -305,17 +311,21 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						j=k;
 					*rp = j;
 				}
+				bat_iterator_end(&pi);
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
 					msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
+				BATiter pi = bat_iterator(p);
+				np = (bit*)pi.base;
 				for(j=1; rp<end; np++, rp++) {
 					if (*np)
 						j=1;
 					*rp = j;
 				}
+				bat_iterator_end(&pi);
 			}
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
@@ -323,12 +333,14 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				no = (bit*)oi.base;
 				for(j=1,k=1; rp<end; k++, no++, rp++) {
 					if (*no)
 						j=k;
 					*rp = j;
 				}
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				for(; rp<end; rp++)
 					*rp = 1;
@@ -349,7 +361,8 @@ bailout:
 	unfix_inputs(3, b, p, o);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
@@ -393,8 +406,10 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
-				no = (bit*)Tloc(o, 0);
+				BATiter pi = bat_iterator(p);
+				BATiter oi = bat_iterator(o);
+				np = (bit*)pi.base;
+				no = (bit*)oi.base;
 				for(j=1; rp<end; np++, no++, rp++) {
 					if (*np)
 						j=1;
@@ -402,17 +417,21 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						j++;
 					*rp = j;
 				}
+				bat_iterator_end(&pi);
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
 					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
+				BATiter pi = bat_iterator(p);
+				np = (bit*)pi.base;
 				for(j=1; rp<end; np++, rp++) {
 					if (*np)
 						j=1;
 					*rp = j;
 				}
+				bat_iterator_end(&pi);
 			}
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
@@ -420,12 +439,14 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				no = (bit*)oi.base;
 				for(j=1; rp<end; no++, rp++) {
 					if (*no)
 						j++;
 					*rp = j;
 				}
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				for(; rp<end; rp++)
 					*rp = 1;
@@ -446,7 +467,8 @@ bailout:
 	unfix_inputs(3, b, p, o);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
@@ -491,9 +513,11 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
+				BATiter pi = bat_iterator(p);
+				np = (bit*)pi.base;
 				np2 = np + BATcount(p);
-				no2 = no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				no2 = no = (bit*)oi.base;
 
 				for (; np<np2; np++, no++) {
 					if (*np) {
@@ -513,6 +537,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 					}
 				}
+				bat_iterator_end(&pi);
 				ncnt = no - no2;
 				if (ncnt == 1) {
 					for (; no2<no; no2++, rp++)
@@ -527,6 +552,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						*rp = j / cnt_cast;
 					}
 				}
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				for(; rp<end; rp++)
 					*rp = 0.0;
@@ -539,7 +565,8 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				no = (bit*)oi.base;
 
 				if (cnt == 1) {
 					for (; rp<end; rp++)
@@ -554,6 +581,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						*rp = j / cnt_cast;
 					}
 				}
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				for(; rp<end; rp++)
 					*rp = 0.0;
@@ -574,7 +602,8 @@ bailout:
 	unfix_inputs(3, b, p, o);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
@@ -616,9 +645,11 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
+				BATiter pi = bat_iterator(p);
+				np = (bit*)pi.base;
 				end = np + BATcount(p);
-				bo1 = bo2 = no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				bo1 = bo2 = no = (bit*)oi.base;
 
 				for (; np<end; np++, no++) {
 					if (*np) {
@@ -650,6 +681,8 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				for (; bo1 < bo2; bo1++, rb++)
 					*rb = 1.0;
+				bat_iterator_end(&pi);
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				rp = rb + BATcount(b);
 				for (; rb<rp; rb++)
@@ -663,7 +696,8 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				bo1 = bo2 = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				bo1 = bo2 = (bit*)oi.base;
 				no = bo1 + BATcount(b);
 				cnt_cast = (dbl) BATcount(b);
 				for (; bo2<no; bo2++) {
@@ -676,6 +710,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				for (; bo1 < bo2; bo1++, rb++)
 					*rb = 1.0;
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				rp = rb + BATcount(b);
 				for (; rb<rp; rb++)
@@ -697,7 +732,8 @@ bailout:
 	unfix_inputs(3, b, p, o);
 	if (res && r && !msg) {
 		r->tkey = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else if (r)
 		BBPreclaim(r);
 	return msg;
@@ -1046,7 +1082,9 @@ bailout:
 				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor"); \
 				goto bailout; \
 			} \
+			MT_lock_set(&l->theaplock); \
 			rval = ((TPE*)Tloc(l, 0))[0]; \
+			MT_lock_unset(&l->theaplock); \
 		} else { \
 			rval = *getArgReference_##TPE(stk, pci, 2); \
 		} \
@@ -1064,10 +1102,10 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 {
 	int tp1, tp2, tp3, base = 2;
 	BUN l_value = 1;
-	const void *restrict default_value;
+	void *restrict default_value;
 	gdk_return (*gdk_call)(BAT *, BAT *, BAT *, BUN, const void* restrict, int) = func;
 	BAT *b = NULL, *l = NULL, *d = NULL, *p = NULL, *r = NULL;
-	bool tp2_is_a_bat;
+	bool tp2_is_a_bat, free_default_value = false;
 	str msg = MAL_SUCCEED;
 	bat *res = NULL;
 
@@ -1111,6 +1149,8 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		tp3 = getArgType(mb, pci, 3);
 		if (isaBatType(tp3)) {
 			BATiter bpi;
+			size_t default_size;
+			const void *p;
 
 			tp3 = getBatType(tp3);
 			if (!(d = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
@@ -1118,7 +1158,17 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 				goto bailout;
 			}
 			bpi = bat_iterator(d);
-			default_value = BUNtail(bpi, 0);
+			p = BUNtail(bpi, 0);
+			default_size = ATOMlen(tp3, p);
+			default_value = GDKmalloc(default_size);
+			if (default_value)
+				memcpy(default_value, p, default_size);
+			bat_iterator_end(&bpi);
+			if (!default_value) {
+				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			free_default_value = true;
 		} else {
 			ValRecord *in = &(stk)->stk[(pci)->argv[3]];
 			default_value = VALget(in);
@@ -1128,7 +1178,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		int tpe = tp1;
 		if (isaBatType(tpe))
 			tpe = getBatType(tp1);
-		default_value = ATOMnilptr(tpe);
+		default_value = (void *)ATOMnilptr(tpe);
 	}
 
 	assert(default_value); //default value must be set
@@ -1175,6 +1225,8 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 	}
 
 bailout:
+	if (free_default_value)
+		GDKfree(default_value);
 	unfix_inputs(4, b, p, l, d);
 	finalize_output(res, r, msg);
 	return msg;
@@ -1212,16 +1264,24 @@ SQLbasecount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tname = *getArgReference_str(stk, pci, 2);
 	mvc *m = NULL;
 	str msg;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = s?mvc_bind_table(m, s, tname):NULL;
-	if (!t || !isTable(t) || isMergeTable(t) || isReplicaTable(t))
-		return createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot find table %s.%s", sname, tname);
-	sql_column *c = ol_first_node(t->columns)->data;
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.count", SQLSTATE(3F000) "Schema missing %s", sname);
+	if (!(t = mvc_bind_table(m, s, tname)))
+		throw(SQL, "sql.count", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
+	if (!isTable(t))
+		throw(SQL, "sql.count", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (!ol_first_node(t->columns))
+		throw(SQL, "sql.count", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
+	c = ol_first_node(t->columns)->data;
 	sqlstore *store = m->session->tr->store;
 
 	*res = store->storage_api.count_col(m->session->tr, c, 10);
@@ -1310,6 +1370,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	(void) cntxt;
 	if (pci->argc != 7)
 		throw(SQL, op, ILLEGAL_ARGUMENT "%s requires exactly 7 arguments", op);
+	tp2 = getArgType(mb, pci, 0);
 	tp1 = getArgType(mb, pci, 1);
 	frame_type = *getArgReference_int(stk, pci, 4);
 	assert(frame_type >= 0 && frame_type <= 6);
@@ -1321,29 +1382,9 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			goto bailout;
 		}
 	}
-	switch (tp1) {
-		case TYPE_bte:
-		case TYPE_sht:
-		case TYPE_int:
-		case TYPE_lng:
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			tp2 = TYPE_hge;
-#else
-			tp2 = TYPE_lng;
-#endif
-			break;
-		case TYPE_flt:
-			tp2 = TYPE_flt;
-			break;
-		case TYPE_dbl:
-			tp2 = TYPE_dbl;
-			break;
-		default: {
-			msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
-			goto bailout;
-		}
-	}
+	if (isaBatType(tp2))
+		tp2 = getBatType(tp2);
+
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(r = COLnew(b->hseqbase, tp2, BATcount(b), TRANSIENT))) {
@@ -1383,8 +1424,68 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		ptr in = getArgReference(stk, pci, 1);
 		int scale = 0;
 
-		switch (tp1) {
+		switch (tp2) {
+		case TYPE_bte:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_bte((bte*)res, &scale, (bte*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_sht:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_sht((sht*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_sht((sht*)res, &scale, (sht*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_int:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_int((int*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_int((int*)res, &scale, (sht*)in);
+				break;
+			case TYPE_int:
+				msg = int_dec2_int((int*)res, &scale, (int*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_lng:{
+			switch (tp1) {
+			case TYPE_bte:
+				msg = bte_dec2_lng((lng*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_lng((lng*)res, &scale, (sht*)in);
+				break;
+			case TYPE_int:
+				msg = int_dec2_lng((lng*)res, &scale, (int*)in);
+				break;
+			case TYPE_lng:
+				msg = lng_dec2_lng((lng*)res, &scale, (lng*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
 #ifdef HAVE_HGE
+		case TYPE_hge:{
+			switch (tp1) {
 			case TYPE_bte:
 				msg = bte_dec2_hge((hge*)res, &scale, (bte*)in);
 				break;
@@ -1398,22 +1499,26 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = lng_dec2_hge((hge*)res, &scale, (lng*)in);
 				break;
 			case TYPE_hge:
-				*(hge*)res = *((hge*)in);
+				msg = hge_dec2_hge((hge*)res, &scale, (hge*)in);
 				break;
-#else
-			case TYPE_bte:
-				msg = bte_dec2_lng((lng*)res, &scale, (bte*)in);
-				break;
-			case TYPE_sht:
-				msg = sht_dec2_lng((lng*)res, &scale, (sht*)in);
-				break;
-			case TYPE_int:
-				msg = int_dec2_lng((lng*)res, &scale, (int*)in);
-				break;
-			case TYPE_lng:
-				*(lng*)res = *((lng*)in);
-				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
 #endif
+		case TYPE_flt:{
+			switch (tp1) {
+			case TYPE_flt:
+				*(flt*)res = *((flt*)in);
+				break;
+			default:
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		case TYPE_dbl:{
+			switch (tp1) {
 			case TYPE_flt: {
 				flt fp = *((flt*)in);
 				*(dbl*)res = is_flt_nil(fp) ? dbl_nil : (dbl) fp;
@@ -1422,7 +1527,12 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				*(dbl*)res = *((dbl*)in);
 				break;
 			default:
-				msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
+			}
+			break;
+		}
+		default:
+			msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 		}
 	}
 
@@ -1447,7 +1557,7 @@ SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe = getArgType(mb, pci, 1), frame_type;
+	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg");
 	bat *res = NULL;
@@ -1507,7 +1617,7 @@ bailout:
 str
 SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe = getArgType(mb, pci, 1), frame_type;
+	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, "sql.avg");
 	bat *res = NULL;
@@ -1552,7 +1662,7 @@ static str
 do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
 					   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int))
 {
-	int tpe = getArgType(mb, pci, 1), frame_type;
+	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, op);
 	bat *res = NULL;
@@ -1620,7 +1730,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		for (; k < i;) { \
 			j = k; \
 			do {	\
@@ -1642,7 +1752,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_CURRENT_ROW_TILL_UNBOUNDED(TPE) \
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		l = i - 1; \
 		for (j = l; ; j--) { \
 			n += !is_##TPE##_nil(bp[j]);	\
@@ -1669,7 +1779,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_ALL_ROWS(TPE) \
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		for (; j < i; j++) \
 			n += !is_##TPE##_nil(bp[j]);	\
 		if (n > minimum) { /* covariance_samp requires at least one value */ \
@@ -1685,7 +1795,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_CURRENT_ROW(TPE) \
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		for (; k < i; k++) { \
 			n += !is_##TPE##_nil(bp[k]);	\
 			if (n > minimum) { /* covariance_samp requires at least one value */ \
@@ -1721,10 +1831,10 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_OTHERS(TPE)	\
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		oid ncount = i - k; \
-		if (GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &nlevels) != GDK_SUCCEED) { \
-			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		if (GDKrebuild_segment_tree(ncount, sizeof(lng), st, &segment_tree, &levels_offset, &nlevels) != GDK_SUCCEED) { \
+			msg = createException(SQL, op, GDK_EXCEPTION); \
 			goto bailout; \
 		} \
 		populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING, NOTHING); \
@@ -1792,7 +1902,7 @@ static str
 do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
 							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), lng minimum, dbl defaultv, dbl single_case)
 {
-	BAT *r = NULL, *b = NULL, *c = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
+	BAT *r = NULL, *b = NULL, *c = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL, *st = NULL;
 	int tp1, tp2, frame_type;
 	bool is_a_bat1, is_a_bat2;
 	str msg = MAL_SUCCEED;
@@ -1864,11 +1974,16 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		} else {
 			/* corner case, second column is a constant, calculate it this way... */
 			BAT *d = b ? b : c;
+			BATiter di = bat_iterator(d);
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[b ? 2 : 1]];
-			oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(d), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
-				tree_capacity = 0, nlevels = 0;
+			BATiter si = bat_iterator(s);
+			BATiter ei = bat_iterator(e);
+			oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(d), *restrict start = s ? (oid*)si.base : NULL, *restrict end = e ? (oid*)ei.base : NULL,
+				nlevels = 0;
 			lng n = 0;
-			bit *np = p ? Tloc(p, 0) : NULL, *opp = o ? Tloc(o, 0) : NULL;
+			BATiter pi = bat_iterator(p);
+			BATiter oi = bat_iterator(o);
+			bit *np = pi.base, *opp = oi.base;
 			dbl *restrict rb = (dbl *) Tloc(r, 0), val = VALisnil(input2) ? dbl_nil : defaultv, rr;
 			bool has_nils = is_dbl_nil(val), last = false;
 
@@ -1887,10 +2002,19 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW);
 				} break;
 				default: {
-					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
+					if ((st = GDKinitialize_segment_tree())) {
+						COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
+					} else {
+						msg = createException(SQL, op, GDK_EXCEPTION);
+					}
 				}
 				}
 			}
+			bat_iterator_end(&di);
+			bat_iterator_end(&ei);
+			bat_iterator_end(&si);
+			bat_iterator_end(&oi);
+			bat_iterator_end(&pi);
 
 			BATsetcount(r, cnt);
 			r->tnonil = !has_nils;
@@ -1919,7 +2043,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	}
 
 bailout:
-	GDKfree(segment_tree);
+	BBPreclaim(st);
 	unfix_inputs(6, b, c, p, o, s, e);
 	finalize_output(res, r, msg);
 	return msg;

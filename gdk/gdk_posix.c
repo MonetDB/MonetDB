@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -60,7 +60,11 @@
 #define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
 
 #ifndef O_CLOEXEC
+#ifdef _O_NOINHERIT
+#define O_CLOEXEC _O_NOINHERIT	/* Windows */
+#else
 #define O_CLOEXEC 0
+#endif
 #endif
 
 /* Crude VM buffer management that keep a list of all memory mapped
@@ -730,6 +734,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		mode3 = PAGE_READWRITE;
 		mode4 = FILE_MAP_WRITE;
 	}
+	mode2 |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = 0;

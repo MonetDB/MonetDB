@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -33,28 +33,6 @@
 #include "mal_exception.h"
 #include "mal_debugger.h"
 
-/* set access mode to bat, replacing input with output */
-static BAT *
-setaccess(BAT *b, restrict_t mode)
-{
-	BAT *bn = b;
-
-	if (BATsetaccess(b, mode) != GDK_SUCCEED) {
-		if (b->batSharecnt && mode != BAT_READ) {
-			bn = COLcopy(b, b->ttype, true, TRANSIENT);
-			if (bn != NULL &&
-				BATsetaccess(bn, mode) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				bn = NULL;
-			}
-		} else {
-			bn = NULL;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	return bn;
-}
-
 /*
  * The remainder contains the wrapper code over the mserver version 4
  * InformationFunctions
@@ -65,6 +43,17 @@ setaccess(BAT *b, restrict_t mode)
  * with sequenceBase. It represents the old fashioned :vid
  */
 
+
+#define derefStr(b, v)							\
+	do {										\
+		int _tpe= ATOMstorage((b)->ttype);		\
+		if (_tpe >= TYPE_str) {					\
+			if ((v) == 0 || *(str*) (v) == 0)	\
+				(v) = (str) str_nil;			\
+			else								\
+				(v) = *(str *) (v);				\
+		}										\
+	} while (0)
 
 str
 BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
@@ -89,10 +78,8 @@ BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 	bn = BATattach(*tt, *heapfile, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "bat.attach", GDK_EXCEPTION);
-	if( !bn->batTransient)
-		BATmsync(bn);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -110,7 +97,7 @@ BKCdensebat(bat *ret, const lng *size)
 	if (bn == NULL)
 		throw(MAL, "bat.densebat", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -120,11 +107,12 @@ BKCmirror(bat *ret, const bat *bid)
 	BAT *b, *bn;
 
 	*ret = 0;
-	if (!(b = BBPquickdesc(*bid, false)))
+	if (!(b = BBPquickdesc(*bid)))
 		throw(MAL, "bat.mirror", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (!(bn = BATdense(b->hseqbase, b->hseqbase, BATcount(b))))
 		throw(MAL, "bat.mirror", GDK_EXCEPTION);
-	BBPkeepref(*ret = bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -182,8 +170,6 @@ BKCdelete_all(bat *r, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
-	if( !b->batTransient)
-		BATmsync(b);
 	*r = b->batCacheid;
 	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
@@ -199,11 +185,27 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.append", OPERATION_FAILED);
+	if (isVIEW(b)) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		MT_lock_set(&b->theaplock);
+		restrict_t mode = b->batRestricted;
+		MT_lock_unset(&b->theaplock);
+		BBPunfix(b->batCacheid);
+		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
+			throw(MAL, "bat.append", GDK_EXCEPTION);
+	}
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (mask_cand(u)) {
+		BAT *ou = u;
+		u = BATunmask(u);
+		BBPunfix(ou->batCacheid);
+		if (!u) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "bat.append", GDK_EXCEPTION);
+		}
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
@@ -218,8 +220,6 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
-	if( !b->batTransient)
-		BATmsync(b);
 	*r = b->batCacheid;
 	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
@@ -252,14 +252,16 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.append", OPERATION_FAILED);
-	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
-		if (u == 0 || *(str*)u == 0)
-			u = (ptr) str_nil;
-		else
-			u = (ptr) *(str *)u;
+	if (isVIEW(b)) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		MT_lock_set(&b->theaplock);
+		restrict_t mode = b->batRestricted;
+		MT_lock_unset(&b->theaplock);
+		BBPunfix(b->batCacheid);
+		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
+			throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
+	derefStr(b, u);
 	if (BUNappend(b, u, force ? *force : false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
@@ -284,6 +286,7 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	derefStr(b, t);
 	if (void_inplace(b, *id, t, false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
@@ -302,6 +305,7 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	derefStr(b, t);
 	if (void_inplace(b, *id, t, *force) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
@@ -359,12 +363,11 @@ static str
 BKCgetCapacity(lng *res, const bat *bid)
 {
 	*res = lng_nil;
-	if (BBPcheck(*bid, "bat.getCapacity")) {
-		BAT *b = BBPquickdesc(*bid, false);
+	BAT *b = BBPquickdesc(*bid);
 
-		if (b != NULL)
-			*res = (lng) BATcapacity(b);
-	}
+	if (b == NULL)
+		throw(MAL, "bat.getCapacity", ILLEGAL_ARGUMENT);
+	*res = (lng) BATcapacity(b);
 	return MAL_SUCCEED;
 }
 
@@ -372,14 +375,11 @@ static str
 BKCgetColumnType(str *res, const bat *bid)
 {
 	const char *ret = str_nil;
+	BAT *b = BBPquickdesc(*bid);
 
-	if (BBPcheck(*bid, "bat.getColumnType")) {
-		BAT *b = BBPquickdesc(*bid, false);
-
-		if (b) {
-			ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
-		}
-	}
+	if (b == NULL)
+		throw(MAL, "bat.getColumnType", ILLEGAL_ARGUMENT);
+	ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
 	*res = GDKstrdup(ret);
 	if(*res == NULL)
 		throw(MAL,"bat.getColumnType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -440,7 +440,9 @@ BKCgetKey(bit *ret, const bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	*ret = BATkeyed(b);
+	MT_lock_set(&b->theaplock);
+	*ret = b->tkey;
+	MT_lock_unset(&b->theaplock);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -477,7 +479,9 @@ BKCisPersistent(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	MT_lock_set(&b->theaplock);
 	*res = !b->batTransient;
+	MT_lock_unset(&b->theaplock);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -497,7 +501,9 @@ BKCisTransient(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setTransient", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	MT_lock_set(&b->theaplock);
 	*res = b->batTransient;
+	MT_lock_unset(&b->theaplock);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -525,7 +531,7 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT " Got %c" " expected 'r','a', or 'w'", *param[0]);
 	}
-	if ((b = setaccess(b, m)) == NULL)
+	if ((b = BATsetaccess(b, m)) == NULL)
 		throw(MAL, "bat.setAccess", OPERATION_FAILED);
 	*res = b->batCacheid;
 	BATsettrivprop(b);
@@ -551,6 +557,8 @@ BKCgetAccess(str *res, const bat *bid)
 	case BAT_WRITE:
 		*res = GDKstrdup("write");
 		break;
+	default:
+		MT_UNREACHABLE();
 	}
 	BBPunfix(b->batCacheid);
 	if(*res == NULL)
@@ -572,8 +580,10 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 
 	if ((msg = BATinfo(&bk, &bv, *bid)) != NULL)
 		return msg;
-	BBPkeepref(*ret1 = bk->batCacheid);
-	BBPkeepref(*ret2 = bv->batCacheid);
+	*ret1 = bk->batCacheid;
+	BBPkeepref(bk);
+	*ret2 = bv->batCacheid;
+	BBPkeepref(bv);
 	return MAL_SUCCEED;
 }
 
@@ -590,15 +600,40 @@ BKCgetSize(lng *tot, const bat *bid){
 	}
 
 	size = sizeof (bat);
+
+	MT_lock_set(&b->theaplock);
 	if ( !isVIEW(b)) {
 		BUN cnt = BATcapacity(b);
 		size += ROUND_UP(b->theap->free, blksize);
 		if (b->tvheap)
 			size += ROUND_UP(b->tvheap->free, blksize);
+		MT_lock_unset(&b->theaplock);
+
 		if (b->thash)
 			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		size += IMPSimprintsize(b);
+	} else {
+		MT_lock_unset(&b->theaplock);
 	}
+	*tot = size;
+	BBPunfix(*bid);
+	return MAL_SUCCEED;
+}
+
+static str
+BKCgetVHeapSize(lng *tot, const bat *bid){
+	BAT *b;
+	lng size = 0;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.getVHeapSize", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (ATOMvarsized(b->ttype)) {
+		MT_lock_set(&b->theaplock);
+		if (b->tvheap)
+			size += b->tvheap->size;
+		MT_lock_unset(&b->theaplock);
+	}
+
 	*tot = size;
 	BBPunfix(*bid);
 	return MAL_SUCCEED;
@@ -668,7 +703,7 @@ BKCsetName(void *r, const bat *bid, const char * const *s)
 		}
 
 	t = *s;
-	ret = BBPrename(b->batCacheid, t);
+	ret = BBPrename(b, t);
 	BBPunfix(b->batCacheid);
 	switch (ret) {
 	case BBPRENAME_ILLEGAL:
@@ -697,7 +732,7 @@ BKCgetBBPname(str *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getName", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*ret = GDKstrdup(BBPname(b->batCacheid));
+	*ret = GDKstrdup(BBP_logical(b->batCacheid));
 	BBPunfix(b->batCacheid);
 	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
@@ -733,10 +768,13 @@ BKCsave2(void *r, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.save", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	MT_lock_set(&b->theaplock);
 	if ( !b->batTransient){
+		MT_lock_unset(&b->theaplock);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.save", "Only save transient columns.");
 	}
+	MT_lock_unset(&b->theaplock);
 
 	if (b && BATdirty(b))
 		BBPsave(b);
@@ -793,16 +831,14 @@ BKCgetSequenceBase(oid *r, const bat *bid)
  */
 #define shrinkloop(Type)							\
 	do {											\
-		Type *p = (Type*)Tloc(b, 0);				\
-		Type *q = (Type*)Tloc(b, BUNlast(b));		\
-		Type *r = (Type*)Tloc(bn, 0);				\
-		cnt=0;										\
+		const Type *in = (Type*)bi.base;			\
+		Type *restrict r = (Type*)Tloc(bn, 0);		\
 		for (;p<q; oidx++, p++) {					\
 			if ( o < ol && *o == oidx ){			\
 				o++;								\
 			} else {								\
+				*r++ = in[p];						\
 				cnt++;								\
-				*r++ = *p;							\
 			}										\
 		}											\
 	} while (0)
@@ -811,7 +847,7 @@ str
 BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
-	BUN cnt =0;
+	BUN cnt = 0, p = 0, q;
 	oid oidx = 0, *o, *ol;
 	gdk_return res;
 
@@ -837,52 +873,56 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
 	o = (oid*)Tloc(bs, 0);
-	ol= (oid*)Tloc(bs, BUNlast(bs));
+	ol = (oid*)Tloc(bs, BATcount(bs));
 
-	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: shrinkloop(bte); break;
-	case TYPE_sht: shrinkloop(sht); break;
-	case TYPE_int: shrinkloop(int); break;
-	case TYPE_lng: shrinkloop(lng); break;
+	BATiter bi = bat_iterator(b);
+	q = bi.count;
+	if (ATOMvarsized(bi.type)) {
+		for (;p<q; oidx++, p++) {
+			if ( o < ol && *o == oidx ){
+				o++;
+			} else {
+				if (BUNappend(bn, BUNtvar(bi, p), false) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
+					BBPunfix(b->batCacheid);
+					BBPunfix(bn->batCacheid);
+					throw(MAL, "bat.shrink", GDK_EXCEPTION);
+				}
+				cnt++;
+			}
+		}
+	} else {
+		uint16_t width = bi.width;
+
+		switch (width) {
+		case 0:
+			bat_iterator_end(&bi);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "bat.shrink", SQLSTATE(42000) "bat.shrink not available for 0 width types");
+		case 1:shrinkloop(bte); break;
+		case 2:shrinkloop(sht); break;
+		case 4:shrinkloop(int); break;
+		case 8:shrinkloop(lng); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: shrinkloop(hge); break;
+		case 16:shrinkloop(hge); break;
 #endif
-	case TYPE_flt: shrinkloop(flt); break;
-	case TYPE_dbl: shrinkloop(dbl); break;
-	case TYPE_oid: shrinkloop(oid); break;
-	default:
-		if (ATOMvarsized(bn->ttype)) {
-			BUN p = 0;
-			BUN q = BUNlast(b);
-			BATiter bi = bat_iterator(b);
+		default: {
+			const int8_t *restrict src = (int8_t*) bi.base;
+			int8_t *restrict dst = (int8_t*) Tloc(bn, 0);
 
-			cnt=0;
+			assert(b->ttype != TYPE_oid); /* because of 'restrict', the oid case can't fall here */
 			for (;p<q; oidx++, p++) {
-				if ( o < ol && *o == oidx ){
+				if (o < ol && *o == oidx) {
 					o++;
 				} else {
-					if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
-						BBPunfix(b->batCacheid);
-						BBPunfix(bn->batCacheid);
-						throw(MAL, "bat.shrink", GDK_EXCEPTION);
-					}
+					memcpy(dst, src, width);
+					dst += width;
 					cnt++;
 				}
+				src += width;
 			}
-		} else {
-			switch( b->twidth){
-			case 1:shrinkloop(bte); break;
-			case 2:shrinkloop(sht); break;
-			case 4:shrinkloop(int); break;
-			case 8:shrinkloop(lng); break;
-#ifdef HAVE_HGE
-			case 16:shrinkloop(hge); break;
-#endif
-			default:
-				BBPunfix(b->batCacheid);
-				BBPunfix(bn->batCacheid);
-				throw(MAL, "bat.shrink", "Illegal argument type");
-			}
+		}
 		}
 	}
 
@@ -890,13 +930,14 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	bn->tsorted = false;
 	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
-	bn->tkey = b->tkey;
-	bn->tnonil = b->tnonil;
+	bn->tkey = bi.key;
+	bn->tnonil = bi.nonil;
 	bn->tnil = false;		/* can't be sure if values deleted */
-
+	*ret = bn->batCacheid;
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
-	BBPkeepref(*ret= bn->batCacheid);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -932,7 +973,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
 	o = (oid*)Tloc(bs, 0);
-	ol= (oid*)Tloc(bs, BUNlast(bs));
+	ol= (oid*)Tloc(bs, BATcount(bs));
 	r = (oid*)Tloc(bn, 0);
 
 	lim = BATcount(b);
@@ -953,7 +994,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
-	BBPkeepref(*ret= bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 #endif	/* unused */
@@ -964,8 +1006,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 #define reuseloop(Type)										\
 	do {													\
 		Type *dst = (Type *) Tloc(bn, 0);					\
-		const Type *src = (const Type *) Tloc(b, 0);		\
-		for (BUN p = 0; p < b->batCount; p++, src++) {		\
+		const Type *src = (const Type *) bi.base;			\
+		for (BUN p = 0; p < bi.count; p++, src++) {			\
 			if (o < ol && b->hseqbase + p == *o) {			\
 				do											\
 					o++;									\
@@ -1008,23 +1050,30 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	const oid *ol = o + bs->batCount;
 	while (o < ol && *o < b->hseqbase)
 		o++;
-	if (b->tvarsized) {
-		BATiter bi = bat_iterator(b);
-		for (BUN p = 0; p < b->batCount; p++) {
+	BATiter bi = bat_iterator(b);
+	if (bi.vh) {
+		for (BUN p = 0; p < bi.count; p++) {
 			if (o < ol && b->hseqbase + p == *o) {
 				do
 					o++;
 				while (o < ol && b->hseqbase + p == *o);
 			} else if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
 				BBPunfix(bn->batCacheid);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bs->batCacheid);
-				throw(MAL, "bat.shrink", GDK_EXCEPTION);
+				throw(MAL, "bat.reuse", GDK_EXCEPTION);
 			}
 		}
 	} else {
 		BUN n = 0;
-		switch (b->twidth) {
+		switch (bi.width) {
+		case 0:
+			bat_iterator_end(&bi);
+			BBPunfix(bn->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bs->batCacheid);
+			throw(MAL, "bat.reuse", SQLSTATE(42000) "bat.reuse not available for 0 width types");
 		case 1:
 			reuseloop(bte);
 			break;
@@ -1044,33 +1093,35 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 #endif
 		default: {
 			char *dst = (char *) Tloc(bn, 0);
-			const char *src = (const char *) Tloc(b, 0);
-			for (BUN p = 0; p < b->batCount; p++) {
+			const char *src = (const char *) bi.base;
+			for (BUN p = 0; p < bi.count; p++) {
 				if (o < ol && b->hseqbase + p == *o) {
 					do
 						o++;
 					while (o < ol && b->hseqbase + p == *o);
 				} else {
-					memcpy(dst, src, b->twidth);
-					dst += b->twidth;
+					memcpy(dst, src, bi.width);
+					dst += bi.width;
 					n++;
 				}
-				src += b->twidth;
+				src += bi.width;
 			}
 			break;
 		}
 		}
 		BATsetcount(bn, n);
-		bn->tkey = b->tkey;
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-		bn->tnonil = b->tnonil;
+		bn->tkey = bi.key;
+		bn->tsorted = bi.sorted;
+		bn->trevsorted = bi.revsorted;
+		bn->tnonil = bi.nonil;
 		bn->tnil = false;		/* can't be sure if values deleted */
 	}
+	bat_iterator_end(&bi);
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
-	BBPkeepref(*ret= bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1127,7 +1178,8 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
-	BBPkeepref(*ret= bn->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1149,7 +1201,7 @@ BKCmergecand(bat *ret, const bat *aid, const bat *bid)
 	if (bn == NULL)
 		throw(MAL, "bat.mergecand", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1171,7 +1223,7 @@ BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 	if (bn == NULL)
 		throw(MAL, "bat.intersectcand", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1193,7 +1245,7 @@ BKCdiffcand(bat *ret, const bat *aid, const bat *bid)
 	if (bn == NULL)
 		throw(MAL, "bat.diffcand", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -1216,11 +1268,12 @@ mel_func bat5_init_funcs[] = {
  command("bat", "densebat", BKCdensebat, false, "Creates a new [void,void] BAT of size 'sz'.", args(1,2, batarg("",oid),arg("sz",lng))),
  command("bat", "info", BKCinfo, false, "Produce a table containing information about a BAT in [attribute,value] format. \nIt contains all properties of the BAT record. ", args(2,3, batarg("",str),batarg("",str),batargany("b",1))),
  command("bat", "getSize", BKCgetSize, false, "Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes\nrounded to the memory page size (see bbp.getPageSize()).", args(1,2, arg("",lng),batargany("b",1))),
+ command("bat", "getVHeapSize", BKCgetVHeapSize, false, "Calculate the vheap size for varsized bats", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getCapacity", BKCgetCapacity, false, "Returns the current allocation size (in max number of elements) of a BAT.", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getColumnType", BKCgetColumnType, false, "Returns the type of the tail column of a BAT, as an integer type number.", args(1,2, arg("",str),batargany("b",1))),
  command("bat", "getRole", BKCgetRole, false, "Returns the rolename of the head column of a BAT.", args(1,2, arg("",str),batargany("bid",1))),
  command("bat", "isaKey", BKCgetKey, false, "Return whether the column tail values are unique (key).", args(1,2, arg("",bit),batargany("b",1))),
- command("bat", "setAccess", BKCsetAccess, false, "Try to change the update access priviliges \nto this BAT. Mode:\nr[ead-only]      - allow only read access.\na[append-only]   - allow reads and update.\nw[riteable]      - allow all operations.\nBATs are updatable by default. On making a BAT read-only, \nall subsequent updates fail with an error message.\nReturns the BAT itself.", args(1,3, batargany("",1),batargany("b",1),arg("mode",str))),
+ command("bat", "setAccess", BKCsetAccess, false, "Try to change the update access privileges \nto this BAT. Mode:\nr[ead-only]      - allow only read access.\na[append-only]   - allow reads and update.\nw[riteable]      - allow all operations.\nBATs are updatable by default. On making a BAT read-only, \nall subsequent updates fail with an error message.\nReturns the BAT itself.", args(1,3, batargany("",1),batargany("b",1),arg("mode",str))),
  command("bat", "getAccess", BKCgetAccess, false, "Return the access mode attached to this BAT as a character.", args(1,2, arg("",str),batargany("b",1))),
  command("bat", "getSequenceBase", BKCgetSequenceBase, false, "Get the sequence base for the void column of a BAT.", args(1,2, arg("",oid),batargany("b",1))),
  command("bat", "isSorted", BKCisSorted, false, "Returns true if BAT values are ordered.", args(1,2, arg("",bit),batargany("b",1))),

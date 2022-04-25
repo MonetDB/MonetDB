@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -108,7 +108,7 @@ sql_strdup(char *s)
 }
 
 char *
-sql_escape_str(sql_allocator *sa, char *s)
+sql_escape_str(sql_allocator *sa, const char *s)
 {
 	size_t l = strlen(s);
 	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
@@ -166,4 +166,3 @@ char *sa_message( sql_allocator *sa, const char *format, ... )
 	va_end (ap);
 	return sa_strdup(sa, buf);
 }
-

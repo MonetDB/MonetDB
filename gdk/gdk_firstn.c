@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -106,19 +106,19 @@
 #define nGTlng(a, b)	(!is_lng_nil(b) && (is_lng_nil(a) || (a) > (b)))
 #define nGThge(a, b)	(!is_hge_nil(b) && (is_hge_nil(a) || (a) > (b)))
 
-#define LTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase),	\
-			     BUNtail(bi, oids[p2] - b->hseqbase)) < 0)
-#define GTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase),	\
-			     BUNtail(bi, oids[p2] - b->hseqbase)) > 0)
+#define LTany(p1, p2)	(cmp(BUNtail(*bi, oids[p1] - hseq),	\
+			     BUNtail(*bi, oids[p2] - hseq)) < 0)
+#define GTany(p1, p2)	(cmp(BUNtail(*bi, oids[p1] - hseq),	\
+			     BUNtail(*bi, oids[p2] - hseq)) > 0)
 
-#define nLTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase), nil) != 0 \
-			 && (cmp(BUNtail(bi, oids[p2] - b->hseqbase), nil) == 0	\
-			     || cmp(BUNtail(bi, oids[p1] - b->hseqbase), \
-				    BUNtail(bi, oids[p2] - b->hseqbase)) < 0))
-#define nGTany(p1, p2)	(cmp(BUNtail(bi, oids[p2] - b->hseqbase), nil) != 0 \
-			 && (cmp(BUNtail(bi, oids[p1] - b->hseqbase), nil) == 0	\
-			     || cmp(BUNtail(bi, oids[p1] - b->hseqbase), \
-				    BUNtail(bi, oids[p2] - b->hseqbase)) > 0))
+#define nLTany(p1, p2)	(cmp(BUNtail(*bi, oids[p1] - hseq), nil) != 0 \
+			 && (cmp(BUNtail(*bi, oids[p2] - hseq), nil) == 0	\
+			     || cmp(BUNtail(*bi, oids[p1] - hseq), \
+				    BUNtail(*bi, oids[p2] - hseq)) < 0))
+#define nGTany(p1, p2)	(cmp(BUNtail(*bi, oids[p2] - hseq), nil) != 0 \
+			 && (cmp(BUNtail(*bi, oids[p1] - hseq), nil) == 0	\
+			     || cmp(BUNtail(*bi, oids[p1] - hseq), \
+				    BUNtail(*bi, oids[p2] - hseq)) > 0))
 
 #define LTflt(a, b)	(!is_flt_nil(b) && (is_flt_nil(a) || (a) < (b)))
 #define LTdbl(a, b)	(!is_dbl_nil(b) && (is_dbl_nil(a) || (a) < (b)))
@@ -130,47 +130,47 @@
 #define nGTflt(a, b)	(!is_flt_nil(b) && (is_flt_nil(a) || (a) > (b)))
 #define nGTdbl(a, b)	(!is_dbl_nil(b) && (is_dbl_nil(a) || (a) > (b)))
 
-#define LTfltfix(p1, p2)	LTflt(vals[oids[p1] - b->hseqbase],	\
-				      vals[oids[p2] - b->hseqbase])
-#define GTfltfix(p1, p2)	GTflt(vals[oids[p1] - b->hseqbase],	\
-				      vals[oids[p2] - b->hseqbase])
-#define LTdblfix(p1, p2)	LTdbl(vals[oids[p1] - b->hseqbase],	\
-				      vals[oids[p2] - b->hseqbase])
-#define GTdblfix(p1, p2)	GTdbl(vals[oids[p1] - b->hseqbase],	\
-				      vals[oids[p2] - b->hseqbase])
-#define LTfix(p1, p2)		LT(vals[oids[p1] - b->hseqbase],	\
-				   vals[oids[p2] - b->hseqbase])
-#define GTfix(p1, p2)		GT(vals[oids[p1] - b->hseqbase],	\
-				   vals[oids[p2] - b->hseqbase])
+#define LTfltfix(p1, p2)	LTflt(vals[oids[p1] - hseq],	\
+				      vals[oids[p2] - hseq])
+#define GTfltfix(p1, p2)	GTflt(vals[oids[p1] - hseq],	\
+				      vals[oids[p2] - hseq])
+#define LTdblfix(p1, p2)	LTdbl(vals[oids[p1] - hseq],	\
+				      vals[oids[p2] - hseq])
+#define GTdblfix(p1, p2)	GTdbl(vals[oids[p1] - hseq],	\
+				      vals[oids[p2] - hseq])
+#define LTfix(p1, p2)		LT(vals[oids[p1] - hseq],	\
+				   vals[oids[p2] - hseq])
+#define GTfix(p1, p2)		GT(vals[oids[p1] - hseq],	\
+				   vals[oids[p2] - hseq])
 
-#define nLTfltfix(p1, p2)	nLTflt(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nGTfltfix(p1, p2)	nGTflt(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nLTdblfix(p1, p2)	nLTdbl(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nGTdblfix(p1, p2)	nGTdbl(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nLTbtefix(p1, p2)	nLTbte(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nGTbtefix(p1, p2)	nGTbte(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nLTshtfix(p1, p2)	nLTsht(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nGTshtfix(p1, p2)	nGTsht(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nLTintfix(p1, p2)	nLTint(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nGTintfix(p1, p2)	nGTint(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nLTlngfix(p1, p2)	nLTlng(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nGTlngfix(p1, p2)	nGTlng(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nLThgefix(p1, p2)	nLThge(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
-#define nGThgefix(p1, p2)	nGThge(vals[oids[p1] - b->hseqbase],	\
-				       vals[oids[p2] - b->hseqbase])
+#define nLTfltfix(p1, p2)	nLTflt(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nGTfltfix(p1, p2)	nGTflt(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nLTdblfix(p1, p2)	nLTdbl(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nGTdblfix(p1, p2)	nGTdbl(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nLTbtefix(p1, p2)	nLTbte(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nGTbtefix(p1, p2)	nGTbte(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nLTshtfix(p1, p2)	nLTsht(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nGTshtfix(p1, p2)	nGTsht(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nLTintfix(p1, p2)	nLTint(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nGTintfix(p1, p2)	nGTint(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nLTlngfix(p1, p2)	nLTlng(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nGTlngfix(p1, p2)	nGTlng(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nLThgefix(p1, p2)	nLThge(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
+#define nGThgefix(p1, p2)	nGThge(vals[oids[p1] - hseq],	\
+				       vals[oids[p2] - hseq])
 
 #define SWAP1(p1, p2)				\
 	do {					\
@@ -181,13 +181,13 @@
 
 #define shuffle_unique(TYPE, OP)					\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
+		const TYPE *restrict vals = (const TYPE *) bi->base;	\
 		heapify(OP##fix, SWAP1);				\
 		while (cnt > 0) {					\
 			cnt--;						\
 			i = canditer_next(&ci);				\
-			if (OP(vals[i - b->hseqbase],			\
-			       vals[oids[0] - b->hseqbase])) {		\
+			if (OP(vals[i - hseq],				\
+			       vals[oids[0] - hseq])) {			\
 				oids[0] = i;				\
 				siftdown(OP##fix, 0, SWAP1);		\
 			}						\
@@ -205,14 +205,14 @@
  * that are not all included in the first N.
  */
 static BAT *
-BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng t0)
+BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng t0)
 {
 	BAT *bn;
-	BATiter bi = bat_iterator(b);
 	oid *restrict oids;
+	oid hseq = bi->b->hseqbase;
 	BUN i, cnt;
 	struct canditer ci;
-	int tpe = b->ttype;
+	int tpe = bi->type;
 	int (*cmp)(const void *, const void *);
 	const void *nil;
 	/* variables used in heapify/siftdown macros */
@@ -220,7 +220,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 	BUN pos, childpos;
 
 	MT_thread_setalgorithm(__func__);
-	cnt = canditer_init(&ci, b, s);
+	canditer_init(&ci, bi->b, s);
+	cnt = ci.ncand;
 
 	if (n >= cnt) {
 		/* trivial: return all candidates */
@@ -230,15 +231,15 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (trivial -- " LLFMT " usec)\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+			  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), n,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
-	if (BATtvoid(b)) {
+	if (BATtvoid(bi->b)) {
 		/* nilslast doesn't make a difference: either all are
 		 * nil, or none are */
-		if (asc || is_oid_nil(b->tseqbase)) {
+		if (asc || is_oid_nil(bi->tseq)) {
 			/* return the first part of the candidate list
 			 * or of the BAT itself */
 			bn = canditer_slice(&ci, 0, n);
@@ -247,7 +248,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 				  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 				  " (initial slice -- " LLFMT " usec)\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+				  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), n,
 				  ALGOOPTBATPAR(bn), GDKusec() - t0);
 			return bn;
 		}
@@ -259,12 +260,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (final slice -- " LLFMT " usec)\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+			  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), n,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
-	/* note, we want to do both calls */
-	if (BATordered(b) | BATordered_rev(b)) {
+	if (bi->sorted || bi->revsorted) {
 		/* trivial: b is sorted so we just need to return the
 		 * initial or final part of it (or of the candidate
 		 * list); however, if nilslast == asc, then the nil
@@ -274,13 +274,13 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 		/* after we create the to-be-returned BAT, we set pos
 		 * to the BUN in the new BAT whose value we should
 		 * return through *lastp */
-		if (nilslast == asc && !b->tnonil) {
-			pos = SORTfndlast(b, ATOMnilptr(tpe));
-			pos = canditer_search(&ci, b->hseqbase + pos, true);
+		if (nilslast == asc && !bi->nonil) {
+			pos = SORTfndlast(bi->b, ATOMnilptr(tpe));
+			pos = canditer_search(&ci, hseq + pos, true);
 			/* 0 <= pos <= cnt
 			 * 0 < n < cnt
 			 */
-			if (b->tsorted) {
+			if (bi->sorted) {
 				/* [0..pos) -- nil
 				 * [pos..cnt) -- non-nil <<<
 				 */
@@ -333,7 +333,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 			/* either there are no nils, or they are in
 			 * the appropriate position already, so we can
 			 * just slice */
-			if (asc ? b->tsorted : b->trevsorted) {
+			if (asc ? bi->sorted : bi->revsorted) {
 				/* return copy of first part of
 				 * candidate list */
 				bn = canditer_slice(&ci, 0, n);
@@ -350,7 +350,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (ordered -- " LLFMT " usec)\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+			  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), n,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
@@ -388,7 +388,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 	cnt -= n;
 
 	if (asc) {
-		if (nilslast && !b->tnonil) {
+		if (nilslast && !bi->nonil) {
 			switch (tpe) {
 			case TYPE_bte:
 				shuffle_unique(bte, nLTbte);
@@ -418,10 +418,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 				while (cnt > 0) {
 					cnt--;
 					i = canditer_next(&ci);
-					if (cmp(BUNtail(bi, i - b->hseqbase), nil) != 0
-					    && (cmp(BUNtail(bi, oids[0] - b->hseqbase), nil) == 0
-						|| cmp(BUNtail(bi, i - b->hseqbase),
-						       BUNtail(bi, oids[0] - b->hseqbase)) < 0)) {
+					if (cmp(BUNtail(*bi, i - hseq), nil) != 0
+					    && (cmp(BUNtail(*bi, oids[0] - hseq), nil) == 0
+						|| cmp(BUNtail(*bi, i - hseq),
+						       BUNtail(*bi, oids[0] - hseq)) < 0)) {
 						oids[0] = i;
 						siftdown(nLTany, 0, SWAP1);
 					}
@@ -458,8 +458,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 				while (cnt > 0) {
 					cnt--;
 					i = canditer_next(&ci);
-					if (cmp(BUNtail(bi, i - b->hseqbase),
-						BUNtail(bi, oids[0] - b->hseqbase)) < 0) {
+					if (cmp(BUNtail(*bi, i - hseq),
+						BUNtail(*bi, oids[0] - hseq)) < 0) {
 						oids[0] = i;
 						siftdown(LTany, 0, SWAP1);
 					}
@@ -468,7 +468,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 			}
 		}
 	} else {
-		if (nilslast || b->tnonil) {
+		if (nilslast || bi->nonil) {
 			switch (tpe) {
 			case TYPE_bte:
 				shuffle_unique(bte, GT);
@@ -498,8 +498,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 				while (cnt > 0) {
 					cnt--;
 					i = canditer_next(&ci);
-					if (cmp(BUNtail(bi, i - b->hseqbase),
-						BUNtail(bi, oids[0] - b->hseqbase)) > 0) {
+					if (cmp(BUNtail(*bi, i - hseq),
+						BUNtail(*bi, oids[0] - hseq)) > 0) {
 						oids[0] = i;
 						siftdown(GTany, 0, SWAP1);
 					}
@@ -536,10 +536,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 				while (cnt > 0) {
 					cnt--;
 					i = canditer_next(&ci);
-					if (cmp(BUNtail(bi, oids[0] - b->hseqbase), nil) != 0
-					    && (cmp(BUNtail(bi, i - b->hseqbase), nil) == 0
-						|| cmp(BUNtail(bi, i - b->hseqbase),
-						       BUNtail(bi, oids[0] - b->hseqbase)) > 0)) {
+					if (cmp(BUNtail(*bi, oids[0] - hseq), nil) != 0
+					    && (cmp(BUNtail(*bi, i - hseq), nil) == 0
+						|| cmp(BUNtail(*bi, i - hseq),
+						       BUNtail(*bi, oids[0] - hseq)) > 0)) {
 						oids[0] = i;
 						siftdown(nGTany, 0, SWAP1);
 					}
@@ -562,7 +562,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 		  " (" LLFMT " usec)\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+		  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), n,
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 }
@@ -681,15 +681,15 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 
 #define shuffle_unique_with_groups(TYPE, OP)				\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
+		const TYPE *restrict vals = (const TYPE *) bi->base;	\
 		heapify(OP##fixgrp, SWAP2);				\
 		while (cnt > 0) {					\
 			cnt--;						\
 			i = canditer_next(&ci);				\
 			if (gv[j] < goids[0] ||				\
 			    (gv[j] == goids[0] &&			\
-			     OP(vals[i - b->hseqbase],			\
-				vals[oids[0] - b->hseqbase]))) {	\
+			     OP(vals[i - hseq],				\
+				vals[oids[0] - hseq]))) {		\
 				oids[0] = i;				\
 				goids[0] = gv[j];			\
 				siftdown(OP##fixgrp, 0, SWAP2);		\
@@ -710,15 +710,15 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
  * that same value.
  */
 static BAT *
-BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, oid *lastp, oid *lastgp, lng t0)
+BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, oid *lastp, oid *lastgp, lng t0)
 {
 	BAT *bn;
-	BATiter bi = bat_iterator(b);
 	oid *restrict oids, *restrict goids;
+	oid hseq = bi->b->hseqbase;
 	const oid *restrict gv;
 	BUN i, j, cnt;
 	struct canditer ci;
-	int tpe = b->ttype;
+	int tpe = bi->type;
 	int (*cmp)(const void *, const void *);
 	const void *nil;
 	/* variables used in heapify/siftdown macros */
@@ -726,7 +726,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 	BUN pos, childpos;
 
 	MT_thread_setalgorithm(__func__);
-	cnt = canditer_init(&ci, b, s);
+	canditer_init(&ci, bi->b, s);
+	cnt = ci.ncand;
 
 	if (n > cnt)
 		n = cnt;
@@ -742,7 +743,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",g=" ALGOBATFMT ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (empty -- " LLFMT " usec)\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+			  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
@@ -758,7 +759,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",g=" ALGOBATFMT ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (dense group -- " LLFMT " usec)\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+			  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
@@ -787,7 +788,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 	}
 	cnt -= n;
 
-	if (BATtvoid(b)) {
+	if (BATtvoid(bi->b)) {
 		/* nilslast doesn't make a difference (all nil, or no nil) */
 		if (asc) {
 			heapify(LTvoidgrp, SWAP2);
@@ -819,7 +820,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 			}
 		}
 	} else if (asc) {
-		if (nilslast && !b->tnonil) {
+		if (nilslast && !bi->nonil) {
 			switch (tpe) {
 			case TYPE_bte:
 				shuffle_unique_with_groups(bte, nLTbte);
@@ -851,10 +852,10 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 					i = canditer_next(&ci);
 					if (gv[j] < goids[0]
 					    || (gv[j] == goids[0]
-						&& cmp(BUNtail(bi, i - b->hseqbase), nil) != 0
-						&& (cmp(BUNtail(bi, oids[0] - b->hseqbase), nil) == 0
-						    || cmp(BUNtail(bi, i - b->hseqbase),
-							   BUNtail(bi, oids[0] - b->hseqbase)) < 0))) {
+						&& cmp(BUNtail(*bi, i - hseq), nil) != 0
+						&& (cmp(BUNtail(*bi, oids[0] - hseq), nil) == 0
+						    || cmp(BUNtail(*bi, i - hseq),
+							   BUNtail(*bi, oids[0] - hseq)) < 0))) {
 						oids[0] = i;
 						goids[0] = gv[j];
 						siftdown(nLTanygrp, 0, SWAP2);
@@ -895,8 +896,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 					i = canditer_next(&ci);
 					if (gv[j] < goids[0] ||
 					    (gv[j] == goids[0] &&
-					     cmp(BUNtail(bi, i - b->hseqbase),
-						 BUNtail(bi, oids[0] - b->hseqbase)) < 0)) {
+					     cmp(BUNtail(*bi, i - hseq),
+						 BUNtail(*bi, oids[0] - hseq)) < 0)) {
 						oids[0] = i;
 						goids[0] = gv[j];
 						siftdown(LTanygrp, 0, SWAP2);
@@ -906,7 +907,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 				break;
 			}
 		}
-	} else if (nilslast || b->tnonil) {
+	} else if (nilslast || bi->nonil) {
 		switch (tpe) {
 		case TYPE_bte:
 			shuffle_unique_with_groups(bte, GT);
@@ -938,8 +939,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 				i = canditer_next(&ci);
 				if (gv[j] < goids[0] ||
 				    (gv[j] == goids[0] &&
-				     cmp(BUNtail(bi, i - b->hseqbase),
-					 BUNtail(bi, oids[0] - b->hseqbase)) > 0)) {
+				     cmp(BUNtail(*bi, i - hseq),
+					 BUNtail(*bi, oids[0] - hseq)) > 0)) {
 					oids[0] = i;
 					goids[0] = gv[j];
 					siftdown(GTanygrp, 0, SWAP2);
@@ -980,10 +981,10 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 				i = canditer_next(&ci);
 				if (gv[j] < goids[0]
 				    || (gv[j] == goids[0]
-					&& cmp(BUNtail(bi, oids[0] - b->hseqbase), nil) != 0
-					&& (cmp(BUNtail(bi, i - b->hseqbase), nil) == 0
-					    || cmp(BUNtail(bi, i - b->hseqbase),
-						   BUNtail(bi, oids[0] - b->hseqbase)) > 0))) {
+					&& cmp(BUNtail(*bi, oids[0] - hseq), nil) != 0
+					&& (cmp(BUNtail(*bi, i - hseq), nil) == 0
+					    || cmp(BUNtail(*bi, i - hseq),
+						   BUNtail(*bi, oids[0] - hseq)) > 0))) {
 					oids[0] = i;
 					goids[0] = gv[j];
 					siftdown(nGTanygrp, 0, SWAP2);
@@ -1009,26 +1010,26 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",g=" ALGOBATFMT ",n=" BUNFMT " -> " ALGOOPTBATFMT
 		  " (" LLFMT " usec)\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+		  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 }
 
 static gdk_return
-BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool nilslast, bool distinct, lng t0)
+BATfirstn_grouped(BAT **topn, BAT **gids, BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, bool distinct, lng t0)
 {
 	BAT *bn, *gn = NULL, *su = NULL;
 	oid last;
 	gdk_return rc;
 
 	MT_thread_setalgorithm(__func__);
-	if (distinct && !b->tkey) {
+	if (distinct && !bi->key) {
 		su = s;
-		s = BATunique(b, s);
+		s = BATunique(bi->b, s);
 		if (s == NULL)
 			return GDK_FAIL;
 	}
-	bn = BATfirstn_unique(b, s, n, asc, nilslast, &last, t0);
+	bn = BATfirstn_unique(bi, s, n, asc, nilslast, &last, t0);
 	if (bn == NULL)
 		return GDK_FAIL;
 	if (BATcount(bn) == 0) {
@@ -1044,26 +1045,25 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT "," ALGOOPTBATFMT
 			  " (empty -- " LLFMT " usec)\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+			  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), n,
 			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
-	if (!b->tkey) {
+	if (!bi->key) {
 		if (distinct) {
 			BAT *bn1;
 
 			bn1 = bn;
 			BBPunfix(s->batCacheid);
-			bn = BATintersect(b, b, su, bn1, true, false, BUN_NONE);
+			bn = BATintersect(bi->b, bi->b, su, bn1, true, false, BUN_NONE);
 			BBPunfix(bn1->batCacheid);
 			if (bn == NULL)
 				return GDK_FAIL;
 		} else {
-			BATiter bi = bat_iterator(b);
 			BAT *bn1, *bn2;
 
 			bn1 = bn;
-			bn2 = BATselect(b, s, BUNtail(bi, last - b->hseqbase), NULL, true, false, false);
+			bn2 = BATselect(bi->b, s, BUNtail(*bi, last - bi->b->hseqbase), NULL, true, false, false);
 			if (bn2 == NULL) {
 				BBPunfix(bn1->batCacheid);
 				return GDK_FAIL;
@@ -1077,7 +1077,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 	}
 	if (gids) {
 		BAT *bn1, *bn2, *bn3, *bn4;
-		bn1 = BATproject(bn, b);
+		bn1 = BATproject(bn, bi->b);
 		if (bn1 == NULL) {
 			BBPunfix(bn->batCacheid);
 			return GDK_FAIL;
@@ -1109,24 +1109,25 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",n=" BUNFMT " -> " ALGOOPTBATFMT "," ALGOOPTBATFMT
 		  " (" LLFMT " usec)\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+		  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), n,
 		  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn), GDKusec() - t0);
 	return GDK_SUCCEED;
 }
 
 static gdk_return
-BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, bool distinct, lng t0)
+BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, bool distinct, lng t0)
 {
 	BAT *bn, *gn = NULL;
+	oid hseq = bi->b->hseqbase;
 	oid last, lastg;
 	gdk_return rc;
 
 	MT_thread_setalgorithm(__func__);
 	if (distinct) {
-		BAT *bn1, *bn2, *bn3, *bn4, *bn5, *bn6, *bn7, *bn8;
-		if (BATgroup(&bn1, &bn2, NULL, b, s, g, NULL, NULL) != GDK_SUCCEED)
+		BAT *bn1, *bn2, *bn3, *bn4, *bn5, *bn6, *bn7;
+		if (BATgroup(&bn1, &bn2, NULL, bi->b, s, g, NULL, NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
-		bn3 = BATproject(bn2, b);
+		bn3 = BATproject(bn2, bi->b);
 		if (bn3 == NULL) {
 			BBPunfix(bn1->batCacheid);
 			BBPunfix(bn2->batCacheid);
@@ -1144,24 +1145,25 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn1->batCacheid);
 			return GDK_FAIL;
 		}
-		bn6 = BATfirstn_unique_with_groups(bn3, NULL, bn5, n, asc, nilslast, NULL, NULL, t0);
+		BATiter bn3i = bat_iterator(bn3);
+		bn6 = BATfirstn_unique_with_groups(&bn3i, NULL, bn5, n, asc, nilslast, NULL, NULL, t0);
+		bat_iterator_end(&bn3i);
 		BBPunfix(bn3->batCacheid);
 		BBPunfix(bn5->batCacheid);
 		if (bn6 == NULL) {
 			BBPunfix(bn1->batCacheid);
 			return GDK_FAIL;
 		}
-		rc = BATleftjoin(&bn8, &bn7, bn1, bn6, NULL, NULL, false, BUN_NONE);
+		rc = BATleftjoin(&bn7, NULL, bn1, bn6, NULL, NULL, false, BUN_NONE);
 		BBPunfix(bn6->batCacheid);
 		if (rc != GDK_SUCCEED)
 			return GDK_FAIL;
+		bn = BATproject(bn7, s);
 		BBPunfix(bn7->batCacheid);
-		bn = BATproject(bn8, s);
-		BBPunfix(bn8->batCacheid);
 		if (bn == NULL)
 			return GDK_FAIL;
 	} else {
-		bn = BATfirstn_unique_with_groups(b, s, g, n, asc, nilslast, &last, &lastg, t0);
+		bn = BATfirstn_unique_with_groups(bi, s, g, n, asc, nilslast, &last, &lastg, t0);
 		if (bn == NULL)
 			return GDK_FAIL;
 	}
@@ -1179,13 +1181,12 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			  ",g=" ALGOBATFMT ",n=" BUNFMT
 			  " -> " ALGOOPTBATFMT "," ALGOOPTBATFMT
 			  " (empty -- " LLFMT " usec)\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+			  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
 			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
-	if (!distinct && !b->tkey) {
+	if (!distinct && !bi->key) {
 		BAT *bn1, *bn2, *bn3, *bn4;
-		BATiter bi = bat_iterator(b);
 
 		bn1 = bn;
 		bn2 = BATselect(g, NULL, &lastg, NULL, true, false, false);
@@ -1199,7 +1200,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn1->batCacheid);
 			return  GDK_FAIL;
 		}
-		bn4 = BATselect(b, bn3, BUNtail(bi, last - b->hseqbase), NULL, true, false, false);
+		bn4 = BATselect(bi->b, bn3, BUNtail(*bi, last - hseq), NULL, true, false, false);
 		BBPunfix(bn3->batCacheid);
 		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);
@@ -1224,7 +1225,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn->batCacheid);
 			return GDK_FAIL;
 		}
-		bn3 = BATproject(bn, b);
+		bn3 = BATproject(bn, bi->b);
 		if (bn3 == NULL) {
 			BBPunfix(bn2->batCacheid);
 			return GDK_FAIL;
@@ -1266,7 +1267,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		  ",g=" ALGOBATFMT ",n=" BUNFMT
 		  " -> " ALGOOPTBATFMT "," ALGOOPTBATFMT
 		  " (" LLFMT " usec)\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+		  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
 		  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn), GDKusec() - t0);
 	return GDK_SUCCEED;
 }
@@ -1275,6 +1276,7 @@ gdk_return
 BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, bool distinct)
 {
 	lng t0 = 0;
+	gdk_return rc = GDK_SUCCEED;
 
 	assert(topn != NULL);
 	if (b == NULL) {
@@ -1283,6 +1285,11 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool 
 	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	(void) BATordered(b);
+	(void) BATordered_rev(b);
+
+	BATiter bi = bat_iterator(b);
 
 	/* if g specified, then so must s */
 	assert(g == NULL || s != NULL);
@@ -1293,28 +1300,28 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool 
 	if (n == 0 || BATcount(b) == 0 || (s != NULL && BATcount(s) == 0)) {
 		/* trivial: empty result */
 		*topn = BATdense(0, 0, 0);
-		if (*topn == NULL)
-			return GDK_FAIL;
-		if (gids) {
+		if (*topn == NULL) {
+			rc = GDK_FAIL;
+		} else if (gids) {
 			*gids = BATdense(0, 0, 0);
 			if (*gids == NULL) {
 				BBPreclaim(*topn);
-				return GDK_FAIL;
+				rc = GDK_FAIL;
 			}
 		}
-		return GDK_SUCCEED;
-	}
-
-	if (g == NULL) {
+	} else if (g == NULL) {
 		if (gids == NULL && !distinct) {
-			*topn = BATfirstn_unique(b, s, n, asc, nilslast, NULL, t0);
-			return *topn ? GDK_SUCCEED : GDK_FAIL;
+			*topn = BATfirstn_unique(&bi, s, n, asc, nilslast, NULL, t0);
+			rc = *topn ? GDK_SUCCEED : GDK_FAIL;
+		} else {
+			rc = BATfirstn_grouped(topn, gids, &bi, s, n, asc, nilslast, distinct, t0);
 		}
-		return BATfirstn_grouped(topn, gids, b, s, n, asc, nilslast, distinct, t0);
+	} else if (gids == NULL && !distinct) {
+		*topn = BATfirstn_unique_with_groups(&bi, s, g, n, asc, nilslast, NULL, NULL, t0);
+		rc = *topn ? GDK_SUCCEED : GDK_FAIL;
+	} else {
+		rc = BATfirstn_grouped_with_groups(topn, gids, &bi, s, g, n, asc, nilslast, distinct, t0);
 	}
-	if (gids == NULL && !distinct) {
-		*topn = BATfirstn_unique_with_groups(b, s, g, n, asc, nilslast, NULL, NULL, t0);
-		return *topn ? GDK_SUCCEED : GDK_FAIL;
-	}
-	return BATfirstn_grouped_with_groups(topn, gids, b, s, g, n, asc, nilslast, distinct, t0);
+	bat_iterator_end(&bi);
+	return rc;
 }

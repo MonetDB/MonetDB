@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -53,7 +53,7 @@ typedef struct _AggrParams{
 } AggrParams;
 
 static void ComputeParallelAggregation(AggrParams *p);
-static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase);
 
 static const char *FunctionBasePath(void)
@@ -185,7 +185,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	int retcols;
 	bool gstate = 0;
 	int unnamedArgs = 0;
-	bool parallel_aggregation = grouped && mapped;
+	bool parallel_aggregation = grouped && mapped, freeexprStr = false;
 	int argcount = pci->argc;
 
 	char *eval_additional_args[] = {"_columns", "_column_types", "_conn"};
@@ -200,16 +200,21 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		throw(MAL, "pyapi3.eval", SQLSTATE(PY000) "Embedded Python is enabled but an error was "
 								 "thrown during initialization.");
 	}
-	if (!grouped) {
-		sql_subfunc *sqlmorefun =
-			(*(sql_subfunc **)getArgReference(stk, pci, pci->retc));
-		if (sqlmorefun) {
-			sqlfun = sqlmorefun->func;
-		}
-	} else {
-		sqlfun = *(sql_func **)getArgReference(stk, pci, pci->retc);
+
+	// If the first input argument is of type lng, this is a cardinality-only bulk operation.
+	int has_card_arg = 0;
+	BUN card; // cardinality of non-bat inputs
+	if (getArgType(mb, pci, pci->retc) == TYPE_lng) {
+		has_card_arg=1;
+		card = (BUN) *getArgReference_lng(stk, pci, pci->retc);
 	}
-	exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
+	else {
+		has_card_arg=0;
+		card = 1;
+	}
+
+	sqlfun = *(sql_func **)getArgReference(stk, pci, pci->retc + has_card_arg);
+	exprStr = *getArgReference_str(stk, pci, pci->retc + 1 + has_card_arg);
 	varres = sqlfun ? sqlfun->varres : 0;
 	retcols = !varres ? pci->retc : -1;
 
@@ -219,9 +224,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		throw(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL " arguments.");
 	}
 
-	if ((pci->argc - (pci->retc + 2)) * sizeof(PyInput) > 0) {
+	if ((pci->argc - (pci->retc + 2 + has_card_arg)) * sizeof(PyInput) > 0) {
 		pyinput_values =
-			GDKzalloc((pci->argc - (pci->retc + 2)) * sizeof(PyInput));
+			GDKzalloc((pci->argc - (pci->retc + 2 + has_card_arg)) * sizeof(PyInput));
 
 		if (pyinput_values == NULL) {
 			GDKfree(args);
@@ -232,7 +237,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 	// Analyse the SQL_Func structure to get the parameter names
 	if (sqlfun != NULL && sqlfun->ops->cnt > 0) {
-		unnamedArgs = pci->retc + 2;
+		unnamedArgs = pci->retc + 2 + has_card_arg;
 		argnode = sqlfun->ops->h;
 		while (argnode) {
 			char *argname = ((sql_arg *)argnode->data)->name;
@@ -250,14 +255,14 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 	// We name all the unknown arguments, if grouping is enabled the first
 	// unknown argument that is the group variable, we name this 'aggr_group'
-	for (i = pci->retc + 2; i < argcount; i++) {
+	for (i = pci->retc + 2 + has_card_arg; i < argcount; i++) {
 		if (args[i] == NULL) {
 			if (!seengrp && grouped) {
 				args[i] = GDKstrdup("aggr_group");
 				seengrp = TRUE;
 			} else {
 				char argbuf[64];
-				snprintf(argbuf, sizeof(argbuf), "arg%i", i - pci->retc - 1);
+				snprintf(argbuf, sizeof(argbuf), "arg%i", i - pci->retc - (1 + has_card_arg));
 				args[i] = GDKstrdup(argbuf);
 			}
 		}
@@ -268,24 +273,35 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	// (a thread can fork while another process is in the lock, which means we
 	// can get stuck permanently)
 	argnode = sqlfun && sqlfun->ops->cnt > 0 ? sqlfun->ops->h : NULL;
-	for (i = pci->retc + 2; i < argcount; i++) {
-		PyInput *inp = &pyinput_values[i - (pci->retc + 2)];
+	for (i = pci->retc + 2 + has_card_arg; i < argcount; i++) {
+		PyInput *inp = &pyinput_values[i - (pci->retc + 2 + has_card_arg)];
 		if (!isaBatType(getArgType(mb, pci, i))) {
 			inp->scalar = true;
 			inp->bat_type = getArgType(mb, pci, i);
 			inp->count = 1;
-			if (inp->bat_type == TYPE_str) {
-				inp->dataptr = getArgReference_str(stk, pci, i);
-			} else {
-				inp->dataptr = getArgReference(stk, pci, i);
+
+			if (!has_card_arg) {
+				if (inp->bat_type == TYPE_str) {
+					inp->dataptr = getArgReference_str(stk, pci, i);
+				} else {
+					inp->dataptr = getArgReference(stk, pci, i);
+				}
+			}
+			else {
+				const ValRecord *v = &stk->stk[getArg(pci, i)];
+				b = BATconstant(0, v->vtype, VALptr(v), card, TRANSIENT);
+				if (b == NULL) {
+					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+				inp->count = BATcount(b);
+				inp->bat_type = b->ttype;
+				inp->bat = b;
 			}
 		} else {
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {
-				msg = createException(
-					MAL, "pyapi3.eval",
-					SQLSTATE(PY000) "The BAT passed to the function (argument #%d) is NULL.\n",
-					i - (pci->retc + 2) + 1);
+				msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 			seqbase = b->hseqbase;
@@ -296,7 +312,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				// one of the input BATs is empty, don't execute the function at
 				// all
 				// just return empty BATs
-				CreateEmptyReturn(mb, stk, pci, retcols, seqbase);
+				msg = CreateEmptyReturn(mb, stk, pci, retcols, seqbase);
 				goto wrapup;
 			}
 		}
@@ -593,6 +609,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL " function body string.");
 				goto wrapup;
 			}
+			freeexprStr = true;
 			if (fread(exprStr, 1, (size_t) length, fp) != (size_t) length) {
 				msg = createException(MAL, "pyapi3.eval",
 									  SQLSTATE(PY000) "Failed to read from file \"%s\".",
@@ -619,7 +636,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	// arrays)
 	// We will put the python arrays in a PyTuple object, we will use this
 	// PyTuple object as the set of arguments to call the Python function
-	pArgs = PyTuple_New(argcount - (pci->retc + 2) +
+	pArgs = PyTuple_New(argcount - (pci->retc + 2 + has_card_arg) +
 						(code_object == NULL ? additional_columns : 0));
 	pColumns = PyDict_New();
 	pColumnTypes = PyDict_New();
@@ -630,23 +647,23 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 #endif
 
 	// Now we will loop over the input BATs and convert them to python objects
-	for (i = pci->retc + 2; i < argcount; i++) {
+	for (i = pci->retc + 2 + has_card_arg; i < argcount; i++) {
 		PyObject *result_array;
 		// t_start and t_end hold the part of the BAT we will convert to a Numpy
 		// array, by default these hold the entire BAT [0 - BATcount(b)]
-		size_t t_start = 0, t_end = pyinput_values[i - (pci->retc + 2)].count;
+		size_t t_start = 0, t_end = pyinput_values[i - (pci->retc + 2 + has_card_arg)].count;
 
 		// There are two possibilities, either the input is a BAT, or the input
 		// is a scalar
 		// If the input is a scalar we will convert it to a python scalar
 		// If the input is a BAT, we will convert it to a numpy array
-		if (pyinput_values[i - (pci->retc + 2)].scalar) {
+		if (pyinput_values[i - (pci->retc + 2 + has_card_arg)].scalar) {
 			result_array = PyArrayObject_FromScalar(
-				&pyinput_values[i - (pci->retc + 2)], &msg);
+				&pyinput_values[i - (pci->retc + 2 + has_card_arg)], &msg);
 		} else {
-			int type = pyinput_values[i - (pci->retc + 2)].bat_type;
+			int type = pyinput_values[i - (pci->retc + 2 + has_card_arg)].bat_type;
 			result_array = PyMaskedArray_FromBAT(
-				&pyinput_values[i - (pci->retc + 2)], t_start, t_end, &msg,
+				&pyinput_values[i - (pci->retc + 2 + has_card_arg)], t_start, t_end, &msg,
 				!enable_zerocopy_input && type != TYPE_void);
 		}
 		if (result_array == NULL) {
@@ -657,13 +674,13 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			goto wrapup;
 		}
 		if (code_object == NULL) {
-			PyObject *arg_type = PyString_FromString(
-				BatType_Format(pyinput_values[i - (pci->retc + 2)].bat_type));
+			PyObject *arg_type = PyUnicode_FromString(
+				BatType_Format(pyinput_values[i - (pci->retc + 2 + has_card_arg)].bat_type));
 			PyDict_SetItemString(pColumns, args[i], result_array);
 			PyDict_SetItemString(pColumnTypes, args[i], arg_type);
 			Py_DECREF(arg_type);
 		}
-		pyinput_values[i - (pci->retc + 2)].result = result_array;
+		pyinput_values[i - (pci->retc + 2 + has_card_arg)].result = result_array;
 		PyTuple_SetItem(pArgs, ai++, result_array);
 	}
 	if (code_object == NULL) {
@@ -718,7 +735,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			size_t *group_counts = NULL;
 			oid *aggr_group_arr = NULL;
 			void ***split_bats = NULL;
-			int named_columns = unnamedArgs - (pci->retc + 2);
+			int named_columns = unnamedArgs - (pci->retc + 2 + has_card_arg);
 			PyObject *aggr_result;
 
 			// release the GIL
@@ -768,9 +785,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			// now split the columns one by one
 			for (i = 0; i < named_columns; i++) {
 				PyInput input = pyinput_values[i];
-				void *basevals = Tloc(input.bat, 0);
-
 				if (!input.scalar) {
+					BATiter bi = bat_iterator(input.bat);
+					void *basevals = bi.base;
+
 					switch (input.bat_type) {
 						case TYPE_void:
 							NP_SPLIT_BAT(oid);
@@ -825,7 +843,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 								for (element_it = 0; element_it < elements;
 									 element_it++) {
 									// append current element to proper group
-									ptr[element_it][i][temp_indices[element_it]++] = 
+									ptr[element_it][i][temp_indices[element_it]++] =
 										batcontent[element_it];
 								}
 							} else {
@@ -845,9 +863,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 							msg = createException(
 								MAL, "pyapi3.eval", SQLSTATE(PY000) "Unrecognized BAT type %s",
 								BatType_Format(input.bat_type));
+							bat_iterator_end(&bi);
 							goto aggrwrapup;
-							break;
 					}
+					bat_iterator_end(&bi);
 				}
 			}
 
@@ -878,7 +897,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 					params->pyinput_values = &pyinput_values;
 					params->column_types_dict = &pColumnTypes;
 					params->split_bats = &split_bats;
-					params->base = pci->retc + 2;
+					params->base = pci->retc + 2 + has_card_arg;
 					params->function = &pFunc;
 					params->connection = &pConnection;
 					params->pycall = &pycall;
@@ -1001,7 +1020,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				retnames = GDKzalloc(sizeof(char *) * retcols);
 				for (i = 0; i < retcols; i++) {
 					PyObject *colname = PyList_GetItem(keys, i);
-					if (!PyString_CheckExact(colname)) {
+					if (!PyUnicode_CheckExact(colname)) {
 						msg = createException(MAL, "pyapi3.eval",
 											  SQLSTATE(PY000) "Expected a string key in the "
 											  "dictionary, but received an "
@@ -1096,7 +1115,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				//   if someone has some problem with memory size exploding when
 				//   using PYTHON_MAP but it being fine in regular PYTHON this
 				//   is probably the issue
-				PyInput *inp = &pyinput_values[i - (pci->retc + 2)];
+				PyInput *inp = &pyinput_values[i - (pci->retc + 2 + has_card_arg)];
 				int bat_type = inp->bat_type;
 				PyObject *new_array = PyArray_FromAny(
 					ret->numpy_array,
@@ -1207,18 +1226,19 @@ returnvalues:
 		msg = MAL_SUCCEED;
 		if (isaBatType(getArgType(mb, pci, i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
+			BBPkeepref(b);
 		} else { // single value return, only for non-grouped aggregations
+			BATiter li = bat_iterator(b);
 			if (bat_type != TYPE_str) {
-				if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) ==
+				if (VALinit(&stk->stk[pci->argv[i]], bat_type, li.base) ==
 					NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
-				BATiter li = bat_iterator(b);
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 							BUNtail(li, 0)) == NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
+			bat_iterator_end(&li);
 		}
 		if (argnode) {
 			argnode = argnode->next;
@@ -1300,8 +1320,8 @@ wrapup:
 #endif
 	// Actual cleanup
 	// Cleanup input BATs
-	for (i = pci->retc + 2; i < pci->argc; i++) {
-		PyInput *inp = &pyinput_values[i - (pci->retc + 2)];
+	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
+		PyInput *inp = &pyinput_values[i - (pci->retc + 2 + has_card_arg)];
 		if (inp->bat != NULL)
 			BBPunfix(inp->bat->batCacheid);
 	}
@@ -1339,13 +1359,14 @@ wrapup:
 			GDKfree(args[i]);
 	GDKfree(args);
 	GDKfree(pycall);
+	if (freeexprStr)
+		GDKfree(exprStr);
 
 	return msg;
 }
 
-str
-PYAPI3PyAPIprelude(void *ret) {
-	(void) ret;
+static str
+PYAPI3PyAPIprelude(void) {
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
 		wchar_t* program = Py_DecodeLocale("mserver5", NULL);
@@ -1367,7 +1388,7 @@ PYAPI3PyAPIprelude(void *ret) {
 		}
 		_pytypes_init();
 		_loader_init();
-		tmp = PyString_FromString("marshal");
+		tmp = PyUnicode_FromString("marshal");
 		marshal_module = PyImport_Import(tmp);
 		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
@@ -1411,7 +1432,7 @@ char *PyError_CreateException(char *error_text, char *pycall)
 								 &py_error_traceback);
 		error = PyObject_Str(py_error_value);
 
-		py_error_string = PyString_AS_STRING(error);
+		py_error_string = PyUnicode_AsUTF8(error);
 		Py_XDECREF(error);
 		if (pycall != NULL && strlen(pycall) > 0) {
 			if (py_error_traceback == NULL) {
@@ -1632,20 +1653,58 @@ wrapup:
 	gstate = Python_ReleaseGIL(gstate);
 }
 
-static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-							  size_t retcols, oid seqbase)
+static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+							 size_t retcols, oid seqbase)
 {
-	size_t i;
-	for (i = 0; i < retcols; i++) {
-		int bat_type = getBatType(getArgType(mb, pci, i));
-		BAT *b = COLnew(seqbase, bat_type, 0, TRANSIENT);
+	str msg = MAL_SUCCEED;
+	void **res = GDKzalloc(retcols * sizeof(void*));
+
+	if (!res) {
+		msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	for (size_t i = 0; i < retcols; i++) {
 		if (isaBatType(getArgType(mb, pci, i))) {
-			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
+			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
+			if (!b) {
+				msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+				goto bailout;
+			}
+			((BAT**)res)[i] = b;
 		} else { // single value return, only for non-grouped aggregations
-			VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
+			// return NULL to conform to SQL aggregates
+			int tpe = getArgType(mb, pci, i);
+			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+				msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			((ValPtr*)res)[i] = &stk->stk[pci->argv[i]];
 		}
 	}
+
+bailout:
+	if (res) {
+		for (size_t i = 0; i < retcols; i++) {
+			if (isaBatType(getArgType(mb, pci, i))) {
+				BAT *b = ((BAT**)res)[i];
+
+				if (b && msg) {
+					BBPreclaim(b);
+				} else if (b) {
+					*getArgReference_bat(stk, pci, i) = b->batCacheid;
+					BBPkeepref(b);
+				}
+			} else if (msg) {
+				ValPtr pt = ((ValPtr*)res)[i];
+
+				if (pt)
+					VALclear(pt);
+			}
+		}
+		GDKfree(res);
+	}
+	return msg;
 }
 
 #include "mel.h"
@@ -1656,8 +1715,8 @@ static mel_func pyapi3_init_funcs[] = {
  pattern("pyapi3", "eval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,3, varargany("",0),arg("fptr",ptr),arg("expr",str))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- command("pyapi3", "prelude", PYAPI3PyAPIprelude, false, "", args(1,1, arg("",void))),
- pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr", ptr), arg("expr",str),varargany("arg",0))),
+ pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batpyapi3", "subeval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3", "eval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,3, varargany("",0),arg("fptr",ptr),arg("expr",str))),
@@ -1677,4 +1736,4 @@ static mel_func pyapi3_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pyapi3_mal)
-{ mal_module("pyapi3", NULL, pyapi3_init_funcs); }
+{ mal_module2("pyapi3", NULL, pyapi3_init_funcs, PYAPI3PyAPIprelude, NULL); }

@@ -3,28 +3,19 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
-
-#ifdef WIN32
-#ifndef LIBGDK
-#define gdk_export extern __declspec(dllimport)
-#else
-#define gdk_export extern __declspec(dllexport)
-#endif
-#else
-#define gdk_export extern
-#endif
 
 /* if __has_attribute is not known to the preprocessor, we ignore
  * attributes completely; if it is known, use it to find out whether
  * specific attributes that we use are known */
 #ifndef __has_attribute
 #ifndef __GNUC__
-#define __has_attribute(attr)	0
+/* we can define __has_attribute as 1 since we define __attribute__ as empty */
+#define __has_attribute(attr)	1
 #ifndef __attribute__
 #define __attribute__(attr)	/* empty */
 #endif
@@ -33,50 +24,76 @@
  * attributes that we use are known */
 #define __has_attribute__alloc_size__ 1
 #define __has_attribute__cold__ 1
-#define __has_attribute__format__ 1
+#define __has_attribute__const__ 1
+#define __has_attribute__constructor__ 1
 #define __has_attribute__designated_init__ 0
+#define __has_attribute__format__ 1
 #define __has_attribute__malloc__ 1
+#define __has_attribute__nonnull__ 1
 #define __has_attribute__nonstring__ 0
-#define __has_attribute__noreturn__ 1
-#define __has_attribute__pure__ 0
+#define __has_attribute__pure__ 1
 #define __has_attribute__returns_nonnull__ 0
 #define __has_attribute__visibility__ 1
 #define __has_attribute__warn_unused_result__ 1
 #define __has_attribute(attr)	__has_attribute##attr
 #endif
 #endif
-#if !__has_attribute(__warn_unused_result__)
-#define __warn_unused_result__
-#endif
-#if !__has_attribute(__malloc__)
-#define __malloc__
-#endif
 #if !__has_attribute(__alloc_size__)
 #define __alloc_size__(a)
 #endif
-#if !__has_attribute(__format__)
-#define __format__(a,b,c)
+#if !__has_attribute(__cold__)
+#define __cold__
 #endif
-#if !__has_attribute(__nonstring__)
-#define __nonstring__
+#if !__has_attribute(__const__)
+#define __const__
 #endif
-#if !__has_attribute(__noreturn__)
-#define __noreturn__
-#endif
-#if !__has_attribute(__pure__)
-#define __pure__
+#if !__has_attribute(__constructor__)
+#define __constructor__
 #endif
 #if !__has_attribute(__designated_init__)
 #define __designated_init__
 #endif
-/* these are used in some *private.h files */
+#if !__has_attribute(__format__)
+#define __format__(a,b,c)
+#endif
+#if !__has_attribute(__malloc__)
+#define __malloc__
+#endif
+#if !__has_attribute(__nonnull__)
+#define __nonnull__(a)
+#endif
+#if !__has_attribute(__nonstring__)
+#define __nonstring__
+#endif
+#if !__has_attribute(__pure__)
+#define __pure__
+#endif
+#if !__has_attribute(__returns_nonnull__)
+#define __returns_nonnull__
+#endif
 #if !__has_attribute(__visibility__)
 #define __visibility__(a)
 #elif defined(__CYGWIN__)
 #define __visibility__(a)
 #endif
-#if !__has_attribute(__cold__)
-#define __cold__
+#if !__has_attribute(__warn_unused_result__)
+#define __warn_unused_result__
+#endif
+
+/* unreachable code */
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#elif defined(__clang__) || defined(__INTEL_COMPILER)
+#ifdef WIN32
+#define __builtin_unreachable()	GDKfatal("Unreachable C code path reached");
+#endif
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#elif defined(_MSC_VER)
+#define MT_UNREACHABLE()	do { assert(0); __assume(0); } while (0)
+#else
+/* we don't know how to tell the compiler, so call a function that
+ * doesn't return */
+#define MT_UNREACHABLE()	do { assert(0); GDKfatal("Unreachable C code path reached"); } while (0)
 #endif
 
 /* also see gdk.h for these */
@@ -182,11 +199,8 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 /* define this to keep lock statistics (can be expensive) */
 /* #define LOCK_STATS 1 */
 
-/* define this if you want to use pthread (or Windows) locks instead
- * of atomic instructions for locking (latching) */
-#define USE_NATIVE_LOCKS 1
-
 #ifdef LOCK_STATS
+#include "gdk_tracer.h"
 
 #define _DBG_LOCK_COUNT_0(l)					\
 	do {							\
@@ -223,56 +237,45 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
 				;					\
 			(l)->next = GDKlocklist;			\
+			(l)->prev = NULL;				\
+			if (GDKlocklist)				\
+				GDKlocklist->prev = (l);		\
 			GDKlocklist = (l);				\
 			ATOMIC_CLEAR(&GDKlocklistlock);			\
 		}							\
 		TRC_DEBUG(TEM, "Locking %s complete\n", (l)->name);	\
 	} while (0)
 
-#define _DBG_LOCK_INIT(l)						\
-	do {								\
-		(l)->count = 0;						\
-		ATOMIC_INIT(&(l)->contention, 0);			\
-		ATOMIC_INIT(&(l)->sleep, 0);				\
-		(l)->locker = NULL;					\
-		(l)->thread = NULL;					\
-		/* if name starts with "sa_" don't link in GDKlocklist */ \
-		/* since the lock is in memory that is governed by the */ \
-		/* SQL storage allocator, and hence we have no control */ \
-		/* over when the lock is destroyed and the memory freed */ \
-		if (strncmp((l)->name, "sa_", 3) != 0) {		\
-			MT_Lock * volatile _p;				\
-			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
-				;					\
-			for (_p = GDKlocklist; _p; _p = _p->next)	\
-				assert(_p != (l));			\
-			(l)->next = GDKlocklist;			\
-			GDKlocklist = (l);				\
-			ATOMIC_CLEAR(&GDKlocklistlock);			\
-		} else {						\
-			(l)->next = NULL;				\
-		}							\
+#define _DBG_LOCK_INIT(l)					\
+	do {							\
+		(l)->count = 0;					\
+		ATOMIC_INIT(&(l)->contention, 0);		\
+		ATOMIC_INIT(&(l)->sleep, 0);			\
+		(l)->locker = NULL;				\
+		(l)->thread = NULL;				\
+		while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
+			;					\
+		if (GDKlocklist)				\
+			GDKlocklist->prev = (l);		\
+		(l)->next = GDKlocklist;			\
+		(l)->prev = NULL;				\
+		GDKlocklist = (l);				\
+		ATOMIC_CLEAR(&GDKlocklistlock);			\
 	} while (0)
 
-#define _DBG_LOCK_DESTROY(l)						\
-	do {								\
-		/* if name starts with "sa_" don't link in GDKlocklist */ \
-		/* since the lock is in memory that is governed by the */ \
-		/* SQL storage allocator, and hence we have no control */ \
-		/* over when the lock is destroyed and the memory freed */ \
-		if (strncmp((l)->name, "sa_", 3) != 0) {		\
-			MT_Lock * volatile *_p;				\
-			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
-				;					\
-			for (_p = &GDKlocklist; *_p; _p = &(*_p)->next)	\
-				if ((l) == *_p) {			\
-					*_p = (l)->next;		\
-					break;				\
-				}					\
-			ATOMIC_CLEAR(&GDKlocklistlock);			\
-			ATOMIC_DESTROY(&(l)->contention);		\
-			ATOMIC_DESTROY(&(l)->sleep);			\
-		}							\
+#define _DBG_LOCK_DESTROY(l)					\
+	do {							\
+		while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
+			;					\
+		if ((l)->next)					\
+			(l)->next->prev = (l)->prev;		\
+		if ((l)->prev)					\
+			(l)->prev->next = (l)->next;		\
+		else if (GDKlocklist == (l))			\
+			GDKlocklist = (l)->next;		\
+		ATOMIC_CLEAR(&GDKlocklistlock);			\
+		ATOMIC_DESTROY(&(l)->contention);		\
+		ATOMIC_DESTROY(&(l)->sleep);			\
 	} while (0)
 
 #else
@@ -288,8 +291,6 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #endif
 
-#ifdef USE_NATIVE_LOCKS
-
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 typedef struct MT_Lock {
 	CRITICAL_SECTION lock;
@@ -298,7 +299,8 @@ typedef struct MT_Lock {
 	size_t count;
 	ATOMIC_TYPE contention;
 	ATOMIC_TYPE sleep;
-	struct MT_Lock * volatile next;
+	struct MT_Lock *volatile next;
+	struct MT_Lock *volatile prev;
 	const char *locker;
 	const char *thread;
 #endif
@@ -396,7 +398,8 @@ typedef struct MT_Lock {
 	size_t count;
 	ATOMIC_TYPE contention;
 	ATOMIC_TYPE sleep;
-	struct MT_Lock * volatile next;
+	struct MT_Lock *volatile next;
+	struct MT_Lock *volatile prev;
 	const char *locker;
 	const char *thread;
 #endif
@@ -418,19 +421,17 @@ typedef struct MT_Lock {
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0)
 
 #ifdef LOCK_STATS
-#define MT_lock_set(l)							\
-	do {								\
-		_DBG_LOCK_COUNT_0(l);					\
-		if (!MT_lock_try(l)) {					\
-			_DBG_LOCK_CONTENTION(l);			\
-			MT_thread_setlockwait(l);			\
-			do						\
-				_DBG_LOCK_SLEEP(l);			\
-			while (pthread_mutex_lock(&(l)->lock) != 0);	\
-			MT_thread_setlockwait(NULL);			\
-		}							\
-		_DBG_LOCK_LOCKER(l);					\
-		_DBG_LOCK_COUNT_2(l);					\
+#define MT_lock_set(l)					\
+	do {						\
+		_DBG_LOCK_COUNT_0(l);			\
+		if (!MT_lock_try(l)) {			\
+			_DBG_LOCK_CONTENTION(l);	\
+			MT_thread_setlockwait(l);	\
+			pthread_mutex_lock(&(l)->lock);	\
+			MT_thread_setlockwait(NULL);	\
+		}					\
+		_DBG_LOCK_LOCKER(l);			\
+		_DBG_LOCK_COUNT_2(l);			\
 	} while (0)
 #else
 #define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
@@ -448,12 +449,14 @@ typedef struct MT_Lock {
 		pthread_mutex_destroy(&(l)->lock);	\
 	} while (0)
 
+#if !defined(__GLIBC__) || __GLIBC__ > 2 || (__GLIBC__ == 2 && defined(__GLIBC_MINOR__) && __GLIBC_MINOR__ >= 30)
+/* this is the normal implementation of our pthreads-based read-write lock */
 typedef struct MT_RWLock {
 	pthread_rwlock_t lock;
 	char name[MT_NAME_LEN];
 } MT_RWLock;
 
-#define MT_RWLOCK_INITIALIZER(n)	\
+#define MT_RWLOCK_INITIALIZER(n)				\
 	{ .lock = PTHREAD_RWLOCK_INITIALIZER, .name = #n, }
 
 #define MT_rwlock_init(l, n)					\
@@ -474,132 +477,78 @@ typedef struct MT_RWLock {
 
 #define MT_rwlock_wrunlock(l)	pthread_rwlock_unlock(&(l)->lock)
 
-#endif
-
 #else
-
-/* if LOCK_STATS is set, we maintain a bunch of counters and maintain
- * a linked list of active locks */
-typedef struct MT_Lock {
-	ATOMIC_FLAG lock;
-	char name[MT_NAME_LEN];
-#ifdef LOCK_STATS
-	size_t count;
-	ATOMIC_TYPE contention;
-	ATOMIC_TYPE sleep;
-	struct MT_Lock * volatile next;
-	const char *locker;
-	const char *thread;
-#endif
-} MT_Lock;
-
-#ifdef LOCK_STATS
-#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .next = (struct MT_Lock *) -1, .name = #n, }
-#else
-#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .name = #n, }
-#endif
-
-#define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)
-
-#define MT_lock_set(l)						\
-	do {							\
-		_DBG_LOCK_COUNT_0(l);				\
-		if (!MT_lock_try(l)) {				\
-			/* we didn't get the lock */		\
-			unsigned _spincnt = 0;			\
-			_DBG_LOCK_CONTENTION(l);		\
-			MT_thread_setlockwait(l);		\
-			do {					\
-				if ((++_spincnt & 2047) == 0) {	\
-					_DBG_LOCK_SLEEP(l);	\
-					MT_sleep_ms(1);		\
-				}				\
-			} while (!MT_lock_try(l));		\
-			MT_thread_setlockwait(NULL);		\
-		}						\
-		_DBG_LOCK_LOCKER(l);				\
-		_DBG_LOCK_COUNT_2(l);				\
-	} while (0)
-
-#define MT_lock_init(l, n)				\
-	do {						\
-		size_t nlen;				\
-		ATOMIC_CLEAR(&(l)->lock);		\
-		nlen = strlen(n);			\
-		if (nlen >= sizeof((l)->name))		\
-			nlen = sizeof((l)->name) - 1;	\
-		memcpy((l)->name, (n), nlen + 1);	\
-		(l)->name[sizeof((l)->name) - 1] = 0;	\
-		_DBG_LOCK_INIT(l);			\
-	} while (0)
-
-#define MT_lock_unset(l)					\
-		do {						\
-			/* lock should be locked */		\
-			assert(ATOMIC_TAS(&(l)->lock) != 0);	\
-			_DBG_LOCK_UNLOCKER(l);			\
-			ATOMIC_CLEAR(&(l)->lock);		\
-		} while (0)
-
-#define MT_lock_destroy(l)	_DBG_LOCK_DESTROY(l)
-
+/* in glibc before 2.30, there was a deadlock condition in the tryrdlock
+ * and trywrlock functions, we work around that by not using the
+ * implementation at all
+ * see https://sourceware.org/bugzilla/show_bug.cgi?id=23844 for a
+ * discussion and comment 14 for the analysis */
 typedef struct MT_RWLock {
-	MT_Lock lock;
+	pthread_mutex_t lock;
 	ATOMIC_TYPE readers;
+	char name[MT_NAME_LEN];
 } MT_RWLock;
 
-#define MT_RWLOCK_INITIALIZER(n)	\
-	{ .lock = MT_LOCK_INITIALIZER(n), .readers = ATOMIC_VAR_INIT(0), }
+#define MT_RWLOCK_INITIALIZER(n)					\
+	{ .lock = PTHREAD_MUTEX_INITIALIZER, .readers = ATOMIC_VAR_INIT(0), .name = #n, }
 
-#define MT_rwlock_init(l, n)			\
-	do {					\
-		MT_lock_init(&(l)->lock, n);	\
-		ATOMIC_INIT(&(l)->readers, 0);	\
-	 } while (0)
+#define MT_rwlock_init(l, n)					\
+	do {							\
+		pthread_mutex_init(&(l)->lock, 0);		\
+		ATOMIC_INIT(&(l)->readers, 0);			\
+		strcpy_len((l)->name, (n), sizeof((l)->name));	\
+	} while (0)
 
-#define MT_rwlock_destroy(l)			\
-	do {					\
-		MT_lock_destroy(&(l)->lock);	\
-		ATOMIC_DESTROY(&(l)->readers);	\
+#define MT_rwlock_destroy(l)				\
+	do {						\
+		pthread_mutex_destroy(&(l)->lock);	\
+		ATOMIC_DESTROY(&(l)->readers);		\
 	} while (0)
 
 #define MT_rwlock_rdlock(l)				\
 	do {						\
-		MT_lock_set(&(l)->lock);		\
+		pthread_mutex_lock(&(l)->lock);		\
 		(void) ATOMIC_INC(&(l)->readers);	\
-		MT_lock_unset(&(l)->lock);		\
-	 } while (0)
+		pthread_mutex_unlock(&(l)->lock);	\
+	} while (0)
+
 static inline bool
 MT_rwlock_rdtry(MT_RWLock *l)
 {
-	if (!MT_lock_try(l))
+	if (pthread_mutex_trylock(&l->lock) != 0)
 		return false;
 	(void) ATOMIC_INC(&(l)->readers);
-	MT_lock_unset(&(l)->lock);
+	pthread_mutex_unlock(&l->lock);
 	return true;
 }
 
-#define MT_rwlock_rdunlock(l)	((void) ATOMIC_DEC(&(l)->readers))
+#define MT_rwlock_rdunlock(l)				\
+	do {						\
+		(void) ATOMIC_DEC(&(l)->readers);	\
+	} while (0)
 
 #define MT_rwlock_wrlock(l)				\
 	do {						\
-		MT_lock_set(&(l)->lock);		\
+		pthread_mutex_lock(&(l)->lock);		\
 		while (ATOMIC_GET(&(l)->readers) > 0)	\
 			MT_sleep_ms(1);			\
-	 } while (0)
+	} while (0)
+
 static inline bool
 MT_rwlock_wrtry(MT_RWLock *l)
 {
-	if (!MT_lock_try(l))
+	if (pthread_mutex_trylock(&l->lock) != 0)
 		return false;
 	if (ATOMIC_GET(&l->readers) > 0) {
-		MT_lock_unset(l);
+		pthread_mutex_unlock(&l->lock);
 		return false;
 	}
 	return true;
 }
 
-#define MT_rwlock_wrunlock(l)	MT_lock_unset(&(l)->lock)
+#define MT_rwlock_wrunlock(l)  pthread_mutex_unlock(&(l)->lock);
+
+#endif
 
 #endif
 

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -64,22 +64,14 @@
 
 const char str_nil[2] = { '\200', 0 };
 
-void
+gdk_return
 strHeap(Heap *d, size_t cap)
 {
 	size_t size;
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1, 1) == GDK_SUCCEED) {
-		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
-		d->dirty = true;
-		memset(d->base, 0, d->free);
-#ifndef NDEBUG
-		/* fill should solve initialization problems within valgrind */
-		memset(d->base + d->free, 0, d->size - d->free);
-#endif
-	}
+	return HEAPalloc(d, size, 1, 1);
 }
 
 
@@ -94,6 +86,14 @@ strCleanHash(Heap *h, bool rebuild)
 	(void) rebuild;
 	if (!h->cleanhash)
 		return;
+	if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) &&
+	    HEAPextend(h, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+		GDKclrerr();
+		if (h->size > 0)
+			memset(h->base, 0, h->size);
+		return;
+	}
+
 	/* rebuild hash table for double elimination
 	 *
 	 * If appending strings to the BAT was aborted, if the heap
@@ -117,7 +117,7 @@ strCleanHash(Heap *h, bool rebuild)
 		strhash = strHash(s);
 		off = strhash & GDK_STRHASHMASK;
 		newhash[off] = (stridx_t) (pos - sizeof(stridx_t));
-		pos += strLen(s);
+		pos += strlen(s) + 1;
 	}
 	/* only set dirty flag if the hash table actually changed */
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
@@ -138,7 +138,7 @@ strCleanHash(Heap *h, bool rebuild)
 			pos += pad;
 			s = h->base + pos;
 			assert(strLocate(h, s) != 0);
-			pos += strLen(s);
+			pos += strlen(s) + 1;
 		}
 	}
 #endif
@@ -148,7 +148,7 @@ strCleanHash(Heap *h, bool rebuild)
 /*
  * The strPut routine. The routine strLocate can be used to identify
  * the location of a string in the heap if it exists. Otherwise it
- * returns zero.
+ * returns (var_t) -2 (-1 is reserved for error).
  */
 var_t
 strLocate(Heap *h, const char *v)
@@ -157,6 +157,11 @@ strLocate(Heap *h, const char *v)
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
+	if (h->free == 0) {
+		/* empty, so there are no strings */
+		return (var_t) -2;
+	}
+
 	off = strHash(v);
 	off &= GDK_STRHASHMASK;
 
@@ -166,84 +171,10 @@ strLocate(Heap *h, const char *v)
 	/* search the linked list */
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
-		if (strCmp(v, (str) (next + 1)) == 0)
+		if (strcmp(v, (str) (next + 1)) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
 	}
-	return 0;
-}
-
-#ifdef __GNUC__
-/* __builtin_expect returns its first argument; it is expected to be
- * equal to the second argument */
-#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
-#define likely(expr)	__builtin_expect((expr) != 0, 1)
-#else
-#define unlikely(expr)	(expr)
-#define likely(expr)	(expr)
-#endif
-
-/*
- * UTF-8 encoding is as follows:
- * U-00000000 - U-0000007F: 0xxxxxxx
- * U-00000080 - U-000007FF: 110zzzzx 10xxxxxx
- * U-00000800 - U-0000FFFF: 1110zzzz 10zxxxxx 10xxxxxx
- * U-00010000 - U-0010FFFF: 11110zzz 10zzxxxx 10xxxxxx 10xxxxxx
- *
- * To be correctly coded UTF-8, the sequence should be the shortest
- * possible encoding of the value being encoded.  This means that at
- * least one of the z bits must be non-zero.  Also note that the four
- * byte sequence can encode more than is allowed and that the values
- * U+D800..U+DFFF are not allowed to be encoded.
- */
-static inline gdk_return
-checkUTF8(const char *v)
-{
-	/* It is unlikely that this functions returns GDK_FAIL, because
-	 * it is likely that the string presented is a correctly coded
-	 * UTF-8 string.  So we annotate the tests that are very
-	 * unlikely to succeed, i.e. the ones that lead to a return of
-	 * GDK_FAIL, as being expected to return 0 using the
-	 * __builtin_expect function. */
-	if (v[0] != '\200' || v[1] != '\0') {
-		/* check that string is correctly encoded UTF-8 */
-		for (size_t i = 0; v[i]; i++) {
-			/* we do not annotate all tests, only the ones
-			 * leading directly to an unlikely return
-			 * statement */
-			if ((v[i] & 0x80) == 0) {
-				;
-			} else if ((v[i] & 0xE0) == 0xC0) {
-				if (unlikely((v[i] & 0x1E) == 0))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else if ((v[i] & 0xF0) == 0xE0) {
-				if ((v[i++] & 0x0F) == 0) {
-					if (unlikely((v[i] & 0xE0) != 0xA0))
-						return GDK_FAIL;
-				} else {
-					if (unlikely((v[i] & 0xC0) != 0x80))
-						return GDK_FAIL;
-				}
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else if ((v[i] & 0xF8) == 0xF0) {
-				if ((v[i++] & 0x07) == 0) {
-					if (unlikely((v[i] & 0x30) == 0))
-						return GDK_FAIL;
-				}
-				if (unlikely((v[i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else {
-				return GDK_FAIL;
-			}
-		}
-	}
-	return GDK_SUCCEED;
+	return (var_t) -2;
 }
 
 var_t
@@ -252,9 +183,29 @@ strPut(BAT *b, var_t *dst, const void *V)
 	const char *v = V;
 	Heap *h = b->tvheap;
 	size_t pad;
-	size_t pos, len = strLen(v);
+	size_t pos, len = strlen(v) + 1;
 	stridx_t *bucket;
 	BUN off;
+
+	if (h->free == 0) {
+		MT_lock_set(&b->theaplock);
+		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
+				return (var_t) -1;
+			}
+			h = b->tvheap;
+		}
+		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		h->dirty = true;
+		MT_lock_unset(&b->theaplock);
+#ifdef NDEBUG
+		memset(h->base, 0, h->free);
+#else
+		/* fill should solve initialization problems within valgrind */
+		memset(h->base, 0, h->size);
+#endif
+	}
 
 	off = strHash(v);
 	off &= GDK_STRHASHMASK;
@@ -269,7 +220,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 			do {
 				pos = *ref + sizeof(stridx_t);
-				if (strCmp(v, h->base + pos) == 0) {
+				if (strcmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
 				}
@@ -280,7 +231,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 			 * linked list, so only look at single
 			 * entry */
 			pos = *bucket;
-			if (strCmp(v, h->base + pos) == 0) {
+			if (strcmp(v, h->base + pos) == 0) {
 				/* already in heap: reuse */
 				return *dst = (var_t) pos;
 			}
@@ -291,10 +242,12 @@ strPut(BAT *b, var_t *dst, const void *V)
 	/* check that string is correctly encoded UTF-8; there was no
 	 * need to do this earlier: if the string was found above, it
 	 * must have gone through here in the past */
-	if (checkUTF8(v) != GDK_SUCCEED) {
+#ifndef NDEBUG
+	if (!checkUTF8(v)) {
 		GDKerror("incorrectly encoded UTF-8\n");
-		return 0;
+		return (var_t) -1;
 	}
+#endif
 
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
 	if (GDK_ELIMBASE(h->free + pad) == 0) {	/* i.e. h->free+pad < GDK_ELIMLIMIT */
@@ -325,16 +278,16 @@ strPut(BAT *b, var_t *dst, const void *V)
 		assert(newsize);
 
 		if (h->free + pad + len >= (size_t) VAR_MAX) {
-			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
-			return 0;
+			GDKerror("string heap gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
+			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		Heap *new = HEAPgrow(h, newsize);
-		if (new == NULL)
-			return 0;
 		MT_lock_set(&b->theaplock);
-		HEAPdecref(h, false);
-		b->tvheap = h = new;
+		if (HEAPgrow(&b->tvheap, newsize, true) != GDK_SUCCEED) {
+			MT_lock_unset(&b->theaplock);
+			return (var_t) -1;
+		}
+		h = b->tvheap;
 		MT_lock_unset(&b->theaplock);
 
 		/* make bucket point into the new heap */
@@ -347,8 +300,10 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (pad > 0)
 		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
+	MT_lock_set(&b->theaplock);
 	h->free += pad + len;
 	h->dirty = true;
+	MT_lock_unset(&b->theaplock);
 
 	/* maintain hash table */
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
@@ -366,6 +321,16 @@ strPut(BAT *b, var_t *dst, const void *V)
  * Convert an "" separated string to a GDK string value, checking that
  * the input is correct UTF-8.
  */
+
+#ifdef __GNUC__
+/* __builtin_expect returns its first argument; it is expected to be
+ * equal to the second argument */
+#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
+#define likely(expr)	__builtin_expect((expr) != 0, 1)
+#else
+#define unlikely(expr)	(expr)
+#define likely(expr)	(expr)
+#endif
 
 ssize_t
 GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
@@ -640,13 +605,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
  * Convert a GDK string value to something printable.
  */
 /* all but control characters (in range 0 to 31) and DEL */
-#ifdef ASCII_CHR
-/* ASCII printable characters */
-#define printable_chr(ch)	(' ' <= (ch) && (ch) <= '~')
-#else
-/* everything except ASCII control characters */
 #define printable_chr(ch)	((' ' <= (ch) && (ch) <= '~') || ((ch) & 0x80) != 0)
-#endif
 
 size_t
 escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote)
@@ -662,7 +621,6 @@ escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int 
 		    || (sep1len && strncmp(src + end, sep1, sep1len) == 0)
 		    || (sep2len && strncmp(src + end, sep2, sep2len) == 0)) {
 			sz += 2;
-#ifndef ASCII_CHR
 		} else if (src[end] == (char) '\302' &&
 			   0200 <= ((int) src[end + 1] & 0377) &&
 			   ((int) src[end + 1] & 0377) <= 0237) {
@@ -674,7 +632,6 @@ escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int 
 			 * 1, together that's 8, i.e. the width of two
 			 * backslash-escaped octal coded characters */
 			sz += 7;
-#endif
 		} else if (!printable_chr(src[end])) {
 			sz += 4;
 		} else {
@@ -693,16 +650,13 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 	sep2len = sep2 ? strlen(sep2) : 0;
 	for (; src[cur] && l < dstlen; cur++)
 		if (!printable_chr(src[cur])
-#ifndef ASCII_CHR
 		    || (src[cur] == '\302'
 			&& 0200 <= (src[cur + 1] & 0377)
 			&& ((int) src[cur + 1] & 0377) <= 0237)
 		    || (cur > 0
 			&& src[cur - 1] == '\302'
 			&& 0200 <= (src[cur] & 0377)
-			&& (src[cur] & 0377) <= 0237)
-#endif
-			) {
+			&& (src[cur] & 0377) <= 0237)) {
 			dst[l++] = '\\';
 			switch (src[cur]) {
 			case '\t':
@@ -792,7 +746,7 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (checkUTF8(a) != GDK_SUCCEED) {
+	if (!checkUTF8(a)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return GDK_FAIL;
 	}
@@ -804,14 +758,14 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 static gdk_return
 concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
-	       BUN ngrp, struct canditer *restrict ci, BUN ncand,
+	       BUN ngrp, struct canditer *restrict ci,
 	       const oid *restrict gids, oid min, oid max, bool skip_nils,
 	       BAT *sep, const char *restrict separator, BUN *has_nils)
 {
 	oid gid;
 	BUN i, p, nils = 0;
 	size_t *restrict lengths = NULL, *restrict lastseplength = NULL, separator_length = 0, next_length;
-	str *restrict astrings = NULL, s, sl;
+	str *restrict astrings = NULL;
 	BATiter bi, bis = (BATiter) {0};
 	BAT *bn = NULL;
 	gdk_return rres = GDK_SUCCEED;
@@ -820,6 +774,13 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	assert((bnp == NULL) != (pt == NULL));
 	/* if pt not NULL, only a single group allowed */
 	assert(pt == NULL || ngrp == 1);
+
+	bi = bat_iterator(b);
+	if (sep)
+		bis = bat_iterator(sep);
+	else
+		separator_length = strlen(separator);
+
 	if (bnp) {
 		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
 			rres = GDK_FAIL;
@@ -828,20 +789,14 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		*bnp = bn;
 	}
 
-	bi = bat_iterator(b);
-	if (sep)
-		bis = bat_iterator(sep);
-	else
-		separator_length = strlen(separator);
-
 	if (ngrp == 1) {
 		size_t offset = 0, single_length = 0;
 		bool empty = true;
 
 		if (separator) {
-			for (i = 0; i < ncand; i++) {
+			CAND_LOOP_IDX(ci, i) {
 				p = canditer_next(ci) - seqb;
-				s = BUNtvar(bi, p);
+				const char *s = BUNtvar(bi, p);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -856,10 +811,10 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			for (i = 0; i < ncand; i++) {
+			CAND_LOOP_IDX(ci, i) {
 				p = canditer_next(ci) - seqb;
-				s = BUNtvar(bi, p);
-				sl = BUNtvar(bis, p);
+				const char *s = BUNtvar(bi, p);
+				const char *sl = BUNtvar(bis, p);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -885,13 +840,17 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
 
-			if ((single_str = GDKmalloc(single_length + 1)) == NULL)
+			if ((single_str = GDKmalloc(single_length + 1)) == NULL) {
+				bat_iterator_end(&bi);
+				if (sep)
+					bat_iterator_end(&bis);
 				return GDK_FAIL;
+			}
 			empty = true;
 			if (separator) {
-				for (i = 0; i < ncand; i++) {
+				CAND_LOOP_IDX(ci, i) {
 					p = canditer_next(ci) - seqb;
-					s = BUNtvar(bi, p);
+					const char *s = BUNtvar(bi, p);
 					if (strNil(s))
 						continue;
 					if (!empty) {
@@ -905,10 +864,10 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			} else { /* sep case */
 				assert(sep != NULL);
-				for (i = 0; i < ncand; i++) {
+				CAND_LOOP_IDX(ci, i) {
 					p = canditer_next(ci) - seqb;
-					s = BUNtvar(bi, p);
-					sl = BUNtvar(bis, p);
+					const char *s = BUNtvar(bi, p);
+					const char *sl = BUNtvar(bis, p);
 					if (strNil(s))
 						continue;
 					if (!empty && !strNil(sl)) {
@@ -927,6 +886,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 					GDKfree(single_str);
+					bat_iterator_end(&bi);
+					if (sep)
+						bat_iterator_end(&bis);
 					return GDK_FAIL;
 				}
 			} else {
@@ -936,12 +898,23 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 			GDKfree(single_str);
 		} else if (bn) {
-			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED)
+			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
+				if (sep)
+					bat_iterator_end(&bis);
 				return GDK_FAIL;
+			}
 		} else {
-			if (VALinit(pt, TYPE_str, str_nil) == NULL)
+			if (VALinit(pt, TYPE_str, str_nil) == NULL) {
+				bat_iterator_end(&bi);
+				if (sep)
+					bat_iterator_end(&bis);
 				return GDK_FAIL;
+			}
 		}
+		bat_iterator_end(&bi);
+		if (sep)
+			bat_iterator_end(&bis);
 		return GDK_SUCCEED;
 	} else {
 		/* first used to calculated the total length of
@@ -961,13 +934,13 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			astrings[i] = (char *) str_nil;
 
 		if (separator) {
-			for (p = 0; p < ncand; p++) {
+			CAND_LOOP_IDX(ci, p) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					s = BUNtvar(bi, i);
+					const char *s = BUNtvar(bi, i);
 					if (!strNil(s)) {
 						lengths[gid] += strlen(s) + separator_length;
 						astrings[gid] = NULL;
@@ -980,14 +953,14 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			for (p = 0; p < ncand; p++) {
+			CAND_LOOP_IDX(ci, p) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					s = BUNtvar(bi, i);
-					sl = BUNtvar(bis, i);
+					const char *s = BUNtvar(bi, i);
+					const char *sl = BUNtvar(bis, i);
 					if (!strNil(s)) {
 						lengths[gid] += strlen(s);
 						if (!strNil(sl)) {
@@ -1036,12 +1009,12 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		canditer_reset(ci);
 
 		if (separator) {
-			for (p = 0; p < ncand; p++) {
+			CAND_LOOP_IDX(ci, p) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
 					if (astrings[gid]) {
-						s = BUNtvar(bi, i);
+						const char *s = BUNtvar(bi, i);
 						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]]) {
@@ -1057,13 +1030,13 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			for (p = 0; p < ncand; p++) {
+			CAND_LOOP_IDX(ci, p) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
 					if (astrings[gid]) {
-						s = BUNtvar(bi, i);
-						sl = BUNtvar(bis, i);
+						const char *s = BUNtvar(bi, i);
+						const char *sl = BUNtvar(bis, i);
 						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]] && !strNil(sl)) {
@@ -1095,6 +1068,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	}
 
   finish:
+	bat_iterator_end(&bi);
+	if (sep)
+		bat_iterator_end(&bis);
 	if (has_nils)
 		*has_nils = nils;
 	GDKfree(lengths);
@@ -1116,29 +1092,40 @@ gdk_return
 BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 		    bool abort_on_error, bool nil_if_empty, const char *restrict separator)
 {
-	BUN ncand;
 	struct canditer ci;
+	gdk_return r = GDK_SUCCEED;
+	bool free_nseparator = false;
+	char *nseparator = (char *)separator;
 
 	(void) abort_on_error;
-	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
+	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	res->vtype = TYPE_str;
 
-	ncand = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
-		separator = BUNtvar(bi, 0);
+		nseparator = GDKstrdup(BUNtvar(bi, 0));
+		bat_iterator_end(&bi);
+		if (!nseparator)
+			return GDK_FAIL;
+		free_nseparator = true;
 		sep = NULL;
 	}
 
-	if (ncand == 0 || (separator && strNil(separator))) {
+	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
 		if (VALinit(res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
-			return GDK_FAIL;
-		return GDK_SUCCEED;
+			r = GDK_FAIL;
+		if (free_nseparator)
+			GDKfree(nseparator);
+		return r;
 	}
 
-	return concat_strings(NULL, res, b, b->hseqbase, 1, &ci, ncand, NULL, 0, 0,
-			      skip_nils, sep, separator, NULL);
+	r = concat_strings(NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
+			      skip_nils, sep, nseparator, NULL);
+	if (free_nseparator)
+		GDKfree(nseparator);
+	return r;
 }
 
 BAT *
@@ -1147,16 +1134,18 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 {
 	BAT *bn = NULL;
 	oid min, max;
-	BUN ngrp, ncand, nils = 0;
+	BUN ngrp, nils = 0;
 	struct canditer ci;
 	const char *err;
 	gdk_return res;
+	bool free_nseparator = false;
+	char *nseparator = (char *)separator;
 
-	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
+	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp,
-				    &ci, &ncand)) !=NULL) {
+				    &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -1167,232 +1156,248 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
-		separator = BUNtvar(bi, 0);
+		nseparator = GDKstrdup(BUNtvar(bi, 0));
+		bat_iterator_end(&bi);
+		if (!nseparator)
+			return NULL;
+		free_nseparator = true;
 		sep = NULL;
 	}
 
-	if (ncand == 0 || ngrp == 0 || (separator && strNil(separator))) {
+	if (ci.ncand == 0 || ngrp == 0 || (nseparator && strNil(nseparator))) {
 		/* trivial: no strings to concat, so return bat
 		 * aligned with g with nil in the tail */
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
+		goto done;
 	}
 
 	if (BATtdense(g) || (g->tkey && g->tnonil)) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, TYPE_str, abort_on_error, 0, 0, 0);
+		bn = BATconvert(b, s, TYPE_str, abort_on_error, 0, 0, 0);
+		goto done;
 	}
 
-	res = concat_strings(&bn, NULL, b, b->hseqbase, ngrp, &ci, ncand,
+	res = concat_strings(&bn, NULL, b, b->hseqbase, ngrp, &ci,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
-			     separator, &nils);
+			     nseparator, &nils);
 	if (res != GDK_SUCCEED)
-		return NULL;
+		bn = NULL;
 
+done:
+	if (free_nseparator)
+		GDKfree(nseparator);
 	return bn;
 }
 
-#define compute_next_single_str(START, END)	\
-	do {	\
-		for (oid m = START; m < END; m++) {	\
-			sb = BUNtvar(bi, m);	\
-	\
-			if (separator) {	\
-				if (!strNil(sb)) {	\
-					next_group_length += strlen(sb);	\
-					if (!empty)	\
-						next_group_length += separator_length;	\
-					empty = false;	\
-				}	\
-			} else { /* sep case */	\
-				assert(sep != NULL);	\
-				sl = BUNtvar(bis, m);	\
-	\
-				if (!strNil(sb)) {	\
-					next_group_length += strlen(sb);	\
+#define compute_next_single_str(START, END)				\
+	do {								\
+		for (oid m = START; m < END; m++) {			\
+			const char *sb = BUNtvar(bi, m);		\
+									\
+			if (separator) {				\
+				if (!strNil(sb)) {			\
+					next_group_length += strlen(sb); \
+					if (!empty)			\
+						next_group_length += separator_length; \
+					empty = false;			\
+				}					\
+			} else { /* sep case */				\
+				assert(sep != NULL);			\
+				const char *sl = BUNtvar(sepi, m);	\
+									\
+				if (!strNil(sb)) {			\
+					next_group_length += strlen(sb); \
 					if (!empty && !strNil(sl))	\
-						next_group_length += strlen(sl);	\
-					empty = false;	\
-				}	\
-			}	\
-		}	\
-		if (empty) {	\
-			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */	\
-				max_group_length = 1;	\
-				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL)	\
-					goto allocation_error;	\
-			} else if (1 > max_group_length) {	\
-				max_group_length = 1;	\
-				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL)	\
-					goto allocation_error;	\
-				single_str = next_single_str;	\
-			}	\
-			strcpy(single_str, str_nil);	\
-			has_nils = true;	\
-		} else {	\
-			empty = true;	\
-			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */	\
+						next_group_length += strlen(sl); \
+					empty = false;			\
+				}					\
+			}						\
+		}							\
+		if (empty) {						\
+			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
+				max_group_length = 1;			\
+				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL) \
+					goto allocation_error;		\
+			} else if (1 > max_group_length) {		\
+				max_group_length = 1;			\
+				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL) \
+					goto allocation_error;		\
+				single_str = next_single_str;		\
+			}						\
+			strcpy(single_str, str_nil);			\
+			has_nils = true;				\
+		} else {						\
+			empty = true;					\
+			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
 				max_group_length = next_group_length;	\
-				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL)	\
-					goto allocation_error;	\
-			} else if (next_group_length > max_group_length) {	\
+				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL) \
+					goto allocation_error;		\
+			} else if (next_group_length > max_group_length) { \
 				max_group_length = next_group_length;	\
-				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL)	\
-					goto allocation_error;	\
-				single_str = next_single_str;	\
-			}	\
-\
-			for (oid m = START; m < END; m++) {	\
-				sb = BUNtvar(bi, m);	\
-\
-				if (separator) {	\
-					if (strNil(sb))	\
-						continue;	\
-					if (!empty) {	\
-						memcpy(single_str + offset, separator, separator_length);	\
-						offset += separator_length;	\
-					}	\
+				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL) \
+					goto allocation_error;		\
+				single_str = next_single_str;		\
+			}						\
+									\
+			for (oid m = START; m < END; m++) {		\
+				const char *sb = BUNtvar(bi, m);	\
+									\
+				if (separator) {			\
+					if (strNil(sb))			\
+						continue;		\
+					if (!empty) {			\
+						memcpy(single_str + offset, separator, separator_length); \
+						offset += separator_length; \
+					}				\
 					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length);	\
-					offset += next_length;	\
-					empty = false;	\
-				} else { /* sep case */	\
-					assert(sep != NULL);	\
-					sl = BUNtvar(bis, m);	\
-\
-					if (strNil(sb))	\
-						continue;	\
+					memcpy(single_str + offset, sb, next_length); \
+					offset += next_length;		\
+					empty = false;			\
+				} else { /* sep case */			\
+					assert(sep != NULL);		\
+					const char *sl = BUNtvar(sepi, m); \
+									\
+					if (strNil(sb))			\
+						continue;		\
 					if (!empty && !strNil(sl)) {	\
-						next_length = strlen(sl);	\
-						memcpy(single_str + offset, sl, next_length);	\
+						next_length = strlen(sl); \
+						memcpy(single_str + offset, sl, next_length); \
 						offset += next_length;	\
-					}	\
+					}				\
 					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length);	\
-					offset += next_length;	\
-					empty = false;	\
-				}	\
-			}	\
-\
-			single_str[offset] = '\0';	\
-		}	\
+					memcpy(single_str + offset, sb, next_length); \
+					offset += next_length;		\
+					empty = false;			\
+				}					\
+			}						\
+									\
+			single_str[offset] = '\0';			\
+		}							\
 } while (0)
 
-#define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW	\
-	do {	\
-		size_t slice_length = 0;	\
-		next_group_length = next_length = offset = 0;	\
-		empty = true;	\
-		compute_next_single_str(k, i); /* compute the entire string then slice it starting from the beginning */	\
-		empty = true; \
-		for (; k < i;) { \
-			str nsep, nstr;	\
-			oid m = k;	\
-			j = k; \
-			do {	\
-				k++; \
-			} while (k < i && !op[k]);	\
-			for (; j < k; j++) {	\
-				nstr = BUNtvar(bi, j);	\
-				if (!strNil(nstr)) {	\
+#define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW		\
+	do {								\
+		size_t slice_length = 0;				\
+		next_group_length = next_length = offset = 0;		\
+		empty = true;						\
+		compute_next_single_str(k, i); /* compute the entire string then slice it starting from the beginning */ \
+		empty = true;						\
+		for (; k < i;) {					\
+			const char *nsep;				\
+			oid m = k;					\
+			j = k;						\
+			do {						\
+				k++;					\
+			} while (k < i && !op[k]);			\
+			for (; j < k; j++) {				\
+				const char *nstr = BUNtvar(bi, j);	\
+				if (!strNil(nstr)) {			\
 					slice_length += strlen(nstr);	\
-					if (!empty) {	\
+					if (!empty) {			\
 						if (separator) {	\
-							nsep = (str) separator; \
+							nsep = (const char *) separator; \
 						} else { /* sep case */	\
-							assert(sep != NULL);	\
-							nsep = BUNtvar(bis, j);	\
-						}	\
+							assert(sep != NULL); \
+							nsep = BUNtvar(sepi, j); \
+						}			\
 						if (!strNil(nsep))	\
-							slice_length += strlen(nsep);	\
-					}	\
-					empty = false; \
-				} \
-			}	\
-			if (empty) {	\
-				for (j = m; j < k; j++) \
-					if (tfastins_nocheckVAR(r, j, str_nil, Tsize(r)) != GDK_SUCCEED)	\
+							slice_length += strlen(nsep); \
+					}				\
+					empty = false;			\
+				}					\
+			}						\
+			if (empty) {					\
+				for (j = m; j < k; j++)			\
+					if (tfastins_nocheckVAR(r, j, str_nil) != GDK_SUCCEED) \
 						goto allocation_error;	\
-				has_nils = true;	\
-			} else {	\
+				has_nils = true;			\
+			} else {					\
 				char save = single_str[slice_length];	\
 				single_str[slice_length] = '\0';	\
-				for (j = m; j < k; j++) \
-					if (tfastins_nocheckVAR(r, j, single_str, Tsize(r)) != GDK_SUCCEED)	\
+				for (j = m; j < k; j++)			\
+					if (tfastins_nocheckVAR(r, j, single_str) != GDK_SUCCEED) \
 						goto allocation_error;	\
-				single_str[slice_length] = save; \
-			}	\
-		} \
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS \
-	do {	\
-		next_group_length = next_length = offset = 0;	\
-		empty = true;	\
-		compute_next_single_str(k, i); \
-		for (; k < i; k++) 	\
-			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED)	\
-				goto allocation_error;	\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW \
-	do {	\
-		for (; k < i; k++) {	\
-			str next = BUNtvar(bi, k); \
-			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED)	\
-				goto allocation_error;	\
-			has_nils |= strNil(next); \
-		}	\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_OTHERS \
-	do { \
-		for (; k < i; k++) {	\
-			next_group_length = next_length = offset = 0;	\
-			empty = true;	\
-			compute_next_single_str(start[k], end[k]); \
-			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED)	\
-				goto allocation_error;	\
-		}	\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(IMP)		\
-	do {						\
-		if (p) {					\
-			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
-					IMP;	\
+				single_str[slice_length] = save;	\
 			}						\
-		}	\
-		i = cnt;			\
-		IMP;	\
+		}							\
+	} while (0)
+
+#define ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS				\
+	do {								\
+		next_group_length = next_length = offset = 0;		\
+		empty = true;						\
+		compute_next_single_str(k, i);				\
+		for (; k < i; k++)					\
+			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
+				goto allocation_error;			\
+	} while (0)
+
+#define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW				\
+	do {								\
+		for (; k < i; k++) {					\
+			const char *next = BUNtvar(bi, k);		\
+			if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED) \
+				goto allocation_error;			\
+			has_nils |= strNil(next);			\
+		}							\
+	} while (0)
+
+#define ANALYTICAL_STR_GROUP_CONCAT_OTHERS				\
+	do {								\
+		for (; k < i; k++) {					\
+			next_group_length = next_length = offset = 0;	\
+			empty = true;					\
+			compute_next_single_str(start[k], end[k]);	\
+			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
+				goto allocation_error;			\
+		}							\
+	} while (0)
+
+#define ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(IMP)	\
+	do {						\
+		if (p) {				\
+			for (; i < cnt; i++) {		\
+				if (np[i])		\
+					IMP;		\
+			}				\
+		}					\
+		i = cnt;				\
+		IMP;					\
 	} while (0)
 
 gdk_return
 GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type)
 {
 	bool has_nils = false, empty;
-	oid i = 0, j = 0, k = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
-	BATiter bi, bis = (BATiter) {0};
-	str sb, sl, single_str = NULL, next_single_str;
+	BATiter pi = bat_iterator(p);
+	BATiter oi = bat_iterator(o);
+	BATiter bi = bat_iterator(b);
+	BATiter sepi = bat_iterator(sep);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
+	oid i = 0, j = 0, k = 0, cnt = bi.count, *restrict start = si.base, *restrict end = ei.base;
+	bit *np = pi.base, *op = oi.base;
+	str single_str = NULL, next_single_str;
 	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
 
-	assert((sep && !separator && BATcount(b) == BATcount(sep)) || (!sep && separator));
+	assert((sep && !separator && bi.count == sepi.count) || (!sep && separator));
 	if (b->ttype != TYPE_str || r->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
 		GDKerror("only string type is supported\n");
+		bat_iterator_end(&pi);
+		bat_iterator_end(&oi);
+		bat_iterator_end(&bi);
+		bat_iterator_end(&sepi);
+		bat_iterator_end(&si);
+		bat_iterator_end(&ei);
 		return GDK_FAIL;
 	}
-	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		bi = bat_iterator(sep);
-		separator = BUNtvar(bi, 0);
+	if (sep && sepi.count == 1) { /* Only one element in sep */
+		separator = BUNtvar(sepi, 0);
 		sep = NULL;
 	}
 
-	bi = bat_iterator(b);
-	if (sep)
-		bis = bat_iterator(sep);
-	else
+	if (sep == NULL)
 		separator_length = strlen(separator);
 
 	if (cnt > 0) {
@@ -1414,15 +1419,33 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 		}
 	}
 
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
+	bat_iterator_end(&bi);
+	bat_iterator_end(&sepi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(single_str);
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
   allocation_error:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
+	bat_iterator_end(&bi);
+	bat_iterator_end(&sepi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(single_str);
 	return GDK_FAIL;
   notimplemented:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
+	bat_iterator_end(&bi);
+	bat_iterator_end(&sepi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKerror("str_group_concat not yet implemented for current row until unbounded case\n");
 	return GDK_FAIL;
 }

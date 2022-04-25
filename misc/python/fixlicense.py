@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 import os, sys, getopt, stat
 
@@ -30,7 +30,7 @@ license = [
     'License, v. 2.0.  If a copy of the MPL was not distributed with this',
     'file, You can obtain one at http://mozilla.org/MPL/2.0/.',
     '',
-    'Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.',
+    'Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.',
     ]
 
 def main():
@@ -126,7 +126,7 @@ def getcomments(file, pre = None, post = None, start = None, end = None):
     ext = ''
     if pre is None and post is None and start is None and end is None:
         if file.endswith('.in') and os.path.basename(file[:-3]) in suffixrules:
-            ext = os.path.basename(file)
+            ext = os.path.basename(file[:-3])
         elif os.path.basename(file) in suffixrules:
             ext = os.path.basename(file)
         else:
@@ -414,7 +414,11 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
     except IOError:
         print('Cannot open file %s' % file, file=sys.stderr)
         return
-    data = f.read()
+    try:
+        data = f.read()
+    except UnicodeDecodeError:
+        print('File %s not Unicode' % file, file=sys.stderr)
+        return
     if PERL_COPYRIGHT in data:
         notice = PERL_COPYRIGHT
     elif COPYRIGHT_NOTICE in data:

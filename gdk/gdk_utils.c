@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -57,6 +57,19 @@ static void GDKunlockHome(int farmid);
 #undef realloc
 #undef free
 
+/* when the number of updates to a BAT is less than 1 in this number, we
+ * keep the unique_est property */
+BUN gdk_unique_estimate_keep_fraction = GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
+/* if the number of unique values is less than 1 in this number, we
+ * destroy the hash rather than update it in HASH{append,insert,delete} */
+BUN hash_destroy_uniques_fraction = HASH_DESTROY_UNIQUES_FRACTION;     /* likewise */
+/* if the estimated number of unique values is less than 1 in this
+ * number, don't build a hash table to do a hashselect */
+dbl no_hash_select_fraction = NO_HASH_SELECT_FRACTION;           /* same here */
+/* if the hash chain is longer than this number, we delete the hash
+ * rather than maintaining it in HASHdelete */
+BUN hash_destroy_chain_length = HASH_DESTROY_CHAIN_LENGTH;
+
 /*
  * @+ Monet configuration file
  * Parse a possible MonetDB config file (if specified by command line
@@ -109,11 +122,13 @@ GDKgetenv(const char *name)
 	}
 	MT_lock_unset(&GDKenvlock);
 	if (GDKkey && GDKval) {
-		BUN b = BUNfnd(GDKkey, (ptr) name);
+		BUN b = BUNfnd(GDKkey, name);
 
 		if (b != BUN_NONE) {
 			BATiter GDKenvi = bat_iterator(GDKval);
-			return BUNtvar(GDKenvi, b);
+			const char *v = BUNtvar(GDKenvi, b);
+			bat_iterator_end(&GDKenvi);
+			return v;
 		}
 	}
 	return NULL;
@@ -248,9 +263,16 @@ GDKsetenv(const char *name, const char *value)
 		}
 		MT_lock_unset(&GDKenvlock);
 	}
-	gdk_return rc = BUNappend(GDKkey, name, false);
-	if (rc == GDK_SUCCEED)
-		rc = BUNappend(GDKval, conval ? conval : value, false);
+	BUN p = BUNfnd(GDKkey, name);
+	gdk_return rc;
+	if (p != BUN_NONE) {
+		rc = BUNreplace(GDKval, p + GDKval->hseqbase,
+				conval ? conval : value, false);
+	} else {
+		rc = BUNappend(GDKkey, name, false);
+		if (rc == GDK_SUCCEED)
+			rc = BUNappend(GDKval, conval ? conval : value, false);
+	}
 	GDKfree(conval);
 	return rc;
 }
@@ -858,6 +880,8 @@ GDKembedded(void)
 	return Mbedded;
 }
 
+static MT_Id mainpid;
+
 gdk_return
 GDKinit(opt *set, int setlen, bool embedded)
 {
@@ -868,6 +892,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 	opt *n;
 	int i, nlen = 0;
 	char buf[16];
+
+	mainpid = MT_getpid();
 
 	if (GDKinmemory(0)) {
 		dbpath = dbtrace = NULL;
@@ -918,22 +944,13 @@ GDKinit(opt *set, int setlen, bool embedded)
 			snprintf(name, sizeof(name), "GDKswapLock%d", i);
 			MT_lock_init(&GDKbatLock[i].swap, name);
 		}
-		for (i = 0; i <= BBP_THREADMASK; i++) {
-			char name[MT_NAME_LEN];
-			snprintf(name, sizeof(name), "GDKcacheLock%d", i);
-			MT_lock_init(&GDKbbpLock[i].cache, name);
-			snprintf(name, sizeof(name), "GDKtrimLock%d", i);
-			MT_lock_init(&GDKbbpLock[i].trim, name);
-			GDKbbpLock[i].free = 0;
-		}
 		if (mnstr_init() < 0) {
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");
 			return GDK_FAIL;
 		}
-		first = false;
 	} else {
 		/* BBP was locked by BBPexit() */
-		BBPunlock();
+		//BBPunlock();
 	}
 	GDKtracer_init(dbpath, dbtrace);
 	errno = 0;
@@ -981,6 +998,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	if (BBPinit() != GDK_SUCCEED)
 		return GDK_FAIL;
+	first = false;
 
 	if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
 		GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;
@@ -1049,12 +1067,14 @@ GDKinit(opt *set, int setlen, bool embedded)
 		TRC_CRITICAL(GDK, "Could not create environment BATs");
 		return GDK_FAIL;
 	}
-	if (BBPrename(GDKkey->batCacheid, "environment_key") != 0 ||
-	    BBPrename(GDKval->batCacheid, "environment_val") != 0) {
+	if (BBPrename(GDKkey, "environment_key") != 0 ||
+	    BBPrename(GDKval, "environment_val") != 0) {
 		free(n);
 		TRC_CRITICAL(GDK, "BBPrename of environment BATs failed");
 		return GDK_FAIL;
 	}
+	BBP_pid(GDKkey->batCacheid) = 0;
+	BBP_pid(GDKval->batCacheid) = 0;
 
 	/* store options into environment BATs */
 	for (i = 0; i < nlen; i++)
@@ -1137,6 +1157,26 @@ GDKinit(opt *set, int setlen, bool embedded)
 		TRC_CRITICAL(GDK, "GDKsetenv revision failed");
 		return GDK_FAIL;
 	}
+	gdk_unique_estimate_keep_fraction = 0;
+	if ((p = GDKgetenv("gdk_unique_estimate_keep_fraction")) != NULL)
+		gdk_unique_estimate_keep_fraction = (BUN) strtoll(p, NULL, 10);
+	if (gdk_unique_estimate_keep_fraction == 0)
+		gdk_unique_estimate_keep_fraction = GDK_UNIQUE_ESTIMATE_KEEP_FRACTION;
+	hash_destroy_uniques_fraction = 0;
+	if ((p = GDKgetenv("hash_destroy_uniques_fraction")) != NULL)
+		hash_destroy_uniques_fraction = (BUN) strtoll(p, NULL, 10);
+	if (hash_destroy_uniques_fraction == 0)
+		hash_destroy_uniques_fraction = HASH_DESTROY_UNIQUES_FRACTION;
+	no_hash_select_fraction = 0;
+	if ((p = GDKgetenv("no_hash_select_fraction")) != NULL)
+		no_hash_select_fraction = (dbl) strtoll(p, NULL, 10);
+	if (no_hash_select_fraction == 0)
+		no_hash_select_fraction = NO_HASH_SELECT_FRACTION;
+	hash_destroy_chain_length = 0;
+	if ((p = GDKgetenv("hash_destroy_chain_length")) != NULL)
+		hash_destroy_chain_length = (BUN) strtoll(p, NULL, 10);
+	if (hash_destroy_chain_length == 0)
+		hash_destroy_chain_length = HASH_DESTROY_CHAIN_LENGTH;
 
 	return GDK_SUCCEED;
 }
@@ -1154,13 +1194,16 @@ GDKexiting(void)
 void
 GDKprepareExit(void)
 {
-	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
-		return;
+	ATOMIC_ADD(&GDKstopped, 1);
 
-	TRC_DEBUG_IF(THRD)
-		dump_threads();
-	join_detached_threads();
+	if (MT_getpid() == mainpid) {
+		TRC_DEBUG_IF(THRD)
+			dump_threads();
+		join_detached_threads();
+	}
 }
+
+static MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
 
 void
 GDKreset(int status)
@@ -1168,6 +1211,10 @@ GDKreset(int status)
 	MT_Id pid = MT_getpid();
 
 	assert(GDKexiting());
+
+	if (GDKembedded())
+		// In the case of a restarted embedded database, GDKstopped has to be reset as well.
+		ATOMIC_SET(&GDKstopped, 0);
 
 	if (GDKkey) {
 		BBPunfix(GDKkey->batCacheid);
@@ -1242,7 +1289,7 @@ GDKreset(int status)
 		GDK_mmap_pagesize = MMAP_PAGESIZE;
 		GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 		GDK_vm_maxsize = GDK_VM_MAXSIZE;
-		GDKatomcnt = TYPE_str + 1;
+		GDKatomcnt = TYPE_blob + 1;
 
 		if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
 			GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;
@@ -1254,9 +1301,6 @@ GDKreset(int status)
 		ATOMIC_SET(&GDKnrofthreads, 0);
 		close_stream((stream *) THRdata[0]);
 		close_stream((stream *) THRdata[1]);
-		for (int i = 0; i <= BBP_THREADMASK; i++) {
-			GDKbbpLock[i].free = 0;
-		}
 
 		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
@@ -1292,9 +1336,8 @@ GDKexit(int status)
  */
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
-bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-MT_Lock GDKnameLock = MT_LOCK_INITIALIZER(GDKnameLock);
-MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
+
+/* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR */
 MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
 
 /*
@@ -1820,14 +1863,14 @@ GDKvm_cursize(void)
 /* we allocate extra space and return a pointer offset by this amount */
 #define MALLOC_EXTRA_SPACE	(2 * SIZEOF_VOID_P)
 
-#ifdef NDEBUG
+#if defined(NDEBUG) || defined(SANITIZER)
 #define DEBUG_SPACE	0
 #else
 #define DEBUG_SPACE	16
 #endif
 
 static void *
-GDKmalloc_internal(size_t size)
+GDKmalloc_internal(size_t size, bool clear)
 {
 	void *s;
 	size_t nsize;
@@ -1856,7 +1899,11 @@ GDKmalloc_internal(size_t size)
 	 * write real size in front; when debugging, also allocate
 	 * extra space for check bytes */
 	nsize = (size + 7) & ~7;
-	if ((s = malloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE)) == NULL) {
+	if (clear)
+		s = calloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE, 1);
+	else
+		s = malloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+	if (s == NULL) {
 		GDKsyserror("malloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
 		return NULL;
 	}
@@ -1867,7 +1914,7 @@ GDKmalloc_internal(size_t size)
 	/* just before the pointer that we return, write how much we
 	 * asked of malloc */
 	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	/* just before that, write how much was asked of us */
 	((size_t *) s)[-2] = size;
 	/* write pattern to help find out-of-bounds writes */
@@ -1882,9 +1929,9 @@ GDKmalloc(size_t size)
 {
 	void *s;
 
-	if ((s = GDKmalloc_internal(size)) == NULL)
+	if ((s = GDKmalloc_internal(size, false)) == NULL)
 		return NULL;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	/* write a pattern to help make sure all data is properly
 	 * initialized by the caller */
 	DEADBEEFCHK memset(s, '\xBD', size);
@@ -1896,12 +1943,7 @@ GDKmalloc(size_t size)
 void *
 GDKzalloc(size_t size)
 {
-	void *s;
-
-	if ((s = GDKmalloc_internal(size)) == NULL)
-		return NULL;
-	memset(s, 0, size);
-	return s;
+	return GDKmalloc_internal(size, true);
 }
 
 #undef GDKstrdup
@@ -1915,7 +1957,7 @@ GDKstrdup(const char *s)
 		return NULL;
 	size = strlen(s) + 1;
 
-	if ((p = GDKmalloc_internal(size)) == NULL)
+	if ((p = GDKmalloc_internal(size, false)) == NULL)
 		return NULL;
 	memcpy(p, s, size);	/* including terminating NULL byte */
 	return p;
@@ -1929,7 +1971,7 @@ GDKstrndup(const char *s, size_t size)
 
 	if (s == NULL)
 		return NULL;
-	if ((p = GDKmalloc_internal(size + 1)) == NULL)
+	if ((p = GDKmalloc_internal(size + 1, false)) == NULL)
 		return NULL;
 	if (size > 0)
 		memcpy(p, s, size);
@@ -1948,7 +1990,7 @@ GDKfree(void *s)
 
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
 	{
@@ -1957,9 +1999,7 @@ GDKfree(void *s)
 			assert(((char *) s)[i] == '\xBD');
 	}
 	((size_t *) s)[-1] |= 2; /* indicate area is freed */
-#endif
 
-#ifndef NDEBUG
 	/* overwrite memory that is to be freed with a pattern that
 	 * will help us recognize access to already freed memory in
 	 * the debugger */
@@ -1975,7 +2015,7 @@ void *
 GDKrealloc(void *s, size_t size)
 {
 	size_t nsize, asize;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	size_t osize;
 	size_t *os;
 #endif
@@ -1994,7 +2034,7 @@ GDKrealloc(void *s, size_t size)
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
 	osize = ((size_t *) s)[-2]; /* how much asked for last */
@@ -2012,7 +2052,7 @@ GDKrealloc(void *s, size_t size)
 	s = realloc((char *) s - MALLOC_EXTRA_SPACE,
 		    nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
 	if (s == NULL) {
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 		os[-1] &= ~2;	/* not freed after all */
 #endif
 		GDKsyserror("realloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
@@ -2022,7 +2062,7 @@ GDKrealloc(void *s, size_t size)
 	/* just before the pointer that we return, write how much we
 	 * asked of malloc */
 	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	/* just before that, write how much was asked of us */
 	((size_t *) s)[-2] = size;
 	/* if growing, initialize new memory with debug pattern */

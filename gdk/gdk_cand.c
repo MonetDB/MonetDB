@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -20,7 +20,7 @@ BATiscand(BAT *b)
 		return true;
 	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))
 		return false;
-	return BATtordered(b) && BATtkey(b);
+	return b->tsorted && BATtkey(b);
 }
 
 /* create a new, dense candidate list with values from `first' up to,
@@ -399,7 +399,7 @@ count_mask_bits(const struct canditer *ci, BUN lo, BUN hi)
 }
 
 /* initialize a candidate iterator, return number of iterations */
-BUN
+void
 canditer_init(struct canditer *ci, BAT *b, BAT *s)
 {
 	assert(ci != NULL);
@@ -410,7 +410,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			*ci = (struct canditer) {
 				.tpe = cand_dense,
 			};
-			return 0;
+			return;
 		}
 		/* every row is a candidate */
 		*ci = (struct canditer) {
@@ -419,7 +419,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			.hseq = b->hseqbase,
 			.ncand = BATcount(b),
 		};
-		return ci->ncand;
+		return;
 	}
 
 	assert(ATOMtype(s->ttype) == TYPE_oid || s->ttype == TYPE_msk);
@@ -437,7 +437,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			.hseq = s->hseqbase,
 			.s = s,
 		};
-		return 0;
+		return;
 	}
 
 	*ci = (struct canditer) {
@@ -504,7 +504,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 					.tpe = cand_dense,
 					.s = s,
 				};
-				return 0;
+				return;
 			}
 			ci->seq = ci->oids[0];
 			ci->nvals = cnt;
@@ -537,7 +537,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 					.tpe = cand_dense,
 					.s = s,
 				};
-				return 0;
+				return;
 			}
 		}
 		if (ci->nvals > 0) {
@@ -595,7 +595,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 					.tpe = cand_dense,
 					.s = s,
 				};
-				return 0;
+				return;
 			}
 			if (b->hseqbase > ci->seq) {
 				cnt -= b->hseqbase - ci->seq;
@@ -616,7 +616,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 					.tpe = cand_dense,
 					.s = s,
 				};
-				return 0;
+				return;
 			}
 			if (b->hseqbase > ci->seq) {
 				cnt = b->hseqbase - ci->seq;
@@ -661,7 +661,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				.tpe = cand_dense,
 				.s = s,
 			};
-			return 0;
+			return;
 		}
 		/* here we know there are 1 bits in the first mask
 		 * word */
@@ -693,11 +693,10 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			}
 		}
 		ci->ncand = count_mask_bits(ci, 0, cnt);
-		return ci->ncand;
+		return;
 	}
 	ci->ncand = cnt;
 	ci->hseq += ci->offset;
-	return cnt;
 }
 
 /* return the next candidate without advancing */
@@ -1146,6 +1145,8 @@ canditer_slice(const struct canditer *ci, BUN lo, BUN hi)
 	bn->tseqbase = oid_nil;
 	bn->tnil = false;
 	bn->tnonil = true;
+	bn->tminpos = 0;
+	bn->tmaxpos = BATcount(bn) - 1;
 	return virtualize(bn);
 }
 
@@ -1319,15 +1320,17 @@ BATnegcands(BUN nr, BAT *odels)
     	dels->parentid = bn->batCacheid;
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
 	dels->dirty = true;
-	if (odels->ttype == TYPE_void) {
+	BATiter bi = bat_iterator(odels);
+	if (bi.type == TYPE_void) {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
 		for (BUN x = lo; x < hi; x++)
 			r[x - lo] = x + odels->tseqbase;
 	} else {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
-		memcpy(r, Tloc(odels, lo), sizeof(oid) * (hi - lo));
+		memcpy(r, (const oid *) bi.base + lo, sizeof(oid) * (hi - lo));
 	}
-	bn->batDirtydesc = true;
+	bat_iterator_end(&bi);
+	assert(bn->tvheap == NULL);
 	bn->tvheap = dels;
 	BATsetcount(bn, bn->batCount - (hi - lo));
 	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
@@ -1385,25 +1388,27 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
 	msks->dirty = true;
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
+	BATiter bi = bat_iterator(masked);
 	if (selected) {
-		if (nr <= BATcount(masked))
-			memcpy(r, Tloc(masked, 0), nmask * sizeof(uint32_t));
+		if (nr <= bi.count)
+			memcpy(r, bi.base, nmask * sizeof(uint32_t));
 		else
-			memcpy(r, Tloc(masked, 0), (BATcount(masked) + 31) / 32 * sizeof(uint32_t));
+			memcpy(r, bi.base, (bi.count + 31) / 32 * sizeof(uint32_t));
 	} else {
-		const uint32_t *s = (const uint32_t *) Tloc(masked, 0);
-		BUN nmask_ = (BATcount(masked) + 31) / 32;
+		const uint32_t *s = (const uint32_t *) bi.base;
+		BUN nmask_ = (bi.count + 31) / 32;
 		for (BUN i = 0; i < nmask_; i++)
 			r[i] = ~s[i];
 	}
-	if (nr > BATcount(masked)) {
-		BUN rest = BATcount(masked) & 31;
-		BUN nmask_ = (BATcount(masked) + 31) / 32;
+	if (nr > bi.count) {
+		BUN rest = bi.count & 31;
+		BUN nmask_ = (bi.count + 31) / 32;
 		if (rest > 0)
 			r[nmask_ -1] |= ((1U << (32 - rest)) - 1) << rest;
 		for (BUN j = nmask_; j < nmask; j++)
 			r[j] = ~0;
 	}
+	bat_iterator_end(&bi);
 	/* make sure last word doesn't have any spurious bits set */
 	BUN cnt = nr % 32;
 	if (cnt > 0)
@@ -1416,6 +1421,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	}
 	if (cnt > 0) {
 		ATOMIC_INIT(&msks->refs, 1);
+		assert(bn->tvheap == NULL);
 		bn->tvheap = msks;
 		bn->tseqbase += (oid) c->firstbit;
 	} else {
@@ -1423,7 +1429,6 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		HEAPfree(msks, true);
 		GDKfree(msks);
 	}
-	bn->batDirtydesc = true;
 	BATsetcount(bn, cnt);
 	TRC_DEBUG(ALGO, "hseq=" OIDFMT ", masked=" ALGOBATFMT ", selected=%s"
 		  " -> " ALGOBATFMT "\n",
@@ -1448,6 +1453,7 @@ BATunmask(BAT *b)
 	oid tseq = b->hseqbase;
 	bool negcand = false;
 
+	BATiter bi = bat_iterator(b);
 	if (mask_cand(b)) {
 		cnt = ccand_free(b) / sizeof(uint32_t);
 		rem = 0;
@@ -1458,16 +1464,18 @@ BATunmask(BAT *b)
 		 * bits are set */
 		negcand = BATcount(b) > cnt * 16;
 	} else {
-		cnt = BATcount(b) / 32;
-		rem = BATcount(b) % 32;
-		src = (const uint32_t *) Tloc(b, 0);
+		cnt = bi.count / 32;
+		rem = bi.count % 32;
+		src = (const uint32_t *) bi.base;
 	}
 	BAT *bn;
 
 	if (negcand) {
 		bn = COLnew(b->hseqbase, TYPE_void, 0, TRANSIENT);
-		if (bn == NULL)
+		if (bn == NULL) {
+			bat_iterator_end(&bi);
 			return NULL;
+		}
 		Heap *dels;
 		if ((dels = GDKzalloc(sizeof(Heap))) == NULL ||
 		    strconcat_len(dels->filename, sizeof(dels->filename),
@@ -1476,11 +1484,12 @@ BATunmask(BAT *b)
 		    (dels->farmid = BBPselectfarm(TRANSIENT, TYPE_void,
 						  varheap)) == -1 ||
 		    HEAPalloc(dels,
-			      cnt * 32 - BATcount(b)
+			      cnt * 32 - bi.count
 			      + sizeof(ccand_t) / sizeof(oid),
 			      sizeof(oid), 0) != GDK_SUCCEED) {
 			GDKfree(dels);
 			BBPreclaim(bn);
+			bat_iterator_end(&bi);
 			return NULL;
 		}
 		dels->parentid = bn->batCacheid;
@@ -1507,14 +1516,17 @@ BATunmask(BAT *b)
 			dels->free = sizeof(ccand_t) + n * sizeof(oid);
 			dels->dirty = true;
 			ATOMIC_INIT(&dels->refs, 1);
+			assert(bn->tvheap == NULL);
 			bn->tvheap = dels;
 		}
-		BATsetcount(bn, n=BATcount(b));
+		BATsetcount(bn, n=bi.count);
 		bn->tseqbase = tseq;
 	} else {
-		bn = COLnew(b->hseqbase, TYPE_oid, mask_cand(b) ? BATcount(b) : 1024, TRANSIENT);
-		if (bn == NULL)
+		bn = COLnew(b->hseqbase, TYPE_oid, mask_cand(b) ? bi.count : 1024, TRANSIENT);
+		if (bn == NULL) {
+			bat_iterator_end(&bi);
 			return NULL;
+		}
 		dst = (oid *) Tloc(bn, 0);
 		for (BUN p = 0; p < cnt; p++) {
 			if ((val = src[p]) == 0)
@@ -1525,6 +1537,7 @@ BATunmask(BAT *b)
 						BATsetcount(bn, n);
 						if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
 							BBPreclaim(bn);
+							bat_iterator_end(&bi);
 							return NULL;
 						}
 						dst = (oid *) Tloc(bn, 0);
@@ -1541,6 +1554,7 @@ BATunmask(BAT *b)
 						BATsetcount(bn, n);
 						if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
 							BBPreclaim(bn);
+							bat_iterator_end(&bi);
 							return NULL;
 						}
 						dst = (oid *) Tloc(bn, 0);
@@ -1551,6 +1565,7 @@ BATunmask(BAT *b)
 		}
 		BATsetcount(bn, n);
 	}
+	bat_iterator_end(&bi);
 	bn->tkey = true;
 	bn->tsorted = true;
 	bn->trevsorted = n <= 1;

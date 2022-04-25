@@ -1,0 +1,6 @@
+statement ok
+create user "user_test" with password 'pass' NAME 'test_6_1_user' SCHEMA "sys"
+
+statement ok
+create table t_6_1 (id int)
+

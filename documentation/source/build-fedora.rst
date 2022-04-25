@@ -2,7 +2,7 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 
 ===============
 Build on Fedora
@@ -17,7 +17,6 @@ These packages are required.
 | gettext-devel
 | libxml2-devel
 | mercurial
-| openssl-devel
 
 These packages are optional, but they are required to build RPMs using
 the command make rpm.
@@ -27,7 +26,6 @@ the command make rpm.
 | checkpolicy		# optional, required to create RPMs (make rpm)
 | geos-devel		# optional: required for geom module
 | libcurl-devel		# optional: read remote files with sys.getcontent(url)
-| libuuid-devel		# optional
 | pcre-devel		# optional: use PCRE library, enable some functions
 | python3-devel		# optional, needed for Python 3 integration
 | python3-numpy		# optional, needed for Python 3 integration

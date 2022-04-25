@@ -80,6 +80,7 @@ select name from sys.keys where name not in ('files_pkey_file_id', 'sq_pkey_sn_f
 ----
 dependency_types_dependency_type_id_pkey
 dependency_types_dependency_type_name_unique
+fkey_actions_action_id_pkey
 function_languages_language_id_pkey
 function_languages_language_name_unique
 function_types_function_type_id_pkey

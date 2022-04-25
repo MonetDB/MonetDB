@@ -4,7 +4,7 @@ BASETABLE
 	-> exps		is list of column expressions (also used for aliases)
 	-> l		(sql_table)
 	-> r 		rel_base_t { alias table name, disallowed (read access), bitvector of used columns/tid/idxs
-	-> r		rel_optimizer rel_rename_part puts parent merge table in there
+	-> r		rel_rename_part call puts parent merge table in there
 
 TABLE 	(card MULTI)
 	-> flags	TABLE_PROD_FUNC, TABLE_FROM_RELATION, TRIGGER_WRAPPER

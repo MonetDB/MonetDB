@@ -1,0 +1,15 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE USER "voc" WITH PASSWORD 'voc' NAME 'VOC_EXPLORER' SCHEMA "sys"
+
+statement ok
+CREATE SCHEMA "voc" AUTHORIZATION "voc"
+
+statement ok
+ALTER USER "voc" SET SCHEMA "voc"
+
+statement ok
+commit
+

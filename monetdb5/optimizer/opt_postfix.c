@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* The SQL code generator can not always look ahead to avoid
@@ -16,12 +16,11 @@
 
 #define isCandidateList(M,P,I) ((M)->var[getArg(P,I)].id[0]== 'C')
 str
-OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, slimit, actions = 0;
-	lng usec = GDKusec();
-	char buf[256];
 	str msg = MAL_SUCCEED;
+	InstrPtr p;
 
 	(void) cntxt;
 	(void) stk;
@@ -33,7 +32,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 /* POSTFIX ACTION FOR THE JOIN CASE  */
 		p= getInstrPtr(mb, i);
 		if ( getModuleId(p) == algebraRef && p->retc == 2) {
-			if ( getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef ||
+			if ( getFunctionId(p) == leftjoinRef || /*getFunctionId(p) == outerjoinRef ||*/
 				 getFunctionId(p) == bandjoinRef || getFunctionId(p) == rangejoinRef ||
 				 getFunctionId(p) == likejoinRef) {
 				if ( getVarEolife(mb, getArg(p, p->retc -1)) == i) {
@@ -43,7 +42,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					continue;
 				}
 			} else if ( getFunctionId(p) == semijoinRef || getFunctionId(p) == joinRef ||
-				 getFunctionId(p) == thetajoinRef || getFunctionId(p) == outerjoinRef || getFunctionId(p) == crossRef) {
+				 getFunctionId(p) == thetajoinRef || /*getFunctionId(p) == outerjoinRef ||*/ getFunctionId(p) == crossRef) {
 				int is_first_ret_not_used = getVarEolife(mb, getArg(p, p->retc -2)) == i;
 				int is_second_ret_not_used = getVarEolife(mb, getArg(p, p->retc -1)) == i;
 
@@ -160,10 +159,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		// if (!msg)
 		// 	msg = chkDeclarations(mb);
 	}
-	usec= GDKusec() - usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec", "postfix", actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

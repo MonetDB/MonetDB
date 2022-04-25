@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef BATSTORAGE_H
@@ -15,10 +15,13 @@
 typedef struct column_storage {
 	int refcnt;
 	int bid;
+	int ebid;		/* extra bid */
 	int uibid;		/* bat with positions of updates */
 	int uvbid;		/* bat with values of updates */
+	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR */
 	bool cleared;
 	bool alter;		/* set when the delta is created for an alter statement */
+	bool merged;	/* only merge changes once */
 	size_t ucnt;	/* number of updates */
 	ulng ts;		/* version timestamp */
 } column_storage;
@@ -40,7 +43,7 @@ typedef struct segment {
 	struct segment *prev;	/* used in destruction list */
 } segment;
 
-/* container structure too allow sharing this structure */
+/* container structure to allow sharing this structure */
 typedef struct segments {
 	sql_ref r;
 	struct segment *h;
@@ -55,8 +58,5 @@ typedef struct storage {
 
 /* initialize bat storage call back functions interface */
 extern void bat_storage_init( store_functions *sf );
-extern sql_delta * col_timestamp_delta( sql_trans *tr, sql_column *c);
-extern storage * tab_timestamp_dbat( sql_trans *tr, sql_table *t);
 
 #endif /*BATSTORAGE_H */
-

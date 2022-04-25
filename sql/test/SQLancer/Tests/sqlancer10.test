@@ -48,7 +48,7 @@ NULL	02:50:32	NULL	01:00:00
 86400.000	02:04:32	2.000	01:00:00
 
 query T rowsort
-SELECT ALL t1.c3 FROM t1 WHERE (((COALESCE(r'', r'㉁*3', r'w1ZR'))ILIKE(r'-6739257'))) = FALSE
+SELECT ALL t1.c3 FROM t1 WHERE (((COALESCE('', '㉁*3', 'w1ZR'))ILIKE('-6739257'))) = FALSE
 ----
 0
 146599340
@@ -90,7 +90,7 @@ statement ok
 set optimizer = 'default_pipe'
 
 query I rowsort
-SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((COALESCE(r'', r'㉁*3', r'w1ZR'))ILIKE(r'-6739257'))) = FALSE AS INT) as count FROM t1) as res
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((COALESCE('', '㉁*3', 'w1ZR'))ILIKE('-6739257'))) = FALSE AS INT) as count FROM t1) as res
 ----
 6
 
@@ -111,7 +111,7 @@ UPDATE t2 SET c0 = TRUE WHERE COALESCE(t2.c0, (t2.c0) IN (FALSE))
 
 statement ok rowcount 1
 UPDATE t2 SET c0 = TRUE WHERE COALESCE(t2.c0, (t2.c0) NOT IN (FALSE), t2.c0, least(t2.c0, t2.c0), (t2.c0) = FALSE, t2.c0, CASE t2.c2
-WHEN t2.c2 THEN t2.c0 ELSE t2.c0 END, ((r'n')LIKE(r'')), ((r'PQ Q<!')LIKE(r'왋di5Xf%N')), (r'cZ') IN (r'0.49842616303390397'))
+WHEN t2.c2 THEN t2.c0 ELSE t2.c0 END, (('n')LIKE('')), (('PQ Q<!')LIKE('왋di5Xf%N')), ('cZ') IN ('0.49842616303390397'))
 
 statement ok
 ROLLBACK
@@ -142,7 +142,7 @@ statement ok rowcount 8
 update t0 set c1 = true where t0.c0 = t0.c0 and t0.c1 = t0.c1
 
 statement ok rowcount 0
-update t0 set c1 = true, c0 = r'.+' where (((("isauuid"(t0.c0))and(((t0.c0)=(t0.c0)))))and(((t0.c1)=(t0.c1))))
+update t0 set c1 = true, c0 = '.+' where (((("isauuid"(t0.c0))and(((t0.c0)=(t0.c0)))))and(((t0.c1)=(t0.c1))))
 
 statement ok
 ROLLBACK
@@ -382,12 +382,12 @@ PLAN SELECT (SELECT c0 FROM t0) FROM t0
 ----
 project (
 | single left outer join (
-| | table("sys"."t0") [ "t0"."%t0_c3_c0_unique" HASHIDX  ] COUNT ,
+| | table("sys"."t0") [ "t0"."%t0_c3_c0_unique" HASHIDX  ],
 | | project (
-| | | table("sys"."t0") [ "t0"."c0" NOT NULL ] COUNT 
-| | ) [ "t0"."c0" NOT NULL as "%1"."%1" ]
+| | | table("sys"."t0") [ "t0"."c0" NOT NULL UNIQUE HASHCOL  ]
+| | ) [ "t0"."c0" NOT NULL UNIQUE HASHCOL  as "%1"."%1" ]
 | ) [  ]
-) [ "%1"."%1" ]
+) [ "%1"."%1" HASHCOL  ]
 
 statement ok
 ROLLBACK

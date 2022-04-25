@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -177,6 +177,8 @@ batUnfix(const bat *b)
  * The incremental atom construction uses hardwired properties.  This
  * should be improved later on.
  */
+static MT_Lock GDKatomLock = MT_LOCK_INITIALIZER(GDKatomLock);
+
 int
 ATOMallocate(const char *id)
 {
@@ -187,13 +189,13 @@ ATOMallocate(const char *id)
 		return int_nil;
 	}
 
-	MT_lock_set(&GDKthreadLock);
+	MT_lock_set(&GDKatomLock);
 	t = ATOMindex(id);
 	if (t < 0) {
 		t = -t;
 		if (t == GDKatomcnt) {
 			if (GDKatomcnt == MAXATOMS) {
-				MT_lock_unset(&GDKthreadLock);
+				MT_lock_unset(&GDKatomLock);
 				GDKerror("too many types");
 				return int_nil;
 			}
@@ -206,7 +208,7 @@ ATOMallocate(const char *id)
 		};
 		strcpy(BATatoms[t].name, id);
 	}
-	MT_lock_unset(&GDKthreadLock);
+	MT_lock_unset(&GDKatomLock);
 	return t;
 }
 
@@ -230,7 +232,7 @@ ATOMindex(const char *nme)
 	return -j;
 }
 
-char *
+const char *
 ATOMname(int t)
 {
 	return t >= 0 && t < GDKatomcnt && *BATatoms[t].name ? BATatoms[t].name : "null";
@@ -301,12 +303,10 @@ ATOMlen(int t, const void *src)
 gdk_return
 ATOMheap(int t, Heap *hp, size_t cap)
 {
-	void (*h) (Heap *, size_t) = BATatoms[t].atomHeap;
+	gdk_return (*h) (Heap *, size_t) = BATatoms[t].atomHeap;
 
 	if (h) {
-		(*h) (hp, cap);
-		if (hp->base == NULL)
-			return GDK_FAIL;
+		return (*h) (hp, cap);
 	}
 	return GDK_SUCCEED;
 }
@@ -426,10 +426,45 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src, bool external)	\
 	return snprintf(*dst, *len, FMT, FMTCAST *src);			\
 }
 
-#define num10(x)	GDKisdigit(x)
+static const bool xdigit[256] = {
+	false,false,false,false,false,false,false,false, /* NUL-BEL */
+	false,false,false,false,false,false,false,false, /* BS-SI */
+	false,false,false,false,false,false,false,false, /* DLE-ETB */
+	false,false,false,false,false,false,false,false, /* CAN-US */
+	false,false,false,false,false,false,false,false, /* SPACE-'\'' */
+	false,false,false,false,false,false,false,false, /* '('-'/' */
+	true, true, true, true, true, true, true, true,	 /* '0'-'7' */
+	true, true, false,false,false,false,false,false, /* '8'-'?' */
+	false,true, true, true, true, true, true, false, /* '@'-'G' */
+	false,false,false,false,false,false,false,false, /* 'H'-'O' */
+	false,false,false,false,false,false,false,false, /* 'P'-'W' */
+	false,false,false,false,false,false,false,false, /* 'X'-'_' */
+	false,true, true, true, true, true, true, false, /* '`'-'g' */
+	false,false,false,false,false,false,false,false, /* 'h'-'o' */
+	false,false,false,false,false,false,false,false, /* 'p'-'w' */
+	false,false,false,false,false,false,false,false, /* 'x'-DEL */
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+	false,false,false,false,false,false,false,false,
+};
+
+#define num10(x)	((x) >= '0' && (x) <= '9')
 #define base10(x)	((x) - '0')
 
-#define num16(x)	isxdigit((unsigned char) (x))
+#define num16(x)	xdigit[(unsigned char) (x)]
 #define base16(x)	(((x) >= 'a' && (x) <= 'f') ? ((x) - 'a' + 10) : ((x) >= 'A' && (x) <= 'F') ? ((x) - 'A' + 10) : (x) - '0')
 #define mult16(x)	((x) << 4)
 
@@ -595,7 +630,7 @@ batToStr(char **dst, size_t *len, const bat *src, bool external)
 	size_t i;
 	str s;
 
-	if (is_bat_nil(b) || (s = BBPname(b)) == NULL || *s == 0) {
+	if (is_bat_nil(b) || !BBPcheck(b) || (s = BBP_logical(b)) == NULL || *s == 0) {
 		atommem(4);
 		if (external) {
 			strcpy(*dst, "nil");
@@ -1150,6 +1185,8 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 		} else {
 			while (src[n] && GDKisspace(src[n]))
 				n++;
+			if (f == -0)
+				f = 0;
 			**dst = (flt) f;
 		}
 	}
@@ -1208,7 +1245,7 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 	if (external && strncmp(p, "nil", 3) == 0)
 		return (ssize_t) (p - src) + 3;
 
-	if (GDKisdigit(*p)) {
+	if (*p >= '0' && *p <= '9') {
 #if SIZEOF_OID == SIZEOF_INT
 		pos = intFromStr(p, &l, &uip, external);
 #else
@@ -1218,7 +1255,7 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 			return pos;
 		if (p[pos] == '@') {
 			pos++;
-			while (GDKisdigit(p[pos]))
+			while (p[pos] >= '0' && p[pos] <= '9')
 				pos++;
 		}
 		if (ui >= 0) {
@@ -1258,11 +1295,7 @@ UUIDcompare(const void *L, const void *R)
 		return !is_uuid_nil(*l);
 	if (is_uuid_nil(*l))
 		return -1;
-#ifdef HAVE_UUID
-	return uuid_compare(l->u, r->u);
-#else
 	return memcmp(l->u, r->u, UUID_SIZE);
-#endif
 }
 
 static ssize_t
@@ -1293,7 +1326,7 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 			if (*s == '-')
 				s++;
 		}
-		if (isdigit((unsigned char) *s))
+		if (*s >= '0' && *s <= '9')
 			u.u[i] = *s - '0';
 		else if ('a' <= *s && *s <= 'f')
 			u.u[i] = *s - 'a' + 10;
@@ -1304,7 +1337,7 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		s++;
 		j++;
 		u.u[i] <<= 4;
-		if (isdigit((unsigned char) *s))
+		if (*s >= '0' && *s <= '9')
 			u.u[i] |= *s - '0';
 		else if ('a' <= *s && *s <= 'f')
 			u.u[i] |= *s - 'a' + 10;
@@ -1328,7 +1361,7 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 static BUN
 UUIDhash(const void *v)
 {
-	return mix_uuid(*(const uuid *) v);
+	return mix_uuid((const uuid *) v);
 }
 
 static void *
@@ -1375,9 +1408,6 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 		strcpy(*retval, str_nil);
 		return 1;
 	}
-#ifdef HAVE_UUID
-	uuid_unparse_lower(value->u, *retval);
-#else
 	snprintf(*retval, *len,
 			 "%02x%02x%02x%02x-%02x%02x-%02x%02x"
 			 "-%02x%02x-%02x%02x%02x%02x%02x%02x",
@@ -1385,9 +1415,259 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 			 value->u[4], value->u[5], value->u[6], value->u[7],
 			 value->u[8], value->u[9], value->u[10], value->u[11],
 			 value->u[12], value->u[13], value->u[14], value->u[15]);
-#endif
 	assert(strlen(*retval) == UUID_STRLEN);
 	return UUID_STRLEN;
+}
+
+static const blob blob_nil = {
+	~(size_t) 0
+};
+
+size_t
+blobsize(size_t nitems)
+{
+	if (nitems == ~(size_t) 0)
+		nitems = 0;
+	assert(offsetof(blob, data) + nitems <= VAR_MAX);
+	return (size_t) (offsetof(blob, data) + nitems);
+}
+
+static int
+BLOBcmp(const void *L, const void *R)
+{
+	const blob *l = L, *r = R;
+	int c;
+	if (is_blob_nil(r))
+		return !is_blob_nil(l);
+	if (is_blob_nil(l))
+		return -1;
+	if (l->nitems < r->nitems) {
+		c = memcmp(l->data, r->data, l->nitems);
+		if (c == 0)
+			return -1;
+	} else {
+		c = memcmp(l->data, r->data, r->nitems);
+		if (c == 0)
+			return l->nitems > r->nitems;
+	}
+	return c;
+}
+
+static void
+BLOBdel(Heap *h, var_t *idx)
+{
+	HEAP_free(h, *idx);
+}
+
+static BUN
+BLOBhash(const void *B)
+{
+	const blob *b = B;
+	return (BUN) b->nitems;
+}
+
+static void *
+BLOBread(void *A, size_t *dstlen, stream *s, size_t cnt)
+{
+	blob *a = A;
+	int len;
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (mnstr_readInt(s, &len) != 1 || len < 0)
+		return NULL;
+	if (a == NULL || *dstlen < (size_t) len) {
+		if ((a = GDKrealloc(a, (size_t) len)) == NULL)
+			return NULL;
+		*dstlen = (size_t) len;
+	}
+	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
+		GDKfree(a);
+		return NULL;
+	}
+	return a;
+}
+
+static gdk_return
+BLOBwrite(const void *A, stream *s, size_t cnt)
+{
+	const blob *a = A;
+	size_t len = blobsize(a->nitems);
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
+		mnstr_write(s, a, len, 1) < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+static size_t
+BLOBlength(const void *P)
+{
+	const blob *p = P;
+	size_t l = blobsize(p->nitems); /* 64bit: check for overflow */
+	assert(l <= (size_t) GDK_int_max);
+	return l;
+}
+
+static gdk_return
+BLOBheap(Heap *heap, size_t capacity)
+{
+	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+}
+
+static var_t
+BLOBput(BAT *b, var_t *bun, const void *VAL)
+{
+	const blob *val = VAL;
+	char *base = NULL;
+
+	*bun = HEAP_malloc(b, blobsize(val->nitems));
+ 	base = b->tvheap->base;
+	if (*bun != (var_t) -1) {
+		memcpy(&base[*bun], val, blobsize(val->nitems));
+		b->tvheap->dirty = true;
+	}
+	return *bun;
+}
+
+static ssize_t
+BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
+{
+	static const char hexit[] = "0123456789ABCDEF";
+	const blob *p = P;
+	char *s;
+	size_t i;
+	size_t expectedlen;
+
+	if (is_blob_nil(p))
+		expectedlen = external ? 4 : 2;
+	else
+		expectedlen = p->nitems * 2 + 1;
+	if (*l < expectedlen || *tostr == NULL) {
+		GDKfree(*tostr);
+		*tostr = GDKmalloc(expectedlen);
+		if (*tostr == NULL)
+			return -1;
+		*l = expectedlen;
+	}
+	if (is_blob_nil(p)) {
+		if (external) {
+			strcpy(*tostr, "nil");
+			return 3;
+		}
+		strcpy(*tostr, str_nil);
+		return 1;
+	}
+
+	s = *tostr;
+
+	for (i = 0; i < p->nitems; i++) {
+		int val = (p->data[i] >> 4) & 15;
+
+		*s++ = hexit[val];
+		val = p->data[i] & 15;
+		*s++ = hexit[val];
+	}
+	*s = '\0';
+	return (ssize_t) (s - *tostr);
+}
+
+static ssize_t
+BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
+{
+	blob **val = (blob **) VAL;
+	size_t i;
+	size_t nitems;
+	size_t nbytes;
+	blob *result;
+	const char *s = instr;
+
+	if (strNil(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
+		nbytes = blobsize(0);
+		if (*l < nbytes || *val == NULL) {
+			GDKfree(*val);
+			if ((*val = GDKmalloc(nbytes)) == NULL)
+				return -1;
+		}
+		**val = blob_nil;
+		return strNil(instr) ? 1 : 3;
+	}
+
+	/* count hexits and check for hexits/space */
+	for (i = nitems = 0; instr[i]; i++) {
+		if (xdigit[(unsigned char) instr[i]])
+			nitems++;
+		else if (instr[i] != ' ' &&
+				 instr[i] != '\n' &&
+				 instr[i] != '\t' &&
+				 instr[i] != '\r' &&
+				 instr[i] != '\f' &&
+				 instr[i] != '\v') {
+			GDKerror("Illegal char in blob\n");
+			return -1;
+		}
+	}
+	if (nitems % 2 != 0) {
+		GDKerror("Illegal blob length '%zu' (should be even)\n", nitems);
+		return -1;
+	}
+	nitems /= 2;
+	nbytes = blobsize(nitems);
+
+	if (*l < nbytes || *val == NULL) {
+		GDKfree(*val);
+		*val = GDKmalloc(nbytes);
+		if( *val == NULL)
+			return -1;
+		*l = nbytes;
+	}
+	result = *val;
+	result->nitems = nitems;
+
+	/*
+	   // Read the values of the blob.
+	 */
+	for (i = 0; i < nitems; ++i) {
+		char res = 0;
+
+		for (;;) {
+			if (*s >= '0' && *s <= '9') {
+				res = *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res = 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res = 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
+		}
+		s++;
+		res <<= 4;
+		for (;;) {
+			if (*s >= '0' && *s <= '9') {
+				res += *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res += 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res += 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
+		}
+		s++;
+
+		result->data[i] = res;
+	}
+
+	return (ssize_t) (s - instr);
 }
 
 atomDesc BATatoms[MAXATOMS] = {
@@ -1649,9 +1929,26 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomLen = (size_t (*)(const void *)) strLen,
 		.atomHeap = strHeap,
 	},
+	[TYPE_blob] = {
+		.name = "blob",
+		.storage = TYPE_blob,
+		.linear = true,
+		.size = sizeof(var_t),
+		.atomNull = (void *) &blob_nil,
+		.atomFromStr = BLOBfromstr,
+		.atomToStr = BLOBtostr,
+		.atomRead = BLOBread,
+		.atomWrite = BLOBwrite,
+		.atomCmp = BLOBcmp,
+		.atomHash = BLOBhash,
+		.atomPut = BLOBput,
+		.atomDel = BLOBdel,
+		.atomLen = BLOBlength,
+		.atomHeap = BLOBheap,
+	},
 };
 
-int GDKatomcnt = TYPE_str + 1;
+int GDKatomcnt = TYPE_blob + 1;
 
 /*
  * Sometimes a bat descriptor is loaded before the dynamic module
@@ -1670,11 +1967,11 @@ ATOMunknown_find(const char *nme)
 	int i, j = 0;
 
 	/* first try to find the atom */
-	MT_lock_set(&GDKthreadLock);
+	MT_lock_set(&GDKatomLock);
 	for (i = 1; i < MAXATOMS; i++) {
 		if (unknown[i]) {
 			if (strcmp(unknown[i], nme) == 0) {
-				MT_lock_unset(&GDKthreadLock);
+				MT_lock_unset(&GDKatomLock);
 				return -i;
 			}
 		} else if (j == 0)
@@ -1682,21 +1979,22 @@ ATOMunknown_find(const char *nme)
 	}
 	if (j == 0) {
 		/* no space for new atom (shouldn't happen) */
-		MT_lock_unset(&GDKthreadLock);
+		MT_lock_unset(&GDKatomLock);
 		return 0;
 	}
 	if ((unknown[j] = GDKstrdup(nme)) == NULL) {
-		MT_lock_unset(&GDKthreadLock);
+		MT_lock_unset(&GDKatomLock);
 		return 0;
 	}
-	MT_lock_unset(&GDKthreadLock);
+	MT_lock_unset(&GDKatomLock);
 	return -j;
 }
 
-str
+const char *
 ATOMunknown_name(int i)
 {
 	assert(i < 0);
+	assert(-i < MAXATOMS);
 	assert(unknown[-i]);
 	return unknown[-i];
 }
@@ -1706,7 +2004,7 @@ ATOMunknown_clean(void)
 {
 	int i;
 
-	MT_lock_set(&GDKthreadLock);
+	MT_lock_set(&GDKatomLock);
 	for (i = 1; i < MAXATOMS; i++) {
 		if(unknown[i]) {
 			GDKfree(unknown[i]);
@@ -1715,5 +2013,5 @@ ATOMunknown_clean(void)
 			break;
 		}
 	}
-	MT_lock_unset(&GDKthreadLock);
+	MT_lock_unset(&GDKatomLock);
 }

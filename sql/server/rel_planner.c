@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,7 +11,7 @@
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
-#include "rel_optimizer.h"
+#include "rel_rewriter.h"
 
 typedef struct memoitem {
 	const char *name;
@@ -123,8 +123,6 @@ rel_getcount(mvc *sql, sql_rel *rel)
 			sqlstore *store = sql->session->tr->store;
 			return (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
 		}
-		if (!t && rel->r) /* dict */
-			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;
 	}
 	case op_select:
@@ -197,7 +195,7 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 }
 
 static int
-exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, char **min, char **max)
+exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, void **min, void **max)
 {
 	switch(e->type) {
 	case e_column: {
@@ -249,15 +247,15 @@ exp_getatom( mvc *sql, sql_exp *e, atom *m)
 }
 
 static dbl
-exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, char *min, char *max)
+exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, void *min, void *max)
 {
 	atom *amin, *amax, *emin, *emax;
 	dbl sel = 1.0;
 	sql_subtype *t = exp_subtype(e->l);
 
 	(void)r;
-	emin = amin = atom_general(sql->sa, t, min);
-	emax = amax = atom_general(sql->sa, t, max);
+	emin = amin = atom_general_ptr(sql->sa, t, min);
+	emax = amax = atom_general_ptr(sql->sa, t, max);
 
 	if (e->f || e->flag == cmp_gt || e->flag == cmp_gte)
 		emin = exp_getatom(sql, e->r, amin);
@@ -306,7 +304,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		case cmp_gte:
 		case cmp_lt:
 		case cmp_lte: {
-			char *min, *max;
+			void *min, *max;
 			if (exp_getranges( sql, r, e->l, &min, &max )) {
 				sel = (dbl)exp_getrange_sel( sql, r, e, min, max);
 			} else {
@@ -922,6 +920,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 				list_remove_data(exps, NULL, e);
 			}
 		}
+		set_processed(top);
 		return top;
 	} else {
 		return mi->data;

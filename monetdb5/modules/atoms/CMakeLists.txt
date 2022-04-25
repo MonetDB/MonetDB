@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
 add_library(atoms OBJECT)
@@ -11,12 +11,12 @@ add_library(atoms OBJECT)
 target_sources(atoms
   PRIVATE
   streams.c streams.h
-  blob.c blob.h
+  blob.c
   color.c color.h
   str.c str.h
   strptime.c
   url.c
-  uuid.c uuid.h
+  uuid.c
   json.c
   mtime.c
   inet.c
@@ -33,7 +33,6 @@ target_include_directories(atoms
 
 target_link_libraries(atoms
   PRIVATE
-  $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
   $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
   stream
   monetdb_config_header

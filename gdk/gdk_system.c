@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -31,7 +31,6 @@
 #include "monetdb_config.h"
 #include "mstring.h"
 #include "gdk.h"
-#include "gdk_system.h"
 #include "gdk_system_private.h"
 
 #include <time.h>
@@ -73,6 +72,7 @@ sortlocklist(MT_Lock *l)
 		r = r->next;
 	}
 	ll->next = NULL;	/* break list into two */
+	r->prev = NULL;
 	/* recursively sort both sublists */
 	l = sortlocklist(l);
 	r = sortlocklist(r);
@@ -92,6 +92,7 @@ sortlocklist(MT_Lock *l)
 				t = ll = l;
 			} else {
 				ll->next = l;
+				l->prev = ll;
 				ll = ll->next;
 			}
 			l = l->next;
@@ -102,13 +103,20 @@ sortlocklist(MT_Lock *l)
 				t = ll = r;
 			} else {
 				ll->next = r;
+				r->prev = ll;
 				ll = ll->next;
 			}
 			r = r->next;
 		}
 	}
 	/* append rest of remaining list */
-	ll->next = l ? l : r;
+	if (l) {
+		ll->next = l;
+		l->prev = ll;
+	} else {
+		ll->next = r;
+		r->prev = ll;
+	}
 	return t;
 }
 
@@ -143,7 +151,9 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	fprintf(stderr, "lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\tthread\n");
+	fprintf(stderr, "%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		"lock name", "count", "content", "sleep",
+		"locked", "locker", "thread");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||

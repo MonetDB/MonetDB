@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #ifndef _GDK_UTILS_H_
@@ -179,13 +179,13 @@ gdk_export int GDKms(void);
 			TRC_DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
 		GDKfree(_ptr);						\
 	})
-#define GDKstrdup(s)							\
-	({								\
-		const char *_str = (s);					\
-		void *_res = GDKstrdup(_str);				\
-		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",		\
-			  _str ? strlen(_str) : 0, _res);		\
-		_res;							\
+#define GDKstrdup(s)						\
+	({							\
+		const char *_str = (s);				\
+		void *_res = GDKstrdup(_str);			\
+		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",	\
+			  _str ? strlen(_str) : 0, _res);	\
+		_res;						\
 	})
 #define GDKstrndup(s, n)					\
 	({							\

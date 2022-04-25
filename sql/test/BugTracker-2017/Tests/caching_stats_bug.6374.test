@@ -42,8 +42,8 @@ PLAN select count(*) from mt where i >= 5 and i < 100
 project (
 | group by (
 | | select (
-| | | table("sys"."sub2") [ "sub2"."i" as "mt"."i" ] COUNT 
-| | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | | table("sys"."sub2") [ "sub2"."i" as "mt"."i" ]
+| | ) [ (int(32) "5") <= ("mt"."i") < (int(32) "100") ]
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -72,13 +72,13 @@ project (
 | | union (
 | | | group by (
 | | | | select (
-| | | | | table("sys"."sub1") [ "sub1"."i" as "mt"."i" ] COUNT 
-| | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | | | | table("sys"."sub1") [ "sub1"."i" as "mt"."i" ]
+| | | | ) [ (int(32) "5") <= ("mt"."i") < (int(32) "100") ]
 | | | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ],
 | | | group by (
 | | | | select (
-| | | | | table("sys"."sub2") [ "sub2"."i" as "mt"."i" ] COUNT 
-| | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | | | | table("sys"."sub2") [ "sub2"."i" as "mt"."i" ]
+| | | | ) [ (int(32) "5") <= ("mt"."i") < (int(32) "100") ]
 | | | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 | | ) [ "%1"."%1" ]
 | ) [  ] [ "sys"."sum" no nil ("%1"."%1") as "%1"."%1" ]

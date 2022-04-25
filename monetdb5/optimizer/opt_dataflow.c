@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -54,7 +54,7 @@ typedef enum {
 	singleton_region, // always a single statement
 	dataflow_region,  // statements without or with controlled side effects, in parallel
 	existing_region,  // existing barrier..exit region, copied as-is
-	sql_region,       // region of nonconflicting sql.append/sql.updates only
+	sql_region,	   // region of nonconflicting sql.append/sql.updates only
 } region_type;
 
 typedef struct {
@@ -149,27 +149,6 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 	return hasSideEffects(mb,p,FALSE);
 }
 
-/* Collect the BATs that are used concurrently to ensure that
- * there is a single point where they can be released
- */
-static int
-dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
-{
-	InstrPtr r;
-	int i;
-	for( i =0; i<top; i++)
-		if( getArg(sink[i],1) == var)
-			return top;
-	(void) cntxt;
-
-	r = newInstruction(NULL,languageRef, passRef);
-	getArg(r,0) = newTmpVariable(mb,TYPE_void);
-	r= addArgument(mb,r, var);
-	sink[top++] = r;
-	return top;
-}
-
-
 static str
 get_str_arg(MalBlkPtr mb, InstrPtr p, int argno)
 {
@@ -204,23 +183,24 @@ isSqlAppendUpdate(MalBlkPtr mb, InstrPtr p)
 	if (p->fcnname != appendRef && p->fcnname != updateRef)
 		return false;
 
-	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,7, arg("",int),
-	//              arg("mvc",int
-	//              arg("sname",str
-	//              arg("tname",str
-	//              arg("cname",str
-	//              arg("offset",lng
-	//              argany("ins",0))),
+	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,8, arg("",int),
+	//			  arg("mvc",int),
+	//			  arg("sname",str),
+	//			  arg("tname",str),
+	//			  arg("cname",str),
+	//			  arg("offset",lng),
+	//			  batarg("pos",oid),
+	//			  argany("ins",0))),
 
- 	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int
-	//              arg("mvc",int),
-	//              arg("sname",str
-	//              arg("tname",str
-	//              arg("cname",str
-	//              argany("rids",0
-	//              argany("upd",0))
+ 	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int),
+	//			  arg("mvc",int),
+	//			  arg("sname",str),
+	//			  arg("tname",str),
+	//			  arg("cname",str),
+	//			  argany("rids",0),
+	//			  argany("upd",0)))
 
-	if (p->argc != 7)
+	if ((p->fcnname == appendRef && p->argc != 8) || (p->fcnname == updateRef && p->argc != 7))
 		return false;
 
 	int mvc_var = getArg(p, 1);
@@ -333,7 +313,7 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_s
 		// Special case. Unless they're from the sql module, instructions with
 		// names like 'append', 'update', 'delete', 'grow', etc., are expected
 		// to express their side effects as data dependencies, for example,
-		//     X5 := bat.append(X_5, ...)
+		//	 X5 := bat.append(X_5, ...)
 		state->type = dataflow_region;
 	} else if (hasSideEffects(mb, p, false)) {
 		state->type = singleton_region;
@@ -350,35 +330,31 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_s
    executed, either sequentially or in parallel */
 
 str
-OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j,k, start, slimit, breakpoint, actions=0, simple = TRUE;
 	int flowblock= 0;
-	InstrPtr *sink = NULL, *old = NULL, q;
-	int limit, vlimit, top = 0;
-	States states;
-	char  buf[256];
+	InstrPtr p, *old = NULL, q;
+	int limit, vlimit;
+	States states = NULL;
 	region_state state = { singleton_region };
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1 || cntxt->workerlimit == 1)
-		return MAL_SUCCEED;
+		goto wrapup;
 
-	if ( optimizerIsApplied(mb,"dataflow"))
-		return MAL_SUCCEED;
+	if ( optimizerIsApplied(mb,dataflowRef))
+		goto wrapup;
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
 	if ( mb->inlineProp)
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	vlimit = mb->vsize;
 	states = (States) GDKzalloc(vlimit * sizeof(char));
-	sink = (InstrPtr *) GDKzalloc(mb->stop * sizeof(InstrPtr));
-	if (states == NULL || sink == NULL){
-		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto wrapup;
+	if (states == NULL ){
+		throw(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	setVariableScope(mb);
@@ -387,9 +363,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	slimit= mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		actions = -1;
-		goto wrapup;
+		GDKfree(states);
+		throw(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* inject new dataflow barriers using a single pass through the program */
@@ -419,7 +394,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					for( k=q->retc; k<q->argc; k++){
 						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j && isaBatType(getVarType(mb,getArg(q,k))) ){
 							InstrPtr r;
-							top = dflowGarbagesink(cntxt, mb, getArg(q,k), sink, top);
 							r = newInstruction(NULL,languageRef, passRef);
 							getArg(r,0) = newTmpVariable(mb,TYPE_void);
 							r= addArgument(mb,r, getArg(q,k));
@@ -429,9 +403,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			/* exit parallel block */
 			if ( ! simple){
-				// force the pending final garbage statements
-				//for( j=0; j<top; j++)
-					//pushInstruction(mb,sink[j]);
 				q= newAssignment(mb);
 				q->barrier= EXITsymbol;
 				getArg(q,0) = flowblock;
@@ -445,7 +416,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 			// Start a new region
 			memset((char*) states, 0, vlimit * sizeof(char));
-			top = 0;
 			start = i;
 			decideRegionType(cntxt, mb, p, states, &state);
 		}
@@ -468,25 +438,20 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* take the remainder as is */
 	for (; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
-
+			pushInstruction(mb, old[i]);
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
 wrapup:
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
+
 	if(states) GDKfree(states);
-	if(sink)   GDKfree(sink);
-	if(old)    GDKfree(old);
+	if(old)	GDKfree(old);
 	return msg;
 }

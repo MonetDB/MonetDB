@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -172,12 +172,7 @@ date_add_month(date dt, int months)
 		m = (m - 1) % 12 + 1;
 	}
 	if (d > monthdays(y, m)) {
-		d -= monthdays(y, m);
-		if (++m > 12) {
-			m = 1;
-			if (++y > YEAR_MAX)
-				return date_nil;
-		}
+		d = monthdays(y, m);
 	}
 	return mkdate(y, m, d);
 }

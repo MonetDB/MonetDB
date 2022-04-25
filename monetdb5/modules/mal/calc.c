@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1725,6 +1725,15 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
  pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
  pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
+ /* calc ops from inet */
+ pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
+ pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",inet),arg("r",inet),arg("nil_matches",bit))),
+ pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
+ pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("l",inet),arg("r",inet),arg("nil_matches",bit))),
+ pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
+ pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
+ pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
+ pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
  /* calc ops from uuid */
  pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",uuid),arg("r",uuid))),
  pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",uuid),arg("r",uuid),arg("nil_matches",bit))),

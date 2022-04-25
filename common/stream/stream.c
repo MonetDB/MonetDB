@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 
@@ -577,6 +577,12 @@ mnstr_isalive(const stream *s)
 }
 
 
+bool
+mnstr_eof(const stream *s)
+{
+	return s->eof;
+}
+
 char *
 mnstr_name(const stream *s)
 {
@@ -704,6 +710,7 @@ create_stream(const char *name)
 		.readonly = true,
 		.isutf8 = false,	/* not known for sure */
 		.binary = false,
+		.eof = false,
 		.name = strdup(name),
 		.errkind = MNSTR_NO__ERROR,
 		.errmsg = {0},
@@ -726,7 +733,9 @@ create_stream(const char *name)
 static ssize_t
 wrapper_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
-	return s->inner->read(s->inner, buf, elmsize, cnt);
+	ssize_t ret = s->inner->read(s->inner, buf, elmsize, cnt);
+	s->eof |= s->inner->eof;
+	return ret;
 }
 
 

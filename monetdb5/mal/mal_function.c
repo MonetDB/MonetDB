@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /*
@@ -734,8 +734,7 @@ chkDeclarations(MalBlkPtr mb){
 				 */
 				if( p->barrier == CATCHsymbol){
 					setVarScope(mb, l, blks[0]);
-				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
-					!isVarInit(mb,l) ) {
+				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) && !isVarInit(mb,l) ) {
 					throw(MAL,"chkFlow",  "%s.%s '%s' may not be used before being initialized",  getModuleId(sig), getFunctionId(sig), getVarName(mb,l));
 				}
 			} else if( !isVarInit(mb,l) ){

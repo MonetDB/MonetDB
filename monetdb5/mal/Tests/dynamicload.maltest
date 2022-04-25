@@ -1,4 +1,4 @@
-statement ok
+statement error
 include UNKNOWlib;
 
 statement ok

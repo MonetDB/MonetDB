@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
 /* streams working on a lzma/xz-compressed disk file */
@@ -199,12 +199,13 @@ pump_in(stream *s)
 				// Error. Return directly, discarding any data lingering
 				// in the internal state.
 				return PUMP_ERROR;
-			if (nread == 0)
+			if (nread == 0) {
 				// Set to NULL so we'll remember next time.
 				// Maybe there is some data in the internal state we don't
 				// return immediately.
 				src = (pump_buffer){.start=NULL, .count=0};
-			else
+				s->eof |= s->inner->eof;
+			} else
 				// All good
 				src = (pump_buffer) { .start = buffer.start, .count = nread};
 
