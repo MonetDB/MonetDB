@@ -607,10 +607,9 @@ trivial_project_exp_card(sql_exp *e)
 static BUN
 rel_calc_nuniques(sql_rel *rel, sql_rel *l, list *exps)
 {
-	BUN nuniques = 0;
-
-	/* compute the highest number of unique values */
 	if (!list_empty(exps)) {
+		BUN nuniques = 0;
+		/* compute the highest number of unique values */
 		for (node *n = exps->h ; n && nuniques != BUN_NONE ; n = n->next) {
 			sql_exp *e = n->data;
 			sql_rel *bt = NULL;
@@ -625,8 +624,9 @@ rel_calc_nuniques(sql_rel *rel, sql_rel *l, list *exps)
 				nuniques = BUN_NONE;
 			}
 		}
+		return nuniques != BUN_NONE ? nuniques : get_rel_count(l);
 	}
-	return nuniques != BUN_NONE ? nuniques : get_rel_count(l);
+	return get_rel_count(l);
 }
 
 static sql_rel *
