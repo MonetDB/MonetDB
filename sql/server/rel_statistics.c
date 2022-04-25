@@ -709,8 +709,10 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					set_count_prop(v->sql->sa, rel, 0);
 			} else if (can_be_pruned && lv == 0 && !rel_is_ref(rel)) { /* left side empty */
 				rel = set_setop_side(v, rel, r);
+				empty_cross = false; /* don't rewrite again */
 			} else if (can_be_pruned && rv == 0 && !rel_is_ref(rel)) { /* right side empty */
 				rel = set_setop_side(v, rel, l);
+				empty_cross = false; /* don't rewrite again */
 			} else if (lv != BUN_NONE && rv != BUN_NONE) {
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
 			} 
@@ -723,8 +725,18 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					empty_cross = true;
 				else
 					set_count_prop(v->sql->sa, rel, 0);
-			} else if (can_be_pruned && !empty_cross && rv == 0 && !rel_is_ref(rel)) { /* right side empty */
-				rel = set_setop_side(v, rel, l);
+			} else if (rv == 0) { /* right side empty */
+				if (is_inter(rel->op)) {
+					if (can_be_pruned)
+						empty_cross = true;
+					else
+						set_count_prop(v->sql->sa, rel, 0);
+				} else if (can_be_pruned && !rel_is_ref(rel)) {
+					rel = set_setop_side(v, rel, l);
+					empty_cross = false; /* don't rewrite again */
+				} else {
+					set_count_prop(v->sql->sa, rel, lv);
+				}
 			} else {
 				set_count_prop(v->sql->sa, rel, lv);
 			}
@@ -741,7 +753,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			}
 			list_hash_clear(rel->exps);
 			sql_rel *l = rel_project(v->sql->sa, NULL, rel->exps);
-			set_count_prop(v->sql->sa, l, 0);
+			set_count_prop(v->sql->sa, l, 1);
 			l = rel_select(v->sql->sa, l, exp_atom_bool(v->sql->sa, 0));
 			set_count_prop(v->sql->sa, l, 0);
 			rel->op = op_project;
@@ -809,25 +821,23 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, join_idx_estimate);
 			} else if (uniques_estimate != BUN_MAX) {
 				set_count_prop(v->sql->sa, rel, uniques_estimate);
-			} else if (lv != BUN_NONE && rv != BUN_NONE) {
-				if (list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
-					/* corner cases for outer joins */
-					if (is_left(rel->op)) {
-						set_count_prop(v->sql->sa, rel, lv);
-					} else if (is_right(rel->op)) {
-						set_count_prop(v->sql->sa, rel, rv);
-					} else if (is_full(rel->op)) {
-						set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
-					} else {
-						set_count_prop(v->sql->sa, rel, 0);
-					}
-				} else if (lv == 0) {
-					set_count_prop(v->sql->sa, rel, (is_right(rel->op) || is_full(rel->op)) ? rv : 0);
-				} else if (rv == 0) {
-					set_count_prop(v->sql->sa, rel, (is_left(rel->op) || is_full(rel->op)) ? lv : 0);
-				} else {
-					set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
+			} else if (list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
+				/* corner cases for outer joins */
+				if (is_left(rel->op)) {
+					set_count_prop(v->sql->sa, rel, lv);
+				} else if (is_right(rel->op)) {
+					set_count_prop(v->sql->sa, rel, rv);
+				} else if (is_full(rel->op) && lv != BUN_NONE && rv != BUN_NONE) {
+					set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
+				} else if (lv != BUN_NONE && rv != BUN_NONE) {
+					set_count_prop(v->sql->sa, rel, 0);
 				}
+			} else if (lv == 0) {
+				set_count_prop(v->sql->sa, rel, (is_right(rel->op) || is_full(rel->op)) ? rv : 0);
+			} else if (rv == 0) {
+				set_count_prop(v->sql->sa, rel, (is_left(rel->op) || is_full(rel->op)) ? lv : 0);
+			} else if (lv != BUN_NONE && rv != BUN_NONE) {
+				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
 			}
 		} break;
 		case op_anti: {
