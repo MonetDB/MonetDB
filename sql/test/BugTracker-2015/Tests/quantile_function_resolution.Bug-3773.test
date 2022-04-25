@@ -12,8 +12,8 @@ project (
 | | project (
 | | | table("sys"."x") [ "x"."y" NOT NULL ]
 | | ) [ "x"."y" NOT NULL, double(53) "0" as "%2"."%2" ]
-| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y" NOT NULL] NOT NULL, "%2"."%2" NOT NULL) as "%1"."%1" ]
-) [ "%1"."%1" ]
+| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y" NOT NULL] NOT NULL, "%2"."%2" NOT NULL) UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" UNIQUE ]
 
 query T nosort
 PLAN select quantile(y, 0) from x
@@ -23,8 +23,8 @@ project (
 | | project (
 | | | table("sys"."x") [ "x"."y" NOT NULL ]
 | | ) [ "x"."y" NOT NULL, double(53) "0" as "%2"."%2" ]
-| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y" NOT NULL] NOT NULL, "%2"."%2" NOT NULL) as "%1"."%1" ]
-) [ "%1"."%1" ]
+| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y" NOT NULL] NOT NULL, "%2"."%2" NOT NULL) UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" UNIQUE ]
 
 statement ok
 rollback

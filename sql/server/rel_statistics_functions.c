@@ -737,8 +737,6 @@ sql_zero_or_one_propagate_statistics(mvc *sql, sql_exp *e)
 		set_minmax_property(sql, e, PROP_MAX, omax);
 		set_minmax_property(sql, e, PROP_MIN, omin);
 	}
-	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
-	p->value.dval = 1;
 }
 
 static struct function_properties functions_list[34] = {

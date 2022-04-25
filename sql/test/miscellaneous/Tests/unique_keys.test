@@ -12,7 +12,7 @@ project (
 | semijoin (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
-| ) [ ("y"."y") = ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) ]
+| ) [ ("y"."y" NOT NULL) = ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) ]
 ) [ "y"."y" NOT NULL ]
 
 query T nosort
@@ -22,7 +22,7 @@ project (
 | semijoin (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE HASHCOL  ]
-| ) [ ("y"."y") = ("testkeys"."b" UNIQUE HASHCOL ) ]
+| ) [ ("y"."y" NOT NULL) = ("testkeys"."b" UNIQUE HASHCOL ) ]
 ) [ "y"."y" NOT NULL ]
 
 query T nosort
@@ -32,7 +32,7 @@ project (
 | semijoin (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
-| ) [ ("y"."y") = ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) ]
+| ) [ ("y"."y" NOT NULL) = ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) ]
 ) [ "y"."y" NOT NULL ]
 
 # The following joins cannot be converted into semijoins
@@ -53,8 +53,8 @@ project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."c" UNIQUE ]
-| ) [ ("y"."y") * = ("testkeys"."c" UNIQUE) ]
-) [ "y"."y" ]
+| ) [ ("y"."y" NOT NULL) * = ("testkeys"."c" UNIQUE) ]
+) [ "y"."y" NOT NULL ]
 
 statement ok
 start transaction
@@ -127,7 +127,7 @@ project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE ]
-| ) [ ("y"."y") = ("testkeys"."a" NOT NULL UNIQUE) ]
+| ) [ ("y"."y" NOT NULL) = ("testkeys"."a" NOT NULL UNIQUE) ]
 ) [ "y"."y" NOT NULL ]
 
 query T nosort
@@ -137,7 +137,7 @@ project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE ]
-| ) [ ("y"."y") = ("testkeys"."b" UNIQUE) ]
+| ) [ ("y"."y" NOT NULL) = ("testkeys"."b" UNIQUE) ]
 ) [ "y"."y" NOT NULL ]
 
 statement ok
@@ -160,7 +160,7 @@ project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE ]
-| ) [ ("y"."y") = ("testkeys"."a" NOT NULL UNIQUE) ]
+| ) [ ("y"."y" NOT NULL) = ("testkeys"."a" NOT NULL UNIQUE) ]
 ) [ "y"."y" NOT NULL ]
 
 query T nosort
@@ -170,7 +170,7 @@ project (
 | join (
 | |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE ]
-| ) [ ("y"."y") = ("testkeys"."b" UNIQUE) ]
+| ) [ ("y"."y" NOT NULL) = ("testkeys"."b" UNIQUE) ]
 ) [ "y"."y" NOT NULL ]
 
 statement ok

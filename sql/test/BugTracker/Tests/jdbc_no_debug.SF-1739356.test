@@ -10,15 +10,15 @@ project (
 | | | | | | table("sys"."_tables") [ "_tables"."id", "_tables"."type" ]
 | | | | | ) [ ("_tables"."type") != (smallint(16) "2") ]
 | | | | ) [ "_tables"."id" as "tables"."id" ]
-| | | ) [  ] [ "sys"."count"() NOT NULL as "%10"."%10" ],
+| | | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%10"."%10" ],
 | | | group by (
 | | | | project (
 | | | | | table("tmp"."_tables") [ "_tables"."id" NOT NULL ]
 | | | | ) [ "_tables"."id" NOT NULL as "tables"."id" ]
-| | | ) [  ] [ "sys"."count"() NOT NULL as "%10"."%10" ]
+| | | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%10"."%10" ]
 | | ) [ "%10"."%10" NOT NULL ]
-| ) [  ] [ "sys"."sum" no nil ("%10"."%10" NOT NULL) as "%10"."%10" ]
-) [ "%10"."%10" NOT NULL ]
+| ) [  ] [ "sys"."sum" no nil ("%10"."%10" NOT NULL) NOT NULL UNIQUE as "%10"."%10" ]
+) [ "%10"."%10" NOT NULL UNIQUE ]
 
 statement ok
 set optimizer='sequential_pipe'

@@ -60,8 +60,8 @@ project (
 | | | | ) [ "f"."id" NOT NULL as "fid", "line" ]
 | | | ) [ "fid" NOT NULL ] [ "line" ASC ]
 | | ) [ "fid" NOT NULL as "commented_function_signatures_6542"."fid" ]
-| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
-) [ "%1"."%1" NOT NULL ]
+| ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL UNIQUE ]
 
 query I rowsort
 select count (*) from sys.commented_function_signatures_6542
