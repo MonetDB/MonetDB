@@ -155,13 +155,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 				set_has_nil(e);
 			if (!is_outerjoin(rel->op) && found_without_semantics) /* at an outer join, null values pass */
 				set_has_no_nil(e);
-			if (is_join(rel->op)) {
-				prop *est;
-				if (is_unique(e) && !still_unique)
-					set_not_unique(e);
-				if ((est = find_prop(e->p, PROP_NUNIQUES))) /* remove unique estimation after a join */
-					e->p = prop_remove(e->p, est);
-			}
+			if (is_join(rel->op) && is_unique(e) && !still_unique)
+				set_not_unique(e);
 			return e;
 		}
 		case op_table:
