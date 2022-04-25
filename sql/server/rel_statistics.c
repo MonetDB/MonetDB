@@ -604,12 +604,36 @@ trivial_project_exp_card(sql_exp *e)
 	return e->type == e_atom && e->f ? (BUN) list_length(e->f) : 1;
 }
 
+static BUN
+rel_calc_nuniques(sql_rel *rel, sql_rel *l, list *exps)
+{
+	BUN nuniques = 0;
+
+	/* compute the highest number of unique values */
+	if (!list_empty(exps)) {
+		for (node *n = exps->h ; n && nuniques != BUN_NONE ; n = n->next) {
+			sql_exp *e = n->data;
+			sql_rel *bt = NULL;
+			prop *p = NULL;
+
+			if (e->type == e_column && is_unique(e) &&
+				name_find_column(rel, e->l, e->r, -1, &bt) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
+				nuniques = MAX(nuniques, p->value.lval);
+			} else if ((p = find_prop(e->p, PROP_NUNIQUES))) {
+				nuniques = MAX(nuniques, (BUN) p->value.dval);
+			} else {
+				nuniques = BUN_NONE;
+			}
+		}
+	}
+	return nuniques != BUN_NONE ? nuniques : get_rel_count(l);
+}
+
 static sql_rel *
 rel_get_statistics_(visitor *v, sql_rel *rel)
 {
 	/* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
 	uint8_t has_special_modify = *(uint8_t*) v->data;
-	prop *p;
 	bool can_be_pruned = !has_special_modify && v->storage_based_opt;
 
 	/* Don't look at the same relation twice */
@@ -635,34 +659,33 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 	case op_except: {
 		bool empty_cross = false;
 		int i = 0;
-		sql_rel *l = rel->l, *r = rel->r;
+		sql_rel *l = rel->l, *pl = rel->l, *r = rel->r, *pr = rel->r;
 
-		while (is_sample(l->op) || is_topn(l->op)) /* skip topN and sample relations in the middle */
-			l = l->l;
-		while (is_sample(r->op) || is_topn(r->op))
-			r = r->l;
+		while (is_sample(pl->op) || is_topn(pl->op)) /* skip topN and sample relations in the middle */
+			pl = pl->l;
+		while (is_sample(r->op) || is_topn(pr->op))
+			pr = pr->l;
 		/* if it's not a projection, then project and propagate statistics */
-		if (!is_project(l->op) && !is_base(l->op)) {
-			l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 0, 1));
-			set_count_prop(v->sql->sa, l, get_rel_count(l->l));
-			l->exps = exps_exp_visitor_bottomup(v, l, l->exps, 0, &rel_propagate_statistics, false);
+		if (!is_project(pl->op) && !is_base(l->op)) {
+			pl = rel_project(v->sql->sa, pl, rel_projections(v->sql, pl, NULL, 0, 1));
+			set_count_prop(v->sql->sa, pl, get_rel_count(pl->l));
+			pl->exps = exps_exp_visitor_bottomup(v, pl, pl->exps, 0, &rel_propagate_statistics, false);
 		}
-		if (!is_project(r->op) && !is_base(r->op)) {
-			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 0, 1));
-			set_count_prop(v->sql->sa, r, get_rel_count(r->l));
-			r->exps = exps_exp_visitor_bottomup(v, r, r->exps, 0, &rel_propagate_statistics, false);
+		if (!is_project(pr->op) && !is_base(pr->op)) {
+			pr = rel_project(v->sql->sa, pr, rel_projections(v->sql, pr, NULL, 0, 1));
+			set_count_prop(v->sql->sa, pr, get_rel_count(pr->l));
+			pr->exps = exps_exp_visitor_bottomup(v, pr, pr->exps, 0, &rel_propagate_statistics, false);
 		}
 
 		for (node *n = rel->exps->h ; n ; n = n->next) {
-			empty_cross |= rel_setop_get_statistics(v->sql, rel, l->exps, r->exps, n->data, i);
+			empty_cross |= rel_setop_get_statistics(v->sql, rel, pl->exps, pr->exps, n->data, i);
 			i++;
 		}
 
-		l = rel->l;
-		r = rel->r;
 		/* propagate row count */
 		if (is_union(rel->op)) {
-			BUN lv = get_rel_count(l), rv = get_rel_count(r);
+			BUN lv = need_distinct(rel) ? rel_calc_nuniques(rel, pl, pl->exps) : get_rel_count(pl),
+				rv = need_distinct(rel) ? rel_calc_nuniques(rel, pr, pr->exps) : get_rel_count(pr);
 
 			if (lv == 0 && rv == 0) { /* both sides empty */
 				if (can_be_pruned)
@@ -677,7 +700,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
 			} 
 		} else if (is_inter(rel->op) || is_except(rel->op)) {
-			BUN lv = get_rel_count(l), rv = get_rel_count(r);
+			BUN lv = need_distinct(rel) ? rel_calc_nuniques(rel, pl, pl->exps) : get_rel_count(pl),
+				rv = need_distinct(rel) ? rel_calc_nuniques(rel, pr, pr->exps) : get_rel_count(pr);
 
 			if (lv == 0) { /* left side empty */
 				if (can_be_pruned)
@@ -744,7 +768,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_full: {
 			BUN lv = get_rel_count(l), rv = get_rel_count(r), uniques_estimate = BUN_MAX, join_idx_estimate = BUN_MAX;
 
-			if (!list_empty(rel->exps)) {
+			if (!list_empty(rel->exps) && !is_single(rel)) {
 				for (node *n = rel->exps->h ; n ; n = n->next) {
 					sql_exp *e = n->data, *el = e->l, *er = e->r;
 
@@ -764,7 +788,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					}
 				}
 			}
-			if (join_idx_estimate != BUN_MAX) {
+			if (is_single(rel)) {
+				set_count_prop(v->sql->sa, rel, lv);
+			} else if (join_idx_estimate != BUN_MAX) {
 				set_count_prop(v->sql->sa, rel, join_idx_estimate);
 			} else if (uniques_estimate != BUN_MAX) {
 				set_count_prop(v->sql->sa, rel, uniques_estimate);
@@ -803,7 +829,11 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		} break;
 		case op_project: {
 			if (l) {
-				set_count_prop(v->sql->sa, rel, get_rel_count(l));
+				if (need_distinct(rel)) {
+					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(rel, l, rel->exps));
+				} else {
+					set_count_prop(v->sql->sa, rel, get_rel_count(l));
+				}
 			} else {
 				BUN card = 1;
 
@@ -819,18 +849,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_groupby: {
 			if (list_empty(rel->r)) {
 				set_count_prop(v->sql->sa, rel, 1);
-			} else if (list_length(rel->r) == 1) {
-				sql_exp *e = ((list*)rel->r)->h->data;
-				sql_rel *bt = NULL;
-				if (e->type == e_column && is_unique(e) && name_find_column(rel, e->l, e->r, -1, &bt) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
-					set_count_prop(v->sql->sa, rel, p->value.lval);
-				} else if ((p = find_prop(e->p, PROP_NUNIQUES))) {
-					set_count_prop(v->sql->sa, rel, (BUN) p->value.dval);
-				} else {
-					set_count_prop(v->sql->sa, rel, get_rel_count(l));
-				}
 			} else {
-				set_count_prop(v->sql->sa, rel, get_rel_count(l));
+				set_count_prop(v->sql->sa, rel, rel_calc_nuniques(rel, l, rel->r));
 			}
 		} break;
 		default:
