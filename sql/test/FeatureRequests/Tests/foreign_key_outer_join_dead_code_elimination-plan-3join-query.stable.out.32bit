@@ -7,8 +7,8 @@ project (
 | | select (
 | | | table("sys"."fk") [ "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 | | ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(31) NULL) ]
-| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
-) [ "%1"."%1" NOT NULL ]
+| ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL UNIQUE ]
 % .plan # table_name
 % rel # name
 % clob # type
@@ -27,8 +27,8 @@ project (
 | | select (
 | | | table("sys"."fk") [ "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 | | ) [ ("fk"."%fk_fk2_fkey") ! * = (oid(31) NULL), ("fk"."%fk_fk1_fkey") ! * = (oid(31) NULL) ]
-| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
-) [ "%1"."%1" NOT NULL ]
+| ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL UNIQUE ]
 % .plan # table_name
 % rel # name
 % clob # type

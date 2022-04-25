@@ -178,7 +178,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 					if (!has_nil(found))
 						set_has_no_nil(e);
 					if (is_unique(found) || (need_distinct(rel) && list_length(rel->exps) == 1) ||
-						(is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)))
+						(is_groupby(rel->op) && (list_empty(rel->r) || (list_length(rel->r) == 1 && exps_find_exp(rel->r, e)))))
 						set_unique(e);
 					/* propagate unique estimation for known cases */
 					if (is_groupby(rel->op) && list_empty(rel->r) && !find_prop(e->p, PROP_NUNIQUES)) { /* global aggregate case */
@@ -373,6 +373,7 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	} break;
 	case e_aggr:
 	case e_func: {
+		BUN lv;
 		sql_subfunc *f = e->f;
 
 		if (!f->func->s) {
@@ -389,8 +390,18 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (look)
 				look(sql, e);
 		}
-		if (!is_semantics(e) && e->l && !have_nil(e->l) && (e->type != e_aggr || (is_groupby(rel->op) && list_length(rel->r))))
+		/* for global aggregates with no semantics, if the left relation has values, then the output won't be NULL */
+		if (!is_semantics(e) && e->l && !have_nil(e->l) &&
+			(e->type != e_aggr || (is_groupby(rel->op) && list_length(rel->r)) || ((lv = get_rel_count(rel->l)) != BUN_NONE && lv > 0)))
 			set_has_no_nil(e);
+		/* set properties for global aggregates */
+		if (e->type == e_aggr && is_groupby(rel->op) && list_empty(rel->r)) {
+			if (!find_prop(e->p, PROP_NUNIQUES)) {
+				prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+				p->value.dval = 1;
+			}
+			set_unique(e);
+		}
 	} break;
 	case e_atom: {
 		if (e->l) {
@@ -405,10 +416,12 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			list *vals = (list *) e->f;
 			sql_exp *first = vals->h ? vals->h->data : NULL;
 			atom *max = NULL, *min = NULL; /* all child values must have a valid min/max */
+			int has_nil = 0;
 
 			if (first) {
 				max = ((lval = find_prop_and_get(first->p, PROP_MAX))) ? lval : NULL;
 				min = ((lval = find_prop_and_get(first->p, PROP_MIN))) ? lval : NULL;
+				has_nil |= has_nil(first);
 			}
 
 			for (node *n = vals->h ? vals->h->next : NULL ; n ; n = n->next) {
@@ -426,8 +439,11 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						min = NULL;
 					}
 				}
+				has_nil |= has_nil(ee);
 			}
 
+			if (!has_nil)
+				set_has_no_nil(e);
 			if (min && max) {
 				set_minmax_property(sql, e, PROP_MAX, max);
 				set_minmax_property(sql, e, PROP_MIN, min);
