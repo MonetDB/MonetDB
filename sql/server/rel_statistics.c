@@ -651,8 +651,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				rel_basetable_column_get_statistics(v->sql, rel, n->data);
 		}
 		/* Set table row count. TODO? look for remote/replica tables. Don't look at storage for declared tables, because it won't be cleaned */
-		if (isTable(t) && t->s && !isDeclaredTable(t))
-			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 0));
+		if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
+			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 10));
 	} break;
 	case op_union:
 	case op_inter:
