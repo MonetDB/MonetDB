@@ -45,6 +45,16 @@ if(TESTING)
     monetdb_config_header
     stream)
 
+  add_executable(testcondvar
+    testcondvar.c)
+
+  target_link_libraries(testcondvar
+    PRIVATE
+    monetdb_config_header
+    bat
+    Threads::Threads
+  )
+
   add_executable(bincopydata
     bincopydata.c
     bincopydata.h
@@ -75,6 +85,7 @@ if(TESTING)
     smack00
     smack01
     streamcat
+    testcondvar
     bincopydata
     RUNTIME
     DESTINATION
@@ -89,6 +100,7 @@ if(TESTING)
       $<TARGET_PDB_FILE:smack00>
       $<TARGET_PDB_FILE:smack01>
       $<TARGET_PDB_FILE:streamcat>
+      $<TARGET_PDB_FILE:testcondvar>
       $<TARGET_PDB_FILE:bincopydata>
       $<TARGET_PDB_FILE:bincopyloops>
       DESTINATION ${CMAKE_INSTALL_BINDIR}
