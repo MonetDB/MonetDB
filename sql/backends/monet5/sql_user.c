@@ -63,6 +63,7 @@ monet5_drop_user(ptr _mvc, str user)
 #define outside_str 1
 #define inside_str 2
 #define default_schema_path "\"sys\"" /* "sys" will be the default schema path */
+#define default_optimizer "default_pipe"
 
 static str
 parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for both building and validating the schema path */
@@ -152,11 +153,12 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"), *auths = find_sql_table(m->session->tr, s, "auths");
 	Client c = MCgetClient(m->clientid);
 	sqlstore *store = m->session->tr->store;
-	const char *opt = optimizer ? optimizer : (char*)str_nil;
 	int log_res = 0;
 
 	if (!schema_path)
 		schema_path = default_schema_path;
+	if (!optimizer)
+		optimizer = default_optimizer;
 	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED)
 		return ret;
 
@@ -168,7 +170,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	}
 
 	user_id = store_next_oid(m->session->tr->store);
-	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path))) {
+	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &wlc, &optimizer))) {
 		if (!enc)
 			free(pwd);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -186,16 +188,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	c->user = grant_user;
 	if (!enc)
 		free(pwd);
-	if (ret != MAL_SUCCEED)
-		return ret;
-
-	user_id = store_next_oid(m->session->tr->store);
-	db_user_info = find_sql_table(m->session->tr, s, "db_user_info");
-	auths = find_sql_table(m->session->tr, s, "auths");
-	store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory,
-			&max_workers, &wlc, &opt);
-	store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid);
-	return NULL;
+	return ret;
 }
 
 static int
@@ -342,14 +335,10 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	char *username = "monetdb";
 	char *fullname = "MonetDB Admin";
 	char *schema_path = default_schema_path;
-	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path);
-	lng max_memory = 0;
-	int max_workers = 0;
-	bool wlc = true;
 	char *optimizer = "default_pipe";
 
-	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory, &max_workers,
-			&wlc, &optimizer);
+	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &lng_nil, &int_nil,
+			&bte_nil, &optimizer);
 }
 
 static int
