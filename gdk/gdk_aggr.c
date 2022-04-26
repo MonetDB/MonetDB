@@ -1820,7 +1820,17 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		}							\
 	} while (0)
 
-/* calculate group averages with optional candidates list */
+/* There are three functions that are used for calculating averages.
+ * The first one (BATgroupavg) returns averages as a floating point
+ * value, the other two (BATgroupavg3 and BATgroupavg3combine) work
+ * together to return averages in the domain type (which should be an
+ * integer type). */
+
+/* Calculate group averages with optional candidates list.  The average
+ * that is calculated is returned in a dbl, independent of the type of
+ * the input.  The average is calculated exactly, so not in a floating
+ * point which could potentially losse bits during processing
+ * (e.g. average of 2**62 and a billion 1's). */
 gdk_return
 BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error, int scale)
 {
@@ -2014,13 +2024,14 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	return GDK_FAIL;
 }
 
-/* An exact numeric average of a bunch of values consists of three parts: the
- * average rounded down (towards minus infinity), the number of values that
- * participated in the calculation, and the remainder.  The remainder is in the
- * range 0 (inclusive) to count (not inclusive).  BATgroupavg3 calculates these
- * values for each given group.  The function below, BATgroupavg3combine,
- * combines averages calculated this way to correct, rounded or truncated
- * towards zero (depending on the symbol TRUNCATE_NUMBERS) averages. */
+/* An exact numeric average of a bunch of values consists of three
+ * parts: the average rounded down (towards minus infinity), the number
+ * of values that participated in the calculation, and the remainder.
+ * The remainder is in the range 0 (inclusive) to count (not inclusive).
+ * BATgroupavg3 calculates these values for each given group.  The
+ * function below, BATgroupavg3combine, combines averages calculated
+ * this way to correct averages by rounding or truncating towards zero
+ * (depending on the symbol TRUNCATE_NUMBERS). */
 gdk_return
 BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
 {
