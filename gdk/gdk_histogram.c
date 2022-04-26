@@ -431,7 +431,6 @@ HISTOGRAMcreate(BAT *b)
 
 #define histogram_print_loop(TPE) \
 	do { \
-		ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[ptype].atomToStr; \
 		const HistogramBucket_##TPE *restrict hist = (HistogramBucket_##TPE *) b->thistogram->histogram; \
 		for (int i = 0 ; i < nbuckets ; i++) { \
 			const HistogramBucket_##TPE *restrict hb = &(hist[i]); \
@@ -490,6 +489,7 @@ HISTOGRAMprint(BAT *b)
 
 	if (tpe == TYPE_str) /* strings use integer size buckets */
 		ptype = TYPE_int;
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[ptype].atomToStr;
 	nbuckets = b->thistogram->nbuckets;
 	switch (tpe) {
 	case TYPE_bte:
