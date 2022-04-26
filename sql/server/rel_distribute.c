@@ -10,6 +10,7 @@
 #include "rel_optimizer_private.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
+#include "rel_rewriter.h"
 #include "sql_privileges.h"
 
 static int
@@ -68,6 +69,7 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 	node *n, *m;
 	sql_rel *r = rel_basetable(sql, p, t->base.name);
 	int allowed = 1;
+	sqlstore *store = sql->session->tr->store;
 
 	if (!table_privs(sql, p, PRIV_SELECT)) /* Test for privileges */
 		allowed = 0;
@@ -98,6 +100,8 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 		exp_prop_alias(sql->sa, ne, e);
 	}
 	list_hash_clear(r->exps); /* the child table may have different column names, so clear the hash */
+	if (isTable(p) && p->s && !isDeclaredTable(p)) /* count active rows only */
+		set_count_prop(sql->sa, r, (BUN)store->storage_api.count_col(sql->session->tr, ol_first_node(p->columns)->data, 10));
 
 	/* set_remote() */
 	if (remote_prop && p && isRemote(p)) {
@@ -372,6 +376,7 @@ rel_remote_func_(visitor *v, sql_rel *rel)
 	if (find_prop(rel->p, PROP_REMOTE) != NULL) {
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 		rel = rel_relational_func(v->sql->sa, rel, exps);
+		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 	}
 	return rel;
 }
