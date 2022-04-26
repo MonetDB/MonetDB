@@ -616,7 +616,7 @@ trivial_project_exp_card(sql_exp *e)
 }
 
 static BUN
-rel_calc_nuniques(sql_rel *l, list *exps)
+rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 {
 	BUN lv = get_rel_count(l);
 
@@ -629,14 +629,28 @@ rel_calc_nuniques(sql_rel *l, list *exps)
 			sql_exp *e = n->data;
 			sql_rel *bt = NULL;
 			prop *p = NULL;
+			BUN euniques = BUN_NONE;
+			atom *min, *max, *sub = NULL;
+			sql_subtype *tp = exp_subtype(e);
+			sql_class ec = tp ? tp->type->eclass : EC_STRING; /* if 'e' has no type (eg parameter), use a non-number type to fail condition */
 
 			if ((p = find_prop(e->p, PROP_NUNIQUES))) {
-				nuniques = MAX(nuniques, (BUN) p->value.dval);
+				euniques = (BUN) p->value.dval;
 			} else if (e->type == e_column && rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
-				nuniques = MAX(nuniques, p->value.lval);
-			} else {
-				nuniques = BUN_NONE;
+				euniques = (BUN) p->value.lval;
 			}
+			/* use min to max range to compute number of possible values in the domain for number types */
+			if ((EC_TEMP(ec)||ec==EC_NUM||ec==EC_MONTH||ec==EC_POS) &&
+				(min = find_prop_and_get(e->p, PROP_MIN)) && (max = find_prop_and_get(e->p, PROP_MAX))) {
+				/* the range includes min and max, so the atom_inc call is needed */
+				/* if 'euniques' has number of distinct values, compute min between both */
+				if ((sub = atom_sub(sql->sa, max, min)) && (sub = atom_inc(sql->sa, sub)) && (sub = atom_cast(sql->sa, sub, sql_bind_localtype("oid"))))
+					euniques = MIN(euniques, (BUN) sub->data.val.oval);
+			}
+			if (euniques != BUN_NONE)
+				nuniques = MAX(nuniques, euniques); /* the highest cardinality sets the estimation */
+			else
+				nuniques = BUN_NONE;
 		}
 		if (nuniques != BUN_NONE)
 			return nuniques;
@@ -699,8 +713,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 
 		/* propagate row count */
 		if (is_union(rel->op)) {
-			BUN lv = need_distinct(rel) ? rel_calc_nuniques(l, l->exps) : get_rel_count(l),
-				rv = need_distinct(rel) ? rel_calc_nuniques(r, r->exps) : get_rel_count(r);
+			BUN lv = need_distinct(rel) ? rel_calc_nuniques(v->sql, l, l->exps) : get_rel_count(l),
+				rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
 
 			if (lv == 0 && rv == 0) { /* both sides empty */
 				if (can_be_pruned)
@@ -717,8 +731,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
 			} 
 		} else if (is_inter(rel->op) || is_except(rel->op)) {
-			BUN lv = need_distinct(rel) ? rel_calc_nuniques(l, l->exps) : get_rel_count(l),
-				rv = need_distinct(rel) ? rel_calc_nuniques(r, r->exps) : get_rel_count(r);
+			BUN lv = need_distinct(rel) ? rel_calc_nuniques(v->sql, l, l->exps) : get_rel_count(l),
+				rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
 
 			if (lv == 0) { /* left side empty */
 				if (can_be_pruned)
@@ -855,7 +869,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_project: {
 			if (l) {
 				if (need_distinct(rel)) {
-					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(l, rel->exps));
+					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->exps));
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
@@ -875,7 +889,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			if (list_empty(rel->r)) {
 				set_count_prop(v->sql->sa, rel, 1);
 			} else {
-				set_count_prop(v->sql->sa, rel, rel_calc_nuniques(l, rel->r));
+				set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->r));
 			}
 		} break;
 		default:
