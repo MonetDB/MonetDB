@@ -2460,7 +2460,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 }
 
 static gdk_return
-internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
+internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced, lng total_cnt)
 {
 	bte tpe = find_type(lg, b->ttype);
 	gdk_return ok = GDK_SUCCEED;
@@ -2489,13 +2489,18 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 
 	if (is_row)
 		l.flag = tpe;
-	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
-	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) {
-		ok = GDK_FAIL;
-		goto bailout;
-	}
+	if (lg->total_cnt == 0) // signals single bulk message or first part of bat logged in parts
+		if (log_write_format(lg, &l) != GDK_SUCCEED ||
+			(!is_row && !mnstr_writeLng(lg->output_log, total_cnt)) ||
+			(!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
+			(!is_row && !mnstr_writeLng(lg->output_log, offset))) {
+			ok = GDK_FAIL;
+			goto bailout;
+		}
+	lg->total_cnt += cnt;
+
+	if (lg->total_cnt == total_cnt) // This is the last to be logged part of this bat, we can already reset the total_cnt
+		lg->total_cnt = 0;
 
 	/* if offset is just for the log, but BAT is already sliced, reset offset */
 	if (sliced)
@@ -2581,7 +2586,7 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 	lg->end++;
 	if (lg->debug & 1)
 		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
-	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0);
+	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0, BATcount(b));
 	logger_unlock(lg);
 	if (r != GDK_SUCCEED)
 		(void) ATOMIC_DEC(&lg->refcount);
@@ -2619,10 +2624,10 @@ log_bat_transient(logger *lg, log_id id)
 }
 
 gdk_return
-log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt)
+log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, lng total_cnt)
 {
 	logger_lock(lg);
-	gdk_return r = internal_log_bat(lg, b, id, offset, cnt, 0);
+	gdk_return r = internal_log_bat(lg, b, id, offset, cnt, 0, total_cnt);
 	logger_unlock(lg);
 	return r;
 }
@@ -2638,7 +2643,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	lng nr;
 
 	if (BATtdense(uid)) {
-		ok = internal_log_bat(lg, uval, id, uid->tseqbase, BATcount(uval), 1);
+		ok = internal_log_bat(lg, uval, id, uid->tseqbase, BATcount(uval), 1, BATcount(uval));
 		logger_unlock(lg);
 		if (!LOG_DISABLED(lg) && ok != GDK_SUCCEED)
 			(void) ATOMIC_DEC(&lg->refcount);

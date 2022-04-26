@@ -34,6 +34,8 @@ struct logger {
 
 	int row_insert_nrcols;	/* nrcols == 0 no rowinsert, log_update will include the logformat */
 
+	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
+
 	bool inmemory;
 	char *fn;
 	char *dir;
