@@ -2367,12 +2367,6 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 	gdk_return ok = GDK_SUCCEED;
 	logformat l;
 	lng nr;
-	int is_row = 0;
-
-	if (lg->row_insert_nrcols != 0) {
-		lg->row_insert_nrcols--;
-		is_row = 1;
-	}
 	l.flag = LOG_UPDATE_CONST;
 	l.id = id;
 	nr = cnt;
@@ -2389,12 +2383,10 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 
 	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[type].atomWrite;
 
-	if (is_row)
-		l.flag = tpe;
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
-	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) {
+	    !mnstr_writeLng(lg->output_log, nr) ||
+	    mnstr_write(lg->output_log, &tpe, 1, 1) != 1 ||
+	    !mnstr_writeLng(lg->output_log, offset)) {
 		(void) ATOMIC_DEC(&lg->refcount);
 		ok = GDK_FAIL;
 		goto bailout;
@@ -2467,12 +2459,6 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	logformat l;
 	BUN p;
 	lng nr;
-	int is_row = 0;
-
-	if (lg->row_insert_nrcols != 0) {
-		lg->row_insert_nrcols--;
-		is_row = 1;
-	}
 	l.flag = LOG_UPDATE_BULK;
 	l.id = id;
 	nr = cnt;
@@ -2487,12 +2473,10 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 
 	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
-	if (is_row)
-		l.flag = tpe;
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
-	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) {
+	    !mnstr_writeLng(lg->output_log, nr) ||
+	    mnstr_write(lg->output_log, &tpe, 1, 1) != 1 ||
+	    !mnstr_writeLng(lg->output_log, offset)) {
 		ok = GDK_FAIL;
 		goto bailout;
 	}

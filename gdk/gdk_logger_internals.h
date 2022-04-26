@@ -32,8 +32,6 @@ struct logger {
 	logged_range *pending;
 	logged_range *current;
 
-	int row_insert_nrcols;	/* nrcols == 0 no rowinsert, log_update will include the logformat */
-
 	bool inmemory;
 	char *fn;
 	char *dir;
