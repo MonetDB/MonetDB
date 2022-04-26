@@ -335,10 +335,15 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	char *username = "monetdb";
 	char *fullname = "MonetDB Admin";
 	char *schema_path = default_schema_path;
-	char *optimizer = "default_pipe";
+	// default values
+	char *optimizer = default_optimizer;
+	lng max_memory = 0;
+	int max_workers = 0;
+	bool wlc = true;
 
-	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &lng_nil, &int_nil,
-			&bte_nil, &optimizer);
+
+	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory, &max_workers,
+			&wlc, &optimizer);
 }
 
 static int
