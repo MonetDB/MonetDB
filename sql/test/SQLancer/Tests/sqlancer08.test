@@ -430,3 +430,43 @@ ROLLBACK
 statement error 22003!overflow in conversion of 789092170 to bte.
 SELECT round(- (((-443710828)||(1616633099))), 789092170)
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "rt0" ("c0" BOOLEAN,"c1" BOOLEAN NOT NULL, CONSTRAINT "rt0_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok rowcount 2
+INSERT INTO "rt0" VALUES (NULL, false), (false, true)
+
+query I nosort
+SELECT rt0.c1 FROM rt0 FULL OUTER JOIN (VALUES (1)) x(x) ON TRUE AND 'a' = 'b' WHERE rt0.c1
+----
+1
+
+query I nosort
+SELECT rt0.c1 FROM rt0 RIGHT OUTER JOIN (VALUES (1)) x(x) ON TRUE AND 'a' = 'b' WHERE rt0.c1
+----
+
+query I nosort
+SELECT rt0.c1 FROM rt0 LEFT OUTER JOIN (VALUES (1)) x(x) ON TRUE AND 'a' = 'b' WHERE rt0.c1
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(rt0.c1 AS INT) as count FROM rt0 FULL OUTER JOIN (VALUES (1)) AS nort0(norc0) ON TRUE AND 'a' = 'b') as res
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(rt0.c1 AS INT) as count FROM rt0 RIGHT OUTER JOIN (VALUES (1)) AS nort0(norc0) ON TRUE AND 'a' = 'b') as res
+----
+NULL
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(rt0.c1 AS INT) as count FROM rt0 LEFT OUTER JOIN (VALUES (1)) AS nort0(norc0) ON TRUE AND 'a' = 'b') as res
+----
+1
+
+statement ok
+ROLLBACK
