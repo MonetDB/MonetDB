@@ -365,6 +365,7 @@ developer.
 %{_bindir}/smack00
 %{_bindir}/smack01
 %{_bindir}/streamcat
+%{_bindir}/testcondvar
 %{_bindir}/testgetinfo
 %{_bindir}/testStmtAttr
 %{_bindir}/malsample.pl
