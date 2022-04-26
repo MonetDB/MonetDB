@@ -431,7 +431,7 @@ HISTOGRAMcreate(BAT *b)
 
 #define histogram_print_loop(TPE) \
 	do { \
-		ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[TYPE_##TPE].atomToStr; \
+		ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[ptype].atomToStr; \
 		const HistogramBucket_##TPE *restrict hist = (HistogramBucket_##TPE *) b->thistogram->histogram; \
 		for (int i = 0 ; i < nbuckets ; i++) { \
 			const HistogramBucket_##TPE *restrict hb = &(hist[i]); \
@@ -465,7 +465,7 @@ HISTOGRAMprint(BAT *b)
 {
 	size_t len = 0, rlen = 2048, minlen = 256, maxlen = 256;
 	str res = NULL, minbuf = NULL, maxbuf = NULL;
-	int tpe = ATOMbasetype(b->ttype), nbuckets;
+	int tpe = ATOMbasetype(b->ttype), nbuckets, ptype = b->ttype;
 
 	if (VIEWtparent(b)) /* don't look on views */
 		b = BBP_cache(VIEWtparent(b));
@@ -488,6 +488,8 @@ HISTOGRAMprint(BAT *b)
 	len = sprintf(res, "Total entries: %d, buckets: %d\n", b->thistogram->size, b->thistogram->nbuckets);
 	len += sprintf(res + len, "nulls -> %d\n", b->thistogram->nulls);
 
+	if (tpe == TYPE_str) /* strings use integer size buckets */
+		ptype = TYPE_int;
 	nbuckets = b->thistogram->nbuckets;
 	switch (tpe) {
 	case TYPE_bte:
