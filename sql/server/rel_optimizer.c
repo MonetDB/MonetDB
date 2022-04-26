@@ -656,14 +656,14 @@ const sql_optimizer pre_sql_optimizers[] = {
 /* these optimizers/rewriters only run once after the cycle loop */
 const sql_optimizer post_sql_optimizers[] = {
 	{22, "setjoins_2_joingroupby", bind_setjoins_2_joingroupby},
-	{23, "get_statistics", bind_get_statistics}, /* gather statistics */
-	{24, "join_order2", bind_join_order2}, /* run join order one more time with statistics */
-	{25, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
 	/* Merge table rewrites may introduce remote or replica tables */
-	/* At the moment, make sure the remote table rewriters always run last */
-	{26, "rewrite_remote", bind_rewrite_remote},
-	{27, "rewrite_replica", bind_rewrite_replica},
-	{28, "remote_func", bind_remote_func},
+	/* At the moment, make sure the remote table rewriters always run after the merge table one */
+	{23, "rewrite_remote", bind_rewrite_remote},
+	{24, "rewrite_replica", bind_rewrite_replica},
+	{25, "remote_func", bind_remote_func},
+	{26, "get_statistics", bind_get_statistics}, /* gather statistics */
+	{27, "join_order2", bind_join_order2}, /* run join order one more time with statistics */
+	{28, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
 	{ 0, NULL, NULL}
 	/* If an optimizer is going to be added, don't forget to update NSQLREWRITERS macro */
 };
