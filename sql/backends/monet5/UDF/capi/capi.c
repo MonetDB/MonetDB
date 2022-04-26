@@ -86,9 +86,8 @@ static str CUDFevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return CUDFeval(cntxt, mb, stk, pci, true);
 }
 
-static str CUDFprelude(void *ret)
+static str CUDFprelude(void)
 {
-	(void)ret;
 	if (!cudf_initialized) {
 		cudf_initialized = true;
 		option_enable_mprotect = GDKgetenv_istrue(mprotect_enableflag) || GDKgetenv_isyes(mprotect_enableflag);
@@ -1950,7 +1949,6 @@ static mel_func capi_init_funcs[] = {
  pattern("capi", "eval", CUDFevalStd, false, "Execute a simple CUDF script value", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("capi", "subeval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("capi", "eval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
- command("capi", "prelude", CUDFprelude, false, "", args(1,1, arg("",void))),
  pattern("batcapi", "eval", CUDFevalStd, false, "Execute a simple CUDF script value", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("batcapi", "subeval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("batcapi", "eval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
@@ -1962,4 +1960,4 @@ static mel_func capi_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_capi_mal)
-{ mal_module("capi", NULL, capi_init_funcs); }
+{ mal_module2("capi", NULL, capi_init_funcs, CUDFprelude, NULL); }

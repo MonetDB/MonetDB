@@ -322,6 +322,29 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t0 (c0 INT)
+
+statement ok rowcount 1
+INSERT INTO t0 VALUES (2)
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','t0','c0', true)
+
+query I nosort
+SELECT * FROM t0 WHERE c0 > 1
+----
+2
+
+statement ok
+DROP TABLE t0
+
+statement ok
+START TRANSACTION
+
+statement ok
 DROP ALL PROCEDURE "sys"."dict_compress"
 
 statement ok

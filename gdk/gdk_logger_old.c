@@ -1016,7 +1016,7 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 	int dbg = GDKdebug;
 	int fd;
 
-	GDKdebug &= ~(CHECKMASK|PROPMASK);
+	GDKdebug &= ~CHECKMASK;
 
 	if (lg->lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
@@ -1715,6 +1715,13 @@ old_logger_destroy(old_logger *lg)
 	BATloop(lg->add, p, q) {
 		b = BATdescriptor(bids[p]);
 		if (b) {
+			if (b != lg->lg->catalog_bid &&
+			    b != lg->lg->catalog_id &&
+			    b != lg->lg->dcatalog &&
+			    b != lg->lg->seqs_id &&
+			    b != lg->lg->seqs_val &&
+			    b != lg->lg->dseqs)
+				b = BATsetaccess(b, BAT_READ);
 			BATmode(b, false);
 			BBPunfix(bids[p]);
 		}
