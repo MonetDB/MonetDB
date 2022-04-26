@@ -1164,7 +1164,7 @@ MT_cond_wait(MT_Cond *cond, MT_Lock *lock)
 {
 	MT_thread_setcondwait(cond);
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
-	SleepConditionVariableCS(&cond->cv, &lock->lock);
+	SleepConditionVariableCS(&cond->cv, &lock->lock, INFINITE);
 #else
 	pthread_cond_wait(&cond->cv, &lock->lock);
 #endif

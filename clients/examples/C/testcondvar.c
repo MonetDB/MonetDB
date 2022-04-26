@@ -18,7 +18,7 @@ volatile int timeout = 100; // set this to 0 during interactive debugging
 
 /* global state protected by a lock: */
 
-MT_Lock lock = MT_LOCK_INITIALIZER(the_lock);
+MT_Lock lock = MT_LOCK_INITIALIZER(lock);
 MT_Cond condvar = MT_COND_INITIALIZER(the_condvar);
 struct state {
 	MT_Id id;
