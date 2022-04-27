@@ -3907,7 +3907,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 }
 
 static int
-log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
+log_storage(sql_trans *tr, sql_table *t, storage *s)
 {
 	int ok = LOG_OK, cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
@@ -3915,7 +3915,7 @@ log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 	if (ok == LOG_OK)
 		ok = segments2cs(tr, s->segs, &s->cs);
 	if (ok == LOG_OK)
-		ok = log_segments(tr, s->segs, id);
+		ok = log_segments(tr, s->segs, t->base.id);
 	if (ok == LOG_OK && !cleared)
 		ok = log_table_append(tr, t, s->segs);
 	return ok;
@@ -4244,7 +4244,7 @@ log_update_del( sql_trans *tr, sql_change *change)
 	sql_table *t = (sql_table*)change->obj;
 
 	if (!isTempTable(t) && !tr->parent) /* don't write save point commits */
-		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data), t->base.id);
+		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data));
 	return LOG_OK;
 }
 
