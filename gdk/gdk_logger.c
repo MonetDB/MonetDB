@@ -2493,7 +2493,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 		if (log_write_format(lg, &l) != GDK_SUCCEED ||
 			(!is_row && !mnstr_writeLng(lg->output_log, total_cnt)) ||
 			(!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-			(!is_row && !mnstr_writeLng(lg->output_log, offset))) {
+			(!is_row && !mnstr_writeLng(lg->output_log, total_cnt?-1:offset))) { /* offset = -1 indicates bat was logged in parts */
 			ok = GDK_FAIL;
 			goto bailout;
 		}
