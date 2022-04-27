@@ -3865,8 +3865,6 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs, size_t nr_appends)
 		return LOG_OK;
 	size_t end = segs_end(segs, tr, t);
 
-	log_table_start(store->logger, t->base.id);
-
 	for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
 		sql_column *c = n->data;
 		column_storage *cs = ATOMIC_PTR_GET(&c->data);
@@ -3920,10 +3918,19 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs, size_t nr_appends)
 		}
 	}
 
-	if (ok == GDK_SUCCEED)
-		ok = log_table_end(store->logger, t->base.id);
-
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static inline int
+tr_log_table_start(sql_trans *tr, sql_table *t) {
+	sqlstore *store = tr->store;
+	return log_table_start(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
+}
+
+static inline int
+tr_log_table_end(sql_trans *tr, sql_table *t) {
+	sqlstore *store = tr->store;
+	return log_table_end(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
 }
 
 static int
@@ -3936,9 +3943,13 @@ log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 	if (ok == LOG_OK)
 		ok = segments2cs(tr, s->segs, &s->cs);
 	if (ok == LOG_OK)
+		ok = tr_log_table_start(tr, t);
+	if (ok == LOG_OK)
 		ok = log_segments(tr, s->segs, id, &nr_appends);
 	if (ok == LOG_OK && !cleared)
 		ok = log_table_append(tr, t, s->segs, nr_appends);
+	if (ok == LOG_OK)
+		ok = tr_log_table_end(tr, t);
 	return ok;
 }
 
