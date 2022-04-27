@@ -34,7 +34,7 @@ static gdk_return logger_del_bat(logger *lg, log_bid bid);
 #define LOG_DESTROY	6
 #define LOG_SEQ		7
 #define LOG_CLEAR	8
-#define LOG_ROW		9 /* per row relative small log entry */
+#define LOG_TABLE	9
 
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
@@ -60,7 +60,7 @@ static const char *log_commands[] = {
 	"LOG_DESTROY",
 	"LOG_SEQ",
 	"LOG_CLEAR",
-	"LOG_ROW",
+	"LOG_TABLE",
 };
 
 typedef struct logaction {
@@ -2621,6 +2621,31 @@ log_bat_transient(logger *lg, log_id id)
 	if (r != GDK_SUCCEED)
 		(void) ATOMIC_DEC(&lg->refcount);
 	return r;
+}
+
+static gdk_return
+log_table(logger *lg, log_id id)
+{
+	gdk_return r = GDK_SUCCEED;
+	logformat l;
+	l.flag = LOG_TABLE;
+	l.id = id;
+	logger_lock(lg);
+	r = log_write_format(lg, &l);
+	logger_unlock(lg);
+	return r;
+}
+
+gdk_return
+log_table_start(logger *lg, log_id id) {
+	/*positive table id represent start of logged table*/
+	return log_table(lg, id);
+}
+
+gdk_return
+log_table_end(logger *lg, log_id id) {
+	/*negative table id represent end of logged table*/
+	return log_table(lg, -id);
 }
 
 gdk_return

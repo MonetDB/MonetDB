@@ -3865,6 +3865,8 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs, size_t nr_appends)
 		return LOG_OK;
 	size_t end = segs_end(segs, tr, t);
 
+	log_table_start(store->logger, t->base.id);
+
 	for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
 		sql_column *c = n->data;
 		column_storage *cs = ATOMIC_PTR_GET(&c->data);
@@ -3917,6 +3919,10 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs, size_t nr_appends)
 			}
 		}
 	}
+
+	if (ok == GDK_SUCCEED)
+		ok = log_table_end(store->logger, t->base.id);
+
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
