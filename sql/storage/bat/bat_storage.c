@@ -328,55 +328,30 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 			size_t pos = s->start;
 			dst = (uint32_t *) Tloc(b, 0) + (pos/32);
 			uint32_t cur = 0;
-			if (s->deleted) {
-				size_t used = pos&31, end = 32;
-				if (used) {
-					if (lnr < (32-used))
-						end = used + lnr;
-					assert(end > used);
-					cur |= ((1U << (end - used)) - 1) << used;
-					lnr -= end - used;
-					*dst++ |= cur;
-					cur = 0;
-				}
-				size_t full = lnr/32;
-				size_t rest = lnr%32;
-				if (full > 0) {
-					memset(dst, ~0, full * sizeof(*dst));
-					dst += full;
-					lnr -= full * 32;
-				}
-				if (rest > 0) {
-					cur |= (1U << rest) - 1;
-					lnr -= rest;
-					*dst |= cur;
-				}
-				assert(lnr==0);
-			} else {
-				size_t used = pos&31, end = 32;
-				if (used) {
-					if (lnr < (32-used))
-						end = used + lnr;
-					assert(end > used);
-					cur |= ((1U << (end - used)) - 1) << used;
-					lnr -= end - used;
-					*dst++ &= ~cur;
-					cur = 0;
-				}
-				size_t full = lnr/32;
-				size_t rest = lnr%32;
-				if (full > 0) {
-					memset(dst, 0, full * sizeof(*dst));
-					dst += full;
-					lnr -= full * 32;
-				}
-				if (rest > 0) {
-					cur |= (1U << rest) - 1;
-					lnr -= rest;
-					*dst &= ~cur;
-				}
-				assert(lnr==0);
+			size_t used = pos&31, end = 32;
+			if (used) {
+				if (lnr < (32-used))
+					end = used + lnr;
+				assert(end > used);
+				cur |= ((1U << (end - used)) - 1) << used;
+				lnr -= end - used;
+				*dst = s->deleted ? *dst | cur : *dst & ~cur;
+				dst++;
+				cur = 0;
 			}
+			size_t full = lnr/32;
+			size_t rest = lnr%32;
+			if (full > 0) {
+				memset(dst, s->deleted?~0:0, full * sizeof(*dst));
+				dst += full;
+				lnr -= full * 32;
+			}
+			if (rest > 0) {
+				cur |= (1U << rest) - 1;
+				lnr -= rest;
+				*dst = s->deleted ? *dst | cur : *dst & ~cur;
+			}
+			assert(lnr==0);
 			if (cnt < s->end)
 				cnt = s->end;
 		}
