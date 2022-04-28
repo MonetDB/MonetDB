@@ -32,10 +32,7 @@ struct logger {
 	logged_range *pending;
 	logged_range *current;
 
-	int row_insert_nrcols;	/* nrcols == 0 no rowinsert, log_update will include the logformat */
-
 	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
-
 	bool inmemory;
 	char *fn;
 	char *dir;
@@ -111,6 +108,6 @@ struct old_logger {
 	BAT *del;		/* bat ids of bats being deleted by upgrade */
 };
 
-gdk_return logger_create_types_file(logger *lg, const char *filename, bool append);
+gdk_return log_create_types_file(logger *lg, const char *filename, bool append);
 
 #endif /* _LOGGER_INTERNALS_H_ */
