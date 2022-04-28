@@ -463,3 +463,22 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(rt0.c1 AS INT) as count FROM
 
 statement ok
 ROLLBACK
+
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t0(c0 int) ON COMMIT PRESERVE ROWS
+
+statement ok
+INSERT INTO t0(c0) VALUES(NULL)
+
+query I nosort
+SELECT c0 FROM t0
+----
+NULL
+
+query I nosort
+SELECT c0 FROM t0 WHERE c0 IS NULL
+----
+NULL
+
+statement ok
+DROP TABLE t0

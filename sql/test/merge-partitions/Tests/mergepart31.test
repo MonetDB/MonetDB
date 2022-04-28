@@ -603,8 +603,8 @@ plan select 1 from table1 where a = 10
 ----
 project (
 | select (
-| | table("sys"."another1") [ "another1"."a" NOT NULL as "table1"."a" ]
-| ) [ ("table1"."a" NOT NULL) = (int(32) "10") ]
+| | table("sys"."another1") [ "another1"."a" NOT NULL UNIQUE as "table1"."a" ]
+| ) [ ("table1"."a" NOT NULL UNIQUE) = (int(32) "10") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -612,8 +612,8 @@ plan select 1 from table1 where a = 11
 ----
 project (
 | select (
-| | table("sys"."another2") [ "another2"."a" NOT NULL as "table1"."a" ]
-| ) [ ("table1"."a" NOT NULL) = (int(32) "11") ]
+| | table("sys"."another2") [ "another2"."a" NOT NULL UNIQUE as "table1"."a" ]
+| ) [ ("table1"."a" NOT NULL UNIQUE) = (int(32) "11") ]
 ) [ tinyint(1) "1" ]
 
 statement ok rowcount 2
