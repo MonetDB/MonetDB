@@ -3835,10 +3835,10 @@ point_select_on_unique_column(sql_rel *rel)
 static sql_rel *
 rel_push_select_up_(visitor *v, sql_rel *rel)
 {
-	if ((is_join(rel->op) || is_semi(rel->op)) && !is_single(rel)) {
+	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !is_single(rel)) {
 		sql_rel *l = rel->l, *r = rel->r;
-		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l) && !is_single(l),
-			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_single(r) && !is_semi(rel->op);
+		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l) && !is_single(l) && (is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op)),
+			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_single(r) && (is_innerjoin(rel->op) || is_right(rel->op));
 
 		if (can_pushup_left || can_pushup_right) {
 			if (can_pushup_left)
@@ -3877,5 +3877,5 @@ bind_push_select_up(visitor *v, global_props *gp)
 {
 	int flag = v->sql->sql_optimizer;
 	return gp->opt_level == 1 && gp->cnt[op_select] && (gp->cnt[op_join] || gp->cnt[op_left] ||
-		   gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & push_select_up) ? rel_push_select_up : NULL;
+		   gp->cnt[op_right] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & push_select_up) ? rel_push_select_up : NULL;
 }

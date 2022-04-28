@@ -267,14 +267,14 @@ typedef struct store_functions {
 	swap_bats_fptr swap_bats;
 } store_functions;
 
-typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
+typedef int (*log_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
 
-typedef void (*logger_destroy_fptr) (struct sqlstore *store);
-typedef int (*logger_flush_fptr) (struct sqlstore *store, lng save_id);
-typedef int (*logger_activate_fptr) (struct sqlstore *store);
+typedef void (*log_destroy_fptr) (struct sqlstore *store);
+typedef int (*log_flush_fptr) (struct sqlstore *store, lng save_id);
+typedef int (*log_activate_fptr) (struct sqlstore *store);
 typedef int (*logger_cleanup_fptr) (struct sqlstore *store);
 
-typedef int (*logger_changes_fptr)(struct sqlstore *store);
+typedef int (*log_changes_fptr)(struct sqlstore *store);
 typedef int (*logger_get_sequence_fptr) (struct sqlstore *store, int seq, lng *id);
 
 typedef int (*log_isnew_fptr)(struct sqlstore *store);
@@ -282,7 +282,7 @@ typedef int (*log_tstart_fptr) (struct sqlstore *store, bool flush, ulng *log_fi
 typedef int (*log_tend_fptr) (struct sqlstore *store);
 typedef int (*log_tflush_fptr) (struct sqlstore *store, ulng log_file_id, ulng commit_tis);
 typedef lng (*log_save_id_fptr) (struct sqlstore *store);
-typedef int (*log_sequence_fptr) (struct sqlstore *store, int seq, lng id);
+typedef int (*log_tsequence_fptr) (struct sqlstore *store, int seq, lng id);
 
 /*
 -- List which parts of which files must be included in a hot snapshot.
@@ -300,12 +300,12 @@ typedef int (*log_sequence_fptr) (struct sqlstore *store, int seq, lng id);
 typedef gdk_return (*logger_get_snapshot_files_fptr)(struct sqlstore *store, stream *plan);
 
 typedef struct logger_functions {
-	logger_create_fptr create;
-	logger_destroy_fptr destroy;
-	logger_flush_fptr flush;
-	logger_activate_fptr activate;
+	log_create_fptr create;
+	log_destroy_fptr destroy;
+	log_flush_fptr flush;
+	log_activate_fptr activate;
 
-	logger_changes_fptr changes;
+	log_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
 
 	logger_get_snapshot_files_fptr get_snapshot_files;
@@ -315,7 +315,7 @@ typedef struct logger_functions {
 	log_tend_fptr log_tend;
 	log_tflush_fptr log_tflush;
 	log_save_id_fptr log_save_id;
-	log_sequence_fptr log_sequence;
+	log_tsequence_fptr log_tsequence;
 } logger_functions;
 
 /* we need to add an interface for result_tables later */
