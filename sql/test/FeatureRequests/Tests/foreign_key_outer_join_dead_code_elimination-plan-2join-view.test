@@ -14,8 +14,8 @@ query T nosort
 project (
 | project (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
-| ) [ "fk"."id" NOT NULL HASHCOL  as "v2"."id" ]
-) [ "v2"."id" NOT NULL HASHCOL  ] [ "v2"."id" ASC NOT NULL HASHCOL  ]
+| ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  as "v2"."id" ]
+) [ "v2"."id" NOT NULL UNIQUE HASHCOL  ] [ "v2"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T nosort
    plan select id , v2  from v2 order by id

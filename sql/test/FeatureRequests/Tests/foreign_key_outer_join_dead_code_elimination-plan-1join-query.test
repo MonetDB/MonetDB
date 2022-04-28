@@ -13,7 +13,7 @@ query T nosort
 ----
 project (
 | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
-) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
+) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T nosort
    plan select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
@@ -47,7 +47,7 @@ query T nosort
 ----
 project (
 | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
-) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
+) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T nosort
    plan select id , v1  from pk1 right outer join fk on fk.fk1 = pk1.pk1 order by id
@@ -81,7 +81,7 @@ query T nosort
 ----
 project (
 | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
-) [ "fk"."id" HASHCOL  ] [ "fk"."id" ASC HASHCOL  ]
+) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T nosort
    plan select id , v1  from pk1 full outer join fk on fk.fk1 = pk1.pk1 order by id

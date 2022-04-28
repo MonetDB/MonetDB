@@ -175,13 +175,13 @@ explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2
 algebra.projection
 2
 algebra.select
-2
+1
 bat.pack
 5
 language.dataflow
 1
 language.pass
-3
+2
 querylog.define
 1
 sql.bind

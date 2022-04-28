@@ -2639,7 +2639,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 				/* handle possible index lookups, expressions are in index order! */
 				if (!join && (p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
-					sql_idx *i = p->value;
+					sql_idx *i = p->value.pval;
 					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
 					join = s = rel2bin_hash_lookup(be, rel, left, right, i, en);
@@ -3773,7 +3773,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		prop *p;
 
 		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
-			sql_idx *i = p->value;
+			sql_idx *i = p->value.pval;
 			int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
 			if (!(sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en))) {
@@ -3813,65 +3813,6 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	return sub;
 }
 
-static lng
-rel_getcount(mvc *sql, sql_rel *rel)
-{
-	prop *p = NULL;
-
-	if (rel && (p = find_prop(rel->p, PROP_COUNT)) != NULL)
-		return p->number;
-	if (rel && rel->op == op_table)
-		return 1;
-	if (rel && is_semi(rel->op))
-		return rel_getcount(sql, rel->l);
-	if (rel && is_join(rel->op)) {
-		lng l = rel_getcount(sql, rel->l);
-	    lng r =	rel_getcount(sql, rel->r);
-		if (!list_empty(rel->exps)) {
-			sql_exp *e = rel->exps->h->data;
-			if (e && (p = find_prop(e->p, PROP_JOINIDX)) != NULL)
-				return l>r?l:r;
-
-			sql_exp *el = e->l;
-			if (e && e->type == e_cmp && e->flag == cmp_equal && (p = find_prop(el->p, PROP_HASHCOL)) != NULL)
-				return l;
-			sql_exp *er = e->r;
-			if (e && e->type == e_cmp && e->flag == cmp_equal && (p = find_prop(er->p, PROP_HASHCOL)) != NULL)
-				return r;
-		}
-		if ((l * r) < l)
-			return l;
-		return l*r;
-	}
-	if (rel && rel->op == op_union)
-		return rel_getcount(sql, rel->l) + rel_getcount(sql, rel->r);
-	if (rel && is_set(rel->op))
-		return rel_getcount(sql, rel->l);
-	if (rel && rel->l && rel->op == op_select)
-		return rel_getcount(sql, rel->l);
-	if (rel && rel->op == op_project) {
-		if (rel->l)
-			return rel_getcount(sql, rel->l);
-		return 1;
-	}
-	if (rel && rel->l && rel->op == op_groupby) {
-		if (list_empty(rel->r))
-			return 1;
-		else if (list_length(rel->r) == 1) {
-			list *gbes = rel->r;
-			sql_exp *e = gbes->h->data;
-			if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL && p->value) {
-				sql_key *k = p->value;
-				sql_table *t = k->t;
-				sqlstore *store = sql->session->tr->store;
-				return (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
-			}
-		}
-		return rel_getcount(sql, rel->l);
-	}
-	return -1;
-}
-
 /*
  * The groupby execution plan:
  * The various choices:
@@ -3885,9 +3826,15 @@ rel_getcount(mvc *sql, sql_rel *rel)
 static lng
 exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	lng cnt = rel_getcount(sql, rel);
+	BUN est = get_rel_count(rel);
+	lng cnt;
 	sql_subtype *t = exp_subtype(e);
 
+	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+		cnt = 85000000;
+	} else {
+		cnt = (lng) est;
+	}
 	if (e->type == e_column && t && t->type->localtype == TYPE_str) {
 		sql_column *c = name_find_column(rel, e->l, e->r, -1, NULL);
 
@@ -3915,10 +3862,15 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 static bool
 rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 {
-	lng card = 1;
-	lng cnt = rel_getcount(sql, rel);
+	BUN est = get_rel_count(rel);
+	lng card = 1, cnt;
 	bool global = list_empty(rel->r);
 
+	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+		cnt = 85000000;
+	} else {
+		cnt = (lng) est;
+	}
 	if (!list_empty(rel->r)) {
 		list *l = rel->r;
 		for( node *n = l->h; n; n = n->next ) {
@@ -4030,13 +3982,14 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			}
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
+		BUN est = get_rel_count(rel->l);
+		lng estimate, card = 1;
 		int curhash = 0;
-		lng estimate = rel_getcount(be->mvc, rel->l);
-		lng card = 1;
 
-		if (estimate<0) {
-			assert(0);
+		if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
 			estimate = 85000000;
+		} else {
+			estimate = (lng) est;
 		}
 		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 		list *gbexps = rel->r;
@@ -4094,11 +4047,13 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				list *el = e->l;
 				sql_exp *a = el->h->data;
 				sql_subtype *t = exp_subtype(a);
-				int estimate = rel_getcount(be->mvc, rel->l);
+				BUN est = get_rel_count(rel->l);
+				lng estimate;
 
-				if (estimate<0) {
-					assert(0);
+				if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
 					estimate = 85000000;
+				} else {
+					estimate = (lng) est;
 				}
 
 				InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, curhash);
@@ -5006,6 +4961,7 @@ sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t, stmt **updates
 	ti->updates = updates;
 	ti->type = 1;
 	ti->nn = name;
+
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);

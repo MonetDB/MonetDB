@@ -3638,7 +3638,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 	if (is_groupby(rel->op)) {
 		/* ROLLUP, CUBE, GROUPING SETS cases */
 		if ((found = find_prop(rel->p, PROP_GROUPINGS))) {
-			list *sets = (list*) found->value;
+			list *sets = (list*) found->value.pval;
 			sql_rel *unions = NULL;
 
 			rel->p = prop_remove(rel->p, found); /* remove property */

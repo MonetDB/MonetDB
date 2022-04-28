@@ -18,7 +18,7 @@ target_sources(atoms
   url.c
   uuid.c
   json.c
-  mtime.c
+  mtime.c mtime.h
   inet.c
   identifier.c
   xml.c xml.h
