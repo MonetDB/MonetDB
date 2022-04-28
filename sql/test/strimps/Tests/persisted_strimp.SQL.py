@@ -37,6 +37,10 @@ with tempfile.TemporaryDirectory() as farm_dir:
             mdb.execute("""COPY 15000 RECORDS INTO orders from r'{}/sql/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|','\n','"';""".format(os.getenv('TSTSRCBASE'))).assertSucceeded()
             mdb.execute("""COPY 15000 RECORDS INTO orders from r'{}/sql/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|','\n','"';""".format(os.getenv('TSTSRCBASE'))).assertSucceeded()
             mdb.execute("""COPY 15000 RECORDS INTO orders from r'{}/sql/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|','\n','"';""".format(os.getenv('TSTSRCBASE'))).assertSucceeded()
+            # Create strimp
+            mdb.execute("ALTER TABLE orders SET READ ONLY;")
+            mdb.execute("CREATE IMPRINTS INDEX o_comment_strimp ON orders(o_comment);")
+
             mdb.execute("SELECT COUNT(*) FROM orders WHERE o_comment LIKE '%%slyly%%';").assertSucceeded().assertDataResultMatch([(12896,)])
         s.communicate()
 
