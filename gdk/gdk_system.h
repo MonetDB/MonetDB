@@ -710,4 +710,30 @@ gdk_export const char *MT_thread_getalgorithm(void);
 
 gdk_export int MT_check_nr_cores(void);
 
+/*
+ * @ Condition Variable API
+ */
+
+typedef struct MT_Cond {
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	CONDITION_VARIABLE cv;
+#else
+	pthread_cond_t cv;
+#endif
+	char name[MT_NAME_LEN];
+} MT_Cond;
+
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+#  define MT_COND_INITIALIZER(N) { .cv = CONDITION_VARIABLE_INIT, .name = #N }
+#else
+#  define MT_COND_INITIALIZER(N) { .cv = PTHREAD_COND_INITIALIZER, .name = #N }
+#endif
+
+gdk_export void MT_cond_init(MT_Cond *cond);
+gdk_export void MT_cond_destroy(MT_Cond *cond);
+gdk_export void MT_cond_wait(MT_Cond *cond, MT_Lock *lock);
+gdk_export void MT_cond_signal(MT_Cond *cond);
+gdk_export void MT_cond_broadcast(MT_Cond *cond);
+
+
 #endif /*_GDK_SYSTEM_H_*/

@@ -99,7 +99,7 @@ MSERVER5 OPTIONS
 **-d**\ [*value*]
    Set debug level. This is mostly for debugging purposes. The *value*
    together with the **=** sign is optional. If not specified, it
-   defaults to **1**. In the short form **-d**, the value, if present,
+   defaults to **2**. In the short form **-d**, the value, if present,
    must immediately (i.e. without space) follow the option. The values
    of multiple instances of this flag are OR-ed together. The value is
    an integer, which can be (a bit-wise OR of):
@@ -108,11 +108,7 @@ MSERVER5 OPTIONS
       (THRDMASK) thread-specific debug output
 
    **2**
-      (CHECKMASK) property enforcing on new BATs
-
-   **8**
-      (PROPMASK) property checking on all values: tells about wrongly
-      set properties
+      (CHECKMASK) property checking on new BATs
 
    **16**
       (IOMASK) major IO activity
@@ -195,7 +191,7 @@ MSERVER5 OPTIONS
    Equivalent to **--debug=**\ *(DEADBEEFMASK)*.
 
 **--properties**
-   Equivalent to **--debug=**\ *(CHECKMASK \| PROPMASK \| BATMASK)*.
+   Equivalent to **--debug=**\ *(CHECKMASK)*.
 
 **--threads**
    Equivalent to **--debug=**\ *(THRDMASK \| PARMASK)*.
