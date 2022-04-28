@@ -422,6 +422,7 @@ int yydebug=1;
 	XML_namespace_prefix
 	XML_PI_target
     opt_optimizer
+    opt_default_role
 
 %type <l>
 	argument_list
@@ -1480,7 +1481,7 @@ role_def:
 	  append_string(l, $2);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident user_schema_path opt_max_memory opt_max_workers opt_wlc opt_optimizer
+ |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident user_schema_path opt_max_memory opt_max_workers opt_wlc opt_optimizer opt_default_role
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  append_string(l, $6);
@@ -1492,6 +1493,7 @@ role_def:
       append_int(l, $13);
       append_int(l, $14);
 	  append_string(l, $15);
+	  append_string(l, $16);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
  ;
 
@@ -1513,6 +1515,11 @@ opt_wlc:
 opt_optimizer:
     /* empty */         { $$ = NULL; }
  |  OPTIMIZER string    { $$ = $2; }
+ ;
+
+opt_default_role:
+    /* empty */         { $$ = NULL; }
+ |  DEFAULT ROLE ident    { $$ = $3; }
  ;
 
 opt_encrypted:
