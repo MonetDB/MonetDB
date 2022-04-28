@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "rel_physical.h"
 #include "rel_optimizer_private.h"
+#include "rel_rewriter.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
 
@@ -109,7 +110,9 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		rel->used |= rewrite_gt_zero_used;
 		e = exp_compare(sql->sa, e, exp_atom_lng(sql->sa, 0), cmp_notequal);
 		rel = rel_select(sql->sa, rel, e);
+		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 		rel = rel_project(sql->sa, rel, exps);
+		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 	}
 	return rel;
 }
@@ -259,9 +262,11 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 		nrel->parallel = rel->parallel;
 		nrel->partition = rel->partition;
 		nrel->spb = rel->spb;
+		set_count_prop(v->sql->sa, nrel, get_rel_count(rel));
 		rel_destroy(rel);
 		nrel->exps = nexps;
 		rel = rel_project(sql->sa, nrel, pexps);
+		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 		set_processed(rel);
 		v->changes++;
 	}
