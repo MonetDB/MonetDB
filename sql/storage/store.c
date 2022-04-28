@@ -3926,7 +3926,7 @@ sql_trans_commit(sql_trans *tr)
 				sequences_unlock(store);
 			}
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
-				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
+				ok = store->logger_api.log_tsequence(store, OBJ_SID, store->obj_id);
 			store->prev_oid = store->obj_id;
 
 
