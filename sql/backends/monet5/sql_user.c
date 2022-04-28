@@ -23,6 +23,24 @@
 #include "mal_authorize.h"
 #include "mcrypt.h"
 
+
+static int
+monet5_find_role(ptr _mvc, str role, sqlid *role_id)
+{
+	mvc *m = (mvc *) _mvc;
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = m->session->tr->store;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *auths = find_sql_table(tr, sys, "auths");
+	sql_column *auth_name = find_sql_column(auths, "name");
+	oid rid = store->table_api.column_find_row(tr, auth_name, role, NULL);
+	if (is_oid_nil(rid))
+		return -1;
+	*role_id = store->table_api.column_find_sqlid(m->session->tr, find_sql_column(auths, "id"), rid);
+	return 1;
+}
+
+
 static int
 monet5_drop_user(ptr _mvc, str user)
 {
@@ -143,7 +161,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 }
 
 static str
-monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid, lng max_memory, int max_workers, bool wlc, str optimizer)
+monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid, lng max_memory, int max_workers, bool wlc, str optimizer, sqlid role_id)
 {
 	mvc *m = (mvc *) _mvc;
 	oid uid = 0;
@@ -170,7 +188,8 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	}
 
 	user_id = store_next_oid(m->session->tr->store);
-	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &wlc, &optimizer))) {
+	sqlid default_role_id = role_id > 0 ? role_id : user_id;
+	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &wlc, &optimizer, &default_role_id))) {
 		if (!enc)
 			free(pwd);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -295,6 +314,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
 	mvc_create_column_(&col, m, t, "wlc", "boolean", 1);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
+	mvc_create_column_(&col, m, t, "default_role", "int", 9);
 	uinfo = t;
 
 	res = sa_list(m->sa);
@@ -307,6 +327,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE, FALSE);
 	if (f)
 		f->instantiated = TRUE;
+	// TODO include all new columns
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\" as \"name\", "
 			    "ui.\"fullname\", ui.\"default_schema\", "
@@ -326,6 +347,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
 	mvc_create_column_(&col, m, t, "wlc", "boolean", 1);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
+	mvc_create_column_(&col, m, t, "default_role", "int", 9);
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	schema_id = sys->base.id;
@@ -340,10 +362,11 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	lng max_memory = 0;
 	int max_workers = 0;
 	bool wlc = true;
+	sqlid default_role_id = USER_MONETDB;
 
 
 	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory, &max_workers,
-			&wlc, &optimizer);
+			&wlc, &optimizer, &default_role_id);
 }
 
 static int
@@ -567,6 +590,7 @@ monet5_user_init(backend_functions *be_funcs)
 	be_funcs->fcuser = &monet5_create_user;
 	be_funcs->fduser = &monet5_drop_user;
 	be_funcs->ffuser = &monet5_find_user;
+	be_funcs->ffrole = &monet5_find_role;
 	be_funcs->fcrpriv = &monet5_create_privileges;
 	be_funcs->fshuser = &monet5_schema_has_user;
 	be_funcs->fauser = &monet5_alter_user;
@@ -728,3 +752,4 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 	return res;
 }
+
