@@ -2728,12 +2728,12 @@ dcount_col(sql_trans *tr, sql_column *c)
 }
 
 static BAT *
-bind_no_view(BAT *b)
+bind_no_view(BAT *b, bool quick)
 {
 	if (isVIEW(b)) { /* If it is a view get the parent BAT */
 		BAT *nb = BBP_cache(VIEWtparent(b));
 		bat_destroy(b);
-		if (!(b = temp_descriptor(nb->batCacheid)))
+		if (!(b = quick ? quick_descriptor(nb->batCacheid) : temp_descriptor(nb->batCacheid)))
 			return NULL;
 	}
 	return b;
@@ -2763,7 +2763,7 @@ min_max_col(sql_trans *tr, sql_column *c)
 		_DELETE(c->min);
 		_DELETE(c->max);
 		if ((b = bind_col(tr, c, access))) {
-			if (!(b = bind_no_view(b))) {
+			if (!(b = bind_no_view(b, false))) {
 				unlock_column(tr->store, c->base.id);
 				return 0;
 			}
@@ -2889,7 +2889,7 @@ static int
 col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
 {
 	int ok = 0;
-	BAT *b = NULL, *off = NULL;
+	BAT *b = NULL, *off = NULL, *upv = NULL;
 	sql_delta *d = NULL;
 
 	(void) tr;
@@ -2905,9 +2905,11 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			*nonil = true; /* TODO for min/max. I will do it later */
 			return ok;
 		}
-		bat bid = d->cs.st == ST_DICT ? d->cs.ebid : d->cs.bid;
-		if ((b = temp_descriptor(bid))) {
-			int eclass = c->type.type->eclass;
+		int eclass = c->type.type->eclass;
+		int access = d->cs.st == ST_DICT ? RD_EXT : RDONLY;
+		if ((b = bind_col(tr, c, access))) {
+			if (!(b = bind_no_view(b, false)))
+				return ok;
 			BATiter bi = bat_iterator(b);
 			*nonil = bi.nonil && !bi.nil;
 
@@ -2918,27 +2920,29 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 				if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
 					ok |= 2;
 			}
-			/* for dict, check the offsets bat for uniqueness */
-			if (d->cs.ucnt == 0 && (d->cs.st == ST_DEFAULT || (off = quick_descriptor(d->cs.bid)))) {
-				if (off) {
+			if (d->cs.ucnt == 0) {
+				if (d->cs.st == ST_DEFAULT) {
+					*unique = bi.key;
+					*unique_est = bi.unique_est;
+				} else if (d->cs.st == ST_DICT && (off = bind_col(tr, c, QUICK)) && (off = bind_no_view(off, true))) {
+					/* for dict, check the offsets bat for uniqueness */
 					MT_lock_set(&off->theaplock);
 					*unique = off->tkey;
 					*unique_est = off->tunique_est;
 					MT_lock_unset(&off->theaplock);
-				} else {
-					*unique = bi.key;
-					*unique_est = bi.unique_est;
 				}
 			}
 			bat_iterator_end(&bi);
 			bat_destroy(b);
 			if (*nonil && d->cs.ucnt > 0) {
-				if (!(b = quick_descriptor(d->cs.uvbid))) {
+				/* This could use a quick descriptor */
+				if (!(upv = bind_col(tr, c, RD_UPD_VAL)) || !(upv = bind_no_view(upv, false))) {
 					*nonil = false;
 				} else {
-					MT_lock_set(&b->theaplock);
-					*nonil &= b->tnonil && !b->tnil;
-					MT_lock_unset(&b->theaplock);
+					MT_lock_set(&upv->theaplock);
+					*nonil &= upv->tnonil && !upv->tnil;
+					MT_lock_unset(&upv->theaplock);
+					bat_destroy(upv);
 				}
 			}
 		}

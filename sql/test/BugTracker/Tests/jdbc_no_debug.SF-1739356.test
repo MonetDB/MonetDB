@@ -13,8 +13,8 @@ project (
 | | | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%10"."%10" ],
 | | | group by (
 | | | | project (
-| | | | | table("tmp"."_tables") [ "_tables"."id" NOT NULL ]
-| | | | ) [ "_tables"."id" NOT NULL as "tables"."id" ]
+| | | | | table("tmp"."_tables") [ "_tables"."id" NOT NULL UNIQUE ]
+| | | | ) [ "_tables"."id" NOT NULL UNIQUE as "tables"."id" ]
 | | | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%10"."%10" ]
 | | ) [ "%10"."%10" NOT NULL ]
 | ) [  ] [ "sys"."sum" no nil ("%10"."%10" NOT NULL) NOT NULL UNIQUE as "%10"."%10" ]

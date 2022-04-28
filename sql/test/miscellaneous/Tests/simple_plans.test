@@ -49,27 +49,27 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1
 ----
 project (
 | select (
-| | table("sys"."myx") [ "myx"."x" NOT NULL, "myx"."y" NOT NULL ]
-| ) [ (("myx"."x" NOT NULL) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) ]
-) [ "myx"."x" NOT NULL, "myx"."y" NOT NULL ]
+| | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
+| ) [ (("myx"."x" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) ]
+) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null
 ----
 project (
 | select (
-| | table("sys"."myx") [ "myx"."x" NOT NULL, "myx"."y" NOT NULL ]
-| ) [ (("myx"."x" NOT NULL) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL) * = (uuid NULL)) ]
-) [ "myx"."x" NOT NULL, "myx"."y" NOT NULL ]
+| | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
+| ) [ (("myx"."x" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) * = (uuid NULL)) ]
+) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967'
 ----
 project (
 | select (
-| | table("sys"."myx") [ "myx"."x" NOT NULL, "myx"."y" NOT NULL ]
-| ) [ (("myx"."x" NOT NULL) in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or (("myx"."y" NOT NULL) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL)) ]
-) [ "myx"."x" NOT NULL, "myx"."y" NOT NULL ]
+| | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
+| ) [ (("myx"."x" NOT NULL UNIQUE) in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL)) ]
+) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 statement ok
 insert into myx values ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961967')

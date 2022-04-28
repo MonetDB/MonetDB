@@ -43,12 +43,12 @@ project (
 | | | | | | | | | | join (
 | | | | | | | | | | | semijoin (
 | | | | | | | | | | | | select (
-| | | | | | | | | | | | | table("sys"."myfunctions") [ "myfunctions"."id" NOT NULL as "f"."id", "myfunctions"."schema_id" NOT NULL as "f"."schema_id", "myfunctions"."system" NOT NULL as "f"."system" ]
-| | | | | | | | | | | | ) [ ("f"."system" NOT NULL) = (boolean(1) "true") ],
+| | | | | | | | | | | | | table("sys"."myfunctions") [ "myfunctions"."id" NOT NULL UNIQUE as "f"."id", "myfunctions"."schema_id" NOT NULL UNIQUE as "f"."schema_id", "myfunctions"."system" NOT NULL UNIQUE as "f"."system" ]
+| | | | | | | | | | | | ) [ ("f"."system" NOT NULL UNIQUE) = (boolean(1) "true") ],
 | | | | | | | | | | | | table("sys"."comments") [ "comments"."id" NOT NULL UNIQUE HASHCOL  as "c"."id" ]
-| | | | | | | | | | | ) [ ("f"."id" NOT NULL) = ("c"."id" NOT NULL UNIQUE HASHCOL ) ],
+| | | | | | | | | | | ) [ ("f"."id" NOT NULL UNIQUE) = ("c"."id" NOT NULL UNIQUE HASHCOL ) ],
 | | | | | | | | | | | table("sys"."schemas") [ "schemas"."id" UNIQUE as "s"."id" ]
-| | | | | | | | | | ) [ ("f"."schema_id" NOT NULL) = ("s"."id" UNIQUE) ],
+| | | | | | | | | | ) [ ("f"."schema_id" NOT NULL UNIQUE) = ("s"."id" UNIQUE) ],
 | | | | | | | | | | select (
 | | | | | | | | | | | table("sys"."args") [ "args"."func_id" as "p"."func_id", "args"."inout" as "p"."inout", "args"."number" as "p"."number" ]
 | | | | | | | | | | ) [ ("p"."inout") = (tinyint(1) "1") ]
