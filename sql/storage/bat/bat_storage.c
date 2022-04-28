@@ -3900,19 +3900,13 @@ static int
 merge_cs( column_storage *cs)
 {
 	int ok = LOG_OK;
-	BAT *cur = NULL;
 
-	if (cs->bid) {
-		cur = temp_descriptor(cs->bid);
-		if(!cur)
-			return LOG_ERR;
-	}
-
-	if (cs->ucnt) {
+	if (cs->bid && cs->ucnt) {
+		BAT *cur = temp_descriptor(cs->bid);
 		BAT *ui = temp_descriptor(cs->uibid);
 		BAT *uv = temp_descriptor(cs->uvbid);
 
-		if(!ui || !uv) {
+		if (!cur || !ui || !uv) {
 			bat_destroy(ui);
 			bat_destroy(uv);
 			bat_destroy(cur);
@@ -3933,15 +3927,15 @@ merge_cs( column_storage *cs)
 		temp_destroy(cs->uvbid);
 		cs->uibid = e_bat(TYPE_oid);
 		cs->uvbid = e_bat(cur->ttype);
-		if(cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
+		if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
 			ok = LOG_ERR;
 		cs->ucnt = 0;
 		bat_destroy(ui);
 		bat_destroy(uv);
+		bat_destroy(cur);
 	}
 	cs->cleared = 0;
 	cs->merged = 1;
-	bat_destroy(cur);
 	return ok;
 }
 
