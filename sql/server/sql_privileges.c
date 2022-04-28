@@ -775,11 +775,16 @@ mvc_set_schema(mvc *m, char *schema)
 }
 
 char *
-sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, bool wlc, char *optimizer)
+sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, bool wlc, char *optimizer, char *role)
 {
 	char *err;
 	sql_schema *s = NULL;
 	sqlid schema_id = 0;
+	sqlid role_id = 0;
+
+	if (role)
+		if (backend_find_role(sql, role, &role_id) < 0)
+			throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: no such role '%s'", role);
 
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "Insufficient privileges to create user '%s'", user);
@@ -796,7 +801,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id, max_memory,
-					max_workers, wlc, optimizer)) != NULL)
+					max_workers, wlc, optimizer, role_id)) != NULL)
 	{
 		/* strip off MAL exception decorations */
 		char *r;

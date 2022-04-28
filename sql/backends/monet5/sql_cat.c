@@ -1746,10 +1746,11 @@ SQLcreate_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int max_workers = *getArgReference_int(stk, pci, 8);
 	bool wlc = *getArgReference_bit(stk, pci, 9);
 	char *optimizer = SaveArgReference(stk, pci, 10);
+	char *default_role = SaveArgReference(stk, pci, 11);
 
 	initcontext();
 	msg = sql_create_user(sql, sname, passwd, enc, fullname, schema, schema_path, max_memory, max_workers, wlc,
-			optimizer);
+			optimizer, default_role);
 	return msg;
 }
 

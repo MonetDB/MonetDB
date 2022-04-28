@@ -35,11 +35,11 @@ backend_freecode(const char *mod, int clientid, const char *name)
 }
 
 char *
-backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor, lng max_memory, int max_workers, bool wlc, char *optimizer)
+backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor, lng max_memory, int max_workers, bool wlc, char *optimizer, sqlid role_id)
 {
 	if (be_funcs.fcuser != NULL)
 		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, schema_path, grantor, max_memory,
-					max_workers, wlc, optimizer));
+					max_workers, wlc, optimizer, role_id));
 	return(NULL);
 }
 
@@ -112,5 +112,13 @@ backend_has_module(ptr M, char *name)
 {
 	if (be_funcs.fhas_module_function != NULL)
 		return be_funcs.fhas_module_function(M, name);
+	return 0;
+}
+
+int
+backend_find_role(ptr mvc, char *name, sqlid *role_id)
+{
+	if (be_funcs.ffrole != NULL)
+		return be_funcs.ffrole(mvc, name, role_id);
 	return 0;
 }
