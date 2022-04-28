@@ -189,6 +189,9 @@ fi
 
 file=ChangeLog.$RANDOM
 
+# make sure we get the correct day and month names
+export LC_ALL=en_US.utf-8
+
 case "$CL" in
 */*)
     cd "${CL%/*}"

@@ -221,6 +221,8 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 				rel->r = NULL;
 				rel->op = op_select;
 			}
+			/* make sure the single expression is false, so the generate NULL values won't match */
+			rel->exps->h->data = exp_atom_bool(v->sql->sa, 0);
 			rel->l = rel_project(v->sql->sa, NULL, nexps);
 			rel->card = CARD_ATOM;
 			v->changes++;

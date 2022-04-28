@@ -378,8 +378,8 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define THRDMASK	(1)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
-#define PROPMASK	(1<<3)
-#define PROPDEBUG	if (GDKdebug & PROPMASK)
+#define PROPMASK	(1<<3)	/* unused */
+#define PROPDEBUG	if (GDKdebug & PROPMASK) /* unused */
 #define IOMASK		(1<<4)
 #define BATMASK		(1<<5)
 #define PARMASK		(1<<7)

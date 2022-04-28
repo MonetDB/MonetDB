@@ -328,55 +328,30 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 			size_t pos = s->start;
 			dst = (uint32_t *) Tloc(b, 0) + (pos/32);
 			uint32_t cur = 0;
-			if (s->deleted) {
-				size_t used = pos&31, end = 32;
-				if (used) {
-					if (lnr < (32-used))
-						end = used + lnr;
-					assert(end > used);
-					cur |= ((1U << (end - used)) - 1) << used;
-					lnr -= end - used;
-					*dst++ |= cur;
-					cur = 0;
-				}
-				size_t full = lnr/32;
-				size_t rest = lnr%32;
-				if (full > 0) {
-					memset(dst, ~0, full * sizeof(*dst));
-					dst += full;
-					lnr -= full * 32;
-				}
-				if (rest > 0) {
-					cur |= (1U << rest) - 1;
-					lnr -= rest;
-					*dst |= cur;
-				}
-				assert(lnr==0);
-			} else {
-				size_t used = pos&31, end = 32;
-				if (used) {
-					if (lnr < (32-used))
-						end = used + lnr;
-					assert(end > used);
-					cur |= ((1U << (end - used)) - 1) << used;
-					lnr -= end - used;
-					*dst++ &= ~cur;
-					cur = 0;
-				}
-				size_t full = lnr/32;
-				size_t rest = lnr%32;
-				if (full > 0) {
-					memset(dst, 0, full * sizeof(*dst));
-					dst += full;
-					lnr -= full * 32;
-				}
-				if (rest > 0) {
-					cur |= (1U << rest) - 1;
-					lnr -= rest;
-					*dst &= ~cur;
-				}
-				assert(lnr==0);
+			size_t used = pos&31, end = 32;
+			if (used) {
+				if (lnr < (32-used))
+					end = used + lnr;
+				assert(end > used);
+				cur |= ((1U << (end - used)) - 1) << used;
+				lnr -= end - used;
+				*dst = s->deleted ? *dst | cur : *dst & ~cur;
+				dst++;
+				cur = 0;
 			}
+			size_t full = lnr/32;
+			size_t rest = lnr%32;
+			if (full > 0) {
+				memset(dst, s->deleted?~0:0, full * sizeof(*dst));
+				dst += full;
+				lnr -= full * 32;
+			}
+			if (rest > 0) {
+				cur |= (1U << rest) - 1;
+				lnr -= rest;
+				*dst = s->deleted ? *dst | cur : *dst & ~cur;
+			}
+			assert(lnr==0);
 			if (cnt < s->end)
 				cnt = s->end;
 		}
@@ -2314,15 +2289,13 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, void *i,
 	if (cnt) {
 		if (BATcount(b) < offset) { /* add space */
 			const void *tv = ATOMnilptr(b->ttype);
-			lng j, d = offset - BATcount(b);
-			for(j=0;j<d;j++) {
-				if (BUNappend(b, tv, true) != GDK_SUCCEED) {
-					bat_destroy(b);
-					if (i != oi)
-						GDKfree(i);
-					unlock_column(tr->store, id);
-					return LOG_ERR;
-				}
+			BUN d = offset - BATcount(b);
+			if (BUNappendmulti(b, tv, d, true) != GDK_SUCCEED) {
+				bat_destroy(b);
+				if (i != oi)
+					GDKfree(i);
+				unlock_column(tr->store, id);
+				return LOG_ERR;
 			}
 		}
 		if (BUNappendmulti(b, i, cnt, true) != GDK_SUCCEED) {
@@ -2899,7 +2872,7 @@ static int
 load_cs(sql_trans *tr, column_storage *cs, int type, sqlid id)
 {
 	sqlstore *store = tr->store;
-	int bid = logger_find_bat(store->logger, id);
+	int bid = log_find_bat(store->logger, id);
 	if (!bid)
 		return LOG_ERR;
 	cs->bid = temp_dup(bid);
@@ -3004,7 +2977,7 @@ create_col(sql_trans *tr, sql_column *c)
 		if (ok == LOG_OK && c->storage_type) {
 			if (strcmp(c->storage_type, "DICT") == 0) {
 				sqlstore *store = tr->store;
-				int bid = logger_find_bat(store->logger, -c->base.id);
+				int bid = log_find_bat(store->logger, -c->base.id);
 				if (!bid)
 					return LOG_ERR;
 				bat->cs.ebid = temp_dup(bid);
@@ -3909,7 +3882,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 }
 
 static int
-log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
+log_storage(sql_trans *tr, sql_table *t, storage *s)
 {
 	int ok = LOG_OK, cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
@@ -3917,7 +3890,7 @@ log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 	if (ok == LOG_OK)
 		ok = segments2cs(tr, s->segs, &s->cs);
 	if (ok == LOG_OK)
-		ok = log_segments(tr, s->segs, id);
+		ok = log_segments(tr, s->segs, t->base.id);
 	if (ok == LOG_OK && !cleared)
 		ok = log_table_append(tr, t, s->segs);
 	return ok;
@@ -4246,7 +4219,7 @@ log_update_del( sql_trans *tr, sql_change *change)
 	sql_table *t = (sql_table*)change->obj;
 
 	if (!isTempTable(t) && !tr->parent) /* don't write save point commits */
-		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data), t->base.id);
+		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data));
 	return LOG_OK;
 }
 
