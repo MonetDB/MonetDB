@@ -40,10 +40,12 @@ with tempfile.TemporaryDirectory() as farm_dir:
         s.communicate()
 
     with process.server(mapiport='0', dbname='db1',
-                        args=["--set", "gdk_use_strimps=yes",],
                         dbfarm=fdir,
                         stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
         with SQLTestCase() as mdb:
             mdb.connect(database='db1', port=s.dbport, username='monetdb', password='monetdb')
+            # Create strimp
+            mdb.execute("ALTER TABLE orders SET READ ONLY;")
+            mdb.execute("CREATE IMPRINTS INDEX o_comment_strimp ON orders(o_comment);")
             mdb.execute("SELECT COUNT(*) FROM orders WHERE o_comment LIKE '%%slyly%%';").assertSucceeded().assertDataResultMatch([(12896,)])
         s.communicate()
