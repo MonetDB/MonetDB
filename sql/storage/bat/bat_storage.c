@@ -2727,6 +2727,18 @@ dcount_col(sql_trans *tr, sql_column *c)
 	return cnt;
 }
 
+static BAT *
+bind_no_view(BAT *b)
+{
+	if (isVIEW(b)) { /* If it is a view get the parent BAT */
+		BAT *nb = BBP_cache(VIEWtparent(b));
+		bat_destroy(b);
+		if (!(b = temp_descriptor(nb->batCacheid)))
+			return NULL;
+	}
+	return b;
+}
+
 static int
 min_max_col(sql_trans *tr, sql_column *c)
 {
@@ -2742,6 +2754,7 @@ min_max_col(sql_trans *tr, sql_column *c)
 	if ((d = ATOMIC_PTR_GET(&c->data))) {
 		if (d->cs.st == ST_FOR)
 			return 0;
+		int access = d->cs.st == ST_DICT ? RD_EXT : RDONLY;
 		lock_column(tr->store, c->base.id);
 		if (c->min && c->max) {
 			unlock_column(tr->store, c->base.id);
@@ -2749,7 +2762,11 @@ min_max_col(sql_trans *tr, sql_column *c)
 		}
 		_DELETE(c->min);
 		_DELETE(c->max);
-		if ((b = temp_descriptor(d->cs.st == ST_DICT ? d->cs.ebid : d->cs.bid))) {
+		if ((b = bind_col(tr, c, access))) {
+			if (!(b = bind_no_view(b))) {
+				unlock_column(tr->store, c->base.id);
+				return 0;
+			}
 			BATiter bi = bat_iterator(b);
 			if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
 				const void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
