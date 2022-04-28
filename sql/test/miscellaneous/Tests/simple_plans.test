@@ -701,3 +701,8 @@ SELECT sum(CASE x.x WHEN 1 THEN 1 END + 2) FROM (select distinct 1) x(x)
 ----
 3
 3
+
+query I nosort
+SELECT sum(y.y) FROM (SELECT DISTINCT x + 1 FROM (SELECT 1) x(x)) y(y)
+----
+2

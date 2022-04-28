@@ -1016,7 +1016,7 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 	int dbg = GDKdebug;
 	int fd;
 
-	GDKdebug &= ~(CHECKMASK|PROPMASK);
+	GDKdebug &= ~CHECKMASK;
 
 	if (lg->lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
@@ -1761,7 +1761,7 @@ old_logger_destroy(old_logger *lg)
 		GDKfree(subcommit);
 		return rc;
 	}
-	if ((rc = logger_create_types_file(lg->lg, lg->filename, true)) != GDK_SUCCEED) {
+	if ((rc = log_create_types_file(lg->lg, lg->filename, true)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		GDKfree(subcommit);
 		return rc;
