@@ -642,19 +642,20 @@ int
 monet5_user_set_def_schema(mvc *m, oid user)
 {
 	oid rid;
-	sqlid schema_id;
+	sqlid schema_id, default_role_id;
 	sql_schema *sys = NULL;
 	sql_table *user_info = NULL;
 	sql_column *users_name = NULL;
 	sql_column *users_schema = NULL;
 	sql_column *users_schema_path = NULL;
+	sql_column *users_default_role = NULL;
 	sql_table *schemas = NULL;
 	sql_column *schemas_name = NULL;
 	sql_column *schemas_id = NULL;
 	sql_table *auths = NULL;
 	sql_column *auths_id = NULL;
 	sql_column *auths_name = NULL;
-	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, username = NULL, err = NULL;
+	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, username = NULL, userrole = NULL, err = NULL;
 	int ok = 1, res = 0;
 
 	TRC_DEBUG(SQL_TRANS, OIDFMT "\n", user);
@@ -674,6 +675,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	users_name = find_sql_column(user_info, "name");
 	users_schema = find_sql_column(user_info, "default_schema");
 	users_schema_path = find_sql_column(user_info, "schema_path");
+	users_default_role = find_sql_column(user_info, "default_role");
 
 	sqlstore *store = m->session->tr->store;
 	rid = store->table_api.column_find_row(m->session->tr, users_name, username, NULL);
@@ -690,6 +692,8 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		GDKfree(username);
 		return -1;
 	}
+
+	default_role_id = store->table_api.column_find_sqlid(m->session->tr, users_default_role, rid);
 
 	schemas = find_sql_table(m->session->tr, sys, "schemas");
 	schemas_name = find_sql_column(schemas, "name");
@@ -726,7 +730,26 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		_DELETE(schema_path);
 		return -2;
 	}
-	m->user_id = m->role_id = store->table_api.column_find_sqlid(m->session->tr, auths_id, rid);
+
+	m->user_id = store->table_api.column_find_sqlid(m->session->tr, auths_id, rid);
+
+	/* check if role exists */
+	rid = store->table_api.column_find_row(m->session->tr, auths_id, &default_role_id, NULL);
+	if (is_oid_nil(rid)) {
+		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			freeException(other);
+		GDKfree(username);
+		_DELETE(schema_path);
+		return -4;
+	}
+	m->role_id = default_role_id;
+	if (!(userrole = store->table_api.column_find_value(m->session->tr, auths_name, rid))) {
+		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			freeException(other);
+		GDKfree(username);
+		_DELETE(schema_path);
+		return -1;
+	}
 
 	/* while getting the session's schema, set the search path as well */
 	if (!(ok = mvc_set_schema(m, schema)) || (path_err = parse_schema_path_str(m, schema_path, true)) != MAL_SUCCEED) {
@@ -738,10 +761,11 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return ok == 0 ? -3 : -1;
 	}
 
+
 	/* reset the user and schema names */
 	if (!sqlvar_set_string(find_global_var(m, sys, "current_schema"), schema) ||
 		!sqlvar_set_string(find_global_var(m, sys, "current_user"), username) ||
-		!sqlvar_set_string(find_global_var(m, sys, "current_role"), username)) {
+		!sqlvar_set_string(find_global_var(m, sys, "current_role"), userrole)) {
 		res = -1;
 	}
 	GDKfree(username);
