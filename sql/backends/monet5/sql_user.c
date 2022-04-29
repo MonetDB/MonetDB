@@ -161,7 +161,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 }
 
 static str
-monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid, lng max_memory, int max_workers, bool wlc, str optimizer, sqlid role_id)
+monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid, lng max_memory, int max_workers, str optimizer, sqlid role_id)
 {
 	mvc *m = (mvc *) _mvc;
 	oid uid = 0;
@@ -189,7 +189,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 
 	user_id = store_next_oid(m->session->tr->store);
 	sqlid default_role_id = role_id > 0 ? role_id : user_id;
-	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &wlc, &optimizer, &default_role_id))) {
+	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id))) {
 		if (!enc)
 			free(pwd);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -312,7 +312,6 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
 	mvc_create_column_(&col, m, t, "max_memory", "bigint", bits2digits(64));
 	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
-	mvc_create_column_(&col, m, t, "wlc", "boolean", 1);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "default_role", "int", 9);
 	uinfo = t;
@@ -345,7 +344,6 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
 	mvc_create_column_(&col, m, t, "max_memory", "bigint", bits2digits(64));
 	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
-	mvc_create_column_(&col, m, t, "wlc", "boolean", 1);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "default_role", "int", 9);
 
@@ -361,12 +359,11 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	char *optimizer = default_optimizer;
 	lng max_memory = 0;
 	int max_workers = 0;
-	bool wlc = true;
 	sqlid default_role_id = USER_MONETDB;
 
 
-	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory, &max_workers,
-			&wlc, &optimizer, &default_role_id);
+	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory,
+		   	&max_workers, &optimizer, &default_role_id);
 }
 
 static int
