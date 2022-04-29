@@ -1949,7 +1949,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	lng *restrict rems = NULL;
 	lng *restrict cnts = NULL;
 	dbl *restrict dbls;
-	BAT *bn = NULL, *cn = NULL;
+	BAT *bn = *bnp, *cn = cntsp ? *cntsp : NULL;
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
@@ -1979,11 +1979,14 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	if (ci.ncand == 0 || ngrp == 0) {
 		/* trivial: no averages, so return bat aligned with g
 		 * with nil in the tail */
-		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
 		if (bn == NULL) {
-			return GDK_FAIL;
+			bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+			if (bn == NULL) {
+				return GDK_FAIL;
+			}
+			*bnp = bn;
 		}
-		if (cntsp) {
+		if (cntsp && cn == NULL) {
 			lng zero = 0;
 			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
@@ -1991,11 +1994,11 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 			}
 			*cntsp = cn;
 		}
-		*bnp = bn;
 		return GDK_SUCCEED;
 	}
 
-	if ((!skip_nils || cntsp == NULL || b->tnonil) &&
+	if (bn == NULL &&
+	    (!skip_nils || cntsp == NULL || b->tnonil) &&
 	    (e == NULL ||
 	     (BATcount(e) == ci.ncand && e->hseqbase == b->hseqbase)) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
@@ -2179,6 +2182,23 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		bn = *avgp;
 		rn = *remp;
 		cn = *cntp;
+		ngrp += min;
+		min = 0;
+		if (bn->batCount < ngrp) {
+			if (BATextend(bn, ngrp) != GDK_SUCCEED ||
+			    BATextend(rn, ngrp) != GDK_SUCCEED ||
+			    BATextend(cn, ngrp) != GDK_SUCCEED)
+				return GDK_FAIL;
+			/* bn will be initialized below, based on
+			 * this */
+			cnts = Tloc(cn, 0);
+			rems = Tloc(rn, 0);
+			for (i = bn->batCount; i < ngrp; i++) {
+				cnts[i] = lng_nil;
+				rems[i] = 0;
+			}
+		} else if (ngrp < bn->batCount)
+			ngrp = bn->batCount;
 		rems = Tloc(rn, 0);
 		cnts = Tloc(cn, 0);
 		cn->tnil = false;
@@ -2191,10 +2211,12 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		case TYPE_bte: {
 			bte *avgs = (bte *) Tloc(bn, 0);
 			for (i = 0; i < ngrp; i++) {
-				if (is_lng_nil(cnts[i]) || cnts[i] == 0) {
-					rems[i] = 0;
-					avgs[i] = 0;
-					cnts[i] = 0;
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
 				} else if (is_lng_nil(rems[i])) {
 					bn->tnil = true;
 					rn->tnil = true;
@@ -2208,10 +2230,12 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		case TYPE_sht: {
 			sht *avgs = (sht *) Tloc(bn, 0);
 			for (i = 0; i < ngrp; i++) {
-				if (is_lng_nil(cnts[i]) || cnts[i] == 0) {
-					rems[i] = 0;
-					avgs[i] = 0;
-					cnts[i] = 0;
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
 				} else if (is_lng_nil(rems[i])) {
 					bn->tnil = true;
 					rn->tnil = true;
@@ -2225,10 +2249,12 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		case TYPE_int: {
 			int *avgs = (int *) Tloc(bn, 0);
 			for (i = 0; i < ngrp; i++) {
-				if (is_lng_nil(cnts[i]) || cnts[i] == 0) {
-					rems[i] = 0;
-					avgs[i] = 0;
-					cnts[i] = 0;
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
 				} else if (is_lng_nil(rems[i])) {
 					bn->tnil = true;
 					rn->tnil = true;
@@ -2242,10 +2268,12 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		case TYPE_lng: {
 			lng *avgs = (lng *) Tloc(bn, 0);
 			for (i = 0; i < ngrp; i++) {
-				if (is_lng_nil(cnts[i]) || cnts[i] == 0) {
-					rems[i] = 0;
-					avgs[i] = 0;
-					cnts[i] = 0;
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
 				} else if (is_lng_nil(rems[i])) {
 					bn->tnil = true;
 					rn->tnil = true;
@@ -2260,10 +2288,12 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		case TYPE_hge: {
 			hge *avgs = (hge *) Tloc(bn, 0);
 			for (i = 0; i < ngrp; i++) {
-				if (is_lng_nil(cnts[i]) || cnts[i] == 0) {
-					rems[i] = 0;
-					avgs[i] = 0;
-					cnts[i] = 0;
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
 				} else if (is_lng_nil(rems[i])) {
 					bn->tnil = true;
 					rn->tnil = true;
