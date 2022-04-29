@@ -1949,7 +1949,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
 			if(with_strimps_anti) {
 				/* Reverse the result */
-				BAT *rev = BATdiffcand(BATdense(0, 0, b->batCount), bn);
+				BAT *rev = BATnegcands(BATcount(b), bn);
 				BBPunfix(bn->batCacheid);
 				bn = rev;
 			}
