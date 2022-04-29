@@ -269,23 +269,28 @@ class TestCaseResult(object):
     def assertResultHashTo(self, hash_value):
         raise NotImplementedError
 
-    def assertValue(self, row, col, val):
-        """Assert on a value matched against row, col in the result"""
+    def assertValue(self, val, row=0, col=0):
+        """Assert on a value. Optionally matched against row, col in the result"""
         received = None
-        row = int(row)
-        col = int(col)
-        try:
-            received = self.data[row][col]
-        except IndexError:
-            pass
+        if type(self.data) == list:
+            row = int(row)
+            col = int(col)
+            try:
+                received = self.data[row][col]
+            except IndexError:
+                pass
+        else:
+            received = self.data
+
         if type(val) is type(received):
             if val != received:
-                msg = 'expected "{}", received "{}" in row={}, col={}'.format(val, received, row, col)
+                msg = 'expected "{}", received "{}"'.format(val, received)
                 self.fail(msg, data=self.data)
         else:
             # handle type mismatch
-            msg = 'expected type {} and value "{}", received type {} and value "{}" in row={}, col={}'.format(type(val), str(val), type(received), str(received), row, col)
+            msg = 'expected type {} and value "{}", received type {} and value "{}"'.format(type(val), str(val), type(received), str(received))
             self.fail(msg, data=self.data)
+
         return self
 
     def assertDataResultMatch(self, data=[], index=None):
