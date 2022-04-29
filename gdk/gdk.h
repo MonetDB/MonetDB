@@ -735,8 +735,8 @@ typedef struct {
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
-		revsorted:1,	/* column is sorted in descending order */
-		private_bat:1;	/* used by single worker thread only */
+		revsorted:1;	/* column is sorted in descending order */
+	bool private_bat;	/* used by single worker thread only */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
