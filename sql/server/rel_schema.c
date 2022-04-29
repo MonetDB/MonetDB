@@ -2262,7 +2262,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 }
 
 static sql_rel *
-rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, bool wlc, char *optimizer, char *default_role)
+rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2277,7 +2277,6 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 	append(exps, exp_atom_clob(sa, fullname));
 	append(exps, exp_atom_lng(sa, max_memory));
 	append(exps, exp_atom_int(sa, max_workers));
-	append(exps, exp_atom_bool(sa, wlc));
 	append(exps, exp_atom_clob(sa, optimizer));
 	append(exps, exp_atom_clob(sa, default_role));
 	rel->l = NULL;
@@ -2926,10 +2925,9 @@ rel_schemas(sql_query *query, symbol *s)
 				  l->h->next->next->next->data.sval,	/* dschema */
 				  l->h->next->next->next->next->data.sval,	/* schema path */
 				  l->h->next->next->next->next->next->next->data.l_val,	/* max memory */
-				  l->h->next->next->next->next->next->next->next->data.i_val,	/* max workers */
-				  l->h->next->next->next->next->next->next->next->next->data.i_val,	/* wlc */
-				  l->h->next->next->next->next->next->next->next->next->next->data.sval, /* optimizer */
-				  l->h->next->next->next->next->next->next->next->next->next->next->data.sval);	/* default role */
+				  l->h->next->next->next->next->next->next->next->data.i_val, /* max workers */
+				  l->h->next->next->next->next->next->next->next->next->data.sval, /* optimizer */
+				  l->h->next->next->next->next->next->next->next->next->next->data.sval); /* default role */
 	} 	break;
 	case SQL_DROP_USER:
 		ret = rel_schema2(sql->sa, ddl_drop_user, s->data.sval, NULL, 0);

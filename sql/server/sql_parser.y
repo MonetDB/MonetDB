@@ -611,7 +611,6 @@ int yydebug=1;
 	opt_work
 	set_distinct
 	tz
-    opt_wlc
 
 %right <sval> STRING USTRING XSTRING
 %right <sval> X_BODY
@@ -717,7 +716,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW
 
 %token X_BODY 
-%token MAX_MEMORY MAX_WORKERS WLC OPTIMIZER
+%token MAX_MEMORY MAX_WORKERS OPTIMIZER
 %%
 
 sqlstmt:
@@ -1481,7 +1480,7 @@ role_def:
 	  append_string(l, $2);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident user_schema_path opt_max_memory opt_max_workers opt_wlc opt_optimizer opt_default_role
+ |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident user_schema_path opt_max_memory opt_max_workers opt_optimizer opt_default_role
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  append_string(l, $6);
@@ -1491,9 +1490,8 @@ role_def:
 	  append_int(l, $4);
       append_lng(l, $12);
       append_int(l, $13);
-      append_int(l, $14);
+	  append_string(l, $14);
 	  append_string(l, $15);
-	  append_string(l, $16);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
  ;
 
@@ -1505,11 +1503,6 @@ opt_max_memory:
 opt_max_workers:
     /* empty */         { $$ = 0; }
  |  MAX_WORKERS posint  { $$ = $2; }
- ;
-
-opt_wlc:
-    /* empty */         { $$ = TRUE; }
- |  NO WLC              { $$ = FALSE; }
  ;
     
 opt_optimizer:
