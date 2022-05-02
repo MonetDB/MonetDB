@@ -620,7 +620,7 @@ CMDbatADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcadd, BATcalcaddcst, BATcalccstadd,
-						 calctype, 0, "batcalc.add_noerror");
+						 calctype, false, "batcalc.add_noerror");
 }
 
 static str
@@ -629,7 +629,7 @@ CMDbatADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcadd, BATcalcaddcst, BATcalccstadd,
-						 calctype, 1, "batcalc.+");
+						 calctype, true, "batcalc.+");
 }
 
 static str
@@ -638,7 +638,7 @@ CMDbatADDenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcadd, BATcalcaddcst, BATcalccstadd,
-						 calctypeenlarge, 1, "batcalc.add_enlarge");
+						 calctypeenlarge, true, "batcalc.add_enlarge");
 }
 
 static str
@@ -647,7 +647,7 @@ CMDbatSUB(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcsub, BATcalcsubcst, BATcalccstsub,
-						 calctype, 0, "batcalc.sub_noerror");
+						 calctype, false, "batcalc.sub_noerror");
 }
 
 static str
@@ -656,7 +656,7 @@ CMDbatSUBsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcsub, BATcalcsubcst, BATcalccstsub,
-						 calctype, 1, "batcalc.-");
+						 calctype, true, "batcalc.-");
 }
 
 static str
@@ -665,7 +665,7 @@ CMDbatSUBenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcsub, BATcalcsubcst, BATcalccstsub,
-						 calctypeenlarge, 1, "batcalc.sub_enlarge");
+						 calctypeenlarge, true, "batcalc.sub_enlarge");
 }
 
 static str
@@ -674,7 +674,7 @@ CMDbatMUL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcmul, BATcalcmulcst, BATcalccstmul,
-						 calctype, 0, "batcalc.mul_noerror");
+						 calctype, false, "batcalc.mul_noerror");
 }
 
 static str
@@ -683,7 +683,7 @@ CMDbatMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcmul, BATcalcmulcst, BATcalccstmul,
-						 calctype, 1, "batcalc.*");
+						 calctype, true, "batcalc.*");
 }
 
 static str
@@ -692,7 +692,7 @@ CMDbatMULenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcmul, BATcalcmulcst, BATcalccstmul,
-						 calctypeenlarge, 1, "batcalc.mul_enlarge");
+						 calctypeenlarge, true, "batcalc.mul_enlarge");
 }
 
 static str
@@ -701,7 +701,7 @@ CMDbatDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
-						 calcdivtype, 0, "batcalc.div_noerror");
+						 calcdivtype, false, "batcalc.div_noerror");
 }
 
 static str
@@ -710,7 +710,7 @@ CMDbatDIVsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
-						 calcdivtype, 1, "batcalc./");
+						 calcdivtype, true, "batcalc./");
 }
 
 static str
@@ -719,7 +719,7 @@ CMDbatMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcmod, BATcalcmodcst, BATcalccstmod,
-						 calcmodtype, 0, "batcalc.mod_noerror");
+						 calcmodtype, false, "batcalc.mod_noerror");
 }
 
 static str
@@ -728,7 +728,7 @@ CMDbatMODsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	return CMDbatBINARY2(mb, stk, pci, BATcalcmod, BATcalcmodcst, BATcalccstmod,
-						 calcmodtype, 1, "batcalc.%");
+						 calcmodtype, true, "batcalc.%");
 }
 
 static str
@@ -2167,9 +2167,9 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
 
- pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B1 and B2 with candidates list", args(1,5, batarg("",str),batarg("b1",str),batarg("b2",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B and V with candidates list", args(1,4, batarg("",str),batarg("b",str),arg("v",str),batarg("s",oid))),
- pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of V and B with candidates list", args(1,4, batarg("",str),arg("v",str),batarg("b",str),batarg("s",oid))),
+ pattern("batcalc", "+", CMDbatADDsignal, false, "Return concatenation of B1 and B2 with candidates list", args(1,5, batarg("",str),batarg("b1",str),batarg("b2",str),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batcalc", "+", CMDbatADDsignal, false, "Return concatenation of B and V with candidates list", args(1,4, batarg("",str),batarg("b",str),arg("v",str),batarg("s",oid))),
+ pattern("batcalc", "+", CMDbatADDsignal, false, "Return concatenation of V and B with candidates list", args(1,4, batarg("",str),arg("v",str),batarg("b",str),batarg("s",oid))),
 
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),arg("y",dbl))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid))),

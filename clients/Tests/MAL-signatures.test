@@ -7775,21 +7775,6 @@ CMDbatMULsignal;
 (empty)
 batcalc
 +
-pattern batcalc.+(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:str] 
-CMDbatADD;
-Return concatenation of B1 and B2 with candidates list
-batcalc
-+
-pattern batcalc.+(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:str] 
-CMDbatADD;
-Return concatenation of B and V with candidates list
-batcalc
-+
-pattern batcalc.+(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:str] 
-CMDbatADD;
-Return concatenation of V and B with candidates list
-batcalc
-+
 pattern batcalc.+(X_0:bat[:bte], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:oid]):bat[:dbl] 
 CMDbatADDenlarge;
 (empty)
@@ -8975,6 +8960,16 @@ CMDbatADDsignal;
 (empty)
 batcalc
 +
+pattern batcalc.+(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:str] 
+CMDbatADDsignal;
+Return concatenation of B1 and B2 with candidates list
+batcalc
++
+pattern batcalc.+(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:str] 
+CMDbatADDsignal;
+Return concatenation of B and V with candidates list
+batcalc
++
 pattern batcalc.+(X_0:bte, X_1:bat[:bte], X_2:bat[:oid]):bat[:bte] 
 CMDbatADDsignal;
 (empty)
@@ -9153,6 +9148,11 @@ batcalc
 pattern batcalc.+(X_0:sht, X_1:bat[:sht], X_2:bat[:oid]):bat[:sht] 
 CMDbatADDsignal;
 (empty)
+batcalc
++
+pattern batcalc.+(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:str] 
+CMDbatADDsignal;
+Return concatenation of V and B with candidates list
 batcalc
 ++
 pattern batcalc.++(X_0:bat[:bte]):bat[:bte] 
