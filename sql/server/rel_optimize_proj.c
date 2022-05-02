@@ -2845,21 +2845,34 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 		/* With multiple count(*), use exp_ref to reduce the number of calls to this aggregate */
 		if (ncountstar > 1) {
 			sql_exp *count_star = NULL;
+			sql_rel *nrel = rel_project(v->sql->sa, rel, NULL);
+			list *aexps = sa_list(v->sql->sa), *nexps = sa_list(v->sql->sa);
+			nrel->exps = nexps;
 			for (node *n = rel->exps->h; n ; n = n->next) {
 				sql_exp *e = n->data;
 
 				if (exp_aggr_is_count(e) && !need_distinct(e) && list_length(e->l) == 0) {
 					if (!count_star) {
 						count_star = e;
+						append(aexps, e);
+						append(nexps, exp_ref(sql, e));
 					} else {
 						sql_exp *ne = exp_ref(sql, count_star);
+						//n->data = ne; /* make sure we don't do this optimization twice */
+
+						//ne = exp_ref(sql, count_star);
 						if (exp_name(e))
 							exp_prop_alias(sql->sa, ne, e);
-						n->data = ne;
 						v->changes++;
+						append(nexps, ne);
 					}
+				} else {
+					append(aexps, e);
+					append(nexps, exp_ref(sql, e));
 				}
 			}
+			rel->exps = aexps;
+			return nrel;
 		}
 	}
 	return rel;
@@ -2879,7 +2892,7 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 		rel = rel_simplify_groupby_columns(v, rel);
 	}
 	rel = rel_groupby_cse(v, rel);
-	rel = rel_remove_const_aggr(v, rel);
+	//rel = rel_remove_const_aggr(v, rel);
 	rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);

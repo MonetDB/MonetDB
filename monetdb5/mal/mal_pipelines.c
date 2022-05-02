@@ -147,7 +147,7 @@ stack_copy(MalStkPtr stk, int start)
 			}
 		} else {
 			rhs = &stk->stk[i];
-			if ((getVarDeclared(stk->blk, i) <= start && getVarEolife(stk->blk, i) > start) || !rhs->vtype) {
+			if (/*getVarScope(stk->blk, i) < stk->calldepth ||*/ ((getVarDeclared(stk->blk, i) <= start && getVarEolife(stk->blk, i) > start)) || !rhs->vtype) {
 				if(VALcopy(lhs, rhs) == NULL)
 					break;
 			} else {

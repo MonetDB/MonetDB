@@ -3661,9 +3661,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				continue;
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1, 0);
 			} else { 	/* topn based on 2 columns */
-				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1, 0);
 			}
 			if (!limit)
 				return NULL;
@@ -3937,13 +3937,14 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			sql_subfunc *sf = e->f;
 			sql_subtype *t = exp_subtype(e);
 			int tt = t->type->localtype;
+			int avg = e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0;
 
 			stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)));
 			if (!cc)
 				return NULL;
 			append(shared, &cc->nr);
 
-			if (e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0) {
+			if (avg) {
 				/* remainder and count */
 				if (!EC_APPNUM(t->type->eclass)) {
 					cc = const_column(be, stmt_atom_lng(be, 0));
@@ -4489,11 +4490,10 @@ rel_topn_2_phases(sql_rel *rel)
 	if (rel->l) {
 		sql_rel *l = rel->l;
 		/* for now no support for concurrent heap based topn */
-		if (is_project(l->op) && l->r)
+		if (is_simple_project(l->op) && !list_empty(l->r))
 			return false;
 	}
-//	return true;
-			return false;
+	return true;
 }
 
 static list *
@@ -4501,8 +4501,24 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel)
 {
 	sql_rel *l = rel->l;
 
-	if (l && is_project(l->op) && !list_empty(l->exps)) {
+	/* subslice vs firstn case */
+	/* (g,c, topn (bat+sink)) := subslice (b, offset, limit); # ro/rl are inout
+	 * b1 := project(c,b); # for each attribute
+	 * r1 := projection(g, b1); # r1 is inout
+	 */
+	while (l && is_select(l->op))
+		l = l->l;
+	if (l && (!is_project(l->op) && !is_base(l->op)))
+		l = rel_project(be->mvc->sa, l, rel_projections(be->mvc, l, NULL, 1, 1));
+	if (l && (is_project(l->op) || is_base(l->op)) && !list_empty(l->exps)) {
 		list *projectresults = sa_list(be->mvc->sa);
+
+		/* bat for topn sink */
+		InstrPtr q = newStmt(be->mb, batRef, newRef);
+		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+		q = pushType(be->mb, q, TYPE_oid);
+		append(projectresults, q->argv);
+
 		for( node *n = l->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
@@ -4515,7 +4531,6 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel)
 			q = pushType(be->mb, q, tt);
 			append(projectresults, q->argv);
 		}
-		set_need_pipeline(be);
 		return projectresults;
 	}
 	return NULL;
@@ -4524,22 +4539,32 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel)
 static stmt *
 rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stmt *l)
 {
+	node *n, *m = projectresults->h;
 	(void)pp_jump(be, pp, be->nrparts);
 
+	assert(pp);
 	list *newl = sa_list(be->mvc->sa);
 	list *cols = sub->op4.lval;
-	if (list_length(cols) != list_length(projectresults))
+	if (list_length(cols) != list_length(projectresults)-1)
 		return NULL;
-	for (node *n = cols->h, *m = projectresults->h; n && m; n = n->next, m = m->next) {
+	stmt *sc = cols->h->data;
+	stmt *limit = stmt_limit(be, sc, NULL, NULL, o, l, 0,0,0,0,0, be->pipeline);
+	int resid = *(int*)m->data;
+	limit->q->argv[2] = resid; /* shared topn */
+	stmt *glimit = stmt_result(be, limit, 0);
+	limit = stmt_result(be, limit, 1);
+
+	for (n = cols->h, m = m->next; n && m; n = n->next, m = m->next) {
 		stmt *sc = n->data;
-		int resid = *(int*)m->data;
+		resid = *(int*)m->data;
 		const char *cname = column_name(be->mvc->sa, sc);
 		const char *tname = table_name(be->mvc->sa, sc);
 
 		sc = column(be, sc);
-		/* todo locked slice */
-		(void)o;
-		sc = stmt_slice(be, sc, l); /* sum o+l */
+		sc = stmt_project(be, limit, sc);
+		sc = stmt_project(be, glimit, sc);
+		sc->q->inout = 0;
+		sc->q = pushArgument(be->mb, sc->q, be->pipeline);
 		sc->nr = sc->q->argv[0] = resid; /* use shared result */
 		list_append(newl, stmt_alias(be, sc, tname, cname));
 	}
@@ -4558,9 +4583,20 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	node *n;
 	int _2phases = rel_topn_2_phases(rel);
     list *projectresults = NULL;
+	bool df2 = (SQLrunning && rel->parallel && _2phases);
+	int neededpp = rel->partition && get_need_pipeline(be);
 
-	if (SQLrunning && _2phases)
+	if (df2) {
 		projectresults = rel_topn_prepare_pp(be, rel);
+
+		if (!rel->spb) {
+			set_need_pipeline(be);
+		} else {
+			stmt *pp = pp_create(be, SLICES*GDKnr_threads);
+			set_pipeline(be, pp);
+		}
+	}
+
 	if (rel->l) { /* first construct the sub relation */
 		sql_rel *rl = rel->l;
 
@@ -4574,11 +4610,15 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	if (!sub)
 		return NULL;
 
+	assert(!df2 || projectresults);
 	stmt *pp = NULL;
-	if (projectresults)
+	if (df2)
 		pp = get_pipeline(be);
-	if (projectresults && !pp)
-		assert(0);
+	if (df2 && !pp) {
+		(void)get_need_pipeline(be);
+		set_pipeline(be, pp = pp_create(be, SLICES*GDKnr_threads));
+		sub = rel2bin_slicer(be, sub, 1);
+	}
 
 	le = topn_limit(rel);
 	oe = topn_offset(rel);
@@ -4611,33 +4651,43 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 
 		sc = column(be, sc);
-		if (!pp) {
-			limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, o, l, 0,0,0,0,0);
+		stmt *glimit = NULL;
 
-			for ( ; n; n = n->next) {
-				stmt *sc = n->data;
-				const char *cname = column_name(sql->sa, sc);
-				const char *tname = table_name(sql->sa, sc);
+		stmt *il = l, *io = o;
+		if (pp) {
+			sql_subtype *lng = sql_bind_localtype("lng");
+			sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
 
-				sc = column(be, sc);
-				sc = stmt_project(be, limit, sc);
-				list_append(newl, stmt_alias(be, sc, tname, cname));
-			}
-			sub = stmt_list(be, newl);
-		} else {
-			for ( ; n; n = n->next) {
-				stmt *sc = n->data;
-				const char *cname = column_name(sql->sa, sc);
-				const char *tname = table_name(sql->sa, sc);
-
-				sc = column(be, sc);
-				sc = stmt_slice(be, sc, l); /* sum o+l */
-				list_append(newl, stmt_alias(be, sc, tname, cname));
-			}
-			sub = stmt_list(be, newl);
-			/* */
-			sub = rel_pp_topn(be, projectresults, sub, pp, o, l);
+			io = stmt_atom_lng(be, 0);
+			il = stmt_binop(be, l, o, NULL, add);
 		}
+		limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, io, il, 0,0,0,0,0, pp?be->pipeline:0);
+		if (pp) {
+			glimit = stmt_result(be, limit, 0);
+			limit = stmt_result(be, limit, 1);
+		}
+
+		for ( ; n; n = n->next) {
+			stmt *sc = n->data;
+			const char *cname = column_name(sql->sa, sc);
+			const char *tname = table_name(sql->sa, sc);
+
+			sc = column(be, sc);
+			sc = stmt_project(be, limit, sc);
+			if (glimit) {
+				sc = stmt_project(be, glimit, sc);
+				sc->q->inout = 0;
+				sc->q = pushArgument(be->mb, sc->q, be->pipeline);
+			}
+			list_append(newl, stmt_alias(be, sc, tname, cname));
+		}
+		sub = stmt_list(be, newl);
+		if (pp)
+			sub = rel_pp_topn(be, projectresults, sub, pp, o, l);
+	}
+	if (neededpp && !get_pipeline(be)) {
+		set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
+		sub = rel2bin_slicer(be, sub, 1);
 	}
 	return sub;
 }

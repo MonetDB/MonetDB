@@ -126,11 +126,17 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo OFFSET 2
 ----
 algebra.projection
-2
+5
 algebra.subslice
-1
+2
+bat.new
+2
 bat.pack
 5
+language.pipelines
+1
+pipeline.counter
+1
 querylog.define
 1
 sql.bind
@@ -148,11 +154,17 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo LIMIT 2
 ----
 algebra.projection
-2
+5
 algebra.subslice
-1
+2
+bat.new
+2
 bat.pack
 5
+language.pipelines
+1
+pipeline.counter
+1
 querylog.define
 1
 sql.bind
@@ -170,11 +182,17 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo LIMIT 1 OFFSET 2
 ----
 algebra.projection
-2
+5
 algebra.subslice
-1
+2
+bat.new
+2
 bat.pack
 5
+language.pipelines
+1
+pipeline.counter
+1
 querylog.define
 1
 sql.bind
@@ -192,11 +210,17 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo LIMIT 2 OFFSET 1
 ----
 algebra.projection
-2
+5
 algebra.subslice
-1
+2
+bat.new
+2
 bat.pack
 5
+language.pipelines
+1
+pipeline.counter
+1
 querylog.define
 1
 sql.bind

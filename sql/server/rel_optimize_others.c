@@ -1152,31 +1152,35 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			return rel;
 		}
 
-		/* duplicate topn/sample direct under union or crossproduct */
-		if (r && !rel_is_ref(r) && r->l && r->r && ((is_union(r->op) && r->exps) || (r->op == op_join && list_empty(r->exps)))) {
+		/* duplicate topn/sample direct under union, crossproduct or on one side of left/right outer joins */
+		if (r && !rel_is_ref(r) && r->l && r->r && ((is_union(r->op) && r->exps) || (r->op == op_join && list_empty(r->exps)) || (r->op == op_left) || (r->op == op_right))) {
 			sql_rel *u = r, *x;
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
 			bool changed = false;
 
-			x = ul;
-			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
-				x = x->l;
-			if (x && x->op != rel->op) { /* only push topn once */
-				ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
-				set_processed(ul);
-				u->l = ul;
-				changed = true;
+			if (r->op != op_right) {
+				x = ul;
+				while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
+					x = x->l;
+				if (x && x->op != rel->op) { /* only push topn once */
+					ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
+					set_processed(ul);
+					u->l = ul;
+					changed = true;
+				}
 			}
 
-			x = ur;
-			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
-				x = x->l;
-			if (x && x->op != rel->op) { /* only push topn once */
-				ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
-				set_processed(ur);
-				u->r = ur;
-				changed = true;
+			if (r->op != op_left) {
+				x = ur;
+				while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
+					x = x->l;
+				if (x && x->op != rel->op) { /* only push topn once */
+					ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
+					set_processed(ur);
+					u->r = ur;
+					changed = true;
+				}
 			}
 
 			if (changed)

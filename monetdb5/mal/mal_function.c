@@ -574,7 +574,7 @@ setVariableScope(MalBlkPtr mb)
 			if( isVarConstant(mb,v) && getVarUpdated(mb,v) == 0)
 				setVarUpdated(mb,v, pc);
 
-			if ( getVarDeclared(mb,v) == 0 ){
+			if ( getVarDeclared(mb,v) == 0 && k < p->retc ){
 				setVarDeclared(mb,v, pc);
 				setVarScope(mb,v,depth);
 			}

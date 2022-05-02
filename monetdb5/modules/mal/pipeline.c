@@ -1954,12 +1954,132 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	return msg;
 }
 
+#define TOPN_SINK 2
+typedef struct topn_t {
+	Sink s;
+	lng start;
+	lng end;
+} topn_t;
+
+static void
+topn_destroy(topn_t *t)
+{
+	GDKfree(t);
+}
+
+static topn_t *
+topn_create(void)
+{
+	topn_t *t = (topn_t*)GDKzalloc(sizeof(topn_t));
+
+	t->s.destroy = (sink_destroy)&topn_destroy;
+	t->s.type = TOPN_SINK;
+	t->start = 0;
+	t->end = 0;
+	return t;
+}
+
+static str
+LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, lng *end, const ptr *H)
+{
+	str msg = MAL_SUCCEED;
+	Pipeline *p = (Pipeline*)*H;
+	BAT *g = NULL, *r = NULL, *t = NULL, *b = BATdescriptor(*bid);
+	BUN s = *start, e = *end;
+	int fb = 1;
+	bool private = (!tid || is_bat_nil(*tid));
+
+	if (!b)
+		return createException(SQL, "algebra.subslice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	if (private && *tid && is_bat_nil(*tid)) {
+		t = COLnew(b->hseqbase, /*b->ttype?b->ttype:*/TYPE_oid, 0, TRANSIENT);
+		t->T.sink = (Sink*)topn_create();
+		t->T.private_bat = 1;
+	} else {
+		t = BATdescriptor(*tid);
+	}
+	if (!t) {
+		BBPunfix(*bid);
+		return createException(SQL, "algebra.subslice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	if (!private)
+		pipeline_lock1(t);
+	topn_t *n = (topn_t*)t->T.sink;
+	if (!n) {
+		n = topn_create();
+		t->T.sink = (Sink*)n;
+	}
+	assert(n && n->s.type == TOPN_SINK);
+
+	(void)p;
+	BUN cnt = BATcount(b);
+
+	BUN rs = 0, re = 0;
+	rs = n->start;
+	re = n->end;
+	BUN off = b->hseqbase;
+	e += 1; /* make range exclusive */
+	if (re < e) {
+		BUN ls = 0, lnr = cnt;
+		if (rs < s) {
+			ls = s-rs;
+			if (ls > cnt)
+				ls = cnt;
+
+			rs += ls;
+			lnr -= ls;
+		}
+		e -= s;
+		if (re < e && lnr) {
+			BUN rest = e - re;
+			if (rest > lnr)
+				rest = lnr;
+			g = BATdense(0, re, rest);
+			r = BATdense(0, ls+off, rest);
+			re += rest;
+			g->T.maxval = re;
+			fb = 0;
+		}
+		n->start = rs;
+		n->end = re;
+	}
+	if (fb) {
+		assert(!g && !r);
+		g = COLnew(b->hseqbase, TYPE_oid, 0, TRANSIENT);
+		g->T.maxval = re;
+		r = COLnew(b->hseqbase, TYPE_oid, 0, TRANSIENT);
+	}
+	BBPunfix(b->batCacheid);
+	if (!private)
+		pipeline_unlock1(t);
+	if (!g || !r) {
+		if (r)
+			BBPreclaim(r);
+		return createException(SQL, "algebra.subslice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	*gid = g->batCacheid;
+	*rid = r->batCacheid;
+	*tid = t->batCacheid;
+	BBPkeepref(g);
+	BBPkeepref(r);
+	BBPkeepref(t);
+	return msg;
+}
+
+
 #define project(Type) \
 	if (ATOMstorage(tt) == TYPE_##Type) { \
 		Type *v = Tloc(b, 0); \
 		Type *o = Tloc(r, 0); \
-		for(BUN i = 0; i<cnt; i++) { \
-			o[gp[i]] = v[i]; \
+		if (g->ttype == TYPE_void) { \
+			oid gi = g->tseqbase; \
+			for(BUN i = 0; i<cnt; i++, gi++) \
+				o[gi] = v[i]; \
+		} else { \
+			for(BUN i = 0; i<cnt; i++) \
+				o[gp[i]] = v[i]; \
 		} \
 	}
 
@@ -1967,8 +2087,13 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	if (tt == TYPE_void) { \
 		oid vi = b->tseqbase; \
 		oid *o = Tloc(r, 0); \
-		for(BUN i = 0; i<cnt; i++, vi++) { \
-			o[gp[i]] = vi; \
+		if (g->ttype == TYPE_void) { \
+			oid gi = g->tseqbase; \
+			for(BUN i = 0; i<cnt; i++, vi++, gi++) \
+				o[gi] = vi; \
+		} else { \
+			for(BUN i = 0; i<cnt; i++, vi++) \
+				o[gp[i]] = vi; \
 		} \
 	}
 
@@ -1976,8 +2101,13 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	if (ATOMstorage(tt) == TYPE_##Type && b->twidth == w) { \
 		Toff *v = Tloc(b, 0); \
 		Toff *o = Tloc(r, 0); \
-		for(BUN i = 0; i<cnt; i++) { \
-			o[gp[i]] = v[i]; \
+		if (g->ttype == TYPE_void) { \
+			oid gi = g->tseqbase; \
+			for(BUN i = 0; i<cnt; i++, gi++) \
+				o[gi] = v[i]; \
+		} else { \
+			for(BUN i = 0; i<cnt; i++) \
+				o[gp[i]] = v[i]; \
 		} \
 	}
 
@@ -1986,26 +2116,52 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	if (ATOMstorage(tt) == TYPE_##Type) { \
 		BATiter bi = bat_iterator(b); \
 		int ins = 0; \
-		for(BUN i = 0; i<cnt && !err; i++) { \
-			int w = r->twidth; \
-			if(w == 1) { \
-				uint8_t *o = Tloc(r, 0); \
-				ins = (o[gp[i]] == 0); \
-			} else if (w == 2) { \
-				uint16_t *o = Tloc(r, 0); \
-				ins = (o[gp[i]] == 0); \
-			} else if (w == 4) { \
-				uint32_t *o = Tloc(r, 0); \
-				ins = (o[gp[i]] == 0); \
-			} else { \
-				var_t *o = Tloc(r, 0); \
-				ins = (o[gp[i]] == 0); \
+		if (g->ttype == TYPE_void) { \
+			oid gi = g->tseqbase; \
+			for(BUN i = 0; i<cnt && !err; i++, gi++) { \
+				int w = r->twidth; \
+				if(w == 1) { \
+					uint8_t *o = Tloc(r, 0); \
+					ins = (o[gi] == 0); \
+				} else if (w == 2) { \
+					uint16_t *o = Tloc(r, 0); \
+					ins = (o[gi] == 0); \
+				} else if (w == 4) { \
+					uint32_t *o = Tloc(r, 0); \
+					ins = (o[gi] == 0); \
+				} else { \
+					var_t *o = Tloc(r, 0); \
+					ins = (o[gi] == 0); \
+				} \
+				if (ins && tfastins_nocheckVAR( r, gi, BUNtvar(bi, i)) != GDK_SUCCEED) \
+					err = 1; \
+				if (w < r->twidth) { \
+					BUN sz = BATcapacity(r); \
+					memset(Tloc(r, max), 0, r->twidth*(sz-max)); \
+				} \
 			} \
-			if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) \
-				err = 1; \
-			if (w < r->twidth) { \
-				BUN sz = BATcapacity(r); \
-				memset(Tloc(r, max), 0, r->twidth*(sz-max)); \
+		} else { \
+			for(BUN i = 0; i<cnt && !err; i++) { \
+				int w = r->twidth; \
+				if(w == 1) { \
+					uint8_t *o = Tloc(r, 0); \
+					ins = (o[gp[i]] == 0); \
+				} else if (w == 2) { \
+					uint16_t *o = Tloc(r, 0); \
+					ins = (o[gp[i]] == 0); \
+				} else if (w == 4) { \
+					uint32_t *o = Tloc(r, 0); \
+					ins = (o[gp[i]] == 0); \
+				} else { \
+					var_t *o = Tloc(r, 0); \
+					ins = (o[gp[i]] == 0); \
+				} \
+				if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) \
+					err = 1; \
+				if (w < r->twidth) { \
+					BUN sz = BATcapacity(r); \
+					memset(Tloc(r, max), 0, r->twidth*(sz-max)); \
+				} \
 			} \
 		} \
 		bat_iterator_end(&bi); \
@@ -2562,7 +2718,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid max = BATcount(pg) ? pg->T.maxval : 0;
 	BBPunfix(pg->batCacheid);
 
-	if (pci->retc == 2 && pci->argc == 6) {
+	if (pci->retc == 2 && (pci->argc == 6 || pci->argc == 7)) {
 		if (BATgroupavg(&bn, &cn, b, g, NULL, NULL, TYPE_dbl, true, true, 0) != GDK_SUCCEED) {
 			if (!private)
 				pipeline_unlock1(bn);
@@ -3236,6 +3392,7 @@ static mel_func pipeline_init_funcs[] = {
  command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid), batarg("gid",oid))),
  command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",3), arg("pipeline", ptr), batargany("b",4))),
  command("group", "group", LALGderive, false, "Sub Group input.", args(2,6, batarg("gid", oid), batargany("sink",3), arg("pipeline", ptr), batarg("pgid", oid), batargany("phash", 5), batargany("b",3))),
+ command("algebra", "subslice", LALGsubslice, false, "Returns the slice of a pipelined result", args(3,7, batarg("gid", oid), batarg("rid", oid), batarg("tid", oid), batargany("b", 1), arg("start", lng), arg("end", lng), arg("pipeline", ptr))),
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Count per group.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),

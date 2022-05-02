@@ -797,6 +797,7 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	inout &= !is_lng_nil((*cnt));
 	if (inout) {
 		avgs = BATconstant(0, b->ttype, getArgReference(stk, pci, 0), 1, TRANSIENT);
 		rems = BATconstant(0, TYPE_lng, rest, 1, TRANSIENT);

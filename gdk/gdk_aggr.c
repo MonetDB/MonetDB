@@ -2045,7 +2045,11 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 			goto bailout1;
 	}
 
-	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
+	if (!bn)
+		bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
+	else if (BATcapacity(bn) < ngrp && BATextend(bn, ngrp) != GDK_SUCCEED)
+		goto bailout1;
+
 	if (bn == NULL)
 		goto bailout1;
 	dbls = (dbl *) Tloc(bn, 0);
