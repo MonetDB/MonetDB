@@ -173,6 +173,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
+
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
 			/* TODO add access error */
 			return NULL;

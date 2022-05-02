@@ -1361,7 +1361,7 @@ exp_is_const_op(sql_exp *exp, sql_exp *tope, sql_rel *expr)
 		if (f->func->side_effect || IS_ANALYTIC(f->func))
 			return 0;
 		return exps_are_const_op(exp->l, tope, expr);
-	}	
+	}
 	case e_cmp:
 		if (exp->flag == cmp_or || exp->flag == cmp_filter)
 			return exps_are_const_op(exp->l, tope, expr) && exps_are_const_op(exp->r, tope, expr);
@@ -2212,105 +2212,6 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-int
-sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_based)
-{
-	int de;
-
-	if (!t)
-		return 0;
-	switch (ATOMstorage(t->type->localtype)) {
-		case TYPE_bte:
-			return 150 - 8;
-		case TYPE_sht:
-			return 150 - 16;
-		case TYPE_int:
-			return 150 - 32;
-		case TYPE_void:
-		case TYPE_lng:
-			return 150 - 64;
-		case TYPE_uuid:
-#ifdef HAVE_HGE
-		case TYPE_hge:
-#endif
-			return 150 - 128;
-		case TYPE_flt:
-			return 75 - 24;
-		case TYPE_dbl:
-			return 75 - 53;
-		default: {
-			if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
-				return 150 - de * 8;
-			/* strings and blobs not duplicate eliminated don't get any points here */
-			return 0;
-		}
-	}
-}
-
-/* Compute the efficiency of using this expression earl	y in a group by list */
-static int
-score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
-{
-	int res = 0;
-	sql_subtype *t = exp_subtype(e);
-	sql_column *c = exp_find_column(rel, e, -2);
-
-	if (e->card == CARD_ATOM) /* constants are trivial to group */
-		res += 1000;
-	/* can we find out if the underlying table is sorted */
-	if (is_unique(e) || find_prop(e->p, PROP_HASHCOL) || (c && v->storage_based_opt && mvc_is_unique(v->sql, c))) /* distinct columns */
-		res += 700;
-	if (c && v->storage_based_opt && mvc_is_sorted(v->sql, c))
-		res += 500;
-	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
-		res += 200;
-
-	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(v, c, t, true); /* smaller the type, better */
-	return res;
-}
-
-/* reorder group by expressions */
-static inline sql_rel *
-rel_groupby_order(visitor *v, sql_rel *rel)
-{
-	int *scores = NULL;
-	sql_exp **exps = NULL;
-
-	if (is_groupby(rel->op) && list_length(rel->r) > 1) {
-		node *n;
-		list *gbe = rel->r;
-		int i, ngbe = list_length(gbe);
-		scores = SA_NEW_ARRAY(v->sql->ta, int, ngbe);
-		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, ngbe);
-
-		/* first sorting step, give priority for integers and sorted columns */
-		for (i = 0, n = gbe->h; n; i++, n = n->next) {
-			exps[i] = n->data;
-			scores[i] = score_gbe(v, rel, exps[i]);
-		}
-		GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
-
-		/* second sorting step, give priority to strings with lower number of digits */
-		for (i = ngbe - 1; i && !scores[i]; i--); /* find expressions with no score from the first round */
-		if (scores[i])
-			i++;
-		if (ngbe - i > 1) {
-			for (int j = i; j < ngbe; j++) {
-				sql_subtype *t = exp_subtype(exps[j]);
-				scores[j] = t ? t->digits : 0;
-			}
-			/* the less number of digits the better, order ascending */
-			GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
-		}
-
-		for (i = 0, n = gbe->h; n; i++, n = n->next)
-			n->data = exps[i];
-	}
-
-	return rel;
-}
-
 /* reduce group by expressions based on pkey info
  *
  * The reduced group by and (derived) aggr expressions are restored via
@@ -2518,6 +2419,100 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 					v->changes++;
 				}
 			}
+		}
+	}
+	return rel;
+}
+
+static inline sql_rel *
+rel_remove_const_aggr(visitor *v, sql_rel *rel)
+{
+	if (!rel)
+		return rel;
+	if (rel && is_groupby(rel->op) && list_length(rel->exps) >= 1 && !rel_is_ref(rel)) {
+		int needed = 0;
+		for (node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *exp = (sql_exp*) n->data;
+
+			if (exp_is_atom(exp) && exp->type != e_aggr)
+				needed++;
+		}
+		if (needed) {
+			if (!list_empty(rel->r)) {
+				int atoms = 0;
+				/* corner case, all grouping columns are atoms */
+				for (node *n = ((list*)rel->r)->h; n; n = n->next) {
+					sql_exp *exp = (sql_exp*) n->data;
+
+					if (exp_is_atom(exp))
+						atoms++;
+				}
+				if (atoms == list_length(rel->r)) {
+					list *nexps = sa_list(v->sql->sa);
+					for (node *n = rel->exps->h; n; ) {
+						node *next = n->next;
+						sql_exp *e = (sql_exp*) n->data;
+
+						/* remove references to constant group by columns */
+						if (e->type == e_column) {
+							sql_exp *found = NULL;
+							const char *nrname = (const char*) e->l, *nename = (const char*) e->r;
+							if (nrname && nename) {
+								found = exps_bind_column2(rel->r, nrname, nename, NULL);
+							} else if (nename) {
+								found = exps_bind_column(rel->r, nename, NULL, NULL, 1);
+							}
+							if (found) {
+								list_append(nexps, found);
+								list_remove_node(rel->exps, NULL, n);
+							}
+						}
+						n = next;
+					}
+					rel->r = NULL; /* transform it into a global aggregate */
+					rel->exps = list_merge(nexps, rel->exps, (fdup) NULL); /* add grouping columns back as projections */
+					/* global aggregates may return 1 row, so filter it based on the count */
+					sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+					sql_exp *count = exp_aggr(v->sql->sa, NULL, cf, 0, 1, CARD_ATOM, 0);
+					count = rel_groupby_add_aggr(v->sql, rel, count);
+					sql_exp *cp = exp_compare(v->sql->sa, exp_ref(v->sql, count), exp_atom(v->sql->sa, atom_int(v->sql->sa, exp_subtype(count), 0)), cmp_notequal);
+					rel = rel_select(v->sql->sa, rel, cp);
+					set_processed(rel);
+					return rel;
+				}
+			} else if (list_length(rel->exps) == needed) { /* all are const */
+				sql_rel *ll = rel->l;
+				rel->op = op_project;
+				/* TODO check if l->l == const, else change that */
+				if (ll && ll->l) {
+					rel_destroy(ll);
+					rel->l = rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
+				}
+				return rel;
+			}
+			sql_rel *nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
+			for (node *n = nrel->exps->h; n; n = n->next) {
+				sql_exp *exp = (sql_exp*) n->data;
+				if (exp->type == e_column) {
+					sql_exp *e = rel_find_exp(rel, exp);
+
+					if (e && exp_is_atom(e) && e->type == e_atom) {
+						sql_exp *ne = exp_copy(v->sql, e);
+						exp_setname(v->sql->sa, ne, exp_find_rel_name(exp), exp_name(exp));
+						n->data = ne;
+						v->changes++;
+					}
+				}
+			}
+			list *nl = sa_list(v->sql->sa);
+			for (node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *exp = (sql_exp*) n->data;
+
+				if (!exp_is_atom(exp) || exp->type != e_atom)
+					append(nl, exp);
+			}
+			rel->exps = nl;
+			return nrel;
 		}
 	}
 	return rel;
@@ -2836,7 +2831,7 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 			if (exp_aggr_is_count(e) && !need_distinct(e)) {
 				if (list_length(e->l) == 0) {
 					ncountstar++;
-				} else if (list_length(e->l) == 1 && exp_is_not_null((sql_exp*)((list*)e->l)->h->data)) {
+				} else if (list_length(e->l) == 1 && !has_nil((sql_exp*)((list*)e->l)->h->data)) {
 					sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 					sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
 					if (exp_name(e))
@@ -2878,6 +2873,7 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	if (!rel || !is_groupby(rel->op))
 		return rel;
 
+	rel = rel_remove_const_aggr(v, rel);
 	if (v->value_based_opt) {
 		rel = rel_simplify_sum(v, rel);
 		rel = rel_simplify_groupby_columns(v, rel);
@@ -2885,10 +2881,9 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	rel = rel_groupby_cse(v, rel);
 	rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
-	rel = rel_groupby_order(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
-	rel = rel_groupby_distinct(v, rel);
+	if (0) rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
 	/* only when value_based_opt is on, ie not for dependency resolution */
 	if (v->value_based_opt) {
@@ -3452,6 +3447,7 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *ne;
 
+			set_nodistinct(e);
 			ne = exp_ref(v->sql, e);
 			if (e->card > CARD_ATOM && !list_find_exp(gbe, ne)) /* no need to group by on constants, or the same column multiple times */
 				append(gbe, ne);
