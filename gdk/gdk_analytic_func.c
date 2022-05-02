@@ -1798,7 +1798,7 @@ cleanup:
 			   &(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
 			   &curval, 1, TYPE_##TPE1,			\
 			   TYPE_##TPE2, NULL, 0, 0, true,		\
-			   false, true) == BUN_NONE) {			\
+			   true, true) == BUN_NONE) {			\
 			goto bailout;					\
 		}							\
 		for (; k < i; k++)					\
