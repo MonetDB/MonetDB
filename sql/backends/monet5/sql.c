@@ -24,6 +24,9 @@
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
 #include "sql_partition.h"
+#include "rel_unnest.h"
+#include "rel_optimizer.h"
+#include "rel_statistics.h"
 #include "rel_partition.h"
 #include "rel_select.h"
 #include "rel_rel.h"
@@ -122,13 +125,14 @@ sql_symbol2relation(backend *be, symbol *sym)
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
 	lng Tbegin;
-	int extra_opts = be->mvc->emode != m_prepare;
+	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
 
 	rel = rel_semantic(query, sym);
+	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = GDKusec();
 	if (rel)
-		rel = sql_processrelation(be->mvc, rel, profile, 1, extra_opts, extra_opts);
+		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 	if (rel)
 		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))

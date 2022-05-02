@@ -2728,12 +2728,12 @@ dcount_col(sql_trans *tr, sql_column *c)
 }
 
 static BAT *
-bind_no_view(BAT *b)
+bind_no_view(BAT *b, bool quick)
 {
 	if (isVIEW(b)) { /* If it is a view get the parent BAT */
 		BAT *nb = BBP_cache(VIEWtparent(b));
 		bat_destroy(b);
-		if (!(b = temp_descriptor(nb->batCacheid)))
+		if (!(b = quick ? quick_descriptor(nb->batCacheid) : temp_descriptor(nb->batCacheid)))
 			return NULL;
 	}
 	return b;
@@ -2763,7 +2763,7 @@ min_max_col(sql_trans *tr, sql_column *c)
 		_DELETE(c->min);
 		_DELETE(c->max);
 		if ((b = bind_col(tr, c, access))) {
-			if (!(b = bind_no_view(b))) {
+			if (!(b = bind_no_view(b, false))) {
 				unlock_column(tr->store, c->base.id);
 				return 0;
 			}
@@ -2883,6 +2883,71 @@ double_elim_col(sql_trans *tr, sql_column *col)
 		assert(de >= 0 && de <= 16);
 	}
 	return de;
+}
+
+static int
+col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
+{
+	int ok = 0;
+	BAT *b = NULL, *off = NULL, *upv = NULL;
+	sql_delta *d = NULL;
+
+	(void) tr;
+	assert(tr->active);
+	*nonil = false;
+	*unique = false;
+	*unique_est = 0.0;
+	if (!c || !isTable(c->t) || !c->t->s)
+		return ok;
+
+	if ((d = ATOMIC_PTR_GET(&c->data))) {
+		if (d->cs.st == ST_FOR) {
+			*nonil = true; /* TODO for min/max. I will do it later */
+			return ok;
+		}
+		int eclass = c->type.type->eclass;
+		int access = d->cs.st == ST_DICT ? RD_EXT : RDONLY;
+		if ((b = bind_col(tr, c, access))) {
+			if (!(b = bind_no_view(b, false)))
+				return ok;
+			BATiter bi = bat_iterator(b);
+			*nonil = bi.nonil && !bi.nil;
+
+			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
+				d->cs.ucnt == 0 && (bi.minpos != BUN_NONE || bi.maxpos != BUN_NONE)) {
+				if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
+					ok |= 1;
+				if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
+					ok |= 2;
+			}
+			if (d->cs.ucnt == 0) {
+				if (d->cs.st == ST_DEFAULT) {
+					*unique = bi.key;
+					*unique_est = bi.unique_est;
+				} else if (d->cs.st == ST_DICT && (off = bind_col(tr, c, QUICK)) && (off = bind_no_view(off, true))) {
+					/* for dict, check the offsets bat for uniqueness */
+					MT_lock_set(&off->theaplock);
+					*unique = off->tkey;
+					*unique_est = off->tunique_est;
+					MT_lock_unset(&off->theaplock);
+				}
+			}
+			bat_iterator_end(&bi);
+			bat_destroy(b);
+			if (*nonil && d->cs.ucnt > 0) {
+				/* This could use a quick descriptor */
+				if (!(upv = bind_col(tr, c, RD_UPD_VAL)) || !(upv = bind_no_view(upv, false))) {
+					*nonil = false;
+				} else {
+					MT_lock_set(&upv->theaplock);
+					*nonil &= upv->tnonil && !upv->tnil;
+					MT_lock_unset(&upv->theaplock);
+					bat_destroy(upv);
+				}
+			}
+		}
+	}
+	return ok;
 }
 
 static int
@@ -4924,6 +4989,7 @@ bat_storage_init( store_functions *sf)
 	sf->sorted_col = &sorted_col;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
+	sf->col_stats = &col_stats;
 
 	sf->col_dup = &col_dup;
 	sf->idx_dup = &idx_dup;

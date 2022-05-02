@@ -29,11 +29,9 @@
  */
 
 #include "monetdb_config.h"
-#include "gdk.h"
-#include "gdk_time.h"
+#include "mtime.h"
 #include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_exception.h"
+
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
@@ -486,13 +484,6 @@ bailout: 																\
 #define func2_noexcept(FUNC, RET, PARAM1, PARAM2) RET = FUNC(PARAM1, PARAM2)
 #define func2_except(FUNC, RET, PARAM1, PARAM2) msg = FUNC(&RET, PARAM1, PARAM2); if (msg) break
 
-/* TODO change dayint again into an int instead of lng */
-static inline lng
-date_diff_imp(const date d1, const date d2)
-{
-	int diff = date_diff(d1, d2);
-	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) (24*60*60*1000);
-}
 func2(MTIMEdate_diff, "diff",
 	  date, date, lng, date_diff_imp, func2_noexcept,
 	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
@@ -506,28 +497,6 @@ func2(MTIMEdaytime_diff_msec, "diff",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-date_sub_msec_interval(date *ret, date d, lng ms)
-{
-	if (is_date_nil(d) || is_lng_nil(ms)) {
-		*ret = date_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (-ms / (24*60*60*1000))))))
-		throw(MAL, "mtime.date_sub_msec_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
-static inline str
-date_add_msec_interval(date *ret, date d, lng ms)
-{
-	if (is_date_nil(d) || is_lng_nil(ms)) {
-		*ret = date_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (ms / (24*60*60*1000))))))
-		throw(MAL, "mtime.date_add_msec_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
 func2(MTIMEdate_sub_msec_interval, "date_sub_msec_interval",
 	  date, lng, date, date_sub_msec_interval, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -541,28 +510,6 @@ func2(MTIMEdate_add_msec_interval, "date_add_msec_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-timestamp_sub_msec_interval(timestamp *ret, timestamp ts, lng ms)
-{
-	if (is_timestamp_nil(ts) || is_lng_nil(ms)) {
-		*ret = timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, -ms * 1000))))
-		throw(MAL, "mtime.timestamp_sub_msec_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
-static inline str
-timestamp_add_msec_interval(timestamp *ret, timestamp ts, lng ms)
-{
-	if (is_timestamp_nil(ts) || is_lng_nil(ms)) {
-		*ret = timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
-		throw(MAL, "mtime.timestamp_add_msec_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
 func2(MTIMEtimestamp_sub_msec_interval, "timestamp_sub_msec_interval",
 	  timestamp, lng, timestamp, timestamp_sub_msec_interval, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -576,28 +523,6 @@ func2(MTIMEtimestamp_add_msec_interval, "timestamp_add_msec_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-timestamp_sub_month_interval(timestamp *ret, timestamp ts, int m)
-{
-	if (is_timestamp_nil(ts) || is_int_nil(m)) {
-		*ret = timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_timestamp_nil((*ret = timestamp_add_month(ts, -m))))
-		throw(MAL, "mtime.timestamp_sub_month_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
-static inline str
-timestamp_add_month_interval(timestamp *ret, timestamp ts, int m)
-{
-	if (is_timestamp_nil(ts) || is_int_nil(m)) {
-		*ret = timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_timestamp_nil((*ret = timestamp_add_month(ts, m))))
-		throw(MAL, "mtime.timestamp_add_month_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
 func2(MTIMEtimestamp_sub_month_interval, "timestamp_sub_month_interval",
 	  timestamp, int, timestamp, timestamp_sub_month_interval, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -611,20 +536,6 @@ func2(MTIMEtimestamp_add_month_interval, "timestamp_add_month_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline daytime
-time_sub_msec_interval(const daytime t, const lng ms)
-{
-	if (is_lng_nil(ms))
-		return daytime_nil;
-	return daytime_add_usec_modulo(t, -ms * 1000);
-}
-static inline daytime
-time_add_msec_interval(const daytime t, const lng ms)
-{
-	if (is_lng_nil(ms))
-		return daytime_nil;
-	return daytime_add_usec_modulo(t, ms * 1000);
-}
 func2(MTIMEtime_sub_msec_interval, "time_sub_msec_interval",
 	  daytime, lng, daytime, time_sub_msec_interval, func2_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -638,28 +549,6 @@ func2(MTIMEtime_add_msec_interval, "time_add_msec_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-date_submonths(date *ret, date d, int m)
-{
-	if (is_date_nil(d) || is_int_nil(m)) {
-		*ret = date_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_date_nil((*ret = date_add_month(d, -m))))
-		throw(MAL, "mtime.date_submonths", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
-static inline str
-date_addmonths(date *ret, date d, int m)
-{
-	if (is_date_nil(d) || is_int_nil(m)) {
-		*ret = date_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_date_nil((*ret = date_add_month(d, m))))
-		throw(MAL, "mtime.date_addmonths", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
 func2(MTIMEdate_submonths, "date_submonths",
 	  date, int, date, date_submonths, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -673,8 +562,6 @@ func2(MTIMEdate_addmonths, "date_addmonths",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-#define date_to_msec_since_epoch(t) is_date_nil(t) ? lng_nil : (timestamp_diff(timestamp_create(t, daytime_create(0, 0, 0, 0)), unixepoch) / 1000)
-#define daytime_to_msec_since_epoch(t) daytime_diff(t, daytime_create(0, 0, 0, 0))
 func1(MTIMEdate_extract_century, "date_century", date, int,
 	  date_century, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
@@ -736,22 +623,6 @@ func1(MTIMEdaytime_extract_epoch_ms, "epoch_ms", daytime, lng,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
-static inline lng
-TSDIFF(timestamp t1, timestamp t2)
-{
-	lng diff = timestamp_diff(t1, t2);
-	if (!is_lng_nil(diff)) {
-#ifndef TRUNCATE_NUMBERS
-		if (diff < 0)
-			diff = -((-diff + 500) / 1000);
-		else
-			diff = (diff + 500) / 1000;
-#else
-		diff /= 1000;
-#endif
-	}
-	return diff;
-}
 func2(MTIMEtimestamp_diff_msec, "diff",
 	  timestamp, timestamp, lng, TSDIFF, func2_noexcept,
 	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
@@ -759,26 +630,6 @@ func2(MTIMEtimestamp_diff_msec, "diff",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline int
-timestamp_century(const timestamp t)
-{
-	if (is_timestamp_nil(t))
-		return int_nil;
-	int y = date_year(timestamp_date(t));
-	if (y > 0)
-		return (y - 1) / 100 + 1;
-	else
-		return -((-y - 1) / 100 + 1);
-}
-#define timestamp_decade(t) is_timestamp_nil(t) ? int_nil : date_year(timestamp_date(t)) / 10
-#define timestamp_year(t) date_year(timestamp_date(t))
-#define timestamp_quarter(t) is_timestamp_nil(t) ? int_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1
-#define timestamp_month(t) date_month(timestamp_date(t))
-#define timestamp_day(t) date_day(timestamp_date(t))
-#define timestamp_hours(t) daytime_hour(timestamp_daytime(t))
-#define timestamp_minutes(t) daytime_min(timestamp_daytime(t))
-#define timestamp_extract_usecond(ts)	daytime_sec_usec(timestamp_daytime(ts))
-#define timestamp_to_msec_since_epoch(t) is_timestamp_nil(t) ? lng_nil : (timestamp_diff(t, unixepoch) / 1000)
 func1(MTIMEtimestamp_century, "timestamp_century", timestamp, int,
 	  timestamp_century, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
@@ -820,13 +671,6 @@ func1(MTIMEtimestamp_extract_epoch_ms, "epoch_ms", timestamp, lng,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
-#define sql_year(m) is_int_nil(m) ? int_nil : m / 12
-#define sql_month(m) is_int_nil(m) ? int_nil : m % 12
-#define sql_day(m) is_lng_nil(m) ? lng_nil : m / (24*60*60*1000)
-#define sql_hours(m) is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000))
-#define sql_minutes(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000))
-#define sql_seconds(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*1000)) / 1000)
-#define msec_since_epoch(ts)	ts
 func1(MTIMEsql_year, "sql_year", int, int,
 	  sql_year, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,

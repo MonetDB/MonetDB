@@ -242,3 +242,7 @@ SELECT (VALUES (prod(x.x - 1)), (x.x)) FROM (VALUES (1), (0.058128458)) x(x)
 
 statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
 SELECT (SELECT 1 WHERE count(*) = 1)
+
+query I nosort
+SELECT 1 WHERE 0.8574837 < 0.6612825109479848
+----

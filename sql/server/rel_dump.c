@@ -17,6 +17,7 @@
 #include "rel_updates.h"
 #include "rel_select.h"
 #include "rel_remote.h"
+#include "rel_rewriter.h"
 #include "rel_optimizer.h"
 #include "sql_privileges.h"
 
@@ -323,13 +324,13 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " NOT NULL");
 	if (e->type != e_atom && e->type != e_cmp && is_unique(e))
 		mnstr_printf(fout, " UNIQUE");
-	if (e->p) {
-		prop *p = e->p;
-		char *pv;
-
-		for (; p; p = p->p) {
-			pv = propvalue2string(sql->ta, p);
-			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+	if (e->p && e->type != e_atom && !exp_is_atom(e)) { /* don't show properties on value lists */
+		for (prop *p = e->p; p; p = p->p) {
+			/* Don't show min/max/unique est on atoms, or when running tests with forcemito */
+			if ((GDKdebug & FORCEMITOMASK) == 0 || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
+				char *pv = propvalue2string(sql->ta, p);
+				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			}
 		}
 	}
 	if (exp_name(e) && alias) {
@@ -583,12 +584,11 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		assert(0);
 	}
 	if (rel->p) {
-		prop *p = rel->p;
-		char *pv;
-
-		for (; p; p = p->p) {
-			pv = propvalue2string(sql->ta, p);
-			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+		for (prop *p = rel->p; p; p = p->p) {
+			if (p->kind != PROP_COUNT || (GDKdebug & FORCEMITOMASK) == 0) {
+				char *pv = propvalue2string(sql->ta, p);
+				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			}
 		}
 	}
 }
@@ -844,7 +844,7 @@ read_prop(mvc *sql, sql_exp *exp, char *r, int *pos, bool *found)
 			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s missing\n", sname);
 		if (!find_prop(exp->p, PROP_JOINIDX)) {
 			p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
-			if (!(p->value = mvc_bind_idx(sql, s, iname)))
+			if (!(p->value.pval = mvc_bind_idx(sql, s, iname)))
 				return sql_error(sql, -1, SQLSTATE(42000) "Index %s missing\n", iname);
 		}
 		skipWS(r,pos);
@@ -899,6 +899,59 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 }
 
 static sql_exp*
+exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_str, rel_prop kind)
+{
+	atom *a;
+	sql_subtype *tpe = exp_subtype(exp);
+
+	(*pos)+= (int) strlen(prop_str);
+	skipWS(r, pos);
+
+	if (strncmp(r+*pos, "NULL",  strlen("NULL")) == 0) {
+		(*pos)+= (int) strlen("NULL");
+		a = atom_general(sql->sa, tpe, NULL);
+	} else {
+		void *ptr = readAtomString(tpe->type->localtype, r, pos);
+		if (!ptr)
+			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
+		a = atom_general_ptr(sql->sa, tpe, ptr);
+		GDKfree(ptr);
+	}
+	if (!find_prop(exp->p, kind)) {
+		prop *p = exp->p = prop_create(sql->sa, kind, exp->p);
+		p->value.pval = a;
+	}
+	skipWS(r, pos);
+	return exp;
+}
+
+static sql_exp*
+exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
+{
+	void *ptr = NULL;
+	size_t nbytes = 0;
+	ssize_t res = 0;
+	sql_subtype *tpe = sql_bind_localtype("dbl");
+
+	(*pos)+= (int) strlen("NUNIQUES");
+	skipWS(r, pos);
+
+	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
+		GDKfree(ptr);
+		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
+	}
+
+	if (!find_prop(exp->p, PROP_NUNIQUES)) {
+		prop *p = exp->p = prop_create(sql->sa, PROP_NUNIQUES, exp->p);
+		p->value.dval = *(dbl*)ptr;
+	}
+	(*pos) += (int) res; /* it should always fit */
+	GDKfree(ptr);
+	skipWS(r, pos);
+	return exp;
+}
+
+static sql_exp*
 read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 {
 	bool found = true;
@@ -907,6 +960,8 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 
 		if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
 			(*pos)+= (int) strlen("COUNT");
+			if (!find_prop(exp->p, PROP_COUNT))
+				exp->p = prop_create(sql->sa, PROP_COUNT, exp->p);
 			skipWS(r,pos);
 			found = true;
 		} else if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
@@ -920,6 +975,18 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 			if (!find_prop(exp->p, PROP_HASHCOL))
 				exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
 			skipWS(r,pos);
+			found = true;
+		} else if (strncmp(r+*pos, "MIN",  strlen("MIN")) == 0) {
+			if (!exp_read_min_or_max(sql, exp, r, pos, "MIN", PROP_MIN))
+				return NULL;
+			found = true;
+		} else if (strncmp(r+*pos, "MAX",  strlen("MAX")) == 0) {
+			if (!exp_read_min_or_max(sql, exp, r, pos, "MAX", PROP_MAX))
+				return NULL;
+			found = true;
+		} else if (strncmp(r+*pos, "NUNIQUES",  strlen("NUNIQUES")) == 0) {
+			if (!exp_read_nuniques(sql, exp, r, pos))
+				return NULL;
 			found = true;
 		}
 		if (!read_prop(sql, exp, r, pos, &found))
@@ -1272,7 +1339,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				skipWS(r, pos);
 				exp = exp_convert(sql->sa, exp, exp_subtype(exp), &tpe);
 			} else {
-				exp = parse_atom(sql, r, pos, &tpe);
+				if (!(exp = parse_atom(sql, r, pos, &tpe)))
+					return NULL;
 				skipWS(r, pos);
 			}
 		}
@@ -1288,7 +1356,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
 				sql_init_subtype(&tpe, t, 0, 0);
 			}
-			exp = parse_atom(sql, r, pos, &tpe);
+			if (!(exp = parse_atom(sql, r, pos, &tpe)))
+				return NULL;
 			skipWS(r, pos);
 		}
 		break;
@@ -1572,9 +1641,33 @@ rel_set_types(mvc *sql, sql_rel *rel)
 	for(n=iexps->h, m=rel->exps->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e = m->data;
 
-		e->tpe = *exp_subtype( n->data );
+		if (!e->tpe.type)
+			e->tpe = *exp_subtype( n->data );
 	}
 	return 0;
+}
+
+static sql_rel*
+rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
+{
+	void *ptr = NULL;
+	size_t nbytes = 0;
+	ssize_t res = 0;
+	sql_subtype *tpe = sql_bind_localtype("oid");
+
+	(*pos)+= (int) strlen("COUNT");
+	skipWS(r, pos);
+
+	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
+		GDKfree(ptr);
+		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
+	}
+
+	set_count_prop(sql->sa, rel, *(BUN*)ptr);
+	(*pos) += (int) res; /* it should always fit */
+	GDKfree(ptr);
+	skipWS(r, pos);
+	return rel;
 }
 
 static sql_rel*
@@ -1585,8 +1678,8 @@ read_rel_properties(mvc *sql, sql_rel *rel, char *r, int *pos)
 		found = false;
 
 		if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
-			(*pos)+= (int) strlen("COUNT");
-			skipWS(r,pos);
+			if (!rel_read_count(sql, rel, r, pos))
+				return NULL;
 			found = true;
 		} else if (strncmp(r+*pos, "REMOTE", strlen("REMOTE")) == 0) { /* Remote tables under remote tables not supported, so remove REMOTE property */
 			(*pos)+= (int) strlen("REMOTE");
@@ -2179,7 +2272,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(*pos)++;
 		skipWS(r, pos);
 
-		if (!(exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0, 1)))
+		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_setop(sql->sa, lrel, rrel, j);
 		rel_setop_set_exps(sql, rel, exps, false);
