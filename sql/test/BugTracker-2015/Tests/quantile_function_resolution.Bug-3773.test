@@ -10,10 +10,10 @@ PLAN select quantile(y, 0.0) from x
 project (
 | group by (
 | | project (
-| | | table("sys"."x") [ "x"."y" ]
-| | ) [ "x"."y", double(53) "0" as "%2"."%2" ]
-| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"], "%2"."%2" NOT NULL) as "%1"."%1" ]
-) [ "%1"."%1" ]
+| | | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
+| | ) [ "x"."y" NOT NULL UNIQUE, double(53) "0" as "%2"."%2" ]
+| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y" NOT NULL UNIQUE] NOT NULL, "%2"."%2" NOT NULL) UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" UNIQUE ]
 
 query T nosort
 PLAN select quantile(y, 0) from x
@@ -21,10 +21,10 @@ PLAN select quantile(y, 0) from x
 project (
 | group by (
 | | project (
-| | | table("sys"."x") [ "x"."y" ]
-| | ) [ "x"."y", double(53) "0" as "%2"."%2" ]
-| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"], "%2"."%2" NOT NULL) as "%1"."%1" ]
-) [ "%1"."%1" ]
+| | | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
+| | ) [ "x"."y" NOT NULL UNIQUE, double(53) "0" as "%2"."%2" ]
+| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y" NOT NULL UNIQUE] NOT NULL, "%2"."%2" NOT NULL) UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" UNIQUE ]
 
 statement ok
 rollback

@@ -25,7 +25,7 @@ project (
 | | | table("sys"."myy") [ "myy"."col1", "myy"."col2" ]
 | | ) [ "sys"."sql_add"(bigint(33)["myy"."col1"], bigint(33)["myy"."col2"]) as "%1"."%1" ]
 | ) [ "%1"."%1" ] [ "%1"."%1" ]
-) [ "%1"."%1" ] [ "%1"."%1" ASC ]
+) [ "%1"."%1" UNIQUE ] [ "%1"."%1" ASC UNIQUE ]
 
 query T nosort
 plan select col2 from myy order by col1 ASC, col1 DESC
@@ -49,27 +49,27 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1
 ----
 project (
 | select (
-| | table("sys"."myx") [ "myx"."x", "myx"."y" ]
-| ) [ (("myx"."x") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) ]
-) [ "myx"."x", "myx"."y" ]
+| | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
+| ) [ (("myx"."x" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) ]
+) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null
 ----
 project (
 | select (
-| | table("sys"."myx") [ "myx"."x", "myx"."y" ]
-| ) [ (("myx"."x") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y") * = (uuid NULL)) ]
-) [ "myx"."x", "myx"."y" ]
+| | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
+| ) [ (("myx"."x" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) * = (uuid NULL)) ]
+) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967'
 ----
 project (
 | select (
-| | table("sys"."myx") [ "myx"."x", "myx"."y" ]
-| ) [ (("myx"."x") in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or (("myx"."y") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL)) ]
-) [ "myx"."x", "myx"."y" ]
+| | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
+| ) [ (("myx"."x" NOT NULL UNIQUE) in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL)) ]
+) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 statement ok
 insert into myx values ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961967')
@@ -155,12 +155,12 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 0)
+plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 100)
 ----
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ("tab0"."col2") < (int(32) "0"), ("tab0"."col1") notin (int(32) "1", int(32) "81") ]
+| ) [ ("tab0"."col2") < (int(32) "100"), ("tab0"."col1") notin (int(32) "1", int(32) "81") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -182,12 +182,12 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (col1 <> 100)
+plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (col1 <> 47)
 ----
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ("tab0"."col1") != (int(32) "100"), (("tab0"."col1") notin (int(32) "1", int(32) "81")) or (("tab0"."col2") = (int(32) "100")) ]
+| ) [ ("tab0"."col1") != (int(32) "47"), (("tab0"."col1") notin (int(32) "1", int(32) "81")) or (("tab0"."col2") = (int(32) "100")) ]
 ) [ tinyint(1) "1" ]
 
 statement ok
@@ -392,16 +392,16 @@ project (
 | | | left outer join (
 | | | | join (
 | | | | | project (
-| | | | | | table("sys"."tabel1") [ "tabel1"."id_nr" as "a"."id_nr" ]
-| | | | | ) [ "a"."id_nr" as "s"."id_nr" ],
+| | | | | | table("sys"."tabel1") [ "tabel1"."id_nr" UNIQUE as "a"."id_nr" ]
+| | | | | ) [ "a"."id_nr" UNIQUE as "s"."id_nr" ],
 | | | | | project (
 | | | | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ]
 | | | | | ) [ "a"."id_nr" as "h"."id_nr" ]
-| | | | ) [ ("s"."id_nr") = ("h"."id_nr") ],
+| | | | ) [ ("s"."id_nr" UNIQUE) = ("h"."id_nr") ],
 | | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ]
-| | | ) [ ("h"."id_nr") = ("a"."id_nr") ]
-| | ) [ "s"."id_nr" ]
-| ) [ ("a"."id_nr") = ("s"."id_nr") ]
+| | | ) [ ("h"."id_nr" NOT NULL) = ("a"."id_nr") ]
+| | ) [ "s"."id_nr" NOT NULL ]
+| ) [ ("a"."id_nr") = ("s"."id_nr" NOT NULL) ]
 ) [ tinyint(1) "1" ]
 
 statement ok
@@ -437,10 +437,10 @@ plan select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is 
 ----
 project (
 | full outer join (
-| | table("sys"."integers") [ "integers"."i" as "i1"."i" ],
-| | table("sys"."integers") [ "integers"."i" as "i2"."i" ]
-| ) [ ("i1"."i") * = ("i2"."i") ]
-) [ "i1"."i", "i2"."i" ]
+| | table("sys"."integers") [ "integers"."i" UNIQUE as "i1"."i" ],
+| | table("sys"."integers") [ "integers"."i" UNIQUE as "i2"."i" ]
+| ) [ ("i1"."i" UNIQUE) * = ("i2"."i" UNIQUE) ]
+) [ "i1"."i" UNIQUE, "i2"."i" UNIQUE ]
 
 query II rowsort
 select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i
@@ -459,9 +459,9 @@ plan select i, j from integers where i = j or (i is null and j is null)
 ----
 project (
 | select (
-| | table("sys"."integers") [ "integers"."i", "integers"."j" ]
-| ) [ ("integers"."i") * = ("integers"."j") ]
-) [ "integers"."i", "integers"."j" ]
+| | table("sys"."integers") [ "integers"."i" UNIQUE, "integers"."j" ]
+| ) [ ("integers"."i" UNIQUE) * = ("integers"."j") ]
+) [ "integers"."i" UNIQUE, "integers"."j" ]
 
 query II rowsort
 select i, j from integers where i = j or (i is null and j is null)
@@ -506,7 +506,7 @@ project (
 | | ) [ ("t1"."a") = ("t2"."a") ],
 | | table("sys"."t3") [ "t3"."b" ]
 | ) [ ("t1"."b") FILTER "sys"."like"("t3"."b", clob "", boolean(1) "false") ]
-) [ "t1"."a", "t1"."b" ]
+) [ "t1"."a" NOT NULL, "t1"."b" ]
 
 query T python .explain.function_histogram
 explain select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
@@ -546,17 +546,17 @@ project (
 | | | | select (
 | | | | | table("sys"."t1") [ "t1"."a" ]
 | | | | ) [ ("t1"."a") > (int(32) "2") ]
-| | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint(2) "3") as "c" ]
-| | ) [ "b" as "x"."x", "c" as "x"."y" ],
+| | | ) [ "t1"."a" NOT NULL as "b", "sys"."sql_div"("t1"."a" NOT NULL, tinyint(2) "3") NOT NULL as "c" ]
+| | ) [ "b" NOT NULL as "x"."x", "c" NOT NULL as "x"."y" ],
 | | project (
 | | | project (
 | | | | select (
 | | | | | table("sys"."t2") [ "t2"."a" ]
 | | | | ) [ ("t2"."a") > (int(32) "2") ]
-| | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint(3) "5") as "d" ]
-| | ) [ "z" as "x"."x", "d" as "x"."y" ]
-| ) [ "x"."x", "x"."y" ]
-) [ "x"."x", "x"."y" ]
+| | | ) [ "t2"."a" NOT NULL as "z", "sys"."sql_div"("t2"."a" NOT NULL, tinyint(3) "5") NOT NULL as "d" ]
+| | ) [ "z" NOT NULL as "x"."x", "d" NOT NULL as "x"."y" ]
+| ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
+) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
 
 query T nosort
 plan select x, y from (select a as b, a / 3 as c from t1 union distinct select a as z, a / 5 as d from t2) x(x,y) where x > 2
@@ -569,20 +569,20 @@ project (
 | | | | | select (
 | | | | | | table("sys"."t1") [ "t1"."a" ]
 | | | | | ) [ ("t1"."a") > (int(32) "2") ]
-| | | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint(2) "3") as "c" ]
-| | | ) [ "b", "c" ] [ "b", "c" ]
-| | ) [ "b" as "x"."x", "c" as "x"."y" ],
+| | | | ) [ "t1"."a" NOT NULL as "b", "sys"."sql_div"("t1"."a" NOT NULL, tinyint(2) "3") NOT NULL as "c" ]
+| | | ) [ "b" NOT NULL, "c" NOT NULL ] [ "b" NOT NULL, "c" NOT NULL ]
+| | ) [ "b" NOT NULL as "x"."x", "c" NOT NULL as "x"."y" ],
 | | project (
 | | | group by (
 | | | | project (
 | | | | | select (
 | | | | | | table("sys"."t2") [ "t2"."a" ]
 | | | | | ) [ ("t2"."a") > (int(32) "2") ]
-| | | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint(3) "5") as "d" ]
-| | | ) [ "z", "d" ] [ "z", "d" ]
-| | ) [ "z" as "x"."x", "d" as "x"."y" ]
-| ) [ "x"."x", "x"."y" ]
-) [ "x"."x", "x"."y" ]
+| | | | ) [ "t2"."a" NOT NULL as "z", "sys"."sql_div"("t2"."a" NOT NULL, tinyint(3) "5") NOT NULL as "d" ]
+| | | ) [ "z" NOT NULL, "d" NOT NULL ] [ "z" NOT NULL, "d" NOT NULL ]
+| | ) [ "z" NOT NULL as "x"."x", "d" NOT NULL as "x"."y" ]
+| ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
+) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
 
 statement ok
 rollback
@@ -598,8 +598,8 @@ project (
 | group by (
 | | select (
 | | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
-| | ) [ ("x"."x") > (tinyint(2) "2") ]
-| ) [ "x"."x" ] [ "x"."x" ]
+| | ) [ ("x"."x" NOT NULL) > (tinyint(2) "2") ]
+| ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -609,21 +609,21 @@ project (
 | group by (
 | | select (
 | | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
-| | ) [ ("x"."x") > (tinyint(2) "2") ]
-| ) [ "x"."x" ] [ "sys"."max" no nil ("x"."x") as "%5"."%5" ]
-) [ "%5"."%5" as "x"."y" ]
+| | ) [ ("x"."x" NOT NULL) > (tinyint(2) "2") ]
+| ) [ "x"."x" NOT NULL ] [ "sys"."max" no nil ("x"."x" NOT NULL) NOT NULL as "%5"."%5" ]
+) [ "%5"."%5" NOT NULL as "x"."y" ]
 
 # here the select cannot be pushed down
 query T nosort
-plan select x from (select min(x) as x from (values(1,1),(2,2),(3,3)) x(x,y)) x(x) where x > 0
+plan select x from (select min(x) as x from (values(1,1),(2,2),(3,3)) x(x,y)) x(x) where x > 2
 ----
 project (
 | select (
 | | group by (
 | | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
-| | ) [  ] [ "sys"."min" no nil ("x"."x") as "%11"."%11" ]
-| ) [ ("%11"."%11") > (tinyint(8) "0") ]
-) [ "%11"."%11" as "x"."x" ]
+| | ) [  ] [ "sys"."min" no nil ("x"."x" NOT NULL) NOT NULL UNIQUE as "%11"."%11" ]
+| ) [ ("%11"."%11" NOT NULL UNIQUE) > (tinyint(2) "2") ]
+) [ "%11"."%11" NOT NULL UNIQUE as "x"."x" ]
 
 # optimize sum(x + 2) into sum(x) + 2*count(*)
 query IIII nosort
@@ -641,9 +641,9 @@ project (
 | project (
 | | group by (
 | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
-| | ) [  ] [ "sys"."sum" no nil ("x"."x") as "%7"."%7", "%7"."%7" as "%20"."%20", "%7"."%7" as "%22"."%22", "%7"."%7" as "%24"."%24", "sys"."count"() NOT NULL as "%16"."%16" ]
-| ) [ "%7"."%7", "sys"."sql_add"("%20"."%20", "sys"."sql_mul"(tinyint(2) "1", "%16"."%16" NOT NULL) NOT NULL) as "%10"."%10", "sys"."sql_add"("%22"."%22", "sys"."sql_mul"(tinyint(3) "2", "%16"."%16" NOT NULL) NOT NULL) as "%11"."%11", "sys"."sql_add"("%24"."%24", "sys"."sql_mul"(tinyint(3) "3", "%16"."%16" NOT NULL) NOT NULL) as "%12"."%12" ]
-) [ "%7"."%7", "%10"."%10", "%11"."%11", "%12"."%12" ]
+| | ) [  ] [ "sys"."sum" no nil ("x"."x" NOT NULL) NOT NULL UNIQUE as "%7"."%7", "%7"."%7" as "%20"."%20", "%7"."%7" as "%22"."%22", "%7"."%7" as "%24"."%24", "sys"."count"() NOT NULL UNIQUE as "%16"."%16" ]
+| ) [ "%7"."%7" NOT NULL UNIQUE, "sys"."sql_add"("%20"."%20" UNIQUE, "sys"."sql_mul"(tinyint(2) "1", "%16"."%16" NOT NULL UNIQUE) NOT NULL) as "%10"."%10", "sys"."sql_add"("%22"."%22" UNIQUE, "sys"."sql_mul"(tinyint(3) "2", "%16"."%16" NOT NULL UNIQUE) NOT NULL) as "%11"."%11", "sys"."sql_add"("%24"."%24" UNIQUE, "sys"."sql_mul"(tinyint(3) "3", "%16"."%16" NOT NULL UNIQUE) NOT NULL) as "%12"."%12" ]
+) [ "%7"."%7" NOT NULL UNIQUE, "%10"."%10", "%11"."%11", "%12"."%12" ]
 
 query III nosort
 SELECT 10*sum(5 - x) as aa, sum(x + 12) + 15 as bb, count(*) as cc FROM (VALUES (1),(2),(3),(4),(5)) x(x)
@@ -659,9 +659,9 @@ project (
 | project (
 | | group by (
 | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
-| | ) [  ] [ "sys"."sum" no nil ("x"."x") as "%15"."%15", "%15"."%15" as "%17"."%17", "sys"."count"() NOT NULL as "%11"."%11" ]
-| ) [ "%11"."%11" NOT NULL, "sys"."sql_sub"("sys"."sql_mul"(tinyint(4) "5", "%11"."%11" NOT NULL) NOT NULL, "%15"."%15") as "%7"."%7", "sys"."sql_add"("%17"."%17", "sys"."sql_mul"(tinyint(5) "12", "%11"."%11" NOT NULL) NOT NULL) as "%10"."%10" ]
-) [ "sys"."sql_mul"(tinyint(4) "10", "%7"."%7") as "aa", "sys"."sql_mul"("%10"."%10", tinyint(2) "2") as "bb", "%11"."%11" NOT NULL as "cc" ]
+| | ) [  ] [ "sys"."sum" no nil ("x"."x" NOT NULL) NOT NULL UNIQUE as "%15"."%15", "%15"."%15" as "%17"."%17", "sys"."count"() NOT NULL UNIQUE as "%11"."%11" ]
+| ) [ "%11"."%11" NOT NULL UNIQUE, "sys"."sql_sub"("sys"."sql_mul"(tinyint(4) "5", "%11"."%11" NOT NULL UNIQUE) NOT NULL, "%15"."%15" NOT NULL UNIQUE) NOT NULL as "%7"."%7", "sys"."sql_add"("%17"."%17" UNIQUE, "sys"."sql_mul"(tinyint(5) "12", "%11"."%11" NOT NULL UNIQUE) NOT NULL) as "%10"."%10" ]
+) [ "sys"."sql_mul"(tinyint(4) "10", "%7"."%7" NOT NULL) NOT NULL as "aa", "sys"."sql_mul"("%10"."%10", tinyint(2) "2") as "bb", "%11"."%11" NOT NULL UNIQUE as "cc" ]
 
 query II nosort
 SELECT sum(5 - x), count(*) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
@@ -689,10 +689,10 @@ project (
 | | group by (
 | | | project (
 | | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
-| | | ) [ smallint(9)["sys"."sql_add"("x"."x", "x"."x")] as "%11"."%11" ]
-| | ) [  ] [ "sys"."sum" no nil ("%11"."%11") as "%14"."%14", "sys"."count"() NOT NULL as "%12"."%12" ]
-| ) [ "sys"."sql_add"("%14"."%14", "sys"."sql_mul"(smallint(9) "2", "%12"."%12" NOT NULL) NOT NULL) as "%7"."%7" ]
-) [ "%7"."%7" ]
+| | | ) [ smallint(9)["sys"."sql_add"("x"."x" NOT NULL, "x"."x" NOT NULL) NOT NULL] NOT NULL as "%11"."%11" ]
+| | ) [  ] [ "sys"."sum" no nil ("%11"."%11" NOT NULL) NOT NULL UNIQUE as "%14"."%14", "sys"."count"() NOT NULL UNIQUE as "%12"."%12" ]
+| ) [ "sys"."sql_add"("%14"."%14" NOT NULL UNIQUE, "sys"."sql_mul"(smallint(9) "2", "%12"."%12" NOT NULL UNIQUE) NOT NULL) NOT NULL as "%7"."%7" ]
+) [ "%7"."%7" NOT NULL ]
 
 query I nosort
 SELECT sum(CASE x.x WHEN 1 THEN 1 END + 2) FROM (select distinct 1) x(x)

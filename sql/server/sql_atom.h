@@ -32,7 +32,7 @@ extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, lng val);
 extern atom *atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 extern atom *atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 
-extern unsigned int atom_num_digits( atom *a );
+extern unsigned int atom_num_digits(atom *a);
 
 /* cast atom a to type tp (success returns not NULL, fail returns NULL) */
 extern atom *atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp);
@@ -50,11 +50,14 @@ extern lng atom_get_int(atom *a);
 
 extern int atom_cmp(atom *a1, atom *a2);
 
+extern atom *atom_absolute(sql_allocator *sa, atom *a);
 extern atom *atom_neg(sql_allocator *sa, atom *a);
 extern atom *atom_add(sql_allocator *sa, atom *a1, atom *a2);
 extern atom *atom_sub(sql_allocator *sa, atom *a1, atom *a2);
 extern atom *atom_mul(sql_allocator *sa, atom *a1, atom *a2);
+extern atom *atom_div(sql_allocator *sa, atom *a1, atom *a2);
 extern atom *atom_inc(sql_allocator *sa, atom *a);
+
 extern int atom_is_true(atom *a);
 extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
@@ -67,6 +70,6 @@ extern const hge scales[MAX_SCALE];
 extern const lng scales[MAX_SCALE];
 #endif
 
-extern atom *atom_zero_value(sql_allocator *sa, sql_subtype* tpe);
+extern atom *atom_zero_value(sql_allocator *sa, sql_subtype *tpe);
 extern atom *atom_max_value(sql_allocator *sa, sql_subtype *tpe);
 #endif /* _SQL_ATOM_H_ */
