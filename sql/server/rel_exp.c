@@ -356,6 +356,8 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 	e->l = l;
 	e->r = append(append(sa_list(sa), gbe), obe);
 	e->f = f;
+	if (!f->func->s && strcmp(f->func->base.name, "count") == 0)
+		set_has_no_nil(e);
 	e->semantics = f->func->semantics;
 	return e;
 }
@@ -2416,7 +2418,7 @@ exp_unsafe(sql_exp *e, int allow_identity)
 	case e_func: {
 		sql_subfunc *f = e->f;
 
-		if (IS_ANALYTIC(f->func) || (!allow_identity && is_identity(e, NULL)))
+		if (IS_ANALYTIC(f->func) || !LANG_INT_OR_MAL(f->func->lang) || f->func->side_effect || (!allow_identity && is_identity(e, NULL)))
 			return 1;
 		return exps_have_unsafe(e->l, allow_identity);
 	} break;

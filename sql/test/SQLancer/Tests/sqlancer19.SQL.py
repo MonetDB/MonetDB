@@ -373,6 +373,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(1,)])
     cli.execute("SELECT 1 FROM rt3 LEFT OUTER JOIN (SELECT 1) x(x) ON 1 <> ALL(VALUES (rt3.c0)) where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(1,)])
+    cli.execute("(SELECT greatest(JSON '\"5mTevdOzH5brfkMv\"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM t3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM t3);") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("(SELECT greatest(JSON '\"5mTevdOzH5brfkMv\"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM rt3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM rt3);") \
+        .assertSucceeded().assertDataResultMatch([])
     cli.execute("ROLLBACK;")
 
     cli.execute("SELECT CASE 1 WHEN 5 THEN ((SELECT t3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (t3.c0), (1)) END FROM t3;") \
