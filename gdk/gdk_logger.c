@@ -1285,6 +1285,9 @@ log_read_transaction(logger *lg)
 		tr = tr_abort(lg, tr);
 	if (!lg->flushing)
 		GDKdebug = dbg;
+
+	if (offsets)
+		GDKfree(offsets);
 	if (!ok)
 		return LOG_EOF;
 	return err;
