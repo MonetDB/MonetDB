@@ -681,6 +681,7 @@ BATfree(BAT *b)
 	IMPSfree(b);
 	OIDXfree(b);
 	STRMPfree(b);
+	TSKfree(b);
 	MT_lock_set(&b->theaplock);
 	if (nunique != BUN_NONE) {
 		b->tunique_est = (double) nunique;

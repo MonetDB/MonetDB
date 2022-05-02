@@ -854,6 +854,7 @@ typedef struct BAT {
 #define tstrimps	T.strimps
 
 #define TSKdestroy(b) if (b->tsink && b->tsink->destroy) { b->tsink->destroy(b->tsink); b->tsink = NULL; }
+#define TSKfree(b)    TSKdestroy(b)
 
 /* some access functions for the bitmask type */
 static inline void

@@ -855,9 +855,12 @@ ht_destroy(hash_table *ht)
 		GDKfree((void*)ht->gids);
 	if (ht->pgids)
 		GDKfree(ht->pgids);
-	for(int i = 0; i<ht->nr_allocators; i++) {
-		if(ht->allocators[i])
-			sa_destroy(ht->allocators[i]);
+	if (ht->allocators) {
+		for(int i = 0; i<ht->nr_allocators; i++) {
+			if(ht->allocators[i])
+				sa_destroy(ht->allocators[i]);
+		}
+		GDKfree(ht->allocators);
 	}
 	GDKfree(ht);
 }
@@ -1591,6 +1594,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
 				if (!h->allocators)
 					err = 1;
+				else
+					h->nr_allocators = p->p->nr_workers;
 			}
 			pipeline_unlock(p);
 		}
@@ -1891,6 +1896,8 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 				h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
 				if (!h->allocators)
 					err = 1;
+				else
+					h->nr_allocators = p->p->nr_workers;
 			}
 			pipeline_unlock(p);
 		}
