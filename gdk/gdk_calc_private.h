@@ -36,10 +36,7 @@
 	do {								\
 		if (__builtin_##op##_overflow(lft, rgt, &(dst)) ||	\
 		    (dst) < -(max) || (dst) > (max)) {			\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = nil;					\
-			nils++;						\
+			on_overflow;					\
 		}							\
 	} while (0)
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
@@ -51,19 +48,13 @@
 	do {							\
 		if ((rgt) < 1) {				\
 			if (-(max) - (rgt) > (lft)) {		\
-				if (abort_on_error)		\
-					on_overflow;		\
-				(dst) = TYPE3##_nil;		\
-				nils++;				\
+				on_overflow;			\
 			} else {				\
 				(dst) = (TYPE3) (lft) + (rgt);	\
 			}					\
 		} else {					\
 			if ((max) - (rgt) < (lft)) {		\
-				if (abort_on_error)		\
-					on_overflow;		\
-				(dst) = TYPE3##_nil;		\
-				nils++;				\
+				on_overflow;			\
 			} else {				\
 				(dst) = (TYPE3) (lft) + (rgt);	\
 			}					\
@@ -91,19 +82,13 @@
 	do {							\
 		if ((rgt) < 1) {				\
 			if ((max) + (rgt) < (lft)) {		\
-				if (abort_on_error)		\
-					on_overflow;		\
-				(dst) = TYPE3##_nil;		\
-				nils++;				\
+				on_overflow;			\
 			} else {				\
 				(dst) = (TYPE3) (lft) - (rgt);	\
 			}					\
 		} else {					\
 			if (-(max) + (rgt) > (lft)) {		\
-				if (abort_on_error)		\
-					on_overflow;		\
-				(dst) = TYPE3##_nil;		\
-				nils++;				\
+				on_overflow;			\
 			} else {				\
 				(dst) = (TYPE3) (lft) - (rgt);	\
 			}					\
@@ -132,10 +117,7 @@
 		TYPE4 c = (TYPE4) (lft) * (rgt);			\
 		if (c < (TYPE4) -(max) ||				\
 		    c > (TYPE4) (max)) {				\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = TYPE3##_nil;				\
-			nils++;						\
+			on_overflow;					\
 		} else {						\
 			(dst) = (TYPE3) c;				\
 		}							\
@@ -168,10 +150,7 @@
 		    (chi == -1 && clo < 0 && clo >= -(max))) {		\
 			(dst) = (lng) clo;				\
 		} else {						\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = lng_nil;				\
-			nils++;						\
+			on_overflow;					\
 		}							\
 	} while (0)
 #else
@@ -201,10 +180,7 @@
 		     (c) <= (ulng) (max))) {				\
 			(dst) = sign * (lng) c;				\
 		} else {						\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = lng_nil;				\
-			nils++;						\
+			on_overflow;					\
 		}							\
 	} while (0)
 #endif	/* HAVE_HGE */
@@ -243,10 +219,7 @@
 		    (c) <= (uhge) (max)) {				\
 			(dst) = sign * (hge) c;				\
 		} else {						\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = hge_nil;				\
-			nils++;						\
+			on_overflow;					\
 		}							\
 	} while (0)
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
@@ -316,8 +289,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 		    struct canditer *restrict ci,
 		    void *restrict results, BUN ngrp, int tp1, int tp2,
 		    const oid *restrict gids,
-		    oid min, oid max, bool skip_nils, bool abort_on_error,
-		    bool nil_if_empty)
+		    oid min, oid max, bool skip_nils, bool nil_if_empty)
 	__attribute__((__visibility__("hidden")));
 
 /* format strings for the seven/eight basic types we deal with
@@ -606,16 +578,12 @@ BUN dofsum(const void *restrict values, oid seqb,
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
 				} else if (CHECK(v1, v2)) {		\
-					if (abort_on_error) {		\
-						GDKerror("%s: shift operand too large in " \
-							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
-							 func,		\
-							 CST##TYPE1 v1,	\
-							 CST##TYPE2 v2); \
-						goto checkfail;		\
-					}				\
-					((TYPE3 *)dst)[k] = TYPE3##_nil; \
-					nils++;				\
+					GDKerror("%s: shift operand too large in " \
+						 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+						 func,			\
+						 CST##TYPE1 v1,		\
+						 CST##TYPE2 v2);	\
+					goto checkfail;			\
 				} else {				\
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
@@ -633,16 +601,12 @@ BUN dofsum(const void *restrict values, oid seqb,
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
 				} else if (CHECK(v1, v2)) {		\
-					if (abort_on_error) {		\
-						GDKerror("%s: shift operand too large in " \
-							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
-							 func,		\
-							 CST##TYPE1 v1,	\
-							 CST##TYPE2 v2); \
-						goto checkfail;		\
-					}				\
-					((TYPE3 *)dst)[k] = TYPE3##_nil; \
-					nils++;				\
+					GDKerror("%s: shift operand too large in " \
+						 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+						 func,			\
+						 CST##TYPE1 v1,		\
+						 CST##TYPE2 v2);	\
+					goto checkfail;			\
 				} else {				\
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\

@@ -1798,7 +1798,7 @@ cleanup:
 			   &(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
 			   &curval, 1, TYPE_##TPE1,			\
 			   TYPE_##TPE2, NULL, 0, 0, true,		\
-			   true, true) == BUN_NONE) {			\
+			   true) == BUN_NONE) {				\
 			goto bailout;					\
 		}							\
 		for (; k < i; k++)					\
@@ -1960,8 +1960,6 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, nlevels = 0;
 	bit *np = pi.base, *op = oi.base;
-	int abort_on_error = 1;
-	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
 	BAT *st = NULL;
@@ -2220,10 +2218,7 @@ nosupport:
 			if (is_##TPE2##_nil(curval)) {			\
 				curval = (TPE2) ARG;			\
 			} else if (ABSOLUTE(curval) > 1 && GDK_##TPE2##_max / ABSOLUTE(ARG) < ABSOLUTE(curval)) { \
-				if (abort_on_error)			\
-					goto calc_overflow;		\
-				curval = TPE2##_nil;			\
-				nils++;					\
+				goto calc_overflow;			\
 			} else {					\
 				curval *= ARG;				\
 			}						\
@@ -2297,10 +2292,7 @@ nosupport:
 			if (is_##TPE2##_nil(computed)) {		\
 				computed = VAL;				\
 			} else if (ABSOLUTE(computed) > 1 && GDK_##TPE2##_max / ABSOLUTE(VAL) < ABSOLUTE(computed)) { \
-				if (abort_on_error)			\
-					goto calc_overflow;		\
-				computed = TPE2##_nil;			\
-				nils++;					\
+				goto calc_overflow;			\
 			} else {					\
 				computed *= VAL;			\
 			}						\
@@ -2487,8 +2479,6 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, nlevels = 0;
 	bit *np = pi.base, *op = oi.base;
-	int abort_on_error = 1;
-	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
 	BAT *st = NULL;
