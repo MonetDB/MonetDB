@@ -1226,7 +1226,7 @@ log_read_transaction(logger *lg)
 				err = log_read_updates(lg, tr, &l, l.id, offsets, &nr_offsets);
 				if (l.flag == LOG_UPDATE_CONST && offsets && nr_offsets == cap_offsets) {
 					cap_offsets <<= 1;
-					offsets = GDKrealloc(offsets, cap_offsets);
+					offsets = GDKrealloc(offsets, sizeof(*offsets) * cap_offsets);
 				}
 			}
 			break;
