@@ -140,7 +140,6 @@ BAT *BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils);
 BAT *BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils);
-BAT *BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils, const char *restrict separator);
