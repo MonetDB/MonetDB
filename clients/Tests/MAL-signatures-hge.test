@@ -62104,21 +62104,6 @@ pattern optimizer.strimps(X_0:str, X_1:str):str
 OPTwrapper;
 Use strimps index if appropriate
 optimizer
-volcano
-pattern optimizer.volcano():str 
-OPTwrapper;
-(empty)
-optimizer
-volcano
-pattern optimizer.volcano(X_0:str, X_1:str):str 
-OPTwrapper;
-Simulate volcano style execution
-optimizer
-volcano_pipe
-function optimizer.volcano_pipe():void;
-(empty)
-(empty)
-optimizer
 wlc
 pattern optimizer.wlc():str 
 OPTwrapper;
