@@ -258,7 +258,7 @@ VALconvert(int typ, ValPtr t)
 	dst.vtype = typ;
 
 	/* first convert into a new location */
-	if (VARconvert(&dst, t, true, 0, 0, 0) != GDK_SUCCEED)
+	if (VARconvert(&dst, t, 0, 0, 0) != GDK_SUCCEED)
 		return NULL;
 
 	/* then maybe free the old */
