@@ -2985,11 +2985,6 @@ ALGsemijoin;
 Semi join with candidate lists
 algebra
 slice
-command algebra.slice(X_0:bat[:any_1], X_1:lng, X_2:lng):bat[:any_1] 
-ALGslice;
-Return the slice with the BUNs at position x till y.
-algebra
-slice
 command algebra.slice(X_0:bat[:any_1], X_1:int, X_2:int):bat[:any_1] 
 ALGslice_int;
 Return the slice with the BUNs at position x till y.
@@ -36470,11 +36465,6 @@ RMTepilogue;
 release the resources held by the remote module
 remote
 exec
-pattern remote.exec(X_0:str, X_1:str, X_2:str):str 
-RMTexec;
-remotely executes <mod>.<func> and returns the handle to its result
-remote
-exec
 pattern remote.exec(X_0:str, X_1:str, X_2:str):str... 
 RMTexec;
 remotely executes <mod>.<func> and returns the handle to its result
@@ -36483,11 +36473,6 @@ exec
 pattern remote.exec(X_0:str, X_1:str, X_2:str, X_3:ptr, X_4:str...):void 
 RMTexec;
 remotely executes <mod>.<func> using the argument list of remote objects and applying function pointer rcb as callback to handle any results.
-remote
-exec
-pattern remote.exec(X_0:str, X_1:str, X_2:str, X_3:str...):str 
-RMTexec;
-remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result
 remote
 exec
 pattern remote.exec(X_0:str, X_1:str, X_2:str, X_3:str...):str... 
