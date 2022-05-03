@@ -727,6 +727,29 @@ sql_min_max_propagate_statistics(mvc *sql, sql_exp *e)
 }
 
 static void
+sql_avg_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data;
+	atom *omin, *omax;
+
+	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
+		sql_subtype *etype = exp_subtype(e), *ftype = exp_subtype(first);
+		if (ftype && etype->type->base.id == ftype->type->base.id) { /* average on decimals or intervals */
+			set_minmax_property(sql, e, PROP_MAX, omax);
+			set_minmax_property(sql, e, PROP_MIN, omin);
+		} else if (ftype && etype) { /* average on integer types */
+			assert(etype->type->eclass == EC_FLT);
+			atom *min_cast = atom_copy(sql->sa, omin), *max_cast = atom_copy(sql->sa, omax);
+			if ((min_cast = atom_cast(sql->sa, min_cast, etype)) && (max_cast = atom_cast(sql->sa, max_cast, etype))) {
+				set_minmax_property(sql, e, PROP_MAX, max_cast);
+				set_minmax_property(sql, e, PROP_MIN, min_cast);
+			}
+		}
+	}
+}
+
+static void
 sql_zero_or_one_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
@@ -739,7 +762,7 @@ sql_zero_or_one_propagate_statistics(mvc *sql, sql_exp *e)
 	}
 }
 
-static struct function_properties functions_list[34] = {
+static struct function_properties functions_list[35] = {
 	/* arithmetic functions */
 	{"sql_add", &sql_add_propagate_statistics},
 	{"sql_sub", &sql_sub_propagate_statistics},
@@ -780,6 +803,7 @@ static struct function_properties functions_list[34] = {
 	/* aggregates */
 	{"min", &sql_min_max_propagate_statistics},
 	{"max", &sql_min_max_propagate_statistics},
+	{"avg", &sql_avg_propagate_statistics},
 	{"zero_or_one", &sql_zero_or_one_propagate_statistics}
 };
 
