@@ -732,7 +732,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			  EC_TEMP_NOFRAC(tp->type->eclass)))) {
 			ValRecord v;
 			v.vtype = tp->type->localtype;
-			if (VARconvert(&v, &a->data, true, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
+			if (VARconvert(&v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
 				GDKclrerr();
 				return NULL;
 			}
@@ -917,7 +917,7 @@ atom_add(sql_allocator *sa, atom *a1, atom *a2)
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
 	dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcadd(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+	if (VARcalcadd(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
@@ -951,7 +951,7 @@ atom_sub(sql_allocator *sa, atom *a1, atom *a2)
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
 	dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcsub(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+	if (VARcalcsub(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
@@ -979,7 +979,7 @@ atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
 	dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcmul(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+	if (VARcalcmul(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
@@ -1002,7 +1002,7 @@ atom_div(sql_allocator *sa, atom *a1, atom *a2)
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
 	dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcdiv(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+	if (VARcalcdiv(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
@@ -1022,7 +1022,7 @@ atom_inc(sql_allocator *sa, atom *a)
 	if (a->isnull)
 		return a;
 	dst.vtype = a->data.vtype;
-	if (VARcalcincr(&dst, &a->data, 1) != GDK_SUCCEED) {
+	if (VARcalcincr(&dst, &a->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}

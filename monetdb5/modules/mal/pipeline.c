@@ -2726,7 +2726,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(pg->batCacheid);
 
 	if (pci->retc == 2 && (pci->argc == 6 || pci->argc == 7)) {
-		if (BATgroupavg(&bn, &cn, b, g, NULL, NULL, TYPE_dbl, true, true, 0) != GDK_SUCCEED) {
+		if (BATgroupavg(&bn, &cn, b, g, NULL, NULL, TYPE_dbl, true, 0) != GDK_SUCCEED) {
 			if (!private)
 				pipeline_unlock1(bn);
 			throw(MAL, "aggr.avg", GDK_EXCEPTION);
@@ -3249,7 +3249,7 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 	}
 	lng result1 = 0;
 	if (b->ttype == TYPE_msk || mask_cand(b)) {
-		BATsum(&result1, TYPE_lng, b, s, *ignore_nils, false, false, false);
+		BATsum(&result1, TYPE_lng, b, s, *ignore_nils, false, false);
 	} else if (*ignore_nils) {
 		result1 = (lng) BATcount_no_nil(b, s);
 	} else {

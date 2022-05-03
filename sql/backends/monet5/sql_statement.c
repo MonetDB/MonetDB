@@ -3727,7 +3727,7 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	const char *mod, *aggrfunc;
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
-	bool complex_aggr = false, abort_on_error = false;
+	bool complex_aggr = false;
 	int *stmt_nr = NULL;
 	int avg = 0;
 	int pipeline_mod = (pipeline && !grp);
@@ -3755,9 +3755,6 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 			complex_aggr = true;
 		if (!pipeline && restype == TYPE_dbl)
 			avg = 0;
-		/* some "sub" aggregates have an extra argument "abort_on_error" */
-		abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
-						strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
 	}
 
 	int argc = 1
@@ -3842,17 +3839,11 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		if (!pipeline) {
 			q = pushArgument(mb, q, grp->nr);
 			q = pushArgument(mb, q, ext->nr);
-				if (LANG_INT_OR_MAL(op->func->lang) && avg) /* push nil candidates */
-					q = pushNil(mb, q, TYPE_bat);
+			if (LANG_INT_OR_MAL(op->func->lang) && avg) /* push nil candidates */
+				q = pushNil(mb, q, TYPE_bat);
 		}
-		if (LANG_INT_OR_MAL(op->func->lang)) {
-			if (!pipeline || (grp != op1 && strncmp(aggrfunc, "count", 5) == 0))
-				q = pushBit(mb, q, no_nil);
-			if (!pipeline) {
-				if (!avg && abort_on_error)
-					q = pushBit(mb, q, TRUE);
-			}
-		}
+		if (LANG_INT_OR_MAL(op->func->lang) && (!pipeline || (grp != op1 && strncmp(aggrfunc, "count", 5) == 0)))
+			q = pushBit(mb, q, no_nil);
 	} else if (LANG_INT_OR_MAL(op->func->lang) && no_nil && strncmp(aggrfunc, "count", 5) == 0) {
 		q = pushBit(mb, q, no_nil);
 	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {

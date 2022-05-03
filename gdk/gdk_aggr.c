@@ -43,9 +43,7 @@
  * If a group is empty, the result for that group is nil.
  *
  * If there is overflow during the calculation of an aggregate, the
- * whole operation fails if abort_on_error is set to non-zero,
- * otherwise the result of the group in which the overflow occurred is
- * nil.
+ * whole operation fails.
  *
  * If skip_nils is non-zero, a nil value in b is ignored, otherwise a
  * nil in b results in a nil result for the group.
@@ -171,8 +169,7 @@ dofsum(const void *restrict values, oid seqb,
        struct canditer *restrict ci,
        void *restrict results, BUN ngrp, int tp1, int tp2,
        const oid *restrict gids,
-       oid min, oid max, bool skip_nils, bool abort_on_error,
-       bool nil_if_empty)
+       oid min, oid max, bool skip_nils, bool nil_if_empty)
 {
 	struct pergroup {
 		int npartials;
@@ -309,17 +306,7 @@ dofsum(const void *restrict values, oid seqb,
 		}
 #ifdef INFINITES_ALLOWED
 		if (isinf(pergroup[grp].infs) || isnan(pergroup[grp].infs)) {
-			if (abort_on_error) {
-				goto overflow;
-			}
-			if (tp2 == TYPE_flt)
-				((flt *) results)[grp] = flt_nil;
-			else
-				((dbl *) results)[grp] = dbl_nil;
-			nils++;
-			GDKfree(pergroup[grp].partials);
-			pergroup[grp].partials = NULL;
-			continue;
+			goto overflow;
 		}
 #endif
 
@@ -342,17 +329,12 @@ dofsum(const void *restrict values, oid seqb,
 						if (isinf(f) ||
 						    isnan(f) ||
 						    is_flt_nil(f)) {
-							if (abort_on_error)
-								goto overflow;
-							((flt *) results)[grp] = flt_nil;
-							nils++;
-						} else
-							((flt *) results)[grp] = f;
-					} else if (is_dbl_nil(x)) {
-						if (abort_on_error)
 							goto overflow;
-						((dbl *) results)[grp] = dbl_nil;
-						nils++;
+						} else {
+							((flt *) results)[grp] = f;
+						}
+					} else if (is_dbl_nil(x)) {
+						goto overflow;
 					} else
 						((dbl *) results)[grp] = x;
 					continue;
@@ -412,19 +394,15 @@ dofsum(const void *restrict values, oid seqb,
 		if (tp2 == TYPE_flt) {
 			f = (flt) hi;
 			if (isinf(f) || isnan(f) || is_flt_nil(f)) {
-				if (abort_on_error)
-					goto overflow;
-				((flt *) results)[grp] = flt_nil;
-				nils++;
-			} else
-				((flt *) results)[grp] = f;
-		} else if (is_dbl_nil(hi)) {
-			if (abort_on_error)
 				goto overflow;
-			((dbl *) results)[grp] = dbl_nil;
-			nils++;
-		} else
+			} else {
+				((flt *) results)[grp] = f;
+			}
+		} else if (is_dbl_nil(hi)) {
+			goto overflow;
+		} else {
 			((dbl *) results)[grp] = hi;
+		}
 	}
 	GDKfree(pergroup);
 	return nils;
@@ -721,7 +699,7 @@ dosum(const void *restrict values, bool nonil, oid seqb,
       struct canditer *restrict ci,
       void *restrict results, BUN ngrp, int tp1, int tp2,
       const oid *restrict gids,
-      oid min, oid max, bool skip_nils, bool abort_on_error,
+      oid min, oid max, bool skip_nils,
       bool nil_if_empty, const char *func, const char **algo)
 {
 	BUN nils = 0;
@@ -745,7 +723,7 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 			goto unsupported;
 		*algo = "sum: floating point";
 		return dofsum(values, seqb, ci, results, ngrp, tp1, tp2,
-			      gids, min, max, skip_nils, abort_on_error,
+			      gids, min, max, skip_nils,
 			      nil_if_empty);
 	}
 
@@ -913,7 +891,7 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 
 /* calculate group sums with optional candidates list */
 BAT *
-BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -947,7 +925,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, tp, abort_on_error, 0, 0, 0);
+		return BATconvert(b, s, tp, 0, 0, 0);
 	}
 
 	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
@@ -963,7 +941,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	BATiter bi = bat_iterator(b);
 	nils = dosum(bi.base, bi.nonil, b->hseqbase, &ci,
 		     Tloc(bn, 0), ngrp, bi.type, tp, gids, min, max,
-		     skip_nils, abort_on_error, true, __func__, &algo);
+		     skip_nils, true, __func__, &algo);
 	bat_iterator_end(&bi);
 
 	if (nils < BUN_NONE) {
@@ -1031,7 +1009,7 @@ mskCountOnes(BAT *b, struct canditer *ci)
 }
 
 gdk_return
-BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
+BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1159,11 +1137,8 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error
 					*(flt *) res = flt_nil;
 				else if (cnt > 0 &&
 					 GDK_flt_max / cnt < fabs(avg)) {
-					if (abort_on_error) {
-						GDKerror("22003!overflow in sum aggregate.\n");
-						return GDK_FAIL;
-					}
-					*(flt *) res = flt_nil;
+					GDKerror("22003!overflow in sum aggregate.\n");
+					return GDK_FAIL;
 				} else {
 					*(flt *) res = (flt) avg * cnt;
 				}
@@ -1172,11 +1147,8 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error
 					*(dbl *) res = dbl_nil;
 				} else if (cnt > 0 &&
 					   GDK_dbl_max / cnt < fabs(avg)) {
-					if (abort_on_error) {
-						GDKerror("22003!overflow in sum aggregate.\n");
-						return GDK_FAIL;
-					}
-					*(dbl *) res = dbl_nil;
+					GDKerror("22003!overflow in sum aggregate.\n");
+					return GDK_FAIL;
 				} else {
 					*(dbl *) res = avg * cnt;
 				}
@@ -1201,7 +1173,7 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error
 	BATiter bi = bat_iterator(b);
 	BUN nils = dosum(bi.base, bi.nonil, b->hseqbase, &ci,
 			 res, true, bi.type, tp, &min, min, max,
-			 skip_nils, abort_on_error, nil_if_empty, __func__, &algo);
+			 skip_nils, nil_if_empty, __func__, &algo);
 	bat_iterator_end(&bi);
 	if (inout) {
 		switch (tp) {
@@ -1411,10 +1383,7 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error
 					if (!is_##TYPE2##_nil(prods[gid])) { \
 						if (ABSOLUTE(vals[i]) > 1 && \
 						    GDK_##TYPE2##_max / ABSOLUTE(vals[i]) < ABSOLUTE(prods[gid])) { \
-							if (abort_on_error) \
-								goto overflow; \
-							prods[gid] = TYPE2##_nil; \
-							nils++;		\
+							goto overflow;	\
 						} else {		\
 							prods[gid] *= vals[i]; \
 						}			\
@@ -1430,7 +1399,7 @@ static BUN
 doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
        void *restrict results, BUN ngrp, int tp1, int tp2,
        const oid *restrict gids, bool gidincr, oid min, oid max,
-       bool skip_nils, bool abort_on_error, bool nil_if_empty, const char *func)
+       bool skip_nils, bool nil_if_empty, const char *func)
 {
 	BUN nils = 0;
 	BUN i;
@@ -1657,7 +1626,7 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 
 /* calculate group products with optional candidates list */
 BAT *
-BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -1690,7 +1659,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, tp, abort_on_error, 0, 0, 0);
+		return BATconvert(b, s, tp, 0, 0, 0);
 	}
 
 	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
@@ -1706,7 +1675,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	BATiter bi = bat_iterator(b);
 	nils = doprod(bi.base, b->hseqbase, &ci, Tloc(bn, 0), ngrp,
 		      bi.type, tp, gids, true, min, max, skip_nils,
-		      abort_on_error, true, __func__);
+		      true, __func__);
 	bat_iterator_end(&bi);
 
 	if (nils < BUN_NONE) {
@@ -1732,7 +1701,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 }
 
 gdk_return
-BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, bool inout)
+BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1789,7 +1758,7 @@ BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_erro
 	BATiter bi = bat_iterator(b);
 	nils = doprod(bi.base, b->hseqbase, &ci, res, true,
 		      bi.type, tp, &min, false, min, max,
-		      skip_nils, abort_on_error, nil_if_empty, __func__);
+		      skip_nils, nil_if_empty, __func__);
 	bat_iterator_end(&bi);
 	if (inout) {
 		switch (tp) {
@@ -1939,7 +1908,7 @@ BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_erro
  * point which could potentially losse bits during processing
  * (e.g. average of 2**62 and a billion 1's). */
 gdk_return
-BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error, int scale)
+BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -2004,7 +1973,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		if ((bn = BATconvert(b, s, TYPE_dbl, abort_on_error, 0, 0, 0)) == NULL)
+		if ((bn = BATconvert(b, s, TYPE_dbl, 0, 0, 0)) == NULL)
 			return GDK_FAIL;
 		if (cntsp) {
 			lng one = 1;
@@ -3273,9 +3242,6 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 #endif
 	struct canditer ci;
 	const void *restrict src;
-	/* these two needed for ADD_WITH_CHECK macro */
-	bool abort_on_error = true;
-	BUN nils = 0;
 
 	if (inout) {
 		double iprt, fprt; /* integer and fraction parts */
@@ -3397,7 +3363,7 @@ bailout:
 
 /* calculate group counts with optional candidates list */
 BAT *
-BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -3423,7 +3389,6 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 
 	assert(tp == TYPE_lng);
 	(void) tp;		/* compatibility (with other BATgroup* */
-	(void) abort_on_error;	/* functions) argument */
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
@@ -3537,84 +3502,6 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
-}
-
-/* calculate group sizes (number of TRUE values) with optional
- * candidates list */
-BAT *
-BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
-{
-	const oid *restrict gids;
-	oid min, max;
-	BUN i, ngrp;
-	const bit *restrict bits;
-	lng *restrict cnts;
-	BAT *bn = NULL;
-	struct canditer ci;
-	const char *err;
-	lng t0 = 0;
-
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-
-	assert(tp == TYPE_lng);
-	assert(b->ttype == TYPE_bit);
-	/* compatibility arguments */
-	(void) tp;
-	(void) abort_on_error;
-	(void) skip_nils;
-
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
-		GDKerror("%s\n", err);
-		return NULL;
-	}
-	if (g == NULL) {
-		GDKerror("b and g must be aligned\n");
-		return NULL;
-	}
-
-	if (ci.ncand == 0 || ngrp == 0) {
-		/* trivial: no products, so return bat aligned with g
-		 * with zero in the tail */
-		lng zero = 0;
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT);
-	}
-
-	bn = COLnew(min, TYPE_lng, ngrp, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	cnts = (lng *) Tloc(bn, 0);
-	memset(cnts, 0, ngrp * sizeof(lng));
-
-	if (BATtdense(g))
-		gids = NULL;
-	else
-		gids = (const oid *) Tloc(g, 0);
-
-	BATiter bi = bat_iterator(b);
-
-	bits = (const bit *) bi.base;
-
-	CAND_LOOP(&ci) {
-		i = canditer_next(&ci) - b->hseqbase;
-		if (bits[i] == 1 &&
-		    (gids == NULL || (gids[i] >= min && gids[i] <= max))) {
-			cnts[gids ? gids[i] - min : (oid) i]++;
-		}
-	}
-	bat_iterator_end(&bi);
-	BATsetcount(bn, ngrp);
-	bn->tkey = BATcount(bn) <= 1;
-	bn->tsorted = BATcount(bn) <= 1;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->tnil = false;
-	bn->tnonil = true;
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
-		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
-		  "; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
-		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
-		  ci.seq, ci.ncand, GDKusec() - t0);
-	return bn;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -3919,7 +3806,6 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 
 static BAT *
 BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
-	       bool abort_on_error,
 	       BUN (*minmax)(oid *restrict, BATiter *, const oid *restrict, BUN,
 			     oid, oid, struct canditer *restrict,
 			     bool, bool),
@@ -3939,7 +3825,6 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 
 	assert(tp == TYPE_oid);
 	(void) tp;		/* compatibility (with other BATgroup* */
-	(void) abort_on_error;	/* functions) argument */
 
 	if (!ATOMlinear(b->ttype)) {
 		GDKerror("%s: cannot determine minimum on "
@@ -3994,10 +3879,9 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 }
 
 BAT *
-BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    bool skip_nils, bool abort_on_error)
+BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
-	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
+	return BATgroupminmax(b, g, e, s, tp, skip_nils,
 			      do_groupmin, __func__);
 }
 
@@ -4168,10 +4052,9 @@ BATmin(BAT *b, void *aggr)
 }
 
 BAT *
-BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    bool skip_nils, bool abort_on_error)
+BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
-	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
+	return BATgroupminmax(b, g, e, s, tp, skip_nils,
 			      do_groupmax, __func__);
 }
 
@@ -4349,7 +4232,7 @@ BATmax(BAT *b, void *aggr)
 
 static BAT *
 doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
-		   bool skip_nils, bool abort_on_error, bool average)
+		   bool skip_nils, bool average)
 {
 	BAT *origb = b;
 	BAT *origg = g;
@@ -4366,7 +4249,6 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	dbl val;		/* only used for average */
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 	const char *err;
-	(void) abort_on_error;
 	lng t0 = 0;
 
 	size_t counter = 0;
@@ -4444,7 +4326,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			/* singleton groups, so calculating quantile is
 			 * easy */
 			if (average)
-				bn = BATconvert(b, NULL, TYPE_dbl, abort_on_error, 0, 0, 0);
+				bn = BATconvert(b, NULL, TYPE_dbl, 0, 0, 0);
 			else
 				bn = COLcopy(b, tp, false, TRANSIENT);
 			BAThseqbase(bn, g->tseqbase); /* deals with NULL */
@@ -4697,34 +4579,32 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 
 BAT *
 BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	       bool skip_nils, bool abort_on_error)
+	       bool skip_nils)
 {
 	return doBATgroupquantile(b, g, e, s, tp, 0.5,
-				  skip_nils, abort_on_error, false);
+				  skip_nils, false);
 }
 
 BAT *
 BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
-		 bool skip_nils, bool abort_on_error)
+		 bool skip_nils)
 {
 	return doBATgroupquantile(b, g, e, s, tp, quantile,
-				  skip_nils, abort_on_error, false);
+				  skip_nils, false);
 }
 
 BAT *
-BATgroupmedian_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-		   bool skip_nils, bool abort_on_error)
+BATgroupmedian_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
-	return doBATgroupquantile(b, g, e, s, tp, 0.5,
-				  skip_nils, abort_on_error, true);
+	return doBATgroupquantile(b, g, e, s, tp, 0.5, skip_nils, true);
 }
 
 BAT *
 BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
-		     bool skip_nils, bool abort_on_error)
+		     bool skip_nils)
 {
 	return doBATgroupquantile(b, g, e, s, tp, quantile,
-				  skip_nils, abort_on_error, true);
+				  skip_nils, true);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -5267,37 +5147,32 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 }
 
 BAT *
-BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-		     bool skip_nils, bool abort_on_error)
+BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
-	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, false,
 			    __func__);
 }
 
 BAT *
 BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			 bool skip_nils, bool abort_on_error)
+			 bool skip_nils)
 {
-	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, false,
 			    __func__);
 }
 
 BAT *
 BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			bool skip_nils, bool abort_on_error)
+			bool skip_nils)
 {
-	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, true,
 			    __func__);
 }
 
 BAT *
 BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			    bool skip_nils, bool abort_on_error)
+			    bool skip_nils)
 {
-	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, true,
 			    __func__);
 }
@@ -5498,17 +5373,15 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 }
 
 BAT *
-BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
-	(void) abort_on_error;
 	return dogroupcovariance(b1, b2, g, e, s, tp, skip_nils, true,
 				 __func__);
 }
 
 BAT *
-BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
-	(void) abort_on_error;
 	return dogroupcovariance(b1, b2, g, e, s, tp, skip_nils, false,
 				 __func__);
 }
@@ -5557,7 +5430,7 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 	} while (0)
 
 BAT *
-BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
 	const oid *restrict gids;
 	oid gid, min, max;
@@ -5580,7 +5453,6 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 
 	assert(tp == TYPE_dbl && BATcount(b1) == BATcount(b2) && b1->ttype == b2->ttype && BATtdense(b1) == BATtdense(b2));
 	(void) tp;
-	(void) abort_on_error;
 
 	if ((err = BATgroupaggrinit(b1, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);

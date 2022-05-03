@@ -366,8 +366,6 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	lng n = 0, rr = 0;
 	dbl *rb = (dbl *) Tloc(r, 0), curval = dbl_nil;
 	bit *np = pi.base, *op = oi.base;
-	bool abort_on_error = true;
-	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
 #ifdef HAVE_HGE
