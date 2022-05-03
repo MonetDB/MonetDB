@@ -2169,8 +2169,8 @@ project (
 | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t18") [ "t18"."a18" NOT NULL UNIQUE HASHCOL , "t18"."b18", "t18"."x18" ],
 | | | | | | | | | | | | | | | | | | | | | | | | select (
 | | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t12") [ "t12"."a12" NOT NULL UNIQUE HASHCOL , "t12"."x12" ]
-| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL HASHCOL ) = (int(32) "4") ]
-| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL HASHCOL ) ],
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL UNIQUE HASHCOL ) = (int(32) "4") ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL UNIQUE HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t3") [ "t3"."a3" NOT NULL UNIQUE HASHCOL , "t3"."b3", "t3"."x3" ]
 | | | | | | | | | | | | | | | | | | | | | | ) [ ("t3"."b3") = ("t18"."a18" NOT NULL HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | table("sys"."t10") [ "t10"."a10" NOT NULL UNIQUE HASHCOL , "t10"."b10", "t10"."x10" ]
@@ -2326,8 +2326,8 @@ project (
 | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t18") [ "t18"."a18" NOT NULL UNIQUE HASHCOL , "t18"."b18", "t18"."x18" ],
 | | | | | | | | | | | | | | | | | | | | | | | | select (
 | | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t12") [ "t12"."a12" NOT NULL UNIQUE HASHCOL , "t12"."x12" ]
-| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL HASHCOL ) = (int(32) "4") ]
-| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL HASHCOL ) ],
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL UNIQUE HASHCOL ) = (int(32) "4") ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL UNIQUE HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t3") [ "t3"."a3" NOT NULL UNIQUE HASHCOL , "t3"."b3", "t3"."x3" ]
 | | | | | | | | | | | | | | | | | | | | | | ) [ ("t3"."b3") = ("t18"."a18" NOT NULL HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | table("sys"."t10") [ "t10"."a10" NOT NULL UNIQUE HASHCOL , "t10"."b10", "t10"."x10" ]
@@ -2483,8 +2483,8 @@ project (
 | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t18") [ "t18"."a18" NOT NULL UNIQUE HASHCOL , "t18"."b18", "t18"."x18" ],
 | | | | | | | | | | | | | | | | | | | | | | | | select (
 | | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t12") [ "t12"."a12" NOT NULL UNIQUE HASHCOL , "t12"."x12" ]
-| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL HASHCOL ) = (int(32) "4") ]
-| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL HASHCOL ) ],
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL UNIQUE HASHCOL ) = (int(32) "4") ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL UNIQUE HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t3") [ "t3"."a3" NOT NULL UNIQUE HASHCOL , "t3"."b3", "t3"."x3" ]
 | | | | | | | | | | | | | | | | | | | | | | ) [ ("t3"."b3") = ("t18"."a18" NOT NULL HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | table("sys"."t10") [ "t10"."a10" NOT NULL UNIQUE HASHCOL , "t10"."b10", "t10"."x10" ]
@@ -2640,8 +2640,8 @@ project (
 | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t18") [ "t18"."a18" NOT NULL UNIQUE HASHCOL , "t18"."b18", "t18"."x18" ],
 | | | | | | | | | | | | | | | | | | | | | | | | select (
 | | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t12") [ "t12"."a12" NOT NULL UNIQUE HASHCOL , "t12"."x12" ]
-| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL HASHCOL ) = (int(32) "4") ]
-| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL HASHCOL ) ],
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL UNIQUE HASHCOL ) = (int(32) "4") ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL UNIQUE HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t3") [ "t3"."a3" NOT NULL UNIQUE HASHCOL , "t3"."b3", "t3"."x3" ]
 | | | | | | | | | | | | | | | | | | | | | | ) [ ("t3"."b3") = ("t18"."a18" NOT NULL HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | table("sys"."t10") [ "t10"."a10" NOT NULL UNIQUE HASHCOL , "t10"."b10", "t10"."x10" ]
@@ -2797,8 +2797,8 @@ project (
 | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t18") [ "t18"."a18" NOT NULL UNIQUE HASHCOL , "t18"."b18", "t18"."x18" ],
 | | | | | | | | | | | | | | | | | | | | | | | | select (
 | | | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t12") [ "t12"."a12" NOT NULL UNIQUE HASHCOL , "t12"."x12" ]
-| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL HASHCOL ) = (int(32) "4") ]
-| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL HASHCOL ) ],
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ ("t12"."a12" NOT NULL UNIQUE HASHCOL ) = (int(32) "4") ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ ("t18"."b18") = ("t12"."a12" NOT NULL UNIQUE HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | | table("sys"."t3") [ "t3"."a3" NOT NULL UNIQUE HASHCOL , "t3"."b3", "t3"."x3" ]
 | | | | | | | | | | | | | | | | | | | | | | ) [ ("t3"."b3") = ("t18"."a18" NOT NULL HASHCOL ) ],
 | | | | | | | | | | | | | | | | | | | | | | table("sys"."t10") [ "t10"."a10" NOT NULL UNIQUE HASHCOL , "t10"."b10", "t10"."x10" ]

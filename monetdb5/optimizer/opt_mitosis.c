@@ -71,7 +71,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 		/* do not split up floating point bat that is being summed */
 		if (p->retc == 1 &&
-			(((p->argc == 6 || p->argc == 7) &&
+			(((p->argc == 5 || p->argc == 6) &&
 			  getModuleId(p) == aggrRef &&
 			  getFunctionId(p) == subsumRef) ||
 			 (p->argc == 4 &&

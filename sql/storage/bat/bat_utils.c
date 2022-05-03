@@ -9,6 +9,14 @@
 #include "monetdb_config.h"
 #include "bat_utils.h"
 
+int
+bat_fix(BAT *b)
+{
+	if (b)
+		return BBPfix(b->batCacheid);
+	return 0;
+}
+
 void
 bat_destroy(BAT *b)
 {

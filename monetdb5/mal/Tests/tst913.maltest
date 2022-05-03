@@ -5,9 +5,8 @@ bat.append(b,"true");
 bat.append(b,"TRUE");
 bat.append(b,"FALSE");
 bat.append(b,"false");
-bat.append(b,"");
 bat.append(b,nil:str);
-bc:= batcalc.bit_noerror(b);
+bc:= batcalc.bit(b);
 io.print(bc);
 end;
 
@@ -24,6 +23,20 @@ user.foo();
 0
 4
 NULL
-5
-NULL
+
+statement ok
+function bar();
+b:= bat.new(:str);
+bat.append(b,"true");
+bat.append(b,"TRUE");
+bat.append(b,"FALSE");
+bat.append(b,"false");
+bat.append(b,"");
+bat.append(b,nil:str);
+bc:= batcalc.bit(b);
+io.print(bc);
+end;
+
+statement error
+user.bar();
 

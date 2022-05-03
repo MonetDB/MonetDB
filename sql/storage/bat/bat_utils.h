@@ -24,6 +24,7 @@ extern log_bid temp_dup(log_bid b);
 extern log_bid temp_create(BAT *b);
 extern log_bid temp_copy(log_bid b, bool renew, bool temp);
 
+extern int bat_fix(BAT *b);
 extern void bat_destroy(BAT *b);
 extern BAT *bat_new(int tt, BUN size, role_t role);
 extern void bat_clear(BAT *b);
