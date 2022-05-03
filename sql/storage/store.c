@@ -6225,6 +6225,15 @@ sql_trans_is_duplicate_eliminated( sql_trans *tr, sql_column *col )
 	return 0;
 }
 
+int
+sql_trans_col_stats( sql_trans *tr, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max )
+{
+	sqlstore *store = tr->store;
+	if (col && isTable(col->t) && store->storage_api.col_stats)
+		return store->storage_api.col_stats(tr, col, nonil, unique, unique_est, min, max);
+	return 0;
+}
+
 size_t
 sql_trans_dist_count( sql_trans *tr, sql_column *col )
 {

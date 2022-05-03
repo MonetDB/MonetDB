@@ -2727,6 +2727,18 @@ dcount_col(sql_trans *tr, sql_column *c)
 	return cnt;
 }
 
+static BAT *
+bind_no_view(BAT *b, bool quick)
+{
+	if (isVIEW(b)) { /* If it is a view get the parent BAT */
+		BAT *nb = BBP_cache(VIEWtparent(b));
+		bat_destroy(b);
+		if (!(b = quick ? quick_descriptor(nb->batCacheid) : temp_descriptor(nb->batCacheid)))
+			return NULL;
+	}
+	return b;
+}
+
 static int
 min_max_col(sql_trans *tr, sql_column *c)
 {
@@ -2742,6 +2754,7 @@ min_max_col(sql_trans *tr, sql_column *c)
 	if ((d = ATOMIC_PTR_GET(&c->data))) {
 		if (d->cs.st == ST_FOR)
 			return 0;
+		int access = d->cs.st == ST_DICT ? RD_EXT : RDONLY;
 		lock_column(tr->store, c->base.id);
 		if (c->min && c->max) {
 			unlock_column(tr->store, c->base.id);
@@ -2749,7 +2762,11 @@ min_max_col(sql_trans *tr, sql_column *c)
 		}
 		_DELETE(c->min);
 		_DELETE(c->max);
-		if ((b = temp_descriptor(d->cs.st == ST_DICT ? d->cs.ebid : d->cs.bid))) {
+		if ((b = bind_col(tr, c, access))) {
+			if (!(b = bind_no_view(b, false))) {
+				unlock_column(tr->store, c->base.id);
+				return 0;
+			}
 			BATiter bi = bat_iterator(b);
 			if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
 				const void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
@@ -2866,6 +2883,71 @@ double_elim_col(sql_trans *tr, sql_column *col)
 		assert(de >= 0 && de <= 16);
 	}
 	return de;
+}
+
+static int
+col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
+{
+	int ok = 0;
+	BAT *b = NULL, *off = NULL, *upv = NULL;
+	sql_delta *d = NULL;
+
+	(void) tr;
+	assert(tr->active);
+	*nonil = false;
+	*unique = false;
+	*unique_est = 0.0;
+	if (!c || !isTable(c->t) || !c->t->s)
+		return ok;
+
+	if ((d = ATOMIC_PTR_GET(&c->data))) {
+		if (d->cs.st == ST_FOR) {
+			*nonil = true; /* TODO for min/max. I will do it later */
+			return ok;
+		}
+		int eclass = c->type.type->eclass;
+		int access = d->cs.st == ST_DICT ? RD_EXT : RDONLY;
+		if ((b = bind_col(tr, c, access))) {
+			if (!(b = bind_no_view(b, false)))
+				return ok;
+			BATiter bi = bat_iterator(b);
+			*nonil = bi.nonil && !bi.nil;
+
+			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
+				d->cs.ucnt == 0 && (bi.minpos != BUN_NONE || bi.maxpos != BUN_NONE)) {
+				if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
+					ok |= 1;
+				if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
+					ok |= 2;
+			}
+			if (d->cs.ucnt == 0) {
+				if (d->cs.st == ST_DEFAULT) {
+					*unique = bi.key;
+					*unique_est = bi.unique_est;
+				} else if (d->cs.st == ST_DICT && (off = bind_col(tr, c, QUICK)) && (off = bind_no_view(off, true))) {
+					/* for dict, check the offsets bat for uniqueness */
+					MT_lock_set(&off->theaplock);
+					*unique = off->tkey;
+					*unique_est = off->tunique_est;
+					MT_lock_unset(&off->theaplock);
+				}
+			}
+			bat_iterator_end(&bi);
+			bat_destroy(b);
+			if (*nonil && d->cs.ucnt > 0) {
+				/* This could use a quick descriptor */
+				if (!(upv = bind_col(tr, c, RD_UPD_VAL)) || !(upv = bind_no_view(upv, false))) {
+					*nonil = false;
+				} else {
+					MT_lock_set(&upv->theaplock);
+					*nonil &= upv->tnonil && !upv->tnil;
+					MT_lock_unset(&upv->theaplock);
+					bat_destroy(upv);
+				}
+			}
+		}
+	}
+	return ok;
 }
 
 static int
@@ -3900,19 +3982,13 @@ static int
 merge_cs( column_storage *cs)
 {
 	int ok = LOG_OK;
-	BAT *cur = NULL;
 
-	if (cs->bid) {
-		cur = temp_descriptor(cs->bid);
-		if(!cur)
-			return LOG_ERR;
-	}
-
-	if (cs->ucnt) {
+	if (cs->bid && cs->ucnt) {
+		BAT *cur = temp_descriptor(cs->bid);
 		BAT *ui = temp_descriptor(cs->uibid);
 		BAT *uv = temp_descriptor(cs->uvbid);
 
-		if(!ui || !uv) {
+		if (!cur || !ui || !uv) {
 			bat_destroy(ui);
 			bat_destroy(uv);
 			bat_destroy(cur);
@@ -3933,15 +4009,15 @@ merge_cs( column_storage *cs)
 		temp_destroy(cs->uvbid);
 		cs->uibid = e_bat(TYPE_oid);
 		cs->uvbid = e_bat(cur->ttype);
-		if(cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
+		if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
 			ok = LOG_ERR;
 		cs->ucnt = 0;
 		bat_destroy(ui);
 		bat_destroy(uv);
+		bat_destroy(cur);
 	}
 	cs->cleared = 0;
 	cs->merged = 1;
-	bat_destroy(cur);
 	return ok;
 }
 
@@ -4913,6 +4989,7 @@ bat_storage_init( store_functions *sf)
 	sf->sorted_col = &sorted_col;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
+	sf->col_stats = &col_stats;
 
 	sf->col_dup = &col_dup;
 	sf->idx_dup = &idx_dup;
