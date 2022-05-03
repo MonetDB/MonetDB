@@ -10,7 +10,8 @@ if(GEOS_FOUND)
   add_library(geomodule MODULE)
 
   set(include_sql_files
-    40_geom)
+    40_geom
+    spatial_ref_sys)
 
   create_include_object(
     SQL_LANGUAGE
