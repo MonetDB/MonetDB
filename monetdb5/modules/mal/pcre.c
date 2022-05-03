@@ -1856,6 +1856,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	bool use_re = false, use_strcmp = false, empty = false;
 	bool with_strimps = false;
 	bool with_strimps_anti = false;
+	BUN p = 0, q = 0, rcnt = 0;
+	struct canditer ci;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1871,9 +1873,14 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, *pat, *esc)) != MAL_SUCCEED)
 		goto bailout;
 
-	/* Since the strimp pre-filtering of a LIKE query produces a superset of
-	 * the actual result the complement of that set will necessarily reject
-	 * some of the matching entries in the NOT LIKE query.
+	if (empty) {
+		if (!(bn = BATdense(0, 0, 0)))
+			msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		goto bailout;
+	}
+	/* Since the strimp pre-filtering of a LIKE query produces a superset of the actual result the complement of that
+	 * set will necessarily reject some of the matching entries in the NOT LIKE query.
 	 *
 	 * In this case we run the PCRElikeselect as a LIKE query with strimps and return the complement of the result,
 	 * taking extra care to not return NULLs. This currently means that we do not run strimps for NOT LIKE queries if
@@ -1895,61 +1902,64 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 		}
 	}
 
-	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" :
+	MT_thread_setalgorithm(// check this
 						   use_strcmp ? (with_strimps ? "pcrelike: pattern matching using strcmp with strimps" : (with_strimps_anti ? "pcrelike: pattern matching using strcmp with strimps anti" : "pcrelike: pattern matching using strcmp")) :
 						   use_re ? (with_strimps ? "pcrelike: pattern matching using RE with strimps" : (with_strimps_anti ? "pcrelike: patterm matching using RE with strimps anti" : "pcrelike: pattern matching using RE")) :
 						   (with_strimps ? "pcrelike: pattern matching using pcre with strimps" : (with_strimps_anti ? "pcrelike: pattermatching using pcre with strimps anti" : "pcrelike: pattern matching using pcre")));
 
-	if (empty) {
-		if (!(bn = BATdense(0, 0, 0)))
-			msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else {
-		BUN p = 0, q = 0, rcnt = 0;
-		struct canditer ci;
+	canditer_init(&ci, b, s);
+	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
+		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
-		canditer_init(&ci, b, s);
-		if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
-			msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-
-		if (!s || BATtdense(s)) {
-			if (s) {
-				assert(BATtdense(s));
-				p = (BUN) s->tseqbase;
-				q = p + BATcount(s);
-				if ((oid) p < b->hseqbase)
-					p = b->hseqbase;
-				if ((oid) q > b->hseqbase + BATcount(b))
-					q = b->hseqbase + BATcount(b);
-			} else {
+	if (!s || BATtdense(s)) {
+		if (s) {
+			assert(BATtdense(s));
+			p = (BUN) s->tseqbase;
+			q = p + BATcount(s);
+			if ((oid) p < b->hseqbase)
 				p = b->hseqbase;
-				q = BATcount(b) + b->hseqbase;
-			}
-		}
-
-		if (use_re) {
-			msg = re_likeselect(bn, b, s, &ci, p, q, &rcnt, *pat, (bool) *caseignore, (bool) *anti && !with_strimps_anti, use_strcmp, (unsigned char) **esc);
+			if ((oid) q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
 		} else {
-			msg = pcre_likeselect(bn, b, s, &ci, p, q, &rcnt, ppat, (bool) *caseignore, (bool) *anti && !with_strimps_anti);
-		}
-
-		if (!msg) { /* set some properties */
-			BATsetcount(bn, rcnt);
-			bn->tsorted = true;
-			bn->trevsorted = bn->batCount <= 1;
-			bn->tkey = true;
-			bn->tnil = false;
-			bn->tnonil = true;
-			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
-			if(with_strimps_anti) {
-				/* Reverse the result */
-				BAT *rev = BATnegcands(BATcount(b), bn);
-				BBPunfix(bn->batCacheid);
-				bn = rev;
-			}
+			p = b->hseqbase;
+			q = BATcount(b) + b->hseqbase;
 		}
 	}
+
+	if (use_re) {
+		msg = re_likeselect(bn, b, s, &ci, p, q, &rcnt, *pat, *caseignore, *anti && !with_strimps_anti, use_strcmp, (unsigned char) **esc);
+	} else {
+		msg = pcre_likeselect(bn, b, s, &ci, p, q, &rcnt, ppat, *caseignore, *anti && !with_strimps_anti);
+	}
+
+	if (!msg) { /* set some properties */
+		BATsetcount(bn, rcnt);
+		bn->tsorted = true;
+		bn->trevsorted = bn->batCount <= 1;
+		bn->tkey = true;
+		bn->tnil = false;
+		bn->tnonil = true;
+		bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
+		if(with_strimps_anti) {
+			/* Reverse the result taking into account the original candidate list. */
+			// BAT *rev = BATdiffcand(BATdense(b->hseqbase, 0, b->batCount), bn);
+			BAT *rev;
+			if (old_s) {
+				rev = BATdiffcand(old_s, bn);
+				assert (BATintersectcand(old_s, bn)->batCount == bn->batCount);
+				assert (rev->batCount == old_s->batCount - bn->batCount);
+			}
+
+			else
+				rev = BATnegcands(b->batCount, bn);
+			/* BAT *rev = BATnegcands(b->batCount, bn); */
+			BBPunfix(bn->batCacheid);
+			bn = rev;
+		}
+	}
+
 
 bailout:
 	if (b)
