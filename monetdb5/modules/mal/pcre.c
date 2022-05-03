@@ -1850,7 +1850,7 @@ bailout:
 static str
 PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *caseignore, const bit *anti)
 {
-	BAT *b, *s = NULL, *bn = NULL;
+	BAT *b, *s = NULL, *bn = NULL, *old_s = NULL;
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
@@ -1875,28 +1875,23 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	 * the actual result the complement of that set will necessarily reject
 	 * some of the matching entries in the NOT LIKE query.
 	 *
-	 * A better solution is to run the PCRElikeselect as a LIKE query with
-	 * strimps and return the complement of the result.
+	 * In this case we run the PCRElikeselect as a LIKE query with strimps and return the complement of the result,
+	 * taking extra care to not return NULLs. This currently means that we do not run strimps for NOT LIKE queries if
+	 * the BAT contains NULLs.
 	 */
-	if (!empty && BAThasstrimps(b) && !*anti) {
-		BAT *tmp_s = STRMPfilter(b, s, *pat);
-		if (tmp_s) {
-			if (s)
-				BBPunfix(s->batCacheid);
-			s = tmp_s;
-			with_strimps = true;
-		} else { /* If we cannot create the strimp just continue normally */
-			GDKclrerr();
-		}
-	} else if (!empty && BAThasstrimps(b) && b->tnonil && *anti) {
-		BAT *tmp_s = STRMPfilter(b, s, *pat);
-		if (tmp_s) {
-			if (s)
-				BBPunfix(s->batCacheid);
-			s = tmp_s;
-			with_strimps_anti = true;
-		} else { /* If we cannot create the strimp just continue normally */
-			GDKclrerr();
+	if (BAThasstrimps(b)) {
+		if (!*anti || (b->tnonil && *anti)) {
+			BAT *tmp_s = STRMPfilter(b, s, *pat);
+			if (tmp_s) {
+				old_s = s;
+				s = tmp_s;
+				if (!*anti)
+					with_strimps = true;
+				else
+					with_strimps_anti = true;
+			} else { /* If we cannot filter with the strimp just continue normally */
+				GDKclrerr();
+			}
 		}
 	}
 
@@ -1961,6 +1956,8 @@ bailout:
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (old_s)
+		BBPunfix(old_s->batCacheid);
 	GDKfree(ppat);
 	if (bn && !msg) {
 		*ret = bn->batCacheid;
