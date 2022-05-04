@@ -838,7 +838,7 @@ static int
 bl_restart(lng save_id)
 {
 	if (bat_logger)
-		return logger_restart(bat_logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+		return logger_flush(bat_logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 

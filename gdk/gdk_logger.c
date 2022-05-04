@@ -2381,6 +2381,12 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	return NULL;
 }
 
+gdk_return
+logger_restart(logger *lg)
+{
+	return logger_flush(lg, lg->tid);
+}
+
 /* Create a new logger */
 logger *
 logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
@@ -2406,7 +2412,7 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	}
 	fflush(stdout);
 	if (lg->changes &&
-	    (logger_restart(lg, lg->tid) != GDK_SUCCEED ||
+	    (logger_restart(lg) != GDK_SUCCEED ||
 	     logger_cleanup(lg) != GDK_SUCCEED)) {
 		logger_destroy(lg);
 		return NULL;
@@ -2422,7 +2428,7 @@ logger_destroy(logger *lg)
 		BAT *b = lg->catalog_bid;
 
 		if (lg->changes &&
-		    (logger_restart(lg, lg->tid+1) != GDK_SUCCEED ||
+		    (logger_flush(lg, lg->tid+1) != GDK_SUCCEED ||
 		     logger_cleanup(lg) != GDK_SUCCEED))
 			TRC_CRITICAL(GDK, "logger_cleanup failed\n");
 
@@ -2456,8 +2462,8 @@ logger_destroy(logger *lg)
 	GDKfree(lg);
 }
 
-gdk_return
-logger_exit(logger *lg, lng save_id)
+static gdk_return
+logger_end(logger *lg, lng save_id)
 {
 	FILE *fp;
 	char filename[FILENAME_MAX];
@@ -2550,9 +2556,15 @@ logger_exit(logger *lg, lng save_id)
 }
 
 gdk_return
-logger_restart(logger *lg, lng save_id)
+logger_exit(logger *lg)
 {
-	if (logger_exit(lg, save_id) == GDK_SUCCEED &&
+	return logger_end(lg, lg->tid);
+}
+
+gdk_return
+logger_flush(logger *lg, lng save_id)
+{
+	if (logger_end(lg, save_id) == GDK_SUCCEED &&
 	    logger_open(lg) == GDK_SUCCEED)
 		return GDK_SUCCEED;
 	return GDK_FAIL;
