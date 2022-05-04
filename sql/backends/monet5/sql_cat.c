@@ -1773,9 +1773,10 @@ SQLalter_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *schema = SaveArgReference(stk, pci, 4);
 	char *schema_path = SaveArgReference(stk, pci, 5);
 	char *oldpasswd = SaveArgReference(stk, pci, 6);
+	char *role = SaveArgReference(stk, pci, 7);
 
 	initcontext();
-	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd);
+	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd, role);
 
 	return msg;
 }

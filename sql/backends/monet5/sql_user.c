@@ -384,7 +384,8 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 static int
-monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str schema_path, str oldpasswd)
+monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str schema_path, str oldpasswd, sqlid
+		role_id)
 {
 	mvc *m = (mvc *) _mvc;
 	Client c = MCgetClient(m->clientid);
@@ -462,18 +463,19 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 	}
 
 	sqlstore *store = m->session->tr->store;
+	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
+	sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
+	sql_column *users_name = find_sql_column(info, "name");
+
+	oid rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
+	if (is_oid_nil(rid)) {
+		(void) sql_error(m, 02, "ALTER USER: user not found");
+		return FALSE;
+	}
+
 	if (schema_id) {
-		sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-		sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
-		sql_column *users_name = find_sql_column(info, "name");
 		sql_column *users_schema = find_sql_column(info, "default_schema");
 
-		oid rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
-		if (is_oid_nil(rid)) {
-			(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
-				 "your database is damaged, auth not found in SQL catalog");
-			return FALSE;
-		}
 		if ((res = store->table_api.column_update_value(m->session->tr, users_schema, rid, &schema_id))) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
 							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -482,9 +484,6 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 	}
 
 	if (schema_path) {
-		sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-		sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
-		sql_column *users_name = find_sql_column(info, "name");
 		sql_column *sp = find_sql_column(info, "schema_path");
 
 		if ((err = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
@@ -493,17 +492,22 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 			return (FALSE);
 		}
 
-		oid rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
-		if (is_oid_nil(rid)) {
-			(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
-				 "your database is damaged, auth not found in SQL catalog");
-			return FALSE;
-		}
 		if ((res = store->table_api.column_update_value(m->session->tr, sp, rid, schema_path))) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
 							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 			return (FALSE);
 		}
+	}
+
+	if (role_id) {
+		sql_column *users_role = find_sql_column(info, "default_role");
+
+		if ((res = store->table_api.column_update_value(m->session->tr, users_role, rid, &role_id))) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
+							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			return (FALSE);
+		}
+
 	}
 
 	return TRUE;
