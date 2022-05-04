@@ -1230,10 +1230,10 @@ alter_statement:
 	  append_string(l, $7);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
- | ALTER USER ident opt_with_encrypted_password user_schema user_schema_path
+ | ALTER USER ident opt_with_encrypted_password user_schema user_schema_path opt_default_role
 	{ dlist *l = L(), *p = L();
-	  if (!$4 && !$5 && !$6) {
-		yyerror(m, "ALTER USER: At least one property should be updatd");
+	  if (!$4 && !$5 && !$6 && !$7) {
+		yyerror(m, "ALTER USER: At least one property should be updated");
 		YYABORT;
 	  }
 	  append_string(l, $3);
@@ -1243,6 +1243,7 @@ alter_statement:
 	  append_int(p, $4 ? $4->h->next->data.i_val : 0);
 	  append_string(p, NULL);
 	  append_list(l, p);
+	  append_string(l, $7);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER USER ident RENAME TO ident
 	{ dlist *l = L();
@@ -1282,6 +1283,7 @@ user_schema_path:
 	SCHEMA PATH string	{ $$ = $3; }
  |  /* empty */			{ $$ = NULL; }
  ;
+
 
 alter_table_element:
 	opt_column ident SET DEFAULT default_value

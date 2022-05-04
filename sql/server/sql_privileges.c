@@ -921,10 +921,15 @@ sql_drop_user(mvc *sql, char *user)
 }
 
 char *
-sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd)
+sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd, char *role)
 {
 	sql_schema *s = NULL;
 	sqlid schema_id = 0;
+	sqlid role_id = 0;
+
+	if (role)
+		if (backend_find_role(sql, role, &role_id) < 0)
+			throw(SQL,"sql.create_user", SQLSTATE(42M31) "ALTER USER: no such role '%s'", role);
 
 	/* we may be called from MAL (nil) */
 	if (strNil(user))
@@ -943,7 +948,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
 			throw(SQL, "sql.alter_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd) == FALSE)
+	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id) == FALSE)
 		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
 	return NULL;
 }
