@@ -12,7 +12,7 @@ aggr
 allnotequal
 pattern aggr.allnotequal(X_0:bat[:any_1], X_1:bat[:any_1]):bit 
 SQLallnotequal;
-if all values in r are not equal to l return true, else if r has nil nil else false
+if all values in r are not equal to l, return true, else if r has nil, return nil, else return false
 aggr
 anyequal
 pattern aggr.anyequal(X_0:any_1, X_1:any_1):bit 
@@ -22,7 +22,7 @@ aggr
 anyequal
 pattern aggr.anyequal(X_0:bat[:any_1], X_1:bat[:any_1]):bit 
 SQLanyequal;
-if any value in r is equal to l return true, else if r has nil nil else false
+if any value in r is equal to l, return true, else if r has nil, return nil, else return false
 aggr
 avg
 command aggr.avg(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1]):bat[:dbl] 
@@ -977,42 +977,32 @@ aggr
 suballnotequal
 pattern aggr.suballnotequal(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:oid], X_6:bit):bat[:bit] 
 SQLallnotequal_grp2;
-if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true; with candidate list
+if all values in r are not equal to l, return true, else if r has nil return nil, else return false, except if rid is nil (ie empty) then return true; with candidate list
 aggr
 suballnotequal
 pattern aggr.suballnotequal(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:oid], X_5:bit):bat[:bit] 
 SQLallnotequal_grp2;
-if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true
-aggr
-suballnotequal
-pattern aggr.suballnotequal(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:oid], X_5:bit):bat[:bit] 
-SQLallnotequal_grp;
-if all values in r are not equal to l return true, else if r has nil nil else false; with candidate list
+if all values in r are not equal to l, return true, else if r has nil return nil, else return false, except if rid is nil (ie empty) then return true
 aggr
 suballnotequal
 pattern aggr.suballnotequal(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:bit] 
 SQLallnotequal_grp;
-if all values in r are not equal to l return true, else if r has nil nil else false
+if all values in r are not equal to l, return true, else if r has nil, return nil else return false
 aggr
 subanyequal
 pattern aggr.subanyequal(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:oid], X_6:bit):bat[:bit] 
 SQLanyequal_grp2;
-if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false; with candidate list
+if any value in r is equal to l, return true, else if r has nil, return nil, else return false, except if rid is nil (ie empty) then return false; with candidate list
 aggr
 subanyequal
 pattern aggr.subanyequal(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:oid], X_5:bit):bat[:bit] 
 SQLanyequal_grp2;
-if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false
-aggr
-subanyequal
-pattern aggr.subanyequal(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:oid], X_5:bit):bat[:bit] 
-SQLanyequal_grp;
-if any value in r is equal to l return true, else if r has nil nil else false; with candidate list
+if any value in r is equal to l, return true, else if r has nil, return nil, else return false, except if rid is nil (ie empty) then return false
 aggr
 subanyequal
 pattern aggr.subanyequal(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:bit] 
 SQLanyequal_grp;
-if any value in r is equal to l return true, else if r has nil nil else false
+if any value in r is equal to l, return true, else if r has nil, return nil, else return false
 aggr
 subavg
 command aggr.subavg(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit) (X_5:bat[:bte], X_6:bat[:lng], X_7:bat[:lng]) 
@@ -3447,12 +3437,12 @@ bataggr
 allnotequal
 pattern bataggr.allnotequal(X_0:bat[:any_1], X_1:bat[:any_1]):bit 
 SQLallnotequal;
-(empty)
+if all values in r are not equal to l, return true, else if r has nil, return nil, else return false
 bataggr
 anyequal
 pattern bataggr.anyequal(X_0:bat[:any_1], X_1:bat[:any_1]):bat[:bit] 
 SQLanyequal;
-(empty)
+if any value in r is equal to l, return true, else if r has nil, return nil, else return false
 bataggr
 exist
 pattern bataggr.exist(X_0:any_1):bat[:bit] 
@@ -18091,8 +18081,8 @@ BLOBblob_blob_bulk;
 batcalc
 blob
 command batcalc.blob(X_0:bat[:str], X_1:bat[:oid]):bat[:blob] 
-batstr_2_blob;
-cast to blob
+BLOBblob_fromstr_bulk;
+(empty)
 batcalc
 bte
 pattern batcalc.bte(X_0:bat[:bit]):bat[:bte] 
@@ -19448,11 +19438,6 @@ date
 pattern batcalc.date(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:date] 
 MTIMEtimestamp_extract_date_bulk;
 (empty)
-batcalc
-date
-command batcalc.date(X_0:bat[:str], X_1:bat[:oid]):bat[:date] 
-batstr_2_date;
-cast to date
 batcalc
 date
 pattern batcalc.date(X_0:bat[:oid]):bat[:date] 
@@ -30724,11 +30709,6 @@ command calc.blob(X_0:str):blob
 BLOBblob_fromstr;
 (empty)
 calc
-blob
-command calc.blob(X_0:str):blob 
-str_2_blob;
-cast to blob
-calc
 bte
 pattern calc.bte(X_0:bit):bte 
 CMDvarCONVERT;
@@ -31072,11 +31052,6 @@ calc
 date
 pattern calc.date(X_0:void):date 
 nil_2_date;
-cast to date
-calc
-date
-pattern calc.date(X_0:str):date 
-str_2_date;
 cast to date
 calc
 daytime

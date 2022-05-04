@@ -1185,8 +1185,10 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 			res = batstr_2time_daytime(&result_bat, &b->batCacheid, NULL, &digits);
 			break;
 		case EC_DATE:
-			res = batstr_2_date(&result_bat, &b->batCacheid, NULL);
-			break;
+			if ((*ret_bat = BATconvert(b, NULL, TYPE_date, 0, 0, 0)) == NULL)
+				throw(MAL, "pyapi3.eval", GDK_EXCEPTION);
+			*ret_type = TYPE_date;
+			return MAL_SUCCEED;
 		case EC_DEC:
 			res = batdbl_num2dec_lng(&result_bat, &b->batCacheid, NULL,
 									 &digits, &scale);
@@ -1199,6 +1201,7 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 	}
 	if (res == MAL_SUCCEED) {
 		*ret_bat = BATdescriptor(result_bat);
+		BBPrelease(result_bat);
 		*ret_type = (*ret_bat)->ttype;
 	}
 
