@@ -784,7 +784,7 @@ SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *gp = getArgReference_bat(stk, pci, 3);
 	bat *gpe = getArgReference_bat(stk, pci, 4);
 	bat *sp = pci->argc == 7 ? getArgReference_bat(stk, pci, 5) : NULL;
-	//bit *no_nil = getArgReference_bit(stk, pci, pci->argc == 7 ? 6 : 5); no_nil argument is ignored
+	//bit *no_nil = getArgReference_bit(stk, pci, pci->argc - 1); no_nil argument is ignored
 	BAT *l = NULL, *r = NULL, *g = NULL, *e = NULL, *s = NULL, *res = NULL;
 
 	(void)cntxt;

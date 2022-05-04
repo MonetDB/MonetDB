@@ -1622,7 +1622,6 @@ str batsht_num2dec_flt(bat *res, const bat *v, const bat *sid, const int *d2, co
 str batsht_num2dec_int(bat *res, const bat *v, const bat *sid, const int *d2, const int *s2);
 str batsht_num2dec_lng(bat *res, const bat *v, const bat *sid, const int *d2, const int *s2);
 str batsht_num2dec_sht(bat *res, const bat *v, const bat *sid, const int *d2, const int *s2);
-str batstr_2_date(bat *res, const bat *val, const bat *s);
 str batstr_2time_daytime(bat *res, const bat *v, const bat *s, const int *len);
 str batstr_2time_timestamp(bat *res, const bat *v, const bat *s, const int *len);
 str bte_dec2_bte(bte *res, const int *s1, const bte *v);

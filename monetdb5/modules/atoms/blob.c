@@ -239,6 +239,28 @@ BLOBblob_fromstr(blob **b, const char **s)
 	return MAL_SUCCEED;
 }
 
+static str
+BLOBblob_fromstr_bulk(bat *res, const bat *bid, const bat *sid)
+{
+	BAT *b, *s = NULL, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batcalc.blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "batcalc.blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATconvert(b, s, TYPE_blob, 0, 0, 0);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "batcalc.blob", GDK_EXCEPTION);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func blob_init_funcs[] = {
  command("blob", "blob", BLOBblob_blob, false, "Noop routine.", args(1,2, arg("",blob),arg("s",blob))),
@@ -250,6 +272,7 @@ static mel_func blob_init_funcs[] = {
  command("calc", "blob", BLOBblob_blob, false, "", args(1,2, arg("",blob),arg("b",blob))),
  command("batcalc", "blob", BLOBblob_blob_bulk, false, "", args(1,3, batarg("",blob),batarg("b",blob),batarg("s",oid))),
  command("calc", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
+ command("batcalc", "blob", BLOBblob_fromstr_bulk, false, "", args(1,3, batarg("",blob),batarg("b",str),batarg("s",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"

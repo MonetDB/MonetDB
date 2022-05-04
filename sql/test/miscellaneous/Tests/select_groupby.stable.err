@@ -36,7 +36,7 @@ ERROR = !SELECT: no such operator 'sys'.'dummy'(blob, blob, char(1))
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-399914/.s.monetdb.30869
 QUERY = exec  4 (); --error, from the condition "'col9'"='', it fails to covert '' to date
-ERROR = !Date '' has incorrect format
+ERROR = !Conversion of string '' to date failed
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-61110/.s.monetdb.36063
 QUERY = exec  7 (blob 'aaaa'); --error, cannot cast
