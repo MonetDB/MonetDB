@@ -132,5 +132,3 @@ if(WIN32)
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     OPTIONAL)
 endif()
-
-# vim: set ts=2:sw=2:et

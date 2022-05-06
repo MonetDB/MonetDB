@@ -1237,5 +1237,3 @@ controlRunner(void *d)
 	Mfprintf(_mero_ctlout, "control channel closed\n");
 	return NULL;
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

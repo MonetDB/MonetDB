@@ -860,5 +860,3 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	pthread_mutex_unlock(&_mero_topdp_lock);
 	return(newErr("%s", strerror(e)));
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */
