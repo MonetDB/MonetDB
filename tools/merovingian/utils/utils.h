@@ -62,5 +62,3 @@ void free_snapshots(struct snapshot *snapshots, int nsnapshots);
 
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

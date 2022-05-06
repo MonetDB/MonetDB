@@ -12,4 +12,3 @@
 #    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5/createdb
 #    COMPONENT server)
 #endif()
-# vim: set ts=2:sw=2:et

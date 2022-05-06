@@ -1169,5 +1169,3 @@ shutdown:
 	 * will see it */
 	return(0);
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

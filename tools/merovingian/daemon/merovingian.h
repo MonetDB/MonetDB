@@ -81,5 +81,3 @@ extern confkeyval *_mero_db_props;
 extern confkeyval *_mero_props;
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */
