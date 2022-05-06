@@ -1197,6 +1197,7 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 	}
 	if (res == MAL_SUCCEED) {
 		*ret_bat = BATdescriptor(result_bat);
+		BBPrelease(result_bat);
 		*ret_type = (*ret_bat)->ttype;
 	}
 
