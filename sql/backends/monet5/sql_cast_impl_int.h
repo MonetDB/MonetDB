@@ -13,7 +13,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 
 	VALset(&v1, TPE(TP1), &val);
 	v2.vtype = TPE(TP2);
-	if (VARconvert(&v2, &v1, true, s1, s2, p) != GDK_SUCCEED)
+	if (VARconvert(&v2, &v1, s1, s2, p) != GDK_SUCCEED)
 		throw(SQL, STRNG(FUN(,TP1,_2_,TP2)), GDK_EXCEPTION);
 	*res = *(TP2 *) VALptr(&v2);
 	return MAL_SUCCEED;
@@ -52,7 +52,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *sid
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TPE(TP2), true, *s1, 0, 0);
+	bn = BATconvert(b, s, TPE(TP2), *s1, 0, 0);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -75,7 +75,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const bat *
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TPE(TP2), true, *S1, *S2, *d2);
+	bn = BATconvert(b, s, TPE(TP2), *S1, *S2, *d2);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -100,7 +100,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const bat *sid, const int 
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TPE(TP2), true, 0, *s2, *d2);
+	bn = BATconvert(b, s, TPE(TP2), 0, *s2, *d2);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);

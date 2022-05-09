@@ -76,6 +76,7 @@ MNDBStatistics(ODBCStmt *stmt,
 	size_t querylen;
 	size_t pos = 0;
 	char *sch = NULL, *tab = NULL;
+	char *sysORtmp = "sys";
 
 	fixODBCstring(TableName, NameLength3, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
@@ -113,7 +114,6 @@ MNDBStatistics(ODBCStmt *stmt,
 		addStmtError(stmt, "HY101", NULL, 0);
 		return SQL_ERROR;
 	}
-
 
 	/* check if a valid (non null, not empty) table name is supplied */
 	if (TableName == NULL) {
@@ -166,6 +166,9 @@ MNDBStatistics(ODBCStmt *stmt,
 	if (query == NULL)
 		goto nomem;
 
+	if (SchemaName != NULL && strcmp((const char *) SchemaName, "tmp") == 0)
+		sysORtmp = "tmp";
+
 	/* SQLStatistics returns a table with the following columns:
 	   VARCHAR      table_cat
 	   VARCHAR      table_schem
@@ -198,12 +201,12 @@ MNDBStatistics(ODBCStmt *stmt,
 		       "cast(null as integer) as cardinality, "
 		       "cast(null as integer) as pages, "
 		       "cast(null as varchar(1)) as filter_condition "
-		"from sys.idxs i, "
+		"from %s.idxs i, "
 		     "sys.schemas s, "
-		     "sys.tables t, "
-		     "sys.columns c, "
-		     "sys.objects kc, "
-		     "sys.keys k "
+		     "%s._tables t, "
+		     "%s._columns c, "
+		     "%s.objects kc, "
+		     "%s.keys k "
 		"where i.table_id = t.id and "
 		      "t.schema_id = s.id and "
 		      "i.id = kc.id and "
@@ -212,7 +215,8 @@ MNDBStatistics(ODBCStmt *stmt,
 		      "k.name = i.name and "
 		      "k.type in (0, 1)",
 		stmt->Dbc->dbname,
-		SQL_INDEX_HASHED, SQL_INDEX_OTHER);
+		SQL_INDEX_HASHED, SQL_INDEX_OTHER,
+		sysORtmp, sysORtmp, sysORtmp, sysORtmp, sysORtmp);
 	assert(pos < 1000);
 
 	/* Construct the selection condition query part */

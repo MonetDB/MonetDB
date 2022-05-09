@@ -459,9 +459,8 @@ JSONisarray(bit *ret, json *js)
 }
 
 static str
-JSONprelude(void *ret)
+JSONprelude(void)
 {
-	(void) ret;
 	TYPE_json = ATOMindex("json");
 	return MAL_SUCCEED;
 }
@@ -2958,7 +2957,6 @@ static mel_func json_init_funcs[] = {
  command("json", "valuearray", JSONvalueArray, false, "Expands the outermost JSON object values into a JSON value array.", args(1,2, arg("",json),arg("val",json))),
  command("json", "keys", JSONkeyTable, false, "Expands the outermost JSON object names.", args(1,2, batarg("",str),arg("val",json))),
  command("json", "values", JSONvalueTable, false, "Expands the outermost JSON values.", args(1,2, batarg("",json),arg("val",json))),
- command("json", "prelude", JSONprelude, false, "", noargs),
  pattern("json", "renderobject", JSONrenderobject, false, "", args(1,2, arg("",json),varargany("val",0))),
  pattern("json", "renderarray", JSONrenderarray, false, "", args(1,2, arg("",json),varargany("val",0))),
  command("aggr", "jsonaggr", JSONgroupStr, false, "Aggregate the string values to array.", args(1,2, arg("",str),batarg("val",str))),
@@ -2975,4 +2973,4 @@ static mel_func json_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_json_mal)
-{ mal_module("json", json_init_atoms, json_init_funcs); }
+{ mal_module2("json", json_init_atoms, json_init_funcs, JSONprelude, NULL); }

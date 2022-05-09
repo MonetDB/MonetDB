@@ -398,7 +398,7 @@ count_mask_bits(const struct canditer *ci, BUN lo, BUN hi)
 	return n;
 }
 
-/* initialize a candidate iterator, return number of iterations */
+/* initialize a candidate iterator */
 void
 canditer_init(struct canditer *ci, BAT *b, BAT *s)
 {

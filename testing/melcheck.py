@@ -28,11 +28,40 @@ gpats = {}
 gcmds = {}
 
 mel = []
+maldefs = {}
 
 mappings = {
     'streams': 'Stream',
     'bstream': 'Bstream',
 }
+
+def malcheck(imp, mod, fcn, retc, argc, args):
+    malfunc = f'{mod}.{fcn}'
+    if retc == 0:
+        retc = 1
+        argc += 1
+        args = ',arg("",void)' + args
+    returns = []
+    arguments = []
+    pos = 0
+    for i in range(argc):
+        res = argre.match(args, pos)
+        if res is None:
+            print(f'not enough arguments in command {mod}.{fcn} with implementation {imp}')
+            return
+        normarg = res.group('bat','any','argval')
+        if i < retc:
+            returns.append(normarg)
+        else:
+            arguments.append(normarg)
+        pos = res.end(0)
+    if malfunc not in maldefs:
+        maldefs[malfunc] = []
+    for mf in maldefs[malfunc]:
+        if mf[0] == retc and mf[1] == argc and mf[2] == returns and mf[3] == arguments:
+            print(f'duplicate MAL definition for {mod}.{fcn} with implementations {mf[4]} and {imp}')
+            return
+    maldefs[malfunc].append((retc, argc, returns, arguments, imp))
 
 def checkcommand(imp, mod, fcn, decl, retc, argc, args):
     if argc < retc:
@@ -94,20 +123,26 @@ def process1(f):
     res = patre.search(data)
     while res is not None:
         imp = res.group('imp')
+        mod = res.group('mod')
+        fcn = res.group('fcn')
+        retc = res.group('retc')
+        argc = res.group('argc')
+        args = res.group('args')
         if res.group('cmdpat') == 'pattern':
             if imp not in pats and imp not in gpats:
                 if imp in cmds or imp in gcmds:
-                    print('command implementation {} for pattern {}.{}'.format(imp, res.group('mod'), res.group('fcn')))
+                    print('command implementation {} for pattern {}.{}'.format(imp, mod, fcn))
                 else:
-                    mel.append(('pattern', imp, res.group('mod'), res.group('fcn'), res.group('retc'), res.group('argc'), res.group('args')))
+                    mel.append(('pattern', imp, mod, fcn, retc, argc, args))
         else:
             if imp not in cmds and imp not in gcmds:
                 if imp in pats or imp in gpats:
-                    print('pattern implementation {} for command {}.{}'.format(imp, res.group('mod'), res.group('fcn')))
+                    print('pattern implementation {} for command {}.{}'.format(imp, mod, fcn))
                 else:
-                    mel.append(('command', imp, res.group('mod'), res.group('fcn'), res.group('retc'), res.group('argc'), res.group('args')))
+                    mel.append(('command', imp, mod, fcn, retc, argc, args))
             else:
-                checkcommand(imp, res.group('mod'), res.group('fcn'), cmds.get(imp, gcmds.get(imp)), int(res.group('retc')), int(res.group('argc')), res.group('args'))
+                checkcommand(imp, mod, fcn, cmds.get(imp, gcmds.get(imp)), int(retc), int(argc), args)
+        malcheck(imp, mod, fcn, int(retc), int(argc), args)
         res = patre.search(data, pos=res.end(0))
 
 def process2():

@@ -1,3 +1,9 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Thu Apr 21 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Corrected ODBC API functions SQLPrimaryKeys(), SQLSpecialColumns() and
+  SQLStatistics() for local temporary tables located in schema tmp. They did
+  not return any rows when the temp table had a primary or unique key or
+  index. Now they do return rows as expected.
+

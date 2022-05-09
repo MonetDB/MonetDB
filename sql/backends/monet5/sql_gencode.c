@@ -318,7 +318,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	const char *local_tbl = prp->value;
+	const char *local_tbl = prp->value.pval;
 	node *n;
 	int i, q, v, res = 0, added_to_cache = 0,  *lret, *rret;
 	size_t len = 1024, nr;

@@ -57,7 +57,7 @@ exec ** (1);
 
 drop table rr;
 
-prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tbls limit 24;
+prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tbls order by id limit 24;
 exec ** ();
 
 drop table tbls;

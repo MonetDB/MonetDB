@@ -381,7 +381,7 @@ statement ok
 create or replace view v74(vc0, vc1) as (values (-1, 0.014)) with check option
 
 statement ok
-create or replace view v84(vc0, vc1) as (values (1, 1222), (12,10)) with check option
+create or replace view v84(vc0, vc1) as (values (1, 1222), (12,10), (null, 2)) with check option
 
 statement error 22003!overflow in calculation 1XOR-9223372036854775807.
 select 1 from v74 cross join v84 join (values ('b'), ('a'), (1)) as sub0 on (v84.vc0)^(-9223372036854775807) is not null

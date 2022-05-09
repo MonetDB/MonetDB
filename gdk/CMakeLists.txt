@@ -48,7 +48,7 @@ target_sources(bat
   gdk_cand.h gdk_cand.c
   gdk_search.c
   gdk_hash.c gdk_hash.h
-  gdk_tm.c gdk_tm.h
+  gdk_tm.c
   gdk_orderidx.c
   gdk_align.c
   gdk_bbp.c gdk_bbp.h

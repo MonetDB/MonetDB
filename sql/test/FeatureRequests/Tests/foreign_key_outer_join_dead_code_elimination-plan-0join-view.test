@@ -9,8 +9,8 @@ project (
 | | project (
 | | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
 | | ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  as "v0"."id" ]
-| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
-) [ "%1"."%1" NOT NULL ]
+| ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL UNIQUE ]
 
 query T nosort
    plan select id       from v0 order by id

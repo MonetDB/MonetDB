@@ -24,6 +24,7 @@
 #include "rel_semantic.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
+#include "rel_statistics.h"
 #include "wlc.h"
 
 #include "mal_authorize.h"
@@ -143,6 +144,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
 	}
+	initialize_sql_functions_lookup(store->sa);
 
 	m = mvc_create((sql_store)store, store->sa, 0, 0, NULL, NULL);
 	if (!m) {
@@ -1538,6 +1540,13 @@ mvc_is_duplicate_eliminated(mvc *m, sql_column *col)
 {
 	TRC_DEBUG(SQL_TRANS, "Is duplicate eliminated: %s\n", col->base.name);
 	return sql_trans_is_duplicate_eliminated(m->session->tr, col);
+}
+
+int
+mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
+{
+	TRC_DEBUG(SQL_TRANS, "Retrieving column stats for: %s\n", col->base.name);
+	return sql_trans_col_stats(m->session->tr, col, nonil, unique, unique_est, min, max);
 }
 
 int

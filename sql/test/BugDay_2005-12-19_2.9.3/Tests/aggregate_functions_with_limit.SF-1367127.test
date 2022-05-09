@@ -156,11 +156,22 @@ select count(*) from test_aggre_limit limit 1
 ----
 50
 
-query TI rowsort
-select type, count(*) from test_aggre_limit group by type limit 1
+query I rowsort
+select count(*) from test_aggre_limit group by type
 ----
+15
+29
+6
+
+query TI rowsort
+select type, count(*) from test_aggre_limit group by type limit 3
+----
+boolean
+6
 int
 29
+varchar
+15
 
 statement ok
 drop table test_aggre_limit

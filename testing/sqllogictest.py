@@ -173,7 +173,7 @@ class SQLLogic:
     def drop(self):
         if self.language != 'sql':
             return
-        self.crs.execute('select s.name, t.name, tt.table_type_name from sys.tables t, sys.schemas s, sys.table_types tt where not t.system and t.schema_id = s.id and t.type = tt.table_type_id')
+        self.crs.execute('select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like \'%VIEW%\') then \'VIEW\' else \'TABLE\' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id')
         for row in self.crs.fetchall():
             try:
                 self.crs.execute('drop {} "{}"."{}" cascade'.format(row[2], row[0].replace('"', '""'), row[1].replace('"', '""')))

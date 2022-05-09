@@ -80,7 +80,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			sql_subtype *et = exp_subtype(e);
 
 			/* 0*a = 0 */
-			if (exp_is_atom(le) && exp_is_zero(le) && exp_is_atom(re) && exp_is_not_null(re)) {
+			if (exp_is_atom(le) && exp_is_zero(le) && exp_is_atom(re) && !has_nil(re)) {
 				(*changes)++;
 				le = exp_zero(sql->sa, et);
 				if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
@@ -90,7 +90,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				return le;
 			}
 			/* a*0 = 0 */
-			if (exp_is_atom(re) && exp_is_zero(re) && exp_is_atom(le) && exp_is_not_null(le)) {
+			if (exp_is_atom(re) && exp_is_zero(re) && exp_is_atom(le) && !has_nil(le)) {
 				(*changes)++;
 				re = exp_zero(sql->sa, et);
 				if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
@@ -255,7 +255,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					}
 				}
 			}
-			if (exp_is_not_null(le) && exp_is_not_null(re) && exp_equal(le,re) == 0) { /* a - a = 0 */
+			if (!has_nil(le) && !has_nil(re) && exp_equal(le,re) == 0) { /* a - a = 0 */
 				atom *a;
 				sql_exp *ne;
 

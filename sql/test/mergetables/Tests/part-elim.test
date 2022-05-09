@@ -54,66 +54,50 @@ plan select * from test where id between 1 and 10000
 ----
 union (
 | project (
-| | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
-| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "10000") ]
-| ) [ "test"."id", "test"."posx" ],
+| | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL UNIQUE ],
 | project (
-| | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
-| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "10000") ]
-| ) [ "test"."id", "test"."posx" ]
-) [ "test"."id", "test"."posx" ]
+| | table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
+) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
 plan select * from test where id between 1 and 1000
 ----
 project (
-| select (
-| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
-| ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "1000") ]
-) [ "test"."id", "test"."posx" ]
+| table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
+) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 
 query T nosort
 plan select * from test where id between 1 and 10000
 ----
 union (
 | project (
-| | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
-| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "10000") ]
-| ) [ "test"."id", "test"."posx" ],
+| | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL UNIQUE ],
 | project (
-| | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
-| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "10000") ]
-| ) [ "test"."id", "test"."posx" ]
-) [ "test"."id", "test"."posx" ]
+| | table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
+) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
 plan select * from test where id between 1 and 1000
 ----
 project (
-| select (
-| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
-| ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64) "1000") ]
-) [ "test"."id", "test"."posx" ]
+| table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
+) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 
 query T nosort
 plan select * from test where id between 1 and 1000*10
 ----
 union (
 | project (
-| | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
-| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64)["sys"."sql_mul"(smallint(10) "1000", tinyint(4) "10") NOT NULL] NOT NULL) ]
-| ) [ "test"."id", "test"."posx" ],
+| | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL UNIQUE ],
 | project (
-| | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
-| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64)["sys"."sql_mul"(smallint(10) "1000", tinyint(4) "10") NOT NULL] NOT NULL) ]
-| ) [ "test"."id", "test"."posx" ]
-) [ "test"."id", "test"."posx" ]
+| | table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
+) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
 plan select * from test where id between 1 and 100*10
@@ -121,15 +105,15 @@ plan select * from test where id between 1 and 100*10
 union (
 | project (
 | | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
-| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64)["sys"."sql_mul"(tinyint(7) "100", tinyint(4) "10") NOT NULL] NOT NULL) ]
-| ) [ "test"."id", "test"."posx" ],
+| | | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id" NOT NULL UNIQUE) <= (bigint(64)["sys"."sql_mul"(tinyint(7) "100", tinyint(4) "10") NOT NULL] NOT NULL) ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL UNIQUE ],
 | project (
 | | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
-| | ) [ (bigint(64) "1") <= ("test"."id") <= (bigint(64)["sys"."sql_mul"(tinyint(7) "100", tinyint(4) "10") NOT NULL] NOT NULL) ]
-| ) [ "test"."id", "test"."posx" ]
-) [ "test"."id", "test"."posx" ]
+| | | table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
+| | ) [ (bigint(64) "1") <= ("test"."id" NOT NULL UNIQUE) <= (bigint(64)["sys"."sql_mul"(tinyint(7) "100", tinyint(4) "10") NOT NULL] NOT NULL) ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
+) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
 plan select * from test where id in (1, 1022)
@@ -137,24 +121,24 @@ plan select * from test where id in (1, 1022)
 union (
 | project (
 | | select (
-| | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ]
-| | ) [ ("test"."id") in (bigint(64) "1", bigint(64) "1022") ]
-| ) [ "test"."id", "test"."posx" ],
+| | | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
+| | ) [ ("test"."id" NOT NULL UNIQUE) in (bigint(64) "1", bigint(64) "1022") ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL UNIQUE ],
 | project (
 | | select (
-| | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
-| | ) [ ("test"."id") in (bigint(64) "1", bigint(64) "1022") ]
-| ) [ "test"."id", "test"."posx" ]
-) [ "test"."id", "test"."posx" ]
+| | | table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
+| | ) [ ("test"."id" NOT NULL UNIQUE) in (bigint(64) "1", bigint(64) "1022") ]
+| ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
+) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
 plan select * from test where id in (1, 1000)
 ----
 project (
 | select (
-| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ]
-| ) [ ("test"."id") in (bigint(64) "1", bigint(64) "1000") ]
-) [ "test"."id", "test"."posx" ]
+| | table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
+| ) [ ("test"."id" NOT NULL UNIQUE) in (bigint(64) "1", bigint(64) "1000") ]
+) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 
 statement ok
 drop table test

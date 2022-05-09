@@ -280,6 +280,8 @@ static int
 rel_partition_(mvc *sql, sql_rel *rel, int pb)
 {
 	int res = 0, lres = 0, rres = 0;
+	sql_rel *l = rel->l;
+
 	if (mvc_highwater(sql)) {
 		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return 0;
@@ -293,7 +295,22 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			res = REL_PARTITION;
 		}
 	} else if (is_groupby(rel->op)) {
-		bool safe = rel_groupby_partition_safe(rel);
+		bool safe = rel_groupby_partition_safe(rel) && !rel_is_ref(rel);
+		if (rel->l)
+			res = rel_partition_(sql, rel->l, safe?SPB:pb);
+		if (safe) {
+			rel->parallel = 1;
+			if (res == REL_PARTITION)
+				rel->spb = 1;
+			if (pb) {
+				rel->partition = 1;
+				if (res)
+					res = SPB;
+			} else
+				res = EPB;
+		}
+	} else if (is_topn(rel->op) && (l && (!is_simple_project(l->op) || list_empty(l->r)))) {
+		bool safe = !has_groupby(rel->l); /* no partitioning after a group by */
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, safe?SPB:pb);
 		if (safe) {

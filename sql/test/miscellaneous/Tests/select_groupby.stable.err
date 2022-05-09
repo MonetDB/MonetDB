@@ -34,17 +34,9 @@ MAPI  = (monetdb) /var/tmp/mtest-155076/.s.monetdb.39205
 QUERY = SELECT "sys"."dummy"("fortieth-second", blob '', '0') AS "alias1", "fortieth-third" FROM "myschema"."mytable"; --error, function doesn't exist
 ERROR = !SELECT: no such operator 'sys'.'dummy'(blob, blob, char(1))
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-328803/.s.monetdb.34130
-QUERY = SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
-        ( ( ("'col19'"='Some information of my hobby')) AND 
-        ( ("'col9'"='' AND "'col3'"='ABCDE' AND (EXTRACT(YEAR FROM "'col1'")*100 + EXTRACT(MONTH FROM "'col1'"))/100.0='2011.040' 
-        AND "'col14'"='A description of something' AND "'col8'"='2015-08-07')) AND  ( ("'col34'"='home to')) AND  ( ("'col36'"='2013'))) GROUP BY "'col26'"
-        LIMIT 1001 OFFSET 0; --error, from the condition "'col9'"='', it fails to covert '' to date
-ERROR = !Date '' has incorrect format
-CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-399914/.s.monetdb.30869
 QUERY = exec  4 (); --error, from the condition "'col9'"='', it fails to covert '' to date
-ERROR = !Date '' has incorrect format
+ERROR = !Conversion of string '' to date failed
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-61110/.s.monetdb.36063
 QUERY = exec  7 (blob 'aaaa'); --error, cannot cast

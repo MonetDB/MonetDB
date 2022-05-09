@@ -1267,6 +1267,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 					 type == 4 ? "STREAM " :
 					 type == 5 ? "REMOTE " :
 					 type == 6 ? "REPLICA " :
+					 type == 7 ? "UNLOGGED " :
 					 "");
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, tname, " ");
@@ -1722,6 +1723,10 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		}
 		if (strcmp(ttype, "6") == 0) {
 			/* replica table */
+			goto doreturn;
+		}
+		if (strcmp(ttype, "7") == 0) {
+			/* unlogged table */
 			goto doreturn;
 		}
 	}

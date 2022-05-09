@@ -378,8 +378,8 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define THRDMASK	(1)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
-#define PROPMASK	(1<<3)
-#define PROPDEBUG	if (GDKdebug & PROPMASK)
+#define PROPMASK	(1<<3)	/* unused */
+#define PROPDEBUG	if (GDKdebug & PROPMASK) /* unused */
 #define IOMASK		(1<<4)
 #define BATMASK		(1<<5)
 #define PARMASK		(1<<7)
@@ -735,8 +735,8 @@ typedef struct {
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
-		revsorted:1,	/* column is sorted in descending order */
-		private_bat:1;	/* used by single worker thread only */
+		revsorted:1;	/* column is sorted in descending order */
+	bool private_bat;	/* used by single worker thread only */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
@@ -854,6 +854,7 @@ typedef struct BAT {
 #define tstrimps	T.strimps
 
 #define TSKdestroy(b) if (b->tsink && b->tsink->destroy) { b->tsink->destroy(b->tsink); b->tsink = NULL; }
+#define TSKfree(b)    TSKdestroy(b)
 
 /* some access functions for the bitmask type */
 static inline void

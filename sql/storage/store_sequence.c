@@ -35,7 +35,7 @@ log_store_sequence(sql_store Store, void *s)
 {
 	sqlstore *store = Store;
 	store_sequence *seq = s;
-	store->logger_api.log_sequence(store, seq->seqid,  seq->cur);
+	store->logger_api.log_tsequence(store, seq->seqid,  seq->cur);
 	seq->intrans = false;
 }
 

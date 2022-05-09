@@ -1315,7 +1315,6 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		s = addArgument(mb, s, mat[g].mv);
 		s = addArgument(mb, s, mat[e].mv);
 		s = pushBit(mb, s, 1); /* skip nils */
-		s = pushBit(mb, s, 1);
 		pushInstruction(mb,s);
 
 		/*  w=count = ifthenelse(s=count==0,NULL,s=count)  */
@@ -1384,8 +1383,6 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	ai2 = addArgument(mb, ai2, mat[g].mv);
 	ai2 = addArgument(mb, ai2, mat[e].mv);
 	ai2 = pushBit(mb, ai2, 1); /* skip nils */
-	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef && !(isAvg && tpe != TYPE_dbl))
-		ai2 = pushBit(mb, ai2, 1);
 	pushInstruction(mb, ai2);
 	return 0;
 }

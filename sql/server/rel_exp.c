@@ -356,6 +356,8 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 	e->l = l;
 	e->r = append(append(sa_list(sa), gbe), obe);
 	e->f = f;
+	if (!f->func->s && strcmp(f->func->base.name, "count") == 0)
+		set_has_no_nil(e);
 	e->semantics = f->func->semantics;
 	return e;
 }
@@ -704,7 +706,6 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_unique(ne);
 	if (is_basecol(oe))
 		set_basecol(ne);
-	ne->flag = oe->flag; /* needed if the referenced column is a parameter without type set yet */
 	ne->p = prop_copy(sa, oe->p);
 	return ne;
 }
