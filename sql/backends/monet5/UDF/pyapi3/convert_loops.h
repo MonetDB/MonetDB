@@ -67,6 +67,7 @@
 #define nancheck_oid(bat) ((void)0)
 #define nancheck_date(bat) ((void)0)
 #define nancheck_daytime(bat) ((void)0)
+#define nancheck_timestamp(bat) ((void)0)
 #if defined(HAVE_FORK)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore)                               \
 	{                                                                          \
