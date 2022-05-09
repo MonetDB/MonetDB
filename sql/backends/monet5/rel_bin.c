@@ -5128,11 +5128,6 @@ dump_code(int starting_point)
 static sql_exp*
 can_use_copyparpipe(sql_rel *rel)
 {
-	if (rel->flag & UPD_NO_CONSTRAINT) {
-		// "no constraint" mode.. don't know what it is but it sounds scary
-		return NULL;
-	}
-
 	if (rel->flag & UPD_COMP) {
 		// special case copied from rel2bin_insert
 		rel = rel->r;
