@@ -21,16 +21,16 @@ SELECT pyapi_date(cast('2000-10-10' AS DATE))
 2000-10-10
 
 statement ok
-CREATE TABLE time_table(d TIME)
+CREATE TABLE time_table(d TIME(6))
 
 statement ok rowcount 1
-INSERT INTO time_table VALUES (cast('12:00:00.000001' AS TIME))
+INSERT INTO time_table VALUES (cast('12:00:00.000001' AS TIME(6)))
 
 statement ok
-CREATE FUNCTION pyapi_time(d TIME) RETURNS TIME LANGUAGE PYTHON { return d; }
+CREATE FUNCTION pyapi_time(d TIME(6)) RETURNS TIME(6) LANGUAGE PYTHON { return d; }
 
 query T rowsort
-SELECT pyapi_time(cast('12:00:00.000001' AS TIME))
+SELECT pyapi_time(cast('12:00:00.000001' AS TIME(6)))
 ----
 12:00:00.000001
 
@@ -89,7 +89,7 @@ SELECT * FROM pyapi_ret_date()
 2000-10-10
 
 statement ok
-CREATE FUNCTION pyapi_ret_time() RETURNS TABLE(d TIME)
+CREATE FUNCTION pyapi_ret_time() RETURNS TABLE(d TIME(6))
 LANGUAGE PYTHON
 {
     import datetime
