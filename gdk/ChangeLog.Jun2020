@@ -7,7 +7,11 @@
   (write-ahead log) and low level (so-called subcommit).
 - Improved BATproject for string bats.
 - Improved low-level algorithm selection in join.
-- Bugs were fixed that could in rare cases cause an empty string that
-  had been added to a BAT earlier to be seen as a non-empty string,
-  even as one with an invalid UTF-8 encoding.
+
+* Mon May  3 2021 Sjoerd Mullender <sjoerd@acm.org>
+- A bug that would very occasionally produce an error "strPut: incorrectly
+  encoded UTF-8", even when no incorrectly coded characters are used
+  at all, has been fixed.  It was the result of a rare combination of
+  strings having been added to the column that caused essentially an
+  off-by-one type of error to occur.
 

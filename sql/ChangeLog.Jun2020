@@ -6,6 +6,9 @@
   logging.setcomplevel('SQL_EXECUTION', 'INFO');
 - Comments inside queries are now available in the sys.queue
   function/view.
-- Fixed an issue where under heavy concurrent workloads, data could be
-  lost in a sequence of truncate/delete all queries.
+
+* Mon May  3 2021 Sjoerd Mullender <sjoerd@acm.org>
+- A bug where a sequence of TRUNCATE TABLE and COPY INTO the just
+  truncated table would result in success being reported to both queries,
+  but the table still being empty afterwards, has been fixed.
 
