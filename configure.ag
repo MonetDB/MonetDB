@@ -2127,6 +2127,8 @@ AM_CONDITIONAL([HAVE_HGE], [test "x$have_hge" = xyes])
 AC_CHECK_TYPES([ptrdiff_t],,,[@%:@include <stddef.h>])
 AC_CHECK_TYPES([intptr_t])
 AC_CHECK_TYPES([uintptr_t])
+# needed for UNIXodbc on 32 bit architectures.
+AC_CHECK_TYPES([long long])
 
 AC_CHECK_SIZEOF([char])
 AC_CHECK_SIZEOF([short])
