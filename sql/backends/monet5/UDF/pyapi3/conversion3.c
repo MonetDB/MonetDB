@@ -1149,9 +1149,6 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 bit ConvertableSQLType(sql_subtype *sql_subtype)
 {
 	switch (GetSQLType(sql_subtype)) {
-		/* case EC_DATE: */
-		/* case EC_TIME: */
-		/* case EC_TIMESTAMP: */
 		case EC_DEC:
 			return 1;
 	}
@@ -1177,11 +1174,6 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 	assert(sql_subtype->type);
 
 	switch (sql_subtype->type->eclass) {
-		/* case EC_DATE: */
-		/* case EC_TIME: */
-		/* case EC_TIMESTAMP: */
-		/* 	conv_type = TYPE_str; */
-		/* 	break; */
 		case EC_DEC:
 			conv_type = TYPE_dbl;
 			break;

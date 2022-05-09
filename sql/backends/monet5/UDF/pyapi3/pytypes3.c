@@ -269,12 +269,13 @@ bool Python_ReleaseGIL(bool state)
 	return 0;
 }
 
-// Returns true if the type of [object] is a scalar (i.e. numeric scalar or
-// string, basically "not an array but a single value")
+// Returns true if the type of [object] is a scalar (i.e. numeric scalar, date, time, datetime value or string,
+// basically "not an array but a single value")
 bool PyType_IsPyScalar(PyObject *object)
 {
 	if (object == NULL)
 		return false;
+
 	USE_DATETIME_API;
 	return (PyArray_CheckScalar(object) || PyLong_Check(object) ||
 			PyFloat_Check(object) || PyUnicode_Check(object) ||
