@@ -1,3 +1,6 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Mon May  9 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Allow -1 for exittimeout, with the meaning: terminate and wait.
+

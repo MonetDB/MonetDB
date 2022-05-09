@@ -1,3 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon May  9 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Print current query when using CALL
+  logging.setcomplevel('SQL_EXECUTION', 'INFO');
+- Comments inside queries are now available in the sys.queue
+  function/view.
+- Fixed an issue where under heavy concurrent workloads, data could be
+  lost in a sequence of truncate/delete all queries.
+
