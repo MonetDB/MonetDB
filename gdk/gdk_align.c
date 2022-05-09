@@ -266,7 +266,7 @@ BATmaterialize(BAT *b)
  * The @#VIEWunlink@ routine cuts a reference to the parent. Part of the view
  * destroy sequence.
  */
-static void
+void
 VIEWunlink(BAT *b)
 {
 	if (b) {
@@ -279,8 +279,6 @@ VIEWunlink(BAT *b)
 
 		if (tp)
 			tpb = BBP_cache(tp);
-		if (tp && !vtp)
-			vtp = tp;
 		if (vtp)
 			vtpb = BBP_cache(vtp);
 
