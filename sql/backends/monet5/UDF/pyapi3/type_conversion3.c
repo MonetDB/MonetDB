@@ -93,6 +93,32 @@ str pyobject_to_date(PyObject **ptr, size_t maxsize, date *value) {
 	return msg;
 }
 
+str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value) {
+	str msg = MAL_SUCCEED;
+
+	if (ptr == NULL || *ptr == NULL) {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyObject.");
+		goto wrapup;
+	}
+
+	(void) maxsize;
+
+	USE_DATETIME_API;
+	if(PyTime_Check(*ptr)) {
+		*value = daytime_create(PyDateTime_TIME_GET_HOUR(*ptr),
+								PyDateTime_TIME_GET_MINUTE(*ptr),
+								PyDateTime_TIME_GET_SECOND(*ptr),
+								PyDateTime_TIME_GET_MICROSECOND(*ptr));
+	}
+	else {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyTime object.");
+	}
+
+ wrapup:
+	return msg;
+}
+
+
 str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 	size_t size;
 	char* bytes_data;
@@ -211,40 +237,40 @@ wrapup:
 
 str str_to_date(const char *ptr, size_t maxsize, date *value)
 {
-	if (ptr) {
-        if (date_fromstr(ptr, &maxsize, &value, true) < 0) {
-			return createException(MAL, "pyapi3.eval",
-								   SQLSTATE(PY000) "Could not convert string %s to date.",
-								   ptr);
-		}
-	}
-	else
-		return createException(MAL, "pyapi3.eval",
-							   SQLSTATE(PY000) "Invalid PyObject");
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
 
-	return MAL_SUCCEED;
+	return GDKstrdup("Implicit conversion of date to string is not allowed.");
 }
 
 str unicode_to_date(Py_UNICODE *ptr, size_t maxsize, date *value)
 {
-	if (ptr) {
-		const char *buf = PyUnicode_AsUTF8((PyObject *)ptr);
-		if (buf == NULL || !PyUnicode_CheckExact(ptr)) {
-			return createException(MAL, "pyapi3.pyapi",
-								   SQLSTATE(PY000) "Invalid UTF-8 when converting to date.");
-		}
-		if (date_fromstr(buf, &maxsize, &value, true) < 0) {
-			return createException(MAL, "pyapi3.eval",
-								   SQLSTATE(PY000) "Could not convert string to date.");
-		}
-	}
-	else
-		return createException(MAL, "pyapi3.eval",
-							   SQLSTATE(PY000) "Invalid PyObject");
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
 
-
-	return MAL_SUCCEED;
+	return GDKstrdup("Implicit conversion of date to string is not allowed.");
 }
+
+str str_to_daytime(const char *ptr, size_t maxsize, daytime *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of time to string is not allowed.");
+}
+
+str unicode_to_daytime(Py_UNICODE *ptr, size_t maxsize, daytime *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of time to string is not allowed.");
+}
+
 
 #define PY_TO_(type, inttpe)						\
 str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\

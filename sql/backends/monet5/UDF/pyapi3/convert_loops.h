@@ -66,6 +66,7 @@
 #define nancheck_hge(bat) ((void)0) /* not used if no HAVE_HGE */
 #define nancheck_oid(bat) ((void)0)
 #define nancheck_date(bat) ((void)0)
+#define nancheck_daytime(bat) ((void)0)
 #if defined(HAVE_FORK)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore)                               \
 	{                                                                          \
@@ -550,8 +551,8 @@ convert_and_append(BAT* b, const char* text, bool force) {
 						((PyObject **)&data[(index_offset * ret->count + iu) * \
 											ret->memory_size]),                \
 						utf8_size, &utf8_string);                              \
-					if (msg != MAL_SUCCEED)								\
-						goto wrapup;									\
+					if (msg != MAL_SUCCEED)                                    \
+						goto wrapup;                                           \
 					if (convert_and_append(b, utf8_string, false) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi3.eval",              \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \

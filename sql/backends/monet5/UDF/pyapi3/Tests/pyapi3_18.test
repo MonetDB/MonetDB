@@ -24,15 +24,20 @@ statement ok
 CREATE TABLE time_table(d TIME)
 
 statement ok rowcount 1
-INSERT INTO time_table VALUES (cast('12:00:00' AS TIME))
+INSERT INTO time_table VALUES (cast('12:00:00.000001' AS TIME))
 
 statement ok
-CREATE FUNCTION pyapi_time(d TIME) RETURNS STRING LANGUAGE PYTHON { return d; }
+CREATE FUNCTION pyapi_time(d TIME) RETURNS TIME LANGUAGE PYTHON { return d; }
+
+query T rowsort
+SELECT pyapi_time(cast('12:00:00.000001' AS TIME))
+----
+12:00:00.000001
 
 query T rowsort
 SELECT pyapi_time(d) FROM time_table
 ----
-12:00:00.000000
+12:00:00.000001
 
 statement ok
 CREATE TABLE timestamp_table(d TIMESTAMP)
@@ -81,8 +86,9 @@ statement ok
 CREATE FUNCTION pyapi_ret_time() RETURNS TABLE(d TIME)
 LANGUAGE PYTHON
 {
+    import datetime
     result = dict()
-    result['d'] = '12:00:00'
+    result['d'] = datetime.time(12, 0, 0, 0)
     return result
 }
 

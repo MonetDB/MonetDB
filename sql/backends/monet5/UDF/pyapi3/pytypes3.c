@@ -279,7 +279,8 @@ bool PyType_IsPyScalar(PyObject *object)
 	return (PyArray_CheckScalar(object) || PyLong_Check(object) ||
 			PyFloat_Check(object) || PyUnicode_Check(object) ||
 			PyBool_Check(object) || PyByteArray_Check(object) ||
-			PyBytes_Check(object) || PyDate_Check(object));
+			PyBytes_Check(object) || PyDate_Check(object) ||
+			PyTime_Check(object));
 }
 
 void _pytypes_init(void) { _import_array(); }
