@@ -19,3 +19,5 @@
 - Moved COPY INTO spatial_ref_sys to **spatial_ref_sys.sql**
 - Moved Geodetic functions (except bulk versions) to **geod.c** (MAL functions still on geom.c)
 - Moved Geodetic headers to **geod.h** 
+- Moved MBR functions (including atom functions) to **mbr.c** (MAL functions still on geom.c)
+- Moved MBR headers to **mbr.h**

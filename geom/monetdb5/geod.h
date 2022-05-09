@@ -1,3 +1,5 @@
+#include "geom.h"
+
 /* Geographic data types */
 //Bounding box of a geographic shape
 typedef struct BoundingBox {
@@ -60,6 +62,3 @@ str wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const 
 str wkbIntersectsGeographic(bit* out, wkb** a, wkb** b);
 str wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti);
 str wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti);
-
-//TODO: Not used
-str geodeticEdgeBoundingBox(const CartPoint3D* p1, const CartPoint3D* p2, BoundingBox* mbox);
