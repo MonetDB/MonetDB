@@ -8,10 +8,15 @@ statement ok rowcount 1
 INSERT INTO date_table VALUES (cast('2000-10-10' AS DATE))
 
 statement ok
-CREATE FUNCTION pyapi_date(d DATE) RETURNS STRING LANGUAGE PYTHON { return d; }
+CREATE FUNCTION pyapi_date(d DATE) RETURNS DATE LANGUAGE PYTHON { return d; }
 
 query T rowsort
 SELECT pyapi_date(d) FROM date_table
+----
+2000-10-10
+
+query T rowsort
+SELECT pyapi_date(cast('2000-10-10' AS DATE))
 ----
 2000-10-10
 
@@ -61,8 +66,9 @@ statement ok
 CREATE FUNCTION pyapi_ret_date() RETURNS TABLE(d DATE)
 LANGUAGE PYTHON
 {
+    import datetime
     result = dict()
-    result['d'] = '2000-10-10'
+    result['d'] = datetime.date(2000, 10, 10)
     return result
 }
 
