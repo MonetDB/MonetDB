@@ -118,6 +118,34 @@ str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value) {
 	return msg;
 }
 
+str pyobject_to_timestamp(PyObject **ptr, size_t maxsize, timestamp *value) {
+	str msg = MAL_SUCCEED;
+
+	if (ptr == NULL || *ptr == NULL) {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyObject.");
+		goto wrapup;
+	}
+
+	(void) maxsize;
+
+	USE_DATETIME_API;
+	if(PyDateTime_Check(*ptr)) {
+		date dt = date_create(PyDateTime_GET_YEAR(*ptr),
+							  PyDateTime_GET_MONTH(*ptr),
+							  PyDateTime_GET_DAY(*ptr));
+		daytime dtm = daytime_create(PyDateTime_DATE_GET_HOUR(*ptr),
+									 PyDateTime_DATE_GET_MINUTE(*ptr),
+									 PyDateTime_DATE_GET_SECOND(*ptr),
+									 PyDateTime_DATE_GET_MICROSECOND(*ptr));
+		*value = timestamp_create(dt, dtm);
+	}
+	else {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyDateTime object.");
+	}
+
+ wrapup:
+	return msg;
+}
 
 str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 	size_t size;
@@ -241,7 +269,7 @@ str str_to_date(const char *ptr, size_t maxsize, date *value)
 	(void)maxsize;
 	(void)value;
 
-	return GDKstrdup("Implicit conversion of date to string is not allowed.");
+	return GDKstrdup("Implicit conversion of string to date is not allowed.");
 }
 
 str unicode_to_date(Py_UNICODE *ptr, size_t maxsize, date *value)
@@ -250,7 +278,7 @@ str unicode_to_date(Py_UNICODE *ptr, size_t maxsize, date *value)
 	(void)maxsize;
 	(void)value;
 
-	return GDKstrdup("Implicit conversion of date to string is not allowed.");
+	return GDKstrdup("Implicit conversion of string to date is not allowed.");
 }
 
 str str_to_daytime(const char *ptr, size_t maxsize, daytime *value)
@@ -259,7 +287,7 @@ str str_to_daytime(const char *ptr, size_t maxsize, daytime *value)
 	(void)maxsize;
 	(void)value;
 
-	return GDKstrdup("Implicit conversion of time to string is not allowed.");
+	return GDKstrdup("Implicit conversion of string to daytime is not allowed.");
 }
 
 str unicode_to_daytime(Py_UNICODE *ptr, size_t maxsize, daytime *value)
@@ -268,7 +296,25 @@ str unicode_to_daytime(Py_UNICODE *ptr, size_t maxsize, daytime *value)
 	(void)maxsize;
 	(void)value;
 
-	return GDKstrdup("Implicit conversion of time to string is not allowed.");
+	return GDKstrdup("Implicit conversion of string to daytime is not allowed.");
+}
+
+str str_to_timestamp(const char *ptr, size_t maxsize, timestamp *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of string to timestamp is not allowed.");
+}
+
+str unicode_to_timestamp(Py_UNICODE *ptr, size_t maxsize, timestamp *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of string to timestamp is not allowed.");
 }
 
 

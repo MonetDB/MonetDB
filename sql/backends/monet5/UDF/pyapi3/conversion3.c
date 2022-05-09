@@ -70,23 +70,29 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 			vararray = PyLong_FromHge(*((hge *)inp->dataptr));
 			break;
 #endif
-		case TYPE_date:
-			{
+		case TYPE_date: {
 				USE_DATETIME_API;
 				date dt = *(date *)inp->dataptr;
 				vararray = PyDate_FromDate(date_year(dt), date_month(dt), date_day(dt));
 				/* error checking */
 				break;
-			}
-		case TYPE_daytime:
-			{
+		}
+		case TYPE_daytime: {
 				USE_DATETIME_API;
 				daytime dt = *(daytime *)inp->dataptr;
 				vararray = PyTime_FromTime(daytime_hour(dt), daytime_min(dt), daytime_sec(dt), daytime_usec(dt));
 				/* error checking */
 				break;
-			}
-
+		}
+		case TYPE_timestamp: {
+				USE_DATETIME_API;
+				timestamp ts = *(timestamp *)inp->dataptr;
+				date dt = timestamp_date(ts);
+				daytime dtm = timestamp_daytime(ts);
+				vararray = PyDateTime_FromDateAndTime(date_year(dt), date_month(dt), date_day(dt), daytime_hour(dtm), daytime_min(dtm), daytime_sec(dtm), daytime_usec(dtm));
+				/* error checking */
+				break;
+		}
 		case TYPE_str:
 			vararray = PyUnicode_FromString(*((char **)inp->dataptr));
 			break;
@@ -299,6 +305,28 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 				bat_iterator_end(&li);
 				break;
 			}
+			case TYPE_timestamp: {
+				li = bat_iterator(b);
+
+				USE_DATETIME_API;
+				vararray = PyArray_EMPTY(1, elements, NPY_OBJECT, 0);
+				{
+					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
+					// PyObject *obj;
+					j = 0;
+					BATloop(b, p, q)
+					{
+						const timestamp* ts = (const timestamp*)BUNtail(li, p);
+						const date dt = timestamp_date(*ts);
+						const daytime dtm = timestamp_daytime(*ts);
+
+						data[j++] = PyDateTime_FromDateAndTime(date_year(dt), date_month(dt), date_day(dt), daytime_hour(dtm), daytime_min(dtm), daytime_sec(dtm), daytime_usec(dtm));
+					}
+				}
+				bat_iterator_end(&li);
+				break;
+			}
+
 			case TYPE_str: {
 				bool unicode = false;
 				li = bat_iterator(b);
@@ -893,7 +921,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 
 	switch (GetSQLType(type)) {
 		case EC_TIMESTAMP:
-			bat_type = TYPE_str;
+			bat_type = TYPE_timestamp;
 			break;
 		case EC_TIME:
 			bat_type = TYPE_daytime;
@@ -1058,6 +1086,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 			case TYPE_daytime:
 				NP_CREATE_BAT(b, daytime);
 				break;
+			case TYPE_timestamp:
+				NP_CREATE_BAT(b, timestamp);
+				break;
 			case TYPE_str: {
 				bool *mask = NULL;
 				char *data = NULL;
@@ -1120,7 +1151,7 @@ bit ConvertableSQLType(sql_subtype *sql_subtype)
 	switch (GetSQLType(sql_subtype)) {
 		/* case EC_DATE: */
 		/* case EC_TIME: */
-		case EC_TIMESTAMP:
+		/* case EC_TIMESTAMP: */
 		case EC_DEC:
 			return 1;
 	}
@@ -1148,9 +1179,9 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 	switch (sql_subtype->type->eclass) {
 		/* case EC_DATE: */
 		/* case EC_TIME: */
-		case EC_TIMESTAMP:
-			conv_type = TYPE_str;
-			break;
+		/* case EC_TIMESTAMP: */
+		/* 	conv_type = TYPE_str; */
+		/* 	break; */
 		case EC_DEC:
 			conv_type = TYPE_dbl;
 			break;
@@ -1303,6 +1334,7 @@ bit IsStandardBATType(int type)
 #endif
 		case TYPE_date:
 		case TYPE_daytime:
+		case TYPE_timestamp:
 		case TYPE_str:
 			return 1;
 		default:
