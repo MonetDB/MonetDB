@@ -78,6 +78,15 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 				/* error checking */
 				break;
 			}
+		case TYPE_daytime:
+			{
+				USE_DATETIME_API;
+				daytime dt = *(daytime *)inp->dataptr;
+				vararray = PyTime_FromTime(daytime_hour(dt), daytime_min(dt), daytime_sec(dt), daytime_usec(dt));
+				/* error checking */
+				break;
+			}
+
 		case TYPE_str:
 			vararray = PyUnicode_FromString(*((char **)inp->dataptr));
 			break;
@@ -264,6 +273,27 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 					{
 						const date* dt = (const date*)BUNtail(li, p);
 						data[j++] = PyDate_FromDate(date_year(*dt), date_month(*dt), date_day(*dt));
+					}
+				}
+				bat_iterator_end(&li);
+				break;
+			}
+			case TYPE_daytime: {
+				li = bat_iterator(b);
+
+				USE_DATETIME_API;
+				vararray = PyArray_EMPTY(1, elements, NPY_OBJECT, 0);
+				{
+					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
+					// PyObject *obj;
+					j = 0;
+					BATloop(b, p, q)
+					{
+						const daytime* dt = (const daytime*)BUNtail(li, p);
+						data[j++] = PyTime_FromTime(daytime_hour(*dt),
+													daytime_min(*dt),
+													daytime_sec(*dt),
+													daytime_usec(*dt));
 					}
 				}
 				bat_iterator_end(&li);
@@ -863,8 +893,10 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 
 	switch (GetSQLType(type)) {
 		case EC_TIMESTAMP:
-		case EC_TIME:
 			bat_type = TYPE_str;
+			break;
+		case EC_TIME:
+			bat_type = TYPE_daytime;
 			break;
 		case EC_DATE:
 			bat_type = TYPE_date;
@@ -1023,6 +1055,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 			case TYPE_date:
 				NP_CREATE_BAT(b, date);
 				break;
+			case TYPE_daytime:
+				NP_CREATE_BAT(b, daytime);
+				break;
 			case TYPE_str: {
 				bool *mask = NULL;
 				char *data = NULL;
@@ -1084,7 +1119,7 @@ bit ConvertableSQLType(sql_subtype *sql_subtype)
 {
 	switch (GetSQLType(sql_subtype)) {
 		/* case EC_DATE: */
-		case EC_TIME:
+		/* case EC_TIME: */
 		case EC_TIMESTAMP:
 		case EC_DEC:
 			return 1;
@@ -1111,8 +1146,8 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 	assert(sql_subtype->type);
 
 	switch (sql_subtype->type->eclass) {
-		case EC_DATE:
-		case EC_TIME:
+		/* case EC_DATE: */
+		/* case EC_TIME: */
 		case EC_TIMESTAMP:
 			conv_type = TYPE_str;
 			break;
@@ -1267,6 +1302,7 @@ bit IsStandardBATType(int type)
 		case TYPE_hge:
 #endif
 		case TYPE_date:
+		case TYPE_daytime:
 		case TYPE_str:
 			return 1;
 		default:

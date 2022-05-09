@@ -50,6 +50,10 @@ str pyobject_to_date(PyObject **ptr, size_t maxsize, date *value);
 str str_to_date(const char *ptr, size_t maxsize, date *value);
 str unicode_to_date(Py_UNICODE *ptr, size_t maxsize, date *value);
 
+str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value);
+str str_to_daytime(const char *ptr, size_t maxsize, daytime *value);
+str unicode_to_daytime(Py_UNICODE *ptr, size_t maxsize, daytime *value);
+
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
     str str_to_##tpe(const char *ptr, size_t maxsize, tpe *value);          \
