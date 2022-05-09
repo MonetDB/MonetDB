@@ -65,12 +65,13 @@
 #define nancheck_lng(bat) ((void)0)
 #define nancheck_hge(bat) ((void)0) /* not used if no HAVE_HGE */
 #define nancheck_oid(bat) ((void)0)
+#define nancheck_date(bat) ((void)0)
 #if defined(HAVE_FORK)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore)                               \
 	{                                                                          \
 		bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                      \
 		if (bat == NULL) {                                                     \
-		msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Cannot create column");     \
+			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Cannot create column"); \
 			goto wrapup;                                                       \
 		}                                                                      \
 		bat->tnil = false;                                                     \
@@ -545,10 +546,12 @@ convert_and_append(BAT* b, const char* text, bool force) {
 					}                                                          \
 				} else {                                                       \
 					/* we try to handle as many types as possible */           \
-					pyobject_to_str(                                           \
+					msg = pyobject_to_str(								\
 						((PyObject **)&data[(index_offset * ret->count + iu) * \
 											ret->memory_size]),                \
 						utf8_size, &utf8_string);                              \
+					if (msg != MAL_SUCCEED)								\
+						goto wrapup;									\
 					if (convert_and_append(b, utf8_string, false) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi3.eval",              \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \

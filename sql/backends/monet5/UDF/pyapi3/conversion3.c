@@ -70,6 +70,14 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 			vararray = PyLong_FromHge(*((hge *)inp->dataptr));
 			break;
 #endif
+		case TYPE_date:
+			{
+				USE_DATETIME_API;
+				date dt = *(date *)inp->dataptr;
+				vararray = PyDate_FromDate(date_year(dt), date_month(dt), date_day(dt));
+				/* error checking */
+				break;
+			}
 		case TYPE_str:
 			vararray = PyUnicode_FromString(*((char **)inp->dataptr));
 			break;
@@ -243,6 +251,24 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			case TYPE_dbl:
 				BAT_TO_NP(b, dbl, NPY_FLOAT64);
 				break;
+			case TYPE_date: {
+				li = bat_iterator(b);
+
+				USE_DATETIME_API;
+				vararray = PyArray_EMPTY(1, elements, NPY_OBJECT, 0);
+				{
+					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
+					// PyObject *obj;
+					j = 0;
+					BATloop(b, p, q)
+					{
+						const date* dt = (const date*)BUNtail(li, p);
+						data[j++] = PyDate_FromDate(date_year(*dt), date_month(*dt), date_day(*dt));
+					}
+				}
+				bat_iterator_end(&li);
+				break;
+			}
 			case TYPE_str: {
 				bool unicode = false;
 				li = bat_iterator(b);
@@ -572,8 +598,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			}
 		}
 
-		if (PyType_IsPyScalar(
-				pResult)) { // check if the return object is a scalar
+		if (PyType_IsPyScalar(pResult)) { // check if the return object is a scalar
 			if (expected_columns == 1 || expected_columns <= 0) {
 				// if we only expect a single return value, we can accept
 				// scalars by converting it into an array holding an array
@@ -839,8 +864,10 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 	switch (GetSQLType(type)) {
 		case EC_TIMESTAMP:
 		case EC_TIME:
-		case EC_DATE:
 			bat_type = TYPE_str;
+			break;
+		case EC_DATE:
+			bat_type = TYPE_date;
 			break;
 		case EC_DEC:
 			bat_type = TYPE_dbl;
@@ -993,6 +1020,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				NP_CREATE_BAT(b, hge);
 				break;
 #endif
+			case TYPE_date:
+				NP_CREATE_BAT(b, date);
+				break;
 			case TYPE_str: {
 				bool *mask = NULL;
 				char *data = NULL;
@@ -1053,7 +1083,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 bit ConvertableSQLType(sql_subtype *sql_subtype)
 {
 	switch (GetSQLType(sql_subtype)) {
-		case EC_DATE:
+		/* case EC_DATE: */
 		case EC_TIME:
 		case EC_TIMESTAMP:
 		case EC_DEC:
@@ -1236,6 +1266,7 @@ bit IsStandardBATType(int type)
 #ifdef HAVE_HGE
 		case TYPE_hge:
 #endif
+		case TYPE_date:
 		case TYPE_str:
 			return 1;
 		default:

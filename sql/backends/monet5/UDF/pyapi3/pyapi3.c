@@ -70,9 +70,19 @@ static const char *FunctionBasePath(void)
 
 static MT_Lock pyapiLock = MT_LOCK_INITIALIZER(pyapiLock);
 static bool pyapiInitialized = false;
+static PyDateTime_CAPI *PYAPI3_DateTimeAPI;
 
 bool PYAPI3PyAPIInitialized(void) {
 	return pyapiInitialized;
+}
+
+PyDateTime_CAPI *get_DateTimeAPI(void) {
+	return PYAPI3_DateTimeAPI;
+}
+
+void init_DateTimeAPI(void) {
+	PyDateTime_IMPORT;
+	PYAPI3_DateTimeAPI = PyDateTimeAPI;
 }
 
 #ifdef HAVE_FORK
@@ -1390,6 +1400,7 @@ PYAPI3PyAPIprelude(void) {
 		_loader_init();
 		tmp = PyUnicode_FromString("marshal");
 		marshal_module = PyImport_Import(tmp);
+		init_DateTimeAPI();
 		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
 			MT_lock_unset(&pyapiLock);
