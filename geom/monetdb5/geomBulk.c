@@ -12,6 +12,7 @@
 
 #include "geom.h"
 #include "geod.h"
+#include "mbr.h"
 
 /********** Geo Update **********/
 
