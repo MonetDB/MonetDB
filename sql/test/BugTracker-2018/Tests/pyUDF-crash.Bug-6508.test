@@ -19,7 +19,7 @@ insert into example ("column1") values (NULL)
 query T rowsort
 select test_timestamp_with_nulls("column1") from example
 ----
-["2017-01-01 00:00:01.000000", null]
+["2017-01-01 00:00:01", null]
 
 statement ok
 drop table example
