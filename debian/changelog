@@ -1,3 +1,70 @@
+monetdb (11.37.13) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#6938: Segmentation fault in MalOptimizer
+  * GH#6939: Error in optimizer multiplex when selecting
+    profiler.getlimit() or wlc.clock() or wlc.tick() or wlr.clock() or
+    wlr.tick()
+  * GH#6950: redundant/replicated code line in gdk/gdk_hash.c
+  * GH#6954: FILTER functions no longer find their implementation
+  * GH#6955: ROUND(DECIMAL, PRECISION) gives incorrect result with
+    non-scalar precision parameter
+  * GH#6964: Table returning function: Cannot access column descriptor
+  * GH#6965: Crash when using distinct on the result of a table returning
+    function
+  * GH#7108: Monetdb crashes on query execution
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 09 May 2022 18:43:56 +0200
+
+monetdb (11.37.13) unstable; urgency=low
+
+  * gdk: Improve the heuristic for growing the result bat in a rangejoin.
+  * gdk: Improved management of bats around commit time, both at the SQL level
+    (write-ahead log) and low level (so-called subcommit).
+  * gdk: Improved BATproject for string bats.
+  * gdk: Improved low-level algorithm selection in join.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 9 May 2022 18:43:56 +0200
+
+monetdb (11.37.13) unstable; urgency=low
+
+  * sql: Print current query when using CALL
+    logging.setcomplevel('SQL_EXECUTION', 'INFO');
+  * sql: Comments inside queries are now available in the sys.queue
+    function/view.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 9 May 2022 18:43:56 +0200
+
+monetdb (11.37.13) unstable; urgency=low
+
+  * gdk: A bug that would very occasionally produce an error "strPut: incorrectly
+    encoded UTF-8", even when no incorrectly coded characters are used
+    at all, has been fixed.  It was the result of a rare combination of
+    strings having been added to the column that caused essentially an
+    off-by-one type of error to occur.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 18:43:56 +0200
+
+monetdb (11.37.13) unstable; urgency=low
+
+  * merovingian: When stopping monetdbd using the `monetdbd stop' command, this command
+    now waits for 5 seconds longer than the exittimeout value before it
+    kills the monetdbd daemon instead of only 30 seconds total (or until
+    that daemon stops earlier).  This gives the daemon enough time to
+    terminate the mserver5 processes that it is managing.  If exittimeout
+    is negative, the daemon and the monetdbd process initiating the stop
+    wait indefinitely until the mserver5 processes have stopped.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 18:43:56 +0200
+
+monetdb (11.37.13) unstable; urgency=low
+
+  * sql: A bug where a sequence of TRUNCATE TABLE and COPY INTO the just
+    truncated table would result in success being reported to both queries,
+    but the table still being empty afterwards, has been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 18:43:56 +0200
+
 monetdb (11.37.11) unstable; urgency=low
 
   * Rebuilt.
