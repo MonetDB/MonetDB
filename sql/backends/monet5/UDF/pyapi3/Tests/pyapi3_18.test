@@ -94,14 +94,14 @@ LANGUAGE PYTHON
 {
     import datetime
     result = dict()
-    result['d'] = datetime.time(12, 0, 0, 0)
+    result['d'] = datetime.time(12, 0, 0, 1)
     return result
 }
 
 query T rowsort
 SELECT * FROM pyapi_ret_time()
 ----
-12:00:00
+12:00:00.000001
 
 statement ok
 CREATE FUNCTION pyapi_ret_timestamp() RETURNS TABLE(d TIMESTAMP)
@@ -116,7 +116,7 @@ LANGUAGE PYTHON
 query T rowsort
 SELECT * FROM pyapi_ret_timestamp()
 ----
-2000-01-01 12:00:00
+2000-01-01 12:00:00.000001
 
 statement ok
 CREATE FUNCTION pyapi_ret_decimal() RETURNS TABLE(d DECIMAL)
@@ -170,10 +170,10 @@ statement ok rowcount 1
 INSERT INTO uuid_tbl VALUES ('54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c')
 
 statement ok
-CREATE FUNCTION pyapi_interval(d UUID) RETURNS STRING LANGUAGE PYTHON { return d; }
+CREATE FUNCTION pyapi_uuid(d UUID) RETURNS STRING LANGUAGE PYTHON { return d; }
 
 query T rowsort
-SELECT pyapi_interval(d) FROM uuid_tbl
+SELECT pyapi_uuid(d) FROM uuid_tbl
 ----
 54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c
 
