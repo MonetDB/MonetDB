@@ -5237,7 +5237,23 @@ can_use_copyparpipe(sql_rel *rel)
 	assert(atom_type(a)->type->localtype == TYPE_ptr);
 	sql_table *template_table = a->data.val.pval;
 
-	// disallow best effort
+	// disallow offset, N records and best effort
+	sql_exp *arg5 = n->next->next->next->next->next->next->data;
+	if (arg5->type != e_atom)
+		return NULL;
+	a = arg5->l;
+	assert(atom_type(a)->type->localtype == TYPE_lng);
+	lng nrecords = a->data.val.lval;
+	if (nrecords != -1)
+		return NULL;
+	sql_exp *arg6 = n->next->next->next->next->next->next->next->data;
+	if (arg6->type != e_atom)
+		return NULL;
+	a = arg6->l;
+	assert(atom_type(a)->type->localtype == TYPE_lng);
+	lng offset = a->data.val.lval;
+	if (offset != 0 && offset != 1)
+		return NULL;
 	sql_exp *arg7 = n->next->next->next->next->next->next->next->next->data;
 	if (arg7->type != e_atom)
 		return NULL;
