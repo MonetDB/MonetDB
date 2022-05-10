@@ -25,9 +25,7 @@ typedef struct Pipelines {
 	ATOMIC_TYPE workers;
 	ATOMIC_TYPE master_counter;
 	int counters[THREADS];
-#ifdef HAVE_PTHREAD_H
-	pthread_cond_t cond;
-#endif
+	MT_Cond cond;
 } Pipelines;
 
 typedef struct Pipeline {
@@ -39,7 +37,5 @@ typedef struct Pipeline {
 mal_export str runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, MalStkPtr stk);
 mal_export int PIPELINEnext_counter(Pipeline *p);
 mal_export void PIPELINEclear_counter(Pipeline *p);
-mal_export void PIPELINEwait(Pipeline *p);
-mal_export void PIPELINEnotify(Pipeline *p, const char *msg);
 
 #endif /*  _MAL_PIPELINES_H*/

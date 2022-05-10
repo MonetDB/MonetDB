@@ -256,7 +256,7 @@ PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*metadata = p->p->counters[p->wid] + 1;
 
-	PIPELINEnotify(p, "send");
+	MT_cond_broadcast(&pp->cond);
 	(void)cntxt;
 bailout:
 	MT_lock_unset(&pp->l);
@@ -331,7 +331,7 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		// Wait until something changes
-		PIPELINEwait(p);
+		MT_cond_wait(&pp->cond, &pp->l);
 	}
 	(void)cntxt;
 
