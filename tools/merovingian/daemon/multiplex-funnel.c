@@ -954,5 +954,3 @@ multiplexRemoveClient(multiplex *m, multiplex_client *c)
 		p = w;
 	}
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

@@ -16,5 +16,3 @@ void control_handleclient(const char *host, int sock, stream *fdin, stream *fdou
 void *controlRunner(void *d);
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */
