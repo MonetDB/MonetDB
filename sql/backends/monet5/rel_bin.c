@@ -5286,9 +5286,9 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (parallel_copy_level() > 0) {
 		sql_exp *copyfrom = can_use_copyparpipe(rel);
 		if (copyfrom != NULL) {
-			dump_code(0);
+			// dump_code(0);
 			stmt *ret = rel2bin_copyparpipe(be, rel, refs, copyfrom);
-			dump_code(-1);
+			// dump_code(-1);
 			return ret;
 		}
 	}
