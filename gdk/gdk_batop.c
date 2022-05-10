@@ -57,7 +57,7 @@ unshare_varsized_heap(BAT *b)
  * of inserting individual strings.  See the comments in the code for
  * more information. */
 static gdk_return
-insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare)
+insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare, lng timeoffset)
 {
 	BATiter ni;		/* iterator */
 	size_t toff = ~(size_t) 0;	/* tail offset */
@@ -215,8 +215,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		}
 		MT_thread_setalgorithm("copy offset values");
 		r = b->batCount;
-		while (cnt > 0) {
-			cnt--;
+		TIMEOUT_LOOP(cnt, timeoffset) {
 			p = canditer_next(ci) - n->hseqbase;
 			switch (ni.width) {
 			case 1:
@@ -267,8 +266,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		r = b->batCount;
 		oid hseq = n->hseqbase;
 		MT_thread_setalgorithm("insert string values");
-		while (cnt > 0) {
-			cnt--;
+		TIMEOUT_LOOP(cnt, timeoffset) {
 			p = canditer_next(ci) - hseq;
 			tp = BUNtvar(ni, p);
 			if (tfastins_nocheckVAR(b, r, tp) != GDK_SUCCEED) {
@@ -286,8 +284,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		 * offset, otherwise we insert normally.  */
 		r = b->batCount;
 		MT_thread_setalgorithm("insert string values with check");
-		while (cnt > 0) {
-			cnt--;
+		TIMEOUT_LOOP(cnt, timeoffset) {
 			p = canditer_next(ci) - n->hseqbase;
 			off = BUNtvaroff(ni, p); /* the offset */
 			tp = ni.vh->base + off; /* the string */
@@ -327,8 +324,9 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			r++;
 		}
 	}
-	BATsetcount(b, oldcnt + ci->ncand);
 	bat_iterator_end(&ni);
+	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
+	BATsetcount(b, oldcnt + ci->ncand);
 	assert(b->batCapacity >= b->batCount);
 	/* maintain hash */
 	MT_rwlock_wrlock(&b->thashlock);
@@ -695,6 +693,12 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			  ATOMname(BATttype(n)), ATOMname(BATttype(b)));
 	}
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	BATiter ni = bat_iterator(n);
 
 	cnt = canditer_init(&ci, n, s);
@@ -840,7 +844,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		b->tnil |= n->tnil && cnt == ni.count;
 	}
 	if (b->ttype == TYPE_str) {
-		if (insert_string_bat(b, n, &ci, force, mayshare) != GDK_SUCCEED) {
+		if (insert_string_bat(b, n, &ci, force, mayshare, timeoffset) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
@@ -882,8 +886,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				r++;
 			}
 		} else {
-			while (cnt > 0) {
-				cnt--;
+			TIMEOUT_LOOP(cnt, timeoffset) {
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
 				if (tfastins_nocheck(b, r, t) != GDK_SUCCEED) {
@@ -895,6 +898,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 					HASHappend_locked(b, r, t);
 				r++;
 			}
+			TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
 		BATsetcount(b, b->batCount + ci.ncand);
@@ -908,6 +912,10 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
+  bailout:
+	MT_rwlock_wrunlock(&b->thashlock);
+	bat_iterator_end(&ni);
+	return GDK_FAIL;
 }
 
 gdk_return
