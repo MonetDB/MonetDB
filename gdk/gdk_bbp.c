@@ -1397,6 +1397,7 @@ BBPtrim(bool aggressive)
 		    (b = BBP_cache(bid)) != NULL) {
 			MT_lock_set(&b->theaplock);
 			if (b->batSharecnt == 0 &&
+			    !isVIEW(b) &&
 			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
 			    !(BBP_status(bid) & flag) /*&&
 			    (BBP_status(bid) & BBPPERSISTENT ||
@@ -1777,28 +1778,24 @@ BBPexit(void)
 						skipped = true;
 						continue;
 					}
-					if (isVIEW(b)) {
-						/* "manually"
-						 * decrement parent
-						 * references, since
-						 * VIEWdestroy doesn't
-						 * (and can't here due
-						 * to locks) do it */
-						bat tp = VIEWtparent(b);
-						bat vtp = VIEWvtparent(b);
-						if (tp) {
-							BBP_desc(tp)->batSharecnt--;
-							--BBP_lrefs(tp);
-						}
-						if (vtp) {
-							BBP_desc(vtp)->batSharecnt--;
-							--BBP_lrefs(vtp);
-						}
-						VIEWdestroy(b);
-					} else {
-						PROPdestroy(b);
-						BATfree(b);
+					MT_lock_set(&b->theaplock);
+					bat tp = VIEWtparent(b);
+					if (tp != 0) {
+						BBP_desc(tp)->batSharecnt--;
+						--BBP_lrefs(tp);
+						HEAPdecref(b->theap, false);
+						b->theap = NULL;
 					}
+					tp = VIEWvtparent(b);
+					if (tp != 0) {
+						BBP_desc(tp)->batSharecnt--;
+						--BBP_lrefs(tp);
+						HEAPdecref(b->tvheap, false);
+						b->tvheap = NULL;
+					}
+					MT_lock_unset(&b->theaplock);
+					PROPdestroy(b);
+					BATfree(b);
 				}
 				BBP_pid(i) = 0;
 				BBPuncacheit(i, true);
@@ -3150,7 +3147,7 @@ BBPreclaim(BAT *b)
 
 	assert(BBP_refs(i) == 1);
 
-	return decref(i, false, false, true, lock, __func__) <0;
+	return decref(i, false, false, true, lock, __func__) < 0;
 }
 
 /*
@@ -3316,20 +3313,16 @@ BBPfree(BAT *b)
 
 	assert(bid > 0);
 	assert(BBPswappable(b));
+	assert(!isVIEW(b));
 
 	BBP_unload_inc();
-	/* write dirty BATs before being unloaded */
+	/* write dirty BATs before unloading */
 	ret = BBPsave(b);
 	if (ret == GDK_SUCCEED) {
-		if (isVIEW(b)) {	/* physical view */
-			VIEWdestroy(b);
-		} else {
-			if (BBP_cache(bid))
-				BATfree(b);	/* free memory */
-		}
+		if (BBP_cache(bid))
+			BATfree(b);	/* free memory */
 		BBPuncacheit(bid, false);
 	}
-	/* clearing bits can be done without the lock */
 	TRC_DEBUG(BAT_, "turn off unloading %d\n", bid);
 	BBP_status_off(bid, BBPUNLOADING);
 	BBP_unload_dec();
