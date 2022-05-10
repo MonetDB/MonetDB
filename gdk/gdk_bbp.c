@@ -3272,9 +3272,11 @@ BBPdestroy(BAT *b)
 	bat tp = VIEWtparent(b);
 	bat vtp = VIEWvtparent(b);
 
-	if (isVIEW(b)) {	/* a physical view */
-		VIEWdestroy(b);
-	} else {
+	HASHdestroy(b);
+	IMPSdestroy(b);
+	OIDXdestroy(b);
+	PROPdestroy(b);
+	if (tp == 0) {
 		/* bats that get destroyed must unfix their atoms */
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		assert(b->batSharecnt == 0);
@@ -3287,8 +3289,16 @@ BBPdestroy(BAT *b)
 				(void) (*tunfix)(BUNtail(bi, p));
 			}
 		}
-		BATdelete(b);	/* handles persistent case also (file deletes) */
 	}
+	if (tp || vtp)
+		VIEWunlink(b);
+	if (b->theap) {
+		HEAPfree(b->theap, true);
+	}
+	if (b->tvheap)
+		HEAPfree(b->tvheap, true);
+	b->batCopiedtodisk = false;
+
 	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
 
 	/* parent released when completely done with child */

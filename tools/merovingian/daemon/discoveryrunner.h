@@ -31,5 +31,3 @@ extern remotedb _mero_remotedbs;
 extern pthread_mutex_t _mero_remotedb_lock;
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */
