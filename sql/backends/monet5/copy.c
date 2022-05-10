@@ -877,7 +877,7 @@ COPYset_parallel(bit *dummy, int *level)
 static str
 COPYget_parallel(int *level)
 {
-	*level = GDKgetenv_int(COPY_PARALLEL_SETTING, 0);
+	*level = GDKgetenv_int(COPY_PARALLEL_SETTING, int_nil);
 	return MAL_SUCCEED;
 }
 

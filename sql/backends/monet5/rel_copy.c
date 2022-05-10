@@ -12,13 +12,19 @@
 #include "rel_copy.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
+#include "sql_scenario.h"
 
 void dump_code(int);
 
 int
 parallel_copy_level(void)
 {
-	return GDKgetenv_int(COPY_PARALLEL_SETTING, 0);
+	if (!SQLrunning)
+		return 0;
+	int level = GDKgetenv_int(COPY_PARALLEL_SETTING, int_nil);
+	if (is_int_nil(level))
+		level = 1;
+	return level;
 }
 
 static int
