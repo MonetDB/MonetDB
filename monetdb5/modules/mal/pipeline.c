@@ -238,10 +238,10 @@ PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&pp->l);
 
-	const char *ch_name = mb->var[getArg(pci, 2)].name;
-	char *formatted = ATOMformat(tpe, value);
-	fprintf(stderr, "Iteration %d sending value %s on channel %s\n", pp->counters[p->wid], formatted, ch_name);
-	GDKfree(formatted);
+	// const char *ch_name = mb->var[getArg(pci, 2)].name;
+	// char *formatted = ATOMformat(tpe, value);
+	// fprintf(stderr, "Iteration %d sending value %s on channel %s\n", pp->counters[p->wid], formatted, ch_name);
+	// GDKfree(formatted);
 
 	if (!is_int_nil(*metadata)) {
 		msg = createException(MAL, "pipeline.send", SQLSTATE(42000)"causality violation detected in iteration %d: %d has sent already",
@@ -280,10 +280,10 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// Note: these point into the master stack frame not the worker stack frame
 	void *mailbox = getArgReference(pp->stk, pci, 2);
 	int *metadata = getArgReference_int(pp->stk, pci, 3);
-	int prev = int_nil;
+	int prev = int_nil; (void)prev; // for debug logging
 
 	int tpe = getArgGDKType(mb, pci, 2);
-	const char *ch_name = mb->var[getArg(pci, 2)].name;
+	// const char *ch_name = mb->var[getArg(pci, 2)].name;
 
 	MT_lock_set(&pp->l);
 	locked = true;
@@ -302,9 +302,9 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			*metadata = int_nil;
 			//
-			char *formatted = ATOMformat(tpe, ret);
-			fprintf(stderr, "Iteration %d recv'd %s from channel %s\n", pp->counters[p->wid], formatted, ch_name);
-			GDKfree(formatted);
+			// char *formatted = ATOMformat(tpe, ret);
+			// fprintf(stderr, "Iteration %d recv'd %s from channel %s\n", pp->counters[p->wid], formatted, ch_name);
+			// GDKfree(formatted);
 			break;
 		}
 		// value is not in yet, is there still hope?
@@ -316,19 +316,19 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 		if (!sender_still_running) {
-			fprintf(stderr, "Iteration %d failed to recv from channel %s because no message was sent\n", p->p->counters[p->wid], ch_name);
+			// fprintf(stderr, "Iteration %d failed to recv from channel %s because no message was sent\n", p->p->counters[p->wid], ch_name);
 			msg = createException(MAL, "pipeline.recv", SQLSTATE(42000)"iteration %d neglected to send a message to %d", myself - 1, myself);
 			break;
 		}
 
-		if (*metadata != prev) {
-			prev = *metadata;
-			fprintf(stderr, "Iteration %d waiting to recv from channel %s [currently ", p->p->counters[p->wid], ch_name);
-			if (is_int_nil(*metadata))
-				fprintf(stderr, "empty]\n");
-			else
-				fprintf(stderr, "for %d]\n", *metadata);
-		}
+		// if (*metadata != prev) {
+		// 	prev = *metadata;
+		// 	fprintf(stderr, "Iteration %d waiting to recv from channel %s [currently ", p->p->counters[p->wid], ch_name);
+		// 	if (is_int_nil(*metadata))
+		// 		fprintf(stderr, "empty]\n");
+		// 	else
+		// 		fprintf(stderr, "for %d]\n", *metadata);
+		// }
 
 		// Wait until something changes
 		MT_cond_wait(&pp->cond, &pp->l);
