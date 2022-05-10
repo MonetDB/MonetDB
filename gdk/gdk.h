@@ -2336,20 +2336,19 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 
 #define GDK_CHECK_TIMEOUT_BODY(timeoffset, callback)		\
 	do {							\
-		if (timeoffset && GDKusec() > timeoffset) {	\
+		if (GDKexiting() ||				\
+		    (timeoffset && GDKusec() > timeoffset)) {	\
 			callback;				\
 		}						\
 	} while (0)
 
 #define GDK_CHECK_TIMEOUT(timeoffset, counter, callback)		\
 	do {								\
-		if (timeoffset) {					\
-			if (counter > CHECK_QRY_TIMEOUT_STEP) {		\
-				GDK_CHECK_TIMEOUT_BODY(timeoffset, callback); \
-				counter = 0;				\
-			} else {					\
-				counter++;				\
-			}						\
+		if (counter > CHECK_QRY_TIMEOUT_STEP) {			\
+			GDK_CHECK_TIMEOUT_BODY(timeoffset, callback);	\
+			counter = 0;					\
+		} else {						\
+			counter++;					\
 		}							\
 	} while (0)
 
