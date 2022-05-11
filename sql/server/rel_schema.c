@@ -2918,17 +2918,18 @@ rel_schemas(sql_query *query, symbol *s)
 	} 	break;
 	case SQL_CREATE_USER: {
 		dlist *l = s->data.lval;
+		dlist *schema_details = l->h->next->next->next->data.lval;
 
 		ret = rel_create_user(sql->sa, l->h->data.sval,	/* user name */
 				  l->h->next->data.sval,	/* password */
 				  l->h->next->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
 				  l->h->next->next->data.sval,	/* fullname */
-				  l->h->next->next->next->data.sval,	/* dschema */
-				  l->h->next->next->next->next->data.sval,	/* schema path */
-				  l->h->next->next->next->next->next->next->data.l_val,	/* max memory */
-				  l->h->next->next->next->next->next->next->next->data.i_val, /* max workers */
-				  l->h->next->next->next->next->next->next->next->next->data.sval, /* optimizer */
-				  l->h->next->next->next->next->next->next->next->next->next->data.sval); /* default role */
+				  schema_details->h->data.sval,	/* schema ident*/
+				  schema_details->h->next->data.sval,	/* schema path */
+				  l->h->next->next->next->next->next->data.l_val,	/* max memory */
+				  l->h->next->next->next->next->next->next->data.i_val, /* max workers */
+				  l->h->next->next->next->next->next->next->next->data.sval, /* optimizer */
+				  l->h->next->next->next->next->next->next->next->next->data.sval); /* default role */
 	} 	break;
 	case SQL_DROP_USER:
 		ret = rel_schema2(sql->sa, ddl_drop_user, s->data.sval, NULL, 0);
