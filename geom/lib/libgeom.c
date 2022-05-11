@@ -52,6 +52,25 @@ is_wkb_nil(const wkb *w)
 	return 0;
 }
 
+/* returns the size of variable-sized atom wkb */
+var_t
+wkb_size(size_t len)
+{
+	if (len == ~(size_t) 0)
+		len = 0;
+	assert(offsetof(wkb, data) + len <= VAR_MAX);
+	return (var_t) (offsetof(wkb, data) + len);
+}
+
+wkb *
+wkbNULLcopy(void)
+{
+	wkb *n = GDKmalloc(sizeof(wkb_nil));
+	if (n)
+		*n = wkb_nil;
+	return n;
+}
+
 GEOSGeom
 wkb2geos(const wkb *geomWKB)
 {
@@ -66,6 +85,45 @@ wkb2geos(const wkb *geomWKB)
 		GEOSSetSRID(geosGeometry, geomWKB->srid);
 
 	return geosGeometry;
+}
+
+/* create the WKB out of the GEOSGeometry
+ * It makes sure to make all checks before returning
+ * the input geosGeometry should not be altered by this function
+ * return NULL on error */
+wkb *
+geos2wkb(const GEOSGeometry *geosGeometry)
+{
+	size_t wkbLen = 0;
+	unsigned char *w = NULL;
+	wkb *geomWKB;
+
+	// if the geosGeometry is NULL create a NULL WKB
+	if (geosGeometry == NULL) {
+		return wkbNULLcopy();
+	}
+
+	GEOS_setWKBOutputDims(GEOSGeom_getCoordinateDimension(geosGeometry));
+	w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
+
+	if (w == NULL)
+		return NULL;
+
+	assert(wkbLen <= GDK_int_max);
+
+	geomWKB = GDKmalloc(wkb_size(wkbLen));
+	//If malloc failed create a NULL wkb
+	if (geomWKB == NULL) {
+		GEOSFree(w);
+		return NULL;
+	}
+
+	geomWKB->len = (int) wkbLen;
+	geomWKB->srid = GEOSGetSRID(geosGeometry);
+	memcpy(&geomWKB->data, w, wkbLen);
+	GEOSFree(w);
+
+	return geomWKB;
 }
 
 const char *

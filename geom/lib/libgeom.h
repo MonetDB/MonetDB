@@ -132,7 +132,14 @@ libgeom_export void libgeom_exit(void);
 
 #define mbr_nil mbrFromGeos(NULL);
 
+/* variables */
+int TYPE_mbr;
+static const wkb wkb_nil = { ~0, 0 };
+
 libgeom_export bool is_wkb_nil(const wkb *wkbp);
+libgeom_export var_t wkb_size(size_t len);
+libgeom_export wkb * wkbNULLcopy(void);
 libgeom_export GEOSGeom wkb2geos(const wkb *geomWKB);
+libgeom_export wkb * geos2wkb(const GEOSGeometry *geosGeometry);
 
 #endif /* LIBGEOM_H */
