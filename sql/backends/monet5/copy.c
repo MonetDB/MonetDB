@@ -93,6 +93,12 @@ COPYread(lng *ret_nread, Stream *stream_arg, lng *block_size_arg, bat *block_bat
 
 	BATsetcount(bat, nread);
 	bat->batInserted = 0;
+	// it would be very surprising if the bytes we just read were ordered or unique!
+	bat->tkey = false;
+	bat->tnonil = false;
+	bat->tnil = false;
+	bat->tsorted = false;
+	bat->trevsorted = false;
 
 	*ret_nread = nread;
 #ifdef BLOCK_DEBUG
@@ -771,7 +777,13 @@ end:
 				BAT *b = return_bats[i];
 				bat id = b->batCacheid;
 				if (msg == MAL_SUCCEED) {
-					BATcount(b) = line_count;
+					BATsetcount(b, line_count);
+					// these are indices into the block. they should be ascending.
+					b->tkey = true;
+					b->tnil = false;
+					b->tnonil = true;
+					b->tsorted = true;
+					b->trevsorted = false;
 					BBPkeepref(b);
 					*getArgReference_bat(stk, pci, i) = id;
 				}

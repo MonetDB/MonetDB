@@ -63,6 +63,12 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bailout("copy.parse_generic", GDK_EXCEPTION);
 	}
 	BATsetcount(ret, n);
+	// we don't know anything about the data we just parsed
+	ret->tkey = false;
+	ret->tnil = false;
+	ret->tnonil = false;
+	ret->tsorted = false;
+	ret->trevsorted = false;
 end:
 	GDKfree(buffer);
 	if (ret) {
@@ -111,6 +117,12 @@ parse_fixed_width_column(
 		goto end;
 
 	BATsetcount(parsed_bat, BATcount(offsets_bat));
+	// we don't know anything about the data we just parsed
+	parsed_bat->tkey = false;
+	parsed_bat->tnil = false;
+	parsed_bat->tnonil = false;
+	parsed_bat->tsorted = false;
+	parsed_bat->trevsorted = false;
 
 	if (errors.count > 0)
 		bailout(fname, "At least %d conversion errors, example: %s", errors.count, errors.message);
