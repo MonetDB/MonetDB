@@ -11,6 +11,8 @@ if(GEOS_FOUND)
 
   set(include_sql_files
     40_geom
+    40_geom_PostGIS
+    40_geom_OGC
     spatial_ref_sys)
 
   create_include_object(
@@ -24,6 +26,11 @@ if(GEOS_FOUND)
     geom.c
     geomBulk.c
     geom_upgrade.c
+    geod.c
+    geom_io.c
+    mbr.c
+    wkb.c
+    wkba.c
     ${MONETDB_CURRENT_SQL_SOURCES}
     PUBLIC
     ${geomodule_public_headers})

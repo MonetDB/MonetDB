@@ -1,3 +1,4 @@
+#include "geom.h"
 #include "geod.h"
 
 /**
@@ -1270,8 +1271,6 @@ FP_EQUALS (double x, double y)
 	return fabs(x-y) < 1e-12;
 }
 
-//TODO Uncomment
-/*
 str
 geodeticEdgeBoundingBox(const CartPoint3D* p1, const CartPoint3D* p2, BoundingBox* mbox)
 {
@@ -1338,4 +1337,3 @@ geodeticEdgeBoundingBox(const CartPoint3D* p1, const CartPoint3D* p2, BoundingBo
 	}
 	return MAL_SUCCEED;
 }
-*/

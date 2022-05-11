@@ -14,742 +14,58 @@
 #include "geom.h"
 #include "geod.h"
 #include "mbr.h"
+#include "wkba.h"
+#include "wkb.h"
+#include "geom_srid.h"
+#include "geom_io.h"
 #include "gdk_logger.h"
 #include "mal_exception.h"
 
-static wkb *geos2wkb(const GEOSGeometry *geosGeometry);
+#include "gdk_geomlogger.h"
 
-/** 
-* 
-* Geographic update code start
-*
-**/
-
-/**
-* Collect (Group By implementation) 
-* 
-**/
-//Gets the type of collection a single geometry should belong to
-static int
-GEOSGeom_getCollectionType (int GEOSGeom_type) {
-	//Single geometries get collected into a Multi* geometry
-	if (GEOSGeom_type == GEOS_POINT)
-		return GEOS_MULTIPOINT;
-	else if (GEOSGeom_type == GEOS_LINESTRING || GEOSGeom_type == GEOS_LINEARRING)
-		return GEOS_MULTILINESTRING;
-	else if (GEOSGeom_type == GEOS_POLYGON)
-		return GEOS_MULTIPOLYGON;
-	//Multi* or GeometryCollections get collected into GeometryCollections
-	else
-		return GEOS_GEOMETRYCOLLECTION;
-}
-
-/* Group By operation. Joins geometries together in the same group into a MultiGeometry */
-//TODO Check if the SRID is consistent within a group (right now we only use the first SRID)
-//TODO The number of candidates is getting wrong here
-str 
-wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
-{
-	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
-	BAT *sortedgroups, *sortedorder, *sortedinput;
-	BATiter bi;
-	const oid *gids = NULL;
-	str msg = MAL_SUCCEED;
-	const char *err;
-
-	oid min, max;
-	BUN ngrp, ncand;
-	struct canditer ci;
-
-	oid lastGrp = -1;
-	int geomCollectionType = -1;
-	BUN geomCount = 0;
-	wkb **unions = NULL;
-	GEOSGeom *unionGroup = NULL, collection;
-
-	//Not using these variables
-	(void)skip_nils;
-	(void)eid;
-
-	//Get the BAT descriptors for the value, group and candidate bats
-	if ((b = BATdescriptor(*bid)) == NULL || 
-		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
-		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
-		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
-		goto free;
-	}
-
-	if ((BATsort(&sortedgroups, &sortedorder, NULL, g, NULL, NULL, false, false, true)) != GDK_SUCCEED) {
-		msg = createException(MAL, "geom.Collect", "BAT sort failed.");
-		goto free;
-	}
-	
-	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
-	if (!BATtdense(sortedorder)) {
-		sortedinput = BATproject(sortedorder,b);
-		BBPunfix(b->batCacheid);
-		BBPunfix(g->batCacheid);
-		b = sortedinput;
-		g = sortedgroups;
-		BBPunfix(sortedorder->batCacheid);
-		
-	}
-	else {
-		BBPunfix(sortedgroups->batCacheid);
-		BBPunfix(sortedorder->batCacheid);
-	}
-
-	//Fill in the values of the group aggregate operation
-	if ((err = BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		msg = createException(MAL, "geom.Collect", "%s", err);
-		goto free;
-	}
-
-	//Create a new BAT column of wkb type, with lenght equal to the number of groups
-	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto free;
-	}
-
-	//All unions for output BAT
-	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
-		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
-		goto free;
-	}
-
-	//Intermediate array for all the geometries in a group
-	//TODO Change allocation size
-	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ncand)) == NULL) {
-		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
-		if (unions)
-			GDKfree(unions);
-		goto free;
-	}
-
-	if (g && !BATtdense(g))
-		gids = (const oid *)Tloc(g, 0);
-	bi = bat_iterator(b);
-	
-	for (BUN i = 0; i < ncand; i++) {
-		oid o = canditer_next(&ci);
-		BUN p = o - b->hseqbase;
-		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
-		wkb *inWKB = (wkb *)BUNtvar(bi, p);
-		GEOSGeom inGEOM = wkb2geos(inWKB);
-		//int srid = 0;
-
-		if (grp != lastGrp) {
-			if (lastGrp != (oid)-1) {
-				//Finish the previous group, move on to the next one
-				collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
-				//TODO Set SRID for collection
-				//Save collection to unions array as wkb
-				unions[lastGrp] = geos2wkb(collection);
-
-				//TODO Frees for the previous group (am I missing the GEOSGeom_destroy call for unionGroup[i])?
-				GEOSGeom_destroy(collection);
-				GDKfree(unionGroup);
-
-				//TODO Change allocation size
-				if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ncand)) == NULL) {
-					msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					//Frees
-					bat_iterator_end(&bi);
-					if (unions) {
-						for (BUN i = 0; i < ngrp; i++)
-							GDKfree(unions[i]);
-						GDKfree(unions);
-					}
-					if (unionGroup) {
-						for (BUN i = 0; i < geomCount; i++)
-							if (unionGroup[i])
-								GEOSGeom_destroy(unionGroup[i]);
-						GDKfree(unionGroup);
-					}
-					goto free;
-				}
-			}
-			geomCount = 0;
-			lastGrp = grp;
-			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
-			//srid = GEOSGetSRID(inGEOM);
-		}
-
-		unionGroup[geomCount] = inGEOM;
-		geomCount += 1;
-		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM)) != geomCollectionType)
-			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
-	}
-	//Last collection
-	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
-	unions[lastGrp] = geos2wkb(collection);
-
-	GEOSGeom_destroy(collection);
-	GDKfree(unionGroup);
-
-	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED) {
-		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
-		bat_iterator_end(&bi);
-		if (unions) {
-			for (BUN i = 0; i < ngrp; i++)
-				GDKfree(unions[i]);
-			GDKfree(unions);
-		}
-		goto free;
-	}
-
-	bat_iterator_end(&bi);
-	for (BUN i = 0; i < ngrp; i++)
-		GDKfree(unions[i]);
-	GDKfree(unions);
-
-	BBPkeepref(*outid = out->batCacheid);
-	BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	return MAL_SUCCEED;
-free:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	return msg;
-}
-
-str 
-wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
-{
-	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
-}
-
-//TODO Use this for the grouped version, just need to separate the groups and then call this one
+/* initialize geos */
 str
-wkbCollectAggr (wkb **out, const bat *bid) {
-	str msg = MAL_SUCCEED;
-	BAT *b = NULL;
-	GEOSGeom *unionGroup = NULL, collection;
-	int geomCollectionType = -1;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
-		if (b)
-			BBPunfix(b->batCacheid);
-		return msg;
-	}
-
-	BUN count = BATcount(b);
-
-	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * count)) == NULL) {
-		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(b->batCacheid);
-		return msg;
-	}
-
-	BATiter bi = bat_iterator(b);
-	for (BUN i = 0; i < count; i++) {
-		oid p = i + b->hseqbase;
-		wkb *inWKB = (wkb *)BUNtvar(bi, p);
-		unionGroup[i] = wkb2geos(inWKB);
-
-		//Set collection type on first geometry
-		if (geomCollectionType == -1)
-			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(unionGroup[i]));
-		//Then, check if we need to change it a Geometry collection (if the current geometry is different from the previous type)
-		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(unionGroup[i])) != geomCollectionType)
-			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
-	}
-	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) count);
-	//Result
-	(*out) = geos2wkb(collection);
-	if (*out == NULL)
-		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
-
-    // Cleanup
-    // Data ownership has been transfered from unionGroup elements to 
-    // collection. Check libgeos GEOSGeom_createCollection() for more.
-    bat_iterator_end(&bi);
-    GEOSGeom_destroy(collection);
-    if (unionGroup)
-        GDKfree(unionGroup);
-    BBPunfix(b->batCacheid);
-
-	return msg;
-}
-
-/** 
-* 
-* Geographic update code end
-*
-**/
-
-int TYPE_mbr;
-static const wkb wkb_nil = { ~0, 0 };
-static const wkba wkba_nil = {.itemsNum = ~0};
-
-static wkb *
-wkbNULLcopy(void)
+geom_prelude(void *ret)
 {
-	wkb *n = GDKmalloc(sizeof(wkb_nil));
-	if (n)
-		*n = wkb_nil;
-	return n;
-}
-
-#ifdef HAVE_PROJ
-
-/* math.h files do not have M_PI defined */
-#ifndef M_PI
-#define M_PI	((double) 3.14159265358979323846)	/* pi */
-#endif
-
-/** convert degrees to radians */
-static inline void
-degrees2radians(double *x, double *y, double *z)
-{
-	double val = M_PI / 180.0;
-	*x *= val;
-	*y *= val;
-	*z *= val;
-}
-
-/** convert radians to degrees */
-static inline void
-radians2degrees(double *x, double *y, double *z)
-{
-	double val = 180.0 / M_PI;
-	*x *= val;
-	*y *= val;
-	*z *= val;
-}
-
-static str
-transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_dst, const GEOSCoordSequence *gcs_old, GEOSCoordSeq gcs_new)
-{
-	double x = 0, y = 0, z = 0;
-	int *errorNum = 0;
-
-	if (!GEOSCoordSeq_getX(gcs_old, idx, &x) ||
-	    !GEOSCoordSeq_getY(gcs_old, idx, &y) ||
-	    (coordinatesNum > 2 && !GEOSCoordSeq_getZ(gcs_old, idx, &z)))
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot get coordinates");
-
-	/* check if the passed reference system is geographic (proj=latlong)
-	 * and change the degrees to radians because pj_transform works with radians*/
-	if (pj_is_latlong(proj4_src))
-		degrees2radians(&x, &y, &z);
-
-	pj_transform(proj4_src, proj4_dst, 1, 0, &x, &y, &z);
-
-	errorNum = pj_get_errno_ref();
-	if (*errorNum != 0) {
-		if (coordinatesNum > 2)
-			throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot transform point (%f %f %f): %s\n", x, y, z, pj_strerrno(*errorNum));
-		else
-			throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot transform point (%f %f): %s\n", x, y, pj_strerrno(*errorNum));
-	}
-
-	/* check if the destination reference system is geographic and change
-	 * the destination coordinates from radians to degrees */
-	if (pj_is_latlong(proj4_dst))
-		radians2degrees(&x, &y, &z);
-
-	if (!GEOSCoordSeq_setX(gcs_new, idx, x) ||
-	    !GEOSCoordSeq_setY(gcs_new, idx, y) ||
-	    (coordinatesNum > 2 && !GEOSCoordSeq_setZ(gcs_new, idx, z)))
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot set coordinates");
+	//TODO DELETE
+	(void) geodeticEdgeBoundingBox;
+	(void) ret;
+	mbrNIL.xmin = flt_nil;
+	mbrNIL.xmax = flt_nil;
+	mbrNIL.ymin = flt_nil;
+	mbrNIL.ymax = flt_nil;
+	libgeom_init();
+	TYPE_mbr = malAtomSize(sizeof(mbr), "mbr");
 
 	return MAL_SUCCEED;
 }
 
-static str
-transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
-{
-	int coordinatesNum = 0;
-	const GEOSCoordSequence *gcs_old;
-	GEOSCoordSeq gcs_new;
-	str ret = MAL_SUCCEED;
-
-	*transformedGeometry = NULL;
-
-	/* get the number of coordinates the geometry has */
-	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
-	/* get the coordinates of the points comprising the geometry */
-	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
-
-	if (gcs_old == NULL)
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_getCoordSeq failed");
-
-	/* create the coordinates sequence for the transformed geometry */
-	gcs_new = GEOSCoordSeq_create(1, coordinatesNum);
-	if (gcs_new == NULL)
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_getCoordSeq failed");
-
-	/* create the transformed coordinates */
-	ret = transformCoordSeq(0, coordinatesNum, proj4_src, proj4_dst, gcs_old, gcs_new);
-	if (ret != MAL_SUCCEED) {
-		GEOSCoordSeq_destroy(gcs_new);
-		return ret;
-	}
-
-	/* create the geometry from the coordinates sequence */
-	*transformedGeometry = GEOSGeom_createPoint(gcs_new);
-	if (*transformedGeometry == NULL) {
-		GEOSCoordSeq_destroy(gcs_new);
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_getCoordSeq failed");
-	}
-
-	return MAL_SUCCEED;
-}
-
-static str
-transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
-{
-	int coordinatesNum = 0;
-	const GEOSCoordSequence *gcs_old;
-	unsigned int pointsNum = 0, i = 0;
-	str ret = MAL_SUCCEED;
-
-	/* get the number of coordinates the geometry has */
-	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
-	/* get the coordinates of the points comprising the geometry */
-	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
-
-	if (gcs_old == NULL)
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_getCoordSeq failed");
-
-	/* get the number of points in the geometry */
-	if (!GEOSCoordSeq_getSize(gcs_old, &pointsNum))
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSCoordSeq_getSize failed");
-
-	/* create the coordinates sequence for the transformed geometry */
-	*gcs_new = GEOSCoordSeq_create(pointsNum, coordinatesNum);
-	if (*gcs_new == NULL)
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSCoordSeq_create failed");
-
-	/* create the transformed coordinates */
-	for (i = 0; i < pointsNum; i++) {
-		ret = transformCoordSeq(i, coordinatesNum, proj4_src, proj4_dst, gcs_old, *gcs_new);
-		if (ret != MAL_SUCCEED) {
-			GEOSCoordSeq_destroy(*gcs_new);
-			*gcs_new = NULL;
-			return ret;
-		}
-	}
-
-	return MAL_SUCCEED;
-}
-
-static str
-transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
-{
-	GEOSCoordSeq coordSeq;
-	str ret = MAL_SUCCEED;
-
-	ret = transformLine(&coordSeq, geosGeometry, proj4_src, proj4_dst);
-	if (ret != MAL_SUCCEED) {
-		*transformedGeometry = NULL;
-		return ret;
-	}
-
-	/* create the geometry from the coordinates sequence */
-	*transformedGeometry = GEOSGeom_createLineString(coordSeq);
-	if (*transformedGeometry == NULL) {
-		GEOSCoordSeq_destroy(coordSeq);
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_createLineString failed");
-	}
-
-	return ret;
-}
-
-static str
-transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
-{
-	GEOSCoordSeq coordSeq = NULL;
-	str ret = MAL_SUCCEED;
-
-	ret = transformLine(&coordSeq, geosGeometry, proj4_src, proj4_dst);
-	if (ret != MAL_SUCCEED) {
-		*transformedGeometry = NULL;
-		return ret;
-	}
-
-	/* create the geometry from the coordinates sequence */
-	*transformedGeometry = GEOSGeom_createLinearRing(coordSeq);
-	if (*transformedGeometry == NULL) {
-		GEOSCoordSeq_destroy(coordSeq);
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_createLineString failed");
-	}
-
-	return ret;
-}
-
-static str
-transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst, int srid)
-{
-	const GEOSGeometry *exteriorRingGeometry;
-	GEOSGeometry *transformedExteriorRingGeometry = NULL;
-	GEOSGeometry **transformedInteriorRingGeometries = NULL;
-	int numInteriorRings = 0, i = 0;
-	str ret = MAL_SUCCEED;
-
-	/* get the exterior ring of the polygon */
-	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
-	if (exteriorRingGeometry == NULL) {
-		*transformedGeometry = NULL;
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGetExteriorRing failed");
-	}
-
-	ret = transformLinearRing(&transformedExteriorRingGeometry, exteriorRingGeometry, proj4_src, proj4_dst);
-	if (ret != MAL_SUCCEED) {
-		*transformedGeometry = NULL;
-		return ret;
-	}
-	GEOSSetSRID(transformedExteriorRingGeometry, srid);
-
-	numInteriorRings = GEOSGetNumInteriorRings(geosGeometry);
-	if (numInteriorRings == -1) {
-		*transformedGeometry = NULL;
-		GEOSGeom_destroy(transformedExteriorRingGeometry);
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGetInteriorRingN failed.");
-	}
-
-	if(numInteriorRings > 0)
-	{
-		/* iterate over the interiorRing and transform each one of them */
-		transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
-		if (transformedInteriorRingGeometries == NULL) {
-			*transformedGeometry = NULL;
-			GEOSGeom_destroy(transformedExteriorRingGeometry);
-			throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		for (i = 0; i < numInteriorRings; i++) {
-			ret = transformLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
-			if (ret != MAL_SUCCEED) {
-				while (--i >= 0)
-					GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-				GDKfree(transformedInteriorRingGeometries);
-				GEOSGeom_destroy(transformedExteriorRingGeometry);
-				*transformedGeometry = NULL;
-				return ret;
-			}
-			GEOSSetSRID(transformedInteriorRingGeometries[i], srid);
-		}
-	}
-
-	*transformedGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-	if (*transformedGeometry == NULL) {
-		for (i = 0; i < numInteriorRings; i++)
-			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-		ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_createPolygon failed");
-	}
-	GDKfree(transformedInteriorRingGeometries);
-	GEOSGeom_destroy(transformedExteriorRingGeometry);
-
-	return ret;
-}
-
-static str
-transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst, int srid, int geometryType)
-{
-	int geometriesNum, subGeometryType, i;
-	GEOSGeometry **transformedMultiGeometries = NULL;
-	const GEOSGeometry *multiGeometry = NULL;
-	str ret = MAL_SUCCEED;
-
-	geometriesNum = GEOSGetNumGeometries(geosGeometry);
-	if (geometriesNum == -1)
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGetNumGeometries failed");
-	transformedMultiGeometries = GDKmalloc(geometriesNum * sizeof(GEOSGeometry *));
-	if (transformedMultiGeometries == NULL)
-		throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	for (i = 0; i < geometriesNum; i++) {
-		if ((multiGeometry = GEOSGetGeometryN(geosGeometry, i)) == NULL)
-			ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGetGeometryN failed");
-		else if ((subGeometryType = GEOSGeomTypeId(multiGeometry) + 1) == 0)
-			ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
-		else {
-			switch (subGeometryType) {
-			case wkbPoint_mdb:
-				ret = transformPoint(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst);
-				break;
-			case wkbLineString_mdb:
-				ret = transformLineString(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst);
-				break;
-			case wkbLinearRing_mdb:
-				ret = transformLinearRing(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst);
-				break;
-			case wkbPolygon_mdb:
-				ret = transformPolygon(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst, srid);
-				break;
-			default:
-				ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos unknown geometry type");
-				break;
-			}
-		}
-
-		if (ret != MAL_SUCCEED) {
-			while (--i >= 0)
-				GEOSGeom_destroy(transformedMultiGeometries[i]);
-			GDKfree(transformedMultiGeometries);
-			*transformedGeometry = NULL;
-			return ret;
-		}
-
-		GEOSSetSRID(transformedMultiGeometries[i], srid);
-	}
-
-	*transformedGeometry = GEOSGeom_createCollection(geometryType - 1, transformedMultiGeometries, geometriesNum);
-	if (*transformedGeometry == NULL) {
-		for (i = 0; i < geometriesNum; i++)
-			GEOSGeom_destroy(transformedMultiGeometries[i]);
-		ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_createCollection failed");
-	}
-	GDKfree(transformedMultiGeometries);
-
-	return ret;
-}
-
-/* the following function is used in postgis to get projPJ from str.
- * it is necessary to do it in a detailed way like that because pj_init_plus
- * does not set all parameters correctly and I cannot test whether the
- * coordinate reference systems are geographic or not */
-static projPJ
-projFromStr(const char *projStr)
-{
-	int t;
-	char *params[1024];	// one for each parameter
-	char *loc;
-	char *str;
-	projPJ result;
-
-	if (projStr == NULL)
-		return NULL;
-
-	str = GDKstrdup(projStr);
-	if (str == NULL)
-		return NULL;
-
-	// first we split the string into a bunch of smaller strings,
-	// based on the " " separator
-
-	params[0] = str;	// 1st param, we'll null terminate at the " " soon
-
-	t = 1;
-	for (loc = strchr(str, ' '); loc != NULL; loc = strchr(loc, ' ')) {
-		if (t == (int) (sizeof(params) / sizeof(params[0]))) {
-			/* too many parameters */
-			GDKfree(str);
-			return NULL;
-		}
-		*loc++ = 0;	// null terminate and advance
-		params[t++] = loc;
-	}
-
-	result = pj_init(t, params);
-	GDKfree(str);
-
-	return result;
-}
-#endif
-
-/* It gets a geometry and transforms its coordinates to the provided srid */
+/* clean geos */
 str
-wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
+geom_epilogue(void *ret)
 {
-#ifndef HAVE_PROJ
-	*transformedWKB = NULL;
-	(void) geomWKB;
-	(void) srid_src;
-	(void) srid_dst;
-	(void) proj4_src_str;
-	(void) proj4_dst_str;
-	throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos function Not Implemented");
-#else
-	projPJ proj4_src, proj4_dst;
-	GEOSGeom geosGeometry, transformedGeosGeometry;
-	int geometryType = -1;
+	(void) ret;
+	libgeom_exit();
+	return MAL_SUCCEED;
+}
 
-	str ret = MAL_SUCCEED;
+/* function that is used when a column is added to an existing table */
+/* TODO: understand why this is here and why it's in the calc module */
+str
+wkbFromWKB(wkb **w, wkb **src)
+{
+	*w = GDKmalloc(wkb_size((*src)->len));
+	if (*w == NULL)
+		throw(MAL, "calc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (*geomWKB == NULL)
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos wkb format is null");
-
-	if (is_wkb_nil(*geomWKB) ||
-	    is_int_nil(*srid_src) ||
-	    is_int_nil(*srid_dst) ||
-	    strNil(*proj4_src_str) ||
-	    strNil(*proj4_dst_str)) {
-		if ((*transformedWKB = wkbNULLcopy()) == NULL)
-			throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
+	if (is_wkb_nil(*src)) {
+		**w = wkb_nil;
+	} else {
+		(*w)->len = (*src)->len;
+		(*w)->srid = (*src)->srid;
+		memcpy((*w)->data, (*src)->data, (*src)->len);
 	}
-
-	if (strcmp(*proj4_src_str, "null") == 0)
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Cannot find in spatial_ref_sys srid %d\n", *srid_src);
-	if (strcmp(*proj4_dst_str, "null") == 0)
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Cannot find in spatial_ref_sys srid %d\n", *srid_dst);
-
-	proj4_src = /*pj_init_plus */ projFromStr(*proj4_src_str);
-	proj4_dst = /*pj_init_plus */ projFromStr(*proj4_dst_str);
-	if (proj4_src == NULL || proj4_dst == NULL) {
-		if (proj4_src)
-			pj_free(proj4_src);
-		if (proj4_dst)
-			pj_free(proj4_dst);
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation pj_init failed");
-	}
-
-	/* get the geosGeometry from the wkb */
-	geosGeometry = wkb2geos(*geomWKB);
-	/* get the type of the geometry */
-	geometryType = GEOSGeomTypeId(geosGeometry) + 1;
-
-	switch (geometryType) {
-	case wkbPoint_mdb:
-		ret = transformPoint(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
-		break;
-	case wkbLineString_mdb:
-		ret = transformLineString(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
-		break;
-	case wkbLinearRing_mdb:
-		ret = transformLinearRing(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
-		break;
-	case wkbPolygon_mdb:
-		ret = transformPolygon(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst, *srid_dst);
-		break;
-	case wkbMultiPoint_mdb:
-	case wkbMultiLineString_mdb:
-	case wkbMultiPolygon_mdb:
-		ret = transformMultiGeometry(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst, *srid_dst, geometryType);
-		break;
-	default:
-		transformedGeosGeometry = NULL;
-		ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos unknown geometry type");
-	}
-
-	if (ret == MAL_SUCCEED && transformedGeosGeometry) {
-		/* set the new srid */
-		GEOSSetSRID(transformedGeosGeometry, *srid_dst);
-		/* get the wkb */
-		if ((*transformedWKB = geos2wkb(transformedGeosGeometry)) == NULL)
-			ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
-		/* destroy the geos geometries */
-		GEOSGeom_destroy(transformedGeosGeometry);
-	}
-
-	pj_free(proj4_src);
-	pj_free(proj4_dst);
-	GEOSGeom_destroy(geosGeometry);
-
-	return ret;
-#endif
+	return MAL_SUCCEED;
 }
 
 //gets a coord seq and forces it to have dim dimensions adding or removing extra dimensions
@@ -2296,433 +1612,6 @@ geom_2_geom(wkb **resWKB, wkb **valueWKB, int *columnType, int *columnSRID)
 	return MAL_SUCCEED;
 }
 
-#include "gdk_geomlogger.h"
-
-/* initialize geos */
-str
-geom_prelude(void *ret)
-{
-	(void) ret;
-	mbrNIL.xmin = flt_nil;
-	mbrNIL.xmax = flt_nil;
-	mbrNIL.ymin = flt_nil;
-	mbrNIL.ymax = flt_nil;
-	libgeom_init();
-	TYPE_mbr = malAtomSize(sizeof(mbr), "mbr");
-
-	return MAL_SUCCEED;
-}
-
-/* clean geos */
-str
-geom_epilogue(void *ret)
-{
-	(void) ret;
-	libgeom_exit();
-	return MAL_SUCCEED;
-}
-
-/* returns the size of variable-sized atom wkb */
-static var_t
-wkb_size(size_t len)
-{
-	if (len == ~(size_t) 0)
-		len = 0;
-	assert(offsetof(wkb, data) + len <= VAR_MAX);
-	return (var_t) (offsetof(wkb, data) + len);
-}
-
-/* returns the size of variable-sized atom wkba */
-static var_t
-wkba_size(int items)
-{
-	var_t size;
-
-	if (items == ~0)
-		items = 0;
-	size = (var_t) (offsetof(wkba, data) + items * sizeof(wkb *));
-	assert(size <= VAR_MAX);
-
-	return size;
-}
-
-/* Creates WKB representation (including srid) from WKT representation */
-/* return number of parsed characters. */
-static str
-wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread)
-{
-	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
-	GEOSWKTReader *WKT_reader;
-	const char *polyhedralSurface = "POLYHEDRALSURFACE";
-	const char *multiPolygon = "MULTIPOLYGON";
-	char *geomWKT_new = NULL;
-	size_t parsedCharacters = 0;
-
-	*nread = 0;
-
-	/* we always allocate new memory */
-	GDKfree(*geomWKB);
-	*len = 0;
-	*geomWKB = NULL;
-
-	if (strNil(geomWKT)) {
-		*geomWKB = wkbNULLcopy();
-		if (*geomWKB == NULL)
-			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*len = sizeof(wkb_nil);
-		return MAL_SUCCEED;
-	}
-	//check whether the representation is binary (hex)
-	if (geomWKT[0] == '0') {
-		str ret = wkbFromBinary(geomWKB, &geomWKT);
-
-		if (ret != MAL_SUCCEED)
-			return ret;
-		*nread = strlen(geomWKT);
-		*len = (size_t) wkb_size((*geomWKB)->len);
-		return MAL_SUCCEED;
-	}
-	//check whether the geometry type is polyhedral surface
-	//geos cannot handle this type of geometry but since it is
-	//a special type of multipolygon I just change the type before
-	//continuing. Of course this means that isValid for example does
-	//not work correctly.
-	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
-		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface) + strlen(multiPolygon) + 1;
-		geomWKT_new = GDKmalloc(sizeOfInfo);
-		if (geomWKT_new == NULL)
-			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		snprintf(geomWKT_new, sizeOfInfo, "%s%s", multiPolygon, geomWKT + strlen(polyhedralSurface));
-		geomWKT = geomWKT_new;
-	}
-	////////////////////////// UP TO HERE ///////////////////////////
-
-	WKT_reader = GEOSWKTReader_create();
-	if (WKT_reader == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
-		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_create failed");
-	}
-	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT);
-	GEOSWKTReader_destroy(WKT_reader);
-
-	if (geosGeometry == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
-		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_read failed");
-	}
-
-	if (GEOSGeomTypeId(geosGeometry) == -1) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
-	}
-
-	GEOSSetSRID(geosGeometry, srid);
-	/* the srid was lost with the transformation of the GEOSGeom to wkb
-	 * so we decided to store it in the wkb */
-
-	/* we have a GEOSGeometry with number of coordinates and SRID and we
-	 * want to get the wkb out of it */
-	*geomWKB = geos2wkb(geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
-	if (*geomWKB == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
-		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation geos2wkb failed");
-	}
-
-	*len = (size_t) wkb_size((*geomWKB)->len);
-	parsedCharacters = strlen(geomWKT);
-	assert(parsedCharacters <= GDK_int_max);
-
-	GDKfree(geomWKT_new);
-
-	*nread = parsedCharacters;
-	return MAL_SUCCEED;
-}
-
-static ssize_t
-wkbaFROMSTR_withSRID(const char *fromStr, size_t *len, wkba **toArray, int srid)
-{
-	int items, i;
-	size_t skipBytes = 0;
-
-//IS THERE SPACE OR SOME OTHER CHARACTER?
-
-	//read the number of items from the beginning of the string
-	memcpy(&items, fromStr, sizeof(int));
-	skipBytes += sizeof(int);
-	*toArray = GDKmalloc(wkba_size(items));
-	if (*toArray == NULL)
-		return -1;
-
-	for (i = 0; i < items; i++) {
-		size_t parsedBytes;
-		str err = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid, &parsedBytes);
-		if (err != MAL_SUCCEED) {
-			GDKerror("%s", getExceptionMessageAndState(err));
-			freeException(err);
-			return -1;
-		}
-		skipBytes += parsedBytes;
-	}
-
-	assert(skipBytes <= GDK_int_max);
-	return (ssize_t) skipBytes;
-}
-
-/* create the WKB out of the GEOSGeometry
- * It makes sure to make all checks before returning
- * the input geosGeometry should not be altered by this function
- * return NULL on error */
-static wkb *
-geos2wkb(const GEOSGeometry *geosGeometry)
-{
-	size_t wkbLen = 0;
-	unsigned char *w = NULL;
-	wkb *geomWKB;
-
-	// if the geosGeometry is NULL create a NULL WKB
-	if (geosGeometry == NULL) {
-		return wkbNULLcopy();
-	}
-
-	GEOS_setWKBOutputDims(GEOSGeom_getCoordinateDimension(geosGeometry));
-	w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
-
-	if (w == NULL)
-		return NULL;
-
-	assert(wkbLen <= GDK_int_max);
-
-	geomWKB = GDKmalloc(wkb_size(wkbLen));
-	//If malloc failed create a NULL wkb
-	if (geomWKB == NULL) {
-		GEOSFree(w);
-		return NULL;
-	}
-
-	geomWKB->len = (int) wkbLen;
-	geomWKB->srid = GEOSGetSRID(geosGeometry);
-	memcpy(&geomWKB->data, w, wkbLen);
-	GEOSFree(w);
-
-	return geomWKB;
-}
-
-//Returns the wkb in a hex representation */
-static char hexit[] = "0123456789ABCDEF";
-
-str
-wkbAsBinary(char **toStr, wkb **geomWKB)
-{
-	char *s;
-	int i;
-
-	if (is_wkb_nil(*geomWKB)) {
-		if ((*toStr = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "geom.AsBinary", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-	if ((*toStr = GDKmalloc(1 + (*geomWKB)->len * 2)) == NULL)
-		throw(MAL, "geom.AsBinary", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	s = *toStr;
-	for (i = 0; i < (*geomWKB)->len; i++) {
-		int val = ((*geomWKB)->data[i] >> 4) & 0xf;
-		*s++ = hexit[val];
-		val = (*geomWKB)->data[i] & 0xf;
-		*s++ = hexit[val];
-		TRC_DEBUG(GEOM, "%d: First: %c - Second: %c ==> Original %c (%d)\n", i, *(s-2), *(s-1), (*geomWKB)->data[i], (int)((*geomWKB)->data[i]));
-	}
-	*s = '\0';
-	return MAL_SUCCEED;
-}
-
-static int
-decit(char hex)
-{
-	switch (hex) {
-	case '0':
-		return 0;
-	case '1':
-		return 1;
-	case '2':
-		return 2;
-	case '3':
-		return 3;
-	case '4':
-		return 4;
-	case '5':
-		return 5;
-	case '6':
-		return 6;
-	case '7':
-		return 7;
-	case '8':
-		return 8;
-	case '9':
-		return 9;
-	case 'A':
-	case 'a':
-		return 10;
-	case 'B':
-	case 'b':
-		return 11;
-	case 'C':
-	case 'c':
-		return 12;
-	case 'D':
-	case 'd':
-		return 13;
-	case 'E':
-	case 'e':
-		return 14;
-	case 'F':
-	case 'f':
-		return 15;
-	default:
-		return -1;
-	}
-}
-
-str
-wkbFromBinary(wkb **geomWKB, const char **inStr)
-{
-	size_t strLength, wkbLength, i;
-	wkb *w;
-
-	if (strNil(*inStr)) {
-		if ((*geomWKB = wkbNULLcopy()) == NULL)
-			throw(MAL, "geom.FromBinary", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-
-	strLength = strlen(*inStr);
-	if (strLength & 1)
-		throw(MAL, "geom.FromBinary", SQLSTATE(38000) "Geos odd length input string");
-
-	wkbLength = strLength / 2;
-	assert(wkbLength <= GDK_int_max);
-
-	w = GDKmalloc(wkb_size(wkbLength));
-	if (w == NULL)
-		throw(MAL, "geom.FromBinary", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	//compute the value for s
-	for (i = 0; i < strLength; i += 2) {
-		int firstHalf = decit((*inStr)[i]);
-		int secondHalf = decit((*inStr)[i + 1]);
-		if (firstHalf == -1 || secondHalf == -1) {
-			GDKfree(w);
-			throw(MAL, "geom.FromBinary", SQLSTATE(38000) "Geos incorrectly formatted input string");
-		}
-		w->data[i / 2] = (firstHalf << 4) | secondHalf;
-	}
-
-	w->len = (int) wkbLength;
-	w->srid = 0;
-	*geomWKB = w;
-
-	return MAL_SUCCEED;
-}
-
-static ssize_t wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external);
-
-str
-wkbFromWKB(wkb **w, wkb **src)
-{
-	*w = GDKmalloc(wkb_size((*src)->len));
-	if (*w == NULL)
-		throw(MAL, "calc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	if (is_wkb_nil(*src)) {
-		**w = wkb_nil;
-	} else {
-		(*w)->len = (*src)->len;
-		(*w)->srid = (*src)->srid;
-		memcpy((*w)->data, (*src)->data, (*src)->len);
-	}
-	return MAL_SUCCEED;
-}
-
-/* creates a wkb from the given textual representation */
-/* int* tpe is needed to verify that the type of the FromText function used is the
- * same with the type of the geometry created from the wkt representation */
-str
-wkbFromText(wkb **geomWKB, str *geomWKT, int *srid, int *tpe)
-{
-	size_t len = 0;
-	int te = 0;
-	str err;
-	size_t parsedBytes;
-
-	*geomWKB = NULL;
-	if (strNil(*geomWKT) || is_int_nil(*srid) || is_int_nil(*tpe)) {
-		if ((*geomWKB = wkbNULLcopy()) == NULL)
-			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-	err = wkbFROMSTR_withSRID(*geomWKT, &len, geomWKB, *srid, &parsedBytes);
-	if (err != MAL_SUCCEED)
-		return err;
-
-	if (is_wkb_nil(*geomWKB) || *tpe == 0 ||
-	    *tpe == wkbGeometryCollection_mdb ||
-	    ((te = *((*geomWKB)->data + 1) & 0x0f) + (*tpe > 2)) == *tpe) {
-		return MAL_SUCCEED;
-	}
-
-	GDKfree(*geomWKB);
-	*geomWKB = NULL;
-
-	te += (te > 2);
-	if (*tpe > 0 && te != *tpe)
-		throw(SQL, "wkb.FromText", SQLSTATE(38000) "Geometry not type '%d: %s' but '%d: %s' instead", *tpe, geom_type2str(*tpe, 0), te, geom_type2str(te, 0));
-	throw(MAL, "wkb.FromText", SQLSTATE(38000) "%s", "cannot parse string");
-}
-
-/* create textual representation of the wkb */
-str
-wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
-{
-	size_t len = 0;
-	char *wkt = NULL;
-	const char *sridTxt = "SRID:";
-
-	if (is_wkb_nil(*geomWKB) || (withSRID && is_int_nil(*withSRID))) {
-		if ((*txt = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "geom.AsText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-
-	if ((*geomWKB)->srid < 0)
-		throw(MAL, "geom.AsText", SQLSTATE(38000) "Geod negative SRID");
-
-	if (wkbTOSTR(&wkt, &len, *geomWKB, false) < 0)
-		throw(MAL, "geom.AsText", SQLSTATE(38000) "Geos failed to create Text from Well Known Format");
-
-	if (withSRID == NULL || *withSRID == 0) {	//accepting NULL withSRID to make internal use of it easier
-		*txt = wkt;
-		return MAL_SUCCEED;
-	}
-
-	/* 10 for maximum number of digits to represent an INT */
-	len = strlen(wkt) + 10 + strlen(sridTxt) + 2;
-	*txt = GDKmalloc(len);
-	if (*txt == NULL) {
-		GDKfree(wkt);
-		throw(MAL, "geom.AsText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	snprintf(*txt, len, "%s%d;%s", sridTxt, (*geomWKB)->srid, wkt);
-
-	GDKfree(wkt);
-	return MAL_SUCCEED;
-}
-
 str
 wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 {
@@ -3014,9 +1903,16 @@ wkbGeometryType(char **out, wkb **geomWKB, int *flag)
 	ret = wkbBasicInt(&typeId, *geomWKB, GEOSGeomTypeId, "geom.GeometryType");
 	if (ret != MAL_SUCCEED)
 		return ret;
-	if (!is_int_nil(typeId))	/* geoGetType deals with nil */
+	if (!is_int_nil(typeId))
 		typeId = (typeId + 1) << 2;
-	return geoGetType(out, &typeId, flag);
+	if (is_int_nil(typeId) || is_int_nil(*flag)) {
+		if ((*out = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "geom.getType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+	if ((*out = GDKstrdup(geom_type2str(typeId >> 2, *flag))) == NULL)
+		throw(MAL, "geom.getType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
 }
 
 /* returns the number of dimensions of the geometry */
@@ -3031,37 +1927,6 @@ str
 wkbDimension(int *dimension, wkb **geomWKB)
 {
 	return wkbBasicInt(dimension, *geomWKB, GEOSGeom_getDimensions, "geom.Dimension");
-}
-
-/* returns the srid of the geometry */
-str
-wkbGetSRID(int *out, wkb **geomWKB)
-{
-	return wkbBasicInt(out, *geomWKB, GEOSGetSRID, "geom.GetSRID");
-}
-
-/* sets the srid of the geometry */
-str
-wkbSetSRID(wkb **resultGeomWKB, wkb **geomWKB, int *srid)
-{
-	GEOSGeom geosGeometry;
-
-	if (is_wkb_nil(*geomWKB) || is_int_nil(*srid)) {
-		if ((*resultGeomWKB = wkbNULLcopy()) == NULL)
-			throw(MAL, "geom.setSRID", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-	if ((geosGeometry = wkb2geos(*geomWKB)) == NULL)
-		throw(MAL, "geom.setSRID", SQLSTATE(38000) "Geos operation wkb2geos failed");
-
-	GEOSSetSRID(geosGeometry, *srid);
-	*resultGeomWKB = geos2wkb(geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
-
-	if (*resultGeomWKB == NULL)
-		throw(MAL, "geom.setSRID", SQLSTATE(38000) "Geos operation geos2wkb failed");
-
-	return MAL_SUCCEED;
 }
 
 /* depending on the specific function it returns the X,Y or Z coordinate of a point */
@@ -3810,77 +2675,6 @@ wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, int *ringNum)
 	GEOSGeom_destroy(geosGeometry);
 
 	return err;
-}
-
-str
-wkbInteriorRings(wkba **geomArray, wkb **geomWKB)
-{
-	int interiorRingsNum = 0, i = 0;
-	GEOSGeom geosGeometry;
-	str ret = MAL_SUCCEED;
-
-	if (is_wkb_nil(*geomWKB)) {
-		if ((*geomArray = GDKmalloc(wkba_size(~0))) == NULL)
-			throw(MAL, "geom.InteriorRings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		**geomArray = wkba_nil;
-		return MAL_SUCCEED;
-	}
-
-	geosGeometry = wkb2geos(*geomWKB);
-	if (geosGeometry == NULL) {
-		throw(MAL, "geom.InteriorRings", SQLSTATE(38000) "Geos operation  wkb2geos failed");
-	}
-
-	if ((GEOSGeomTypeId(geosGeometry) + 1) != wkbPolygon_mdb) {
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.interiorRings", SQLSTATE(38000) "Geometry not a Polygon");
-
-	}
-
-	ret = wkbNumRings(&interiorRingsNum, geomWKB, &i);
-
-	if (ret != MAL_SUCCEED) {
-		GEOSGeom_destroy(geosGeometry);
-		return ret;
-	}
-
-	*geomArray = GDKmalloc(wkba_size(interiorRingsNum));
-	if (*geomArray == NULL) {
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.InteriorRings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	(*geomArray)->itemsNum = interiorRingsNum;
-
-	for (i = 0; i < interiorRingsNum; i++) {
-		const GEOSGeometry *interiorRingGeometry;
-		wkb *interiorRingWKB;
-
-		// get the interior ring of the geometry
-		interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, i);
-		if (interiorRingGeometry == NULL) {
-			while (--i >= 0)
-				GDKfree((*geomArray)->data[i]);
-			GDKfree(*geomArray);
-			GEOSGeom_destroy(geosGeometry);
-			*geomArray = NULL;
-			throw(MAL, "geom.InteriorRings", SQLSTATE(38000) "Geos operation GEOSGetInteriorRingN failed");
-		}
-		// get the wkb representation of it
-		interiorRingWKB = geos2wkb(interiorRingGeometry);
-		if (interiorRingWKB == NULL) {
-			while (--i >= 0)
-				GDKfree((*geomArray)->data[i]);
-			GDKfree(*geomArray);
-			GEOSGeom_destroy(geosGeometry);
-			*geomArray = NULL;
-			throw(MAL, "geom.InteriorRings", SQLSTATE(38000) "Geos operation wkb2geos failed");
-		}
-
-		(*geomArray)->data[i] = interiorRingWKB;
-	}
-	GEOSGeom_destroy(geosGeometry);
-
-	return MAL_SUCCEED;
 }
 
 /* Returns the number of interior rings in the first polygon of the provided geometry
@@ -4686,475 +3480,35 @@ wkbNumGeometries(int *out, wkb **geom)
 }
 
 str
-wkbIsnil(bit *r, wkb **v)
+wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 {
-	*r = is_wkb_nil(*v);
-	return MAL_SUCCEED;
-}
+	mbr *geomMBR;
+	str ret = MAL_SUCCEED;
+	bit empty;
 
-/***********************************************/
-/************* wkb type functions **************/
-/***********************************************/
-
-/* Creates the string representation (WKT) of a WKB */
-/* return length of resulting string. */
-static ssize_t
-wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
-{
-	const wkb *geomWKB = GEOMWKB;
-	char *wkt = NULL;
-	size_t dstStrLen = 5;	/* "nil" */
-
-	/* from WKB to GEOSGeometry */
-	GEOSGeom geosGeometry = wkb2geos(geomWKB);
-
-	if (geosGeometry) {
-		size_t l;
-		GEOSWKTWriter *WKT_wr = GEOSWKTWriter_create();
-		//set the number of dimensions in the writer so that it can
-		//read correctly the geometry coordinates
-		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
-		GEOSWKTWriter_setTrim(WKT_wr, 1);
-		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
-		if (wkt == NULL) {
-			GDKerror("GEOSWKTWriter_write failed\n");
-			return -1;
-		}
-		GEOSWKTWriter_destroy(WKT_wr);
-		GEOSGeom_destroy(geosGeometry);
-
-		l = strlen(wkt);
-		dstStrLen = l;
-		if (external)
-			dstStrLen += 2;	/* add quotes */
-		if (*len < dstStrLen + 1 || *geomWKT == NULL) {
-			*len = dstStrLen + 1;
-			GDKfree(*geomWKT);
-			if ((*geomWKT = GDKmalloc(*len)) == NULL) {
-				GEOSFree(wkt);
-				return -1;
-			}
-		}
-		if (external)
-			snprintf(*geomWKT, *len, "\"%s\"", wkt);
-		else
-			strcpy(*geomWKT, wkt);
-		GEOSFree(wkt);
-
-		return (ssize_t) dstStrLen;
+	if (is_wkb_nil(*geomWKB) || is_int_nil(*coordinateIdx)) {
+		*coordinateValue = dbl_nil;
+		return MAL_SUCCEED;
 	}
 
-	/* geosGeometry == NULL */
-	if (*len < 4 || *geomWKT == NULL) {
-		GDKfree(*geomWKT);
-		if ((*geomWKT = GDKmalloc(*len = 4)) == NULL)
-			return -1;
-	}
-	if (external) {
-		strcpy(*geomWKT, "nil");
-		return 3;
-	}
-	strcpy(*geomWKT, str_nil);
-	return 1;
-}
-
-static ssize_t
-wkbFROMSTR(const char *geomWKT, size_t *len, void **GEOMWKB, bool external)
-{
-	wkb **geomWKB = (wkb **) GEOMWKB;
-	size_t parsedBytes;
-	str err;
-
-	if (external && strncmp(geomWKT, "nil", 3) == 0) {
-		*geomWKB = wkbNULLcopy();
-		if (*geomWKB == NULL)
-			return -1;
-		return 3;
-	}
-	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
-	if (err != MAL_SUCCEED) {
-		GDKerror("%s", getExceptionMessageAndState(err));
-		freeException(err);
-		return -1;
-	}
-	return (ssize_t) parsedBytes;
-}
-
-static BUN
-wkbHASH(const void *W)
-{
-	const wkb *w = W;
-	int i;
-	BUN h = 0;
-
-	for (i = 0; i < (w->len - 1); i += 2) {
-		int a = *(w->data + i), b = *(w->data + i + 1);
-		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
-	}
-	return h;
-}
-
-/* returns a pointer to a null wkb */
-static const void *
-wkbNULL(void)
-{
-	return &wkb_nil;
-}
-
-static int
-wkbCOMP(const void *L, const void *R)
-{
-	const wkb *l = L, *r = R;
-	int len = l->len;
-
-	if (len != r->len)
-		return len - r->len;
-
-	if (len == ~(int) 0)
-		return (0);
-
-	return memcmp(l->data, r->data, len);
-}
-
-/* read wkb from log */
-static void *
-wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
-{
-	wkb *a = A;
-	int len;
-	int srid;
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (mnstr_readInt(s, &len) != 1)
-		return NULL;
-	if (mnstr_readInt(s, &srid) != 1)
-		return NULL;
-	size_t wkblen = (size_t) wkb_size(len);
-	if (a == NULL || *dstlen < wkblen) {
-		if ((a = GDKrealloc(a, wkblen)) == NULL)
-			return NULL;
-		*dstlen = wkblen;
-	}
-	a->len = len;
-	a->srid = srid;
-	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
-		GDKfree(a);
-		return NULL;
-	}
-	return a;
-}
-
-/* write wkb to log */
-static gdk_return
-wkbWRITE(const void *A, stream *s, size_t cnt)
-{
-	const wkb *a = A;
-	int len = a->len;
-	int srid = a->srid;
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (!mnstr_writeInt(s, len))	/* 64bit: check for overflow */
-		return GDK_FAIL;
-	if (!mnstr_writeInt(s, srid))	/* 64bit: check for overflow */
-		return GDK_FAIL;
-	if (len > 0 &&		/* 64bit: check for overflow */
-	    mnstr_write(s, (char *) a->data, len, 1) < 0)
-		return GDK_FAIL;
-	return GDK_SUCCEED;
-}
-
-static var_t
-wkbPUT(BAT *b, var_t *bun, const void *VAL)
-{
-	const wkb *val = VAL;
-	char *base;
-
-	*bun = HEAP_malloc(b, wkb_size(val->len));
-	base = b->tvheap->base;
-	if (*bun != (var_t) -1) {
-		memcpy(&base[*bun], val, wkb_size(val->len));
-		b->tvheap->dirty = true;
-	}
-	return *bun;
-}
-
-static void
-wkbDEL(Heap *h, var_t *index)
-{
-	HEAP_free(h, *index);
-}
-
-static size_t
-wkbLENGTH(const void *P)
-{
-	const wkb *p = P;
-	var_t len = wkb_size(p->len);
-	assert(len <= GDK_int_max);
-	return (size_t) len;
-}
-
-static gdk_return
-wkbHEAP(Heap *heap, size_t capacity)
-{
-	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
-}
-
-/************************************************/
-/************* wkba type functions **************/
-/************************************************/
-
-/* Creates the string representation of a wkb_array */
-/* return length of resulting string. */
-static ssize_t
-wkbaTOSTR(char **toStr, size_t *len, const void *FROMARRAY, bool external)
-{
-	const wkba *fromArray = FROMARRAY;
-	int items = fromArray->itemsNum, i;
-	int itemsNumDigits = (int) ceil(log10(items));
-	size_t dataSize;	//, skipBytes=0;
-	char **partialStrs;
-	char *toStrPtr = NULL, *itemsNumStr = GDKmalloc(itemsNumDigits + 1);
-
-	if (itemsNumStr == NULL)
-		return -1;
-
-	dataSize = (size_t) snprintf(itemsNumStr, itemsNumDigits + 1, "%d", items);
-
-	// reserve space for an array with pointers to the partial
-	// strings, i.e. for each wkbTOSTR
-	partialStrs = GDKzalloc(items * sizeof(char *));
-	if (partialStrs == NULL) {
-		GDKfree(itemsNumStr);
-		return -1;
-	}
-	//create the string version of each wkb
-	for (i = 0; i < items; i++) {
-		size_t llen = 0;
-		ssize_t ds;
-		ds = wkbTOSTR(&partialStrs[i], &llen, fromArray->data[i], false);
-		if (ds < 0) {
-			GDKfree(itemsNumStr);
-			while (i >= 0)
-				GDKfree(partialStrs[i--]);
-			GDKfree(partialStrs);
-			return -1;
-		}
-		dataSize += ds;
-
-		if (strNil(partialStrs[i])) {
-			GDKfree(itemsNumStr);
-			while (i >= 0)
-				GDKfree(partialStrs[i--]);
-			GDKfree(partialStrs);
-			if (*len < 4 || *toStr == NULL) {
-				GDKfree(*toStr);
-				if ((*toStr = GDKmalloc(*len = 4)) == NULL)
-					return -1;
-			}
-			if (external) {
-				strcpy(*toStr, "nil");
-				return 3;
-			}
-			strcpy(*toStr, str_nil);
-			return 1;
-		}
+	//check if the geometry is empty
+	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
+		return ret;
 	}
 
-	//add [] around itemsNum
-	dataSize += 2;
-	//add ", " before each item
-	dataSize += 2 * sizeof(char) * items;
-
-	//copy all partial strings to a single one
-	if (*len < dataSize + 3 || *toStr == NULL) {
-		GDKfree(*toStr);
-		*toStr = GDKmalloc(*len = dataSize + 3);	/* plus quotes + termination character */
-		if (*toStr == NULL) {
-			for (i = 0; i < items; i++)
-				GDKfree(partialStrs[i]);
-			GDKfree(partialStrs);
-			GDKfree(itemsNumStr);
-			return -1;
-		}
-	}
-	toStrPtr = *toStr;
-	if (external)
-		*toStrPtr++ = '\"';
-	*toStrPtr++ = '[';
-	strcpy(toStrPtr, itemsNumStr);
-	toStrPtr += strlen(itemsNumStr);
-	*toStrPtr++ = ']';
-	for (i = 0; i < items; i++) {
-		if (i == 0)
-			*toStrPtr++ = ':';
-		else
-			*toStrPtr++ = ',';
-		*toStrPtr++ = ' ';
-
-		//strcpy(toStrPtr, partialStrs[i]);
-		memcpy(toStrPtr, partialStrs[i], strlen(partialStrs[i]));
-		toStrPtr += strlen(partialStrs[i]);
-		GDKfree(partialStrs[i]);
+	if (empty) {
+		*coordinateValue = dbl_nil;
+		return MAL_SUCCEED;
 	}
 
-	if (external)
-		*toStrPtr++ = '\"';
-	*toStrPtr = '\0';
+	if ((ret = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED)
+		return ret;
 
-	GDKfree(partialStrs);
-	GDKfree(itemsNumStr);
+	ret = wkbCoordinateFromMBR(coordinateValue, &geomMBR, coordinateIdx);
 
-	return (ssize_t) (toStrPtr - *toStr);
-}
+	GDKfree(geomMBR);
 
-/* return number of parsed characters. */
-static ssize_t
-wkbaFROMSTR(const char *fromStr, size_t *len, void **TOARRAY, bool external)
-{
-	wkba **toArray = (wkba **) TOARRAY;
-	if (external && strncmp(fromStr, "nil", 3) == 0) {
-		size_t sz = wkba_size(~0);
-		if ((*len < sz || *toArray == NULL)
-		    && (*toArray = GDKmalloc(sz)) == NULL)
-			return -1;
-		**toArray = wkba_nil;
-		return 3;
-	}
-	return wkbaFROMSTR_withSRID(fromStr, len, toArray, 0);
-}
-
-/* returns a pointer to a null wkba */
-static const void *
-wkbaNULL(void)
-{
-	return &wkba_nil;
-}
-
-static BUN
-wkbaHASH(const void *WARRAY)
-{
-	const wkba *wArray = WARRAY;
-	int j, i;
-	BUN h = 0;
-
-	for (j = 0; j < wArray->itemsNum; j++) {
-		wkb *w = wArray->data[j];
-		for (i = 0; i < (w->len - 1); i += 2) {
-			int a = *(w->data + i), b = *(w->data + i + 1);
-			h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
-		}
-	}
-	return h;
-}
-
-static int
-wkbaCOMP(const void *L, const void *R)
-{
-	const wkba *l = L, *r = R;
-	int i, res = 0;
-
-	//compare the number of items
-	if (l->itemsNum != r->itemsNum)
-		return l->itemsNum - r->itemsNum;
-
-	if (l->itemsNum == ~(int) 0)
-		return (0);
-
-	//compare each wkb separately
-	for (i = 0; i < l->itemsNum; i++)
-		res += wkbCOMP(l->data[i], r->data[i]);
-
-	return res;
-}
-
-/* read wkb from log */
-static void *
-wkbaREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
-{
-	wkba *a = A;
-	int items, i;
-
-	(void) cnt;
-	assert(cnt == 1);
-
-	if (mnstr_readInt(s, &items) != 1)
-		return NULL;
-
-	size_t wkbalen = (size_t) wkba_size(items);
-	if (a == NULL || *dstlen < wkbalen) {
-		if ((a = GDKrealloc(a, wkbalen)) == NULL)
-			return NULL;
-		*dstlen = wkbalen;
-	}
-
-	a->itemsNum = items;
-
-	for (i = 0; i < items; i++) {
-		size_t wlen = 0;
-		a->data[i] = wkbREAD(NULL, &wlen, s, cnt);
-	}
-
-	return a;
-}
-
-/* write wkb to log */
-static gdk_return
-wkbaWRITE(const void *A, stream *s, size_t cnt)
-{
-	const wkba *a = A;
-	int i, items = a->itemsNum;
-	gdk_return ret = GDK_SUCCEED;
-
-	(void) cnt;
-	assert(cnt == 1);
-
-	if (!mnstr_writeInt(s, items))
-		return GDK_FAIL;
-	for (i = 0; i < items; i++) {
-		ret = wkbWRITE(a->data[i], s, cnt);
-
-		if (ret != GDK_SUCCEED)
-			return ret;
-	}
-	return GDK_SUCCEED;
-}
-
-static var_t
-wkbaPUT(BAT *b, var_t *bun, const void *VAL)
-{
-	const wkba *val = VAL;
-	char *base;
-
-	*bun = HEAP_malloc(b, wkba_size(val->itemsNum));
-	base = b->tvheap->base;
-	if (*bun != (var_t) -1) {
-		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
-		b->tvheap->dirty = true;
-	}
-	return *bun;
-}
-
-static void
-wkbaDEL(Heap *h, var_t *index)
-{
-	HEAP_free(h, *index);
-}
-
-static size_t
-wkbaLENGTH(const void *P)
-{
-	const wkba *p = P;
-	var_t len = wkba_size(p->itemsNum);
-	assert(len <= GDK_int_max);
-	return (size_t) len;
-}
-
-static gdk_return
-wkbaHEAP(Heap *heap, size_t capacity)
-{
-	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	return ret;
 }
 
 geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
@@ -5493,6 +3847,275 @@ wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y)
 	*out = TRUE;
 	return MAL_SUCCEED;
 }
+
+/** 
+* 
+* Geographic update code start
+*
+**/
+
+/**
+* Collect (Group By implementation) 
+* 
+**/
+//Gets the type of collection a single geometry should belong to
+static int
+GEOSGeom_getCollectionType (int GEOSGeom_type) {
+	//Single geometries get collected into a Multi* geometry
+	if (GEOSGeom_type == GEOS_POINT)
+		return GEOS_MULTIPOINT;
+	else if (GEOSGeom_type == GEOS_LINESTRING || GEOSGeom_type == GEOS_LINEARRING)
+		return GEOS_MULTILINESTRING;
+	else if (GEOSGeom_type == GEOS_POLYGON)
+		return GEOS_MULTIPOLYGON;
+	//Multi* or GeometryCollections get collected into GeometryCollections
+	else
+		return GEOS_GEOMETRYCOLLECTION;
+}
+
+/* Group By operation. Joins geometries together in the same group into a MultiGeometry */
+//TODO Check if the SRID is consistent within a group (right now we only use the first SRID)
+//TODO The number of candidates is getting wrong here
+str 
+wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
+	BAT *sortedgroups, *sortedorder, *sortedinput;
+	BATiter bi;
+	const oid *gids = NULL;
+	str msg = MAL_SUCCEED;
+	const char *err;
+
+	oid min, max;
+	BUN ngrp, ncand;
+	struct canditer ci;
+
+	oid lastGrp = -1;
+	int geomCollectionType = -1;
+	BUN geomCount = 0;
+	wkb **unions = NULL;
+	GEOSGeom *unionGroup = NULL, collection;
+
+	//Not using these variables
+	(void)skip_nils;
+	(void)eid;
+
+	//Get the BAT descriptors for the value, group and candidate bats
+	if ((b = BATdescriptor(*bid)) == NULL || 
+		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		goto free;
+	}
+
+	if ((BATsort(&sortedgroups, &sortedorder, NULL, g, NULL, NULL, false, false, true)) != GDK_SUCCEED) {
+		msg = createException(MAL, "geom.Collect", "BAT sort failed.");
+		goto free;
+	}
+	
+	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
+	if (!BATtdense(sortedorder)) {
+		sortedinput = BATproject(sortedorder,b);
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		b = sortedinput;
+		g = sortedgroups;
+		BBPunfix(sortedorder->batCacheid);
+		
+	}
+	else {
+		BBPunfix(sortedgroups->batCacheid);
+		BBPunfix(sortedorder->batCacheid);
+	}
+
+	//Fill in the values of the group aggregate operation
+	if ((err = BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+		msg = createException(MAL, "geom.Collect", "%s", err);
+		goto free;
+	}
+
+	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+
+	//All unions for output BAT
+	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(out->batCacheid);
+		goto free;
+	}
+
+	//Intermediate array for all the geometries in a group
+	//TODO Change allocation size
+	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ncand)) == NULL) {
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(out->batCacheid);
+		if (unions)
+			GDKfree(unions);
+		goto free;
+	}
+
+	if (g && !BATtdense(g))
+		gids = (const oid *)Tloc(g, 0);
+	bi = bat_iterator(b);
+	
+	for (BUN i = 0; i < ncand; i++) {
+		oid o = canditer_next(&ci);
+		BUN p = o - b->hseqbase;
+		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
+		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+		GEOSGeom inGEOM = wkb2geos(inWKB);
+		//int srid = 0;
+
+		if (grp != lastGrp) {
+			if (lastGrp != (oid)-1) {
+				//Finish the previous group, move on to the next one
+				collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
+				//TODO Set SRID for collection
+				//Save collection to unions array as wkb
+				unions[lastGrp] = geos2wkb(collection);
+
+				//TODO Frees for the previous group (am I missing the GEOSGeom_destroy call for unionGroup[i])?
+				GEOSGeom_destroy(collection);
+				GDKfree(unionGroup);
+
+				//TODO Change allocation size
+				if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ncand)) == NULL) {
+					msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					//Frees
+					bat_iterator_end(&bi);
+					if (unions) {
+						for (BUN i = 0; i < ngrp; i++)
+							GDKfree(unions[i]);
+						GDKfree(unions);
+					}
+					if (unionGroup) {
+						for (BUN i = 0; i < geomCount; i++)
+							if (unionGroup[i])
+								GEOSGeom_destroy(unionGroup[i]);
+						GDKfree(unionGroup);
+					}
+					goto free;
+				}
+			}
+			geomCount = 0;
+			lastGrp = grp;
+			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
+			//srid = GEOSGetSRID(inGEOM);
+		}
+
+		unionGroup[geomCount] = inGEOM;
+		geomCount += 1;
+		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM)) != geomCollectionType)
+			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
+	}
+	//Last collection
+	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
+	unions[lastGrp] = geos2wkb(collection);
+
+	GEOSGeom_destroy(collection);
+	GDKfree(unionGroup);
+
+	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED) {
+		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+		bat_iterator_end(&bi);
+		if (unions) {
+			for (BUN i = 0; i < ngrp; i++)
+				GDKfree(unions[i]);
+			GDKfree(unions);
+		}
+		goto free;
+	}
+
+	bat_iterator_end(&bi);
+	for (BUN i = 0; i < ngrp; i++)
+		GDKfree(unions[i]);
+	GDKfree(unions);
+
+	BBPkeepref(*outid = out->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return MAL_SUCCEED;
+free:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return msg;
+}
+
+str 
+wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
+{
+	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
+}
+
+//TODO Use this for the grouped version, just need to separate the groups and then call this one
+str
+wkbCollectAggr (wkb **out, const bat *bid) {
+	str msg = MAL_SUCCEED;
+	BAT *b = NULL;
+	GEOSGeom *unionGroup = NULL, collection;
+	int geomCollectionType = -1;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		if (b)
+			BBPunfix(b->batCacheid);
+		return msg;
+	}
+
+	BUN count = BATcount(b);
+
+	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * count)) == NULL) {
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(b->batCacheid);
+		return msg;
+	}
+
+	BATiter bi = bat_iterator(b);
+	for (BUN i = 0; i < count; i++) {
+		oid p = i + b->hseqbase;
+		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+		unionGroup[i] = wkb2geos(inWKB);
+
+		//Set collection type on first geometry
+		if (geomCollectionType == -1)
+			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(unionGroup[i]));
+		//Then, check if we need to change it a Geometry collection (if the current geometry is different from the previous type)
+		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(unionGroup[i])) != geomCollectionType)
+			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
+	}
+	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) count);
+	//Result
+	(*out) = geos2wkb(collection);
+	if (*out == NULL)
+		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
+
+    // Cleanup
+    // Data ownership has been transfered from unionGroup elements to 
+    // collection. Check libgeos GEOSGeom_createCollection() for more.
+    bat_iterator_end(&bi);
+    GEOSGeom_destroy(collection);
+    if (unionGroup)
+        GDKfree(unionGroup);
+    BBPunfix(b->batCacheid);
+
+	return msg;
+}
+
+/** 
+* 
+* Geographic update code end
+*
+**/
 
 static const unsigned char geom_functions[9054] = {
 "module geom;\n"

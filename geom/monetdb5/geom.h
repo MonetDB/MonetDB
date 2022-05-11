@@ -32,37 +32,20 @@
 #define geom_export extern
 #endif
 
-/* New functions */
-str wkbCollectAggr (wkb **out, const bat *bid);
-str wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
-str wkbCollectAggrSubGroupedCand(bat* outid, const bat* bid, const bat* gid, const bat* eid, const bat* sid, const bit* skip_nils);
-
-
-/* general functions */
-geom_export str geoHasZ(int* res, int* info);
-geom_export str geoHasM(int* res, int* info);
-geom_export str geoGetType(char** res, int* info, int* flag);
-
+/* Start up and end functions for geom module */
 geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
-
-geom_export str wkbIsnil(bit *r, wkb **v);
 
 /* functions that are used when a column is added to an existing table */
 geom_export str wkbFromWKB(wkb **w, wkb **src);
 //Is it needed?? geom_export str wkbFromWKB_bat(bat* outBAT_id, bat* inBAT_id);
-
-/* The WKB we use is the EWKB used also in PostGIS
- * because we decided that it is easire to carry around
- * the SRID */
+geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID);
 
 
-geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
-geom_export str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe);
-geom_export str wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *tpe);
 
 geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str *geomWKT, int* srid, int* flag);
 
+geom_export str wkbCoordinateFromMBR(dbl*, mbr**, int*);
 
 /* Basic Methods on Geometric objects (OGC) */
 geom_export str wkbDimension(int*, wkb**);
@@ -70,14 +53,6 @@ geom_export str wkbDimension_bat(bat *inBAT_id, bat *outBAT_id);
 
 geom_export str wkbGeometryType(char**, wkb**, int*);
 geom_export str wkbGeometryType_bat(bat *inBAT_id, bat *outBAT_id, int *flag);
-
-geom_export str wkbGetSRID(int*, wkb**);
-//Envelope
-geom_export str wkbAsText(char **outTXT, wkb **inWKB, int *withSRID);
-geom_export str wkbAsText_bat(bat *inBAT_id, bat *outBAT_id, int *withSRID);
-
-geom_export str wkbAsBinary(char**, wkb**);
-geom_export str wkbFromBinary(wkb**, const char**);
 
 geom_export str wkbIsEmpty(bit*, wkb**);
 geom_export str wkbIsEmpty_bat(bat *inBAT_id, bat *outBAT_id);
@@ -107,13 +82,10 @@ geom_export str wkbDWithin(bit*, wkb**, wkb**, dbl*);
 //LocateAlong
 //LocateBetween
 
-//geom_export str wkbFromString(wkb**, str*);
-
 geom_export str wkbMakePoint(wkb**, dbl*, dbl*, dbl*, dbl*, int*);
 geom_export str wkbMakePoint_bat(bat*, bat*, bat*, bat*, bat*, int*);
 
 geom_export str wkbCoordDim(int* , wkb**);
-geom_export str wkbSetSRID(wkb**, wkb**, int*);
 
 geom_export str wkbGetCoordinate(dbl *out, wkb **geom, int *dimNum);
 geom_export str wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int* flag);
@@ -168,7 +140,6 @@ geom_export str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int* flag)
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 geom_export str wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id);
 
-geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str wkbTranslate(wkb**, wkb**, dbl*, dbl*, dbl*);
 geom_export str wkbDelaunayTriangles(wkb**, wkb**, dbl*, int*);
 geom_export str wkbPointOnSurface(wkb**, wkb**);
@@ -177,8 +148,6 @@ geom_export str wkbSegmentize(wkb**, wkb**, dbl*);
 
 geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbDumpPoints(bat* idBAT_id, bat* geomBAT_id, wkb**);
-
-geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID);
 
 /* BULK */
 
@@ -202,3 +171,9 @@ geom_export str wkbSetSRID_bat(bat* outBAT_id, bat* inBAT_id, int* srid);
 geom_export str geom_2_geom_bat(bat* outBAT_id, bat* inBAT_id, bat* cand, int* columnType, int* columnSRID);
 
 geom_export str geom_sql_upgrade(int);
+
+
+/* New functions */
+str wkbCollectAggr (wkb **out, const bat *bid);
+str wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+str wkbCollectAggrSubGroupedCand(bat* outid, const bat* bid, const bat* gid, const bat* eid, const bat* sid, const bit* skip_nils);

@@ -13,6 +13,8 @@
 #include "geom.h"
 #include "geod.h"
 #include "mbr.h"
+#include "geom_srid.h"
+#include "geom_io.h"
 
 /********** Geo Update **********/
 
