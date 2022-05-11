@@ -1115,7 +1115,7 @@ int
 mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner)
 {
 	TRC_DEBUG(SQL_TRANS, "Create schema: %s %d %d\n", name, auth_id, owner);
-	return sql_trans_create_schema(m->session->tr, name, auth_id, owner);
+	return sql_trans_create_schema(m->session->tr, name, auth_id, owner, NULL);
 }
 
 int

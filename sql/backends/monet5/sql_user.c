@@ -164,25 +164,57 @@ static str
 monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid, lng max_memory, int max_workers, str optimizer, sqlid role_id)
 {
 	mvc *m = (mvc *) _mvc;
-	oid uid = 0;
-	str ret, pwd;
+	oid rid, uid = 0;
+	str ret, pwd, schema_buf;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
-	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"), *auths = find_sql_table(m->session->tr, s, "auths");
+	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"),
+			  *auths = find_sql_table(m->session->tr, s, "auths"),
+			  *schemas_tbl = find_sql_table(m->session->tr, s, "schemas");
 	Client c = MCgetClient(m->clientid);
 	sqlstore *store = m->session->tr->store;
 	int log_res = 0;
+	bool new_schema = false;
 
-	if (!schema_path)
-		schema_path = default_schema_path;
+	if (schema_id == 0) {
+		// create default schema matching $user
+		switch (sql_trans_create_schema(m->session->tr, user, m->role_id, m->user_id, &schema_id)) {
+			case -1:
+				throw(SQL,"sql.create_user",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.create_user",SQLSTATE(42000) "Create user schema failed due to transaction conflict");
+			default:
+				break;
+		}
+		if (is_oid_nil(rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas_tbl, "id"), &schema_id, NULL)))
+			throw(SQL,"sql.create_user",SQLSTATE(42000) "User schema not found");
+		new_schema = true;
+	}
+
+	// default path is $user
+	if (!schema_path) {
+		// "\"$user\"\0"
+		schema_buf = GDKmalloc(strlen(user) + 3);
+		assert(snprintf(schema_buf, strlen(schema_buf) + 1, "\"%s\"", user) > 0);
+		schema_path = schema_buf;
+	}
+
+	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
+		if (schema_buf)
+			GDKfree(schema_buf);
+		return ret;
+	}
+
 	if (!optimizer)
 		optimizer = default_optimizer;
-	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED)
-		return ret;
 
 	if (!enc) {
-		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd))))
+		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd)))) {
+			if (schema_buf)
+				GDKfree(schema_buf);
 			throw(MAL, "sql.create_user", SQLSTATE(42000) "Crypt backend hash not found");
+		}
 	} else {
 		pwd = passwd;
 	}
@@ -192,12 +224,38 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id))) {
 		if (!enc)
 			free(pwd);
+		if (schema_buf)
+			GDKfree(schema_buf);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
 		if (!enc)
 			free(pwd);
+		if (schema_buf)
+			GDKfree(schema_buf);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
+
+	if (new_schema) {
+		// update schema authorization to be default_role_id
+		switch (sql_trans_change_schema_authorization(m->session->tr, schema_id, default_role_id)) {
+			case -1:
+				if (!enc)
+					free(pwd);
+				if (schema_buf)
+					GDKfree(schema_buf);
+				throw(SQL,"sql.create_user",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				if (!enc)
+					free(pwd);
+				if (schema_buf)
+					GDKfree(schema_buf);
+				throw(SQL,"sql.create_user",SQLSTATE(42000) "Update schema authorization failed due to transaction conflict");
+			default:
+				break;
+		}
+
 	}
 
 	/* add the user to the M5 authorisation administration */
@@ -207,6 +265,8 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	c->user = grant_user;
 	if (!enc)
 		free(pwd);
+	if (schema_buf)
+		GDKfree(schema_buf);
 	return ret;
 }
 
