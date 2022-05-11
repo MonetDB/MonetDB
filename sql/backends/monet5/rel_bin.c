@@ -5128,6 +5128,30 @@ dump_code(int starting_point)
 	dump_code_state.pos = stop;
 }
 
+static ValPtr
+atom_argument(node *node, int arg, int typ)
+{
+	while (arg-- > 0)
+		node = node->next;
+
+	sql_exp *e = node->data;
+	assert(e != NULL);
+	if (e == NULL)
+		return NULL;
+
+	atom *a = e->l;
+	assert(a != NULL);
+	if (a == NULL)
+		return NULL;
+
+	int atyp = atom_type(a)->type->localtype;
+	assert(atyp == typ);
+	if (atyp != typ)
+		return NULL;
+
+	return &a->data;
+}
+
 // This is basically a long list of reasons not to use the new
 // code. The idea is that we'll gradually add support for more cases and shorten
 // this list until it disappears.
@@ -5224,43 +5248,33 @@ can_use_copyparpipe(sql_rel *rel)
 	if (strcmp(sf->func->imp, "copy_from") != 0)
 		return NULL;
 
+	// take apart the argument list
 	list *args = copy_from->l;
 	if (args == NULL)
 		return NULL;
 	node *n = args->h;
 	if (n == NULL)
 		return NULL;
-	sql_exp *arg0 = n->data;
-	assert(arg0 != NULL); // hopefully
-	atom *a = arg0->l;
-	assert(a != NULL);
-	assert(atom_type(a)->type->localtype == TYPE_ptr);
-	sql_table *template_table = a->data.val.pval;
-
-	// disallow offset, N records and best effort
-	sql_exp *arg5 = n->next->next->next->next->next->next->data;
-	if (arg5->type != e_atom)
+	sql_table *template_table = atom_argument(n, 0, TYPE_ptr)->val.pval;
+	str fname = atom_argument(n, 5, TYPE_str)->val.sval;
+	lng nrecords = atom_argument(n, 6, TYPE_lng)->val.lval;
+	lng offset = atom_argument(n, 7, TYPE_lng)->val.lval;
+	int best_effort = atom_argument(n, 8, TYPE_int)->val.ival;
+	str fixed_width = atom_argument(n, 9, TYPE_str)->val.sval;
+	int on_client = atom_argument(n, 10, TYPE_int)->val.ival;
+	if (strNil(fname)) {
+		// from stdin
 		return NULL;
-	a = arg5->l;
-	assert(atom_type(a)->type->localtype == TYPE_lng);
-	lng nrecords = a->data.val.lval;
+	}
 	if (nrecords != -1)
 		return NULL;
-	sql_exp *arg6 = n->next->next->next->next->next->next->next->data;
-	if (arg6->type != e_atom)
-		return NULL;
-	a = arg6->l;
-	assert(atom_type(a)->type->localtype == TYPE_lng);
-	lng offset = a->data.val.lval;
 	if (offset != 0 && offset != 1)
 		return NULL;
-	sql_exp *arg7 = n->next->next->next->next->next->next->next->next->data;
-	if (arg7->type != e_atom)
-		return NULL;
-	a = arg7->l;
-	assert(atom_type(a)->type->localtype == TYPE_int);
-	int best_effort = a->data.val.ival;
 	if (best_effort)
+		return NULL;
+	if (!strNil(fixed_width))
+		return NULL;
+	if (on_client)
 		return NULL;
 
 	// The sql.copy_from operator takes as its first argument a pointer to the
