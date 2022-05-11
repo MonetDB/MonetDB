@@ -792,11 +792,23 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 	if (backend_find_user(sql, user) >= 0)
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);
 
-	if (!(s = find_sql_schema(sql->session->tr, schema)))
-		throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
-	schema_id = s->base.id;
-	if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, schema_id, ddl) != LOG_OK)
-		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (schema) {
+		if (!(s = find_sql_schema(sql->session->tr, schema)))
+			throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
+		schema_id = s->base.id;
+		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, schema_id, ddl) != LOG_OK)
+			throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	} else {
+		// look for an existing schema matching user
+		if ((s = find_sql_schema(sql->session->tr, user))) {
+			schema_id = s->base.id;
+			if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, schema_id, ddl) != LOG_OK)
+				throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+
+
 	if (sql_trans_add_dependency(sql->session->tr, sql->user_id, ddl) != LOG_OK)
 		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -817,6 +829,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 		_DELETE(err);
 		return r;
 	}
+
 	return NULL;
 }
 

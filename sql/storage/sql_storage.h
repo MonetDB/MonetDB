@@ -366,8 +366,9 @@ extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func
 extern void sql_trans_update_tables(sql_trans *tr, sql_schema *s);
 extern void sql_trans_update_schemas(sql_trans *tr);
 
-extern int sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner);
+extern int sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner, sqlid *schema_id_ptr);
 extern int sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
+extern int sql_trans_change_schema_authorization(sql_trans *tr, sqlid id, sqlid auth_id);
 extern int sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action);
 
 sql_export int sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bte properties);
