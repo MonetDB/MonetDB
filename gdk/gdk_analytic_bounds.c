@@ -992,7 +992,6 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 	BATiter bi = bat_iterator(b);
 	BATiter li = bat_iterator(l);
 	const bit *restrict np = pi.base;
-	int abort_on_error = 1;
 	bool last = false;
 
 	if ((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && tp2 != TYPE_int && tp2 != TYPE_lng)

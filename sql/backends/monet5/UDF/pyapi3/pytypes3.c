@@ -133,6 +133,8 @@ char *BatType_Format(int type)
 			return "STRING";
 		case TYPE_oid:
 			return "OID";
+		case TYPE_date:
+			return "DATE";
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return "HUGEINT";
@@ -215,6 +217,8 @@ int BatType_ToPyType(int type)
 		case TYPE_hge:
 			return NPY_FLOAT64;
 #endif
+		case TYPE_date:
+			return NPY_DATETIME;
 		default:
 			return NPY_STRING;
 	}
@@ -265,16 +269,19 @@ bool Python_ReleaseGIL(bool state)
 	return 0;
 }
 
-// Returns true if the type of [object] is a scalar (i.e. numeric scalar or
-// string, basically "not an array but a single value")
+// Returns true if the type of [object] is a scalar (i.e. numeric scalar, date, time, datetime value or string,
+// basically "not an array but a single value")
 bool PyType_IsPyScalar(PyObject *object)
 {
 	if (object == NULL)
 		return false;
+
+	USE_DATETIME_API;
 	return (PyArray_CheckScalar(object) || PyLong_Check(object) ||
 			PyFloat_Check(object) || PyUnicode_Check(object) ||
 			PyBool_Check(object) || PyByteArray_Check(object) ||
-			PyBytes_Check(object));
+			PyBytes_Check(object) || PyDate_Check(object) ||
+			PyTime_Check(object) || PyDateTime_Check(object));
 }
 
 void _pytypes_init(void) { _import_array(); }

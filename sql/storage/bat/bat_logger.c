@@ -1656,7 +1656,7 @@ upgrade(old_logger *lg)
 	if (b == NULL)
 		goto bailout;
 	cands = b;
-	b = BATconvert(lg->catalog_oid, cands, TYPE_int, true, 0, 0, 0);
+	b = BATconvert(lg->catalog_oid, cands, TYPE_int, 0, 0, 0);
 	if (b == NULL) {
 		bat_destroy(cands);
 		goto bailout;
