@@ -117,7 +117,7 @@ TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_,
 	for (int i = 0; i < count; i++) {
 		int offset = offsets[i];
 		if (is_int_nil(offset)) {
-			dest[i] = int_nil;
+			dest[i] = TMPL_NIL;
 			continue;
 		}
 		dest[i] = TMPL_SUFFIXED(parse_one_decimal)(errors, parms, i, data + offset);
@@ -135,7 +135,7 @@ TMPL_SUFFIXED(parse_many_integers) (struct error_handling *errors, void *parms, 
 	for (int i = 0; i < count; i++) {
 		int offset = offsets[i];
 		if (is_int_nil(offset)) {
-			dest[i] = int_nil;
+			dest[i] = TMPL_NIL;
 			continue;
 		}
 		dest[i] = TMPL_SUFFIXED(parse_one_integer)(errors, i, data + offset);
