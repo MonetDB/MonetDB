@@ -1844,7 +1844,7 @@ gdk_export lng IMPSimprintsize(BAT *b);
 
 /* Strimps exported functions */
 gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
-gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
+gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q, bool keep_nils);
 gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
 

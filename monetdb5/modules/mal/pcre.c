@@ -1726,7 +1726,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* scan select loop with or without candidates */
-#define pcrescanloop(TEST)		\
+#define pcrescanloop(TEST, KEEP_NULLS)				\
 	do {	\
 		TRC_DEBUG(ALGO,			\
 				  "PCREselect(b=%s#"BUNFMT",anti=%d): "		\
@@ -1737,7 +1737,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 GDK_CHECK_TIMEOUT(timeoffset, counter,						\
                         GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
 				const char *restrict v = BUNtvar(bi, p - off);	\
-				if (TEST)	\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))	\
 					vals[cnt++] = p;	\
 			}		\
 		} else {		\
@@ -1746,7 +1746,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                         GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
 				oid o = canditer_next(ci);		\
 				const char *restrict v = BUNtvar(bi, o - off);	\
-				if (TEST) 	\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))	\
 					vals[cnt++] = o;	\
 			}		\
 		}		\
@@ -1759,7 +1759,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 static str
-pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *pat, bool caseignore, bool anti)
+pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *pat, bool caseignore, bool anti, bool keep_nulls)
 {
 #ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
@@ -1784,9 +1784,9 @@ pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN 
 		goto bailout;
 
 	if (anti)
-		pcrescanloop(v && *v != '\200' && !PCRE_LIKESELECT_BODY);
+		pcrescanloop(v && *v != '\200' && !PCRE_LIKESELECT_BODY, keep_nulls);
 	else
-		pcrescanloop(v && *v != '\200' && PCRE_LIKESELECT_BODY);
+		pcrescanloop(v && *v != '\200' && PCRE_LIKESELECT_BODY, keep_nulls);
 
 bailout:
 	bat_iterator_end(&bi);
@@ -1796,7 +1796,7 @@ bailout:
 }
 
 static str
-re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *pat, bool caseignore, bool anti, bool use_strcmp, uint32_t esc)
+re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *pat, bool caseignore, bool anti, bool use_strcmp, uint32_t esc, bool keep_nulls)
 {
 	BATiter bi = bat_iterator(b);
 	BUN cnt = 0, ncands = ci->ncand;
@@ -1817,26 +1817,26 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *r
 	if (use_strcmp) {
 		if (caseignore) {
 			if (anti)
-				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) != 0);
+				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) != 0, keep_nulls);
 			else
-				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) == 0);
+				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) == 0, keep_nulls);
 		} else {
 			if (anti)
-				pcrescanloop(v && *v != '\200' && strcmp(v, pat) != 0);
+				pcrescanloop(v && *v != '\200' && strcmp(v, pat) != 0, keep_nulls);
 			else
-				pcrescanloop(v && *v != '\200' && strcmp(v, pat) == 0);
+				pcrescanloop(v && *v != '\200' && strcmp(v, pat) == 0, keep_nulls);
 		}
 	} else {
 		if (caseignore) {
 			if (anti)
-				pcrescanloop(v && *v != '\200' && !re_match_ignore(v, re));
+				pcrescanloop(v && *v != '\200' && !re_match_ignore(v, re), keep_nulls);
 			else
-				pcrescanloop(v && *v != '\200' && re_match_ignore(v, re));
+				pcrescanloop(v && *v != '\200' && re_match_ignore(v, re), keep_nulls);
 		} else {
 			if (anti)
-				pcrescanloop(v && *v != '\200' && !re_match_no_ignore(v, re));
+				pcrescanloop(v && *v != '\200' && !re_match_no_ignore(v, re), keep_nulls);
 			else
-				pcrescanloop(v && *v != '\200' && re_match_no_ignore(v, re));
+				pcrescanloop(v && *v != '\200' && re_match_no_ignore(v, re), keep_nulls);
 		}
 	}
 
@@ -1887,23 +1887,20 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	 * the BAT contains NULLs.
 	 */
 	if (BAThasstrimps(b)) {
-		if (!*anti || (b->tnonil && *anti)) {
-			BAT *tmp_s = STRMPfilter(b, s, *pat);
-			if (tmp_s) {
-				old_s = s;
-				s = tmp_s;
-				if (!*anti)
-					with_strimps = true;
-				else
-					with_strimps_anti = true;
-			} else { /* If we cannot filter with the strimp just continue normally */
-				GDKclrerr();
-			}
+		BAT *tmp_s = STRMPfilter(b, s, *pat, *anti);
+		if (tmp_s) {
+			old_s = s;
+			s = tmp_s;
+			if (!*anti)
+				with_strimps = true;
+			else
+				with_strimps_anti = true;
+		} else { /* If we cannot filter with the strimp just continue normally */
+			GDKclrerr();
 		}
 	}
 
-	MT_thread_setalgorithm(// check this
-						   use_strcmp ? (with_strimps ? "pcrelike: pattern matching using strcmp with strimps" : (with_strimps_anti ? "pcrelike: pattern matching using strcmp with strimps anti" : "pcrelike: pattern matching using strcmp")) :
+	MT_thread_setalgorithm(use_strcmp ? (with_strimps ? "pcrelike: pattern matching using strcmp with strimps" : (with_strimps_anti ? "pcrelike: pattern matching using strcmp with strimps anti" : "pcrelike: pattern matching using strcmp")) :
 						   use_re ? (with_strimps ? "pcrelike: pattern matching using RE with strimps" : (with_strimps_anti ? "pcrelike: patterm matching using RE with strimps anti" : "pcrelike: pattern matching using RE")) :
 						   (with_strimps ? "pcrelike: pattern matching using pcre with strimps" : (with_strimps_anti ? "pcrelike: pattermatching using pcre with strimps anti" : "pcrelike: pattern matching using pcre")));
 
@@ -1929,9 +1926,9 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	}
 
 	if (use_re) {
-		msg = re_likeselect(bn, b, s, &ci, p, q, &rcnt, *pat, *caseignore, *anti && !with_strimps_anti, use_strcmp, (unsigned char) **esc);
+		msg = re_likeselect(bn, b, s, &ci, p, q, &rcnt, *pat, *caseignore, *anti && !with_strimps_anti, use_strcmp, (unsigned char) **esc,  with_strimps_anti);
 	} else {
-		msg = pcre_likeselect(bn, b, s, &ci, p, q, &rcnt, ppat, *caseignore, *anti && !with_strimps_anti);
+		msg = pcre_likeselect(bn, b, s, &ci, p, q, &rcnt, ppat, *caseignore, *anti && !with_strimps_anti, with_strimps_anti);
 	}
 
 	if (!msg) { /* set some properties */

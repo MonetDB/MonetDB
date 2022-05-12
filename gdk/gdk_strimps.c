@@ -12,10 +12,11 @@
  * A string imprint is an index that can be used as a prefilter in LIKE
  * queries. It has 2 components:
  *
- * - a header of 64 string element pairs.
+ * - a header of 63 string element pairs.
  *
  * - a 64 bit mask for each string in the BAT that encodes the presence
- *   or absence of each element of the header in the specific item.
+ *   or absence of each element of the header in the specific item or if
+ *   the corresponding entry in the BAT is NULL.
  *
  * A string imprint is stored in a new Heap in the BAT, aligned in 8
  * byte (64 bit) words.
@@ -59,11 +60,11 @@
  * - Construct a histogram of all the element pairs for all the strings
  *   in the BAT.
  *
- * - Take the np most frequent pairs as the Strimp Header.
+ * - Take the np - 1 most frequent pairs as the Strimp Header.
  *
  * - For each string s in the BAT, construct an np-bit mask, m_s that
  *   encodes the presence or absence of each member of the header in the
- *   string.
+ *   string or if s is NULL.
  *
  * Filtering with a query string q goes as follows:
  *
@@ -241,11 +242,6 @@ STRMPmakebitstring(const char *s, Strimps *r)
  * STRIMP_HEADER_SIZE largest elements. This depends on the size of the
  * histogram n. For some small n sorting might be more efficient, but
  * for such inputs the difference should not be noticeable.
- *
- * TODO: Explore if a priority queue (heap construction and 64 extract
- * maximums) is worth it. The tradeoff here is that it will complicate
- * the code but might improve performance. In a debug build the current
- * implementation takes ~200 μs.
  */
 static void
 STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
@@ -443,7 +439,7 @@ BATcheckstrimps(BAT *b)
 					 */
 					if (read(fd, &desc, 8) == 8
 					    && (desc & 0xff) == STRIMP_VERSION
-					    && ((npairs = NPAIRS(desc)) == 64)
+					    && ((npairs = NPAIRS(desc)) == STRIMP_PAIRS)
 					    && (hsize = HSIZE(desc)) >= 200 && hsize <= 584
 					    && ((desc >> 32) & 0xff) == 1 /* check the persistence byte */
 					    && fstat(fd, &st) == 0
@@ -455,8 +451,8 @@ BATcheckstrimps(BAT *b)
 								      BATcount(b)*sizeof(uint64_t))
 					    && HEAPload(&hp->strimps, nme, "tstrimps", false) == GDK_SUCCEED) {
 						hp->sizes_base = (uint8_t *)hp->strimps.base + 8; /* sizes just after the descriptor */
-						hp->pairs_base = hp->sizes_base + npairs;         /* pairs just after the offsets */
-						hp->bitstrings_base = hp->strimps.base + hsize;        /* bitmasks just after the pairs */
+						hp->pairs_base = hp->sizes_base + STRIMP_HEADER_SIZE;   /* pairs just after the offsets. */
+						hp->bitstrings_base = hp->strimps.base + hsize;   /* bitmasks just after the pairs */
 
 						close(fd);
 						ATOMIC_INIT(&hp->strimps.refs, 1);
@@ -496,7 +492,8 @@ BATcheckstrimps(BAT *b)
 	do {								\
 		for (i = 0; i < ci.ncand; i++) {			\
 			x = next(&ci);					\
-			if ((bitstring_array[x] & qbmask) == qbmask) {	\
+			if ((bitstring_array[x] & qbmask) == qbmask || \
+			    (keep_nils && (bitstring_array[x] & ((uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1))))) { \
 				rvals[j++] = x;				\
 			}						\
 		}							\
@@ -506,7 +503,7 @@ BATcheckstrimps(BAT *b)
  * list.
  */
 BAT *
-STRMPfilter(BAT *b, BAT *s, const char *q)
+STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 {
 	BAT *r = NULL;
 	BUN i, j = 0;
@@ -546,6 +543,7 @@ STRMPfilter(BAT *b, BAT *s, const char *q)
 	}
 
 	qbmask = STRMPmakebitstring(q, strmps);
+	assert((qbmask & ((uint64_t)0x1 << 63)) == 0);
 	bitstring_array = (uint64_t *)strmps->bitstrings_base;
 	rvals = Tloc(r, 0);
 
@@ -658,6 +656,13 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	if ((r = b->tstrimps) == NULL &&
 		STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put
 						 the result in hpairs */
+		/* The 64th bit in the bit string is used to indicate if
+		   the string is NULL. So the corresponding pair does
+		   not encode useful information. We need to keep it for
+		   alignment but we make sure that it will not match an
+		   actual pair of characters we encounter in strings.*/
+		for (i = 0; i < hpairs[STRIMP_HEADER_SIZE - 1].psize; i++)
+			hpairs[STRIMP_HEADER_SIZE - 1].pbytes[i] = 0;
 		sz = 8 + STRIMP_HEADER_SIZE; /* add 8-bytes for the descriptor and
 						the pair sizes */
 		for (i = 0; i < STRIMP_HEADER_SIZE; i++) {
@@ -679,7 +684,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 			return NULL;
 		}
 
-		descriptor = STRIMP_VERSION | ((uint64_t)STRIMP_HEADER_SIZE) << 8 |
+		descriptor = STRIMP_VERSION | ((uint64_t)(STRIMP_PAIRS)) << 8 |
 			((uint64_t)sz) << 16;
 
 		((uint64_t *)r->strimps.base)[0] = descriptor;
@@ -761,10 +766,12 @@ STRMPcreate(BAT *b, BAT *s)
 			for (i = 0; i < ci.ncand; i++) {
 				x = canditer_next(&ci);
 				const char *cs = BUNtvar(bi, x);
-				if (!strNil(cs))
+				if (!strNil(cs)) {
 					*dh++ = STRMPmakebitstring(cs, r);
+					assert((*(dh - 1) & ((uint64_t)0x1 << (STRIMP_PAIRS))) == 0);
+				}
 				else
-					*dh++ = 0;
+					*dh++ = (uint64_t)0x1 << (STRIMP_PAIRS); /* Encode NULL strings in the last bit */
 			}
 			bat_iterator_end(&bi);
 
