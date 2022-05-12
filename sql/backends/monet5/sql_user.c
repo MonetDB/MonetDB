@@ -451,6 +451,23 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 	Client c = MCgetClient(m->clientid);
 	str err;
 	int res = LOG_OK;
+	oid rid;
+
+	sqlstore *store = m->session->tr->store;
+	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
+	sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
+	sql_column *users_name = find_sql_column(info, "name");
+
+	if (schema_id || schema_path || role_id) {
+		rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
+		// user should be checked here since the way `ALTER USER ident ...` stmt is
+		if (is_oid_nil(rid)) {
+			(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
+				 "your database is damaged, auth not found in SQL catalog");
+			return FALSE;
+		}
+	}
+
 
 	if (passwd != NULL) {
 		str pwd = NULL;
@@ -522,16 +539,6 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 		}
 	}
 
-	sqlstore *store = m->session->tr->store;
-	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
-	sql_column *users_name = find_sql_column(info, "name");
-
-	oid rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
-	if (is_oid_nil(rid)) {
-		(void) sql_error(m, 02, "ALTER USER: user not found");
-		return FALSE;
-	}
 
 	if (schema_id) {
 		sql_column *users_schema = find_sql_column(info, "default_schema");
@@ -542,6 +549,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 			return (FALSE);
 		}
 	}
+
 
 	if (schema_path) {
 		sql_column *sp = find_sql_column(info, "schema_path");

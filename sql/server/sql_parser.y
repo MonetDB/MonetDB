@@ -1262,6 +1262,7 @@ alter_statement:
 	  append_int(p, $4);
 	  append_string(p, $10);
 	  append_list(l, p);
+	  append_string(l, NULL);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER SCHEMA if_exists ident RENAME TO ident
 	{ dlist *l = L();
