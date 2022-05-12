@@ -703,8 +703,11 @@ func1(MTIMEmsec_extract_epoch_ms, "msepoch", lng, lng,
 static inline str
 date_fromstr_func(date *ret, str s)
 {
-	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, false) < 0)
-		throw(MAL, "mtime.date_fromstr", GDK_EXCEPTION);
+	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, false) < 0) {
+		if (strNil(s))
+			throw(MAL, "mtime.date_fromstr", SQLSTATE(42000) "Conversion of NULL string to date failed");
+		throw(MAL, "mtime.date_fromstr", SQLSTATE(22007) "Conversion of string '%s' to date failed", s);
+	}
 	return MAL_SUCCEED;
 }
 func1(MTIMEdate_fromstr, "date_fromstr", str, date,

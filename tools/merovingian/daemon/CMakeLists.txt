@@ -83,5 +83,3 @@ if(WIN32)
 endif()
 
 add_subdirectory(config)
-
-# vim: set ts=2:sw=2:et

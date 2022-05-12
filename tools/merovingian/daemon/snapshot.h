@@ -21,5 +21,3 @@ err snapshot_list(int *nsnapshots, struct snapshot **snapshots);
 
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

@@ -592,5 +592,3 @@ discoveryRunner(void *d)
 	free(ckv);
 	return NULL;
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */
