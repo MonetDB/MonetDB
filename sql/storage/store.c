@@ -2136,7 +2136,6 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		store_exit(store);
 		return NULL;
 	}
-	exit(0);
 	return store;
 }
 
