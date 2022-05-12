@@ -2321,24 +2321,23 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 
 #define GDK_CHECK_TIMEOUT_BODY(timeoffset, callback)		\
 	do {							\
-		if (timeoffset && GDKusec() > timeoffset) {	\
+		if (GDKexiting() ||				\
+		    (timeoffset && GDKusec() > timeoffset)) {	\
 			callback;				\
 		}						\
 	} while (0)
 
 #define GDK_CHECK_TIMEOUT(timeoffset, counter, callback)		\
 	do {								\
-		if (timeoffset) {					\
-			if (counter > CHECK_QRY_TIMEOUT_STEP) {		\
-				GDK_CHECK_TIMEOUT_BODY(timeoffset, callback); \
-				counter = 0;				\
-			} else {					\
-				counter++;				\
-			}						\
+		if (counter > CHECK_QRY_TIMEOUT_STEP) {			\
+			GDK_CHECK_TIMEOUT_BODY(timeoffset, callback);	\
+			counter = 0;					\
+		} else {						\
+			counter++;					\
 		}							\
 	} while (0)
 
-/* here are some useful construct to iterate a number of times (the
+/* here are some useful constructs to iterate a number of times (the
  * REPEATS argument--only evaluated once) and checking for a timeout
  * every once in a while; the TIMEOFFSET value is a variable of type lng
  * which is either 0 or the GDKusec() compatible time after which the
@@ -2351,19 +2350,19 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
  * on each iteration */
 #define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
 #define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
 #define TIMEOUT_LOOP(REPEATS, TIMEOFFSET)				\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
 		for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
 
 /* break out of the loop (cannot use do/while trick here) */
