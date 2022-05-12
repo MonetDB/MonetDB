@@ -3418,22 +3418,15 @@ log_segment(sql_trans *tr, segment *s, sqlid id)
 }
 
 static int
-log_segments(sql_trans *tr, segments *segs, sqlid id, size_t* nr_appends)
+log_segments(sql_trans *tr, segments *segs, sqlid id)
 {
 	/* log segments */
-	size_t _nr_appends = 0;
 	for (segment *seg = segs->h; seg; seg=seg->next) {
 		if (seg->ts == tr->tid && seg->end-seg->start) {
-
-			if (!seg->deleted)
-				_nr_appends += (seg->end - seg->start);
 			if (log_segment(tr, seg, id) != LOG_OK)
 				return LOG_ERR;
 		}
 	}
-
-	if (nr_appends)
-		*nr_appends = _nr_appends;
 	return LOG_OK;
 }
 
@@ -3455,7 +3448,7 @@ log_create_storage(sql_trans *tr, storage *bat, sql_table *t)
 	if (ok == LOG_OK)
 		ok = (log_bat_persists(store->logger, b, t->base.id) == GDK_SUCCEED)?LOG_OK:LOG_ERR;
 	if (ok == LOG_OK)
-		ok = log_segments(tr, bat->segs, t->base.id, NULL);
+		ok = log_segments(tr, bat->segs, t->base.id);
 	bat_destroy(b);
 	return ok;
 }
@@ -3912,8 +3905,20 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
+static inline int
+tr_log_table_start(sql_trans *tr, sql_table *t) {
+	sqlstore *store = tr->store;
+	return log_table_start(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
+}
+
+static inline int
+tr_log_table_end(sql_trans *tr, sql_table *t) {
+	sqlstore *store = tr->store;
+	return log_table_end(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
+}
+
 static int
-log_table_append(sql_trans *tr, sql_table *t, segments *segs, size_t nr_appends)
+log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 {
 	sqlstore *store = tr->store;
 	gdk_return ok = GDK_SUCCEED;
@@ -3921,6 +3926,21 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs, size_t nr_appends)
 	if (isTempTable(t))
 		return LOG_OK;
 	size_t end = segs_end(segs, tr, t);
+
+	if (tr_log_table_start(tr, t) != LOG_OK)
+		return LOG_ERR;
+
+	size_t nr_appends = 0;
+	for (segment *seg = segs->h; seg; seg=seg->next) {
+		if (seg->ts == tr->tid && seg->end-seg->start) {
+			if (!seg->deleted) {
+				if (log_segment(tr, seg, t->base.id) != LOG_OK)
+					return LOG_ERR;
+
+				nr_appends += (seg->end - seg->start);
+			}
+		}
+	}
 
 	for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
 		sql_column *c = n->data;
@@ -3931,7 +3951,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs, size_t nr_appends)
 			continue;
 		}
 
-		for (segment *cur = segs->h; cur && ok; cur = cur->next) {
+		if (!cs->cleared) for (segment *cur = segs->h; cur && ok; cur = cur->next) {
 			if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 				/* append col*/
 				BAT *ins = temp_descriptor(cs->bid);
@@ -3942,11 +3962,11 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs, size_t nr_appends)
 			}
 		}
 
-		if (ok == GDK_SUCCEED && cs->ebid) {
+		if (cs->ebid) {
 			BAT *ins = temp_descriptor(cs->ebid);
 			assert(ins);
 			if (BATcount(ins) > ins->batInserted)
-				ok = log_bat(store->logger, ins, -c->base.id, ins->batInserted, BATcount(ins)-ins->batInserted, BATcount(ins)-ins->batInserted);
+				ok = log_bat(store->logger, ins, -c->base.id, ins->batInserted, BATcount(ins)-ins->batInserted, 0);
 			BATcommit(ins, BATcount(ins));
 			bat_destroy(ins);
 		}
@@ -3975,38 +3995,24 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs, size_t nr_appends)
 		}
 	}
 
-	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
-}
+	if (ok != GDK_SUCCEED || tr_log_table_end(tr, t) != LOG_OK)
+		return LOG_ERR;
 
-static inline int
-tr_log_table_start(sql_trans *tr, sql_table *t) {
-	sqlstore *store = tr->store;
-	return log_table_start(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
-}
-
-static inline int
-tr_log_table_end(sql_trans *tr, sql_table *t) {
-	sqlstore *store = tr->store;
-	return log_table_end(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
+	return LOG_OK;
 }
 
 static int
 log_storage(sql_trans *tr, sql_table *t, storage *s)
 {
-	size_t nr_appends = 0;
 	int ok = LOG_OK, cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
 		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
 	if (ok == LOG_OK)
 		ok = segments2cs(tr, s->segs, &s->cs);
 	if (ok == LOG_OK)
-		ok = tr_log_table_start(tr, t);
-	if (ok == LOG_OK)
-		ok = log_segments(tr, s->segs, t->base.id, &nr_appends);
+		ok = log_segments(tr, s->segs, t->base.id);
 	if (ok == LOG_OK && !cleared)
-		ok = log_table_append(tr, t, s->segs, nr_appends);
-	if (ok == LOG_OK)
-		ok = tr_log_table_end(tr, t);
+		ok = log_table_append(tr, t, s->segs);
 	return ok;
 }
 
