@@ -34,7 +34,7 @@ static gdk_return log_del_bat(logger *lg, log_bid bid);
 #define LOG_DESTROY	6
 #define LOG_SEQ		7
 #define LOG_CLEAR	8
-#define LOG_TABLE	9
+#define LOG_BAT_GROUP	9
 
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
@@ -60,7 +60,7 @@ static const char *log_commands[] = {
 	"LOG_DESTROY",
 	"LOG_SEQ",
 	"LOG_CLEAR",
-	"LOG_TABLE",
+	"LOG_BAT_GROUP",
 };
 
 typedef struct logaction {
@@ -1172,7 +1172,7 @@ log_read_transaction(logger *lg)
 	if (!lg->flushing)
 		GDKdebug &= ~CHECKMASK;
 
-	BAT* cands = NULL; // used in case of LOG_TABLE
+	BAT* cands = NULL; // used in case of LOG_BAT_GROUP
 
 	while (err == LOG_OK && (ok=log_read_format(lg, &l))) {
 		if (l.flag == 0 && l.id == 0) {
@@ -1246,18 +1246,18 @@ log_read_transaction(logger *lg)
 			else
 				err = log_read_clear(lg, tr, l.id);
 			break;
-		case LOG_TABLE:
+		case LOG_BAT_GROUP:
 			if (tr == NULL)
 				err = LOG_EOF;
 			else {
 				if (l.id > 0) {
-					// START OF LOG_TABLE
+					// START OF LOG_BAT_GROUP
 					cands = COLnew(0, TYPE_void, 0, TRANSIENT);
 					if (!cands)
 						err = LOG_ERR;
 				}
 				else {
-					// END OF LOG_TABLE
+					// END OF LOG_BAT_GROUP
 					BBPunfix(cands->batCacheid);
 					cands = NULL;
 				}
@@ -2686,13 +2686,13 @@ log_bat_transient(logger *lg, log_id id)
 }
 
 static gdk_return
-log_table(logger *lg, log_id id)
+log_bat_group(logger *lg, log_id id)
 {
 	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
 	logformat l;
-	l.flag = LOG_TABLE;
+	l.flag = LOG_BAT_GROUP;
 	l.id = id;
 	log_lock(lg);
 	gdk_return r = log_write_format(lg, &l);
@@ -2701,15 +2701,15 @@ log_table(logger *lg, log_id id)
 }
 
 gdk_return
-log_table_start(logger *lg, log_id id) {
+log_bat_group_start(logger *lg, log_id id) {
 	/*positive table id represent start of logged table*/
-	return log_table(lg, id);
+	return log_bat_group(lg, id);
 }
 
 gdk_return
-log_table_end(logger *lg, log_id id) {
+log_bat_group_end(logger *lg, log_id id) {
 	/*negative table id represent end of logged table*/
-	return log_table(lg, -id);
+	return log_bat_group(lg, -id);
 }
 
 gdk_return

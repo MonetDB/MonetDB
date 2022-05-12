@@ -3908,13 +3908,13 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 static inline int
 tr_log_table_start(sql_trans *tr, sql_table *t) {
 	sqlstore *store = tr->store;
-	return log_table_start(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
+	return log_bat_group_start(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
 }
 
 static inline int
 tr_log_table_end(sql_trans *tr, sql_table *t) {
 	sqlstore *store = tr->store;
-	return log_table_end(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
+	return log_bat_group_end(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
 }
 
 static int

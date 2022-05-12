@@ -63,8 +63,8 @@ gdk_export gdk_return log_bat_persists(logger *lg, BAT *b, log_id id);
 gdk_export gdk_return log_bat_transient(logger *lg, log_id id);
 gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 
-gdk_export gdk_return log_table_start(logger *lg, log_id id);
-gdk_export gdk_return log_table_end(logger *lg, log_id id);
+gdk_export gdk_return log_bat_group_start(logger *lg, log_id id);
+gdk_export gdk_return log_bat_group_end(logger *lg, log_id id);
 
 /* insert/clear groups of bats */
 //gdk_export gdk_return log_batgroup(logger *lg, char tpe, oid id, bool cleared, lng nr_inserted, lng offset_inserted, lng nr_deleted, lng offset_deleted);
