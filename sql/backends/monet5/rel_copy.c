@@ -396,9 +396,10 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	(void)var_on_client;
 	(void)var_fixed_width;
 
-	q = newAssignment(mb);
+	q = newStmt(mb, "bat", "new");
+	q = pushNil(mb, q, TYPE_oid);
 	q = pushLng(mb, q, 0);
-	int var_total_row_count = getDestVar(q);
+	int var_new_oids_bat = getDestVar(q);
 
 	q = newAssignment(mb);
 	q = pushNil(mb, q, TYPE_bit);
@@ -416,6 +417,13 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushArgument(mb, q, loop_vars.our_line_count);
 	int var_position = getArg(q, 0);
 	int var_positions = getArg(q, 1);
+
+	q = newStmt(mb, "copy", "trackrowids");
+	q = pushReturn(mb, q, var_new_oids_bat);
+	q = pushArgument(mb, q, var_new_oids_bat);
+	q = pushArgument(mb, q, loop_vars.our_line_count);
+	q = pushArgument(mb, q, var_position);
+	q = pushArgument(mb, q, var_positions);
 
 	emit_send(mb, loop_vars.loop_handle, claim_channel_stmt, var_claim_token);
 
@@ -483,17 +491,16 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		q = pushArgument(mb, q, var_converted);
 	}
 
-	q = newStmt(mb, "calc", "+");
-	setDestVar(q, var_total_row_count);
-	q = pushArgument(mb, q, var_total_row_count);
-	q = pushArgument(mb, q, loop_vars.our_line_count);
-
-
 	// END LOOP
 	emit_loop_end(mb, &loop_vars);
-	add_to_rowcount_accumulator(be, var_total_row_count);
-	// dump_code(-1);
 
+	q = newStmt(mb, "aggr", "count");
+	q = pushArgument(mb, q, var_new_oids_bat);
+	q = pushBit(mb, q, false);
+	int var_row_count = getDestVar(q);
+
+	add_to_rowcount_accumulator(be, var_row_count);
+	// dump_code(-1);
 
 	// I'm assuming that attaching the stmt list to op4.lval
 	// will make some else free the arg_stmt's we created here.

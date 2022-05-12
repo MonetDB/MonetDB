@@ -797,6 +797,50 @@ end:
 	return msg;
 }
 
+static str
+COPYtrackrowids(lng *start, bat *newrows_out_id, bat *newrows_in_id, lng *count, oid *offset, bat *pos_bat_id)
+{
+	str msg = MAL_SUCCEED;
+	BAT *newrows = NULL;
+	BAT *pos = NULL;
+
+	newrows = BATdescriptor(*newrows_in_id);
+	if (!newrows)
+		bailout("copy.trackrowids", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	*start = BATcount(newrows);
+	*newrows_out_id = *newrows_in_id;
+	BBPretain(*newrows_out_id);
+
+	if (*count == 0)
+		goto end;
+
+	if (is_bat_nil(*pos_bat_id)) {
+		if (BATextend(newrows, *start + *count) != GDK_SUCCEED)
+			bailout("copy.trackrowid", GDK_EXCEPTION);
+		oid *p = (oid*)Tloc(newrows, *start);
+		for (int i = 0; i < *count; i++) {
+			*p++ = *offset + i;
+		}
+		BATsetcount(newrows, *start + *count);
+	} else {
+		pos = BATdescriptor(*pos_bat_id);
+		if (!pos)
+			bailout("copy.trackrowids", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		if (BATcount(pos) != (BUN)*count)
+			bailout("copy.trackrowids", SQLSTATE(42000) "expected " BUNFMT " row ids, got %" PRId64, *count, BATcount(pos));
+		if (BUNappendmulti(newrows, Tloc(pos, 0), (BUN)*count, false) != GDK_SUCCEED)
+			bailout("copy.trackrowids", GDK_EXCEPTION);
+	}
+	newrows->trevsorted = false;
+	newrows->tseqbase = oid_nil;
+end:
+	if (newrows)
+		BBPunfix(*newrows_in_id);
+	if (pos)
+		BBPunfix(*pos_bat_id);
+	return msg;
+}
 
 
 void
@@ -999,6 +1043,11 @@ static mel_func copy_init_funcs[] = {
  pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1, 8,
 	batvararg("", int),
 	batarg("block", bte), arg("linecount", lng), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), arg("escape", bit)
+ )),
+
+ command("copy", "trackrowids", COPYtrackrowids, true, "keep track of newly claimed rows", args(2, 6,
+	arg("", lng), batarg("", oid),
+	batarg("newrows", oid), arg("count", lng), arg("offset",oid), batarg("pos",oid)
  )),
 
  pattern("copy", "parse_generic", COPYparse_generic, false, "Parse using GDK's atomFromStr", args(1, 4,
