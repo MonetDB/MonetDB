@@ -469,7 +469,7 @@ BATcheckstrimps(BAT *b)
 					}
 					close(fd);
 					/* unlink unusable file */
-					GDKunlink(hp->strimps.farmid, BATDIR, nme, "tstrimp");
+					GDKunlink(hp->strimps.farmid, BATDIR, nme, "tstrimps");
 
 				}
 			}
