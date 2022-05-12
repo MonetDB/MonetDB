@@ -4,3 +4,4 @@
 #
 HAVE_ODBC&NOT_WIN32?odbcsample1
 HAVE_ODBC&NOT_WIN32?testgetinfo
+HAVE_ODBC&NOT_WIN32?metadata

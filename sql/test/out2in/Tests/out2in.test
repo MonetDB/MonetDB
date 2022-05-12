@@ -22,8 +22,8 @@ project (
 | | select (
 | | | table("sys"."bar") [ "bar"."i" ]
 | | ) [ ("bar"."i") ! * = (int(32) NULL) ]
-| ) [ ("foo"."i") = ("bar"."i") ]
-) [ "foo"."i", "bar"."i" ]
+| ) [ ("foo"."i") = ("bar"."i" NOT NULL) ]
+) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
 query T nosort
 PLAN SELECT foo.i, bar.i FROM foo LEFT JOIN bar ON foo.i = bar.i WHERE bar.j IS NOT NULL
@@ -35,7 +35,7 @@ project (
 | | | table("sys"."bar") [ "bar"."i", "bar"."j" ]
 | | ) [ ("bar"."j") ! * = (int(32) NULL) ]
 | ) [ ("foo"."i") = ("bar"."i") ]
-) [ "foo"."i", "bar"."i" ]
+) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
 query T nosort
 PLAN SELECT foo.i, bar.i FROM foo RIGHT JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
@@ -47,7 +47,7 @@ project (
 | | ) [ (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (bigint(34) "20")) or (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (bigint(34) "400"), ("sys"."sql_add"(bigint(33)["foo"."i"], bigint(33)["foo"."i"])) = (bigint(64)["foo"."i"])) ],
 | | table("sys"."bar") [ "bar"."i" ]
 | ) [ ("foo"."i") = ("bar"."i") ]
-) [ "foo"."i", "bar"."i" ]
+) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
 query T nosort
 PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
@@ -85,7 +85,7 @@ project (
 | | | table("sys"."bar") [ "bar"."i", "bar"."j" ]
 | | ) [ ("bar"."j") ! * = (int(32) NULL) ]
 | ) [ ("foo"."i") = ("bar"."i") ]
-) [ "foo"."i", "bar"."i" ]
+) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
 statement ok
 ROLLBACK

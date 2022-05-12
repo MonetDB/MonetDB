@@ -1070,6 +1070,12 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 		char tpe;
 		oid id;
 
+		if (l.flag == 0) {
+			/* end of useful content */
+			assert(l.tid == 0);
+			assert(l.nr == 0);
+			break;
+		}
 		t1 = time(NULL);
 		if (t1 - t0 > 10) {
 			lng fpos;
@@ -1207,8 +1213,6 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 				err = LOG_EOF;
 			else
 				err = log_read_clear(lg, tr, name, tpe, id);
-			break;
-		case 0:
 			break;
 		default:
 			err = LOG_ERR;
@@ -1761,7 +1765,7 @@ old_logger_destroy(old_logger *lg)
 		GDKfree(subcommit);
 		return rc;
 	}
-	if ((rc = logger_create_types_file(lg->lg, lg->filename, true)) != GDK_SUCCEED) {
+	if ((rc = log_create_types_file(lg->lg, lg->filename, true)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		GDKfree(subcommit);
 		return rc;

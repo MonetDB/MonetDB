@@ -156,6 +156,7 @@ typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -241,6 +242,7 @@ typedef struct store_functions {
 	prop_col_fptr sorted_col;
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
+	proprec_col_fptr col_stats;
 
 	col_dup_fptr col_dup;
 	idx_dup_fptr idx_dup;
@@ -267,14 +269,14 @@ typedef struct store_functions {
 	swap_bats_fptr swap_bats;
 } store_functions;
 
-typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
+typedef int (*log_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
 
-typedef void (*logger_destroy_fptr) (struct sqlstore *store);
-typedef int (*logger_flush_fptr) (struct sqlstore *store, lng save_id);
-typedef int (*logger_activate_fptr) (struct sqlstore *store);
+typedef void (*log_destroy_fptr) (struct sqlstore *store);
+typedef int (*log_flush_fptr) (struct sqlstore *store, lng save_id);
+typedef int (*log_activate_fptr) (struct sqlstore *store);
 typedef int (*logger_cleanup_fptr) (struct sqlstore *store);
 
-typedef int (*logger_changes_fptr)(struct sqlstore *store);
+typedef int (*log_changes_fptr)(struct sqlstore *store);
 typedef int (*logger_get_sequence_fptr) (struct sqlstore *store, int seq, lng *id);
 
 typedef int (*log_isnew_fptr)(struct sqlstore *store);
@@ -282,7 +284,7 @@ typedef int (*log_tstart_fptr) (struct sqlstore *store, bool flush, ulng *log_fi
 typedef int (*log_tend_fptr) (struct sqlstore *store);
 typedef int (*log_tflush_fptr) (struct sqlstore *store, ulng log_file_id, ulng commit_tis);
 typedef lng (*log_save_id_fptr) (struct sqlstore *store);
-typedef int (*log_sequence_fptr) (struct sqlstore *store, int seq, lng id);
+typedef int (*log_tsequence_fptr) (struct sqlstore *store, int seq, lng id);
 
 /*
 -- List which parts of which files must be included in a hot snapshot.
@@ -300,12 +302,12 @@ typedef int (*log_sequence_fptr) (struct sqlstore *store, int seq, lng id);
 typedef gdk_return (*logger_get_snapshot_files_fptr)(struct sqlstore *store, stream *plan);
 
 typedef struct logger_functions {
-	logger_create_fptr create;
-	logger_destroy_fptr destroy;
-	logger_flush_fptr flush;
-	logger_activate_fptr activate;
+	log_create_fptr create;
+	log_destroy_fptr destroy;
+	log_flush_fptr flush;
+	log_activate_fptr activate;
 
-	logger_changes_fptr changes;
+	log_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
 
 	logger_get_snapshot_files_fptr get_snapshot_files;
@@ -315,7 +317,7 @@ typedef struct logger_functions {
 	log_tend_fptr log_tend;
 	log_tflush_fptr log_tflush;
 	log_save_id_fptr log_save_id;
-	log_sequence_fptr log_sequence;
+	log_tsequence_fptr log_tsequence;
 } logger_functions;
 
 /* we need to add an interface for result_tables later */
@@ -396,6 +398,7 @@ extern int sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
+extern int sql_trans_col_stats(sql_trans *tr, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, void **min, void **max);
 

@@ -15,5 +15,3 @@ err openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short 
 err openConnectionUNIX(int *ret, const char *path, int mode, FILE *log);
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

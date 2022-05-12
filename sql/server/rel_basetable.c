@@ -156,10 +156,10 @@ bind_col_exp(mvc *sql, char *name, sql_column *c)
 
 	if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 		p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-		p->value = c->t->pkey;
+		p->value.pval = c->t->pkey;
 	} else if (c->unique == 2) {
 		p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-		p->value = NULL;
+		p->value.pval = NULL;
 	}
 	set_basecol(e);
 	return e;
@@ -267,11 +267,11 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 				sql_exp *e = exp_column(sql->sa, name, iname, t, CARD_MULTI, has_nils, unique, 1);
 				if (hash_index(i->type)) {
 					p = e->p = prop_create(sql->sa, PROP_HASHIDX, e->p);
-					p->value = i;
+					p->value.pval = i;
 				}
 				if (i->type == join_idx) {
 					p = e->p = prop_create(sql->sa, PROP_JOINIDX, e->p);
-					p->value = i;
+					p->value.pval = i;
 				}
 				append(exps, e);
 			}
@@ -324,10 +324,10 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 		}
 		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-			p->value = c->t->pkey;
+			p->value.pval = c->t->pkey;
 		} else if (c->unique == 2) {
 			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-			p->value = NULL;
+			p->value.pval = NULL;
 		}
 		set_basecol(e);
 		append(r->exps, e);
@@ -370,10 +370,10 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			}
 			if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 				p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
-				p->value = c->t->pkey;
+				p->value.pval = c->t->pkey;
 			} else if (c->unique == 2) {
 				p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
-				p->value = NULL;
+				p->value.pval = NULL;
 			}
 			set_basecol(e);
 			append(rel->exps, e);
@@ -409,11 +409,11 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			/* index names are prefixed, to make them independent */
 			if (hash_index(i->type)) {
 				p = e->p = prop_create(sa, PROP_HASHIDX, e->p);
-				p->value = i;
+				p->value.pval = i;
 			}
 			if (i->type == join_idx) {
 				p = e->p = prop_create(sa, PROP_JOINIDX, e->p);
-				p->value = i;
+				p->value.pval = i;
 			}
 			append(rel->exps, e);
 		}
@@ -486,10 +486,10 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			sql_exp *ne = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, is_column_unique(rc), 0);
 			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
-				p->value = rc->t->pkey;
+				p->value.pval = rc->t->pkey;
 			} else if (rc->unique == 2) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
-				p->value = NULL;
+				p->value.pval = NULL;
 			}
 			set_basecol(ne);
 			rel_base_use(sql, p, rc->colnr);
@@ -515,10 +515,10 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			/* index names are prefixed, to make them independent */
 			if (hash_index(ri->type)) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHIDX, ne->p);
-				p->value = ri;
+				p->value.pval = ri;
 			} else if (ri->type == join_idx) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_JOINIDX, ne->p);
-				p->value = ri;
+				p->value.pval = ri;
 			}
 			list_append(p->exps, ne);
 		}

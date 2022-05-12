@@ -5551,7 +5551,7 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *gro
 		rel = rel_groupby(sql, rel, gbe);
 		if (sets && list_length(sets) > 1) { /* if there is only one combination, there is no reason to generate unions */
 			prop *p = prop_create(sql->sa, PROP_GROUPINGS, rel->p);
-			p->value = sets;
+			p->value.pval = sets;
 			rel->p = p;
 		}
 	}
