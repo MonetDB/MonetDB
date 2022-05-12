@@ -40,7 +40,7 @@ bat.append(bbte,42:bte)
 statement ok
 bat.append(bbte,84:bte)
 
-statement ok
+statement error
 bat.append(bbte,254:bte)
 
 statement ok

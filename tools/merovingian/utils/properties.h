@@ -22,5 +22,3 @@ void readPropsBuf(confkeyval *ckv, char *buf);
 char *setProp(const char *path, const char *key, const char *val);
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

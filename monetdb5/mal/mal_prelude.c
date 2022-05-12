@@ -216,7 +216,7 @@ addFunctions(mel_func *fcn){
 		mod = putName(fcn->mod);
 		c = getModule(mod);
 		if( c == NULL){
-			if (globalModule(mod=putName(fcn->mod)) == NULL)
+			if (globalModule(mod) == NULL)
 				throw(LOADER, "addFunctions", "Module %s can not be created", fcn->mod);
 			c = getModule(mod);
 		}

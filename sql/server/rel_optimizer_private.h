@@ -20,6 +20,7 @@ typedef struct global_props {
 		needs_remote_replica_rewrite:1,
 		needs_distinct:1,
 		needs_setjoin_rewrite:1,
+		has_special_modify:1, /* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
 		opt_level:1; /* 0 run necessary rewriters, 1 run all optimizers */
 	uint8_t opt_cycle; /* the optimization cycle number */
 } global_props;
@@ -38,12 +39,16 @@ typedef struct sql_optimizer {
 #define rewrite_fix_count_used    (1 << 0)
 #define rewrite_values_used       (1 << 1)
 #define rel_merge_select_rse_used (1 << 2)
-#define rel_remote_func_used      (1 << 3)
+#define statistics_gathered       (1 << 3)
+#define rel_remote_func_used      (1 << 4)
+#define rewrite_gt_zero_used      (1 << 5)
 
 #define is_rewrite_fix_count_used(X)    ((X & rewrite_fix_count_used) == rewrite_fix_count_used)
 #define is_rewrite_values_used(X)       ((X & rewrite_values_used) == rewrite_values_used)
 #define is_rel_merge_select_rse_used(X) ((X & rel_merge_select_rse_used) == rel_merge_select_rse_used)
+#define are_statistics_gathered(X)      ((X & statistics_gathered) == statistics_gathered)
 #define is_rel_remote_func_used(X)      ((X & rel_remote_func_used) == rel_remote_func_used)
+#define is_rewrite_gt_zero_used(X)      ((X & rewrite_gt_zero_used) == rewrite_gt_zero_used)
 
 /* At the moment the follwowing optimizers 'packs' can be disabled,
    later we could disable individual optimizers from the 'pack' */
@@ -91,13 +96,16 @@ extern run_optimizer bind_dce(visitor *v, global_props *gp) __attribute__((__vis
 extern run_optimizer bind_push_func_and_select_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_push_topn_and_sample_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_distinct_project2groupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern run_optimizer bind_push_select_up(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_merge_table_rewrite(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_setjoins_2_joingroupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_get_statistics(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_join_order2(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_final_optimization_loop(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_rewrite_remote(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_rewrite_replica(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_remote_func(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 
+/* these rewriters are shared by multiple optimizers */
 extern sql_rel *rel_split_project_(visitor *v, sql_rel *rel, int top) __attribute__((__visibility__("hidden")));
 extern sql_exp *exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) __attribute__((__visibility__("hidden")));
 extern sql_exp *add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel) __attribute__((__visibility__("hidden")));
@@ -111,4 +119,4 @@ extern int exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool 
 extern int is_numeric_upcast(sql_exp *e) __attribute__((__visibility__("hidden")));
 extern sql_exp *list_exps_uses_exp(list *exps, const char *rname, const char *name) __attribute__((__visibility__("hidden")));
 extern sql_exp *exps_uses_exp(list *exps, sql_exp *e) __attribute__((__visibility__("hidden")));
-extern int sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_based) __attribute__((__visibility__("hidden")));
+extern int exp_keyvalue(sql_exp *e) __attribute__((__visibility__("hidden")));

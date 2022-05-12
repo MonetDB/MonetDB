@@ -8,40 +8,56 @@ statement ok rowcount 1
 INSERT INTO date_table VALUES (cast('2000-10-10' AS DATE))
 
 statement ok
-CREATE FUNCTION pyapi_date(d DATE) RETURNS STRING LANGUAGE PYTHON { return d; }
+CREATE FUNCTION pyapi_date(d DATE) RETURNS DATE LANGUAGE PYTHON { return d; }
 
 query T rowsort
 SELECT pyapi_date(d) FROM date_table
 ----
 2000-10-10
 
+query T rowsort
+SELECT pyapi_date(cast('2000-10-10' AS DATE))
+----
+2000-10-10
+
 statement ok
-CREATE TABLE time_table(d TIME)
+CREATE TABLE time_table(d TIME(6))
 
 statement ok rowcount 1
-INSERT INTO time_table VALUES (cast('12:00:00' AS TIME))
+INSERT INTO time_table VALUES (cast('12:00:00.000001' AS TIME(6)))
 
 statement ok
-CREATE FUNCTION pyapi_time(d TIME) RETURNS STRING LANGUAGE PYTHON { return d; }
+CREATE FUNCTION pyapi_time(d TIME(6)) RETURNS TIME(6) LANGUAGE PYTHON { return d; }
+
+query T rowsort
+SELECT pyapi_time(cast('12:00:00.000001' AS TIME(6)))
+----
+12:00:00.000001
 
 query T rowsort
 SELECT pyapi_time(d) FROM time_table
 ----
-12:00:00.000000
+12:00:00.000001
 
 statement ok
 CREATE TABLE timestamp_table(d TIMESTAMP)
 
 statement ok rowcount 1
-INSERT INTO timestamp_table VALUES (cast('2000-1-1 12:00:00' AS TIMESTAMP))
+INSERT INTO timestamp_table VALUES (cast('2000-1-1 12:00:00.000001' AS TIMESTAMP))
 
 statement ok
-CREATE FUNCTION pyapi_timestamp(d TIMESTAMP) RETURNS STRING LANGUAGE PYTHON { return d; }
+CREATE FUNCTION pyapi_timestamp(d TIMESTAMP) RETURNS TIMESTAMP LANGUAGE PYTHON { return d; }
+
+query T rowsort
+SELECT pyapi_timestamp(cast('2000-1-1 12:00:00.000001' AS TIMESTAMP)) FROM timestamp_table
+----
+2000-01-01 12:00:00.000001
 
 query T rowsort
 SELECT pyapi_timestamp(d) FROM timestamp_table
 ----
-2000-01-01 12:00:00.000000
+2000-01-01 12:00:00.000001
+
 
 statement ok
 CREATE TABLE decimal_table(d DECIMAL(10, 3))
@@ -61,8 +77,9 @@ statement ok
 CREATE FUNCTION pyapi_ret_date() RETURNS TABLE(d DATE)
 LANGUAGE PYTHON
 {
+    import datetime
     result = dict()
-    result['d'] = '2000-10-10'
+    result['d'] = datetime.date(2000, 10, 10)
     return result
 }
 
@@ -72,32 +89,34 @@ SELECT * FROM pyapi_ret_date()
 2000-10-10
 
 statement ok
-CREATE FUNCTION pyapi_ret_time() RETURNS TABLE(d TIME)
+CREATE FUNCTION pyapi_ret_time() RETURNS TABLE(d TIME(6))
 LANGUAGE PYTHON
 {
+    import datetime
     result = dict()
-    result['d'] = '12:00:00'
+    result['d'] = datetime.time(12, 0, 0, 1)
     return result
 }
 
 query T rowsort
 SELECT * FROM pyapi_ret_time()
 ----
-12:00:00
+12:00:00.000001
 
 statement ok
 CREATE FUNCTION pyapi_ret_timestamp() RETURNS TABLE(d TIMESTAMP)
 LANGUAGE PYTHON
 {
+    import datetime
     result = dict()
-    result['d'] = '2000-1-1 12:00:00'
+    result['d'] = datetime.datetime(2000, 1, 1, 12, 0, 0, 1)
     return result
 }
 
 query T rowsort
 SELECT * FROM pyapi_ret_timestamp()
 ----
-2000-01-01 12:00:00
+2000-01-01 12:00:00.000001
 
 statement ok
 CREATE FUNCTION pyapi_ret_decimal() RETURNS TABLE(d DECIMAL)
@@ -151,10 +170,10 @@ statement ok rowcount 1
 INSERT INTO uuid_tbl VALUES ('54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c')
 
 statement ok
-CREATE FUNCTION pyapi_interval(d UUID) RETURNS STRING LANGUAGE PYTHON { return d; }
+CREATE FUNCTION pyapi_uuid(d UUID) RETURNS STRING LANGUAGE PYTHON { return d; }
 
 query T rowsort
-SELECT pyapi_interval(d) FROM uuid_tbl
+SELECT pyapi_uuid(d) FROM uuid_tbl
 ----
 54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c
 

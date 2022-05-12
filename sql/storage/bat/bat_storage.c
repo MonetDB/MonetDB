@@ -328,55 +328,30 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 			size_t pos = s->start;
 			dst = (uint32_t *) Tloc(b, 0) + (pos/32);
 			uint32_t cur = 0;
-			if (s->deleted) {
-				size_t used = pos&31, end = 32;
-				if (used) {
-					if (lnr < (32-used))
-						end = used + lnr;
-					assert(end > used);
-					cur |= ((1U << (end - used)) - 1) << used;
-					lnr -= end - used;
-					*dst++ |= cur;
-					cur = 0;
-				}
-				size_t full = lnr/32;
-				size_t rest = lnr%32;
-				if (full > 0) {
-					memset(dst, ~0, full * sizeof(*dst));
-					dst += full;
-					lnr -= full * 32;
-				}
-				if (rest > 0) {
-					cur |= (1U << rest) - 1;
-					lnr -= rest;
-					*dst |= cur;
-				}
-				assert(lnr==0);
-			} else {
-				size_t used = pos&31, end = 32;
-				if (used) {
-					if (lnr < (32-used))
-						end = used + lnr;
-					assert(end > used);
-					cur |= ((1U << (end - used)) - 1) << used;
-					lnr -= end - used;
-					*dst++ &= ~cur;
-					cur = 0;
-				}
-				size_t full = lnr/32;
-				size_t rest = lnr%32;
-				if (full > 0) {
-					memset(dst, 0, full * sizeof(*dst));
-					dst += full;
-					lnr -= full * 32;
-				}
-				if (rest > 0) {
-					cur |= (1U << rest) - 1;
-					lnr -= rest;
-					*dst &= ~cur;
-				}
-				assert(lnr==0);
+			size_t used = pos&31, end = 32;
+			if (used) {
+				if (lnr < (32-used))
+					end = used + lnr;
+				assert(end > used);
+				cur |= ((1U << (end - used)) - 1) << used;
+				lnr -= end - used;
+				*dst = s->deleted ? *dst | cur : *dst & ~cur;
+				dst++;
+				cur = 0;
 			}
+			size_t full = lnr/32;
+			size_t rest = lnr%32;
+			if (full > 0) {
+				memset(dst, s->deleted?~0:0, full * sizeof(*dst));
+				dst += full;
+				lnr -= full * 32;
+			}
+			if (rest > 0) {
+				cur |= (1U << rest) - 1;
+				lnr -= rest;
+				*dst = s->deleted ? *dst | cur : *dst & ~cur;
+			}
+			assert(lnr==0);
 			if (cnt < s->end)
 				cnt = s->end;
 		}
@@ -2752,6 +2727,18 @@ dcount_col(sql_trans *tr, sql_column *c)
 	return cnt;
 }
 
+static BAT *
+bind_no_view(BAT *b, bool quick)
+{
+	if (isVIEW(b)) { /* If it is a view get the parent BAT */
+		BAT *nb = BBP_cache(VIEWtparent(b));
+		bat_destroy(b);
+		if (!(b = quick ? quick_descriptor(nb->batCacheid) : temp_descriptor(nb->batCacheid)))
+			return NULL;
+	}
+	return b;
+}
+
 static int
 min_max_col(sql_trans *tr, sql_column *c)
 {
@@ -2767,6 +2754,7 @@ min_max_col(sql_trans *tr, sql_column *c)
 	if ((d = ATOMIC_PTR_GET(&c->data))) {
 		if (d->cs.st == ST_FOR)
 			return 0;
+		int access = d->cs.st == ST_DICT ? RD_EXT : RDONLY;
 		lock_column(tr->store, c->base.id);
 		if (c->min && c->max) {
 			unlock_column(tr->store, c->base.id);
@@ -2774,7 +2762,11 @@ min_max_col(sql_trans *tr, sql_column *c)
 		}
 		_DELETE(c->min);
 		_DELETE(c->max);
-		if ((b = temp_descriptor(d->cs.st == ST_DICT ? d->cs.ebid : d->cs.bid))) {
+		if ((b = bind_col(tr, c, access))) {
+			if (!(b = bind_no_view(b, false))) {
+				unlock_column(tr->store, c->base.id);
+				return 0;
+			}
 			BATiter bi = bat_iterator(b);
 			if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
 				const void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
@@ -2894,10 +2886,75 @@ double_elim_col(sql_trans *tr, sql_column *col)
 }
 
 static int
+col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
+{
+	int ok = 0;
+	BAT *b = NULL, *off = NULL, *upv = NULL;
+	sql_delta *d = NULL;
+
+	(void) tr;
+	assert(tr->active);
+	*nonil = false;
+	*unique = false;
+	*unique_est = 0.0;
+	if (!c || !isTable(c->t) || !c->t->s)
+		return ok;
+
+	if ((d = ATOMIC_PTR_GET(&c->data))) {
+		if (d->cs.st == ST_FOR) {
+			*nonil = true; /* TODO for min/max. I will do it later */
+			return ok;
+		}
+		int eclass = c->type.type->eclass;
+		int access = d->cs.st == ST_DICT ? RD_EXT : RDONLY;
+		if ((b = bind_col(tr, c, access))) {
+			if (!(b = bind_no_view(b, false)))
+				return ok;
+			BATiter bi = bat_iterator(b);
+			*nonil = bi.nonil && !bi.nil;
+
+			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
+				d->cs.ucnt == 0 && (bi.minpos != BUN_NONE || bi.maxpos != BUN_NONE)) {
+				if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
+					ok |= 1;
+				if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
+					ok |= 2;
+			}
+			if (d->cs.ucnt == 0) {
+				if (d->cs.st == ST_DEFAULT) {
+					*unique = bi.key;
+					*unique_est = bi.unique_est;
+				} else if (d->cs.st == ST_DICT && (off = bind_col(tr, c, QUICK)) && (off = bind_no_view(off, true))) {
+					/* for dict, check the offsets bat for uniqueness */
+					MT_lock_set(&off->theaplock);
+					*unique = off->tkey;
+					*unique_est = off->tunique_est;
+					MT_lock_unset(&off->theaplock);
+				}
+			}
+			bat_iterator_end(&bi);
+			bat_destroy(b);
+			if (*nonil && d->cs.ucnt > 0) {
+				/* This could use a quick descriptor */
+				if (!(upv = bind_col(tr, c, RD_UPD_VAL)) || !(upv = bind_no_view(upv, false))) {
+					*nonil = false;
+				} else {
+					MT_lock_set(&upv->theaplock);
+					*nonil &= upv->tnonil && !upv->tnil;
+					MT_lock_unset(&upv->theaplock);
+					bat_destroy(upv);
+				}
+			}
+		}
+	}
+	return ok;
+}
+
+static int
 load_cs(sql_trans *tr, column_storage *cs, int type, sqlid id)
 {
 	sqlstore *store = tr->store;
-	int bid = logger_find_bat(store->logger, id);
+	int bid = log_find_bat(store->logger, id);
 	if (!bid)
 		return LOG_ERR;
 	cs->bid = temp_dup(bid);
@@ -3002,7 +3059,7 @@ create_col(sql_trans *tr, sql_column *c)
 		if (ok == LOG_OK && c->storage_type) {
 			if (strcmp(c->storage_type, "DICT") == 0) {
 				sqlstore *store = tr->store;
-				int bid = logger_find_bat(store->logger, -c->base.id);
+				int bid = log_find_bat(store->logger, -c->base.id);
 				if (!bid)
 					return LOG_ERR;
 				bat->cs.ebid = temp_dup(bid);
@@ -3907,7 +3964,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 }
 
 static int
-log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
+log_storage(sql_trans *tr, sql_table *t, storage *s)
 {
 	int ok = LOG_OK, cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
@@ -3915,7 +3972,7 @@ log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 	if (ok == LOG_OK)
 		ok = segments2cs(tr, s->segs, &s->cs);
 	if (ok == LOG_OK)
-		ok = log_segments(tr, s->segs, id);
+		ok = log_segments(tr, s->segs, t->base.id);
 	if (ok == LOG_OK && !cleared)
 		ok = log_table_append(tr, t, s->segs);
 	return ok;
@@ -3925,19 +3982,13 @@ static int
 merge_cs( column_storage *cs)
 {
 	int ok = LOG_OK;
-	BAT *cur = NULL;
 
-	if (cs->bid) {
-		cur = temp_descriptor(cs->bid);
-		if(!cur)
-			return LOG_ERR;
-	}
-
-	if (cs->ucnt) {
+	if (cs->bid && cs->ucnt) {
+		BAT *cur = temp_descriptor(cs->bid);
 		BAT *ui = temp_descriptor(cs->uibid);
 		BAT *uv = temp_descriptor(cs->uvbid);
 
-		if(!ui || !uv) {
+		if (!cur || !ui || !uv) {
 			bat_destroy(ui);
 			bat_destroy(uv);
 			bat_destroy(cur);
@@ -3958,15 +4009,15 @@ merge_cs( column_storage *cs)
 		temp_destroy(cs->uvbid);
 		cs->uibid = e_bat(TYPE_oid);
 		cs->uvbid = e_bat(cur->ttype);
-		if(cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
+		if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
 			ok = LOG_ERR;
 		cs->ucnt = 0;
 		bat_destroy(ui);
 		bat_destroy(uv);
+		bat_destroy(cur);
 	}
 	cs->cleared = 0;
 	cs->merged = 1;
-	bat_destroy(cur);
 	return ok;
 }
 
@@ -4244,7 +4295,7 @@ log_update_del( sql_trans *tr, sql_change *change)
 	sql_table *t = (sql_table*)change->obj;
 
 	if (!isTempTable(t) && !tr->parent) /* don't write save point commits */
-		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data), t->base.id);
+		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data));
 	return LOG_OK;
 }
 
@@ -4938,6 +4989,7 @@ bat_storage_init( store_functions *sf)
 	sf->sorted_col = &sorted_col;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
+	sf->col_stats = &col_stats;
 
 	sf->col_dup = &col_dup;
 	sf->idx_dup = &idx_dup;

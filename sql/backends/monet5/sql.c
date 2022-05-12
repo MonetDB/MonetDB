@@ -24,6 +24,9 @@
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
 #include "sql_partition.h"
+#include "rel_unnest.h"
+#include "rel_optimizer.h"
+#include "rel_statistics.h"
 #include "rel_partition.h"
 #include "rel_select.h"
 #include "rel_rel.h"
@@ -122,13 +125,14 @@ sql_symbol2relation(backend *be, symbol *sym)
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
 	lng Tbegin;
-	int extra_opts = be->mvc->emode != m_prepare;
+	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
 
 	rel = rel_semantic(query, sym);
+	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = GDKusec();
 	if (rel)
-		rel = sql_processrelation(be->mvc, rel, profile, 1, extra_opts, extra_opts);
+		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 	if (rel)
 		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
@@ -5375,10 +5379,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "current_timestamp", SQLcurrent_timestamp, false, "Get the clients current timestamp", args(1,1, arg("",timestamp))),
  pattern("calc", "date", nil_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",void))),
  pattern("batcalc", "date", nil_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",oid))),
- pattern("calc", "date", str_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",str))),
- command("batcalc", "date", batstr_2_date, false, "cast to date", args(1,3, batarg("",date),batarg("v",str),batarg("s",oid))),
- command("calc", "blob", str_2_blob, false, "cast to blob", args(1,2, arg("",blob),arg("v",str))),
- command("batcalc", "blob", batstr_2_blob, false, "cast to blob", args(1,3, batarg("",blob),batarg("v",str),batarg("s",oid))),
  pattern("calc", "str", SQLstr_cast, false, "cast to string and check for overflow", args(1,7, arg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),argany("v",1),arg("digits",int))),
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,8, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),batarg("s",oid),arg("digits",int))),
  pattern("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
@@ -5883,18 +5883,18 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),arg("nl",bit),batarg("nr",bit))),
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),batarg("nl",bit),arg("nr",bit))),
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),batarg("nl",bit),batarg("nr",bit))),
- pattern("aggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
- pattern("bataggr", "anyequal", SQLanyequal, false, "", args(1,3, batarg("",bit),batargany("l",1),batargany("r",1))),
- pattern("aggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
- pattern("bataggr", "allnotequal", SQLallnotequal, false, "", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
- pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
- pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l return true, else if r has nil nil else false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
- pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
- pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false; with candidate list", args(1,8, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
- pattern("aggr", "suballnotequal", SQLallnotequal_grp, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
- pattern("aggr", "suballnotequal", SQLallnotequal_grp, false, "if all values in r are not equal to l return true, else if r has nil nil else false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
- pattern("aggr", "suballnotequal", SQLallnotequal_grp2, false, "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
- pattern("aggr", "suballnotequal", SQLallnotequal_grp2, false, "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true; with candidate list", args(1,8, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
+ pattern("aggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("bataggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false", args(1,3, batarg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("aggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l, return true, else if r has nil, return nil, else return false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("bataggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l, return true, else if r has nil, return nil, else return false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+// pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
+ pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false, except if rid is nil (ie empty) then return false", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+ pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false, except if rid is nil (ie empty) then return false; with candidate list", args(1,8, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
+ pattern("aggr", "suballnotequal", SQLallnotequal_grp, false, "if all values in r are not equal to l, return true, else if r has nil, return nil else return false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+// pattern("aggr", "suballnotequal", SQLallnotequal_grp, false, "if all values in r are not equal to l, return true, else if r has nil, return nil else return false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
+ pattern("aggr", "suballnotequal", SQLallnotequal_grp2, false, "if all values in r are not equal to l, return true, else if r has nil return nil, else return false, except if rid is nil (ie empty) then return true", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+ pattern("aggr", "suballnotequal", SQLallnotequal_grp2, false, "if all values in r are not equal to l, return true, else if r has nil return nil, else return false, except if rid is nil (ie empty) then return true; with candidate list", args(1,8, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
  pattern("aggr", "exist", SQLexist, false, "", args(1,2, arg("",bit), argany("b",1))),
  pattern("bataggr", "exist", SQLexist, false, "", args(1,2, batarg("",bit), argany("b",1))),
  pattern("bataggr", "exist", SQLexist, false, "", args(1,2, arg("",bit), batargany("b",1))),

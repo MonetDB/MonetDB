@@ -1090,14 +1090,13 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 
 gdk_return
 BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
-		    bool abort_on_error, bool nil_if_empty, const char *restrict separator)
+		    bool nil_if_empty, const char *restrict separator)
 {
 	struct canditer ci;
 	gdk_return r = GDK_SUCCEED;
 	bool free_nseparator = false;
 	char *nseparator = (char *)separator;
 
-	(void) abort_on_error;
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	res->vtype = TYPE_str;
 
@@ -1130,7 +1129,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 
 BAT *
 BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils,
-			 bool abort_on_error, const char *restrict separator)
+			 const char *restrict separator)
 {
 	BAT *bn = NULL;
 	oid min, max;
@@ -1174,7 +1173,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	if (BATtdense(g) || (g->tkey && g->tnonil)) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		bn = BATconvert(b, s, TYPE_str, abort_on_error, 0, 0, 0);
+		bn = BATconvert(b, s, TYPE_str, 0, 0, 0);
 		goto done;
 	}
 

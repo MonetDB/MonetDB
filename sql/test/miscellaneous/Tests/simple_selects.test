@@ -669,7 +669,7 @@ project (
 | | |  [ boolean(1) "true" as "%1"."%1" ]
 | | ) [ tinyint(1) "1" as "x"."x" ]
 | ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
-) [ "z" NOT NULL, tinyint(2) "2" ]
+) [ "z" NOT NULL UNIQUE, tinyint(2) "2" ]
 
 statement error
 select x as z, y as z from (select 1, 2) as x(x,y) group by z
@@ -912,9 +912,9 @@ plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (
-| |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x", "x"."x" as "x1" ]
-| ) [ "x"."x" ] [ "x"."x", "x1" ]
-) [ "x"."x", "x1" ]
+| |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x", "x"."x" NOT NULL as "x1" ]
+| ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
+) [ "x"."x" NOT NULL UNIQUE, "x1" NOT NULL ]
 
 query II rowsort
 SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
@@ -934,9 +934,9 @@ project (
 | group by (
 | | project (
 | | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
-| | ) [ "x"."x", "sys"."sql_add"("x"."x", tinyint(2) "1") as "x1" ]
-| ) [ "x"."x" ] [ "x"."x", "x1" ]
-) [ "x"."x", "x1" ]
+| | ) [ "x"."x" NOT NULL, "sys"."sql_add"("x"."x" NOT NULL, tinyint(2) "1") NOT NULL as "x1" ]
+| ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
+) [ "x"."x" NOT NULL UNIQUE, "x1" NOT NULL ]
 
 query II rowsort
 SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
@@ -960,9 +960,9 @@ project (
 | group by (
 | | project (
 | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
-| | ) [ "x"."x", "sys"."sql_add"("x"."x", tinyint(5) "10") as "%7"."%7", "sys"."sql_mul"("%7"."%7", tinyint(2) "2") as "%10"."%10", "sys"."sql_sub"("%10"."%10", smallint(10) "29") as "x1" ]
-| ) [ "x"."x" ] [ "x"."x", "x1" ]
-) [ "x"."x", "x1" ]
+| | ) [ "x"."x" NOT NULL, "sys"."sql_add"("x"."x" NOT NULL, tinyint(5) "10") NOT NULL as "%7"."%7", "sys"."sql_mul"("%7"."%7" NOT NULL, tinyint(2) "2") NOT NULL as "%10"."%10", "sys"."sql_sub"("%10"."%10" NOT NULL, smallint(10) "29") NOT NULL as "x1" ]
+| ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
+) [ "x"."x" NOT NULL UNIQUE, "x1" NOT NULL ]
 
 query I nosort
 SELECT count(1) FROM (SELECT 0.642700575141694319114549216465093195438385009765 % 3) x(x) GROUP BY 2+(0+round(x.x, 1))
