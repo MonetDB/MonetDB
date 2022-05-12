@@ -778,11 +778,10 @@ end:
 				bat id = b->batCacheid;
 				if (msg == MAL_SUCCEED) {
 					BATsetcount(b, line_count);
-					// these are indices into the block. they should be ascending.
-					b->tkey = true;
+					b->tkey = false;
 					b->tnil = false;
-					b->tnonil = true;
-					b->tsorted = true;
+					b->tnonil = false;
+					b->tsorted = false;
 					b->trevsorted = false;
 					BBPkeepref(b);
 					*getArgReference_bat(stk, pci, i) = id;
