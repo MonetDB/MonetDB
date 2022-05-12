@@ -277,7 +277,7 @@ BATmaterialize(BAT *b, BUN cap)
  * The @#VIEWunlink@ routine cuts a reference to the parent. Part of the view
  * destroy sequence.
  */
-static void
+void
 VIEWunlink(BAT *b)
 {
 	if (b) {
@@ -290,8 +290,6 @@ VIEWunlink(BAT *b)
 
 		if (tp)
 			tpb = BBP_cache(tp);
-		if (tp && !vtp)
-			vtp = tp;
 		if (vtp)
 			vtpb = BBP_cache(vtp);
 
@@ -394,12 +392,18 @@ VIEWdestroy(BAT *b)
 	VIEWunlink(b);
 
 	MT_lock_set(&b->theaplock);
+	/* heaps that are left after VIEWunlink are ours, so need to be
+	 * destroyed (and files deleted) */
 	if (b->theap) {
-		HEAPdecref(b->theap, false);
+		HEAPdecref(b->theap, true);
 		b->theap = NULL;
 	}
 	if (b->tvheap) {
-		HEAPdecref(b->tvheap, false);
+		/* should never happen: if this heap exists, then it was
+		 * our own (not a view), and then it doesn't make sense
+		 * that the offset heap was a view (at least one of them
+		 * had to be) */
+		HEAPdecref(b->tvheap, true);
 		b->tvheap = NULL;
 	}
 	MT_lock_unset(&b->theaplock);

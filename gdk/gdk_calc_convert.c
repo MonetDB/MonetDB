@@ -773,7 +773,47 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 }
 
 static BUN
-convert_str_any(BATiter *bi, int tp, void *restrict dst,
+convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
+{
+	int tp = bn->ttype;
+	oid candoff = bi->b->hseqbase;
+	void *dst = 0;
+	size_t len = 0;
+	BUN nils = 0;
+	BUN i;
+	const void *nil = ATOMnilptr(tp);
+	const char *restrict src;
+	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
+	oid x;
+
+	CAND_LOOP_IDX(ci, i) {
+		x = canditer_next(ci) - candoff;
+		src = BUNtvar(*bi, x);
+		if (strNil(src)) {
+			nils++;
+			if (tfastins_nocheckVAR(bn, i, nil) != GDK_SUCCEED) {
+				goto bailout;
+			}
+		} else {
+			ssize_t l;
+			if ((l = (*atomfromstr)(src, &len, &dst, false)) < 0 ||
+			    l < (ssize_t) strlen(src) ||
+			    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
+				goto bailout;
+			}
+		}
+	}
+	bn->theap->dirty = true;
+	BATsetcount(bn, ci->ncand);
+	GDKfree(dst);
+	return nils;
+  bailout:
+	GDKfree(dst);
+	return BUN_NONE + 2;
+}
+
+static BUN
+convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		struct canditer *restrict ci, oid candoff)
 {
 	BUN nils = 0;
@@ -1474,8 +1514,12 @@ BATconvert(BAT *b, BAT *s, int tp,
 		nils = convert_any_str(&bi, bn, &ci);
 	else if (bi.type == TYPE_str) {
 		reduce = true;
-		nils = convert_str_any(&bi, tp, Tloc(bn, 0),
-				       &ci, b->hseqbase);
+		if (ATOMvarsized(tp)) {
+			nils = convert_str_var(&bi, bn, &ci);
+		} else {
+			nils = convert_str_fix(&bi, tp, Tloc(bn, 0),
+					       &ci, b->hseqbase);
+		}
 	} else if (ATOMstorage(bi.type) == TYPE_msk &&
 		   ATOMstorage(tp) == TYPE_msk) {
 		if (BATappend(bn, b, s, false) != GDK_SUCCEED)

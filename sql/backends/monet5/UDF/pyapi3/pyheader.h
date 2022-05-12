@@ -40,6 +40,7 @@
 #else
 #include <Python.h>
 #endif
+#include <datetime.h>
 
 // Numpy Library
 #ifdef __COVERITY__
@@ -64,6 +65,16 @@
 #else
 #define pyapi_export extern
 #endif
+
+PyDateTime_CAPI *get_DateTimeAPI(void);
+void init_DateTimeAPI(void);
+
+#define USE_DATETIME_API						\
+	do {										\
+		PyDateTimeAPI = get_DateTimeAPI();		\
+	} while(0)
+
+
 
 #define utf8string_minlength 256
 

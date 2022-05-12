@@ -605,6 +605,3 @@ copy_snapshot(struct snapshot *dest, struct snapshot *src)
 	dest->name = strdup(src->name);
 	dest->path = strdup(src->path);
 }
-
-
-/* vim:set ts=4 sw=4 noexpandtab: */
