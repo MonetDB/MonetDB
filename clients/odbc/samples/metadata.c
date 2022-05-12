@@ -72,19 +72,7 @@ check(SQLRETURN ret, SQLSMALLINT tpe, SQLHANDLE hnd, const char *func)
 }
 
 static void
-renewStmtHandle(SQLHANDLE dbc, SQLHANDLE stmt)
-{
-	SQLRETURN ret;
-
-	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle (STMT)");
-
-	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle (STMT)");
-}
-
-static void
-compareResult(SQLHANDLE stmt, const char * functionname, const char * expected)
+compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, const char * expected)
 {
 	SQLRETURN ret;
 	SQLSMALLINT columns;	// Number of columns in result-set
@@ -96,8 +84,7 @@ compareResult(SQLHANDLE stmt, const char * functionname, const char * expected)
 	SQLLEN indicator;
 	char buf[255];
 
-	SQLSMALLINT nameLength;
-	SQLSMALLINT dataType;
+	check(retcode, SQL_HANDLE_STMT, stmt, functionname);
 
 	// How many columns are there
 	ret = SQLNumResultCols(stmt, &columns);
@@ -107,7 +94,7 @@ compareResult(SQLHANDLE stmt, const char * functionname, const char * expected)
 	// get Result Column Names and print them
 	for (col = 1; col <= columns; col++) {
 		ret = SQLDescribeCol(stmt, col, (SQLCHAR *) buf, sizeof(buf),
-			&nameLength, &dataType, NULL, NULL, NULL);
+			NULL, NULL, NULL, NULL, NULL);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLDescribeCol()");
 		pos += snprintf(outp + pos, outp_len - pos,
 				(col > 1) ? "\t%s" : "%s", buf);
@@ -144,6 +131,9 @@ compareResult(SQLHANDLE stmt, const char * functionname, const char * expected)
 
 	// cleanup
 	free(outp);
+
+	ret = SQLCloseCursor(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
 }
 
 int
@@ -186,54 +176,75 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle (STMT)");
 
-	/* run actual tests */
+/* run actual metadata query tests */
 	// All catalogs query
 	ret = SQLTables(stmt, (SQLCHAR*)SQL_ALL_CATALOGS, SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLTables (SQL_ALL_CATALOGS)");
-	compareResult(stmt, "SQLTables (SQL_ALL_CATALOGS)",
-			"Resultset with 5 columns\n"
-			"table_cat	table_schem	table_name	table_type	remarks\n"
-			"mTests_sql_odbc_samples	NULL	NULL	NULL	NULL\n");
-	renewStmtHandle(dbc, stmt);
+	compareResult(stmt, ret, "SQLTables (SQL_ALL_CATALOGS)",
+		"Resultset with 5 columns\n"
+		"table_cat	table_schem	table_name	table_type	remarks\n"
+		"mTests_sql_odbc_samples	NULL	NULL	NULL	NULL\n");
 
 	// All schemas query
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)SQL_ALL_SCHEMAS, SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLTables (SQL_ALL_SCHEMAS)");
-	compareResult(stmt, "SQLTables (SQL_ALL_SCHEMAS)",
-			"Resultset with 5 columns\n"
-			"table_cat	table_schem	table_name	table_type	remarks\n"
-			"NULL	json	NULL	NULL	NULL\n"
-			"NULL	logging	NULL	NULL	NULL\n"
-			"NULL	profiler	NULL	NULL	NULL\n"
-			"NULL	sys	NULL	NULL	NULL\n"
-			"NULL	tmp	NULL	NULL	NULL\n"
-			"NULL	wlc	NULL	NULL	NULL\n"
-			"NULL	wlr	NULL	NULL	NULL\n");
-	renewStmtHandle(dbc, stmt);
+	compareResult(stmt, ret, "SQLTables (SQL_ALL_SCHEMAS)",
+		"Resultset with 5 columns\n"
+		"table_cat	table_schem	table_name	table_type	remarks\n"
+		"NULL	json	NULL	NULL	NULL\n"
+		"NULL	logging	NULL	NULL	NULL\n"
+		"NULL	profiler	NULL	NULL	NULL\n"
+		"NULL	sys	NULL	NULL	NULL\n"
+		"NULL	tmp	NULL	NULL	NULL\n"
+		"NULL	wlc	NULL	NULL	NULL\n"
+		"NULL	wlr	NULL	NULL	NULL\n");
 
 	// All table types query
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)SQL_ALL_TABLE_TYPES, SQL_NTS);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLTables (SQL_ALL_TABLE_TYPES)");
-	compareResult(stmt, "SQLTables (SQL_ALL_TABLE_TYPES)",
-			"Resultset with 5 columns\n"
-			"table_cat	table_schem	table_name	table_type	remarks\n"
-			"NULL	NULL	NULL	GLOBAL TEMPORARY TABLE	NULL\n"
-			"NULL	NULL	NULL	LOCAL TEMPORARY TABLE	NULL\n"
-			"NULL	NULL	NULL	MERGE TABLE	NULL\n"
-			"NULL	NULL	NULL	REMOTE TABLE	NULL\n"
-			"NULL	NULL	NULL	REPLICA TABLE	NULL\n"
-			"NULL	NULL	NULL	SYSTEM TABLE	NULL\n"
-			"NULL	NULL	NULL	SYSTEM VIEW	NULL\n"
-			"NULL	NULL	NULL	TABLE	NULL\n"
-			"NULL	NULL	NULL	UNLOGGED TABLE	NULL\n"
-			"NULL	NULL	NULL	VIEW	NULL\n");
+	compareResult(stmt, ret, "SQLTables (SQL_ALL_TABLE_TYPES)",
+		"Resultset with 5 columns\n"
+		"table_cat	table_schem	table_name	table_type	remarks\n"
+		"NULL	NULL	NULL	GLOBAL TEMPORARY TABLE	NULL\n"
+		"NULL	NULL	NULL	LOCAL TEMPORARY TABLE	NULL\n"
+		"NULL	NULL	NULL	MERGE TABLE	NULL\n"
+		"NULL	NULL	NULL	REMOTE TABLE	NULL\n"
+		"NULL	NULL	NULL	REPLICA TABLE	NULL\n"
+		"NULL	NULL	NULL	SYSTEM TABLE	NULL\n"
+		"NULL	NULL	NULL	SYSTEM VIEW	NULL\n"
+		"NULL	NULL	NULL	TABLE	NULL\n"
+		"NULL	NULL	NULL	UNLOGGED TABLE	NULL\n"
+		"NULL	NULL	NULL	VIEW	NULL\n");
 
+	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"keywords", SQL_NTS);
+	compareResult(stmt, ret, "SQLPrimaryKeys (sys, keywords)",
+		"Resultset with 6 columns\n"
+		"table_cat	table_schem	table_name	column_name	key_seq	pk_name\n"
+		"mTests_sql_odbc_samples	sys	keywords	keyword	1	keywords_keyword_pkey\n");
+
+	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
+			SQL_SCOPE_SESSION, SQL_NO_NULLS);
+	compareResult(stmt, ret, "SQLSpecialColumns (sys, table_types)",
+		"Resultset with 8 columns\n"
+		"scope	column_name	data_type	type_name	column_size	buffer_length	decimal_digits	pseudo_column\n"
+		"1	table_type_id	5	SMALLINT	16	6	0	1\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
+			SQL_INDEX_UNIQUE, SQL_QUICK);
+	compareResult(stmt, ret, "SQLStatistics (sys, table_types)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	NULL	NULL	NULL\n");
+
+
+	// cleanup
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle (STMT)");
 
