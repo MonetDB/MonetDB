@@ -614,7 +614,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT** cands)
 
 		if (res == LOG_OK && tr_grow(tr) == GDK_SUCCEED) {
 			tr->changes[tr->nr].type = l->flag;
-			if (l->flag==LOG_UPDATE_BULK && cands && offset == -1) {
+			if (l->flag==LOG_UPDATE_BULK && offset == -1) {
+				assert(cands); // bat r is part of a group of bats logged together.
 				struct canditer ci;
 				canditer_init(&ci, NULL, *cands);
 				const oid first = canditer_peek(&ci);
