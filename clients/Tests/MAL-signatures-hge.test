@@ -49435,7 +49435,7 @@ SQLalter_table;
 Catalog operation alter_table
 sqlcatalog
 alter_user
-pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str):void 
+pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str):void 
 SQLalter_user;
 Catalog operation alter_user
 sqlcatalog
@@ -49480,7 +49480,7 @@ SQLcreate_type;
 Catalog operation create_type
 sqlcatalog
 create_user
-pattern sqlcatalog.create_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str):void 
+pattern sqlcatalog.create_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:lng, X_7:int, X_8:str, X_9:str):void 
 SQLcreate_user;
 Catalog operation create_user
 sqlcatalog
