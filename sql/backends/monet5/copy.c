@@ -24,25 +24,30 @@ COPYread(lng *ret_nread, Stream *stream_arg, lng *block_size_arg, bat *block_bat
 	stream *s = *stream_arg;
 	lng block_size = *block_size_arg;
 	bat b = *block_bat_arg;
+	BUN start;
+	BUN newcap;
 	BAT *bat = NULL;
 	lng nread;
 
 	bat = BATdescriptor(b);
+	if (!bat)
+		bailout("copy.read", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (bat->batRole != TRANSIENT) {
 		bailout("copy.read", SQLSTATE(42000) "can only read into transient BAT");
 	}
-	BATclear(bat, true);
 
-	if (BATcapacity(bat) < (BUN)block_size && BATextend(bat, block_size) != GDK_SUCCEED) {
+	newcap = BATcount(bat) + block_size;
+	if (BATcapacity(bat) < newcap && BATextend(bat, newcap) != GDK_SUCCEED) {
 		bailout("copy.read", "%s", GDK_EXCEPTION);
 	}
 
-	nread = mnstr_read(s, Tloc(bat, 0), 1, block_size);
+	start = BATcount(bat);
+	nread = mnstr_read(s, Tloc(bat, start), 1, block_size);
 	if (nread < 0) {
 		bailout("copy.read", SQLSTATE(42000) "%s", mnstr_peek_error(s));
 	}
 
-	BATsetcount(bat, nread);
+	BATsetcount(bat, start + nread);
 	bat->batInserted = 0;
 	// it would be very surprising if the bytes we just read were ordered or unique!
 	bat->tkey = false;
@@ -422,7 +427,7 @@ end:
 
 
 static mel_func copy_init_funcs[] = {
- command("copy", "read", COPYread, true, "Clear the BAT and read 'block_size' bytes into it from 's'",
+ command("copy", "read", COPYread, true, "Read 'block_size' bytes into 'block' from 's'",
 	args(1, 4,
 		arg("",lng),
 		arg("stream", streams), arg("block_size", lng), batarg("block", bte)
