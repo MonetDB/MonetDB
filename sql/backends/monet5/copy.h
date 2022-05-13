@@ -29,9 +29,7 @@ void copy_report_error(struct error_handling *restrict admin, int rel_row, _In_z
 
 typedef str (*bulk_converter)(struct error_handling*, void *parms, int count, void *dest, char *data, int *offsets);
 
-str parse_fixed_width_column(bat *ret, const char *fname, bat block_bat_id, bat offsets_bat_id, int tpe, bulk_converter f, void *parms);
-
-
+extern str parse_fixed_width_column(bat *ret, const char *fname, bat block_bat_id, bat offsets_bat_id, int tpe, bulk_converter f, void *parms);
 extern str COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str COPYparse_integer_bte(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *dummy);
 extern str COPYparse_integer_sht(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *dummy);
@@ -53,6 +51,20 @@ struct decimal_parms {
 	int digits;
 	int scale;
 };
+
+extern int scan_fields(
+	char *data_start, int skip_amount, char *data_end,
+	int col_sep, int line_sep, int quote, bool backslash_escapes, char *null_repr,
+	int ncols, int nrows, int **columns);
+
+extern str COPYset_blocksize(int *dummy, int *blocksize);
+extern str COPYget_blocksize(int *blocksize);
+extern str COPYset_parallel(bit *dummy, int *level);
+extern str COPYget_parallel(int *level);
+extern str COPYstr2buf(bat *bat_id, str *s);
+extern str COPYbuf2str(str *ret, bat *bat_id);
+
+void dump_block(const char *msg, BAT *b);
 
 
 #ifdef __GNUC__
