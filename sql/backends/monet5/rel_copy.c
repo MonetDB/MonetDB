@@ -258,77 +258,6 @@ emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
 	getDestVar(q) = loop_vars->loop_barrier;
 }
 
-
-static stmt *
-rel2bin_dummy_loop(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
-{
-	(void)rel;
-	(void)refs;
-	(void)copyfrom;
-	MalBlkPtr mb = be->mb;
-	InstrPtr q;
-
-	q = newStmt(mb, "copy", "reset_clock");
-
-	q = newStmt(mb, "bat", "new");
-	q = pushNil(mb, q, TYPE_bte);
-	q = pushLng(mb, q, 2015);
-	int var_item = getDestVar(q);
-
-	q = newStmt(mb, "pipeline", "channel");
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
-	q = pushArgument(mb, q, var_item);
-	int var_mailbox = getArg(q, 0);
-	int var_channel = getArg(q, 1);
-
-	q = newStmt(mb, languageRef, pipelinesRef);
-	q->barrier = BARRIERsymbol;
-	setArgType(mb, q, 0, TYPE_bit);
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
-	q = pushInt(mb, q, -1);
-	int var_loop = getArg(q, 0);
-	int var_iter_id = getArg(q, 1);
-	int var_handle = getArg(q, 2);
-
-	q = newStmt(mb, "calc", ">");
-	q->barrier = LEAVEsymbol;
-	q = pushArgument(mb, q, var_iter_id);
-	q = pushInt(mb, q, 2);
-	getDestVar(q) = var_loop;
-
-	q = newStmt(mb, "pipeline", "recv");
-	q = pushArgument(mb, q, var_handle);
-	q = pushArgument(mb, q, var_mailbox);
-	q = pushArgument(mb, q, var_channel);
-	int var_token = getDestVar(q);
-
-	q = newStmt(mb, "copy", "work");
-	q = pushLng(mb, q, 1);
-	q = pushStr(mb, q, "FOO");
-	q = pushArgument(mb, q, var_iter_id);
-
-	q = newStmt(mb, "pipeline", "send");
-	q = pushArgument(mb, q, var_handle);
-	q = pushArgument(mb, q, var_mailbox);
-	q = pushArgument(mb, q, var_channel);
-	q = pushArgument(mb, q, var_token);
-
-	q = newAssignment(mb);
-	q->barrier = EXITsymbol;
-	getDestVar(q) = var_loop;
-
-	q = newAssignment(mb);
-	q = pushLng(mb, q, 2);
-	int var_total_row_count = getDestVar(q);
-
-	add_to_rowcount_accumulator(be, var_total_row_count);
-	// dump_code(-1);
-	stmt *dummy_stmt = stmt_none(be);
-	(void)rel; (void)refs; (void)copyfrom;
-	return dummy_stmt;
-}
-
 stmt *
 rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
@@ -338,8 +267,6 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 			return NULL;
 		case 1:
 			break; // main case, below
-		case 2:
-			return rel2bin_dummy_loop(be, rel, refs, copyfrom);
 		default:
 			assert(0 /* invalid parallel level */);
 			return NULL;

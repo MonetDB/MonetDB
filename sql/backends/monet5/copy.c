@@ -864,43 +864,6 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, _In_z_ _Pr
 }
 
 
-
-static str
-COPYpair_assign(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void)cntxt;
-	(void)mb;
-
-	int tpe = getArgGDKType(mb, pci, 2);
-	stk->stk[pci->argv[0]] = stk->stk[pci->argv[2]];
-	stk->stk[pci->argv[1]] = stk->stk[pci->argv[3]];
-
-	(void)tpe;
-	return MAL_SUCCEED;
-}
-
-static str
-COPYpair_assign_bats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void)cntxt;
-	(void)mb;
-	(void)stk;
-	(void)pci;
-
-	bat left = *getArgReference_bat(stk, pci, 2);
-	bat right = *getArgReference_bat(stk, pci, 3);
-
-	if (!is_bat_nil(left))
-		BBPretain(left);
-	if (!is_bat_nil(right))
-		BBPretain(right);
-
-	*getArgReference_bat(stk, pci, 0) = left;
-	*getArgReference_bat(stk, pci, 1) = right;
-
-	return MAL_SUCCEED;
-}
-
 static str
 COPYset_blocksize(int *dummy, int *blocksize)
 {
@@ -994,40 +957,6 @@ end:
 	return msg;
 }
 
-static struct timeval start_time = { 0 };
-
-static double
-elapsed_ms(void)
-{
-	struct timeval now;
-	gettimeofday(&now, NULL);
-	double sec = now.tv_sec - start_time.tv_sec;
-	double usec = now.tv_usec - start_time.tv_usec;
-	return sec + usec / 1000000;
-}
-
-static str
-COPYreset_clock(bit *ret)
-{
-	(void)ret;
-	gettimeofday(&start_time, NULL);
-	fprintf(stderr, "RESET CLOCK\n");
-	*ret = true;
-	return MAL_SUCCEED;
-}
-
-static str
-COPYwork(bit *ret, lng *sleep, str *msg, int *iter)
-{
-	const char *name = MT_thread_getname();
-	int ticks = (int) (*sleep * 100);
-	fprintf(stderr, "%08.3f %s start %d/%s\n", elapsed_ms(), name, *iter, *msg);
-	MT_sleep_ms(ticks);
-	fprintf(stderr, "%08.3f %s stop  %d/%s\n", elapsed_ms(), name, *iter, *msg);
-	*ret = true;
-	return MAL_SUCCEED;
-}
-
 
 static mel_func copy_init_funcs[] = {
  command("copy", "read", COPYread, true, "Clear the BAT and read 'block_size' bytes into it from 's'",
@@ -1115,23 +1044,6 @@ static mel_func copy_init_funcs[] = {
 	arg("", int)
  )),
 
- // temporary
- pattern("copy", "send", COPYpair_assign, false, "dummy", args(2, 4,
-	argany("", 1), argany("", 1),
-	argany("chan_val", 1), argany("nil_val", 1)
- )),
- pattern("copy", "recv", COPYpair_assign, false, "dummy", args(2, 4,
-	argany("", 1), argany("", 1),
-	argany("chan_val", 1), argany("nil_val", 1)
- )),
- pattern("copy", "send", COPYpair_assign_bats, false, "dummy", args(2, 4,
-	batargany("", 1), batargany("", 1),
-	batargany("chan_val", 1), batargany("nil_val", 1)
- )),
- pattern("copy", "recv", COPYpair_assign_bats, false, "dummy", args(2, 4,
-	batargany("", 1), batargany("", 1),
-	batargany("chan_val", 1), batargany("nil_val", 1)
- )),
 
  // for testing
  command("copy", "str2buf", COPYstr2buf, false, "turn str into bat[:bte]", args(1, 2,
@@ -1141,14 +1053,6 @@ static mel_func copy_init_funcs[] = {
  command("copy", "buf2str", COPYbuf2str, false, "turn bat[:bte] into str", args(1, 2,
 	arg("str", str),
 	batarg("", bte),
- )),
-
- command("copy", "reset_clock", COPYreset_clock, true, "reset the work clock", args(1, 1,
-	arg("", bit)
- )),
- command("copy", "work", COPYwork, true, "pretend to do some work", args(1, 4,
-	arg("", bit),
-	arg("sleep", lng), arg("msg", str), arg("arg", int)
  )),
 
  { .imp=NULL }
