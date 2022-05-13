@@ -18,5 +18,3 @@ _Noreturn void segvhandler(int sig);
 void reinitialize(void);
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

@@ -126,5 +126,3 @@ find_package(Reprepro)
 find_package(Semodule)
 find_package(Awk)
 find_package(Candle)
-
-# vim: set ts=2:sw=2:et

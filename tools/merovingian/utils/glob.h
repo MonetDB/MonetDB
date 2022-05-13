@@ -12,5 +12,3 @@
 bool db_glob(const char *expr, const char *haystack);
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

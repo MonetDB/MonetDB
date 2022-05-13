@@ -893,6 +893,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 	int i, nlen = 0;
 	char buf[16];
 
+	ATOMIC_SET(&GDKstopped, 0);
+
 	mainpid = MT_getpid();
 
 	if (GDKinmemory(0)) {

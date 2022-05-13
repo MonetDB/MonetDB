@@ -14,5 +14,3 @@
 err startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client);
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */
