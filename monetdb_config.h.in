@@ -176,6 +176,7 @@
 #cmakedefine HAVE_ICONV 1
 #cmakedefine HAVE_PTHREAD_H 1
 #cmakedefine HAVE_LIBPCRE 1
+#define OPENSSL_SUPPRESS_DEPRECATED
 #cmakedefine HAVE_OPENSSL 1
 #cmakedefine HAVE_COMMONCRYPTO 1
 #cmakedefine HAVE_LIBBZ2 1
