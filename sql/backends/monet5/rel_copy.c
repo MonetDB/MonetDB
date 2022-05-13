@@ -119,7 +119,6 @@ emit_onserver_loop(
 	int var_line_sep, int var_quote_char, int var_escape)
 {
 	InstrPtr q;
-	int streams_type = ATOMindex("streams");
 	int bte_bat_type = newBatType(TYPE_bte);
 	int alloc = allocation_size(block_size);
 
@@ -154,36 +153,11 @@ emit_onserver_loop(
 	q = pushLng(mb, q, alloc);
 	int var_next_block = getDestVar(q);
 
-	// START READ BLOCK
-	q = newStmt(mb, "calc", "isnotnil");
-	q->barrier = BARRIERsymbol;
-	q = pushArgument(mb, q, var_s);
-	int var_read_barrier = getDestVar(q);
-
 	q = newStmt(mb, "copy", "read");
 	q = pushArgument(mb, q, var_s);
 	q = pushLng(mb, q, block_size);
 	q = pushArgument(mb, q, var_next_block);
-	int var_nread = getDestVar(q);
-
-	// can't we just move the LEAVE to the previous stmt?
-	q = newStmt(mb, "calc", ">");
-	q->barrier = LEAVEsymbol;
-	setReturnArgument(q, var_read_barrier);
-	q = pushArgument(mb, q, var_nread);
-	q = pushLng(mb, q, 0);
-
-	q = newStmt(mb, "streams", "close");
-	q = pushArgument(mb, q, var_s);
-
-	q = newAssignment(mb);
-	setReturnArgument(q, var_s);
-	q = pushNil(mb, q, streams_type);
-
-	// END READ BLOCK
-	q = newAssignment(mb);
-	q->barrier = EXITsymbol;
-	getDestVar(q) = var_read_barrier;
+	setDestVar(q, var_s);
 
 	emit_send(mb, loop_vars->loop_handle, stream_channel_stmt, var_s);
 

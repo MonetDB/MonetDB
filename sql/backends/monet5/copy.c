@@ -18,16 +18,19 @@
 // #define BLOCK_DEBUG
 
 static str
-COPYread(lng *ret_nread, Stream *stream_arg, lng *block_size_arg, bat *block_bat_arg)
+COPYread(Stream *stream_out_arg, Stream *stream_in_arg, lng *block_size_arg, bat *block_bat_arg)
 {
 	str msg = MAL_SUCCEED;
-	stream *s = *stream_arg;
+	stream *s = *stream_in_arg;
 	lng block_size = *block_size_arg;
 	bat b = *block_bat_arg;
 	BUN start;
 	BUN newcap;
 	BAT *bat = NULL;
 	lng nread;
+
+	if (s == NULL)
+		goto end;
 
 	bat = BATdescriptor(b);
 	if (!bat)
@@ -56,11 +59,17 @@ COPYread(lng *ret_nread, Stream *stream_arg, lng *block_size_arg, bat *block_bat
 	bat->tsorted = false;
 	bat->trevsorted = false;
 
-	*ret_nread = nread;
+	if (nread == 0){
+		mnstr_close(s);
+		s = NULL;
+	}
 #ifdef BLOCK_DEBUG
 	dump_block("just read", bat);
 #endif
 end:
+	if (msg == MAL_SUCCEED) {
+		*stream_out_arg = s;
+	}
 	if (bat != NULL)
 		BBPunfix(bat->batCacheid);
 	return msg;
@@ -429,7 +438,7 @@ end:
 static mel_func copy_init_funcs[] = {
  command("copy", "read", COPYread, true, "Read 'block_size' bytes into 'block' from 's'",
 	args(1, 4,
-		arg("",lng),
+		arg("",streams),
 		arg("stream", streams), arg("block_size", lng), batarg("block", bte)
  )),
  command("copy", "fixlines", COPYfixlines, true, "Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied",
