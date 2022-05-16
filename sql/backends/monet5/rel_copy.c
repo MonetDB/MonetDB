@@ -116,8 +116,9 @@ static void
 emit_onserver_loop(
 	MalBlkPtr mb, struct loop_vars *loop_vars,
 	int var_fname, int block_size,
-	int var_line_sep, int var_quote_char, int var_escape)
+	int var_line_sep, int var_quote_char, int var_escape, int var_offset)
 {
+	(void)var_offset;
 	InstrPtr q;
 	int bte_bat_type = newBatType(TYPE_bte);
 	int alloc = allocation_size(block_size);
@@ -125,13 +126,49 @@ emit_onserver_loop(
 	// set up the stream channel
 	q = newStmt(mb, "streams", "openRead");
 	q = pushArgument(mb, q, var_fname);
-	InstrPtr stream_channel_stmt = emit_channel(mb, getDestVar(q));
+	int var_stream = getDestVar(q);
 
-	// set up the block channel
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
 	q = pushLng(mb, q, alloc);
-	InstrPtr block_channel_stmt = emit_channel(mb, getDestVar(q));
+	int var_block = getDestVar(q);
+
+	// emit the offset handling
+	q = newStmt(mb, "calc", ">");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_offset);
+	q = pushLng(mb, q, 0);
+	int offset_handling = getDestVar(q);
+
+	q = newStmt(mb, "calc", "isnil");
+	q->barrier = LEAVEsymbol;
+	q = pushArgument(mb, q, var_stream);
+	setDestVar(q, offset_handling);
+
+	q = newStmt(mb, "copy", "read");
+	q = pushArgument(mb, q, var_stream);
+	q = pushLng(mb, q, block_size);
+	q = pushArgument(mb, q, var_block);
+	setDestVar(q, var_stream);
+
+	q = newStmt(mb, "copy", "skiplines");
+	q = pushArgument(mb, q, var_block);
+	q = pushArgument(mb, q, var_offset);
+	setDestVar(q, var_offset);
+
+	q = newStmt(mb, "calc", ">");
+	q->barrier = REDOsymbol;
+	q = pushArgument(mb, q, var_offset);
+	q = pushLng(mb, q, 0);
+	setDestVar(q, offset_handling);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	setDestVar(q, offset_handling);
+
+	// set up the channels
+	InstrPtr stream_channel_stmt = emit_channel(mb, var_stream);
+	InstrPtr block_channel_stmt = emit_channel(mb, var_block);
 
 
 	// START LOOP
@@ -289,10 +326,24 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushInt(mb, q, 0);
 	var_escape = getDestVar(q);
 
+	// convert offset to 0-based
+	q = newStmt(mb, "calc", ">");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_offset);
+	q = pushLng(mb, q, 0);
+	int offset_calculation = getDestVar(q);
+
+	q = newStmt(mb, "calc", "-");
+	q = pushArgument(mb, q, var_offset);
+	q = pushLng(mb, q, 1);
+	setDestVar(q, var_offset);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	setDestVar(q, offset_calculation);
 
 	// TODO: Deal with the following
 	(void)var_num_rows;
-	(void)var_offset;
 	(void)var_best_effort;
 	(void)var_on_client;
 	(void)var_fixed_width;
@@ -306,7 +357,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushNil(mb, q, TYPE_bit);
 	InstrPtr claim_channel_stmt = emit_channel(mb, getDestVar(q));
 
-	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape);
+	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape, var_offset);
 
 	int var_claim_token = emit_receive(mb, loop_vars.loop_handle, claim_channel_stmt);
 
