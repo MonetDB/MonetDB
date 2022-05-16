@@ -1857,6 +1857,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	bool with_strimps = false;
 	bool with_strimps_anti = false;
 	BUN p = 0, q = 0, rcnt = 0;
+	bool use_strimps = true;
 	struct canditer ci;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1886,19 +1887,22 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	 * taking extra care to not return NULLs. This currently means that we do not run strimps for NOT LIKE queries if
 	 * the BAT contains NULLs.
 	 */
-	if (BAThasstrimps(b)) {
-		BAT *tmp_s = STRMPfilter(b, s, *pat, *anti);
-		if (tmp_s) {
-			old_s = s;
-			s = tmp_s;
-			if (!*anti)
-				with_strimps = true;
-			else
-				with_strimps_anti = true;
+	if (use_strimps) {
+		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
+			BAT *tmp_s = STRMPfilter(b, s, *pat, *anti);
+			if (tmp_s) {
+				old_s = s;
+				s = tmp_s;
+				if (!*anti)
+					with_strimps = true;
+				else
+					with_strimps_anti = true;
+			}
 		} else { /* If we cannot filter with the strimp just continue normally */
 			GDKclrerr();
 		}
 	}
+
 
 	MT_thread_setalgorithm(use_strcmp ? (with_strimps ? "pcrelike: pattern matching using strcmp with strimps" : (with_strimps_anti ? "pcrelike: pattern matching using strcmp with strimps anti" : "pcrelike: pattern matching using strcmp")) :
 						   use_re ? (with_strimps ? "pcrelike: pattern matching using RE with strimps" : (with_strimps_anti ? "pcrelike: patterm matching using RE with strimps anti" : "pcrelike: pattern matching using RE")) :
