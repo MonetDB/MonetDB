@@ -423,12 +423,12 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT** cands)
 				if (BATcount(*cands) == 0 || lg->flushing) {
 					// when flushing, we only need the offset and count of the last segment of inserts.
 					assert((*cands)->ttype == TYPE_void);
-					BATtseqbase(*cands, offset);
-					BATsetcount(*cands, nr);
+					BATtseqbase(*cands, (oid) offset);
+					BATsetcount(*cands, (BUN) nr);
 				}
 				else if (!lg->flushing) {
 					assert(BATcount(*cands) > 0);
-					BAT* dense = BATdense(0,offset, nr);
+					BAT* dense = BATdense(0, (oid) offset, (BUN) nr);
 					BAT* newcands = NULL;
 					if (!dense ) {
 						res = LOG_ERR;
