@@ -467,10 +467,7 @@ BATcheckstrimps(BAT *b)
 		GDKfree(hp);
 		GDKclrerr();	/* we're not currently interested in errors */
 	}
-	/* The string imprint is initialized if the strimp pointer is
-	 * not null and the number of bitstrings is equal to the bat
-	 * count.
-	 */
+
 	ret = b->tstrimps != NULL;
 	if (ret) {
 		TRC_DEBUG(ACCELERATOR,
@@ -517,9 +514,11 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 		pb = b;
 	}
 
-	if (!BATcheckstrimps(pb))
-		goto sfilter_fail;
 	MT_lock_set(&pb->batIdxLock);
+	if (!BATcheckstrimps(pb)) {
+		MT_lock_unset(&pb->batIdxLock);
+		goto sfilter_fail;
+	}
 	strmps = pb->tstrimps;
 	STRMPincref(strmps);
 	MT_lock_unset(&pb->batIdxLock);
@@ -725,6 +724,7 @@ BAThasstrimps(BAT *b)
  */
 #define STRIMP_COMPLETE(b)						\
 	b->tstrimps != NULL &&						\
+		b->tstrimps != (Strimps *)1 &&				\
 		((b->tstrimps->strimps.free - ((char *)b->tstrimps->bitstrings_base - b->tstrimps->strimps.base)) == b->batCount*sizeof(uint64_t))
 
 
@@ -775,6 +775,9 @@ STRMPcreate(BAT *b, BAT *s)
 		MT_lock_unset(&pb->batIdxLock);
 	}
 
+	if (STRIMP_COMPLETE(pb)) {
+		return GDK_SUCCEED;
+	}
 	r = pb->tstrimps;
 	assert(r);
 	dh = (uint64_t *)r->bitstrings_base + b->hseqbase;
@@ -798,46 +801,6 @@ STRMPcreate(BAT *b, BAT *s)
 		persistStrimp(pb);
 	}
 	MT_lock_unset(&b->batIdxLock);
-
-
-	/*
-	  if (pb->tstrimps == NULL) {
-		MT_lock_set(&pb->batIdxLock);
-		if (pb->tstrimps == NULL) {
-			Strimps *r;
-			BATiter bi;
-			BUN i;
-			oid x;
-			struct canditer ci;
-			uint64_t *dh;
-
-			if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
-				MT_lock_unset(&pb->batIdxLock);
-				return GDK_FAIL;
-			}
-			dh = (uint64_t *)r->bitstrings_base;
-
-			canditer_init(&ci, pb, NULL);
-			bi = bat_iterator(pb);
-			for (i = 0; i < ci.ncand; i++) {
-				x = canditer_next(&ci);
-				const char *cs = BUNtvar(bi, x);
-				if (!strNil(cs)) {
-					*dh++ = STRMPmakebitstring(cs, r);
-					assert((*(dh - 1) & ((uint64_t)0x1 << (STRIMP_PAIRS))) == 0);
-				}
-				else
-					*dh++ = (uint64_t)0x1 << (STRIMP_PAIRS);
-			}
-			bat_iterator_end(&bi);
-
-			r->strimps.free += ci.ncand*sizeof(uint64_t);
-			pb->tstrimps = r;
-			persistStrimp(pb);
-		}
-		MT_lock_unset(&pb->batIdxLock);
-	}
-	*/
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
