@@ -409,6 +409,8 @@ BATcheckstrimps(BAT *b)
 		const char *nme = BBP_physical(b->batCacheid);
 		int fd;
 
+		MT_thread_setalgorithm("read strimp index from disk");
+
 		b->tstrimps = NULL;
 		if ((hp = GDKzalloc(sizeof(Strimps))) != NULL &&
 		    (hp->strimps.farmid = BBPselectfarm(b->batRole, b->ttype, strimpheap)) >= 0) {
@@ -741,7 +743,6 @@ STRMPcreate(BAT *b, BAT *s)
 	struct canditer ci;
 	uint64_t *dh;
 
-	MT_thread_setalgorithm("create strimp index");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	TRC_DEBUG(ACCELERATOR, "creating strimp");
 	if (ATOMstorage(b->ttype) != TYPE_str) {
@@ -778,6 +779,8 @@ STRMPcreate(BAT *b, BAT *s)
 	if (STRIMP_COMPLETE(pb)) {
 		return GDK_SUCCEED;
 	}
+
+	MT_thread_setalgorithm("create strimp index");
 	r = pb->tstrimps;
 	assert(r);
 	dh = (uint64_t *)r->bitstrings_base + b->hseqbase;
