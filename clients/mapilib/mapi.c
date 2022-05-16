@@ -3476,6 +3476,7 @@ mapi_prepare(Mapi mid, const char *cmd)
 				hdl->query = NULL;		\
 				return;				\
 			}					\
+			hdl->query = q;				\
 		}						\
 	} while (0)
 
