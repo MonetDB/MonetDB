@@ -75,6 +75,49 @@ end:
 	return msg;
 }
 
+static str
+COPYskiplines(lng *toskip_out, bat *block_bat, lng *toskip_in)
+{
+	str msg = MAL_SUCCEED;
+	lng toskip = *toskip_in;
+	BAT *block = NULL;
+	char *start, *pos, *end;
+
+	if (!toskip)
+		goto end;
+
+	block = BATdescriptor(*block_bat);
+	if (!block)
+		bailout("copy.skiplines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	start = Tloc(block, 0);
+	pos = start;
+	end = Tloc(block, BATcount(block));
+	while (toskip && pos < end) {
+		char *p = memchr(pos, '\n', end - pos);
+		if (!p) {
+			// discard everything but do not decrement toskip
+			pos = end;
+			break;
+		}
+		pos = p + 1;
+		toskip--;
+	}
+
+	if (pos > start) {
+		size_t n = end - pos;
+		memmove(start, pos, n);
+		BATsetcount(block, n);
+	}
+
+	end:
+	*toskip_out = toskip;
+	if (block) {
+		BBPunfix(block->batCacheid);
+	}
+	return msg;
+}
+
 static int
 get_sep_char(str sep, bool backslash_escapes)
 {
@@ -440,6 +483,10 @@ static mel_func copy_init_funcs[] = {
 	args(1, 4,
 		arg("",streams),
 		arg("stream", streams), arg("block_size", lng), batarg("block", bte)
+ )),
+ command("copy", "skiplines", COPYskiplines, true, "Skip the first N lines in the buffer", args(1, 3,
+	arg("", lng),
+	batarg("block", bte),arg("toskip", lng)
  )),
  command("copy", "fixlines", COPYfixlines, true, "Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied",
 	args(3, 8,
