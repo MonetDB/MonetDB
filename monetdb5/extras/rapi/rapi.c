@@ -467,10 +467,12 @@ static char *RAPIinitialize(void) {
 	if ((e = RAPIinstalladdons()) != 0) {
 		return e;
 	}
+#if R_VERSION < R_Version(4,2,0)
 	// patch R internals to disallow quit and system. Setting them to NULL produces an error.
 	SET_INTERNAL(install("quit"), R_NilValue);
 	// install.packages() uses system2 to call gcc etc., so we cannot disable it (perhaps store the pointer somewhere just for that?)
 	//SET_INTERNAL(install("system"), R_NilValue);
+#endif
 
 	rapiInitialized = true;
 	return NULL;
