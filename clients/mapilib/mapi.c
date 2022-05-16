@@ -1046,15 +1046,15 @@ static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
 			return (e);					\
 		}							\
 	} while (0)
-#define REALLOC(p, c)						\
-	do {							\
-		if (p) {					\
-			void *tmp = (p);			\
-			(p) = realloc((p), (c) * sizeof(*(p)));	\
-			if ((p) == NULL)			\
-				free(tmp);			\
-		} else						\
-			(p) = malloc((c) * sizeof(*(p)));	\
+#define REALLOC(p, c)							\
+	do {								\
+		if (p) {						\
+			void *tmp = realloc((p), (c) * sizeof(*(p)));	\
+			if (tmp == NULL)				\
+				free(p);				\
+			(p) = tmp;					\
+		} else							\
+			(p) = malloc((c) * sizeof(*(p)));		\
 	} while (0)
 
 /*
@@ -3469,11 +3469,11 @@ mapi_prepare(Mapi mid, const char *cmd)
 	do {							\
 		/* note: k==strlen(hdl->query) */		\
 		if (k+len >= lim) {				\
-			char *q = hdl->query;			\
 			lim = k + len + MAPIBLKSIZE;		\
-			hdl->query = realloc(hdl->query, lim);	\
-			if (hdl->query == NULL) {		\
-				free(q);			\
+			char *q = realloc(hdl->query, lim);	\
+			if (q == NULL) {			\
+				free(hdl->query);		\
+				hdl->query = NULL;		\
 				return;				\
 			}					\
 		}						\
@@ -3609,11 +3609,11 @@ mapi_param_store(MapiHdl hdl)
 				val = mapi_quote(buf, 1);
 				/* note: k==strlen(hdl->query) */
 				if (k + strlen(val) + 3 >= lim) {
-					char *q = hdl->query;
 					lim = k + strlen(val) + 3 + MAPIBLKSIZE;
-					hdl->query = realloc(hdl->query, lim);
-					if (hdl->query == NULL) {
-						free(q);
+					char *q = realloc(hdl->query, lim);
+					if (q == NULL) {
+						free(hdl->query);
+						hdl->query = NULL;
 						free(val);
 						return;
 					}
@@ -3626,11 +3626,11 @@ mapi_param_store(MapiHdl hdl)
 				val = mapi_quote((char *) src, hdl->params[i].sizeptr ? *hdl->params[i].sizeptr : -1);
 				/* note: k==strlen(hdl->query) */
 				if (k + strlen(val) + 3 >= lim) {
-					char *q = hdl->query;
 					lim = k + strlen(val) + 3 + MAPIBLKSIZE;
-					hdl->query = realloc(hdl->query, lim);
-					if (hdl->query == NULL) {
-						free(q);
+					char *q = realloc(hdl->query, lim);
+					if (q == NULL) {
+						free(hdl->query);
+						hdl->query = NULL;
 						free(val);
 						return;
 					}
