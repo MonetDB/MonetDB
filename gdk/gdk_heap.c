@@ -164,8 +164,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 	if (!GDKinmemory(h->farmid) && h->base == NULL) {
 		char *nme;
 
-		if (h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))
-			fprintf(stderr, "#%s:  emergency mmap %11zu %11zu %11zu\n", __func__, h->size, (size_t) GDKmem_cursize(), (size_t) GDKvm_cursize());
 		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
 		if (nme == NULL)
 			return GDK_FAIL;
@@ -274,8 +272,6 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			/* too big: convert it to a disk-based temporary heap */
 			bool existing = false;
 
-			if (size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))
-				fprintf(stderr, "#%s: emergency mmap %11zu %11zu %11zu\n", __func__, h->size, (size_t) GDKmem_cursize(), (size_t) GDKvm_cursize());
 			assert(h->storage == STORE_MEM);
 			assert(ext != NULL);
 			/* if the heap file already exists, we want to switch
@@ -765,8 +761,6 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		h->storage = h->newstorage = h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
 			(allocated = GDKmem_cursize()) < GDK_mem_maxsize &&
 			h->size < ((GDK_mem_maxsize - allocated) >> 6) ? STORE_MEM : STORE_MMAP;
-		if (h->storage == STORE_MMAP && h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))
-			fprintf(stderr, "#%s: emergency mmap %11zu %11zu\n", __func__, h->size, (size_t) GDKmem_cursize());
 	}
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
