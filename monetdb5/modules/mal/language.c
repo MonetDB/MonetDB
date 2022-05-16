@@ -268,7 +268,7 @@ MALpipelines( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (pc < 0 || pc > pci->jump)
 		throw(MAL, "language.pipelines", "Illegal statement range");
-	*res = TRUE;
+	*res = maxparts > 0;
 	*curpart = maxparts;
 	return runMALpipelines(cntxt, mb, pc, pci->jump, maxparts, stk);
 }

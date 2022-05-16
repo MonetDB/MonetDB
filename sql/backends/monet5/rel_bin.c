@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 
 #include "rel_bin.h"
+#include "rel_copy.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
@@ -54,7 +55,6 @@ get_pipeline(backend *be)
 	return be->ppstmt;
 }
 
-static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 
@@ -69,7 +69,7 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
 	be->mvc->errstr[0] = '\0';
 }
 
-static void
+void
 add_to_rowcount_accumulator(backend *be, int nr)
 {
 	if (be->silent)
@@ -5097,9 +5097,229 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
+// Call this from the debugger at any time to see how code generation proceeds.
+void dump_code(int);
+static struct {
+	MalBlkPtr mb;
+	int pos;
+} dump_code_state;
+void
+dump_code(int starting_point)
+{
+	stream *s = stderr_wastream();
+	MalBlkPtr mb = dump_code_state.mb;
+	int start = starting_point >= 0 ? starting_point : dump_code_state.pos;
+	int stop = mb->stop;
+
+	mnstr_printf(s, "\n");
+	mnstr_printf(s, "Found %d new statements:\n", stop - start);
+	for (int i = start; i < stop; i++) {
+		str line = instruction2str(mb, NULL, getInstrPtr(mb, i), LIST_MAL_ALL);
+		if (line != NULL) {
+			mnstr_printf(s, "%d: %s\n", i, line);
+			GDKfree(line);
+		} else {
+			mnstr_printf(s, "// %d?\n", i);
+		}
+	}
+
+	mnstr_close(s);
+
+	dump_code_state.pos = stop;
+}
+
+static ValPtr
+atom_argument(node *node, int arg, int typ)
+{
+	while (arg-- > 0)
+		node = node->next;
+
+	sql_exp *e = node->data;
+	assert(e != NULL);
+	if (e == NULL)
+		return NULL;
+
+	atom *a = e->l;
+	assert(a != NULL);
+	if (a == NULL)
+		return NULL;
+
+	int atyp = atom_type(a)->type->localtype;
+	assert(atyp == typ);
+	if (atyp != typ)
+		return NULL;
+
+	return &a->data;
+}
+
+// This is basically a long list of reasons not to use the new
+// code. The idea is that we'll gradually add support for more cases and shorten
+// this list until it disappears.
+static sql_exp*
+can_use_copyparpipe(sql_rel *rel)
+{
+	if (rel->flag & UPD_COMP) {
+		// special case copied from rel2bin_insert
+		rel = rel->r;
+	}
+	sql_rel *left = rel->l;
+
+	if (left->op != op_basetable)
+		return NULL;
+	sql_table *destination_table = left->l;
+	if (destination_table->s == NULL) {
+		// no schema means DECLAREd table, apparently those can't or don't need
+		// to use sql.claim.
+		return NULL;
+	}
+
+	// We don't yet know how to deal with indices that need to be updated or
+	// constraints that need to be checked.
+	if (destination_table->pkey != NULL)
+		return NULL;
+	if (destination_table->idxs != NULL && list_length(destination_table->idxs->l) > 0)
+		return NULL;
+	if (destination_table->keys != NULL && list_length(destination_table->keys->l) > 0)
+		return NULL;
+	if (destination_table->triggers != NULL && list_length(destination_table->triggers->l) > 0)
+		return NULL;
+
+
+	sql_rel *projection;
+	sql_rel *incoming;
+	sql_rel *p = rel->r;
+	if (p == NULL)
+		return NULL;
+	if (p->op == op_project) {
+		projection = p;
+		incoming = p->l;
+	} else {
+		projection = NULL;
+		incoming = p;
+	}
+	/* this seems to occur around foreign keys and it scares me */
+	if (projection && rel_is_ref(projection))
+		return NULL;
+
+	if (incoming == NULL) {
+		// happens for example with INSERT INTO foo VALUES (..),
+		// the values are in the projection's exps.
+		return NULL;
+	}
+	if (incoming->op != op_table)
+		return NULL;
+	if (rel_is_ref(incoming))
+		return NULL;
+	if (incoming->flag != TABLE_PROD_FUNC)
+		return NULL;
+
+	// Does anything scary happen in the projection?
+	if (projection) {
+		list *p_exps = projection->exps;
+		list *i_exps = incoming->exps;
+		node *np = p_exps->h;
+		node *ni = i_exps->h;
+		for (; np && ni; np = np->next, ni = ni->next) {
+			// exps are the same
+			sql_exp *p = np->data;
+			sql_exp *i = ni->data;
+			if (p->type != e_column)
+				return NULL;
+			if (i->type != e_column)
+				return NULL;
+			// compare relation name
+			if (p->l == NULL || i->l == NULL || strcmp((char*)p->l, (char*)i->l) != 0)
+				return NULL;
+			// compare column name
+			if (p->r == NULL || i->r == NULL || strcmp((char*)p->r, (char*)i->r) != 0)
+				return NULL;
+		}
+		// lists are same length
+		if ((np == NULL) != (ni == NULL))
+			return NULL;
+	}
+
+	sql_exp *copy_from = incoming->r;
+	if (copy_from->type != e_func)
+		return NULL;
+	sql_subfunc *sf = copy_from->f;
+	if (strcmp(sf->func->mod, "sql") != 0)
+		return NULL;
+	if (strcmp(sf->func->imp, "copy_from") != 0)
+		return NULL;
+
+	// take apart the argument list
+	list *args = copy_from->l;
+	if (args == NULL)
+		return NULL;
+	node *n = args->h;
+	if (n == NULL)
+		return NULL;
+	sql_table *template_table = atom_argument(n, 0, TYPE_ptr)->val.pval;
+	str fname = atom_argument(n, 5, TYPE_str)->val.sval;
+	lng nrecords = atom_argument(n, 6, TYPE_lng)->val.lval;
+	int best_effort = atom_argument(n, 8, TYPE_int)->val.ival;
+	str fixed_width = atom_argument(n, 9, TYPE_str)->val.sval;
+	int on_client = atom_argument(n, 10, TYPE_int)->val.ival;
+	if (strNil(fname)) {
+		// from stdin
+		return NULL;
+	}
+	if (nrecords != -1)
+		return NULL;
+	if (best_effort)
+		return NULL;
+	if (!strNil(fixed_width))
+		return NULL;
+	if (on_client)
+		return NULL;
+
+	// The sql.copy_from operator takes as its first argument a pointer to the
+	// table to be filled.  It uses this to determine the column types, and
+	// maybe also for other things.
+	//
+	// If we have to reorder the columns, for example COPY INTO foo(i,j) FROM
+	// 'data.csv'(j,i), the table pointer cannot point to foo itself because the
+	// column order is wrong. In that case, the sql->rel translator creates a
+	// special temporary table just like foo but with its columns in the right
+	// order.
+	//
+	// For the time being, we'll only support the easy cases without reordering,
+	// recognizable by these tables being identical.
+	if (template_table != destination_table)
+		return NULL;
+
+	// Because of the check above we don't have to worry about generating
+	// default values.
+
+	// If NULL or uniqueness checks have to be generated we'll take the generic path.
+	for (node *n = ol_first_node(destination_table->columns); n != NULL; n = n->next) {
+		sql_column *c = n->data;
+		if (!c->null)
+			return NULL;
+		if (c->unique > 0)
+			return NULL;
+	}
+
+	return copy_from;
+}
+
 static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
+	dump_code_state.mb = be->mb;
+	// dump_code(0);
+
+	if (parallel_copy_level() > 0) {
+		sql_exp *copyfrom = can_use_copyparpipe(rel);
+		if (copyfrom != NULL) {
+			// dump_code(0);
+			stmt *ret = rel2bin_copyparpipe(be, rel, refs, copyfrom);
+			// dump_code(-1);
+			return ret;
+		}
+	}
+
 	mvc *sql = be->mvc;
 	list *l;
 	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL;
@@ -5132,6 +5352,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!inserts)
 		return NULL;
 
+	/* by now the sql.copy_from has been generated */
+
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
@@ -5158,6 +5380,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 	}
 	insert = NULL;
+
+	/* by now the aggr.count has been generated */
 
 	if (t->idxs) {
 		idx_m = m;
@@ -5208,6 +5432,10 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		append(l,insert);
 	}
 	be->mvc_var = mvc_var;
+
+	/* by now the appends have been generated */
+
+
 	if (!insert)
 		return NULL;
 
@@ -5216,6 +5444,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	/* update predicate list */
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
+
+	// dump_code(-1);
 
 	if (ddl) {
 		ret = ddl;
@@ -6588,7 +6818,6 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		if (next->s && isGlobal(next) && !isGlobalTemp(next))
 			stmt_add_dependency_change(be, next, other);
 	}
-
 finalize:
 	sa_reset(sql->ta);
 	return ret;

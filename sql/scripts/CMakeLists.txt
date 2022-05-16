@@ -22,6 +22,7 @@ install(FILES
   25_debug.sql
   26_sysmon.sql
   27_rejects.sql
+  28_copy.sql
   39_analytics.sql
   40_json.sql
   42_md5sum.sql

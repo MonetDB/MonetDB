@@ -15,4 +15,9 @@
 
 extern stmt *output_rel_bin(backend *be, sql_rel *rel, int top);
 
+// Defined in rel_bin.c but also used in rel_copy.c.
+// Maybe these should go to another header file..
+extern stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
+extern void add_to_rowcount_accumulator(backend *be, int nr);
+
 #endif /*_REL_BIN_H_*/
