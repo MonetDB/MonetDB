@@ -2629,6 +2629,7 @@ AH_TOP([
 @%:@define _SEEN_MONETDB_CONFIG_H 1
 ])
 AH_BOTTOM([
+@%:@define OPENSSL_SUPPRESS_DEPRECATED
 @%:@ifdef INTEL_MATH_H_HACK
 /* see https://software.intel.com/en-us/forums/intel-c-compiler/topic/760979 */
 typedef enum {

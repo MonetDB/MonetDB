@@ -1953,12 +1953,14 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 	({							\
 		void *_ptr = (p);				\
 		size_t _size = (s);				\
+		char _buf[12];					\
+		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
 		void *_res = GDKrealloc(_ptr, _size);		\
 		ALLOCDEBUG					\
 			fprintf(stderr,				\
-				"#GDKrealloc(%p,%zu) -> %p"	\
+				"#GDKrealloc(%s,%zu) -> %p"	\
 				" %s[%s:%d]\n",			\
-				_ptr, _size, _res,		\
+				_buf, _size, _res,		\
 				__func__, __FILE__, __LINE__);	\
 		_res;						\
 	 })
@@ -2045,12 +2047,14 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 	({							\
 		void *_ptr = (p);				\
 		size_t _size = (s);				\
+		char _buf[12];					\
+		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
 		void *_res = realloc(_ptr, _size);		\
 		ALLOCDEBUG					\
 			fprintf(stderr,				\
-				"#realloc(%p,%zu) -> %p"	\
+				"#realloc(%s,%zu) -> %p"	\
 				" %s[%s:%d]\n",			\
-				_ptr, _size, _res,		\
+				_buf, _size, _res,		\
 				__func__, __FILE__, __LINE__);	\
 		_res;						\
 	 })

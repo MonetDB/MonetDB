@@ -2748,8 +2748,8 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 
 #define DO_QUANTILE_AVG(TPE)						\
 	do {								\
-		TPE low = *(TPE*) BUNtail(bi, r + (BUN) hi);		\
-		TPE high = *(TPE*) BUNtail(bi, r + (BUN) lo);		\
+		TPE low = *(TPE*) BUNtloc(bi, r + (BUN) hi);		\
+		TPE high = *(TPE*) BUNtloc(bi, r + (BUN) lo);		\
 		if (is_##TPE##_nil(low) || is_##TPE##_nil(high)) {	\
 			val = dbl_nil;					\
 			nils++;						\

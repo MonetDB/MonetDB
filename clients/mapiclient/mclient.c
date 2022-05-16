@@ -916,7 +916,7 @@ EXPANDEDrenderer(MapiHdl hdl)
 				data = nullstring;
 			do {
 				edata = utf8skip(data, ~(size_t)0);
-				mnstr_printf(toConsole, "%-*s | %.*s\n", fieldw, name, (int) (edata - data), data);
+				mnstr_printf(toConsole, "%-*s | %.*s\n", fieldw, name, (int) (edata - data), data ? data : "");
 				name = "";
 				data = edata;
 				if (*data)
