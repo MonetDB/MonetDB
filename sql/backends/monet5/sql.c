@@ -851,10 +851,8 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	if (!BATcount(it))
 		goto bailout; /* Success case */
 
-	if (b)
-		bi = bat_iterator(b);
-	if (c)
-		ci = bat_iterator(c);
+	bi = bat_iterator(b);
+	ci = bat_iterator(c);
 
 	BATloop(it, p, q) {
 		str nsname, nseqname;
@@ -1027,10 +1025,8 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!BATcount(it))
 		goto bailout; /* Success case */
 
-	if (b)
-		bi = bat_iterator(b);
-	if (c)
-		ci = bat_iterator(c);
+	bi = bat_iterator(b);
+	ci = bat_iterator(c);
 	if (d)
 		di = (lng *) Tloc(d, 0);
 
