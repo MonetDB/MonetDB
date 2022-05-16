@@ -466,11 +466,12 @@ BATcheckstrimps(BAT *b)
 
 			}
 		}
+		b->tstrimps = (Strimps *)2;
 		GDKfree(hp);
 		GDKclrerr();	/* we're not currently interested in errors */
 	}
 
-	ret = b->tstrimps != NULL;
+	ret = b->tstrimps != NULL && b->tstrimps != (Strimps *)2;
 	if (ret) {
 		TRC_DEBUG(ACCELERATOR,
 			  "BATcheckstrimps(" ALGOBATFMT "): already has strimps, waited " LLFMT " usec\n",
@@ -713,12 +714,33 @@ BAThasstrimps(BAT *b)
 	}
 
 	MT_lock_set(&pb->batIdxLock);
-	ret = BATcheckstrimps(pb);
+	ret = pb->tstrimps != NULL;
 	MT_lock_unset(&pb->batIdxLock);
 
 	return ret;
 
 }
+
+gdk_return
+BATsetstrimps(BAT *b)
+{
+	BAT *pb;
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	MT_lock_set(&pb->batIdxLock);
+	if (pb->tstrimps == NULL) {
+		pb->tstrimps = (Strimps *)2;
+	}
+	MT_lock_unset(&pb->batIdxLock);
+
+	return GDK_SUCCEED;
+}
+
 /* This macro takes a bat and checks if the strimp construction has been
  * completed. It is completed when the strimp pointer is not null and it
  * is either 1 (i.e. it exists on disk) or the number of bitstrings
@@ -757,8 +779,10 @@ STRMPcreate(BAT *b, BAT *s)
 		pb = b;
 	}
 
-	if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1) {
+	if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1 || pb->tstrimps == (Strimps*)2) {
 		MT_lock_set(&pb->batIdxLock);
+		if (pb->tstrimps == (Strimps *)2)
+			pb->tstrimps = NULL;
 		if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1) {
 			if (BATcheckstrimps(pb)) {
 				MT_lock_unset(&b->batIdxLock);
@@ -859,7 +883,7 @@ STRMPfree(BAT *b)
 	if (b && b->tstrimps) {
 		Strimps *s;
 		MT_lock_set(&b->batIdxLock);
-		if ((s = b->tstrimps) != NULL && s != (Strimps *)1) {
+		if ((s = b->tstrimps) != NULL && s != (Strimps *)1 && s != (Strimps *)2) {
 			if (GDKinmemory(s->strimps.farmid)) {
 				b->tstrimps = NULL;
 				STRMPdecref(s, s->strimps.parentid == b->batCacheid);

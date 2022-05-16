@@ -1283,9 +1283,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
 				}
 				if(b->ttype == TYPE_str) {
-					if (t->access != TABLE_READONLY)
-						throw(SQL, "sql.alter_TABLE", SQLSTATE(HY005) "Cannot create string imprint index %s on non read only table %s.%s", i->base.name, s->base.name, t->base.name);
-					r = STRMPcreate(b, NULL);
+					/* if (t->access != TABLE_READONLY) */
+					/* 	throw(SQL, "sql.alter_TABLE", SQLSTATE(HY005) "Cannot create string imprint index %s on non read only table %s.%s", i->base.name, s->base.name, t->base.name); */
+					r = BATsetstrimps(b);
 				}
 				else {
 					r = BATimprints(b);
