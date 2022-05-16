@@ -12,5 +12,3 @@ if(WIN32)
     DESTINATION "."
     COMPONENT server)
 endif()
-
-# vim: set ts=2:sw=2:et

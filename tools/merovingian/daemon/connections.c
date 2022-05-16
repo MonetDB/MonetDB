@@ -226,5 +226,3 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	*ret = sock;
 	return(NO_ERR);
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

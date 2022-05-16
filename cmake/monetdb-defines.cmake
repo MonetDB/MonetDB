@@ -337,5 +337,3 @@ macro(monetdb_configure_misc)
     set(inline "__inline")
   endif()
 endmacro()
-
-# vim: set ts=2:sw=2:et

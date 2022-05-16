@@ -23,5 +23,3 @@ if(DEVELOPMENT AND NOT WIN32)
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT buildtools)
 endif()
-
-# vim: set ts=2:sw=2:et

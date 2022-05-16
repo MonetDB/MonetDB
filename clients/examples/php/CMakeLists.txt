@@ -8,10 +8,8 @@
 
 if(TESTING)
   install(FILES
-    sqlsample.php 
+    sqlsample.php
     PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT clienttest)
 endif()
-
-# vim: set ts=2:sw=2:et
