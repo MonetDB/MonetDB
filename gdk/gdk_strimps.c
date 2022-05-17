@@ -569,7 +569,6 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 static void
 BATstrimpsync(BAT *b)
 {
-	// BAT *b = arg;
 	lng t0 = 0;
 	Heap *hp;
 	int fd;
@@ -577,7 +576,6 @@ BATstrimpsync(BAT *b)
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
-	// MT_lock_set(&b->batIdxLock);
 	if ((hp = &b->tstrimps->strimps)) {
 		if (HEAPsave(hp, hp->filename, NULL, true, hp->free, NULL) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
@@ -615,7 +613,6 @@ BATstrimpsync(BAT *b)
 				  BATgetId(b), GDKusec() - t0, failed);
 		}
 	}
-	// MT_lock_unset(&b->batIdxLock);
 	BBPunfix(b->batCacheid);
 }
 
@@ -626,14 +623,10 @@ persistStrimp(BAT *b)
 	   && b->batInserted == b->batCount
 	   && !b->theap->dirty
 	   && !GDKinmemory(b->theap->farmid)) {
-		// MT_Id tid;
 		BBPfix(b->batCacheid);
 		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "strimpsync%d", b->batCacheid);
 		BATstrimpsync(b);
-		/* if (MT_create_thread(&tid, BATstrimpsync, b, */
-		/* 		     MT_THR_DETACHED, name) < 0) */
-		/* BBPunfix(b->batCacheid); */
 	} else
 		TRC_DEBUG(ACCELERATOR, "persistStrimp(" ALGOBATFMT "): NOT persisting strimp\n", ALGOBATPAR(b));
 }
@@ -752,7 +745,22 @@ BATsetstrimps(BAT *b)
 		((b->tstrimps->strimps.free - ((char *)b->tstrimps->bitstrings_base - b->tstrimps->strimps.base)) == b->batCount*sizeof(uint64_t))
 
 
-
+/* Strimp creation.
+ *
+ * First we attempt to take the index lock of the BAT. The first thread
+ * that succeeds, checks if the strimp already exists on disk and
+ * attempts to read it. If this succeeds then strimp creation is
+ * complete. If it does not either because the strimp does not exist or
+ * because it is outdated (if for example there is a version mismatch),
+ * the same thread that still holds the lock attempts to create the
+ * strimp header and heap. If this fails then we cannot have a strimp on
+ * this BAT and we report a failure after releasing the lock.
+ *
+ * If the strimp header is suceessfully created, then we release the
+ * lock and allow the rest of the threads to compute the bitstrings of
+ * the slice they have been assigned.
+ *
+ */
 gdk_return
 STRMPcreate(BAT *b, BAT *s)
 {
@@ -779,7 +787,14 @@ STRMPcreate(BAT *b, BAT *s)
 		pb = b;
 	}
 
+	/* Strimp creation was requested. There are two cases:
+	   - The strimp is on disk (pb->tstrimps == 1)
+	   - The strimp needs to be created (pb->tstrimps == 2)
+	 */
 	if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1 || pb->tstrimps == (Strimps*)2) {
+		/* First thread to take the lock will read the strimp
+		 * from disk or construct the strimp header
+		 */
 		MT_lock_set(&pb->batIdxLock);
 		if (pb->tstrimps == (Strimps *)2)
 			pb->tstrimps = NULL;
@@ -901,7 +916,6 @@ STRMPfree(BAT *b)
 	}
 }
 
-/* Parallel creation. does not wok*/
 #if 0
 /* Update the strimp by computing a bitstring and adding it to the heap.
    This will probably be useful later when strimps take updates into
