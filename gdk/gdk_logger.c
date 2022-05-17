@@ -2885,6 +2885,51 @@ log_tend(logger *lg)
 		(void) ATOMIC_DEC(&lg->refcount);
 	return result;
 }
+
+static gdk_return
+log_tdone(logger *lg, ulng commit_ts)
+{
+	if (lg->debug & 1)
+		fprintf(stderr, "#log_tdone " LLFMT "\n", commit_ts);
+
+	if (lg->current) {
+		lg->current->last_ts = commit_ts;
+	}
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+log_tcommit(logger *lg, ulng commit_ts)
+{
+	if (lg->debug & 1)
+		fprintf(stderr, "#log_tcommit " LLFMT "\n", commit_ts);
+
+	lg->end++;
+	if (LOG_DISABLED(lg)) {
+		return GDK_SUCCEED;
+	}
+
+	gdk_return result;
+	logformat l;
+	l.flag = LOG_COMMIT;
+	l.id = 0; // No purpose for now
+
+	if ((result = log_write_format(lg, &l)) != GDK_SUCCEED) {
+		(void) ATOMIC_DEC(&lg->refcount);
+		return result;
+	}
+
+	if (mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
+					(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
+					new_logfile(lg) != GDK_SUCCEED) {
+
+	}
+
+
+
+	return GDK_SUCCEED;
+}
+
 static int
 request_number_flush_queue(logger *lg) {
 	// Semaphore protects ring buffer structure in queue against overflowing
@@ -2934,18 +2979,6 @@ flush_queue_length(logger *lg) {
 	return fql;
 }
 
-static gdk_return
-log_tdone(logger *lg, ulng commit_ts)
-{
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_tdone " LLFMT "\n", commit_ts);
-
-	if (lg->current) {
-		lg->current->last_ts = commit_ts;
-	}
-	return GDK_SUCCEED;
-}
-
 gdk_return
 log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 
@@ -2959,7 +2992,7 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 		return GDK_SUCCEED;
 	}
 
-	if (log_file_id == lg->id) {
+	if (log_file_id == lg->id) { // TODO: this check might be a data race
 		unsigned int number = request_number_flush_queue(lg);
 
 		MT_lock_set(&lg->flush_lock);
@@ -2971,7 +3004,7 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 			if (mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
 					(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
 					new_logfile(lg) != GDK_SUCCEED) {
-				/* flush failed */
+				/* first flush failed */
 				MT_lock_unset(&lg->flush_lock);
 				(void) ATOMIC_DEC(&lg->refcount);
 				return GDK_FAIL;

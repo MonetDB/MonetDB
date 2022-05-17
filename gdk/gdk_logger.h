@@ -74,6 +74,7 @@ gdk_export gdk_return log_bat_group_end(logger *lg, log_id id);
 gdk_export gdk_return log_tstart(logger *lg, bool flushnow, ulng *log_file_id);
 gdk_export gdk_return log_tend(logger *lg);
 gdk_export gdk_return log_tflush(logger *lg, ulng log_file_id, ulng commit_ts); /* Flush the WAL to disk using group commit */
+gdk_export gdk_return log_tcommit(logger *lg, ulng commit_ts); /* Flush the WAL to disk using group commit */
 
 gdk_export gdk_return log_tsequence(logger *lg, int seq, lng id);
 gdk_export log_bid log_find_bat(logger *lg, log_id id);

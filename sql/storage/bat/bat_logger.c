@@ -3156,6 +3156,11 @@ bl_tflush(sqlstore *store, ulng log_file_id, ulng commit_ts)
 }
 
 static int
+bl_tcommit(sqlstore *store, ulng commit_ts) {
+	return log_tcommit(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static int
 bl_sequence(sqlstore *store, int seq, lng id)
 {
 	return log_tsequence(store->logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
@@ -3553,6 +3558,7 @@ bat_logger_init( logger_functions *lf )
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
 	lf->log_tflush = bl_tflush;
+	lf->log_tcommit = bl_tcommit;
 	lf->log_tsequence = bl_sequence;
 	lf->get_snapshot_files = bl_snapshot;
 }
