@@ -165,7 +165,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 {
 	mvc *m = (mvc *) _mvc;
 	oid rid, uid = 0;
-	str ret, pwd, schema_buf;
+	str ret, pwd, schema_buf = NULL;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"),
@@ -451,7 +451,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 	Client c = MCgetClient(m->clientid);
 	str err;
 	int res = LOG_OK;
-	oid rid;
+	oid rid = oid_nil;
 
 	sqlstore *store = m->session->tr->store;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
