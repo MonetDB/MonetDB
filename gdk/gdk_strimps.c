@@ -725,6 +725,12 @@ BATsetstrimps(BAT *b)
 		pb = b;
 	}
 
+	if (pb->batCount < STRIMP_CREATION_THRESHOLD) {
+		GDKerror("Cannot create strimps index on columns with fewer than %ud elements\n", STRIMP_CREATION_THRESHOLD);
+		return GDK_FAIL;
+	}
+
+
 	MT_lock_set(&pb->batIdxLock);
 	if (pb->tstrimps == NULL) {
 		pb->tstrimps = (Strimps *)2;
@@ -742,6 +748,7 @@ BATsetstrimps(BAT *b)
 #define STRIMP_COMPLETE(b)						\
 	b->tstrimps != NULL &&						\
 		b->tstrimps != (Strimps *)1 &&				\
+		b->tstrimps != (Strimps *)2 &&				\
 		((b->tstrimps->strimps.free - ((char *)b->tstrimps->bitstrings_base - b->tstrimps->strimps.base)) == b->batCount*sizeof(uint64_t))
 
 
