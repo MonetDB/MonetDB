@@ -152,9 +152,11 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 	h->free = 0;
 	h->cleanhash = false;
 
+	size_t allocated;
 	if (GDKinmemory(h->farmid) ||
-	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
-	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
+	    ((allocated = GDKmem_cursize()) + h->size < GDK_mem_maxsize &&
+	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
+	     h->size < ((GDK_mem_maxsize - allocated) >> 6))) {
 		h->storage = STORE_MEM;
 		h->base = GDKmalloc(h->size);
 		TRC_DEBUG(HEAP, "%s %zu %p\n", h->filename, h->size, h->base);
@@ -244,8 +246,12 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
 		Heap bak = *h;
-		bool exceeds_swap = size + GDKmem_cursize() >= GDK_mem_maxsize;
-		bool must_mmap = !GDKinmemory(h->farmid) && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
+		size_t allocated;
+		bool must_mmap = (!GDKinmemory(h->farmid) &&
+				   (h->newstorage != STORE_MEM ||
+				    (allocated = GDKmem_cursize()) + size >= GDK_mem_maxsize ||
+				    size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ||
+				    size >= ((GDK_mem_maxsize - allocated) >> 6)));
 
 		h->size = size;
 
@@ -750,8 +756,12 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	char *srcpath, *dstpath, *tmp;
 	int t0;
 
-	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID)
-		h->storage = h->newstorage = h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ? STORE_MEM : STORE_MMAP;
+	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID) {
+		size_t allocated;
+		h->storage = h->newstorage = h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
+			(allocated = GDKmem_cursize()) < GDK_mem_maxsize &&
+			h->size < ((GDK_mem_maxsize - allocated) >> 6) ? STORE_MEM : STORE_MMAP;
+	}
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)
