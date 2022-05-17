@@ -190,6 +190,7 @@ gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, b
 BAT *BATsetaccess(BAT *b, restrict_t mode) __attribute__((__warn_unused_result__));
 void BATsetcapacity(BAT *b, BUN cnt);
 void BATsetcount(BAT *b, BUN cnt);
+gdk_return BATsetstrimps(BAT *b);
 BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, bool reverse, bool nilslast, bool stable) __attribute__((__warn_unused_result__));
 gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool nil_if_empty, const char *restrict separator);
