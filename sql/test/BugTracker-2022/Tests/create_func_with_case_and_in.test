@@ -1,0 +1,9 @@
+statement ok
+CREATE FUNCTION foo(t INT) RETURNS STRING BEGIN
+RETURN  CASE WHEN t IN (10, 20, 30) THEN 'YES' ELSE 'NO' END;
+END;
+
+query T rowsort
+select foo(10);
+----
+'YES'
