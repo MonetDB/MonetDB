@@ -3905,6 +3905,18 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
+static inline int
+tr_log_table_start(sql_trans *tr, sql_table *t) {
+	sqlstore *store = tr->store;
+	return log_bat_group_start(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
+}
+
+static inline int
+tr_log_table_end(sql_trans *tr, sql_table *t) {
+	sqlstore *store = tr->store;
+	return log_bat_group_end(store->logger, t->base.id) == GDK_SUCCEED? LOG_OK: LOG_ERR;
+}
+
 static int
 log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 {
@@ -3914,53 +3926,79 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 	if (isTempTable(t))
 		return LOG_OK;
 	size_t end = segs_end(segs, tr, t);
-	for (segment *cur = segs->h; cur && ok; cur = cur->next) {
-		if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
-			for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
-				sql_column *c = n->data;
-				column_storage *cs = ATOMIC_PTR_GET(&c->data);
 
-				if (cs->cleared) {
-					ok = (tr_log_cs(tr, t, cs, cur, c->base.id) == LOG_OK)? GDK_SUCCEED : GDK_FAIL;
-					continue;
-				}
+	if (tr_log_table_start(tr, t) != LOG_OK)
+		return LOG_ERR;
 
+	size_t nr_appends = 0;
+	for (segment *seg = segs->h; seg; seg=seg->next) {
+		if (seg->ts == tr->tid && seg->end-seg->start) {
+			if (!seg->deleted) {
+				if (log_segment(tr, seg, t->base.id) != LOG_OK)
+					return LOG_ERR;
+
+				nr_appends += (seg->end - seg->start);
+			}
+		}
+	}
+
+	for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
+		sql_column *c = n->data;
+		column_storage *cs = ATOMIC_PTR_GET(&c->data);
+
+		if (cs->cleared) {
+			ok = (tr_log_cs(tr, t, cs, NULL, c->base.id) == LOG_OK)? GDK_SUCCEED : GDK_FAIL;
+			continue;
+		}
+
+		if (!cs->cleared) for (segment *cur = segs->h; cur && ok; cur = cur->next) {
+			if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 				/* append col*/
 				BAT *ins = temp_descriptor(cs->bid);
 				assert(ins);
 				assert(BATcount(ins) >= cur->end);
-				ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start);
+				ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start, nr_appends);
 				bat_destroy(ins);
-				if (ok == GDK_SUCCEED && cs->ebid) {
-					BAT *ins = temp_descriptor(cs->ebid);
-					assert(ins);
-					if (BATcount(ins) > ins->batInserted)
-						ok = log_bat(store->logger, ins, -c->base.id, ins->batInserted, BATcount(ins)-ins->batInserted);
-					BATcommit(ins, BATcount(ins));
-					bat_destroy(ins);
-				}
 			}
-			if (t->idxs) {
-				for (node *n = ol_first_node(t->idxs); n && ok; n = n->next) {
-					sql_idx *i = n->data;
+		}
 
-					if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
-						continue;
-					column_storage *cs = ATOMIC_PTR_GET(&i->data);
+		if (cs->ebid) {
+			BAT *ins = temp_descriptor(cs->ebid);
+			assert(ins);
+			if (BATcount(ins) > ins->batInserted)
+				ok = log_bat(store->logger, ins, -c->base.id, ins->batInserted, BATcount(ins)-ins->batInserted, 0);
+			BATcommit(ins, BATcount(ins));
+			bat_destroy(ins);
+		}
+	}
 
-					if (cs) {
+	if (t->idxs) {
+		for (node *n = ol_first_node(t->idxs); n && ok; n = n->next) {
+			sql_idx *i = n->data;
+
+			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
+				continue;
+			column_storage *cs = ATOMIC_PTR_GET(&i->data);
+
+			if (cs) {
+				for (segment *cur = segs->h; cur && ok; cur = cur->next) {
+					if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 						/* append idx */
 						BAT *ins = temp_descriptor(cs->bid);
 						assert(ins);
 						assert(BATcount(ins) >= cur->end);
-						ok = log_bat(store->logger, ins, i->base.id, cur->start, cur->end-cur->start);
+						ok = log_bat(store->logger, ins, i->base.id, cur->start, cur->end-cur->start, nr_appends);
 						bat_destroy(ins);
 					}
 				}
 			}
 		}
 	}
-	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+
+	if (ok != GDK_SUCCEED || tr_log_table_end(tr, t) != LOG_OK)
+		return LOG_ERR;
+
+	return LOG_OK;
 }
 
 static int
