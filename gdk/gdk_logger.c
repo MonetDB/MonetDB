@@ -35,6 +35,7 @@ static gdk_return log_del_bat(logger *lg, log_bid bid);
 #define LOG_SEQ		7
 #define LOG_CLEAR	8
 #define LOG_BAT_GROUP	9
+#define LOG_COMMIT	10
 
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
@@ -2887,7 +2888,7 @@ log_tend(logger *lg)
 static int
 request_number_flush_queue(logger *lg) {
 	// Semaphore protects ring buffer structure in queue against overflowing
-	static int _number = 0;
+	static unsigned int _number = 0;
 	int result;
 	MT_sema_down(&lg->flush_queue_semaphore);
 	MT_lock_set(&lg->flush_queue_lock);
@@ -2912,7 +2913,7 @@ left_truncate_flush_queue(logger *lg, int limit) {
 }
 
 static int
-number_in_flush_queue(logger *lg, int number) {
+number_in_flush_queue(logger *lg, unsigned int number) {
 	MT_lock_set(&lg->flush_queue_lock);
 	const int fql = lg->flush_queue_length;
 	MT_lock_unset(&lg->flush_queue_lock);
@@ -2959,7 +2960,7 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 	}
 
 	if (log_file_id == lg->id) {
-		int number = request_number_flush_queue(lg);
+		unsigned int number = request_number_flush_queue(lg);
 
 		MT_lock_set(&lg->flush_lock);
 		/* the transaction is not yet flushed */
