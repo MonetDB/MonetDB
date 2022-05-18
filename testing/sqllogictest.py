@@ -560,21 +560,41 @@ class SQLLogic:
             result2 = result
         return result1, result2
 
-    def initfile(self, f):
+    def initfile(self, f, defines):
         self.name = f
         self.file = open(f, 'r', encoding='utf-8', errors='replace')
         self.line = 0
         self.hashes = {}
+        defs = []
+        if defines:
+            for define in defines:
+                key, val = define.split('=', 1)
+                defs.append((re.compile(r'\$' + key.strip() + r'\b'),
+                             val.strip().replace('\\', r'\\')))
+        self.defines = defs
+        self.lines = []
 
     def readline(self):
         self.line += 1
-        return self.file.readline()
+        origline = line = self.file.readline()
+        for key, val in self.defines:
+            line = key.sub(val, line)
+        if self.approve:
+            self.lines.append((origline, line))
+        return line
 
     def writeline(self, line=''):
         if self.approve:
-            self.approve.write(line)
             if not line.endswith('\n'):
-                self.approve.write('\n')
+                line = line + '\n'
+            i = 0
+            while i < len(self.lines):
+                if self.lines[i][1] == line:
+                    line = self.lines[i][0]
+                    del self.lines[:i+1]
+                    break
+                i = i + 1
+            self.approve.write(line)
 
     def parse_connection_string(self, s: str) -> dict:
         '''parse strings like @connection(id=con1, ...)
@@ -603,9 +623,9 @@ class SQLLogic:
                 self.raise_error('invalid connection parameters definition, username or password missing!')
         return res
 
-    def parse(self, f, approve=None, verbose=False):
+    def parse(self, f, approve=None, verbose=False, defines=None):
         self.approve = approve
-        self.initfile(f)
+        self.initfile(f, defines)
         if self.language == 'sql':
             self.crs.execute(f'call sys.setsession(cast({self.timeout or 0} as bigint))')
         else:
@@ -759,6 +779,8 @@ if __name__ == '__main__':
     parser.add_argument('--approve', action='store',
                         type=argparse.FileType('w'),
                         help='file in which to produce a new .test file with updated results')
+    parser.add_argument('--define', action='append',
+                        help='define substitutions')
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
@@ -772,7 +794,8 @@ if __name__ == '__main__':
             if opts.verbose:
                 print('now testing {}'. format(test))
             try:
-                sql.parse(test, approve=opts.approve, verbose=opts.verbose)
+                sql.parse(test, approve=opts.approve, verbose=opts.verbose,
+                          defines=opts.define)
             except SQLLogicSyntaxError:
                 pass
         except BrokenPipeError:
