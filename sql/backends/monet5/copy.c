@@ -555,6 +555,7 @@ static mel_func copy_init_funcs[] = {
 #endif
 
  command("copy", "set_blocksize", COPYset_blocksize, true, "set the COPY block size", args(1, 2,
+	arg("", int),
 	arg("blocksize", int)
  )),
  command("copy", "get_blocksize", COPYget_blocksize, true, "get the COPY block size", args(1, 1,

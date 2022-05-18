@@ -150,7 +150,7 @@ TMPL_SUFFIXED(COPYparse_decimal) (
 	bat *parsed_bat_id,
 	bat *block_bat_id, bat *offsets_bat_id,
 	int *digits, int *scale,
-	int *dummy)
+	TMPL_TYPE *dummy)
 {
 	(void)dummy;
 	struct decimal_parms myparms = {
@@ -167,7 +167,7 @@ str
 TMPL_SUFFIXED(COPYparse_integer) (
 	bat *parsed_bat_id,
 	bat *block_bat_id, bat *offsets_bat_id,
-	int *dummy)
+	TMPL_TYPE *dummy)
 {
 	(void)dummy;
 	return parse_fixed_width_column(
