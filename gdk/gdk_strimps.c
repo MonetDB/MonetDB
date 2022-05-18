@@ -880,9 +880,11 @@ STRMPcreate(BAT *b, BAT *s)
 		return GDK_SUCCEED;
 	}
 
+	/* At this point pb->tstrimps should be a valid strimp heap. */
+	assert(pb->tstrimps);
 	MT_thread_setalgorithm("create strimp index");
 	r = pb->tstrimps;
-	assert(r);
+	STRMPincref(r);
 	dh = (uint64_t *)r->bitstrings_base + b->hseqbase;
 	canditer_init(&ci, b, s);
 
@@ -904,6 +906,7 @@ STRMPcreate(BAT *b, BAT *s)
 		persistStrimp(pb);
 	}
 	MT_lock_unset(&b->batIdxLock);
+	STRMPdecref(r, false);
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
