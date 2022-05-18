@@ -729,7 +729,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				empty_cross = false; /* don't rewrite again */
 			} else if (lv != BUN_NONE && rv != BUN_NONE) {
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
-			} 
+			}
 		} else if (is_inter(rel->op) || is_except(rel->op)) {
 			BUN lv = need_distinct(rel) ? rel_calc_nuniques(v->sql, l, l->exps) : get_rel_count(l),
 				rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
@@ -930,8 +930,18 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			set_count_prop(v->sql->sa, rel, lv);
 		}
 	} break;
+	case op_table: {
+		sql_exp *op = rel->r;
+		if (rel->flag != TRIGGER_WRAPPER && op) {
+			sql_subfunc *f = op->f;
+			if (strcmp(f->func->base.name, "storage") == 0) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of catalog */);
+			}
+		}
+
+	} break;
 	/*These relations are less important for now
-	case op_table: TODO later we can tune it
+	TODO later we can tune it
 	case op_insert:
 	case op_update:
 	case op_delete:

@@ -18,4 +18,4 @@ webExamplesMathematicalFunctionsOperators
 
 utilities
 
-HAVE_JDBCCLIENT_JAR?ValidateSystemCatalogTables
+#HAVE_JDBCCLIENT_JAR?ValidateSystemCatalogTables

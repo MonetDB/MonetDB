@@ -2930,7 +2930,7 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 			assert(b == NULL || b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
 			assert(b == NULL || b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
-			if (b) {
+			if (refs == 0 && b) {
 				tp = VIEWtparent(b);
 				tvp = VIEWvtparent(b);
 				if (refs == 0 && (tp || tvp))
