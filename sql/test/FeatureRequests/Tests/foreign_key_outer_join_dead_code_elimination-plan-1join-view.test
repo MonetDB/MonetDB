@@ -24,7 +24,7 @@ project (
 | project (
 | | left outer join (
 | | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ],
-| | | table("sys"."pk1") [ "pk1"."v1", "pk1"."%TID%" NOT NULL UNIQUE ]
+| | | table("sys"."pk1") [ "pk1"."v1" UNIQUE, "pk1"."%TID%" NOT NULL UNIQUE ]
 | | ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 | ) [ "fk"."id" NOT NULL HASHCOL  as "v1"."id", "pk1"."v1" as "v1"."v1" ]
 ) [ "v1"."id" NOT NULL HASHCOL , "v1"."v1" ] [ "v1"."id" ASC NOT NULL HASHCOL  ]
