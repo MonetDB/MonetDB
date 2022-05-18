@@ -1286,6 +1286,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 						throw(SQL, "sql.alter_TABLE", SQLSTATE(HY005) "Cannot create string imprint index %s on non read only table %s.%s", i->base.name, s->base.name, t->base.name);
 					}
 
+					/* We signal that we want a strimp on b. It will be created the next time it is needed, i.e. by
+					 * PCRElikeselect.
+					 */
 					r = BATsetstrimps(b);
 				}
 				else {
