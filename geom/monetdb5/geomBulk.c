@@ -11,6 +11,8 @@
  */
 
 #include "geom.h"
+#include "geod.h"
+#include "geom_atoms.h"
 
 /********** Geo Update **********/
 
