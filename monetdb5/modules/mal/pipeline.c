@@ -157,32 +157,23 @@ BATupgrade(BAT *r, BAT *b)
 static void
 BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 {
-	/* lock always in order to avoid deadlocks */
-	if (b->batCacheid < u->batCacheid) {
-		MT_lock_set(&b->theaplock);
-		MT_lock_set(&u->theaplock);
-	} else {
-		MT_lock_set(&u->theaplock);
-		MT_lock_set(&b->theaplock);
-	}
+	MT_lock_set(&b->theaplock);
+	MT_lock_set(&u->theaplock);
 	if (p)
 		pipeline_lock(p);
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
 		HEAPincref(b->tvheap);
 		u->tvheap = b->tvheap;
+		MT_lock_unset(&b->theaplock);
 		BBPshare(b->tvheap->parentid);
 		u->batDirtydesc = true;
+	} else {
+		MT_lock_unset(&b->theaplock);
 	}
 	if (p)
 		pipeline_unlock(p);
-	if (b->batCacheid < u->batCacheid) {
-		MT_lock_unset(&u->theaplock);
-		MT_lock_unset(&b->theaplock);
-	} else {
-		MT_lock_unset(&b->theaplock);
-		MT_lock_unset(&u->theaplock);
-	}
+	MT_lock_unset(&u->theaplock);
 }
 
 static str
