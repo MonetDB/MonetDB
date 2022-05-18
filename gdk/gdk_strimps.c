@@ -563,7 +563,7 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 	}
 
 	qbmask = STRMPmakebitstring(q, strmps);
-	assert((qbmask & ((uint64_t)0x1 << 63)) == 0);
+	assert((qbmask & ((uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1))) == 0);
 	bitstring_array = (uint64_t *)strmps->bitstrings_base;
 	rvals = Tloc(r, 0);
 
@@ -895,7 +895,7 @@ STRMPcreate(BAT *b, BAT *s)
 		if (!strNil(cs))
 			*dh++ = STRMPmakebitstring(cs, r);
 		else
-			*dh++ = (uint64_t)0x1 << (STRIMP_PAIRS); /* Encode NULL strings in the most significant bit */
+			*dh++ = (uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1); /* Encode NULL strings in the most significant bit */
 	}
 	bat_iterator_end(&bi);
 
