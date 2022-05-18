@@ -818,10 +818,16 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					} else if (e->type == e_cmp && e->flag == cmp_equal) {
 						/* if one of the sides is unique, the cardinality will be that exact number, but look for nulls */
 						if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
-							if (is_unique(el)) {
+							BUN lu = 0, ru = 0;
+							prop *p = NULL;
+							if ((p = find_prop(el->p, PROP_NUNIQUES)))
+								lu = (BUN) p->value.dval;
+							if ((p = find_prop(er->p, PROP_NUNIQUES)))
+								ru = (BUN) p->value.dval;
+							if (is_unique(el) || lu > lv) {
 								BUN ncount = (is_right(rel->op) || is_full(rel->op)) ? MAX(lv, rv) : lv;
 								uniques_estimate = MIN(uniques_estimate, ncount);
-							} else if (is_unique(er)) {
+							} else if (is_unique(er) || ru > rv) {
 								BUN ncount = (is_left(rel->op) || is_full(rel->op)) ? MAX(lv, rv) : rv;
 								uniques_estimate = MIN(uniques_estimate, ncount);
 							}
@@ -934,11 +940,15 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		sql_exp *op = rel->r;
 		if (rel->flag != TRIGGER_WRAPPER && op) {
 			sql_subfunc *f = op->f;
-			if (strcmp(f->func->base.name, "storage") == 0) {
+			if (f->func->lang == FUNC_LANG_SQL) {
+				set_count_prop(v->sql->sa, rel, 1000 /* just some fallback value */);
+			} else if (f->func->lang == FUNC_LANG_MAL && strcmp(f->func->base.name, "storage") == 0) {
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of catalog */);
+			/*} else {
+				printf("%%func needs stats : %s\n", f->func->base.name);
+				*/
 			}
 		}
-
 	} break;
 	/*These relations are less important for now
 	TODO later we can tune it
