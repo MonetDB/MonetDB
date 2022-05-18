@@ -113,7 +113,7 @@ static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs
 
 static void rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
 
-static void
+void
 exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias)
 {
 	(void)sql;

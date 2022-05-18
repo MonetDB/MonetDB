@@ -6,4 +6,14 @@ END;
 query T rowsort
 select foo(10);
 ----
-'YES'
+YES
+
+statement ok
+CREATE FUNCTION nfoo(t INT) RETURNS STRING BEGIN
+RETURN  CASE WHEN t NOT IN (10, 20, 30) THEN 'YES' ELSE 'NO' END;
+END;
+
+query T rowsort
+select nfoo(10);
+----
+NO
