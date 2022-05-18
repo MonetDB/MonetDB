@@ -82,12 +82,14 @@ monet5_drop_user(ptr _mvc, str user)
 #define inside_str 2
 #define default_schema_path "\"sys\"" /* "sys" will be the default schema path */
 #define default_optimizer "default_pipe"
+#define MAX_SCHEMA_SIZE 1024
+
 
 static str
 parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for both building and validating the schema path */
 {
 	list *l = m->schema_path;
-	char next_schema[1024]; /* needs one extra character for null terminator */
+	char next_schema[MAX_SCHEMA_SIZE]; /* needs one extra character for null terminator */
 	int status = outside_str;
 	size_t bp = 0;
 
@@ -195,8 +197,10 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	// default path is $user
 	if (!schema_path) {
 		// "\"$user\"\0"
-		schema_buf = GDKmalloc(strlen(user) + 3);
-		assert(snprintf(schema_buf, strlen(schema_buf) + 1, "\"%s\"", user) > 0);
+		if ((strlen(user) + 4) > MAX_SCHEMA_SIZE)
+			throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+ 		schema_buf = GDKmalloc(MAX_SCHEMA_SIZE);
+		snprintf(schema_buf, MAX_SCHEMA_SIZE, "\"%s\"", user);
 		schema_path = schema_buf;
 	}
 
