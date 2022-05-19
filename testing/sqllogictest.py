@@ -778,9 +778,11 @@ if __name__ == '__main__':
                         help='information to add to any error messages')
     parser.add_argument('--approve', action='store',
                         type=argparse.FileType('w'),
-                        help='file in which to produce a new .test file with updated results')
+                        help='file in which to produce a new .test file '
+                        'with updated results')
     parser.add_argument('--define', action='append',
-                        help='define substitutions')
+                        help='define substitution for $var as var=replacement'
+                        ' (can be repeated)')
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
