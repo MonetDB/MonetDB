@@ -2527,17 +2527,7 @@ BBPcacheit(BAT *bn, bool lock)
 	if (lock)
 		lock = locked_by == 0 || locked_by != MT_getpid();
 
-	if (i) {
-		assert(i > 0);
-	} else {
-		i = BBPinsert(bn);	/* bat was not previously entered */
-		if (i == 0)
-			return GDK_FAIL;
-		if (bn->theap)
-			bn->theap->parentid = i;
-		if (bn->tvheap)
-			bn->tvheap->parentid = i;
-	}
+	assert(i > 0);
 
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
@@ -2778,7 +2768,7 @@ static inline int
 incref(bat i, bool logical, bool lock)
 {
 	int refs;
-	BAT *b, *pb = NULL, *pvb = NULL;
+	BAT *b;
 
 	if (!BBPcheck(i))
 		return 0;
@@ -2815,14 +2805,6 @@ incref(bat i, bool logical, bool lock)
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
 
-	if (!logical && refs > 1) {
-		/* this wasn't the first physical reference, so undo
-		 * the fixes on the parent bats */
-		if (pb)
-			BBPunfix(pb->batCacheid);
-		if (pvb)
-			BBPunfix(pvb->batCacheid);
-	}
 	return refs;
 }
 
@@ -2833,16 +2815,7 @@ incref(bat i, bool logical, bool lock)
 int
 BBPfix(bat i)
 {
-	bool lock = locked_by == 0 || locked_by != MT_getpid();
-
-	BAT *b = BBP_desc(i);
-	if (b) {
-		if (b->theap->parentid != b->batCacheid)
-			(void) BBPfix(b->theap->parentid);
-		if (b->tvheap && b->tvheap->parentid != b->batCacheid)
-			(void) BBPfix(b->tvheap->parentid);
-	}
-	return incref(i, false, lock);
+	return BATdescriptor(i) ? 1 : 0;
 }
 
 /* increment the logical reference count for the given bat
@@ -2868,7 +2841,7 @@ BBPshare(bat parent)
 	assert(BBP_refs(parent) > 0);
 	if (lock)
 		MT_lock_unset(&GDKswapLock(parent));
-	BBPfix(parent);
+	(void) BATdescriptor(parent);
 }
 
 static inline int
@@ -3075,39 +3048,54 @@ BATdescriptor(bat i)
 	BAT *b = NULL;
 
 	if (BBPcheck(i)) {
-		for (;;) {
-			MT_lock_set(&GDKswapLock(i));
-			if (!(BBP_status(i) & (BBPUNSTABLE|BBPLOADING)))
-				break;
-			/* the BATs is "unstable", try again */
-			MT_lock_unset(&GDKswapLock(i));
-			BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
+		bool lock = locked_by == 0 || locked_by != MT_getpid();
+		/* parent bats get a single fix for all physical
+		 * references of a view and in order to do that
+		 * properly, we must incref the parent bats always
+		 * before our own incref, then after that decref them if
+		 * we were not the first */
+		int tp = 0, tvp = 0;
+		if ((b = BBP_desc(i)) != NULL) {
+			MT_lock_set(&b->theaplock);
+			tp = b->theap->parentid;
+			tvp = b->tvheap ? b->tvheap->parentid : 0;
+			MT_lock_unset(&b->theaplock);
+			if (tp != i) {
+				if (BATdescriptor(tp) == NULL) {
+					return NULL;
+				}
+			}
+			if (tvp != 0 && tvp != i) {
+				if (BATdescriptor(tvp) == NULL) {
+					if (tp != i)
+						BBPunfix(tp);
+					return NULL;
+				}
+			}
 		}
-		if (incref(i, false, false) <= 0)
+		if (lock) {
+			for (;;) {
+				MT_lock_set(&GDKswapLock(i));
+				if (!(BBP_status(i) & (BBPUNSTABLE|BBPLOADING)))
+					break;
+				/* the BATs is "unstable", try again */
+				MT_lock_unset(&GDKswapLock(i));
+				BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
+			}
+		}
+		int refs;
+		if ((refs = incref(i, false, false)) <= 0)
 			return NULL;
 		b = BBP_cache(i);
 		if (b == NULL)
 			b = getBBPdescriptor(i);
-		MT_lock_unset(&GDKswapLock(i));
-		if (b != NULL) {
-			MT_lock_set(&b->theaplock);
-			int tp = b->theap->parentid;
-			int tvp = b->tvheap ? b->tvheap->parentid : 0;
-			MT_lock_unset(&b->theaplock);
-			if (tp != b->batCacheid &&
-			    BATdescriptor(tp) == NULL) {
-				decref(i, false, false, false, false, __func__);
-				return NULL;
-			}
-			if (tvp != 0 &&
-			    tvp != b->batCacheid &&
-			    BATdescriptor(tvp) == NULL) {
-				if (tp != b->batCacheid)
-					decref(tp, false, false, true, true, __func__);
-
-				decref(i, false, false, false, false, __func__);
-				return NULL;
-			}
+		if (lock)
+			MT_lock_unset(&GDKswapLock(i));
+		if (refs > 1) {
+			if (tp != 0 && tp != i)
+				BBPunfix(tp);
+			if (tvp != 0 && tvp != i)
+				BBPunfix(tvp);
 		}
 	}
 	return b;
