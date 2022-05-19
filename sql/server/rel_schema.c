@@ -2922,7 +2922,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		ret = rel_create_user(sql->sa, l->h->data.sval,	/* user name */
 				  l->h->next->data.sval,	/* password */
-				  l->h->next->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+				  l->h->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
 				  l->h->next->next->data.sval,	/* fullname */
 				  schema_details->h->data.sval,	/* schema ident*/
 				  schema_details->h->next->data.sval,	/* schema path */
