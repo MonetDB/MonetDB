@@ -830,6 +830,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 			freeException(other);
 		GDKfree(username);
 		_DELETE(schema_path);
+		_DELETE(userrole);
 		freeException(path_err);
 		return ok == 0 ? -3 : -1;
 	}
@@ -843,6 +844,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 	GDKfree(username);
 	_DELETE(schema_path);
+	_DELETE(userrole);
 	if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
 		freeException(other);
 		return -1;
