@@ -488,10 +488,13 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 			p++;
 			p[1] = 0;
 		}
+		MT_lock_set(&GDKtmLock);
 		for (;;) {
 			exists = file_exists(old->farmid, BAKDIR, fname, NULL);
-			if (exists == -1)
+			if (exists == -1) {
+				MT_lock_unset(&GDKtmLock);
 				return GDK_FAIL;
+			}
 			if (exists == 1)
 				break;
 			if (*p == '1')
@@ -515,8 +518,10 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 			const char *base = old->base;
 
 			/* first save heap in file with extra .tmp extension */
-			if ((fd = GDKfdlocate(old->farmid, old->filename, "wb", "tmp")) < 0)
+			if ((fd = GDKfdlocate(old->farmid, old->filename, "wb", "tmp")) < 0) {
+				MT_lock_unset(&GDKtmLock);
 				return GDK_FAIL;
+			}
 			while (size > 0) {
 				ret = write(fd, base, (unsigned) MIN(1 << 30, size));
 				if (ret < 0)
@@ -539,6 +544,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 				GDKsyserror("syncing heap to disk failed\n");
 				close(fd);
 				GDKunlink(old->farmid, BATDIR, old->filename, "tmp");
+				MT_lock_unset(&GDKtmLock);
 				return GDK_FAIL;
 			}
 			/* move tmp file to backup directory (without .tmp
@@ -546,9 +552,11 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 			if (GDKmove(old->farmid, BATDIR, old->filename, "tmp", BAKDIR, filename, NULL, true) != GDK_SUCCEED) {
 				/* backup failed */
 				GDKunlink(old->farmid, BATDIR, old->filename, "tmp");
+				MT_lock_unset(&GDKtmLock);
 				return GDK_FAIL;
 			}
 		}
+		MT_lock_unset(&GDKtmLock);
 	}
 
 	new = GDKmalloc(sizeof(Heap));
