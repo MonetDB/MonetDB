@@ -2307,17 +2307,18 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define CHECK_QRY_TIMEOUT_MASK	(CHECK_QRY_TIMEOUT_STEP - 1)
 
 #define TIMEOUT_MSG "Timeout was reached!"
+#define EXITING_MSG "Server is exiting!"
 
-#define TIMEOUT_HANDLER(rtpe)			\
-	do {					\
-		GDKerror(TIMEOUT_MSG);		\
-		return rtpe;			\
+#define TIMEOUT_HANDLER(rtpe)						\
+	do {								\
+		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		return rtpe;						\
 	} while(0)
 
-#define GOTO_LABEL_TIMEOUT_HANDLER(label)	\
-	do {					\
-		GDKerror(TIMEOUT_MSG);		\
-		goto label;			\
+#define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
+	do {								\
+		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		goto label;						\
 	} while(0)
 
 #define GDK_CHECK_TIMEOUT_BODY(timeoffset, callback)		\

@@ -32,6 +32,7 @@ struct logger {
 	logged_range *pending;
 	logged_range *current;
 
+	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
 	bool inmemory;
 	char *fn;
 	char *dir;
@@ -68,7 +69,7 @@ struct logger {
 	size_t bufsize;
 
 	/* flush variables */
-	int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
+	unsigned int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
 	int flush_queue_begin; /* start index of the queue */
 	int flush_queue_length; /* length of the queue */
 	MT_Sema flush_queue_semaphore; /*to protect the queue against ring buffer overflows */
