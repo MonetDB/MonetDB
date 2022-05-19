@@ -86,7 +86,12 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 	size_t pos = 0;
 	SQLUSMALLINT col;
 	SQLLEN indicator;
-	char buf[255];
+	char buf[2048];
+
+	if (outp == NULL) {
+		fprintf(stderr, "Failed to allocate %ld memory!\n", outp_len);
+		return;
+	}
 
 	check(retcode, SQL_HANDLE_STMT, stmt, functionname);
 
@@ -115,12 +120,10 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 			ret = SQLGetData(stmt, col, SQL_C_CHAR, buf, sizeof(buf), &indicator);
 			check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData()");
 			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-				// Handle null columns
-				if (indicator == SQL_NULL_DATA)
-					strcpy(buf, "NULL");
-
 				pos += snprintf(outp + pos, outp_len - pos,
-					(col > 1) ? "\t%s" : "%s", buf);
+					(col > 1) ? "\t%s" : "%s",
+					// Handle null columns
+					(indicator == SQL_NULL_DATA) ? "NULL" : buf);
 			}
 		}
 		pos += snprintf(outp + pos, outp_len - pos, "\n");
@@ -180,6 +183,26 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle (STMT)");
 
+	ret = SQLExecDirect(stmt, (SQLCHAR *)
+		"CREATE TABLE sys.pk_uc (id1 INT NOT NULL PRIMARY KEY, name1 VARCHAR(99) UNIQUE);\n"
+		"CREATE LOCAL TEMP TABLE tmp_pk_uc (id1 INT NOT NULL PRIMARY KEY, name1 VARCHAR(99) UNIQUE);\n"
+		"CREATE GLOBAL TEMP TABLE glbl_pk_uc (id1 INT NOT NULL PRIMARY KEY, name1 VARCHAR(99) UNIQUE);\n"
+		"CREATE TABLE sys.nopk_twoucs (id2 INT NOT NULL UNIQUE, name2 VARCHAR(99) UNIQUE);\n"
+		"CREATE LOCAL TEMP TABLE tmp_nopk_twoucs (id2 INT NOT NULL UNIQUE, name2 VARCHAR(99) UNIQUE);\n"
+		"CREATE GLOBAL TEMP TABLE glbl_nopk_twoucs (id2 INT NOT NULL UNIQUE, name2 VARCHAR(99) UNIQUE);\n"
+		, SQL_NTS);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (create tables script)");
+
+	ret = SQLExecDirect(stmt, (SQLCHAR *)
+		"CREATE INDEX pk_uc_i ON sys.pk_uc (id1, name1);\n"
+		"CREATE INDEX tmp_pk_uc_i ON tmp.tmp_pk_uc (id1, name1);\n"
+		"CREATE INDEX glbl_pk_uc_i ON tmp.glbl_pk_uc (id1, name1);\n"
+		"CREATE INDEX nopk_twoucs_i ON sys.nopk_twoucs (id2, name2);\n"
+		"CREATE INDEX tmp_nopk_twoucs_i ON tmp.tmp_nopk_twoucs (id2, name2);\n"
+		"CREATE INDEX glbl_nopk_twoucs_i ON tmp.glbl_nopk_twoucs (id2, name2);\n"
+		, SQL_NTS);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (create indices script)");
+
 /* run actual metadata query tests */
 	// All catalogs query
 	ret = SQLTables(stmt, (SQLCHAR*)SQL_ALL_CATALOGS, SQL_NTS,
@@ -223,12 +246,13 @@ main(int argc, char **argv)
 		"NULL	NULL	NULL	UNLOGGED TABLE	NULL\n"
 		"NULL	NULL	NULL	VIEW	NULL\n");
 
+	// sys.table_types
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
-			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"keywords", SQL_NTS);
-	compareResult(stmt, ret, "SQLPrimaryKeys (sys, keywords)",
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS);
+	compareResult(stmt, ret, "SQLPrimaryKeys (sys, table_types)",
 		"Resultset with 6 columns\n"
 		"table_cat	table_schem	table_name	column_name	key_seq	pk_name\n"
-		"mTests_sql_odbc_samples	sys	keywords	keyword	1	keywords_keyword_pkey\n");
+		"mTests_sql_odbc_samples	sys	table_types	table_type_id	1	table_types_table_type_id_pkey\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
@@ -240,15 +264,256 @@ main(int argc, char **argv)
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
-			SQL_INDEX_UNIQUE, SQL_QUICK);
-	compareResult(stmt, ret, "SQLStatistics (sys, table_types)",
+			SQL_INDEX_UNIQUE, SQL_ENSURE);
+	compareResult(stmt, ret, "SQLStatistics (sys, table_types, SQL_INDEX_UNIQUE, SQL_ENSURE)",
 		"Resultset with 13 columns\n"
 		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
-		"mTests_sql_odbc_samples	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_samples	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	NULL	NULL	NULL\n");
+		"mTests_sql_odbc_samples	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
 
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
+			SQL_INDEX_ALL, SQL_QUICK);
+	compareResult(stmt, ret, "SQLStatistics (sys, table_types, SQL_INDEX_ALL, SQL_QUICK)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
+
+	// sys.pk_uc
+	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS);
+	compareResult(stmt, ret, "SQLPrimaryKeys (sys, pk_uc)",
+		"Resultset with 6 columns\n"
+		"table_cat	table_schem	table_name	column_name	key_seq	pk_name\n"
+		"mTests_sql_odbc_samples	sys	pk_uc	id1	1	pk_uc_id1_pkey\n");
+
+	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS,
+			SQL_SCOPE_SESSION, SQL_NO_NULLS);
+	compareResult(stmt, ret, "SQLSpecialColumns (sys, pk_uc)",
+		"Resultset with 8 columns\n"
+		"scope	column_name	data_type	type_name	column_size	buffer_length	decimal_digits	pseudo_column\n"
+		"1	id1	4	INTEGER	32	11	0	1\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS,
+			SQL_INDEX_UNIQUE, SQL_ENSURE);
+	compareResult(stmt, ret, "SQLStatistics (sys, pk_uc, SQL_INDEX_UNIQUE, SQL_ENSURE)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	sys	pk_uc	0	NULL	pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	pk_uc	0	NULL	pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS,
+			SQL_INDEX_ALL, SQL_QUICK);
+	compareResult(stmt, ret, "SQLStatistics (sys, pk_uc, SQL_INDEX_ALL, SQL_QUICK)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	sys	pk_uc	0	NULL	pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	pk_uc	0	NULL	pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	pk_uc	1	NULL	pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	pk_uc	1	NULL	pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
+
+	// tmp.tmp_pk_uc
+	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS);
+	compareResult(stmt, ret, "SQLPrimaryKeys (tmp, tmp_pk_uc)",
+		"Resultset with 6 columns\n"
+		"table_cat	table_schem	table_name	column_name	key_seq	pk_name\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	id1	1	tmp_pk_uc_id1_pkey\n");
+
+	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS,
+			SQL_SCOPE_SESSION, SQL_NO_NULLS);
+	compareResult(stmt, ret, "SQLSpecialColumns (sys, tmp_pk_uc)",
+		"Resultset with 8 columns\n"
+		"scope	column_name	data_type	type_name	column_size	buffer_length	decimal_digits	pseudo_column\n"
+		"1	id1	4	INTEGER	32	11	0	1\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS,
+			SQL_INDEX_UNIQUE, SQL_ENSURE);
+	compareResult(stmt, ret, "SQLStatistics (tmp, tmp_pk_uc, SQL_INDEX_UNIQUE, SQL_ENSURE)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_id1_pkey	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_name1_unique	2	1	name1	NULL	NULL	NULL	NULL\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS,
+			SQL_INDEX_ALL, SQL_QUICK);
+	compareResult(stmt, ret, "SQLStatistics (tmp, tmp_pk_uc, SQL_INDEX_ALL, SQL_QUICK)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_id1_pkey	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_name1_unique	2	1	name1	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
+
+	// tmp.glbl_pk_uc
+	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS);
+	compareResult(stmt, ret, "SQLPrimaryKeys (tmp, glbl_pk_uc)",
+		"Resultset with 6 columns\n"
+		"table_cat	table_schem	table_name	column_name	key_seq	pk_name\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	id1	1	glbl_pk_uc_id1_pkey\n");
+
+	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS,
+			SQL_SCOPE_SESSION, SQL_NO_NULLS);
+	compareResult(stmt, ret, "SQLSpecialColumns (tmp, glbl_pk_uc)",
+		"Resultset with 8 columns\n"
+		"scope	column_name	data_type	type_name	column_size	buffer_length	decimal_digits	pseudo_column\n"
+		"1	id1	4	INTEGER	32	11	0	1\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS,
+			SQL_INDEX_UNIQUE, SQL_ENSURE);
+	compareResult(stmt, ret, "SQLStatistics (tmp, glbl_pk_uc, SQL_INDEX_UNIQUE, SQL_ENSURE)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS,
+			SQL_INDEX_ALL, SQL_QUICK);
+	compareResult(stmt, ret, "SQLStatistics (tmp, glbl_pk_uc, SQL_INDEX_ALL, SQL_QUICK)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
+
+	// sys.nopk_twoucs
+	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS);
+	compareResult(stmt, ret, "SQLPrimaryKeys (sys, nopk_twoucs)",
+		"Resultset with 6 columns\n"
+		"table_cat	table_schem	table_name	column_name	key_seq	pk_name\n");
+
+	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
+			SQL_SCOPE_SESSION, SQL_NO_NULLS);
+	compareResult(stmt, ret, "SQLSpecialColumns (sys, nopk_twoucs)",
+		"Resultset with 8 columns\n"
+		"scope	column_name	data_type	type_name	column_size	buffer_length	decimal_digits	pseudo_column\n"
+		"1	id2	4	INTEGER	32	11	0	1\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
+			SQL_INDEX_UNIQUE, SQL_ENSURE);
+	compareResult(stmt, ret, "SQLStatistics (sys, nopk_twoucs, SQL_INDEX_UNIQUE, SQL_ENSURE)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	sys	nopk_twoucs	0	NULL	nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	nopk_twoucs	0	NULL	nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
+			SQL_INDEX_ALL, SQL_QUICK);
+	compareResult(stmt, ret, "SQLStatistics (sys, nopk_twoucs, SQL_INDEX_ALL, SQL_QUICK)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	sys	nopk_twoucs	0	NULL	nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	nopk_twoucs	0	NULL	nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	nopk_twoucs	1	NULL	nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	sys	nopk_twoucs	1	NULL	nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
+
+	// tmp.tmp_nopk_twoucs
+	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS);
+	compareResult(stmt, ret, "SQLPrimaryKeys (tmp, tmp_nopk_twoucs)",
+		"Resultset with 6 columns\n"
+		"table_cat	table_schem	table_name	column_name	key_seq	pk_name\n");
+
+	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS,
+			SQL_SCOPE_SESSION, SQL_NO_NULLS);
+	compareResult(stmt, ret, "SQLSpecialColumns (tmp, tmp_nopk_twoucs)",
+		"Resultset with 8 columns\n"
+		"scope	column_name	data_type	type_name	column_size	buffer_length	decimal_digits	pseudo_column\n"
+		"1	id2	4	INTEGER	32	11	0	1\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS,
+			SQL_INDEX_UNIQUE, SQL_ENSURE);
+	compareResult(stmt, ret, "SQLStatistics (tmp, tmp_nopk_twoucs, SQL_INDEX_UNIQUE, SQL_ENSURE)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_id2_unique	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_name2_unique	2	1	name2	NULL	NULL	NULL	NULL\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS,
+			SQL_INDEX_ALL, SQL_QUICK);
+	compareResult(stmt, ret, "SQLStatistics (tmp, tmp_nopk_twoucs, SQL_INDEX_ALL, SQL_QUICK)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_id2_unique	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_name2_unique	2	1	name2	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
+
+	// tmp.glbl_nopk_twoucs
+	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS);
+	compareResult(stmt, ret, "SQLPrimaryKeys (tmp, glbl_nopk_twoucs)",
+		"Resultset with 6 columns\n"
+		"table_cat	table_schem	table_name	column_name	key_seq	pk_name\n");
+
+	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS,
+			SQL_SCOPE_SESSION, SQL_NO_NULLS);
+	compareResult(stmt, ret, "SQLSpecialColumns (tmp, glbl_nopk_twoucs)",
+		"Resultset with 8 columns\n"
+		"scope	column_name	data_type	type_name	column_size	buffer_length	decimal_digits	pseudo_column\n"
+		"1	id2	4	INTEGER	32	11	0	1\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS,
+			SQL_INDEX_UNIQUE, SQL_ENSURE);
+	compareResult(stmt, ret, "SQLStatistics (tmp, glbl_nopk_twoucs, SQL_INDEX_UNIQUE, SQL_ENSURE)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n");
+
+	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS,
+			SQL_INDEX_ALL, SQL_QUICK);
+	compareResult(stmt, ret, "SQLStatistics (tmp, glbl_nopk_twoucs, SQL_INDEX_ALL, SQL_QUICK)",
+		"Resultset with 13 columns\n"
+		"table_cat	table_schem	table_name	non_unique	index_qualifier	index_name	type	ordinal_position	column_name	asc_or_desc	cardinality	pages	filter_condition\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
 
 	// cleanup
+	ret = SQLExecDirect(stmt, (SQLCHAR *)
+		"DROP INDEX sys.pk_uc_i;\n"
+		"DROP INDEX tmp.tmp_pk_uc_i;\n"
+		"DROP INDEX tmp.glbl_pk_uc_i;\n"
+		"DROP INDEX sys.nopk_twoucs_i;\n"
+		"DROP INDEX tmp.tmp_nopk_twoucs_i;\n"
+		"DROP INDEX tmp.glbl_nopk_twoucs_i;\n"
+		, SQL_NTS);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (drop indices script)");
+
+	ret = SQLExecDirect(stmt, (SQLCHAR *)
+		"DROP TABLE sys.pk_uc;\n"
+		"DROP TABLE tmp.tmp_pk_uc;\n"
+		"DROP TABLE tmp.glbl_pk_uc;\n"
+		"DROP TABLE sys.nopk_twoucs;\n"
+		"DROP TABLE tmp.tmp_nopk_twoucs;\n"
+		"DROP TABLE tmp.glbl_nopk_twoucs;\n"
+		, SQL_NTS);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (drop tables script)");
+
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle (STMT)");
 
