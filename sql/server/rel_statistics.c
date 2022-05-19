@@ -961,6 +961,21 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, 1000 /* just some fallback value */);
 			} else if (f->func->lang == FUNC_LANG_MAL && strcmp(f->func->base.name, "storage") == 0) {
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of catalog */);
+			} else if (f->func->lang == FUNC_LANG_MAL && strcmp(f->func->base.name, "db_users") == 0) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of users */);
+			} else if (f->func->lang == FUNC_LANG_MAL && strncmp(f->func->base.name, "querylog", 8) == 0) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of querylog */);
+			} else if (f->func->lang == FUNC_LANG_MAL &&
+						(strcmp(f->func->base.name, "queue") == 0 ||
+						 strcmp(f->func->base.name, "optimizers") == 0 ||
+						 strcmp(f->func->base.name, "env") == 0 ||
+						 strcmp(f->func->base.name, "keywords") == 0 ||
+						 strcmp(f->func->base.name, "statistics") == 0 ||
+						 strcmp(f->func->base.name, "rejects") == 0 ||
+						 strcmp(f->func->base.name, "schemastorage") == 0 ||
+						 strncmp(f->func->base.name, "storage", 7) == 0 ||
+						 strcmp(f->func->base.name, "sessions") == 0) ) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of queue */);
 			/*} else {
 				printf("%%func needs stats : %s\n", f->func->base.name);
 				*/
