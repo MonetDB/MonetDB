@@ -286,6 +286,40 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 }
 
 sql_exp *
+exp_in_aggr(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
+{
+	sql_subfunc *a_func = NULL;
+	sql_exp *e = le;
+
+	if (is_tuple) {
+		list *l = exp_get_values(e);
+		e = l->h->data;
+	}
+	if (!(a_func = sql_bind_func(sql, "sys", anyequal ? "anyequal" : "allnotequal", exp_subtype(e), exp_subtype(e), F_AGGR, true)))
+		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(e) ? exp_subtype(e)->type->base.name : "unknown");
+	e = exp_aggr2(sql->sa, le, vals, a_func, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+	if (e) {
+		unsigned int exps_card = CARD_ATOM;
+
+		/* ignore the cardinalites of sub-relations */
+		if (vals->type == e_atom && vals->f) {
+			for (node *n = ((list*)vals->f)->h ; n ; n = n->next) {
+				sql_exp *next = n->data;
+
+				if (!exp_is_rel(next) && exps_card < next->card)
+					exps_card = next->card;
+			}
+		} else if (!exp_is_rel(vals))
+			exps_card = vals->card;
+
+		e->card = MAX(le->card, exps_card);
+		if (!has_nil(le) && !has_nil(vals))
+			set_has_no_nil(e);
+	}
+	return e;
+}
+
+sql_exp *
 exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier)
 {
 	sql_subfunc *cmp_func = sql_bind_func(sql, "sys", compareop, exp_subtype(le), exp_subtype(le), F_FUNC, true);
