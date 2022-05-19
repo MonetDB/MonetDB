@@ -222,6 +222,8 @@ int BBPretain(bat b);
 gdk_return BBPsave(BAT *b);
 void BBPshare(bat b);
 gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);
+void BBPtmlock(void);
+void BBPtmunlock(void);
 int BBPunfix(bat b);
 void BBPunlock(void);
 gdk_return BUNappend(BAT *b, const void *right, bool force) __attribute__((__warn_unused_result__));
