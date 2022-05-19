@@ -2537,10 +2537,9 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 	gdk_return ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
-	lng nr;
+	lng nr = cnt;
 	l.flag = LOG_UPDATE_BULK;
 	l.id = id;
-	nr = cnt;
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
@@ -2839,7 +2838,6 @@ new_logfile(logger *lg)
 {
 	assert(!LOG_DISABLED(lg));
 
-
 	const lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 
 	gdk_return result = GDK_SUCCEED;
@@ -2850,18 +2848,19 @@ new_logfile(logger *lg)
 		return GDK_FAIL;
 	}
 	if (( p > log_large || (lg->end*1024) > log_large )) {
-		if (ATOMIC_GET(&lg->refcount) == 1) {
+		if (ATOMIC_GET(&lg->refcount) == 0) {
 			lg->id++;
 			log_close_output(lg);
 			result = log_open_output(lg);
 			lg->request_rotation = false;
 		}
 		else {
-			// Delegate wal rotation to next writer or last flusher.
+			// Delegate wal rotation to next writer or (TODO) last flusher.
 			lg->request_rotation = true;
 		}
 	}
 	MT_lock_unset(&lg->rotation_lock);
+
 	return result;
 }
 
@@ -2883,6 +2882,7 @@ log_tend(logger *lg)
 
 	if ((result = log_write_format(lg, &l)) != GDK_SUCCEED)
 		(void) ATOMIC_DEC(&lg->refcount);
+
 	return result;
 }
 
@@ -2898,11 +2898,13 @@ log_tdone(logger *lg, ulng commit_ts)
 	return GDK_SUCCEED;
 }
 
-static gdk_return
+gdk_return
 log_tcommit(logger *lg, ulng commit_ts)
 {
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tcommit " LLFMT "\n", commit_ts);
+
+	// TODO: check commit queue number
 
 	lg->end++;
 	if (LOG_DISABLED(lg)) {
@@ -2912,29 +2914,21 @@ log_tcommit(logger *lg, ulng commit_ts)
 	gdk_return result;
 	logformat l;
 	l.flag = LOG_COMMIT;
-	l.id = 0; // No purpose for now
+	l.id = 0; // number of transactions to be committed;
 
 	if ((result = log_write_format(lg, &l)) != GDK_SUCCEED) {
 		(void) ATOMIC_DEC(&lg->refcount);
 		return result;
 	}
 
-	if (mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
-					(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
-					new_logfile(lg) != GDK_SUCCEED) {
-
-	}
-
-
-
 	return GDK_SUCCEED;
 }
 
-static int
+static unsigned int
 request_number_flush_queue(logger *lg) {
 	// Semaphore protects ring buffer structure in queue against overflowing
 	static unsigned int _number = 0;
-	int result;
+	unsigned int result;
 	MT_sema_down(&lg->flush_queue_semaphore);
 	MT_lock_set(&lg->flush_queue_lock);
 	result = ++_number;
@@ -2984,7 +2978,7 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 
 	if (lg->flushnow) {
 		lg->flushnow = 0;
-		log_tdone(lg, commit_ts);
+		if (!commit_ts) log_tdone(lg, commit_ts); // TODO: check if 
 		return log_commit(lg);
 	}
 
@@ -2992,7 +2986,11 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 		return GDK_SUCCEED;
 	}
 
-	if (log_file_id == lg->id) { // TODO: this check might be a data race
+	(void) ATOMIC_DEC(&lg->refcount);
+
+	MT_lock_set(&lg->rotation_lock);
+	if (log_file_id == lg->id) { // TODO: introduce lg->flushed and get rid of log_file_id in signature
+		MT_lock_unset(&lg->rotation_lock);
 		unsigned int number = request_number_flush_queue(lg);
 
 		MT_lock_set(&lg->flush_lock);
@@ -3004,9 +3002,8 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 			if (mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
 					(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
 					new_logfile(lg) != GDK_SUCCEED) {
-				/* first flush failed */
+				// TODO: a failed flush/sync/rotate should be a very fatal error.
 				MT_lock_unset(&lg->flush_lock);
-				(void) ATOMIC_DEC(&lg->refcount);
 				return GDK_FAIL;
 			}
 			else {
@@ -3015,15 +3012,17 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 			}
 		}
 		/* else the transaction was already flushed in a group commit.
-		 * No need to do anything */
+		 * another transaction successfully flushed my message. no need to do anything. */
 	}
-	/* else the log file has already rotated and hence my wal messages are already flushed.
-	 * No need to do anything */
+	else 
+		/* else the log file has already rotated and hence my wal messages are already flushed.
+		* no need to do anything */
+		MT_lock_unset(&lg->rotation_lock);
 
 
-	log_tdone(lg, commit_ts);
-	(void) ATOMIC_DEC(&lg->refcount);
+	if (!commit_ts) log_tdone(lg, commit_ts);
 	MT_lock_unset(&lg->flush_lock);
+	// TODO: request number for commit message queue.
 
 	return GDK_SUCCEED;
 }
@@ -3197,7 +3196,7 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 {
 	MT_lock_set(&lg->rotation_lock);
 	log_lock(lg);
-	if (flushnow || lg->request_rotation) {
+	if (flushnow || (lg->request_rotation && ATOMIC_GET(&lg->refcount) == 0) ) {
 		lg->id++;
 		log_close_output(lg);
 		/* start new file */

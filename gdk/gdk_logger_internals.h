@@ -42,7 +42,7 @@ struct logger {
 	void *funcdata;
 	stream *output_log;
 	stream *input_log;	/* current stream to flush */
-	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
+	lng end;		/* end of pre-allocated blocks for faster f(data)sync */ // TODO: only incremen when actual files writes occur.
 
 	ATOMIC_TYPE refcount; /* Number of active writers and flushers in the logger */ // TODO check refcount in c->log and c->end
 	MT_Lock rotation_lock;
@@ -54,7 +54,7 @@ struct logger {
 	BAT *catalog_lid;	/* last tid, after which it gets released/destroyed */
 	BAT *dcatalog;		/* deleted from catalog table */
 	BUN cnt;		/* number of persistent bats, incremented on log flushing */
-	BUN deleted;		/* number of destroyed persistent bats, needed for catalog vacuum */
+	BUN deleted;		/* number of destroyed persistent bats, needekd for catalog vacuum */
 
 	BAT *seqs_id;		/* int id column */
 	BAT *seqs_val;		/* lng value column */
