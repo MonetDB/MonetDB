@@ -270,6 +270,18 @@ static int BBPunloadCnt = 0;
 static MT_Lock GDKunloadLock = MT_LOCK_INITIALIZER(GDKunloadLock);
 
 void
+BBPtmlock(void)
+{
+	MT_lock_set(&GDKtmLock);
+}
+
+void
+BBPtmunlock(void)
+{
+	MT_lock_unset(&GDKtmLock);
+}
+
+void
 BBPlock(void)
 {
 	int i;
@@ -304,7 +316,6 @@ BBPunlock(void)
 	locked_by = 0;
 	MT_lock_unset(&GDKtmLock);
 }
-
 
 static gdk_return
 BBPinithash(int j, bat size)

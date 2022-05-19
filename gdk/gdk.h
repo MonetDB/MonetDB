@@ -1537,8 +1537,9 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBPRENAME_MEMORY	(-4)
 
 gdk_export void BBPlock(void);
-
 gdk_export void BBPunlock(void);
+gdk_export void BBPtmlock(void);
+gdk_export void BBPtmunlock(void);
 
 gdk_export BAT *BBPquickdesc(bat b);
 

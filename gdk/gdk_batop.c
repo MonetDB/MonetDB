@@ -466,19 +466,24 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	}
 	/* copy data from n to b */
 	r = BUNlast(b);
-	MT_rwlock_wrlock(&b->thashlock);
-	while (cnt > 0) {
-		cnt--;
+	for (BUN i = 0; i < cnt; i++) {
 		BUN p = canditer_next(ci) - hseq;
 		const void *t = BUNtvar(ni, p);
 		if (tfastins_nocheckVAR(b, r, t) != GDK_SUCCEED) {
-			MT_rwlock_wrunlock(&b->thashlock);
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
-		if (b->thash)
-			HASHappend_locked(b, r, t);
 		r++;
+	}
+	MT_rwlock_wrlock(&b->thashlock);
+	if (b->thash) {
+		r -= cnt;
+		BATiter bi = bat_iterator_nolock(b);
+		for (BUN i = 0; i < cnt; i++) {
+			const void *t = BUNtvar(bi, r);
+			HASHappend_locked(b, r, t);
+			r++;
+		}
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 	BATsetcount(b, r);
@@ -1292,10 +1297,16 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
-				/* doesn't fit in current heap, upgrade it */
+				/* doesn't fit in current heap, upgrade
+				 * it, can't keep hashlock while doing
+				 * so */
+				MT_rwlock_wrunlock(&b->thashlock);
+				locked = false;
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
 					goto bailout;
 				}
+				MT_rwlock_wrlock(&b->thashlock);
+				locked = true;
 			}
 			/* in case ATOMreplaceVAR and/or
 			 * GDKupgradevarheap replaces a heap, we need to
