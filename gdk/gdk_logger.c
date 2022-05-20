@@ -2963,7 +2963,7 @@ log_tcommit(logger *lg, ulng commit_ts)
 
 	// TODO: check commit queue number
 
-	lg->end++;
+	lg->end++; // TODO check whether or not this should be done in light of log_activate
 	if (LOG_DISABLED(lg)) {
 		return GDK_SUCCEED;
 	}
