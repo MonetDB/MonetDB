@@ -1,13 +1,3 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
-* Thu May 19 2022 Sjoerd Mullender <sjoerd@acm.org>
-- All accesses to the BACKUP directory need to be protected by the
-  same lock.  The lock already existed (GDKtmLock), but wasn't used
-  consistently.  This is now fixed.  Hopefully this makes the hot snapshot
-  code more reliable.
-
-* Tue May 10 2022 Sjoerd Mullender <sjoerd@acm.org>
-- When exiting, long running instructions are aborted using the same
-  mechanism that is used for query timeouts.
-
