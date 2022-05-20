@@ -81,7 +81,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jan2022-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jan2022-SP3/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -850,6 +850,30 @@ fi
 %endif
 
 %changelog
+* Fri May 20 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- Rebuilt.
+- GH#7036: Generate column names instead of labels
+
+* Thu May 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- gdk: All accesses to the BACKUP directory need to be protected by the
+  same lock.  The lock already existed (GDKtmLock), but wasn't used
+  consistently.  This is now fixed.  Hopefully this makes the hot snapshot
+  code more reliable.
+
+* Tue May 10 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- gdk: When exiting, long running instructions are aborted using the same
+  mechanism that is used for query timeouts.
+
+* Mon Apr 25 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- sql: GLOBAL TEMPORARY tables are now treated like LOCAL TEMPORARY tables
+  as far as the table content is concerned.  The schema information
+  stays global.  This fixes an issue with concurrent access and cleanup
+  of stale data.
+
+* Thu Apr 14 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- sql: The NO CONSTRAINT option of the COPY INTO query has been removed.
+  It didn't work and it was never a good idea anyway.
+
 * Fri Apr 01 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
 - Rebuilt.
 - GH#7278: BUG when there is more than one field/filter in the having
