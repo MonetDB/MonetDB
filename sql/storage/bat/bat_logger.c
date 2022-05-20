@@ -3157,17 +3157,21 @@ bl_sequence(sqlstore *store, int seq, lng id)
 /* Write a plan entry to copy part of the given file.
  * That part of the file must remain unchanged until the plan is executed.
  */
-static void
+static gdk_return __attribute__((__warn_unused_result__))
 snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
 {
-	mnstr_printf(plan, "c %" PRIu64 " %s\n", extent, name);
+	if (mnstr_printf(plan, "c %" PRIu64 " %s\n", extent, name) < 0) {
+		GDKerror("%s", mnstr_peek_error(plan));
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
 /* Write a plan entry to write the current contents of the given file.
  * The contents are included in the plan so the source file is allowed to
  * change in the mean time.
  */
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 {
 	gdk_return ret = GDK_FAIL;
@@ -3195,26 +3199,25 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 		goto end;
 	}
 
-	mnstr_printf(plan, "w %zu %s\n", to_copy, name);
+	if (mnstr_printf(plan, "w %zu %s\n", to_copy, name) < 0) {
+		GDKerror("%s", mnstr_peek_error(plan));
+		goto end;
+	}
 
 	while (to_copy > 0) {
 		size_t chunk = (to_copy <= bufsize) ? to_copy : bufsize;
 		ssize_t bytes_read = mnstr_read(s, buf, 1, chunk);
 		if (bytes_read < 0) {
-			char *err = mnstr_error(s);
-			GDKerror("Reading bytes of component %s failed: %s", path, err);
-			free(err);
+			GDKerror("Reading bytes of component %s failed: %s", path, mnstr_peek_error(s));
 			goto end;
 		} else if (bytes_read < (ssize_t) chunk) {
-			char *err = mnstr_error(s);
-			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, err);
-			free(err);
+			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, mnstr_peek_error(s));
 			goto end;
 		}
 
 		ssize_t bytes_written = mnstr_write(plan, buf, 1, chunk);
 		if (bytes_written < 0) {
-			GDKerror("Writing to plan failed");
+			GDKerror("Writing to plan failed: %s", mnstr_peek_error(plan));
 			goto end;
 		} else if (bytes_written < (ssize_t) chunk) {
 			GDKerror("write to plan truncated");
@@ -3232,7 +3235,7 @@ end:
 }
 
 /* Add plan entries for all relevant files in the Write Ahead Log */
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 {
 	char log_file[FILENAME_MAX];
@@ -3243,7 +3246,8 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 		GDKerror("Could not open %s, filename is too large", log_file);
 		return GDK_FAIL;
 	}
-	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
+	if (snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1) != GDK_SUCCEED)
+		return GDK_FAIL;
 
 	for (ulng id = bat_logger->saved_id+1; id <= bat_logger->id; id++) {
 		struct stat statbuf;
@@ -3254,7 +3258,8 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 			return GDK_FAIL;
 		}
 		if (MT_stat(log_file, &statbuf) == 0) {
-			snapshot_lazy_copy_file(plan, log_file + strlen(db_dir) + 1, statbuf.st_size);
+			if (snapshot_lazy_copy_file(plan, log_file + strlen(db_dir) + 1, statbuf.st_size) != GDK_SUCCEED)
+				return GDK_FAIL;
 		} else {
 			GDKerror("Could not open %s", log_file);
 			return GDK_FAIL;
@@ -3263,7 +3268,7 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 	return GDK_SUCCEED;
 }
 
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *filename, const char *suffix, uint64_t extent)
 {
 	char path1[FILENAME_MAX];
@@ -3284,8 +3289,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		return GDK_FAIL;
 	}
 	if (MT_stat(path1, &statbuf) == 0) {
-		snapshot_lazy_copy_file(plan, path1 + offset, extent);
-		return GDK_SUCCEED;
+		return snapshot_lazy_copy_file(plan, path1 + offset, extent);
 	}
 	if (errno != ENOENT) {
 		GDKsyserror("Error stat'ing %s", path1);
@@ -3300,8 +3304,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		return GDK_FAIL;
 	}
 	if (MT_stat(path2, &statbuf) == 0) {
-		snapshot_lazy_copy_file(plan, path2 + offset, extent);
-		return GDK_SUCCEED;
+		return snapshot_lazy_copy_file(plan, path2 + offset, extent);
 	}
 	if (errno != ENOENT) {
 		GDKsyserror("Error stat'ing %s", path2);
@@ -3315,7 +3318,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 /* Add plan entries for all persistent BATs by looping over the BBP.dir.
  * Also include the BBP.dir itself.
  */
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 snapshot_bats(stream *plan, const char *db_dir)
 {
 	char bbpdir[FILENAME_MAX];
@@ -3323,6 +3326,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 	char line[1024];
 	int gdk_version, len;
 	gdk_return ret = GDK_FAIL;
+	ssize_t n = 0;
 
 	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
 	if (len == -1 || len >= FILENAME_MAX) {
@@ -3340,7 +3344,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
-		GDKerror("Could not read first line of %s", bbpdir);
+		GDKerror("Could not read first line of %s: %s", bbpdir, mnstr_peek_error(cat));
 		goto end;
 	}
 	if (sscanf(line, "BBP.dir, GDKversion %d", &gdk_version) != 1) {
@@ -3358,21 +3362,21 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
-		GDKerror("Couldn't skip the second line of %s", bbpdir);
+		GDKerror("Couldn't skip the second line of %s: %s", bbpdir, mnstr_peek_error(cat));
 		goto end;
 	}
 	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
-		GDKerror("Couldn't skip the third line of %s", bbpdir);
+		GDKerror("Couldn't skip the third line of %s: %s", bbpdir, mnstr_peek_error(cat));
 		goto end;
 	}
 
 	/* TODO get transaction id and last processed log file id */
 	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
-		GDKerror("Couldn't skip the 4th line of %s", bbpdir);
+		GDKerror("Couldn't skip the 4th line of %s: %s", bbpdir, mnstr_peek_error(cat));
 		goto end;
 	}
 
-	while (mnstr_readline(cat, line, sizeof(line)) > 0) {
+	while ((n = mnstr_readline(cat, line, sizeof(line))) > 0) {
 		uint64_t batid;
 		char type[16];
 		uint16_t width;
@@ -3414,13 +3418,13 @@ snapshot_bats(stream *plan, const char *db_dir)
 				/* fallthrough */
 			case 5:
 				// tail only
-				snapshot_heap(plan, db_dir, batid, filename,
-							  strcmp(type, "str") == 0 ? width == 1 ? ".tail1" : width == 2 ? ".tail2" :
+				ret = snapshot_heap(plan, db_dir, batid, filename,
+									strcmp(type, "str") == 0 ? width == 1 ? ".tail1" : width == 2 ? ".tail2" :
 #if SIZEOF_VAR_T == 8
-							  width == 4 ? ".tail4" :
+									width == 4 ? ".tail4" :
 #endif
-							  ".tail" : ".tail",
-							  tail_free);
+									".tail" : ".tail",
+									tail_free);
 				if (ret != GDK_SUCCEED)
 					goto end;
 				/* fallthrough */
@@ -3428,6 +3432,10 @@ snapshot_bats(stream *plan, const char *db_dir)
 				// no tail?
 				break;
 		}
+	}
+	if (n < 0) {
+		GDKerror("%s", mnstr_peek_error(cat));
+		return GDK_FAIL;
 	}
 
 end:
@@ -3443,7 +3451,7 @@ end:
  * With this information, a replica initialized from this snapshot can
  * be configured to catch up with its master by replaying later transactions.
  */
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 snapshot_wlc(stream *plan, const char *db_dir)
 {
 	const char name[] = "wlr.config.in";
@@ -3461,13 +3469,16 @@ snapshot_wlc(stream *plan, const char *db_dir)
 		, wlc_beat, wlc_batches
 	);
 
-	mnstr_printf(plan, "w %d %s\n", len, name);
-	mnstr_write(plan, buf, 1, len);
+	if (mnstr_printf(plan, "w %d %s\n", len, name) < 0 ||
+		mnstr_write(plan, buf, 1, len) < 0) {
+		GDKerror("%s", mnstr_peek_error(plan));
+		return GDK_FAIL;
+	}
 
 	return GDK_SUCCEED;
 }
 
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 snapshot_vaultkey(stream *plan, const char *db_dir)
 {
 	char path[FILENAME_MAX];
@@ -3480,8 +3491,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 		return GDK_FAIL;
 	}
 	if (MT_stat(path, &statbuf) == 0) {
-		snapshot_lazy_copy_file(plan, ".vaultkey", statbuf.st_size);
-		return GDK_SUCCEED;
+		return snapshot_lazy_copy_file(plan, ".vaultkey", statbuf.st_size);
 	}
 	if (errno == ENOENT) {
 		// No .vaultkey? Fine.
@@ -3491,6 +3501,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 	GDKsyserror("Error stat'ing %s", path);
 	return GDK_FAIL;
 }
+
 static gdk_return
 bl_snapshot(sqlstore *store, stream *plan)
 {
@@ -3501,14 +3512,19 @@ bl_snapshot(sqlstore *store, stream *plan)
 
 	// Farm 0 is always the persistent farm.
 	db_dir = GDKfilepath(0, NULL, "", NULL);
+	if (db_dir == NULL)
+		return GDK_FAIL;
 	db_dir_len = strlen(db_dir);
 	if (db_dir[db_dir_len - 1] == DIR_SEP)
 		db_dir[db_dir_len - 1] = '\0';
 
-	mnstr_printf(plan, "%s\n", db_dir);
-
-	// Please monetdbd
-	mnstr_printf(plan, "w 0 .uplog\n");
+	if (mnstr_printf(plan, "%s\n", db_dir) < 0 ||
+		// Please monetdbd
+		mnstr_printf(plan, "w 0 .uplog\n") < 0) {
+		GDKerror("%s", mnstr_peek_error(plan));
+		ret = GDK_FAIL;
+		goto end;
+	}
 
 	ret = snapshot_vaultkey(plan, db_dir);
 	if (ret != GDK_SUCCEED)
@@ -3528,8 +3544,7 @@ bl_snapshot(sqlstore *store, stream *plan)
 
 	ret = GDK_SUCCEED;
 end:
-	if (db_dir)
-		GDKfree(db_dir);
+	GDKfree(db_dir);
 	return ret;
 }
 
