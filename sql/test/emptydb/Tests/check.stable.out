@@ -1481,6 +1481,10 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.functions",	"sys",	"concat",	"SYSTEM",	"+",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	"arg_2",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"concat",	"SYSTEM",	"+",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"contains",	"SYSTEM",	"create function contains(a geometry, x double, y double) returns boolean external name geom.\"Contains\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	true,	NULL,	"result",	"boolean",	1,	0,	"out",	"a",	"geometry",	0,	0,	"in",	"x",	"double",	53,	0,	"in",	"y",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"copy_blocksize",	"SYSTEM",	"create function sys.copy_blocksize() returns int external name \"copy\".get_blocksize;",	"copy",	"MAL",	"Scalar function",	true,	false,	false,	true,	NULL,	"result",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"copy_blocksize",	"SYSTEM",	"create procedure sys.copy_blocksize(size int) external name \"copy\".set_blocksize;",	"copy",	"MAL",	"Procedure",	true,	false,	false,	true,	NULL,	"size",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"copy_parallel",	"SYSTEM",	"create function sys.copy_parallel() returns int external name \"copy\".get_parallel;",	"copy",	"MAL",	"Scalar function",	true,	false,	false,	true,	NULL,	"result",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"copy_parallel",	"SYSTEM",	"create procedure sys.copy_parallel(level int) external name \"copy\".set_parallel;",	"copy",	"MAL",	"Procedure",	true,	false,	false,	true,	NULL,	"level",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"corr",	"SYSTEM",	"create aggregate corr(e1 bigint, e2 bigint) returns double external name \"aggr\".\"corr\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	NULL,	"result",	"double",	53,	0,	"out",	"e1",	"bigint",	64,	0,	"in",	"e2",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"corr",	"SYSTEM",	"create aggregate corr(e1 double, e2 double) returns double external name \"aggr\".\"corr\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	NULL,	"result",	"double",	53,	0,	"out",	"e1",	"double",	53,	0,	"in",	"e2",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"corr",	"SYSTEM",	"create aggregate corr(e1 integer, e2 integer) returns double external name \"aggr\".\"corr\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	NULL,	"result",	"double",	53,	0,	"out",	"e1",	"int",	32,	0,	"in",	"e2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4923,67 +4927,67 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.dependency_types",	13,	"PROCEDURE"	]
 [ "sys.dependency_types",	14,	"BE_DROPPED"	]
 [ "sys.dependency_types",	15,	"TYPE"	]
-% .%2,	sys.%1,	sys.schemas # table_name
+% .%2,	.%1,	.schemas # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 21,	1,	1 # length
-% .%2,	sys.%1,	sys._tables # table_name
+% .%2,	.%1,	._tables # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 21,	1,	1 # length
-% .%12,	sys.%10,	sys.tables # table_name
-% %12,	%10,	id # name
+% .%13,	.%10,	.tables # table_name
+% %13,	%10,	id # name
 % char,	bigint,	int # type
 % 20,	1,	1 # length
-% .%2,	sys.%1,	sys._columns # table_name
+% .%2,	.%1,	._columns # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 22,	1,	1 # length
-% .%10,	sys.%6,	sys.columns # table_name
-% %10,	%6,	id # name
+% .%11,	.%6,	.columns # table_name
+% %11,	%6,	id # name
 % char,	bigint,	int # type
 % 21,	1,	1 # length
-% .%2,	sys.%1,	sys.functions # table_name
+% .%2,	.%1,	.functions # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 23,	1,	1 # length
-% .%2,	sys.%1,	sys.args # table_name
+% .%2,	.%1,	.args # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 18,	1,	1 # length
-% .%2,	sys.%1,	sys.types # table_name
+% .%2,	.%1,	.types # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 19,	1,	1 # length
-% .%2,	sys.%1,	sys.objects,	sys.objects # table_name
+% .%2,	.%1,	.objects,	.objects # table_name
 % %2,	%1,	id,	nr # name
 % char,	bigint,	int,	int # type
 % 21,	1,	1,	1 # length
-% .%2,	sys.%1,	sys.keys # table_name
+% .%2,	.%1,	.keys # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 18,	1,	1 # length
-% .%2,	sys.%1,	sys.idxs # table_name
+% .%2,	.%1,	.idxs # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 18,	1,	1 # length
-% .%2,	sys.%1,	sys.triggers # table_name
+% .%2,	.%1,	.triggers # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 22,	1,	1 # length
-% .%2,	sys.%1,	sys.sequences # table_name
+% .%2,	.%1,	.sequences # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 23,	1,	1 # length
-% .%2,	sys.%1,	sys.dependency_types # table_name
+% .%2,	.%1,	.dependency_types # table_name
 % %2,	%1,	dependency_type_id # name
 % char,	bigint,	smallint # type
 % 30,	1,	1 # length
-% .%2,	sys.%1,	sys.dependencies,	sys.dependencies # table_name
+% .%2,	.%1,	.dependencies,	.dependencies # table_name
 % %2,	%1,	id,	depend_id # name
 % char,	bigint,	int,	int # type
 % 26,	1,	1,	1 # length
-% .%2,	sys.%1,	sys.auths # table_name
+% .%2,	.%1,	.auths # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 19,	1,	1 # length
@@ -4991,11 +4995,11 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	name # name
 % char,	bigint,	varchar # type
 % 19,	1,	0 # length
-% .%2,	sys.%1,	sys.user_role,	sys.user_role # table_name
+% .%2,	.%1,	.user_role,	.user_role # table_name
 % %2,	%1,	login_id,	role_id # name
 % char,	bigint,	int,	int # type
 % 23,	1,	1,	1 # length
-% .%2,	sys.%1,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% .%2,	.%1,	.privileges,	.privileges,	.privileges # table_name
 % %2,	%1,	obj_id,	auth_id,	privileges # name
 % char,	bigint,	int,	int,	int # type
 % 24,	1,	1,	1,	1 # length
@@ -5019,7 +5023,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %3,	%2,	name # name
 % char,	bigint,	varchar # type
 % 25,	1,	0 # length
-% .%2,	sys.%1,	sys.db_user_info # table_name
+% .%2,	.%1,	.db_user_info # table_name
 % %2,	%1,	name # name
 % char,	bigint,	varchar # type
 % 26,	1,	0 # length
@@ -5031,7 +5035,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %3,	%2,	schema,	table,	column # name
 % char,	bigint,	varchar,	varchar,	varchar # type
 % 23,	1,	0,	0,	0 # length
-% .%2,	sys.%1,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% .%2,	.%1,	.storagemodelinput,	.storagemodelinput,	.storagemodelinput # table_name
 % %2,	%1,	schema,	table,	column # name
 % char,	bigint,	varchar,	varchar,	varchar # type
 % 31,	1,	0,	0,	0 # length
@@ -5039,35 +5043,35 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %3,	%2,	rowid # name
 % char,	bigint,	bigint # type
 % 21,	1,	1 # length
-% .%2,	sys.%1,	sys.keywords # table_name
+% .%2,	.%1,	.keywords # table_name
 % %2,	%1,	keyword # name
 % char,	bigint,	varchar # type
 % 22,	1,	0 # length
-% .%2,	sys.%1,	sys.table_types # table_name
+% .%2,	.%1,	.table_types # table_name
 % %2,	%1,	table_type_id # name
 % char,	bigint,	smallint # type
 % 25,	1,	1 # length
-% .%2,	sys.%1,	sys.function_languages # table_name
+% .%2,	.%1,	.function_languages # table_name
 % %2,	%1,	language_id # name
 % char,	bigint,	smallint # type
 % 32,	1,	1 # length
-% .%2,	sys.%1,	sys.function_types # table_name
+% .%2,	.%1,	.function_types # table_name
 % %2,	%1,	function_type_id # name
 % char,	bigint,	smallint # type
 % 28,	1,	1 # length
-% .%2,	sys.%1,	sys.index_types # table_name
+% .%2,	.%1,	.index_types # table_name
 % %2,	%1,	index_type_id # name
 % char,	bigint,	smallint # type
 % 25,	1,	1 # length
-% .%2,	sys.%1,	sys.key_types # table_name
+% .%2,	.%1,	.key_types # table_name
 % %2,	%1,	key_type_id # name
 % char,	bigint,	smallint # type
 % 23,	1,	1 # length
-% .%2,	sys.%1,	sys.privilege_codes # table_name
+% .%2,	.%1,	.privilege_codes # table_name
 % %2,	%1,	privilege_code_id # name
 % char,	bigint,	int # type
 % 29,	1,	1 # length
-% .%2,	sys.%1,	sys.comments # table_name
+% .%2,	.%1,	.comments # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 22,	1,	1 # length
@@ -5075,19 +5079,19 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %176,	%170,	id # name
 % char,	bigint,	int # type
 % 17,	1,	1 # length
-% .%105,	.%104,	.var_values # table_name
-% %105,	%104,	var_name # name
+% .%115,	.%104,	.var_values # table_name
+% %115,	%104,	var_name # name
 % char,	bigint,	char # type
 % 24,	1,	16 # length
-% .%2,	sys.%1,	sys.table_partitions # table_name
+% .%2,	.%1,	.table_partitions # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 30,	1,	1 # length
-% .%2,	sys.%1,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% .%2,	.%1,	.range_partitions,	.range_partitions,	.range_partitions # table_name
 % %2,	%1,	table_id,	partition_id,	minimum # name
 % char,	bigint,	int,	int,	varchar # type
 % 30,	1,	1,	1,	0 # length
-% .%2,	sys.%1,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
+% .%2,	.%1,	.value_partitions,	.value_partitions,	.value_partitions # table_name
 % %2,	%1,	table_id,	partition_id,	value # name
 % char,	bigint,	int,	int,	varchar # type
 % 30,	1,	1,	1,	0 # length
@@ -5099,79 +5103,79 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %3,	%2,	sessionid # name
 % char,	bigint,	int # type
 % 22,	1,	1 # length
-% .%2,	sys.%1,	sys.schemas # table_name
+% .%2,	.%1,	.schemas # table_name
 % %2,	%1,	name # name
 % char,	bigint,	varchar # type
 % 21,	1,	0 # length
-% .%2,	sys.%1,	sys._tables,	sys._tables # table_name
+% .%2,	.%1,	._tables,	._tables # table_name
 % %2,	%1,	schema_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 21,	1,	1,	0 # length
-% .%12,	sys.%10,	sys.tables,	sys.tables # table_name
-% %12,	%10,	schema_id,	name # name
+% .%13,	.%10,	.tables,	.tables # table_name
+% %13,	%10,	schema_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 20,	1,	1,	0 # length
-% .%2,	sys.%1,	sys._columns,	sys._columns # table_name
+% .%2,	.%1,	._columns,	._columns # table_name
 % %2,	%1,	table_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 22,	1,	1,	0 # length
-% .%10,	sys.%6,	sys.columns,	sys.columns # table_name
-% %10,	%6,	table_id,	name # name
+% .%11,	.%6,	.columns,	.columns # table_name
+% %11,	%6,	table_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 21,	1,	1,	0 # length
-% .%2,	sys.%1,	sys._columns,	sys._columns # table_name
+% .%2,	.%1,	._columns,	._columns # table_name
 % %2,	%1,	table_id,	number # name
 % char,	bigint,	int,	int # type
 % 22,	1,	1,	1 # length
-% .%10,	sys.%6,	sys.columns,	sys.columns # table_name
-% %10,	%6,	table_id,	number # name
+% .%11,	.%6,	.columns,	.columns # table_name
+% %11,	%6,	table_id,	number # name
 % char,	bigint,	int,	int # type
 % 21,	1,	1,	1 # length
-% .%21,	.%20,	.t # table_name
-% %21,	%20,	id # name
+% .%24,	.%20,	.t # table_name
+% %24,	%20,	id # name
 % char,	bigint,	int # type
 % 161,	1,	1 # length
-% .%37,	.%34,	.t # table_name
-% %37,	%34,	id # name
+% .%44,	.%34,	.t # table_name
+% %44,	%34,	id # name
 % char,	bigint,	int # type
 % 159,	1,	1 # length
-% .%2,	sys.%1,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.f,	sys.a # table_name
+% .%2,	.%1,	.f,	.f,	.f,	.f,	.f,	.f,	.f,	.f,	.f,	.a # table_name
 % %2,	%1,	schema_id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	id # name
 % char,	bigint,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
 % 59,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
-% .%2,	sys.%1,	sys.args,	sys.args,	sys.args # table_name
+% .%2,	.%1,	.args,	.args,	.args # table_name
 % %2,	%1,	func_id,	name,	inout # name
 % char,	bigint,	int,	varchar,	tinyint # type
 % 18,	1,	1,	0,	1 # length
-% .%2,	sys.%1,	sys.types,	sys.types,	sys.types # table_name
+% .%2,	.%1,	.types,	.types,	.types # table_name
 % %2,	%1,	schema_id,	systemname,	sqlname # name
 % char,	bigint,	int,	varchar,	varchar # type
 % 19,	1,	1,	0,	0 # length
-% .%2,	sys.%1,	sys.objects,	sys.objects # table_name
+% .%2,	.%1,	.objects,	.objects # table_name
 % %2,	%1,	id,	name # name
 % char,	bigint,	int,	varchar # type
 % 21,	1,	1,	0 # length
-% .%2,	sys.%1,	sys.keys,	sys.keys # table_name
+% .%2,	.%1,	.keys,	.keys # table_name
 % %2,	%1,	table_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 18,	1,	1,	0 # length
-% .%2,	sys.%1,	sys.idxs,	sys.idxs # table_name
+% .%2,	.%1,	.idxs,	.idxs # table_name
 % %2,	%1,	table_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 18,	1,	1,	0 # length
-% .%2,	sys.%1,	sys.triggers,	sys.triggers # table_name
+% .%2,	.%1,	.triggers,	.triggers # table_name
 % %2,	%1,	table_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 22,	1,	1,	0 # length
-% .%2,	sys.%1,	sys.sequences,	sys.sequences # table_name
+% .%2,	.%1,	.sequences,	.sequences # table_name
 % %2,	%1,	schema_id,	name # name
 % char,	bigint,	int,	varchar # type
 % 23,	1,	1,	0 # length
-% .%2,	sys.%1,	sys.dependency_types # table_name
+% .%2,	.%1,	.dependency_types # table_name
 % %2,	%1,	dependency_type_name # name
 % char,	bigint,	varchar # type
 % 30,	1,	0 # length
-% .%2,	sys.%1,	sys.auths # table_name
+% .%2,	.%1,	.auths # table_name
 % %2,	%1,	name # name
 % char,	bigint,	varchar # type
 % 19,	1,	0 # length
@@ -5179,43 +5183,43 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %3,	%2,	def # name
 % char,	bigint,	clob # type
 % 24,	1,	0 # length
-% .%2,	sys.%1,	sys.table_types # table_name
+% .%2,	.%1,	.table_types # table_name
 % %2,	%1,	table_type_name # name
 % char,	bigint,	varchar # type
 % 25,	1,	0 # length
-% .%2,	sys.%1,	sys.function_types # table_name
+% .%2,	.%1,	.function_types # table_name
 % %2,	%1,	function_type_name # name
 % char,	bigint,	varchar # type
 % 28,	1,	0 # length
-% .%2,	sys.%1,	sys.function_languages # table_name
+% .%2,	.%1,	.function_languages # table_name
 % %2,	%1,	language_name # name
 % char,	bigint,	varchar # type
 % 32,	1,	0 # length
-% .%2,	sys.%1,	sys.index_types # table_name
+% .%2,	.%1,	.index_types # table_name
 % %2,	%1,	index_type_name # name
 % char,	bigint,	varchar # type
 % 25,	1,	0 # length
-% .%2,	sys.%1,	sys.key_types # table_name
+% .%2,	.%1,	.key_types # table_name
 % %2,	%1,	key_type_name # name
 % char,	bigint,	varchar # type
 % 23,	1,	0 # length
-% .%2,	sys.%1,	sys.privilege_codes # table_name
+% .%2,	.%1,	.privilege_codes # table_name
 % %2,	%1,	privilege_code_name # name
 % char,	bigint,	varchar # type
 % 29,	1,	0 # length
-% .%2,	sys.%1,	sys.comments # table_name
+% .%2,	.%1,	.comments # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 22,	1,	1 # length
-% .%2,	sys.%1,	sys.table_partitions,	sys.table_partitions # table_name
+% .%2,	.%1,	.table_partitions,	.table_partitions # table_name
 % %2,	%1,	table_id,	column_id # name
 % char,	bigint,	int,	int # type
 % 58,	1,	1,	1 # length
-% .%2,	sys.%1,	sys.table_partitions,	sys.table_partitions # table_name
+% .%2,	.%1,	.table_partitions,	.table_partitions # table_name
 % %2,	%1,	table_id,	expression # name
 % char,	bigint,	int,	varchar # type
 % 59,	1,	1,	0 # length
-% .%2,	sys.%1,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% .%2,	.%1,	.range_partitions,	.range_partitions,	.range_partitions # table_name
 % %2,	%1,	table_id,	partition_id,	maximum # name
 % char,	bigint,	int,	int,	varchar # type
 % 30,	1,	1,	1,	0 # length
