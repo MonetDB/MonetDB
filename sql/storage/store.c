@@ -2669,6 +2669,7 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 
 	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
+	BBPtmlock();
 	locked = 1;
 	if (GDKexiting())
 		goto end;
@@ -2693,6 +2694,7 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 
 end:
 	if (locked) {
+		BBPtmunlock();
 		MT_lock_unset(&store->lock);
 		MT_lock_unset(&store->flush);
 	}
