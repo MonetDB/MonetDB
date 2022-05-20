@@ -2399,7 +2399,7 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 #define TAR_BLOCK_SIZE (512)
 
 // Write a tar header to the given stream.
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
 {
 	char buf[TAR_BLOCK_SIZE] = {0};
@@ -2453,7 +2453,7 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
  * multiple of TAR_BLOCK_SIZE.  Make sure all writes are in multiples
  * of TAR_BLOCK_SIZE.
  */
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 tar_write(stream *outfile, const char *data, size_t size)
 {
 	const size_t tail = size % TAR_BLOCK_SIZE;
@@ -2480,7 +2480,7 @@ tar_write(stream *outfile, const char *data, size_t size)
 	return GDK_SUCCEED;
 }
 
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
 {
 	gdk_return res;
@@ -2492,7 +2492,7 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	return tar_write(tarfile, data, size);
 }
 
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
 {
 	const ssize_t bufsize = 64 * 1024;
@@ -2543,7 +2543,7 @@ end:
 	return ret;
 }
 
-static gdk_return
+static gdk_return __attribute__((__warn_unused_result__))
 hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 {
 	gdk_return ret = GDK_FAIL;
@@ -2618,7 +2618,7 @@ end:
  *
  * This function is not entirely safe as compared to for example mkstemp.
  */
-static str
+static str __attribute__((__warn_unused_result__))
 pick_tmp_name(str filename)
 {
 	str name = GDKmalloc(strlen(filename) + 10);
