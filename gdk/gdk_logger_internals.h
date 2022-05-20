@@ -35,6 +35,9 @@ struct logger {
 	ulng saved_id;		/* id of last fully handled log file */
 	int tid;		/* current transaction id */
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
+	ulng transaction_count;
+	ulng commit_count;
+	int committed_tid; /*id of flushed transaction for which the proper commit messages are also flushed*/
 	bool flushing;
 	bool flushnow;
 	bool request_rotation;

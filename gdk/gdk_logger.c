@@ -992,6 +992,7 @@ tr_commit(logger *lg, trans *tr)
 		la_destroy(&tr->changes[i]);
 	}
 	lg->saved_tid = tr->tid;
+	lg->transaction_count++;
 	return tr_destroy(tr);
 }
 
@@ -1266,8 +1267,13 @@ log_read_transaction(logger *lg)
 			}
 			break;
 		case LOG_COMMIT:
-			assert(l.id > 0);
-			// TODO
+			if(l.id < 0) {
+				err = LOG_ERR;
+				break;
+			}
+			lg->commit_count += (ulng) l.id;
+			if (lg->transaction_count == lg->commit_count)
+				lg->committed_tid = lg->saved_tid;
 			break;
 		default:
 			err = LOG_ERR;
@@ -1363,6 +1369,14 @@ log_readlogs(logger *lg, char *filename)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_readlogs logger id is " LLFMT " last logger id is " LLFMT "\n", lg->id, lg->saved_id);
 
+	/* simple consistency based on
+	 * running counts of transactions and
+	 * running sums of transaction counts in commit messages
+	 */
+	lg->committed_tid = 0;
+	lg->transaction_count = 0;
+	lg->commit_count = 0;
+
 	char log_filename[FILENAME_MAX];
 	if (lg->saved_id >= lg->id) {
 		bool filemissing = false;
@@ -1380,6 +1394,17 @@ log_readlogs(logger *lg, char *filename)
 			}
 		}
 	}
+
+	if (res == GDK_SUCCEED && lg->transaction_count != lg->commit_count) {
+
+		GDKfatal(
+			"The last consistent transaction has id %d.\n"
+			"The transactions written after this transaction "
+			"are not followed by a correct set of commit messages.\n"
+			"This might indicate corruption of the Write-ahead log file(s) and/or\n"
+			"it might indicate that one or more following log files are missing.\n", lg->committed_tid);
+	}
+
 	return res;
 }
 
@@ -2985,7 +3010,10 @@ log_tcommit(logger *lg, ulng commit_ts, unsigned int commit_queue_number)
 		gdk_return result;
 		logformat l;
 		l.flag = LOG_COMMIT;
-		l.id = cql; // number of transactions to be committed;
+
+		/* number of transactions to be committed in this commit message.
+		 * Only used for checking consistency when replaying the log.*/
+		l.id = cql;
 
 		/* if the log file being rotated at the moment,
 		 * wait for it to finish*/
