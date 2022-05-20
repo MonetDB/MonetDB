@@ -416,7 +416,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		/* ordering on SCOPE not needed (since it is constant) */
 
 		if (pos >= querylen)
-			fprintf(stderr, "pos >= querylen, %ld > %ld\n", pos, querylen);
+			fprintf(stderr, "pos >= querylen, %zu > %zu\n", pos, querylen);
 	} else {
 		assert(IdentifierType == SQL_ROWVER);
 		/* The backend does not have such info available */
