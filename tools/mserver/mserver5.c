@@ -600,7 +600,7 @@ main(int argc, char **av)
 
 	if (dbtrace) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
-		if (GDKcreatedir(dbtrace) != GDK_SUCCEED) {
+		if (!inmemory && GDKcreatedir(dbtrace) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
 			exit(1);
 		}
