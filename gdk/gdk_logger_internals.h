@@ -9,7 +9,7 @@
 #ifndef _LOGGER_INTERNALS_H_
 #define _LOGGER_INTERNALS_H_
 
-#define FLUSH_QUEUE_SIZE 2048 /* maximum size of the flush queue, i.e. maximum number of transactions committing simultaneously */
+#define LOG_QUEUE_SIZE 2048 /* maximum size of the flush queue, i.e. maximum number of transactions committing simultaneously */
 
 typedef struct logged_range_t {
 	ulng id;			/* log file id */
@@ -18,6 +18,15 @@ typedef struct logged_range_t {
 	ulng last_ts;		/* last stored timestamp */
 	struct logged_range_t *next;
 } logged_range;
+
+typedef struct log_queue {
+	/* flush variables */
+	unsigned int queue[LOG_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
+	int begin; /* start index of the queue */
+	int length; /* length of the queue */
+	MT_Sema sema; /*to protect the queue against ring buffer overflows */
+	MT_Lock queue_lock; /* to protect the queue against concurrent reads and writes */
+} log_queue;
 
 struct logger {
 	int debug;
@@ -47,6 +56,7 @@ struct logger {
 	ATOMIC_TYPE refcount; /* Number of active writers and flushers in the logger */ // TODO check refcount in c->log and c->end
 	MT_Lock rotation_lock;
 	MT_Lock lock;
+	MT_Lock flush_lock; /* so only one transaction can flush to disk at any given time */
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog_bid;	/* int bid column */
 	BAT *catalog_id;	/* object identifier is unique */
@@ -68,13 +78,7 @@ struct logger {
 	void *buf;
 	size_t bufsize;
 
-	/* flush variables */
-	unsigned int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
-	int flush_queue_begin; /* start index of the queue */
-	int flush_queue_length; /* length of the queue */
-	MT_Sema flush_queue_semaphore; /*to protect the queue against ring buffer overflows */
-	MT_Lock flush_queue_lock; /* to protect the queue against concurrent reads and writes */
-	MT_Lock flush_lock; /* so only one transaction can flush to disk at any given time */
+	log_queue flush_queue;
 };
 
 struct old_logger {
