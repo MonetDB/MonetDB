@@ -625,6 +625,10 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._columns",	"db_user_info",	"fullname",	"varchar",	2048,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"db_user_info",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL,	NULL	]
 [ "sys._columns",	"db_user_info",	"schema_path",	"clob",	0,	0,	NULL,	true,	3,	NULL,	NULL	]
+[ "sys._columns",	"db_user_info",	"max_memory",	"bigint",	19,	0,	NULL,	true,	4,	NULL,	NULL	]
+[ "sys._columns",	"db_user_info",	"max_workers",	"int",	9,	0,	NULL,	true,	5,	NULL,	NULL	]
+[ "sys._columns",	"db_user_info",	"optimizer",	"varchar",	1024,	0,	NULL,	true,	6,	NULL,	NULL	]
+[ "sys._columns",	"db_user_info",	"default_role",	"int",	9,	0,	NULL,	true,	7,	NULL,	NULL	]
 [ "sys._columns",	"dependencies",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"dependencies",	"depend_id",	"int",	32,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"dependencies",	"depend_type",	"smallint",	16,	0,	NULL,	true,	2,	NULL,	NULL	]
@@ -1312,6 +1316,10 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._columns",	"users",	"fullname",	"varchar",	2048,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"users",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL,	NULL	]
 [ "sys._columns",	"users",	"schema_path",	"clob",	0,	0,	NULL,	true,	3,	NULL,	NULL	]
+[ "sys._columns",	"users",	"max_memory",	"bigint",	19,	0,	NULL,	true,	4,	NULL,	NULL	]
+[ "sys._columns",	"users",	"max_workers",	"int",	9,	0,	NULL,	true,	5,	NULL,	NULL	]
+[ "sys._columns",	"users",	"optimizer",	"varchar",	1024,	0,	NULL,	true,	6,	NULL,	NULL	]
+[ "sys._columns",	"users",	"default_role",	"int",	9,	0,	NULL,	true,	7,	NULL,	NULL	]
 [ "sys._columns",	"value_partitions",	"table_id",	"int",	32,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"value_partitions",	"partition_id",	"int",	32,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"value_partitions",	"value",	"varchar",	2048,	0,	NULL,	true,	2,	NULL,	NULL	]
@@ -5508,14 +5516,14 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %5,	default_schema,	name,	fullname,	default_schema,	schema_path # name
 % char,	int,	varchar,	varchar,	int,	clob # type
 % 41,	1,	0,	0,	1,	0 # length
-% .%5,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %5,	name,	name,	fullname,	default_schema,	schema_path # name
-% char,	varchar,	varchar,	varchar,	int,	clob # type
-% 38,	0,	0,	0,	1,	0 # length
-% .%5,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %5,	default_schema,	name,	fullname,	default_schema,	schema_path # name
-% char,	int,	varchar,	varchar,	int,	clob # type
-% 48,	1,	0,	0,	1,	0 # length
+% .%5,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %5,	name,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	varchar,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 38,	0,	0,	0,	1,	0,	1,	1,	0,	1 # length
+% .%5,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %5,	default_schema,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	int,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 48,	1,	0,	0,	1,	0,	1,	1,	0,	1 # length
 % .%5,	sys.user_role,	sys.user_role,	sys.user_role # table_name
 % %5,	login_id,	login_id,	role_id # name
 % char,	int,	int,	int # type
@@ -5828,18 +5836,18 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	grantor,	id,	name,	grantor # name
 % char,	int,	int,	varchar,	int # type
 % 21,	1,	1,	0,	1 # length
-% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %1,	name,	name,	fullname,	default_schema,	schema_path # name
-% char,	varchar,	varchar,	varchar,	int,	clob # type
-% 25,	0,	0,	0,	1,	0 # length
-% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %1,	fullname,	name,	fullname,	default_schema,	schema_path # name
-% char,	varchar,	varchar,	varchar,	int,	clob # type
-% 29,	0,	0,	0,	1,	0 # length
-% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %1,	default_schema,	name,	fullname,	default_schema,	schema_path # name
-% char,	int,	varchar,	varchar,	int,	clob # type
-% 35,	1,	0,	0,	1,	0 # length
+% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %1,	name,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	varchar,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 25,	0,	0,	0,	1,	0,	1,	1,	0,	1 # length
+% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %1,	fullname,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	varchar,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 29,	0,	0,	0,	1,	0,	1,	1,	0,	1 # length
+% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %1,	default_schema,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	int,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 35,	1,	0,	0,	1,	0,	1,	1,	0,	1 # length
 % .%1,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
 % %1,	id,	id,	depend_id,	depend_type # name
 % char,	int,	int,	int,	smallint # type
