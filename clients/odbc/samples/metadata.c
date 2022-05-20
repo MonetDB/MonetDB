@@ -89,7 +89,7 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 	char buf[2048];
 
 	if (outp == NULL) {
-		fprintf(stderr, "Failed to allocate %ld memory!\n", outp_len);
+		fprintf(stderr, "Failed to allocate %zu memory!\n", outp_len);
 		return;
 	}
 
