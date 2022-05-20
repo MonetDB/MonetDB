@@ -1265,6 +1265,10 @@ log_read_transaction(logger *lg)
 				}
 			}
 			break;
+		case LOG_COMMIT:
+			assert(l.id > 0);
+			// TODO
+			break;
 		default:
 			err = LOG_ERR;
 		}
@@ -2198,6 +2202,7 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 	MT_lock_destroy(&lg->rotation_lock);
 	MT_lock_destroy(&lg->flush_lock);
 	log_queue_destroy(&lg->flush_queue);
+	log_queue_destroy(&lg->commit_queue);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->local_dir);
@@ -2267,6 +2272,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	MT_lock_init(&lg->flush_lock, "flush_lock");
 
 	log_queue_initialize(&lg->flush_queue, "flush_queue_semaphore", "flush_queue_lock");
+	log_queue_initialize(&lg->commit_queue, "commit_queue_semaphore", "commit_queue_lock");
 
 	if (log_load(debug, fn, logdir, lg, filename) == GDK_SUCCEED) {
 		return lg;
@@ -2316,6 +2322,7 @@ log_destroy(logger *lg)
 	MT_lock_destroy(&lg->rotation_lock);
 	MT_lock_destroy(&lg->flush_lock);
 	log_queue_destroy(&lg->flush_queue);
+	log_queue_destroy(&lg->commit_queue);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->buf);
@@ -2937,8 +2944,8 @@ log_tend(logger *lg)
 	l.flag = LOG_END;
 	l.id = lg->tid;
 
-	if ((result = log_write_format(lg, &l)) != GDK_SUCCEED)
-		(void) ATOMIC_DEC(&lg->refcount);
+	result = log_write_format(lg, &l);
+	(void) ATOMIC_DEC(&lg->refcount);
 
 	return result;
 }
@@ -2956,7 +2963,7 @@ log_tdone(logger *lg, ulng commit_ts)
 }
 
 gdk_return
-log_tcommit(logger *lg, ulng commit_ts)
+log_tcommit(logger *lg, ulng commit_ts, unsigned int commit_queue_number)
 {
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tcommit " LLFMT "\n", commit_ts);
@@ -2968,33 +2975,50 @@ log_tcommit(logger *lg, ulng commit_ts)
 		return GDK_SUCCEED;
 	}
 
-	gdk_return result;
-	logformat l;
-	l.flag = LOG_COMMIT;
-	l.id = 0; // number of transactions to be committed;
+	log_queue* commit_queue = &lg->commit_queue;
 
-	if ((result = log_write_format(lg, &l)) != GDK_SUCCEED) {
+	if (log_queue_has_number(commit_queue, commit_queue_number)) {
+
+		log_queue* cq = &lg->commit_queue;
+
+		const int cql = log_queue_length(cq);
+		gdk_return result;
+		logformat l;
+		l.flag = LOG_COMMIT;
+		l.id = cql; // number of transactions to be committed;
+
+		/* if the log file being rotated at the moment,
+		 * wait for it to finish*/
+		MT_lock_set(&lg->rotation_lock);
+		(void) ATOMIC_INC(&lg->refcount);
+		MT_lock_unset(&lg->rotation_lock);
+
+		if ((result = log_write_format(lg, &l)) != GDK_SUCCEED) {
+			(void) ATOMIC_DEC(&lg->refcount);
+			return result;
+		}
+		else {
+			log_queue_truncate_left(cq, cql);
+		}
+
 		(void) ATOMIC_DEC(&lg->refcount);
-		return result;
 	}
 
 	return GDK_SUCCEED;
 }
 
 gdk_return
-log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
+log_tflush(logger* lg, ulng log_file_id, ulng commit_ts, unsigned int* commit_queue_number) {
 
 	if (lg->flushnow) {
 		lg->flushnow = 0;
-		if (!commit_ts) log_tdone(lg, commit_ts); // TODO: check if 
+		if (!commit_queue_number) log_tdone(lg, commit_ts); // TODO: check if 
 		return log_commit(lg);
 	}
 
 	if (LOG_DISABLED(lg)) {
 		return GDK_SUCCEED;
 	}
-
-	(void) ATOMIC_DEC(&lg->refcount);
 
 	MT_lock_set(&lg->rotation_lock);
 	if (log_file_id == lg->id) { // TODO: introduce lg->flushed and get rid of log_file_id in signature
@@ -3028,8 +3052,11 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 		* no need to do anything */
 		MT_lock_unset(&lg->rotation_lock);
 
+	if (commit_queue_number) {
+		*commit_queue_number = log_queue_request_number(&lg->commit_queue);
+	}
 
-	if (!commit_ts) log_tdone(lg, commit_ts);
+	if (!commit_queue_number) log_tdone(lg, commit_ts);
 	MT_lock_unset(&lg->flush_lock);
 	// TODO: request number for commit message queue.
 

@@ -53,7 +53,7 @@ struct logger {
 	stream *input_log;	/* current stream to flush */
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */ // TODO: only incremen when actual files writes occur.
 
-	ATOMIC_TYPE refcount; /* Number of active writers and flushers in the logger */ // TODO check refcount in c->log and c->end
+	ATOMIC_TYPE refcount; /* Number of active writers in the logger */ // TODO check if atomicity + rotation_lock is redundant, check refcount in c->log and c->end
 	MT_Lock rotation_lock;
 	MT_Lock lock;
 	MT_Lock flush_lock; /* so only one transaction can flush to disk at any given time */
@@ -79,6 +79,7 @@ struct logger {
 	size_t bufsize;
 
 	log_queue flush_queue;
+	log_queue commit_queue;
 };
 
 struct old_logger {

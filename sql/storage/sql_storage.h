@@ -282,8 +282,8 @@ typedef int (*logger_get_sequence_fptr) (struct sqlstore *store, int seq, lng *i
 typedef int (*log_isnew_fptr)(struct sqlstore *store);
 typedef int (*log_tstart_fptr) (struct sqlstore *store, bool flush, ulng *log_file_id);
 typedef int (*log_tend_fptr) (struct sqlstore *store);
-typedef int (*log_tflush_fptr) (struct sqlstore *store, ulng log_file_id, ulng commit_ts);
-typedef int (*log_tcommit_fptr) (struct sqlstore *store, ulng commit_ts);
+typedef int (*log_tflush_fptr) (struct sqlstore *store, ulng log_file_id, ulng commit_ts, unsigned int* commit_queue_number);
+typedef int (*log_tcommit_fptr) (struct sqlstore *store, ulng commit_ts, unsigned int commit_queue_number);
 typedef lng (*log_save_id_fptr) (struct sqlstore *store);
 typedef int (*log_tsequence_fptr) (struct sqlstore *store, int seq, lng id);
 

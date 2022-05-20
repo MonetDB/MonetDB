@@ -3150,14 +3150,14 @@ bl_tend(sqlstore *store)
 }
 
 static int
-bl_tflush(sqlstore *store, ulng log_file_id, ulng commit_ts)
+bl_tflush(sqlstore *store, ulng log_file_id, ulng commit_ts, unsigned int* commit_queue_number)
 {
-	return log_tflush(store->logger, log_file_id, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tflush(store->logger, log_file_id, commit_ts, commit_queue_number) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
-bl_tcommit(sqlstore *store, ulng commit_ts) {
-	return log_tcommit(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+bl_tcommit(sqlstore *store, ulng commit_ts, unsigned int commit_queue_number) {
+	return log_tcommit(store->logger, commit_ts, commit_queue_number) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int

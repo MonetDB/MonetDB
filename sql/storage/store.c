@@ -3986,17 +3986,23 @@ sql_trans_commit(sql_trans *tr)
 		store_unlock(store);
 		/* flush the log structure */
 		if (log) {
+			unsigned int commit_queue_number;
 			if (!flush)
 				MT_lock_unset(&store->commit); /* release the commit log when flushing to disk */
 			if (ok == LOG_OK)
-				ok = store->logger_api.log_tflush(store, log_file_id, commit_ts); /* first flush/sync */
+				ok = store->logger_api.log_tflush(store, log_file_id, commit_ts, &commit_queue_number); /* first flush/sync */
 			if (!flush)
 				MT_lock_set(&store->commit);
 			if (ok == LOG_OK)
-				ok = store->logger_api.log_tcommit(store, commit_ts); /* write final commit and  */
-			if (flush)
+				ok = store->logger_api.log_tcommit(store, commit_ts, commit_queue_number); /* write final commit message */
+			if (!flush)
+				MT_lock_unset(&store->commit);
+			if (ok == LOG_OK)
+				ok = store->logger_api.log_tflush(store, log_file_id, commit_ts, NULL); /* second flush/sync */
+			if (!flush)
+				MT_lock_set(&store->commit);
+			 if (flush)
 				MT_lock_unset(&store->flush);
-			
 		}
 		MT_lock_unset(&store->commit);
 		list_destroy(tr->changes);
