@@ -347,7 +347,7 @@ stmt_bat_new(backend *be, int tt, lng estimate)
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushType(be->mb, q, tt);
 	if (estimate > 0) {
-		assert (estimate <= 1100000);
+		assert (estimate <= 4100000);
 		q = pushInt(be->mb, q, (int)estimate);
 	}
 	//return getDestVar(q);
@@ -364,7 +364,7 @@ stmt_hash_new(backend *be, int tt, lng estimate, int parent)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushType(be->mb, q, tt);
-	assert (estimate >= 0 && estimate <= 1100000);
+	assert (estimate >= 0 && estimate <= 4100000);
 	q = pushInt(be->mb, q, (int)estimate);
 	if (parent)
 		q = pushArgument(be->mb, q, parent);
