@@ -2993,7 +2993,9 @@ log_tcommit(logger *lg, ulng commit_ts, unsigned int commit_queue_number)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tcommit " LLFMT "\n", commit_ts);
 
-	// TODO: check commit queue number
+	/* TODO: check if commit_ts can be used to retrieve commit_queue_number.
+	 * advantage would be that the log_tcommit does not have to pass
+	 * a logger implementation detail like commit_queue_number.*/
 
 	lg->end++; // TODO check whether or not this should be done in light of log_activate
 	if (LOG_DISABLED(lg)) {
