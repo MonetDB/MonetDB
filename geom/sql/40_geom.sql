@@ -514,6 +514,8 @@ GRANT EXECUTE ON FUNCTION ST_CoveredBy(Geometry, Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Distance"
 CREATE FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, dst double) RETURNS boolean EXTERNAL NAME geom."DWithin";
 GRANT EXECUTE ON FUNCTION ST_DWithin(Geometry, Geometry, double) TO PUBLIC;
+CREATE FUNCTION ST_DWithin2(geom1 Geometry, geom2 Geometry, bbox1 mbr, bbox2 mbr, dst double) RETURNS boolean EXTERNAL NAME geom."DWithin2";
+GRANT EXECUTE ON FUNCTION ST_DWithin2(Geometry, Geometry, mbr, mbr, double) TO PUBLIC;
 --CREATE FUNCTION ST_HausdorffDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_MaxDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Distance_Sphere RETURNS EXTERNAL NAME

@@ -879,6 +879,24 @@ mbrEqual_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
 	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrEqual);
 }
 
+str
+mbrDiagonal(dbl *out, mbr **b)
+{
+	double side_a = .0, side_b = .0;
+
+	if (is_mbr_nil(*b)) {
+		*out = dbl_nil;
+		return MAL_SUCCEED;
+	}
+
+	side_a = (*b)->xmax - (*b)->xmin;
+	side_b = (*b)->ymax - (*b)->ymin;
+
+	*out = sqrt(pow(side_a, 2.0) + pow(side_b, 2.0));
+
+	return MAL_SUCCEED;
+}
+
 /* returns the Euclidean distance of the centroids of the boxes */
 str
 mbrDistance(dbl *out, mbr **b1, mbr **b2)
