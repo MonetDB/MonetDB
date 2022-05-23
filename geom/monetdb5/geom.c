@@ -17,6 +17,8 @@
 #include "gdk_logger.h"
 #include "mal_exception.h"
 
+mbr mbrNIL = {0}; // will be initialized properly by geom prelude
+
 /**
  * AGGREGATES
  **/

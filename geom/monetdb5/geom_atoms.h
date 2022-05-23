@@ -3,7 +3,7 @@
 
 /* NULL: generic nil mbr. */
 /* returns a pointer to a nil-mbr. */
-static mbr mbrNIL;		/* to be filled in */
+extern mbr mbrNIL;
 
 static const wkb wkb_nil = { ~0, 0 };
 static const wkba wkba_nil = {.itemsNum = ~0};
