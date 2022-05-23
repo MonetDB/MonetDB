@@ -64,6 +64,7 @@ geom_export str mbrContained(bit *out, mbr **b1, mbr **b2);
 geom_export str mbrContained_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
 geom_export str mbrEqual(bit *out, mbr **b1, mbr **b2);
 geom_export str mbrEqual_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
+geom_export str mbrDiagonal(dbl *out, mbr **b);
 geom_export str mbrDistance(dbl *out, mbr **b1, mbr **b2);
 geom_export str mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB);
 geom_export str wkbCoordinateFromWKB(dbl*, wkb**, int*);

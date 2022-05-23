@@ -22,16 +22,16 @@
  **/
 
 /**
-* Collect (Group By implementation) 
-* 
+* Collect (Group By implementation)
+*
 **/
 //Gets the type of collection a single geometry should belong to
 static int
 GEOSGeom_getCollectionType (int GEOSGeom_type) {
-	
+
 	//TODO Remove
 	(void) geodeticEdgeBoundingBox;
-	
+
 	//Single geometries get collected into a Multi* geometry
 	if (GEOSGeom_type == GEOS_POINT)
 		return GEOS_MULTIPOINT;
@@ -47,7 +47,7 @@ GEOSGeom_getCollectionType (int GEOSGeom_type) {
 /* Group By operation. Joins geometries together in the same group into a MultiGeometry */
 //TODO Check if the SRID is consistent within a group (right now we only use the first SRID)
 //TODO The number of candidates is getting wrong here
-str 
+str
 wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
@@ -72,7 +72,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	(void)eid;
 
 	//Get the BAT descriptors for the value, group and candidate bats
-	if ((b = BATdescriptor(*bid)) == NULL || 
+	if ((b = BATdescriptor(*bid)) == NULL ||
 		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
 		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
@@ -83,7 +83,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		msg = createException(MAL, "geom.Collect", "BAT sort failed.");
 		goto free;
 	}
-	
+
 	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
 	if (!BATtdense(sortedorder)) {
 		sortedinput = BATproject(sortedorder,b);
@@ -92,7 +92,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		b = sortedinput;
 		g = sortedgroups;
 		BBPunfix(sortedorder->batCacheid);
-		
+
 	}
 	else {
 		BBPunfix(sortedgroups->batCacheid);
@@ -131,7 +131,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	if (g && !BATtdense(g))
 		gids = (const oid *)Tloc(g, 0);
 	bi = bat_iterator(b);
-	
+
 	for (BUN i = 0; i < ncand; i++) {
 		oid o = canditer_next(&ci);
 		BUN p = o - b->hseqbase;
@@ -222,7 +222,7 @@ free:
 	return msg;
 }
 
-str 
+str
 wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
 {
 	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
@@ -271,7 +271,7 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
 
     // Cleanup
-    // Data ownership has been transfered from unionGroup elements to 
+    // Data ownership has been transfered from unionGroup elements to
     // collection. Check libgeos GEOSGeom_createCollection() for more.
     bat_iterator_end(&bi);
     GEOSGeom_destroy(collection);
@@ -4508,6 +4508,59 @@ wkbDWithin(bit *out, wkb **geomWKB_a, wkb **geomWKB_b, dbl *distance)
 	return MAL_SUCCEED;
 }
 
+str
+wkbDWithinMbr(bit *out, wkb **a, wkb **b, mbr **mbr_a, mbr **mbr_b, dbl *distance)
+{
+	double actualDistance, bboxDistance;
+	double halfd_a, halfd_b; // halfed diagonals of the a and b bounding boxes
+	double ambiguous_zone_min, ambiguous_zone_max; // see comments
+	str err;
+
+	if (is_wkb_nil(*a) || is_wkb_nil(*b) || is_dbl_nil(*distance)) {
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+
+	// if there are no mbr(s) fallback to wkbDWithin
+	if (is_mbr_nil(*mbr_a) || is_mbr_nil(*mbr_b))
+		return wkbDWithin(out, a, b, distance);
+
+	// first calculate the distance of the bounding boxes (mbrs)
+	if ((err = mbrDistance(&bboxDistance, mbr_a, mbr_b)) != MAL_SUCCEED)
+		return err;
+
+	if ((err = mbrDiagonal(&halfd_a, mbr_a)) != MAL_SUCCEED)
+		return err;
+	halfd_a *= .5;
+
+	if ((err = mbrDiagonal(&halfd_b, mbr_b)) != MAL_SUCCEED)
+		return err;
+	halfd_b *= .5;
+
+	// Every bounding box can be inscribed in a circle. When calculating the distance
+	// between two mbrs we do so by their centroids which are actually the origins of
+	// their circumscribed circles. Then, independently of the bounded geometry, we can
+	// find two rough distance limits which are giving us a zone outside of which the
+	// questions 'distance within' can be answered only by the bounding box geometry.
+	// If the 'distance within' check is done over distance value in this zone then we
+	// actually need to perform the underlying geometry distance calculation.
+	ambiguous_zone_max = bboxDistance;
+	ambiguous_zone_min = bboxDistance - halfd_a - halfd_b;
+
+	if (*distance < ambiguous_zone_min) {
+		*out = false;
+	} else if (*distance > ambiguous_zone_max) {
+		*out = true;
+	} else {
+		// if we are not sure still calculate the actual distance of the geometries
+		if ((err = wkbDistance(&actualDistance, a, b)) != MAL_SUCCEED)
+			return err;
+		*out = (actualDistance <= *distance);
+	}
+
+	return MAL_SUCCEED;
+}
+
 /*returns the n-th geometry in a multi-geometry */
 str
 wkbGeometryN(wkb **out, wkb **geom, const int *geometryNum)
@@ -5286,13 +5339,13 @@ static mel_atom geom_init_atoms[] = {
  { .name="wkba", .tostr=wkbaTOSTR, .fromstr=wkbaFROMSTR, .null=wkbaNULL, .hash=wkbaHASH, .cmp=wkbaCOMP, .read=wkbaREAD, .write=wkbaWRITE, .put=wkbaPUT, .del=wkbaDEL, .length=wkbaLENGTH, .heap=wkbaHEAP, },  { .cmp=NULL }
 };
 static mel_func geom_init_funcs[] = {
- //TODO Fill in descriptions 
+ //TODO Fill in descriptions
  command("geom", "CoversGeographic", wkbCoversGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
 
  command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
  command("batgeom", "DistanceGeographic", wkbDistanceGeographic_bat, false, "TODO", args(1, 3, batarg("", dbl), batarg("a", wkb), batarg("b", wkb))),
  command("batgeom", "DistanceGeographic", wkbDistanceGeographic_bat_cand, false, "TODO", args(1, 5, batarg("", dbl), batarg("a", wkb), batarg("b", wkb), batarg("s1", oid), batarg("s2", oid))),
-  
+
  //Filter functions
  command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", bit), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
  command("geom", "DWithinGeographicselect", wkbDWithinGeographicSelect, false, "TODO", args(1, 6, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("d", dbl),arg("anti",bit))),
@@ -5304,12 +5357,12 @@ static mel_func geom_init_funcs[] = {
  command("aggr", "Collect", wkbCollectAggr, false, "TODO", args(1, 2, arg("", wkb), batarg("val", wkb))),
  command("aggr", "subCollect", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
  command("aggr", "subCollect", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 6, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit))),
- 
+
  //TODO: See if we can remove (used in SQL level on 39_spatial_ref_sys.sql)
  command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "getType", geoGetType, false, "returns the str representation of the geometry type", args(1,3, arg("",str),arg("flags",int),arg("format",int))),
- 
+
  command("geom", "MLineStringToPolygon", wkbMLineStringToPolygon, false, "Creates polygons using the MultiLineString provided as WKT. Depending on the flag creates one (flag=0) or multiple (flag=1) polygons", args(1,4, arg("",wkb),arg("wkt",str),arg("srid",int),arg("flag",int))),
  command("geom", "AsBinary", wkbAsBinary, false, "Returns the wkb representation into HEX format", args(1,2, arg("",str),arg("w",wkb))),
  command("geom", "FromBinary", wkbFromBinary, false, "Creates a wkb using the HEX representation", args(1,2, arg("",wkb),arg("w",str))),
@@ -5363,6 +5416,7 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Covers", wkbCovers, false, "Returns TRUE if no point of geometry B is outside geometry A", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "CoveredBy", wkbCoveredBy, false, "Returns TRUE if no point of geometry A is outside geometry B", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "DWithin", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("geom", "DWithin2", wkbDWithinMbr, false, "" /* <<< desc TODO */, args(1,6, arg("",bit),arg("a",wkb),arg("b",wkb),arg("a_mbr",mbr),arg("b_mbr",mbr),arg("dst",dbl))),
  command("geom", "GeometryN", wkbGeometryN, false, "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL", args(1,3, arg("",wkb),arg("g",wkb),arg("n",int))),
  command("geom", "NumGeometries", wkbNumGeometries, false, "Returns the number of geometries", args(1,2, arg("",int),arg("g",wkb))),
  command("geom", "Transform", wkbTransform, false, "Transforms a geometry from one srid to another", args(1,6, arg("",wkb),arg("g",wkb),arg("srid_src",int),arg("srid_dst",int),arg("proj_src",str),arg("proj_dest",str))),
