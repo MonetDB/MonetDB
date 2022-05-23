@@ -1,3 +1,42 @@
+monetdb (11.43.15) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7036: Generate column names instead of labels
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 20 May 2022 10:10:59 +0200
+
+monetdb (11.43.15) unstable; urgency=low
+
+  * gdk: All accesses to the BACKUP directory need to be protected by the
+    same lock.  The lock already existed (GDKtmLock), but wasn't used
+    consistently.  This is now fixed.  Hopefully this makes the hot snapshot
+    code more reliable.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 19 May 2022 10:10:59 +0200
+
+monetdb (11.43.15) unstable; urgency=low
+
+  * gdk: When exiting, long running instructions are aborted using the same
+    mechanism that is used for query timeouts.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 10 May 2022 10:10:59 +0200
+
+monetdb (11.43.15) unstable; urgency=low
+
+  * sql: GLOBAL TEMPORARY tables are now treated like LOCAL TEMPORARY tables
+    as far as the table content is concerned.  The schema information
+    stays global.  This fixes an issue with concurrent access and cleanup
+    of stale data.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 25 Apr 2022 10:10:59 +0200
+
+monetdb (11.43.15) unstable; urgency=low
+
+  * sql: The NO CONSTRAINT option of the COPY INTO query has been removed.
+    It didn't work and it was never a good idea anyway.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 14 Apr 2022 10:10:59 +0200
+
 monetdb (11.43.13) unstable; urgency=low
 
   * Rebuilt.

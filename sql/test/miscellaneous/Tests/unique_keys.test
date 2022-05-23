@@ -90,10 +90,10 @@ project (
 | | | select (
 | | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
 | | | ) [ ("testkeys"."b" UNIQUE HASHCOL ) = (int(32) "1") ],
-| | | table("sys"."othertable") [ "othertable"."a" ]
-| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL) ]
-| ) [ (int(32) "2") <= ("othertable"."a") <= (int(32) "5") ]
-) [ "testkeys"."a" NOT NULL HASHCOL  ]
+| | | table("sys"."othertable") [ "othertable"."a" UNIQUE ]
+| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL UNIQUE) ]
+| ) [ (int(32) "2") <= ("othertable"."a" UNIQUE) <= (int(32) "5") ]
+) [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
 
 # here 'othertable.a > 1' cannot be pushed up because 'testkeys.b is null' may pass multiple values
 query T nosort
@@ -105,10 +105,10 @@ project (
 | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
 | | ) [ ("testkeys"."b" UNIQUE HASHCOL ) * = (int(32) NULL) ],
 | | select (
-| | | table("sys"."othertable") [ "othertable"."a" ]
-| | ) [ ("othertable"."a") > (int(32) "1") ]
-| ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL) ]
-) [ "testkeys"."a" NOT NULL HASHCOL  ]
+| | | table("sys"."othertable") [ "othertable"."a" UNIQUE ]
+| | ) [ ("othertable"."a" UNIQUE) > (int(32) "1") ]
+| ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL UNIQUE) ]
+) [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
 
 statement ok
 rollback

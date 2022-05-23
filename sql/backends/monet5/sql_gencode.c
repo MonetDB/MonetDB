@@ -1420,6 +1420,12 @@ _rel_print(mvc *sql, sql_rel *rel)
 }
 
 void
+_exp_print(mvc *sql, sql_exp *e) {
+	exp_print(sql, GDKstdout, e, 0, NULL, 1, 0);
+	mnstr_printf(GDKstdout, "\n");
+}
+
+void
 rel_print(mvc *sql, sql_rel *rel, int depth)
 {
 	list *refs = sa_list(sql->sa);

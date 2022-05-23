@@ -194,6 +194,26 @@ pattern aggr.avg(X_0:bat[:any_2], X_1:int):dbl
 CMDcalcavg;
 Gives the avg of all tail values
 aggr
+avg
+pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:lng], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:any_1], X_7:bat[:lng], X_8:bat[:lng]) 
+LALGavg;
+avg per group.
+aggr
+avg
+pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:lng], X_3:ptr, X_4:bat[:oid]) (X_5:bat[:dbl], X_6:bat[:lng]) 
+LALGavg;
+avg per group.
+aggr
+avg
+pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:any_1], X_5:bat[:lng], X_6:bat[:lng]) 
+LALGavg;
+avg per group.
+aggr
+avg
+pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:dbl], X_5:bat[:lng]) 
+LALGavg;
+avg per group.
+aggr
 cardinality
 command aggr.cardinality(X_0:bat[:any_2]):lng 
 ALGcard;
@@ -263,6 +283,16 @@ count
 command aggr.count(X_0:bat[:any], X_1:bit):lng 
 ALGcount_nil;
 Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
+aggr
+count
+command aggr.count(X_0:bat[:oid], X_1:bat[:any_1], X_2:bit, X_3:ptr, X_4:bat[:oid]):bat[:lng] 
+LALGcount;
+Count per group.
+aggr
+count
+command aggr.count(X_0:bat[:oid], X_1:ptr, X_2:bat[:oid]):bat[:lng] 
+LALGcountstar;
+count per group.
 aggr
 count_no_nil
 command aggr.count_no_nil(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:any_2]):bat[:lng] 
@@ -384,6 +414,11 @@ command aggr.max(X_0:bat[:any_2], X_1:bit):any_2
 ALGmaxany_skipnil;
 Return the highest tail value or nil.
 aggr
+max
+command aggr.max(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]):bat[:any_1] 
+LALGmax;
+Max per group.
+aggr
 median
 command aggr.median(X_0:bat[:any_1]):any_1 
 AGGRmedian;
@@ -408,6 +443,11 @@ min
 command aggr.min(X_0:bat[:any_2], X_1:bit):any_2 
 ALGminany_skipnil;
 Return the lowest tail value or nil.
+aggr
+min
+command aggr.min(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]):bat[:any_1] 
+LALGmin;
+Min per group.
 aggr
 not_anyequal
 pattern aggr.not_anyequal(X_0:any_1, X_1:any_1):bit 
@@ -833,6 +873,11 @@ prod
 pattern aggr.prod(X_0:bat[:sht], X_1:bit):sht 
 CMDBATprod;
 Calculate aggregate product of B.
+aggr
+prod
+pattern aggr.prod(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1] 
+LALGprod;
+product per group.
 aggr
 quantile
 command aggr.quantile(X_0:bat[:any_1], X_1:bat[:dbl]):any_1 
@@ -2654,6 +2699,11 @@ pattern aggr.sum(X_0:bat[:sht], X_1:bit):sht
 CMDBATsum;
 Calculate aggregate sum of B.
 aggr
+sum
+pattern aggr.sum(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1] 
+LALGsum;
+sum per group.
+aggr
 variance
 command aggr.variance(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1]):bat[:dbl] 
 AGGRvariance3_dbl;
@@ -2924,6 +2974,11 @@ command algebra.projection(X_0:bat[:oid], X_1:bat[:any_3]):bat[:any_3]
 ALGprojection;
 Project left input onto right input.
 algebra
+projection
+command algebra.projection(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr):bat[:any_1] 
+LALGproject;
+Project.
+algebra
 projectionpath
 pattern algebra.projectionpath(X_0:bat[:any]...):bat[:any] 
 ALGprojectionpath;
@@ -3039,6 +3094,11 @@ command algebra.subslice(X_0:bat[:any_1], X_1:lng, X_2:lng):bat[:oid]
 ALGsubslice_lng;
 Return the oids of the slice with the BUNs at position x till y.
 algebra
+subslice
+command algebra.subslice(X_0:bat[:any_1], X_1:lng, X_2:lng, X_3:ptr) (X_4:bat[:oid], X_5:bat[:oid], X_6:bat[:oid]) 
+LALGsubslice;
+Returns the slice of a pipelined result
+algebra
 thetajoin
 command algebra.thetajoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:int, X_5:bit, X_6:lng):bat[:oid] 
 ALGthetajoin1;
@@ -3058,6 +3118,16 @@ unique
 command algebra.unique(X_0:bat[:any_1], X_1:bat[:oid]):bat[:oid] 
 ALGunique;
 Select all unique values from the tail of the first input.@Input is a dense-headed BAT, the second input is a@dense-headed BAT with sorted tail, output is a dense-headed@BAT with in the tail the head value of the input BAT that was@selected.  The output BAT is sorted on the tail value.  The@second input BAT is a list of candidates.
+algebra
+unique
+command algebra.unique(X_0:ptr, X_1:bat[:any_3], X_2:bat[:oid], X_3:bat[:oid]) (X_4:bat[:oid], X_5:bat[:any_3]) 
+LALGgroup_unique;
+Unique per group rows.
+algebra
+unique
+command algebra.unique(X_0:ptr, X_1:bat[:any_3], X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:any_3]) 
+LALGunique;
+Unique rows.
 bat
 append
 command bat.append(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bit):bat[:any_1] 
@@ -23785,12 +23855,12 @@ PCREreplacefirst_bat_wrap;
 (empty)
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):any... 
+unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):bat[:any_1] 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):any... 
+unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):bat[:any]... 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
@@ -32633,6 +32703,106 @@ ycc
 command color.ycc(X_0:int, X_1:int, X_2:int):color 
 CLRycc;
 Converts an YCC triplets to a color atom
+copy
+buf2str
+command copy.buf2str(X_0:bat[:bte]):str 
+COPYbuf2str;
+turn bat[:bte] into str
+copy
+fixlines
+unsafe command copy.fixlines(X_0:bat[:bte], X_1:bat[:bte], X_2:str, X_3:str, X_4:bit) (X_5:bat[:bte], X_6:bat[:bte], X_7:lng) 
+COPYfixlines;
+Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied
+copy
+get_blocksize
+unsafe command copy.get_blocksize():int 
+COPYget_blocksize;
+get the COPY block size
+copy
+get_parallel
+unsafe command copy.get_parallel():int 
+COPYget_parallel;
+get the id of the current COPY INTO implementation
+copy
+parse_decimal
+command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte):bat[:bte] 
+COPYparse_decimal_bte;
+Parse as a decimal
+copy
+parse_decimal
+command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:int):bat[:int] 
+COPYparse_decimal_int;
+Parse as a decimal
+copy
+parse_decimal
+command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:lng):bat[:lng] 
+COPYparse_decimal_lng;
+Parse as a decimal
+copy
+parse_decimal
+command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:sht):bat[:sht] 
+COPYparse_decimal_sht;
+Parse as a decimal
+copy
+parse_generic
+pattern copy.parse_generic(X_0:bat[:bte], X_1:bat[:int], X_2:any_1):bat[:any_1] 
+COPYparse_generic;
+Parse using GDK's atomFromStr
+copy
+parse_integer
+command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:bte):bat[:bte] 
+COPYparse_integer_bte;
+Parse as an integer
+copy
+parse_integer
+command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:int):bat[:int] 
+COPYparse_integer_int;
+Parse as an integer
+copy
+parse_integer
+command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:lng):bat[:lng] 
+COPYparse_integer_lng;
+Parse as an integer
+copy
+parse_integer
+command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:sht):bat[:sht] 
+COPYparse_integer_sht;
+Parse as an integer
+copy
+read
+unsafe command copy.read(X_0:streams, X_1:lng, X_2:bat[:bte]):streams 
+COPYread;
+Read 'block_size' bytes into 'block' from 's'
+copy
+set_blocksize
+unsafe command copy.set_blocksize(X_0:int):int 
+COPYset_blocksize;
+set the COPY block size
+copy
+set_parallel
+unsafe command copy.set_parallel(X_0:int):bit 
+COPYset_parallel;
+switch between different COPY INTO implementations
+copy
+skiplines
+unsafe command copy.skiplines(X_0:bat[:bte], X_1:lng):lng 
+COPYskiplines;
+Skip the first N lines in the buffer
+copy
+splitlines
+pattern copy.splitlines(X_0:bat[:bte], X_1:lng, X_2:str, X_3:str, X_4:str, X_5:str, X_6:bit):bat[:int]... 
+COPYsplitlines;
+Find the fields of the individual columns
+copy
+str2buf
+command copy.str2buf(X_0:str):bat[:bte] 
+COPYstr2buf;
+turn str into bat[:bte]
+copy
+trackrowids
+unsafe command copy.trackrowids(X_0:bat[:oid], X_1:lng, X_2:oid, X_3:bat[:oid]) (X_4:lng, X_5:bat[:oid]) 
+COPYtrackrowids;
+keep track of newly claimed rows
 dict
 compress
 pattern dict.compress(X_0:bat[:any_1]) (X_1:bat[:any], X_2:bat[:any_1]) 
@@ -33864,6 +34034,16 @@ command group.group(X_0:bat[:any_1], X_1:bat[:oid]) (X_2:bat[:oid], X_3:bat[:oid
 GRPgroup4;
 (empty)
 group
+group
+command group.group(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_5], X_3:bat[:any_3]) (X_4:bat[:oid], X_5:bat[:any_3]) 
+LALGderive;
+Sub Group input.
+group
+group
+command group.group(X_0:ptr, X_1:bat[:any_4]) (X_2:bat[:oid], X_3:bat[:any_3]) 
+LALGgroup;
+Group input.
+group
 groupdone
 command group.groupdone(X_0:bat[:any_1]):bat[:oid] 
 GRPgroup11;
@@ -34018,6 +34198,66 @@ subgroupdone
 command group.subgroupdone(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:lng]) (X_5:bat[:oid], X_6:bat[:oid]) 
 GRPsubgroup9;
 (empty)
+hash
+new
+pattern hash.new(X_0:any_1, X_1:int):bat[:any_1] 
+UHASHnew;
+(empty)
+hash
+new
+pattern hash.new(X_0:any_1, X_1:int, X_2:bat[:any_2]):bat[:any_1] 
+UHASHnew;
+(empty)
+iaggr
+count
+command iaggr.count(X_0:bat[:any], X_1:bat[:oid]):lng 
+ALGcountCND_bat;
+Return the current size (in number of elements) in a BAT.
+iaggr
+count
+command iaggr.count(X_0:bat[:any], X_1:bat[:oid], X_2:bit):lng 
+ALGcountCND_nil;
+Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
+iaggr
+count
+command iaggr.count(X_0:bat[:any]):lng 
+ALGcount_bat;
+Return the current size (in number of elements) in a BAT.
+iaggr
+count
+command iaggr.count(X_0:bat[:any], X_1:bit):lng 
+ALGcount_nil;
+Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
+iaggr
+count_no_nil
+command iaggr.count_no_nil(X_0:bat[:any_2], X_1:bat[:oid]):lng 
+ALGcountCND_no_nil;
+Return the number of elements currently@in a BAT ignoring BUNs with nil-tail
+iaggr
+count_no_nil
+command iaggr.count_no_nil(X_0:bat[:any_2]):lng 
+ALGcount_no_nil;
+Return the number of elements currently@in a BAT ignoring BUNs with nil-tail
+iaggr
+max
+command iaggr.max(X_0:bat[:any_2]):any_2 
+ALGmaxany;
+Return the highest tail value or nil.
+iaggr
+max
+command iaggr.max(X_0:bat[:any_2], X_1:bit):any_2 
+ALGmaxany_skipnil;
+Return the highest tail value or nil.
+iaggr
+min
+command iaggr.min(X_0:bat[:any_2]):any_2 
+ALGminany;
+Return the lowest tail value or nil.
+iaggr
+min
+command iaggr.min(X_0:bat[:any_2], X_1:bit):any_2 
+ALGminany_skipnil;
+Return the lowest tail value or nil.
 identifier
 identifier
 command identifier.identifier(X_0:str):identifier 
@@ -34564,6 +34804,11 @@ pattern language.pass(X_0:any_1):void
 MALpass;
 Cheap instruction to disgard storage while retaining the dataflow dependency
 language
+pipelines
+pattern language.pipelines(X_0:int) (X_1:bit, X_2:int, X_3:ptr) 
+MALpipelines;
+The current guarded block in Parallel Pipelines
+language
 raise
 unsafe command language.raise(X_0:str):str 
 CMDraise;
@@ -34583,6 +34828,61 @@ source
 pattern language.source(X_0:str):void 
 CMDevalFile;
 Merge the instructions stored in the file with the current program.
+lockedaggr
+avg
+unsafe pattern lockedaggr.avg(X_0:ptr, X_1:any_1, X_2:lng) (X_3:bat[:any_1], X_4:bat[:lng]) 
+LOCKEDAGGRavg;
+avg values into bat (bat has value, update), using the bat lock
+lockedaggr
+avg
+unsafe pattern lockedaggr.avg(X_0:ptr, X_1:any_1, X_2:lng, X_3:lng) (X_4:bat[:any_1], X_5:bat[:lng], X_6:bat[:lng]) 
+LOCKEDAGGRavg;
+avg values into bat (bat has value, update), using the bat lock
+lockedaggr
+max
+unsafe pattern lockedaggr.max(X_0:ptr, X_1:any_1):bat[:any_1] 
+LOCKEDAGGRmax;
+max values into bat (bat has value, update), using the bat lock
+lockedaggr
+min
+unsafe pattern lockedaggr.min(X_0:ptr, X_1:any_1):bat[:any_1] 
+LOCKEDAGGRmin;
+min values into bat (bat has value, update), using the bat lock
+lockedaggr
+prod
+unsafe pattern lockedaggr.prod(X_0:ptr, X_1:any_2):bat[:any_1] 
+LOCKEDAGGRprod;
+product of all values, using the bat lock
+lockedaggr
+sum
+command lockedaggr.sum(X_0:ptr, X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:any_1]):bat[:lng] 
+LAGGRsum3_lng;
+Grouped tail sum on lng
+lockedaggr
+sum
+unsafe pattern lockedaggr.sum(X_0:ptr, X_1:any_1):bat[:any_1] 
+LOCKEDAGGRsum;
+sum values into bat (bat has value, update), using the bat lock
+lockedalgebra
+projection
+command lockedalgebra.projection(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_3]):bat[:any_3] 
+LALGprojection;
+Project left input onto right input.
+lockedgroup
+group
+command lockedgroup.group(X_0:ptr, X_1:bat[:any_1]) (X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:lng]) 
+LGRPgroup1;
+(empty)
+lockedgroup
+group
+command lockedgroup.group(X_0:ptr, X_1:bat[:any_1]) (X_2:bat[:oid], X_3:bat[:oid]) 
+LGRPgroup3;
+(empty)
+lockedgroup
+subgroupdone
+command lockedgroup.subgroupdone(X_0:ptr, X_1:bat[:any_1], X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:lng]) 
+LGRPsubgroup2;
+(empty)
 logging
 compinfo
 pattern logging.compinfo() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:str]) 
@@ -36188,6 +36488,26 @@ sql2pcre
 command pcre.sql2pcre(X_0:str, X_1:str):str 
 PCREsql2pcre;
 Convert a SQL like pattern with the given escape character into a PCRE pattern.
+pipeline
+channel
+unsafe pattern pipeline.channel(X_0:any_1) (X_1:any_1, X_2:int) 
+PPchannel;
+create a new channel
+pipeline
+counter
+unsafe pattern pipeline.counter(X_0:ptr):int 
+PPcounter;
+return next atomic number [0..n>
+pipeline
+recv
+unsafe pattern pipeline.recv(X_0:ptr, X_1:any_1, X_2:int):any_1 
+PPrecv;
+receive from channel
+pipeline
+send
+unsafe pattern pipeline.send(X_0:ptr, X_1:any_1, X_2:int, X_3:any_1):bit 
+PPsend;
+send through channel
 profiler
 cleanup
 unsafe pattern profiler.cleanup():void 
@@ -36280,7 +36600,7 @@ CMDstopTrace;
 Stop collecting trace information
 pyapi3
 eval
-unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any 
+unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any_1 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script returning a single value
 pyapi3
@@ -36523,6 +36843,11 @@ import
 unsafe pattern shp.import(X_0:int, X_1:wkb):void 
 SHPpartialimport;
 Partially import an ESRI Shapefile with given id into the vault
+slicer
+slice
+pattern slicer.slice(X_0:int) (X_1:bat[:any_1], X_2:bat[:any_1]) 
+SLICERslice;
+(empty)
 sql
 affectedRows
 unsafe pattern sql.affectedRows(X_0:int, X_1:lng):int 

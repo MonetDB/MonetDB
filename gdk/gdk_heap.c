@@ -152,9 +152,11 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 	h->free = 0;
 	h->cleanhash = false;
 
+	size_t allocated;
 	if (GDKinmemory(h->farmid) ||
-	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
-	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
+	    ((allocated = GDKmem_cursize()) + h->size < GDK_mem_maxsize &&
+	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
+	     h->size < ((GDK_mem_maxsize - allocated) >> 6))) {
 		h->storage = STORE_MEM;
 		h->base = GDKmalloc(h->size);
 		TRC_DEBUG(HEAP, "%s %zu %p\n", h->filename, h->size, h->base);
@@ -244,8 +246,12 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
 		Heap bak = *h;
-		bool exceeds_swap = size + GDKmem_cursize() >= GDK_mem_maxsize;
-		bool must_mmap = !GDKinmemory(h->farmid) && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
+		size_t allocated;
+		bool must_mmap = (!GDKinmemory(h->farmid) &&
+				   (h->newstorage != STORE_MEM ||
+				    (allocated = GDKmem_cursize()) + size >= GDK_mem_maxsize ||
+				    size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ||
+				    size >= ((GDK_mem_maxsize - allocated) >> 6)));
 
 		h->size = size;
 
@@ -482,10 +488,13 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 			p++;
 			p[1] = 0;
 		}
+		MT_lock_set(&GDKtmLock);
 		for (;;) {
 			exists = file_exists(old->farmid, BAKDIR, fname, NULL);
-			if (exists == -1)
+			if (exists == -1) {
+				MT_lock_unset(&GDKtmLock);
 				return GDK_FAIL;
+			}
 			if (exists == 1)
 				break;
 			if (*p == '1')
@@ -509,8 +518,10 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 			const char *base = old->base;
 
 			/* first save heap in file with extra .tmp extension */
-			if ((fd = GDKfdlocate(old->farmid, old->filename, "wb", "tmp")) < 0)
+			if ((fd = GDKfdlocate(old->farmid, old->filename, "wb", "tmp")) < 0) {
+				MT_lock_unset(&GDKtmLock);
 				return GDK_FAIL;
+			}
 			while (size > 0) {
 				ret = write(fd, base, (unsigned) MIN(1 << 30, size));
 				if (ret < 0)
@@ -533,6 +544,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 				GDKsyserror("syncing heap to disk failed\n");
 				close(fd);
 				GDKunlink(old->farmid, BATDIR, old->filename, "tmp");
+				MT_lock_unset(&GDKtmLock);
 				return GDK_FAIL;
 			}
 			/* move tmp file to backup directory (without .tmp
@@ -540,9 +552,11 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 			if (GDKmove(old->farmid, BATDIR, old->filename, "tmp", BAKDIR, filename, NULL, true) != GDK_SUCCEED) {
 				/* backup failed */
 				GDKunlink(old->farmid, BATDIR, old->filename, "tmp");
+				MT_lock_unset(&GDKtmLock);
 				return GDK_FAIL;
 			}
 		}
+		MT_lock_unset(&GDKtmLock);
 	}
 
 	new = GDKmalloc(sizeof(Heap));
@@ -750,8 +764,12 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	char *srcpath, *dstpath, *tmp;
 	int t0;
 
-	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID)
-		h->storage = h->newstorage = h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ? STORE_MEM : STORE_MMAP;
+	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID) {
+		size_t allocated;
+		h->storage = h->newstorage = h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
+			(allocated = GDKmem_cursize()) < GDK_mem_maxsize &&
+			h->size < ((GDK_mem_maxsize - allocated) >> 6) ? STORE_MEM : STORE_MMAP;
+	}
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)

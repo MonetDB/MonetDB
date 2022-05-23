@@ -30,6 +30,8 @@ extern int monet5_create_relational_function(mvc *m, const char *mod, const char
 extern void rel_print(mvc *sql, sql_rel *rel, int depth);
 extern void _rel_print(mvc *sql, sql_rel *rel);
 
+extern void _exp_print(mvc *sql, sql_exp *e);
+
 extern int constantAtom(backend *be, MalBlkPtr mb, atom *a);
 extern InstrPtr table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes);
 extern InstrPtr relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f);
