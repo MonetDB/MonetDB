@@ -117,7 +117,7 @@ static void
 emit_onserver_loop(
 	MalBlkPtr mb, struct loop_vars *loop_vars,
 	int var_fname, int block_size,
-	int var_line_sep, int var_quote_char, int var_escape, int var_offset)
+	int var_line_sep, int var_quote_char, int var_escape, int var_offset, int var_nrecords)
 {
 	(void)var_offset;
 	InstrPtr q;
@@ -221,9 +221,24 @@ emit_onserver_loop(
 	int var_total_count = getDestVar(q);
 
 	q = newStmt(mb, "calc", "==");
-	q->barrier = BARRIERsymbol;
 	q = pushArgument(mb, q, var_total_count);
 	q = pushLng(mb, q, 0);
+	int var_total_count_is_zero = getDestVar(q);
+
+	q = newStmt(mb, "calc", "-");
+	q = pushArgument(mb, q, var_nrecords);
+	q = pushArgument(mb, q, loop_vars->earlier_line_count);
+	int var_todo = getDestVar(q);
+
+	q = newStmt(mb, "calc", "<=");
+	q = pushArgument(mb, q, var_todo);
+	q = pushLng(mb, q, 0);
+	int var_no_more_needed = getDestVar(q);
+
+	q = newStmt(mb, "calc", "or");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_total_count_is_zero);
+	q = pushArgument(mb, q, var_no_more_needed);
 	int var_quit_barrier = getDestVar(q);
 
 	// Before we exit the main loop we make sure to unblock the next
@@ -250,6 +265,7 @@ emit_onserver_loop(
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushArgument(mb, q, var_escape);
+	q = pushArgument(mb, q, var_todo);
 	// use the variables defined by fixlines from now on:
 	loop_vars->our_block = getArg(q, 0);
 	var_next_block = getArg(q, 1);
@@ -340,6 +356,21 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushInt(mb, q, 0);
 	var_escape = getDestVar(q);
 
+	// remove special negative case for num_rows
+	q = newStmt(mb, "calc", "<");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_num_rows);
+	q = pushLng(mb, q, 0);
+	int num_rows_calculation = getDestVar(q);
+
+	q = newAssignment(mb);
+	q = pushLng(mb, q, GDK_lng_max);
+	setDestVar(q, var_num_rows);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	setDestVar(q, num_rows_calculation);
+
 	// convert offset to 0-based
 	q = newStmt(mb, "calc", ">");
 	q->barrier = BARRIERsymbol;
@@ -371,7 +402,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushNil(mb, q, TYPE_bit);
 	InstrPtr claim_channel_stmt = emit_channel(mb, getDestVar(q));
 
-	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape, var_offset);
+	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape, var_offset, var_num_rows);
 
 	int var_claim_token = emit_receive(mb, loop_vars.loop_handle, claim_channel_stmt);
 

@@ -164,11 +164,12 @@ get_sep_char(str sep, bool backslash_escapes)
 static str
 COPYfixlines(
 	  bat *ret_left, bat *ret_right, lng *ret_linecount,
-	  bat *left_block, bat *right_block, str *linesep_arg, str *quote_arg, bit *escape)
+	  bat *left_block, bat *right_block, str *linesep_arg, str *quote_arg, bit *escape, lng *max_rows_arg)
 {
 	str msg = MAL_SUCCEED;
 	int linesep, quote;
 	bool backslash_escapes;
+	lng max_rows = *max_rows_arg;
 	BAT *left = NULL, *right = NULL;
 	BAT *new_left = NULL, *new_right = NULL;
 	int start, left_size, right_size;
@@ -233,6 +234,19 @@ COPYfixlines(
 			if (!quoted && left_data[i] == linesep) {
 				latest_newline = i;
 				newline_count++;
+				if (newline_count >= max_rows) {
+					// Emergency brake:
+					// We have all the rows we need. The rest of the left block is no longer needed, and neither is
+					// the entirety of th right block
+					new_left = left;
+					new_right = right;
+					*ret_linecount = newline_count;
+					BATsetcount(left, i + 1);
+					BATsetcount(right, 0);
+					assert(right->batInserted == 0);
+					msg = MAL_SUCCEED;
+					goto end;
+				}
 			}
 		}
 	} else {
@@ -489,9 +503,9 @@ static mel_func copy_init_funcs[] = {
 	batarg("block", bte),arg("toskip", lng)
  )),
  command("copy", "fixlines", COPYfixlines, true, "Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied",
-	args(3, 8,
+	args(3, 9,
 	batarg("new_left", bte), batarg("new_right", bte), arg("linecount", lng),
-	batarg("left", bte), batarg("right", bte), arg("linesep", str), arg("quote", str), arg("escape", bit),
+	batarg("left", bte), batarg("right", bte), arg("linesep", str), arg("quote", str), arg("escape", bit), arg("maxrows", lng)
  )),
  pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1, 8,
 	batvararg("", int),
