@@ -640,6 +640,7 @@ BATclear(BAT *b, bool force)
 	b->batCount = 0;
 	if (b->ttype == TYPE_void)
 		b->batCapacity = 0;
+	b->theap->free = 0;
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
 	b->batDirtydesc = true;
