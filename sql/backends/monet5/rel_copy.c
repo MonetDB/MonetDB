@@ -108,6 +108,7 @@ struct loop_vars {
 	int loop_iter;
 	int loop_handle;
 	int our_block;
+	int earlier_line_count;
 	int our_line_count;
 };
 
@@ -166,9 +167,14 @@ emit_onserver_loop(
 	q->barrier = EXITsymbol;
 	setDestVar(q, offset_handling);
 
+	q = newAssignment(mb);
+	q = pushLng(mb, q, 0);
+	int var_initial_line_count = getDestVar(q);
+
 	// set up the channels
 	InstrPtr stream_channel_stmt = emit_channel(mb, var_stream);
 	InstrPtr block_channel_stmt = emit_channel(mb, var_block);
+	InstrPtr line_count_stmt = emit_channel(mb, var_initial_line_count);
 
 
 	// START LOOP
@@ -198,6 +204,7 @@ emit_onserver_loop(
 
 	emit_send(mb, loop_vars->loop_handle, stream_channel_stmt, var_s);
 
+	loop_vars->earlier_line_count = emit_receive(mb, loop_vars->loop_handle, line_count_stmt);
 	loop_vars->our_block = emit_receive(mb, loop_vars->loop_handle, block_channel_stmt);
 
 	q = newStmt(mb, "aggr", "count");
@@ -222,6 +229,7 @@ emit_onserver_loop(
 	// Before we exit the main loop we make sure to unblock the next
 	// thread.
 
+	emit_send(mb, loop_vars->loop_handle, line_count_stmt, loop_vars->earlier_line_count);
 	emit_send(mb, loop_vars->loop_handle, block_channel_stmt, var_next_block);
 
 	q = newAssignment(mb);
@@ -247,6 +255,12 @@ emit_onserver_loop(
 	var_next_block = getArg(q, 1);
 	loop_vars->our_line_count = getArg(q, 2);
 
+	q = newStmt(mb, "calc", "+");
+	q = pushArgument(mb, q, loop_vars->earlier_line_count);
+	q = pushArgument(mb, q, loop_vars->our_line_count);
+	int var_next_line_count = getDestVar(q);
+
+	emit_send(mb, loop_vars->loop_handle, line_count_stmt, var_next_line_count);
 	emit_send(mb, loop_vars->loop_handle, block_channel_stmt, var_next_block);
 }
 
