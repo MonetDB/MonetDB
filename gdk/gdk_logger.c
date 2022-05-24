@@ -33,7 +33,7 @@ static gdk_return log_del_bat(logger *lg, log_bid bid);
 #define LOG_CREATE	5
 #define LOG_DESTROY	6
 #define LOG_SEQ		7
-#define LOG_CLEAR	8
+#define LOG_CLEAR	8 // DEPRECATED
 #define LOG_BAT_GROUP	9
 
 #ifdef NATIVE_WIN32
@@ -59,7 +59,7 @@ static const char *log_commands[] = {
 	"LOG_CREATE",
 	"LOG_DESTROY",
 	"LOG_SEQ",
-	"LOG_CLEAR",
+	"", // LOG_CLEAR IS DEPRECATED
 	"LOG_BAT_GROUP",
 };
 
@@ -237,40 +237,6 @@ log_write_format(logger *lg, logformat *data)
 		return GDK_SUCCEED;
 	TRC_CRITICAL(GDK, "write failed\n");
 	return GDK_FAIL;
-}
-
-static log_return
-log_read_clear(logger *lg, trans *tr, log_id id)
-{
-	if (lg->debug & 1)
-		fprintf(stderr, "#logger found log_read_clear %d\n", id);
-	if (tr_grow(tr) != GDK_SUCCEED)
-		return LOG_ERR;
-	tr->changes[tr->nr].type = LOG_CLEAR;
-	tr->changes[tr->nr].cid = id;
-	tr->nr++;
-	return LOG_OK;
-}
-
-static gdk_return
-la_bat_clear(logger *lg, logaction *la, int tid)
-{
-	log_bid bid = internal_find_bat(lg, la->cid, tid);
-	BAT *b;
-
-	if (lg->debug & 1)
-		fprintf(stderr, "#la_bat_clear %d\n", la->cid);
-
-	b = BATdescriptor(bid);
-	if (b) {
-		restrict_t access = b->batRestricted;
-		b->batRestricted = BAT_WRITE;
-		/* during startup this is fine */
-		BATclear(b, true);
-		b->batRestricted = access;
-		logbat_destroy(b);
-	}
-	return GDK_SUCCEED;
 }
 
 static log_return
@@ -909,10 +875,6 @@ la_apply(logger *lg, logaction *c, int tid)
 		if (!lg->flushing)
 			ret = la_bat_destroy(lg, c, tid);
 		break;
-	case LOG_CLEAR:
-		if (!lg->flushing)
-			ret = la_bat_clear(lg, c, tid);
-		break;
 	default:
 		assert(0);
 	}
@@ -1184,6 +1146,7 @@ log_read_transaction(logger *lg)
 		if (lg->debug & 1) {
 			fprintf(stderr, "#log_readlog: ");
 			if (l.flag > 0 &&
+				l.flag != LOG_CLEAR &&
 			    l.flag < (bte) (sizeof(log_commands) / sizeof(log_commands[0])))
 				fprintf(stderr, "%s", log_commands[(int) l.flag]);
 			else
@@ -1240,12 +1203,6 @@ log_read_transaction(logger *lg)
 				err = LOG_EOF;
 			else
 				err = log_read_destroy(lg, tr, l.id);
-			break;
-		case LOG_CLEAR:
-			if (tr == NULL)
-				err = LOG_EOF;
-			else
-				err = log_read_clear(lg, tr, l.id);
 			break;
 		case LOG_BAT_GROUP:
 			if (tr == NULL)
@@ -2799,32 +2756,6 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	}
 	log_unlock(lg);
 	return ok;
-}
-
-
-gdk_return
-log_bat_clear(logger *lg, int id)
-{
-	logformat l;
-
-	lg->end++;
-	if (LOG_DISABLED(lg)) {
-		log_lock(lg);
-		gdk_return res = la_bat_update_count(lg, id, 0, lg->tid);
-		log_unlock(lg);
-		return res;
-	}
-
-	l.flag = LOG_CLEAR;
-	l.id = id;
-
-	if (lg->debug & 1)
-		fprintf(stderr, "#Logged clear %d\n", id);
-
-	gdk_return r =  log_write_format(lg, &l);
-	if(r != GDK_SUCCEED)
-		(void) ATOMIC_DEC(&lg->refcount);
-	return r;
 }
 
 #define DBLKSZ		8192
