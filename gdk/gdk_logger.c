@@ -35,7 +35,6 @@ static gdk_return log_del_bat(logger *lg, log_bid bid);
 #define LOG_SEQ		7
 #define LOG_CLEAR	8
 #define LOG_BAT_GROUP	9
-#define LOG_COMMIT	10
 
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
