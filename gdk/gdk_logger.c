@@ -2969,8 +2969,8 @@ log_tend(logger *lg)
 	l.flag = LOG_END;
 	l.id = lg->tid;
 
-	result = log_write_format(lg, &l);
-	(void) ATOMIC_DEC(&lg->refcount);
+	if ((result = log_write_format(lg, &l)) != GDK_SUCCEED)
+		(void) ATOMIC_DEC(&lg->refcount);
 
 	return result;
 }
@@ -3017,12 +3017,6 @@ log_tcommit(logger *lg, ulng commit_ts, unsigned int commit_queue_number)
 		 * Only used for checking consistency when replaying the log.*/
 		l.id = cql;
 
-		/* if the log file being rotated at the moment,
-		 * wait for it to finish*/
-		MT_lock_set(&lg->rotation_lock);
-		(void) ATOMIC_INC(&lg->refcount);
-		MT_lock_unset(&lg->rotation_lock);
-
 		if ((result = log_write_format(lg, &l)) != GDK_SUCCEED) {
 			(void) ATOMIC_DEC(&lg->refcount);
 			return result;
@@ -3030,9 +3024,9 @@ log_tcommit(logger *lg, ulng commit_ts, unsigned int commit_queue_number)
 		else {
 			log_queue_truncate_left(cq, cql);
 		}
-
-		(void) ATOMIC_DEC(&lg->refcount);
 	}
+
+	(void) ATOMIC_DEC(&lg->refcount);
 
 	return GDK_SUCCEED;
 }
