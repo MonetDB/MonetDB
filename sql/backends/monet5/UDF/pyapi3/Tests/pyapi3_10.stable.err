@@ -38,7 +38,7 @@ ERROR = !Could not parse Python code
         !  1. def pyfun(i,j,_columns,_column_types,_conn):
         !> 2.     return(i*j 
         !  3. 
-        !unexpected EOF while parsing (<string>, line 2)
+        !'(' was never closed (<string>, line 2)
 CODE  = PY000
 MAPI  = (monetdb) /var/tmp/mtest-13372/.s.monetdb.36607
 QUERY = SELECT AVG(pyapi10_indentation_error(i,j)) FROM pyapi10_random_table_nulls(5000);
