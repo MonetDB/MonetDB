@@ -62,24 +62,81 @@ dump_block(const char *msg, BAT *b)
 	dump_data("    ", Tloc(b, start), len);
 }
 
+
 void
-copy_report_error(struct error_handling *restrict admin, int rel_row, _In_z_ _Printf_format_string_ const char *restrict format, ...)
+copy_init_error_handling(struct error_handling *admin, const char *func, lng starting_row, int default_col_no, const char *column_name)
 {
-	admin->count++;
-	if (admin->rel_row >= 0)
-		return;
+	admin->func = func;
+	admin->count = 0;
+	admin->starting_row = starting_row;
+	admin->default_col_no = default_col_no;
+	admin->column_name = column_name ? GDKstrdup(column_name) : NULL;
+	admin->buffer[0] = '\0';
+}
 
-	admin->rel_row = rel_row;
+void
+copy_destroy_error_handling(struct error_handling *admin)
+{
+	GDKfree(admin->column_name);
+}
 
-	char *buf = admin->message;
-	size_t buf_size = sizeof(admin->message);
-	va_list ap;
-	va_start(ap, format);
-	int ret = vsnprintf(buf, buf_size, format, ap);
-	va_end(ap);
-	if (ret < 0) {
-		snprintf(buf, buf_size, "an error [%d] occurred during error reporting", ret);
+gdk_return
+copy_report_error(struct error_handling *restrict admin, int rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
+{
+	// We remember only the first error and count the rest
+	if (admin->count == 0) {
+		lng row_number = admin->starting_row + 1 + rel_row;
+		if (column < 0)
+			column = admin->default_col_no;
+		int column_1based = column + 1;
+		char col_msg[100];
+		if (column < 0)
+			col_msg[0] = '\0';
+		else if (column != admin->default_col_no || admin->column_name == NULL)
+			snprintf(col_msg, sizeof(col_msg), " column %d", column_1based);
+		else
+			snprintf(col_msg, sizeof(col_msg), " column %d '%s'", column_1based, admin->column_name);
+
+		char *buf = admin->buffer;
+		char *buf_end = admin->buffer + sizeof(admin->buffer);
+		int n = snprintf(buf, buf_end - buf, "Row %ld%s: ", row_number, col_msg);
+		if (n < buf_end - buf) {
+			buf += n;
+			va_list ap;
+			va_start(ap, format);
+			n = vsnprintf(buf, buf_end - buf, format, ap);
+			if (n < 0) {
+				snprintf(buf, buf_end - buf, "An error occurred during error reporting");
+			}
+			va_end(ap);
+		}
 	}
+	admin->count++;
+
+	// what to do if this fails?
+	return GDK_FAIL;
+}
+
+lng
+copy_error_count(struct error_handling *admin)
+{
+	return admin->count;
+}
+
+bool
+copy_too_many_errors(struct error_handling *admin)
+{
+	// no support for BEST EFFORT yet
+	return admin->count > 0;
+}
+
+const char *
+copy_error_message(struct error_handling *admin)
+{
+	if (admin->count == 0)
+		return MAL_SUCCEED;
+	else
+		return admin->buffer;
 }
 
 

@@ -22,15 +22,21 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
 	str msg = MAL_SUCCEED;
+	struct error_handling errors;
 	BAT *ret = NULL;
 	BAT *block = BATdescriptor(*getArgReference_bat(stk, pci, 1));
 	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 	int tpe = getArgGDKType(mb, pci, 3);
+	lng starting_row = *getArgReference_lng(stk, pci, 4);
+	int col_no = *getArgReference_int(stk, pci, 5);
+	const char *col_name = *getArgReference_str(stk, pci, 6);
 	int n;
 	void *buffer;
 	size_t buffer_len;
 	const void *nil_ptr;
 	size_t nil_len;
+
+	copy_init_error_handling(&errors, "copy.parse_generic", starting_row, col_no, col_name);
 
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_generic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -56,8 +62,19 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			len = BATatoms[tpe].atomFromStr(src, &buffer_len, &buffer, false);
 			p = buffer;
-			if (len < 0)
-				bailout("copy.parse_generic", SQLSTATE(42000)"Conversion failed for value '%s'", src);
+			if (len < 0) {
+				copy_report_error(&errors, i, -1, "conversion to %s failed: %s", ATOMname(tpe), src);
+				GDKclrerr();
+				p = nil_ptr;
+				len = nil_len;
+				if (copy_too_many_errors(&errors)) {
+					lng error_count = copy_error_count(&errors);
+					if (error_count == 1)
+						bailout("copy.parse_generic", "%s", copy_error_message(&errors));
+					else
+						bailout("copy.parse_generic", "At least %ld conversion errors, example: %s", error_count, copy_error_message(&errors));
+				}
+			}
 		}
 		if (bunfastapp(ret, p) != GDK_SUCCEED)
 			bailout("copy.parse_generic", GDK_EXCEPTION);
@@ -71,6 +88,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret->trevsorted = false;
 end:
 	GDKfree(buffer);
+	copy_destroy_error_handling(&errors);
 	if (ret) {
 		if (msg == MAL_SUCCEED) {
 			*getArgReference_bat(stk, pci, 0) = ret->batCacheid;
@@ -89,19 +107,18 @@ end:
 str
 parse_fixed_width_column(
 	bat *ret,
+	struct error_handling *errors,
 	const char *fname,
 	bat block_bat_id, bat offsets_bat_id,
 	int tpe,
-	str (*f)(struct error_handling*, void*, int, void*, char*, int*),
+	void (*f)(struct error_handling*, void*, int, void*, char*, int*),
 	void *fx)
 {
 	str msg = MAL_SUCCEED;
 	BAT *block_bat = NULL;
 	BAT *offsets_bat = NULL;
 	BAT *parsed_bat = NULL;
-	struct error_handling errors = {
-		.rel_row = -1,
-	};
+
 
 	block_bat = BATdescriptor(block_bat_id);
 	offsets_bat = BATdescriptor(offsets_bat_id);
@@ -112,9 +129,14 @@ parse_fixed_width_column(
 	if (!parsed_bat)
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	msg = f(&errors, fx, BATcount(offsets_bat), Tloc(parsed_bat, 0), Tloc(block_bat, 0), Tloc(offsets_bat, 0));
-	if (msg != MAL_SUCCEED)
-		goto end;
+	f(errors, fx, BATcount(offsets_bat), Tloc(parsed_bat, 0), Tloc(block_bat, 0), Tloc(offsets_bat, 0));
+	if (copy_too_many_errors(errors)) {
+		lng error_count = copy_error_count(errors);
+		if (error_count == 1)
+			bailout(fname, "%s", copy_error_message(errors));
+		else
+			bailout(fname, "At least %ld conversion errors, example: %s", error_count, copy_error_message(errors));
+	}
 
 	BATsetcount(parsed_bat, BATcount(offsets_bat));
 	// we don't know anything about the data we just parsed
@@ -123,9 +145,6 @@ parse_fixed_width_column(
 	parsed_bat->tnonil = false;
 	parsed_bat->tsorted = false;
 	parsed_bat->trevsorted = false;
-
-	if (errors.count > 0)
-		bailout(fname, "At least %d conversion errors, example: %s", errors.count, errors.message);
 
 end:
 	if (parsed_bat) {

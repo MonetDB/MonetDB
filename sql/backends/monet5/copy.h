@@ -19,31 +19,45 @@
 
 
 struct error_handling {
-	int rel_row;
-	int count;
-	char message[512];
+	const char *func;
+	lng count;
+	lng starting_row;
+	int default_col_no;
+	str column_name;
+	char buffer[512];
 };
 
-void copy_report_error(struct error_handling *restrict admin, int rel_row, _In_z_ _Printf_format_string_ const char *restrict format, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
+void copy_init_error_handling(struct error_handling *admin, const char *func, lng starting_row, int default_col_no, const char *column_name);
 
-typedef str (*bulk_converter)(struct error_handling*, void *parms, int count, void *dest, char *data, int *offsets);
+gdk_return copy_report_error(struct error_handling *admin, int rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
+	__attribute__((__format__(__printf__, 4, 5)));
+lng copy_error_count(struct error_handling *admin);
+bool copy_too_many_errors(struct error_handling *amin);
+const char *copy_error_message(struct error_handling *admin);
 
-extern str parse_fixed_width_column(bat *ret, const char *fname, bat block_bat_id, bat offsets_bat_id, int tpe, bulk_converter f, void *parms);
+void copy_destroy_error_handling(struct error_handling *admin);
+
+
+
+
+typedef void (*bulk_converter)(struct error_handling*, void *parms, int count, void *dest, char *data, int *offsets);
+
+extern str parse_fixed_width_column(bat *ret, struct error_handling *errors, const char *fname, bat block_bat_id, bat offsets_bat_id, int tpe, bulk_converter f, void *parms);
+
 extern str COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str COPYparse_integer_bte(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, bte *dummy);
-extern str COPYparse_integer_sht(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, sht *dummy);
-extern str COPYparse_integer_int(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *dummy);
-extern str COPYparse_integer_lng(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, lng *dummy);
+extern str COPYparse_integer_bte(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, bte *dummy, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_integer_sht(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, sht *dummy, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_integer_int(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *dummy, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_integer_lng(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, lng *dummy, lng *starting_row, int *col_no, str *col_name);
 #ifdef HAVE_HGE
-extern str COPYparse_integer_hge(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, hge *dummy);
+extern str COPYparse_integer_hge(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, hge *dummy, lng *starting_row, int *col_no, str *col_name);
 #endif
-extern str COPYparse_decimal_bte(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, bte *dummy);
-extern str COPYparse_decimal_sht(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, sht *dummy);
-extern str COPYparse_decimal_int(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, int *dummy);
-extern str COPYparse_decimal_lng(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, lng *dummy);
+extern str COPYparse_decimal_bte(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, bte *dummy, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_decimal_sht(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, sht *dummy, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_decimal_int(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, int *dummy, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_decimal_lng(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, lng *dummy, lng *starting_row, int *col_no, str *col_name);
 #ifdef HAVE_HGE
-extern str COPYparse_decimal_hge(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, hge *dummy);
+extern str COPYparse_decimal_hge(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, hge *dummy, lng *starting_row, int *col_no, str *col_name);
 #endif
 
 

@@ -447,8 +447,8 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	InstrPtr splitlines_instr = q;
 
 	int i = 0;
-	for (node *n = table->columns->l->h; n != NULL; n = n->next) {
-		int var_indices = getArg(splitlines_instr, i++);
+	for (node *n = table->columns->l->h; n != NULL; n = n->next, i++) {
+		int var_indices = getArg(splitlines_instr, i);
 
 		sql_column *col = n->data;
 		sql_type *type = col->type.type;
@@ -456,10 +456,13 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 		switch (type->eclass) {
 			case EC_NUM:
-				q = newStmt(mb, "copy", "parse_integer");
+				q = newStmtArgs(mb, "copy", "parse_integer", 12);
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
 				q = pushNil(mb, q, col->type.type->localtype);
+				q = pushArgument(mb, q, loop_vars.earlier_line_count);
+				q = pushInt(mb, q, i);
+				q = pushStr(mb, q, col->base.name);
 				break;
 			case EC_DEC:
 				q = newStmt(mb, "copy", "parse_decimal");
@@ -468,12 +471,18 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushInt(mb, q, col->type.digits);
 				q = pushInt(mb, q, col->type.scale);
 				q = pushNil(mb, q, col->type.type->localtype);
+				q = pushArgument(mb, q, loop_vars.earlier_line_count);
+				q = pushInt(mb, q, i);
+				q = pushStr(mb, q, col->base.name);
 				break;
 			default:
 				q = newStmt(mb, "copy", "parse_generic");
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
 				q = pushNil(mb, q, col->type.type->localtype);
+				q = pushArgument(mb, q, loop_vars.earlier_line_count);
+				q = pushInt(mb, q, i);
+				q = pushStr(mb, q, col->base.name);
 				break;
 		}
 		int var_converted = getDestVar(q);

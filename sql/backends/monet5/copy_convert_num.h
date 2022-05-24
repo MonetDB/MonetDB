@@ -26,7 +26,7 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 		// int is safe because of promotion rules
 		int digit = *s - '0';
 		if (unlikely(acc >= (TMPL_MAX / 10))) {
-			copy_report_error(errors, rel_row, "overflow: %s", value);
+			copy_report_error(errors, rel_row, -1, "overflow: %s", value);
 			return TMPL_NIL;
 		}
 		TMPL_TYPE new_acc = 10 * acc + digit;
@@ -44,8 +44,8 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 		s++;
 
 	if (*s != '\0') {
-		copy_report_error(errors, rel_row, "trailing garbage: %s", s);
-		acc = TMPL_NIL;
+		copy_report_error(errors, rel_row, -1, "trailing garbage: %s", s);
+		return TMPL_NIL;
 	}
 
 	if (!pos)
@@ -98,8 +98,8 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 		scale--;
 	}
 	if (*s) {
-		copy_report_error(errors, rel_row, "trailing garbage: %s", s);
-		res = TMPL_NIL;
+		copy_report_error(errors, rel_row, -1, "trailing garbage: %s", s);
+		return TMPL_NIL;
 	}
 	if (neg)
 		res = -res;
@@ -108,7 +108,7 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 
 
 
-static str
+static void
 TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_, int count, void *dest_, char *data, int *offsets)
 {
 	struct decimal_parms *parms = parms_;
@@ -122,11 +122,9 @@ TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_,
 		}
 		dest[i] = TMPL_SUFFIXED(parse_one_decimal)(errors, parms, i, data + offset);
 	}
-
-	return MAL_SUCCEED;
 }
 
-static str
+static void
 TMPL_SUFFIXED(parse_many_integers) (struct error_handling *errors, void *parms, int count, void *dest_, char *data, int *offsets)
 {
 	(void)parms;
@@ -140,8 +138,6 @@ TMPL_SUFFIXED(parse_many_integers) (struct error_handling *errors, void *parms, 
 		}
 		dest[i] = TMPL_SUFFIXED(parse_one_integer)(errors, i, data + offset);
 	}
-
-	return MAL_SUCCEED;
 }
 
 
@@ -150,30 +146,47 @@ TMPL_SUFFIXED(COPYparse_decimal) (
 	bat *parsed_bat_id,
 	bat *block_bat_id, bat *offsets_bat_id,
 	int *digits, int *scale,
-	TMPL_TYPE *dummy)
+	TMPL_TYPE *dummy,
+	lng *starting_row, int *col_no, str *col_name)
 {
 	(void)dummy;
+
+	struct error_handling errors;
+	copy_init_error_handling(&errors, "copy.parse_decimal", *starting_row, *col_no, *col_name);
+
 	struct decimal_parms myparms = {
 		.digits = *digits,
 		.scale = *scale,
 	};
-	return parse_fixed_width_column(
-		parsed_bat_id, "copy.parse_decimal",
+	str msg = parse_fixed_width_column(
+		parsed_bat_id, &errors, "copy.parse_decimal",
 		*block_bat_id, *offsets_bat_id,
 		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_decimals), &myparms);
+
+	copy_destroy_error_handling(&errors);
+	return msg;
 }
 
 str
 TMPL_SUFFIXED(COPYparse_integer) (
 	bat *parsed_bat_id,
 	bat *block_bat_id, bat *offsets_bat_id,
-	TMPL_TYPE *dummy)
+	TMPL_TYPE *dummy,
+	lng *starting_row, int *col_no, str *col_name)
 {
 	(void)dummy;
-	return parse_fixed_width_column(
-		parsed_bat_id, "copy.parse_integer",
+
+	struct error_handling errors;
+
+	copy_init_error_handling(&errors, "copy.parse_integer", *starting_row, *col_no, *col_name);
+
+	str msg = parse_fixed_width_column(
+		parsed_bat_id, &errors, "copy.parse_integer" ,
 		*block_bat_id, *offsets_bat_id,
 		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_integers), NULL);
+
+	copy_destroy_error_handling(&errors);
+	return msg;
 }
 
 
