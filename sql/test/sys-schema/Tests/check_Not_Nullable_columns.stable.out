@@ -434,20 +434,20 @@ stdout of test 'check_Not_Nullable_columns` in directory 'sql/test/sys-schema` i
 % int,	int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	1,	0,	1,	1 # length
 #SELECT "id", * FROM "sys"."objects" WHERE "id" IS NULL;
-% sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
-% id,	id,	name,	nr # name
-% int,	int,	varchar,	int # type
-% 1,	1,	0,	1 # length
+% sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% id,	id,	name,	nr,	sub # name
+% int,	int,	varchar,	int,	int # type
+% 1,	1,	0,	1,	1 # length
 #SELECT "name", * FROM "sys"."objects" WHERE "name" IS NULL;
-% sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
-% name,	id,	name,	nr # name
-% varchar,	int,	varchar,	int # type
-% 0,	1,	0,	1 # length
+% sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% name,	id,	name,	nr,	sub # name
+% varchar,	int,	varchar,	int,	int # type
+% 0,	1,	0,	1,	1 # length
 #SELECT "nr", * FROM "sys"."objects" WHERE "nr" IS NULL;
-% sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
-% nr,	id,	name,	nr # name
-% int,	int,	varchar,	int # type
-% 1,	1,	0,	1 # length
+% sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% nr,	id,	name,	nr,	sub # name
+% int,	int,	varchar,	int,	int # type
+% 1,	1,	0,	1,	1 # length
 #SELECT "obj_id", * FROM "sys"."privileges" WHERE "obj_id" IS NULL;
 % sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
 % obj_id,	obj_id,	auth_id,	privileges,	grantor,	grantable # name

@@ -30,7 +30,7 @@ stdout of test 'groupby_having_orderby_count.Bug-6624` in directory 'sql/test/Bu
 % type,	%1 # name
 % varchar,	bigint # type
 % 8,	2 # length
-[ "int",	19	]
+[ "int",	20	]
 [ "varchar",	14	]
 [ "smallint",	6	]
 #SELECT type,COUNT(id) FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY 2 DESC;
@@ -38,7 +38,7 @@ stdout of test 'groupby_having_orderby_count.Bug-6624` in directory 'sql/test/Bu
 % type,	%1 # name
 % varchar,	bigint # type
 % 8,	2 # length
-[ "int",	19	]
+[ "int",	20	]
 [ "varchar",	14	]
 [ "smallint",	6	]
 #SELECT type,COUNT(id) as cnt FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY cnt DESC;
@@ -46,7 +46,7 @@ stdout of test 'groupby_having_orderby_count.Bug-6624` in directory 'sql/test/Bu
 % type,	cnt # name
 % varchar,	bigint # type
 % 8,	2 # length
-[ "int",	19	]
+[ "int",	20	]
 [ "varchar",	14	]
 [ "smallint",	6	]
 #DROP TABLE cols_6624;

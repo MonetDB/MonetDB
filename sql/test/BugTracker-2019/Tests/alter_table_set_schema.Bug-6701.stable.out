@@ -40,10 +40,10 @@ stdout of test 'alter_table_set_schema.Bug-6701` in directory 'sql/test/BugTrack
 % int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1 # length
 #SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
-% sys.objects,	sys.objects,	sys.objects # table_name
-% id,	name,	nr # name
-% int,	varchar,	int # type
-% 1,	0,	1 # length
+% sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% id,	name,	nr,	sub # name
+% int,	varchar,	int,	int # type
+% 1,	0,	1,	1 # length
 #SELECT * FROM sys.idxs WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	table_id,	type,	name # name
@@ -151,10 +151,10 @@ stdout of test 'alter_table_set_schema.Bug-6701` in directory 'sql/test/BugTrack
 % int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1 # length
 #SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
-% sys.objects,	sys.objects,	sys.objects # table_name
-% id,	name,	nr # name
-% int,	varchar,	int # type
-% 1,	0,	1 # length
+% sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% id,	name,	nr,	sub # name
+% int,	varchar,	int,	int # type
+% 1,	0,	1,	1 # length
 #SELECT * FROM sys.idxs WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	table_id,	type,	name # name
@@ -187,10 +187,10 @@ stdout of test 'alter_table_set_schema.Bug-6701` in directory 'sql/test/BugTrack
 % int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1 # length
 #SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
-% sys.objects,	sys.objects,	sys.objects # table_name
-% id,	name,	nr # name
-% int,	varchar,	int # type
-% 1,	0,	1 # length
+% sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% id,	name,	nr,	sub # name
+% int,	varchar,	int,	int # type
+% 1,	0,	1,	1 # length
 #SELECT * FROM sys.idxs WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	table_id,	type,	name # name

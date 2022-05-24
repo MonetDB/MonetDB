@@ -80,6 +80,7 @@ stdout of test 'innerjoin_multiple-bug-sf-943661` in directory 'sql/test/bugs` i
 [ "sys",	"objects",	"id"	]
 [ "sys",	"objects",	"name"	]
 [ "sys",	"objects",	"nr"	]
+[ "sys",	"objects",	"sub"	]
 [ "sys",	"sequences",	"cacheinc"	]
 [ "sys",	"sequences",	"cycle"	]
 [ "sys",	"sequences",	"id"	]
@@ -102,6 +103,7 @@ stdout of test 'innerjoin_multiple-bug-sf-943661` in directory 'sql/test/bugs` i
 [ "tmp",	"objects",	"id"	]
 [ "tmp",	"objects",	"name"	]
 [ "tmp",	"objects",	"nr"	]
+[ "tmp",	"objects",	"sub"	]
 #select s.name, t.name, c.name from 
 #	columns c
 #		inner join 
@@ -159,6 +161,7 @@ stdout of test 'innerjoin_multiple-bug-sf-943661` in directory 'sql/test/bugs` i
 [ "sys",	"objects",	"id"	]
 [ "sys",	"objects",	"name"	]
 [ "sys",	"objects",	"nr"	]
+[ "sys",	"objects",	"sub"	]
 [ "sys",	"sequences",	"cacheinc"	]
 [ "sys",	"sequences",	"cycle"	]
 [ "sys",	"sequences",	"id"	]
@@ -181,6 +184,7 @@ stdout of test 'innerjoin_multiple-bug-sf-943661` in directory 'sql/test/bugs` i
 [ "tmp",	"objects",	"id"	]
 [ "tmp",	"objects",	"name"	]
 [ "tmp",	"objects",	"nr"	]
+[ "tmp",	"objects",	"sub"	]
 
 # 15:05:59 >  
 # 15:05:59 >  Done.
