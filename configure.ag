@@ -52,7 +52,7 @@ dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
 AC_PREREQ([2.63b])
-AC_INIT([MonetDB], [11.37a.12], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_INIT([MonetDB], [11.37a.14], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
@@ -1789,7 +1789,7 @@ AC_ARG_WITH([proj],
 		[include proj support (default=auto)])],
 	[have_proj="$withval"])
 AS_VAR_IF([have_proj], [no], [], [
-	PKG_CHECK_MODULES([proj], [proj],
+	PKG_CHECK_MODULES([proj], [proj < 8.0.0],
 		[AC_DEFINE([HAVE_PROJ], 1, [Define if the proj library exists])
 		 have_proj=yes],
 		[AS_VAR_IF([have_proj], [auto], [],
@@ -2127,6 +2127,8 @@ AM_CONDITIONAL([HAVE_HGE], [test "x$have_hge" = xyes])
 AC_CHECK_TYPES([ptrdiff_t],,,[@%:@include <stddef.h>])
 AC_CHECK_TYPES([intptr_t])
 AC_CHECK_TYPES([uintptr_t])
+# needed for UNIXodbc on 32 bit architectures.
+AC_CHECK_TYPES([long long])
 
 AC_CHECK_SIZEOF([char])
 AC_CHECK_SIZEOF([short])
@@ -2463,6 +2465,7 @@ AH_TOP([
 @%:@define _SEEN_MONETDB_CONFIG_H 1
 ])
 AH_BOTTOM([
+@%:@define OPENSSL_SUPPRESS_DEPRECATED
 @%:@ifdef INTEL_MATH_H_HACK
 /* see https://software.intel.com/en-us/forums/intel-c-compiler/topic/760979 */
 typedef enum {

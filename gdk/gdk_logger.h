@@ -105,8 +105,9 @@ typedef int log_bid;
 
 gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
-gdk_export gdk_return logger_exit(logger *lg, lng save_id);
-gdk_export gdk_return logger_restart(logger *lg, lng save_id);
+gdk_export gdk_return logger_exit(logger *lg);
+gdk_export gdk_return logger_restart(logger *lg);
+gdk_export gdk_return logger_flush(logger *lg, lng save_id);
 gdk_export gdk_return logger_cleanup(logger *lg);
 gdk_export void logger_with_ids(logger *lg);
 gdk_export lng logger_changes(logger *lg);

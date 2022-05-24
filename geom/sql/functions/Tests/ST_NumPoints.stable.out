@@ -25,8 +25,8 @@ stdout of test 'ST_NumPoints` in directory 'geom/sql/functions` itself:
 # 09:53:35 >  
 
 #SELECT ST_NumPoints(ST_GeomFromText('LINESTRING(77.29 29.07,77.42 29.26,77.27 29.31,77.29 29.07)'));
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 4	]

@@ -1141,6 +1141,12 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 		char tpe;
 		oid id;
 
+		if (l.flag == 0) {
+			/* end of useful content */
+			assert(l.tid == 0);
+			assert(l.nr == 0);
+			break;
+		}
 		t1 = time(NULL);
 		if (t1 - t0 > 10) {
 			lng fpos;
@@ -1278,8 +1284,6 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 				err = LOG_EOF;
 			else
 				err = log_read_clear(lg, tr, name, tpe, id);
-			break;
-		case 0:
 			break;
 		default:
 			err = LOG_ERR;
@@ -1458,6 +1462,7 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 	if (BBPrename(new->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
+	BBPretain(new->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -1516,7 +1521,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	    catalog_bid == list_bid &&
 	    catalog_nme == list_nme &&
 	    lg->catalog_bid == catalog_bid) {
-		BAT *bids, *nmes, *tids, *tpes, *oids;
+		BAT *bids, *nmes, *tids, *tpes, *oids, *dcat;
 
 		tids = bm_tids(catalog_bid, dcatalog);
 		if (tids == NULL) {
@@ -1527,13 +1532,15 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		nmes = logbat_new(TYPE_str, BATcount(tids), PERSISTENT);
 		tpes = logbat_new(TYPE_bte, BATcount(tids), PERSISTENT);
 		oids = logbat_new(TYPE_lng, BATcount(tids), PERSISTENT);
+		dcat = logbat_new(TYPE_oid, 0, PERSISTENT);
 
-		if (bids == NULL || nmes == NULL || tpes == NULL || oids == NULL) {
+		if (bids == NULL || nmes == NULL || tpes == NULL || oids == NULL || dcat == NULL) {
 			logbat_destroy(tids);
 			logbat_destroy(bids);
 			logbat_destroy(nmes);
 			logbat_destroy(tpes);
 			logbat_destroy(oids);
+			logbat_destroy(dcat);
 			GDKfree(n);
 			return GDK_FAIL;
 		}
@@ -1547,16 +1554,17 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			logbat_destroy(nmes);
 			logbat_destroy(tpes);
 			logbat_destroy(oids);
+			logbat_destroy(dcat);
 			GDKfree(n);
 			return GDK_FAIL;
 		}
 		logbat_destroy(tids);
-		BATclear(dcatalog, true);
 
 		if (logger_switch_bat(catalog_bid, bids, lg->fn, "catalog_bid") != GDK_SUCCEED ||
 		    logger_switch_bat(catalog_nme, nmes, lg->fn, "catalog_nme") != GDK_SUCCEED ||
 		    logger_switch_bat(catalog_tpe, tpes, lg->fn, "catalog_tpe") != GDK_SUCCEED ||
-		    logger_switch_bat(catalog_oid, oids, lg->fn, "catalog_oid") != GDK_SUCCEED) {
+		    logger_switch_bat(catalog_oid, oids, lg->fn, "catalog_oid") != GDK_SUCCEED ||
+		    logger_switch_bat(dcatalog, dcat, lg->fn, "dcatalog") != GDK_SUCCEED) {
 			logbat_destroy(bids);
 			logbat_destroy(nmes);
 			GDKfree(n);
@@ -1566,16 +1574,19 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		n[i++] = nmes->batCacheid;
 		n[i++] = tpes->batCacheid;
 		n[i++] = oids->batCacheid;
+		n[i++] = dcat->batCacheid;
 
 		logbat_destroy(lg->catalog_bid);
 		logbat_destroy(lg->catalog_nme);
 		logbat_destroy(lg->catalog_tpe);
 		logbat_destroy(lg->catalog_oid);
+		logbat_destroy(lg->dcatalog);
 
 		lg->catalog_bid = catalog_bid = bids;
 		lg->catalog_nme = catalog_nme = nmes;
 		lg->catalog_tpe = catalog_tpe = tpes;
 		lg->catalog_oid = catalog_oid = oids;
+		lg->dcatalog = dcatalog = dcat;
 	}
 	if (lg->seqs_id && list_nme) {
 		n[i++] = lg->seqs_id->batCacheid;
@@ -2370,6 +2381,12 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	return NULL;
 }
 
+gdk_return
+logger_restart(logger *lg)
+{
+	return logger_flush(lg, lg->tid);
+}
+
 /* Create a new logger */
 logger *
 logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
@@ -2395,7 +2412,7 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	}
 	fflush(stdout);
 	if (lg->changes &&
-	    (logger_restart(lg, lg->tid) != GDK_SUCCEED ||
+	    (logger_restart(lg) != GDK_SUCCEED ||
 	     logger_cleanup(lg) != GDK_SUCCEED)) {
 		logger_destroy(lg);
 		return NULL;
@@ -2411,7 +2428,7 @@ logger_destroy(logger *lg)
 		BAT *b = lg->catalog_bid;
 
 		if (lg->changes &&
-		    (logger_restart(lg, lg->tid) != GDK_SUCCEED ||
+		    (logger_flush(lg, lg->tid+1) != GDK_SUCCEED ||
 		     logger_cleanup(lg) != GDK_SUCCEED))
 			TRC_CRITICAL(GDK, "logger_cleanup failed\n");
 
@@ -2445,8 +2462,8 @@ logger_destroy(logger *lg)
 	GDKfree(lg);
 }
 
-gdk_return
-logger_exit(logger *lg, lng save_id)
+static gdk_return
+logger_end(logger *lg, lng save_id)
 {
 	FILE *fp;
 	char filename[FILENAME_MAX];
@@ -2539,9 +2556,15 @@ logger_exit(logger *lg, lng save_id)
 }
 
 gdk_return
-logger_restart(logger *lg, lng save_id)
+logger_exit(logger *lg)
 {
-	if (logger_exit(lg, save_id) == GDK_SUCCEED &&
+	return logger_end(lg, lg->tid);
+}
+
+gdk_return
+logger_flush(logger *lg, lng save_id)
+{
+	if (logger_end(lg, save_id) == GDK_SUCCEED &&
 	    logger_open(lg) == GDK_SUCCEED)
 		return GDK_SUCCEED;
 	return GDK_FAIL;
@@ -3141,7 +3164,6 @@ bm_commit(logger *lg, lng save_id)
 				"#commit deleted (snapshot) %s (%d)\n",
 				name, bid);
 		if (BUNappend(n, name, false) != GDK_SUCCEED) {
-			logbat_destroy(lb);
 			logbat_destroy(n);
 			return GDK_FAIL;
 		}
@@ -3160,7 +3182,7 @@ bm_commit(logger *lg, lng save_id)
 		BATloop(lg->freed, p, q) {
 			lng lid = lids[p];
 
-			if (lid < save_id && (
+			if (lid > save_id && (
 				BUNappend(nfreed, bids+p, false) != GDK_SUCCEED ||
 				BUNappend(nfreed_lid, &lid, false) != GDK_SUCCEED)) {
 				logbat_destroy(n);

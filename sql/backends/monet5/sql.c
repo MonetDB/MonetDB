@@ -862,10 +862,8 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	if (!BATcount(it))
 		goto bailout; /* Success case */
 
-	if (b)
-		bi = bat_iterator(b);
-	if (c)
-		ci = bat_iterator(c);
+	bi = bat_iterator(b);
+	ci = bat_iterator(c);
 
 	BATloop(it, p, q) {
 		str nsname, nseqname;
@@ -1044,10 +1042,8 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!BATcount(it))
 		goto bailout; /* Success case */
 
-	if (b)
-		bi = bat_iterator(b);
-	if (c)
-		ci = bat_iterator(c);
+	bi = bat_iterator(b);
+	ci = bat_iterator(c);
 	if (d)
 		di = (lng *) Tloc(d, 0);
 
@@ -2446,6 +2442,14 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATdescriptor(bid);
 	if ( b == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
+	if (isVIEW(b)) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		BBPunfix(b->batCacheid);
+		if (bn == NULL)
+			throw(MAL, "sql.resultset", GDK_EXCEPTION);
+		b = bn;
+		assert(!isVIEW(b));
+	}
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, b);
 	if (res < 0)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result table construction failed");
@@ -2471,12 +2475,21 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		colname = BUNtvar(iteratr,o);
 		tpename = BUNtvar(itertpe,o);
 		b = BATdescriptor(bid);
-		if ( b == NULL)
+		if ( b == NULL) {
 			msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
-		else if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
+			break;
+		}
+		if (isVIEW(b)) {
+			BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+			BBPunfix(b->batCacheid);
+			if (bn == NULL)
+				throw(MAL, "sql.resultset", GDK_EXCEPTION);
+			b = bn;
+			assert(!isVIEW(b));
+		}
+		if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
 			msg = createException(SQL, "sql.resultset", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
-		if( b)
-			BBPunfix(bid);
+		BBPunfix(b->batCacheid);
 	}
 	/* now send it to the channel cntxt->fdout */
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize))

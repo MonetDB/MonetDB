@@ -166,9 +166,11 @@ gdk_export int GDKms(void);
 	({							\
 		void *_ptr = (p);				\
 		size_t _size = (s);				\
+		char _buf[12];					\
+		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
 		void *_res = GDKrealloc(_ptr, _size);		\
-		TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",	\
-			  _ptr, _size, _res);			\
+		TRC_DEBUG(ALLOC, "GDKrealloc(%s,%zu) -> %p\n",	\
+			  _buf, _size, _res);			\
 		_res;						\
 	 })
 #define GDKfree(p)							\
@@ -237,9 +239,11 @@ gdk_export int GDKms(void);
 	({							\
 		void *_ptr = (p);				\
 		size_t _size = (s);				\
+		char _buf[12];					\
+		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
 		void *_res = realloc(_ptr, _size);		\
-		TRC_DEBUG(ALLOC, "realloc(%p,%zu) -> %p\n",	\
-			  _ptr, _size, _res);			\
+		TRC_DEBUG(ALLOC, "realloc(%s,%zu) -> %p\n",	\
+			  _buf, _size, _res);			\
 		_res;						\
 	 })
 #define free(p)						\
