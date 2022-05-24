@@ -68,6 +68,7 @@ HAVE_GEOM?ST_MakeBox2D
 #HAVE_GEOM?mbr_distance
 
 HAVE_GEOM?ST_DWithin2
+HAVE_GEOM?ST_Transform
 HAVE_GEOM?dropTestGeometries
 
 HAVE_GEOM?geomcasts
