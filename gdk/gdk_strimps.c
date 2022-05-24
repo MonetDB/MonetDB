@@ -472,7 +472,6 @@ BATcheckstrimps(BAT *b)
 					hp->strimps.parentid = b->batCacheid;
 					b->tstrimps = hp;
 					TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
-					MT_lock_unset(&b->batIdxLock);
 					return true;
 				}
 				close(fd);
