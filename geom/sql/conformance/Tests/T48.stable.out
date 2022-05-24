@@ -29,7 +29,7 @@ stdout of test 'T48` in directory 'geom/sql/conformance` itself:
 % %1 # name
 % clob # type
 % 45 # length
-[ "POLYGON ((62 48, 84 48, 84 42, 56 34, 62 48))"	]
+[ "POLYGON ((84 48, 84 42, 56 34, 62 48, 84 48))"	]
 
 # 15:15:54 >  
 # 15:15:54 >  "Done."
