@@ -362,16 +362,19 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int **return_indices = NULL;
 	int ncols = pci->retc;
 	int line_sep, col_sep, quote;
+	struct error_handling errors;
 
-	assert(pci->argc == pci->retc + 7);
+	assert(pci->argc == pci->retc + 8);
 	bat block_bat_id = *getArgReference_bat(stk, pci, pci->retc + 0);
-	lng line_count = *getArgReference_lng(stk, pci, pci->retc + 1);
-	str col_sep_str = *getArgReference_str(stk, pci, pci->retc + 2);
-	str line_sep_str = *getArgReference_str(stk, pci, pci->retc + 3);
-	str quote_str = *getArgReference_str(stk, pci, pci->retc + 4);
-	str null_repr = *getArgReference_str(stk, pci, pci->retc + 5);
-	bool backslash_escapes = *getArgReference_bit(stk, pci, pci->retc + 6);
+	lng starting_row = *getArgReference_lng(stk, pci, pci->retc + 1);
+	lng line_count = *getArgReference_lng(stk, pci, pci->retc + 2);
+	str col_sep_str = *getArgReference_str(stk, pci, pci->retc + 3);
+	str line_sep_str = *getArgReference_str(stk, pci, pci->retc + 4);
+	str quote_str = *getArgReference_str(stk, pci, pci->retc + 5);
+	str null_repr = *getArgReference_str(stk, pci, pci->retc + 6);
+	bool backslash_escapes = *getArgReference_bit(stk, pci, pci->retc + 7);
 
+	copy_init_error_handling(&errors, "copy.splitlines", starting_row, -1, NULL);
 
 	line_sep = get_sep_char(line_sep_str, backslash_escapes);
 	if (line_sep <= 0) // 0 not ok
@@ -407,16 +410,16 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef BLOCK_DEBUG
 	dump_block("splitlines", block_bat);
 #endif
-	int ret;
-	ret = scan_fields(
+	msg = scan_fields(&errors,
 		Tloc(block_bat, 0), (int)block_bat->batInserted, Tloc(block_bat, BATcount(block_bat)),
 		col_sep, line_sep, quote, backslash_escapes, null_repr,
 		ncols, line_count,
 		return_indices);
-	if (ret < 0)
-		bailout("copy.splitlines", "field splitting failed: %d", ret);
+	if (msg != MAL_SUCCEED)
+		goto end;
 
 end:
+	copy_destroy_error_handling(&errors);
 	if (block_bat)
 		BBPunfix(block_bat->batCacheid);
 	if (return_bats) {
@@ -507,9 +510,9 @@ static mel_func copy_init_funcs[] = {
 	batarg("new_left", bte), batarg("new_right", bte), arg("linecount", lng),
 	batarg("left", bte), batarg("right", bte), arg("linesep", str), arg("quote", str), arg("escape", bit), arg("maxrows", lng)
  )),
- pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1, 8,
+ pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1, 9,
 	batvararg("", int),
-	batarg("block", bte), arg("linecount", lng), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), arg("escape", bit)
+	batarg("block", bte), arg("startingrow", lng), arg("linecount", lng), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), arg("escape", bit)
  )),
 
  command("copy", "trackrowids", COPYtrackrowids, true, "keep track of newly claimed rows", args(2, 6,

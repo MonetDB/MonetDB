@@ -438,6 +438,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		q = pushReturn(mb, q, v);
 	}
 	q = pushArgument(mb, q, loop_vars.our_block);
+	q = pushArgument(mb, q, loop_vars.earlier_line_count);
 	q = pushArgument(mb, q, loop_vars.our_line_count);
 	q = pushArgument(mb, q, var_col_sep);
 	q = pushArgument(mb, q, var_line_sep);

@@ -66,7 +66,8 @@ struct decimal_parms {
 	int scale;
 };
 
-extern int scan_fields(
+extern str scan_fields(
+	struct error_handling *errors,
 	char *data_start, int skip_amount, char *data_end,
 	int col_sep, int line_sep, int quote, bool backslash_escapes, char *null_repr,
 	int ncols, int nrows, int **columns);

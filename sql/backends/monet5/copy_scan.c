@@ -8,12 +8,13 @@
 
 #include "monetdb_config.h"
 #include "mal_interpreter.h"
+#include "mal_exception.h"
 
 #include "copy.h"
 #include "rel_copy.h"
 
 static int
-scan_octal_escape(unsigned char **rr, unsigned char **ww, unsigned char *end, int c)
+scan_octal_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end, int c)
 {
 	unsigned char *r = *rr + 2;
 	if (r >= end || *r < '0' || *r > '7')
@@ -25,18 +26,27 @@ scan_octal_escape(unsigned char **rr, unsigned char **ww, unsigned char *end, in
 	c = 8 * c + *r - '0';
 	r++;
 end:
-	if (c > 0xFF)
+	if (c > 0xFF) {
+		*err_msg = "octal escape out of range";
 		return -1;
+	}
+	if (c == 0) {
+		*err_msg = "\\000 is not a valid octal escape";
+		return -1;
+	}
 	*rr = r;
 	*(*ww)++ = c;
 	return 0;
 }
 
 static int
-one_hex_digit(unsigned char **rr, unsigned char *end)
+one_hex_digit(const char **err_msg, unsigned char **rr, unsigned char *end)
 {
-	if (*rr >= end)
+	if (*rr >= end) {
+		// this only occurs if for example the buffer ends in '\\' 'x'.
+		*err_msg = "incomplete hex sequence";
 		return -1;
+	}
 	unsigned int d = **rr;
 	unsigned int d0 = d - '0';
 	unsigned int da = d - 'a';
@@ -46,26 +56,35 @@ one_hex_digit(unsigned char **rr, unsigned char *end)
 	int vA = (dA < 6 ? dA + 11 : 0);
 	int v =  v0 | va | vA;
 
-	// If there was a match, v is one too high, otherwise it's 0.
-	*rr += v > 0;
-	return v - 1;
+	// If it's not a hex digit, v will be 0, otherwise it will be 1 too high
+	if (v > 0) {
+		*rr += 1;
+		return v - 1;
+	} else {
+		*err_msg = "invalid hex digit";
+		return -1;
+	}
 }
 
 static int
-scan_hex_escape(unsigned char **rr, unsigned char **ww, unsigned char *end)
+scan_hex_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end)
 {
 	int acc;
 	*rr += 2;
-	int d = one_hex_digit(rr, end);
+	int d = one_hex_digit(err_msg, rr, end);
 	if (d < 0)
 		return d;
 	acc = d;
-	d = one_hex_digit(rr, end);
-	if (d >= 0) {
-		acc = 16 * acc + d;
+	d = one_hex_digit(err_msg, rr, end);
+	if (d < 0)
+		return d;
+	acc = 16 * acc + d;
+
+	assert(acc >= 0);
+	assert(acc < 0xFF);
+	if (acc == 0) {
+		*err_msg = "\\x00 is not a valid hex escape";
 	}
-	if (acc > 0xFF)
-		return -1;
 	// rr has already been updated by one_hex_digit
 	*(*ww)++ = acc;
 	return 0;
@@ -80,20 +99,24 @@ utf8cont(unsigned int n, int shift)
 	return n;
 }
 static int
-scan_unicode_escape(unsigned char **rr, unsigned char **ww, unsigned char *end, int digits)
+scan_unicode_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end, int digits)
 {
 	unsigned int acc = 0;
 	*rr += 2;
-	if (end - *rr < digits)
+	if (end - *rr < digits) {
+		*err_msg = "incomplete unicode hex sequence";
 		return -1;
+	}
 	for (int i = 0; i < digits; i++) {
-		int d = one_hex_digit(rr, end);
+		int d = one_hex_digit(err_msg, rr, end);
 		if (d < 0)
 			return d;
 		acc = 16 * acc + d;
 	}
-	if (acc == 0)
+	if (acc == 0) {
+		*err_msg = "\\u0000 is not a valid unicode escape";
 		return -1;
+	}
 	else if (acc <      0x80) {
 		*(*ww)++ = acc;
 	} else if (acc <  0x0800) {
@@ -104,7 +127,8 @@ scan_unicode_escape(unsigned char **rr, unsigned char **ww, unsigned char *end, 
 		*(*ww)++ = utf8cont(acc, 6);
 		*(*ww)++ = utf8cont(acc, 0);
 	} else if (acc <  0xE000) {
-		return -1; // reserved for utf16 surrogate halves
+		*err_msg = "invalid unicode escape, it denotes a surrogate halve";
+		return -1;
 	} else if (acc < 0x10000) {
 		*(*ww)++ = (acc >> 12) | 0xE0; //   0xE0 == 0b1110_0000
 		*(*ww)++ = utf8cont(acc, 6);
@@ -119,11 +143,13 @@ scan_unicode_escape(unsigned char **rr, unsigned char **ww, unsigned char *end, 
 }
 
 static int
-scan_backslash_escape(unsigned char **rr, unsigned char **ww, unsigned char *end)
+scan_backslash_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end)
 {
 	unsigned char *r = *rr;
-	if (end - r < 2)
+	if (end - r < 2) {
+		*err_msg = "incomplete backslash escape sequence";
 		return -50;
+	}
 	assert(r[0] == '\\');
 	unsigned char c;
 	switch (r[1]) {
@@ -135,13 +161,13 @@ scan_backslash_escape(unsigned char **rr, unsigned char **ww, unsigned char *end
 		case '5':
 		case '6':
 		case '7':
-			return scan_octal_escape(rr, ww, end, r[1] - '0');
+			return scan_octal_escape(err_msg, rr, ww, end, r[1] - '0');
 		case 'x':
-			return scan_hex_escape(rr, ww, end);
+			return scan_hex_escape(err_msg, rr, ww, end);
 		case 'u':
-			return scan_unicode_escape(rr, ww, end, 4);
+			return scan_unicode_escape(err_msg, rr, ww, end, 4);
 		case 'U':
-			return scan_unicode_escape(rr, ww, end, 8);
+			return scan_unicode_escape(err_msg, rr, ww, end, 8);
 		case 'a':
 			c = '\a';
 			break;
@@ -176,18 +202,22 @@ scan_backslash_escape(unsigned char **rr, unsigned char **ww, unsigned char *end
 // Never scan past 'end'. Reaching 'end' is considered an error.
 // Writes the number of bytes written, excluding the '\0', to '*nwritten'.
 static int
-scan_quoted(unsigned char *start, unsigned char *end, int quote, bool backslash_escapes, int *nwritten)
+scan_quoted(const char **err_msg, unsigned char *start, unsigned char *end, int quote, bool backslash_escapes, int *nwritten)
 {
-	if (start == end)
+	if (end - start < 2) {
+		*err_msg = "incomplete quoted text at end";
 		return -30;
+	}
 	unsigned char *last = end - 1;
 	unsigned char *r = start + 1;
 	unsigned char *w = start;
 
 	while (r <= last) {
 		assert(w <= r);
-		if (*r == '\0')
+		if (*r == '\0') {
+			*err_msg = "unexpected NUL character";
 			return -31;
+		}
 		if (*r == quote) {
 			if (r < last && r[1] == quote) {
 				// doubled quote, write only one
@@ -201,7 +231,7 @@ scan_quoted(unsigned char *start, unsigned char *end, int quote, bool backslash_
 				return r - start + 1;
 			}
 		} else if (backslash_escapes && *r == '\\') {
-			int ret = scan_backslash_escape(&r, &w, end);
+			int ret = scan_backslash_escape(err_msg, &r, &w, end);
 			if (ret < 0)
 				return ret;
 			continue;
@@ -212,6 +242,7 @@ scan_quoted(unsigned char *start, unsigned char *end, int quote, bool backslash_
 		}
 		assert(0 /* unreachable */);
 	}
+	*err_msg = "incomplete quoted text";
 	return -32;
 }
 
@@ -222,7 +253,7 @@ scan_quoted(unsigned char *start, unsigned char *end, int quote, bool backslash_
 // Return the number of bytes scanned, including the separator.
 // On succesful return, write the separator found to '*sep_found'.
 static int
-scan_unquoted(unsigned char *start, unsigned char *end, int col_sep, int line_sep, bool backslash_escapes, unsigned char *sep_found)
+scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, int col_sep, int line_sep, bool backslash_escapes, unsigned char *sep_found)
 {
 	char *sep;
 
@@ -244,6 +275,7 @@ scan_unquoted(unsigned char *start, unsigned char *end, int col_sep, int line_se
 			*sep = 0;
 			return sep - (char*)start + 1;
 		} else {
+			*err_msg = "no column- or line separator found";
 			return -40;
 		}
 	}
@@ -258,7 +290,7 @@ scan_unquoted(unsigned char *start, unsigned char *end, int col_sep, int line_se
 			return r - start + 1;
 		}
 		if (*r == '\\') {
-			int ret = scan_backslash_escape(&r, &w, end);
+			int ret = scan_backslash_escape(err_msg, &r, &w, end);
 			if (ret < 0)
 				return ret;
 		} else {
@@ -266,6 +298,7 @@ scan_unquoted(unsigned char *start, unsigned char *end, int col_sep, int line_se
 		}
 	}
 	// no sep found is an error
+	*err_msg = "no column- or line separator found";
 	return -40;
 }
 
@@ -277,16 +310,18 @@ scan_unquoted(unsigned char *start, unsigned char *end, int col_sep, int line_se
 // Return the number of bytes scanned including the separator, or < 0 on
 // error. Write the separator found to '*sep_found'.
 static int
-scan_field(unsigned char *start, unsigned char *end, int col_sep, int line_sep, int quote, bool backslash_escapes, unsigned char *sep_found)
+scan_field(const char **err_msg, unsigned char *start, unsigned char *end, int col_sep, int line_sep, int quote, bool backslash_escapes, unsigned char *sep_found)
 {
-	if (start == end)
+	if (start == end) {
+		*err_msg = "no field found at end";
 		return -10;
+	}
 
 	int nread;
 	int nwritten;
 	if (quote && *start == quote) {
 
-		nread = scan_quoted(start, end, quote, backslash_escapes, &nwritten);
+		nread = scan_quoted(err_msg, start, end, quote, backslash_escapes, &nwritten);
 		if (nread < 0)
 			return nread;
 		// scan_quoted errors out if it reaches 'end' so we know 'start[n]' exists
@@ -295,20 +330,15 @@ scan_field(unsigned char *start, unsigned char *end, int col_sep, int line_sep, 
 			// nread should include the separator
 			nread += 1;
 		} else {
-			// end quote must be followed by separator
+			*err_msg = "end quote must be followed by separator";
 			return -11;
 		}
 	} else {
-		nread = scan_unquoted(start, end, col_sep, line_sep, backslash_escapes, sep_found);
+		nread = scan_unquoted(err_msg, start, end, col_sep, line_sep, backslash_escapes, sep_found);
 		if (nread < 0)
 			return nread;
 		// with scan_unquoted, nread includes the separator, now replaced with '\0'
 		nwritten = nread - 1;
-	}
-
-	if (backslash_escapes) {
-		(void)nwritten;
-		(void)start;
 	}
 
 	return nread;
@@ -321,27 +351,27 @@ scan_field(unsigned char *start, unsigned char *end, int col_sep, int line_sep, 
 // for 'nrows' field indices.
 // Verify that column separators and row separators occur at the appropriate
 // moment. Verify that exactly the right amount of data is offered.
-// Return 0 on succes, < 0 on error.
 // If a field contains the null_repr, replace its index with int_nil.
-int
+str
 scan_fields(
+	struct error_handling *errors,
 	char *data_start, int skip_amount, char *data_end,
 	int col_sep, int line_sep, int quote, bool backslash_escapes, char *null_repr,
 	int ncols, int nrows, int **columns)
 {
-	if (ncols < 0 || nrows < 0)
-		return -1;
-
 	unsigned char *p = (unsigned char*)&data_start[skip_amount];
 	unsigned char *end = (unsigned char*)data_end;
 	int row = 0;
 	int col = 0;
+	const char *err_msg = NULL;
 	while (p < end && row < nrows) {
 		unsigned char sep = 0;
-		int n = scan_field(p, end, col_sep, line_sep, quote, backslash_escapes, &sep);
+
+		int n = scan_field(&err_msg, p, end, col_sep, line_sep, quote, backslash_escapes, &sep);
+		assert((n < 0) == (err_msg != NULL));
 		if (n < 0) {
-			printf("ERROR row=%d col=%d\n", row, col);
-			return n;
+			copy_report_error(errors, row, col, "%s", err_msg);
+			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
 		}
 		bool last_col = col == ncols - 1;
 		bool ok;
@@ -359,8 +389,10 @@ scan_fields(
 				ok = false;
 			}
 		}
-		if (!ok)
-			return -2;
+		if (!ok) {
+			copy_report_error(errors, row, col, "invalid separator");
+			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
+		}
 		bool is_null = (null_repr && strcasecmp((char*)p, null_repr) == 0);
 		int field = is_null ? int_nil : ((char*)p - data_start);
 		columns[col][row] = field;
@@ -373,15 +405,15 @@ scan_fields(
 		}
 	}
 
+	assert(p == end || row == nrows);
+
 	if (p < end) {
-		// leftover data
-		return -3;
+		throw(MAL, "copy.splitlines", "leftover data at end of buffer");
 	}
-	if (row < nrows || col != 0) {
-		// too few rows
-		return -4;
+	if (row < nrows) {
+		throw(MAL, "copy.splitlines", "not enough rows found in buffer");
 	}
 
-	return 0;
+	return MAL_SUCCEED;
 }
 
