@@ -152,6 +152,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				}
 				memcpy(b->tvheap->base + toff, ni.vh->base, ni.vhfree);
 				b->tvheap->free = toff + ni.vhfree;
+				b->tvheap->dirty = true;
 			}
 		}
 	}
