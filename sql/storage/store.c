@@ -2056,6 +2056,9 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	sql_allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
 
+	if (debug&2)
+		GDKtracer_set_layer_level("sql_all", "debug");
+
 	if (!store) {
 		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		return NULL;
