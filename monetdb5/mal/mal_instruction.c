@@ -810,9 +810,7 @@ getVarName(MalBlkPtr mb, int idx)
 	if( getVarKind(mb,idx) == 0)
 		setVarKind(mb,idx, REFMARKER);
 
-	if( *s &&  s[1] != '_' && (s[0] != 'X' && s[0] != 'C'))
-		return s;
-	if ( *s == 0)
+	if (*s == 0)
 		(void) snprintf(s, IDLENGTH,"%c_%d", getVarKind(mb, idx), mb->vid++);
 	return s;
 }
@@ -1265,10 +1263,10 @@ addArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	if (p->argc == p->maxarg) {
 		pn = extendInstruction(mb, p);
 #ifndef NDEBUG
-               if (p != pn) {
-                       for (int i = mb->stop - 1; i >= 0; i--)
-                               assert(mb->stmt[i] != p);
-	       }
+		if (p != pn) {
+			for (int i = mb->stop - 1; i >= 0; i--)
+				assert(mb->stmt[i] != p);
+		}
 #endif
 		p = pn;
 		if (mb->errors)

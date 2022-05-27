@@ -571,16 +571,6 @@ select "like"('aabbccdd', '%bc_d%', '', true) as tru
 ----
 1
 
-query I rowsort
-select sql_exists('abc') as tru
-----
-1
-
-query I rowsort
-select sql_not_exists('abc') as fals
-----
-0
-
 query T rowsort
 select coalesce(1, 'b', null)
 ----

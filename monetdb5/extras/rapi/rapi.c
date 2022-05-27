@@ -64,7 +64,7 @@
 		retsxp = PROTECT(newfun(bati.count));							\
 		if (!retsxp) break;												\
 		valptr = ptrfun(retsxp);										\
-		if (bat->tnonil && !bat->tnil) {								\
+		if (bati.nonil && !bati.nil) {								\
 			if (memcopy) {												\
 				memcpy(valptr, p,										\
 					   bati.count * sizeof(tpe));						\
@@ -145,7 +145,7 @@ bat_to_sexp(BAT* b, int type)
 	SEXP varvalue = NULL;
 	BATiter bi = bat_iterator(b);
 	// TODO: deal with SQL types (DECIMAL/TIME/TIMESTAMP)
-	switch (ATOMstorage(b->ttype)) {
+	switch (ATOMstorage(bi.type)) {
 	case TYPE_void: {
 		size_t i = 0;
 		varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
@@ -238,7 +238,7 @@ bat_to_sexp(BAT* b, int type)
 			GDKfree(sexp_ptrs);
 		}
 		else {
-			if (b->tnonil) {
+			if (bi.nonil) {
 				BATloop(b, p, q) {
 					SET_STRING_ELT(varvalue, j++, RSTR(
 									   (const char *) BUNtvar(bi, p)));
@@ -353,7 +353,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 
 	if (b) {
 		BATsetcount(b, cnt);
-		BBPkeepref(b->batCacheid);
+		BBPkeepref(b);
 	}
 	return b;
 }
@@ -473,10 +473,12 @@ static char *RAPIinitialize(void) {
 	if ((e = RAPIinstalladdons()) != 0) {
 		return e;
 	}
+#if R_VERSION < R_Version(4,2,0)
 	// patch R internals to disallow quit and system. Setting them to NULL produces an error.
 	SET_INTERNAL(install("quit"), R_NilValue);
 	// install.packages() uses system2 to call gcc etc., so we cannot disable it (perhaps store the pointer somewhere just for that?)
 	//SET_INTERNAL(install("system"), R_NilValue);
+#endif
 
 	rapiInitialized = true;
 	return NULL;
@@ -582,7 +584,8 @@ bailout:
 				if (b && msg) {
 					BBPreclaim(b);
 				} else if (b) {
-					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+					*getArgReference_bat(stk, pci, i) = b->batCacheid;
+					BBPkeepref(b);
 				}
 			} else if (msg) {
 				ValPtr pt = ((ValPtr*)res)[i];
@@ -642,13 +645,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 			  "Embedded R initialization has failed");
 	}
 
-	if (!grouped) {
-		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc+has_card_arg));
-		if (sqlmorefun) sqlfun = sqlmorefun->func;
-	} else {
-		sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc+has_card_arg);
-	}
-
+	sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc+has_card_arg);
 	args = (str*) GDKzalloc(sizeof(str) * pci->argc);
 	if (args == NULL) {
 		throw(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -907,9 +904,7 @@ RAPIloopback(void *query) {
 	return ScalarLogical(1);
 }
 
-static str RAPIprelude(void *ret) {
-	(void) ret;
-
+static str RAPIprelude(void) {
 	if (RAPIEnabled()) {
 		MT_lock_set(&rapiLock);
 		/* startup internal R environment  */
@@ -936,7 +931,6 @@ static mel_func rapi_init_funcs[] = {
  pattern("rapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("rapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("rapi", "eval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- command("rapi", "prelude", RAPIprelude, false, "", args(1,1, arg("",void))),
  pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batrapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
@@ -949,4 +943,4 @@ static mel_func rapi_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_rapi_mal)
-{ mal_module("rapi", NULL, rapi_init_funcs); }
+{ mal_module2("rapi", NULL, rapi_init_funcs, RAPIprelude, NULL); }

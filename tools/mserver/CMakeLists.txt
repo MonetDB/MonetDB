@@ -50,6 +50,7 @@ target_link_libraries(mserver5
   monetdb5
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
+  $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>
   Threads::Threads)
 
 add_executable(shutdowntest)
@@ -79,6 +80,7 @@ target_link_libraries(shutdowntest
   bat
   stream
   monetdb5
+  $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   Threads::Threads)
 
@@ -132,5 +134,3 @@ if(WIN32)
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     OPTIONAL)
 endif()
-
-# vim: set ts=2:sw=2:et

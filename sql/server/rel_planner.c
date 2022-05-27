@@ -11,7 +11,7 @@
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
-#include "rel_optimizer.h"
+#include "rel_rewriter.h"
 
 typedef struct memoitem {
 	const char *name;
@@ -920,6 +920,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 				list_remove_data(exps, NULL, e);
 			}
 		}
+		set_processed(top);
 		return top;
 	} else {
 		return mi->data;

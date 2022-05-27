@@ -21,7 +21,6 @@
 #include "mal_stack.h"
 #include "mal_linker.h"
 #include "gdk.h"
-#include "blob.h"
 #include "sql_catalog.h"
 #include "sql_scenario.h"
 #include "sql_cast.h"
@@ -41,6 +40,7 @@
 #else
 #include <Python.h>
 #endif
+#include <datetime.h>
 
 // Numpy Library
 #ifdef __COVERITY__
@@ -66,15 +66,15 @@
 #define pyapi_export extern
 #endif
 
-#define PyString_FromString PyUnicode_FromString
-#define PyString_Check PyUnicode_Check
-#define PyString_CheckExact PyUnicode_CheckExact
-#define PyString_AsString PyUnicode_AsUTF8
-#define PyString_AS_STRING PyUnicode_AsUTF8
-#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_Check PyLong_Check
-#define PythonUnicodeType Py_UNICODE
+PyDateTime_CAPI *get_DateTimeAPI(void);
+void init_DateTimeAPI(void);
+
+#define USE_DATETIME_API						\
+	do {										\
+		PyDateTimeAPI = get_DateTimeAPI();		\
+	} while(0)
+
+
 
 #define utf8string_minlength 256
 

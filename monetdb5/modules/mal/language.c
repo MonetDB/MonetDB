@@ -40,8 +40,11 @@ CMDraise(str *ret, str *msg)
 	if( *ret == NULL)
 		throw(MAL, "mal.raise", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	res = GDKstrdup(*msg);
-	if( res == NULL)
+	if( res == NULL) {
+		GDKfree(*ret);
+		*ret = NULL;
 		throw(MAL, "mal.raise", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	return res;
 }
 

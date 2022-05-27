@@ -39,7 +39,6 @@ geom_export str geoHasZ(int* res, int* info);
 geom_export str geoHasM(int* res, int* info);
 geom_export str geoGetType(char** res, int* info, int* flag);
 
-geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
 
 /* functions that are used when a column is added to an existing table */

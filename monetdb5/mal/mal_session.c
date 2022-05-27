@@ -27,7 +27,7 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(char *modules[], int embedded)
+malBootstrap(char *modules[], bool embedded)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
@@ -169,6 +169,8 @@ is_exiting(void *data)
 	return GDKexiting();
 }
 
+static str MSserveClient(Client cntxt);
+
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
@@ -273,20 +275,23 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		return;
 	} else {
 		str err;
-		oid uid;
+		oid uid = 0;
 		sabdb *stats = NULL;
 
-		/* access control: verify the credentials supplied by the user,
-		 * no need to check for database stuff, because that is done per
-		 * database itself (one gets a redirect) */
-		err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
-		if (err != MAL_SUCCEED) {
-			mnstr_printf(fout, "!%s\n", err);
-			exit_streams(fin, fout);
-			freeException(err);
-			GDKfree(command);
-			return;
+		if (!GDKembedded()) {
+			/* access control: verify the credentials supplied by the user,
+			* no need to check for database stuff, because that is done per
+			* database itself (one gets a redirect) */
+			err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
+			if (err != MAL_SUCCEED) {
+				mnstr_printf(fout, "!%s\n", err);
+				exit_streams(fin, fout);
+				freeException(err);
+				GDKfree(command);
+				return;
+			}
 		}
+
 
 		if (!GDKinmemory(0) && !GDKembedded()) {
 			err = msab_getMyStatus(&stats);
@@ -443,7 +448,7 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 
 	if (mb->errors == MAL_SUCCEED){
 		for (i = sig->argc; i < mb->vtop; i++) {
-			if (glb && i < glb->stktop && isTmpVar(mb,i) ) {
+			if (glb && i < glb->stktop && isTmpVar(mb,i) && !glb->keepTmps) {
 				/* clean stack entry */
 				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;
@@ -494,7 +499,7 @@ MSresetVariables(MalBlkPtr mb)
  * for the global variables.  Thereafter it is up to the scenario
  * interpreter to process input.
  */
-str
+static str
 MSserveClient(Client c)
 {
 	MalBlkPtr mb;
@@ -512,7 +517,7 @@ MSserveClient(Client c)
 	if (c->glb == NULL)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
-		c->mode = RUNCLIENT;
+		MCcloseClient(c);
 		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
@@ -522,7 +527,7 @@ MSserveClient(Client c)
 	if (c->scenario == 0)
 		msg = defaultScenario(c);
 	if (msg) {
-		c->mode = RUNCLIENT;
+		MCcloseClient(c);
 		return msg;
 	} else {
 		do {
@@ -560,10 +565,6 @@ MSserveClient(Client c)
 	*/
 
 	MCcloseClient(c);
-	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
-		freeModule(c->usermodule);
-		c->usermodule = NULL;
-	}
 	return MAL_SUCCEED;
 }
 

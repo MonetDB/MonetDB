@@ -300,6 +300,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("REMOTE", REMOTE);
 	failed += keywords_insert("MERGE", MERGE);
 	failed += keywords_insert("REPLICA", REPLICA);
+	failed += keywords_insert("UNLOGGED", UNLOGGED);
 	failed += keywords_insert("TO", TO);
 	failed += keywords_insert("UNION", UNION);
 	failed += keywords_insert("EXCEPT", EXCEPT);
@@ -1411,6 +1412,8 @@ sqllex(YYSTYPE * yylval, void *parm)
 
 		if (next == NOT) {
 			return sqllex(yylval, parm);
+		} else if (next == EXISTS) {
+			token = NOT_EXISTS;
 		} else if (next == BETWEEN) {
 			token = NOT_BETWEEN;
 		} else if (next == sqlIN) {

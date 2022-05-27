@@ -97,7 +97,7 @@ if(NOT ${CMAKE_INSTALL_PREFIX} STREQUAL "/usr")
 #  SET(CMAKE_SKIP_RPATH TRUE)
 endif()
 
-# required for some instalation files
+# required for some installation files
 set(PROGRAM_PERMISSIONS_DEFAULT
   OWNER_WRITE
   OWNER_READ
@@ -183,6 +183,3 @@ add_subdirectory(documentation)
 if(CMAKE_SUMMARY)
   monetdb_cmake_summary()
 endif()
-
-
-# vim: set ts=2:sw=2:et

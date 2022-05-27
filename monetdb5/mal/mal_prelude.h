@@ -16,9 +16,9 @@
 
 mal_export int mal_startup(void);
 
-mal_export void mal_module(str name, mel_atom *atoms, mel_func *funcs);
-mal_export void mal_module2(str name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code);
+mal_export void mal_module(const char *name, mel_atom *atoms, mel_func *funcs);
+mal_export void mal_module2(const char *name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code);
 
-mal_export str malIncludeModules(Client c, char *modules[], int listing, int embedded);
+mal_export str malIncludeModules(Client c, char *modules[], int listing, bool embedded);
 
 #endif /*  _MAL_PRELUDE_H */

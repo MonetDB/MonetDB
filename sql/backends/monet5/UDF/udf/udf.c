@@ -205,7 +205,8 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 	if (msg == MAL_SUCCEED) {
 		/* register result BAT in buffer pool */
-		BBPkeepref((*ret = res->batCacheid));
+		*ret = res->batCacheid;
+		BBPkeepref(res);
 	}
 
 	return msg;
@@ -351,12 +352,12 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 		 * second/right tail values are either all >= 0 or all < 0;
 		 * otherwise, we cannot tell.
 		 */
-		if (BATtordered(bone)
+		if (bone->tsorted
 		    && (BATtkey(bone) || two_tail_sorted_unsigned))
 			bres->tsorted = true;
 		else
 			bres->tsorted = (BATcount(bres) <= 1);
-		if (BATtrevordered(bone)
+		if (bone->trevsorted
 		    && (BATtkey(bone) || two_tail_revsorted_unsigned))
 			bres->trevsorted = true;
 		else
@@ -399,7 +400,8 @@ UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 
 	if (msg == MAL_SUCCEED) {
 		/* register result BAT in buffer pool */
-		BBPkeepref((*ires = bres->batCacheid));
+		*ires = bres->batCacheid;
+		BBPkeepref(bres);
 	}
 
 	return msg;

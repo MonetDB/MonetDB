@@ -99,7 +99,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 			}
 			t->order = o->batCacheid;
 			t->nr_rows = 1;
-			BBPkeepref(t->order);
+			BBPkeepref(o);
 		}
 		cached = true; /* simply keep memory pointer for this small bat */
 	}

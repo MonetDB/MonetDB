@@ -24,6 +24,7 @@
 #include "rel_semantic.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
+#include "rel_statistics.h"
 #include "wlc.h"
 
 #include "mal_authorize.h"
@@ -62,7 +63,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 
 		r = rel_parse(m, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(m, r, 0, 0, 0);
+			r = sql_processrelation(m, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(m, r);
 			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
@@ -143,6 +144,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
 	}
+	initialize_sql_functions_lookup(store->sa);
 
 	m = mvc_create((sql_store)store, store->sa, 0, 0, NULL, NULL);
 	if (!m) {
@@ -290,7 +292,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 
 		for (int i = 0; i < 9; i++) {
 			sql_column *col = NULL;
-			
+
 			mvc_create_column_(&col, m, t, tview[i].name, tview[i].type, tview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);
@@ -784,6 +786,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 
 	m->role_id = m->user_id = -1;
 	m->timezone = 0;
+	m->sql_optimizer = INT_MAX;
 	m->clientid = clientid;
 
 	m->emode = m_normal;
@@ -793,6 +796,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 
 	m->label = 0;
 	m->cascade_action = NULL;
+	m->runs = NULL;
 
 	if (!(m->schema_path = list_create((fdestroy)_free))) {
 		qc_destroy(m->qc);
@@ -866,12 +870,16 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	if (m->timezone != 0)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "current_timezone"), 0);
 	m->timezone = 0;
+	if (m->sql_optimizer != INT_MAX)
+		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "sql_optimizer"), INT_MAX);
+	m->sql_optimizer = INT_MAX;
 	if (m->debug != debug)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "debug"), debug);
 	m->debug = debug;
 
 	m->label = 0;
 	m->cascade_action = NULL;
+	m->runs = NULL;
 	m->type = Q_PARSE;
 
 	scanner_init(&m->scanner, rs, ws);
@@ -993,10 +1001,9 @@ mvc_first_column(mvc *m, sql_table *t)
 sql_key *
 mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 {
-	sql_base *b = os_find_name(s->keys, m->session->tr, kname);
-	sql_key *k = (sql_key*)b;
+	sql_key *k = schema_find_key(m->session->tr, s, kname);
 
-	if (!b)
+	if (!k)
 		return NULL;
 	TRC_DEBUG(SQL_TRANS, "Bind key: %s.%s\n", s->base.name, kname);
 	return k;
@@ -1005,11 +1012,10 @@ mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 sql_idx *
 mvc_bind_idx(mvc *m, sql_schema *s, const char *iname)
 {
-	sql_base *b = os_find_name(s->idxs, m->session->tr, iname);
+	sql_idx *i = schema_find_idx(m->session->tr, s, iname);
 
-	if (!b)
+	if (!i)
 		return NULL;
-	sql_idx *i = (sql_idx*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind index: %s.%s\n", s->base.name, iname);
 	return i;
 }
@@ -1054,13 +1060,12 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 sql_trigger *
 mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 {
-	sql_base *b = os_find_name(s->triggers, m->session->tr, tname);
+	sql_trigger *t = schema_find_trigger(m->session->tr, s, tname);
 
-	if (!b)
+	if (!t)
 		return NULL;
-	sql_trigger *trigger = (sql_trigger*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind trigger: %s.%s\n", s->base.name, tname);
-	return trigger;
+	return t;
 }
 
 int
@@ -1538,6 +1543,13 @@ mvc_is_duplicate_eliminated(mvc *m, sql_column *col)
 }
 
 int
+mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
+{
+	TRC_DEBUG(SQL_TRANS, "Retrieving column stats for: %s\n", col->base.name);
+	return sql_trans_col_stats(m->session->tr, col, nonil, unique, unique_est, min, max);
+}
+
+int
 mvc_copy_column(mvc *m, sql_table *t, sql_column *c, sql_column **cres)
 {
 	return sql_trans_copy_column(m->session->tr, t, c, cres);
@@ -1562,12 +1574,12 @@ mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres)
 }
 
 sql_rel *
-sql_processrelation(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt)
+sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
 	if (rel)
 		rel = rel_unnest(sql, rel);
 	if (rel)
-		rel = rel_optimizer(sql, rel, instantiate, value_based_opt, storage_based_opt);
+		rel = rel_optimizer(sql, rel, profile, instantiate, value_based_opt, storage_based_opt);
 	return rel;
 }
 

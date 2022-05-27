@@ -4,7 +4,7 @@ Test if server doesn't crash when remote and local table definitions do not matc
 Current result is an mal error (compilation failed)
 """
 
-import os, sys, socket, pymonetdb, threading, tempfile
+import os, sys, pymonetdb, threading, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -28,13 +28,6 @@ tabledata = """
 INSERT INTO %SHARD% VALUES (42);
 """
 
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
 # load data (in parallel)
 def worker_load(workerrec):
     c = workerrec['conn'].cursor()
@@ -45,37 +38,34 @@ def worker_load(workerrec):
     c.execute(tabledata.replace("%SHARD%", stable))
 
 
-masterport = freeport()
-
 with tempfile.TemporaryDirectory() as tmpdir:
     os.mkdir(os.path.join(tmpdir, 'master'))
 
-    with process.server(mapiport=masterport, dbname="master",
+    with process.server(mapiport='0', dbname="master",
                         dbfarm=os.path.join(tmpdir, 'master'),
                         stdin=process.PIPE, stdout=process.PIPE) as masterproc:
-        masterconn = pymonetdb.connect(database='', port=masterport, autocommit=True)
+        masterconn = pymonetdb.connect(database='', port=masterproc.dbport, autocommit=True)
 
         try:
             # setup and start workers
             workers = []
             for i in range(nworkers):
-                workerport = freeport()
                 workerdbname = 'worker_' + str(i)
                 workerrec = {
                     'no'       : i,
-                    'port'     : workerport,
                     'dbname'   : workerdbname,
                     'dbfarm'   : os.path.join(tmpdir, workerdbname),
-                    'mapi'     : 'mapi:monetdb://localhost:{}/{}'.format(workerport, workerdbname),
                     'tpf'      : '_{}'.format(i)
                 }
                 workers.append(workerrec)
                 os.mkdir(workerrec['dbfarm'])
-                workerrec['proc'] = process.server(mapiport=workerrec['port'],
+                workerrec['proc'] = process.server(mapiport='0',
                                                    dbname=workerrec['dbname'],
                                                    dbfarm=workerrec['dbfarm'],
                                                    stdin=process.PIPE,
                                                    stdout=process.PIPE)
+                workerrec['port'] = workerrec['proc'].dbport
+                workerrec['mapi'] = 'mapi:monetdb://localhost:{}/{}'.format(workerrec['port'], workerdbname)
                 workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'],
                                                       port=workerrec['port'],
                                                       autocommit=True)

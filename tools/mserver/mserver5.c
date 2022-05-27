@@ -524,7 +524,7 @@ main(int argc, char **av)
 					usage(prog, -1);
 				}
 			} else {
-				debug |= 1;
+				debug |= CHECKMASK;
 			}
 			break;
 		case 'r':
@@ -600,20 +600,20 @@ main(int argc, char **av)
 
 	if (dbtrace) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
-		if (GDKcreatedir(dbtrace) != GDK_SUCCEED) {
+		if (!inmemory && GDKcreatedir(dbtrace) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
 			exit(1);
 		}
 		GDKfree(dbtrace);
 	}
 
+	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	if (monet_init(set, setlen, false) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
 			fprintf(stderr, "%s\n", GDKerrbuf);
 		exit(1);
 	}
-	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	mo_free_options(set, setlen);
 
 	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED ||
@@ -804,7 +804,7 @@ main(int argc, char **av)
 	}
 
 	modules[mods++] = 0;
-	if (mal_init(modules, 0)) {
+	if (mal_init(modules, false)) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();

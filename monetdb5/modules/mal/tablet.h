@@ -27,7 +27,7 @@ typedef struct Column_t {
 	const char *sep;
 	const char *rsep;
 	int seplen;
-	char *type;
+	const char *type;
 	int adt;					/* type index */
 	BAT *c;						/* set to NULL when scalar is meant */
 	BATiter ci;

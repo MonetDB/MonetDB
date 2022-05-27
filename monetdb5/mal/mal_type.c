@@ -170,6 +170,8 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 		return TYPE_timestamp;
 	else if (len == 4 && strncmp(nme, "uuid", len) == 0)
 		return TYPE_uuid;
+	else if (len == 4 && strncmp(nme, "blob", len) == 0)
+		return TYPE_blob;
 	for (i = TYPE_str; i < GDKatomcnt; i++)
 		if (BATatoms[i].name[0] == nme[0] &&
 			strncmp(nme, BATatoms[i].name, len) == 0 &&

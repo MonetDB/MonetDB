@@ -21,8 +21,17 @@ enum valtype {
 	STR,
 	MURI,
 	LADDR,
+	LOGLEVEL,
+	MODS,						/* list of mserver5 modules */
 	OTHER
 };
+
+typedef enum loglevel_t {
+	ERROR = 1,
+	WARNING,
+	INFORMATION,
+	DEBUG
+} loglevel;
 
 typedef struct _confkeyval {
 	char *key;
@@ -62,5 +71,3 @@ void free_snapshots(struct snapshot *snapshots, int nsnapshots);
 
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

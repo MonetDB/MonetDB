@@ -9,16 +9,6 @@
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
 
-#ifdef WIN32
-#ifndef LIBGDK
-#define gdk_export extern __declspec(dllimport)
-#else
-#define gdk_export extern __declspec(dllexport)
-#endif
-#else
-#define gdk_export extern
-#endif
-
 /* if __has_attribute is not known to the preprocessor, we ignore
  * attributes completely; if it is known, use it to find out whether
  * specific attributes that we use are known */
@@ -88,6 +78,22 @@
 #endif
 #if !__has_attribute(__warn_unused_result__)
 #define __warn_unused_result__
+#endif
+
+/* unreachable code */
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#elif defined(__clang__) || defined(__INTEL_COMPILER)
+#ifdef WIN32
+#define __builtin_unreachable()	GDKfatal("Unreachable C code path reached");
+#endif
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#elif defined(_MSC_VER)
+#define MT_UNREACHABLE()	do { assert(0); __assume(0); } while (0)
+#else
+/* we don't know how to tell the compiler, so call a function that
+ * doesn't return */
+#define MT_UNREACHABLE()	do { assert(0); GDKfatal("Unreachable C code path reached"); } while (0)
 #endif
 
 /* also see gdk.h for these */
@@ -240,51 +246,36 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 		TRC_DEBUG(TEM, "Locking %s complete\n", (l)->name);	\
 	} while (0)
 
-#define _DBG_LOCK_INIT(l)						\
-	do {								\
-		(l)->count = 0;						\
-		ATOMIC_INIT(&(l)->contention, 0);			\
-		ATOMIC_INIT(&(l)->sleep, 0);				\
-		(l)->locker = NULL;					\
-		(l)->thread = NULL;					\
-		/* if name starts with "sa_" don't link in GDKlocklist */ \
-		/* since the lock is in memory that is governed by the */ \
-		/* SQL storage allocator, and hence we have no control */ \
-		/* over when the lock is destroyed and the memory freed */ \
-		if (strncmp((l)->name, "sa_", 3) != 0) {		\
-			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
-				;					\
-			if (GDKlocklist)				\
-				GDKlocklist->prev = (l);		\
-			(l)->next = GDKlocklist;			\
-			(l)->prev = NULL;				\
-			GDKlocklist = (l);				\
-			ATOMIC_CLEAR(&GDKlocklistlock);			\
-		} else {						\
-			(l)->next = NULL;				\
-			(l)->prev = NULL;				\
-		}							\
+#define _DBG_LOCK_INIT(l)					\
+	do {							\
+		(l)->count = 0;					\
+		ATOMIC_INIT(&(l)->contention, 0);		\
+		ATOMIC_INIT(&(l)->sleep, 0);			\
+		(l)->locker = NULL;				\
+		(l)->thread = NULL;				\
+		while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
+			;					\
+		if (GDKlocklist)				\
+			GDKlocklist->prev = (l);		\
+		(l)->next = GDKlocklist;			\
+		(l)->prev = NULL;				\
+		GDKlocklist = (l);				\
+		ATOMIC_CLEAR(&GDKlocklistlock);			\
 	} while (0)
 
-#define _DBG_LOCK_DESTROY(l)						\
-	do {								\
-		/* if name starts with "sa_" don't link in GDKlocklist */ \
-		/* since the lock is in memory that is governed by the */ \
-		/* SQL storage allocator, and hence we have no control */ \
-		/* over when the lock is destroyed and the memory freed */ \
-		if (strncmp((l)->name, "sa_", 3) != 0) {		\
-			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
-				;					\
-			if ((l)->next)					\
-				(l)->next->prev = (l)->prev;		\
-			if ((l)->prev)					\
-				(l)->prev->next = (l)->next;		\
-			else if (GDKlocklist == (l))			\
-				GDKlocklist = (l)->next;		\
-			ATOMIC_CLEAR(&GDKlocklistlock);			\
-			ATOMIC_DESTROY(&(l)->contention);		\
-			ATOMIC_DESTROY(&(l)->sleep);			\
-		}							\
+#define _DBG_LOCK_DESTROY(l)					\
+	do {							\
+		while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
+			;					\
+		if ((l)->next)					\
+			(l)->next->prev = (l)->prev;		\
+		if ((l)->prev)					\
+			(l)->prev->next = (l)->next;		\
+		else if (GDKlocklist == (l))			\
+			GDKlocklist = (l)->next;		\
+		ATOMIC_CLEAR(&GDKlocklistlock);			\
+		ATOMIC_DESTROY(&(l)->contention);		\
+		ATOMIC_DESTROY(&(l)->sleep);			\
 	} while (0)
 
 #else
@@ -498,7 +489,7 @@ typedef struct MT_RWLock {
 	char name[MT_NAME_LEN];
 } MT_RWLock;
 
-#define MT_RWLOCK_INITIALIZER(n)				\
+#define MT_RWLOCK_INITIALIZER(n)					\
 	{ .lock = PTHREAD_MUTEX_INITIALIZER, .readers = ATOMIC_VAR_INIT(0), .name = #n, }
 
 #define MT_rwlock_init(l, n)					\
@@ -718,5 +709,31 @@ gdk_export void MT_thread_setalgorithm(const char *algo);
 gdk_export const char *MT_thread_getalgorithm(void);
 
 gdk_export int MT_check_nr_cores(void);
+
+/*
+ * @ Condition Variable API
+ */
+
+typedef struct MT_Cond {
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	CONDITION_VARIABLE cv;
+#else
+	pthread_cond_t cv;
+#endif
+	char name[MT_NAME_LEN];
+} MT_Cond;
+
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+#  define MT_COND_INITIALIZER(N) { .cv = CONDITION_VARIABLE_INIT, .name = #N }
+#else
+#  define MT_COND_INITIALIZER(N) { .cv = PTHREAD_COND_INITIALIZER, .name = #N }
+#endif
+
+gdk_export void MT_cond_init(MT_Cond *cond);
+gdk_export void MT_cond_destroy(MT_Cond *cond);
+gdk_export void MT_cond_wait(MT_Cond *cond, MT_Lock *lock);
+gdk_export void MT_cond_signal(MT_Cond *cond);
+gdk_export void MT_cond_broadcast(MT_Cond *cond);
+
 
 #endif /*_GDK_SYSTEM_H_*/

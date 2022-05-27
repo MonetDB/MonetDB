@@ -332,6 +332,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	}
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
+	mb->starttime = GDKusec();
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 
 	/* pass the new debug mode to the caller */
@@ -422,6 +423,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 				BBPretain(lhs->val.bval);
 		}
 		stk->cmd = debug;
+		mb->starttime = GDKusec();
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
 	case FACTORYsymbol:
@@ -503,7 +505,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		startedProfileQueue = 1;
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
-		mb->starttime = GDKusec();
 		if (cntxt->sessiontimeout && mb->starttime - cntxt->session > cntxt->sessiontimeout) {
 			runtimeProfileFinish(cntxt, mb, stk);
 			if ( backup != backups) GDKfree(backup);
@@ -854,24 +855,21 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval)
 					GDKfree(lhs->val.pval);
 			}
-			if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {
+			if (GDKdebug & CHECKMASK && exceptionVar < 0) {
 				BAT *b;
 
 				for (i = 0; i < pci->retc; i++) {
 					if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
 						!is_bat_nil(stk->stk[getArg(pci, i)].val.bval)) {
 						assert(stk->stk[getArg(pci, i)].val.bval > 0);
-						b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval);
+						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
 						if (b == NULL) {
 							if (ret == MAL_SUCCEED)
 								ret = createException(MAL, "mal.propertyCheck", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 							continue;
 						}
-						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
-						if (b) {
-							BATassertProps(b);
-							BBPunfix(b->batCacheid);
-						}
+						BATassertProps(b);
+						BBPunfix(b->batCacheid);
 					}
 				}
 			}
@@ -886,9 +884,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 						if (garbage[i] >= 0) {
 							bid = stk->stk[garbage[i]].val.bval;
-							stk->stk[garbage[i]].val.bval = bat_nil;
-							BBPcold(bid);
-							BBPrelease(bid);
+							if (!is_bat_nil(bid)) {
+								stk->stk[garbage[i]].val.bval = bat_nil;
+								BBPcold(bid);
+								BBPrelease(bid);
+							}
 						}
 					}
 				}

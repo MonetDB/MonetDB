@@ -121,8 +121,13 @@ COPY 4 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 -803413833
 921740890
 
-statement error 42000!Argument 2 to round function must be positive
-select t2.tc0, scale_down(0.87735366430185102171179778451914899051189422607421875, t2.tc0) from t2
+query I nosort
+select 1 from t2
+----
+1
+1
+1
+1
 
 statement ok
 ROLLBACK
@@ -247,7 +252,7 @@ statement ok rowcount 9
 INSERT INTO "salesmart" VALUES ('pT펈*1.{'),('1870507234'),('27825'),('/aF⯗u'),('10545346022400.000'),(''),('-1533465369'),(''),('29781')
 
 statement ok
-create view v2(vc0, vc1) as (select all sign(((820356984)*(scale_down(0.53676551856816223651236441583023406565189361572265625, 0.5695062)))), cast(null as clob))
+create view v2(vc0, vc1) as (select all sign(((820356984)*(0.53))), cast(null as clob))
 
 query I rowsort
 select cast(sum(count) as bigint) from (select all cast(true as int) as count from v2 join salesmart on not ((salesmart.city) between asymmetric (trim(salesmart.city, v2.vc1)) and ('0.43353835334391844'))) as res
@@ -271,18 +276,6 @@ COPY 5 RECORDS INTO "sys"."salesmart" FROM stdin USING DELIMITERS E'\t',E'\n','"
 "0.8200084709639743"
 ""
 "\015"
-
-query I rowsort
-SELECT 1 FROM salesmart WHERE CAST(1 AS BOOLEAN) OR "index"(salesmart.city, true)
-----
-1
-1
-1
-1
-1
-
-statement ok rowcount 5
-DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = TRUE)OR(CAST("index"(substr(salesmart.city, 1058445329, 887361238), (-528898388) IS NOT NULL) AS BOOLEAN)))
 
 statement ok
 ROLLBACK
@@ -371,7 +364,7 @@ statement ok
 create view v7(vc0, vc1) as (select all 56, replace('0.0074401190660642325', "insert"('0.9471086251830542', null, 1872651914, '(Ga_'), '2]vK') where not (not (false))) with check option
 
 query I rowsort
-select 1 from v7 where not (((cast(scale_up(4751, -1823537248) as string(86)))not like(v7.vc1)))
+select 1 from v7 where not (((cast(4751 as string(86)))not like(v7.vc1)))
 ----
 
 statement ok
@@ -430,3 +423,62 @@ ROLLBACK
 statement error 22003!overflow in conversion of 789092170 to bte.
 SELECT round(- (((-443710828)||(1616633099))), 789092170)
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "rt0" ("c0" BOOLEAN,"c1" BOOLEAN NOT NULL, CONSTRAINT "rt0_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok rowcount 2
+INSERT INTO "rt0" VALUES (NULL, false), (false, true)
+
+query I nosort
+SELECT rt0.c1 FROM rt0 FULL OUTER JOIN (VALUES (1)) x(x) ON TRUE AND 'a' = 'b' WHERE rt0.c1
+----
+1
+
+query I nosort
+SELECT rt0.c1 FROM rt0 RIGHT OUTER JOIN (VALUES (1)) x(x) ON TRUE AND 'a' = 'b' WHERE rt0.c1
+----
+
+query I nosort
+SELECT rt0.c1 FROM rt0 LEFT OUTER JOIN (VALUES (1)) x(x) ON TRUE AND 'a' = 'b' WHERE rt0.c1
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(rt0.c1 AS INT) as count FROM rt0 FULL OUTER JOIN (VALUES (1)) AS nort0(norc0) ON TRUE AND 'a' = 'b') as res
+----
+1
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(rt0.c1 AS INT) as count FROM rt0 RIGHT OUTER JOIN (VALUES (1)) AS nort0(norc0) ON TRUE AND 'a' = 'b') as res
+----
+NULL
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(rt0.c1 AS INT) as count FROM rt0 LEFT OUTER JOIN (VALUES (1)) AS nort0(norc0) ON TRUE AND 'a' = 'b') as res
+----
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t0(c0 int) ON COMMIT PRESERVE ROWS
+
+statement ok
+INSERT INTO t0(c0) VALUES(NULL)
+
+query I nosort
+SELECT c0 FROM t0
+----
+NULL
+
+query I nosort
+SELECT c0 FROM t0 WHERE c0 IS NULL
+----
+NULL
+
+statement ok
+DROP TABLE t0

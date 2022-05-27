@@ -210,24 +210,42 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			}
 			continue;
 		}
-		if (getModuleId(p)== algebraRef){
-			if( getFunctionId(p) == projectionRef) {
-				if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
-					actions++;
-					emptyresult(0);
-				}
-			}
-			if( getFunctionId(p) == thetaselectRef || getFunctionId(p) == selectRef) {
-				if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
-					actions++;
-					emptyresult(0);
-				}
-			}
-		}
-		if( getModuleId(p) == batstrRef){
+		if (getModuleId(p)== algebraRef && getFunctionId(p) == projectionRef) {
 			if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
 				actions++;
 				emptyresult(0);
+			}
+		}
+		if ((getModuleId(p)== algebraRef || getModuleId(p) == dictRef) && (getFunctionId(p) == thetaselectRef || getFunctionId(p) == selectRef)) {
+			if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
+				actions++;
+				emptyresult(0);
+			}
+		}
+		if (getModuleId(p) == forRef && getFunctionId(p) == decompressRef){
+			if (empty[getArg(p,1)]){
+				actions++;
+				emptyresult(0);
+			}
+		}
+		if (getModuleId(p) == dictRef){
+			if (getFunctionId(p) == decompressRef && (empty[getArg(p,1)] || empty[getArg(p,2)])){
+				actions++;
+				emptyresult(0);
+			}
+			if (getFunctionId(p) == compressRef && empty[getArg(p,2)]){
+				actions++;
+				emptyresult(0);
+			}
+		}
+		if (getModuleId(p) == batmkeyRef || getModuleId(p) == batstrRef || getModuleId(p) == batmtimeRef ||
+			getModuleId(p) == batmmathRef || getModuleId(p) == batcalcRef || (getModuleId(p) == algebraRef && getFunctionId(p) == projectionpathRef)) {
+			for (int j = p->retc; j < p->argc; j++) {
+				if( empty[getArg(p,j)]){
+					actions++;
+					emptyresult(0);
+					break;
+				}
 			}
 		}
 		if (getModuleId(p)== batRef && isUpdateInstruction(p)){

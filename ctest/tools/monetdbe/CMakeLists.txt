@@ -101,7 +101,8 @@ endif()
 if (TESTING)
   install(TARGETS
     example_proxy
-    DESTINATION ${CMAKE_INSTALL_BINDIR})
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT mbeddedtest)
 
   if(WIN32)
     install(FILES

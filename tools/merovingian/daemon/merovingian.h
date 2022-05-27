@@ -13,7 +13,7 @@
 #include <pthread.h> /* pthread_mutex_t */
 #include <signal.h>	 /* sig_atomic_t */
 
-#include "utils/utils.h" /* confkeyval */
+#include "utils/utils.h" /* confkeyval, loglevel */
 
 #define MERO_PORT      MAPI_PORT_STR
 #define MERO_SOCK      ".s.monetdb."
@@ -30,15 +30,6 @@ typedef char* err;
 #define freeErr(X) free(X)
 #define getErrMsg(X) X
 #define NO_ERR (err)0
-
-/* when not writing to stderr, one has to flush, make it easy to do so */
-#define Mfprintf(S, ...)						\
-	do {										\
-		if (S) {								\
-			fprintf(S, __VA_ARGS__);			\
-			fflush(S);							\
-		}										\
-	} while (0)
 
 typedef enum _mtype {
 	MERO = 1,
@@ -62,6 +53,20 @@ char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
 bool terminateProcess(char *dbname, pid_t pid, mtype type);
 void logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int rest);
 
+loglevel getLogLevel(void);
+void setLogLevel(loglevel level);
+
+/* based on monetdbd loglevel only print when type of msg is lower or equal than loglevel */
+/* DEBUG (4) is greater than INFORMATION (3) is greater than WARNING (2) is greater than ERROR (1) */
+/* when not writing to stderr, one has to flush, make it easy to do so */
+#define Mlevelfprintf(msgtype, S, ...)			\
+	do {										\
+		if (S && (msgtype <= getLogLevel())) {	\
+			fprintf(S, __VA_ARGS__);			\
+			fflush(S);							\
+		}										\
+	} while (0)
+
 extern char *_mero_mserver;
 extern dpair _mero_topdp;
 extern pthread_mutex_t _mero_topdp_lock;
@@ -81,5 +86,3 @@ extern confkeyval *_mero_db_props;
 extern confkeyval *_mero_props;
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

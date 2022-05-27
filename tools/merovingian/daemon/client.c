@@ -55,7 +55,6 @@ struct clientdata {
 
 static void *
 handleClient(void *data)
-
 {
 	stream *fdin, *fout;
 	char buf[8096];
@@ -101,7 +100,7 @@ handleClient(void *data)
 	if (isusock) {
 		snprintf(host, sizeof(host), "(local)");
 	} else if (getpeername(sock, (struct sockaddr *) &saddr, &saddrlen) == -1) {
-		Mfprintf(stderr, "couldn't get peername of client: %s\n", strerror(errno));
+		Mlevelfprintf(ERROR, stderr, "couldn't get peername of client: %s\n", strerror(errno));
 		snprintf(host, sizeof(host), "(unknown)");
 	} else {
 		char ghost[512];
@@ -278,7 +277,7 @@ handleClient(void *data)
 			mnstr_printf(fout, "!monetdbd: no such database '%s', please create it first\n", database);
 		} else {
 			mnstr_printf(fout, "!monetdbd: internal error while starting mserver '%s'%s\n", e, strstr(e, "logfile")?"":", please refer to the logs");
-			Mfprintf(_mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
+			Mlevelfprintf(ERROR, _mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
 		}
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
@@ -302,10 +301,10 @@ handleClient(void *data)
 	/* collect possible redirects */
 	for (stat = top; stat != NULL; stat = stat->next) {
 		if (stat->conns == NULL || stat->conns->val == NULL) {
-			Mfprintf(stdout, "dropping database without available "
+			Mlevelfprintf(ERROR, stdout, "dropping database without available "
 					"connections: '%s'\n", stat->dbname);
 		} else if (r == 24) {
-			Mfprintf(stdout, "dropping database connection because of "
+			Mlevelfprintf(ERROR, stdout, "dropping database connection because of "
 					"too many already: %s\n", stat->conns->val);
 		} else {
 			redirs[r++] = *stat;
@@ -371,11 +370,10 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 	} else {
-		/* Jan2022: disabled logging of next info message to reduce merovingian.log size:
-		Mfprintf(stdout, "proxying client %s for database '%s' to "
+		Mlevelfprintf(DEBUG, stdout, "proxying client %s for database '%s' to "
 				"%s?database=%s\n",
 				host, database, redirs[0].conns->val, redirs[0].dbname);
-		*/
+
 		/* merovingian is in control, only consider the first redirect */
 		mnstr_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
 				redirs[0].dbname);
@@ -394,10 +392,10 @@ handleClient(void *data)
 			mnstr_read_block(fdin, buf, 8095, 1); /* eat away client response */
 			mnstr_printf(fout, "!monetdbd: an internal error has occurred '%s', refer to the logs for details, please try again later\n",e);
 			mnstr_flush(fout, MNSTR_FLUSH_DATA);
-			Mfprintf(_mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
+			Mlevelfprintf(ERROR, _mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
 			close_stream(fout);
 			close_stream(fdin);
-			Mfprintf(stdout, "starting a proxy failed: %s\n", e);
+			Mlevelfprintf(ERROR, stdout, "starting a proxy failed: %s\n", e);
 			msab_freeStatus(&top);
 			self->dead = true;
 			return(e);
@@ -463,7 +461,7 @@ acceptConnections(int socks[3])
 				*threadp = p->next;
 				free(p);
 				if (e != NO_ERR) {
-					Mfprintf(stderr, "client error: %s\n",
+					Mlevelfprintf(ERROR, stderr, "client error: %s\n",
 							 getErrMsg((char *) e));
 					freeErr(e);
 				}
@@ -589,12 +587,12 @@ acceptConnections(int socks[3])
 			case '1':
 				/* filedescriptor, no way */
 				closesocket(sock);
-				Mfprintf(stderr, "client error: fd passing not supported\n");
+				Mlevelfprintf(ERROR, stderr, "client error: fd passing not supported\n");
 				continue;
 			default:
 				/* some unknown state */
 				closesocket(sock);
-				Mfprintf(stderr, "client error: unknown initial byte\n");
+				Mlevelfprintf(ERROR, stderr, "client error: unknown initial byte\n");
 				continue;
 			}
 		}
@@ -609,7 +607,7 @@ acceptConnections(int socks[3])
 			if (p)
 				free(p);
 			closesocket(sock);
-			Mfprintf(stderr, "cannot allocate memory\n");
+			Mlevelfprintf(ERROR, stderr, "cannot allocate memory\n");
 			continue;
 		}
 		data->sock = sock;
@@ -649,5 +647,3 @@ error:
 	}
 	return(newErr("accept connection: %s", msg));
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

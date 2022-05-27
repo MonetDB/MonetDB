@@ -1,0 +1,3 @@
+--set embedded_py=3
+--set embedded_c=true
+--set capi_cc='cc -std=c99'

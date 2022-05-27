@@ -28,7 +28,6 @@ target_sources(malmodules
   mdb.c
   pcre.c
   mat.c
-  transaction.c
   wlc.c
   mal_mapi.c
   remote.c remote.h

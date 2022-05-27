@@ -11,14 +11,14 @@ add_library(atoms OBJECT)
 target_sources(atoms
   PRIVATE
   streams.c streams.h
-  blob.c blob.h
+  blob.c
   color.c color.h
   str.c str.h
   strptime.c
   url.c
-  uuid.c uuid.h
+  uuid.c
   json.c
-  mtime.c
+  mtime.c mtime.h
   inet.c
   identifier.c
   xml.c xml.h
@@ -33,7 +33,6 @@ target_include_directories(atoms
 
 target_link_libraries(atoms
   PRIVATE
-  $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
   $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
   stream
   monetdb_config_header

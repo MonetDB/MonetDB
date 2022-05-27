@@ -109,15 +109,15 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/transactions/"},
 	{"COPY BINARY",
 	 "Append binary representations into a table",
-	 "COPY [( BIG | LITTLE | NATIVE) ENDIAN] BINARY INTO qname [column_list] FROM string [',' ...] [ON { CLIENT | SERVER }] [NO CONSTRAINT]",
+	 "COPY [( BIG | LITTLE | NATIVE) ENDIAN] BINARY INTO qname [column_list] FROM string [',' ...] [ON { CLIENT | SERVER }]",
 	 "qname,column_list",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/binary-loading/"},
 	{"COPY INTO",
 	 "Parse a csv file into a table or write a query result to a csv file",
 	 "COPY [nrofrecords] INTO qname [column_list] FROM string [',' ...] [headerlist] [ON { CLIENT | SERVER }] [ separators]\n"
-	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT] [FWF '(' integer [',' ...] ')'\n"
+	 " [NULL [AS] string] [BEST EFFORT] [FWF '(' integer [',' ...] ')'\n"
 	 "COPY [nrofrecords] INTO qname [column_list] FROM STDIN [headerlist] [ separators]\n"
-	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT]\n"
+	 " [NULL [AS] string] [BEST EFFORT]\n"
 	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [separators] [NULL [AS] string]",
 	 "nrofrecords,qname,column_list,headerlist,separators",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/"},
@@ -187,6 +187,13 @@ SQLhelp sqlhelp1[] = {
 	 "CREATE REMOTE TABLE [ IF NOT EXISTS ] qname ON string [WITH [USER 'username'] [[ENCRYPTED] PASSWORD 'password']]",
 	 NULL,
 	 "remote name should match mapi:monetdb://host:port/database[/schema[/table]]"},
+	{"CREATE UNLOGGED TABLE",
+	 "Create a new unlogged table",
+	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
+	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname FROM LOADER function_ref\n"
+	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname table_source [on_commit]",
+	 "table_source,on_commit,function_ref",
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-definition/"},
 	{"CREATE REPLICA TABLE",
 	 "",
 	 "CREATE REPLICA TABLE [ IF NOT EXISTS ] qname table_source",
@@ -424,7 +431,7 @@ SQLhelp sqlhelp1[] = {
 	 "",
 	 "[ WITH cte_list ] MERGE INTO qname [ [AS] ident ] USING table_ref [ [AS] ident ] ON search_condition merge_list",
 	 "cte_list,table_ref,search_condition,merge_list",
-	 "See also: https://www.monetdb.org/blog/sql2003_merge_statements_now_supported"},
+	 "See also: https://www.monetdb.org/documentation/user-guide/blog-archive/merge-statements/"},
 	{"PLAN",
 	 "Give relational execution plan for the SQL statement",
 	 "PLAN statement",
@@ -761,14 +768,14 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "PARTITION BY { RANGE | VALUES } { ON '(' ident ')' | USING '(' query_expression ')' }",
 	 "query_expression",
-	 "See also: https://www.monetdb.org/blog/updatable-merge-tables"},
+	 "See also: https://www.monetdb.org/documentation/user-guide/blog-archive/update-mergetables/"},
 	{"partition_spec",
 	 NULL,
 	 "{ IN '(' partition_list ')' [ WITH NULL VALUES ]\n"
 	 "| FROM partition_range_from TO partition_range_to [ WITH NULL VALUES ]\n"
 	 "| FOR NULL VALUES }",
 	 "partition_list,partition_range_from,partition_range_to",
-	 "See also: https://www.monetdb.org/blog/updatable-merge-tables"},
+	 "See also: https://www.monetdb.org/documentation/user-guide/blog-archive/update-mergetables/"},
 	{"param",
 	 NULL,
 	 "ident data_type",

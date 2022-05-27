@@ -41,14 +41,14 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	}
 	if ((r = BATgroup(&gn, next ? &en : NULL, nhis ? &hn : NULL, b, s, g, e, h)) == GDK_SUCCEED) {
 		*ngid = gn->batCacheid;
-		BBPkeepref(*ngid);
+		BBPkeepref(gn);
 		if (next) {
 			*next = en->batCacheid;
-			BBPkeepref(*next);
+			BBPkeepref(en);
 		}
 		if (nhis){
 			*nhis = hn->batCacheid;
-			BBPkeepref(*nhis);
+			BBPkeepref(hn);
 		}
 	}
 	BBPunfix(b->batCacheid);

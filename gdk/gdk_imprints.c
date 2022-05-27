@@ -315,7 +315,7 @@ BATcheckimprints(BAT *b)
 			assert(!GDKinmemory(bi.h->farmid));
 			b->timprints = NULL;
 			if ((imprints = GDKzalloc(sizeof(Imprints))) != NULL &&
-			    (imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0) {
+			    (imprints->imprints.farmid = BBPselectfarm(b->batRole, bi.type, imprintsheap)) >= 0) {
 				int fd;
 
 				strconcat_len(imprints->imprints.filename,
@@ -390,7 +390,7 @@ BATimpsync(void *arg)
 	MT_lock_set(&b->batIdxLock);
 	if ((imprints = b->timprints) != NULL) {
 		Heap *hp = &imprints->imprints;
-		if (HEAPsave(hp, hp->filename, NULL, true, hp->free) == GDK_SUCCEED) {
+		if (HEAPsave(hp, hp->filename, NULL, true, hp->free, NULL) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 					/* add version number */
@@ -499,7 +499,7 @@ BATimprints(BAT *b)
 			      sizeof(imprints->imprints.filename),
 			      nme, ".timprints", NULL);
 		pages = (((size_t) bi.count * bi.width) + IMPS_PAGE - 1) / IMPS_PAGE;
-		imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype,
+		imprints->imprints.farmid = BBPselectfarm(b->batRole, bi.type,
 							  imprintsheap);
 
 #define SMP_SIZE 2048
@@ -580,7 +580,7 @@ BATimprints(BAT *b)
 		imprints->imps = (void *) (imprints->stats + 64 * 3);
 		imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 
-		switch (ATOMbasetype(b->ttype)) {
+		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte:
 			FILL_HISTOGRAM(bte);
 			break;
@@ -797,10 +797,12 @@ void
 IMPSdecref(Imprints *imprints, bool remove)
 {
 	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s\n", imprints->imprints.filename);
-	imprints->imprints.remove |= remove;
-	if (ATOMIC_DEC(&imprints->imprints.refs) == 0) {
+	if (remove)
+		ATOMIC_OR(&imprints->imprints.refs, HEAPREMOVE);
+	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&imprints->imprints.refs);
+	if ((refs & HEAPREFS) == 0) {
 		ATOMIC_DESTROY(&imprints->imprints.refs);
-		HEAPfree(&imprints->imprints, imprints->imprints.remove);
+		HEAPfree(&imprints->imprints, (bool) (refs & HEAPREMOVE));
 		GDKfree(imprints);
 	}
 }

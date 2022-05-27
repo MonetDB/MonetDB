@@ -594,7 +594,6 @@ int yydebug=1;
 	opt_best_effort
 	opt_brackets
 	opt_chain
-	opt_constraint
 	opt_distinct
 	opt_escape
 	opt_grant_for
@@ -637,7 +636,7 @@ int yydebug=1;
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE SNAPSHOT
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
-%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
+%token <operation> ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
 %token <operation> GROUPING SETS FROM FOR MATCH
 
 %token <operation> EXTRACT
@@ -667,7 +666,7 @@ int yydebug=1;
 
 %left <operation> NOT
 %left <operation> '='
-%left <operation> ALL ANY NOT_BETWEEN BETWEEN NOT_IN sqlIN NOT_LIKE LIKE NOT_ILIKE ILIKE OR SOME
+%left <operation> ALL ANY NOT_BETWEEN BETWEEN NOT_IN sqlIN NOT_EXISTS EXISTS NOT_LIKE LIKE NOT_ILIKE ILIKE OR SOME
 %left <operation> AND
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
@@ -684,7 +683,7 @@ CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMP TEMPORARY MERGE REMOTE REPLICA
+%token TEMP TEMPORARY MERGE REMOTE REPLICA UNLOGGED
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
@@ -824,7 +823,7 @@ if_exists:
 
 if_not_exists:
 	/* empty */   { $$ = FALSE; }
-|	IF NOT EXISTS { $$ = TRUE; }
+|	IF NOT_EXISTS { $$ = TRUE; }
 ;
 
 drop:
@@ -1552,6 +1551,19 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, $7);
 	  append_list(l, $8);
+	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
+	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  UNLOGGED TABLE if_not_exists qname table_content_source
+	{ int commit_action = CA_COMMIT, tpe = SQL_UNLOGGED_TABLE;
+	  dlist *l = L();
+
+	  append_int(l, tpe);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
+	  append_int(l, commit_action);
+	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
@@ -2734,7 +2746,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_constraint opt_fwf_widths
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2744,12 +2756,11 @@ copyfrom_stmt:
 	  append_list(l, $2);
 	  append_string(l, $12);
 	  append_int(l, $13);
-	  append_int(l, $14);
-	  append_list(l, $15);
+	  append_list(l, $14);
 	  append_int(l, $9);
 	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort 
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2759,7 +2770,6 @@ copyfrom_stmt:
 	  append_list(l, $2);
 	  append_string(l, $11);
 	  append_int(l, $12);
-	  append_int(l, $13);
 	  append_list(l, NULL);
 	  append_int(l, 0);
 	  append_int(l, $10);
@@ -2769,12 +2779,11 @@ copyfrom_stmt:
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
-   | COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location opt_constraint
+   | COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location 
 	{ dlist *l = L();
 	  append_list(l, $5);
 	  append_list(l, $6);
 	  append_list(l, $8);
-	  append_int(l, $10);
 	  append_int(l, $9);
 	  append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
@@ -2883,11 +2892,6 @@ opt_escape:
 opt_best_effort:
 	/* empty */	{ $$ = FALSE; }
  |  	BEST EFFORT	{ $$ = TRUE; }
- ;
-
-opt_constraint:
-	/* empty */	{ $$ = TRUE; }
- |  	NO CONSTRAINT	{ $$ = FALSE; }
  ;
 
 string_commalist:
@@ -3103,8 +3107,11 @@ joined_table:
  |  table_ref CROSS JOIN table_ref
 	{ dlist *l = L();
 	  append_symbol(l, $1);
+	  append_int(l, 0);
+	  append_int(l, 4);
 	  append_symbol(l, $4);
-	  $$ = _symbol_create_list( SQL_CROSS, l); }
+	  append_symbol(l, NULL);
+	  $$ = _symbol_create_list( SQL_JOIN, l); }
  |  table_ref join_type JOIN table_ref join_spec
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -3358,19 +3365,20 @@ table_ref_commalist:
 table_ref:
     qname opt_table_name 	{ dlist *l = L();
 		  		  append_list(l, $1);
+		  	  	  append_int(l, 0);
 		  	  	  append_symbol(l, $2);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
  |  func_ref opt_table_name
 	 		        { dlist *l = L();
 		  		  append_symbol(l, $1);
-		  	  	  append_symbol(l, $2);
 		  	  	  append_int(l, 0);
+		  	  	  append_symbol(l, $2);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
  |  LATERAL func_ref opt_table_name
 	 		        { dlist *l = L();
 		  		  append_symbol(l, $2);
-		  	  	  append_symbol(l, $3);
 		  	  	  append_int(l, 1);
+		  	  	  append_symbol(l, $3);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
  |  subquery_with_orderby table_name
 				{
@@ -3379,6 +3387,7 @@ table_ref:
 				  	SelectNode *sn = (SelectNode*)$1;
 				  	sn->name = $2;
 				  } else {
+	  				append_int($2->data.lval, 0);
 				  	append_symbol($1->data.lval, $2);
 				  }
 				}
@@ -3390,8 +3399,8 @@ table_ref:
 				  	sn->name = $3;
 					sn->lateral = 1;
 				  } else {
-				  	append_symbol($2->data.lval, $3);
 	  				append_int($2->data.lval, 1);
+				  	append_symbol($2->data.lval, $3);
 				  }
 				}
  |  subquery_with_orderby
@@ -3742,6 +3751,7 @@ pred_exp_list:
 
 existence_test:
     EXISTS subquery 	{ $$ = _symbol_create_symbol( SQL_EXISTS, $2 ); }
+ |  NOT_EXISTS subquery 	{ $$ = _symbol_create_symbol( SQL_NOT_EXISTS, $2 ); }
  ;
 
 filter_arg_list:
@@ -5462,6 +5472,7 @@ non_reserved_word:
 | STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 | TEMP		{ $$ = sa_strdup(SA, "temp"); }
 | TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
+| UNLOGGED	{ $$ = sa_strdup(SA, "unlogged"); }
 | sqlTEXT	{ $$ = sa_strdup(SA, "text"); }
 | SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
@@ -6255,7 +6266,6 @@ char *token2string(tokens token)
 	SQL(CREATE_TYPE);
 	SQL(CREATE_USER);
 	SQL(CREATE_VIEW);
-	SQL(CROSS);
 	SQL(CUBE);
 	SQL(CURRENT_ROW);
 	SQL(CYCLE);

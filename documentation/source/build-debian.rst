@@ -32,7 +32,6 @@ python3-dev		# optional, needed for Python 3 integration
 python3-numpy		# optional, needed for Python 3 integration
 r-base			# optional, needed for R integration
 unixodbc-dev		# optional, needed for ODBC driver
-uuid-dev		# optional
 zlib1g-dev		# optional: read and write .gz compressed files
 
 These packages are optional.

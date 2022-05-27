@@ -9,17 +9,11 @@
 #ifndef _REL_OPTIMIZER_H_
 #define _REL_OPTIMIZER_H_
 
-#include "sql_relation.h"
 #include "sql_mvc.h"
+#include "sql_relation.h"
 
-extern sql_rel *rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt);
+#define NSQLREWRITERS 29
 
-extern int exp_joins_rels(sql_exp *e, list *rels);
-
-extern sql_column *name_find_column(sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt);
-/* WARNING exps_unique doesn't check for duplicate NULL values */
-extern int exps_unique(mvc *sql, sql_rel *rel, list *exps);
-
-extern sql_rel *rel_dce(mvc *sql, sql_rel *rel);
+extern sql_rel *rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt);
 
 #endif /*_REL_OPTIMIZER_H_*/

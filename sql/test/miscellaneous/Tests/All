@@ -1,7 +1,8 @@
+unlogged
 column_aliases
 declared_tables
 trace_test
-simple_selects
+HAVE_LIBPCRE?simple_selects
 update_delete_aliases
 groupby_expressions
 values
@@ -25,3 +26,4 @@ NOT_ASSERT?sqlfuncnames
 sequences
 analyze_test
 blobs
+temp_tables

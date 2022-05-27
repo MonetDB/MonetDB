@@ -32,7 +32,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 /* POSTFIX ACTION FOR THE JOIN CASE  */
 		p= getInstrPtr(mb, i);
 		if ( getModuleId(p) == algebraRef && p->retc == 2) {
-			if ( getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef ||
+			if ( getFunctionId(p) == leftjoinRef || /*getFunctionId(p) == outerjoinRef ||*/
 				 getFunctionId(p) == bandjoinRef || getFunctionId(p) == rangejoinRef ||
 				 getFunctionId(p) == likejoinRef) {
 				if ( getVarEolife(mb, getArg(p, p->retc -1)) == i) {
@@ -42,7 +42,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 					continue;
 				}
 			} else if ( getFunctionId(p) == semijoinRef || getFunctionId(p) == joinRef ||
-				 getFunctionId(p) == thetajoinRef || getFunctionId(p) == outerjoinRef || getFunctionId(p) == crossRef) {
+				 getFunctionId(p) == thetajoinRef || /*getFunctionId(p) == outerjoinRef ||*/ getFunctionId(p) == crossRef) {
 				int is_first_ret_not_used = getVarEolife(mb, getArg(p, p->retc -2)) == i;
 				int is_second_ret_not_used = getVarEolife(mb, getArg(p, p->retc -1)) == i;
 

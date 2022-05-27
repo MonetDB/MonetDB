@@ -15,7 +15,7 @@ char* control_send(
 		int port,
 		const char *database,
 		const char *command,
-		char wait,
+		bool wait,
 		const char *pass);
 char* control_send_callback(
 		char** ret,

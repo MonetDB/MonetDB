@@ -3,7 +3,7 @@ Load the "dump" from the sql/test/testdb test and dump it.  Load that
 dump into a fresh database and check the result of dumping that.
 '''
 
-import os, sys, socket, shutil
+import os, sys, shutil
 try:
     from MonetDBtesting import process
 except ImportError:

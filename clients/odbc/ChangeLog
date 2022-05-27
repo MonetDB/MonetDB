@@ -1,0 +1,20 @@
+# ChangeLog file for odbc
+# This file is updated with Maddlog
+
+* Thu May 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Corrected SQLSpecialColumns(..., SQL_BEST_ROWID, ...). Previously it only
+  returned rows when the table had a primary key. Now it also returns
+  rows when a table has a unique constraint.
+- Corrected SQLStatistics(..., SQL_INDEX_ALL, ...). Previously it only
+  returned rows when the table had a primary or unique key. Now it also
+  returns rows for indices which are not based on a key.
+- Corrected SQLStatistics(..., SQL_ENSURE). It now returns CARDINALITY
+  information for columns based on a primary/unique key. Previously it
+  always returned NULL for the CARDINALITY result column.
+
+* Thu Apr 21 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Corrected ODBC API functions SQLPrimaryKeys(), SQLSpecialColumns() and
+  SQLStatistics() for local temporary tables located in schema tmp. They did
+  not return any rows when the temp table had a primary or unique key or
+  index. Now they do return rows as expected.
+

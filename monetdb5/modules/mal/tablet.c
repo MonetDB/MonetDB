@@ -193,6 +193,7 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b = fmt[i].c;
 		b->tsorted = b->trevsorted = false;
 		b->tkey = false;
+		b->batDirtydesc = true;
 		BATsettrivprop(b);
 		if ((b = BATsetaccess(b, BAT_READ)) == NULL) {
 			fmt[i].c = NULL;
@@ -209,7 +210,6 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 			b->trevsorted = false;
 		if (BATtdense(b))
 			b->tkey = true;
-		b->batDirtydesc = true;
 
 		if (offset > 0) {
 			BBPunfix(bv->batCacheid);
@@ -593,8 +593,7 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 
 #define BREAKROW 1
 #define UPDATEBAT 2
-#define SYNCBAT 3
-#define ENDOFCOPY 4
+#define ENDOFCOPY 3
 
 typedef struct {
 	Client cntxt;
@@ -1080,9 +1079,8 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 
+	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
-		MT_sema_down(&task->sema);
-
 		/* stage one, break the rows spread the work over the workers */
 		switch (task->state) {
 		case BREAKROW:
@@ -1118,28 +1116,12 @@ SQLworker(void *arg)
 					task->wtime += t0;
 				}
 			break;
-		case SYNCBAT:
-			if (!task->besteffort && task->errorcnt)
-				break;
-			for (i = 0; i < task->as->nr_attrs; i++)
-				if (task->cols[i]) {
-					BAT *b = task->as->format[task->cols[i] - 1].c;
-					if (b == NULL)
-						continue;
-					t0 = GDKusec();
-					if (b->batTransient)
-						continue;
-					BATmsync(b);
-					t0 = GDKusec() - t0;
-					task->time[i] += t0;
-					task->wtime += t0;
-				}
-			break;
 		case ENDOFCOPY:
 			MT_sema_up(&task->reply);
 			goto do_return;
 		}
 		MT_sema_up(&task->reply);
+		MT_sema_down(&task->sema);
 	}
 	MT_sema_up(&task->reply);
 
@@ -1857,10 +1839,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			/* producer should stop */
 			task.maxrow = cnt;
 			task.state = ENDOFCOPY;
+			task.ateof = true;
 		}
 		if (task.ateof && task.top[task.cur] < task.limit && cnt != task.maxrow)
 			break;
 		task.top[task.cur] = 0;
+		if (cnt == task.maxrow)
+			task.ateof = true;
 		MT_sema_up(&task.producer);
 	}
 
@@ -1868,29 +1853,14 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 
 	cnt = BATcount(task.as->format[firstcol].c);
 
-	task.ateof = true;
 	task.state = ENDOFCOPY;
 /*	TRC_DEBUG(MAL_SERVER, "Activate sync on disk\n");*/
-
-	// activate the workers to sync the BATs to disk
-	if (res == 0) {
-		for (j = 0; j < threads; j++) {
-			// stage three, update the BATs
-			ptask[j].state = SYNCBAT;
-			MT_sema_up(&ptask[j].sema);
-		}
-	}
 
 	if (!task.ateof || cnt < task.maxrow) {
 /*		TRC_DEBUG(MAL_SERVER, "Shut down reader\n");*/
 		MT_sema_up(&task.producer);
 	}
 	MT_join_thread(task.tid);
-	if (res == 0) {
-		// await completion of the BAT syncs
-		for (j = 0; j < threads; j++)
-			MT_sema_down(&ptask[j].reply);
-	}
 
 /*	TRC_DEBUG(MAL_SERVER, "Activate endofcopy\n");*/
 

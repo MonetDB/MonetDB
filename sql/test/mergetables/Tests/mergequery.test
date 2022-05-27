@@ -109,9 +109,9 @@ PLAN SELECT * FROM complete where x = 0.0
 ----
 project (
 | select (
-| | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
-| ) [ ("complete"."x") = (double(53,1) "0") ]
-) [ "complete"."x", "complete"."y", "complete"."z" ]
+| | table("sys"."part1") [ "part1"."x" NOT NULL as "complete"."x", "part1"."y" NOT NULL as "complete"."y", "part1"."z" NOT NULL as "complete"."z" ]
+| ) [ ("complete"."x" NOT NULL) = (double(53) "0") ]
+) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
 query RRR rowsort
 SELECT * FROM complete where x = 0.0
@@ -128,9 +128,9 @@ PLAN SELECT * FROM complete where x = 3.0
 ----
 project (
 | select (
-| | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
-| ) [ ("complete"."x") = (double(53,1) "3") ]
-) [ "complete"."x", "complete"."y", "complete"."z" ]
+| | table("sys"."part2") [ "part2"."x" NOT NULL as "complete"."x", "part2"."y" NOT NULL as "complete"."y", "part2"."z" NOT NULL as "complete"."z" ]
+| ) [ ("complete"."x" NOT NULL) = (double(53) "3") ]
+) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
 query RRR rowsort
 SELECT * FROM complete where x = 3.0
@@ -147,9 +147,9 @@ PLAN SELECT * FROM complete where x >= 1.0 AND x < 2.0
 ----
 project (
 | select (
-| | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
-| ) [ (double(53) "1") <= ("complete"."x") < (double(53) "2") ]
-) [ "complete"."x", "complete"."y", "complete"."z" ]
+| | table("sys"."part1") [ "part1"."x" NOT NULL as "complete"."x", "part1"."y" NOT NULL as "complete"."y", "part1"."z" NOT NULL as "complete"."z" ]
+| ) [ (double(53) "1") <= ("complete"."x" NOT NULL) < (double(53) "2") ]
+) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
 query RRR rowsort
 SELECT * FROM complete where x >= 1.0 AND x < 2.0
@@ -166,9 +166,9 @@ PLAN SELECT * FROM complete where x > 1.0 AND x <= 2.0
 ----
 project (
 | select (
-| | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
-| ) [ (double(53) "1") < ("complete"."x") <= (double(53) "2") ]
-) [ "complete"."x", "complete"."y", "complete"."z" ]
+| | table("sys"."part2") [ "part2"."x" NOT NULL as "complete"."x", "part2"."y" NOT NULL as "complete"."y", "part2"."z" NOT NULL as "complete"."z" ]
+| ) [ (double(53) "1") < ("complete"."x" NOT NULL) <= (double(53) "2") ]
+) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
 query RRR rowsort
 SELECT * FROM complete where x > 1.0 AND x <= 2.0
@@ -199,15 +199,15 @@ PLAN SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 union (
 | project (
 | | select (
-| | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
-| | ) [ (double(53) "1") <= ("complete"."x") <= (double(53) "2") ]
-| ) [ "complete"."x", "complete"."y", "complete"."z" ],
+| | | table("sys"."part1") [ "part1"."x" NOT NULL as "complete"."x", "part1"."y" NOT NULL as "complete"."y", "part1"."z" NOT NULL as "complete"."z" ]
+| | ) [ (double(53) "1") <= ("complete"."x" NOT NULL) <= (double(53) "2") ]
+| ) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ],
 | project (
 | | select (
-| | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
-| | ) [ (double(53) "1") <= ("complete"."x") <= (double(53) "2") ]
-| ) [ "complete"."x", "complete"."y", "complete"."z" ]
-) [ "complete"."x", "complete"."y", "complete"."z" ]
+| | | table("sys"."part2") [ "part2"."x" NOT NULL as "complete"."x", "part2"."y" NOT NULL as "complete"."y", "part2"."z" NOT NULL as "complete"."z" ]
+| | ) [ (double(53) "1") <= ("complete"."x" NOT NULL) <= (double(53) "2") ]
+| ) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
+) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
 query RRR nosort
 SELECT * FROM complete where x >= 1.0 AND x <= 2.0
@@ -230,16 +230,14 @@ PLAN SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
 ----
 union (
 | project (
-| | select (
-| | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ]
-| | ) [ (double(53) "0") <= ("complete"."y") <= (double(53) "2"), (double(53) "0") <= ("complete"."x") <= (double(53) "2") ]
-| ) [ "complete"."x", "complete"."y", "complete"."z" ],
+| | table("sys"."part1") [ "part1"."x" NOT NULL as "complete"."x", "part1"."y" NOT NULL as "complete"."y", "part1"."z" NOT NULL as "complete"."z" ]
+| ) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ],
 | project (
 | | select (
-| | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ]
-| | ) [ (double(53) "0") <= ("complete"."y") <= (double(53) "2"), (double(53) "0") <= ("complete"."x") <= (double(53) "2") ]
-| ) [ "complete"."x", "complete"."y", "complete"."z" ]
-) [ "complete"."x", "complete"."y", "complete"."z" ]
+| | | table("sys"."part2") [ "part2"."x" NOT NULL as "complete"."x", "part2"."y" NOT NULL as "complete"."y", "part2"."z" NOT NULL as "complete"."z" ]
+| | ) [ (double(53) "0") <= ("complete"."x" NOT NULL) <= (double(53) "2") ]
+| ) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
+) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
 query RRR rowsort
 SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2

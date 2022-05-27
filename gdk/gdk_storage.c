@@ -651,135 +651,24 @@ DESCload(int i)
 		return NULL;
 	}
 
+	MT_lock_set(&b->theaplock);
 	tt = b->ttype;
-	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
-		GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
-		return NULL;
+	if (tt < 0) {
+		if ((tt = ATOMindex(s = ATOMunknown_name(tt))) < 0) {
+			MT_lock_unset(&b->theaplock);
+			GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
+			return NULL;
+		}
+		b->ttype = tt;
 	}
-	b->ttype = tt;
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
 	b->batTransient = (BBP_status(b->batCacheid) & BBPPERSISTENT) == 0;
 	b->batCopiedtodisk = true;
 	DESCclean(b);
+	MT_lock_unset(&b->theaplock);
 	return b;
-}
-
-/* spawning the background msync should be done carefully
- * because there is a (small) chance that the BAT has been
- * deleted by the time you issue the msync.
- * This leaves you with possibly deadbeef BAT descriptors.
- */
-
-/* #define DISABLE_MSYNC */
-#define MSYNC_BACKGROUND
-
-#ifndef DISABLE_MSYNC
-#ifndef MS_ASYNC
-struct msync {
-	bat id;
-	Heap *h;
-};
-
-static void
-BATmsyncImplementation(void *arg)
-{
-	Heap *h = ((struct msync *) arg)->h;
-
-	(void) MT_msync(h->base, h->size);
-	BBPunfix(((struct msync *) arg)->id);
-	GDKfree(arg);
-}
-#endif
-#endif
-
-void
-BATmsync(BAT *b)
-{
-	/* we don't sync views or if we're told not to */
-	if (isVIEW(b) || GDKinmemory(b->theap->farmid) || (GDKdebug & NOSYNCMASK))
-		return;
-	/* we don't sync transients */
-	if (b->theap->farmid != 0 ||
-	    (b->tvheap != NULL && b->tvheap->farmid != 0))
-		return;
-#ifndef DISABLE_MSYNC
-#ifdef MS_ASYNC
-	if (b->theap->storage == STORE_MMAP &&
-	    msync(b->theap->base, b->theap->free, MS_ASYNC) < 0)
-		GDKsyserror("msync heap of bat %d failed\n", b->batCacheid);
-	if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
-	    msync(b->tvheap->base, b->tvheap->free, MS_ASYNC) < 0)
-		GDKsyserror("msync vheap of bat %d failed\n", b->batCacheid);
-#else
-	{
-		struct msync *arg;
-
-		assert(!b->batTransient);
-		if (b->theap->storage == STORE_MMAP &&
-		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-			arg->id = b->batCacheid;
-			arg->h = b->theap;
-			BBPfix(b->batCacheid);
-#ifdef MSYNC_BACKGROUND
-			char name[MT_NAME_LEN];
-			MT_Id tid;
-			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
-					     MT_THR_DETACHED, name) < 0) {
-				/* don't bother if we can't create a thread */
-				BBPunfix(b->batCacheid);
-				GDKfree(arg);
-			}
-#else
-			BATmsyncImplementation(arg);
-#endif
-		}
-
-		if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
-		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-			arg->id = b->batCacheid;
-			arg->h = b->tvheap;
-			BBPfix(b->batCacheid);
-#ifdef MSYNC_BACKGROUND
-			char name[MT_NAME_LEN];
-			MT_Id tid;
-			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
-					     MT_THR_DETACHED, name) < 0) {
-				/* don't bother if we can't create a thread */
-				BBPunfix(b->batCacheid);
-				GDKfree(arg);
-			}
-#else
-			BATmsyncImplementation(arg);
-#endif
-		}
-	}
-#endif
-#else
-	(void) b;
-#endif	/* DISABLE_MSYNC */
-}
-
-static inline const char *
-gettailnamebi(const BATiter *bi)
-{
-	if (bi->type != TYPE_str)
-		return "tail";
-	switch (bi->width) {
-	case 1:
-		return "tail1";
-	case 2:
-		return "tail2";
-#if SIZEOF_VAR_T == 8
-	case 4:
-		return "tail4";
-#endif
-	default:
-		return "tail";
-	}
 }
 
 gdk_return
@@ -792,14 +681,14 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 	BATcheck(b, GDK_FAIL);
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
-	assert(!GDKinmemory(b->theap->farmid));
+	assert(!GDKinmemory(bi->h->farmid));
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
 		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
-	if (!BATdirty(b)) {
+	if (!BATdirtybi(*bi)) {
 		return GDK_SUCCEED;
 	}
 
@@ -850,14 +739,14 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			}
 		}
 	} else {
-		if (!b->batCopiedtodisk || b->batDirtydesc || bi->h->dirty)
+		if (!bi->copiedtodisk || bi->dirtydesc || bi->hdirty)
 			if (err == GDK_SUCCEED && bi->type)
-				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree);
+				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
 		if (bi->vh
-		    && (!b->batCopiedtodisk || b->batDirtydesc || bi->vh->dirty)
+		    && (!bi->copiedtodisk || bi->dirtydesc || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
-			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree);
+			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, &b->theaplock);
 	}
 
 	if (err == GDK_SUCCEED) {
@@ -1051,16 +940,16 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		buf = argv[i]->tident;
-		mnstr_write(s, buf, 1, strlen(buf));
+		const char *nm = argv[i]->tident;
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # name\n", 1, 9);
 	mnstr_write(s, "# ", 1, 2);
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		buf = ATOMname(argv[i]->ttype);
-		mnstr_write(s, buf, 1, strlen(buf));
+		const char *nm = ATOMname(argv[i]->ttype);
+		mnstr_write(s, nm, 1, strlen(nm));
 	}
 	mnstr_write(s, "  # type\n", 1, 9);
 	mnstr_write(s, "#--------------------------#\n", 1, 29);
@@ -1096,7 +985,7 @@ BATprint(stream *fdout, BAT *b)
 {
 	if (complex_cand(b)) {
 		struct canditer ci;
-		BUN ncand = canditer_init(&ci, NULL, b);
+		canditer_init(&ci, NULL, b);
 		oid hseq = ci.hseq;
 
 		mnstr_printf(fdout,
@@ -1105,7 +994,7 @@ BATprint(stream *fdout, BAT *b)
 			     "# void\toid  # type\n"
 			     "#--------------------------#\n",
 			     b->tident);
-		for (BUN i = 0; i < ncand; i++) {
+		for (BUN i = 0; i < ci.ncand; i++) {
 			oid o = canditer_next(&ci);
 			mnstr_printf(fdout,
 				     "[ " OIDFMT "@0,\t" OIDFMT "@0  ]\n",

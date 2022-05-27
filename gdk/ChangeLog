@@ -1,0 +1,19 @@
+# ChangeLog file for GDK
+# This file is updated with Maddlog
+
+* Mon Mar 21 2022 Sjoerd Mullender <sjoerd@acm.org>
+- The function BBPkeepref now gets a BAT pointer as argument instead of
+  a bat id.
+
+* Fri Mar 18 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Get rid of macro Tsize, use ->twidth instead.
+- Get rid of macro BUNlast, just use BATcount instead.
+
+* Mon Jan 31 2022 Sjoerd Mullender <sjoerd@acm.org>
+- The BLOB type has been moved into the GDK layer.
+
+* Tue Jan 25 2022 Sjoerd Mullender <sjoerd@acm.org>
+- When adding or subtracting months from a date or timestamp value,
+  clamp the result to the calculated month instead of wrapping to the
+  beginning of the next month.  See bug 7227.
+
