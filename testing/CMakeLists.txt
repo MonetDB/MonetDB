@@ -83,6 +83,9 @@ endif(HAVE_PROJ)
 if (HAVE_SHP)
   set(HAVE_SHP_FALSE "#")
 endif(HAVE_SHP)
+if (HAVE_GETENTROPY)
+  set(HAVE_GETENTROPY_FALSE "#")
+endif(HAVE_GETENTROPY)
 if (NOT WIN32)
   set(NOT_WIN32_FALSE "#")
 endif()
@@ -178,5 +181,3 @@ install(FILES
   PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT pytesting)
-
-# vim: set ts=2:sw=2:et

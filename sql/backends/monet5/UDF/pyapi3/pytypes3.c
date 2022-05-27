@@ -133,6 +133,8 @@ char *BatType_Format(int type)
 			return "STRING";
 		case TYPE_oid:
 			return "OID";
+		case TYPE_date:
+			return "DATE";
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return "HUGEINT";
@@ -215,6 +217,8 @@ int BatType_ToPyType(int type)
 		case TYPE_hge:
 			return NPY_FLOAT64;
 #endif
+		case TYPE_date:
+			return NPY_DATETIME;
 		default:
 			return NPY_STRING;
 	}
@@ -223,7 +227,7 @@ int BatType_ToPyType(int type)
 bool PyType_IsPandasDataFrame(PyObject *object)
 {
 	PyObject *str = PyObject_Str(PyObject_Type(object));
-	bool ret = strcmp(PyString_AsString(str),
+	bool ret = strcmp(PyUnicode_AsUTF8(str),
 					  "<class 'pandas.core.frame.DataFrame'>") == 0;
 	Py_DECREF(str);
 	return ret;
@@ -232,7 +236,7 @@ bool PyType_IsPandasDataFrame(PyObject *object)
 bool PyType_IsNumpyMaskedArray(PyObject *object)
 {
 	PyObject *str = PyObject_Str(PyObject_Type(object));
-	bool ret = strcmp(PyString_AsString(str),
+	bool ret = strcmp(PyUnicode_AsUTF8(str),
 					  "<class 'numpy.ma.core.MaskedArray'>") == 0;
 	Py_DECREF(str);
 	return ret;
@@ -241,7 +245,7 @@ bool PyType_IsNumpyMaskedArray(PyObject *object)
 bool PyType_IsLazyArray(PyObject *object)
 {
 	PyObject *str = PyObject_Str(PyObject_Type(object));
-	bool ret = strcmp(PyString_AsString(str), "<class 'lazyarray'>") == 0;
+	bool ret = strcmp(PyUnicode_AsUTF8(str), "<class 'lazyarray'>") == 0;
 	Py_DECREF(str);
 	return ret;
 }
@@ -265,17 +269,19 @@ bool Python_ReleaseGIL(bool state)
 	return 0;
 }
 
-// Returns true if the type of [object] is a scalar (i.e. numeric scalar or
-// string, basically "not an array but a single value")
+// Returns true if the type of [object] is a scalar (i.e. numeric scalar, date, time, datetime value or string,
+// basically "not an array but a single value")
 bool PyType_IsPyScalar(PyObject *object)
 {
 	if (object == NULL)
 		return false;
-	return (PyArray_CheckScalar(object) || PyInt_Check(object) ||
-			PyFloat_Check(object) || PyLong_Check(object) ||
-			PyString_Check(object) || PyBool_Check(object) ||
-			PyUnicode_Check(object) || PyByteArray_Check(object)
-			|| PyBytes_Check(object));
+
+	USE_DATETIME_API;
+	return (PyArray_CheckScalar(object) || PyLong_Check(object) ||
+			PyFloat_Check(object) || PyUnicode_Check(object) ||
+			PyBool_Check(object) || PyByteArray_Check(object) ||
+			PyBytes_Check(object) || PyDate_Check(object) ||
+			PyTime_Check(object) || PyDateTime_Check(object));
 }
 
 void _pytypes_init(void) { _import_array(); }

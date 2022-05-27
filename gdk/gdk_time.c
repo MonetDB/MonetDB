@@ -172,12 +172,7 @@ date_add_month(date dt, int months)
 		m = (m - 1) % 12 + 1;
 	}
 	if (d > monthdays(y, m)) {
-		d -= monthdays(y, m);
-		if (++m > 12) {
-			m = 1;
-			if (++y > YEAR_MAX)
-				return date_nil;
-		}
+		d = monthdays(y, m);
 	}
 	return mkdate(y, m, d);
 }

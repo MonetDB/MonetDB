@@ -122,7 +122,7 @@ SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit 
 		TPE val = TPE##_nil;	\
 		if (c > 0) { \
 			TPE *restrict bp = (TPE*)bi.base; \
-			if (c == 1 || (b->tsorted && b->trevsorted)) { \
+			if (c == 1 || (bi.sorted && bi.revsorted)) { \
 				val = bp[0]; \
 			} else { \
 				for (; q < c; q++) { /* find first non nil */ \
@@ -157,7 +157,7 @@ SQLall(ptr ret, const bat *bid)
 		memcpy(ret, &p, sizeof(oid));
 	} else {
 		BATiter bi = bat_iterator(b);
-		switch (ATOMbasetype(b->ttype)) {
+		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte:
 			SQLall_imp(bte);
 			break;
@@ -182,12 +182,12 @@ SQLall(ptr ret, const bat *bid)
 			SQLall_imp(dbl);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(b->ttype);
-			const void *n = ATOMnilptr(b->ttype), *p = n;
+			int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+			const void *n = ATOMnilptr(bi.type), *p = n;
 			size_t s;
 
 			if (c > 0) {
-				if (c == 1 || (b->tsorted && b->trevsorted)) {
+				if (c == 1 || (bi.sorted && bi.revsorted)) {
 					p = BUNtail(bi, 0);
 				} else {
 					for (; q < c; q++) { /* find first non nil */
@@ -204,8 +204,8 @@ SQLall(ptr ret, const bat *bid)
 					}
 				}
 			}
-			s = ATOMlen(ATOMtype(b->ttype), p);
-			if (ATOMextern(b->ttype)) {
+			s = ATOMlen(ATOMtype(bi.type), p);
+			if (ATOMextern(bi.type)) {
 				*(ptr *) ret = GDKmalloc(s);
 				if (*(ptr *) ret == NULL) {
 					bat_iterator_end(&bi);
@@ -264,7 +264,7 @@ SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.all =", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -291,10 +291,10 @@ SQLnil(bit *ret, const bat *bid)
 	if (BATcount(b) == 0)
 		*ret = bit_nil;
 	if (BATcount(b) > 0) {
-		BUN o = BUNlast(b);
+		BUN o = BATcount(b);
 
 		BATiter bi = bat_iterator(b);
-		switch (ATOMbasetype(b->ttype)) {
+		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte:
 			SQLnil_imp(bte);
 			break;
@@ -319,8 +319,8 @@ SQLnil(bit *ret, const bat *bid)
 			SQLnil_imp(dbl);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(b->ttype);
-			const void *restrict nilp = ATOMnilptr(b->ttype);
+			int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+			const void *restrict nilp = ATOMnilptr(bi.type);
 
 			for (BUN q = 0; q < o; q++) {
 				const void *restrict c = BUNtail(bi, q);
@@ -378,7 +378,7 @@ SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.nil", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -486,9 +486,10 @@ bailout1:
 	bat_iterator_end(&nri);
 
 bailout:
-	if (res && !msg)
-		BBPkeepref(*ret = res->batCacheid);
-	else if (res)
+	if (res && !msg) {
+		*ret = res->batCacheid;
+		BBPkeepref(res);
+	} else if (res)
 		BBPreclaim(res);
 	if (cmp)
 		BBPunfix(cmp->batCacheid);
@@ -597,9 +598,10 @@ bailout1:
 	bat_iterator_end(&nri);
 
 bailout:
-	if (res && !msg)
-		BBPkeepref(*ret = res->batCacheid);
-	else if (res)
+	if (res && !msg) {
+		*ret = res->batCacheid;
+		BBPkeepref(res);
+	} else if (res)
 		BBPreclaim(res);
 	if (cmp)
 		BBPunfix(cmp->batCacheid);
@@ -668,7 +670,7 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bit *restrict res_l = (bit*) Tloc(res, 0);
 
-		switch (ATOMbasetype(l->ttype)) {
+		switch (ATOMbasetype(li.type)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_imp_multi(bte, ==);
 			break;
@@ -693,8 +695,8 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			SQLanyequal_or_not_imp_multi(dbl, ==);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
-			const void *nilp = ATOMnilptr(l->ttype);
+			int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+			const void *nilp = ATOMnilptr(li.type);
 
 			for (BUN q = 0; q < o; q++) {
 				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
@@ -707,14 +709,14 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		res->tnil = l->tnil || r->tnil;
-		res->tnonil = l->tnonil && r->tnonil;
+		res->tnil = li.nil || ri.nil;
+		res->tnonil = li.nonil && ri.nonil;
 	} else {
 		bit *ret = getArgReference_bit(stk, pci, 0);
 
 		*ret = FALSE;
 		if (o > 0) {
-			switch (ATOMbasetype(l->ttype)) {
+			switch (ATOMbasetype(li.type)) {
 			case TYPE_bte:
 				SQLanyequal_or_not_imp_single(bte, TRUE);
 				break;
@@ -739,8 +741,8 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				SQLanyequal_or_not_imp_single(dbl, TRUE);
 				break;
 			default: {
-				int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
-				const void *nilp = ATOMnilptr(l->ttype);
+				int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+				const void *nilp = ATOMnilptr(li.type);
 				const void *p = BUNtail(li, 0);
 
 				for (BUN q = 0; q < o; q++) {
@@ -761,9 +763,10 @@ bailout1:
 	bat_iterator_end(&ri);
 
 bailout:
-	if (res && !msg)
-		BBPkeepref(*bret = res->batCacheid);
-	else if (res)
+	if (res && !msg) {
+		*bret = res->batCacheid;
+		BBPkeepref(res);
+	} else if (res)
 		BBPreclaim(res);
 	if (l)
 		BBPunfix(l->batCacheid);
@@ -781,7 +784,7 @@ SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *gp = getArgReference_bat(stk, pci, 3);
 	bat *gpe = getArgReference_bat(stk, pci, 4);
 	bat *sp = pci->argc == 7 ? getArgReference_bat(stk, pci, 5) : NULL;
-	//bit *no_nil = getArgReference_bit(stk, pci, pci->argc == 7 ? 6 : 5); no_nil argument is ignored
+	//bit *no_nil = getArgReference_bit(stk, pci, pci->argc - 1); no_nil argument is ignored
 	BAT *l = NULL, *r = NULL, *g = NULL, *e = NULL, *s = NULL, *res = NULL;
 
 	(void)cntxt;
@@ -827,7 +830,7 @@ SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.any =", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -892,7 +895,7 @@ SQLanyequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.any =", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -931,7 +934,7 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bit *restrict res_l = (bit*) Tloc(res, 0);
 
-		switch (ATOMbasetype(l->ttype)) {
+		switch (ATOMbasetype(li.type)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_imp_multi(bte, !=);
 			break;
@@ -956,8 +959,8 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			SQLanyequal_or_not_imp_multi(dbl, !=);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
-			const void *nilp = ATOMnilptr(l->ttype);
+			int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+			const void *nilp = ATOMnilptr(li.type);
 
 			for (BUN q = 0; q < o; q++) {
 				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
@@ -970,14 +973,14 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		res->tnil = l->tnil || r->tnil;
-		res->tnonil = l->tnonil && r->tnonil;
+		res->tnil = li.nil || ri.nil;
+		res->tnonil = li.nonil && ri.nonil;
 	} else {
 		bit *ret = getArgReference_bit(stk, pci, 0);
 
 		*ret = TRUE;
 		if (o > 0) {
-			switch (ATOMbasetype(l->ttype)) {
+			switch (ATOMbasetype(li.type)) {
 			case TYPE_bte:
 				SQLanyequal_or_not_imp_single(bte, FALSE);
 				break;
@@ -1002,8 +1005,8 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				SQLanyequal_or_not_imp_single(dbl, FALSE);
 				break;
 			default: {
-				int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
-				const void *nilp = ATOMnilptr(l->ttype);
+				int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+				const void *nilp = ATOMnilptr(li.type);
 				const void *p = BUNtail(li, 0);
 
 				for (BUN q = 0; q < o; q++) {
@@ -1023,9 +1026,10 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&ri);
 
 bailout:
-	if (res && !msg)
-		BBPkeepref(*bret = res->batCacheid);
-	else if (res)
+	if (res && !msg) {
+		*bret = res->batCacheid;
+		BBPkeepref(res);
+	} else if (res)
 		BBPreclaim(res);
 	if (l)
 		BBPunfix(l->batCacheid);
@@ -1089,7 +1093,7 @@ SQLallnotequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.all <>", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -1155,7 +1159,7 @@ SQLallnotequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.all <>", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -1176,7 +1180,8 @@ SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat *res = getArgReference_bat(stk, pci, 0);
 		if (!(r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)))
 			throw(SQL, "aggr.exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 		*res = count;
@@ -1226,7 +1231,7 @@ SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.subexist", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }
 
@@ -1247,7 +1252,8 @@ SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat *res = getArgReference_bat(stk, pci, 0);
 		if (!(r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)))
 			throw(SQL, "aggr.not_exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPkeepref(*res = r->batCacheid);
+		*res = r->batCacheid;
+		BBPkeepref(r);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 		*res = count;
@@ -1297,6 +1303,6 @@ SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (res == NULL)
 		throw(MAL, "sql.subnot_exist", GDK_EXCEPTION);
 	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	BBPkeepref(res);
 	return MAL_SUCCEED;
 }

@@ -819,45 +819,47 @@ mvc_export_warning(stream *s, str w)
 static int
 mvc_export_binary_bat(stream *s, BAT* bn)
 {
-	bool sendtheap = bn->ttype != TYPE_void, sendtvheap = sendtheap && bn->tvarsized;
+	BATiter bni = bat_iterator(bn);
+	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bni.vh;
 
 	if (mnstr_printf(s, /*JSON*/"{"
-		"\"version\":1,"
-		"\"ttype\":%d,"
-		"\"hseqbase\":" OIDFMT ","
-		"\"tseqbase\":" OIDFMT ","
-		"\"tsorted\":%d,"
-		"\"trevsorted\":%d,"
-		"\"tkey\":%d,"
-		"\"tnonil\":%d,"
-		"\"tdense\":%d,"
-		"\"size\":" BUNFMT ","
-		"\"tailsize\":%zu,"
-		"\"theapsize\":%zu"
-		"}\n",
-		bn->ttype,
-		bn->hseqbase, bn->tseqbase,
-		bn->tsorted, bn->trevsorted,
-		bn->tkey,
-		bn->tnonil,
-		BATtdense(bn),
-		bn->batCount,
-		sendtheap ? (size_t)bn->batCount << bn->tshift : 0,
-		sendtvheap && bn->batCount > 0 ? bn->tvheap->free : 0) < 0)
+					 "\"version\":1,"
+					 "\"ttype\":%d,"
+					 "\"hseqbase\":" OIDFMT ","
+					 "\"tseqbase\":" OIDFMT ","
+					 "\"tsorted\":%d,"
+					 "\"trevsorted\":%d,"
+					 "\"tkey\":%d,"
+					 "\"tnonil\":%d,"
+					 "\"tdense\":%d,"
+					 "\"size\":" BUNFMT ","
+					 "\"tailsize\":%zu,"
+					 "\"theapsize\":%zu"
+					 "}\n",
+					 bni.type,
+					 bn->hseqbase, bn->tseqbase,
+					 bni.sorted, bni.revsorted,
+					 bni.key,
+					 bni.nonil,
+					 BATtdensebi(&bni),
+					 bn->batCount,
+					 sendtheap ? (size_t)bni.count << bni.shift : 0,
+					 sendtvheap && bni.count > 0 ? bni.vhfree : 0) < 0) {
+		bat_iterator_end(&bni);
 		return -4;
+	}
 
-	if (sendtheap && bn->batCount > 0) {
-		BATiter bni = bat_iterator(bn);
+	if (sendtheap && bni.count > 0) {
 		if (mnstr_write(s, /* tail */ bni.base, bni.count * bni.width, 1) < 1) {
 			bat_iterator_end(&bni);
 			return -4;
 		}
-		if (sendtvheap && mnstr_write(s, /* tvheap */ bni.vh->base, bni.vh->free, 1) < 1) {
+		if (sendtvheap && mnstr_write(s, /* tvheap */ bni.vh->base, bni.vhfree, 1) < 1) {
 			bat_iterator_end(&bni);
 			return -4;
 		}
-		bat_iterator_end(&bni);
 	}
+	bat_iterator_end(&bni);
 	return 0;
 }
 
@@ -1478,7 +1480,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 int
 mvc_export(mvc *m, stream *s, res_table *t, BUN nr)
 {
-	backend b;
+	backend b = {0};
 	b.mvc = m;
 	b.results = t;
 	b.reloptimizer = 0;
@@ -1765,7 +1767,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 	/* row count, min(count, reply_size) */
 	/* the columnar protocol ignores the reply size by fetching the entire resultset at once, so don't set it */
-	if (mvc_send_int(s, (b->client->protocol != PROTOCOL_COLUMNAR && m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
+	if (mvc_send_int(s, (b->client && b->client->protocol != PROTOCOL_COLUMNAR && m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
 		return -4;
 
 	// export query id

@@ -831,18 +831,17 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 	)
 {
 	struct canditer ci1, ci2;
-	BUN ncand;
 
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	ncand = canditer_init(&ci1, b1, s1);
-	if (canditer_init(&ci2, b2, s2) != ncand ||
-	    ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, b1, s1);
+	canditer_init(&ci2, b2, s2);
+	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
-	if (ncand == 0)
+	if (ci1.ncand == 0)
 		return COLnew(ci1.hseq, TYPE_TPE, 0, TRANSIENT);
 
 	if (BATtvoid(b1) && BATtvoid(b2) && ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
@@ -857,7 +856,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 		else
 			res = OP(b1->tseqbase + ci1.seq, b2->tseqbase + ci2.seq);
 
-		return BATconstant(b1->hseqbase, TYPE_TPE, &res, ncand, TRANSIENT);
+		return BATconstant(b1->hseqbase, TYPE_TPE, &res, ci1.ncand, TRANSIENT);
 	}
 
 	BATiter b1i = bat_iterator(b1);
@@ -874,7 +873,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 				b2i.width,
 				&ci1, &ci2,
 				b1->hseqbase, b2->hseqbase,
-				b1->tnonil && b2->tnonil,
+				b1i.nonil && b2i.nonil,
 				ci1.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,
@@ -893,12 +892,11 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
 	)
 {
 	struct canditer ci;
-	BUN ncand;
 
 	BATcheck(b, NULL);
 
-	ncand = canditer_init(&ci, b, s);
-	if (ncand == 0)
+	canditer_init(&ci, b, s);
+	if (ci.ncand == 0)
 		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
 
 	BATiter bi = bat_iterator(b);
@@ -913,9 +911,9 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
 				NULL,
 				0,
 				&ci,
-				&(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				&(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				b->hseqbase, 0,
-				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,
@@ -933,12 +931,11 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s
 	)
 {
 	struct canditer ci;
-	BUN ncand;
 
 	BATcheck(b, NULL);
 
-	ncand = canditer_init(&ci, b, s);
-	if (ncand == 0)
+	canditer_init(&ci, b, s);
+	if (ci.ncand == 0)
 		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
 
 	BATiter bi = bat_iterator(b);
@@ -952,10 +949,10 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s
 				true,
 				bi.vh ? bi.vh->base : NULL,
 				bi.width,
-				&(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				&(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				&ci,
 				0, b->hseqbase,
-				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,

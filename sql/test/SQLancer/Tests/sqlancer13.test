@@ -168,7 +168,7 @@ COPY 29 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 841884503.000
 0.784
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 select ((select 1 from t1, t0)) in (2, t1.c0) from t1
 
 statement ok

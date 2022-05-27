@@ -62,10 +62,10 @@ proxyThread(void *d)
 	if (p->name != NULL) {
 		/* name is only set on the client-to-server thread */
 		if (len <= 0) {
-			Mfprintf(stdout, "client %s has disconnected from proxy\n",
+			Mlevelfprintf(DEBUG, stdout, "client %s has disconnected from proxy\n",
 					p->name);
 		} else {
-			Mfprintf(stdout, "server has terminated proxy connection, "
+			Mlevelfprintf(WARNING, stdout, "server has terminated proxy connection, "
 					"disconnecting client %s\n", p->name);
 		}
 		free(p->name);
@@ -184,10 +184,8 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		msg.msg_controllen = cmsg->cmsg_len;
 		msg.msg_flags = 0;
 
-		/* Jan2022: disabled logging of next info message to reduce merovingian.log size:
-		Mfprintf(stdout, "target connection is on local UNIX domain socket, "
+		Mlevelfprintf(DEBUG, stdout, "target connection is on local UNIX domain socket, "
 				"passing on filedescriptor instead of proxying\n");
-		*/
 		if (sendmsg(ssock, &msg, 0) < 0) {
 			closesocket(ssock);
 			return(newErr("could not send initial byte: %s", strerror(errno)));
@@ -309,74 +307,3 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 
 	return(NO_ERR);
 }
-
-#ifdef MYSQL_EMULATION_BLEEDING_EDGE_STUFF
-static err
-handleMySQLClient(int sock)
-{
-	stream *fdin, *fout;
-	str buf[8096];
-	str p;
-	int len;
-
-	fdin = socket_rstream(sock, "merovingian<-mysqlclient (read)");
-	if (fdin == 0)
-		return(newErr("merovingian-mysqlclient inputstream problems: %s", mnstr_peek_error(NULL)));
-
-	fout = socket_wstream(sock, "merovingian->mysqlclient (write)");
-	if (fout == 0) {
-		close_stream(fdin);
-		return(newErr("merovingian-mysqlclient outputstream problems: %s", mnstr_peek_error(NULL)));
-	}
-
-#ifdef WORDS_BIGENDIAN
-#define le_int(P, X) \
-	*(P)++ = (unsigned int)X & 255; \
-	*(P)++ = ((unsigned int)X >> 8) & 255; \
-	*(P)++ = ((unsigned int)X >> 16) & 255; \
-	*(P)++ = ((unsigned int)X >> 24) & 255;
-#define le_sht(P, X) \
-	*(P)++ = (unsigned short)X & 255; \
-	*(P)++ = ((unsigned short)X >> 8) & 255;
-#else
-#define le_int(P, X) \
-	*(P)++ = ((unsigned int)X >> 24) & 255; \
-	*(P)++ = ((unsigned int)X >> 16) & 255; \
-	*(P)++ = ((unsigned int)X >> 8) & 255; \
-	*(P)++ = (unsigned int)X & 255;
-#define le_sht(P, X) \
-	*(P)++ = ((unsigned short)X >> 8) & 255; \
-	*(P)++ = (unsigned short)X & 255;
-#endif
-
-	/* Handshake Initialization Packet */
-	p = buf + 4;   /* skip bytes for package header */
-	*p++ = 0x10;   /* protocol_version */
-	p += sprintf(p, MONETDB_VERSION "-merovingian") + 1; /* server_version\0 */
-	le_int(p, 0);  /* thread_number */
-	p += sprintf(p, "voidvoid"); /* scramble_buff */
-	*p++ = 0x00;   /* filler */
-	/* server_capabilities:
-	 * CLIENT_CONNECT_WITH_DB CLIENT_NO_SCHEMA CLIENT_PROTOCOL_41
-	 * CLIENT_INTERACTIVE CLIENT_MULTI_STATEMENTS CLIENT_MULTI_RESULTS
-	 */
-	le_sht(p, (8 | 16 | 512 | 1024 | 8192 | 65536 | 131072));
-	*p++ = 0x33;   /* server_language = utf8_general_ci */
-	le_sht(p, 2);  /* server_status = SERVER_STATUS_AUTOCOMMIT */
-	p += sprintf(p, "             ");  /* filler 14 bytes */
-
-	/* packet header */
-	len = p - buf;
-	p = buf;
-	le_int(p, len);
-	*p = *(p + 1); p++;
-	*p = *(p + 1); p++;
-	*p = *(p + 1); p++;
-	*p = 0x00;   /* packet number */
-	mnstr_flush(fout, MNSTR_FLUSH_DATA);
-
-	return(NO_ERR);
-}
-#endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

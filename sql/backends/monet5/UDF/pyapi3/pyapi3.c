@@ -70,9 +70,19 @@ static const char *FunctionBasePath(void)
 
 static MT_Lock pyapiLock = MT_LOCK_INITIALIZER(pyapiLock);
 static bool pyapiInitialized = false;
+static PyDateTime_CAPI *PYAPI3_DateTimeAPI;
 
 bool PYAPI3PyAPIInitialized(void) {
 	return pyapiInitialized;
+}
+
+PyDateTime_CAPI *get_DateTimeAPI(void) {
+	return PYAPI3_DateTimeAPI;
+}
+
+void init_DateTimeAPI(void) {
+	PyDateTime_IMPORT;
+	PYAPI3_DateTimeAPI = PyDateTimeAPI;
 }
 
 #ifdef HAVE_FORK
@@ -213,15 +223,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		card = 1;
 	}
 
-	if (!grouped) {
-		sql_subfunc *sqlmorefun =
-			(*(sql_subfunc **)getArgReference(stk, pci, pci->retc + has_card_arg));
-		if (sqlmorefun) {
-			sqlfun = sqlmorefun->func;
-		}
-	} else {
-		sqlfun = *(sql_func **)getArgReference(stk, pci, pci->retc + has_card_arg);
-	}
+	sqlfun = *(sql_func **)getArgReference(stk, pci, pci->retc + has_card_arg);
 	exprStr = *getArgReference_str(stk, pci, pci->retc + 1 + has_card_arg);
 	varres = sqlfun ? sqlfun->varres : 0;
 	retcols = !varres ? pci->retc : -1;
@@ -682,7 +684,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			goto wrapup;
 		}
 		if (code_object == NULL) {
-			PyObject *arg_type = PyString_FromString(
+			PyObject *arg_type = PyUnicode_FromString(
 				BatType_Format(pyinput_values[i - (pci->retc + 2 + has_card_arg)].bat_type));
 			PyDict_SetItemString(pColumns, args[i], result_array);
 			PyDict_SetItemString(pColumnTypes, args[i], arg_type);
@@ -1028,7 +1030,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				retnames = GDKzalloc(sizeof(char *) * retcols);
 				for (i = 0; i < retcols; i++) {
 					PyObject *colname = PyList_GetItem(keys, i);
-					if (!PyString_CheckExact(colname)) {
+					if (!PyUnicode_CheckExact(colname)) {
 						msg = createException(MAL, "pyapi3.eval",
 											  SQLSTATE(PY000) "Expected a string key in the "
 											  "dictionary, but received an "
@@ -1234,7 +1236,7 @@ returnvalues:
 		msg = MAL_SUCCEED;
 		if (isaBatType(getArgType(mb, pci, i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
+			BBPkeepref(b);
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
 			if (bat_type != TYPE_str) {
@@ -1373,9 +1375,8 @@ wrapup:
 	return msg;
 }
 
-str
-PYAPI3PyAPIprelude(void *ret) {
-	(void) ret;
+static str
+PYAPI3PyAPIprelude(void) {
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
 		wchar_t* program = Py_DecodeLocale("mserver5", NULL);
@@ -1397,8 +1398,9 @@ PYAPI3PyAPIprelude(void *ret) {
 		}
 		_pytypes_init();
 		_loader_init();
-		tmp = PyString_FromString("marshal");
+		tmp = PyUnicode_FromString("marshal");
 		marshal_module = PyImport_Import(tmp);
+		init_DateTimeAPI();
 		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
 			MT_lock_unset(&pyapiLock);
@@ -1441,7 +1443,7 @@ char *PyError_CreateException(char *error_text, char *pycall)
 								 &py_error_traceback);
 		error = PyObject_Str(py_error_value);
 
-		py_error_string = PyString_AS_STRING(error);
+		py_error_string = PyUnicode_AsUTF8(error);
 		Py_XDECREF(error);
 		if (pycall != NULL && strlen(pycall) > 0) {
 			if (py_error_traceback == NULL) {
@@ -1701,7 +1703,8 @@ bailout:
 				if (b && msg) {
 					BBPreclaim(b);
 				} else if (b) {
-					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+					*getArgReference_bat(stk, pci, i) = b->batCacheid;
+					BBPkeepref(b);
 				}
 			} else if (msg) {
 				ValPtr pt = ((ValPtr*)res)[i];
@@ -1723,7 +1726,6 @@ static mel_func pyapi3_init_funcs[] = {
  pattern("pyapi3", "eval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,3, varargany("",0),arg("fptr",ptr),arg("expr",str))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- command("pyapi3", "prelude", PYAPI3PyAPIprelude, false, "", args(1,1, arg("",void))),
  pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr", ptr), arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batpyapi3", "subeval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
@@ -1745,4 +1747,4 @@ static mel_func pyapi3_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pyapi3_mal)
-{ mal_module("pyapi3", NULL, pyapi3_init_funcs); }
+{ mal_module2("pyapi3", NULL, pyapi3_init_funcs, PYAPI3PyAPIprelude, NULL); }

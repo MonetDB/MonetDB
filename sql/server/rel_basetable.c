@@ -15,14 +15,14 @@
 #include "sql_privileges.h"
 
 #define USED_LEN(nr) ((nr+31)/32)
-#define rel_base_set_used(b,nr) b->used[(nr)/32] |= (1<<((nr)%32))
-#define rel_base_is_used(b,nr) ((b->used[(nr)/32]&(1<<((nr)%32))) != 0)
+#define rel_base_set_used(b,nr) b->used[(nr)/32] |= (1U<<((nr)%32))
+#define rel_base_is_used(b,nr) ((b->used[(nr)/32]&(1U<<((nr)%32))) != 0)
 
 typedef struct rel_base_t {
 	sql_table *mt;
 	char *name;
 	int disallowed;	/* ie check per column */
-	int used[FLEXIBLE_ARRAY_MEMBER];
+	uint32_t used[FLEXIBLE_ARRAY_MEMBER];
 } rel_base_t;
 
 void
@@ -90,7 +90,7 @@ rel_base_use_all( mvc *sql, sql_rel *rel)
 	} else {
 		int len = USED_LEN(ol_length(t->columns) + 1 + ol_length(t->idxs));
 		for (int i = 0; i < len; i++)
-			ba->used[i] = ~0;
+			ba->used[i] = ~0U;
 	}
 }
 
@@ -127,7 +127,7 @@ rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out)
 
 	assert(is_basetable(in->op) && is_basetable(out->op));
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
-	size_t bsize = sizeof(rel_base_t) + sizeof(int)*USED_LEN(end);
+	size_t bsize = sizeof(rel_base_t) + sizeof(uint32_t)*USED_LEN(end);
 	rel_base_t *nba = (rel_base_t*)sa_alloc(sa, bsize);
 
 	memcpy(nba, ba, bsize);
@@ -156,10 +156,10 @@ bind_col_exp(mvc *sql, char *name, sql_column *c)
 
 	if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 		p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-		p->value = c->t->pkey;
+		p->value.pval = c->t->pkey;
 	} else if (c->unique == 2) {
 		p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-		p->value = NULL;
+		p->value.pval = NULL;
 	}
 	set_basecol(e);
 	return e;
@@ -267,11 +267,11 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 				sql_exp *e = exp_column(sql->sa, name, iname, t, CARD_MULTI, has_nils, unique, 1);
 				if (hash_index(i->type)) {
 					p = e->p = prop_create(sql->sa, PROP_HASHIDX, e->p);
-					p->value = i;
+					p->value.pval = i;
 				}
 				if (i->type == join_idx) {
 					p = e->p = prop_create(sql->sa, PROP_JOINIDX, e->p);
-					p->value = i;
+					p->value.pval = i;
 				}
 				append(exps, e);
 			}
@@ -324,10 +324,10 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 		}
 		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-			p->value = c->t->pkey;
+			p->value.pval = c->t->pkey;
 		} else if (c->unique == 2) {
 			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-			p->value = NULL;
+			p->value.pval = NULL;
 		}
 		set_basecol(e);
 		append(r->exps, e);
@@ -370,10 +370,10 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			}
 			if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 				p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
-				p->value = c->t->pkey;
+				p->value.pval = c->t->pkey;
 			} else if (c->unique == 2) {
 				p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
-				p->value = NULL;
+				p->value.pval = NULL;
 			}
 			set_basecol(e);
 			append(rel->exps, e);
@@ -409,16 +409,56 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			/* index names are prefixed, to make them independent */
 			if (hash_index(i->type)) {
 				p = e->p = prop_create(sa, PROP_HASHIDX, e->p);
-				p->value = i;
+				p->value.pval = i;
 			}
 			if (i->type == join_idx) {
 				p = e->p = prop_create(sa, PROP_JOINIDX, e->p);
-				p->value = i;
+				p->value.pval = i;
 			}
 			append(rel->exps, e);
 		}
 	}
 	return rel;
+}
+
+sql_exp *
+basetable_get_tid_or_add_it(mvc *sql, sql_rel *rel)
+{
+	sql_exp *res = NULL;
+
+	if (is_basetable(rel->op)) {
+		sql_allocator *sa = sql->sa;
+		sql_table *t = rel->l;
+		rel_base_t *ba = rel->r;
+		const char *tname = t->base.name;
+		const char *atname = ba->name?ba->name:tname;
+
+		if (isRemote(t))
+			tname = mapiuri_table(t->query, sql->sa, tname);
+		if (!rel->exps) { /* no exps yet, just set TID */
+			rel_base_use_tid(sql, rel);
+			res = exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+		} else if (!rel_base_is_used(ba, ol_length(t->columns)) ||  /* exps set, but no TID, add it */
+				   !(res = exps_bind_column2(rel->exps, atname, TID, NULL))) { /* exps set with TID, but maybe rel_dce removed it */
+			node *n = NULL;
+			rel_base_use_tid(sql, rel);
+			res = exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+
+			/* search for indexes */
+			for (node *cn = rel->exps->h; cn && !n; cn = cn->next) {
+				sql_exp *e = cn->data;
+
+				if (is_intern(e))
+					n = cn;
+			}
+			if (n) { /* has indexes, insert TID before them */
+				list_append_before(rel->exps, n, res);
+			} else {
+				list_append(rel->exps, res);
+			}
+		}
+	}
+	return res;
 }
 
 sql_rel *
@@ -446,10 +486,10 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			sql_exp *ne = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, is_column_unique(rc), 0);
 			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
-				p->value = rc->t->pkey;
+				p->value.pval = rc->t->pkey;
 			} else if (rc->unique == 2) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
-				p->value = NULL;
+				p->value.pval = NULL;
 			}
 			set_basecol(ne);
 			rel_base_use(sql, p, rc->colnr);
@@ -475,10 +515,10 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			/* index names are prefixed, to make them independent */
 			if (hash_index(ri->type)) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHIDX, ne->p);
-				p->value = ri;
+				p->value.pval = ri;
 			} else if (ri->type == join_idx) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_JOINIDX, ne->p);
-				p->value = ri;
+				p->value.pval = ri;
 			}
 			list_append(p->exps, ne);
 		}
@@ -520,7 +560,7 @@ rel_base_dump_exps( stream *fout, sql_rel *rel)
 			comma = 1;
 		}
 	}
-	mnstr_printf(fout, " ]\n");
+	mnstr_printf(fout, " ]");
 }
 
 int

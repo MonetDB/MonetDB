@@ -1320,9 +1320,10 @@ RAWrenderer(MapiHdl hdl)
 	}
 }
 
-static void
+static int
 SQLheader(MapiHdl hdl, int *len, int fields, char more)
 {
+	int rows = 1;				/* start with the separator row */
 	SQLseparator(len, fields, '-');
 	if (mapi_get_name(hdl, 0)) {
 		int i;
@@ -1339,11 +1340,13 @@ SQLheader(MapiHdl hdl, int *len, int fields, char more)
 			names[i] = mapi_get_name(hdl, i);
 			numeric[i] = 0;
 		}
-		SQLrow(len, numeric, names, fields, 1, more);
+		rows += SQLrow(len, numeric, names, fields, 1, more);
+		rows++;					/* add a separator row */
 		SQLseparator(len, fields, '=');
 		free(names);
 		free(numeric);
 	}
+	return rows;
 }
 
 static void
@@ -1560,7 +1563,7 @@ SQLrenderer(MapiHdl hdl)
 			break;
 	}
 
-	SQLheader(hdl, len, printfields, fields != printfields);
+	rows = SQLheader(hdl, len, printfields, fields != printfields);
 
 	while ((rfields = fetch_row(hdl)) != 0) {
 		if (mnstr_errnr(toConsole))
@@ -1603,8 +1606,10 @@ SQLrenderer(MapiHdl hdl)
 		if (ps > 0 && rows >= ps && fromConsole != NULL) {
 			SQLpagemove(len, printfields, &ps, &silent);
 			rows = 0;
-			if (silent)
-				continue;
+			if (silent) {
+				mapi_finish(hdl);
+				break;
+			}
 		}
 
 		rows += SQLrow(len, numeric, rest, printfields, 2, 0);
@@ -2610,6 +2615,11 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						}
 						q += snprintf(q, endq - q, " ORDER BY fullname, type, remark");
 
+#ifdef HAVE_POPEN
+						stream *saveFD;
+						start_pager(&saveFD);
+#endif
+
 						hdl = mapi_query(mid, query);
 						free(query);
 						CHECK_RESULT(mid, hdl, buf, fp);
@@ -2642,6 +2652,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
+#ifdef HAVE_POPEN
+						end_pager(saveFD);
+#endif
 					}
 					continue;
 				}
@@ -2737,8 +2750,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					continue;
 #ifdef HAVE_POPEN
 				case '|':
-					if (pager)
-						free(pager);
+					free(pager);
 					pager = NULL;
 					setWidth();	/* reset to system default */
 
@@ -3502,7 +3514,7 @@ main(int argc, char **argv)
 		exit(2);
 	}
 
-	mapi_cache_limit(mid, -1);
+	mapi_cache_limit(mid, 1000);
 	mapi_setAutocommit(mid, autocommit);
 	if (mode == SQL && !settz)
 		mapi_set_time_zone(mid, 0);

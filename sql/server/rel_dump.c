@@ -14,12 +14,12 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
 #include "rel_updates.h"
 #include "rel_select.h"
 #include "rel_remote.h"
+#include "rel_rewriter.h"
+#include "rel_optimizer.h"
 #include "sql_privileges.h"
-#include "mal_errors.h"		/* for SQLSTATE() */
 
 static void
 print_indent(mvc *sql, stream *fout, int depth, int decorate)
@@ -111,7 +111,9 @@ dump_sql_subtype(sql_allocator *sa, sql_subtype *t)
 
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets);
 
-static void
+static void rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
+
+void
 exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias)
 {
 	(void)sql;
@@ -158,7 +160,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				exps_print(sql, fout, e->f, depth, refs, 0, 0);
 			alias = 0;
 		} else if (e->flag & PSM_REL) {
-			rel_print_(sql, fout, e->l, depth+10, refs, 1);
+			rel_print_rel(sql, fout, e->l, depth+10, refs, 1);
 		} else if (e->flag & PSM_EXCEPTION) {
 			mnstr_printf(fout, "except ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
@@ -322,13 +324,13 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " NOT NULL");
 	if (e->type != e_atom && e->type != e_cmp && is_unique(e))
 		mnstr_printf(fout, " UNIQUE");
-	if (e->p) {
-		prop *p = e->p;
-		char *pv;
-
-		for (; p; p = p->p) {
-			pv = propvalue2string(sql->ta, p);
-			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+	if (e->p && e->type != e_atom && !exp_is_atom(e)) { /* don't show properties on value lists */
+		for (prop *p = e->p; p; p = p->p) {
+			/* Don't show min/max/unique est on atoms, or when running tests with forcemito */
+			if ((GDKdebug & FORCEMITOMASK) == 0 || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
+				char *pv = propvalue2string(sql->ta, p);
+				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			}
 		}
 	}
 	if (exp_name(e) && alias) {
@@ -359,49 +361,6 @@ exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias,
 		mnstr_printf(fout, " ]");
 }
 
-const char *
-op2string(operator_type op)
-{
-	switch (op) {
-	case op_basetable:
-		return "basetable";
-	case op_table:
-		return "table";
-	case op_ddl:
-		return "ddl";
-	case op_project:
-		return "project";
-	case op_select:
-		return "select";
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-		return "join";
-	case op_semi:
-		return "semi";
-	case op_anti:
-		return "anti";
-	case op_union:
-	case op_inter:
-	case op_except:
-		return "set op";
-	case op_groupby:
-		return "group by";
-	case op_topn:
-		return "topn";
-	case op_sample:
-		return "sample";
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-	case op_merge:
-		return "modify op";
-	}
-	return "unknown";
-}
-
 static int
 find_ref( list *refs, sql_rel *rel )
 {
@@ -415,8 +374,8 @@ find_ref( list *refs, sql_rel *rel )
 	return 0;
 }
 
-void
-rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate)
+static void
+rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate)
 {
 	char *r = NULL;
 
@@ -437,35 +396,25 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
-#if 0
-		sql_column *c = rel->r;
+		const char *sname = t->s ? t->s->base.name : NULL; /* All tables, but declared ones on the stack have schema */
+		const char *tname = t->base.name;
 
-		if (!t && c) {
-			mnstr_printf(fout, "dict(\"%s\".\"%s\")",
-						 dump_escape_ident(sql->ta, c->t->base.name), dump_escape_ident(sql->ta, c->base.name));
-		} else {
-#endif
+		if (isRemote(t)) {
+			const char *uri = t->query;
 
-			const char *sname = t->s ? t->s->base.name : NULL; /* All tables, but declared ones on the stack have schema */
-			const char *tname = t->base.name;
-
-			if (isRemote(t)) {
-				const char *uri = t->query;
-
-				sname = mapiuri_schema( uri, sql->sa, sname);
-				tname = mapiuri_table( uri, sql->sa, tname);
-			}
-			if (sname)
-				mnstr_printf(fout, "%s(\"%s\".\"%s\")",
-					isRemote(t)&&decorate?"REMOTE":
-					isReplicaTable(t)?"REPLICA":"table",
-					dump_escape_ident(sql->ta, sname), dump_escape_ident(sql->ta, tname));
-			else
-				mnstr_printf(fout, "%s(\"%s\")",
-					isRemote(t)&&decorate?"REMOTE":
-					isReplicaTable(t)?"REPLICA":"table",
-					dump_escape_ident(sql->ta, tname));
-	//	}
+			sname = mapiuri_schema( uri, sql->sa, sname);
+			tname = mapiuri_table( uri, sql->sa, tname);
+		}
+		if (sname)
+			mnstr_printf(fout, "%s(\"%s\".\"%s\")",
+				isRemote(t)&&decorate?"REMOTE":
+				isReplicaTable(t)?"REPLICA":"table",
+				dump_escape_ident(sql->ta, sname), dump_escape_ident(sql->ta, tname));
+		else
+			mnstr_printf(fout, "%s(\"%s\")",
+				isRemote(t)&&decorate?"REMOTE":
+				isReplicaTable(t)?"REPLICA":"table",
+				dump_escape_ident(sql->ta, tname));
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		else
@@ -478,9 +427,9 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			exp_print(sql, fout, rel->r, depth, refs, 1, 0);
 		if (rel->l) {
 			if (rel->flag == TRIGGER_WRAPPER)
-		  		mnstr_printf(fout, "rel_dump not yet implemented for trigger input");
+				mnstr_printf(fout, "rel_dump not yet implemented for trigger input");
 			else
-				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
@@ -490,9 +439,9 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	case op_ddl:
 		mnstr_printf(fout, "ddl");
 		if (rel->l)
-			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+			rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 		if (rel->r)
-			rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
+			rel_print_rel(sql, fout, rel->r, depth+1, refs, decorate);
 		if (rel->exps && (rel->flag == ddl_psm || rel->flag == ddl_exception || rel->flag == ddl_list))
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
@@ -536,7 +485,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d ", nr);
 			} else
-				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 		}
 		mnstr_printf(fout, ",");
 		if (rel->r) {
@@ -545,11 +494,13 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d  ", nr);
 			} else
-				rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->r, depth+1, refs, decorate);
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
 		exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
+		if (is_join(rel->op) && rel->attr) /* mark joins */
+			exps_print(sql, fout, rel->attr, depth, refs, 1, 0);
 		break;
 	case op_project:
 	case op_select:
@@ -575,7 +526,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d ", nr);
 			} else
-				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 			print_indent(sql, fout, depth, decorate);
 			mnstr_printf(fout, ")");
 		}
@@ -614,7 +565,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d ", nr);
 			} else
-				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
 		}
 		if (rel->r) {
 			if (rel_is_ref(rel->r)) {
@@ -622,7 +573,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				print_indent(sql, fout, depth+1, decorate);
 				mnstr_printf(fout, "& REF %d ", nr);
 			} else
-				rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
+				rel_print_rel(sql, fout, rel->r, depth+1, refs, decorate);
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
@@ -633,15 +584,13 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		assert(0);
 	}
 	if (rel->p) {
-		prop *p = rel->p;
-		char *pv;
-
-		for (; p; p = p->p) {
-			pv = propvalue2string(sql->ta, p);
-			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+		for (prop *p = rel->p; p; p = p->p) {
+			if (p->kind != PROP_COUNT || (GDKdebug & FORCEMITOMASK) == 0) {
+				char *pv = propvalue2string(sql->ta, p);
+				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			}
 		}
 	}
-	//mnstr_printf(fout, " %p ", rel);
 }
 
 void
@@ -658,14 +607,14 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 			if (rel->l) {
 				rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 				if (rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
-					rel_print_(sql, fout, rel->l, depth, refs, decorate);
+					rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 					list_append(refs, rel->l);
 				}
 			}
 			if (rel->r) {
 				rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
 				if (rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
-					rel_print_(sql, fout, rel->r, depth, refs, decorate);
+					rel_print_rel(sql, fout, rel->r, depth, refs, decorate);
 					list_append(refs, rel->r);
 				}
 			}
@@ -685,11 +634,11 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->r)
 			rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
-			rel_print_(sql, fout, rel->l, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
 		if (rel->r && rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
-			rel_print_(sql, fout, rel->r, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->r, depth, refs, decorate);
 			list_append(refs, rel->r);
 		}
 		break;
@@ -701,7 +650,7 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->l)
 			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
-			rel_print_(sql, fout, rel->l, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
 		break;
@@ -713,16 +662,33 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->l)
 			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
-			rel_print_(sql, fout, rel->l, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
 		if (rel->r)
 			rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
 		if (rel->r && rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
-			rel_print_(sql, fout, rel->r, depth, refs, decorate);
+			rel_print_rel(sql, fout, rel->r, depth, refs, decorate);
 			list_append(refs, rel->r);
 		}
 		break;
+	}
+}
+
+void
+rel_print_(mvc *sql, stream *fout, sql_rel *rel, int depth, list *refs, int decorate)
+{
+	rel_print_rel(sql, fout, rel, depth, refs, decorate);
+	if (sql->runs) {
+		for (int i = 0 ; i < NSQLREWRITERS ; i++) {
+			sql_optimizer_run *run = &(sql->runs[i]);
+
+			if (run->name) { /* if name is set, then the optimizer did run */
+				print_indent(sql, fout, depth, decorate);
+				mnstr_printf(fout, "%-36s %3d actions " LLFMT " usec",
+							 run->name, run->nchanges, run->time);
+			}
+		}
 	}
 }
 
@@ -878,7 +844,7 @@ read_prop(mvc *sql, sql_exp *exp, char *r, int *pos, bool *found)
 			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s missing\n", sname);
 		if (!find_prop(exp->p, PROP_JOINIDX)) {
 			p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
-			if (!(p->value = mvc_bind_idx(sql, s, iname)))
+			if (!(p->value.pval = mvc_bind_idx(sql, s, iname)))
 				return sql_error(sql, -1, SQLSTATE(42000) "Index %s missing\n", iname);
 		}
 		skipWS(r,pos);
@@ -933,6 +899,59 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 }
 
 static sql_exp*
+exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_str, rel_prop kind)
+{
+	atom *a;
+	sql_subtype *tpe = exp_subtype(exp);
+
+	(*pos)+= (int) strlen(prop_str);
+	skipWS(r, pos);
+
+	if (strncmp(r+*pos, "NULL",  strlen("NULL")) == 0) {
+		(*pos)+= (int) strlen("NULL");
+		a = atom_general(sql->sa, tpe, NULL);
+	} else {
+		void *ptr = readAtomString(tpe->type->localtype, r, pos);
+		if (!ptr)
+			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
+		a = atom_general_ptr(sql->sa, tpe, ptr);
+		GDKfree(ptr);
+	}
+	if (!find_prop(exp->p, kind)) {
+		prop *p = exp->p = prop_create(sql->sa, kind, exp->p);
+		p->value.pval = a;
+	}
+	skipWS(r, pos);
+	return exp;
+}
+
+static sql_exp*
+exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
+{
+	void *ptr = NULL;
+	size_t nbytes = 0;
+	ssize_t res = 0;
+	sql_subtype *tpe = sql_bind_localtype("dbl");
+
+	(*pos)+= (int) strlen("NUNIQUES");
+	skipWS(r, pos);
+
+	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
+		GDKfree(ptr);
+		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
+	}
+
+	if (!find_prop(exp->p, PROP_NUNIQUES)) {
+		prop *p = exp->p = prop_create(sql->sa, PROP_NUNIQUES, exp->p);
+		p->value.dval = *(dbl*)ptr;
+	}
+	(*pos) += (int) res; /* it should always fit */
+	GDKfree(ptr);
+	skipWS(r, pos);
+	return exp;
+}
+
+static sql_exp*
 read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 {
 	bool found = true;
@@ -941,6 +960,8 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 
 		if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
 			(*pos)+= (int) strlen("COUNT");
+			if (!find_prop(exp->p, PROP_COUNT))
+				exp->p = prop_create(sql->sa, PROP_COUNT, exp->p);
 			skipWS(r,pos);
 			found = true;
 		} else if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
@@ -954,6 +975,18 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 			if (!find_prop(exp->p, PROP_HASHCOL))
 				exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
 			skipWS(r,pos);
+			found = true;
+		} else if (strncmp(r+*pos, "MIN",  strlen("MIN")) == 0) {
+			if (!exp_read_min_or_max(sql, exp, r, pos, "MIN", PROP_MIN))
+				return NULL;
+			found = true;
+		} else if (strncmp(r+*pos, "MAX",  strlen("MAX")) == 0) {
+			if (!exp_read_min_or_max(sql, exp, r, pos, "MAX", PROP_MAX))
+				return NULL;
+			found = true;
+		} else if (strncmp(r+*pos, "NUNIQUES",  strlen("NUNIQUES")) == 0) {
+			if (!exp_read_nuniques(sql, exp, r, pos))
+				return NULL;
 			found = true;
 		}
 		if (!read_prop(sql, exp, r, pos, &found))
@@ -1250,7 +1283,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 					if (sname && !mvc_bind_schema(sql, sname))
 						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
-					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT)))
+					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT, true)))
 						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Filter: missing function '%s'.'%s'\n", sname, fname);
 					if (!execute_priv(sql, f->func))
 						return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'.'%s'\n", sname, fname);
@@ -1306,7 +1339,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				skipWS(r, pos);
 				exp = exp_convert(sql->sa, exp, exp_subtype(exp), &tpe);
 			} else {
-				exp = parse_atom(sql, r, pos, &tpe);
+				if (!(exp = parse_atom(sql, r, pos, &tpe)))
+					return NULL;
 				skipWS(r, pos);
 			}
 		}
@@ -1322,7 +1356,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
 				sql_init_subtype(&tpe, t, 0, 0);
 			}
-			exp = parse_atom(sql, r, pos, &tpe);
+			if (!(exp = parse_atom(sql, r, pos, &tpe)))
+				return NULL;
 			skipWS(r, pos);
 		}
 		break;
@@ -1364,9 +1399,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				list *ops = sa_list(sql->sa);
 				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
-				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR);
+				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR, true);
 			} else {
-				f = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
+				f = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR, true); /* count(*) */
 			}
 			if (!f)
 				return function_error_string(sql, tname, cname, exps, false, F_AGGR);
@@ -1379,7 +1414,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			int nops = list_length(exps);
 			if (!strcmp(tname, "sys") && (!strcmp(cname, "case") || !strcmp(cname, "casewhen") || !strcmp(cname, "coalesce") || !strcmp(cname, "nullif"))) {
 				/* these functions are bound on a different way */
-				if ((f = sql_find_func(sql, NULL, cname, 2, F_FUNC, NULL))) {
+				if ((f = sql_find_func(sql, NULL, cname, 2, F_FUNC, true, NULL))) {
 					if (!execute_priv(sql, f->func))
 						return function_error_string(sql, tname, cname, exps, true, F_FUNC);
 					sql_exp *res = exps->t->data;
@@ -1391,41 +1426,32 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
 
-				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC);
+				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC, true);
 				if (!f) {
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true);
 				}
 				if (!f && nops > 1) { /* window functions without frames get 2 extra arguments */
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
 					list_remove_node(ops, NULL, ops->t);
 					list_remove_node(ops, NULL, ops->t);
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true);
 				}
 				if (!f && nops > 4) { /* window functions with frames get 5 extra arguments */
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
 					for (int i = 0 ; i < 3 ; i++)
 						list_remove_node(ops, NULL, ops->t);
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true);
 				}
 
 				if (f && !execute_priv(sql, f->func))
 					return function_error_string(sql, tname, cname, exps, true, F_FUNC);
 				/* apply scale fixes if needed */
 				if (f && f->func->type != F_ANALYTIC) {
-					if (list_length(exps) == 1) {
-						if (f->func->fix_scale == INOUT) {
-							sql_subtype *t = exp_subtype(exps->h->data);
-							sql_subtype *res = f->res->h->data;
-
-							res->digits = t->digits;
-							res->scale = t->scale;
-						} else if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
-							return NULL;
-					} else if (list_length(exps) == 2) {
+					if (list_length(exps) == 2) {
 						sql_exp *l = exps->h->data;
 						sql_exp *r = exps->h->next->data;
 
@@ -1615,9 +1641,33 @@ rel_set_types(mvc *sql, sql_rel *rel)
 	for(n=iexps->h, m=rel->exps->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e = m->data;
 
-		e->tpe = *exp_subtype( n->data );
+		if (!e->tpe.type)
+			e->tpe = *exp_subtype( n->data );
 	}
 	return 0;
+}
+
+static sql_rel*
+rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
+{
+	void *ptr = NULL;
+	size_t nbytes = 0;
+	ssize_t res = 0;
+	sql_subtype *tpe = sql_bind_localtype("oid");
+
+	(*pos)+= (int) strlen("COUNT");
+	skipWS(r, pos);
+
+	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
+		GDKfree(ptr);
+		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
+	}
+
+	set_count_prop(sql->sa, rel, *(BUN*)ptr);
+	(*pos) += (int) res; /* it should always fit */
+	GDKfree(ptr);
+	skipWS(r, pos);
+	return rel;
 }
 
 static sql_rel*
@@ -1628,8 +1678,8 @@ read_rel_properties(mvc *sql, sql_rel *rel, char *r, int *pos)
 		found = false;
 
 		if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
-			(*pos)+= (int) strlen("COUNT");
-			skipWS(r,pos);
+			if (!rel_read_count(sql, rel, r, pos))
+				return NULL;
 			found = true;
 		} else if (strncmp(r+*pos, "REMOTE", strlen("REMOTE")) == 0) { /* Remote tables under remote tables not supported, so remove REMOTE property */
 			(*pos)+= (int) strlen("REMOTE");
@@ -1943,6 +1993,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: the number of output parameters don't match the table ones relation outputs: %d != function outputs: %d\n",
 									 list_length(outputs), list_length(sf->func->res));
 				rel = rel_table_func(sql->sa, lrel, tudf, outputs, TABLE_FROM_RELATION);
+				set_processed(rel);
 			} else {
 				if (r[*pos] != ')')
 					sql_error(sql, -1, SQLSTATE(42000) "Table: missing ')'\n");
@@ -1992,6 +2043,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 				return NULL;
 			rel = rel_topn(sql->sa, nrel, exps);
+			set_processed(rel);
 		}
 		break;
 	case 'p':
@@ -2013,12 +2065,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_project(sql->sa, nrel, exps);
+		set_processed(rel);
 		/* order by ? */
-		if (r[*pos] == '[') {
-			/* first projected expressions, then left relation projections */
-			if (!(rel->r = read_exps(sql, rel, nrel, NULL, r, pos, '[', 0, 1)))
-				return NULL;
-		}
+		/* first projected expressions, then left relation projections */
+		if (r[*pos] == '[' && !(rel->r = read_exps(sql, rel, nrel, NULL, r, pos, '[', 0, 1)))
+			return NULL;
 		break;
 	case 'g':
 		*pos += (int) strlen("group by");
@@ -2066,6 +2117,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 				return NULL;
 			rel = rel_sample(sql->sa, nrel, exps);
+			set_processed(rel);
 		} else if (r[*pos+2] == 'l') {
 			*pos += (int) strlen("select");
 			skipWS(r, pos);
@@ -2084,6 +2136,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 				return NULL;
 			rel = rel_select_copy(sql->sa, nrel, exps);
+			set_processed(rel);
 			/* semijoin or antijoin */
 		} else if (r[*pos+1] == 'e' || r[*pos+1] == 'n') {
 			if (r[*pos+1] == 'n') {
@@ -2120,6 +2173,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return NULL;
 			rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 			rel->exps = exps;
+			set_processed(rel);
 		}
 		break;
 	case 'l':
@@ -2176,6 +2230,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
+		set_processed(rel);
 		break;
 	case 'u':
 		if (j == op_basetable) {
@@ -2217,7 +2272,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(*pos)++;
 		skipWS(r, pos);
 
-		if (!(exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0, 1)))
+		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_setop(sql->sa, lrel, rrel, j);
 		rel_setop_set_exps(sql, rel, exps, false);
@@ -2230,9 +2285,9 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		rel = rel_project(sql->sa, NULL, exps);
 		/* order by ? */
-		if (r[*pos] == '[')
-			if (!(rel->r = read_exps(sql, NULL, rel, NULL, r, pos, '[', 0, 1)))
-				return NULL;
+		if (r[*pos] == '[' && !(rel->r = read_exps(sql, NULL, rel, NULL, r, pos, '[', 0, 1)))
+			return NULL;
+		set_processed(rel);
 		break;
 	case 'd':
 		/* 'ddl' not supported */

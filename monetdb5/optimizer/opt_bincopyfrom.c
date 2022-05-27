@@ -153,7 +153,7 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 	// same backend type, for example nul- and newline terminated strings.
 	// For the time being we just use the name of the storage type as the method
 	// name.
-	str method = ATOMname(getBatType(var_type));
+	const char *method = ATOMname(getBatType(var_type));
 
 	int onclient = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
 

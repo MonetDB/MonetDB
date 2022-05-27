@@ -40,7 +40,7 @@ bool ATOMisdescendant(int id, int parentid)
 int ATOMunknown_find(const char *nme)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-str ATOMunknown_name(int a)
+const char *ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
 void ATOMunknown_clean(void)
 	__attribute__((__visibility__("hidden")));
@@ -78,7 +78,7 @@ bool BATiscand(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATmaterialize(BAT *b)
+gdk_return BATmaterialize(BAT *b, BUN cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BATrmprop(BAT *b, enum prop_t idx)
@@ -102,7 +102,7 @@ void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPinit(bool first)
+gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
@@ -181,13 +181,13 @@ void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHdelete(BAT *b, BUN p, const void *v)
+void HASHdelete(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHdelete_locked(BAT *b, BUN p, const void *v)
+void HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHinsert(BAT *b, BUN p, const void *v)
+void HASHinsert(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHinsert_locked(BAT *b, BUN p, const void *v)
+void HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 BUN HASHmask(BUN cnt)
 	__attribute__((__const__))
@@ -202,14 +202,14 @@ gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	__attribute__((__visibility__("hidden")));
 void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPgrow(MT_Lock *lock, Heap **old, size_t size, bool mayshare)
+gdk_return HEAPgrow(Heap **old, size_t size, bool mayshare)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free)
+gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPshrink(Heap *h, size_t size)
@@ -266,7 +266,7 @@ var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
 var_t strPut(BAT *b, var_t *dst, const void *v)
 	__attribute__((__visibility__("hidden")));
-str strRead(str a, size_t *dstlen, stream *s, size_t cnt)
+char *strRead(str a, size_t *dstlen, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
 ssize_t strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 	__attribute__((__visibility__("hidden")));
@@ -277,8 +277,32 @@ gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
+void VIEWunlink(BAT *b)
+	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
+
+static inline const char *
+gettailnamebi(const BATiter *bi)
+{
+	if (bi->type == TYPE_str) {
+		switch (bi->width) {
+		case 1:
+			return "tail1";
+		case 2:
+			return "tail2";
+		case 4:
+#if SIZEOF_VAR_T == 8
+			return "tail4";
+		case 8:
+#endif
+			break;
+		default:
+			MT_UNREACHABLE();
+		}
+	}
+	return "tail";
+}
 
 static inline bool
 imprintable(int tpe)
@@ -390,7 +414,7 @@ ilog2(BUN x)
 	b ? b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"" : "", \
 	b ? "]" : "",							\
 	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
-	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
+	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && b->tvheap && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
 	b ? b->tkey ? "K" : b->tnokey[1] ? "!k" : "" : "",		\
@@ -399,7 +423,11 @@ ilog2(BUN x)
 	b && b->torderidx ? "O" : "",					\
 	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid) && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
 
+#ifdef __SANITIZE_THREAD__
+#define BBP_BATMASK	31
+#else
 #define BBP_BATMASK	((1 << (SIZEOF_SIZE_T + 5)) - 1)
+#endif
 
 struct PROPrec {
 	enum prop_t id;
@@ -447,7 +475,6 @@ extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
 extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
 extern size_t GDK_mmap_pagesize; /* mmap granularity */
-extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 
 #define BATcheck(tst, err)				\
@@ -467,15 +494,25 @@ extern MT_Lock GDKtmLock;
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 
+#define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << 63)
+#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 63) - 1)
+
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */
-extern BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
+#define GDK_UNIQUE_ESTIMATE_KEEP_FRACTION	1000
+extern BUN gdk_unique_estimate_keep_fraction; /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */
-extern BUN HASH_DESTROY_UNIQUES_FRACTION;     /* likewise */
+#define HASH_DESTROY_UNIQUES_FRACTION		1000
+extern BUN hash_destroy_uniques_fraction;     /* likewise */
 /* if the estimated number of unique values is less than 1 in this
  * number, don't build a hash table to do a hashselect */
-extern dbl NO_HASH_SELECT_FRACTION;           /* same here */
+#define NO_HASH_SELECT_FRACTION			1000
+extern dbl no_hash_select_fraction;           /* same here */
+/* if the hash chain is longer than this number, we delete the hash
+ * rather than maintaining it in HASHdelete */
+#define HASH_DESTROY_CHAIN_LENGTH		1000
+extern BUN hash_destroy_chain_length;
 
 #if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */

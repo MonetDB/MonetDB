@@ -289,7 +289,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 {
 	lng t0 = 0;
 	BATiter bi;
-	BUN i, ncand;
+	BUN i;
 	size_t hidx;
 	oid x;
 	size_t hlen;
@@ -302,8 +302,8 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
-	ncand = canditer_init(&ci, b, s);
-	if (ncand == 0) {
+	canditer_init(&ci, b, s);
+	if (ci.ncand == 0) {
 		GDKerror("Not enough distinct values to create strimp index\n");
 		return false;
 	}
@@ -322,7 +322,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	bi = bat_iterator(b);
 	pip = &pi;
 	cpp = &cp;
-	for (i = 0; i < ncand; i++) {
+	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
 		const char *cs = BUNtvar(bi, x);
 		if (!strNil(cs)) {
@@ -492,14 +492,14 @@ BATcheckstrimps(BAT *b)
 	return ret;
 }
 
-#define STRMPfilterloop(next) \
-	do { \
-		for (i = 0; i < ncand; i++) { \
-			x = next(&ci); \
-			if ((bitstring_array[x] & qbmask) == qbmask) { \
-				rvals[j++] = x; \
-			} \
-		} \
+#define STRMPfilterloop(next)						\
+	do {								\
+		for (i = 0; i < ci.ncand; i++) {			\
+			x = next(&ci);					\
+			if ((bitstring_array[x] & qbmask) == qbmask) {	\
+				rvals[j++] = x;				\
+			}						\
+		}							\
 	} while (0)
 
 /* Filter a BAT b using a string q. Return the result as a candidate
@@ -509,7 +509,7 @@ BAT *
 STRMPfilter(BAT *b, BAT *s, const char *q)
 {
 	BAT *r = NULL;
-	BUN i, ncand, j = 0;
+	BUN i, j = 0;
 	uint64_t qbmask;
 	uint64_t *bitstring_array;
 	Strimps *strmps;
@@ -534,12 +534,12 @@ STRMPfilter(BAT *b, BAT *s, const char *q)
 	STRMPincref(strmps);
 	MT_lock_unset(&pb->batIdxLock);
 
-	ncand = canditer_init(&ci, b, s);
-	if (ncand == 0) {
+	canditer_init(&ci, b, s);
+	if (ci.ncand == 0) {
 		STRMPdecref(strmps, false);
 		return BATdense(b->hseqbase, 0, 0);
 	}
-	r = COLnew(b->hseqbase, TYPE_oid, ncand, TRANSIENT);
+	r = COLnew(b->hseqbase, TYPE_oid, ci.ncand, TRANSIENT);
 	if (r == NULL) {
 		STRMPdecref(strmps, false);
 		goto sfilter_fail;
@@ -563,8 +563,8 @@ STRMPfilter(BAT *b, BAT *s, const char *q)
 	r->tnonil = true;
 	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " BUNFMT
 		  " items took " LLFMT " usec. Keeping " BUNFMT
-		  " items (%.2f%%).\n", ncand, GDKusec()-t0, r->batCount,
-		  100*r->batCount/(double)ncand);
+		  " items (%.2f%%).\n", ci.ncand, GDKusec()-t0, r->batCount,
+		  100*r->batCount/(double)ci.ncand);
 	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	STRMPdecref(strmps, false);
 	return virtualize(r);
@@ -586,7 +586,7 @@ BATstrimpsync(void *arg)
 
 	MT_lock_set(&b->batIdxLock);
 	if ((hp = &b->tstrimps->strimps)) {
-		if (HEAPsave(hp, hp->filename, NULL, true, hp->free) == GDK_SUCCEED) {
+		if (HEAPsave(hp, hp->filename, NULL, true, hp->free, NULL) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 					((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
@@ -744,7 +744,7 @@ STRMPcreate(BAT *b, BAT *s)
 		if (pb->tstrimps == NULL) {
 			Strimps *r;
 			BATiter bi;
-			BUN i, ncand;
+			BUN i;
 			oid x;
 			struct canditer ci;
 			uint64_t *dh;
@@ -756,9 +756,9 @@ STRMPcreate(BAT *b, BAT *s)
 			dh = (uint64_t *)r->bitstrings_base;
 
 			/* Compute bitstrings */
-			ncand = canditer_init(&ci, pb, NULL);
+			canditer_init(&ci, pb, NULL);
 			bi = bat_iterator(pb);
-			for (i = 0; i < ncand; i++) {
+			for (i = 0; i < ci.ncand; i++) {
 				x = canditer_next(&ci);
 				const char *cs = BUNtvar(bi, x);
 				if (!strNil(cs))
@@ -768,9 +768,8 @@ STRMPcreate(BAT *b, BAT *s)
 			}
 			bat_iterator_end(&bi);
 
-			r->strimps.free += ncand*sizeof(uint64_t);
+			r->strimps.free += ci.ncand*sizeof(uint64_t);
 			pb->tstrimps = r;
-			pb->batDirtydesc = true;
 			persistStrimp(pb);
 		}
 		MT_lock_unset(&pb->batIdxLock);
@@ -783,12 +782,14 @@ STRMPcreate(BAT *b, BAT *s)
 void
 STRMPdecref(Strimps *strimps, bool remove)
 {
+	if (remove)
+		ATOMIC_OR(&strimps->strimps.refs, HEAPREMOVE);
+	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&strimps->strimps.refs);
 	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " BUNFMT "\n",
-		  strimps->strimps.filename, (BUN) (ATOMIC_GET(&strimps->strimps.refs) - 1));
-	strimps->strimps.remove |= remove;
-	if (ATOMIC_DEC(&strimps->strimps.refs) == 0) {
+		  strimps->strimps.filename, (BUN) (refs & HEAPREFS));
+	if ((refs & HEAPREFS) == 0) {
 		ATOMIC_DESTROY(&strimps->strimps.refs);
-		HEAPfree(&strimps->strimps, strimps->strimps.remove);
+		HEAPfree(&strimps->strimps, (bool) (refs & HEAPREMOVE));
 		GDKfree(strimps);
 	}
 
@@ -797,10 +798,9 @@ STRMPdecref(Strimps *strimps, bool remove)
 void
 STRMPincref(Strimps *strimps)
 {
+	ATOMIC_BASE_TYPE refs = ATOMIC_INC(&strimps->strimps.refs);
 	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s to " BUNFMT "\n",
-		  strimps->strimps.filename, (BUN) (ATOMIC_GET(&strimps->strimps.refs) + 1));
-	(void)ATOMIC_INC(&strimps->strimps.refs);
-
+		  strimps->strimps.filename, (BUN) (refs & HEAPREFS));
 }
 
 void
@@ -907,7 +907,6 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 
 			// incref
 			b->tstrimps = r;
-			b->batDirtydesc = true;
 		}
 	}
 	else
@@ -933,7 +932,7 @@ STRMPcreate(BAT *b, BAT *s)
 {
 	lng t0 = 0;
 	BATiter bi;
-	BUN i, ncand;
+	BUN i;
 	Strimps *h;
 	uint64_t *dh;
 	BAT *pb;
@@ -962,10 +961,10 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 	dh = (uint64_t *)h->bitstrings_base + b->hseqbase;
 
-	ncand = canditer_init(&ci, b, s);
+	canditer_init(&ci, b, s);
 
 	bi = bat_iterator(b);
-	for (i = 0; i < ncand; i++) {
+	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
 		const char *cs = BUNtvar(bi, x);
 		if (!strNil(cs))

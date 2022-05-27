@@ -12,9 +12,6 @@
 
 #include <longintrepr.h>
 
-#define PyInt_Check PyLong_Check
-#define PyString_CheckExact PyUnicode_CheckExact
-
 bool pyapi3_string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode)
 {
 	size_t i;
@@ -72,6 +69,83 @@ size_t pyobject_get_size(PyObject *obj)
 	return size;
 }
 
+str pyobject_to_date(PyObject **ptr, size_t maxsize, date *value) {
+	str msg = MAL_SUCCEED;
+
+	if (ptr == NULL || *ptr == NULL) {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyObject.");
+		goto wrapup;
+	}
+
+	(void) maxsize;
+
+	USE_DATETIME_API;
+	if(PyDate_Check(*ptr)) {
+		*value = date_create(PyDateTime_GET_YEAR(*ptr),
+							 PyDateTime_GET_MONTH(*ptr),
+							 PyDateTime_GET_DAY(*ptr));
+	}
+	else {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyDate object.");
+	}
+
+ wrapup:
+	return msg;
+}
+
+str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value) {
+	str msg = MAL_SUCCEED;
+
+	if (ptr == NULL || *ptr == NULL) {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyObject.");
+		goto wrapup;
+	}
+
+	(void) maxsize;
+
+	USE_DATETIME_API;
+	if(PyTime_Check(*ptr)) {
+		*value = daytime_create(PyDateTime_TIME_GET_HOUR(*ptr),
+								PyDateTime_TIME_GET_MINUTE(*ptr),
+								PyDateTime_TIME_GET_SECOND(*ptr),
+								PyDateTime_TIME_GET_MICROSECOND(*ptr));
+	}
+	else {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyTime object.");
+	}
+
+ wrapup:
+	return msg;
+}
+
+str pyobject_to_timestamp(PyObject **ptr, size_t maxsize, timestamp *value) {
+	str msg = MAL_SUCCEED;
+
+	if (ptr == NULL || *ptr == NULL) {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyObject.");
+		goto wrapup;
+	}
+
+	(void) maxsize;
+
+	USE_DATETIME_API;
+	if(PyDateTime_Check(*ptr)) {
+		date dt = date_create(PyDateTime_GET_YEAR(*ptr),
+							  PyDateTime_GET_MONTH(*ptr),
+							  PyDateTime_GET_DAY(*ptr));
+		daytime dtm = daytime_create(PyDateTime_DATE_GET_HOUR(*ptr),
+									 PyDateTime_DATE_GET_MINUTE(*ptr),
+									 PyDateTime_DATE_GET_SECOND(*ptr),
+									 PyDateTime_DATE_GET_MICROSECOND(*ptr));
+		*value = timestamp_create(dt, dtm);
+	}
+	else {
+		msg = createException(MAL, "pyapi3.eval", "Invalid PyDateTime object.");
+	}
+
+ wrapup:
+	return msg;
+}
 
 str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 	size_t size;
@@ -150,8 +224,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 						  "object.\n");
 			goto wrapup;
 		}
-	} else if (PyBool_Check(obj) || PyLong_Check(obj) || PyInt_Check(obj) ||
-			   PyFloat_Check(obj)) {
+	} else if (PyBool_Check(obj) || PyLong_Check(obj) || PyFloat_Check(obj)) {
 #ifdef HAVE_HGE
 		hge h;
 		pyobject_to_hge(&obj, 0, &h);
@@ -189,6 +262,61 @@ wrapup:
 			return GDKstrdup("Error converting string.");                      \
 		return MAL_SUCCEED;                                                    \
 	}
+
+str str_to_date(const char *ptr, size_t maxsize, date *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of string to date is not allowed.");
+}
+
+str unicode_to_date(Py_UNICODE *ptr, size_t maxsize, date *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of string to date is not allowed.");
+}
+
+str str_to_daytime(const char *ptr, size_t maxsize, daytime *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of string to daytime is not allowed.");
+}
+
+str unicode_to_daytime(Py_UNICODE *ptr, size_t maxsize, daytime *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of string to daytime is not allowed.");
+}
+
+str str_to_timestamp(const char *ptr, size_t maxsize, timestamp *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of string to timestamp is not allowed.");
+}
+
+str unicode_to_timestamp(Py_UNICODE *ptr, size_t maxsize, timestamp *value)
+{
+	(void)ptr;
+	(void)maxsize;
+	(void)value;
+
+	return GDKstrdup("Implicit conversion of string to timestamp is not allowed.");
+}
+
 
 #define PY_TO_(type, inttpe)						\
 str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\

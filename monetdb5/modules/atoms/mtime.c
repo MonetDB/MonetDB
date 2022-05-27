@@ -29,11 +29,9 @@
  */
 
 #include "monetdb_config.h"
-#include "gdk.h"
-#include "gdk_time.h"
+#include "mtime.h"
 #include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_exception.h"
+
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
@@ -115,8 +113,8 @@ bailout: \
 #define CLEAR_NOTHING(RES)
 
 
-#define COPYFLAGS	do { bn->tsorted = b1->tsorted; bn->trevsorted = b1->trevsorted; } while (0)
-#define SETFLAGS	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
+#define COPYFLAGS(n)	do { bn->tsorted = b1i.sorted; bn->trevsorted = b1i.revsorted; } while (0)
+#define SETFLAGS(n)	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
 #define func1(NAME, MALFUNC, INTYPE, OUTTYPE,							\
 			  FUNC, SETFLAGS, FUNC_CALL,								\
 			  DEC_SRC, DEC_OUTPUT,										\
@@ -135,7 +133,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
 	str msg = MAL_SUCCEED; 												\
 	BAT *b1 = NULL, *s = NULL, *bn = NULL;								\
-	BUN n;																\
 	struct canditer ci = {0};											\
 	oid off;															\
 	bool nils = false;													\
@@ -160,8 +157,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	off = b1->hseqbase;													\
-	n = canditer_init(&ci, b1, s);										\
-	if ((bn = COLnew(ci.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	canditer_init(&ci, b1, s);											\
+	if ((bn = COLnew(ci.hseq, TYPE_##OUTTYPE, ci.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -169,22 +166,22 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_SRC(1);														\
 	INIT_OUTPUT(n);														\
 	if (ci.tpe == cand_dense) {											\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci.ncand; i++) {							\
 			oid p = (canditer_next_dense(&ci) - off);					\
 			FUNC_CALL(FUNC, ptrn[i], GET_NEXT_SRC(1, p));				\
 			nils |= is_##OUTTYPE##_nil(ptrn[i]);						\
 		}																\
 	} else {															\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci.ncand; i++) {							\
 			oid p = (canditer_next(&ci) - off);							\
 			FUNC_CALL(FUNC, ptrn[i], GET_NEXT_SRC(1, p));				\
 			nils |= is_##OUTTYPE##_nil(ptrn[i]);						\
 		}																\
 	}																	\
-	BATsetcount(bn, n);													\
+	BATsetcount(bn, ci.ncand);											\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	SETFLAGS;															\
+	SETFLAGS(ci.ncand);													\
 	bn->tkey = false;													\
 bailout: 																\
 	if (b1) {															\
@@ -196,8 +193,10 @@ bailout: 																\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
-		else															\
-			BBPkeepref(*ret = bn->batCacheid);							\
+		else {															\
+			*ret = bn->batCacheid;										\
+			BBPkeepref(bn);												\
+		}																\
 	}																	\
 	return msg;															\
 }
@@ -228,7 +227,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
 	str msg = MAL_SUCCEED; 												\
 	BAT *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *bn = NULL;		\
-	BUN n;																\
 	oid off1, off2; 													\
 	struct canditer ci1 = {0}, ci2 = {0}; 								\
 	bool nils = false; 													\
@@ -264,13 +262,14 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	n = canditer_init(&ci1, b1, s1);									\
-	if (canditer_init(&ci2, b2, s2) != n || ci1.hseq != ci2.hseq) {		\
+	canditer_init(&ci1, b1, s1);										\
+	canditer_init(&ci2, b2, s2);										\
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {				\
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  "inputs not the same size");								\
 		goto bailout;													\
 	}																	\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -281,7 +280,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_SRC2(2);														\
 	INIT_OUTPUT(n);														\
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {				\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next_dense(&ci1) - off1);				\
 			oid p2 = (canditer_next_dense(&ci2) - off2);				\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2)); \
@@ -289,7 +288,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next(&ci1) - off1);						\
 			oid p2 = (canditer_next(&ci2) - off2);						\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2)); \
@@ -297,11 +296,11 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
-	BATsetcount(bn, n);													\
+	BATsetcount(bn, ci1.ncand);											\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	bn->tsorted = n < 2;												\
-	bn->trevsorted = n < 2;												\
+	bn->tsorted = ci1.ncand < 2;										\
+	bn->trevsorted = ci1.ncand < 2;										\
 	bn->tkey = false;													\
 bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
@@ -318,8 +317,10 @@ bailout: 																\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
-		else															\
-			BBPkeepref(*ret = bn->batCacheid);							\
+		else {															\
+			*ret = bn->batCacheid;										\
+			BBPkeepref(bn);												\
+		}																\
 	}																	\
 	return msg;															\
 }																		\
@@ -328,7 +329,6 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
 	str msg = MAL_SUCCEED; 												\
 	BAT *b2 = NULL, *s2 = NULL, *bn = NULL;								\
-	BUN n;																\
 	oid off2; 															\
 	struct canditer ci2 = {0}; 											\
 	bool nils = false; 													\
@@ -349,13 +349,13 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	b2i = bat_iterator(b2);												\
-	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) {\
+	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	n = canditer_init(&ci2, b2, s2);									\
-	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	canditer_init(&ci2, b2, s2);										\
+	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE, ci2.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -364,25 +364,25 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_SRC2(2);														\
 	INIT_OUTPUT(n);														\
 	if (ci2.tpe == cand_dense) {										\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci2.ncand; i++) {							\
 			oid p2 = (canditer_next_dense(&ci2) - off2);				\
 			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(2, p2));			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci2.ncand; i++) {							\
 			oid p2 = (canditer_next(&ci2) - off2);						\
 			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(2, p2));			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
-	BATsetcount(bn, n);													\
+	BATsetcount(bn, ci2.ncand);											\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	bn->tsorted = n < 2;												\
-	bn->trevsorted = n < 2;												\
+	bn->tsorted = ci2.ncand < 2;										\
+	bn->trevsorted = ci2.ncand < 2;										\
 	bn->tkey = false;													\
 bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
@@ -395,8 +395,10 @@ bailout: 																\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
-		else															\
-			BBPkeepref(*ret = bn->batCacheid);							\
+		else {															\
+			*ret = bn->batCacheid;										\
+			BBPkeepref(bn);												\
+		}																\
 	}																	\
 	return msg;															\
 }																		\
@@ -405,7 +407,6 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
 	str msg = MAL_SUCCEED; 												\
 	BAT *b1 = NULL, *s1 = NULL, *bn = NULL;								\
-	BUN n;																\
 	oid off1; 															\
 	struct canditer ci1 = {0};											\
 	bool nils = false; 													\
@@ -431,8 +432,8 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	n = canditer_init(&ci1, b1, s1);									\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	canditer_init(&ci1, b1, s1);										\
+	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -441,25 +442,25 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_SRC1(1);														\
 	INIT_OUTPUT(n);														\
 	if (ci1.tpe == cand_dense) {										\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next_dense(&ci1) - off1);				\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), src2);			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
-		for (BUN i = 0; i < n; i++) { 									\
+		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next(&ci1) - off1);						\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), src2);			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
-	BATsetcount(bn, n);													\
+	BATsetcount(bn, ci1.ncand);											\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	bn->tsorted = n < 2;												\
-	bn->trevsorted = n < 2;												\
+	bn->tsorted = ci1.ncand < 2;										\
+	bn->trevsorted = ci1.ncand < 2;										\
 	bn->tkey = false;													\
 bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
@@ -472,22 +473,17 @@ bailout: 																\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
-		else															\
-			BBPkeepref(*ret = bn->batCacheid);							\
+		else {															\
+			*ret = bn->batCacheid;										\
+			BBPkeepref(bn);												\
+		}																\
 	}																	\
 	return msg;															\
-}																		\
+}
 
 #define func2_noexcept(FUNC, RET, PARAM1, PARAM2) RET = FUNC(PARAM1, PARAM2)
 #define func2_except(FUNC, RET, PARAM1, PARAM2) msg = FUNC(&RET, PARAM1, PARAM2); if (msg) break
 
-/* TODO change dayint again into an int instead of lng */
-static inline lng
-date_diff_imp(const date d1, const date d2)
-{
-	int diff = date_diff(d1, d2);
-	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) (24*60*60*1000);
-}
 func2(MTIMEdate_diff, "diff",
 	  date, date, lng, date_diff_imp, func2_noexcept,
 	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
@@ -501,28 +497,6 @@ func2(MTIMEdaytime_diff_msec, "diff",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-date_sub_msec_interval(date *ret, date d, lng ms)
-{
-	if (is_date_nil(d) || is_lng_nil(ms)) {
-		*ret = date_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (-ms / (24*60*60*1000))))))
-		throw(MAL, "mtime.date_sub_msec_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
-static inline str
-date_add_msec_interval(date *ret, date d, lng ms)
-{
-	if (is_date_nil(d) || is_lng_nil(ms)) {
-		*ret = date_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (ms / (24*60*60*1000))))))
-		throw(MAL, "mtime.date_add_msec_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
 func2(MTIMEdate_sub_msec_interval, "date_sub_msec_interval",
 	  date, lng, date, date_sub_msec_interval, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -536,28 +510,6 @@ func2(MTIMEdate_add_msec_interval, "date_add_msec_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-timestamp_sub_msec_interval(timestamp *ret, timestamp ts, lng ms)
-{
-	if (is_timestamp_nil(ts) || is_lng_nil(ms)) {
-		*ret = timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, -ms * 1000))))
-		throw(MAL, "mtime.timestamp_sub_msec_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
-static inline str
-timestamp_add_msec_interval(timestamp *ret, timestamp ts, lng ms)
-{
-	if (is_timestamp_nil(ts) || is_lng_nil(ms)) {
-		*ret = timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
-		throw(MAL, "mtime.timestamp_add_msec_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
 func2(MTIMEtimestamp_sub_msec_interval, "timestamp_sub_msec_interval",
 	  timestamp, lng, timestamp, timestamp_sub_msec_interval, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -571,28 +523,6 @@ func2(MTIMEtimestamp_add_msec_interval, "timestamp_add_msec_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-timestamp_sub_month_interval(timestamp *ret, timestamp ts, int m)
-{
-	if (is_timestamp_nil(ts) || is_int_nil(m)) {
-		*ret = timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_timestamp_nil((*ret = timestamp_add_month(ts, -m))))
-		throw(MAL, "mtime.timestamp_sub_month_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
-static inline str
-timestamp_add_month_interval(timestamp *ret, timestamp ts, int m)
-{
-	if (is_timestamp_nil(ts) || is_int_nil(m)) {
-		*ret = timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_timestamp_nil((*ret = timestamp_add_month(ts, m))))
-		throw(MAL, "mtime.timestamp_add_month_interval", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
 func2(MTIMEtimestamp_sub_month_interval, "timestamp_sub_month_interval",
 	  timestamp, int, timestamp, timestamp_sub_month_interval, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -606,20 +536,6 @@ func2(MTIMEtimestamp_add_month_interval, "timestamp_add_month_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline daytime
-time_sub_msec_interval(const daytime t, const lng ms)
-{
-	if (is_lng_nil(ms))
-		return daytime_nil;
-	return daytime_add_usec_modulo(t, -ms * 1000);
-}
-static inline daytime
-time_add_msec_interval(const daytime t, const lng ms)
-{
-	if (is_lng_nil(ms))
-		return daytime_nil;
-	return daytime_add_usec_modulo(t, ms * 1000);
-}
 func2(MTIMEtime_sub_msec_interval, "time_sub_msec_interval",
 	  daytime, lng, daytime, time_sub_msec_interval, func2_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -633,28 +549,6 @@ func2(MTIMEtime_add_msec_interval, "time_add_msec_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-date_submonths(date *ret, date d, int m)
-{
-	if (is_date_nil(d) || is_int_nil(m)) {
-		*ret = date_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_date_nil((*ret = date_add_month(d, -m))))
-		throw(MAL, "mtime.date_submonths", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
-static inline str
-date_addmonths(date *ret, date d, int m)
-{
-	if (is_date_nil(d) || is_int_nil(m)) {
-		*ret = date_nil;
-		return MAL_SUCCEED;
-	}
-	if (is_date_nil((*ret = date_add_month(d, m))))
-		throw(MAL, "mtime.date_addmonths", SQLSTATE(22003) "overflow in calculation");
-	return MAL_SUCCEED;
-}
 func2(MTIMEdate_submonths, "date_submonths",
 	  date, int, date, date_submonths, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -668,8 +562,6 @@ func2(MTIMEdate_addmonths, "date_addmonths",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-#define date_to_msec_since_epoch(t) is_date_nil(t) ? lng_nil : (timestamp_diff(timestamp_create(t, daytime_create(0, 0, 0, 0)), unixepoch) / 1000)
-#define daytime_to_msec_since_epoch(t) daytime_diff(t, daytime_create(0, 0, 0, 0))
 func1(MTIMEdate_extract_century, "date_century", date, int,
 	  date_century, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
@@ -731,22 +623,6 @@ func1(MTIMEdaytime_extract_epoch_ms, "epoch_ms", daytime, lng,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
-static inline lng
-TSDIFF(timestamp t1, timestamp t2)
-{
-	lng diff = timestamp_diff(t1, t2);
-	if (!is_lng_nil(diff)) {
-#ifndef TRUNCATE_NUMBERS
-		if (diff < 0)
-			diff = -((-diff + 500) / 1000);
-		else
-			diff = (diff + 500) / 1000;
-#else
-		diff /= 1000;
-#endif
-	}
-	return diff;
-}
 func2(MTIMEtimestamp_diff_msec, "diff",
 	  timestamp, timestamp, lng, TSDIFF, func2_noexcept,
 	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
@@ -754,26 +630,6 @@ func2(MTIMEtimestamp_diff_msec, "diff",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline int
-timestamp_century(const timestamp t)
-{
-	if (is_timestamp_nil(t))
-		return int_nil;
-	int y = date_year(timestamp_date(t));
-	if (y > 0)
-		return (y - 1) / 100 + 1;
-	else
-		return -((-y - 1) / 100 + 1);
-}
-#define timestamp_decade(t) is_timestamp_nil(t) ? int_nil : date_year(timestamp_date(t)) / 10
-#define timestamp_year(t) date_year(timestamp_date(t))
-#define timestamp_quarter(t) is_timestamp_nil(t) ? int_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1
-#define timestamp_month(t) date_month(timestamp_date(t))
-#define timestamp_day(t) date_day(timestamp_date(t))
-#define timestamp_hours(t) daytime_hour(timestamp_daytime(t))
-#define timestamp_minutes(t) daytime_min(timestamp_daytime(t))
-#define timestamp_extract_usecond(ts)	daytime_sec_usec(timestamp_daytime(ts))
-#define timestamp_to_msec_since_epoch(t) is_timestamp_nil(t) ? lng_nil : (timestamp_diff(t, unixepoch) / 1000)
 func1(MTIMEtimestamp_century, "timestamp_century", timestamp, int,
 	  timestamp_century, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
@@ -815,13 +671,6 @@ func1(MTIMEtimestamp_extract_epoch_ms, "epoch_ms", timestamp, lng,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
-#define sql_year(m) is_int_nil(m) ? int_nil : m / 12
-#define sql_month(m) is_int_nil(m) ? int_nil : m % 12
-#define sql_day(m) is_lng_nil(m) ? lng_nil : m / (24*60*60*1000)
-#define sql_hours(m) is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000))
-#define sql_minutes(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000))
-#define sql_seconds(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*1000)) / 1000)
-#define msec_since_epoch(ts)	ts
 func1(MTIMEsql_year, "sql_year", int, int,
 	  sql_year, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
@@ -854,8 +703,11 @@ func1(MTIMEmsec_extract_epoch_ms, "msepoch", lng, lng,
 static inline str
 date_fromstr_func(date *ret, str s)
 {
-	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, false) < 0)
-		throw(MAL, "mtime.date_fromstr", GDK_EXCEPTION);
+	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, false) < 0) {
+		if (strNil(s))
+			throw(MAL, "mtime.date_fromstr", SQLSTATE(42000) "Conversion of NULL string to date failed");
+		throw(MAL, "mtime.date_fromstr", SQLSTATE(22007) "Conversion of string '%s' to date failed", s);
+	}
 	return MAL_SUCCEED;
 }
 func1(MTIMEdate_fromstr, "date_fromstr", str, date,

@@ -109,7 +109,6 @@
 #cmakedefine HAVE_SYS_WAIT_H 1
 #cmakedefine HAVE_TERMIOS_H 1
 #cmakedefine HAVE_UNISTD_H 1
-#cmakedefine HAVE_UUID_UUID_H 1
 #cmakedefine HAVE_WINSOCK_H 1
 #cmakedefine HAVE_SEMAPHORE_H 1
 #cmakedefine HAVE_GETOPT_H 1
@@ -190,7 +189,6 @@
 #cmakedefine HAVE_PROJ 1
 #cmakedefine HAVE_SNAPPY 1
 #cmakedefine HAVE_FITS 1
-#cmakedefine HAVE_UUID 1
 #cmakedefine HAVE_VALGRIND 1
 #cmakedefine HAVE_NETCDF 1
 #cmakedefine HAVE_READLINE 1
@@ -269,15 +267,25 @@
 #define MONETDB5_PASSWDHASH_TOKEN @PASSWORD_BACKEND@
 
 #ifndef _Noreturn
+#ifdef __cplusplus
+#define _Noreturn
+#else
 #cmakedefine _Noreturn @_Noreturn@
 #endif
-#ifndef __cplusplus
+#endif
 /* Does your compiler support `inline' keyword? (C99 feature) */
 #ifndef inline
+#ifdef __cplusplus
+#define inline
+#else
 #cmakedefine inline @inline@
+#endif
 #endif
 /* Does your compiler support `restrict' keyword? (C99 feature) */
 #ifndef restrict
+#ifdef __cplusplus
+#define restrict
+#else
 #cmakedefine restrict @restrict@
 #endif
 #endif
@@ -326,16 +334,21 @@
 /* The size of `__uint128_t', as computed by sizeof. */
 #cmakedefine SIZEOF___UINT128_T @SIZEOF___UINT128_T@
 
-#ifdef SIZEOF___INT128
+#cmakedefine HAVE___INT128 1
+#cmakedefine HAVE___INT128_T 1
+#cmakedefine HAVE___UINT128_T 1
+#cmakedefine HAVE_HGE 1
+
+#ifdef HAVE_HGE
+#ifdef HAVE___INT128
 typedef __int128 hge;
 typedef unsigned __int128 uhge;
-#define HAVE_HGE 1
 #define SIZEOF_HGE SIZEOF___INT128
-#elif defined(SIZEOF___INT128_T) && defined(SIZEOF___UINT128_T)
+#elif defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t hge;
 typedef __uint128_t uhge;
-#define HAVE_HGE 1
 #define SIZEOF_HGE SIZEOF___INT128_T
+#endif
 #endif
 
 // End Section: monetdb configure sizes

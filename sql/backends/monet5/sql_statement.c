@@ -1381,7 +1381,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		// push pointer to the SQL structure into the MAL call
 		// allows getting argument names for example
 		if (LANG_EXT(f->func->lang))
-			q = pushPtr(mb, q, f); // nothing to see here, please move along
+			q = pushPtr(mb, q, f->func); // nothing to see here, please move along
 		// f->query contains the R code to be run
 		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
 			q = pushStr(mb, q, f->func->query);
@@ -1454,13 +1454,16 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		const char *mod = calcRef;
 		const char *op = "=";
 		int k;
+		int notin = 0;
 
 		switch (cmptype) {
 		case mark_in:
-		case mark_notin:
 		case cmp_equal:
 			op = "=";
 			break;
+		case mark_notin:
+			notin = 1;
+			/* fall through */
 		case cmp_notequal:
 			op = "!=";
 			break;
@@ -1497,6 +1500,14 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		if (is_semantics)
 			q = pushBit(mb, q, TRUE);
 		k = getDestVar(q);
+
+		if (notin) {
+			q = newStmt(mb, batcalcRef, ifthenelseRef);
+			q = pushArgument(mb, q, k);
+			q = pushBit(mb, q, FALSE);
+			q = pushBit(mb, q, TRUE);
+			k = getDestVar(q);
+		}
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
@@ -3001,57 +3012,32 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	return NULL;
 }
 
-stmt *
-stmt_dependency_change(backend *be, sql_table *t, stmt *cnt)
+void
+stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
 	if (!t || cnt->nr < 0)
-		return NULL;
-	q = newStmtArgs(mb, sqlRef, putName("depend"), 3);
+		return ;
+	q = newStmtArgs(mb, sqlRef, dependRef, 4);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
 	q = pushArgument(mb, q, cnt->nr);
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_depend);
-		if(!s) {
-			freeInstruction(q);
-			return NULL;
-		}
-		s->op1 = cnt;
-		s->op4.tval = t;
-		s->nr = getDestVar(q);
-		s->q = q;
-		return s;
-	}
-	return NULL;
 }
 
-stmt *
-stmt_column_predicate(backend *be, sql_column *c)
+void
+stmt_add_column_predicate(backend *be, sql_column *c)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
 	if (!c)
-		return NULL;
-	q = newStmtArgs(mb, sqlRef, putName("predicate"), 3);
+		return ;
+	q = newStmtArgs(mb, sqlRef, predicateRef, 4);
 	q = pushSchema(mb, q, c->t);
 	q = pushStr(mb, q, c->t->base.name);
 	q = pushStr(mb, q, c->base.name);
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_predicate);
-		if(!s) {
-			freeInstruction(q);
-			return NULL;
-		}
-		s->op4.cval = c;
-		s->nr = getDestVar(q);
-		s->q = q;
-		return s;
-	}
-	return NULL;
 }
 
 stmt *
@@ -3369,6 +3355,8 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 	return r;
 }
 
+#define LANG_INT_OR_MAL(l)  ((l)==FUNC_LANG_INT || (l)==FUNC_LANG_MAL)
+
 stmt *
 stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 {
@@ -3411,7 +3399,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = pushArgument(mb, q, e2->nr);
 			int nr = getDestVar(q);
 
-			q = newStmt(mb, mod, "ifthenelse");
+			q = newStmt(mb, mod, ifthenelseRef);
 			q = pushArgument(mb, q, nr);
 			q = pushNil(mb, q, tt);
 			q = pushArgument(mb, q, e1->nr);
@@ -3426,26 +3414,20 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 			default_nargs++;
 		}
 
 		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
 
-			if (strcmp(fimp, "rotate_xor_hash") == 0 && strcmp(mod, calcRef) == 0) {
-				q = newStmt(mb, mkeyRef, bulk_rotate_xor_hashRef);
-				if (q == NULL)
-					return NULL;
-			} else {
-				q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
-				if (q == NULL)
-					return NULL;
-				if (rows)
-					q = pushArgument(mb, q, card->nr);
-				q = pushStr(mb, q, mod);
-				q = pushStr(mb, q, fimp);
-			}
+			q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
+			if (q == NULL)
+				return NULL;
+			if (rows)
+				q = pushArgument(mb, q, card->nr);
+			q = pushStr(mb, q, mod);
+			q = pushStr(mb, q, fimp);
 			setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 		} else {
 			q = newStmtArgs(mb, mod, fimp, default_nargs);
@@ -3460,8 +3442,15 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 				setVarType(mb, getArg(q, 0), res->type->localtype);
 			}
 		}
-		if (LANG_EXT(f->func->lang))
-			q = pushPtr(mb, q, f);
+		if (LANG_EXT(f->func->lang)) {
+			/* TODO LOADER functions still use information in sql_subfunc struct
+			   that won't be visible to other sessions if another function uses them.
+			   It has to be cleaned up */
+			if (f->func->type == F_LOADER)
+				q = pushPtr(mb, q, f);
+			else
+				q = pushPtr(mb, q, f->func);
+		}
 		if (f->func->lang == FUNC_LANG_C) {
 			q = pushBit(mb, q, 0);
 		} else if (f->func->lang == FUNC_LANG_CPP) {
@@ -3496,7 +3485,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			}
 		}
 		/* special case for round function on decimals */
-		if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
+		if (LANG_INT_OR_MAL(f->func->lang) && strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
 			q = pushInt(mb, q, tpe->digits);
 			q = pushInt(mb, q, tpe->scale);
 		}
@@ -3561,7 +3550,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		rel->p = prop_remove(rel->p, p);
 	/* sql_processrelation may split projections, so make sure the topmost relation only contains references */
 	rel = rel_project(be->mvc->sa, rel, rel_projections(be->mvc, rel, NULL, 1, 1));
-	if (!(rel = sql_processrelation(be->mvc, rel, 0, 1, 1)))
+	if (!(rel = sql_processrelation(be->mvc, rel, 0, 0, 1, 1)))
 		return NULL;
 	if (p) {
 		p->p = rel->p;
@@ -3633,7 +3622,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
 	bool complex_aggr = false;
-	bool abort_on_error;
 	int *stmt_nr = NULL;
 	int avg = 0;
 
@@ -3644,16 +3632,15 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	mod = sql_func_mod(op->func);
 	aggrfunc = backend_function_imp(be, op->func);
 
-	if (strcmp(aggrfunc, "avg") == 0)
-		avg = 1;
-	if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
-		|| strcmp(aggrfunc, "str_group_concat") == 0)
-		complex_aggr = true;
-	if (restype == TYPE_dbl)
-		avg = 0;
-	/* some "sub" aggregates have an extra argument "abort_on_error" */
-	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
-					strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
+	if (LANG_INT_OR_MAL(op->func->lang)) {
+		if (strcmp(aggrfunc, "avg") == 0)
+			avg = 1;
+		if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
+			|| strcmp(aggrfunc, "str_group_concat") == 0)
+			complex_aggr = true;
+		if (restype == TYPE_dbl)
+			avg = 0;
+	}
 
 	int argc = 1
 		+ 2 * avg
@@ -3728,18 +3715,16 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	if (grp) {
 		q = pushArgument(mb, q, grp->nr);
 		q = pushArgument(mb, q, ext->nr);
-		if (avg) /* push nil candidates */
-			q = pushNil(mb, q, TYPE_bat);
-		if (q == NULL)
-			return NULL;
+		if (LANG_INT_OR_MAL(op->func->lang)) {
+			if (avg) /* push nil candidates */
+				q = pushNil(mb, q, TYPE_bat);
+			q = pushBit(mb, q, no_nil);
+		}
+	} else if (LANG_INT_OR_MAL(op->func->lang) && no_nil && strncmp(aggrfunc, "count", 5) == 0) {
 		q = pushBit(mb, q, no_nil);
-		if (!avg && abort_on_error)
-			q = pushBit(mb, q, TRUE);
-	} else if (no_nil && strncmp(aggrfunc, "count", 5) == 0) {
-		q = pushBit(mb, q, no_nil);
-	} else if (!nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
+	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
-	} else if (avg) { /* push candidates */
+	} else if (LANG_INT_OR_MAL(op->func->lang) && avg) { /* push candidates */
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, no_nil);
 	}
@@ -4075,9 +4060,9 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		return NULL;
 	if (anti) {
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
-		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC);
-		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC);
+		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
+		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true);
+		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true);
 		cond = stmt_binop(be,
 			stmt_unop(be, cond, NULL, not),
 			stmt_unop(be, cond, NULL, isnull), NULL, or);

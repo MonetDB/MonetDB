@@ -52,7 +52,6 @@ typedef struct expression {
 	 nulls_last:1,	/* return null after all other rows */
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
 	 distinct:1,
-	 argument_independence:1, /* for a function expression, the arguments are independent of the inner project relation. */
 
 	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
 	 need_no_nil:1,
@@ -75,7 +74,6 @@ typedef struct expression {
 
 /* or-ed with the above TABLE_PROD_FUNC */
 #define UPD_COMP		2
-#define UPD_NO_CONSTRAINT	4
 
 #define LEFT_JOIN		4
 #define REL_PARTITION		8
@@ -279,6 +277,13 @@ typedef struct relation {
 	void *l;
 	void *r;
 	list *exps;
+	list *attr; /* attributes: mark-joins return extra attributes */
+				/* later put all 'projection' attributes in here, ie for set ops, project/group/table/basetable by
+				 * select/ (semi/anti/left/outer/right)join will use exps for predicates
+				 * groupby will use exps for group by exps
+				 * project can use exps for the order by bits
+				 * topn/sample use exps for the input arguments of the limit/sample
+				 */
 	int nrcols;	/* nr of cols */
 	unsigned int
 	 flag:16,
@@ -288,14 +293,12 @@ typedef struct relation {
 	 processed:1,   /* fully processed or still in the process of building */
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
-	 single:1,
+	 single:1;
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
-	 * All bits are used by rel_unnest modifiers and always reset after.
-	 * The first bit is also used by rel_dce and rel_merge_select_rse optimizers.
-	 * The third bit is used by rel_remote_func only and it's not reset.
+	 * The list is kept at rel_optimizer_private.h Please update it accordingly
 	 */
-	 used:3;
+	uint8_t used;
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

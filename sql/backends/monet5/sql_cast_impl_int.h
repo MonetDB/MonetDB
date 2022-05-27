@@ -6,25 +6,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
-/* ! ENSURE THAT THESE LOCAL MACROS ARE UNDEFINED AT THE END OF THIS FILE ! */
-
-/* stringify token */
-#define _STRNG_(s) #s
-#define STRNG(t) _STRNG_(t)
-
-/* concatenate two, three or four tokens */
-#define CONCAT_2(a,b)		a##b
-#define CONCAT_3(a,b,c)		a##b##c
-#define CONCAT_4(a,b,c,d)	a##b##c##d
-
-#define NIL(t)				CONCAT_2(t,_nil)
-#define ISNIL(t)			CONCAT_3(is_,t,_nil)
-#define TPE(t)				CONCAT_2(TYPE_,t)
-#define GDKmin(t)			CONCAT_3(GDK_,t,_min)
-#define GDKmax(t)			CONCAT_3(GDK_,t,_max)
-#define FUN(a,b,c,d)		CONCAT_4(a,b,c,d)
-#define IS_NUMERIC(t)		CONCAT_2(t,_is_numeric)
-
 static inline str
 FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 {
@@ -32,7 +13,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 
 	VALset(&v1, TPE(TP1), &val);
 	v2.vtype = TPE(TP2);
-	if (VARconvert(&v2, &v1, true, s1, s2, p) != GDK_SUCCEED)
+	if (VARconvert(&v2, &v1, s1, s2, p) != GDK_SUCCEED)
 		throw(SQL, STRNG(FUN(,TP1,_2_,TP2)), GDK_EXCEPTION);
 	*res = *(TP2 *) VALptr(&v2);
 	return MAL_SUCCEED;
@@ -71,13 +52,14 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *sid
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TPE(TP2), true, *s1, 0, 0);
+	bn = BATconvert(b, s, TPE(TP2), *s1, 0, 0);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), GDK_EXCEPTION);
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -93,14 +75,15 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const bat *
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TPE(TP2), true, *S1, *S2, *d2);
+	bn = BATconvert(b, s, TPE(TP2), *S1, *S2, *d2);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), GDK_EXCEPTION);
 
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 #endif
@@ -117,25 +100,13 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const bat *sid, const int 
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TPE(TP2), true, 0, *s2, *d2);
+	bn = BATconvert(b, s, TPE(TP2), 0, *s2, *d2);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), GDK_EXCEPTION);
-	BBPkeepref(*res = bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
-
-/* undo local defines */
-#undef FUN
-#undef NIL
-#undef ISNIL
-#undef TPE
-#undef GDKmin
-#undef GDKmax
-#undef CONCAT_2
-#undef CONCAT_3
-#undef CONCAT_4
-#undef STRNG
-#undef _STRNG_

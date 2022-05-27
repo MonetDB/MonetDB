@@ -10,7 +10,6 @@
 #include "sql_atom.h"
 #include "sql_string.h"
 #include "sql_decimal.h"
-#include "blob.h"
 #include "gdk_time.h"
 
 void
@@ -339,7 +338,7 @@ atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 		a->data.len = ATOMlen(a->data.vtype, v);
 		a->data.val.pval = sa_alloc(sa, a->data.len);
 		memcpy(a->data.val.pval, v, a->data.len);
-	} 
+	}
 	a->isnull = VALisnil(&a->data);
 	return a;
 }
@@ -434,7 +433,7 @@ atom2sql(sql_allocator *sa, atom *a, int timezone)
 
 		if ((res = SA_NEW_ARRAY(sa, char, blobstr_size + 8))) {
 			char *tail = stpcpy(res, "blob '");
-			ssize_t blobstr_offset = BLOBtostr(&tail, &blobstr_size, b, true);
+			ssize_t blobstr_offset = BATatoms[TYPE_blob].atomToStr(&tail, &blobstr_size, b, true);
 			strcpy(res + blobstr_offset + 6, "'");
 		}
 		return res;
@@ -723,653 +722,26 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			na->data.vtype = tp->type->localtype;
 			return na;
 		}
-		if (at->type->eclass == EC_NUM && tp->type->eclass == EC_NUM) {
-			if (at->type->localtype <= tp->type->localtype) { /* cast to a larger numeric */
-				switch (tp->type->localtype) {
-				case TYPE_bte:
-					if (at->type->localtype != TYPE_bte)
-						return NULL;
-					break;
-				case TYPE_sht:
-					if (at->type->localtype == TYPE_bte) {
-						na = atom_create(sa);
-						na->data.val.shval = a->data.val.btval;
-					} else if (at->type->localtype != TYPE_sht)
-						return NULL;
-					break;
-				case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-				case TYPE_oid:
-#endif
-					if (at->type->localtype == TYPE_bte) {
-						na = atom_create(sa);
-						na->data.val.ival = a->data.val.btval;
-					} else if (at->type->localtype == TYPE_sht) {
-						na = atom_create(sa);
-						na->data.val.ival = a->data.val.shval;
-					} else if (at->type->localtype != TYPE_int)
-						return NULL;
-					break;
-				case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-				case TYPE_oid:
-#endif
-					if (at->type->localtype == TYPE_bte) {
-						na = atom_create(sa);
-						na->data.val.lval = a->data.val.btval;
-					} else if (at->type->localtype == TYPE_sht) {
-						na = atom_create(sa);
-						na->data.val.lval = a->data.val.shval;
-					} else if (at->type->localtype == TYPE_int) {
-						na = atom_create(sa);
-						na->data.val.lval = a->data.val.ival;
-					} else if (at->type->localtype != TYPE_lng)
-						return NULL;
-					break;
-#ifdef HAVE_HGE
-				case TYPE_hge:
-					if (at->type->localtype == TYPE_bte) {
-						na = atom_create(sa);
-						na->data.val.hval = a->data.val.btval;
-					} else if (at->type->localtype == TYPE_sht) {
-						na = atom_create(sa);
-						na->data.val.hval = a->data.val.shval;
-					} else if (at->type->localtype == TYPE_int) {
-						na = atom_create(sa);
-						na->data.val.hval = a->data.val.ival;
-					} else if (at->type->localtype == TYPE_lng) {
-						na = atom_create(sa);
-						na->data.val.hval = a->data.val.lval;
-					} else if (at->type->localtype != TYPE_hge)
-						return NULL;
-					break;
-#endif
-				default:
-					return NULL;
-				}
-			} else { /* cast to a smaller numeric */
-				switch (tp->type->localtype) {
-#ifdef HAVE_HGE
-				case TYPE_bte:
-					if (a->data.val.hval > (hge) GDK_bte_max || a->data.val.hval <= (hge) GDK_bte_min)
-						return NULL;
-					na = atom_create(sa);
-					na->data.val.btval = (bte) a->data.val.hval;
-					break;
-				case TYPE_sht:
-					if (a->data.val.hval > (hge) GDK_sht_max || a->data.val.hval <= (hge) GDK_sht_min)
-						return NULL;
-					na = atom_create(sa);
-					na->data.val.shval = (sht) a->data.val.hval;
-					break;
-				case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-				case TYPE_oid:
-#endif
-					if (a->data.val.hval > (hge) GDK_int_max || a->data.val.hval <= (hge) GDK_int_min)
-						return NULL;
-					na = atom_create(sa);
-					na->data.val.ival = (int) a->data.val.hval;
-					break;
-				case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-				case TYPE_oid:
-#endif
-					if (a->data.val.hval > (hge) GDK_lng_max || a->data.val.hval <= (hge) GDK_lng_min)
-						return NULL;
-					na = atom_create(sa);
-					na->data.val.lval = (lng) a->data.val.hval;
-					break;
-#else
-				case TYPE_bte:
-					if (a->data.val.lval > (lng) GDK_bte_max || a->data.val.lval <= (lng) GDK_bte_min)
-						return NULL;
-					na = atom_create(sa);
-					na->data.val.btval = (bte) a->data.val.lval;
-					break;
-				case TYPE_sht:
-					if (a->data.val.lval > (lng) GDK_sht_max || a->data.val.lval <= (lng) GDK_sht_min)
-						return NULL;
-					na = atom_create(sa);
-					na->data.val.shval = (sht) a->data.val.lval;
-					break;
-				case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-				case TYPE_oid:
-#endif
-					if (a->data.val.lval > (lng) GDK_int_max || a->data.val.lval <= (lng) GDK_int_min)
-						return NULL;
-					na = atom_create(sa);
-					na->data.val.ival = (int) a->data.val.lval;
-					break;
-#endif
-				default:
-					return NULL;
-				}
-			}
-			if (!na) {
-				na = atom_create(sa);
-				SA_VALcopy(sa, &na->data, &a->data);
-			}
-			na->tpe = *tp;
-			na->data.vtype = tp->type->localtype;
-			return na;
-		}
-		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_DEC &&
-		    at->type->localtype <= tp->type->localtype &&
-		    at->digits <= tp->digits /* &&
-		    at->scale <= tp->scale*/) {
-#ifdef HAVE_HGE
-			hge mul = 1, div = 0, rnd = 0, hval = 0;
-#else
-			lng mul = 1, div = 0, rnd = 0;
-#endif
-			lng lval = 0;
-			int ival = 0;
-			sht shval = 0;
-			bte btval = 0;
-			/* cast numerics */
-			switch (tp->type->localtype) {
-			case TYPE_bte:
-				if (at->type->localtype != TYPE_bte)
-					return NULL;
-				btval = a->data.val.btval;
-				break;
-			case TYPE_sht:
-				if (at->type->localtype == TYPE_bte)
-					shval = (sht) a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht)
-					shval = a->data.val.shval;
-				else
-					return NULL;
-				break;
-			case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			case TYPE_oid:
-#endif
-				if (at->type->localtype == TYPE_bte)
-					ival = (int) a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht)
-					ival = (int) a->data.val.shval;
-				else if (at->type->localtype == TYPE_int)
-					ival = a->data.val.ival;
-				else
-					return NULL;
-				break;
-			case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			case TYPE_oid:
-#endif
-				if (at->type->localtype == TYPE_bte)
-					lval = (lng) a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht)
-					lval = (lng) a->data.val.shval;
-				else if (at->type->localtype == TYPE_int)
-					lval = (lng) a->data.val.ival;
-				else if (at->type->localtype == TYPE_lng)
-					lval = a->data.val.lval;
-				else
-					return NULL;
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				if (at->type->localtype == TYPE_bte)
-					hval = (hge) a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht)
-					hval = (hge) a->data.val.shval;
-				else if (at->type->localtype == TYPE_int)
-					hval = (hge) a->data.val.ival;
-				else if (at->type->localtype == TYPE_lng)
-					hval = (hge) a->data.val.lval;
-				else if (at->type->localtype == TYPE_hge)
-					hval = a->data.val.hval;
-				else
-					return NULL;
-				break;
-#endif
-			default:
-				return NULL;
-			}
-			/* fix scale */
-			if (tp->scale >= at->scale) {
-				mul = scales[tp->scale-at->scale];
-			} else {
-				/* only round when going to a lower scale */
-				mul = scales[at->scale-tp->scale];
-#ifndef TRUNCATE_NUMBERS
-				rnd = mul>>1;
-#endif
-				div = 1;
-			}
-#ifdef HAVE_HGE
-			if (tp->type->localtype == TYPE_hge) {
-				if (div) {
-					if (hval < 0)
-						hval -= rnd;
-					else
-						hval += rnd;
-					hval /= mul;
-				} else
-					hval *= mul;
-			} else if (tp->type->localtype == TYPE_lng) {
-				if (!div && ((hge) GDK_lng_min > (hge) lval * mul || (hge) lval * mul > (hge) GDK_lng_max))
-					return NULL;
-				if (div) {
-					if (lval < 0)
-						lval -= (lng)rnd;
-					else
-						lval += (lng)rnd;
-					lval /= (lng) mul;
-				} else
-					lval *= (lng) mul;
-			} else if (tp->type->localtype == TYPE_int) {
-				if (!div && ((hge) GDK_int_min > (hge) ival * mul || (hge) ival * mul > (hge) GDK_int_max))
-					return NULL;
-				if (div) {
-					if (ival < 0)
-						ival -= (int)rnd;
-					else
-						ival += (int)rnd;
-					ival /= (int) mul;
-				} else
-					ival *= (int) mul;
-			} else if (tp->type->localtype == TYPE_sht) {
-				if (!div && ((hge) GDK_sht_min > (hge) shval * mul || (hge) shval * mul > (hge) GDK_sht_max))
-					return NULL;
-				if (div) {
-					if (shval < 0)
-						shval -= (sht)rnd;
-					else
-						shval += (sht)rnd;
-					shval /= (sht) mul;
-				} else
-					shval *= (sht) mul;
-			} else if (tp->type->localtype == TYPE_bte) {
-				if (!div && ((hge) GDK_bte_min > (hge) btval * mul || (hge) btval * mul > (hge) GDK_bte_max))
-					return NULL;
-				if (div) {
-					if (btval < 0)
-						btval -= (bte)rnd;
-					else
-						btval += (bte)rnd;
-					btval /= (bte) mul;
-				} else
-					btval *= (bte) mul;
-			}
-#else
-			if (tp->type->localtype == TYPE_lng) {
-				if (div) {
-					if (lval < 0)
-						lval -= rnd;
-					else
-						lval += rnd;
-					lval /= mul;
-				} else
-					lval *= mul;
-			} else if (tp->type->localtype == TYPE_int) {
-				if (!div && ((lng) GDK_int_min > (lng) ival * mul || (lng) ival * mul > (lng) GDK_int_max))
-					return 0;
-				if (div) {
-					if (ival < 0)
-						ival -= (int)rnd;
-					else
-						ival += (int)rnd;
-					ival /= (int) mul;
-				} else
-					ival *= (int) mul;
-			} else if (tp->type->localtype == TYPE_sht) {
-				if (!div && ((lng) GDK_sht_min > (lng) shval * mul || (lng) shval * mul > (lng) GDK_sht_max))
-					return 0;
-				if (div) {
-					if (shval < 0)
-						shval -= (sht)rnd;
-					else
-						shval += (sht)rnd;
-					shval /= (sht) mul;
-				} else
-					shval *= (sht) mul;
-			} else if (tp->type->localtype == TYPE_bte) {
-				if (!div && ((lng) GDK_bte_min > (lng) btval * mul || (lng) btval * mul > (lng) GDK_bte_max))
-					return 0;
-				if (div) {
-					if (btval < 0)
-						btval -= (bte)rnd;
-					else
-						btval += (bte)rnd;
-					btval /= (bte) mul;
-				} else
-					btval *= (bte) mul;
-			}
-#endif
-			na = atom_create(sa);
-			na->tpe = *tp;
-			na->data.vtype = tp->type->localtype;
-			switch (tp->type->localtype) {
-			case TYPE_bte:
-				na->data.val.btval = btval;
-				break;
-			case TYPE_sht:
-				na->data.val.shval = shval;
-				break;
-			case TYPE_int:
-				na->data.val.ival = ival;
-				break;
-			case TYPE_lng:
-				na->data.val.lval = lval;
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				na->data.val.hval = hval;
-				break;
-#endif
-			default:
-				return NULL;
-			}
-			return na;
-		}
-		/* truncating decimals */
-		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_DEC &&
-		    at->type->localtype >= tp->type->localtype &&
-		    at->digits >= tp->digits &&
-			(at->digits - tp->digits) == (at->scale - tp->scale)) {
-#ifdef HAVE_HGE
-			hge mul = 1, rnd = 0, val = 0;
-#else
-			lng mul = 1, rnd = 0, val = 0;
-#endif
-
-			/* fix scale */
-
-			/* only round when going to a lower scale */
-			mul = scales[at->scale-tp->scale];
-#ifndef TRUNCATE_NUMBERS
-			rnd = mul>>1;
-#endif
-
-#ifdef HAVE_HGE
-			if (a->data.vtype == TYPE_hge) {
-				val = a->data.val.hval;
-			} else
-#endif
-			if (a->data.vtype == TYPE_lng) {
-				val = a->data.val.lval;
-			} else if (a->data.vtype == TYPE_int) {
-				val = a->data.val.ival;
-			} else if (a->data.vtype == TYPE_sht) {
-				val = a->data.val.shval;
-			} else if (a->data.vtype == TYPE_bte) {
-				val = a->data.val.btval;
-			}
-
-			if (val < 0)
-				val -= rnd;
-			else
-				val += rnd;
-			val /= mul;
-
-#ifdef HAVE_HGE
-			if (tp->type->localtype == TYPE_hge) {
-				na = atom_create(sa);
-				na->data.val.hval = val;
-			} else if (tp->type->localtype == TYPE_lng) {
-				if ( ((hge) GDK_lng_min > val || val > (hge) GDK_lng_max))
-					return NULL;
-				na = atom_create(sa);
-				na->data.val.lval = (lng) val;
-			} else if (tp->type->localtype == TYPE_int) {
-				if ( ((hge) GDK_int_min > val || val > (hge) GDK_int_max))
-					return NULL;
-				na = atom_create(sa);
-				na->data.val.ival = (int) val;
-			} else if (tp->type->localtype == TYPE_sht) {
-				if ( ((hge) GDK_sht_min > val || val > (hge) GDK_sht_max))
-					return NULL;
-				na = atom_create(sa);
-				na->data.val.shval = (sht) val;
-			} else if (tp->type->localtype == TYPE_bte) {
-				if ( ((hge) GDK_bte_min > val || val > (hge) GDK_bte_max))
-					return NULL;
-				na = atom_create(sa);
-				na->data.val.btval = (bte) val;
-			}
-#else
-			if (tp->type->localtype == TYPE_lng) {
-				na = atom_create(sa);
-				na->data.val.lval = val;
-			} else if (tp->type->localtype == TYPE_int) {
-				if ( ((lng) GDK_int_min > val || val > (lng) GDK_int_max))
-					return NULL;
-				na = atom_create(sa);
-				na->data.val.ival = (int) val;
-			} else if (tp->type->localtype == TYPE_sht) {
-				if ( ((lng) GDK_sht_min > val || val > (lng) GDK_sht_max))
-					return NULL;
-				na = atom_create(sa);
-				na->data.val.shval = (sht) val;
-			} else if (tp->type->localtype == TYPE_bte) {
-				if ( ((lng) GDK_bte_min > val || val > (lng) GDK_bte_max))
-					return NULL;
-				na = atom_create(sa);
-				na->data.val.btval = (bte) val;
-			}
-#endif
-			if (!na) {
-				na = atom_create(sa);
-				SA_VALcopy(sa, &na->data, &a->data);
-			}
-			na->tpe = *tp;
-			na->data.vtype = tp->type->localtype;
-			return na;
-		}
-		if (at->type->eclass == EC_NUM && tp->type->eclass == EC_DEC &&
-		    at->type->localtype <= tp->type->localtype &&
-		    (at->digits <= tp->digits || atom_num_digits(a) <= tp->digits) &&
-		    at->scale <= tp->scale) {
-#ifdef HAVE_HGE
-			hge mul = 1, hval = 0;
-#else
-			lng mul = 1;
-#endif
-			lng lval = 0;
-			int ival = 0;
-			sht shval = 0;
-			bte btval = 0;
-			/* cast numerics */
-			switch (tp->type->localtype) {
-			case TYPE_bte:
-				if (at->type->localtype != TYPE_bte)
-					return NULL;
-				btval = a->data.val.btval;
-				break;
-			case TYPE_sht:
-				if (at->type->localtype == TYPE_bte)
-					shval = (sht) a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht)
-					shval = a->data.val.shval;
-				else
-					return NULL;
-				break;
-			case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			case TYPE_oid:
-#endif
-				if (at->type->localtype == TYPE_bte)
-					ival = (int) a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht)
-					ival = (int) a->data.val.shval;
-				else if (at->type->localtype == TYPE_int)
-					ival = a->data.val.ival;
-				else
-					return NULL;
-				break;
-			case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			case TYPE_oid:
-#endif
-				if (at->type->localtype == TYPE_bte)
-					lval = (lng) a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht)
-					lval = (lng) a->data.val.shval;
-				else if (at->type->localtype == TYPE_int)
-					lval = (lng) a->data.val.ival;
-				else if (at->type->localtype == TYPE_lng)
-					lval = a->data.val.lval;
-				else
-					return NULL;
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				if (at->type->localtype == TYPE_bte)
-					hval = (hge) a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht)
-					hval = (hge) a->data.val.shval;
-				else if (at->type->localtype == TYPE_int)
-					hval = (hge) a->data.val.ival;
-				else if (at->type->localtype == TYPE_lng)
-					hval = (hge) a->data.val.lval;
-				else if (at->type->localtype == TYPE_hge)
-					hval = a->data.val.hval;
-				else
-					return NULL;
-				break;
-#endif
-			default:
-				return NULL;
-			}
-			/* fix scale */
-			mul = scales[tp->scale-at->scale];
-#ifdef HAVE_HGE
-			if (tp->type->localtype == TYPE_hge) {
-				hval *= mul;
-			} else if (tp->type->localtype == TYPE_lng) {
-				if ((hge) GDK_lng_min > (hge) lval * mul || (hge) lval * mul > (hge) GDK_lng_max)
-					return NULL;
-				lval *= (lng) mul;
-			} else if (tp->type->localtype == TYPE_int) {
-				if ((hge) GDK_int_min > (hge) ival * mul || (hge) ival * mul > (hge) GDK_int_max)
-					return NULL;
-				ival *= (int) mul;
-			} else if (tp->type->localtype == TYPE_sht) {
-				if ((hge) GDK_sht_min > (hge) shval * mul || (hge) shval * mul > (hge) GDK_sht_max)
-					return NULL;
-				shval *= (sht) mul;
-			} else if (tp->type->localtype == TYPE_bte) {
-				if ((hge) GDK_bte_min > (hge) btval * mul || (hge) btval * mul > (hge) GDK_bte_max)
-					return NULL;
-				btval *= (bte) mul;
-			}
-#else
-			if (tp->type->localtype == TYPE_lng) {
-				lval *= mul;
-			} else if (tp->type->localtype == TYPE_int) {
-				if ((lng) GDK_int_min > (lng) ival * mul || (lng) ival * mul > (lng) GDK_int_max)
-					return NULL;
-				ival *= (int) mul;
-			} else if (tp->type->localtype == TYPE_sht) {
-				if ((lng) GDK_sht_min > (lng) shval * mul || (lng) shval * mul > (lng) GDK_sht_max)
-					return NULL;
-				shval *= (sht) mul;
-			} else if (tp->type->localtype == TYPE_bte) {
-				if ((lng) GDK_bte_min > (lng) btval * mul || (lng) btval * mul > (lng) GDK_bte_max)
-					return NULL;
-				btval *= (bte) mul;
-			}
-#endif
-			na = atom_create(sa);
-			na->tpe = *tp;
-			na->data.vtype = tp->type->localtype;
-			switch (tp->type->localtype) {
-			case TYPE_bte:
-				na->data.val.btval = btval;
-				break;
-			case TYPE_sht:
-				na->data.val.shval = shval;
-				break;
-			case TYPE_int:
-				na->data.val.ival = ival;
-				break;
-			case TYPE_lng:
-				na->data.val.lval = lval;
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				na->data.val.hval = hval;
-				break;
-#endif
-			default:
-				return NULL;
-			}
-			return na;
-		}
-		if ((at->type->eclass == EC_DEC ||
-		     at->type->eclass == EC_NUM) &&
-		    tp->type->eclass == EC_FLT) {
-			ptr p = NULL;
-			char *s = NULL;
-			int tpe = tp->type->localtype;
-			size_t len = (tpe == TYPE_dbl) ? sizeof(dbl) : sizeof(flt);
-			ssize_t res;
-#ifdef HAVE_HGE
-			hge dec = 0;
-#else
-			lng dec = 0;
-#endif
-			/* cast decimals to doubles */
-			switch (at->type->localtype) {
-			case TYPE_bte:
-				dec = a->data.val.btval;
-				break;
-			case TYPE_sht:
-				dec = a->data.val.shval;
-				break;
-			case TYPE_int:
-				dec = a->data.val.ival;
-				break;
-			case TYPE_lng:
-				dec = a->data.val.lval;
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				dec = a->data.val.hval;
-				break;
-#endif
-			default:
-				return NULL;
-			}
-			if (!(s = decimal_to_str(sa, dec, at)))
-				return NULL;
-
-			na = atom_copy(sa, a);
-			p = &(na->data.val);
-			if ((res = ATOMfromstr(tpe, &p, &len, s, false)) < 0) {
-				GDKclrerr();
-				return NULL;
-			}
-			na->tpe = *tp;
-			na->data.vtype = tpe;
-			return na;
-		}
-		if (EC_VARCHAR(at->type->eclass) && (tp->type->eclass == EC_DATE || EC_TEMP_NOFRAC(tp->type->eclass))){
-			int type = tp->type->localtype;
-			ssize_t res = 0;
-			ptr p = NULL;
-
-			a->data.len = 0;
-			res = ATOMfromstr(type, &p, &a->data.len, a->data.val.sval, false);
-			/* no result or nil means error (SQL has NULL not nil) */
-			if (res < (ssize_t) strlen(a->data.val.sval) || !p ||
-			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
-				GDKfree(p);
-				a->data.len = strlen(a->data.val.sval);
+		if (((at->type->eclass == EC_DEC ||
+			  at->type->eclass == EC_NUM) &&
+			 (tp->type->eclass == EC_DEC ||
+			  tp->type->eclass == EC_NUM ||
+			  tp->type->eclass == EC_FLT)) ||
+			(EC_VARCHAR(at->type->eclass) &&
+			 (tp->type->eclass == EC_DATE ||
+			  EC_TEMP_NOFRAC(tp->type->eclass)))) {
+			ValRecord v;
+			v.vtype = tp->type->localtype;
+			if (VARconvert(&v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
 				GDKclrerr();
 				return NULL;
 			}
 			na = atom_create(sa);
 			na->tpe = *tp;
-			na->data.vtype = type;
-			VALset(&na->data, na->data.vtype, p);
-			SA_VALcopy(sa, &na->data, &na->data);
-			GDKfree(p);
+			na->isnull = 0;
+			SA_VALcopy(sa, &na->data, &v);
+			if (ATOMextern(v.vtype))
+				GDKfree(v.val.pval);
 			return na;
 		}
 	} else {
@@ -1404,15 +776,127 @@ atom_neg(sql_allocator *sa, atom *a)
 	return res;
 }
 
+atom *
+atom_absolute(sql_allocator *sa, atom *a)
+{
+	ValRecord dst;
+
+	if (a->isnull)
+		return a;
+	dst.vtype = a->data.vtype;
+	if (VARcalcabsolute(&dst, &a->data) != GDK_SUCCEED) {
+		GDKclrerr();
+		return NULL;
+	}
+	atom *res = atom_create(sa);
+	if (!res)
+		return NULL;
+	res->tpe = a->tpe;
+	res->data = dst;
+	return res;
+}
+
 int
 atom_cmp(atom *a1, atom *a2)
 {
-	if ( a1->tpe.type->localtype != a2->tpe.type->localtype)
-		return -1;
-	if ( a1->isnull != a2->isnull)
+	if (a1->isnull != a2->isnull)
 		return -1;
 	if ( a1->isnull)
 		return 0;
+	if ( a1->tpe.type->localtype != a2->tpe.type->localtype) {
+		switch (ATOMstorage(a1->tpe.type->localtype)) {
+		case TYPE_bte:
+			switch (ATOMstorage(a2->tpe.type->localtype)) {
+			case TYPE_sht:
+				return (a1->data.val.btval < a2->data.val.shval)?-1:
+				       (a1->data.val.btval > a2->data.val.shval)?1:0;
+			case TYPE_int:
+				return (a1->data.val.btval < a2->data.val.ival)?-1:
+				       (a1->data.val.btval > a2->data.val.ival)?1:0;
+			case TYPE_lng:
+				return (a1->data.val.btval < a2->data.val.lval)?-1:
+				       (a1->data.val.btval > a2->data.val.lval)?1:0;
+	#ifdef HAVE_HGE
+			case TYPE_hge:
+				return (a1->data.val.btval < a2->data.val.hval)?-1:
+				       (a1->data.val.btval > a2->data.val.hval)?1:0;
+	#endif
+			}
+			return -1;
+		case TYPE_sht:
+			switch (ATOMstorage(a2->tpe.type->localtype)) {
+			case TYPE_bte:
+				return (a1->data.val.shval < a2->data.val.btval)?-1:
+				       (a1->data.val.shval > a2->data.val.btval)?1:0;
+			case TYPE_int:
+				return (a1->data.val.shval < a2->data.val.ival)?-1:
+				       (a1->data.val.shval > a2->data.val.ival)?1:0;
+			case TYPE_lng:
+				return (a1->data.val.shval < a2->data.val.lval)?-1:
+				       (a1->data.val.shval > a2->data.val.lval)?1:0;
+	#ifdef HAVE_HGE
+			case TYPE_hge:
+				return (a1->data.val.shval < a2->data.val.hval)?-1:
+				       (a1->data.val.shval > a2->data.val.hval)?1:0;
+	#endif
+			}
+			return -1;
+		case TYPE_int:
+			switch (ATOMstorage(a2->tpe.type->localtype)) {
+			case TYPE_bte:
+				return (a1->data.val.ival < a2->data.val.btval)?-1:
+				       (a1->data.val.ival > a2->data.val.btval)?1:0;
+			case TYPE_sht:
+				return (a1->data.val.ival < a2->data.val.shval)?-1:
+				       (a1->data.val.ival > a2->data.val.shval)?1:0;
+			case TYPE_lng:
+				return (a1->data.val.ival < a2->data.val.lval)?-1:
+				       (a1->data.val.ival > a2->data.val.lval)?1:0;
+	#ifdef HAVE_HGE
+			case TYPE_hge:
+				return (a1->data.val.ival < a2->data.val.hval)?-1:
+				       (a1->data.val.ival > a2->data.val.hval)?1:0;
+	#endif
+			}
+			return -1;
+		case TYPE_lng:
+			switch (ATOMstorage(a2->tpe.type->localtype)) {
+			case TYPE_bte:
+				return (a1->data.val.lval < a2->data.val.btval)?-1:
+				       (a1->data.val.lval > a2->data.val.btval)?1:0;
+			case TYPE_sht:
+				return (a1->data.val.lval < a2->data.val.shval)?-1:
+				       (a1->data.val.lval > a2->data.val.shval)?1:0;
+			case TYPE_int:
+				return (a1->data.val.lval < a2->data.val.ival)?-1:
+				       (a1->data.val.lval > a2->data.val.ival)?1:0;
+	#ifdef HAVE_HGE
+			case TYPE_hge:
+				return (a1->data.val.lval < a2->data.val.hval)?-1:
+				       (a1->data.val.lval > a2->data.val.hval)?1:0;
+	#endif
+			}
+			return -1;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (ATOMstorage(a2->tpe.type->localtype)) {
+			case TYPE_bte:
+				return (a1->data.val.hval < a2->data.val.btval)?-1:
+				       (a1->data.val.hval > a2->data.val.btval)?1:0;
+			case TYPE_sht:
+				return (a1->data.val.hval < a2->data.val.shval)?-1:
+				       (a1->data.val.hval > a2->data.val.shval)?1:0;
+			case TYPE_int:
+				return (a1->data.val.hval < a2->data.val.ival)?-1:
+				       (a1->data.val.hval > a2->data.val.ival)?1:0;
+			case TYPE_lng:
+				return (a1->data.val.hval < a2->data.val.lval)?-1:
+				       (a1->data.val.hval > a2->data.val.lval)?1:0;
+		}
+			return -1;
+#endif
+		}
+	}
 	return VALcmp(&a1->data, &a2->data);
 }
 
@@ -1433,7 +917,7 @@ atom_add(sql_allocator *sa, atom *a1, atom *a2)
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
 	dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcadd(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+	if (VARcalcadd(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
@@ -1450,19 +934,24 @@ atom_sub(sql_allocator *sa, atom *a1, atom *a2)
 {
 	ValRecord dst;
 
-	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype)
+	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
-	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
-	     a1->tpe.digits < a2->tpe.digits)) {
+		(a1->tpe.type->localtype == a2->tpe.type->localtype && a1->tpe.digits < a2->tpe.digits)) {
+		atom *na1 = atom_cast(sa, a1, &a2->tpe);
+		/*
 		atom *t = a1;
 		a1 = a2;
 		a2 = t;
+		*/
+		if (!na1)
+			return NULL;
+		a1 = na1;
 	}
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
 	dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcsub(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+	if (VARcalcsub(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
@@ -1479,11 +968,10 @@ atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 {
 	ValRecord dst;
 
-	if (!EC_COMPUTE(a1->tpe.type->eclass))
+	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
-	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
-	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
-	     a1->tpe.digits < a2->tpe.digits)) {
+	if (!EC_INTERVAL(a1->tpe.type->eclass) && (a1->tpe.type->localtype < a2->tpe.type->localtype ||
+		(a1->tpe.type->localtype == a2->tpe.type->localtype && a1->tpe.digits < a2->tpe.digits))) {
 		atom *t = a1;
 		a1 = a2;
 		a2 = t;
@@ -1491,7 +979,7 @@ atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
 	dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcmul(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+	if (VARcalcmul(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
@@ -1505,6 +993,28 @@ atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 }
 
 atom *
+atom_div(sql_allocator *sa, atom *a1, atom *a2)
+{
+	ValRecord dst;
+
+	if (!EC_NUMBER(a1->tpe.type->eclass))
+		return NULL;
+	if (a1->isnull || a2->isnull)
+		return atom_general(sa, &a1->tpe, NULL);
+	dst.vtype = a1->tpe.type->localtype;
+	if (VARcalcdiv(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
+		GDKclrerr();
+		return NULL;
+	}
+	atom *res = atom_create(sa);
+	if (!res)
+		return NULL;
+	res->tpe = a1->tpe;
+	res->data = dst;
+	return res;
+}
+
+atom *
 atom_inc(sql_allocator *sa, atom *a)
 {
 	ValRecord dst;
@@ -1512,7 +1022,7 @@ atom_inc(sql_allocator *sa, atom *a)
 	if (a->isnull)
 		return a;
 	dst.vtype = a->data.vtype;
-	if (VARcalcincr(&dst, &a->data, 1) != GDK_SUCCEED) {
+	if (VARcalcincr(&dst, &a->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}

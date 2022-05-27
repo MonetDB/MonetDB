@@ -21,7 +21,7 @@ extern int backend_dumpproc(backend *be, Client c, cq *q, sql_rel *r);
 extern int backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int addend, const char *query);
 extern int monet5_has_module(ptr M, char *module);
 extern void monet5_freecode(const char *mod, int clientid, const char *name);
-extern int monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bit *side_effect);
+extern int monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect);
 extern int backend_create_mal_func(mvc *m, sql_func *f);
 extern int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);
 
@@ -29,6 +29,8 @@ extern int monet5_create_relational_function(mvc *m, const char *mod, const char
 
 extern void rel_print(mvc *sql, sql_rel *rel, int depth);
 extern void _rel_print(mvc *sql, sql_rel *rel);
+
+extern void _exp_print(mvc *sql, sql_exp *e);
 
 extern int constantAtom(backend *be, MalBlkPtr mb, atom *a);
 extern InstrPtr table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes);

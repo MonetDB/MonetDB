@@ -325,7 +325,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					!isaBatType(getArgType(mb, q, 2)) && isVarConstant(mb, getArg(q, 2)) && /* pattern is a value */
 					isVarConstant(mb, getArg(q, 3)) && /* escape is a value */
 					isVarConstant(mb, getArg(q, 4)) && /* isensitive flag is a value */
-					strcmp(getVarName(mb, getArg(q,0)), getVarName(mb, getArg(p,1))) == 0 /* the output variable from batalgebra.like is the input one for [theta]select */) {
+					getArg(q,0) == getArg(p,1) /* the output variable from batalgebra.like is the input one for [theta]select */) {
 					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0, anti = (getFunctionId(q)[0] == 'n');
 					bit ignore_case = *(bit*)getVarValue(mb, getArg(q, 4)), selectok = TRUE;
 
@@ -646,7 +646,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 				q = newAssignment(mb);
 				getArg(q, 0) = getArg(p, 0);
-				(void) addArgument(mb, q, getArg(p, 2));
+				q = addArgument(mb, q, getArg(p, 2));
 				if (nvars[getArg(p, 2)] > 0)
 					getArg(q, 1) = nvars[getArg(p, 2)];
 				oclean[i] = 1;

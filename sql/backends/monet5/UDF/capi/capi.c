@@ -20,7 +20,6 @@
 #include "cheader.text.h"
 
 #include "gdk_time.h"
-#include "blob.h"
 #include "mutils.h"
 
 #include <setjmp.h>
@@ -87,9 +86,8 @@ static str CUDFevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return CUDFeval(cntxt, mb, stk, pci, true);
 }
 
-static str CUDFprelude(void *ret)
+static str CUDFprelude(void)
 {
-	(void)ret;
 	if (!cudf_initialized) {
 		cudf_initialized = true;
 		option_enable_mprotect = GDKgetenv_istrue(mprotect_enableflag) || GDKgetenv_isyes(mprotect_enableflag);
@@ -418,7 +416,8 @@ bailout:
 				if (b && msg) {
 					BBPreclaim(b);
 				} else if (b) {
-					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+					*getArgReference_bat(stk, pci, i) = b->batCacheid;
+					BBPkeepref(b);
 				}
 			} else if (msg) {
 				ValPtr pt = ((ValPtr*)res)[i];
@@ -454,11 +453,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	str *output_names = NULL;
 	char *msg = MAL_SUCCEED;
 	node *argnode;
-	int seengrp = FALSE;
+	int seengrp = 0;
 	FILE *f = NULL;
 	void *handle = NULL;
 	jitted_function func = NULL;
-	int ret;
+	int ret, limit_argc = 0;
 
 	FILE *compiler = NULL;
 	int compiler_return_code;
@@ -529,16 +528,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
-	if (!grouped) {
-		sql_subfunc *sqlmorefun =
-			(*(sql_subfunc **)getArgReference_ptr(stk, pci, pci->retc));
-		if (sqlmorefun)
-			sqlfun =
-				(*(sql_subfunc **)getArgReference_ptr(stk, pci, pci->retc))->func;
-	} else {
-		sqlfun = *(sql_func **)getArgReference_ptr(stk, pci, pci->retc);
-	}
-
+	sqlfun = *(sql_func **)getArgReference_ptr(stk, pci, pci->retc);
 	funcname = sqlfun ? sqlfun->base.name : "yet_another_c_function";
 
 	args = (str *)GDKzalloc(sizeof(str) * pci->argc);
@@ -588,7 +578,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 	// the first unknown argument is the group, we don't really care for the
 	// rest.
-	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
+	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc && !seengrp; i++) {
 		if (args[i] == NULL) {
 			if (!seengrp && grouped) {
 				args[i] = GDKstrdup("aggr_group");
@@ -596,7 +586,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
-				seengrp = TRUE;
+				seengrp = i; /* Don't be interested in the extents BAT */
 			} else {
 				snprintf(argbuf, sizeof(argbuf), "arg%zu", i - pci->retc - 1);
 				args[i] = GDKstrdup(argbuf);
@@ -607,12 +597,14 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	}
+	// the first index where input arguments are not relevant for the C UDF
+	limit_argc = i;
 	// non-grouped aggregates don't have the group list
 	// to allow users to write code for both grouped and non-grouped aggregates
 	// we create an "aggr_group" BAT for non-grouped aggregates
 	non_grouped_aggregate = grouped && !seengrp;
 
-	input_count = pci->argc - (pci->retc + ARG_OFFSET);
+	input_count = limit_argc - (pci->retc + ARG_OFFSET);
 	output_count = pci->retc;
 
 	// begin the compilation phase
@@ -622,7 +614,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	funcname_hash = strHash(funcname);
 	funcname_hash = funcname_hash % FUNCTION_CACHE_SIZE;
 	j = 0;
-	for (i = 0; i < (size_t)pci->argc; i++) {
+	for (i = 0; i < (size_t)limit_argc; i++) {
 		if (args[i]) {
 			j += strlen(args[i]);
 		}
@@ -653,7 +645,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 	}
 	j = input_count + output_count;
-	for (i = 0; i < (size_t)pci->argc; i++) {
+	for (i = 0; i < (size_t)limit_argc; i++) {
 		if (args[i]) {
 			size_t len = strlen(args[i]);
 			memcpy(function_parameters + j, args[i], len);
@@ -835,7 +827,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// input/output
 		// of the function
 		// first convert the input
-		for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
+		for (i = pci->retc + ARG_OFFSET; i < (size_t)limit_argc; i++) {
 			bat_type = !isaBatType(getArgType(mb, pci, i))
 							   ? getArgType(mb, pci, i)
 							   : getBatType(getArgType(mb, pci, i));
@@ -997,7 +989,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 	// create the inputs
 	argnode = sqlfun ? sqlfun->ops->h : NULL;
-	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
+	for (i = pci->retc + ARG_OFFSET; i < (size_t)limit_argc; i++) {
 		index = i - (pci->retc + ARG_OFFSET);
 		bat_type = getArgType(mb, pci, i);
 		if (!isaBatType(bat_type)) {
@@ -1049,6 +1041,17 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			GENERATE_BAT_INPUT(input_bats[index], int);
 		} else if (bat_type == TYPE_oid) {
 			GENERATE_BAT_INPUT(input_bats[index], oid);
+			// Hack for groups BAT, the count should reflect on the number of groups and not the number
+			// of rows, so use extents BAT
+			if (i == (size_t)seengrp) {
+				struct cudf_data_struct_oid *t = inputs[index];
+				BAT *ex = BBPquickdesc(*getArgReference_bat(stk, pci, i + 1));
+				if (!ex) {
+					msg = createException(MAL, "cudf.eval", RUNTIME_OBJECT_MISSING);
+					goto wrapup;
+				}
+				t->count = BATcount(ex);
+			}
 		} else if (bat_type == TYPE_lng) {
 			GENERATE_BAT_INPUT(input_bats[index], lng);
 		} else if (bat_type == TYPE_flt) {
@@ -1188,15 +1191,16 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bat_data->data[j].size = t->nitems;
 					if (can_mprotect_varheap) {
 						bat_data->data[j].data = &t->data[0];
-					} else {
-						bat_data->data[j].data = t->nitems == 0 ? NULL :
-							wrapped_GDK_malloc_nojump(t->nitems);
-						if (t->nitems > 0 && !bat_data->data[j].data) {
+					} else if (t->nitems > 0) {
+						bat_data->data[j].data = wrapped_GDK_malloc_nojump(t->nitems);
+						if (!bat_data->data[j].data) {
 							bat_iterator_end(&li);
 							msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 							goto wrapup;
 						}
 						memcpy(bat_data->data[j].data, &t->data[0], t->nitems);
+					} else {
+						bat_data->data[j].data = NULL;
 					}
 				}
 				j++;
@@ -1504,7 +1508,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						}
 
 						current_blob->nitems = blob.size;
-						memcpy(&current_blob->data[0], blob.data, blob.size);
+						if (blob.size > 0)
+							memcpy(&current_blob->data[0], blob.data, blob.size);
 					}
 
 					if (BUNappend(b, current_blob, false) != GDK_SUCCEED) {
@@ -1568,7 +1573,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// return the BAT from the function
 		if (isaBatType(getArgType(mb, pci, i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
+			BBPkeepref(b);
 		} else {
 			BATiter li = bat_iterator(b);
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
@@ -1609,7 +1614,7 @@ wrapup:
 	}
 	// argument names (input)
 	if (args) {
-		for (i = 0; i < (size_t)pci->argc; i++) {
+		for (i = 0; i < (size_t)limit_argc; i++) {
 			if (args[i]) {
 				GDKfree(args[i]);
 			}
@@ -1944,7 +1949,6 @@ static mel_func capi_init_funcs[] = {
  pattern("capi", "eval", CUDFevalStd, false, "Execute a simple CUDF script value", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("capi", "subeval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("capi", "eval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
- command("capi", "prelude", CUDFprelude, false, "", args(1,1, arg("",void))),
  pattern("batcapi", "eval", CUDFevalStd, false, "Execute a simple CUDF script value", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("batcapi", "subeval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("batcapi", "eval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
@@ -1956,4 +1960,4 @@ static mel_func capi_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_capi_mal)
-{ mal_module("capi", NULL, capi_init_funcs); }
+{ mal_module2("capi", NULL, capi_init_funcs, CUDFprelude, NULL); }

@@ -69,8 +69,6 @@ typedef enum stmt_type {
 
 	st_export,
 	st_claim,
-	st_depend,
-	st_predicate,
 	st_append,
 	st_append_bulk,
 	st_replace,
@@ -122,8 +120,7 @@ typedef struct stmt {
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */
 	 reduce:1,		/* used to reduce number of rows (also for joins) */
-	 loop:1,		/* cond statement is looping */
-	 argument_independence:1; /*list statement represents a list of function call arguments which are independent of the inner project relation. */
+	 loop:1;		/* cond statement is looping */
 
 	struct stmt *cand;	/* optional candidate list */
 
@@ -142,6 +139,7 @@ typedef struct stmt {
 			 strcmp(mod, "mmath") == 0 || \
 			 strcmp(mod, "mtime") == 0 || \
 			 strcmp(mod, "blob") == 0 || \
+			 strcmp(mod, "mkey") == 0 || \
 			 (strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp))))
 
 extern int stmt_key(stmt *s);
@@ -160,8 +158,8 @@ extern stmt *stmt_idxbat(backend *be, sql_idx *i, int access, int partition);
 extern stmt *stmt_tid(backend *be, sql_table *t, int partition);
 
 extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt);
-extern stmt *stmt_dependency_change(backend *be, sql_table *t, stmt *cnt);
-extern stmt *stmt_column_predicate(backend *be, sql_column *c);
+extern void stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt);
+extern void stmt_add_column_predicate(backend *be, sql_column *c);
 extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int locked);
 extern stmt *stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b);
 extern stmt *stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd);

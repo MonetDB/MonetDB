@@ -60,7 +60,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	const char *err;
 
 	oid min, max;
-	BUN ngrp, ncand;
+	BUN ngrp;
 	struct canditer ci;
 
 	oid lastGrp = -1;
@@ -102,7 +102,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	}
 
 	//Fill in the values of the group aggregate operation
-	if ((err = BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
 		msg = createException(MAL, "geom.Collect", "%s", err);
 		goto free;
 	}
@@ -122,7 +122,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 
 	//Intermediate array for all the geometries in a group
 	//TODO Change allocation size
-	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ncand)) == NULL) {
+	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		BBPunfix(out->batCacheid);
 		if (unions)
@@ -134,7 +134,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		gids = (const oid *)Tloc(g, 0);
 	bi = bat_iterator(b);
 
-	for (BUN i = 0; i < ncand; i++) {
+	for (BUN i = 0; i < ci.ncand; i++) {
 		oid o = canditer_next(&ci);
 		BUN p = o - b->hseqbase;
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
@@ -155,7 +155,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 				GDKfree(unionGroup);
 
 				//TODO Change allocation size
-				if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ncand)) == NULL) {
+				if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
 					msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					//Frees
 					bat_iterator_end(&bi);
@@ -206,7 +206,8 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		GDKfree(unions[i]);
 	GDKfree(unions);
 
-	BBPkeepref(*outid = out->batCacheid);
+	*outid = out->batCacheid;
+	BBPkeepref(out);
 	BBPunfix(b->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
@@ -1934,9 +1935,11 @@ wkbDump(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
-		BBPkeepref(*idBAT_id = idBAT->batCacheid);
+		*idBAT_id = idBAT->batCacheid;
+		BBPkeepref(idBAT);
 
-		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+		*geomBAT_id = geomBAT->batCacheid;
+		BBPkeepref(geomBAT);
 
 		return MAL_SUCCEED;
 	}
@@ -1965,8 +1968,10 @@ wkbDump(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 		return err;
 	}
 
-	BBPkeepref(*idBAT_id = idBAT->batCacheid);
-	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+	*idBAT_id = idBAT->batCacheid;
+	BBPkeepref(idBAT);
+	*geomBAT_id = geomBAT->batCacheid;
+	BBPkeepref(geomBAT);
 	return MAL_SUCCEED;
 }
 
@@ -2167,9 +2172,11 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
-		BBPkeepref(*idBAT_id = idBAT->batCacheid);
+		*idBAT_id = idBAT->batCacheid;
+		BBPkeepref(idBAT);
 
-		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+		*geomBAT_id = geomBAT->batCacheid;
+		BBPkeepref(geomBAT);
 
 		return MAL_SUCCEED;
 	}
@@ -2200,8 +2207,10 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 		return err;
 	}
 
-	BBPkeepref(*idBAT_id = idBAT->batCacheid);
-	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+	*idBAT_id = idBAT->batCacheid;
+	BBPkeepref(idBAT);
+	*geomBAT_id = geomBAT->batCacheid;
+	BBPkeepref(geomBAT);
 	return MAL_SUCCEED;
 }
 
@@ -2295,12 +2304,9 @@ geoGetType(char **res, int *info, int *flag)
 
 /* initialize geos */
 
-#include "gdk_geomlogger.h"
-
-str
-geom_prelude(void *ret)
+static str
+geom_prelude(void)
 {
-	(void) ret;
 	mbrNIL.xmin = flt_nil;
 	mbrNIL.xmax = flt_nil;
 	mbrNIL.ymin = flt_nil;
@@ -4662,7 +4668,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	bo->tkey = false;
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
-	BBPkeepref(*out = bo->batCacheid);
+	*out = bo->batCacheid;
+	BBPkeepref(bo);
 	return MAL_SUCCEED;
 }
 
@@ -4754,7 +4761,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	bo->tkey = false;
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
-	BBPkeepref(*out = bo->batCacheid);
+	*out = bo->batCacheid;
+	BBPkeepref(bo);
 	return MAL_SUCCEED;
 }
 
@@ -5416,7 +5424,6 @@ static mel_func geom_init_funcs[] = {
  command("geom", "mbrDistance", mbrDistance, false, "Returns the distance of the centroids of the two boxes", args(1,3, arg("",dbl),arg("box1",mbr),arg("box2",mbr))),
  command("geom", "coordinateFromWKB", wkbCoordinateFromWKB, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, arg("",dbl),arg("",wkb),arg("",int))),
  command("geom", "coordinateFromMBR", wkbCoordinateFromMBR, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, arg("",dbl),arg("",mbr),arg("",int))),
- command("geom", "prelude", geom_prelude, false, "", args(1,1, arg("",void))),
  command("geom", "epilogue", geom_epilogue, false, "", args(1,1, arg("",void))),
  command("batgeom", "FromText", wkbFromText_bat, false, "", args(1,4, batarg("",wkb),batarg("wkt",str),arg("srid",int),arg("type",int))),
  command("batgeom", "ToText", wkbAsText_bat, false, "", args(1,3, batarg("",str),batarg("w",wkb),arg("withSRID",int))),
@@ -5463,4 +5470,4 @@ static mel_func geom_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_geom_mal)
-{ mal_module2("geom", geom_init_atoms, geom_init_funcs, NULL, (const char*)geom_functions); }
+{ mal_module2("geom", geom_init_atoms, geom_init_funcs, geom_prelude, (const char*)geom_functions); }

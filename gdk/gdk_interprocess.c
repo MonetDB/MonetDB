@@ -130,7 +130,7 @@ GDKreleasemmap(void *ptr, size_t size, size_t id)
  * id: Identifier of the file
 */
 gdk_return
-GDKmmapfile(str buffer, size_t max, size_t id)
+GDKmmapfile(char *buffer, size_t max, size_t id)
 {
 	snprintf(buffer, max, "pymmap%zu", id);
 	return GDK_SUCCEED;

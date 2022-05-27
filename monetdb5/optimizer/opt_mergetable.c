@@ -1315,7 +1315,6 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		s = addArgument(mb, s, mat[g].mv);
 		s = addArgument(mb, s, mat[e].mv);
 		s = pushBit(mb, s, 1); /* skip nils */
-		s = pushBit(mb, s, 1);
 		pushInstruction(mb,s);
 
 		/*  w=count = ifthenelse(s=count==0,NULL,s=count)  */
@@ -1384,8 +1383,6 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	ai2 = addArgument(mb, ai2, mat[g].mv);
 	ai2 = addArgument(mb, ai2, mat[e].mv);
 	ai2 = pushBit(mb, ai2, 1); /* skip nils */
-	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef && !(isAvg && tpe != TYPE_dbl))
-		ai2 = pushBit(mb, ai2, 1);
 	pushInstruction(mb, ai2);
 	return 0;
 }
@@ -2075,7 +2072,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * 3 -> (l,r) range-joins (l,r1,r2)
 		 * NxM -> (l,r) filter-joins (l1,..,ln,r1,..,rm)
 		 */
-		if (match > 0 && isMatJoinOp(p) &&
+		if (match > 0 && isMatJoinOp(p) && !isMatLeftJoinOp(p) &&
 			p->argc >= 5 && p->retc == 2 && bats+nilbats >= 4) {
 			if (bats+nilbats == 4) {
 		   		m = is_a_mat(getArg(p,p->retc), &ml);

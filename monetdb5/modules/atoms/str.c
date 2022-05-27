@@ -2910,9 +2910,8 @@ static BAT *UTF8_toUpperFrom = NULL, *UTF8_toUpperTo = NULL,
 	*UTF8_toLowerFrom = NULL, *UTF8_toLowerTo = NULL;
 
 static str
-STRprelude(void *ret)
+STRprelude(void)
 {
-	(void) ret;
 	if (UTF8_toUpperFrom == NULL) {
 		size_t i;
 
@@ -2963,10 +2962,10 @@ STRprelude(void *ret)
 		UTF8_toLowerTo->tnil = false;
 		UTF8_toLowerTo->tnonil = true;
 
-		if (BBPrename(UTF8_toUpperFrom->batCacheid, "monet_unicode_upper_from") != 0 ||
-			BBPrename(UTF8_toUpperTo->batCacheid, "monet_unicode_upper_to") != 0 ||
-			BBPrename(UTF8_toLowerFrom->batCacheid, "monet_unicode_lower_from") != 0 ||
-			BBPrename(UTF8_toLowerTo->batCacheid, "monet_unicode_lower_to") != 0) {
+		if (BBPrename(UTF8_toUpperFrom, "monet_unicode_upper_from") != 0 ||
+			BBPrename(UTF8_toUpperTo, "monet_unicode_upper_to") != 0 ||
+			BBPrename(UTF8_toLowerFrom, "monet_unicode_lower_from") != 0 ||
+			BBPrename(UTF8_toLowerTo, "monet_unicode_lower_to") != 0) {
 			goto bailout;
 		}
 		BBP_pid(UTF8_toUpperFrom->batCacheid) = 0;
@@ -4787,7 +4786,6 @@ mel_func str_init_funcs[] = {
  command("str", "replace", STRreplace, false, "Insert a string into another", args(1,4, arg("",str),arg("s",str),arg("pat",str),arg("s2",str))),
  command("str", "repeat", STRrepeat, false, "", args(1,3, arg("",str),arg("s2",str),arg("c",int))),
  command("str", "space", STRspace, false, "", args(1,2, arg("",str),arg("l",int))),
- command("str", "prelude", STRprelude, false, "", args(1,1, arg("",void))),
  command("str", "epilogue", STRepilogue, false, "", args(1,1, arg("",void))),
  { .imp=NULL }
 };
@@ -4797,4 +4795,4 @@ mel_func str_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_str_mal)
-{ mal_module("str", NULL, str_init_funcs); }
+{ mal_module2("str", NULL, str_init_funcs, STRprelude, NULL); }

@@ -29,7 +29,7 @@ command_help(int argc, char *argv[])
 	int exitcode = 0;
 
 	if (argc < 2) {
-		printf("usage: monetdbd [ command [ command-options ] ] <dbfarm>\n");
+		printf("usage: monetdbd command [ command-options ] <dbfarm>\n");
 		printf("  where command is one of:\n");
 		printf("    create, start, stop, get, set, version or help\n");
 		printf("  use the help command to get help for a particular command\n");
@@ -221,7 +221,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				kv = findConfKey(ckv, "port");
 				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 						value, kv->ival);
-				value = control_send(&res, buf, -1, "", "mserver", 1, NULL);
+				value = control_send(&res, buf, -1, "", "mserver", true, NULL);
 				if (value != NULL) {
 					free(value);
 					value = "unknown (failed to connect to monetdbd)";
@@ -277,7 +277,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 						value, kv->ival);
 				freeConfFile(cport);
-				value = control_send(&res, buf, -1, "", "version", 1, NULL);
+				value = control_send(&res, buf, -1, "", "version", true, NULL);
 				if (value != NULL) {
 					free(value);
 					value = NULL;
@@ -316,7 +316,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				continue;
 			}
 			if (kv->val == NULL) {
-				value = "<unknown>";
+				value = "<unset>";
 			} else {
 				value = kv->val;
 			}

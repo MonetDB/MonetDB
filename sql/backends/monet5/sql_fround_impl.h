@@ -47,7 +47,6 @@ str
 bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	TYPE *restrict src, *restrict dst, x, r = *(TYPE *)getArgReference(stk, pci, 2);
 	str msg = MAL_SUCCEED;
 	bool nils = false, btsorted = false, btrevsorted = false;
@@ -79,8 +78,8 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -90,7 +89,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			x = src[p1];
 
@@ -106,7 +105,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			x = src[p1];
 
@@ -122,12 +121,12 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	btsorted = b->tsorted;
-	btrevsorted = b->trevsorted;
+	btsorted = bi.sorted;
+	btrevsorted = bi.revsorted;
 bailout1:
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, btsorted, btrevsorted);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, ci1.ncand, btsorted, btrevsorted);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -136,7 +135,6 @@ str
 bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	TYPE *restrict src, *restrict dst, x = *(TYPE *)getArgReference(stk, pci, 1), r;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -160,8 +158,8 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -171,7 +169,7 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			r = src[p1];
 
@@ -193,7 +191,7 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			r = src[p1];
 
@@ -219,7 +217,7 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, ci1.ncand, false, false/* don't propagate here*/);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -228,7 +226,6 @@ str
 bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	BUN q = 0;
 	TYPE *src1, *src2, *restrict dst, x, rr;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
@@ -254,12 +251,13 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, lefts);
-	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, lefts);
+	canditer_init(&ci2, right, rights);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "round", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -272,7 +270,7 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	src2 = (TYPE *) righti.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			x = src1[p1];
 			rr = src2[p2];
@@ -295,7 +293,7 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			x = src1[p1];
 			rr = src2[p2];
@@ -323,7 +321,7 @@ bailout1:
 	bat_iterator_end(&righti);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, ci1.ncand, false, false/* don't propagate here*/);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -371,7 +369,6 @@ str
 bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	TYPE *restrict src, *restrict dst, x;
 	bte r = *getArgReference_bte(stk, pci, 2);
 	str msg = MAL_SUCCEED;
@@ -404,8 +401,8 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -415,7 +412,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			x = src[p1];
 
@@ -431,7 +428,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			x = src[p1];
 
@@ -447,12 +444,12 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	btsorted = b->tsorted;
-	btrevsorted = b->trevsorted;
+	btsorted = bi.sorted;
+	btrevsorted = bi.revsorted;
 bailout1:
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, btsorted, btrevsorted);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, ci1.ncand, btsorted, btrevsorted);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -461,7 +458,6 @@ str
 bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
 	TYPE *restrict dst, x = *(TYPE *)getArgReference(stk, pci, 1);
 	bte *restrict src, r;
 	str msg = MAL_SUCCEED;
@@ -486,8 +482,8 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+	canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -497,7 +493,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	src = (bte *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			r = src[p1];
 
@@ -519,7 +515,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			r = src[p1];
 
@@ -545,7 +541,7 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, ci1.ncand, false, false/* don't propagate here*/);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -554,7 +550,6 @@ str
 bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	BUN q = 0;
 	TYPE *src1, *restrict dst, x;
 	bte *src2, rr;
 	str msg = MAL_SUCCEED;
@@ -585,12 +580,13 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = canditer_init(&ci1, left, lefts);
-	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+	canditer_init(&ci1, left, lefts);
+	canditer_init(&ci2, right, rights);
+	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "round", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -603,7 +599,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	src2 = (bte *) righti.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
 			x = src1[p1];
 			rr = src2[p2];
@@ -626,7 +622,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		for (BUN i = 0; i < q; i++) {
+		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
 			x = src1[p1];
 			rr = src2[p2];
@@ -654,7 +650,7 @@ bailout1:
 	bat_iterator_end(&righti);
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, msg, nils, q, false, false/* don't propagate here*/);
+	finalize_ouput_copy_sorted_property(res, bn, msg, nils, ci1.ncand, false, false/* don't propagate here*/);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }

@@ -57,7 +57,7 @@ mal_export stream	*maleventstream;
 */
 #define GRPthreads (THRDMASK | PARMASK)
 #define GRPmemory (ALLOCMASK )
-#define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
+#define GRPproperties (CHECKMASK )
 #define GRPio (IOMASK | PERFMASK )
 #define GRPheaps (HEAPMASK)
 #define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
@@ -72,7 +72,7 @@ mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
 
-mal_export int mal_init(char *modules[], int embedded);
+mal_export int mal_init(char *modules[], bool embedded);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
 mal_export const char *mal_version(void);
@@ -211,7 +211,8 @@ typedef struct MALSTK {
 	int stkbot;			/* the first variable to be initialized */
 	int stkdepth;		/* to protect against runtime stack overflow */
 	int calldepth;		/* to protect against runtime stack overflow */
-	short keepAlive;	/* do not garbage collect when set */
+	bool keepAlive:1,	/* do not garbage collect when set */
+		 keepTmps:1;	/* also do not garbage collect tmps (needed for interactive debugging only) */
 	/*
 	 * Parallel processing is mostly driven by dataflow, but within this context
 	 * there may be different schemes to take instructions into execution.

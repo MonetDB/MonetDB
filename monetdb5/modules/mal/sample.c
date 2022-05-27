@@ -115,7 +115,8 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (br == NULL)
 		throw(MAL, "sample.subuniform", OPERATION_FAILED);
 
-	BBPkeepref(*r = br->batCacheid);
+	*r = br->batCacheid;
+	BBPkeepref(br);
 	return MAL_SUCCEED;
 }
 
