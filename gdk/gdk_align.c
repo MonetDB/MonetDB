@@ -256,8 +256,8 @@ BATmaterialize(BAT *b)
 	b->ttype = TYPE_oid;
 	BATsetdims(b);
 	b->batDirtydesc = true;
-	MT_lock_unset(&b->theaplock);
 	BATsetcount(b, b->batCount);
+	MT_lock_unset(&b->theaplock);
 
 	return GDK_SUCCEED;
 }

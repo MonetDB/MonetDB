@@ -1030,9 +1030,11 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 		}
 		if (dense) {
+			MT_lock_set(&b->theaplock);
 			if (b->batCount == 0)
 				b->tseqbase = ovals ? ovals[0] : oid_nil;
 			BATsetcount(b, BATcount(b) + count);
+			MT_lock_unset(&b->theaplock);
 			return GDK_SUCCEED;
 		} else {
 			/* we need to materialize b; allocate enough capacity */
@@ -1059,8 +1061,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
+	MT_lock_set(&b->theaplock);
 	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
-		BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+		BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
 	b->theap->dirty = true;
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	if (b->ttype == TYPE_oid) {
@@ -1157,6 +1160,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
+	MT_lock_unset(&b->theaplock);
 	if (values && b->ttype) {
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
@@ -1165,9 +1169,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		BUN minpos = prop ? (BUN) prop->val.oval : BUN_NONE;
 		prop = BATgetprop_nolock(b, GDK_MAX_POS);
 		BUN maxpos = prop ? (BUN) prop->val.oval : BUN_NONE;
+		BATiter bi = bat_iterator_nolock(b);
 		MT_lock_unset(&b->theaplock);
 		const void *minvalp = NULL, *maxvalp = NULL;
-		BATiter bi = bat_iterator_nolock(b);
 		if (minpos != BUN_NONE)
 			minvalp = BUNtail(bi, minpos);
 		if (maxpos != BUN_NONE)
@@ -1294,7 +1298,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
 	}
+	MT_lock_set(&b->theaplock);
 	BATsetcount(b, p);
+	MT_lock_unset(&b->theaplock);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
@@ -1889,7 +1895,6 @@ BATsetcount(BAT *b, BUN cnt)
 	assert(!is_oid_nil(b->hseqbase));
 	assert(cnt <= BUN_MAX);
 
-	MT_lock_set(&b->theaplock);
 	b->batCount = cnt;
 	b->batDirtydesc = true;
 	b->theap->dirty |= b->ttype != TYPE_void && b->theap->parentid == b->batCacheid && cnt > 0;
@@ -1925,7 +1930,6 @@ BATsetcount(BAT *b, BUN cnt)
 		}
 	}
 	assert(b->batCapacity >= cnt);
-	MT_lock_unset(&b->theaplock);
 }
 
 /*
