@@ -66,6 +66,7 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 				MT_lock_set(&b->theaplock);
 				assert(!isVIEW(b));
 				assert(b->batRole == PERSISTENT);
+				assert(sizes == NULL || sizes[i] <= BATcount(b));
 				BATcommit(b, sizes ? sizes[i] : BUN_NONE);
 				MT_lock_unset(&b->theaplock);
 			}
