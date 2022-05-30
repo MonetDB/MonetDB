@@ -178,7 +178,7 @@ add_test(basecase
 # Bad first column, should fail
 add_test(basecase
          .replace(2, '31a|"32x"|33')
-         .expect_error("Row 3 column 1 'i': trailing garbage: a"))
+         .expect_error("Row 3 column 1 'i': unexpected characters while parsing integer: a"))
 
 # NUL character, unquoted
 add_test(basecase

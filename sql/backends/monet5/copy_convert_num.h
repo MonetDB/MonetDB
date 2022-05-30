@@ -44,7 +44,7 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 		s++;
 
 	if (*s != '\0') {
-		copy_report_error(errors, rel_row, -1, "trailing garbage: %s", s);
+		copy_report_error(errors, rel_row, -1, "unexpected characters while parsing integer: %s", s);
 		return TMPL_NIL;
 	}
 
@@ -98,7 +98,7 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 		scale--;
 	}
 	if (*s) {
-		copy_report_error(errors, rel_row, -1, "trailing garbage: %s", s);
+		copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
 		return TMPL_NIL;
 	}
 	if (neg)
