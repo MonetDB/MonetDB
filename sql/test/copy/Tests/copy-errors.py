@@ -7,7 +7,7 @@ import sys
 import tempfile
 import textwrap
 from io import StringIO
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 import pymonetdb
 
@@ -44,6 +44,7 @@ class TestCase:
     raw_testdata: Optional[bytes]
     testdata: list[str]
     quote: Optional[str]
+    expectations: list[Tuple[int,int,Any]]
     error: str
 
     DEFAULT_BLOCKSIZE = 1000
@@ -59,15 +60,24 @@ class TestCase:
         self.quote = quote
         self.null = null
         self.error = None
+        self.expectations = []
 
-    def replace(self, lineno, replacement):
+    def replace(self, rowno, replacement):
         t = copy.deepcopy(self)
-        t.testdata[lineno] = replacement
+        t.testdata[rowno] = replacement
+        t.expectations = [ (r, c, v) for r, c, v in t.expectations if r != rowno ]
         return t
 
     def expect_error(self, substring):
         t = copy.deepcopy(self)
         t.error = substring
+        t.expectations = []
+        return t
+
+    def expect_value(self, row, col, val):
+        assert not self.error
+        t = copy.deepcopy(self)
+        t.expectations.append((row, col, val))
         return t
 
     def run(self):
@@ -111,6 +121,15 @@ class TestCase:
                 print(f'Expected {expected} affected rows, got {rowcount}', file=out)
                 print(file=out)
                 assert rowcount == expected
+                if self.expectations:
+                    CURSOR.execute('SELECT * FROM foo')
+                    results = CURSOR.fetchall()
+                    for r, c, expected in self.expectations:
+                        if self.testdata and '%' in self.testdata[r]:
+                            continue
+                        value = results[r][c]
+                        print(f'Row {r} col {c} expected {expected!r}, got {value!r}', file=out)
+                        assert value == expected
             else:
                 try:
                     CURSOR.execute(query)
@@ -175,14 +194,35 @@ testdata = """\
 51|"52x"|53
 """
 
-basecase = TestCase("i INT, t TEXT, j INT", testdata, quote='"')
+basecase = (TestCase("i INT, t TEXT, j INT", testdata, quote='"')
+    .expect_value(0, 0, 11)
+    .expect_value(0, 1, "12x")
+    .expect_value(0, 2, 13)
+    #
+    .expect_value(1, 0, 21)
+    .expect_value(1, 1, "22x")
+    .expect_value(1, 2, 23)
+    #
+    .expect_value(2, 0, 31)
+    .expect_value(2, 1, "32x")
+    .expect_value(2, 2, 33)
+    #
+    .expect_value(3, 0, 41)
+    .expect_value(3, 1, "42x")
+    .expect_value(3, 2, 43)
+    #
+    .expect_value(4, 0, 51)
+    .expect_value(4, 1, "52x")
+    .expect_value(4, 2, 53)
+)
 
 # Should succeed
 add_test(basecase)
 
 # Has doubled quote. Should still succeed
 add_test(basecase
-         .replace(2, '31|"32""x"|33'))
+         .replace(2, '31|"32""x"|33')
+         .expect_value(2, 1, '32"x'))
 
 # Bad first column, should fail
 add_test(basecase
@@ -210,49 +250,55 @@ add_test(TestCase("i INT", '"42', quote='"')
 add_test(TestCase("i INT", '42', raw=True)
          .expect_error("unterminated line"))
 
+# NULL tests
+add_test(TestCase("i INT", "\n", null='').expect_value(0, 0, None))
+add_test(TestCase("i INT", "null", null="null").expect_value(0, 0, None))
+add_test(TestCase("i INT", "NULL", null="null").expect_value(0, 0, None))
+add_test(TestCase("i INT", "null", null="NULL").expect_value(0, 0, None))
+
 # Integer overflow tests
-add_test(TestCase("i TINYINT", "127"))
-add_test(TestCase("i TINYINT", "+127"))
-add_test(TestCase("i TINYINT", "-127"))
+add_test(TestCase("i TINYINT", "127").expect_value(0, 0, 127))
+add_test(TestCase("i TINYINT", "+127").expect_value(0, 0, +127))
+add_test(TestCase("i TINYINT", "-127").expect_value(0, 0, -127))
 add_test(TestCase("i TINYINT", "128").expect_error("overflow"))
 add_test(TestCase("i TINYINT", "-128").expect_error("overflow"))
 #
-add_test(TestCase("i SMALLINT", "32767"))
-add_test(TestCase("i SMALLINT", "+32767"))
-add_test(TestCase("i SMALLINT", "-32767"))
+add_test(TestCase("i SMALLINT", "32767").expect_value(0, 0, 32767))
+add_test(TestCase("i SMALLINT", "+32767").expect_value(0, 0, +32767))
+add_test(TestCase("i SMALLINT", "-32767").expect_value(0, 0, -32767))
 add_test(TestCase("i SMALLINT", "32768").expect_error("overflow"))
 add_test(TestCase("i SMALLINT", "-32768").expect_error("overflow"))
 #
-add_test(TestCase("i INT", "2147483647"))
-add_test(TestCase("i INT", "+2147483647"))
-add_test(TestCase("i INT", "-2147483647"))
+add_test(TestCase("i INT", "2147483647").expect_value(0, 0, 2147483647))
+add_test(TestCase("i INT", "+2147483647").expect_value(0, 0, +2147483647))
+add_test(TestCase("i INT", "-2147483647").expect_value(0, 0, -2147483647))
 add_test(TestCase("i INT", "2147483648").expect_error("overflow"))
 add_test(TestCase("i INT", "-2147483648").expect_error("overflow"))
 #
-add_test(TestCase("i BIGINT", "9223372036854775807"))
-add_test(TestCase("i BIGINT", "+9223372036854775807"))
-add_test(TestCase("i BIGINT", "-9223372036854775807"))
+add_test(TestCase("i BIGINT", "9223372036854775807").expect_value(0, 0, 9223372036854775807))
+add_test(TestCase("i BIGINT", "+9223372036854775807").expect_value(0, 0, +9223372036854775807))
+add_test(TestCase("i BIGINT", "-9223372036854775807").expect_value(0, 0, -9223372036854775807))
 add_test(TestCase("i BIGINT", "9223372036854775808").expect_error("overflow"))
 add_test(TestCase("i BIGINT", "-9223372036854775808").expect_error("overflow"))
 #
 if HAVE_HGE:
-    add_test(TestCase("i HUGEINT", "170141183460469231731687303715884105727"))
-    add_test(TestCase("i HUGEINT", "+170141183460469231731687303715884105727"))
-    add_test(TestCase("i HUGEINT", "-170141183460469231731687303715884105727"))
+    add_test(TestCase("i HUGEINT", "170141183460469231731687303715884105727").expect_value(0, 0, 170141183460469231731687303715884105727))
+    add_test(TestCase("i HUGEINT", "+170141183460469231731687303715884105727").expect_value(0, 0, +170141183460469231731687303715884105727))
+    add_test(TestCase("i HUGEINT", "-170141183460469231731687303715884105727").expect_value(0, 0, -170141183460469231731687303715884105727))
     add_test(TestCase("i HUGEINT", "170141183460469231731687303715884105728").expect_error("overflow"))
     add_test(TestCase("i HUGEINT", "-170141183460469231731687303715884105728").expect_error("overflow"))
 
 # Integer trailing whitespace and other tails
 add_test(TestCase("i INT", "", null="null").expect_error("missing integer"))
-add_test(TestCase("i INT", "10"))
-add_test(TestCase("i INT", "10  "))
-add_test(TestCase("i INT", "10\t"))
-add_test(TestCase("i INT", "10."))
-add_test(TestCase("i INT", "10.  "))
-add_test(TestCase("i INT", "10.\t"))
-add_test(TestCase("i INT", "10.0"))
-add_test(TestCase("i INT", "10.0  "))
-add_test(TestCase("i INT", "10.0\t"))
+add_test(TestCase("i INT", "10").expect_value(0, 0, 10))
+add_test(TestCase("i INT", "10  ").expect_value(0, 0, 10))
+add_test(TestCase("i INT", "10\t").expect_value(0, 0, 10))
+add_test(TestCase("i INT", "10.").expect_value(0, 0, 10))
+add_test(TestCase("i INT", "10.  ").expect_value(0, 0, 10))
+add_test(TestCase("i INT", "10.\t").expect_value(0, 0, 10))
+add_test(TestCase("i INT", "10.0").expect_value(0, 0, 10))
+add_test(TestCase("i INT", "10.0  ").expect_value(0, 0, 10))
+add_test(TestCase("i INT", "10.0\t").expect_value(0, 0, 10))
 add_test(TestCase("i INT", "10.0000000000000000000000000000000000000000000000000000000"))
 add_test(TestCase("i INT", "10.0000000000000000000000000000000000000000000000000000000  "))
 add_test(TestCase("i INT", "10.0000000000000000000000000000000000000000000000000000000\t"))
