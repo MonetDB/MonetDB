@@ -291,14 +291,6 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid, true);
-	if (bn->theap)
-		HEAPdecref(bn->theap, true);
-	if (bn->tvheap)
-		HEAPdecref(bn->tvheap, true);
-	MT_lock_destroy(&bn->theaplock);
-	MT_lock_destroy(&bn->batIdxLock);
-	MT_rwlock_destroy(&bn->thashlock);
-	GDKfree(bn);
 	return NULL;
 }
 
