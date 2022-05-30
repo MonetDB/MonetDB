@@ -16,7 +16,6 @@ with tempfile.TemporaryDirectory() as farm_dir:
     fdir = os.path.join(farm_dir, 'db1')
     os.mkdir(fdir)
     with process.server(mapiport='0', dbname='db1',
-                        args=["--set", "gdk_use_strimps=yes",],
                         dbfarm=fdir,
                         stdin=process.PIPE,
                         stdout=process.PIPE,
