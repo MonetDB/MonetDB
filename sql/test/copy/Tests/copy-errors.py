@@ -193,6 +193,15 @@ add_test(basecase
          .replace(2, '31a|"32x\x00"|33')
          .expect_error("Row 3 column 2: invalid NUL character"))
 
+# Unterminated string
+add_test(TestCase("i INT", '"42', quote='"')
+         .expect_error("unterminated quoted string"))
+
+# Unterminated final line
+add_test(TestCase("i INT", '42', raw=True)
+         .expect_error("unterminated line"))
+
+
 ######
 # Run the tests
 ######

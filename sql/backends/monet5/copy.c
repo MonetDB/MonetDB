@@ -306,6 +306,15 @@ COPYfixlines(
 		// The best way to do so is by appending all of 'right' to 'left' and
 		// returning the resulting jumbo block as 'new_right', with an empty
 		// block as 'new_left'.
+		// However, if 'right' is empty, we know we have reached the end of the
+		// input so we know the end of the line will never come.
+		if (right_size == 0) {
+			if (quoted) {
+				bailout("copy.fixlines", SQLSTATE(42000) "unterminated quoted string at end of file");
+			} else {
+				bailout("copy.fixlines", SQLSTATE(42000) "unterminated line at end of file");
+			}
+		}
 		BUN new_size = (BUN)left_size + (BUN)right_size;
 		if (new_size >= MAX_LINE_LENGTH)
 			bailout("copy.fixlines", SQLSTATE(42000) "line too long: " BUNFMT ", limit set to " BUNFMT, new_size, (BUN)MAX_LINE_LENGTH);
