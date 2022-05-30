@@ -2066,6 +2066,9 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	sql_allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
 
+	if (debug&2)
+		GDKtracer_set_layer_level("sql_all", "debug");
+
 	if (!store) {
 		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		return NULL;
@@ -2331,7 +2334,8 @@ store_manager(sqlstore *store)
 
 		if (res != LOG_OK) {
 			MT_lock_unset(&store->flush);
-			GDKfatal("write-ahead logging failure");
+			if (!GDKexiting())
+				GDKfatal("write-ahead logging failure");
 		}
 
 		if (GDKexiting())
