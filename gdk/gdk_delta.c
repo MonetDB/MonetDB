@@ -72,11 +72,12 @@ BATfakeCommit(BAT *b)
 void
 BATundo(BAT *b)
 {
-	BATiter bi = bat_iterator_nolock(b);
 	BUN p, bunlast, bunfirst;
 
 	if (b == NULL)
 		return;
+	MT_lock_set(&b->theaplock);
+	BATiter bi = bat_iterator_nolock(b);
 	assert(b->theap->parentid == b->batCacheid);
 	TRC_DEBUG(DELTA, "BATundo: %s \n", BATgetId(b));
 	if (b->batDirtyflushed) {
@@ -106,4 +107,5 @@ BATundo(BAT *b)
 	b->theap->free = tailsize(b, b->batInserted);
 
 	BATsetcount(b, b->batInserted);
+	MT_lock_unset(&b->theaplock);
 }
