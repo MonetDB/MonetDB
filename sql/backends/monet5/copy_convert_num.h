@@ -25,7 +25,7 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 	while (isdigit((unsigned char) *s)) {
 		// int is safe because of promotion rules
 		int digit = *s - '0';
-		if (unlikely(acc >= (TMPL_MAX / 10))) {
+		if (unlikely(acc > ((TMPL_MAX - digit) / 10))) {
 			copy_report_error(errors, rel_row, -1, "overflow: %s", value);
 			return TMPL_NIL;
 		}
@@ -43,8 +43,15 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 	while (isspace((unsigned char) *s))
 		s++;
 
+	if (s == value) {
+		copy_report_error(errors, rel_row, -1, "missing integer");
+		return TMPL_NIL;
+	}
 	if (*s != '\0') {
-		copy_report_error(errors, rel_row, -1, "unexpected characters while parsing integer: %s", s);
+		if (isdigit(*s))
+			copy_report_error(errors, rel_row, -1, "unexpected decimal digit '%c' while parsing integer", *s);
+		else
+			copy_report_error(errors, rel_row, -1, "unexpected character '%c' while parsing integer", *s);
 		return TMPL_NIL;
 	}
 

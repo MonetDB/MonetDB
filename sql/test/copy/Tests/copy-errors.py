@@ -16,6 +16,13 @@ port = int(os.getenv("MAPIPORT", '50000'))
 CONN = pymonetdb.connect(dbname, port=port)
 CURSOR = CONN.cursor()
 
+HAVE_HGE = True
+try:
+    CURSOR.execute('SELECT CAST(1 AS HUGEINT)')
+except pymonetdb.ProgrammingError:
+    HAVE_HGE = False
+    CONN.rollback()
+
 ######
 # Infrastructure
 ######
@@ -41,7 +48,7 @@ class TestCase:
 
     DEFAULT_BLOCKSIZE = 1000
 
-    def __init__(self, spec, data, raw=False, quote=None):
+    def __init__(self, spec, data, raw=False, quote=None, null=None):
         self.fieldspec = spec
         if raw:
             self.raw_testdata = data
@@ -50,6 +57,7 @@ class TestCase:
             self.raw_testdata = None
             self.testdata = data.splitlines()
         self.quote = quote
+        self.null = null
         self.error = None
 
     def replace(self, lineno, replacement):
@@ -85,11 +93,12 @@ class TestCase:
             f.write(testdata)
             f.close()
             using = f" USING DELIMITERS '|', E'\\n', {self.escape(self.quote)}" if self.quote else ''
+            null = f" NULL AS {self.escape(self.null)}" if self.null is not None else ''
             query = textwrap.dedent(f"""\
                 CALL sys.copy_blocksize({block_size});
                 DROP TABLE foo;
                 CREATE TABLE foo({self.fieldspec});
-                COPY INTO foo FROM {qfilename}{using};
+                COPY INTO foo FROM {qfilename}{using}{null};
             """)
 
             print(
@@ -178,7 +187,7 @@ add_test(basecase
 # Bad first column, should fail
 add_test(basecase
          .replace(2, '31a|"32x"|33')
-         .expect_error("Row 3 column 1 'i': unexpected characters while parsing integer: a"))
+         .expect_error("Row 3 column 1 'i': unexpected character"))
 
 # NUL character, unquoted
 add_test(basecase
@@ -200,6 +209,57 @@ add_test(TestCase("i INT", '"42', quote='"')
 # Unterminated final line
 add_test(TestCase("i INT", '42', raw=True)
          .expect_error("unterminated line"))
+
+# Integer overflow tests
+add_test(TestCase("i TINYINT", "127"))
+add_test(TestCase("i TINYINT", "+127"))
+add_test(TestCase("i TINYINT", "-127"))
+add_test(TestCase("i TINYINT", "128").expect_error("overflow"))
+add_test(TestCase("i TINYINT", "-128").expect_error("overflow"))
+#
+add_test(TestCase("i SMALLINT", "32767"))
+add_test(TestCase("i SMALLINT", "+32767"))
+add_test(TestCase("i SMALLINT", "-32767"))
+add_test(TestCase("i SMALLINT", "32768").expect_error("overflow"))
+add_test(TestCase("i SMALLINT", "-32768").expect_error("overflow"))
+#
+add_test(TestCase("i INT", "2147483647"))
+add_test(TestCase("i INT", "+2147483647"))
+add_test(TestCase("i INT", "-2147483647"))
+add_test(TestCase("i INT", "2147483648").expect_error("overflow"))
+add_test(TestCase("i INT", "-2147483648").expect_error("overflow"))
+#
+add_test(TestCase("i BIGINT", "9223372036854775807"))
+add_test(TestCase("i BIGINT", "+9223372036854775807"))
+add_test(TestCase("i BIGINT", "-9223372036854775807"))
+add_test(TestCase("i BIGINT", "9223372036854775808").expect_error("overflow"))
+add_test(TestCase("i BIGINT", "-9223372036854775808").expect_error("overflow"))
+#
+if HAVE_HGE:
+    add_test(TestCase("i HUGEINT", "170141183460469231731687303715884105727"))
+    add_test(TestCase("i HUGEINT", "+170141183460469231731687303715884105727"))
+    add_test(TestCase("i HUGEINT", "-170141183460469231731687303715884105727"))
+    add_test(TestCase("i HUGEINT", "170141183460469231731687303715884105728").expect_error("overflow"))
+    add_test(TestCase("i HUGEINT", "-170141183460469231731687303715884105728").expect_error("overflow"))
+
+# Integer trailing whitespace and other tails
+add_test(TestCase("i INT", "", null="null").expect_error("missing integer"))
+add_test(TestCase("i INT", "10"))
+add_test(TestCase("i INT", "10  "))
+add_test(TestCase("i INT", "10\t"))
+add_test(TestCase("i INT", "10."))
+add_test(TestCase("i INT", "10.  "))
+add_test(TestCase("i INT", "10.\t"))
+add_test(TestCase("i INT", "10.0"))
+add_test(TestCase("i INT", "10.0  "))
+add_test(TestCase("i INT", "10.0\t"))
+add_test(TestCase("i INT", "10.0000000000000000000000000000000000000000000000000000000"))
+add_test(TestCase("i INT", "10.0000000000000000000000000000000000000000000000000000000  "))
+add_test(TestCase("i INT", "10.0000000000000000000000000000000000000000000000000000000\t"))
+add_test(TestCase("i INT", "10.01").expect_error("unexpected decimal digit '1'"))
+add_test(TestCase("i INT", "10.01  ").expect_error("unexpected decimal digit '1'"))
+add_test(TestCase("i INT", "10.01\t").expect_error("unexpected decimal digit '1'"))
+add_test(TestCase("i INT", "10x").expect_error("unexpected character 'x'"))
 
 
 ######
