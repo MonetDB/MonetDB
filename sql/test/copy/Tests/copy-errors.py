@@ -180,6 +180,19 @@ add_test(basecase
          .replace(2, '31a|"32x"|33')
          .expect_error("Row 3 column 1 'i': trailing garbage: a"))
 
+# NUL character, unquoted
+add_test(basecase
+         .replace(2, '31a\x00|"32x"|33')
+         .expect_error("Row 3 column 1: invalid NUL character"))
+add_test(basecase
+         .replace(2, '3\x001a|"32x"|33')
+         .expect_error("Row 3 column 1: invalid NUL character"))
+
+# NUL character, quoted
+add_test(basecase
+         .replace(2, '31a|"32x\x00"|33')
+         .expect_error("Row 3 column 2: invalid NUL character"))
+
 ######
 # Run the tests
 ######

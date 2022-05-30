@@ -229,7 +229,7 @@ COPYfixlines(
 				escape_pending = true;
 				continue;
 			}
-			bool is_quote = left_data[i] == quote;
+			bool is_quote = left_data[i] == quote && quote != 0;
 			quoted ^= is_quote;
 			if (!quoted && left_data[i] == linesep) {
 				latest_newline = i;

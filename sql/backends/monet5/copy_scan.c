@@ -215,7 +215,7 @@ scan_quoted(const char **err_msg, unsigned char *start, unsigned char *end, int 
 	while (r <= last) {
 		assert(w <= r);
 		if (*r == '\0') {
-			*err_msg = "unexpected NUL character";
+			*err_msg = "invalid NUL character";
 			return -31;
 		}
 		if (*r == quote) {
@@ -284,6 +284,10 @@ scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, in
 	unsigned char *r = start;
 	unsigned char *w = start;
 	while (r < end) {
+		if (*r == '\0') {
+			*err_msg = "invalid NUL character";
+			return -41;
+		}
 		if (*r == col_sep || *r == line_sep) {
 			*sep_found = *r;
 			*w = 0;
