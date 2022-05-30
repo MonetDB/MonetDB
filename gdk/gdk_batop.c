@@ -151,6 +151,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				}
 				memcpy(b->tvheap->base + toff, ni.vh->base, ni.vhfree);
 				b->tvheap->free = toff + ni.vhfree;
+				b->tvheap->dirty = true;
 			}
 		}
 	}
@@ -326,8 +327,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	}
 	bat_iterator_end(&ni);
 	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
+	MT_lock_set(&b->theaplock);
 	BATsetcount(b, oldcnt + ci->ncand);
 	assert(b->batCapacity >= b->batCount);
+	MT_lock_unset(&b->theaplock);
 	/* maintain hash */
 	MT_rwlock_wrlock(&b->thashlock);
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
@@ -398,7 +401,9 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				*dst++ = src[canditer_next(ci) - hseq];
 			}
 		}
+		MT_lock_set(&b->theaplock);
 		BATsetcount(b, BATcount(b) + ci->ncand);
+		MT_lock_unset(&b->theaplock);
 		/* maintain hash table */
 		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = BATcount(b) - ci->ncand;
@@ -486,7 +491,9 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		}
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
+	MT_lock_set(&b->theaplock);
 	BATsetcount(b, r);
+	MT_lock_unset(&b->theaplock);
 	bat_iterator_end(&ni);
 	return GDK_SUCCEED;
 }
@@ -723,12 +730,14 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		return GDK_FAIL;
 	}
 
-	b->batDirtydesc = true;
-
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
+
 	MT_lock_set(&b->theaplock);
+
+	b->batDirtydesc = true;
+
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
 		if (ni.maxpos != BUN_NONE) {
 			BATiter bi = bat_iterator_nolock(b);
@@ -767,6 +776,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	if (b->ttype == TYPE_void) {
 		/* b does not have storage, keep it that way if we can */
 		HASHdestroy(b);	/* we're not maintaining the hash here */
+		MT_lock_set(&b->theaplock);
 		if (BATtdense(n) && ci.tpe == cand_dense &&
 		    (BATcount(b) == 0 ||
 		     (BATtdense(b) &&
@@ -775,6 +785,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (BATcount(b) == 0)
 				BATtseqbase(b, n->tseqbase + ci.seq - hseq);
 			BATsetcount(b, BATcount(b) + cnt);
+			MT_lock_unset(&b->theaplock);
 			goto doreturn;
 		}
 		if ((BATcount(b) == 0 || is_oid_nil(b->tseqbase)) &&
@@ -782,10 +793,12 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			/* both b and n are void/nil */
 			BATtseqbase(b, oid_nil);
 			BATsetcount(b, BATcount(b) + cnt);
+			MT_lock_unset(&b->theaplock);
 			goto doreturn;
 		}
 		/* we need to materialize b; allocate enough capacity */
 		b->batCapacity = BATcount(b) + cnt;
+		MT_lock_unset(&b->theaplock);
 		if (BATmaterialize(b) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
@@ -795,6 +808,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	r = BUNlast(b);
 
 	/* property setting */
+	MT_lock_set(&b->theaplock);
 	if (BATcount(b) == 0) {
 		b->tsorted = n->tsorted;
 		b->trevsorted = n->trevsorted;
@@ -848,6 +862,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		b->tnonil &= n->tnonil;
 		b->tnil |= n->tnil && cnt == ni.count;
 	}
+	MT_lock_unset(&b->theaplock);
 	if (b->ttype == TYPE_str) {
 		if (insert_string_bat(b, n, &ci, force, mayshare, timeoffset) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
@@ -906,7 +921,9 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
+		MT_lock_set(&b->theaplock);
 		BATsetcount(b, b->batCount + ci.ncand);
+		MT_lock_unset(&b->theaplock);
 	}
 
   doreturn:
@@ -1142,19 +1159,18 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		return GDK_FAIL;
 	}
 
-	BATiter bi = bat_iterator_nolock(b);
-	BATiter ni = bat_iterator(n);
-
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	STRMPdestroy(b);
+	/* load hash so that we can maintain it */
+	(void) BATcheckhash(b);
+	BATiter ni = bat_iterator(n);
 	MT_lock_set(&b->theaplock);
 	if (ni.count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
 		b->tunique_est = 0;
 	}
-	MT_lock_unset(&b->theaplock);
-	/* load hash so that we can maintain it */
-	(void) BATcheckhash(b);
+
+	BATiter bi = bat_iterator_nolock(b);
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;
@@ -1165,6 +1181,9 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	const void *nil = ATOMnilptr(b->ttype);
 	oid hseqend = b->hseqbase + BATcount(b);
+
+	MT_lock_unset(&b->theaplock);
+
 	bool anynil = false;
 	bool locked = false;
 
@@ -2781,6 +2800,7 @@ PROPdestroy(BAT *b)
 
 	b->tprops = NULL;
 	while (p) {
+		/* only set dirty if a saved property is changed */
 		n = p->next;
 		VALclear(&p->v);
 		GDKfree(p);
@@ -2847,7 +2867,6 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 		GDKclrerr();
 		p = NULL;
 	}
-	b->batDirtydesc = true;
 	return p ? &p->v : NULL;
 }
 

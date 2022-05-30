@@ -97,6 +97,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.batRole = role,
 		.batTransient = true,
 		.batRestricted = BAT_WRITE,
+		.batDirtydesc = true,
 	};
 	if (heapnames && (bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
 		GDKfree(bn);
@@ -120,6 +121,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		*bn->theap = (Heap) {
 			.parentid = bn->batCacheid,
 			.farmid = BBPselectfarm(role, bn->ttype, offheap),
+			.dirty = true,
 		};
 
 		const char *nme = BBP_physical(bn->batCacheid);
@@ -136,6 +138,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 			*bn->tvheap = (Heap) {
 				.parentid = bn->batCacheid,
 				.farmid = BBPselectfarm(role, bn->ttype, varheap),
+				.dirty = true,
 			};
 			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			strconcat_len(bn->tvheap->filename,
@@ -153,7 +156,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	MT_lock_init(&bn->batIdxLock, name);
 	snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
 	MT_rwlock_init(&bn->thashlock, name);
-	bn->batDirtydesc = true;
 	return bn;
 }
 
@@ -630,6 +632,7 @@ BATclear(BAT *b, bool force)
 	b->batCount = 0;
 	if (b->ttype == TYPE_void)
 		b->batCapacity = 0;
+	b->theap->free = 0;
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
 	b->batDirtydesc = true;
@@ -1022,9 +1025,11 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 		}
 		if (dense) {
+			MT_lock_set(&b->theaplock);
 			if (b->batCount == 0)
 				b->tseqbase = ovals ? ovals[0] : oid_nil;
 			BATsetcount(b, BATcount(b) + count);
+			MT_lock_unset(&b->theaplock);
 			return GDK_SUCCEED;
 		} else {
 			/* we need to materialize b; allocate enough capacity */
@@ -1051,11 +1056,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
-	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
-		MT_lock_set(&b->theaplock);
+	MT_lock_set(&b->theaplock);
+	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
 		b->tunique_est = 0;
-		MT_lock_unset(&b->theaplock);
-	}
 	b->theap->dirty = true;
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	if (b->ttype == TYPE_oid) {
@@ -1152,6 +1155,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
+	MT_lock_unset(&b->theaplock);
 	if (values && b->ttype) {
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
@@ -1271,7 +1275,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
 	}
+	MT_lock_set(&b->theaplock);
 	BATsetcount(b, p);
+	MT_lock_unset(&b->theaplock);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
@@ -1868,7 +1874,6 @@ BATsetcount(BAT *b, BUN cnt)
 	assert(!is_oid_nil(b->hseqbase));
 	assert(cnt <= BUN_MAX);
 
-	MT_lock_set(&b->theaplock);
 	b->batCount = cnt;
 	b->batDirtydesc = true;
 	b->theap->dirty |= b->ttype != TYPE_void && b->theap->parentid == b->batCacheid && cnt > 0;
@@ -1904,7 +1909,6 @@ BATsetcount(BAT *b, BUN cnt)
 		}
 	}
 	assert(b->batCapacity >= cnt);
-	MT_lock_unset(&b->theaplock);
 }
 
 /*
