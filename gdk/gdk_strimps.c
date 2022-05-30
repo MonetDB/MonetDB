@@ -867,6 +867,12 @@ STRMPcreate(BAT *b, BAT *s)
 			assert(pb->tstrimps == NULL);
 
 			if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
+				/* Strimp creation failed, but it still
+				 * exists in the SQL layer. Set the
+				 * pointer to 2 so that construction
+				 * will be attemtped again next time.
+				 */
+				pb->tstrimps = (Strimps *)2;
 				MT_lock_unset(&pb->batIdxLock);
 				return GDK_FAIL;
 			}
