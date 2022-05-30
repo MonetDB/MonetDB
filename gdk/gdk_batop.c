@@ -2792,6 +2792,8 @@ PROPdestroy(BAT *b)
 
 	b->tprops = NULL;
 	while (p) {
+		/* only set dirty if a saved property is changed */
+		b->batDirtydesc |= p->id == GDK_MIN_POS || p->id == GDK_MAX_POS;
 		n = p->next;
 		VALclear(&p->v);
 		GDKfree(p);
@@ -2823,6 +2825,8 @@ BATrmprop_nolock(BAT *b, enum prop_t idx)
 				b->tprops = prop->next;
 			VALclear(&prop->v);
 			GDKfree(prop);
+			/* only set dirty if a saved property is changed */
+			b->batDirtydesc |= idx == GDK_MIN_POS || idx == GDK_MAX_POS;
 			return;
 		}
 		prev = prop;
@@ -2858,7 +2862,8 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 		GDKclrerr();
 		p = NULL;
 	}
-	b->batDirtydesc = true;
+	/* only set dirty if a saved property is changed */
+	b->batDirtydesc |= idx == GDK_MIN_POS || idx == GDK_MAX_POS;
 	return p ? &p->v : NULL;
 }
 

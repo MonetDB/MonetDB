@@ -754,6 +754,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 				return GDK_FAIL;
 			}
 		}
+		bn->batDirtydesc = false; /* undo setting by BATsetprop_nolock */
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
