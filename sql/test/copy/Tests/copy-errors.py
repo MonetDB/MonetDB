@@ -7,6 +7,7 @@ import sys
 import tempfile
 import textwrap
 from io import StringIO
+from typing import Optional
 
 import pymonetdb
 
@@ -33,12 +34,22 @@ def add_test(t):
 class TestCase:
     lineno: int
     fieldspec: str
+    raw_testdata: Optional[bytes]
     testdata: list[str]
+    quote: Optional[str]
     error: str
 
-    def __init__(self, spec, data):
+    DEFAULT_BLOCKSIZE = 1000
+
+    def __init__(self, spec, data, raw=False, quote=None):
         self.fieldspec = spec
-        self.testdata = data.splitlines()
+        if raw:
+            self.raw_testdata = data
+            self.testdata = None
+        else:
+            self.raw_testdata = None
+            self.testdata = data.splitlines()
+        self.quote = quote
         self.error = None
 
     def replace(self, lineno, replacement):
@@ -59,31 +70,10 @@ class TestCase:
         else:
             out = StringIO()
         print(
-            f"\n\n**** RUNNING TEST DEFINED AT LINE {self.lineno}:", file=out)
+            f"\n**** RUNNING TEST DEFINED AT LINE {self.lineno}: **********************\n", file=out)
         try:
             CONN.rollback()
-            first_group = []
-            second_group = self.testdata[:]
-            block_size = 1000
-            for i, line in enumerate(second_group):
-                if '%' in line:
-                    first_group = second_group[:i + 1]
-                    second_group = second_group[i + 1:]
-                    break
-            first_block = "\n".join(first_group)
-            second_block = "\n".join(second_group)
-            if first_block:
-                difference = len(second_block) - len(first_block)
-                if difference > 0:
-                    idx = first_block.find('%')
-                    first_block = first_block[:idx] + \
-                        difference * '%' + first_block[idx+1:]
-                    first_block = first_block[:idx] + \
-                        difference * '%' + first_block[idx+1:]
-                block_size = len(first_block) + 1
-                first_block += "\n"
-            second_block += "\n"
-            testdata = first_block + second_block
+            testdata, block_size = self.prepare_testdata()
 
             print(
                 f'----- testdata -----\n{testdata}--------------------\n', file=out)
@@ -91,14 +81,15 @@ class TestCase:
             f = tempfile.NamedTemporaryFile(
                 'w', encoding='utf-8', delete=False, prefix="copyerrors", suffix=".txt")
             filename = f.name
-            qfilename = "E'" + \
-                filename.replace("\\", "\\\\").replace("\'", "\\\'") + "'"
+            qfilename = self.escape(filename)
             f.write(testdata)
             f.close()
+            using = f" USING DELIMITERS '|', E'\\n', {self.escape(self.quote)}" if self.quote else ''
             query = textwrap.dedent(f"""\
+                CALL sys.copy_blocksize({block_size});
                 DROP TABLE foo;
                 CREATE TABLE foo({self.fieldspec});
-                COPY INTO foo FROM {qfilename};
+                COPY INTO foo FROM {qfilename}{using};
             """)
 
             print(
@@ -108,8 +99,8 @@ class TestCase:
                 CURSOR.execute(query)
                 rowcount = CURSOR.rowcount
                 expected = len(self.testdata)
-                print(
-                    f'Expected {expected} affected rows, got {rowcount}', file=out)
+                print(f'Expected {expected} affected rows, got {rowcount}', file=out)
+                print(file=out)
                 assert rowcount == expected
             else:
                 try:
@@ -117,12 +108,50 @@ class TestCase:
                     assert "should have thrown" and False
                 except pymonetdb.exceptions.Error as e:
                     exc = e
+                print(f'Got exception:      {exc}', file=out)
+                print(f'Expected exception: {self.error}', file=out)
+                print(file=out)
+                assert self.error in str(exc)
+            print(f'OK', file=out)
 
             os.unlink(filename)
         except Exception:
             if not VERBOSE:
                 sys.stderr.write(out.getvalue())
             raise
+
+    def prepare_testdata(self):
+        if self.raw_testdata is not None:
+            return (self.raw_testdata, self.DEFAULT_BLOCKSIZE)
+        first_group = []
+        second_group = self.testdata[:]
+        block_size = self.DEFAULT_BLOCKSIZE
+        for i, line in enumerate(second_group):
+            if '%' in line:
+                first_group = second_group[:i + 1]
+                second_group = second_group[i + 1:]
+                break
+        first_block = "\n".join(first_group)
+        second_block = "\n".join(second_group)
+        if first_block:
+            difference = len(second_block) - len(first_block)
+            if difference > 0:
+                idx = first_block.find('%')
+                first_block = first_block[:idx] + \
+                        difference * '%' + first_block[idx+1:]
+                first_block = first_block[:idx] + \
+                        difference * '%' + first_block[idx+1:]
+            block_size = len(first_block) + 1
+            first_block += "\n"
+        second_block += "\n"
+        testdata = first_block + second_block
+        return (testdata, block_size)
+
+    def escape(self, text):
+        if "\\" not in text and "'" not in text and '"' not in text:
+            return f"'{text}'"
+        else:
+            return "E'" + text.replace("\\", "\\\\").replace("\'", "\\\'") + "'"
 
 
 ######
@@ -137,7 +166,7 @@ testdata = """\
 51|"52x"|53
 """
 
-basecase = TestCase("i INT, t TEXT, j INT", testdata)
+basecase = TestCase("i INT, t TEXT, j INT", testdata, quote='"')
 
 # Should succeed
 add_test(basecase)
