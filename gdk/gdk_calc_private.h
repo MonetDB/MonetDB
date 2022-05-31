@@ -136,7 +136,7 @@
 #ifdef HAVE_HGE
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
-#elif HAVE___INT128
+#elif defined(HAVE___INT128)
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, __int128, on_overflow)
 #elif defined(_MSC_VER) && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
