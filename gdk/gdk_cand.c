@@ -330,7 +330,7 @@ BATdiffcand(BAT *a, BAT *b)
 			while (!is_oid_nil(ob) && ob < oa) {
 				ob = canditer_next(&cib);
 			}
-			if ((!is_oid_nil(ob) && oa < ob) || is_oid_nil(ob))
+			if (is_oid_nil(ob) || oa < ob)
 				*p++ = oa;
 		}
 	}
