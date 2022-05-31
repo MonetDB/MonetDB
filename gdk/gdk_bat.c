@@ -97,6 +97,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.batRole = role,
 		.batTransient = true,
 		.batRestricted = BAT_WRITE,
+		.batDirtydesc = true,
 	};
 	if (heapnames && (bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
 		GDKfree(bn);
@@ -120,6 +121,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		*bn->theap = (Heap) {
 			.parentid = bn->batCacheid,
 			.farmid = BBPselectfarm(role, bn->ttype, offheap),
+			.dirty = true,
 		};
 
 		const char *nme = BBP_physical(bn->batCacheid);
@@ -136,6 +138,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 			*bn->tvheap = (Heap) {
 				.parentid = bn->batCacheid,
 				.farmid = BBPselectfarm(role, bn->ttype, varheap),
+				.dirty = true,
 			};
 			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			strconcat_len(bn->tvheap->filename,
@@ -153,7 +156,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	MT_lock_init(&bn->batIdxLock, name);
 	snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
 	MT_rwlock_init(&bn->thashlock, name);
-	bn->batDirtydesc = true;
 	return bn;
 }
 
@@ -294,14 +296,6 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid, true);
-	if (bn->theap)
-		HEAPdecref(bn->theap, true);
-	if (bn->tvheap)
-		HEAPdecref(bn->tvheap, true);
-	MT_lock_destroy(&bn->theaplock);
-	MT_lock_destroy(&bn->batIdxLock);
-	MT_rwlock_destroy(&bn->thashlock);
-	GDKfree(bn);
 	return NULL;
 }
 
@@ -645,6 +639,7 @@ BATclear(BAT *b, bool force)
 	b->batCount = 0;
 	if (b->ttype == TYPE_void)
 		b->batCapacity = 0;
+	b->theap->free = 0;
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
 	b->batDirtydesc = true;

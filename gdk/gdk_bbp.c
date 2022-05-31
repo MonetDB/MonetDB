@@ -805,6 +805,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 				goto bailout;
 			}
 		}
+		bn->batDirtydesc = false; /* undo setting by BATsetprop_nolock */
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
@@ -3924,7 +3925,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					BBP_status_on(i, BBPSAVING);
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
-					assert(size <= bi.count || size == BUN_NONE);
+					assert(sizes == NULL || size <= bi.count);
+					assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
 					if (size > bi.count)
 						size = bi.count;
 					MT_rwlock_rdlock(&b->thashlock);
