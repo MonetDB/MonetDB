@@ -49,6 +49,10 @@ run_test(TestCase("d DECIMAL(5, 2)", "0").expect_first(0))
 run_test(TestCase("d DECIMAL(5, 2)", "00").expect_first(0))
 run_test(TestCase("d DECIMAL(5, 2)", "000").expect_first(0))
 run_test(TestCase("d DECIMAL(5, 2)", "0000").expect_first(0))
+run_test(TestCase("d DECIMAL(5, 2)", ".0").expect_first(0))
+# I find this surprising but it matches the old implementation
+run_test(TestCase("d DECIMAL(5, 2)", ".").expect_first(0))
+#
 run_test(TestCase("d DECIMAL(5, 2)", "0.").expect_first(0))
 run_test(TestCase("d DECIMAL(5, 2)", "0.0").expect_first(0))
 run_test(TestCase("d DECIMAL(5, 2)", "0.00").expect_first(0))
