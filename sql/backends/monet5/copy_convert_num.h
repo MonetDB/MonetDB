@@ -105,7 +105,10 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 		scale--;
 	}
 	if (*s) {
-		copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
+		if (isdigit(*s))
+			copy_report_error(errors, rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
+		else
+			copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
 		return TMPL_NIL;
 	}
 	if (neg)
@@ -156,6 +159,7 @@ TMPL_SUFFIXED(COPYparse_decimal) (
 	TMPL_TYPE *dummy,
 	lng *starting_row, int *col_no, str *col_name)
 {
+	str msg = MAL_SUCCEED;
 	(void)dummy;
 
 	struct error_handling errors;
@@ -165,11 +169,20 @@ TMPL_SUFFIXED(COPYparse_decimal) (
 		.digits = *digits,
 		.scale = *scale,
 	};
-	str msg = parse_fixed_width_column(
+
+	// Does this number of digits fit in the result type?
+	// Should be ensured by the rest of the system but let's double check
+	// so we do not have to think about overflows while parsing at all.
+	double max = pow(10, myparms.digits);
+	if (max >= (double)TMPL_MAX)
+		bailout("copy.parse_decimal", "result type cannot hold %d digits", myparms.digits);
+
+	msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_decimal",
 		*block_bat_id, *offsets_bat_id,
 		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_decimals), &myparms);
 
+end:
 	copy_destroy_error_handling(&errors);
 	return msg;
 }

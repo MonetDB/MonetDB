@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import copy
+import decimal
+from decimal import Decimal
 import inspect
 import os
 import sys
@@ -31,15 +33,17 @@ VERBOSE = os.getenv('VERBOSE') is not None
 TESTS = []
 
 
-def add_test(t):
+def add_test(t, sub=None):
     global TESTS
     t = copy.deepcopy(t)
     t.lineno = inspect.getframeinfo(inspect.stack()[1][0]).lineno
+    t.sub = sub
     TESTS.append(t)
 
 
 class TestCase:
     lineno: int
+    sub: Optional[str]
     fieldspec: str
     raw_testdata: Optional[bytes]
     testdata: list[str]
@@ -68,6 +72,11 @@ class TestCase:
         t.expectations = [ (r, c, v) for r, c, v in t.expectations if r != rowno ]
         return t
 
+    def replace_schema(self, new_schema):
+        t = copy.deepcopy(self)
+        t.fieldspec = new_schema
+        return t
+
     def expect_error(self, substring):
         t = copy.deepcopy(self)
         t.error = substring
@@ -90,8 +99,10 @@ class TestCase:
             out = sys.stderr
         else:
             out = StringIO()
-        print(
-            f"\n**** RUNNING TEST DEFINED AT LINE {self.lineno}: **********************\n", file=out)
+        msg = f"RUNNING TEST DEFINED AT LINE {self.lineno}"
+        if self.sub:
+            msg += " WITH " + self.sub
+        print(f"\n**** {msg}: **********************\n", file=out)
         try:
             CONN.rollback()
             testdata, block_size = self.prepare_testdata()
@@ -136,7 +147,7 @@ class TestCase:
             else:
                 try:
                     CURSOR.execute(query)
-                    assert "should have thrown" and False
+                    assert "should have thrown an exception" and False
                 except pymonetdb.exceptions.Error as e:
                     exc = e
                 print(f'Got exception:      {exc}', file=out)
@@ -313,6 +324,99 @@ add_test(TestCase("i INT", "10.01").expect_error("unexpected decimal digit '1'")
 add_test(TestCase("i INT", "10.01  ").expect_error("unexpected decimal digit '1'"))
 add_test(TestCase("i INT", "10.01\t").expect_error("unexpected decimal digit '1'"))
 add_test(TestCase("i INT", "10x").expect_error("unexpected character 'x'"))
+
+# Decimal parsing, the basics
+add_test(TestCase("d DECIMAL(5,0)", "0").expect_first(0))
+add_test(TestCase("d DECIMAL(5,0)", "-0").expect_first(0))
+add_test(TestCase("d DECIMAL(5,0)", "00").expect_first(0))
+add_test(TestCase("d DECIMAL(5,0)", "-00").expect_first(0))
+add_test(TestCase("d DECIMAL(5,0)", "0.").expect_first(0))
+add_test(TestCase("d DECIMAL(5,0)", "0.0").expect_error("too many decimal digits"))
+add_test(TestCase("d DECIMAL(5,0)", ".0").expect_error("too many decimal digits"))
+#
+add_test(TestCase("d DECIMAL(5,0)", "10").expect_first(10))
+add_test(TestCase("d DECIMAL(5,0)", "10.").expect_first(10))
+add_test(TestCase("d DECIMAL(5,0)", "010").expect_first(10))
+add_test(TestCase("d DECIMAL(5,0)", "-10").expect_first(-10))
+add_test(TestCase("d DECIMAL(5,0)", "-10.").expect_first(-10))
+add_test(TestCase("d DECIMAL(5,0)", "-010").expect_first(-10))
+add_test(TestCase("d DECIMAL(5,0)", "+10").expect_first(10))
+add_test(TestCase("d DECIMAL(5,0)", "+10.").expect_first(10))
+add_test(TestCase("d DECIMAL(5,0)", "+010").expect_first(10))
+#
+add_test(TestCase("d DECIMAL(5,0)", "99999").expect_first(99999))
+add_test(TestCase("d DECIMAL(5,0)", "-99999").expect_first(-99999))
+add_test(TestCase("d DECIMAL(5,0)", "099999").expect_first(99999))
+add_test(TestCase("d DECIMAL(5,0)", "-099999").expect_first(-99999))
+#
+add_test(TestCase("d DECIMAL(5,0)", "100000").expect_error("too many decimal digits"))
+add_test(TestCase("d DECIMAL(5,0)", "-100000").expect_error("too many decimal digits"))
+add_test(TestCase("d DECIMAL(5,0)", "999999").expect_error("too many decimal digits"))
+add_test(TestCase("d DECIMAL(5,0)", "-999999").expect_error("too many decimal digits"))
+#
+add_test(TestCase("d DECIMAL(5, 2)", "0").expect_first(0))
+add_test(TestCase("d DECIMAL(5, 2)", "00").expect_first(0))
+add_test(TestCase("d DECIMAL(5, 2)", "000").expect_first(0))
+add_test(TestCase("d DECIMAL(5, 2)", "0000").expect_first(0))
+add_test(TestCase("d DECIMAL(5, 2)", "0.").expect_first(0))
+add_test(TestCase("d DECIMAL(5, 2)", "0.0").expect_first(0))
+add_test(TestCase("d DECIMAL(5, 2)", "0.00").expect_first(0))
+add_test(TestCase("d DECIMAL(5, 2)", "0.000").expect_error("too many decimal digits"))
+#
+add_test(TestCase("d DECIMAL(5, 2)", "123").expect_first(123))
+add_test(TestCase("d DECIMAL(5, 2)", "1234").expect_error("too many decimal digits"))
+add_test(TestCase("d DECIMAL(5, 2)", "0123").expect_first(123))
+add_test(TestCase("d DECIMAL(5, 2)", "00123").expect_first(123))
+add_test(TestCase("d DECIMAL(5, 2)", "000123").expect_first(123))
+add_test(TestCase("d DECIMAL(5, 2)", "123.").expect_first(123))
+add_test(TestCase("d DECIMAL(5, 2)", "123.0").expect_first(123))
+add_test(TestCase("d DECIMAL(5, 2)", "123.00").expect_first(123))
+add_test(TestCase("d DECIMAL(5, 2)", "123.000").expect_error("too many decimal digits"))
+add_test(TestCase("d DECIMAL(5, 2)", "123.").expect_first(123))
+add_test(TestCase("d DECIMAL(5, 2)", "123.4").expect_first(Decimal('123.4')))
+add_test(TestCase("d DECIMAL(5, 2)", "123.45").expect_first(Decimal('123.45')))
+add_test(TestCase("d DECIMAL(5, 2)", "23.45").expect_first(Decimal('23.45')))
+add_test(TestCase("d DECIMAL(5, 2)", "3.45").expect_first(Decimal('3.45')))
+add_test(TestCase("d DECIMAL(5, 2)", "0.45").expect_first(Decimal('0.45')))
+add_test(TestCase("d DECIMAL(5, 2)", ".45").expect_first(Decimal('0.45')))
+add_test(TestCase("d DECIMAL(5, 2)", "-.45").expect_first(-Decimal('0.45')))
+#
+add_test(TestCase("d DECIMAL(5, 2)", "x").expect_error("unexpected characters"))
+add_test(TestCase("d DECIMAL(5, 2)", "0x").expect_error("unexpected characters"))
+add_test(TestCase("d DECIMAL(5, 2)", "1x").expect_error("unexpected characters"))
+add_test(TestCase("d DECIMAL(5, 2)", ".x").expect_error("unexpected characters"))
+add_test(TestCase("d DECIMAL(5, 2)", "1.x").expect_error("unexpected characters"))
+add_test(TestCase("d DECIMAL(5, 2)", "1.0x").expect_error("unexpected characters"))
+
+# Location reporting for decimal parsing failures
+decimalcase = basecase.replace_schema("i DECIMAL(5,2), t TEXT, j DECIMAL(5,2)")
+add_test(decimalcase.replace(3, '41x|"42x"|43').expect_error("Row 4 column 1 'i':"))
+add_test(decimalcase.replace(3, '41|"42x"|43x').expect_error("Row 4 column 3 'j':"))
+
+
+# Decimal overflow
+max_digits = 38 if HAVE_HGE else 19
+decprec = decimal.getcontext().prec
+decimal.getcontext().prec = max_digits + 2
+for d in range(1, max_digits + 1):
+    candidate_scales = set([0, 1,  d//2, (d+1)//2, (d//2) + 1, d - 1 , d])
+    scales = sorted(s for s in candidate_scales if 0 <= s <= d)
+    for s in scales:
+        #
+        n = ('9' * (d-s)) + '.' + ('9' * s)
+        dn = Decimal(n)
+        input = f'{n}\n+{n}\n-{n}\n'
+        answers = [dn, dn, -dn]
+        tc = TestCase(f'd DECIMAL({d}, {s})', input)
+        for i, a in enumerate(answers):
+            tc = tc.expect_value(i, 0, a)
+        add_test(tc, sub=f'd={d}, s={s}')
+        #
+        n = '1' + n.replace('9', '0')
+        add_test(TestCase(f'd DECIMAL({d}, {s})', f'{n}').expect_error('too many decimal digits'))
+        add_test(TestCase(f'd DECIMAL({d}, {s})', f'+{n}').expect_error('too many decimal digits'))
+        add_test(TestCase(f'd DECIMAL({d}, {s})', f'-{n}').expect_error('too many decimal digits'))
+decimal.getcontext().prec = decprec
 
 
 ######
