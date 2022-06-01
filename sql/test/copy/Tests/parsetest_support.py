@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+
+import copy
+import inspect
+import os
+import sys
+import tempfile
+import textwrap
+from io import StringIO
+from typing import Any, Optional, Tuple
+
+import pymonetdb
+
+######
+# Infrastructure
+######
+
+
+class TestCase:
+    lineno: int
+    sub: Optional[str]
+    fieldspec: str
+    raw_testdata: Optional[bytes]
+    testdata: list[str]
+    quote: Optional[str]
+    expectations: list[Tuple[int, int, Any]]
+    error: str
+
+    DEFAULT_BLOCKSIZE = 1000
+
+    def __init__(self, spec, data, raw=False, quote=None, null=None):
+        self.fieldspec = spec
+        if raw:
+            self.raw_testdata = data
+            self.testdata = None
+        else:
+            self.raw_testdata = None
+            self.testdata = data.splitlines()
+        self.quote = quote
+        self.null = null
+        self.error = None
+        self.expectations = []
+
+    def replace(self, rowno, replacement):
+        t = copy.deepcopy(self)
+        t.testdata[rowno] = replacement
+        t.expectations = [(r, c, v)
+                          for r, c, v in t.expectations if r != rowno]
+        return t
+
+    def replace_schema(self, new_schema):
+        t = copy.deepcopy(self)
+        t.fieldspec = new_schema
+        return t
+
+    def expect_error(self, substring):
+        t = copy.deepcopy(self)
+        t.error = substring
+        t.expectations = []
+        return t
+
+    def expect_value(self, row, col, val):
+        assert not self.error
+        t = copy.deepcopy(self)
+        t.expectations.append((row, col, val))
+        return t
+
+    def expect_first(self, val):
+        return self.expect_value(0, 0, val)
+
+    def run(self, conn: pymonetdb.Connection, cursor, out):
+        msg = f"RUNNING TEST DEFINED AT LINE {self.lineno}"
+        if self.sub:
+            msg += " WITH " + self.sub
+        print(f"\n**** {msg}: **********************\n", file=out)
+        conn.rollback()
+        testdata, block_size = self.prepare_testdata()
+
+        print(
+            f'----- testdata -----\n{testdata}--------------------\n', file=out)
+
+        f = tempfile.NamedTemporaryFile(
+            'w', encoding='utf-8', delete=False, prefix="copyerrors", suffix=".txt")
+        filename = f.name
+        qfilename = self.escape(filename)
+        f.write(testdata)
+        f.close()
+        using = f" USING DELIMITERS '|', E'\\n', {self.escape(self.quote)}" if self.quote else ''
+        null = f" NULL AS {self.escape(self.null)}" if self.null is not None else ''
+        query = textwrap.dedent(f"""\
+            CALL sys.copy_blocksize({block_size});
+            DROP TABLE foo;
+            CREATE TABLE foo({self.fieldspec});
+            COPY INTO foo FROM {qfilename}{using}{null};
+        """)
+
+        print(
+            f'----- sql code -----\n{query}--------------------\n', file=out)
+
+        if self.error is None:
+            cursor.execute(query)
+            rowcount = cursor.rowcount
+            expected = len(self.testdata)
+            print(f'Expected {expected} affected rows, got {rowcount}', file=out)
+            print(file=out)
+            assert rowcount == expected
+            if self.expectations:
+                cursor.execute('SELECT * FROM foo')
+                results = cursor.fetchall()
+                for r, c, expected in self.expectations:
+                    if self.testdata and '%' in self.testdata[r]:
+                        continue
+                    value = results[r][c]
+                    print(f'Row {r} col {c} expected {expected!r}, got {value!r}', file=out)
+                    assert value == expected
+        else:
+            try:
+                cursor.execute(query)
+                assert "should have thrown an exception" and False
+            except pymonetdb.exceptions.Error as e:
+                exc = e
+            print(f'Got exception:      {exc}', file=out)
+            print(f'Expected exception: {self.error}', file=out)
+            print(file=out)
+            assert self.error in str(exc)
+        print(f'OK', file=out)
+
+        os.unlink(filename)
+
+    def prepare_testdata(self):
+        if self.raw_testdata is not None:
+            return (self.raw_testdata, self.DEFAULT_BLOCKSIZE)
+        first_group = []
+        second_group = self.testdata[:]
+        block_size = self.DEFAULT_BLOCKSIZE
+        for i, line in enumerate(second_group):
+            if '%' in line:
+                first_group = second_group[:i + 1]
+                second_group = second_group[i + 1:]
+                break
+        first_block = "\n".join(first_group)
+        second_block = "\n".join(second_group)
+        if first_block:
+            difference = len(second_block) - len(first_block)
+            if difference > 0:
+                idx = first_block.find('%')
+                first_block = first_block[:idx] + \
+                    difference * '%' + first_block[idx+1:]
+                first_block = first_block[:idx] + \
+                    difference * '%' + first_block[idx+1:]
+            block_size = len(first_block) + 1
+            first_block += "\n"
+        second_block += "\n"
+        testdata = first_block + second_block
+        return (testdata, block_size)
+
+    def escape(self, text):
+        if "\\" not in text and "'" not in text and '"' not in text:
+            return f"'{text}'"
+        else:
+            return "E'" + text.replace("\\", "\\\\").replace("\'", "\\\'") + "'"
+
+
+class TestSuite:
+    conn: pymonetdb.Connection
+    verbose: bool
+    have_hge: bool
+    filter = None
+
+    def __init__(self, conn, filter, verbose):
+        self.conn = conn
+        self.verbose = verbose
+        self.have_hge = True
+        self.filter = filter
+        cursor = conn.cursor()
+        try:
+            cursor.execute('SELECT CAST(1 AS HUGEINT)')
+        except pymonetdb.ProgrammingError:
+            self.have_hge = False
+            self.conn.rollback()
+        finally:
+            cursor.close()
+
+    def run_test(self, t, sub=None):
+        t = copy.deepcopy(t)
+        t.lineno = inspect.getframeinfo(inspect.stack()[1][0]).lineno
+        t.sub = sub
+        if self.filter and not self.filter(t):
+            return
+        if self.verbose:
+            out = sys.stderr
+        else:
+            out = StringIO()
+        try:
+            c = self.conn.cursor()
+            t.run(self.conn, c, out)
+        except Exception:
+            if not self.verbose:
+                sys.stderr.write(out.getvalue())
+            raise
+        finally:
+            c.close()
+
+
+def setup_suite():
+    verbose = os.getenv('VERBOSE') is not None
+    linenos = set(int(a) for a in os.getenv('ONLY', '').split())
+    if linenos:
+        filter = lambda t: t.lineno in linenos
+        verbose = True
+    else:
+        filter = None
+    dbname = os.getenv("TSTDB", "demo")
+    port = int(os.getenv("MAPIPORT", '50000'))
+    conn = pymonetdb.connect(dbname, port=port)
+
+    return TestSuite(conn, filter=filter, verbose=verbose)
