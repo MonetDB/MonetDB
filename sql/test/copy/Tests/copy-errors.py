@@ -80,6 +80,9 @@ class TestCase:
         t.expectations.append((row, col, val))
         return t
 
+    def expect_first(self, val):
+        return self.expect_value(0, 0, val)
+
     def run(self):
         global VERBOSE, CONN, CURSOR
 
@@ -251,54 +254,54 @@ add_test(TestCase("i INT", '42', raw=True)
          .expect_error("unterminated line"))
 
 # NULL tests
-add_test(TestCase("i INT", "\n", null='').expect_value(0, 0, None))
-add_test(TestCase("i INT", "null", null="null").expect_value(0, 0, None))
-add_test(TestCase("i INT", "NULL", null="null").expect_value(0, 0, None))
-add_test(TestCase("i INT", "null", null="NULL").expect_value(0, 0, None))
+add_test(TestCase("i INT", "\n", null='').expect_first(None))
+add_test(TestCase("i INT", "null", null="null").expect_first(None))
+add_test(TestCase("i INT", "NULL", null="null").expect_first(None))
+add_test(TestCase("i INT", "null", null="NULL").expect_first(None))
 
 # Integer overflow tests
-add_test(TestCase("i TINYINT", "127").expect_value(0, 0, 127))
-add_test(TestCase("i TINYINT", "+127").expect_value(0, 0, +127))
-add_test(TestCase("i TINYINT", "-127").expect_value(0, 0, -127))
+add_test(TestCase("i TINYINT", "127").expect_first(127))
+add_test(TestCase("i TINYINT", "+127").expect_first(+127))
+add_test(TestCase("i TINYINT", "-127").expect_first(-127))
 add_test(TestCase("i TINYINT", "128").expect_error("overflow"))
 add_test(TestCase("i TINYINT", "-128").expect_error("overflow"))
 #
-add_test(TestCase("i SMALLINT", "32767").expect_value(0, 0, 32767))
-add_test(TestCase("i SMALLINT", "+32767").expect_value(0, 0, +32767))
-add_test(TestCase("i SMALLINT", "-32767").expect_value(0, 0, -32767))
+add_test(TestCase("i SMALLINT", "32767").expect_first(32767))
+add_test(TestCase("i SMALLINT", "+32767").expect_first(+32767))
+add_test(TestCase("i SMALLINT", "-32767").expect_first(-32767))
 add_test(TestCase("i SMALLINT", "32768").expect_error("overflow"))
 add_test(TestCase("i SMALLINT", "-32768").expect_error("overflow"))
 #
-add_test(TestCase("i INT", "2147483647").expect_value(0, 0, 2147483647))
-add_test(TestCase("i INT", "+2147483647").expect_value(0, 0, +2147483647))
-add_test(TestCase("i INT", "-2147483647").expect_value(0, 0, -2147483647))
+add_test(TestCase("i INT", "2147483647").expect_first(2147483647))
+add_test(TestCase("i INT", "+2147483647").expect_first(+2147483647))
+add_test(TestCase("i INT", "-2147483647").expect_first(-2147483647))
 add_test(TestCase("i INT", "2147483648").expect_error("overflow"))
 add_test(TestCase("i INT", "-2147483648").expect_error("overflow"))
 #
-add_test(TestCase("i BIGINT", "9223372036854775807").expect_value(0, 0, 9223372036854775807))
-add_test(TestCase("i BIGINT", "+9223372036854775807").expect_value(0, 0, +9223372036854775807))
-add_test(TestCase("i BIGINT", "-9223372036854775807").expect_value(0, 0, -9223372036854775807))
+add_test(TestCase("i BIGINT", "9223372036854775807").expect_first(9223372036854775807))
+add_test(TestCase("i BIGINT", "+9223372036854775807").expect_first(+9223372036854775807))
+add_test(TestCase("i BIGINT", "-9223372036854775807").expect_first(-9223372036854775807))
 add_test(TestCase("i BIGINT", "9223372036854775808").expect_error("overflow"))
 add_test(TestCase("i BIGINT", "-9223372036854775808").expect_error("overflow"))
 #
 if HAVE_HGE:
-    add_test(TestCase("i HUGEINT", "170141183460469231731687303715884105727").expect_value(0, 0, 170141183460469231731687303715884105727))
-    add_test(TestCase("i HUGEINT", "+170141183460469231731687303715884105727").expect_value(0, 0, +170141183460469231731687303715884105727))
-    add_test(TestCase("i HUGEINT", "-170141183460469231731687303715884105727").expect_value(0, 0, -170141183460469231731687303715884105727))
+    add_test(TestCase("i HUGEINT", "170141183460469231731687303715884105727").expect_first(170141183460469231731687303715884105727))
+    add_test(TestCase("i HUGEINT", "+170141183460469231731687303715884105727").expect_first(+170141183460469231731687303715884105727))
+    add_test(TestCase("i HUGEINT", "-170141183460469231731687303715884105727").expect_first(-170141183460469231731687303715884105727))
     add_test(TestCase("i HUGEINT", "170141183460469231731687303715884105728").expect_error("overflow"))
     add_test(TestCase("i HUGEINT", "-170141183460469231731687303715884105728").expect_error("overflow"))
 
 # Integer trailing whitespace and other tails
 add_test(TestCase("i INT", "", null="null").expect_error("missing integer"))
-add_test(TestCase("i INT", "10").expect_value(0, 0, 10))
-add_test(TestCase("i INT", "10  ").expect_value(0, 0, 10))
-add_test(TestCase("i INT", "10\t").expect_value(0, 0, 10))
-add_test(TestCase("i INT", "10.").expect_value(0, 0, 10))
-add_test(TestCase("i INT", "10.  ").expect_value(0, 0, 10))
-add_test(TestCase("i INT", "10.\t").expect_value(0, 0, 10))
-add_test(TestCase("i INT", "10.0").expect_value(0, 0, 10))
-add_test(TestCase("i INT", "10.0  ").expect_value(0, 0, 10))
-add_test(TestCase("i INT", "10.0\t").expect_value(0, 0, 10))
+add_test(TestCase("i INT", "10").expect_first(10))
+add_test(TestCase("i INT", "10  ").expect_first(10))
+add_test(TestCase("i INT", "10\t").expect_first(10))
+add_test(TestCase("i INT", "10.").expect_first(10))
+add_test(TestCase("i INT", "10.  ").expect_first(10))
+add_test(TestCase("i INT", "10.\t").expect_first(10))
+add_test(TestCase("i INT", "10.0").expect_first(10))
+add_test(TestCase("i INT", "10.0  ").expect_first(10))
+add_test(TestCase("i INT", "10.0\t").expect_first(10))
 add_test(TestCase("i INT", "10.0000000000000000000000000000000000000000000000000000000"))
 add_test(TestCase("i INT", "10.0000000000000000000000000000000000000000000000000000000  "))
 add_test(TestCase("i INT", "10.0000000000000000000000000000000000000000000000000000000\t"))
