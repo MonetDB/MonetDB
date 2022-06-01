@@ -3155,8 +3155,8 @@ dirty_bat(bat *i, bool subcommit)
 			if ((BBP_status(*i) & BBPNEW) &&
 			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
 				*i = -*i;	/* error */
-			if ((BBP_status(*i) & BBPPERSISTENT) &&
-			    (subcommit || BATdirty(b)))
+			else if ((BBP_status(*i) & BBPPERSISTENT) &&
+				 (subcommit || BATdirty(b)))
 				return b;	/* the bat is loaded, persistent and dirty */
 		} else if (BBP_status(*i) & BBPSWAPPED) {
 			b = (BAT *) BBPquickdesc(*i);
