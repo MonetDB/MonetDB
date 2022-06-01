@@ -3672,9 +3672,10 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			BATiter bi;
 			oid minpos = oid_nil, maxpos = oid_nil;
 
-			/* add a fix so that BBPmanager doesn't interfere */
-			BBPfix(i);
 			if (BBP_status(i) & BBPPERSISTENT) {
+				/* add a fix so that BBPmanager doesn't
+				 * interfere */
+				BBPfix(i);
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
 					decref(-i, false, false, locked_by == 0 || locked_by != MT_getpid(), __func__);
@@ -3729,9 +3730,12 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, subcommit != NULL, &bi, (BUN) minpos, (BUN) maxpos);
 			}
 			bat_iterator_end(&bi);
-			/* can't use BBPunfix because of the "lock"
-			 * argument: locked_by may be set here */
-			decref(i, false, false, locked_by == 0 || locked_by != MT_getpid(), __func__);
+			if (BBP_status(i) & BBPPERSISTENT) {
+				/* can't use BBPunfix because of the
+				 * "lock" argument: locked_by may be set
+				 * here */
+				decref(i, false, false, locked_by == 0 || locked_by != MT_getpid(), __func__);
+			}
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
