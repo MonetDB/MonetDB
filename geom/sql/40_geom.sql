@@ -328,7 +328,7 @@ GRANT EXECUTE ON FUNCTION ST_MakePoint(double, double, double, double) TO PUBLIC
 CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry EXTERNAL NAME geom."MakePointM";
 GRANT EXECUTE ON FUNCTION ST_MakePointM(double, double, double) TO PUBLIC;
 --CREATE FUNCTION ST_MakeLine(geometry set geoms)?????
-CREATE AGGREGATE ST_MakeLine(geom Geometry) RETURNS Geometry external name geom."MakeLine";
+CREATE AGGREGATE ST_MakeLine(geom Geometry) RETURNS Geometry external name aggr."MakeLine";
 CREATE FUNCTION ST_MakeLine(geom1 Geometry, geom2 Geometry) RETURNS Geometry external name geom."MakeLine"; --two single geometries
 GRANT EXECUTE ON FUNCTION ST_MakeLine(Geometry, Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_MakeLine(geoms_arr Geometry[]) RETURNS Geometry external name geom."MakeLine";
