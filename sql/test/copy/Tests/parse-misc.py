@@ -48,18 +48,32 @@ run_test(basecase
          .replace(2, '31|"32""x"|33')
          .expect_value(2, 1, '32"x'))
 
-# NUL character, unquoted
+# Not fully enclosed
 run_test(basecase
-         .replace(2, '31a\x00|"32x"|33')
-         .expect_error("Row 3 column 1: invalid NUL character"))
-run_test(basecase
-         .replace(2, '3\x001a|"32x"|33')
-         .expect_error("Row 3 column 1: invalid NUL character"))
+    .replace(2, '31|"32"x|33')
+    .expect_error("end quote must be followed by separator"))
 
-# NUL character, quoted
-run_test(basecase
-         .replace(2, '31a|"32x\x00"|33')
-         .expect_error("Row 3 column 2: invalid NUL character"))
+# NUL character, unquoted and quoted
+for escape in [True, False]:
+    for quote in ['"', None]:
+        mycase = (basecase
+            .set_escape(escape)
+            .set_quote(quote)
+        )
+        sub = f'escape={escape!r} quote={quote!r}'
+        msg = "NUL character not allowed in textual data"
+        run_test(mycase
+                .replace(2, '31a\x00|"32x"|33')
+                .expect_error(f"Row 3 column 1: {msg}"),
+                sub=sub)
+        run_test(mycase
+                .replace(2, '3\x001a|"32x"|33')
+                .expect_error(f"Row 3 column 1: {msg}"),
+                sub=sub)
+        run_test(mycase
+                .replace(2, '31a|"32x\x00"|33')
+                .expect_error(f"Row 3 column 2: {msg}"),
+                sub=sub)
 
 # Unterminated string
 run_test(TestCase("i INT", '"42', quote='"')
@@ -92,3 +106,37 @@ uuidcase = TestCase("id INT, t TEXT, u UUID", uuiddata)
 run_test(uuidcase)
 run_test(uuidcase.replace(3, '4|x|banana')
          .expect_error("Row 4 column 3 'u': invalid uuid"))
+
+
+# Test field and record termination
+run_test(TestCase("i INT, t TEXT, j INT", """\
+    11|x|12
+    21|%|22
+    31|x|32
+    41|x|42
+"""))
+run_test(TestCase("i INT, t TEXT, j INT", """\
+    11|x|12|
+    21|%|22
+    31|x|32|
+    41|x|42
+"""))
+run_test(TestCase("i INT, t TEXT, j INT", """\
+    11|x|12|
+    21|%|22
+    31|x|32|
+    41|x|42|
+"""))
+run_test(TestCase("i INT, t TEXT, j INT", """\
+    11|x|12
+    21|%|22
+    31|x|32|banana
+    41|x|42
+""").expect_error("Row 3: too many fields"))
+run_test(TestCase("i INT, t TEXT, j INT", """\
+    11|x|12
+    21|%|22
+    31|
+    41|x|42
+""").expect_error("Row 3: too few fields"))
+run_test(TestCase("i INT", "1\n2\n3", raw=True).expect_error("unterminated line at end"))

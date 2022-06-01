@@ -22,13 +22,15 @@ class TestCase:
     fieldspec: str
     raw_testdata: Optional[bytes]
     testdata: list[str]
+    escape: Optional[bool]
+    null: Optional[str]
     quote: Optional[str]
     expectations: list[Tuple[int, int, Any]]
     error: str
 
     DEFAULT_BLOCKSIZE = 1000
 
-    def __init__(self, spec, data, raw=False, quote=None, null=None):
+    def __init__(self, spec, data, raw=False, quote=None, null=None, escape=None):
         self.fieldspec = spec
         if raw:
             self.raw_testdata = data
@@ -37,6 +39,7 @@ class TestCase:
             self.raw_testdata = None
             self.testdata = data.splitlines()
         self.quote = quote
+        self.escape = escape
         self.null = null
         self.error = None
         self.expectations = []
@@ -48,9 +51,19 @@ class TestCase:
                           for r, c, v in t.expectations if r != rowno]
         return t
 
-    def replace_schema(self, new_schema):
+    def set_quote(self, q):
         t = copy.deepcopy(self)
-        t.fieldspec = new_schema
+        t.quote = q
+        return t
+
+    def set_backslashes(self, b):
+        t = copy.deepcopy(self)
+        t.backslashes = b
+        return t
+
+    def set_escape(self, e):
+        t = copy.deepcopy(self)
+        t.escape = e
         return t
 
     def expect_error(self, substring):
@@ -82,16 +95,25 @@ class TestCase:
         f = tempfile.NamedTemporaryFile(
             'w', encoding='utf-8', delete=False, prefix="copyerrors", suffix=".txt")
         filename = f.name
-        qfilename = self.escape(filename)
+        qfilename = self.escape_text(filename)
         f.write(testdata)
         f.close()
-        using = f" USING DELIMITERS '|', E'\\n', {self.escape(self.quote)}" if self.quote else ''
-        null = f" NULL AS {self.escape(self.null)}" if self.null is not None else ''
+        parts = []
+        if self.quote:
+            parts.append(f"USING DELIMITERS '|', E'\\n', {self.escape_text(self.quote)}")
+        if self.escape is not None:
+            if self.escape:
+                parts.append("ESCAPE")
+            else:
+                parts.append("NO ESCAPE")
+        if self.null is not None:
+            parts.append(f" NULL AS {self.escape_text(self.null)}")
+        options = ' '.join(parts)
         query = textwrap.dedent(f"""\
             CALL sys.copy_blocksize({block_size});
             DROP TABLE foo;
             CREATE TABLE foo({self.fieldspec});
-            COPY INTO foo FROM {qfilename}{using}{null};
+            COPY INTO foo FROM {qfilename} {options};
         """)
 
         print(
@@ -154,7 +176,7 @@ class TestCase:
         testdata = first_block + second_block
         return (testdata, block_size)
 
-    def escape(self, text):
+    def escape_text(self, text):
         if "\\" not in text and "'" not in text and '"' not in text:
             return f"'{text}'"
         else:

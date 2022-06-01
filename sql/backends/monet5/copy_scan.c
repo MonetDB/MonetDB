@@ -215,7 +215,7 @@ scan_quoted(const char **err_msg, unsigned char *start, unsigned char *end, int 
 	while (r <= last) {
 		assert(w <= r);
 		if (*r == '\0') {
-			*err_msg = "invalid NUL character";
+			*err_msg = "NUL character not allowed in textual data";
 			return -31;
 		}
 		if (*r == quote) {
@@ -271,12 +271,16 @@ scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, in
 		// pline is either earlier than pcol or there was no pcol.
 		sep = pline ? pline : pcol;
 		if (sep) {
+			if (memchr(start, '\0', sep - (char*)start) != NULL) {
+				*err_msg = "NUL character not allowed in textual data";
+				return -40;
+			}
 			*sep_found = *sep;
 			*sep = 0;
 			return sep - (char*)start + 1;
 		} else {
 			*err_msg = "no column- or line separator found";
-			return -40;
+			return -41;
 		}
 	}
 
@@ -285,8 +289,8 @@ scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, in
 	unsigned char *w = start;
 	while (r < end) {
 		if (*r == '\0') {
-			*err_msg = "invalid NUL character";
-			return -41;
+			*err_msg = "NUL character not allowed in textual data";
+			return -42;
 		}
 		if (*r == col_sep || *r == line_sep) {
 			*sep_found = *r;
@@ -303,7 +307,7 @@ scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, in
 	}
 	// no sep found is an error
 	*err_msg = "no column- or line separator found";
-	return -40;
+	return -43;
 }
 
 // Scan the text pointed to by 'start' up to the first occurrence of either
@@ -311,15 +315,12 @@ scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, in
 // Reaching 'end' is considered an error.
 // Remove quoting and process backslash escapes. Place a '\0' at the end of
 // the field, overwriting the separator or end quote.
-// Return the number of bytes scanned including the separator, or < 0 on
-// error. Write the separator found to '*sep_found'.
+// Return the (strictly positive) number of bytes scanned including the
+// separator, or < 0 on error. Write the separator found to '*sep_found'.
 static int
 scan_field(const char **err_msg, unsigned char *start, unsigned char *end, int col_sep, int line_sep, int quote, bool backslash_escapes, unsigned char *sep_found)
 {
-	if (start == end) {
-		*err_msg = "no field found at end";
-		return -10;
-	}
+	assert(start < end);
 
 	int nread;
 	int nwritten;
@@ -345,6 +346,7 @@ scan_field(const char **err_msg, unsigned char *start, unsigned char *end, int c
 		nwritten = nread - 1;
 	}
 
+	assert(nread > 0); // the separator, if nothing else
 	return nread;
 }
 
@@ -372,6 +374,7 @@ scan_fields(
 		unsigned char sep = 0;
 
 		int n = scan_field(&err_msg, p, end, col_sep, line_sep, quote, backslash_escapes, &sep);
+		assert(n != 0);
 		assert((n < 0) == (err_msg != NULL));
 		if (n < 0) {
 			copy_report_error(errors, row, col, "%s", err_msg);
@@ -380,21 +383,33 @@ scan_fields(
 		bool last_col = col == ncols - 1;
 		bool ok;
 		if (!last_col) {
-			// must be col_sep
-			ok = (sep == col_sep);
+			if (sep == col_sep) {
+				ok = true;
+			} else if (sep == line_sep) {
+				copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
+				ok = false;
+			} else {
+				// if scan_field returnd >=0 it must have found a separator, doesn't it?
+				throw(MAL, "copy.splitlines", "internal error: found %d while col sep is %d and line sep is %d", sep, col_sep, line_sep);
+			}
 		} else {
-			// either col_sep or col_sep followed by line_sep
 			if (sep == line_sep) {
 				ok = true;
-			} else if (sep == col_sep && p + n < end && p[n] == line_sep) {
-				n += 1;
-				ok = true;
-			} else {
-				ok = false;
+			} else if (sep == col_sep) {
+				// Special case: col_sep followed by line_sep as in TPC-H.
+				// So the column separator is really a column terminator.
+				// n bytes have been consumed so p[n-1] is 0.
+				assert(p[n - 1] == '\0');
+				if (p + n < end && p[n] == line_sep) {
+					n += 1; // skip the col_sep
+					ok = true;
+				} else {
+					copy_report_error(errors, row, -1, "too many fields, expected %d but found more", ncols);
+					ok = false;
+				}
 			}
 		}
 		if (!ok) {
-			copy_report_error(errors, row, col, "invalid separator");
 			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
 		}
 		bool is_null = (null_repr && strcasecmp((char*)p, null_repr) == 0);
