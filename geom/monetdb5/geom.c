@@ -191,6 +191,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	GDKfree(unionGroup);
 
 	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED) {
+		//TODO Free out BAT
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
 		bat_iterator_end(&bi);
 		if (unions) {
@@ -3325,7 +3326,7 @@ wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 
 //Gets a BAT with geometries and returns a single LineString
 str
-wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
+wkbMakeLineAggr(wkb **outWKB, bat *bid)
 {
 	BAT *inBAT = NULL;
 	BATiter inBAT_iter;
@@ -3334,7 +3335,7 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	str err;
 
 	//get the BATs
-	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+	if ((inBAT = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "geom.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -3377,6 +3378,173 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	BBPunfix(inBAT->batCacheid);
 
 	return err;
+}
+
+static str
+wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
+	str msg = MAL_SUCCEED;
+	int i;
+	wkb *aWKB, *bWKB;
+
+	/* TODO: what should be returned if the input is less than
+	 * two rows? --sjoerd */
+	if (size == 0) {
+		if ((*outWKB = wkbNULLcopy()) == NULL)
+			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+	aWKB = inWKB_array[0];
+	if (size == 1) {
+		msg = wkbFromWKB(outWKB, &aWKB);
+		if (msg) {
+			freeException(msg);
+			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		return MAL_SUCCEED;
+	}
+	bWKB = inWKB_array[1];
+	//create the first line using the first two geometries
+	msg = wkbMakeLine(outWKB, &aWKB, &bWKB);
+
+	// add one more segment for each following row
+	for (i = 2; msg == MAL_SUCCEED && i < size; i++) {
+		aWKB = *outWKB;
+		bWKB = inWKB_array[i];
+		*outWKB = NULL;
+
+		msg = wkbMakeLine(outWKB, &aWKB, &bWKB);
+		GDKfree(aWKB);
+	}
+	return msg;
+}
+
+//TODO Check SRID
+//TODO Check if the input geometries are points
+str
+wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
+	BAT *sortedgroups, *sortedorder, *sortedinput;
+	BATiter bi;
+	const oid *gids = NULL;
+	str msg = MAL_SUCCEED;
+
+	oid min, max;
+	BUN ngrp;
+	struct canditer ci;
+
+	oid lastGrp = -1;
+	wkb **lines = NULL, **lineGroup = NULL;
+	int position = 0;
+
+	//Not using these variables
+	(void) skip_nils;
+	(void) eid;
+
+	//Get the BAT descriptors for the value, group and candidate bats
+	if ((b = BATdescriptor(*bid)) == NULL ||
+		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+		msg = createException(MAL, "aggr.MakeLine", RUNTIME_OBJECT_MISSING);
+		goto free;
+	}
+
+	if ((BATsort(&sortedgroups, &sortedorder, NULL, g, NULL, NULL, false, false, true)) != GDK_SUCCEED) {
+		msg = createException(MAL, "aggr.MakeLine", "BAT sort failed.");
+		goto free;
+	}
+
+	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
+	if (!BATtdense(sortedorder)) {
+		sortedinput = BATproject(sortedorder,b);
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		b = sortedinput;
+		g = sortedgroups;
+		BBPunfix(sortedorder->batCacheid);
+	}
+	else {
+		BBPunfix(sortedgroups->batCacheid);
+		BBPunfix(sortedorder->batCacheid);
+	}
+
+	//Fill in the values of the group aggregate operation
+	if ((msg = (str) BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
+		msg = createException(MAL, "aggr.MakeLine", "%s", msg);
+		goto free;
+	}
+
+	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
+		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+
+	//Create an array of WKB to hold the results of the MakeLine
+	if ((lines = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
+		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(out->batCacheid);
+		goto free;
+	}
+
+	//Create an array of WKB to hold the points to be made into a line (for one group at a time)
+	if ((lineGroup = GDKzalloc(sizeof(wkb*) * ci.ncand)) == NULL) {
+		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(out->batCacheid);
+		goto free;
+	}
+
+	if (g && !BATtdense(g))
+		gids = (const oid *)Tloc(g, 0);
+	bi = bat_iterator(b);
+
+	for (BUN i = 0; i < ci.ncand; i++) {
+		oid o = canditer_next(&ci);
+		BUN p = o - b->hseqbase;
+		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
+		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+
+		if (grp != lastGrp) {
+			if (lastGrp != (oid)-1) {
+				msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
+				position = 0;
+			}
+			lastGrp = grp;
+		}
+		lineGroup[position++] = inWKB;
+	}
+	msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
+
+	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
+		//TODO Free out BAT
+		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+		bat_iterator_end(&bi);
+		goto free;
+	}
+
+	bat_iterator_end(&bi);
+
+	*outid = out->batCacheid;
+	BBPkeepref(out);
+	BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return MAL_SUCCEED;
+free:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return msg;
+}
+
+str
+wkbMakeLineAggrSubGrouped (bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils) {
+	return wkbMakeLineAggrSubGroupedCand(out,bid,gid,eid,NULL,skip_nils);
 }
 
 /* Returns the first or last point of a linestring */
@@ -5392,7 +5560,9 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Contains", wkbContains_point_bat, false, "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b", args(1,4, batarg("",bit),arg("a",wkb),batarg("px",dbl),batarg("py",dbl))),
  command("geom", "PointsNum", wkbNumPoints, false, "The number of points in the Geometry. If check=1, the geometry should be a linestring", args(1,3, arg("",int),arg("w",wkb),arg("check",int))),
  command("geom", "MakeLine", wkbMakeLine, false, "Gets two point or linestring geometries and returns a linestring geometry", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
- command("geom", "MakeLine", wkbMakeLineAggr, false, "Gets a BAT with point or linestring geometries and returns a single linestring geometry", args(1,2, arg("",wkb),batarg("a",wkb))),
+ command("aggr", "MakeLine", wkbMakeLineAggr, false, "Gets a BAT with point or linestring geometries and returns a single linestring geometry", args(1,2, arg("",wkb),batarg("a",wkb))),
+ command("aggr", "subMakeLine", wkbMakeLineAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
+ command("aggr", "subMakeLine", wkbMakeLineAggrSubGroupedCand, false, "TODO", args(1, 6, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit))),
  command("geom", "PointOnSurface", wkbPointOnSurface, false, "Returns a point guaranteed to lie on the surface. Similar to postGIS it works for points and lines in addition to surfaces and for 3d geometries.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "mbr", wkbMBR, false, "Creates the mbr for the given wkb.", args(1,2, arg("",mbr),arg("",wkb))),
  command("geom", "MakeBox2D", wkbBox2D, false, "Creates an mbr from the two 2D points", args(1,3, arg("",mbr),arg("",wkb),arg("",wkb))),

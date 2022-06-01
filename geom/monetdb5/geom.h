@@ -128,7 +128,9 @@ geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbEnvelopeFromCoordinates(wkb** out, dbl* xmin, dbl* ymin, dbl* xmax, dbl* ymax, int* srid);
 geom_export str wkbMakePolygon(wkb** out, wkb** external, bat* internalBAT_id, int* srid);
 geom_export str wkbMakeLine(wkb**, wkb**, wkb**);
-geom_export str wkbMakeLineAggr(wkb** outWKB, bat* inBAT_id);
+geom_export str wkbMakeLineAggr (wkb **out, bat *bid);
+geom_export str wkbMakeLineAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+geom_export str wkbMakeLineAggrSubGroupedCand(bat* outid, const bat* bid, const bat* gid, const bat* eid, const bat* sid, const bit* skip_nils);
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, int*);
 
