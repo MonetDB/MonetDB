@@ -20,19 +20,19 @@ testdata = """\
 
 basecase = (TestCase("i INT, j INT", testdata, quote='"')
             .expect_value(0, 0, 11)
-            .expect_value(0, 2, 13)
+            .expect_value(0, 1, 13)
             #
             .expect_value(1, 0, 21)
-            .expect_value(1, 2, 23)
+            .expect_value(1, 1, 23)
             #
             .expect_value(2, 0, 31)
-            .expect_value(2, 2, 33)
+            .expect_value(2, 1, 33)
             #
             .expect_value(3, 0, 41)
-            .expect_value(3, 2, 43)
+            .expect_value(3, 1, 43)
             #
             .expect_value(4, 0, 51)
-            .expect_value(4, 2, 53)
+            .expect_value(4, 1, 53)
             )
 
 # Should succeed
