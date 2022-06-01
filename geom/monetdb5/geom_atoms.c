@@ -223,6 +223,18 @@ wkbNULLcopy(void)
 	return n;
 }
 
+wkb *
+wkbCopy(const wkb* src)
+{
+	wkb *n = GDKmalloc(wkb_size(src->len));
+	if (n) {
+		n->len = src->len;
+		n->srid = src->srid;
+		memcpy(n->data, src->data, src->len);
+	}
+	return n;
+}
+
 /* returns the size of variable-sized atom wkb */
 var_t
 wkb_size(size_t len)
