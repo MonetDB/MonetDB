@@ -2042,6 +2042,7 @@ static bool
 doFileBulk(Mapi mid, stream *fp)
 {
 	char *buf = NULL;
+	size_t semicolon1 = 0, semicolon2 = 0;
 	ssize_t length;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
@@ -2064,18 +2065,28 @@ doFileBulk(Mapi mid, stream *fp)
 				break;
 			length = 0;
 			buf[0] = 0;
-		} else if ((length = mnstr_read(fp, buf, 1, bufsize)) <= 0) {
-			/* end of file or error */
-			if (hdl == NULL)
-				break;	/* nothing more to do */
-			buf[0] = 0;
-			length = 0; /* handle error like EOF */
 		} else {
-			buf[length] = 0;
-			if (strlen(buf) < (size_t) length) {
-				mnstr_printf(stderr_stream, "NULL byte in input\n");
+			if ((length = mnstr_read(fp, buf, 1, bufsize)) < 0) {
+				/* error */
 				errseen = true;
-				break;
+				break;	/* nothing more to do */
+			} else {
+				buf[length] = 0;
+				if (length == 0) {
+					/* end of file */
+					if (semicolon2 == 0 && hdl == NULL)
+						break;	/* nothing more to do */
+				} else {
+					if (strlen(buf) < (size_t) length) {
+						mnstr_printf(stderr_stream, "NULL byte in input\n");
+						errseen = true;
+						break;
+					}
+					while (length > 1 && buf[length - 1] == ';') {
+						semicolon1++;
+						buf[--length] = 0;
+					}
+				}
 			}
 		}
 		timerResume();
@@ -2085,7 +2096,15 @@ doFileBulk(Mapi mid, stream *fp)
 		}
 
 		assert(hdl != NULL);
-		mapi_query_part(hdl, buf, (size_t) length);
+		while (semicolon2 > 0) {
+			mapi_query_part(hdl, ";", 1);
+			CHECK_RESULT(mid, hdl, buf, fp);
+			semicolon2--;
+		}
+		semicolon2 = semicolon1;
+		semicolon1 = 0;
+		if (length > 0)
+			mapi_query_part(hdl, buf, (size_t) length);
 		CHECK_RESULT(mid, hdl, buf, fp);
 
 		/* if not at EOF, make sure there is a newline in the
