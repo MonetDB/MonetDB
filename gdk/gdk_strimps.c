@@ -853,7 +853,7 @@ STRMPcreate(BAT *b, BAT *s)
 			pb->tstrimps = NULL;
 		if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1) {
 			if (BATcheckstrimps(pb)) {
-				MT_lock_unset(&b->batIdxLock);
+				MT_lock_unset(&pb->batIdxLock);
 				return GDK_SUCCEED;
 			}
 
