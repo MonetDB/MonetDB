@@ -655,7 +655,11 @@ wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, 
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Cannot find in spatial_ref_sys srid %d\n", *srid_src);
 	if (strcmp(*proj4_dst_str, "null") == 0)
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Cannot find in spatial_ref_sys srid %d\n", *srid_dst);
-
+	if (strcmp(*proj4_src_str, *proj4_dst_str) == 0) {
+		if ((*transformedWKB = wkbCopy(*geomWKB)) == NULL)
+			throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	//Create PROJ transformation object with PROJ strings passed as argument
 	P = proj_create_crs_to_crs(PJ_DEFAULT_CTX,
                                *proj4_src_str,
