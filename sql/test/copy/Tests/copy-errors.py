@@ -259,6 +259,10 @@ add_test(TestCase("i INT", "null", null="null").expect_first(None))
 add_test(TestCase("i INT", "NULL", null="null").expect_first(None))
 add_test(TestCase("i INT", "null", null="NULL").expect_first(None))
 
+# Location reporting for integer parsing failures
+add_test(basecase.replace(3, '41x|"42x"|43').expect_error("Row 4 column 1 'i':"))
+add_test(basecase.replace(3, '41|"42x"|43x').expect_error("Row 4 column 3 'j':"))
+
 # Integer overflow tests
 add_test(TestCase("i TINYINT", "127").expect_first(127))
 add_test(TestCase("i TINYINT", "+127").expect_first(+127))
