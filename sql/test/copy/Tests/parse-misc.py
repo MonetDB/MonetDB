@@ -74,3 +74,21 @@ run_test(TestCase("i INT", "\n", null='').expect_first(None))
 run_test(TestCase("i INT", "null", null="null").expect_first(None))
 run_test(TestCase("i INT", "NULL", null="null").expect_first(None))
 run_test(TestCase("i INT", "null", null="NULL").expect_first(None))
+
+
+# UUID tests.
+# UUID's are parsed through copy.parse_generic.
+# These tests show that that operator reports its errors correctly.
+uuiddata = """\
+1|x|3e208c79-ff18-4615-8ae7-ceda0da7ffb8
+2|%|408dcb98-bd0a-44d5-ad93-04c9680f9400
+3|x|c79c7180-7ac3-4545-9f5f-3610d383fbd7
+4|x|a3f13f6b-da3f-4827-9c09-b630e0acfb4f
+5|x|395687bf-0a0a-4838-81d4-43e0fc8c6931
+"""
+
+uuidcase = TestCase("id INT, t TEXT, u UUID", uuiddata)
+
+run_test(uuidcase)
+run_test(uuidcase.replace(3, '4|x|banana')
+         .expect_error("Row 4 column 3 'u': invalid uuid"))

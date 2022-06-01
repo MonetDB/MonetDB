@@ -63,7 +63,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			len = BATatoms[tpe].atomFromStr(src, &buffer_len, &buffer, false);
 			p = buffer;
 			if (len < 0) {
-				copy_report_error(&errors, i, -1, "conversion to %s failed: %s", ATOMname(tpe), src);
+				copy_report_error(&errors, i, -1, "invalid %s: %s", ATOMname(tpe), src);
 				GDKclrerr();
 				p = nil_ptr;
 				len = nil_len;
