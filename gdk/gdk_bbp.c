@@ -805,7 +805,6 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 				goto bailout;
 			}
 		}
-		bn->batDirtydesc = false; /* undo setting by BATsetprop_nolock */
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
@@ -2277,8 +2276,6 @@ BBPdump(void)
 		}
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
-		if (b->batDirtydesc)
-			fprintf(stderr, " DirtyDesc");
 		if (b->theap) {
 			if (b->theap->parentid != b->batCacheid) {
 				fprintf(stderr, " Theap -> %d", b->theap->parentid);
@@ -2721,7 +2718,6 @@ BBPrename(BAT *b, const char *nme)
 		BBP_insert(bid);
 	}
 	MT_lock_set(&b->theaplock);
-	b->batDirtydesc = true;
 	bool transient = b->batTransient;
 	MT_lock_unset(&b->theaplock);
 	if (!transient) {
@@ -2931,7 +2927,6 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 			 * (sub)commit happened in parallel to an
 			 * update; we must undo the turning off of the
 			 * dirty bits */
-			b->batDirtydesc = true;
 			if (b->theap && b->theap->parentid == i)
 				b->theap->dirty = true;
 			if (b->tvheap && b->tvheap->parentid == i)
@@ -3209,7 +3204,7 @@ BBPsave(BAT *b)
 	gdk_return ret = GDK_SUCCEED;
 
 	MT_lock_set(&b->theaplock);
-	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirtydata(b)) {
+	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b)) {
 		/* do nothing */
 		MT_lock_unset(&b->theaplock);
 		MT_rwlock_rdlock(&b->thashlock);
@@ -3396,12 +3391,9 @@ dirty_bat(bat *i, bool subcommit)
 		} else if (BBP_status(*i) & BBPSWAPPED) {
 			b = (BAT *) BBPquickdesc(*i);
 			if (b) {
-				MT_lock_set(&b->theaplock);
-				if (subcommit || b->batDirtydesc) {
-					MT_lock_unset(&b->theaplock);
-					return b;	/* only the desc is loaded & dirty */
+				if (subcommit) {
+					return b;	/* only the desc is loaded */
 				}
-				MT_lock_unset(&b->theaplock);
 			}
 		}
 	}
@@ -3757,12 +3749,10 @@ BBPbackup(BAT *b, bool subcommit)
 
 		if (bi.type != TYPE_void) {
 			rc = do_backup(srcdir, nme, gettailnamebi(&bi), bi.h,
-				       bi.dirtydesc || bi.hdirty,
-				       subcommit);
+				       bi.hdirty, subcommit);
 			if (rc == GDK_SUCCEED && bi.vh != NULL)
 				rc = do_backup(srcdir, nme, "theap", bi.vh,
-					       bi.dirtydesc || bi.vhdirty,
-					       subcommit);
+					       bi.vhdirty, subcommit);
 		}
 	} else {
 		rc = GDK_FAIL;

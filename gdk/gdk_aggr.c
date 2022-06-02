@@ -3644,7 +3644,6 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 					/* there are no nils, record that */
 					MT_lock_set(&b->theaplock);
 					b->tnonil = true;
-					b->batDirtydesc = true;
 					MT_lock_unset(&b->theaplock);
 				}
 			} else {

@@ -171,7 +171,6 @@ BKCdelete_all(bat *r, const bat *bid)
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

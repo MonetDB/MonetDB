@@ -56,7 +56,7 @@ BATfakeCommit(BAT *b)
 {
 	if (b) {
 		BATcommit(b, BUN_NONE);
-		b->batDirtydesc = b->theap->dirty = false;
+		b->theap->dirty = false;
 		if (b->tvheap)
 			b->tvheap->dirty = false;
 	}
@@ -80,9 +80,9 @@ BATundo(BAT *b)
 	assert(b->theap->parentid == b->batCacheid);
 	TRC_DEBUG(DELTA, "BATundo: %s \n", BATgetId(b));
 	if (b->batDirtyflushed) {
-		b->batDirtydesc = b->theap->dirty = true;
+		b->theap->dirty = true;
 	} else {
-		b->batDirtydesc = b->theap->dirty = false;
+		b->theap->dirty = false;
 		if (b->tvheap)
 			b->tvheap->dirty = false;
 	}

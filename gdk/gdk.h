@@ -681,7 +681,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           bool   batCopiedtodisk;  // BAT is saved on disk?
  *           // dynamic BAT properties
  *           int    batHeat;          // heat of BAT in the BBP
- *           bool   batDirtydesc;     // BAT descriptor specific dirty flag
  *           Heap*  batBuns;          // Heap where the buns are stored
  *           // DELTA status
  *           BUN    batInserted;      // first inserted BUN
@@ -772,20 +771,17 @@ typedef enum {
 	BAT_APPEND,		  /* only reads and appends allowed */
 } restrict_t;
 
-/* batDirtydesc: should be set (true) if any of the following fields
- * have changed since the bat was last saved: hseqbase, batRestricted,
- * batTransient, batCount, and the theap properties tkey, tseqbase,
- * tsorted, trevsorted, twidth, tshift, tnonil, tnil, tnokey, tnosorted,
- * tnorevsorted, tminpos, tmaxpos, and tunique_est; in addition, the
- * value should be set if the BBP field BBP_logical(bid) is changed.
- * This corresponds with any field that gets saved in the BBP.dir file.
- *
- * theaplock: this lock should be held when reading or writing any of
- * the fields mentioned above for batDirtydesc, and also when reading or
- * writing any of the following fields: batDirtydesc, theap, tvheap,
- * batInserted, batCapacity.  There is no need for the lock if the bat
- * cannot possibly be modified concurrently, e.g. when it is new and not
- * yet returned to the interpreter or during system initialization. */
+/* theaplock: this lock should be held when reading or writing any of
+ * the fields that are saved in the BBP.dir file (plus any, if any, that
+ * share bitfields with any of the fields), i.e. hseqbase,
+ * batRestricted, batTransient, batCount, and the theap properties tkey,
+ * tseqbase, tsorted, trevsorted, twidth, tshift, tnonil, tnil, tnokey,
+ * tnosorted, tnorevsorted, tminpos, tmaxpos, and tunique_est, also when
+ * BBP_logical(bid) is changed, and also when reading or writing any of
+ * the following fields: theap, tvheap, batInserted, batCapacity.  There
+ * is no need for the lock if the bat cannot possibly be modified
+ * concurrently, e.g. when it is new and not yet returned to the
+ * interpreter or during system initialization. */
 typedef struct BAT {
 	/* static bat properties */
 	oid hseqbase;		/* head seq base */
@@ -797,8 +793,7 @@ typedef struct BAT {
 	restrict_t batRestricted:2; /* access privileges */
 	bool
 	 batTransient:1,	/* should the BAT persist on disk? */
-	 batCopiedtodisk:1,	/* once written */
-	 batDirtydesc:1;	/* bat descriptor dirty marker */
+	 batCopiedtodisk:1;	/* once written */
 	/* not part of bitfields since not in BATiter */
 	bool batDirtyflushed;	/* was dirty before commit started? */
 	uint16_t selcnt;	/* how often used in equi select without hash */
@@ -975,7 +970,6 @@ typedef struct BATiter {
 		revsorted:1,
 		hdirty:1,
 		vhdirty:1,
-		dirtydesc:1,
 		copiedtodisk:1,
 		transient:1;
 	restrict_t restricted:2;
@@ -1028,7 +1022,6 @@ bat_iterator_nolock(BAT *b)
 			.hdirty = b->theap->parentid == b->batCacheid && b->theap->dirty,
 			/* also, if there is no vheap, it's not dirty */
 			.vhdirty = b->tvheap && b->tvheap->parentid == b->batCacheid && b->tvheap->dirty,
-			.dirtydesc = b->batDirtydesc,
 			.copiedtodisk = b->batCopiedtodisk,
 			.transient = b->batTransient,
 			.restricted = b->batRestricted,
@@ -1305,15 +1298,10 @@ gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
 gdk_export restrict_t BATgetaccess(BAT *b);
 
 
-#define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
+#define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
-#define BATdirty(b)	(BATdirtydata(b) ||	\
-			 (b)->batDirtydesc)
-#define BATdirtybi(bi)	(!(bi).copiedtodisk ||	\
-			 (bi).dirtydesc ||	\
-			 (bi).hdirty ||		\
-			 (bi).vhdirty)
+#define BATdirtybi(bi)	(!(bi).copiedtodisk || (bi).hdirty || (bi).vhdirty)
 
 #define BATcapacity(b)	(b)->batCapacity
 /*
@@ -1434,8 +1422,6 @@ BATsettrivprop(BAT *b)
 {
 	assert(!is_oid_nil(b->hseqbase));
 	assert(is_oid_nil(b->tseqbase) || ATOMtype(b->ttype) == TYPE_oid);
-	if (!b->batDirtydesc)
-		return;
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
 			b->tnonil = b->batCount == 0;
@@ -1450,23 +1436,29 @@ BATsettrivprop(BAT *b)
 		}
 		b->tsorted = true;
 	} else if (b->batCount <= 1) {
+		b->tnosorted = b->tnorevsorted = 0;
+		b->tnokey[0] = b->tnokey[1] = 0;
+		b->tunique_est = b->batCount;
 		if (ATOMlinear(b->ttype)) {
 			b->tsorted = true;
 			b->trevsorted = true;
 		}
 		b->tkey = true;
 		if (b->batCount == 0) {
+			b->tminpos = BUN_NONE;
+			b->tmaxpos = BUN_NONE;
 			b->tnonil = true;
 			b->tnil = false;
 			if (b->ttype == TYPE_oid) {
 				b->tseqbase = 0;
 			}
 		} else if (b->ttype == TYPE_oid) {
-			/* b->batCount == 1 */
 			oid sqbs = ((const oid *) b->theap->base)[b->tbaseoff];
 			if (is_oid_nil(sqbs)) {
 				b->tnonil = false;
 				b->tnil = true;
+				b->tminpos = BUN_NONE;
+				b->tmaxpos = BUN_NONE;
 			} else {
 				b->tnonil = true;
 				b->tnil = false;
@@ -1474,6 +1466,19 @@ BATsettrivprop(BAT *b)
 				b->tmaxpos = 0;
 			}
 			b->tseqbase = sqbs;
+		} else if ((b->tvheap
+			    ? ATOMcmp(b->ttype,
+				      b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
+				      ATOMnilptr(b->ttype))
+			    : ATOMcmp(b->ttype, Tloc(b, 0),
+				      ATOMnilptr(b->ttype))) == 0) {
+			/* the only value is NIL */
+			b->tminpos = BUN_NONE;
+			b->tmaxpos = BUN_NONE;
+		} else {
+			/* the only value is both min and max */
+			b->tminpos = 0;
+			b->tmaxpos = 0;
 		}
 	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
 		int c;
@@ -1490,6 +1495,7 @@ BATsettrivprop(BAT *b)
 		b->tkey = c != 0;
 		b->tnokey[0] = 0;
 		b->tnokey[1] = !b->tkey;
+		b->tunique_est = 1 + b->tkey;
 	} else if (!ATOMlinear(b->ttype)) {
 		b->tsorted = false;
 		b->trevsorted = false;
