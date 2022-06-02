@@ -1239,6 +1239,10 @@ returnvalues:
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			bat_iterator_end(&li);
+			BBPunfix(b->batCacheid);
+			b = NULL;
+			if (msg != MAL_SUCCEED)
+				goto wrapup;
 		}
 		if (argnode) {
 			argnode = argnode->next;
