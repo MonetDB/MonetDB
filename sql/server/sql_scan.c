@@ -914,8 +914,6 @@ number(mvc * c, int cur)
 	 * parsed number (which may be the first causing it not to be a number);
 	 * it token == 0 after this block, a parse error was detected */
 	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
-		if (cur == EOF)
-			return cur;
 		cur = scanner_getc(lc);
 		while (cur != EOF && iswxdigit(cur)) {
 			token = HEXADECIMAL;
@@ -935,9 +933,9 @@ number(mvc * c, int cur)
 		while (cur != EOF && iswdigit(cur)) {
 			token = sqlINT;
 			cur = scanner_getc(lc);
-			if (cur == EOF)
-				return cur;
 		}
+		if (cur == EOF)
+			return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
 				cur = scanner_getc(lc);
