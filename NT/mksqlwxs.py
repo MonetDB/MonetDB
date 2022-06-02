@@ -158,7 +158,7 @@ def main():
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
                vcpkg.format(r'bin\getopt.dll'),
-               vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
+               vcpkg.format(r'bin\libcrypto-3{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\libxml2.dll'),
                vcpkg.format(r'bin\lz4.dll'),
                vcpkg.format(r'bin\liblzma.dll'),
