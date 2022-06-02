@@ -2614,6 +2614,19 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND NOT f.system "
 		  "AND p.grantable = go.id "
 		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
+	const char *global_grants =
+		"SELECT a.name, pc.grnt, g.name, go.opt "
+		"FROM sys.privileges p, "
+		     "sys.auths a, "
+		     "sys.auths g, "
+		     "(VALUES (0, 'COPY INTO'), (1, 'COPY FROM')) AS pc (id, grnt), "
+		     "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
+		"WHERE p.obj_id = 0 "
+		  "AND p.auth_id = a.id "
+		  "AND p.grantor = g.id "
+		  "AND p.privileges = pc.id "
+		  "AND p.grantable = go.id "
+		"ORDER BY a.name, g.name, go.opt";
 	const char *schemas =
 		"SELECT s.name, a.name, rem.remark "
 		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
@@ -2851,6 +2864,23 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			/* optional WITH ADMIN OPTION and FROM
 			   (CURRENT_USER|CURRENT_ROLE) are ignored by
 			   server, so we can't dump them */
+			mnstr_printf(toConsole, ";\n");
+		}
+		if (mapi_error(mid))
+			goto bailout;
+		mapi_close_handle(hdl);
+
+		/* grant global privileges */
+		if ((hdl = mapi_query(mid, global_grants)) == NULL || mapi_error(mid))
+			goto bailout;
+
+		while (mapi_fetch_row(hdl) != 0) {
+			const char *uname = mapi_fetch_field(hdl, 0);
+			const char *grant = mapi_fetch_field(hdl, 1);
+			//const char *gname = mapi_fetch_field(hdl, 2);
+			const char *grantable = mapi_fetch_field(hdl, 3);
+			mnstr_printf(toConsole, "GRANT %s TO ", grant);
+			dquoted_print(toConsole, uname, grantable);
 			mnstr_printf(toConsole, ";\n");
 		}
 		if (mapi_error(mid))
