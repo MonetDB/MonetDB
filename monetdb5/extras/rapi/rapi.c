@@ -119,7 +119,6 @@
 			prev = *p;													\
 		}																\
 		BATsetcount(b, cnt);											\
-		BATsettrivprop(b);												\
 	} while (0)
 
 // DATE epoch differs betwen MonetDB (00-01-01) and R (1970-01-01)

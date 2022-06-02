@@ -629,7 +629,6 @@ static void
 DESCclean(BAT *b)
 {
 	b->batDirtyflushed = DELTAdirty(b);
-	b->batDirtydesc = false;
 	b->theap->dirty = false;
 	if (b->tvheap)
 		b->tvheap->dirty = false;
@@ -739,11 +738,11 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			}
 		}
 	} else {
-		if (!bi->copiedtodisk || bi->dirtydesc || bi->hdirty)
+		if (!bi->copiedtodisk || bi->hdirty)
 			if (err == GDK_SUCCEED && bi->type)
 				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
 		if (bi->vh
-		    && (!bi->copiedtodisk || bi->dirtydesc || bi->vhdirty)
+		    && (!bi->copiedtodisk || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
 			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, &b->theaplock);
@@ -763,14 +762,12 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			/* if the sizes don't match, the BAT must be dirty */
 			b->batCopiedtodisk = false;
 			b->batDirtyflushed = true;
-			b->batDirtydesc = true;
 			b->theap->dirty = true;
 			if (b->tvheap)
 				b->tvheap->dirty = true;
 		} else {
 			b->batCopiedtodisk = true;
 			b->batDirtyflushed = DELTAdirty(b);
-			b->batDirtydesc = false;
 		}
 		MT_lock_unset(&b->theaplock);
 		if (b->thash && b->thash != (Hash *) 1)
@@ -846,7 +843,6 @@ BATload_intern(bat bid, bool lock)
 	}
 
 	/* initialize descriptor */
-	b->batDirtydesc = false;
 	b->theap->parentid = b->batCacheid;
 
 	/* load succeeded; register it in BBP */
