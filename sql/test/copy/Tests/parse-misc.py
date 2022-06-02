@@ -83,6 +83,17 @@ run_test(TestCase("i INT", '"42', quote='"')
 run_test(TestCase("i INT", '42', raw=True)
          .expect_error("unterminated line"))
 
+
+# Test various escape sequences
+def good_escape(text, value):
+    return TestCase("t TEXT", text).set_backslashes(True).expect_first(value)
+
+def bad_escape(text, errmsg):
+    return TestCase("t TEXT", text).set_backslashes(True).expect_error(errmsg)
+
+run_test(good_escape(r"a\x01b", "a\001b"))
+
+
 # NULL tests
 run_test(TestCase("i INT", "\n", null='').expect_first(None))
 run_test(TestCase("i INT", "null", null="null").expect_first(None))

@@ -14,9 +14,9 @@
 #include "rel_copy.h"
 
 static int
-scan_octal_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end, int c)
+scan_octal_escape(const char **err_msg, const unsigned char **rr, unsigned char **ww, unsigned char *end, int c)
 {
-	unsigned char *r = *rr + 2;
+	const unsigned char *r = *rr + 2;
 	if (r >= end || *r < '0' || *r > '7')
 		goto end;
 	c = 8 * c + *r - '0';
@@ -40,7 +40,7 @@ end:
 }
 
 static int
-one_hex_digit(const char **err_msg, unsigned char **rr, unsigned char *end)
+one_hex_digit(const char **err_msg, const unsigned char **rr, unsigned char *end)
 {
 	if (*rr >= end) {
 		// this only occurs if for example the buffer ends in '\\' 'x'.
@@ -67,7 +67,7 @@ one_hex_digit(const char **err_msg, unsigned char **rr, unsigned char *end)
 }
 
 static int
-scan_hex_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end)
+scan_hex_escape(const char **err_msg, const unsigned char **rr, unsigned char **ww, unsigned char *end)
 {
 	int acc;
 	*rr += 2;
@@ -99,7 +99,7 @@ utf8cont(unsigned int n, int shift)
 	return n;
 }
 static int
-scan_unicode_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end, int digits)
+scan_unicode_escape(const char **err_msg, const unsigned char **rr, unsigned char **ww, unsigned char *end, int digits)
 {
 	unsigned int acc = 0;
 	*rr += 2;
@@ -143,9 +143,9 @@ scan_unicode_escape(const char **err_msg, unsigned char **rr, unsigned char **ww
 }
 
 static int
-scan_backslash_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end)
+scan_backslash_escape(const char **err_msg, unsigned const char **rr, unsigned char **ww, unsigned char *end)
 {
-	unsigned char *r = *rr;
+	const unsigned char *r = *rr;
 	if (end - r < 2) {
 		*err_msg = "incomplete backslash escape sequence";
 		return -50;
@@ -209,7 +209,7 @@ scan_quoted(const char **err_msg, unsigned char *start, unsigned char *end, int 
 		return -30;
 	}
 	unsigned char *last = end - 1;
-	unsigned char *r = start + 1;
+	const unsigned char *r = start + 1;
 	unsigned char *w = start;
 
 	while (r <= last) {
@@ -285,7 +285,7 @@ scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, in
 	}
 
 	// go over it character by character and convert backslash escapes
-	unsigned char *r = start;
+	unsigned const char *r = start;
 	unsigned char *w = start;
 	while (r < end) {
 		if (*r == '\0') {
@@ -302,7 +302,7 @@ scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, in
 			if (ret < 0)
 				return ret;
 		} else {
-			*r++ = *w++;
+			*w++ = *r++;
 		}
 	}
 	// no sep found is an error
