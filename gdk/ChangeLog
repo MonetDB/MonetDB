@@ -1,6 +1,12 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Thu Jun  2 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- The interface for using strimps has not changed (create an imprint index
+  on a column of a read only table), but now construction happens at the
+  beginning of the first query that uses the strimp and is performed in
+  a multithreaded manner.
+
 * Thu May 12 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
 - Implemented the use of strimps for NOT LIKE queries. The idea is to
   run the corresponding LIKE query using strimps and take the complement
