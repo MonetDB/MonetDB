@@ -1,6 +1,11 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Thu Jun  2 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Fixed implementation of SQLGetInfo(hdbc, SQL_MAX_DRIVER_CONNECTIONS,
+  ...). It used to always return a value of 64. Now it returns the
+  MonetDB server value.
+
 * Thu May 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Corrected SQLSpecialColumns(..., SQL_BEST_ROWID, ...). Previously it only
   returned rows when the table had a primary key. Now it also returns
