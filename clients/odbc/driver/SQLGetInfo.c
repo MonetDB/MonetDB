@@ -46,8 +46,9 @@ MNDBGetInfo(ODBCDbc *dbc,
 	/* For some info types an active connection is needed */
 	if (!dbc->Connected &&
 	    (InfoType == SQL_DATA_SOURCE_NAME ||
-	     InfoType == SQL_SERVER_NAME ||
 	     InfoType == SQL_DATABASE_NAME ||
+	     InfoType == SQL_DBMS_VER ||
+	     InfoType == SQL_MAX_DRIVER_CONNECTIONS ||
 	     InfoType == SQL_USER_NAME ||
 	     InfoType == SQL_KEYWORDS)) {
 		/* Connection does not exist */
@@ -694,9 +695,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_DRIVER_CONNECTIONS:
-		nValue = 64;	/* default value of mserver5 */
-		/* TODO query the server for the actual value via SQL:
-		   SELECT value FROM sys.env() WHERE name = 'max_clients'; */
+		nValue = dbc->maxclients;
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_IDENTIFIER_LEN:
