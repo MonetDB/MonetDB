@@ -387,6 +387,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                             self.data = out
                         if err:
                             self.test_run_error = err
+                            self.err_code, self.err_message = self._parse_error(err)
                 self.did_run = True
             except Exception as e:
                 raise SystemExit(e)

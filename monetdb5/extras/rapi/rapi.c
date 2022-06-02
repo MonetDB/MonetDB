@@ -339,6 +339,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 				}
 			}
 		}
+		BATsetcount(b, cnt);
 		break;
 	}
 	default:
@@ -350,10 +351,6 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 		}
 	}
 
-	if (b) {
-		BATsetcount(b, cnt);
-		BBPkeepref(b);
-	}
 	return b;
 }
 
@@ -821,6 +818,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 		// bat return
 		if (isaBatType(getArgType(mb,pci,i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
+			BBPkeepref(b);
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
@@ -830,6 +828,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 				goto wrapup;
 			}
 			bat_iterator_end(&li);
+			BBPunfix(b->batCacheid);
 		}
 		msg = MAL_SUCCEED;
 	}

@@ -3382,7 +3382,7 @@ dirty_bat(bat *i, bool subcommit)
 			if ((BBP_status(*i) & BBPNEW) &&
 			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
 				*i = -*i;	/* error */
-			if ((BBP_status(*i) & BBPPERSISTENT) &&
+			else if ((BBP_status(*i) & BBPPERSISTENT) &&
 			    (subcommit || BATdirty(b))) {
 				MT_lock_unset(&b->theaplock);
 				return b;	/* the bat is loaded, persistent and dirty */
@@ -3826,19 +3826,12 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			if (BBP_status(i) & BBPEXISTING) {
 				if (b != NULL) {
 					if (BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
-						BBP_status_off(i, BBPSYNCING);
 						if (lock)
 							MT_lock_unset(&GDKswapLock(i));
 						break;
 					}
-				} else {
-					/* file has not been moved to
-					 * backup dir, so no need for
-					 * other threads to wait */
-					BBP_status_off(i, BBPSYNCING);
 				}
 			} else {
-				BBP_status_off(i, BBPSYNCING);
 				if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
 					char o[10];
 					char *f;
@@ -3890,12 +3883,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			BATiter bi;
 
 			if (BBP_status(i) & BBPPERSISTENT) {
-				/* add a fix so that BBPmanager doesn't
-				 * interfere */
-				BBPfix(i);
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
-					decref(-i, false, false, true, locked_by == 0 || locked_by != MT_getpid(), __func__);
 					break;
 				}
 				bi = bat_iterator(BBP_desc(i));
@@ -3932,16 +3921,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, subcommit != NULL, &bi);
 			}
 			bat_iterator_end(&bi);
-			if (BBP_status(i) & BBPPERSISTENT) {
-				/* can't use BBPunfix because of the
-				 * "lock" argument: locked_by may be
-				 * set here */
-				decref(i, false, false, true, lock, __func__);
-			}
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
-			BBP_status_off(i, BBPSYNCING);
 		}
 		if (idx < cnt)
 			ret = GDK_FAIL;
@@ -3990,6 +3972,14 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		  ret == GDK_SUCCEED ? "" : " failed",
 		  (t0 = GDKms()) - t1);
   bailout:
+	/* turn off the BBPSYNCING bits for all bats, even when things
+	 * didn't go according to plan (i.e., don't check for ret ==
+	 * GDK_SUCCEED) */
+	for (int idx = 1; idx < cnt; idx++) {
+		bat i = subcommit ? subcommit[idx] : idx;
+		BBP_status_off(i, BBPSYNCING);
+	}
+
 	GDKfree(bakdir);
 	GDKfree(deldir);
 	return ret;
