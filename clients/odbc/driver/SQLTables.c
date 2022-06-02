@@ -62,11 +62,11 @@ MNDBTables(ODBCStmt *stmt,
 #endif
 
 	/* SQLTables returns a table with the following columns:
-	   VARCHAR      table_cat
-	   VARCHAR      table_schem
-	   VARCHAR      table_name
-	   VARCHAR      table_type
-	   VARCHAR      remarks
+	   VARCHAR      TABLE_CAT
+	   VARCHAR      TABLE_SCHEM
+	   VARCHAR      TABLE_NAME
+	   VARCHAR      TABLE_TYPE
+	   VARCHAR      REMARKS
 	 */
 
 	/* Check first on the special cases */
@@ -75,11 +75,11 @@ MNDBTables(ODBCStmt *stmt,
 	    CatalogName &&
 	    strcmp((char *) CatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
-		query = strdup("select e.value as table_cat, "
-				      "cast(null as varchar(1)) as table_schem, "
-				      "cast(null as varchar(1)) as table_name, "
-				      "cast(null as varchar(1)) as table_type, "
-				      "cast(null as varchar(1)) as remarks "
+		query = strdup("select e.value as \"TABLE_CAT\", "
+				      "cast(null as varchar(1)) as \"TABLE_SCHEM\", "
+				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
+				      "cast(null as varchar(1)) as \"TABLE_TYPE\", "
+				      "cast(null as varchar(1)) as \"REMARKS\" "
 			       "from sys.env() e "
 			       "where e.name = 'gdk_dbname'");
 		if (query == NULL)
@@ -89,15 +89,15 @@ MNDBTables(ODBCStmt *stmt,
 		   SchemaName &&
 		   strcmp((char *) SchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
-		query = strdup("select cast(null as varchar(1)) as table_cat, "
-				      "name as table_schem, "
-				      "cast(null as varchar(1)) as table_name, "
-				      "cast(null as varchar(1)) as table_type, "
+		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
+				      "name as \"TABLE_SCHEM\", "
+				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
+				      "cast(null as varchar(1)) as \"TABLE_TYPE\", "
 			       /* ODBC says remarks column contains
 				* NULL even though MonetDB supports
 				* schema remarks */
-				      "cast(null as varchar(1)) as remarks "
-			       "from sys.schemas order by table_schem");
+				      "cast(null as varchar(1)) as \"REMARKS\" "
+			       "from sys.schemas order by \"TABLE_SCHEM\"");
 		if (query == NULL)
 			goto nomem;
 	} else if (NameLength1 == 0 &&
@@ -106,12 +106,12 @@ MNDBTables(ODBCStmt *stmt,
 		   TableType &&
 		   strcmp((char *) TableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
-		query = strdup("select cast(null as varchar(1)) as table_cat, "
-				      "cast(null as varchar(1)) as table_schem, "
-				      "cast(null as varchar(1)) as table_name, "
-				      "table_type_name as table_type, "
-				      "cast(null as varchar(1)) as remarks "
-			       "from sys.table_types order by table_type");
+		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
+				      "cast(null as varchar(1)) as \"TABLE_SCHEM\", "
+				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
+				      "table_type_name as \"TABLE_TYPE\", "
+				      "cast(null as varchar(1)) as \"REMARKS\" "
+			       "from sys.table_types order by \"TABLE_TYPE\"");
 		if (query == NULL)
 			goto nomem;
 	} else {
@@ -160,11 +160,11 @@ MNDBTables(ODBCStmt *stmt,
 			goto nomem;
 
 		pos += snprintf(query + pos, querylen - pos,
-		       "select '%s' as table_cat, "
-			      "s.name as table_schem, "
-			      "t.name as table_name, "
-		              "tt.table_type_name as table_type, "
-			      "%s as remarks "
+		       "select '%s' as \"TABLE_CAT\", "
+			      "s.name as \"TABLE_SCHEM\", "
+			      "t.name as \"TABLE_NAME\", "
+		              "tt.table_type_name as \"TABLE_TYPE\", "
+			      "%s as \"REMARKS\" "
 		       "from sys.schemas s, "
 			    "sys.tables t%s, "
 		            "sys.table_types tt "
@@ -232,7 +232,7 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* add the ordering */
-		pos += strcpy_len(query + pos, " order by table_type, table_schem, table_name", querylen - pos);
+		pos += strcpy_len(query + pos, " order by \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"", querylen - pos);
 	}
 
 	/* query the MonetDB data dictionary tables */
