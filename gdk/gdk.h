@@ -1495,7 +1495,7 @@ BATsettrivprop(BAT *b)
 		b->tkey = c != 0;
 		b->tnokey[0] = 0;
 		b->tnokey[1] = !b->tkey;
-		b->tunique_est = 1 + b->tkey;
+		b->tunique_est = (double) (1 + b->tkey);
 	} else if (!ATOMlinear(b->ttype)) {
 		b->tsorted = false;
 		b->trevsorted = false;
