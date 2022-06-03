@@ -3152,7 +3152,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!strNil(fixed_widths)) {
 			size_t ncol = 0, current_width_entry = 0, i;
 			size_t *widths;
-			char* val_start = fixed_widths;
+			const char* val_start = fixed_widths;
 			size_t width_len = strlen(fixed_widths);
 			stream *ns;
 
