@@ -1438,7 +1438,7 @@ BATsettrivprop(BAT *b)
 	} else if (b->batCount <= 1) {
 		b->tnosorted = b->tnorevsorted = 0;
 		b->tnokey[0] = b->tnokey[1] = 0;
-		b->tunique_est = b->batCount;
+		b->tunique_est = (double) b->batCount;
 		if (ATOMlinear(b->ttype)) {
 			b->tsorted = true;
 			b->trevsorted = true;
