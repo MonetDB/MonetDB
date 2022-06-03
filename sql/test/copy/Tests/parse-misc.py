@@ -201,3 +201,50 @@ run_test(TestCase("i INT, t TEXT, j INT", """\
     41|x|42
 """).expect_error("Row 3: too few fields"))
 run_test(TestCase("i INT", "1\n2\n3", raw=True).expect_error("unterminated line at end"))
+
+
+
+# OFFSET and RECORDS
+run_test(TestCase("i INT, t TEXT, j INT", testdata)
+         .offset(0)  # same as 1
+         .expect_value(2, 0, 31))
+run_test(TestCase("i INT, t TEXT, j INT", testdata)
+         .offset(1)  # same as 0
+         .expect_value(2, 0, 31))
+run_test(TestCase("i INT, t TEXT, j INT", testdata)
+         .offset(2)
+         .expect_affected(4)
+         .expect_value(2, 0, 41))
+run_test(TestCase("i INT, t TEXT, j INT", testdata)
+         .offset(5)
+         .expect_affected(1)
+         .expect_first(51))
+run_test(TestCase("i INT, t TEXT, j INT", testdata)
+         .offset(6)
+         .expect_affected(0))
+#
+run_test(TestCase("i INT, t TEXT, j INT", testdata)
+         .records(0)
+         .expect_affected(0))
+run_test(TestCase("i INT, t TEXT, j INT", testdata)
+         .records(3)
+         .expect_affected(3)
+         .expect_first(11)
+         .expect_value(2, 0, 31)
+         .expect_value(2, 2, 33))
+run_test(basecase     # use basecase so we get the result set checks
+         .records(10))
+
+
+# Does OFFSET affect error reporting?
+#
+run_test(TestCase("i INT, t TEXT, j INT", testdata)
+         .replace(3, '41|')
+         .offset(3)
+         .expect_error("Row 2: too few fields")  # note row 2, not 4!
+         )
+run_test(TestCase("i INT, t TEXT, j INT", testdata)
+         .replace(3, '4x1|bla|43')
+         .offset(3)
+         .expect_error("Row 2 column 1")  # note row 2, not 4!
+         )

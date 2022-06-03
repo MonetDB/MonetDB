@@ -25,6 +25,9 @@ class TestCase:
     escape: Optional[bool]
     null: Optional[str]
     quote: Optional[str]
+    offsetk: Optional[int]
+    nrecords: Optional[int]
+    affected: Optional[int]
     expectations: list[Tuple[int, int, Any]]
     error: str
 
@@ -41,44 +44,63 @@ class TestCase:
         self.quote = quote
         self.escape = escape
         self.null = null
+        self.offsetk = None
+        self.nrecords = None
+        self.affected = None
         self.error = None
         self.expectations = []
 
-    def replace(self, rowno, replacement):
+    def replace(self, rowno, replacement) -> "TestCase":
         t = copy.deepcopy(self)
         t.testdata[rowno] = replacement
         t.expectations = [(r, c, v)
                           for r, c, v in t.expectations if r != rowno]
         return t
 
-    def set_quote(self, q):
+    def set_quote(self, q) -> "TestCase":
         t = copy.deepcopy(self)
         t.quote = q
         return t
 
-    def set_backslashes(self, b):
+    def set_backslashes(self, b) -> "TestCase":
         t = copy.deepcopy(self)
         t.backslashes = b
         return t
 
-    def set_escape(self, e):
+    def set_escape(self, e) -> "TestCase":
         t = copy.deepcopy(self)
         t.escape = e
         return t
 
-    def expect_error(self, substring):
+    def offset(self, off) -> "TestCase":
+        t = copy.deepcopy(self)
+        t.offsetk = off
+        return t
+
+    def records(self, nrec) -> "TestCase":
+        t = copy.deepcopy(self)
+        t.nrecords = nrec
+        return t
+
+    def expect_affected(self, n) -> "TestCase":
+        t = copy.deepcopy(self)
+        t.affected = n
+        t.expectations = []
+        return t
+
+    def expect_error(self, substring) -> "TestCase":
         t = copy.deepcopy(self)
         t.error = substring
         t.expectations = []
         return t
 
-    def expect_value(self, row, col, val):
+    def expect_value(self, row, col, val) -> "TestCase":
         assert not self.error
         t = copy.deepcopy(self)
         t.expectations.append((row, col, val))
         return t
 
-    def expect_first(self, val):
+    def expect_first(self, val) -> "TestCase":
         return self.expect_value(0, 0, val)
 
     def run(self, conn: pymonetdb.Connection, cursor, out):
@@ -98,22 +120,30 @@ class TestCase:
         qfilename = self.escape_text(filename)
         f.write(testdata)
         f.close()
-        parts = []
+        option_parts = []
+        nrec_offset_parts = []
         if self.quote:
-            parts.append(f"USING DELIMITERS '|', E'\\n', {self.escape_text(self.quote)}")
+            option_parts.append(f"USING DELIMITERS '|', E'\\n', {self.escape_text(self.quote)}")
         if self.escape is not None:
             if self.escape:
-                parts.append("ESCAPE")
+                option_parts.append("ESCAPE")
             else:
-                parts.append("NO ESCAPE")
+                option_parts.append("NO ESCAPE")
         if self.null is not None:
-            parts.append(f" NULL AS {self.escape_text(self.null)}")
-        options = ' '.join(parts)
+            option_parts.append(f" NULL AS {self.escape_text(self.null)}")
+        if self.nrecords is not None:
+            nrec_offset_parts.append(f"{self.nrecords} RECORDS")
+        if self.offsetk is not None:
+            nrec_offset_parts.append(f"OFFSET {self.offsetk}")
+        options = ' '.join(option_parts)
+        nrec_offset = ' '.join(nrec_offset_parts)
+        if nrec_offset:
+            nrec_offset = ' ' + nrec_offset
         query = textwrap.dedent(f"""\
             CALL sys.copy_blocksize({block_size});
             DROP TABLE IF EXISTS foo;
             CREATE TABLE foo({self.fieldspec});
-            COPY INTO foo FROM {qfilename} {options};
+            COPY{nrec_offset} INTO foo FROM {qfilename} {options};
         """)
 
         print(
@@ -122,10 +152,16 @@ class TestCase:
         if self.error is None:
             cursor.execute(query)
             rowcount = cursor.rowcount
-            expected = len(self.testdata)
-            print(f'Expected {expected} affected rows, got {rowcount}', file=out)
-            print(file=out)
-            assert rowcount == expected
+            if self.affected is not None:
+                expected = self.affected
+            elif self.testdata is not None:
+                expected = len(self.testdata)
+            else:
+                expected = None
+            if expected is not None:
+                print(f'Expected {expected} affected rows, got {rowcount}', file=out)
+                print(file=out)
+                assert rowcount == expected
             if self.expectations:
                 cursor.execute('SELECT * FROM foo')
                 results = cursor.fetchall()
