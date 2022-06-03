@@ -36,7 +36,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const void *nil_ptr;
 	size_t nil_len;
 
-	copy_init_error_handling(&errors, "copy.parse_generic", starting_row, col_no, col_name);
+	copy_init_error_handling(&errors, starting_row, col_no, col_name);
 
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_generic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

@@ -383,7 +383,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str null_repr = *getArgReference_str(stk, pci, pci->retc + 6);
 	bool backslash_escapes = *getArgReference_bit(stk, pci, pci->retc + 7);
 
-	copy_init_error_handling(&errors, "copy.splitlines", starting_row, -1, NULL);
+	copy_init_error_handling(&errors, starting_row, -1, NULL);
 
 	line_sep = get_sep_char(line_sep_str, backslash_escapes);
 	if (line_sep <= 0) // 0 not ok

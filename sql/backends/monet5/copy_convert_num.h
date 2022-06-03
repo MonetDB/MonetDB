@@ -163,7 +163,7 @@ TMPL_SUFFIXED(COPYparse_decimal) (
 	(void)dummy;
 
 	struct error_handling errors;
-	copy_init_error_handling(&errors, "copy.parse_decimal", *starting_row, *col_no, *col_name);
+	copy_init_error_handling(&errors, *starting_row, *col_no, *col_name);
 
 	struct decimal_parms myparms = {
 		.digits = *digits,
@@ -198,7 +198,7 @@ TMPL_SUFFIXED(COPYparse_integer) (
 
 	struct error_handling errors;
 
-	copy_init_error_handling(&errors, "copy.parse_integer", *starting_row, *col_no, *col_name);
+	copy_init_error_handling(&errors, *starting_row, *col_no, *col_name);
 
 	str msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_integer" ,

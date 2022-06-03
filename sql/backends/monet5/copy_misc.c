@@ -64,9 +64,8 @@ dump_block(const char *msg, BAT *b)
 
 
 void
-copy_init_error_handling(struct error_handling *admin, const char *func, lng starting_row, int default_col_no, const char *column_name)
+copy_init_error_handling(struct error_handling *admin, lng starting_row, int default_col_no, const char *column_name)
 {
-	admin->func = func;
 	admin->count = 0;
 	admin->starting_row = starting_row;
 	admin->default_col_no = default_col_no;
