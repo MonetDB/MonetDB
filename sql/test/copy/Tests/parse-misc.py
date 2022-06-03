@@ -91,8 +91,58 @@ def good_escape(text, value):
 def bad_escape(text, errmsg):
     return TestCase("t TEXT", text).set_backslashes(True).expect_error(errmsg)
 
-run_test(good_escape(r"a\x01b", "a\001b"))
+run_test(good_escape(r"a\|", "a|"))
 
+
+run_test(bad_escape(r"a\000b", "not a valid octal escape"))
+run_test(bad_escape(r"a\00b", "not a valid octal escape"))
+run_test(bad_escape(r"a\0b", "not a valid octal escape"))
+run_test(bad_escape(r"a\0", "not a valid octal escape"))
+# 8 is a decimal digit but not an octal digit:
+run_test(good_escape(r"a\0018", "a\0018"))
+run_test(good_escape(r"a\018", "a\0018"))
+run_test(good_escape(r"a\18", "a\0018"))
+run_test(bad_escape(r"a\400b", "octal escape out of range"))
+run_test(bad_escape(r"a\777b", "octal escape out of range"))
+run_test(good_escape(r"a\303\270b", "a\u00F8b"))
+run_test(bad_escape(r"aa\303Ab", "incorrectly encoded UTF-8"))
+
+
+run_test(bad_escape(r"a\x00b", "not a valid hex escape"))
+run_test(good_escape(r"a\x01b", "a\001b"))
+run_test(good_escape(r"a\xc3\xb8b", "a\u00F8b"))
+run_test(bad_escape(r"aa\xc3Ab", "incorrectly encoded UTF-8"))
+run_test(bad_escape(r"a\xG3b", "incomplete hex"))
+run_test(bad_escape(r"a\x\3b", "incomplete hex"))
+run_test(good_escape(r"a\xC3\xB8b", "a\u00F8b"))
+run_test(bad_escape(r"aa\xC3Ab", "incorrectly encoded UTF-8"))
+
+run_test(good_escape(r"a\u0021b", "a!b"))
+run_test(good_escape(r"a\u25a1b", "a\u25a1b"))
+run_test(good_escape(r"a\u0021", "a!"))
+run_test(bad_escape(r"a\u002", "incomplete hex"))
+run_test(bad_escape(r"a\u0000b", "\\u0000 is not a valid unicode escape"))
+#
+run_test(bad_escape(r"a\ud800b", "surrogate"))
+run_test(bad_escape(r"a\udbffb", "surrogate"))
+run_test(bad_escape(r"a\udc00b", "surrogate"))
+run_test(bad_escape(r"a\udfffb", "surrogate"))
+#
+run_test(good_escape(r"a\U00000021b", "a!b"))
+run_test(good_escape(r"a\U0001F440b", "a\U0001F440b"))
+run_test(good_escape(r"a\U00000021", "a!"))
+run_test(bad_escape(r"a\U0000002", "incomplete hex"))
+run_test(bad_escape(r"a\U00000000b", "\\U00000000 is not a valid unicode escape"))
+#
+run_test(bad_escape(r"a\U0000d800b", "surrogate"))
+run_test(bad_escape(r"a\U0000dbffb", "surrogate"))
+run_test(bad_escape(r"a\U0000dc00b", "surrogate"))
+run_test(bad_escape(r"a\U0000dfffb", "surrogate"))
+
+
+# upper case also works
+run_test(good_escape(r"a\xC3\xB8b", "a\u00F8b"))
+run_test(good_escape(r"a\u25A1b", "a\u25a1b"))
 
 # NULL tests
 run_test(TestCase("i INT", "\n", null='').expect_first(None))

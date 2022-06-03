@@ -61,7 +61,7 @@ one_hex_digit(const char **err_msg, const unsigned char **rr, unsigned char *end
 		*rr += 1;
 		return v - 1;
 	} else {
-		*err_msg = "invalid hex digit";
+		*err_msg = "incomplete hex sequence";
 		return -1;
 	}
 }
@@ -84,6 +84,7 @@ scan_hex_escape(const char **err_msg, const unsigned char **rr, unsigned char **
 	assert(acc < 0xFF);
 	if (acc == 0) {
 		*err_msg = "\\x00 is not a valid hex escape";
+		return -1;
 	}
 	// rr has already been updated by one_hex_digit
 	*(*ww)++ = acc;
@@ -114,7 +115,10 @@ scan_unicode_escape(const char **err_msg, const unsigned char **rr, unsigned cha
 		acc = 16 * acc + d;
 	}
 	if (acc == 0) {
-		*err_msg = "\\u0000 is not a valid unicode escape";
+		if (digits == 8)
+			*err_msg = "\\U00000000 is not a valid unicode escape";
+		else
+			*err_msg = "\\u0000 is not a valid unicode escape";
 		return -1;
 	}
 	else if (acc <      0x80) {
