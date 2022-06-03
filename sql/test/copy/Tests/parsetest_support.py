@@ -111,7 +111,7 @@ class TestCase:
         options = ' '.join(parts)
         query = textwrap.dedent(f"""\
             CALL sys.copy_blocksize({block_size});
-            DROP TABLE foo;
+            DROP TABLE IF EXISTS foo;
             CREATE TABLE foo({self.fieldspec});
             COPY INTO foo FROM {qfilename} {options};
         """)
