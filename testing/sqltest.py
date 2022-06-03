@@ -15,6 +15,14 @@ import inspect
 TSTDB=os.getenv("TSTDB")
 MAPIPORT=os.getenv("MAPIPORT")
 
+from pathlib import Path
+from typing import Optional
+class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
+    def secure_resolve(self, filename: str) -> Optional[Path]:
+        return Path(filename).resolve()
+
+transfer_handler = UnsafeDirectoryHandler('.')
+
 def equals(a, b) -> bool:
     if type(a) is type(b):
         return a==b
@@ -145,6 +153,8 @@ class PyMonetDBConnectionContext(object):
                                          port=self.port,
                                          database=self.database,
                                          autocommit=True)
+                self.dbh.set_uploader(transfer_handler)
+                self.dbh.set_downloader(transfer_handler)
             else:
                 self.dbh = malmapi.Connection()
                 self.dbh.connect(
