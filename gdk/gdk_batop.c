@@ -703,6 +703,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
 	TSKdestroy(b);
 	MT_lock_set(&b->theaplock);
+
 	b->batDirtydesc = true;
 
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
@@ -1127,9 +1128,13 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	IMPSdestroy(b);
 	STRMPdestroy(b);
 	TSKdestroy(b);
+	/* load hash so that we can maintain it */
+	(void) BATcheckhash(b);
+
 	MT_lock_set(&b->theaplock);
 	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
 		MT_lock_unset(&b->theaplock);
+		bat_iterator_end(&ni);
 		GDKerror("access denied to %s, aborting.\n", BATgetId(b));
 		return GDK_FAIL;
 	}
@@ -1137,9 +1142,6 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	if (ni.count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
-	MT_lock_unset(&b->theaplock);
-	/* load hash so that we can maintain it */
-	(void) BATcheckhash(b);
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;
@@ -1150,6 +1152,9 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	const void *nil = ATOMnilptr(b->ttype);
 	oid hseqend = b->hseqbase + BATcount(b);
+
+	MT_lock_unset(&b->theaplock);
+
 	bool anynil = false;
 	bool locked = false;
 
@@ -2804,6 +2809,7 @@ PROPdestroy(BAT *b)
 
 	b->tprops = NULL;
 	while (p) {
+		/* only set dirty if a saved property is changed */
 		n = p->next;
 		VALclear(&p->v);
 		GDKfree(p);

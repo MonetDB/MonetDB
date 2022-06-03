@@ -784,10 +784,10 @@ MNDBGetInfo(ODBCDbc *dbc,
 		nValue = SQL_OJ_LEFT |
 			SQL_OJ_RIGHT |
 			SQL_OJ_FULL |
+			SQL_OJ_NESTED |
 			SQL_OJ_NOT_ORDERED |
 			SQL_OJ_INNER |
 			SQL_OJ_ALL_COMPARISON_OPS;
-		/* SQL_OJ_NESTED */
 		break;
 	case SQL_ORDER_BY_COLUMNS_IN_SELECT:
 		sValue = "N";	/* "Y" */
