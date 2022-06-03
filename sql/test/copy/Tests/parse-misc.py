@@ -76,12 +76,12 @@ for escape in [True, False]:
                 sub=sub)
 
 # Unterminated string
-run_test(TestCase("i INT", '"42', quote='"')
-         .expect_error("unterminated quoted string"))
+run_test(TestCase("i INT, t TEXT", '1\n2\n3\n"42', quote='"')
+         .expect_error("Row 4: unterminated quoted string"))
 
 # Unterminated final line
-run_test(TestCase("i INT", '42', raw=True)
-         .expect_error("unterminated line"))
+run_test(TestCase("i INT, t TEXT", '1\n2\n3\n42', raw=True)
+         .expect_error("Row 4: unterminated line"))
 
 
 # Test various escape sequences
@@ -238,13 +238,22 @@ run_test(basecase     # use basecase so we get the result set checks
 
 # Does OFFSET affect error reporting?
 #
+# This test exercises copy.splitlines
 run_test(TestCase("i INT, t TEXT, j INT", testdata)
          .replace(3, '41|')
          .offset(3)
          .expect_error("Row 2: too few fields")  # note row 2, not 4!
          )
+# This test exercises copy.parse_integer
 run_test(TestCase("i INT, t TEXT, j INT", testdata)
          .replace(3, '4x1|bla|43')
          .offset(3)
          .expect_error("Row 2 column 1")  # note row 2, not 4!
          )
+# These tests exercise copy.fixlines
+run_test(TestCase("i INT, t TEXT", '1\n2\n3\n"4', quote='"')
+         .offset(3)
+         .expect_error("Row 2: unterminated quoted string"))
+run_test(TestCase("i INT, t TEXT", '1\n2\n3\n4', raw=True)
+         .offset(3)
+         .expect_error("Row 2: unterminated line"))

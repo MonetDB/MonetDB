@@ -265,6 +265,7 @@ emit_onserver_loop(
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushArgument(mb, q, var_escape);
+	q = pushArgument(mb, q, var_initial_line_count);
 	q = pushArgument(mb, q, var_todo);
 	// use the variables defined by fixlines from now on:
 	loop_vars->our_block = getArg(q, 0);
