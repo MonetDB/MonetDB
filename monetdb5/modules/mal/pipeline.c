@@ -169,7 +169,6 @@ BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 		if (!indirect)
 			MT_lock_unset(&b->theaplock);
 		BBPshare(b->tvheap->parentid);
-		u->batDirtydesc = true;
 	} else {
 		if (!indirect)
 			MT_lock_unset(&b->theaplock);
