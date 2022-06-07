@@ -3282,13 +3282,16 @@ BBPdestroy(BAT *b)
 			}
 		}
 	}
-	if (tp || vtp)
-		VIEWunlink(b);
 	if (b->theap) {
-		HEAPfree(b->theap, true);
+		assert(tp != 0 || (ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
+		HEAPdecref(b->theap, tp == 0);
+		b->theap = NULL;
 	}
-	if (b->tvheap)
-		HEAPfree(b->tvheap, true);
+	if (b->tvheap) {
+		assert(vtp != 0 || (ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
+		HEAPdecref(b->tvheap, vtp == 0);
+		b->tvheap = NULL;
+	}
 	b->batCopiedtodisk = false;
 
 	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
