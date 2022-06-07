@@ -704,8 +704,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	TSKdestroy(b);
 	MT_lock_set(&b->theaplock);
 
-	b->batDirtydesc = true;
-
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
 		if (ni.maxpos != BUN_NONE) {
 			BATiter bi = bat_iterator_nolock(b);
@@ -1936,7 +1934,6 @@ BATordered(BAT *b)
 	 * changes to the bat descriptor. */
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->tsorted && b->tnosorted == 0) {
-		b->batDirtydesc = true;
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			BAT_ORDERED(bte);
@@ -2089,7 +2086,6 @@ BATordered_rev(BAT *b)
 	}
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
-		b->batDirtydesc = true;
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			BAT_REVORDERED(bte);
@@ -2221,22 +2217,16 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void) {
-		if (!b->tsorted) {
-			b->tsorted = true;
-			b->batDirtydesc = true;
-		}
+		b->tsorted = true;
 		if (b->trevsorted != (is_oid_nil(b->tseqbase) || b->batCount <= 1)) {
 			b->trevsorted = !b->trevsorted;
-			b->batDirtydesc = true;
 		}
 		if (b->tkey != (!is_oid_nil(b->tseqbase) || b->batCount <= 1)) {
 			b->tkey = !b->tkey;
-			b->batDirtydesc = true;
 		}
 	} else if (b->batCount <= 1) {
 		if (!b->tsorted || !b->trevsorted) {
 			b->tsorted = b->trevsorted = true;
-			b->batDirtydesc = true;
 		}
 	}
 	MT_lock_unset(&b->theaplock);
@@ -3028,7 +3018,6 @@ BATcount_no_nil(BAT *b, BAT *s)
 		MT_lock_set(&b->theaplock);
 		if (cnt == BATcount(b) && bi.h == b->theap) {
 			/* we learned something */
-			b->batDirtydesc = true;
 			b->tnonil = true;
 			assert(!b->tnil);
 			b->tnil = false;
@@ -3041,7 +3030,6 @@ BATcount_no_nil(BAT *b, BAT *s)
 			if (cnt == BATcount(pb) &&
 			    bi.h == pb->theap &&
 			    !pb->tnonil) {
-				pb->batDirtydesc = true;
 				pb->tnonil = true;
 				assert(!pb->tnil);
 				pb->tnil = false;

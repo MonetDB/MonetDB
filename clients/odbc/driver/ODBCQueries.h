@@ -48,7 +48,7 @@
 		     "when 'timetz' then %d "			\
 		     "when 'tinyint' then %d "			\
 		     "when 'varchar' then %d "			\
-		"end as data_type"
+		"end as \"DATA_TYPE\""
 #define DATA_TYPE_ARGS											\
 		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_WCHAR,		\
 		SQL_WLONGVARCHAR, SQL_TYPE_DATE, SQL_DECIMAL,			\
@@ -104,7 +104,7 @@
 		     "when 'timetz' then 'TIME' "						\
 		     "when 'tinyint' then 'TINYINT' "					\
 		     "when 'varchar' then 'VARCHAR' "					\
-		"end as type_name"
+		"end as \"TYPE_NAME\""
 
 #define COLUMN_SIZE(t)							\
 		"case " #t ".type "						\
@@ -134,7 +134,7 @@
 		     "when 'timestamptz' then 23 "		\
 		     "when 'timetz' then 12 "			\
 		     "else " #t ".type_digits "			\
-		"end as column_size"
+		"end as \"COLUMN_SIZE\""
 
 #define BUFFER_LENGTH(t) "case " #t ".type "				\
 		     "when 'bigint' then 20 "						\
@@ -173,7 +173,7 @@
 		     "when 'tinyint' then 4 "						\
 		     "when 'varchar' then 2 * " #t ".type_digits "	\
 		     "else " #t ".type_digits "						\
-		"end as buffer_length"
+		"end as \"BUFFER_LENGTH\""
 
 #define DECIMAL_DIGITS(t) "case " #t ".type "							\
 		     "when 'bigint' then 0 "									\
@@ -198,7 +198,7 @@
 		     "when 'timetz' then " #t ".type_digits - 1 "				\
 		     "when 'tinyint' then 0 "									\
 		     "else cast(null as smallint) "								\
-		"end as decimal_digits"
+		"end as \"DECIMAL_DIGITS\""
 
 #define NUM_PREC_RADIX(t) "case " #t ".type "							\
 		     "when 'bigint' then 2 "									\
@@ -216,7 +216,7 @@
 		     "when 'smallint' then 2 "									\
 		     "when 'tinyint' then 2 "									\
 		     "else cast(null as smallint) "								\
-		"end as num_prec_radix"
+		"end as \"NUM_PREC_RADIX\""
 
 #define SQL_DATA_TYPE(t)						\
 		"case " #t ".type "						\
@@ -241,7 +241,7 @@
 		     "when 'timetz' then %d "			\
 		     "when 'tinyint' then %d "			\
 		     "when 'varchar' then %d "			\
-		"end as sql_data_type"
+		"end as \"SQL_DATA_TYPE\""
 #define SQL_DATA_TYPE_ARGS												\
 		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_WCHAR,				\
 		SQL_WLONGVARCHAR, SQL_DATETIME, SQL_INTERVAL, SQL_DECIMAL, SQL_DOUBLE, \
@@ -277,7 +277,7 @@
 		     "when 'timestamptz' then %d "		\
 		     "when 'timetz' then %d "			\
 		     "else cast(null as smallint) "		\
-		"end as sql_datetime_sub"
+		"end as \"SQL_DATETIME_SUB\""
 #define SQL_DATETIME_SUB_ARGS											\
 		SQL_CODE_DATE, SQL_CODE_DAY, SQL_CODE_YEAR, SQL_CODE_YEAR_TO_MONTH,	\
 		SQL_CODE_MONTH, SQL_CODE_DAY, SQL_CODE_DAY_TO_HOUR,				\
@@ -295,4 +295,4 @@
 		     "when 'clob' then 2 * " #t ".type_digits "		\
 		     "when 'blob' then " #t ".type_digits "			\
 		     "else cast(null as integer) "					\
-		"end as char_octet_length"
+		"end as \"CHAR_OCTET_LENGTH\""

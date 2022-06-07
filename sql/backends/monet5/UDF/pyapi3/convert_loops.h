@@ -590,7 +590,6 @@ convert_and_append(BAT* b, const char* text, bool force) {
 		bat->tnil = false;                                                 \
 		bat->tnonil = true;                                                \
 		BATsetcount(bat, (BUN)ret->count);                                 \
-		BATsettrivprop(bat);                                               \
 	}
 
 // This very big #define combines all the previous #defines for one big #define
@@ -642,6 +641,5 @@ convert_and_append(BAT* b, const char* text, bool force) {
 				bat->tnonil = false;                                           \
 			}                                                                  \
 			BATsetcount(bat, (BUN)ret->count);                                 \
-			BATsettrivprop(bat);                                               \
 		}                                                                      \
 	}

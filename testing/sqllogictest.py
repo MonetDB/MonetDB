@@ -35,8 +35,16 @@ import re
 import sys
 import importlib
 import MonetDBtesting.utils as utils
+from pathlib import Path
+from typing import Optional
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
+
+class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
+    def secure_resolve(self, filename: str) -> Optional[Path]:
+        return Path(filename).resolve()
+
+transfer_handler = UnsafeDirectoryHandler('.')
 
 class SQLLogicSyntaxError(Exception):
     pass
@@ -115,6 +123,8 @@ class SQLLogic:
                                      port=port,
                                      database=database,
                                      autocommit=True)
+            self.dbh.set_uploader(transfer_handler)
+            self.dbh.set_downloader(transfer_handler)
             self.crs = self.dbh.cursor()
         else:
             dbh = malmapi.Connection()
