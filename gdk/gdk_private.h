@@ -244,6 +244,8 @@ void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void PROPdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
+void PROPdestroy_nolock(BAT *b)
+	__attribute__((__visibility__("hidden")));
 gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer *lci, struct canditer *rci, bool li, bool hi, bool anti, bool symmetric, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));

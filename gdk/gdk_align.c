@@ -367,10 +367,10 @@ VIEWdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	PROPdestroy(b);
 	VIEWunlink(b);
 
 	MT_lock_set(&b->theaplock);
+	PROPdestroy_nolock(b);
 	if (b->theap) {
 		HEAPdecref(b->theap, false);
 		b->theap = NULL;
