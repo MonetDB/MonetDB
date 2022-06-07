@@ -628,7 +628,6 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 static void
 DESCclean(BAT *b)
 {
-	b->batDirtyflushed = DELTAdirty(b);
 	b->theap->dirty = false;
 	if (b->tvheap)
 		b->tvheap->dirty = false;
@@ -761,13 +760,11 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 		if (size != b->batCount || b->batInserted < b->batCount) {
 			/* if the sizes don't match, the BAT must be dirty */
 			b->batCopiedtodisk = false;
-			b->batDirtyflushed = true;
 			b->theap->dirty = true;
 			if (b->tvheap)
 				b->tvheap->dirty = true;
 		} else {
 			b->batCopiedtodisk = true;
-			b->batDirtyflushed = DELTAdirty(b);
 		}
 		MT_lock_unset(&b->theaplock);
 		if (b->thash && b->thash != (Hash *) 1)

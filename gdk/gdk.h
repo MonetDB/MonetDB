@@ -794,8 +794,6 @@ typedef struct BAT {
 	bool
 	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1;	/* once written */
-	/* not part of bitfields since not in BATiter */
-	bool batDirtyflushed;	/* was dirty before commit started? */
 	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
@@ -2076,16 +2074,14 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  * @tab BATcommit (BAT *b)
  * @item BAT *
  * @tab BATfakeCommit (BAT *b)
- * @item BAT *
- * @tab BATundo (BAT *b)
  * @end multitable
  *
  * The BAT keeps track of updates with respect to a 'previous state'.
- * Do not confuse 'previous state' with 'stable' or
- * 'commited-on-disk', because these concepts are not always the
- * same. In particular, they diverge when BATcommit, BATfakecommit,
- * and BATundo are called explictly, bypassing the normal global
- * TMcommit protocol (some applications need that flexibility).
+ * Do not confuse 'previous state' with 'stable' or 'commited-on-disk',
+ * because these concepts are not always the same. In particular, they
+ * diverge when BATcommit and BATfakecommit are called explicitly,
+ * bypassing the normal global TMcommit protocol (some applications need
+ * that flexibility).
  *
  * BATcommit make the current BAT state the new 'stable state'.  This
  * happens inside the global TMcommit on all persistent BATs previous
@@ -2101,7 +2097,6 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  */
 gdk_export void BATcommit(BAT *b, BUN size);
 gdk_export void BATfakeCommit(BAT *b);
-gdk_export void BATundo(BAT *b);
 
 /*
  * @+ BAT Alignment and BAT views
