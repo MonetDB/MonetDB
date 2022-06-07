@@ -279,8 +279,6 @@ gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-void VIEWunlink(BAT *b)
-	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
