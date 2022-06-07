@@ -705,7 +705,7 @@ BATdestroy(BAT *b)
 		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
 	}
-	PROPdestroy(b);
+	PROPdestroy_nolock(b);
 	MT_lock_destroy(&b->theaplock);
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
@@ -1019,7 +1019,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	ALIGNapp(b, force, GDK_FAIL);
-	b->batDirtydesc = true;
 
 	if (b->ttype == TYPE_void && BATtdense(b)) {
 		const oid *ovals = values;
@@ -1038,7 +1037,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return GDK_SUCCEED;
 		} else {
 			/* we need to materialize b; allocate enough capacity */
+			MT_lock_set(&b->theaplock);
 			b->batCapacity = BATcount(b) + count;
+			MT_lock_unset(&b->theaplock);
 			if (BATmaterialize(b) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
@@ -1062,6 +1063,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	MT_lock_set(&b->theaplock);
+	b->batDirtydesc = true;
 	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
 		BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
 	b->theap->dirty = true;
@@ -1321,6 +1323,7 @@ BUNdelete(BAT *b, oid o)
 	BATiter bi = bat_iterator_nolock(b);
 	const void *val;
 	const ValRecord *prop;
+	bool locked = false;
 
 	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
@@ -1333,7 +1336,6 @@ BUNdelete(BAT *b, oid o)
 		GDKerror("cannot delete committed value\n");
 		return GDK_FAIL;
 	}
-	b->batDirtydesc = true;
 	val = BUNtail(bi, p);
 	if (ATOMlinear(b->ttype) &&
 	    ATOMcmp(b->ttype, ATOMnilptr(b->ttype), val) != 0) {
@@ -1381,18 +1383,21 @@ BUNdelete(BAT *b, oid o)
 			HASHinsert(b, p, val);
 		}
 		/* no longer sorted */
+		MT_lock_set(&b->theaplock);
+		locked = true;
 		b->tsorted = b->trevsorted = false;
 		b->theap->dirty = true;
 	}
+	if (!locked)
+		MT_lock_set(&b->theaplock);
+	b->batDirtydesc = true;
 	if (b->tnosorted >= p)
 		b->tnosorted = 0;
 	if (b->tnorevsorted >= p)
 		b->tnorevsorted = 0;
-	MT_lock_set(&b->theaplock);
 	b->batCount--;
 	if (BATcount(b) < GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
 		BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
-	MT_lock_unset(&b->theaplock);
 	if (b->batCount <= 1) {
 		/* some trivial properties */
 		b->tkey = true;
@@ -1403,6 +1408,7 @@ BUNdelete(BAT *b, oid o)
 			b->tnonil = true;
 		}
 	}
+	MT_lock_unset(&b->theaplock);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	return GDK_SUCCEED;
@@ -1428,6 +1434,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	int tt;
 	BUN prv, nxt;
 	const void *val;
+	bool locked = false;
 
 	/* zap alignment info */
 	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
@@ -1471,12 +1478,19 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				 * isn't, we're not sure anymore about
 				 * the nil property, so we must clear
 				 * it */
+				if (!locked) {
+					MT_lock_set(&b->theaplock);
+					locked = true;
+				}
 				b->tnil = false;
 			}
 			if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
 				const ValRecord *prop;
 
-				MT_lock_set(&b->theaplock);
+				if (!locked) {
+					MT_lock_set(&b->theaplock);
+					locked = true;
+				}
 				if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
 					if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
 					    ATOMcmp(b->ttype, VALptr(prop), t) < 0) {
@@ -1523,9 +1537,16 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				}
 				if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
 					BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
+			} else if (b->tprops) {
+				if (!locked) {
+					MT_lock_set(&b->theaplock);
+					locked = true;
+				}
+				PROPdestroy_nolock(b);
+			}
+			if (locked) {
 				MT_lock_unset(&b->theaplock);
-			} else {
-				PROPdestroy(b);
+				locked = false;
 			}
 			HASHdelete_locked(b, p, val);	/* first delete old value from hash */
 		} else {
@@ -1638,6 +1659,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		prv = p > 0 ? p - 1 : BUN_NONE;
 		nxt = p < last ? p + 1 : BUN_NONE;
 
+		MT_lock_set(&b->theaplock);
 		if (BATtordered(b)) {
 			if (prv != BUN_NONE &&
 			    ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) {
@@ -1679,9 +1701,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			b->tnokey[0] = b->tnokey[1] = 0;
 		if (b->tnonil && ATOMstorage(b->ttype) != TYPE_msk)
 			b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
+		MT_lock_unset(&b->theaplock);
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
+	b->batDirtydesc = true;
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;
