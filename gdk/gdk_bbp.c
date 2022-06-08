@@ -1805,8 +1805,8 @@ BBPexit(void)
 						HEAPdecref(b->tvheap, false);
 						b->tvheap = NULL;
 					}
+					PROPdestroy_nolock(b);
 					MT_lock_unset(&b->theaplock);
-					PROPdestroy(b);
 					BATfree(b);
 				}
 				BBP_pid(i) = 0;
@@ -2911,7 +2911,7 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 			assert(b == NULL || b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
 			assert(b == NULL || b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
-			if (refs == 0 && b) {
+			if (b && refs == 0) {
 				tp = VIEWtparent(b);
 				tvp = VIEWvtparent(b);
 				if (tp || tvp)
@@ -3268,7 +3268,7 @@ BBPdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	PROPdestroy(b);
+	PROPdestroy_nolock(b);
 	TSKdestroy(b);
 	if (tp == 0) {
 		/* bats that get destroyed must unfix their atoms */
@@ -3284,13 +3284,16 @@ BBPdestroy(BAT *b)
 			}
 		}
 	}
-	if (tp || vtp)
-		VIEWunlink(b);
 	if (b->theap) {
-		HEAPfree(b->theap, true);
+		assert(tp != 0 || (ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
+		HEAPdecref(b->theap, tp == 0);
+		b->theap = NULL;
 	}
-	if (b->tvheap)
-		HEAPfree(b->tvheap, true);
+	if (b->tvheap) {
+		assert(vtp != 0 || (ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
+		HEAPdecref(b->tvheap, vtp == 0);
+		b->tvheap = NULL;
+	}
 	b->batCopiedtodisk = false;
 
 	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
@@ -3576,6 +3579,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 	char extnew[16];
 	bool istail = strncmp(ext, "tail", 4) == 0;
 
+	h->dirty |= dirty;
 	if (h->wasempty) {
 		return GDK_SUCCEED;
 	}
@@ -3927,8 +3931,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				break;
 			/* we once again have a saved heap */
 		}
-		if (idx < cnt)
+		if (idx < cnt) {
 			ret = GDK_FAIL;
+		}
 	}
 
 	TRC_DEBUG(PERF, "write time %d\n", (t0 = GDKms()) - t1);
