@@ -415,11 +415,12 @@ MCshutdowninprogress(void){
 void
 MCfreeClient(Client c)
 {
+	MT_lock_set(&mal_contextLock);
 	if( c->mode == FREECLIENT) {
 		assert(c->idx == -1);
+		MT_lock_unset(&mal_contextLock);
 		return;
 	}
-	MT_lock_set(&mal_contextLock);
 	c->mode = FINISHCLIENT;
 	MT_lock_unset(&mal_contextLock);
 
