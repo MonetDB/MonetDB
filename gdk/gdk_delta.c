@@ -37,9 +37,6 @@ BATcommit(BAT *b, BUN size)
 		return;
 	TRC_DEBUG(DELTA, "BATcommit1 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
-	if (!BATdirty(b)) {
-		b->batDirtyflushed = false;
-	}
 	b->batInserted = size < BUNlast(b) ? size : BUNlast(b);
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
