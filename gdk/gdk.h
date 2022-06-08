@@ -762,8 +762,8 @@ typedef struct BAT {
 	/* dynamic bat properties */
 	bool
 	 batCopiedtodisk:1,	/* once written */
-	 batDirtyflushed:1,	/* was dirty before commit started? */
-	 batDirtydesc:1,	/* bat descriptor dirty marker */
+	 batDirtyflushed:1,	/* was dirty before commit started? (not used) */
+	 batDirtydesc:1,	/* bat descriptor dirty marker (not used) */
 	 batTransient:1;	/* should the BAT persist on disk? */
 	uint8_t	/* adjacent bit fields are packed together (if they fit) */
 	 batRestricted:2;	/* access privileges */
@@ -1369,8 +1369,6 @@ BATsettrivprop(BAT *b)
 {
 	assert(!is_oid_nil(b->hseqbase));
 	assert(is_oid_nil(b->tseqbase) || ATOMtype(b->ttype) == TYPE_oid);
-	if (!b->batDirtydesc)
-		return;
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
 			b->tnonil = b->batCount == 0;

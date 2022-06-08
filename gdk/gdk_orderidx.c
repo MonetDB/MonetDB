@@ -200,7 +200,6 @@ BATorderidx(BAT *b, bool stable)
 			if (!b->tsorted) {
 				b->tsorted = true;
 				b->tnosorted = 0;
-				b->batDirtydesc = true;
 			}
 		} else {
 			/* BATsort quite possibly already created the
@@ -215,7 +214,6 @@ BATorderidx(BAT *b, bool stable)
 				memcpy((oid *) m->base + ORDERIDXOFF, Tloc(on, 0), BATcount(on) * sizeof(oid));
 				ATOMIC_INIT(&m->refs, 1);
 				b->torderidx = m;
-				b->batDirtydesc = true;
 				persistOIDX(b);
 			}
 			MT_lock_unset(&b->batIdxLock);
@@ -496,7 +494,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		TRC_DEBUG(ACCELERATOR, "GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
 #endif
 
-	b->batDirtydesc = true;
 	MT_lock_unset(&b->batIdxLock);
 	bat_iterator_end(&bi);
 	return GDK_SUCCEED;
