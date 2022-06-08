@@ -981,7 +981,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	 * all values are necessarily distinct */
 	if (h->nunique == BATcount(b) && !b->tkey) {
 		b->tkey = true;
-		b->batDirtydesc = true;
 	}
 	TRC_DEBUG_IF(ACCELERATOR) {
 		TRC_DEBUG_ENDIF(ACCELERATOR,
