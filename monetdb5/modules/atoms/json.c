@@ -2700,87 +2700,82 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			default:
 				assert(0);
 			}
-			bn->tnil = nils != 0;
-			bn->tnonil = nils == 0;
-			bn->tsorted = BATcount(bn) <= 1;
-			bn->trevsorted = BATcount(bn) <= 1;
-			bn->tkey = BATcount(bn) <= 1;
-			goto out;
-		}
-		grps = (const oid *) Tloc(g, 0);
-		prev = grps[0];
-		for (p = 0, q = BATcount(g); p <= q; p++) {
-			if (p == q || grps[p] != prev) {
-				if (isnil) {
-					strcpy(buf, str_nil);
-					nils = 1;
-				} else if (buflen == 0) {
-					strcpy(buf, "[  ]");
-				} else {
-					strcpy(buf + buflen, " ]");
-				}
-				while (BATcount(bn) < prev - min) {
-					if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
+		} else {
+			grps = (const oid *) Tloc(g, 0);
+			prev = grps[0];
+			for (p = 0, q = BATcount(g); p <= q; p++) {
+				if (p == q || grps[p] != prev) {
+					if (isnil) {
+						strcpy(buf, str_nil);
+						nils = 1;
+					} else if (buflen == 0) {
+						strcpy(buf, "[  ]");
+					} else {
+						strcpy(buf + buflen, " ]");
+					}
+					while (BATcount(bn) < prev - min) {
+						if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
+							goto bunins_failed;
+						nils = 1;
+					}
+					if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 						goto bunins_failed;
-					nils = 1;
+					if (p == q)
+						break;
+					buflen = 0;
+					isnil = 0;
+					prev = grps[p];
 				}
-				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
-					goto bunins_failed;
-				if (p == q)
-					break;
-				buflen = 0;
-				isnil = 0;
-				prev = grps[p];
+				if (isnil)
+					continue;
+				switch (b->ttype) {
+				case TYPE_str: {
+					const char *v = (const char *) BUNtvar(bi, p);
+					if (strNil(v)) {
+						if (skip_nils)
+							continue;
+						isnil = 1;
+					} else {
+						/* '[' or ',' plus space and null terminator and " ]" final string */
+						JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 7);
+						char *dst = buf + buflen, *odst = dst;
+						if (buflen == 0)
+							*dst++ = '[';
+						else
+							*dst++ = ',';
+						*dst++ = ' ';
+						*dst++ = '"';
+						JSON_STR_CPY;
+						*dst++ = '"';
+						buflen += (dst - odst);
+					}
+				} break;
+				case TYPE_dbl: {
+					dbl val = vals[p];
+					if (is_dbl_nil(val)) {
+						if (skip_nils)
+							continue;
+						isnil = 1;
+					} else {
+						/* '[' or ',' plus space and null terminator and " ]" final string */
+						JSON_AGGR_CHECK_NEXT_LENGTH(130 + 6);
+						char *dst = buf + buflen;
+						if (buflen == 0)
+							*dst++ = '[';
+						else
+							*dst++ = ',';
+						*dst++ = ' ';
+						buflen += 2;
+						buflen += snprintf(buf + buflen, maxlen - buflen, "%f", val);
+					}
+				} break;
+				default:
+					assert(0);
+				}
 			}
-			if (isnil)
-				continue;
-			switch (b->ttype) {
-			case TYPE_str: {
-				const char *v = (const char *) BUNtvar(bi, p);
-				if (strNil(v)) {
-					if (skip_nils)
-						continue;
-					isnil = 1;
-				} else {
-					/* '[' or ',' plus space and null terminator and " ]" final string */
-					JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 7);
-					char *dst = buf + buflen, *odst = dst;
-					if (buflen == 0)
-						*dst++ = '[';
-					else
-						*dst++ = ',';
-					*dst++ = ' ';
-					*dst++ = '"';
-					JSON_STR_CPY;
-					*dst++ = '"';
-					buflen += (dst - odst);
-				}
-			} break;
-			case TYPE_dbl: {
-				dbl val = vals[p];
-				if (is_dbl_nil(val)) {
-					if (skip_nils)
-						continue;
-					isnil = 1;
-				} else {
-					/* '[' or ',' plus space and null terminator and " ]" final string */
-					JSON_AGGR_CHECK_NEXT_LENGTH(130 + 6);
-					char *dst = buf + buflen;
-					if (buflen == 0)
-						*dst++ = '[';
-					else
-						*dst++ = ',';
-					*dst++ = ' ';
-					buflen += 2;
-					buflen += snprintf(buf + buflen, maxlen - buflen, "%f", val);
-				}
-			} break;
-			default:
-				assert(0);
-			}
+			BBPunfix(t2->batCacheid);
+			t2 = NULL;
 		}
-		BBPunfix(t2->batCacheid);
-		t2 = NULL;
 	} else {
 		switch (b->ttype) {
 		case TYPE_str:
