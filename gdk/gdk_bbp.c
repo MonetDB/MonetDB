@@ -3269,6 +3269,7 @@ BBPdestroy(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
+	TSKdestroy(b);
 	if (tp == 0) {
 		/* bats that get destroyed must unfix their atoms */
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
