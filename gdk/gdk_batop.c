@@ -2790,7 +2790,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
  */
 
 void
-PROPdestroy(BAT *b)
+PROPdestroy_nolock(BAT *b)
 {
 	PROPrec *p = b->tprops;
 	PROPrec *n;
@@ -2803,6 +2803,14 @@ PROPdestroy(BAT *b)
 		GDKfree(p);
 		p = n;
 	}
+}
+
+void
+PROPdestroy(BAT *b)
+{
+	MT_lock_set(&b->theaplock);
+	PROPdestroy_nolock(b);
+	MT_lock_unset(&b->theaplock);
 }
 
 ValPtr

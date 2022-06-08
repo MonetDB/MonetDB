@@ -625,14 +625,6 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
  * merely copies the data into place.  Failure to read or write the
  * BAT results in a NULL, otherwise it returns the BAT pointer.
  */
-static void
-DESCclean(BAT *b)
-{
-	b->theap->dirty = false;
-	if (b->tvheap)
-		b->tvheap->dirty = false;
-}
-
 static BAT *
 DESCload(int i)
 {
@@ -664,7 +656,6 @@ DESCload(int i)
 	 * descriptor, so loaded mode may be stale) */
 	b->batTransient = (BBP_status(b->batCacheid) & BBPPERSISTENT) == 0;
 	b->batCopiedtodisk = true;
-	DESCclean(b);
 	MT_lock_unset(&b->theaplock);
 	return b;
 }
@@ -880,7 +871,7 @@ BATdelete(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	PROPdestroy(b);
+	PROPdestroy_nolock(b);
 	STRMPdestroy(b);
 	HEAPfree(b->theap, true);
 	if (b->tvheap)

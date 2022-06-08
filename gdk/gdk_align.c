@@ -388,10 +388,10 @@ VIEWdestroy(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
-	PROPdestroy(b);
 	VIEWunlink(b);
 
 	MT_lock_set(&b->theaplock);
+	PROPdestroy_nolock(b);
 	/* heaps that are left after VIEWunlink are ours, so need to be
 	 * destroyed (and files deleted) */
 	if (b->theap) {

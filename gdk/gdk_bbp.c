@@ -1804,8 +1804,8 @@ BBPexit(void)
 						HEAPdecref(b->tvheap, false);
 						b->tvheap = NULL;
 					}
+					PROPdestroy_nolock(b);
 					MT_lock_unset(&b->theaplock);
-					PROPdestroy(b);
 					BATfree(b);
 				}
 				BBP_pid(i) = 0;
@@ -3267,7 +3267,7 @@ BBPdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	PROPdestroy(b);
+	PROPdestroy_nolock(b);
 	if (tp == 0) {
 		/* bats that get destroyed must unfix their atoms */
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
@@ -3574,6 +3574,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 	char extnew[16];
 	bool istail = strncmp(ext, "tail", 4) == 0;
 
+	h->dirty |= dirty;
 	if (h->wasempty) {
 		return GDK_SUCCEED;
 	}
@@ -3925,8 +3926,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				break;
 			/* we once again have a saved heap */
 		}
-		if (idx < cnt)
+		if (idx < cnt) {
 			ret = GDK_FAIL;
+		}
 	}
 
 	TRC_DEBUG(PERF, "write time %d\n", (t0 = GDKms()) - t1);
