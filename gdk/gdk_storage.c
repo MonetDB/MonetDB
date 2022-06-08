@@ -820,11 +820,11 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			}
 		}
 	} else {
-		if (!b->batCopiedtodisk || b->batDirtydesc || bi->h->dirty)
+		if (!b->batCopiedtodisk || bi->h->dirty)
 			if (err == GDK_SUCCEED && bi->type)
 				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree);
 		if (bi->vh
-		    && (!b->batCopiedtodisk || b->batDirtydesc || bi->vh->dirty)
+		    && (!b->batCopiedtodisk || bi->vh->dirty)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
 			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree);
@@ -843,14 +843,11 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 		if (size != b->batCount || b->batInserted < b->batCount) {
 			/* if the sizes don't match, the BAT must be dirty */
 			b->batCopiedtodisk = false;
-			b->batDirtyflushed = true;
-			b->batDirtydesc = true;
 			b->theap->dirty = true;
 			if (b->tvheap)
 				b->tvheap->dirty = true;
 		} else {
 			b->batCopiedtodisk = true;
-			b->batDirtyflushed = DELTAdirty(b);
 		}
 		MT_lock_unset(&b->theaplock);
 		if (b->thash && b->thash != (Hash *) 1)
