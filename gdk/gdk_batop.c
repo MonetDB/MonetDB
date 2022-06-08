@@ -97,7 +97,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		HEAPincref(ni.vh);
 		b->tvheap = ni.vh;
 		BBPshare(ni.vh->parentid);
-		b->batDirtydesc = true;
 		MT_lock_unset(&b->theaplock);
 		toff = 0;
 		MT_thread_setalgorithm("share vheap");
@@ -388,7 +387,6 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		HEAPdecref(b->tvheap, true);
 		HEAPincref(ni.vh);
 		b->tvheap = ni.vh;
-		b->batDirtydesc = true;
 		MT_lock_unset(&b->theaplock);
 	}
 	if (b->tvheap == ni.vh) {
@@ -717,8 +715,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	MT_lock_unset(&n->theaplock);
 
 	MT_lock_set(&b->theaplock);
-
-	b->batDirtydesc = true;
 
 	if (BATcount(b) == 0 || (prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
 		if (npropmaxval != NULL) {
@@ -1976,7 +1972,6 @@ BATordered(BAT *b)
 	MT_lock_set(&b->batIdxLock);
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->tsorted && b->tnosorted == 0) {
-		b->batDirtydesc = true;
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			BAT_ORDERED(bte);
@@ -2123,7 +2118,6 @@ BATordered_rev(BAT *b)
 	MT_lock_set(&b->batIdxLock);
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
-		b->batDirtydesc = true;
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			BAT_REVORDERED(bte);
@@ -2255,20 +2249,16 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	if (b->ttype == TYPE_void) {
 		if (!b->tsorted) {
 			b->tsorted = true;
-			b->batDirtydesc = true;
 		}
 		if (b->trevsorted != (is_oid_nil(b->tseqbase) || b->batCount <= 1)) {
 			b->trevsorted = !b->trevsorted;
-			b->batDirtydesc = true;
 		}
 		if (b->tkey != (!is_oid_nil(b->tseqbase) || b->batCount <= 1)) {
 			b->tkey = !b->tkey;
-			b->batDirtydesc = true;
 		}
 	} else if (b->batCount <= 1) {
 		if (!b->tsorted || !b->trevsorted) {
 			b->tsorted = b->trevsorted = true;
-			b->batDirtydesc = true;
 		}
 	}
 	if (o != NULL &&
@@ -2619,7 +2609,6 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (m != NULL) {
 			assert(orderidxlock);
 			if (pb->torderidx == NULL) {
-				pb->batDirtydesc = true;
 				if (ords != (oid *) m->base + ORDERIDXOFF) {
 					memcpy((oid *) m->base + ORDERIDXOFF,
 					       ords,
@@ -2826,7 +2815,6 @@ PROPdestroy_nolock(BAT *b)
 	b->tprops = NULL;
 	while (p) {
 		/* only set dirty if a saved property is changed */
-		b->batDirtydesc |= p->id == GDK_MIN_POS || p->id == GDK_MAX_POS;
 		n = p->next;
 		VALclear(&p->v);
 		GDKfree(p);
@@ -2866,8 +2854,6 @@ BATrmprop_nolock(BAT *b, enum prop_t idx)
 				b->tprops = prop->next;
 			VALclear(&prop->v);
 			GDKfree(prop);
-			/* only set dirty if a saved property is changed */
-			b->batDirtydesc |= idx == GDK_MIN_POS || idx == GDK_MAX_POS;
 			return;
 		}
 		prev = prop;
@@ -2903,8 +2889,6 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 		GDKclrerr();
 		p = NULL;
 	}
-	/* only set dirty if a saved property is changed */
-	b->batDirtydesc |= idx == GDK_MIN_POS || idx == GDK_MAX_POS;
 	return p ? &p->v : NULL;
 }
 

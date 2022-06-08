@@ -754,7 +754,6 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 				return GDK_FAIL;
 			}
 		}
-		bn->batDirtydesc = false; /* undo setting by BATsetprop_nolock */
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
@@ -1962,8 +1961,6 @@ BBPdump(void)
 		}
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
-		if (b->batDirtydesc)
-			fprintf(stderr, " DirtyDesc");
 		if (b->theap) {
 			if (b->theap->parentid != b->batCacheid) {
 				fprintf(stderr, " Theap -> %d", b->theap->parentid);
@@ -2482,7 +2479,6 @@ BBPrename(bat bid, const char *nme)
 	if (tmpid == 0) {
 		BBP_insert(bid);
 	}
-	b->batDirtydesc = true;
 	if (!b->batTransient) {
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
 
@@ -2757,8 +2753,6 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			 * (sub)commit happened in parallel to an
 			 * update; we must undo the turning off of the
 			 * dirty bits */
-			assert(b->batDirtydesc);
-			b->batDirtydesc = true;
 			if (b->theap)
 				b->theap->dirty = true;
 			if (b->tvheap)
@@ -3161,7 +3155,7 @@ dirty_bat(bat *i, bool subcommit)
 				return b;	/* the bat is loaded, persistent and dirty */
 		} else if (BBP_status(*i) & BBPSWAPPED) {
 			b = (BAT *) BBPquickdesc(*i);
-			if (b && (subcommit || b->batDirtydesc))
+			if (b && subcommit)
 				return b;	/* only the desc is loaded & dirty */
 		}
 	}
@@ -3528,12 +3522,12 @@ BBPbackup(BAT *b, bool subcommit)
 	locked = true;
 	if (b->ttype != TYPE_void &&
 	    do_backup(srcdir, nme, gettailname(b), b->theap,
-		      b->batDirtydesc || b->theap->dirty,
+		      b->theap->dirty,
 		      subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (b->tvheap &&
 	    do_backup(srcdir, nme, "theap", b->tvheap,
-		      b->batDirtydesc || b->tvheap->dirty,
+		      b->tvheap->dirty,
 		      subcommit) != GDK_SUCCEED)
 		goto fail;
 	MT_lock_unset(&b->theaplock);
@@ -3674,7 +3668,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				}
 				MT_lock_set(&BBP_desc(i)->theaplock);
 				bi = bat_iterator_nolock(BBP_desc(i));
-				bi.b->batDirtydesc = size != BUN_NONE && size != bi.count;
 				HEAPincref(bi.h);
 				if (bi.vh)
 					HEAPincref(bi.vh);
@@ -3728,13 +3721,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		}
 		if (idx < cnt) {
 			ret = GDK_FAIL;
-			while (idx > 0) {
-				bat i = subcommit ? subcommit[idx] : idx;
-				MT_lock_set(&BBP_desc(i)->theaplock);
-				BBP_desc(i)->batDirtydesc = true;
-				MT_lock_unset(&BBP_desc(i)->theaplock);
-				idx--;
-			}
 		}
 	}
 
