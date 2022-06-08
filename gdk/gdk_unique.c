@@ -278,7 +278,6 @@ BATunique(BAT *b, BAT *s)
 		assert(b->tnokey[0] == 0);
 		assert(b->tnokey[1] == 0);
 		b->tkey = true;
-		b->batDirtydesc = true;
 	}
 	bn = virtualize(bn);
 	MT_thread_setalgorithm(algomsg);
