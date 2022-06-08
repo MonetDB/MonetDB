@@ -696,7 +696,7 @@ BATdestroy(BAT *b)
 		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
 	}
-	PROPdestroy(b);
+	PROPdestroy_nolock(b);
 	MT_lock_destroy(&b->theaplock);
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
@@ -1300,6 +1300,7 @@ BUNdelete(BAT *b, oid o)
 	BUN p;
 	BATiter bi = bat_iterator_nolock(b);
 	const void *val;
+	bool locked = false;
 
 	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
@@ -1346,19 +1347,22 @@ BUNdelete(BAT *b, oid o)
 			memcpy(Tloc(b, p), val, b->twidth);
 			HASHinsert(&bi, p, val);
 			MT_lock_set(&b->theaplock);
+			locked = true;
 			if (b->tminpos == BATcount(b) - 1)
 				b->tminpos = p;
 			if (b->tmaxpos == BATcount(b) - 1)
 				b->tmaxpos = p;
-			MT_lock_unset(&b->theaplock);
 		}
 		/* no longer sorted */
-		MT_lock_set(&b->theaplock);
+		if (!locked) {
+			MT_lock_set(&b->theaplock);
+			locked = true;
+		}
 		b->tsorted = b->trevsorted = false;
 		b->theap->dirty = true;
-		MT_lock_unset(&b->theaplock);
 	}
-	MT_lock_set(&b->theaplock);
+	if (!locked)
+		MT_lock_set(&b->theaplock);
 	if (b->tnosorted >= p)
 		b->tnosorted = 0;
 	if (b->tnorevsorted >= p)
@@ -1457,7 +1461,9 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				 * isn't, we're not sure anymore about
 				 * the nil property, so we must clear
 				 * it */
+				MT_lock_set(&b->theaplock);
 				b->tnil = false;
+				MT_lock_unset(&b->theaplock);
 			}
 			if (b->ttype != TYPE_void) {
 				if (bi.maxpos != BUN_NONE) {
