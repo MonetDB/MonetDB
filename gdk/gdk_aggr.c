@@ -3779,7 +3779,6 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 					MT_lock_set(&b->theaplock);
 					if (b->batCount == bi.count) {
 						b->tnonil = true;
-						b->batDirtydesc = true;
 					}
 					MT_lock_unset(&b->theaplock);
 				}

@@ -401,9 +401,13 @@ MCforkClient(Client father)
 void
 MCfreeClient(Client c)
 {
-	if( c->mode == FREECLIENT)
+	MT_lock_set(&mal_contextLock);
+	if( c->mode == FREECLIENT) {
+		MT_lock_unset(&mal_contextLock);
 		return;
+	}
 	c->mode = FINISHCLIENT;
+	MT_lock_unset(&mal_contextLock);
 
 	MCexitClient(c);
 
@@ -463,7 +467,9 @@ MCfreeClient(Client c)
 	free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_sema_destroy(&c->s);
+	MT_lock_set(&mal_contextLock);
 	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
+	MT_lock_unset(&mal_contextLock);
 }
 
 /*

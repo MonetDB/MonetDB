@@ -267,7 +267,6 @@ TMabort(void)
 				if (!b->batTransient)
 					BBPrelease(i);
 				b->batTransient = true;
-				b->batDirtydesc = true;
 			}
 		}
 	}
@@ -304,7 +303,6 @@ TMabort(void)
 				if (b->batTransient)
 					BBPretain(i);
 				b->batTransient = false;
-				b->batDirtydesc = true;
 			}
 			BBPunfix(i);
 		}

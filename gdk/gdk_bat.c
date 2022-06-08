@@ -97,7 +97,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.batRole = role,
 		.batTransient = true,
 		.batRestricted = BAT_WRITE,
-		.batDirtydesc = true,
 	};
 	if (heapnames && (bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
 		GDKfree(bn);
@@ -635,7 +634,6 @@ BATclear(BAT *b, bool force)
 	b->theap->free = 0;
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
-	b->batDirtydesc = true;
 	b->theap->dirty = true;
 	BATsettrivprop(b);
 	b->tnosorted = b->tnorevsorted = 0;
@@ -924,7 +922,6 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		BATkey(bn, BATtkey(b));
 		bn->tsorted = BATtordered(b);
 		bn->trevsorted = BATtrevordered(b);
-		bn->batDirtydesc = true;
 		bn->tnorevsorted = b->tnorevsorted;
 		if (b->tnokey[0] != b->tnokey[1]) {
 			bn->tnokey[0] = b->tnokey[0];
@@ -1058,7 +1055,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	MT_lock_set(&b->theaplock);
-	b->batDirtydesc = true;
 	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
 		b->tunique_est = 0;
 	b->theap->dirty = true;
@@ -1363,7 +1359,6 @@ BUNdelete(BAT *b, oid o)
 	}
 	if (!locked)
 		MT_lock_set(&b->theaplock);
-	b->batDirtydesc = true;
 	if (b->tnosorted >= p)
 		b->tnosorted = 0;
 	if (b->tnorevsorted >= p)
@@ -1673,7 +1668,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	MT_lock_set(&b->theaplock);
 	b->tminpos = bi.minpos;
 	b->tmaxpos = bi.maxpos;
-	b->batDirtydesc = true;
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;
@@ -1888,10 +1882,10 @@ BATsetcount(BAT *b, BUN cnt)
 	assert(cnt <= BUN_MAX);
 
 	b->batCount = cnt;
-	b->batDirtydesc = true;
-	b->theap->dirty |= b->ttype != TYPE_void && b->theap->parentid == b->batCacheid && cnt > 0;
-	if (b->theap->parentid == b->batCacheid)
+	if (b->theap->parentid == b->batCacheid) {
+		b->theap->dirty |= b->ttype != TYPE_void && cnt > 0;
 		b->theap->free = tailsize(b, cnt);
+	}
 	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
@@ -1946,8 +1940,6 @@ BATkey(BAT *b, bool flag)
 			return GDK_FAIL;
 		}
 	}
-	if (b->tkey != flag)
-		b->batDirtydesc = true;
 	b->tkey = flag;
 	if (!flag) {
 		b->tseqbase = oid_nil;
@@ -1977,7 +1969,6 @@ BAThseqbase(BAT *b, oid o)
 		assert(o <= GDK_oid_max);	/* i.e., not oid_nil */
 		assert(o + BATcount(b) <= GDK_oid_max);
 		if (b->hseqbase != o) {
-			b->batDirtydesc = true;
 			b->hseqbase = o;
 		}
 	}
@@ -1990,9 +1981,6 @@ BATtseqbase(BAT *b, oid o)
 	if (b == NULL)
 		return;
 	assert(is_oid_nil(o) || o + BATcount(b) <= GDK_oid_max);
-	if (b->tseqbase != o) {
-		b->batDirtydesc = true;
-	}
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		b->tseqbase = o;
 
@@ -2271,7 +2259,6 @@ BATcheckmodes(BAT *b, bool existing)
 		return GDK_FAIL;
 
 	if (dirty) {
-		b->batDirtydesc = true;
 		b->theap->newstorage = m1;
 		if (b->tvheap)
 			b->tvheap->newstorage = m3;
@@ -2283,7 +2270,6 @@ BAT *
 BATsetaccess(BAT *b, restrict_t newmode)
 {
 	restrict_t bakmode;
-	bool bakdirty;
 
 	BATcheck(b, NULL);
 	if ((isVIEW(b) || b->batSharecnt) && newmode != BAT_READ) {
@@ -2294,7 +2280,6 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		b = bn;
 	}
 	bakmode = (restrict_t) b->batRestricted;
-	bakdirty = b->batDirtydesc;
 	if (bakmode != newmode) {
 		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
 		bool wr = (newmode == BAT_WRITE);
@@ -2316,7 +2301,6 @@ BATsetaccess(BAT *b, restrict_t newmode)
 
 		/* set new access mode and mmap modes */
 		b->batRestricted = (unsigned int) newmode;
-		b->batDirtydesc = true;
 		b->theap->newstorage = m1;
 		if (b->tvheap)
 			b->tvheap->newstorage = m3;
@@ -2324,7 +2308,6 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		if (existing && BBPsave(b) != GDK_SUCCEED) {
 			/* roll back all changes */
 			b->batRestricted = (unsigned int) bakmode;
-			b->batDirtydesc = bakdirty;
 			b->theap->newstorage = b1;
 			if (b->tvheap)
 				b->tvheap->newstorage = b3;
@@ -2506,6 +2489,8 @@ BATassertProps(BAT *b)
 
 	/* general BAT sanity */
 	assert(b != NULL);
+	assert(!b->batDirtydesc); /* not used anymore, must always be false */
+	assert(!b->batDirtyflushed); /* not used anymore, must always be false */
 	assert(b->batCacheid > 0);
 	assert(b->batCount >= b->batInserted);
 
