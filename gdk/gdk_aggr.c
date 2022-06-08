@@ -3776,9 +3776,14 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 					      bi.width, 0, bi.count,
 					      ATOMnilptr(b->ttype), 1, 1);
 				if (r == 0) {
-					b->tnonil = true;
-					b->batDirtydesc = true;
+					MT_lock_set(&b->theaplock);
+					if (b->batCount == bi.count) {
+						b->tnonil = true;
+						b->batDirtydesc = true;
+					}
+					MT_lock_unset(&b->theaplock);
 				}
+				bat_iterator_end(&bi);
 			} else {
 				r = 0;
 			}

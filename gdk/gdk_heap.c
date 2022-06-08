@@ -832,6 +832,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	if (h->base == NULL)
 		return GDK_FAIL; /* file could  not be read satisfactorily */
 
+	h->dirty = false;	/* we just read it, so it's clean */
 	return GDK_SUCCEED;
 }
 
