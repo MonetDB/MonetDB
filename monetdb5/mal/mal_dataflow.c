@@ -325,7 +325,6 @@ DFLOWworker(void *T)
 	struct worker *t = (struct worker *) T;
 	DataFlow flow;
 	FlowEvent fe = 0, fnxt = 0;
-	int tid = THRgettid();
 	str error = 0;
 	int i,last;
 	lng claim;
@@ -400,8 +399,6 @@ DFLOWworker(void *T)
 		MALadmission_release(flow->cntxt, flow->mb, flow->stk, p,  claim);
 		/* update the numa information. keep the thread-id producing the value */
 		p= getInstrPtr(flow->mb,fe->pc);
-		for( i = 0; i < p->argc; i++)
-			setVarWorker(flow->mb,getArg(p,i),tid);
 
 		MT_lock_set(&flow->flowlock);
 		fe->state = DFLOWwrapup;

@@ -100,10 +100,10 @@ VIEWcreate(oid seq, BAT *b)
 	 * because in case of a mark, we are going to override a
 	 * column with a void. Take care to zero the accelerator data,
 	 * though. */
+	MT_lock_set(&b->theaplock);
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
-	MT_lock_set(&b->theaplock);
 	bn->T = b->T;
 	tp = VIEWtparent(b);
 	if (tp == 0 && b->ttype != TYPE_void)

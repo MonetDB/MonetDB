@@ -2243,12 +2243,14 @@ BBPinsert(BAT *bn)
 	bn->batCacheid = i;
 	bn->creator_tid = MT_getpid();
 
+	MT_lock_set(&GDKswapLock(i));
 	BBP_status_set(i, BBPDELETING|BBPHOT);
 	BBP_cache(i) = NULL;
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 	BBP_pid(i) = MT_getpid();
+	MT_lock_unset(&GDKswapLock(i));
 
 #ifdef HAVE_HGE
 	if (bn->ttype == TYPE_hge)
@@ -2753,9 +2755,9 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			 * (sub)commit happened in parallel to an
 			 * update; we must undo the turning off of the
 			 * dirty bits */
-			if (b->theap)
+			if (b->theap && b->theap->parentid == i)
 				b->theap->dirty = true;
-			if (b->tvheap)
+			if (b->tvheap && b->tvheap->parentid == i)
 				b->tvheap->dirty = true;
 		}
 		if (b->theap)
@@ -2849,9 +2851,13 @@ BBPkeepref(bat i)
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
 		BAT *b;
 
-		incref(i, true, lock);
+		int refs = incref(i, true, lock);
 		if ((b = BBPdescriptor(i)) != NULL) {
-			BATsettrivprop(b);
+			if (refs == 1) {
+				MT_lock_set(&b->theaplock);
+				BATsettrivprop(b);
+				MT_lock_unset(&b->theaplock);
+			}
 			if (GDKdebug & (CHECKMASK | PROPMASK))
 				BATassertProps(b);
 			if (BATsetaccess(b, BAT_READ) == NULL)
