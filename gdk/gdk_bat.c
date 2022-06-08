@@ -2512,6 +2512,7 @@ BATassertProps(BAT *b)
 	/* general BAT sanity */
 	assert(b != NULL);
 	assert(!b->batDirtydesc); /* not used anymore, must always be false */
+	assert(!b->batDirtyflushed); /* not used anymore, must always be false */
 	assert(b->batCacheid > 0);
 	assert(b->batCount >= b->batInserted);
 

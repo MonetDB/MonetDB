@@ -758,7 +758,7 @@ typedef struct BAT {
 	MT_Id creator_tid;	/* which thread created it */
 	bool
 	 batCopiedtodisk:1,	/* once written */
-	 batDirtyflushed:1,	/* was dirty before commit started? */
+	 batDirtyflushed:1,	/* was dirty before commit started? (not used) */
 	 batDirtydesc:1,	/* bat descriptor dirty marker (not used) */
 	 batTransient:1;	/* should the BAT persist on disk? */
 	uint8_t	/* adjacent bit fields are packed together (if they fit) */
