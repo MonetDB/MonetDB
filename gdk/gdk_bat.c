@@ -1914,9 +1914,10 @@ BATsetcount(BAT *b, BUN cnt)
 	assert(cnt <= BUN_MAX);
 
 	b->batCount = cnt;
-	b->theap->dirty |= b->ttype != TYPE_void && b->theap->parentid == b->batCacheid && cnt > 0;
-	if (b->theap->parentid == b->batCacheid)
+	if (b->theap->parentid == b->batCacheid) {
+		b->theap->dirty |= b->ttype != TYPE_void && cnt > 0;
 		b->theap->free = tailsize(b, cnt);
+	}
 	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {

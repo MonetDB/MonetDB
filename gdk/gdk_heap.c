@@ -733,7 +733,8 @@ HEAPfree(Heap *h, bool rmheap)
 void
 HEAPdecref(Heap *h, bool remove)
 {
-	h->remove |= remove;
+	if (remove)
+		h->remove = true;
 	//printf("dec ref(%d) %p %d\n", (int)h->refs, h, h->parentid);
 	if (ATOMIC_DEC(&h->refs) == 0) {
 		ATOMIC_DESTROY(&h->refs);
