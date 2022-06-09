@@ -1045,7 +1045,6 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		}
 
 		BATsetcount(b, (BUN)ret->count);
-		BATsettrivprop(b);
 	} else {
 		switch (bat_type) {
 			case TYPE_void:
@@ -1120,7 +1119,6 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				if (utf8_string)
 					GDKfree(utf8_string);
 				BATsetcount(b, (BUN)ret->count);
-				BATsettrivprop(b);
 				break;
 			}
 			default:

@@ -102,32 +102,32 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 		goto nomem;
 
 	/* SQLTablePrivileges returns a table with the following columns:
-	   table_cat    VARCHAR
-	   table_schem  VARCHAR
-	   table_name   VARCHAR NOT NULL
-	   grantor      VARCHAR
-	   grantee      VARCHAR NOT NULL
-	   privilege    VARCHAR NOT NULL
-	   is_grantable VARCHAR
+	   TABLE_CAT    VARCHAR
+	   TABLE_SCHEM  VARCHAR
+	   TABLE_NAME   VARCHAR NOT NULL
+	   GRANTOR      VARCHAR
+	   GRANTEE      VARCHAR NOT NULL
+	   PRIVILEGE    VARCHAR NOT NULL
+	   IS_GRANTABLE VARCHAR
 	 */
 
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as table_cat, "
-			"s.name as table_schem, "
-			"t.name as table_name, "
+		"select '%s' as \"TABLE_CAT\", "
+			"s.name as \"TABLE_SCHEM\", "
+			"t.name as \"TABLE_NAME\", "
 			"case a.id "
 			     "when s.owner then '_SYSTEM' "
 			     "else g.name "
-			     "end as grantor, "
+			     "end as \"GRANTOR\", "
 			"case a.name "
 			     "when 'public' then 'PUBLIC' "
 			     "else a.name "
-			     "end as grantee, "
-			"pc.privilege_code_name as privilege, "
+			     "end as \"GRANTEE\", "
+			"pc.privilege_code_name as \"PRIVILEGE\", "
 			"case p.grantable "
 			     "when 1 then 'YES' "
 			     "when 0 then 'NO' "
-			     "end as is_grantable "
+			     "end as \"IS_GRANTABLE\" "
 		"from sys.schemas s, "
 		      "sys._tables t, "
 		      "sys.auths a, "
@@ -172,7 +172,7 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by table_schem, table_name, privilege, grantee", querylen - pos);
+	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"PRIVILEGE\", \"GRANTEE\"", querylen - pos);
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

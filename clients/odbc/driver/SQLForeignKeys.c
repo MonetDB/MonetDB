@@ -149,37 +149,37 @@ MNDBForeignKeys(ODBCStmt *stmt,
 		goto nomem;
 
 	/* SQLForeignKeys returns a table with the following columns:
-	   VARCHAR      pktable_cat
-	   VARCHAR      pktable_schem
-	   VARCHAR      pktable_name NOT NULL
-	   VARCHAR      pkcolumn_name NOT NULL
-	   VARCHAR      fktable_cat
-	   VARCHAR      fktable_schem
-	   VARCHAR      fktable_name NOT NULL
-	   VARCHAR      fkcolumn_name NOT NULL
-	   SMALLINT     key_seq NOT NULL
-	   SMALLINT     update_rule
-	   SMALLINT     delete_rule
-	   VARCHAR      fk_name
-	   VARCHAR      pk_name
-	   SMALLINT     deferrability
+	   VARCHAR      PKTABLE_CAT
+	   VARCHAR      PKTABLE_SCHEM
+	   VARCHAR      PKTABLE_NAME NOT NULL
+	   VARCHAR      PKCOLUMN_NAME NOT NULL
+	   VARCHAR      FKTABLE_CAT
+	   VARCHAR      FKTABLE_SCHEM
+	   VARCHAR      FKTABLE_NAME NOT NULL
+	   VARCHAR      FKCOLUMN_NAME NOT NULL
+	   SMALLINT     KEY_SEQ NOT NULL
+	   SMALLINT     UPDATE_RULE
+	   SMALLINT     DELETE_RULE
+	   VARCHAR      FK_NAME
+	   VARCHAR      PK_NAME
+	   SMALLINT     DEFERRABILITY
 	 */
 
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as pktable_cat, "
-		       "pks.name as pktable_schem, "
-		       "pkt.name as pktable_name, "
-		       "pkkc.name as pkcolumn_name, "
-		       "'%s' as fktable_cat, "
-		       "fks.name as fktable_schem, "
-		       "fkt.name as fktable_name, "
-		       "fkkc.name as fkcolumn_name, "
-		       "cast(fkkc.nr + 1 as smallint) as key_seq, "
-		       "cast(%d as smallint) as update_rule, "
-		       "cast(%d as smallint) as delete_rule, "
-		       "fkk.name as fk_name, "
-		       "pkk.name as pk_name, "
-		       "cast(%d as smallint) as deferrability "
+		"select '%s' as \"PKTABLE_CAT\", "
+		       "pks.name as \"PKTABLE_SCHEM\", "
+		       "pkt.name as \"PKTABLE_NAME\", "
+		       "pkkc.name as \"PKCOLUMN_NAME\", "
+		       "'%s' as \"FKTABLE_CAT\", "
+		       "fks.name as \"FKTABLE_SCHEM\", "
+		       "fkt.name as \"FKTABLE_NAME\", "
+		       "fkkc.name as \"FKCOLUMN_NAME\", "
+		       "cast(fkkc.nr + 1 as smallint) as \"KEY_SEQ\", "
+		       "cast(%d as smallint) as \"UPDATE_RULE\", "
+		       "cast(%d as smallint) as \"DELETE_RULE\", "
+		       "fkk.name as \"FK_NAME\", "
+		       "pkk.name as \"PK_NAME\", "
+		       "cast(%d as smallint) as \"DEFERRABILITY\" "
 		"from sys.schemas fks, sys.tables fkt, "
 		     "sys.objects fkkc, sys.keys as fkk, "
 		     "sys.schemas pks, sys.tables pkt, "
@@ -239,9 +239,9 @@ MNDBForeignKeys(ODBCStmt *stmt,
 	/* if PKTableName != NULL, selection on primary key, order
 	   on FK output columns, else order on PK output columns */
 	pos += snprintf(query + pos, querylen - pos,
-			" order by %stable_schem, %stable_name, key_seq",
-			PKTableName != NULL ? "fk" : "pk",
-			PKTableName != NULL ? "fk" : "pk");
+			" order by \"%sTABLE_SCHEM\", \"%sTABLE_NAME\", \"KEY_SEQ\"",
+			PKTableName != NULL ? "FK" : "PK",
+			PKTableName != NULL ? "FK" : "PK");
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
