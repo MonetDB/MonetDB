@@ -1,6 +1,12 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Thu Jun  9 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- For SQLForeignKeys() corrected the output of columns UPDATE_RULE and
+  DELETE_RULE. These columns used to always return 3 (= SQL_NO_ACTION)
+  but now they will report the action codes as specified in the FOREIGN KEY
+  CONSTRAINT construction.
+
 * Thu Jun  2 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Fixed issue in function SQLProcedureColumns(). When the argument ColumnName
   was not empty it generated an invalid SQL query which failed with error:
