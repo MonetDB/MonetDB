@@ -1804,8 +1804,8 @@ BBPexit(void)
 						HEAPdecref(b->tvheap, false);
 						b->tvheap = NULL;
 					}
+					PROPdestroy_nolock(b);
 					MT_lock_unset(&b->theaplock);
-					PROPdestroy(b);
 					BATfree(b);
 				}
 				BBP_pid(i) = 0;
@@ -2276,8 +2276,6 @@ BBPdump(void)
 		}
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
-		if (b->batDirtydesc)
-			fprintf(stderr, " DirtyDesc");
 		if (b->theap) {
 			if (b->theap->parentid != b->batCacheid) {
 				fprintf(stderr, " Theap -> %d", b->theap->parentid);
@@ -2720,7 +2718,6 @@ BBPrename(BAT *b, const char *nme)
 		BBP_insert(bid);
 	}
 	MT_lock_set(&b->theaplock);
-	b->batDirtydesc = true;
 	bool transient = b->batTransient;
 	MT_lock_unset(&b->theaplock);
 	if (!transient) {
@@ -2930,7 +2927,6 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 			 * (sub)commit happened in parallel to an
 			 * update; we must undo the turning off of the
 			 * dirty bits */
-			b->batDirtydesc = true;
 			if (b->theap && b->theap->parentid == i)
 				b->theap->dirty = true;
 			if (b->tvheap && b->tvheap->parentid == i)
@@ -3208,7 +3204,7 @@ BBPsave(BAT *b)
 	gdk_return ret = GDK_SUCCEED;
 
 	MT_lock_set(&b->theaplock);
-	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirtydata(b)) {
+	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b)) {
 		/* do nothing */
 		MT_lock_unset(&b->theaplock);
 		MT_rwlock_rdlock(&b->thashlock);
@@ -3271,7 +3267,7 @@ BBPdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	PROPdestroy(b);
+	PROPdestroy_nolock(b);
 	if (tp == 0) {
 		/* bats that get destroyed must unfix their atoms */
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
@@ -3286,13 +3282,16 @@ BBPdestroy(BAT *b)
 			}
 		}
 	}
-	if (tp || vtp)
-		VIEWunlink(b);
 	if (b->theap) {
-		HEAPfree(b->theap, true);
+		assert(tp != 0 || (ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
+		HEAPdecref(b->theap, tp == 0);
+		b->theap = NULL;
 	}
-	if (b->tvheap)
-		HEAPfree(b->tvheap, true);
+	if (b->tvheap) {
+		assert(vtp != 0 || (ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
+		HEAPdecref(b->tvheap, vtp == 0);
+		b->tvheap = NULL;
+	}
 	b->batCopiedtodisk = false;
 
 	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
@@ -3386,7 +3385,7 @@ dirty_bat(bat *i, bool subcommit)
 			if ((BBP_status(*i) & BBPNEW) &&
 			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
 				*i = -*i;	/* error */
-			if ((BBP_status(*i) & BBPPERSISTENT) &&
+			else if ((BBP_status(*i) & BBPPERSISTENT) &&
 			    (subcommit || BATdirty(b))) {
 				MT_lock_unset(&b->theaplock);
 				return b;	/* the bat is loaded, persistent and dirty */
@@ -3395,12 +3394,9 @@ dirty_bat(bat *i, bool subcommit)
 		} else if (BBP_status(*i) & BBPSWAPPED) {
 			b = (BAT *) BBPquickdesc(*i);
 			if (b) {
-				MT_lock_set(&b->theaplock);
-				if (subcommit || b->batDirtydesc) {
-					MT_lock_unset(&b->theaplock);
-					return b;	/* only the desc is loaded & dirty */
+				if (subcommit) {
+					return b;	/* only the desc is loaded */
 				}
-				MT_lock_unset(&b->theaplock);
 			}
 		}
 	}
@@ -3581,6 +3577,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 	char extnew[16];
 	bool istail = strncmp(ext, "tail", 4) == 0;
 
+	h->dirty |= dirty;
 	if (h->wasempty) {
 		return GDK_SUCCEED;
 	}
@@ -3756,12 +3753,10 @@ BBPbackup(BAT *b, bool subcommit)
 
 		if (bi.type != TYPE_void) {
 			rc = do_backup(srcdir, nme, gettailnamebi(&bi), bi.h,
-				       bi.dirtydesc || bi.hdirty,
-				       subcommit);
+				       bi.hdirty, subcommit);
 			if (rc == GDK_SUCCEED && bi.vh != NULL)
 				rc = do_backup(srcdir, nme, "theap", bi.vh,
-					       bi.dirtydesc || bi.vhdirty,
-					       subcommit);
+					       bi.vhdirty, subcommit);
 		}
 	} else {
 		rc = GDK_FAIL;
@@ -3835,19 +3830,12 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			if (BBP_status(i) & BBPEXISTING) {
 				if (b != NULL) {
 					if (BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
-						BBP_status_off(i, BBPSYNCING);
 						if (lock)
 							MT_lock_unset(&GDKswapLock(i));
 						break;
 					}
-				} else {
-					/* file has not been moved to
-					 * backup dir, so no need for
-					 * other threads to wait */
-					BBP_status_off(i, BBPSYNCING);
 				}
 			} else {
-				BBP_status_off(i, BBPSYNCING);
 				if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
 					char o[10];
 					char *f;
@@ -3898,12 +3886,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			BUN size = sizes ? sizes[idx] : BUN_NONE;
 			BATiter bi;
 
-			/* add a fix so that BBPmanager doesn't interfere */
-			BBPfix(i);
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
-					decref(-i, false, false, true, locked_by == 0 || locked_by != MT_getpid(), __func__);
 					break;
 				}
 				bi = bat_iterator(BBP_desc(i));
@@ -3924,7 +3909,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					BBP_status_on(i, BBPSAVING);
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
-					assert(size <= bi.count || size == BUN_NONE);
+					assert(sizes == NULL || size <= bi.count);
+					assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
 					if (size > bi.count)
 						size = bi.count;
 					MT_rwlock_rdlock(&b->thashlock);
@@ -3939,16 +3925,13 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, subcommit != NULL, &bi);
 			}
 			bat_iterator_end(&bi);
-			/* can't use BBPunfix because of the "lock"
-			 * argument: locked_by may be set here */
-			decref(i, false, false, true, lock, __func__);
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
-			BBP_status_off(i, BBPSYNCING);
 		}
-		if (idx < cnt)
+		if (idx < cnt) {
 			ret = GDK_FAIL;
+		}
 	}
 
 	TRC_DEBUG(PERF, "write time %d\n", (t0 = GDKms()) - t1);
@@ -3994,6 +3977,14 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		  ret == GDK_SUCCEED ? "" : " failed",
 		  (t0 = GDKms()) - t1);
   bailout:
+	/* turn off the BBPSYNCING bits for all bats, even when things
+	 * didn't go according to plan (i.e., don't check for ret ==
+	 * GDK_SUCCEED) */
+	for (int idx = 1; idx < cnt; idx++) {
+		bat i = subcommit ? subcommit[idx] : idx;
+		BBP_status_off(i, BBPSYNCING);
+	}
+
 	GDKfree(bakdir);
 	GDKfree(deldir);
 	return ret;

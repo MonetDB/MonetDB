@@ -176,34 +176,34 @@ MNDBStatistics(ODBCStmt *stmt,
 		goto nomem;
 
 	/* SQLStatistics returns a table with the following columns:
-	   VARCHAR      table_cat
-	   VARCHAR      table_schem
-	   VARCHAR      table_name NOT NULL
-	   SMALLINT     non_unique
-	   VARCHAR      index_qualifier
-	   VARCHAR      index_name
-	   SMALLINT     type NOT NULL
-	   SMALLINT     ordinal_position
-	   VARCHAR      column_name
-	   CHAR(1)      asc_or_desc
-	   INTEGER      cardinality
-	   INTEGER      pages
-	   VARCHAR      filter_condition
+	   VARCHAR      TABLE_CAT
+	   VARCHAR      TABLE_SCHEM
+	   VARCHAR      TABLE_NAME NOT NULL
+	   SMALLINT     NON_UNIQUE
+	   VARCHAR      INDEX_QUALIFIER
+	   VARCHAR      INDEX_NAME
+	   SMALLINT     TYPE NOT NULL
+	   SMALLINT     ORDINAL_POSITION
+	   VARCHAR      COLUMN_NAME
+	   CHAR(1)      ASC_OR_DESC
+	   INTEGER      CARDINALITY
+	   INTEGER      PAGES
+	   VARCHAR      FILTER_CONDITION
 	 */
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as table_cat, "
-		       "s.name as table_schem, "
-		       "t.name as table_name, "
-		       "cast(sys.ifthenelse(k.name is null,1,0) as smallint) as non_unique, "
-		       "cast(null as varchar(1)) as index_qualifier, "
-		       "i.name as index_name, "
-		       "cast(sys.ifthenelse(i.type = 0, %d, %d) as smallint) as type, "
-		       "cast(kc.nr + 1 as smallint) as ordinal_position, "
-		       "c.name as column_name, "
-		       "cast(null as char(1)) as asc_or_desc, "
-		       "cast(sys.ifthenelse(k.name is null,NULL,st.count) as integer) as cardinality, "
-		       "cast(null as integer) as pages, "
-		       "cast(null as varchar(1)) as filter_condition "
+		"select '%s' as \"TABLE_CAT\", "
+		       "s.name as \"TABLE_SCHEM\", "
+		       "t.name as \"TABLE_NAME\", "
+		       "cast(sys.ifthenelse(k.name is null,1,0) as smallint) as \"NON_UNIQUE\", "
+		       "cast(null as varchar(1)) as \"INDEX_QUALIFIER\", "
+		       "i.name as \"INDEX_NAME\", "
+		       "cast(sys.ifthenelse(i.type = 0, %d, %d) as smallint) as \"TYPE\", "
+		       "cast(kc.nr + 1 as smallint) as \"ORDINAL_POSITION\", "
+		       "c.name as \"COLUMN_NAME\", "
+		       "cast(null as char(1)) as \"ASC_OR_DESC\", "
+		       "cast(sys.ifthenelse(k.name is null,NULL,st.count) as integer) as \"CARDINALITY\", "
+		       "cast(null as integer) as \"PAGES\", "
+		       "cast(null as varchar(1)) as \"FILTER_CONDITION\" "
 		"from sys.idxs i "
 		"join sys._tables t on i.table_id = t.id "
 		"join sys.schemas s on t.schema_id = s.id "
@@ -241,19 +241,19 @@ MNDBStatistics(ODBCStmt *stmt,
 		   which are stored in tmp.idxs, tmp._tables, tmp._columns, tmp.objects and tmp.keys */
 		pos += snprintf(query + pos, querylen - pos,
 			" UNION ALL "
-			"select '%s' as table_cat, "
-			       "s.name as table_schem, "
-			       "t.name as table_name, "
-			       "cast(sys.ifthenelse(k.name is null,1,0) as smallint) as non_unique, "
-			       "cast(null as varchar(1)) as index_qualifier, "
-			       "i.name as index_name, "
-			       "cast(sys.ifthenelse(i.type = 0, %d, %d) as smallint) as type, "
-			       "cast(kc.nr + 1 as smallint) as ordinal_position, "
-			       "c.name as column_name, "
-			       "cast(null as char(1)) as asc_or_desc, "
-			       "cast(sys.ifthenelse(k.name is null,NULL,st.count) as integer) as cardinality, "
-			       "cast(null as integer) as pages, "
-			       "cast(null as varchar(1)) as filter_condition "
+			"select '%s' as \"TABLE_CAT\", "
+			       "s.name as \"TABLE_SCHEM\", "
+			       "t.name as \"TABLE_NAME\", "
+			       "cast(sys.ifthenelse(k.name is null,1,0) as smallint) as \"NON_UNIQUE\", "
+			       "cast(null as varchar(1)) as \"INDEX_QUALIFIER\", "
+			       "i.name as \"INDEX_NAME\", "
+			       "cast(sys.ifthenelse(i.type = 0, %d, %d) as smallint) as \"TYPE\", "
+			       "cast(kc.nr + 1 as smallint) as \"ORDINAL_POSITION\", "
+			       "c.name as \"COLUMN_NAME\", "
+			       "cast(null as char(1)) as \"ASC_OR_DESC\", "
+			       "cast(sys.ifthenelse(k.name is null,NULL,st.count) as integer) as \"CARDINALITY\", "
+			       "cast(null as integer) as \"PAGES\", "
+			       "cast(null as varchar(1)) as \"FILTER_CONDITION\" "
 			"from tmp.idxs i "
 			"join tmp._tables t on i.table_id = t.id "
 			"join sys.schemas s on t.schema_id = s.id "
@@ -291,7 +291,7 @@ MNDBStatistics(ODBCStmt *stmt,
 		free(tab);
 
 	/* add the ordering */
-	pos += strcpy_len(query + pos, " order by non_unique, type, index_qualifier, index_name, ordinal_position", querylen - pos);
+	pos += strcpy_len(query + pos, " order by \"NON_UNIQUE\", \"TYPE\", \"INDEX_QUALIFIER\", \"INDEX_NAME\", \"ORDINAL_POSITION\"", querylen - pos);
 
 	/* debug: fprintf(stdout, "SQLStatistics SQL:\n%s\n\n", query); */
 
