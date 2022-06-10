@@ -2287,9 +2287,8 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, void *i,
 	}
 	if (cnt) {
 		if (BATcount(b) < offset) { /* add space */
-			const void *tv = ATOMnilptr(b->ttype);
 			BUN d = offset - BATcount(b);
-			if (BUNappendmulti(b, tv, d, true) != GDK_SUCCEED) {
+			if (BUNappendmulti(b, NULL, d, true) != GDK_SUCCEED) {
 				bat_destroy(b);
 				if (i != oi)
 					GDKfree(i);
