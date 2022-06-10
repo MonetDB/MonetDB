@@ -564,7 +564,7 @@ scanner_error(mvc *lc, int cur)
 	switch (cur) {
 	case EOF:
 		(void) sql_error(lc, 1, SQLSTATE(42000) "Unexpected end of input");
-		return -1;	/* EOF needs -1 result */
+		return EOF;
 	default:
 		/* on Windows at least, iswcntrl returns TRUE for
 		 * U+FEFF, but we just want consistent error
@@ -763,8 +763,8 @@ scanner_string(mvc *c, int quote, bool escapes)
 			cur = scanner_getc(lc);
 		}
 	}
-	(void) sql_error(c, 2, "%s", lc->errstr ? lc->errstr : SQLSTATE(42000) "unexpected end of input");
-	return LEX_ERROR;
+	(void) sql_error(c, 2, "%s", lc->errstr ? lc->errstr : SQLSTATE(42000) "Unexpected end of input");
+	return EOF;
 }
 
 /* scan a structure {blah} into a string. We only count the matching {}
@@ -811,7 +811,7 @@ scanner_body(mvc *c)
 		}
 	}
 	(void) sql_error(c, 2, SQLSTATE(42000) "Unexpected end of input");
-	return LEX_ERROR;
+	return EOF;
 }
 
 static int
@@ -834,6 +834,8 @@ keyword_or_ident(mvc * c, int cur)
 			return lc->yyval;
 		}
 	}
+	if (cur < 0)
+		return cur;
 	(void)scanner_token(lc, IDENT);
 	if ((k = find_keyword_bs(lc,s)))
 		lc->yyval = k->token;
@@ -918,6 +920,10 @@ number(mvc * c, int cur)
 			token = HEXADECIMAL;
 			cur = scanner_getc(lc);
 		}
+
+		if (cur == EOF)
+			return cur;
+
 		if (token != HEXADECIMAL) {
 			/* 0x not followed by a hex digit: show 'x' as erroneous */
 			utf8_putchar(lc, cur);
@@ -929,11 +935,17 @@ number(mvc * c, int cur)
 			token = sqlINT;
 			cur = scanner_getc(lc);
 		}
+		if (cur == EOF)
+			return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
 				cur = scanner_getc(lc);
+				if (cur == EOF)
+					return cur;
 				if (cur == '0') {
 					cur = scanner_getc(lc);
+					if (cur == EOF)
+						return cur;
 					token = OIDNUM;
 				} else {
 					/* number + '@' not followed by 0: show '@' as erroneous */
@@ -945,10 +957,14 @@ number(mvc * c, int cur)
 		} else {
 			if (cur == '.') {
 				cur = scanner_getc(lc);
+					if (cur == EOF)
+						return cur;
 				if (token == sqlINT || iswdigit(cur)) {
 					token = INTNUM;
-					while (iswdigit(cur))
+					while (cur != EOF && iswdigit(cur))
 						cur = scanner_getc(lc);
+					if (cur == EOF)
+						return cur;
 				} else {
 					token = 0;
 				}
@@ -956,12 +972,16 @@ number(mvc * c, int cur)
 			if (cur == 'e' || cur == 'E') {
 				if (token != 0) {
 					cur = scanner_getc(lc);
+					if (cur == EOF)
+						return cur;
 					if (cur == '+' || cur == '-')
 						cur = scanner_getc(lc);
 					while (cur != EOF && iswdigit(cur)) {
 						token = APPROXNUM;
 						cur = scanner_getc(lc);
 					}
+					if (cur == EOF)
+						return cur;
 					if (token != APPROXNUM)
 						token = 0;
 				}
@@ -997,6 +1017,8 @@ int scanner_symbol(mvc * c, int cur)
 	case '/':
 		lc->started = 1;
 		next = scanner_getc(lc);
+		if (next < 0)
+			return EOF;
 		if (next == '*') {
 			lc->started = started;
 			cur = skip_c_comment(lc);
@@ -1033,6 +1055,8 @@ int scanner_symbol(mvc * c, int cur)
 	case '-':
 		lc->started = 1;
 		next = scanner_getc(lc);
+		if (next < 0)
+			return EOF;
 		if (next == '-') {
 			lc->started = started;
 			if ((cur = skip_sql_comment(lc)) == EOF)
@@ -1045,6 +1069,8 @@ int scanner_symbol(mvc * c, int cur)
 	case '~': /* binary not */
 		lc->started = 1;
 		next = scanner_getc(lc);
+		if (next < 0)
+			return EOF;
 		if (next == '=')
 			return scanner_token(lc, GEOM_MBR_EQUAL);
 		utf8_putchar(lc, next);
@@ -1065,8 +1091,14 @@ int scanner_symbol(mvc * c, int cur)
 	case '&':
 		lc->started = 1;
 		cur = scanner_getc(lc);
+		if (cur < 0)
+			return EOF;
+		if (cur < 0)
+			return EOF;
 		if(cur == '<') {
 			next = scanner_getc(lc);
+			if (next < 0)
+				return EOF;
 			if(next == '|') {
 				return scanner_token(lc, GEOM_OVERLAP_OR_BELOW);
 			} else {
@@ -1090,12 +1122,16 @@ int scanner_symbol(mvc * c, int cur)
 	case '<':
 		lc->started = 1;
 		cur = scanner_getc(lc);
+		if (cur < 0)
+			return EOF;
 		if (cur == '=') {
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '>') {
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '<') {
 			next = scanner_getc(lc);
+			if (next < 0)
+				return EOF;
 			if (next == '=') {
 				return scanner_token( lc, LEFT_SHIFT_ASSIGN);
 			} else if (next == '|') {
@@ -1106,6 +1142,8 @@ int scanner_symbol(mvc * c, int cur)
 			}
 		} else if(cur == '-') {
 			next = scanner_getc(lc);
+			if (next < 0)
+				return EOF;
 			if(next == '>') {
 				return scanner_token(lc, GEOM_DIST);
 			} else {
@@ -1121,8 +1159,12 @@ int scanner_symbol(mvc * c, int cur)
 	case '>':
 		lc->started = 1;
 		cur = scanner_getc(lc);
+		if (cur < 0)
+			return EOF;
 		if (cur == '>') {
 			cur = scanner_getc(lc);
+			if (cur < 0)
+				return EOF;
 			if (cur == '=')
 				return scanner_token( lc, RIGHT_SHIFT_ASSIGN);
 			utf8_putchar(lc, cur);
@@ -1136,6 +1178,8 @@ int scanner_symbol(mvc * c, int cur)
 	case '.':
 		lc->started = 1;
 		cur = scanner_getc(lc);
+		if (cur < 0)
+			return EOF;
 		if (!iswdigit(cur)) {
 			utf8_putchar(lc, cur);
 			return scanner_token( lc, '.');
@@ -1147,10 +1191,14 @@ int scanner_symbol(mvc * c, int cur)
 	case '|': /* binary or or string concat */
 		lc->started = 1;
 		cur = scanner_getc(lc);
+		if (cur < 0)
+			return EOF;
 		if (cur == '|') {
 			return scanner_token(lc, CONCATSTRING);
 		} else if (cur == '&') {
 			next = scanner_getc(lc);
+			if (next < 0)
+				return EOF;
 			if(next == '>') {
 				return scanner_token(lc, GEOM_OVERLAP_OR_ABOVE);
 			} else {
@@ -1160,6 +1208,8 @@ int scanner_symbol(mvc * c, int cur)
 			}
 		} else if (cur == '>') {
 			next = scanner_getc(lc);
+			if (next < 0)
+				return EOF;
 			if(next == '>') {
 				return scanner_token(lc, GEOM_ABOVE);
 			} else {

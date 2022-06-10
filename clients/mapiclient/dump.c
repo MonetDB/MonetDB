@@ -2575,29 +2575,32 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"SELECT s.name, t.name, "
 		       "a.name, "
 		       "sum(p.privileges), "
-		       "g.name, p.grantable "
+		       "g.name, go.opt "
 		"FROM sys.schemas s, sys.tables t, "
 		     "sys.auths a, sys.privileges p, "
-		     "sys.auths g "
+		     "sys.auths g, "
+		     "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
 		"WHERE p.obj_id = t.id "
 		  "AND p.auth_id = a.id "
 		  "AND t.schema_id = s.id "
 		  "AND t.system = FALSE "
 		  "AND p.grantor = g.id "
-		"GROUP BY s.name, t.name, a.name, g.name, p.grantable "
-		"ORDER BY s.name, t.name, a.name, g.name, p.grantable";
+		  "AND p.grantable = go.id "
+		"GROUP BY s.name, t.name, a.name, g.name, go.opt "
+		"ORDER BY s.name, t.name, a.name, g.name, go.opt";
 	const char *column_grants =
 		"SELECT s.name, t.name, "
 		       "c.name, a.name, "
 		       "pc.privilege_code_name, "
-		       "g.name, p.grantable "
+		       "g.name, go.opt "
 		"FROM sys.schemas s, "
 		     "sys.tables t, "
 		     "sys.columns c, "
 		     "sys.auths a, "
 		     "sys.privileges p, "
 		     "sys.auths g, "
-		     "sys.privilege_codes pc "
+		     "sys.privilege_codes pc, "
+		     "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
 		"WHERE p.obj_id = c.id "
 		  "AND c.table_id = t.id "
 		  "AND p.auth_id = a.id "
@@ -2605,16 +2608,18 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND t.system = FALSE "
 		  "AND p.grantor = g.id "
 		  "AND p.privileges = pc.privilege_code_id "
+		  "AND p.grantable = go.id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
 	const char *function_grants =
 		"SELECT s.name, f.name, a.name, "
 		       "pc.privilege_code_name, "
-		       "g.name, p.grantable, "
+		       "g.name, go.opt, "
 		       "ft.function_type_keyword "
 		"FROM sys.schemas s, sys.functions f, "
 		     "sys.auths a, sys.privileges p, sys.auths g, "
 		     "sys.function_types ft, "
-		     "sys.privilege_codes pc "
+		     "sys.privilege_codes pc, "
+		     "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
 		"WHERE s.id = f.schema_id "
 		  "AND f.id = p.obj_id "
 		  "AND p.auth_id = a.id "
@@ -2622,7 +2627,21 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND p.privileges = pc.privilege_code_id "
 		  "AND f.type = ft.function_type_id "
 		  "AND NOT f.system "
+		  "AND p.grantable = go.id "
 		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
+	const char *global_grants =
+		"SELECT a.name, pc.grnt, g.name, go.opt "
+		"FROM sys.privileges p, "
+		     "sys.auths a, "
+		     "sys.auths g, "
+		     "(VALUES (0, 'COPY INTO'), (1, 'COPY FROM')) AS pc (id, grnt), "
+		     "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
+		"WHERE p.obj_id = 0 "
+		  "AND p.auth_id = a.id "
+		  "AND p.grantor = g.id "
+		  "AND p.privileges = pc.id "
+		  "AND p.grantable = go.id "
+		"ORDER BY a.name, g.name, go.opt";
 	const char *schemas =
 		"SELECT s.name, a.name, rem.remark "
 		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
@@ -2865,6 +2884,23 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			/* optional WITH ADMIN OPTION and FROM
 			   (CURRENT_USER|CURRENT_ROLE) are ignored by
 			   server, so we can't dump them */
+			mnstr_printf(toConsole, ";\n");
+		}
+		if (mapi_error(mid))
+			goto bailout;
+		mapi_close_handle(hdl);
+
+		/* grant global privileges */
+		if ((hdl = mapi_query(mid, global_grants)) == NULL || mapi_error(mid))
+			goto bailout;
+
+		while (mapi_fetch_row(hdl) != 0) {
+			const char *uname = mapi_fetch_field(hdl, 0);
+			const char *grant = mapi_fetch_field(hdl, 1);
+			//const char *gname = mapi_fetch_field(hdl, 2);
+			const char *grantable = mapi_fetch_field(hdl, 3);
+			mnstr_printf(toConsole, "GRANT %s TO ", grant);
+			dquoted_print(toConsole, uname, grantable);
 			mnstr_printf(toConsole, ";\n");
 		}
 		if (mapi_error(mid))
@@ -3267,9 +3303,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		mnstr_printf(toConsole, " ON TABLE ");
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, tname, " TO ");
-		dquoted_print(toConsole, aname, NULL);
-		if (strcmp(grantable, "1") == 0)
-			mnstr_printf(toConsole, " WITH GRANT OPTION");
+		dquoted_print(toConsole, aname, grantable);
 		mnstr_printf(toConsole, ";\n");
 	}
 	if (mapi_error(mid))
@@ -3293,9 +3327,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		dquoted_print(toConsole, cname, ") ON ");
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, tname, " TO ");
-		dquoted_print(toConsole, aname, NULL);
-		if (strcmp(grantable, "1") == 0)
-			mnstr_printf(toConsole, " WITH GRANT OPTION");
+		dquoted_print(toConsole, aname, grantable);
 		mnstr_printf(toConsole, ";\n");
 	}
 	if (mapi_error(mid))
@@ -3319,9 +3351,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		mnstr_printf(toConsole, "GRANT %s ON %s ", priv, ftype);
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, fname, " TO ");
-		dquoted_print(toConsole, aname, NULL);
-		if (strcmp(grantable, "1") == 0)
-			mnstr_printf(toConsole, " WITH GRANT OPTION");
+		dquoted_print(toConsole, aname, grantable);
 		mnstr_printf(toConsole, ";\n");
 	}
 	if (mapi_error(mid))

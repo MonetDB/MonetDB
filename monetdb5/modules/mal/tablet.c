@@ -193,7 +193,6 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b = fmt[i].c;
 		b->tsorted = b->trevsorted = false;
 		b->tkey = false;
-		b->batDirtydesc = true;
 		BATsettrivprop(b);
 		if ((b = BATsetaccess(b, BAT_READ)) == NULL) {
 			fmt[i].c = NULL;

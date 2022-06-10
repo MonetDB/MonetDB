@@ -149,6 +149,17 @@ BATupgrade(BAT *r, BAT *b)
 		GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
 			err = 1;
 	}
+	/*
+	if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+		   	if (r->twidth < b->twidth) {
+				int m = b->twidth / r->twidth;
+				r->twidth = b->twidth;
+				r->tshift = b->tshift;
+				r->batCapacity /= m;
+				printf("%s %d\n", b->T.heap->filename, b->twidth);
+			}
+	}
+	*/
 	//MT_lock_unset(&r->theaplock);
 	MT_lock_unset(&b->theaplock);
 	return err;
@@ -169,7 +180,6 @@ BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 		if (!indirect)
 			MT_lock_unset(&b->theaplock);
 		BBPshare(b->tvheap->parentid);
-		u->batDirtydesc = true;
 	} else {
 		if (!indirect)
 			MT_lock_unset(&b->theaplock);
@@ -954,6 +964,7 @@ typedef struct hash_table {
 		gid *pgids;			/* id of the parent hash */
 
 		struct hash_table *p;	/* parent hash */
+        int bits;
         size_t last;
         size_t size;
         gid mask;
@@ -1010,28 +1021,29 @@ ht_destroy(hash_table *ht)
 static hash_table *
 _ht_create( int type, int size, hash_table *p)
 {
-        hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
-        int bits = log_base2(size-1);
+	hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
+	int bits = log_base2(size-1);
 
-		if (!type)
-			type = TYPE_oid;
-		h->s.destroy = (sink_destroy)&ht_destroy;
-		h->s.type = HASH_SINK;
-        if (bits >= GIDBITS)
-                bits = GIDBITS-1;
-        h->size = (gid)1<<bits;
-        h->mask = h->size-1;
-        h->type = type;
-        h->width = ATOMsize(type);
-		h->last = 0;
-		h->p = p;
-		if (type == TYPE_str) {
-			h->cmp = (fcmp)str_cmp;
-			h->hsh = (fhsh)str_hsh;
-		} else {
-			h->cmp = (fcmp)ATOMcompare(type);
-		}
-        return _ht_init(h);
+	if (!type)
+		type = TYPE_oid;
+	h->s.destroy = (sink_destroy)&ht_destroy;
+	h->s.type = HASH_SINK;
+	if (bits >= GIDBITS)
+		bits = GIDBITS-1;
+	h->bits = bits;
+	h->size = (gid)1<<bits;
+	h->mask = h->size-1;
+	h->type = type;
+	h->width = ATOMsize(type);
+	h->last = 0;
+	h->p = p;
+	if (type == TYPE_str) {
+		h->cmp = (fcmp)str_cmp;
+		h->hsh = (fhsh)str_hsh;
+	} else {
+		h->cmp = (fcmp)ATOMcompare(type);
+	}
+	return _ht_init(h);
 }
 
 static hash_table *
@@ -1078,7 +1090,35 @@ ht_create(int type, int size, hash_table *p)
 #define _hash_dbl(X)  (_hash_lng(X))
 #define _hash_gid(X)  (_hash_lng(X))
 #define ROT64(x, y)  ((x << y) | (x >> (64 - y)))
-#define combine(X,Y)  (X^Y)
+//#define combine(X,Y)  (_hash_lng((X*5671432987))^(ulng)Y)
+#define combine(X,Y)  (_hash_lng((X*(hash_prime_nr[h->bits-5])))^(ulng)Y)
+int hash_prime_nr[32] = {
+	53,
+	97,
+	193,
+	389,
+	769,
+	1543,
+	3079,
+	6151,
+	12289,
+	24593,
+	49157,
+	98317,
+	196613,
+	393241,
+	786433,
+	1572869,
+	3145739,
+	6291469,
+	12582917,
+	25165843,
+	50331653,
+	100663319,
+	201326611,
+	402653189,
+	805306457,
+	1610612741 };
 
 //(_hash_lng(ROT64(X, 3) ^ ROT64((lng)Y, 17)))
 

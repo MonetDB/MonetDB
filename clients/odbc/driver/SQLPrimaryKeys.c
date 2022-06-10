@@ -123,20 +123,20 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		goto nomem;
 
 	/* SQLPrimaryKeys returns a table with the following columns:
-	   VARCHAR      table_cat
-	   VARCHAR      table_schem
-	   VARCHAR      table_name NOT NULL
-	   VARCHAR      column_name NOT NULL
-	   SMALLINT     key_seq NOT NULL
-	   VARCHAR      pk_name
+	   VARCHAR      TABLE_CAT
+	   VARCHAR      TABLE_SCHEM
+	   VARCHAR      TABLE_NAME NOT NULL
+	   VARCHAR      COLUMN_NAME NOT NULL
+	   SMALLINT     KEY_SEQ NOT NULL
+	   VARCHAR      PK_NAME
 	*/
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as table_cat, "
-			"s.name as table_schem, "
-			"t.name as table_name, "
-			"kc.name as column_name, "
-			"cast(kc.nr + 1 as smallint) as key_seq, "
-			"k.name as pk_name "
+		"select '%s' as \"TABLE_CAT\", "
+			"s.name as \"TABLE_SCHEM\", "
+			"t.name as \"TABLE_NAME\", "
+			"kc.name as \"COLUMN_NAME\", "
+			"cast(kc.nr + 1 as smallint) as \"KEY_SEQ\", "
+			"k.name as \"PK_NAME\" "
 		"from sys.keys k, sys.objects kc, sys._tables t, sys.schemas s "
 		"where k.type = 0 and "
 		     "k.id = kc.id and "
@@ -167,12 +167,12 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		   which are stored in tmp.keys, tmp.objects and tmp._tables */
 		pos += snprintf(query + pos, querylen - pos,
 			" UNION ALL "
-			"select '%s' as table_cat, "
-				"s.name as table_schem, "
-				"t.name as table_name, "
-				"kc.name as column_name, "
-				"cast(kc.nr + 1 as smallint) as key_seq, "
-				"k.name as pk_name "
+			"select '%s' as \"TABLE_CAT\", "
+				"s.name as \"TABLE_SCHEM\", "
+				"t.name as \"TABLE_NAME\", "
+				"kc.name as \"COLUMN_NAME\", "
+				"cast(kc.nr + 1 as smallint) as \"KEY_SEQ\", "
+				"k.name as \"PK_NAME\" "
 			"from tmp.keys k, tmp.objects kc, tmp._tables t, sys.schemas s "
 			"where k.type = 0 and "
 			     "k.id = kc.id and "
@@ -205,7 +205,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		free(tab);
 
 	/* add the ordering */
-	pos += strcpy_len(query + pos, " order by table_schem, table_name, key_seq", querylen - pos);
+	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"KEY_SEQ\"", querylen - pos);
 
 	/* debug: fprintf(stdout, "SQLPrimaryKeys SQL:\n%s\n\n", query); */
 
