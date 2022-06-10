@@ -40,6 +40,82 @@ MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
 MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
 MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
 
+
+
+#ifdef HAVE_PTHREAD_H
+
+static pthread_key_t tl_client_key;
+
+static int
+initialize_tl_client_key(void)
+{
+	static bool initialized = false;
+	if (initialized)
+		return 0;
+
+	if (pthread_key_create(&tl_client_key, NULL) != 0)
+		return -1;
+
+	initialized = true;
+	return 0;
+}
+
+/* declared in mal_interpreter.h so MAL operators can access it */
+Client
+getClientContext(void)
+{
+	return (Client) pthread_getspecific(tl_client_key);
+}
+
+/* declared in mal_private.h so only the MAL interpreter core can access it */
+void
+setClientContext(Client cntxt)
+{
+	if (pthread_setspecific(tl_client_key, cntxt) != 0)
+		GDKfatal("Failed to set thread local Client context");
+}
+
+#elif defined(Win32)
+
+static DWORD tl_client_key = 0;
+
+static int
+initialize_tl_client_key(void)
+{
+	static bool initialized = false;
+	if (initialized)
+		return 0;
+
+	DWORD key = TlsAlloc();
+	if (key == TLS_OUT_OF_INDEXES)
+		return -1;
+
+	tl_client_key = key;
+	initialized = true;
+	return 0;
+}
+
+/* declared in mal_interpreter.h so MAL operators can access it */
+Client
+getClientContext(void)
+{
+	return (Client) TlsGetValue(tl_client_key);
+}
+
+/* declared in mal_private.h so only the MAL interpreter core can access it */
+void
+setClientContext(Client cntxt)
+{
+	if (TlsSetValue(tl_client_key, cntxt) != 0)
+		GDKfatal("Failed to set thread local Client context");
+}
+
+#else
+
+#error "no pthreads and no Win32, don't know what to do"
+
+#endif
+
 const char *
 mal_version(void)
 {
@@ -69,6 +145,9 @@ mal_init(char *modules[], bool embedded)
 					 version, GDK_VERSION);
 		return -1;
 	}
+
+	if (initialize_tl_client_key() != 0)
+		return -1;
 
 	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		freeException(err);
