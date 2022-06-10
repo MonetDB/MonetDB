@@ -314,11 +314,10 @@ COPYfixlines(
 		// However, if 'right' is empty, we know we have reached the end of the
 		// input so we know the end of the line will never come.
 		if (right_size == 0) {
-			lng rowno = starting_row + newline_count;
 			if (quoted)
-				copy_report_error(&errors, rowno, -1, "unterminated quoted string");
+				copy_report_error(&errors, newline_count, -1, "unterminated quoted string");
 			else
-				copy_report_error(&errors, rowno, -1, "unterminated line at end of file");
+				copy_report_error(&errors, newline_count, -1, "unterminated line at end of file");
 			bailout("copy.fixlines", "%s", copy_error_message(&errors));
 		}
 		BUN new_size = (BUN)left_size + (BUN)right_size;
