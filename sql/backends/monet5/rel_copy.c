@@ -303,16 +303,6 @@ emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
 stmt *
 rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
-	switch (parallel_copy_level()) {
-		case 0:
-			assert(0 /* how did we get here, then? */);
-			return NULL;
-		case 1:
-			break; // main case, below
-		default:
-			assert(0 /* invalid parallel level */);
-			return NULL;
-	}
 	(void)rel;
 	(void)refs;
 	const int block_size = get_copy_blocksize();
@@ -322,8 +312,20 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	MalBlkPtr mb = be->mb;
 	mvc *mvc = be->mvc;
 	sql_allocator *sa = mvc->sa;
-	list *intermediate_stmts = sa_list(sa);
 
+	switch (parallel_copy_level()) {
+		case 0:
+			assert(0 /* how did we get here, then? */);
+			return NULL;
+		case 1:
+		case 2:
+			break; // main case, below
+		default:
+			assert(0 /* invalid parallel level */);
+			return NULL;
+	}
+
+	list *intermediate_stmts = sa_list(sa);
 	int int_bat_type = newBatType(TYPE_int);
 
 	// Extract table name

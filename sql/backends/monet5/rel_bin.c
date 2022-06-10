@@ -5264,7 +5264,7 @@ can_use_copyparpipe(sql_rel *rel)
 		// from stdin
 		return NULL;
 	}
-	if (best_effort)
+	if (best_effort && parallel_copy_level() < 2)
 		return NULL;
 	if (!strNil(fixed_width))
 		return NULL;
