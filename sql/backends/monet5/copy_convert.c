@@ -34,7 +34,6 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	void *buffer;
 	size_t buffer_len;
 	const void *nil_ptr;
-	size_t nil_len;
 
 	copy_init_error_handling(&errors, starting_row, col_no, col_name);
 
@@ -47,32 +46,38 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bailout("copy.parse_generic",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	nil_ptr = ATOMnilptr(tpe);
-	nil_len = ATOMlen(tpe, ATOMnilptr(tpe));
 
 	buffer = NULL;
 	buffer_len = 0;
 	for (int i = 0; i < n; i++) {
+		gdk_return ok = GDK_SUCCEED;
 		int offset = *(int*)Tloc(indices, i);
 		const char *src = Tloc(block, offset);
-		const void *p;
-		ssize_t len;
+		const void *to_insert;
+
 		if (is_int_nil(offset)) {
-			p = nil_ptr;
-			len = nil_len;
+			to_insert = nil_ptr;
+		} else if (!checkUTF8(src)) {
+			ok = copy_report_error(&errors, i, -1, "incorrectly encoded UTF-8");
+			to_insert = nil_ptr;
 		} else {
-			len = BATatoms[tpe].atomFromStr(src, &buffer_len, &buffer, false);
-			p = buffer;
-			if (len < 0) {
-				copy_report_error(&errors, i, -1, "invalid %s: %s", ATOMname(tpe), src);
+			ssize_t len = BATatoms[tpe].atomFromStr(src, &buffer_len, &buffer, false);
+			if (len >= 0) {
+				to_insert = buffer;
+			} else {
+				ok = copy_report_error(&errors, i, -1, "invalid %s: %s", ATOMname(tpe), src);
 				GDKclrerr();
-				p = nil_ptr;
-				len = nil_len;
-				msg = copy_check_too_many_errors(&errors, "copy.parse_generic");
-				if (msg != MAL_SUCCEED)
-					goto end;
+				to_insert = nil_ptr;
 			}
 		}
-		if (bunfastapp(ret, p) != GDK_SUCCEED)
+		if (ok != GDK_SUCCEED) {
+			msg = copy_check_too_many_errors(&errors, "copy.parse_generic");
+			if (msg != MAL_SUCCEED)
+				goto end;
+			else
+				ok = GDK_SUCCEED;
+		}
+		if (bunfastapp(ret, to_insert) != GDK_SUCCEED)
 			bailout("copy.parse_generic", GDK_EXCEPTION);
 	}
 	BATsetcount(ret, n);
