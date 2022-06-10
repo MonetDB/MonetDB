@@ -116,17 +116,21 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 	return GDK_FAIL;
 }
 
-lng
-copy_error_count(struct error_handling *admin)
-{
-	return admin->count;
-}
-
-bool
-copy_too_many_errors(struct error_handling *admin)
+str
+copy_check_too_many_errors(struct error_handling *admin, const char *fname)
 {
 	// no support for BEST EFFORT yet
-	return admin->count > 0;
+	lng error_count = admin->count;
+	if  (error_count > 0) {
+		const char *message = copy_error_message(admin);
+		if (error_count == 1)
+			throw(MAL, fname, "%s", message);
+		else
+			throw(MAL, fname, "At least %ld conversion errors, example: %s", error_count, message);
+
+	} else {
+		return MAL_SUCCEED;
+	}
 }
 
 const char *

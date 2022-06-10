@@ -67,13 +67,9 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKclrerr();
 				p = nil_ptr;
 				len = nil_len;
-				if (copy_too_many_errors(&errors)) {
-					lng error_count = copy_error_count(&errors);
-					if (error_count == 1)
-						bailout("copy.parse_generic", "%s", copy_error_message(&errors));
-					else
-						bailout("copy.parse_generic", "At least %ld conversion errors, example: %s", error_count, copy_error_message(&errors));
-				}
+				msg = copy_check_too_many_errors(&errors, "copy.parse_generic");
+				if (msg != MAL_SUCCEED)
+					goto end;
 			}
 		}
 		if (bunfastapp(ret, p) != GDK_SUCCEED)
@@ -130,13 +126,9 @@ parse_fixed_width_column(
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	f(errors, fx, BATcount(offsets_bat), Tloc(parsed_bat, 0), Tloc(block_bat, 0), Tloc(offsets_bat, 0));
-	if (copy_too_many_errors(errors)) {
-		lng error_count = copy_error_count(errors);
-		if (error_count == 1)
-			bailout(fname, "%s", copy_error_message(errors));
-		else
-			bailout(fname, "At least %ld conversion errors, example: %s", error_count, copy_error_message(errors));
-	}
+	msg = copy_check_too_many_errors(errors, fname);
+	if (msg != MAL_SUCCEED)
+		goto end;
 
 	BATsetcount(parsed_bat, BATcount(offsets_bat));
 	// we don't know anything about the data we just parsed

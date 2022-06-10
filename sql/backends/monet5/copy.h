@@ -30,8 +30,7 @@ void copy_init_error_handling(struct error_handling *admin, lng starting_row, in
 
 gdk_return copy_report_error(struct error_handling *admin, int rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
 	__attribute__((__format__(__printf__, 4, 5)));
-lng copy_error_count(struct error_handling *admin);
-bool copy_too_many_errors(struct error_handling *amin);
+str copy_check_too_many_errors(struct error_handling *admin, const char *fname);
 const char *copy_error_message(struct error_handling *admin);
 
 void copy_destroy_error_handling(struct error_handling *admin);
