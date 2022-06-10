@@ -83,6 +83,8 @@ run_test(TestCase("i INT, t TEXT", '1\n2\n3\n"42', quote='"')
 run_test(TestCase("i INT, t TEXT", '1\n2\n3\n42', raw=True)
          .expect_error("Row 4: unterminated line"))
 
+# quoted quotes
+run_test(TestCase("t TEXT", '"""aap"""').set_quote('"').expect_first('"aap"'))
 
 # Test various escape sequences
 def good_escape(text, value):
