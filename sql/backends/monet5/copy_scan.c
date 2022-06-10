@@ -362,6 +362,7 @@ scan_field(const char **err_msg, unsigned char *start, unsigned char *end, int c
 // Verify that column separators and row separators occur at the appropriate
 // moment. Verify that exactly the right amount of data is offered.
 // If a field contains the null_repr, replace its index with int_nil.
+// Note: we must do the NULL check BEFORE processing quotes and backslashes!
 str
 scan_fields(
 	struct error_handling *errors,
@@ -374,10 +375,24 @@ scan_fields(
 	int row = 0;
 	int col = 0;
 	const char *err_msg = NULL;
+	size_t null_repr_len = null_repr ? strlen(null_repr) : 0;
 	while (p < end && row < nrows) {
 		unsigned char sep = 0;
+		int n;
 
-		int n = scan_field(&err_msg, p, end, col_sep, line_sep, quote, backslash_escapes, &sep);
+		bool is_null = (
+			null_repr
+			&& p + null_repr_len < end
+			&& (p[null_repr_len] == col_sep || p[null_repr_len] == line_sep)
+			&& strncasecmp((char*)p, null_repr, null_repr_len) == 0
+		);
+
+		if (is_null) {
+			sep = p[null_repr_len];
+			n = null_repr_len + 1;
+		} else {
+			n = scan_field(&err_msg, p, end, col_sep, line_sep, quote, backslash_escapes, &sep);
+		}
 		assert(n != 0);
 		assert((n < 0) == (err_msg != NULL));
 		if (n < 0) {
@@ -393,7 +408,7 @@ scan_fields(
 				copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
 				ok = false;
 			} else {
-				// if scan_field returnd >=0 it must have found a separator, doesn't it?
+				// if scan_field returned >=0 it must have found a separator, doesn't it?
 				throw(MAL, "copy.splitlines", "internal error: found %d while col sep is %d and line sep is %d", sep, col_sep, line_sep);
 			}
 		} else {
@@ -416,7 +431,6 @@ scan_fields(
 		if (!ok) {
 			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
 		}
-		bool is_null = (null_repr && strcasecmp((char*)p, null_repr) == 0);
 		int field = is_null ? int_nil : ((char*)p - data_start);
 		columns[col][row] = field;
 		p += n;

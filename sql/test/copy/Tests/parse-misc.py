@@ -150,6 +150,16 @@ run_test(TestCase("i INT", "null", null="null").expect_first(None))
 run_test(TestCase("i INT", "NULL", null="null").expect_first(None))
 run_test(TestCase("i INT", "null", null="NULL").expect_first(None))
 
+# 'U' is ASCII 0x55
+tc = (TestCase("t TEXT", 'X\nNULL\n"NULL"\nN\\x55LL\nY\n')
+    .set_quote('"')
+    .expect_value(0, 0, 'X')
+    .expect_value(1, 0, None)
+    .expect_value(2, 0, "NULL")
+    .expect_value(3, 0, "NULL")
+    .expect_value(4, 0, 'Y')
+)
+run_test(tc)
 
 # UUID tests.
 # UUID's are parsed through copy.parse_generic.
