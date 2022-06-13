@@ -41,9 +41,17 @@ mal_export str AUTHdeleteRemoteTableCredentials(const char *local_table);
  * (the vault) by supplying the master password which is the key for the
  * cypher algorithm used to store the data.  The BAT will never
  * contain the plain hashes, as they will be decyphered on the fly when
- * needed.  A locked vault means noone can log into the system, hence, the
+ * needed.  A locked vault means none can log into the system, hence, the
  * vault needs to be unlocked as part of the server startup ritual.
  */
 mal_export str AUTHunlockVault(const char *password);
+
+typedef str (*get_user_password_handler)(void *mvc, str user);
+
+typedef struct AUTHCallbackCntx {
+	get_user_password_handler get_user_password;
+} AUTHCallbackCntx;
+
+mal_export str AUTHRegisterGetPasswordHandler(get_user_password_handler callback);
 
 #endif /* _MAL_AUTHORIZE_H */

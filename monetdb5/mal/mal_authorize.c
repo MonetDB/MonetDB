@@ -47,6 +47,9 @@ static BAT *rt_deleted = NULL;
 /* yep, the vault key is just stored in memory */
 static str vaultKey = NULL;
 static str master_password = NULL;
+static AUTHCallbackCntx authCallbackCntx = {
+	.get_user_password = NULL,
+};
 
 void AUTHreset(void)
 {
@@ -1260,4 +1263,11 @@ AUTHdeleteRemoteTableCredentials(const char *local_table)
 	/* make the stuff persistent */
 	AUTHcommit();
 	return(MAL_SUCCEED);
+}
+
+str
+AUTHRegisterGetPasswordHandler(get_user_password_handler callback)
+{
+	authCallbackCntx.get_user_password = callback;
+	return MAL_SUCCEED;
 }

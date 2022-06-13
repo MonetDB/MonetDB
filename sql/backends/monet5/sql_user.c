@@ -24,6 +24,47 @@
 #include "mcrypt.h"
 
 
+static inline sql_table*
+getUsersTbl(mvc *m)
+{
+	sql_trans *tr = m->session->tr;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	return find_sql_table(tr, sys, "db_user_info");
+}
+
+
+static oid
+getUserOIDByName(mvc *m, str user)
+{
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = m->session->tr->store;
+	sql_table *users = getUsersTbl(m);
+	return store->table_api.column_find_row(tr, find_sql_column(users, "name"), user, NULL);
+}
+
+
+static str
+getPasswordHash(ptr _mvc, str user)
+{
+	mvc *m = (mvc *) _mvc;
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = m->session->tr->store;
+	sql_table *users = getUsersTbl(m);
+	oid rid = getUserOIDByName(m, user);
+	if (is_oid_nil(rid))
+		return NULL;
+	return store->table_api.column_find_value(tr, find_sql_column(users, "password"), rid);
+}
+
+
+static void
+monet5_set_user_api_hooks(ptr mvc)
+{
+	(void) mvc;
+	AUTHRegisterGetPasswordHandler(&getPasswordHash);
+}
+
+
 static int
 monet5_find_role(ptr _mvc, str role, sqlid *role_id)
 {
@@ -378,6 +419,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "default_role", "int", 9);
+	// mvc_create_column_(&col, m, t, "password", "varchar", 256);
 	uinfo = t;
 
 	res = sa_list(m->sa);
@@ -390,7 +432,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE, FALSE);
 	if (f)
 		f->instantiated = TRUE;
-	// TODO include all new columns
+	// TODO this view should go, remove as part of db_user_info -> users rename
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\" as \"name\", "
 			    "ui.\"fullname\", ui.\"default_schema\", "
@@ -599,7 +641,7 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	sql_column *auths_name = find_sql_column(auths, "name");
 	int res = LOG_OK;
 
-	if ((err = AUTHchangeUsername(c, olduser, newuser)) !=MAL_SUCCEED) {
+	if ((err = AUTHchangeUsername(c, olduser, newuser)) != MAL_SUCCEED) {
 		(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 		freeException(err);
 		return (FALSE);
@@ -669,6 +711,7 @@ monet5_user_init(backend_functions *be_funcs)
 	be_funcs->fauser = &monet5_alter_user;
 	be_funcs->fruser = &monet5_rename_user;
 	be_funcs->fschuserdep = &monet5_schema_user_dependencies;
+	be_funcs->fset_user_api_hooks = &monet5_set_user_api_hooks;
 }
 
 int
