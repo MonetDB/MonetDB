@@ -103,7 +103,7 @@ class TestCase:
     def expect_first(self, val) -> "TestCase":
         return self.expect_value(0, 0, val)
 
-    def run(self, conn: pymonetdb.Connection, cursor, out):
+    def run(self, conn: pymonetdb.Connection, cursor, out, prefix):
         msg = f"RUNNING TEST DEFINED AT LINE {self.lineno}"
         if self.sub:
             msg += " WITH " + self.sub
@@ -139,7 +139,7 @@ class TestCase:
         nrec_offset = ' '.join(nrec_offset_parts)
         if nrec_offset:
             nrec_offset = ' ' + nrec_offset
-        query = textwrap.dedent(f"""\
+        query = prefix + textwrap.dedent(f"""\
             CALL sys.copy_blocksize({block_size});
             DROP TABLE IF EXISTS foo;
             CREATE TABLE foo({self.fieldspec});
@@ -222,12 +222,14 @@ class TestCase:
 class TestSuite:
     conn: pymonetdb.Connection
     verbose: bool
+    level: int
     have_hge: bool
     filter = None
 
-    def __init__(self, conn, filter, verbose):
+    def __init__(self, conn, filter, verbose, level):
         self.conn = conn
         self.verbose = verbose
+        self.level = level
         self.have_hge = True
         self.filter = filter
         cursor = conn.cursor()
@@ -240,6 +242,9 @@ class TestSuite:
             cursor.close()
 
     def run_test(self, t, sub=None):
+        prefix = ""
+        if self.level is not None:
+            prefix += f"CALL sys.copy_parallel({self.level});\n"
         t = copy.deepcopy(t)
         t.lineno = inspect.getframeinfo(inspect.stack()[1][0]).lineno
         t.sub = sub
@@ -251,7 +256,7 @@ class TestSuite:
             out = StringIO()
         try:
             c = self.conn.cursor()
-            t.run(self.conn, c, out)
+            t.run(self.conn, c, out, prefix)
         except Exception:
             if not self.verbose:
                 sys.stderr.write(out.getvalue())
@@ -260,9 +265,12 @@ class TestSuite:
             c.close()
 
 
-def setup_suite():
+def setup_suite(level=None):
     verbose = os.getenv('VERBOSE') is not None
     linenos = set(int(a) for a in os.getenv('ONLY', '').split())
+    env_level = os.getenv('LEVEL', None)
+    if env_level is not None:
+        level = int(env_level)
     if linenos:
         filter = lambda t: t.lineno in linenos
         verbose = True
@@ -272,4 +280,4 @@ def setup_suite():
     port = int(os.getenv("MAPIPORT", '50000'))
     conn = pymonetdb.connect(dbname, port=port)
 
-    return TestSuite(conn, filter=filter, verbose=verbose)
+    return TestSuite(conn, filter=filter, verbose=verbose, level=level)
