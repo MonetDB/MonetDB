@@ -990,6 +990,7 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	sql_subfunc *f = NULL;
 	sql_trans *tr = m->session->tr;
 
+	// create db_user_info tbl
 	backend_create_privileges(m, s);
 
 	mvc_create_table(&t, m, s, "user_role", tt_table, 1, SQL_PERSIST, 0, -1, 0);
@@ -1087,4 +1088,10 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	*/
 
 	return 0;
+}
+
+void
+sql_set_user_api_hooks(mvc *m)
+{
+	backend_set_user_api_hooks(m);
 }
