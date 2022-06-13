@@ -353,6 +353,12 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	int var_on_client = extract_parameter(be, intermediate_stmts, copyfrom, 10);
 	int var_escape = extract_parameter(be, intermediate_stmts, copyfrom, 11);
 
+	// coerce var_best_effort to bit
+	q = newStmt(mb, "calc", "!=");
+	q = pushArgument(mb, q, var_best_effort);
+	q = pushInt(mb, q, 0);
+	var_best_effort = getDestVar(q);
+
 	// coerce var_escape to bit
 	q = newStmt(mb, "calc", "!=");
 	q = pushArgument(mb, q, var_escape);
@@ -464,6 +470,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
 				q = pushNil(mb, q, col->type.type->localtype);
+				q = pushArgument(mb, q, var_best_effort);
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
@@ -475,6 +482,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushInt(mb, q, col->type.digits);
 				q = pushInt(mb, q, col->type.scale);
 				q = pushNil(mb, q, col->type.type->localtype);
+				q = pushArgument(mb, q, var_best_effort);
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
@@ -484,6 +492,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
 				q = pushNil(mb, q, col->type.type->localtype);
+				q = pushArgument(mb, q, var_best_effort);
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);

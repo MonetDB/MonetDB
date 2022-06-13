@@ -534,54 +534,54 @@ static mel_func copy_init_funcs[] = {
 	batarg("newrows", oid), arg("count", lng), arg("offset",oid), batarg("pos",oid)
  )),
 
- pattern("copy", "parse_generic", COPYparse_generic, false, "Parse using GDK's atomFromStr", args(1, 7,
+ pattern("copy", "parse_generic", COPYparse_generic, false, "Parse using GDK's atomFromStr", args(1, 8,
 	batargany("", 1),
-	batarg("block", bte), batarg("offsets", int), argany("type", 1), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	batarg("block", bte), batarg("offsets", int), argany("type", 1), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
 
- command("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 9,
+ command("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 10,
 	 batarg("", bte),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_decimal", COPYparse_decimal_sht, false, "Parse as a decimal", args(1, 9,
+ command("copy", "parse_decimal", COPYparse_decimal_sht, false, "Parse as a decimal", args(1, 10,
 	 batarg("", sht),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", sht), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", sht), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_decimal", COPYparse_decimal_int, false, "Parse as a decimal", args(1, 9,
+ command("copy", "parse_decimal", COPYparse_decimal_int, false, "Parse as a decimal", args(1, 10,
 	 batarg("", int),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_decimal", COPYparse_decimal_lng, false, "Parse as a decimal", args(1, 9,
+ command("copy", "parse_decimal", COPYparse_decimal_lng, false, "Parse as a decimal", args(1, 10,
 	 batarg("", lng),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", lng), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", lng), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
  #ifdef HAVE_HGE
- command("copy", "parse_decimal", COPYparse_decimal_hge, false, "Parse as a decimal", args(1, 9,
+ command("copy", "parse_decimal", COPYparse_decimal_hge, false, "Parse as a decimal", args(1, 10,
 	 batarg("", hge),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
 #endif
 
- command("copy", "parse_integer", COPYparse_integer_bte, false, "Parse as an integer", args(1, 7,
+ command("copy", "parse_integer", COPYparse_integer_bte, false, "Parse as an integer", args(1, 8,
 	 batarg("", bte),
-	 batarg("block", bte), batarg("offsets", int), arg("type", bte), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", bte), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_integer", COPYparse_integer_sht, false, "Parse as an integer", args(1, 7,
+ command("copy", "parse_integer", COPYparse_integer_sht, false, "Parse as an integer", args(1, 8,
 	 batarg("", sht),
-	 batarg("block", bte), batarg("offsets", int), arg("type", sht), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", sht), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_integer", COPYparse_integer_int, false, "Parse as an integer", args(1, 7,
+ command("copy", "parse_integer", COPYparse_integer_int, false, "Parse as an integer", args(1, 8,
 	 batarg("", int),
-	 batarg("block", bte), batarg("offsets", int), arg("type", int), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", int), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_integer", COPYparse_integer_lng, false, "Parse as an integer", args(1, 7,
+ command("copy", "parse_integer", COPYparse_integer_lng, false, "Parse as an integer", args(1, 8,
 	 batarg("", lng),
-	 batarg("block", bte), batarg("offsets", int), arg("type", lng), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", lng), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
  #ifdef HAVE_HGE
- command("copy", "parse_integer", COPYparse_integer_hge, false, "Parse as an integer", args(1, 7,
+ command("copy", "parse_integer", COPYparse_integer_hge, false, "Parse as an integer", args(1, 8,
 	 batarg("", hge),
-	 batarg("block", bte), batarg("offsets", int), arg("type", hge), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", hge), arg("besteffort", bit), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
 #endif
 
