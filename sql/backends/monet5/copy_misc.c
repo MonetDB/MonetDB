@@ -64,8 +64,9 @@ dump_block(const char *msg, BAT *b)
 
 
 void
-copy_init_error_handling(struct error_handling *admin, lng starting_row, int default_col_no, const char *column_name)
+copy_init_error_handling(struct error_handling *admin, bool best_effort, lng starting_row, int default_col_no, const char *column_name)
 {
+	admin->best_effort = best_effort;
 	admin->count = 0;
 	admin->starting_row = starting_row;
 	admin->default_col_no = default_col_no;
@@ -163,6 +164,12 @@ end:
 	MT_lock_unset(&cntxt->error_lock);
 }
 
+static bool
+too_many_errors(struct error_handling *admin)
+{
+	return (admin->count > 0 && !admin->best_effort);
+}
+
 
 gdk_return
 copy_report_error(struct error_handling *restrict admin, int rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
@@ -197,16 +204,15 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 
 	copy_add_to_rejects(row_1based, column_1based, buf);
 
-	return GDK_FAIL;
+	return too_many_errors(admin) ? GDK_FAIL : GDK_SUCCEED;;
 }
 
 str
 copy_check_too_many_errors(struct error_handling *admin, const char *fname)
 {
-	// no support for BEST EFFORT yet
-	lng error_count = admin->count;
-	if  (error_count > 0) {
+	if  (too_many_errors(admin)) {
 		const char *message = copy_error_message(admin);
+		lng error_count = admin->count;
 		if (error_count == 1)
 			throw(MAL, fname, "%s", message);
 		else

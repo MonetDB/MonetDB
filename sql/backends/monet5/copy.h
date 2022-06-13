@@ -19,6 +19,7 @@
 
 
 struct error_handling {
+	bool best_effort;
 	lng count;
 	lng starting_row;
 	int default_col_no;
@@ -26,7 +27,7 @@ struct error_handling {
 	char buffer[512];
 };
 
-void copy_init_error_handling(struct error_handling *admin, lng starting_row, int default_col_no, const char *column_name);
+void copy_init_error_handling(struct error_handling *admin, bool best_effort, lng starting_row, int default_col_no, const char *column_name);
 
 gdk_return copy_report_error(struct error_handling *admin, int rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
 	__attribute__((__format__(__printf__, 4, 5)));
