@@ -19,3 +19,4 @@ crlf_normalization
 parse-misc
 parse-integer
 parse-decimal
+parse-besteffort

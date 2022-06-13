@@ -24,16 +24,18 @@ class TestCase:
     testdata: list[str]
     escape: Optional[bool]
     null: Optional[str]
+    besteffort: bool
     quote: Optional[str]
     offsetk: Optional[int]
     nrecords: Optional[int]
     affected: Optional[int]
     expectations: list[Tuple[int, int, Any]]
+    rejects: list[Tuple[int, int, str]]
     error: str
 
     DEFAULT_BLOCKSIZE = 1000
 
-    def __init__(self, spec, data, raw=False, quote=None, null=None, escape=None):
+    def __init__(self, spec, data, raw=False, quote=None, null=None, escape=None, besteffort=False):
         self.fieldspec = spec
         if raw:
             self.raw_testdata = data
@@ -44,11 +46,13 @@ class TestCase:
         self.quote = quote
         self.escape = escape
         self.null = null
+        self.besteffort = besteffort
         self.offsetk = None
         self.nrecords = None
         self.affected = None
         self.error = None
         self.expectations = []
+        self.rejects = []
 
     def replace(self, rowno, replacement) -> "TestCase":
         t = copy.deepcopy(self)
@@ -82,6 +86,11 @@ class TestCase:
         t.nrecords = nrec
         return t
 
+    def besteffort(self, best: bool) -> "TestCase":
+        t = copy.deepcopy(self)
+        t.besteffort = best
+        return t
+
     def expect_affected(self, n) -> "TestCase":
         t = copy.deepcopy(self)
         t.affected = n
@@ -103,6 +112,11 @@ class TestCase:
     def expect_first(self, val) -> "TestCase":
         return self.expect_value(0, 0, val)
 
+    def expect_reject(self, row, col, msg) -> "TestCase":
+        t = copy.deepcopy(self)
+        t.rejects.append((row, col, msg))
+        return t
+
     def run(self, conn: pymonetdb.Connection, cursor, out, prefix):
         msg = f"RUNNING TEST DEFINED AT LINE {self.lineno}"
         if self.sub:
@@ -120,6 +134,8 @@ class TestCase:
         qfilename = self.escape_text(filename)
         f.write(testdata)
         f.close()
+
+        prefix = "CALL sys.clearrejects();\n" + prefix
         option_parts = []
         nrec_offset_parts = []
         if self.quote:
@@ -131,6 +147,8 @@ class TestCase:
                 option_parts.append("NO ESCAPE")
         if self.null is not None:
             option_parts.append(f" NULL AS {self.escape_text(self.null)}")
+        if self.besteffort:
+            option_parts.append("BEST EFFORT")
         if self.nrecords is not None:
             nrec_offset_parts.append(f"{self.nrecords} RECORDS")
         if self.offsetk is not None:
@@ -171,6 +189,26 @@ class TestCase:
                     value = results[r][c]
                     print(f'Row {r} col {c} expected {expected!r}, got {value!r}', file=out)
                     assert value == expected
+            print(file=out)
+            cursor.execute("SELECT rowid, fldid, message FROM sys.rejects")
+            rejects = set(cursor.fetchall())
+            seen = set()
+            for row, col, msg in self.rejects:
+                cands = [(r,c,m) for r,c,m in rejects if r == row and c == col and msg in m]
+                if len(cands) == 1:
+                    print(f"Found reject row={row} col={col} msg={msg!r}:\n\t{cands[0][2]!r}", file=out)
+                    seen.add(cands[0])
+                elif len(cands) == 0:
+                    print(f"Did not find reject row={row} col={col} msg={msg!r}", file=out)
+                    assert False
+                else:
+                    print(f"Found {len(cands)} candidates for reject row={row} col={col} msg={msg!r}", file=out)
+                    assert False
+            unseen = rejects - seen
+            if unseen:
+                print(f"Found {len(unseen)} unexpected rejects:", file=out)
+                for r, c, m in sorted(unseen):
+                    print(f"        row={r} col={c} msg={m}", file=out)
         else:
             try:
                 cursor.execute(query)
