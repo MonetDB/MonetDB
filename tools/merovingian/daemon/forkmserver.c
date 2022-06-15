@@ -348,14 +348,22 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		break;
 	default:
 		/* this also includes SABdbStarting, which we shouldn't ever
-		 * see due to the global starting lock */
+		 * see due to the global starting lock
+		 *
+		 * if SABdbStarting: a process (presumably mserver5) has locked
+		 * the database (i.e. the .gdk_lock file), but the server is not
+		 * ready to accept connections (i.e. there is no .started
+		 * file) */
 		state = (*stats)->state;
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
-		return(newErr("unknown or impossible state: %d",
-					  (int)state));
+		if (state == SABdbStarting)
+			return(newErr("unexpected state: database is locked but not yet started"));
+		else
+			return(newErr("unknown or impossible state: %d",
+						  (int)state));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
