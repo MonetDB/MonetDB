@@ -57,6 +57,12 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 		return false;
 	}
 
+	if (pid == -1) {
+		/* it's already dead */
+		msab_freeStatus(&stats);
+		return true;
+	}
+
 	if (stats->pid != pid) {
 		Mfprintf(stderr,
 			"strange, trying to kill process %lld to stop database '%s' "
@@ -65,8 +71,13 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 			dbname,
 			(long long int)pid
 		);
-		msab_freeStatus(&stats);
-		return false;
+		if (stats->pid >= 1 && pid < 1) {
+			/* assume the server was started by a previous merovingian */
+			pid = stats->pid;
+		} else {
+			msab_freeStatus(&stats);
+			return false;
+		}
 	}
 	assert(stats->pid == pid);
 
@@ -114,8 +125,8 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 			 "TERM signal\n", (long long int)pid, dbname);
 	if (kill(pid, SIGTERM) < 0) {
 		/* barf */
-		Mfprintf(stderr, "cannot send TERM signal to process (database '%s')\n",
-				 dbname);
+		Mfprintf(stderr, "cannot send TERM signal to process (database '%s'): %s\n",
+				 dbname, strerror(errno));
 		msab_freeStatus(&stats);
 		return false;
 	}
