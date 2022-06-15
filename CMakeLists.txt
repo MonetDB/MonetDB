@@ -70,7 +70,6 @@ if(NOT HAVE_SYS_SOCKET_H)
     set(CMAKE_EXTRA_INCLUDE_FILES "winsock.h")
   endif()
 endif()
-set(CMAKE_REQUIRED_INCLUDES "/usr/include")
 
 monetdb_configure_sizes()
 

@@ -15,6 +15,14 @@ import inspect
 TSTDB=os.getenv("TSTDB")
 MAPIPORT=os.getenv("MAPIPORT")
 
+from pathlib import Path
+from typing import Optional
+class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
+    def secure_resolve(self, filename: str) -> Optional[Path]:
+        return Path(filename).resolve()
+
+transfer_handler = UnsafeDirectoryHandler('.')
+
 def equals(a, b) -> bool:
     if type(a) is type(b):
         return a==b
@@ -145,6 +153,8 @@ class PyMonetDBConnectionContext(object):
                                          port=self.port,
                                          database=self.database,
                                          autocommit=True)
+                self.dbh.set_uploader(transfer_handler)
+                self.dbh.set_downloader(transfer_handler)
             else:
                 self.dbh = malmapi.Connection()
                 self.dbh.connect(
@@ -244,8 +254,15 @@ class TestCaseResult(object):
                     msgs.append( "expected to fail with error code {} but failed with error code {}".format(err_code, self.err_code))
             if err_message:
                 if self.err_message:
-                    if err_message.lower() != self.err_message.lower():
-                        msgs.append("expected to fail with error message '{}' but failed with error message '{}'".format(err_message, self.err_message))
+                    if type(err_message) is type(''):
+                        if err_message.lower() != self.err_message.lower():
+                            msgs.append("expected to fail with error message '{}' but failed with error message '{}'".format(err_message, self.err_message))
+                    else:
+                        for em in err_message:
+                            if em.lower() == self.err_message.lower():
+                                break
+                        else:
+                            msgs.append("expected to fail with error message '{}' but failed with error message '{}'".format(err_message, self.err_message))
                 else:
                     msgs.append("expected to fail with error message '{}' but got '{}'".format(err_message, self.err_message))
             if len(msgs) > 0:
@@ -387,6 +404,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                             self.data = out
                         if err:
                             self.test_run_error = err
+                            self.err_code, self.err_message = self._parse_error(err)
                 self.did_run = True
             except Exception as e:
                 raise SystemExit(e)

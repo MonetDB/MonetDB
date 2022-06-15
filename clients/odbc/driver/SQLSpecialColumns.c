@@ -153,14 +153,14 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 	}
 
 	/* SQLSpecialColumns returns a table with the following columns:
-	   SMALLINT     scope
-	   VARCHAR      column_name NOT NULL
-	   SMALLINT     data_type NOT NULL
-	   VARCHAR      type_name NOT NULL
-	   INTEGER      column_size
-	   INTEGER      buffer_length
-	   SMALLINT     decimal_digits
-	   SMALLINT     pseudo_column
+	   SMALLINT     SCOPE
+	   VARCHAR      COLUMN_NAME NOT NULL
+	   SMALLINT     DATA_TYPE NOT NULL
+	   VARCHAR      TYPE_NAME NOT NULL
+	   INTEGER      COLUMN_SIZE
+	   INTEGER      BUFFER_LENGTH
+	   SMALLINT     DECIMAL_DIGITS
+	   SMALLINT     PSEUDO_COLUMN
 	*/
 	if (IdentifierType == SQL_BEST_ROWID) {
 		/* determine if we need to add a query against the tmp.* tables */
@@ -385,10 +385,11 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			free(tab);
 
 		pos += strcpy_len(query + pos,
-			"select sc.scope, sc.column_name, sc.data_type, "
-			       "sc.type_name, sc.column_size, "
-			       "sc.buffer_length, sc.decimal_digits, "
-			       "sc.pseudo_column "
+			"select sc.scope as \"SCOPE\", "
+			       "sc.column_name AS \"COLUMN_NAME\", sc.\"DATA_TYPE\", "
+			       "sc.\"TYPE_NAME\", sc.\"COLUMN_SIZE\", "
+			       "sc.\"BUFFER_LENGTH\", sc.\"DECIMAL_DIGITS\", "
+			       "sc.pseudo_column as \"PSEUDO_COLUMN\""
 			"from sc "
 			/* condition to only return the primary key if one exists for the table */
 			"where (sc.type = 0 and sc.table_id in (select tid from tid)) "
@@ -400,10 +401,11 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		if (addTmpQuery) {
 			pos += strcpy_len(query + pos,
 				" UNION ALL "
-				"select tmpsc.scope, tmpsc.column_name, tmpsc.data_type, "
-				       "tmpsc.type_name, tmpsc.column_size, "
-				       "tmpsc.buffer_length, tmpsc.decimal_digits, "
-				       "tmpsc.pseudo_column "
+				"select tmpsc.scope as \"SCOPE\", "
+				       "tmpsc.column_name AS \"COLUMN_NAME\", tmpsc.\"DATA_TYPE\", "
+				       "tmpsc.\"TYPE_NAME\", tmpsc.\"COLUMN_SIZE\", "
+				       "tmpsc.\"BUFFER_LENGTH\", tmpsc.\"DECIMAL_DIGITS\", "
+				       "tmpsc.pseudo_column as \"PSEUDO_COLUMN\""
 				"from tmpsc "
 				/* condition to only return the primary key if one exists for the table */
 				"where (tmpsc.type = 0 and tmpsc.table_id in (select tid from tmptid)) "
@@ -422,14 +424,14 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		/* The backend does not have such info available */
 		/* create just a query which results in zero rows */
 		/* Note: pseudo_column is sql_pc_unknown is 0 */
-		query = strdup("select cast(null as smallint) as scope, "
-				      "cast('' as varchar(1)) as column_name, "
-				      "cast(1 as smallint) as data_type, "
-				      "cast('char' as varchar(4)) as type_name, "
-				      "cast(1 as integer) as column_size, "
-				      "cast(1 as integer) as buffer_length, "
-				      "cast(0 as smallint) as decimal_digits, "
-				      "cast(0 as smallint) as pseudo_column "
+		query = strdup("select cast(null as smallint) as \"SCOPE\", "
+				      "cast('' as varchar(1)) as \"COLUMN_NAME\", "
+				      "cast(1 as smallint) as \"DATA_TYPE\", "
+				      "cast('char' as varchar(4)) as \"TYPE_NAME\", "
+				      "cast(1 as integer) as \"COLUMN_SIZE\", "
+				      "cast(1 as integer) as \"BUFFER_LENGTH\", "
+				      "cast(0 as smallint) as \"DECIMAL_DIGITS\", "
+				      "cast(0 as smallint) as \"PSEUDO_COLUMN\" "
 			       "where 0 = 1");
 		if (query == NULL)
 			goto nomem;

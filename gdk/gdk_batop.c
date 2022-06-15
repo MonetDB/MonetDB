@@ -701,8 +701,8 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
+
 	MT_lock_set(&b->theaplock);
-	b->batDirtydesc = true;
 
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
 		if (ni.maxpos != BUN_NONE) {
@@ -1124,9 +1124,13 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	STRMPdestroy(b);
+	/* load hash so that we can maintain it */
+	(void) BATcheckhash(b);
+
 	MT_lock_set(&b->theaplock);
 	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
 		MT_lock_unset(&b->theaplock);
+		bat_iterator_end(&ni);
 		GDKerror("access denied to %s, aborting.\n", BATgetId(b));
 		return GDK_FAIL;
 	}
@@ -1134,9 +1138,6 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	if (ni.count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
-	MT_lock_unset(&b->theaplock);
-	/* load hash so that we can maintain it */
-	(void) BATcheckhash(b);
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;
@@ -1147,6 +1148,9 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	const void *nil = ATOMnilptr(b->ttype);
 	oid hseqend = b->hseqbase + BATcount(b);
+
+	MT_lock_unset(&b->theaplock);
+
 	bool anynil = false;
 	bool locked = false;
 
@@ -1928,7 +1932,6 @@ BATordered(BAT *b)
 	 * changes to the bat descriptor. */
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->tsorted && b->tnosorted == 0) {
-		b->batDirtydesc = true;
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			BAT_ORDERED(bte);
@@ -2081,7 +2084,6 @@ BATordered_rev(BAT *b)
 	}
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
-		b->batDirtydesc = true;
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			BAT_REVORDERED(bte);
@@ -2213,22 +2215,16 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void) {
-		if (!b->tsorted) {
-			b->tsorted = true;
-			b->batDirtydesc = true;
-		}
+		b->tsorted = true;
 		if (b->trevsorted != (is_oid_nil(b->tseqbase) || b->batCount <= 1)) {
 			b->trevsorted = !b->trevsorted;
-			b->batDirtydesc = true;
 		}
 		if (b->tkey != (!is_oid_nil(b->tseqbase) || b->batCount <= 1)) {
 			b->tkey = !b->tkey;
-			b->batDirtydesc = true;
 		}
 	} else if (b->batCount <= 1) {
 		if (!b->tsorted || !b->trevsorted) {
 			b->tsorted = b->trevsorted = true;
-			b->batDirtydesc = true;
 		}
 	}
 	MT_lock_unset(&b->theaplock);
@@ -2794,18 +2790,27 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
  */
 
 void
-PROPdestroy(BAT *b)
+PROPdestroy_nolock(BAT *b)
 {
 	PROPrec *p = b->tprops;
 	PROPrec *n;
 
 	b->tprops = NULL;
 	while (p) {
+		/* only set dirty if a saved property is changed */
 		n = p->next;
 		VALclear(&p->v);
 		GDKfree(p);
 		p = n;
 	}
+}
+
+void
+PROPdestroy(BAT *b)
+{
+	MT_lock_set(&b->theaplock);
+	PROPdestroy_nolock(b);
+	MT_lock_unset(&b->theaplock);
 }
 
 ValPtr
@@ -3019,7 +3024,6 @@ BATcount_no_nil(BAT *b, BAT *s)
 		MT_lock_set(&b->theaplock);
 		if (cnt == BATcount(b) && bi.h == b->theap) {
 			/* we learned something */
-			b->batDirtydesc = true;
 			b->tnonil = true;
 			assert(!b->tnil);
 			b->tnil = false;
@@ -3032,7 +3036,6 @@ BATcount_no_nil(BAT *b, BAT *s)
 			if (cnt == BATcount(pb) &&
 			    bi.h == pb->theap &&
 			    !pb->tnonil) {
-				pb->batDirtydesc = true;
 				pb->tnonil = true;
 				assert(!pb->tnil);
 				pb->tnil = false;
