@@ -279,10 +279,14 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		sabdb *stats = NULL;
 
 		if (!GDKembedded()) {
+			c = MCinitClient(MAL_ADMIN, NULL, NULL);
+			Scenario scenario = findScenario(lang);
+			scenario->initClientCmd(c);
 			/* access control: verify the credentials supplied by the user,
 			* no need to check for database stuff, because that is done per
 			* database itself (one gets a redirect) */
-			err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
+			err = AUTHcheckCredentials(&uid, c, user, passwd, challenge, algo);
+			scenario->exitClientCmd(c);
 			if (err != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", err);
 				exit_streams(fin, fout);

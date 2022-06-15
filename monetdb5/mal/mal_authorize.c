@@ -87,7 +87,7 @@ AUTHfindUser(const char *username)
 }
 
 /**
- * Requires the current client to be the admin user thread.  If not the case,
+ * Requires the current client to be the admin user thread. If not the case,
  * this function returns an InvalidCredentialsException.
  */
 static str
@@ -432,7 +432,7 @@ AUTHcheckCredentials(
 	str pwd = NULL;
 	str hash = NULL;
 	BUN p;
-	BATiter passi;
+	// BATiter passi;
 
 	if (cntxt)
 		rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, username));
@@ -456,13 +456,17 @@ AUTHcheckCredentials(
 		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
 	}
 
+	// WIP load password from users tbl
+	if (authCallbackCntx.get_user_password && cntxt)
+		tmp = authCallbackCntx.get_user_password(cntxt, username);
+
 	/* find the corresponding password to the user */
-	passi = bat_iterator(pass);
-	tmp = (str)BUNtvar(passi, p);
-	assert (tmp != NULL);
+	// passi = bat_iterator(pass);
+	// tmp = (str)BUNtvar(passi, p);
+	// assert (tmp != NULL);
 	/* decypher the password (we lose the original tmp here) */
 	tmp = AUTHdecypherValue(&pwd, tmp);
-	bat_iterator_end(&passi);
+	// bat_iterator_end(&passi);
 	if (tmp)
 		return tmp;
 
@@ -1270,4 +1274,11 @@ AUTHRegisterGetPasswordHandler(get_user_password_handler callback)
 {
 	authCallbackCntx.get_user_password = callback;
 	return MAL_SUCCEED;
+}
+
+
+str
+AUTHGeneratePasswordHash(str *res, const char *value)
+{
+	return AUTHcypherValue(res, value);
 }
