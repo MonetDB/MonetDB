@@ -34,26 +34,30 @@ getUsersTbl(mvc *m)
 
 
 static oid
-getUserOIDByName(mvc *m, str user)
+getUserOIDByName(mvc *m, const char *user)
 {
 	sql_trans *tr = m->session->tr;
 	sqlstore *store = m->session->tr->store;
 	sql_table *users = getUsersTbl(m);
-	return store->table_api.column_find_row(tr, find_sql_column(users, "name"), user, NULL);
+	sql_column *users_name = find_sql_column(users, "name");
+	return store->table_api.column_find_row(tr, users_name, user, NULL);
 }
 
 
 static str
-getPasswordHash(ptr _mvc, str user)
+getPasswordHash(Client c, const char *user)
 {
-	mvc *m = (mvc *) _mvc;
+	str res;
+	mvc *m = ((backend *) c->sqlcontext)->mvc;
 	sql_trans *tr = m->session->tr;
 	sqlstore *store = m->session->tr->store;
 	sql_table *users = getUsersTbl(m);
+	sql_trans_begin(m->session);
 	oid rid = getUserOIDByName(m, user);
 	if (is_oid_nil(rid))
 		return NULL;
-	return store->table_api.column_find_value(tr, find_sql_column(users, "password"), rid);
+	res = store->table_api.column_find_value(tr, find_sql_column(users, "password"), rid);
+	return res;
 }
 
 
@@ -208,7 +212,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 {
 	mvc *m = (mvc *) _mvc;
 	oid rid, uid = 0;
-	str ret, pwd, schema_buf = NULL;
+	str ret, err, pwd, hash, schema_buf = NULL;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"),
@@ -264,9 +268,15 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		pwd = passwd;
 	}
 
+	if ((err = AUTHGeneratePasswordHash(&hash, pwd)) != MAL_SUCCEED) {
+		if (schema_buf)
+			GDKfree(schema_buf);
+		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
+	}
+
 	user_id = store_next_oid(m->session->tr->store);
 	sqlid default_role_id = role_id > 0 ? role_id : user_id;
-	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id))) {
+	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id, &hash))) {
 		if (!enc)
 			free(pwd);
 		if (schema_buf)
@@ -402,12 +412,14 @@ static void
 monet5_create_privileges(ptr _mvc, sql_schema *s)
 {
 	sql_schema *sys;
-	sql_table *t = NULL, *uinfo = NULL;
+	sql_table *t = NULL;
+	sql_table *uinfo = NULL;
 	sql_column *col = NULL;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
 	list *res, *ops;
 	sql_func *f = NULL;
+	str err;
 
 	/* create the authorisation related tables */
 	mvc_create_table(&t, m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
@@ -419,7 +431,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "default_role", "int", 9);
-	// mvc_create_column_(&col, m, t, "password", "varchar", 256);
+	mvc_create_column_(&col, m, t, "password", "varchar", 256);
 	uinfo = t;
 
 	res = sa_list(m->sa);
@@ -452,6 +464,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "default_role", "int", 9);
+	mvc_create_column_(&col, m, t, "password", "varchar", 256);
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	schema_id = sys->base.id;
@@ -459,6 +472,14 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 
 	sqlstore *store = m->session->tr->store;
 	char *username = "monetdb";
+	char *password = mcrypt_BackendSum("monetdb", strlen("monedtb"));
+	char *hash = NULL;
+	if ((err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
+		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");
+		freeException(err);
+		return ;
+	}
+
 	char *fullname = "MonetDB Admin";
 	char *schema_path = default_schema_path;
 	// default values
@@ -467,9 +488,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	int max_workers = 0;
 	sqlid default_role_id = USER_MONETDB;
 
-
 	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory,
-		   	&max_workers, &optimizer, &default_role_id);
+		&max_workers, &optimizer, &default_role_id, &hash);
 }
 
 static int
