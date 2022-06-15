@@ -1,6 +1,25 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Thu Jun  9 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- For SQLForeignKeys() corrected the output of columns UPDATE_RULE and
+  DELETE_RULE. These columns used to always return 3 (= SQL_NO_ACTION)
+  but now they will report the action codes as specified in the FOREIGN KEY
+  CONSTRAINT construction.
+
+* Thu Jun  2 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Fixed issue in function SQLProcedureColumns(). When the argument ColumnName
+  was not empty it generated an invalid SQL query which failed with error:
+   SELECT: no such column 'c.name'. This has been resolved.
+- Corrected implementation of SQLGetInfo(hdbc, SQL_MAX_DRIVER_CONNECTIONS, ...).
+  It used to always return 64. Now it returns the value from the MonetDB server.
+- Changed the column names case of the result sets as returned by
+  SQLTables(), SQLColumns(), SQLSpecialColumns(), SQLPrimaryKeys(),
+  SQLForeignKeys(), SQLStatistics(), SQLTablePrivileges(),
+  SQLColumnPrivileges(), SQLProcedures() and SQLProcedureColumns(). The
+  column names where all in lowercase but the ODBC specification defines
+  them in uppercase, so changed them to uppercase.
+
 * Thu May 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Corrected SQLSpecialColumns(..., SQL_BEST_ROWID, ...). Previously it only
   returned rows when the table had a primary key. Now it also returns

@@ -39,9 +39,6 @@ BATcommit(BAT *b, BUN size)
 	assert(size <= BATcount(b) || size == BUN_NONE);
 	TRC_DEBUG(DELTA, "BATcommit1 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
-	if (!BATdirty(b)) {
-		b->batDirtyflushed = false;
-	}
 	b->batInserted = size < BATcount(b) ? size : BATcount(b);
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
@@ -56,55 +53,8 @@ BATfakeCommit(BAT *b)
 {
 	if (b) {
 		BATcommit(b, BUN_NONE);
-		b->batDirtydesc = b->theap->dirty = false;
+		b->theap->dirty = false;
 		if (b->tvheap)
 			b->tvheap->dirty = false;
 	}
-}
-
-/*
- * The routine @%BATundo@ restores the BAT to the previous commit
- * point.  The inserted elements are removed from the accelerators,
- * deleted from the heap. The guarded elements from uncommitted
- * deletes are inserted into the accelerators.
- */
-void
-BATundo(BAT *b)
-{
-	BUN p, bunlast, bunfirst;
-
-	if (b == NULL)
-		return;
-	MT_lock_set(&b->theaplock);
-	BATiter bi = bat_iterator_nolock(b);
-	assert(b->theap->parentid == b->batCacheid);
-	TRC_DEBUG(DELTA, "BATundo: %s \n", BATgetId(b));
-	if (b->batDirtyflushed) {
-		b->batDirtydesc = b->theap->dirty = true;
-	} else {
-		b->batDirtydesc = b->theap->dirty = false;
-		if (b->tvheap)
-			b->tvheap->dirty = false;
-	}
-	bunfirst = b->batInserted;
-	bunlast = BATcount(b) - 1;
-	if (bunlast >= b->batInserted) {
-		BUN i = bunfirst;
-		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
-
-		HASHdestroy(b);
-		if (tunfix || tatmdel) {
-			for (p = bunfirst; p <= bunlast; p++, i++) {
-				if (tunfix)
-					(void) (*tunfix) (BUNtail(bi, p));
-				if (tatmdel)
-					(*tatmdel) (b->tvheap, (var_t *) BUNtloc(bi, p));
-			}
-		}
-	}
-	b->theap->free = tailsize(b, b->batInserted);
-
-	BATsetcount(b, b->batInserted);
-	MT_lock_unset(&b->theaplock);
 }

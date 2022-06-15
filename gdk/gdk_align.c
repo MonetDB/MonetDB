@@ -274,56 +274,6 @@ BATmaterialize(BAT *b, BUN cap)
 }
 
 /*
- * The @#VIEWunlink@ routine cuts a reference to the parent. Part of the view
- * destroy sequence.
- */
-void
-VIEWunlink(BAT *b)
-{
-	if (b) {
-		MT_lock_set(&b->theaplock);
-
-		bat tp = VIEWtparent(b);
-		bat vtp = VIEWvtparent(b);
-		BAT *tpb = NULL;
-		BAT *vtpb = NULL;
-
-		if (tp)
-			tpb = BBP_cache(tp);
-		if (vtp)
-			vtpb = BBP_cache(vtp);
-
-		if (tpb == NULL && vtpb == NULL) {
-			MT_lock_unset(&b->theaplock);
-			return;
-		}
-
-		/* unlink heaps shared with parent */
-		if (b->theap && b->theap->parentid != b->batCacheid) {
-			HEAPdecref(b->theap, false);
-			b->theap = NULL;
-		}
-		assert(b->tvheap == NULL || b->tvheap->parentid > 0);
-		if (b->tvheap && b->tvheap->parentid != b->batCacheid) {
-			HEAPdecref(b->tvheap, false);
-			b->tvheap = NULL;
-		}
-
-		MT_lock_unset(&b->theaplock);
-
-		MT_lock_set(&b->batIdxLock);
-		/* unlink imprints shared with parent */
-		if (b->timprints &&
-		    b->timprints != (Imprints *) 1 &&
-		    b->timprints->imprints.parentid != b->batCacheid) {
-			IMPSdecref(b->timprints, false);
-			b->timprints = NULL;
-		}
-		MT_lock_unset(&b->batIdxLock);
-	}
-}
-
-/*
  * The remainder are utilities to manipulate the BAT view and not to
  * forget some details in the process.  It expects a position range in
  * the underlying BAT and compensates for outliers.
@@ -388,14 +338,13 @@ VIEWdestroy(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
-	PROPdestroy(b);
-	VIEWunlink(b);
 
 	MT_lock_set(&b->theaplock);
+	PROPdestroy_nolock(b);
 	/* heaps that are left after VIEWunlink are ours, so need to be
 	 * destroyed (and files deleted) */
 	if (b->theap) {
-		HEAPdecref(b->theap, true);
+		HEAPdecref(b->theap, b->theap->parentid == b->batCacheid);
 		b->theap = NULL;
 	}
 	if (b->tvheap) {
@@ -403,7 +352,7 @@ VIEWdestroy(BAT *b)
 		 * our own (not a view), and then it doesn't make sense
 		 * that the offset heap was a view (at least one of them
 		 * had to be) */
-		HEAPdecref(b->tvheap, true);
+		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
 		b->tvheap = NULL;
 	}
 	MT_lock_unset(&b->theaplock);

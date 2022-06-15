@@ -963,7 +963,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	MT_lock_set(&b->theaplock);
 	if (h->nunique == BATcount(b) && !b->tkey) {
 		b->tkey = true;
-		b->batDirtydesc = true;
 	}
 	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG_IF(ACCELERATOR) {

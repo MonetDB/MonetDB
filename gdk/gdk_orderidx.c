@@ -198,7 +198,6 @@ BATorderidx(BAT *b, bool stable)
 			if (!b->tsorted) {
 				b->tsorted = true;
 				b->tnosorted = 0;
-				b->batDirtydesc = true;
 			}
 			MT_lock_unset(&b->theaplock);
 		} else {

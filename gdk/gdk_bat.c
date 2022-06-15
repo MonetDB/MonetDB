@@ -120,6 +120,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		*bn->theap = (Heap) {
 			.parentid = bn->batCacheid,
 			.farmid = BBPselectfarm(role, bn->ttype, offheap),
+			.dirty = true,
 		};
 
 		const char *nme = BBP_physical(bn->batCacheid);
@@ -136,6 +137,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 			*bn->tvheap = (Heap) {
 				.parentid = bn->batCacheid,
 				.farmid = BBPselectfarm(role, bn->ttype, varheap),
+				.dirty = true,
 			};
 			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			strconcat_len(bn->tvheap->filename,
@@ -153,7 +155,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	MT_lock_init(&bn->batIdxLock, name);
 	snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
 	MT_rwlock_init(&bn->thashlock, name);
-	bn->batDirtydesc = true;
 	return bn;
 }
 
@@ -294,14 +295,6 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid, true);
-	if (bn->theap)
-		HEAPdecref(bn->theap, true);
-	if (bn->tvheap)
-		HEAPdecref(bn->tvheap, true);
-	MT_lock_destroy(&bn->theaplock);
-	MT_lock_destroy(&bn->batIdxLock);
-	MT_rwlock_destroy(&bn->thashlock);
-	GDKfree(bn);
 	return NULL;
 }
 
@@ -645,16 +638,11 @@ BATclear(BAT *b, bool force)
 	b->batCount = 0;
 	if (b->ttype == TYPE_void)
 		b->batCapacity = 0;
+	b->theap->free = 0;
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
-	b->batDirtydesc = true;
 	b->theap->dirty = true;
 	BATsettrivprop(b);
-	b->tnosorted = b->tnorevsorted = 0;
-	b->tnokey[0] = b->tnokey[1] = 0;
-	b->tminpos = BUN_NONE;
-	b->tmaxpos = BUN_NONE;
-	b->tunique_est = 0.0;
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
@@ -708,7 +696,7 @@ BATdestroy(BAT *b)
 		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
 	}
-	PROPdestroy(b);
+	PROPdestroy_nolock(b);
 	MT_lock_destroy(&b->theaplock);
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
@@ -939,7 +927,6 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		BATkey(bn, BATtkey(b));
 		bn->tsorted = bi.sorted;
 		bn->trevsorted = bi.revsorted;
-		bn->batDirtydesc = true;
 		bn->tnorevsorted = bi.norevsorted;
 		if (bi.nokey[0] != bi.nokey[1]) {
 			bn->tnokey[0] = bi.nokey[0];
@@ -1313,6 +1300,7 @@ BUNdelete(BAT *b, oid o)
 	BUN p;
 	BATiter bi = bat_iterator_nolock(b);
 	const void *val;
+	bool locked = false;
 
 	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
@@ -1331,7 +1319,6 @@ BUNdelete(BAT *b, oid o)
 	 * unlocked (since we're the only thread that should be changing
 	 * anything) */
 	MT_lock_set(&b->theaplock);
-	b->batDirtydesc = true;
 	if (b->tmaxpos == p)
 		b->tmaxpos = BUN_NONE;
 	if (b->tminpos == p)
@@ -1360,19 +1347,22 @@ BUNdelete(BAT *b, oid o)
 			memcpy(Tloc(b, p), val, b->twidth);
 			HASHinsert(&bi, p, val);
 			MT_lock_set(&b->theaplock);
+			locked = true;
 			if (b->tminpos == BATcount(b) - 1)
 				b->tminpos = p;
 			if (b->tmaxpos == BATcount(b) - 1)
 				b->tmaxpos = p;
-			MT_lock_unset(&b->theaplock);
 		}
 		/* no longer sorted */
-		MT_lock_set(&b->theaplock);
+		if (!locked) {
+			MT_lock_set(&b->theaplock);
+			locked = true;
+		}
 		b->tsorted = b->trevsorted = false;
 		b->theap->dirty = true;
-		MT_lock_unset(&b->theaplock);
 	}
-	MT_lock_set(&b->theaplock);
+	if (!locked)
+		MT_lock_set(&b->theaplock);
 	if (b->tnosorted >= p)
 		b->tnosorted = 0;
 	if (b->tnorevsorted >= p)
@@ -1471,7 +1461,9 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				 * isn't, we're not sure anymore about
 				 * the nil property, so we must clear
 				 * it */
+				MT_lock_set(&b->theaplock);
 				b->tnil = false;
+				MT_lock_unset(&b->theaplock);
 			}
 			if (b->ttype != TYPE_void) {
 				if (bi.maxpos != BUN_NONE) {
@@ -1900,7 +1892,6 @@ BATsetcount(BAT *b, BUN cnt)
 	assert(cnt <= BUN_MAX);
 
 	b->batCount = cnt;
-	b->batDirtydesc = true;
 	if (b->theap->parentid == b->batCacheid) {
 		b->theap->dirty |= b->ttype != TYPE_void && cnt > 0;
 		b->theap->free = tailsize(b, cnt);
@@ -1959,8 +1950,6 @@ BATkey(BAT *b, bool flag)
 			return GDK_FAIL;
 		}
 	}
-	if (b->tkey != flag)
-		b->batDirtydesc = true;
 	b->tkey = flag;
 	if (!flag) {
 		b->tseqbase = oid_nil;
@@ -1989,10 +1978,7 @@ BAThseqbase(BAT *b, oid o)
 	if (b != NULL) {
 		assert(o <= GDK_oid_max);	/* i.e., not oid_nil */
 		assert(o + BATcount(b) <= GDK_oid_max);
-		if (b->hseqbase != o) {
-			b->batDirtydesc = true;
-			b->hseqbase = o;
-		}
+		b->hseqbase = o;
 	}
 }
 
@@ -2003,9 +1989,6 @@ BATtseqbase(BAT *b, oid o)
 	if (b == NULL)
 		return;
 	assert(is_oid_nil(o) || o + BATcount(b) <= GDK_oid_max);
-	if (b->tseqbase != o) {
-		b->batDirtydesc = true;
-	}
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		b->tseqbase = o;
 
@@ -2295,7 +2278,6 @@ BAT *
 BATsetaccess(BAT *b, restrict_t newmode)
 {
 	restrict_t bakmode;
-	bool bakdirty;
 
 	BATcheck(b, NULL);
 	if (newmode != BAT_READ && (isVIEW(b) || b->batSharecnt)) {
@@ -2307,7 +2289,6 @@ BATsetaccess(BAT *b, restrict_t newmode)
 	}
 	MT_lock_set(&b->theaplock);
 	bakmode = b->batRestricted;
-	bakdirty = b->batDirtydesc;
 	if (bakmode != newmode) {
 		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
 		bool wr = (newmode == BAT_WRITE);
@@ -2332,7 +2313,6 @@ BATsetaccess(BAT *b, restrict_t newmode)
 
 		/* set new access mode and mmap modes */
 		b->batRestricted = newmode;
-		b->batDirtydesc = true;
 		if (b->theap->parentid == b->batCacheid)
 			b->theap->newstorage = m1;
 		if (b->tvheap && b->tvheap->parentid == b->batCacheid)
@@ -2343,7 +2323,6 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			/* roll back all changes */
 			MT_lock_set(&b->theaplock);
 			b->batRestricted = bakmode;
-			b->batDirtydesc = bakdirty;
 			b->theap->newstorage = b1;
 			if (b->tvheap)
 				b->tvheap->newstorage = b3;
