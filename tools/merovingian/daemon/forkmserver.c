@@ -399,10 +399,13 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
+			close(pfdo[1]);
+			close(pfde[1]);
 			return newErr("Failed to open file descriptor\n");
 		}
 		if(!(f2 = fdopen(pfde[1], "a"))) {
 			fclose(f1);
+			close(pfde[1]);
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
@@ -443,6 +446,10 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
+		close(pfdo[0]);
+		close(pfdo[1]);
+		close(pfde[0]);
+		close(pfde[1]);
 		return(newErr("cannot start database '%s': no .vaultkey found "
 					  "(did you create the database with `monetdb create %s`?)",
 					  database, database));
@@ -454,6 +461,10 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
+		close(pfdo[0]);
+		close(pfdo[1]);
+		close(pfde[0]);
+		close(pfde[1]);
 		return(er);
 	}
 
@@ -696,15 +707,15 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		int dup_err;
 		close(pfdo[0]);
 		dup_err = dup2(pfdo[1], 1);
+		if(dup_err == -1)
+			perror("dup2");
 		close(pfdo[1]);
 
 		close(pfde[0]);
-		if(dup_err == -1)
-			perror("dup2");
 		dup_err = dup2(pfde[1], 2);
-		close(pfde[1]);
 		if(dup_err == -1)
 			perror("dup2");
+		close(pfde[1]);
 
 		write_error = write(1, "arguments:", 10);
 		for (c = 0; argv[c] != NULL; c++) {
