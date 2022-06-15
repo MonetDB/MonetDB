@@ -820,8 +820,7 @@ command_status(int argc, char *argv[])
 		prev = NULL;
 		while (stats != NULL) {
 			if (stats->locked == curLock &&
-					(curLock ||
-					 (!curLock && stats->state == curMode)))
+					(curLock || stats->state == curMode))
 			{
 				sabdb *next = stats->next;
 				stats->next = neworig;
