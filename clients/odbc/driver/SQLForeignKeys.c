@@ -139,9 +139,9 @@ MNDBForeignKeys(ODBCStmt *stmt,
 		}
 	}
 
-	/* first create a string buffer (1200 extra bytes is plenty:
-	   we actually need just over 1000) */
-	querylen = 1200 + (2 * strlen(stmt->Dbc->dbname)) +
+	/* first create a string buffer (1300 extra bytes is plenty:
+	   we actually need just over 1100) */
+	querylen = 1300 + (2 * strlen(stmt->Dbc->dbname)) +
 		(psch ? strlen(psch) : 0) + (ptab ? strlen(ptab) : 0) +
 		(fsch ? strlen(fsch) : 0) + (ftab ? strlen(ftab) : 0);
 	query = malloc(querylen);
@@ -167,35 +167,44 @@ MNDBForeignKeys(ODBCStmt *stmt,
 
 	pos += snprintf(query + pos, querylen - pos,
 		"select '%s' as \"PKTABLE_CAT\", "
-		       "pks.name as \"PKTABLE_SCHEM\", "
-		       "pkt.name as \"PKTABLE_NAME\", "
-		       "pkkc.name as \"PKCOLUMN_NAME\", "
-		       "'%s' as \"FKTABLE_CAT\", "
-		       "fks.name as \"FKTABLE_SCHEM\", "
-		       "fkt.name as \"FKTABLE_NAME\", "
-		       "fkkc.name as \"FKCOLUMN_NAME\", "
-		       "cast(fkkc.nr + 1 as smallint) as \"KEY_SEQ\", "
-		       "cast(%d as smallint) as \"UPDATE_RULE\", "
-		       "cast(%d as smallint) as \"DELETE_RULE\", "
-		       "fkk.name as \"FK_NAME\", "
-		       "pkk.name as \"PK_NAME\", "
-		       "cast(%d as smallint) as \"DEFERRABILITY\" "
-		"from sys.schemas fks, sys.tables fkt, "
-		     "sys.objects fkkc, sys.keys as fkk, "
-		     "sys.schemas pks, sys.tables pkt, "
-		     "sys.objects pkkc, sys.keys as pkk "
-		"where fkt.id = fkk.table_id and "
-		      "pkt.id = pkk.table_id and "
+			"pks.name as \"PKTABLE_SCHEM\", "
+			"pkt.name as \"PKTABLE_NAME\", "
+			"pkkc.name as \"PKCOLUMN_NAME\", "
+			"'%s' as \"FKTABLE_CAT\", "
+			"fks.name as \"FKTABLE_SCHEM\", "
+			"fkt.name as \"FKTABLE_NAME\", "
+			"fkkc.name as \"FKCOLUMN_NAME\", "
+			"cast(fkkc.nr + 1 as smallint) as \"KEY_SEQ\", "
+			/* logic for "action" value interpretation pulled from clients/mapiclient/dump.c dump_foreign_keys() */
+			/* for "action" code values meaning see table: sys.fkey_actions */
+			"cast(CASE ((fkk.\"action\" >> 8) & 255)"
+			" WHEN 0 THEN %d WHEN 1 THEN %d WHEN 2 THEN %d"
+			" WHEN 3 THEN %d WHEN 4 THEN %d ELSE %d END"
+			" AS smallint) as \"UPDATE_RULE\", "
+			"cast(CASE (fkk.\"action\" & 255)"
+			" WHEN 0 THEN %d WHEN 1 THEN %d WHEN 2 THEN %d"
+			" WHEN 3 THEN %d WHEN 4 THEN %d ELSE %d END"
+			" AS smallint) as \"DELETE_RULE\", "
+			"fkk.name as \"FK_NAME\", "
+			"pkk.name as \"PK_NAME\", "
+			"cast(%d as smallint) as \"DEFERRABILITY\" "
+		"from sys.keys as fkk, sys.objects fkkc, sys.tables fkt, sys.schemas fks, "
+		     "sys.keys as pkk, sys.objects pkkc, sys.tables pkt, sys.schemas pks "
+		"where fkk.rkey > 0 and "	/* exclude invalid rkey references, such as -1 first */
+		      "fkk.rkey = pkk.id and "
 		      "fkk.id = fkkc.id and "
 		      "pkk.id = pkkc.id and "
+		      "fkkc.nr = pkkc.nr and "
+		      "fkt.id = fkk.table_id and "
+		      "pkt.id = pkk.table_id and "
 		      "fks.id = fkt.schema_id and "
-		      "pks.id = pkt.schema_id and "
-		      "fkk.rkey = pkk.id and "
-		      "fkkc.nr = pkkc.nr",
+		      "pks.id = pkt.schema_id",
 		stmt->Dbc->dbname,
 		stmt->Dbc->dbname,
-		SQL_NO_ACTION, SQL_NO_ACTION, SQL_NOT_DEFERRABLE);
-	assert(pos < 1100);
+		SQL_NO_ACTION, SQL_CASCADE, SQL_RESTRICT, SQL_SET_NULL, SQL_SET_DEFAULT, SQL_NO_ACTION,
+		SQL_NO_ACTION, SQL_CASCADE, SQL_RESTRICT, SQL_SET_NULL, SQL_SET_DEFAULT, SQL_NO_ACTION,
+		SQL_NOT_DEFERRABLE);
+	assert(pos < 1200);
 
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && PKCatalogName != NULL) {
@@ -233,15 +242,18 @@ MNDBForeignKeys(ODBCStmt *stmt,
 		free(ftab);
 	}
 
-/* TODO finish the FROM and WHERE clauses */
-
 	/* add the ordering */
 	/* if PKTableName != NULL, selection on primary key, order
 	   on FK output columns, else order on PK output columns */
+	/* MvD: added additional ordering on FK_NAME or PK_NAME to get proper ordering
+	   for multiple multi-column fks to the same multi-column pk from one table */
 	pos += snprintf(query + pos, querylen - pos,
-			" order by \"%sTABLE_SCHEM\", \"%sTABLE_NAME\", \"KEY_SEQ\"",
+			" order by \"%sTABLE_SCHEM\", \"%sTABLE_NAME\", \"%s_NAME\", \"KEY_SEQ\"",
+			PKTableName != NULL ? "FK" : "PK",
 			PKTableName != NULL ? "FK" : "PK",
 			PKTableName != NULL ? "FK" : "PK");
+
+	/* debug: fprintf(stdout, "SQLForeignKeys SQL (%zu):\n%s\n\n", pos, query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
@@ -348,7 +360,7 @@ SQLForeignKeysW(SQLHSTMT StatementHandle,
 #endif
 
 	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
 

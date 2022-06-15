@@ -2050,7 +2050,7 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 				uint16_t width;
 				char *fname;
 				struct stat stb;
-				switch (sscanf(buf, "%" SCNu64 " %*u %*s %19s %*u %*u %*u %*u %10s %" SCNu16 " %*u %*u %*u %*u %*u %*u %*u %" SCNu64 " %*u %*u %*u %*u %" SCNu64 " %*u %*u",
+				switch (sscanf(buf, "%" SCNu64 " %*u %*s %19s %*u %*u %*u %10s %" SCNu16 " %*u %*u %*u %*u %*u %*u %*u %" SCNu64 " %*u %*u %" SCNu64,
 					       &batid, filename, type, &width, &free, &vfree)) {
 				case 5:
 					vfree = 0;
