@@ -317,6 +317,8 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
 			}
+			fclose(m->sout);
+			fclose(m->serr);
 			free(m->dbcv);
 			free(m->pool);
 			free(m);
@@ -331,6 +333,8 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
 			}
+			fclose(m->sout);
+			fclose(m->serr);
 			free(m->dbcv);
 			free(m->pool);
 			free(m);
@@ -353,6 +357,8 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 			free(m->dbcv[i]->user);
 			free(m->dbcv[i]);
 		}
+		fclose(m->sout);
+		fclose(m->serr);
 		free(m->dbcv);
 		free(m->pool);
 		free(m);
@@ -367,6 +373,8 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
 			}
+			fclose(m->sout);
+			fclose(m->serr);
 			free(m->dbcv);
 			free(m->pool);
 			free(m);
