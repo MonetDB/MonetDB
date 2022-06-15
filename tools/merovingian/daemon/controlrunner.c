@@ -1259,9 +1259,24 @@ controlRunner(void *d)
 			free(p);
 			if (_mero_keep_listening == 0)
 				break;
-			if (errno != EINTR) {
+			switch (errno) {
+			case EMFILE:
+			case ENFILE:
+			case ENOBUFS:
+			case ENOMEM:
+				/* transient failure, wait a little and continue */
 				Mfprintf(_mero_ctlerr, "error during accept: %s",
 						strerror(errno));
+				sleep_ms(500);
+				break;
+			case EINTR:
+				/* interrupted */
+				break;
+			default:
+				/* anything else */
+				Mfprintf(_mero_ctlerr, "error during accept: %s",
+						strerror(errno));
+				break;
 			}
 			continue;
 		}
