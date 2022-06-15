@@ -3384,14 +3384,12 @@ wkbMakeLineAggr(wkb **outWKB, bat *bid)
 	return err;
 }
 
-static str
+/*static str
 wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
 	str msg = MAL_SUCCEED;
 	int i;
 	wkb *aWKB, *bWKB;
 
-	/* TODO: what should be returned if the input is less than
-	 * two rows? --sjoerd */
 	if (size == 0) {
 		if ((*outWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3419,6 +3417,70 @@ wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
 		msg = wkbMakeLine(outWKB, &aWKB, &bWKB);
 		GDKfree(aWKB);
 	}
+	return msg;
+}*/
+
+static str
+wkbExtractPointToCoordSeq(GEOSCoordSeq *outCoordSeq, wkb *inWKB, int index) {
+	double x,y;
+	str msg = MAL_SUCCEED;
+	GEOSGeom inGeometry;
+	const GEOSCoordSequence *inCoordSeq = NULL;
+
+	inGeometry = wkb2geos(inWKB);
+	if (!inGeometry) {
+		throw(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation wkb2geos failed");
+	}
+	inCoordSeq = GEOSGeom_getCoordSeq(inGeometry);
+	GEOSCoordSeq_getX(inCoordSeq, 0, &x);
+	GEOSCoordSeq_getY(inCoordSeq, 0, &y);
+	if (!GEOSCoordSeq_setX(*outCoordSeq, index, x) ||
+	    !GEOSCoordSeq_setY(*outCoordSeq, index, y)) {
+		throw(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSCoordSeq_set[XY] failed");
+	}
+	return msg;
+}
+
+static str
+wkbMakeLineAggrArray2(wkb **outWKB, wkb **inWKB_array, int size) {
+	str msg = MAL_SUCCEED;
+	int i;
+	wkb *aWKB, *bWKB;
+	GEOSGeom outGeometry;
+	GEOSCoordSeq outCoordSeq = NULL;
+
+	/* TODO: what should be returned if the input is less than
+	 * two rows? --sjoerd */
+	if (size == 0) {
+		if ((*outWKB = wkbNULLcopy()) == NULL)
+			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+	aWKB = inWKB_array[0];
+	if (size == 1) {
+		msg = wkbFromWKB(outWKB, &aWKB);
+		if (msg) {
+			freeException(msg);
+			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		return MAL_SUCCEED;
+	}
+	bWKB = inWKB_array[1];
+	//create the first line using the first two geometries
+	//msg = wkbMakeLine(outWKB, &aWKB, &bWKB);
+	outCoordSeq = GEOSCoordSeq_create(size, 2);
+
+	msg = wkbExtractPointToCoordSeq(&outCoordSeq, aWKB, 0);
+	msg = wkbExtractPointToCoordSeq(&outCoordSeq, bWKB, 1);
+
+	// add one more segment for each following row
+	for (i = 2; msg == MAL_SUCCEED && i < size; i++) {
+		msg = wkbExtractPointToCoordSeq(&outCoordSeq, inWKB_array[i], i);
+	}
+	if ((outGeometry = GEOSGeom_createLineString(outCoordSeq)) == NULL) {
+		msg = createException(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSGeom_createLineString failed");
+	}
+	*outWKB = geos2wkb(outGeometry);
 	return msg;
 }
 
@@ -3510,14 +3572,14 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 
 		if (grp != lastGrp) {
 			if (lastGrp != (oid)-1) {
-				msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
+				msg = wkbMakeLineAggrArray2(&lines[lastGrp], lineGroup, position);
 				position = 0;
 			}
 			lastGrp = grp;
 		}
 		lineGroup[position++] = inWKB;
 	}
-	msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
+	msg = wkbMakeLineAggrArray2(&lines[lastGrp], lineGroup, position);
 
 	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
 		//TODO Free out BAT
