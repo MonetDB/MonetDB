@@ -2671,14 +2671,14 @@ bbpclear(bat i, int idx, bool lock)
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
 	if (lock) {
 		MT_lock_set(&GDKcacheLock(idx));
-		MT_lock_set(&GDKswapLock(idx));
+		MT_lock_set(&GDKswapLock(i));
 	}
 
 	BBP_status_set(i, BBPUNLOADING);
 	BBP_refs(i) = 0;
 	BBP_lrefs(i) = 0;
 	if (lock)
-		MT_lock_unset(&GDKswapLock(idx));
+		MT_lock_unset(&GDKswapLock(i));
 	if (!BBPtmpcheck(BBP_logical(i))) {
 		MT_lock_set(&BBPnameLock);
 		BBP_delete(i);
