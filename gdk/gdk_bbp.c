@@ -1403,16 +1403,16 @@ BBPtrim(bool aggressive)
 		MT_lock_set(&GDKswapLock(bid));
 		BAT *b = NULL;
 		bool swap = false;
-		if (BBP_refs(bid) == 0 &&
+		if (!(BBP_status(bid) & flag) &&
+		    BBP_refs(bid) == 0 &&
 		    BBP_lrefs(bid) != 0 &&
 		    (b = BBP_cache(bid)) != NULL) {
 			MT_lock_set(&b->theaplock);
 			if (b->batSharecnt == 0 &&
 			    !isVIEW(b) &&
-			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
-			    !(BBP_status(bid) & flag) /*&&
+			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) /*&&
 			    (BBP_status(bid) & BBPPERSISTENT ||
-			    (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
+			     (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
 				BBP_status_on(bid, BBPUNLOADING);
 				swap = true;
 			}
@@ -2595,12 +2595,12 @@ bbpclear(bat i, bool lock)
 	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
-	if (lock)
+	if (lock) {
 		MT_lock_set(&GDKcacheLock);
+		MT_lock_set(&GDKswapLock(i));
+	}
 
 	BBP_status_set(i, BBPUNLOADING);
-	if (lock)
-		MT_lock_set(&GDKswapLock(i));
 	BBP_refs(i) = 0;
 	BBP_lrefs(i) = 0;
 	if (lock)
