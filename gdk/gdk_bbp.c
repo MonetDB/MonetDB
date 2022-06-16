@@ -1385,17 +1385,20 @@ BBPtrim(bool aggressive)
 		MT_lock_set(&GDKswapLock(bid));
 		BAT *b = NULL;
 		bool swap = false;
-		if (BBP_refs(bid) == 0 &&
+		if (!(BBP_status(bid) & flag) &&
+		    BBP_refs(bid) == 0 &&
 		    BBP_lrefs(bid) != 0 &&
-		    (b = BBP_cache(bid)) != NULL &&
-		    b->batSharecnt == 0 &&
-		    !isVIEW(b) &&
-		    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
-		    !(BBP_status(bid) & flag) /*&&
-		    (BBP_status(bid) & BBPPERSISTENT ||
-		    (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
-			BBP_status_on(bid, BBPUNLOADING);
-			swap = true;
+		    (b = BBP_cache(bid)) != NULL) {
+			MT_lock_set(&b->theaplock);
+			if (b->batSharecnt == 0 &&
+			    !isVIEW(b) &&
+			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) /*&&
+			    (BBP_status(bid) & BBPPERSISTENT ||
+			     (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
+				BBP_status_on(bid, BBPUNLOADING);
+				swap = true;
+			}
+			MT_lock_unset(&b->theaplock);
 		}
 		MT_lock_unset(&GDKswapLock(bid));
 		if (swap) {
@@ -2666,12 +2669,16 @@ bbpclear(bat i, int idx, bool lock)
 	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
-	if (lock)
+	if (lock) {
 		MT_lock_set(&GDKcacheLock(idx));
+		MT_lock_set(&GDKswapLock(idx));
+	}
 
 	BBP_status_set(i, BBPUNLOADING);
 	BBP_refs(i) = 0;
 	BBP_lrefs(i) = 0;
+	if (lock)
+		MT_lock_unset(&GDKswapLock(idx));
 	if (!BBPtmpcheck(BBP_logical(i))) {
 		MT_lock_set(&BBPnameLock);
 		BBP_delete(i);
