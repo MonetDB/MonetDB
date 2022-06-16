@@ -1290,6 +1290,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
         os.environ['TSTTRGDIR'] = TSTTRGDIR
         os.environ['RELSRCDIR'] = env['RELSRCDIR']
         os.environ['HAVE_HGE'] = CONDITIONALS['HAVE_HGE']
+        os.environ['HAVE_SHP'] = CONDITIONALS['HAVE_SHP']
         os.environ['TST_BITS'] = env['TST_BITS']
         if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
             env['TSTDATAPATH'] = TSTDATAPATH
