@@ -460,6 +460,10 @@ AUTHcheckCredentials(
 	if (authCallbackCntx.get_user_password && cntxt)
 		tmp = authCallbackCntx.get_user_password(cntxt, username);
 
+	if (strNil(tmp)) {
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
+	}
+
 	/* find the corresponding password to the user */
 	// passi = bat_iterator(pass);
 	// tmp = (str)BUNtvar(passi, p);
