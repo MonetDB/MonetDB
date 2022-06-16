@@ -1290,6 +1290,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
         os.environ['TSTTRGDIR'] = TSTTRGDIR
         os.environ['RELSRCDIR'] = env['RELSRCDIR']
         os.environ['HAVE_HGE'] = CONDITIONALS['HAVE_HGE']
+        os.environ['HAVE_SHP'] = CONDITIONALS['HAVE_SHP']
         os.environ['TST_BITS'] = env['TST_BITS']
         if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
             env['TSTDATAPATH'] = TSTDATAPATH
@@ -1764,7 +1765,7 @@ def GetBitsAndModsAndThreads(env) :
         if not env['TST_BITS'] or not env['TST_MODS']:
             print(' '.join(cmd) + "\n\n", file=sys.stderr, end='')
             print(qOut, file=sys.stderr, end='')
-            print.write(file=sys.stderr)
+            print(file=sys.stderr)
             print(qErr, file=sys.stderr, flush=True)
             rtrn = 1
     else:
