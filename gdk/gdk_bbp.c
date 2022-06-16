@@ -996,7 +996,7 @@ BBPcheckbats(unsigned bbpversion)
 #endif
 
 static unsigned
-BBPheader(FILE *fp, int *lineno, bat *bbpsize)
+BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid)
 {
 	char buf[BUFSIZ];
 	int sz, ptrsize, oidsize, intsize;
@@ -1061,13 +1061,12 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize)
 			TRC_CRITICAL(GDK, "short BBP");
 			return 0;
 		}
-		lng logno, transid;
-		if (sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &logno, &transid) != 2) {
+		if (sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, logno, transid) != 2) {
 			TRC_CRITICAL(GDK, "no info value found\n");
 			return 0;
 		}
-		ATOMIC_SET(&BBPlogno, logno);
-		ATOMIC_SET(&BBPtransid, transid);
+	} else {
+		*logno = *transid = 0;
 	}
 	return bbpversion;
 }
@@ -1646,11 +1645,16 @@ BBPinit(void)
 	if (GDKinmemory(0)) {
 		bbpversion = GDKLIBRARY;
 	} else {
-		bbpversion = BBPheader(fp, &lineno, &bbpsize);
+		lng logno, transid;
+		bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid);
 		if (bbpversion == 0) {
 			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
+		assert(bbpversion > GDKLIBRARY_MINMAX_POS || logno == 0);
+		assert(bbpversion > GDKLIBRARY_MINMAX_POS || transid == 0);
+		ATOMIC_SET(&BBPlogno, logno);
+		ATOMIC_SET(&BBPtransid, transid);
 	}
 
 	/* allocate BBP records */
@@ -3748,12 +3752,17 @@ BBPcheckBBPdir(bool subcommit)
 	int lineno = 0;
 	bat bbpsize = 0;
 	unsigned bbpversion;
+	lng logno, transid;
 
 	fp = GDKfileopen(0, BATDIR, "BBP", "dir", "r");
 	assert(fp != NULL);
 	if (fp == NULL)
 		return;
-	bbpversion = BBPheader(fp, &lineno, &bbpsize);
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid);
+	if (bbpversion == 0) {
+		fclose(fp);
+		return;		/* error reading file */
+	}
 	assert(bbpversion == GDKLIBRARY);
 
 	for (;;) {
