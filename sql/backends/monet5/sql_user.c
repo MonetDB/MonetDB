@@ -48,16 +48,20 @@ static str
 getPasswordHash(Client c, const char *user)
 {
 	str res;
-	mvc *m = ((backend *) c->sqlcontext)->mvc;
-	sql_trans *tr = m->session->tr;
-	sqlstore *store = m->session->tr->store;
-	sql_table *users = getUsersTbl(m);
-	sql_trans_begin(m->session);
-	oid rid = getUserOIDByName(m, user);
-	if (is_oid_nil(rid))
-		return NULL;
-	res = store->table_api.column_find_value(tr, find_sql_column(users, "password"), rid);
-	return res;
+	backend *be = (backend *) c->sqlcontext;
+	if (be) {
+		mvc *m = be->mvc;
+		sql_trans *tr = m->session->tr;
+		sqlstore *store = m->session->tr->store;
+		sql_table *users = getUsersTbl(m);
+		sql_trans_begin(m->session);
+		oid rid = getUserOIDByName(m, user);
+		if (is_oid_nil(rid))
+			return NULL;
+		res = store->table_api.column_find_value(tr, find_sql_column(users, "password"), rid);
+		return res;
+	}
+	return NULL;
 }
 
 

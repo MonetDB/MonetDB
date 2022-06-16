@@ -280,7 +280,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 		if (!GDKembedded()) {
 			c = MCinitClient(MAL_ADMIN, NULL, NULL);
-			Scenario scenario = findScenario(lang);
+			Scenario scenario = findScenario("sql");
 			scenario->initClientCmd(c);
 			/* access control: verify the credentials supplied by the user,
 			* no need to check for database stuff, because that is done per
