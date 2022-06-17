@@ -305,6 +305,12 @@ def remove(file):
         pass
     except IsADirectoryError:
         shutil.rmtree(file)
+    except PermissionError:
+        # on Windows we get a weird error from os.remove on a directory
+        if os.name == "nt":
+            shutil.rmtree(file)
+        else:
+            Warn('could not remove {}'.format(file))
     except:
         Warn('could not remove {}'.format(file))
 
