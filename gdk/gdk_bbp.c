@@ -596,7 +596,7 @@ heapinit(BAT *b, const char *buf,
  * in the structure pointed to by bn and extra information through the
  * other pointers; this function does not allocate any memory; return 0
  * on end of file, 1 on success, and -1 on failure */
-static int
+int
 BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 #ifdef GDKLIBRARY_HASHASH
 	       int *hashash,
@@ -995,7 +995,7 @@ BBPcheckbats(unsigned bbpversion)
 #define SIZEOF_MAX_INT SIZEOF_LNG
 #endif
 
-static unsigned
+unsigned
 BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid)
 {
 	char buf[BUFSIZ];
@@ -1356,7 +1356,7 @@ fixhashashbat(BAT *b)
 	/* cleanup */
 	HEAPfree(&h1, false);
 	HEAPfree(&vh1, false);
-	if (HEAPsave(h2, nme, gettailname(b), true, h2->free, NULL) != GDK_SUCCEED) {
+	if (HEAPsave(h2, nme, BATtailname(b), true, h2->free, NULL) != GDK_SUCCEED) {
 		HEAPdecref(h2, false);
 		HEAPdecref(b->tvheap, false);
 		b->tvheap = ovh;
@@ -3681,7 +3681,7 @@ BBPbackup(BAT *b, bool subcommit)
 		*nme++ = '\0';	/* split into directory and file name */
 
 		if (bi.type != TYPE_void) {
-			rc = do_backup(srcdir, nme, gettailnamebi(&bi), bi.h,
+			rc = do_backup(srcdir, nme, BATITERtailname(&bi), bi.h,
 				       bi.hdirty, subcommit);
 			if (rc == GDK_SUCCEED && bi.vh != NULL)
 				rc = do_backup(srcdir, nme, "theap", bi.vh,
@@ -3891,7 +3891,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					char o[10];
 					char *f;
 					snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
-					f = GDKfilepath(b->theap->farmid, BAKDIR, o, gettailname(b));
+					f = GDKfilepath(b->theap->farmid, BAKDIR, o, BATtailname(b));
 					if (f == NULL) {
 						if (lock)
 							MT_lock_unset(&GDKswapLock(i));
@@ -3899,7 +3899,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 						goto bailout;
 					}
 					if (MT_access(f, F_OK) == 0)
-						file_move(b->theap->farmid, BAKDIR, SUBDIR, o, gettailname(b));
+						file_move(b->theap->farmid, BAKDIR, SUBDIR, o, BATtailname(b));
 					GDKfree(f);
 					f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap");
 					if (f == NULL) {
