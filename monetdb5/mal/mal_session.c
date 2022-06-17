@@ -171,6 +171,17 @@ is_exiting(void *data)
 
 static str MSserveClient(Client cntxt);
 
+
+static inline void
+cleanUpScheduleClient(bstream *fin, stream *fout, str command, str err)
+{
+	if (err)
+		freeException(err);
+	exit_streams(fin, fout);
+	GDKfree(command);
+}
+
+
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
@@ -279,21 +290,28 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		sabdb *stats = NULL;
 
 		if (!GDKembedded()) {
-			c = MCinitClient(MAL_ADMIN, NULL, NULL);
+			if ((c = MCinitClient(MAL_ADMIN, NULL, NULL)) == NULL) {
+				if ( MCshutdowninprogress())
+					mnstr_printf(fout, "!system shutdown in progress, please try again later\n");
+				else
+					mnstr_printf(fout, "!maximum concurrent client limit reached "
+									   "(%d), please try again later\n", MAL_MAXCLIENTS);
+				return cleanUpScheduleClient(fin, fout, command, NULL);
+			}
 			Scenario scenario = findScenario("sql");
 			scenario->initClientCmd(c);
 			/* access control: verify the credentials supplied by the user,
 			* no need to check for database stuff, because that is done per
 			* database itself (one gets a redirect) */
-			err = AUTHcheckCredentials(&uid, c, user, passwd, challenge, algo);
-			scenario->exitClientCmd(c);
-			if (err != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", err);
-				exit_streams(fin, fout);
-				freeException(err);
-				GDKfree(command);
-				return;
+			if ((msg = AUTHcheckCredentials(&uid, c, user, passwd, challenge, algo)) != MAL_SUCCEED) {
+				mnstr_printf(fout, "!%s\n", msg);
+				return cleanUpScheduleClient(fin, fout, command, msg);
 			}
+			if((msg = scenario->exitClientCmd(c)) != MAL_SUCCEED) {
+				mnstr_printf(fout, "!%s\n", msg);
+				return cleanUpScheduleClient(fin, fout, command, msg);
+			}
+			MCfreeClient(c);
 		}
 
 
