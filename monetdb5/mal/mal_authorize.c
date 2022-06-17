@@ -49,6 +49,7 @@ static str vaultKey = NULL;
 static str master_password = NULL;
 static AUTHCallbackCntx authCallbackCntx = {
 	.get_user_password = NULL,
+	.get_user_oid = NULL
 };
 
 void AUTHreset(void)
@@ -431,7 +432,7 @@ AUTHcheckCredentials(
 	str tmp;
 	str pwd = NULL;
 	str hash = NULL;
-	BUN p;
+	oid p = oid_nil;
 	// BATiter passi;
 
 	if (cntxt)
@@ -442,10 +443,11 @@ AUTHcheckCredentials(
 	if (strNil(username))
 		throw(INVCRED, "checkCredentials", "invalid credentials for unknown user");
 
-	p = AUTHfindUser(username);
-	if (p == BUN_NONE) {
-		/* DO NOT reveal that the user doesn't exist here! */
-		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
+	if (authCallbackCntx.get_user_oid && cntxt) {
+		if ((p = authCallbackCntx.get_user_oid(cntxt, username)) == oid_nil) {
+			/* DO NOT reveal that the user doesn't exist here! */
+			throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
+		}
 	}
 
 	/* a NULL password is impossible (since we should be dealing with
@@ -456,7 +458,7 @@ AUTHcheckCredentials(
 		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
 	}
 
-	// WIP load password from users tbl
+	// load password from users tbl
 	if (authCallbackCntx.get_user_password && cntxt)
 		tmp = authCallbackCntx.get_user_password(cntxt, username);
 
@@ -1280,6 +1282,13 @@ AUTHRegisterGetPasswordHandler(get_user_password_handler callback)
 	return MAL_SUCCEED;
 }
 
+
+str
+AUTHRegisterGetUserOIDHandler(get_user_oid_handler callback)
+{
+	authCallbackCntx.get_user_oid = callback;
+	return MAL_SUCCEED;
+}
 
 str
 AUTHGeneratePasswordHash(str *res, const char *value)
