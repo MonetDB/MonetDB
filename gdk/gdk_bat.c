@@ -180,7 +180,7 @@ BATsetdims(BAT *b, uint16_t width)
 }
 
 const char *
-gettailname(const BAT *b)
+BATtailname(const BAT *b)
 {
 	if (b->ttype == TYPE_str) {
 		switch (b->twidth) {
