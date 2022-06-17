@@ -47,12 +47,15 @@ mal_export str AUTHdeleteRemoteTableCredentials(const char *local_table);
 mal_export str AUTHunlockVault(const char *password);
 
 typedef str (*get_user_password_handler)(Client c, const char *user);
+typedef oid (*get_user_oid_handler)(Client c, const char *user);
 
 typedef struct AUTHCallbackCntx {
 	get_user_password_handler get_user_password;
+	get_user_oid_handler get_user_oid;
 } AUTHCallbackCntx;
 
 mal_export str AUTHRegisterGetPasswordHandler(get_user_password_handler callback);
+mal_export str AUTHRegisterGetUserOIDHandler(get_user_oid_handler callback);
 mal_export str AUTHGeneratePasswordHash(str *res, const char *value);
 
 #endif /* _MAL_AUTHORIZE_H */

@@ -65,11 +65,24 @@ getPasswordHash(Client c, const char *user)
 }
 
 
+static oid
+getUserOID(Client c, const char *user)
+{
+	backend *be = (backend *) c->sqlcontext;
+	if (be) {
+		mvc *m = be->mvc;
+		return getUserOIDByName(m, user);
+	}
+	return oid_nil;
+}
+
+
 static void
 monet5_set_user_api_hooks(ptr mvc)
 {
 	(void) mvc;
 	AUTHRegisterGetPasswordHandler(&getPasswordHash);
+	AUTHRegisterGetUserOIDHandler(&getUserOID);
 }
 
 
