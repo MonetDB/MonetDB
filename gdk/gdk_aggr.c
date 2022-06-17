@@ -3947,9 +3947,12 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 				if (r == 0) {
 					/* there are no nils, record that */
 					MT_lock_set(&b->theaplock);
-					b->tnonil = true;
+					if (b->batCount == bi.count) {
+						b->tnonil = true;
+					}
 					MT_lock_unset(&b->theaplock);
 				}
+				bat_iterator_end(&bi);
 			} else {
 				r = 0;
 			}

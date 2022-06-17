@@ -1109,8 +1109,10 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				/* range bounded on left */		\
 				if (!li) {				\
 					/* open range on left */	\
-					if (*(TYPE*)tl == MAXVALUE##TYPE) \
+					if (*(TYPE*)tl == MAXVALUE##TYPE) { \
+						bat_iterator_end(&bi);	\
 						return BATdense(0, 0, 0); \
+					}				\
 					/* vl < x === vl+1 <= x */	\
 					vl.v_##TYPE = NEXTVALUE##TYPE(*(TYPE*)tl); \
 					li = true;			\
@@ -1127,8 +1129,10 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				/* range bounded on right */		\
 				if (!hi) {				\
 					/* open range on right */	\
-					if (*(TYPE*)th == MINVALUE##TYPE) \
+					if (*(TYPE*)th == MINVALUE##TYPE) { \
+						bat_iterator_end(&bi);	\
 						return BATdense(0, 0, 0); \
+					}				\
 					/* x < vh === x <= vh-1 */	\
 					vh.v_##TYPE = PREVVALUE##TYPE(*(TYPE*)th); \
 					hi = true;			\
@@ -1141,8 +1145,10 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				th = &vh.v_##TYPE;			\
 				hval = true;				\
 			}						\
-			if (*(TYPE*)tl > *(TYPE*)th)			\
+			if (*(TYPE*)tl > *(TYPE*)th) {			\
+				bat_iterator_end(&bi);			\
 				return BATdense(0, 0, 0);		\
+			}						\
 		}							\
 		assert(lval);						\
 		assert(hval);						\

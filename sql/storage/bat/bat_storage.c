@@ -140,6 +140,7 @@ new_segment(segment *o, sql_trans *tr, size_t cnt)
 static segment *
 split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t start, size_t cnt, bool deleted)
 {
+	assert(tr);
 	if (o->start == start && o->end == start+cnt) {
 		assert(o->deleted != deleted || o->ts < TRANSACTION_ID_BASE);
 		o->oldts = o->ts;
@@ -149,7 +150,6 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 	}
 	segment *n = (segment*)GDKmalloc(sizeof(segment));
 
-	assert(tr);
 	if (!n)
 		return NULL;
 	n->prev = NULL;
@@ -164,6 +164,8 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 		n->deleted = deleted;
 	}
 	if (start == o->start) {
+		/* 2-way split: o remains latter part of segment, new one is
+		 * inserted before */
 		n->start = o->start;
 		n->end = n->start + cnt;
 		n->next = o;
@@ -172,8 +174,9 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 		if (p)
 			p->next = n;
 		o->start = n->end;
-		return n;
 	} else if (start+cnt == o->end) {
+		/* 2-way split: o remains first part of segment, new one is
+		 * added after */
 		n->start = o->end - cnt;
 		n->end = o->end;
 		n->next = o->next;
@@ -181,34 +184,26 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 		if (segs->t == o)
 			segs->t = n;
 		o->end = n->start;
-		return n;
+	} else {
+		/* 3-way split: o remains first part of segment, two new ones
+		 * are added after */
+		segment *n2 = GDKmalloc(sizeof(segment));
+		if (n2 == NULL) {
+			GDKfree(n);
+			return NULL;
+		}
+		n->next = n2;
+		n->start = start;
+		n->end = start + cnt;
+		*n2 = *o;
+		n2->start = n->end;
+		n2->prev = NULL;
+		if (segs->t == o)
+			segs->t = n2;
+		o->next = n;
+		o->end = start;
 	}
-	/* 3 way split */
-	n->start = start;
-	n->end = o->end;
-	n->next = o->next;
-	o->next = n;
-	if (segs->t == o)
-		segs->t = n;
-	o->end = n->start;
-
-	segment *oo = o;
-	o = n;
-	n = (segment*)GDKmalloc(sizeof(segment));
-	if (!n)
-		return NULL;
-	n->prev = NULL;
-	n->ts = oo->ts;
-	n->oldts = oo->oldts;
-	n->deleted = oo->deleted;
-	n->start = start+cnt;
-	n->end = o->end;
-	n->next = o->next;
-	o->next = n;
-	if (segs->t == o)
-		segs->t = n;
-	o->end = n->start;
-	return o;
+	return n;
 }
 
 static void
@@ -2287,9 +2282,8 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, void *i,
 	}
 	if (cnt) {
 		if (BATcount(b) < offset) { /* add space */
-			const void *tv = ATOMnilptr(b->ttype);
 			BUN d = offset - BATcount(b);
-			if (BUNappendmulti(b, tv, d, true) != GDK_SUCCEED) {
+			if (BUNappendmulti(b, NULL, d, true) != GDK_SUCCEED) {
 				bat_destroy(b);
 				if (i != oi)
 					GDKfree(i);
