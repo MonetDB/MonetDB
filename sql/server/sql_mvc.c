@@ -404,7 +404,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		return NULL;
 	}
 
-	// set SQL user callbacks in MAL authorisation
+	// set SQL user callbacks in MAL authorization
 	sql_set_user_api_hooks(m);
 	mvc_destroy(m);
 	return store;

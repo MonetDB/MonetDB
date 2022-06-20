@@ -43,6 +43,17 @@ getUserOIDByName(mvc *m, const char *user)
 	return store->table_api.column_find_row(tr, users_name, user, NULL);
 }
 
+static str
+getUserNameByOID(mvc *m, oid rid)
+{
+	if (is_oid_nil(rid))
+		return NULL;
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = m->session->tr->store;
+	sql_table *users = getUsersTbl(m);
+	return store->table_api.column_find_value(tr, find_sql_column(users, "name"), rid);
+}
+
 
 static str
 getPasswordHash(Client c, const char *user)
@@ -51,15 +62,19 @@ getPasswordHash(Client c, const char *user)
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
-		sql_trans *tr = m->session->tr;
-		sqlstore *store = m->session->tr->store;
-		sql_table *users = getUsersTbl(m);
-		sql_trans_begin(m->session);
-		oid rid = getUserOIDByName(m, user);
-		if (is_oid_nil(rid))
-			return NULL;
-		res = store->table_api.column_find_value(tr, find_sql_column(users, "password"), rid);
-		return res;
+		if (mvc_trans(m) == 0) {
+			sql_trans *tr = m->session->tr;
+			sqlstore *store = m->session->tr->store;
+			sql_table *users = getUsersTbl(m);
+			oid rid = getUserOIDByName(m, user);
+			if (is_oid_nil(rid)) {
+				sql_trans_end(m->session, SQL_OK);
+				return NULL;
+			}
+			res = store->table_api.column_find_value(tr, find_sql_column(users, "password"), rid);
+			sql_trans_end(m->session, SQL_OK);
+			return res;
+		}
 	}
 	return NULL;
 }
@@ -68,10 +83,15 @@ getPasswordHash(Client c, const char *user)
 static oid
 getUserOID(Client c, const char *user)
 {
+	oid res;
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
-		return getUserOIDByName(m, user);
+		if (mvc_trans(m) == 0) {
+			res = getUserOIDByName(m, user);
+			sql_trans_end(m->session, SQL_OK);
+			return res;
+		}
 	}
 	return oid_nil;
 }
@@ -808,19 +828,18 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	sql_table *auths = NULL;
 	sql_column *auths_id = NULL;
 	sql_column *auths_name = NULL;
-	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, username = NULL, userrole = NULL, err = NULL;
+	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, username = NULL, userrole = NULL;
 	int ok = 1, res = 0;
 
 	TRC_DEBUG(SQL_TRANS, OIDFMT "\n", user);
 
-	if ((err = AUTHresolveUser(&username, user)) != MAL_SUCCEED) {
-		freeException(err);
-		return -1;
+	if ((res = mvc_trans(m)) < 0) {
+		// we have -1 here
+		return res;
 	}
 
-	if ((res = mvc_trans(m)) < 0) {
-		GDKfree(username);
-		return res;
+	if ((username = getUserNameByOID(m, user)) == NULL) {
+		return -1;
 	}
 
 	sys = find_sql_schema(m->session->tr, "sys");
