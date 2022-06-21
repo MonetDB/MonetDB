@@ -654,19 +654,26 @@ mulmod(lng a, lng b, lng c)
 			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
 			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
 			lng n = N1 + N2;											\
-			T a = (T) ((a1 / n) * N1 + ((a1 % n) * (__int128) N1) / n + \
-					   (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n + \
-					   (r1 + r2) / n);									\
-			lng r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
-			while (r >= n) {											\
-				r -= n;													\
-				a++;													\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				a = (T) ((a1 / n) * N1 + ((a1 % n) * (__int128) N1) / n + \
+						 (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n + \
+						 (r1 + r2) / n);								\
+				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
 			}															\
-			while (r < 0) {												\
-				r += n;													\
-				a--;													\
-			}															\
-			fix_avg(T, a, r, n);										\
 			a2 = a;														\
 			r2 = r;														\
 			n2 = n;														\
@@ -687,28 +694,35 @@ mulmod(lng a, lng b, lng c)
 			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
 			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
 			lng n = N1 + N2;											\
-			T a = (T) ((a1 / n) * N1 +  (a2 / n) * N2 + (r1 + r2) / n);	\
-			__int64 xlo, xhi;											\
-			xlo = _mul128((__int64) (a1 % n), N1, &xhi);				\
-			a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
-			xlo = _mul128((__int64) (a2 % n), N2, &xhi);				\
-			a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
-			r = (r1 + r2) % n;											\
-			xlo = _mul128(a1, N1, &xhi);								\
-			xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */	\
-			r += xlo;													\
-			xlo = _mul128(a2, N2, &xhi);								\
-			xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */	\
-			r += xlo;													\
-			while (r >= n) {											\
-				r -= n;													\
-				a++;													\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				a = (T) ((a1 / n) * N1 +  (a2 / n) * N2 + (r1 + r2) / n); \
+				__int64 xlo, xhi;										\
+				xlo = _mul128((__int64) (a1 % n), N1, &xhi);			\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
+				xlo = _mul128((__int64) (a2 % n), N2, &xhi);			\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
+				r = (r1 + r2) % n;										\
+				xlo = _mul128(a1, N1, &xhi);							\
+				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ \
+				r += xlo;												\
+				xlo = _mul128(a2, N2, &xhi);							\
+				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ \
+				r += xlo;												\
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
 			}															\
-			while (r < 0) {												\
-				r += n;													\
-				a--;													\
-			}															\
-			fix_avg(T, a, r, n);										\
 			a2 = a;														\
 			r2 = r;														\
 			n2 = n;														\
@@ -725,31 +739,38 @@ mulmod(lng a, lng b, lng c)
 			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
 			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
 			lng n = N1 + N2;											\
-			lng x1 = a1 % n;											\
-			lng x2 = a2 % n;											\
-			if ((N1 != 0 &&												\
-				 (x1 > GDK_lng_max / N1 || x1 < -GDK_lng_max / N1)) ||	\
-				(N2 != 0 &&												\
-				 (x2 > GDK_lng_max / N2 || x2 < -GDK_lng_max / N2))) {	\
-				BBPunfix(b->batCacheid);								\
-				BBPunfix(c->batCacheid);								\
-				BBPunfix(r->batCacheid);								\
-				throw(SQL, "aggr.avg",									\
-					  SQLSTATE(22003) "overflow in calculation");		\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				lng x1 = a1 % n;										\
+				lng x2 = a2 % n;										\
+				if ((N1 != 0 &&											\
+					 (x1 > GDK_lng_max / N1 || x1 < -GDK_lng_max / N1)) || \
+					(N2 != 0 &&											\
+					 (x2 > GDK_lng_max / N2 || x2 < -GDK_lng_max / N2))) { \
+					BBPunfix(b->batCacheid);							\
+					BBPunfix(c->batCacheid);							\
+					BBPunfix(r->batCacheid);							\
+					throw(SQL, "aggr.avg",								\
+						  SQLSTATE(22003) "overflow in calculation");	\
+				}														\
+				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +				\
+						 (a2 / n) * N2 + (x2 * N2) / n +				\
+						 (r1 + r2) / n);								\
+				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
 			}															\
-			T a = (T) ((a1 / n) * N1 + (x1 * N1) / n +					\
-					   (a2 / n) * N2 + (x2 * N2) / n +					\
-					   (r1 + r2) / n);									\
-			lng r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
-			while (r >= n) {											\
-				r -= n;													\
-				a++;													\
-			}															\
-			while (r < 0) {												\
-				r += n;													\
-				a--;													\
-			}															\
-			fix_avg(T, a, r, n);										\
 			a2 = a;														\
 			r2 = r;														\
 			n2 = n;														\
