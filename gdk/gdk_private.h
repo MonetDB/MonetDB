@@ -251,10 +251,10 @@ void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void PROPdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
+void PROPdestroy_nolock(BAT *b)
+	__attribute__((__visibility__("hidden")));
 gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer *lci, struct canditer *rci, bool li, bool hi, bool anti, bool symmetric, BUN maxsize)
 	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
-const char *gettailname(const BAT *b)
 	__attribute__((__visibility__("hidden")));
 void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 	__attribute__((__visibility__("hidden")));
@@ -277,13 +277,11 @@ gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-void VIEWunlink(BAT *b)
-	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
 static inline const char *
-gettailnamebi(const BATiter *bi)
+BATITERtailname(const BATiter *bi)
 {
 	if (bi->type == TYPE_str) {
 		switch (bi->width) {

@@ -562,6 +562,21 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 /* return (a * b) % c without intermediate overflow */
+#ifdef HAVE_HGE
+static inline lng
+mulmod(hge A, lng b, lng c)
+{
+	lng res = 0;
+	lng a = (lng) (A % c);
+	while (b) {
+		if (b & 1)
+			res = (res + a) % c;
+		a = (2 * a) % c;
+		b >>= 1;
+	}
+	return res;
+}
+#else
 static inline lng
 mulmod(lng a, lng b, lng c)
 {
@@ -575,6 +590,7 @@ mulmod(lng a, lng b, lng c)
 	}
 	return res;
 }
+#endif
 
 #ifdef TRUNCATE_NUMBERS
 #define fix_avg(T, a, r, n)							\
@@ -593,6 +609,38 @@ mulmod(lng a, lng b, lng c)
 		}														\
 	} while (0)
 #endif
+/* Inside the avg_aggr_comb macro we want to calculate
+ * n = n1 + n2
+ * a = (a1*n1 + r1 + a2*n2 + r2) / n
+ * r = (a1*n1 + r1 + a2*n2 + r2) % n
+ *
+ * Note that we can't simply distribute the division over the terms but
+ * need to do extra work.  What we can do is when we want to calculate
+ * (a+b)/c to calculate d=(a/c + b/c) and r=(a%c + b%c) and if r too
+ * small or too large (<= -abs(c) or >= abc(c)) then compensate d and r
+ * to get r within the range by adding/subtracting c to/from r until r
+ * is in range, and whenever we do that, add/subtract 1 to/from d.  We
+ * can also do this until r is in the range 0 (inclusive) to abc(c)
+ * (exclusive) to get integer division that truncates towards negative
+ * infinity.
+ *
+ * We derive a way to calculate a*b/c and a*b%c without intermediate
+ * overflow in a*b.
+ *
+ * Notation: x/y is integer division, x÷y is mathematically exact division.
+ * x*y is integer multiplication (always mathematically exact).
+ * x%y is integer remainder following the rule that x == (x/y)*y + x%y, or
+ * x÷y == x/y + (x%y)÷y.
+ * During the derivation we assume infinite precision.
+ *
+ * (a*b)÷c = (a÷c)*b
+ *         = (a/c + (a%c)÷c)*b
+ *         = (a/c)*b + ((a%c)*b)÷c
+ *         = (a/c)*b + ((a%c)*b)/c + (((a%c)*b)%c)÷c
+ *         = (a/c)*b + ((a%c)*b)/c + ((a*b)%c)÷c
+ * Note that the last term is only the fraction (i.e. strictly between
+ * -1 and 1), so (a*b)%c is the remainder.
+ */
 #ifdef HAVE___INT128
 #define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)						\
 	do {																\
@@ -603,33 +651,35 @@ mulmod(lng a, lng b, lng c)
 				n2 = n1;												\
 			}															\
 		} else if (!is_##T##_nil(a1)) {									\
-			/* calculate: */											\
-			/* n = n1 + n2 */											\
-			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
-			/* r = (a1*n1 + r1 + a2*n2 + r2) % (n1 + n2) */				\
-			/* where / and % follow the rule that x==x/y*y + x%y */		\
-			/* but x/y is rounded down, so x%y >= 0 */					\
-			lng n = n1 + n2;											\
-			T a = (T) ((a1 / n) * n1 + ((a1 % n) * (__int128) n1) / n + \
-					   (a2 / n) * n2 + ((a2 % n) * (__int128) n2) / n + \
-					   (r1 + r2) / n);									\
-			lng r = mulmod(a1, n1, n) + mulmod(a2, n2, n) + (r1 + r2) % n; \
-			while (r >= n) {											\
-				r -= n;													\
-				a++;													\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
+			lng n = N1 + N2;											\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				a = (T) ((a1 / n) * N1 + ((a1 % n) * (__int128) N1) / n + \
+						 (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n + \
+						 (r1 + r2) / n);								\
+				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
 			}															\
-			while (r < 0) {												\
-				r += n;													\
-				a--;													\
-			}															\
-			fix_avg(T, a, r, n);										\
 			a2 = a;														\
 			r2 = r;														\
 			n2 = n;														\
 		}																\
 	} while (0)
-#else
-#if defined(_MSC_VER) && _MSC_VER >= 1920 && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
+#elif defined(_MSC_VER) && _MSC_VER >= 1920 && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #include <immintrin.h>
 #pragma intrinsic(_mul128)
@@ -641,29 +691,38 @@ mulmod(lng a, lng b, lng c)
 			r2 = r1;													\
 			n2 = n1;													\
 		} else if (!is_##T##_nil(a1)) {									\
-			/* calculate: */											\
-			/* n = n1 + n2 */											\
-			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
-			/* r = (a1*n1 + r1 + a2*n2 + r2) % (n1 + n2) */				\
-			/* where / and % follow the rule that x==x/y*y + x%y */		\
-			/* but x/y is rounded down, so x%y >= 0 */					\
-			lng n = n1 + n2;											\
-			T a = (T) ((a1 / n) * n1 +  (a2 / n) * n2 + (r1 + r2) / n);	\
-			__int64 xlo, xhi;											\
-			xlo = _mul128((__int64) (a1 % n), n1, &xhi);				\
-			a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
-			xlo = _mul128((__int64) (a2 % n), n2, &xhi);				\
-			a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
-			lng r = mulmod(a1, n1, n) + mulmod(a2, n2, n) + (r1 + r2) % n; \
-			while (r >= n) {											\
-				r -= n;													\
-				a++;													\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
+			lng n = N1 + N2;											\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				a = (T) ((a1 / n) * N1 +  (a2 / n) * N2 + (r1 + r2) / n); \
+				__int64 xlo, xhi;										\
+				xlo = _mul128((__int64) (a1 % n), N1, &xhi);			\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
+				xlo = _mul128((__int64) (a2 % n), N2, &xhi);			\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
+				r = (r1 + r2) % n;										\
+				xlo = _mul128(a1, N1, &xhi);							\
+				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ \
+				r += xlo;												\
+				xlo = _mul128(a2, N2, &xhi);							\
+				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ \
+				r += xlo;												\
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
 			}															\
-			while (r < 0) {												\
-				r += n;													\
-				a--;													\
-			}															\
-			fix_avg(T, a, r, n);										\
 			a2 = a;														\
 			r2 = r;														\
 			n2 = n;														\
@@ -677,44 +736,46 @@ mulmod(lng a, lng b, lng c)
 			r2 = r1;													\
 			n2 = n1;													\
 		} else if (!is_##T##_nil(a1)) {									\
-			/* calculate: */											\
-			/* n = n1 + n2 */											\
-			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
-			/* r = (a1*n1 + r1 + a2*n2 + r2) % (n1 + n2) */				\
-			/* where / and % follow the rule that x==x/y*y + x%y */		\
-			/* but x/y is rounded down, so x%y >= 0 */					\
-			lng n = n1 + n2;											\
-			lng x1 = a1 % n;											\
-			lng x2 = a2 % n;											\
-			if ((n1 != 0 &&												\
-				 (x1 > GDK_lng_max / n1 || x1 < -GDK_lng_max / n1)) ||	\
-				(n2 != 0 &&												\
-				 (x2 > GDK_lng_max / n2 || x2 < -GDK_lng_max / n2))) {	\
-				BBPunfix(b->batCacheid);								\
-				BBPunfix(c->batCacheid);								\
-				BBPunfix(r->batCacheid);								\
-				throw(SQL, "aggr.avg",									\
-					  SQLSTATE(22003) "overflow in calculation");		\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
+			lng n = N1 + N2;											\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				lng x1 = a1 % n;										\
+				lng x2 = a2 % n;										\
+				if ((N1 != 0 &&											\
+					 (x1 > GDK_lng_max / N1 || x1 < -GDK_lng_max / N1)) || \
+					(N2 != 0 &&											\
+					 (x2 > GDK_lng_max / N2 || x2 < -GDK_lng_max / N2))) { \
+					BBPunfix(b->batCacheid);							\
+					BBPunfix(c->batCacheid);							\
+					BBPunfix(r->batCacheid);							\
+					throw(SQL, "aggr.avg",								\
+						  SQLSTATE(22003) "overflow in calculation");	\
+				}														\
+				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +				\
+						 (a2 / n) * N2 + (x2 * N2) / n +				\
+						 (r1 + r2) / n);								\
+				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
 			}															\
-			T a = (T) ((a1 / n) * n1 + x1 / n +							\
-					   (a2 / n) * n2 + x2 / n +							\
-					   (r1 + r2) / n);									\
-			lng r = mulmod(a1, n1, n) + mulmod(a2, n2, n) + (r1 + r2) % n; \
-			while (r >= n) {											\
-				r -= n;													\
-				a++;													\
-			}															\
-			while (r < 0) {												\
-				r += n;													\
-				a--;													\
-			}															\
-			fix_avg(T, a, r, n);										\
 			a2 = a;														\
 			r2 = r;														\
 			n2 = n;														\
 		}																\
 	} while (0)
-#endif
 #endif
 
 #define avg_aggr_acc(T)													\

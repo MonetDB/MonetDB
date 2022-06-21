@@ -252,7 +252,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	}
 
 	sfout = block_stream(socket_wstream(ssock, "merovingian->server (proxy write)"));
-	if (sfdin == 0 || sfout == 0) {
+	if (sfout == 0) {
 		close_stream(sfdin);
 		return(newErr("merovingian-server inputstream or outputstream problems: %s", mnstr_peek_error(NULL)));
 	}

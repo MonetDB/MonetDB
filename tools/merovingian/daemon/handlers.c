@@ -256,10 +256,20 @@ void reinitialize(void)
 				"caught SIGHUP, closing logfile\n",
 				mytime, (long long int)_mero_topdp->next->pid);
 		_mero_topdp->out = _mero_topdp->err = t;
-		_mero_logfile = fdopen(t, "a");
-		Mlevelfprintf(INFORMATION, _mero_logfile, "%s BEG merovingian[%lld]: "
-				"reopening logfile\n",
-				mytime, (long long int)_mero_topdp->next->pid);
+		FILE *f = _mero_logfile;
+		if ((_mero_logfile = fdopen(t, "a")) == NULL) {
+			/* revert to old log so that we have something */
+			Mlevelfprintf(ERROR, f, "%s ERR merovingian[%lld]: "
+					 "failed to reopen logfile",
+					 mytime, (long long int)_mero_topdp->next->pid);
+			_mero_topdp->out = _mero_topdp->err = fileno(f);
+			_mero_logfile = f;
+		} else {
+			fclose(f);
+			Mlevelfprintf(INFORMATION, _mero_logfile, "%s BEG merovingian[%lld]: "
+					 "reopening logfile\n",
+					 mytime, (long long int)_mero_topdp->next->pid);
+		}
 	}
 
 	/* logger go ahead! */

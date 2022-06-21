@@ -55,11 +55,12 @@
  * number of groups) and initializes the variables for candidates
  * selection.
  */
-const char *
-BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
-		 /* outputs: */
-		 oid *minp, oid *maxp, BUN *ngrpp,
-		 struct canditer *ci)
+static const char *
+BATgroupaggrinit2(bool pipeline,
+		  BAT *b, BAT *g, BAT *e, BAT *s,
+		  /* outputs: */
+		  oid *minp, oid *maxp, BUN *ngrpp,
+		  struct canditer *ci)
 {
 	oid min, max;
 	BUN i, ngrp;
@@ -69,7 +70,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 		return "b must exist";
 	canditer_init(ci, b, s);
 	if (g) {
-		if (ci->ncand != BATcount(g) ||
+		if ((pipeline ? ci->ncand > BATcount(g) : ci->ncand != BATcount(g)) ||
 		    (ci->ncand != 0 && ci->seq != g->hseqbase))
 			return "b with s and g must be aligned";
 		assert(BATttype(g) == TYPE_oid);
@@ -128,6 +129,15 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 	*ngrpp = ngrp;
 
 	return NULL;
+}
+
+const char *
+BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
+		 /* outputs: */
+		 oid *minp, oid *maxp, BUN *ngrpp,
+		 struct canditer *ci)
+{
+	return BATgroupaggrinit2(false, b, g, e, s, minp, maxp, ngrpp, ci);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1827,9 +1837,19 @@ BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty,
 #define AGGR_AVG(TYPE)							\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi.base;	\
-		TYPE *restrict avgs = GDKzalloc(ngrp * sizeof(TYPE));	\
+		TYPE *restrict avgs = GDKmalloc(ngrp * sizeof(TYPE));	\
 		if (avgs == NULL)					\
 			goto bailout;					\
+		for (i = 0; i < bn->batCount && i < ngrp; i++) {	\
+			double frac, ipart;				\
+			frac = modf(dbls[i], &ipart);			\
+			avgs[i] = (TYPE) ipart;				\
+			rems[i] = (lng) (frac * cnts[i] + .5);		\
+		}							\
+		for (i = bn->batCount; i < ngrp; i++) {			\
+			avgs[i] = 0;					\
+			rems[i] = 0;					\
+		}							\
 		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
@@ -1936,7 +1956,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	(void) tp;		/* compatibility (with other BATgroup*
 				 * functions) argument */
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit2(true, b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
@@ -1996,7 +2016,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
-		rems = GDKzalloc(ngrp * sizeof(lng));
+		rems = GDKmalloc(ngrp * sizeof(lng));
 		if (rems == NULL)
 			goto bailout1;
 		break;
@@ -2004,22 +2024,30 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		break;
 	}
 	if (cntsp) {
-		if ((cn = COLnew(min, TYPE_lng, ngrp, TRANSIENT)) == NULL)
-			goto bailout1;
-		cnts = (lng *) Tloc(cn, 0);
-		memset(cnts, 0, ngrp * sizeof(lng));
+		if (cn == NULL) {
+			if ((cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT)) == NULL)
+				goto bailout1;
+			cnts = (lng *) Tloc(cn, 0);
+		} else {
+			assert(bn != NULL);
+			assert(bn->batCount == cn->batCount);
+			if (BATcapacity(cn) < ngrp &&
+			    BATextend(cn, ngrp) != GDK_SUCCEED)
+				goto bailout1;
+			cnts = (lng *) Tloc(cn, 0);
+			if (cn->batCount <  ngrp)
+				memset(cnts + cn->batCount, 0, (ngrp - cn->batCount) * sizeof(lng));
+		}
 	} else {
 		cnts = GDKzalloc(ngrp * sizeof(lng));
 		if (cnts == NULL)
 			goto bailout1;
 	}
 
-	if (!bn)
-		bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
-	else if (BATcapacity(bn) < ngrp && BATextend(bn, ngrp) != GDK_SUCCEED)
-		goto bailout1;
-
-	if (bn == NULL)
+	if (bn == NULL) {
+		if ((bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT)) == NULL)
+			goto bailout1;
+	} else if (BATcapacity(bn) < ngrp && BATextend(bn, ngrp) != GDK_SUCCEED)
 		goto bailout1;
 	dbls = (dbl *) Tloc(bn, 0);
 
@@ -2257,7 +2285,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			}
 			break;
 		}
-#ifdef HAVE_hge
+#ifdef HAVE_HGE
 		case TYPE_hge: {
 			hge *avgs = (hge *) Tloc(bn, 0);
 			for (i = 0; i < ngrp; i++) {
@@ -3947,9 +3975,12 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 				if (r == 0) {
 					/* there are no nils, record that */
 					MT_lock_set(&b->theaplock);
-					b->tnonil = true;
+					if (b->batCount == bi.count) {
+						b->tnonil = true;
+					}
 					MT_lock_unset(&b->theaplock);
 				}
+				bat_iterator_end(&bi);
 			} else {
 				r = 0;
 			}

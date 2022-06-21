@@ -531,6 +531,8 @@ main(int argc, char *argv[])
 				/* oops, forking went wrong! */
 				Mlevelfprintf(ERROR, stderr, "unable to fork into background: %s\n",
 						strerror(errno));
+				close(pfd[0]);
+				close(pfd[1]);
 				return(1);
 			case 0:
 				/* detach client from controlling tty, we only write to the
@@ -563,6 +565,7 @@ main(int argc, char *argv[])
 				freeConfFile(ckv); /* make debug tools happy */
 				if (read(pfd[0], &buf, 1) != 1) {
 					Mlevelfprintf(ERROR, stderr, "unable to retrieve startup status\n");
+					close(pfd[0]);
 					return(1);
 				}
 				close(pfd[0]);

@@ -21,8 +21,11 @@ cli.close()
 cli = pymonetdb.connect(port=port,database=db,autocommit=True)
 cur = cli.cursor()
 cur.execute("select * from bug3261 where probeid = 1234 and (markername like 'rmm_' or markername = 'rmm10') limit 10;")
-if cur.fetchall() != [(1234,"rmm1"),(1234,"rmm2"),(1234,"rmm3"),(1234,"rmm4"),(1234,"rmm5"),(1234,"rmm6"),(1234,"rmm7"),(1234,"rmm8"),(1234,"rmm9"),(1234,"rmm10")]:
-    sys.stderr.write('Expected [(1234,"rmm1"),(1234,"rmm2"),(1234,"rmm3"),(1234,"rmm4"),(1234,"rmm5"),(1234,"rmm6"),(1234,"rmm7"),(1234,"rmm8"),(1234,"rmm9"),(1234,"rmm10")]')
+rcv = cur.fetchall()
+exp = [(1234,"rmm1"),(1234,"rmm2"),(1234,"rmm3"),(1234,"rmm4"),(1234,"rmm5"),(1234,"rmm6"),(1234,"rmm7"),(1234,"rmm8"),(1234,"rmm9"),(1234,"rmm10")]
+if sorted(rcv) != sorted(exp):
+    sys.stderr.write('Expected {}\n'.format(exp))
+    sys.stderr.write('Received {}\n'.format(rcv))
 cur.close()
 cli.close()
 
@@ -31,4 +34,3 @@ cur = cli.cursor()
 cur.execute('drop table bug3261;')
 cur.close()
 cli.close()
-
