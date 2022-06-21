@@ -45,6 +45,10 @@ mal_export str AUTHdeleteRemoteTableCredentials(const char *local_table);
  * vault needs to be unlocked as part of the server startup ritual.
  */
 mal_export str AUTHunlockVault(const char *password);
+mal_export str AUTHverifyPassword(const char *passwd);
+mal_export str AUTHdecypherValue(str *ret, const char *value);
+mal_export str AUTHcypherValue(str *ret, const char *value);
+mal_export str AUTHrequireAdmin(Client c);
 
 typedef str (*get_user_password_handler)(Client c, const char *user);
 typedef oid (*get_user_oid_handler)(Client c, const char *user);
