@@ -1512,8 +1512,6 @@ BATsettrivprop(BAT *b)
  * @tab BBPretain (bat bi)
  * @item int
  * @tab BBPrelease (bat bi)
- * @item str
- * @tab BBPname (bat bi)
  * @item bat
  * @tab BBPindex  (str nme)
  * @item BAT*
@@ -1595,12 +1593,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_pid(i)	BBP_record(i).pid
 #define BATgetId(b)	BBP_logical((b)->batCacheid)
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
-
-/* macros that nicely check parameters */
-#define BBPstatus(i)	(BBPcheck(i) ? BBP_status(i) : 0)
-#define BBPrefs(i)	(BBPcheck(i) ? BBP_refs(i) : -1)
-#define BBPcache(i)	(BBPcheck(i) ? BBP_cache(i) : (BAT*) NULL)
-#define BBPname(i)	(BBPcheck(i) ? BBP_logical(i) : "")
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)
