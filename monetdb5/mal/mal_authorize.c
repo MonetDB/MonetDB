@@ -29,9 +29,6 @@
 #include <unistd.h>
 #endif
 
-static str AUTHdecypherValue(str *ret, const char *value);
-static str AUTHcypherValue(str *ret, const char *value);
-static str AUTHverifyPassword(const char *passwd);
 static BUN lookupRemoteTableKey(const char *key);
 
 static BAT *user = NULL;
@@ -91,7 +88,7 @@ AUTHfindUser(const char *username)
  * Requires the current client to be the admin user thread. If not the case,
  * this function returns an InvalidCredentialsException.
  */
-static str
+str
 AUTHrequireAdmin(Client cntxt) {
 	oid id;
 
@@ -908,7 +905,7 @@ AUTHunlockVault(const char *password)
  * an exception.  The ret string is GDKmalloced, and should be GDKfreed
  * by the caller.
  */
-static str
+str
 AUTHdecypherValue(str *ret, const char *value)
 {
 	/* Cyphering and decyphering can be done using many algorithms.
@@ -962,7 +959,7 @@ AUTHdecypherValue(str *ret, const char *value)
  * fails or detects an invalid password, it might throw an exception.
  * The ret string is GDKmalloced, and should be GDKfreed by the caller.
  */
-static str
+str
 AUTHcypherValue(str *ret, const char *value)
 {
 	/* this is the XOR cypher implementation */
@@ -1006,7 +1003,7 @@ AUTHcypherValue(str *ret, const char *value)
  */
 #define concat(x,y)	x##y
 #define digestlength(h)	concat(h, _DIGEST_LENGTH)
-static str
+str
 AUTHverifyPassword(const char *passwd)
 {
 	const char *p = passwd;
