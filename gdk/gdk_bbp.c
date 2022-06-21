@@ -2879,8 +2879,6 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 	/* only consider unloading if refs is 0; if, in addition, lrefs
 	 * is 0, we can definitely unload, else only if some more
 	 * conditions are met */
-	if (b)
-		MT_lock_set(&b->theaplock);
 	if (BBP_refs(i) == 0 &&
 	    (BBP_lrefs(i) == 0 ||
 	     (b != NULL && b->theap != NULL
