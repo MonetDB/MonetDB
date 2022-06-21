@@ -2786,6 +2786,7 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 {
 	int refs = 0, lrefs;
 	bool swap = false;
+	bool locked = false;
 	bat tp = 0, tvp = 0;
 	int farmid = 0;
 	BAT *b;
@@ -2840,6 +2841,8 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 			assert(b == NULL || b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
+				MT_lock_set(&b->theaplock);
+				locked = true;
 				tp = VIEWtparent(b);
 				tvp = VIEWvtparent(b);
 				if (tp || tvp)
@@ -2848,7 +2851,8 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 		}
 	}
 	if (b) {
-		MT_lock_set(&b->theaplock);
+		if (!locked)
+			MT_lock_set(&b->theaplock);
 #if 0
 		if (b->batCount > b->batInserted && !isVIEW(b)) {
 			/* if batCount is larger than batInserted and
@@ -2864,7 +2868,6 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 #endif
 		if (b->theap)
 			farmid = b->theap->farmid;
-		MT_lock_unset(&b->theaplock);
 	}
 
 	/* we destroy transients asap and unload persistent bats only
