@@ -292,4 +292,7 @@ extern str SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 
 sql5_export str getBackendContext(Client cntxt, backend **be);
 
+#define USER_TABLE_NAME "db_user_info"
+#define USER_PASSWORD_COLUMN "password"
+
 #endif /* _SQL_H */

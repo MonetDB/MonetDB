@@ -29,7 +29,7 @@ getUsersTbl(mvc *m)
 {
 	sql_trans *tr = m->session->tr;
 	sql_schema *sys = find_sql_schema(tr, "sys");
-	return find_sql_table(tr, sys, "db_user_info");
+	return find_sql_table(tr, sys, USER_TABLE_NAME);
 }
 
 
@@ -43,8 +43,9 @@ getUserOIDByName(mvc *m, const char *user)
 	return store->table_api.column_find_row(tr, users_name, user, NULL);
 }
 
+
 static str
-getUserNameByOID(mvc *m, oid rid)
+getUserName(mvc *m, oid rid)
 {
 	if (is_oid_nil(rid))
 		return NULL;
@@ -56,22 +57,28 @@ getUserNameByOID(mvc *m, oid rid)
 
 
 static str
-getPasswordHash(Client c, const char *user)
+getUserPassword(mvc *m, oid rid)
+{
+	if (is_oid_nil(rid)) {
+		return NULL;
+	}
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = m->session->tr->store;
+	sql_table *users = getUsersTbl(m);
+	return store->table_api.column_find_value(tr, find_sql_column(users, USER_PASSWORD_COLUMN), rid);
+}
+
+
+static str
+getUserPasswordCallback(Client c, const char *user)
 {
 	str res;
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
 		if (mvc_trans(m) == 0) {
-			sql_trans *tr = m->session->tr;
-			sqlstore *store = m->session->tr->store;
-			sql_table *users = getUsersTbl(m);
 			oid rid = getUserOIDByName(m, user);
-			if (is_oid_nil(rid)) {
-				sql_trans_end(m->session, SQL_OK);
-				return NULL;
-			}
-			res = store->table_api.column_find_value(tr, find_sql_column(users, "password"), rid);
+			res = getUserPassword(m, rid);
 			sql_trans_end(m->session, SQL_OK);
 			return res;
 		}
@@ -80,8 +87,68 @@ getPasswordHash(Client c, const char *user)
 }
 
 
+static int
+setUserPassword(mvc *m, oid rid, str value)
+{
+	str err = NULL;
+	str hash = NULL;
+	if (is_oid_nil(rid)) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: invalid user");
+		return LOG_ERR;
+	}
+	if (strNil(value)) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: password cannot be nil");
+		return LOG_ERR;
+	}
+	if ((err = AUTHverifyPassword(value)) != MAL_SUCCEED) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: %s", getExceptionMessage(err));
+		freeException(err);
+		return LOG_ERR;
+	}
+	if ((err = AUTHcypherValue(&hash, value)) != MAL_SUCCEED) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: %s", getExceptionMessage(err));
+		freeException(err);
+		return LOG_ERR;
+	}
+
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = m->session->tr->store;
+	sql_table *users = getUsersTbl(m);
+	return store->table_api.column_update_value(tr, find_sql_column(users, USER_PASSWORD_COLUMN), rid, hash);
+}
+
+
+static int
+changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
+{
+	str err = NULL;
+	str hash = NULL;
+	if (is_oid_nil(rid)) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: invalid user");
+		return LOG_ERR;
+	}
+	if (strNil(newpass)) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: password cannot be nil");
+		return LOG_ERR;
+	}
+	if (oldpass) {
+		// validate old password match
+		if ((err = AUTHdecypherValue(&hash, getUserPassword(m, rid))) != MAL_SUCCEED) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: %s", getExceptionMessage(err));
+			freeException(err);
+			return LOG_ERR;
+		}
+		if (strcmp(oldpass, hash) != 0) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: password mismatch");
+			return LOG_ERR;
+		}
+	}
+	return setUserPassword(m, rid, newpass);
+}
+
+
 static oid
-getUserOID(Client c, const char *user)
+getUserOIDCallback(Client c, const char *user)
 {
 	oid res;
 	backend *be = (backend *) c->sqlcontext;
@@ -101,8 +168,8 @@ static void
 monet5_set_user_api_hooks(ptr mvc)
 {
 	(void) mvc;
-	AUTHRegisterGetPasswordHandler(&getPasswordHash);
-	AUTHRegisterGetUserOIDHandler(&getUserOID);
+	AUTHRegisterGetPasswordHandler(&getUserPasswordCallback);
+	AUTHRegisterGetUserOIDHandler(&getUserOIDCallback);
 }
 
 
@@ -349,7 +416,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		}
 
 	}
-
+	// TODO don't add user in MAL
 	/* add the user to the M5 authorisation administration */
 	oid grant_user = c->user;
 	c->user = MAL_ADMIN;
@@ -593,30 +660,19 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 			pwd = passwd;
 			opwd = oldpasswd;
 		}
-		if (user == NULL) {
-			err = AUTHchangePassword(c, opwd, pwd);
-			if (!enc) {
-				free(pwd);
-				free(opwd);
-			}
-			if (err !=MAL_SUCCEED) {
-				(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
-				freeException(err);
-				return (FALSE);
-			}
-		} else {
+
+		if (user) {
+			// verify query user value is not the session user
 			str username = NULL;
-			if ((err = AUTHresolveUser(&username, c->user)) !=MAL_SUCCEED) {
+			if ((username = getUserName(m, c->user)) == NULL) {
 				if (!enc) {
 					free(pwd);
 					free(opwd);
 				}
-				(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
-				freeException(err);
+				(void) sql_error(m, 02, "ALTER USER: invalid user");
 				return (FALSE);
 			}
 			if (strcmp(username, user) == 0) {
-				/* avoid message about changePassword (from MAL level) */
 				GDKfree(username);
 				if (!enc) {
 					free(pwd);
@@ -629,16 +685,36 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 				return (FALSE);
 			}
 			GDKfree(username);
-			err = AUTHsetPassword(c, user, pwd);
-			if (!enc) {
-				free(pwd);
-				free(opwd);
-			}
-			if (err !=MAL_SUCCEED) {
+			// verify current user is MAL_ADMIN ?
+			if ((err = AUTHrequireAdmin(c)) != MAL_SUCCEED) {
 				(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				freeException(err);
+				if (!enc) {
+					free(pwd);
+					free(opwd);
+				}
 				return (FALSE);
 			}
+			if (setUserPassword(m, getUserOIDByName(m, user), pwd) != LOG_OK) {
+				if (!enc) {
+					free(pwd);
+					free(opwd);
+				}
+				return (FALSE);
+			}
+
+		} else {
+			if (changeUserPassword(m, c->user, opwd, pwd) != LOG_OK) {
+				if (!enc) {
+					free(pwd);
+					free(opwd);
+				}
+				return (FALSE);
+			}
+		}
+		if (!enc) {
+			free(pwd);
+			free(opwd);
 		}
 	}
 
@@ -838,7 +914,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return res;
 	}
 
-	if ((username = getUserNameByOID(m, user)) == NULL) {
+	if ((username = getUserName(m, user)) == NULL) {
 		return -1;
 	}
 
