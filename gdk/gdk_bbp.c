@@ -3037,17 +3037,11 @@ BATdescriptor(bat i)
 	return b;
 }
 
-static inline void
-GDKunshare(bat parent)
-{
-	(void) decref(parent, false, true, true, true, __func__);
-	(void) decref(parent, true, false, true, true, __func__);
-}
-
 void
 BBPunshare(bat parent)
 {
-	GDKunshare(parent);
+	(void) decref(parent, false, true, true, true, __func__);
+	(void) decref(parent, true, false, true, true, __func__);
 }
 
 /*
@@ -3227,9 +3221,9 @@ BBPdestroy(BAT *b)
 
 	/* parent released when completely done with child */
 	if (tp)
-		GDKunshare(tp);
+		BBPunshare(tp);
 	if (vtp)
-		GDKunshare(vtp);
+		BBPunshare(vtp);
 }
 
 static gdk_return
@@ -3256,9 +3250,9 @@ BBPfree(BAT *b)
 
 	/* parent released when completely done with child */
 	if (ret == GDK_SUCCEED && tp)
-		GDKunshare(tp);
+		BBPunshare(tp);
 	if (ret == GDK_SUCCEED && vtp)
-		GDKunshare(vtp);
+		BBPunshare(vtp);
 	return ret;
 }
 
