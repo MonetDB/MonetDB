@@ -430,6 +430,7 @@ AUTHcheckCredentials(
 	str pwd = NULL;
 	str hash = NULL;
 	oid p = oid_nil;
+	str passValue = NULL;
 	// BATiter passi;
 
 	if (cntxt)
@@ -457,9 +458,9 @@ AUTHcheckCredentials(
 
 	// load password from users tbl
 	if (authCallbackCntx.get_user_password && cntxt)
-		tmp = authCallbackCntx.get_user_password(cntxt, username);
+		passValue = authCallbackCntx.get_user_password(cntxt, username);
 
-	if (strNil(tmp)) {
+	if (strNil(passValue)) {
 		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
 	}
 
@@ -468,7 +469,8 @@ AUTHcheckCredentials(
 	// tmp = (str)BUNtvar(passi, p);
 	// assert (tmp != NULL);
 	/* decypher the password (we lose the original tmp here) */
-	tmp = AUTHdecypherValue(&pwd, tmp);
+	tmp = AUTHdecypherValue(&pwd, passValue);
+	GDKfree(passValue);
 	// bat_iterator_end(&passi);
 	if (tmp)
 		return tmp;

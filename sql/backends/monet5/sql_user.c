@@ -92,6 +92,7 @@ setUserPassword(mvc *m, oid rid, str value)
 {
 	str err = NULL;
 	str hash = NULL;
+	int res;
 	if (is_oid_nil(rid)) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: invalid user");
 		return LOG_ERR;
@@ -108,13 +109,16 @@ setUserPassword(mvc *m, oid rid, str value)
 	if ((err = AUTHcypherValue(&hash, value)) != MAL_SUCCEED) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: %s", getExceptionMessage(err));
 		freeException(err);
+		GDKfree(hash);
 		return LOG_ERR;
 	}
 
 	sql_trans *tr = m->session->tr;
 	sqlstore *store = m->session->tr->store;
 	sql_table *users = getUsersTbl(m);
-	return store->table_api.column_update_value(tr, find_sql_column(users, USER_PASSWORD_COLUMN), rid, hash);
+	res = store->table_api.column_update_value(tr, find_sql_column(users, USER_PASSWORD_COLUMN), rid, hash);
+	GDKfree(hash);
+	return res;
 }
 
 
@@ -123,6 +127,7 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 {
 	str err = NULL;
 	str hash = NULL;
+	str passValue = NULL;
 	if (is_oid_nil(rid)) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: invalid user");
 		return LOG_ERR;
@@ -133,15 +138,19 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 	}
 	if (oldpass) {
 		// validate old password match
-		if ((err = AUTHdecypherValue(&hash, getUserPassword(m, rid))) != MAL_SUCCEED) {
+		if ((err = AUTHdecypherValue(&hash, passValue=getUserPassword(m, rid))) != MAL_SUCCEED) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: %s", getExceptionMessage(err));
 			freeException(err);
+			GDKfree(passValue);
 			return LOG_ERR;
 		}
+		GDKfree(passValue);
 		if (strcmp(oldpass, hash) != 0) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: password mismatch");
+			GDKfree(hash);
 			return LOG_ERR;
 		}
+		GDKfree(hash);
 	}
 	return setUserPassword(m, rid, newpass);
 }
@@ -375,6 +384,8 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	if ((err = AUTHGeneratePasswordHash(&hash, pwd)) != MAL_SUCCEED) {
 		if (schema_buf)
 			GDKfree(schema_buf);
+		if (!enc)
+			free(pwd);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
 	}
 
@@ -383,15 +394,17 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id, &hash))) {
 		if (!enc)
 			free(pwd);
-		if (schema_buf)
-			GDKfree(schema_buf);
+		GDKfree(schema_buf);
+		GDKfree(hash);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
+	// clean up
+	GDKfree(schema_buf);
+	GDKfree(hash);
+
 	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
 		if (!enc)
 			free(pwd);
-		if (schema_buf)
-			GDKfree(schema_buf);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 
@@ -401,15 +414,11 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 			case -1:
 				if (!enc)
 					free(pwd);
-				if (schema_buf)
-					GDKfree(schema_buf);
 				throw(SQL,"sql.create_user",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
 				if (!enc)
 					free(pwd);
-				if (schema_buf)
-					GDKfree(schema_buf);
 				throw(SQL,"sql.create_user",SQLSTATE(42000) "Update schema authorization failed due to transaction conflict");
 			default:
 				break;
@@ -424,8 +433,6 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	c->user = grant_user;
 	if (!enc)
 		free(pwd);
-	if (schema_buf)
-		GDKfree(schema_buf);
 	return ret;
 }
 
@@ -581,8 +588,10 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	if ((err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");
 		freeException(err);
+		free(password);
 		return ;
 	}
+	free(password);
 
 	char *fullname = "MonetDB Admin";
 	char *schema_path = default_schema_path;
@@ -594,6 +603,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 
 	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory,
 		&max_workers, &optimizer, &default_role_id, &hash);
+	GDKfree(hash);
 }
 
 static int
