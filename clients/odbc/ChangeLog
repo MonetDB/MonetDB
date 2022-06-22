@@ -1,6 +1,22 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Wed Jun 22 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved SQLProcedures() and SQLProcedureColumns(). They now list
+  information also for all built-in system procedures and functions, not
+  only those created via SQL. Also corrected the value of ORDINAL_POSITION
+  for scalar function arguments. It would start at 2 instead of 1.
+- Extended output of SQLProcedures() and SQLProcedureColumns() resultsets
+  with an extra column SPECIFIC_NAME. This column contains the name which
+  uniquely identifies this procedure or function within its schema. As
+  MonetDB supports overloaded procedures and functions, the combination of
+  PROCEDURE_SCHEM and PROCEDURE_NAME is not enough to uniquely identify
+  a procedure or function. This extra column allows you to correctly
+  match the corresponding rows returned by SQLProcedureColumns() with the
+  specific rows of SQLProcedures(). This extra column SPECIFIC_NAME is
+  implemented similar to the JDBC DatabaseMetaData methods getProcedures()
+  and getProcedureColumns().
+
 * Thu Jun  9 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - For SQLForeignKeys() corrected the output of columns UPDATE_RULE and
   DELETE_RULE. These columns used to always return 3 (= SQL_NO_ACTION)
