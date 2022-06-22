@@ -33,7 +33,11 @@ def process(line, funmac, macros, infunmac=False):
     res = identre.search(line)
     while res is not None:
         name = res.group('ident')
-        if name in macros:
+        # hack for declaration of BBPreadBBPline with embedded #ifdef/#endif
+        if name in ('ifdef', 'endif') and line[res.start(0)-1:res.start(0)] == '#':
+            nline += line[pos:res.start(0)-2]
+            pos = line.index('\n', res.end(0))
+        elif name in macros:
             macros2 = macros.copy()
             del macros2[name]
             repl = process(macros[name], funmac, macros2)

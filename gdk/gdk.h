@@ -781,7 +781,9 @@ typedef enum {
  * the following fields: theap, tvheap, batInserted, batCapacity.  There
  * is no need for the lock if the bat cannot possibly be modified
  * concurrently, e.g. when it is new and not yet returned to the
- * interpreter or during system initialization. */
+ * interpreter or during system initialization.
+ * If multiple bats need to be locked at the same time by the same
+ * thread, first lock the view, then the view's parent(s). */
 typedef struct BAT {
 	/* static bat properties */
 	oid hseqbase;		/* head seq base */
@@ -908,6 +910,111 @@ gdk_export void HEAPincref(Heap *h);
 #define isVIEW(x)							\
 	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
 	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
+
+/*
+ * @+ BAT Buffer Pool
+ * @multitable @columnfractions 0.08 0.7
+ * @item int
+ * @tab BBPfix (bat bi)
+ * @item int
+ * @tab BBPunfix (bat bi)
+ * @item int
+ * @tab BBPretain (bat bi)
+ * @item int
+ * @tab BBPrelease (bat bi)
+ * @item bat
+ * @tab BBPindex  (str nme)
+ * @item BAT*
+ * @tab BATdescriptor (bat bi)
+ * @end multitable
+ *
+ * The BAT Buffer Pool module contains the code to manage the storage
+ * location of BATs.
+ *
+ * The remaining BBP tables contain status information to load, swap
+ * and migrate the BATs. The core table is BBPcache which contains a
+ * pointer to the BAT descriptor with its heaps.  A zero entry means
+ * that the file resides on disk. Otherwise it has been read or mapped
+ * into memory.
+ *
+ * BATs loaded into memory are retained in a BAT buffer pool.  They
+ * retain their position within the cache during their life cycle,
+ * which make indexing BATs a stable operation.
+ *
+ * The BBPindex routine checks if a BAT with a certain name is
+ * registered in the buffer pools. If so, it returns its BAT id.  The
+ * BATdescriptor routine has a BAT id parameter, and returns a pointer
+ * to the corresponding BAT record (after incrementing the reference
+ * count). The BAT will be loaded into memory, if necessary.
+ *
+ * The structure of the BBP file obeys the tuple format for GDK.
+ *
+ * The status and BAT persistency information is encoded in the status
+ * field.
+ */
+typedef struct {
+	BAT *cache;		/* if loaded: BAT* handle */
+	char *logical;		/* logical name (may point at bak) */
+	char bak[16];		/* logical name backup (tmp_%o) */
+	BAT *desc;		/* the BAT descriptor */
+	char *options;		/* A string list of options */
+#if SIZEOF_VOID_P == 4
+	char physical[20];	/* dir + basename for storage */
+#else
+	char physical[24];	/* dir + basename for storage */
+#endif
+	bat next;		/* next BBP slot in linked list */
+	int refs;		/* in-memory references on which the loaded status of a BAT relies */
+	int lrefs;		/* logical references on which the existence of a BAT relies */
+	ATOMIC_TYPE status;	/* status mask used for spin locking */
+	MT_Id pid;		/* creator of this bat while "private" */
+} BBPrec;
+
+gdk_export bat BBPlimit;
+#if SIZEOF_VOID_P == 4
+#define N_BBPINIT	1000
+#define BBPINITLOG	11
+#else
+#define N_BBPINIT	10000
+#define BBPINITLOG	14
+#endif
+#define BBPINIT		(1 << BBPINITLOG)
+/* absolute maximum number of BATs is N_BBPINIT * BBPINIT
+ * this also gives the longest possible "physical" name and "bak" name
+ * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on 64
+ * bit architecture and 11 + \0 on 32 bit architecture; the physical
+ * name is a bit more complicated, but the longest possible name is 22 +
+ * \0 bytes (16 + \0 on 32 bits), the longest possible extension adds
+ * another 17 bytes (.thsh(grp|uni)(l|b)%08x) */
+gdk_export BBPrec *BBP[N_BBPINIT];
+
+/* fast defines without checks; internal use only  */
+#define BBP_record(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)]
+#define BBP_cache(i)	BBP_record(i).cache
+#define BBP_logical(i)	BBP_record(i).logical
+#define BBP_bak(i)	BBP_record(i).bak
+#define BBP_next(i)	BBP_record(i).next
+#define BBP_physical(i)	BBP_record(i).physical
+#define BBP_options(i)	BBP_record(i).options
+#define BBP_desc(i)	BBP_record(i).desc
+#define BBP_refs(i)	BBP_record(i).refs
+#define BBP_lrefs(i)	BBP_record(i).lrefs
+#define BBP_status(i)	((unsigned) ATOMIC_GET(&BBP_record(i).status))
+#define BBP_pid(i)	BBP_record(i).pid
+#define BATgetId(b)	BBP_logical((b)->batCacheid)
+#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
+
+#define BBPRENAME_ALREADY	(-1)
+#define BBPRENAME_ILLEGAL	(-2)
+#define BBPRENAME_LONG		(-3)
+#define BBPRENAME_MEMORY	(-4)
+
+gdk_export void BBPlock(void);
+gdk_export void BBPunlock(void);
+gdk_export void BBPtmlock(void);
+gdk_export void BBPtmunlock(void);
+
+gdk_export BAT *BBPquickdesc(bat b);
 
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
@@ -1037,7 +1144,25 @@ bat_iterator(BAT *b)
 	/* needs matching bat_iterator_end */
 	BATiter bi;
 	if (b) {
+		BAT *pb = NULL, *pvb = NULL;
+		/* for a view, always first lock the view and then the
+		 * parent(s)
+		 * note that a varsized bat can have two different
+		 * parents and that the parent for the tail can itself
+		 * have a parent for its vheap (which would have to be
+		 * our own vheap parent), so lock the vheap after the
+		 * tail */
 		MT_lock_set(&b->theaplock);
+		if (b->theap->parentid != b->batCacheid) {
+			pb = BBP_desc(b->theap->parentid);
+			MT_lock_set(&pb->theaplock);
+		}
+		if (b->tvheap &&
+		    b->tvheap->parentid != b->batCacheid &&
+		    b->tvheap->parentid != b->theap->parentid) {
+			pvb = BBP_desc(b->tvheap->parentid);
+			MT_lock_set(&pvb->theaplock);
+		}
 		bi = bat_iterator_nolock(b);
 #ifndef NDEBUG
 		bi.locked = true;
@@ -1045,6 +1170,10 @@ bat_iterator(BAT *b)
 		HEAPincref(bi.h);
 		if (bi.vh)
 			HEAPincref(bi.vh);
+		if (pvb)
+			MT_lock_unset(&pvb->theaplock);
+		if (pb)
+			MT_lock_unset(&pb->theaplock);
 		MT_lock_unset(&b->theaplock);
 	} else {
 		bi = (BATiter) {
@@ -1155,6 +1284,7 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 /* internal */
 gdk_export uint8_t ATOMelmshift(int sz)
 	__attribute__((__const__));
+gdk_export const char *BATtailname(const BAT *b);
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	__attribute__((__warn_unused_result__));
@@ -1499,119 +1629,6 @@ BATsettrivprop(BAT *b)
 		b->trevsorted = false;
 	}
 }
-
-/*
- * @+ BAT Buffer Pool
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab BBPfix (bat bi)
- * @item int
- * @tab BBPunfix (bat bi)
- * @item int
- * @tab BBPretain (bat bi)
- * @item int
- * @tab BBPrelease (bat bi)
- * @item str
- * @tab BBPname (bat bi)
- * @item bat
- * @tab BBPindex  (str nme)
- * @item BAT*
- * @tab BATdescriptor (bat bi)
- * @end multitable
- *
- * The BAT Buffer Pool module contains the code to manage the storage
- * location of BATs.
- *
- * The remaining BBP tables contain status information to load, swap
- * and migrate the BATs. The core table is BBPcache which contains a
- * pointer to the BAT descriptor with its heaps.  A zero entry means
- * that the file resides on disk. Otherwise it has been read or mapped
- * into memory.
- *
- * BATs loaded into memory are retained in a BAT buffer pool.  They
- * retain their position within the cache during their life cycle,
- * which make indexing BATs a stable operation.
- *
- * The BBPindex routine checks if a BAT with a certain name is
- * registered in the buffer pools. If so, it returns its BAT id.  The
- * BATdescriptor routine has a BAT id parameter, and returns a pointer
- * to the corresponding BAT record (after incrementing the reference
- * count). The BAT will be loaded into memory, if necessary.
- *
- * The structure of the BBP file obeys the tuple format for GDK.
- *
- * The status and BAT persistency information is encoded in the status
- * field.
- */
-typedef struct {
-	BAT *cache;		/* if loaded: BAT* handle */
-	char *logical;		/* logical name (may point at bak) */
-	char bak[16];		/* logical name backup (tmp_%o) */
-	BAT *desc;		/* the BAT descriptor */
-	char *options;		/* A string list of options */
-#if SIZEOF_VOID_P == 4
-	char physical[20];	/* dir + basename for storage */
-#else
-	char physical[24];	/* dir + basename for storage */
-#endif
-	bat next;		/* next BBP slot in linked list */
-	int refs;		/* in-memory references on which the loaded status of a BAT relies */
-	int lrefs;		/* logical references on which the existence of a BAT relies */
-	ATOMIC_TYPE status;	/* status mask used for spin locking */
-	MT_Id pid;		/* creator of this bat while "private" */
-} BBPrec;
-
-gdk_export bat BBPlimit;
-#if SIZEOF_VOID_P == 4
-#define N_BBPINIT	1000
-#define BBPINITLOG	11
-#else
-#define N_BBPINIT	10000
-#define BBPINITLOG	14
-#endif
-#define BBPINIT		(1 << BBPINITLOG)
-/* absolute maximum number of BATs is N_BBPINIT * BBPINIT
- * this also gives the longest possible "physical" name and "bak" name
- * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on 64
- * bit architecture and 11 + \0 on 32 bit architecture; the physical
- * name is a bit more complicated, but the longest possible name is 22 +
- * \0 bytes (16 + \0 on 32 bits), the longest possible extension adds
- * another 17 bytes (.thsh(grp|uni)(l|b)%08x) */
-gdk_export BBPrec *BBP[N_BBPINIT];
-
-/* fast defines without checks; internal use only  */
-#define BBP_record(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)]
-#define BBP_cache(i)	BBP_record(i).cache
-#define BBP_logical(i)	BBP_record(i).logical
-#define BBP_bak(i)	BBP_record(i).bak
-#define BBP_next(i)	BBP_record(i).next
-#define BBP_physical(i)	BBP_record(i).physical
-#define BBP_options(i)	BBP_record(i).options
-#define BBP_desc(i)	BBP_record(i).desc
-#define BBP_refs(i)	BBP_record(i).refs
-#define BBP_lrefs(i)	BBP_record(i).lrefs
-#define BBP_status(i)	((unsigned) ATOMIC_GET(&BBP_record(i).status))
-#define BBP_pid(i)	BBP_record(i).pid
-#define BATgetId(b)	BBP_logical((b)->batCacheid)
-#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
-
-/* macros that nicely check parameters */
-#define BBPstatus(i)	(BBPcheck(i) ? BBP_status(i) : 0)
-#define BBPrefs(i)	(BBPcheck(i) ? BBP_refs(i) : -1)
-#define BBPcache(i)	(BBPcheck(i) ? BBP_cache(i) : (BAT*) NULL)
-#define BBPname(i)	(BBPcheck(i) ? BBP_logical(i) : "")
-
-#define BBPRENAME_ALREADY	(-1)
-#define BBPRENAME_ILLEGAL	(-2)
-#define BBPRENAME_LONG		(-3)
-#define BBPRENAME_MEMORY	(-4)
-
-gdk_export void BBPlock(void);
-gdk_export void BBPunlock(void);
-gdk_export void BBPtmlock(void);
-gdk_export void BBPtmunlock(void);
-
-gdk_export BAT *BBPquickdesc(bat b);
 
 /*
  * @- GDK error handling
