@@ -168,26 +168,20 @@ BATupgrade(BAT *r, BAT *b)
 static void
 BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 {
-	MT_lock_set(&b->theaplock);
 	MT_lock_set(&u->theaplock);
-	int indirect = (b->tvheap->parentid != b->batCacheid);
 	if (p)
 		pipeline_lock(p);
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
-		HEAPincref(b->tvheap);
-		u->tvheap = b->tvheap;
-		if (!indirect)
-			MT_lock_unset(&b->theaplock);
-		BBPshare(b->tvheap->parentid);
-	} else {
-		if (!indirect)
-			MT_lock_unset(&b->theaplock);
+		MT_lock_set(&b->theaplock);
+		Heap *h = b->tvheap;
+		HEAPincref(h);
+		MT_lock_unset(&b->theaplock);
+		BBPshare(h->parentid);
+		HEAPdecref(u->tvheap, true);
+		u->tvheap = h;
 	}
 	if (p)
 		pipeline_unlock(p);
-	if (indirect)
-		MT_lock_unset(&b->theaplock);
 	MT_lock_unset(&u->theaplock);
 }
 
