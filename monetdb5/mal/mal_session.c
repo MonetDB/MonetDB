@@ -173,15 +173,27 @@ static str MSserveClient(Client cntxt);
 
 
 static inline void
-cleanUpScheduleClient(Client c, bstream *fin, stream *fout, str command, str err)
+cleanUpScheduleClient(Client c, Scenario s, bstream *fin, stream *fout, str *command, str *err)
 {
 	if(c) {
+		if (s) {
+			str msg = NULL;
+			if((msg = s->exitClientCmd(c)) != MAL_SUCCEED) {
+				mnstr_printf(fout, "!%s\n", msg);
+				freeException(msg);
+			}
+		}
 		MCfreeClient(c);
-		c = NULL;
 	}
 	exit_streams(fin, fout);
-	GDKfree(command);
-	freeException(err);
+	if (command) {
+		GDKfree(*command);
+		*command = NULL;
+	}
+	if (err) {
+		freeException(*err);
+		*err = NULL;
+	}
 }
 
 
@@ -299,25 +311,21 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				else
 					mnstr_printf(fout, "!maximum concurrent client limit reached "
 									   "(%d), please try again later\n", MAL_MAXCLIENTS);
-				return cleanUpScheduleClient(NULL, fin, fout, command, NULL);
+				return cleanUpScheduleClient(NULL, NULL, fin, fout, &command, NULL);
 			}
 			Scenario scenario = findScenario("sql");
 			if ((msg = scenario->initClientCmd(c)) != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", msg);
-				return cleanUpScheduleClient(c, fin, fout, command, msg);
+				return cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
 			}
 			/* access control: verify the credentials supplied by the user,
 			* no need to check for database stuff, because that is done per
 			* database itself (one gets a redirect) */
 			if ((msg = AUTHcheckCredentials(&uid, c, user, passwd, challenge, algo)) != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", msg);
-				return cleanUpScheduleClient(c, fin, fout, command, msg);
+				return cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
 			}
-			if((msg = scenario->exitClientCmd(c)) != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", msg);
-				return cleanUpScheduleClient(c, fin, fout, command, msg);
-			}
-			cleanUpScheduleClient(c, NULL, NULL, NULL, NULL);
+			cleanUpScheduleClient(c, scenario, NULL, NULL, NULL, NULL);
 		}
 
 
