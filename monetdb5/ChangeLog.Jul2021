@@ -1,3 +1,6 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Jun 22 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Various race conditions (data races) have been fixed.
+
