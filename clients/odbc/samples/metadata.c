@@ -81,12 +81,13 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 	SQLRETURN ret;
 	SQLSMALLINT columns;	// Number of columns in result-set
 	size_t expct_len = strlen(expected);
-	size_t outp_len = expct_len + 1000;
+	size_t outp_len = expct_len + 10000;
 	char * outp = malloc(outp_len);
 	size_t pos = 0;
 	SQLUSMALLINT col;
 	SQLLEN indicator;
 	char buf[2048];
+	int replaceId = 0;	/* used to replace system id values in column SPECIFIC_NAME of getProcedures and getProcedureColumns */
 
 	if (outp == NULL) {
 		fprintf(stderr, "Failed to allocate %zu memory!\n", outp_len);
@@ -110,6 +111,17 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 	}
 	pos += snprintf(outp + pos, outp_len - pos, "\n");
 
+	/* detect if special handling of data of column SPECIFIC_NAME returned by SQLProcedures and SQLProcedureColumns
+	   is needed as it contains system generated id values which can differ per version and platform */
+	if (columns == 9 || columns == 20) {
+		/* this result could be from SQLProcedures or SQLProcedureColumns */
+		if ((strncmp("SQLProcedures", functionname, 13) == 0)
+		 || (strncmp("SQLProcedureColumns", functionname, 19) == 0)) {
+			if (strncmp("SPECIFIC_NAME", buf, 13) == 0)
+				replaceId = 1;
+		}
+	}
+
 	/* Loop through the rows in the result-set */
 	ret = SQLFetch(stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch(1)");
@@ -120,10 +132,16 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 			ret = SQLGetData(stmt, col, SQL_C_CHAR, buf, sizeof(buf), &indicator);
 			check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData()");
 			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-				pos += snprintf(outp + pos, outp_len - pos,
-					(col > 1) ? "\t%s" : "%s",
-					// Handle null columns
-					(indicator == SQL_NULL_DATA) ? "NULL" : buf);
+				// Check if we need to replace the system id values to get stable output
+				if (replaceId == 0 ||
+				   (replaceId == 1 && col < columns)) {
+					pos += snprintf(outp + pos, outp_len - pos,
+						(col > 1) ? "\t%s" : "%s",
+						// Handle null columns
+						(indicator == SQL_NULL_DATA) ? "NULL" : buf);
+				} else {
+					pos += snprintf(outp + pos, outp_len - pos, "\treplacedId");
+				}
 			}
 		}
 		pos += snprintf(outp + pos, outp_len - pos, "\n");
@@ -223,6 +241,8 @@ main(int argc, char **argv)
 		"GRANT INSERT, UPDATE, DELETE ON TABLE odbctst.pk_uc TO monetdb;\n"
 		, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (add privileges script)");
+
+	// TODO add user procedures / functions to test SQLProcedures() and SQLProcedureColumns() more
 
 /* run actual metadata query tests */
 	// All catalogs query
@@ -665,19 +685,150 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	odbctst	pk2c	pkc2	mTests_sql_odbc_samples	odbctst	fk2c	fkc2	1	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n"
 		"mTests_sql_odbc_samples	odbctst	pk2c	pkc1	mTests_sql_odbc_samples	odbctst	fk2c	fkc3	2	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n");
 
-	// TODO add tables with procedures such that below calls also return data rows
+	// test procedure sys.analyze(). There are 4 overloaded variants of this procedure in MonetDB with 0, 1, 2 or 3 input parameters.
 	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
-			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"myproc", SQL_NTS);
-	compareResult(stmt, ret, "SQLProcedures (odbctst, myproc)",
-		"Resultset with 8 columns\n"
-		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE\n");
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"analyze", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedures (sys, analyze)",
+		"Resultset with 9 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	analyze	0	0	0	NULL	1	replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	0	0	0	NULL	1	replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	0	0	0	NULL	1	replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	0	0	0	NULL	1	replacedId\n");
 
 	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
-			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"myproc", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"analyze", SQL_NTS,
 			(SQLCHAR*)"%", SQL_NTS);
-	compareResult(stmt, ret, "SQLProcedureColumns (odbctst, myproc, %)",
-		"Resultset with 19 columns\n"
-		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n");
+	compareResult(stmt, ret, "SQLProcedureColumns (sys, analyze, %)",
+		"Resultset with 20 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n");
+
+	// test function sys.sin(). There are 2 overloaded variants of this function in MonetDB: sys.sin(real) and sys.sin(double).
+	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"sin", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedures (sys, sin)",
+		"Resultset with 9 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	sin	0	0	0	NULL	2	replacedId\n"
+		"mTests_sql_odbc_samples	sys	sin	0	0	0	NULL	2	replacedId\n");
+
+	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"sin", SQL_NTS,
+			(SQLCHAR*)"%", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedureColumns (sys, sin, %)",
+		"Resultset with 20 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	sin	arg_1	1	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	sin	res_0	5	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	0		replacedId\n"
+		"mTests_sql_odbc_samples	sys	sin	arg_1	1	8	DOUBLE	53	24	15	2	2	NULL	NULL	8	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	sin	res_0	5	8	DOUBLE	53	24	15	2	2	NULL	NULL	8	NULL	NULL	0		replacedId\n");
+
+	// test table returning function sys.env(). It has no input parameters. Only 2 result columns.
+	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"env", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedures (sys, env)",
+		"Resultset with 9 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	env	0	0	0	NULL	2	replacedId\n");
+
+	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"env", SQL_NTS,
+			(SQLCHAR*)"%", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedureColumns (sys, env, %)",
+		"Resultset with 20 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	env	name	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	env	value	3	-9	VARCHAR	2048	4096	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n");
+
+	// test table returning function sys.statistics(). 4 overloaded variants with 0, 1, 2 or 3 input parameters. 13 result columns.
+	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"statistics", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedures (sys, statistics)",
+		"Resultset with 9 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	statistics	0	0	0	NULL	2	replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	0	0	0	NULL	2	replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	0	0	0	NULL	2	replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	0	0	0	NULL	2	replacedId\n");
+
+	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"statistics", SQL_NTS,
+			(SQLCHAR*)"%", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedureColumns (sys, statistics, %)",
+		"Resultset with 20 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
+		// 0 input argument and 13 result columns of sys.statistics()
+		"mTests_sql_odbc_samples	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
+
+		// 1 input argument and 13 result columns of sys.statistics(sname)
+		"mTests_sql_odbc_samples	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
+
+		// 2 input arguments and 13 result columns of sys.statistics(sname, tname)
+		"mTests_sql_odbc_samples	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
+
+		// 3 input arguments and 13 result columns of sys.statistics(sname, tname, cname)
+		"mTests_sql_odbc_samples	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n");
+
 
 	// cleanup
 	ret = SQLExecDirect(stmt, (SQLCHAR *)

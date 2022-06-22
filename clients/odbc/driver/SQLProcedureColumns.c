@@ -141,11 +141,14 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 	   INTEGER      CHAR_OCTET_LENGTH
 	   INTEGER      ORDINAL_POSITION NOT NULL
 	   VARCHAR      IS_NULLABLE
+	   VARCHAR      SPECIFIC_NAME	(Note this is a MonetDB extension, needed to differentiate between overloaded procedure/function names)
+					(similar to JDBC DatabaseMetaData methods getProcedureColumns() and getFunctionColumns())
 	 */
 
-/* see sql_catalog.h */
+/* see sql/include/sql_catalog.h */
+#define F_FUNC 1
+#define F_PROC 2
 #define F_UNION 5
-#define FUNC_LANG_SQL 2
 	pos += snprintf(query + pos, querylen - pos,
 		"select '%s' as \"PROCEDURE_CAT\", "
 		       "s.name as \"PROCEDURE_SCHEM\", "
@@ -169,16 +172,21 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 		CHAR_OCTET_LENGTH(a) ", "
 		       "case when p.type = 5 and a.inout = 0 then a.number + 1 "
 			    "when p.type = 5 and a.inout = 1 then a.number - x.maxout "
+			    "when p.type = 2 and a.inout = 1 then a.number + 1 "
 			    "when a.inout = 0 then 0 "
-			    "else a.number + 1 "
+			    "else a.number "
 		       "end as \"ORDINAL_POSITION\", "
-		       "'' as \"IS_NULLABLE\" "
+		       "'' as \"IS_NULLABLE\", "
+			/* Only the id value uniquely identifies a specific procedure.
+			   Include it to be able to differentiate between multiple
+			   overloaded procedures with the same name and schema */
+			"cast(p.id as varchar(10)) AS \"SPECIFIC_NAME\" "
 		"from sys.schemas s, "
 		     "sys.functions p left outer join (select func_id, max(number) as maxout from sys.args where inout = 0 group by func_id) as x on p.id = x.func_id, "
 		     "sys.args a%s "
-		"where p.language >= %d and "
-		      "s.id = p.schema_id and "
-		      "p.id = a.func_id",
+		"where s.id = p.schema_id and "
+		      "p.id = a.func_id and "
+		      "p.type in (%d, %d, %d)",
 		stmt->Dbc->dbname,
 		/* column_type: */
 		SQL_PARAM_INPUT, F_UNION, SQL_RESULT_COL, SQL_RETURN_VALUE,
@@ -215,8 +223,9 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 #endif
 		/* from clause: */
 		stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = a.id" : "",
-		FUNC_LANG_SQL);
-	assert(pos < 6300);
+		/* where clause: */
+		F_FUNC, F_PROC, F_UNION);
+	assert(pos < 6400);
 
 	/* depending on the input parameter values we must add a
 	   variable selection condition dynamically */
@@ -246,7 +255,9 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"COLUMN_TYPE\", \"ORDINAL_POSITION\"", querylen - pos);
+	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\", \"COLUMN_TYPE\", \"ORDINAL_POSITION\"", querylen - pos);
+
+	/* debug: fprintf(stdout, "SQLProcedureColumns SQL (%zu):\n%s\n\n", pos, query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
