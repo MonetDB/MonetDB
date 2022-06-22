@@ -136,18 +136,23 @@ BATnegateprops(BAT *b)
 #define pipeline_unlock2(r) MT_lock_unset(&r->theaplock)
 
 static int
-BATupgrade(BAT *r, BAT *b)
+BATupgrade(BAT *r, BAT *b, bool locked)
 {
+	/* if locked is true, both r and b's theaplock are locked, else
+	 * neither of them are */
 	int err = 0;
-	MT_lock_set(&b->theaplock);
-	//MT_lock_set(&r->theaplock);
 	//TODO add upgradevarheap variant which only widens, no resize!
+	if (!locked)
+		MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(r->ttype) &&
 		BATcount(r) == 0 &&
 		r->tvheap->parentid == r->batCacheid &&
-		r->twidth < b->twidth &&
-		GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
-			err = 1;
+		r->twidth < b->twidth) {
+		if (locked)
+			MT_lock_unset(&r->theaplock);
+		err = GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED;
+		if (locked)
+			MT_lock_set(&r->theaplock);
 	}
 	/*
 	if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
@@ -160,17 +165,17 @@ BATupgrade(BAT *r, BAT *b)
 			}
 	}
 	*/
-	//MT_lock_unset(&r->theaplock);
-	MT_lock_unset(&b->theaplock);
+	if (!locked)
+		MT_lock_unset(&b->theaplock);
 	return err;
 }
 
 static void
 BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 {
-	MT_lock_set(&u->theaplock);
 	if (p)
 		pipeline_lock(p);
+	MT_lock_set(&u->theaplock);
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		MT_lock_set(&b->theaplock);
 		Heap *h = b->tvheap;
@@ -180,9 +185,9 @@ BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 		HEAPdecref(u->tvheap, true);
 		u->tvheap = h;
 	}
+	MT_lock_unset(&u->theaplock);
 	if (p)
 		pipeline_unlock(p);
-	MT_lock_unset(&u->theaplock);
 }
 
 static str
@@ -1335,9 +1340,15 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	MT_lock_set(&u->theaplock);
+	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid)
-			BATswap_heaps(u, b, p);
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		BATswap_heaps(u, b, p);
+	} else {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -1521,9 +1532,15 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	MT_lock_set(&u->theaplock);
+	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid)
-			BATswap_heaps(u, b, p);
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		BATswap_heaps(u, b, p);
+	} else {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -1823,19 +1840,21 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	MT_lock_set(&u->theaplock);
+	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
 		local_storage = true;
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		pipeline_lock(p);
 		if (!h->allocators) {
-			pipeline_lock(p);
-			if (!h->allocators) {
-				h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
-				if (!h->allocators)
-					err = 1;
-				else
-					h->nr_allocators = p->p->nr_workers;
-			}
-			pipeline_unlock(p);
+			h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
+			if (!h->allocators)
+				err = 1;
+			else
+				h->nr_allocators = p->p->nr_workers;
 		}
+		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = sa_create();
@@ -1843,8 +1862,12 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				err = 1;
 		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid)
-			BATswap_heaps(u, b, p);
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		BATswap_heaps(u, b, p);
+	} else {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -2125,19 +2148,21 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	MT_lock_set(&u->theaplock);
+	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
 		local_storage = true;
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		pipeline_lock(p);
 		if (!h->allocators) {
-			pipeline_lock(p);
-			if (!h->allocators) {
-				h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
-				if (!h->allocators)
-					err = 1;
-				else
-					h->nr_allocators = p->p->nr_workers;
-			}
-			pipeline_unlock(p);
+			h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
+			if (!h->allocators)
+				err = 1;
+			else
+				h->nr_allocators = p->p->nr_workers;
 		}
+		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = sa_create();
@@ -2145,8 +2170,12 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 				err = 1;
 		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid)
-			BATswap_heaps(u, b, p);
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		BATswap_heaps(u, b, p);
+	} else {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -2435,25 +2464,39 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	if (!private)
 		pipeline_lock1(r);
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+		MT_lock_set(&r->theaplock);
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			err = 1;
-		else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
-			BATswap_heaps(r, b, p);
-		}
-	} else if (!r) {
-		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
-			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			BATswap_heaps(r, b, p);
 		} else {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+		}
+	} else if (!r) {
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
+			MT_lock_unset(&b->theaplock);
+			BATswap_heaps(r, b, p);
+		} else {
+			MT_lock_unset(&b->theaplock);
 			local_storage = true;
 			r = COLnew(0, tt, max, TRANSIENT);
 
-			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
-					err = 1;
+			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth)
+				err = BATupgrade(r, b, false);
 		}
 		assert(private);
 		r->T.private_bat = 1;
@@ -3250,25 +3293,39 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	BBPunfix(pg->batCacheid);
 
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+		MT_lock_set(&r->theaplock);
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			err = 1;
-		else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			BATswap_heaps(r, b, p);
+		} else {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 		}
 	} else if (!r) {
+		MT_lock_set(&b->theaplock);
 		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
+			MT_lock_unset(&b->theaplock);
 			BATswap_heaps(r, b, p);
 		} else {
 			local_storage = true;
+			MT_lock_unset(&b->theaplock);
 			r = COLnew(0, b->ttype, max, TRANSIENT);
 
-			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
-				err = 1;
+			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth)
+				err = BATupgrade(r, b, false);
 		}
 		r->T.private_bat = 1;
 	}
@@ -3356,24 +3413,38 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	BBPunfix(pg->batCacheid);
 
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+		MT_lock_set(&r->theaplock);
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			err = 1;
-		else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
-			BATswap_heaps(r, b, p);
-		}
-	} else if (!r) {
-		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
-			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			BATswap_heaps(r, b, p);
 		} else {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+		}
+	} else if (!r) {
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
+			MT_lock_unset(&b->theaplock);
+			BATswap_heaps(r, b, p);
+		} else {
+			MT_lock_unset(&b->theaplock);
 			local_storage = true;
 			r = COLnew(0, b->ttype, max, TRANSIENT);
 
-			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
-				err = 1;
+			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth)
+				err = BATupgrade(r, b, false);
 		}
 		r->T.private_bat = 1;
 	}
