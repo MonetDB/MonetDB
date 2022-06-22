@@ -36,12 +36,13 @@ static const char *myname = 0;	// avoid tracing the profiler module
 /* The JSON rendering can be either using '\n' separators between
  * each key:value pair or as a single line.
  * The current stethoscope implementation requires the first option and
- * also the term rendering  to be set to ''
+ * also the term rendering to be set to ''
  */
 
 /* When the MAL block contains a BARRIER block we may end up with tons
  * of profiler events. To avoid this, we stop emitting the events
- * when we reached the HIGHWATERMARK. Leaving a message in the log. */
+ * when we reached the HIGHWATERMARK. Leaving a message in the log.
+ */
 #define HIGHWATERMARK 5
 
 
@@ -66,7 +67,7 @@ static void logjsonInternal(char *logbuffer, bool flush)
 	len = strlen(logbuffer);
 
 	if (maleventstream) {
-	// upon request the log record is sent over the profile stream
+		// upon request the log record is sent over the profile stream
 		(void) mnstr_write(maleventstream, logbuffer, 1, len);
 		if (flush)
 			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
@@ -169,17 +170,17 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 
 /* JSON rendering method of performance data.
  * The eventparser may assume this layout for ease of parsing
-EXAMPLE:
-{
-"event":6        ,
-"thread":3,
-"function":"user.s3_1",
-"pc":1,
-"tag":10397,
-"state":"start",
-"usec":0,
-}
-"stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
+ EXAMPLE:
+ {
+ "event":6        ,
+ "thread":3,
+ "function":"user.s3_1",
+ "pc":1,
+ "tag":10397,
+ "state":"start",
+ "usec":0,
+ }
+ "stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
 */
 static void
 prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
@@ -201,9 +202,9 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 		return;
 	}
 
-/* The stream of events can be complete read by the DBA,
- * all other users can only see events assigned to their account
- */
+	/* The stream of events can be complete read by the DBA,
+	 * all other users can only see events assigned to their account
+	 */
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return;
 
@@ -654,9 +655,9 @@ openProfilerStream(Client cntxt)
 	/* this code is not thread safe, because the inprogress administration may change concurrently */
 	MT_lock_set(&mal_delayLock);
 	for(j = 0; j <THREADS; j++)
-	if(workingset[j].mb)
-		/* show the event */
-		profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
+		if(workingset[j].mb)
+			/* show the event */
+			profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
 	MT_lock_unset(&mal_delayLock);
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
