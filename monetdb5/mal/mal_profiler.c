@@ -31,17 +31,18 @@
 
 #include <string.h>
 
-static str myname = 0;	// avoid tracing the profiler module
+static const char *myname = 0;	// avoid tracing the profiler module
 
 /* The JSON rendering can be either using '\n' separators between
  * each key:value pair or as a single line.
  * The current stethoscope implementation requires the first option and
- * also the term rendering  to be set to ''
+ * also the term rendering to be set to ''
  */
 
 /* When the MAL block contains a BARRIER block we may end up with tons
  * of profiler events. To avoid this, we stop emitting the events
- * when we reached the HIGHWATERMARK. Leaving a message in the log. */
+ * when we reached the HIGHWATERMARK. Leaving a message in the log.
+ */
 #define HIGHWATERMARK 5
 
 
@@ -60,18 +61,17 @@ static struct rusage prevUsage;
 #define LOGLEN 8192
 
 // The heart beat events should be sent to all outstanding channels.
-static void logjsonInternal(char *logbuffer)
+static void logjsonInternal(char *logbuffer, bool flush)
 {
 	size_t len;
 	len = strlen(logbuffer);
 
-	MT_lock_set(&mal_profileLock);
 	if (maleventstream) {
-	// upon request the log record is sent over the profile stream
+		// upon request the log record is sent over the profile stream
 		(void) mnstr_write(maleventstream, logbuffer, 1, len);
-		(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
+		if (flush)
+			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 	}
-	MT_lock_unset(&mal_profileLock);
 }
 
 /*
@@ -141,7 +141,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			/* includes first time when logbuffer == NULL and logcap = 0 */
 			char *alloc_buff;
 			if (logbuf->loglen > 0)
-				logjsonInternal(logbuf->logbuffer);
+				logjsonInternal(logbuf->logbuffer, false);
 			logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len/2;
 			if (logbuf->logcap < LOGLEN)
 				logbuf->logcap = LOGLEN;
@@ -156,7 +156,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			logbuf->logbuffer = alloc_buff;
 			lognew(logbuf);
 		} else {
-			logjsonInternal(logbuf->logbuffer);
+			logjsonInternal(logbuf->logbuffer, false);
 			lognew(logbuf);
 		}
 	}
@@ -170,20 +170,20 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 
 /* JSON rendering method of performance data.
  * The eventparser may assume this layout for ease of parsing
-EXAMPLE:
-{
-"event":6        ,
-"thread":3,
-"function":"user.s3_1",
-"pc":1,
-"tag":10397,
-"state":"start",
-"usec":0,
-}
-"stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
+ EXAMPLE:
+ {
+ "event":6        ,
+ "thread":3,
+ "function":"user.s3_1",
+ "pc":1,
+ "tag":10397,
+ "state":"start",
+ "usec":0,
+ }
+ "stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
 */
 static void
-renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	struct logbuf logbuf;
 	str c;
@@ -202,9 +202,9 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 		return;
 	}
 
-/* The stream of events can be complete read by the DBA,
- * all other users can only see events assigned to their account
- */
+	/* The stream of events can be complete read by the DBA,
+	 * all other users can only see events assigned to their account
+	 */
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return;
 
@@ -303,7 +303,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 			c =getVarName(mb, getArg(pci,j));
 			if(getVarSTC(mb,getArg(pci,j))){
 				InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
-				if (stc &&
+				if (stc && getModuleId(stc) &&
 					strcmp(getModuleId(stc),"sql") ==0 &&
 					strncmp(getFunctionId(stc),"bind",4)==0 &&
 					!logadd(&logbuf, ",\"alias\":\"%s.%s.%s\"",
@@ -317,13 +317,16 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 				tname = getTypeName(getBatType(tpe));
 				ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
 				GDKfree(tname);
-				if (!ok)
+				if (!ok) {
+					if (d)
+						BBPunfix(d->batCacheid);
 					return;
+				}
 				if(d) {
 					BAT *v;
 					cnt = BATcount(d);
 					if(isVIEW(d)){
-						v= BBPquickdesc(VIEWtparent(d), false);
+						v= BBP_cache(VIEWtparent(d));
 						if (!logadd(&logbuf,
 									",\"view\":\"true\""
 									",\"parent\":%d"
@@ -331,11 +334,15 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 									",\"mode\":\"%s\"",
 									VIEWtparent(d),
 									d->hseqbase,
-									v && !v->batTransient ? "persistent" : "transient"))
+									v && !v->batTransient ? "persistent" : "transient")) {
+							BBPunfix(d->batCacheid);
 							return;
+						}
 					} else {
-						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent")))
+						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"))) {
+							BBPunfix(d->batCacheid);
 							return;
+						}
 					}
 					if (!logadd(&logbuf,
 								",\"sorted\":%d"
@@ -347,26 +354,38 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 								d->trevsorted,
 								d->tnonil,
 								d->tnil,
-								d->tkey))
+								d->tkey)) {
+						BBPunfix(d->batCacheid);
 						return;
+					}
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					c = strchr(cv, '>');
 					if (c)		/* unlikely that this isn't true */
 						*c = 0;
 					ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
 					GDKfree(cv);
-					if (!ok)
+					if (!ok) {
+						BBPunfix(d->batCacheid);
 						return;
-					total += cnt * d->twidth;
-					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
+					}
+					total += cnt << d->tshift;
+					if (!logadd(&logbuf, ",\"width\":%d", d->twidth)) {
+						BBPunfix(d->batCacheid);
 						return;
+					}
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
-					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid)))
+					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
+						BBPunfix(d->batCacheid);
 						return;
-					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid)))
+					}
+					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid))) {
+						BBPunfix(d->batCacheid);
 						return;
-					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d)))
+					}
+					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d))) {
+						BBPunfix(d->batCacheid);
 						return;
+					}
 					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) return; */
 					BBPunfix(d->batCacheid);
 				}
@@ -407,8 +426,16 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	}
 	if (!logadd(&logbuf, "}\n")) // end marker
 		return;
-	logjsonInternal(logbuf.logbuffer);
+	logjsonInternal(logbuf.logbuffer, true);
 	logdel(&logbuf);
+}
+
+static void
+renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+{
+	MT_lock_set(&mal_profileLock);
+	prepareProfilerEvent(cntxt, mb, stk, pci, start);
+	MT_lock_unset(&mal_profileLock);
 }
 
 /* the OS details on cpu load are read from /proc/stat
@@ -509,7 +536,7 @@ profilerHeartbeatEvent(char *alter)
 
 	if (!logadd(&logbuf, "{"))	// fill in later with the event counter
 		return;
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory()) {
 		char *uuid = NULL, *err;
 		if ((err = msab_getUUID(&uuid)) == NULL) {
 			bool ok = logadd(&logbuf, "\"session\":\"%s\",", uuid);
@@ -544,7 +571,7 @@ profilerHeartbeatEvent(char *alter)
 				"}\n",			// end marker
 				alter, cpuload))
 		return;
-	logjsonInternal(logbuf.logbuffer);
+	logjsonInternal(logbuf.logbuffer, true);
 	logdel(&logbuf);
 }
 
@@ -577,16 +604,19 @@ openProfilerStream(Client cntxt)
 	getrusage(RUSAGE_SELF, &infoUsage);
 	prevUsage = infoUsage;
 #endif
+	MT_lock_set(&mal_profileLock);
 	if (myname == 0){
 		myname = putName("profiler");
-		logjsonInternal(monet_characteristics);
+		logjsonInternal(monet_characteristics, true);
 	}
 	if(maleventstream){
 		/* The DBA can always grab the stream, others have to wait */
-		if (cntxt->user == MAL_ADMIN)
+		if (cntxt->user == MAL_ADMIN) {
 			closeProfilerStream(cntxt);
-		else
+		} else {
+			MT_lock_unset(&mal_profileLock);
 			throw(MAL,"profiler.start","Profiler already running, stream not available");
+		}
 	}
 	malProfileMode = -1;
 	maleventstream = cntxt->fdout;
@@ -598,10 +628,11 @@ openProfilerStream(Client cntxt)
 	/* this code is not thread safe, because the inprogress administration may change concurrently */
 	MT_lock_set(&mal_delayLock);
 	for(j = 0; j <THREADS; j++)
-	if(workingset[j].mb)
-		/* show the event */
-		profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
+		if(workingset[j].mb)
+			/* show the event */
+			profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
 	MT_lock_unset(&mal_delayLock);
+	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
 
@@ -635,8 +666,8 @@ startProfiler(Client cntxt)
 		myname = putName("profiler");
 	}
 	malProfileMode = 1;
+	logjsonInternal(monet_characteristics, true);
 	MT_lock_unset(&mal_profileLock);
-	logjsonInternal(monet_characteristics);
 	// reset the trace table
 	clearTrace(cntxt);
 
@@ -795,6 +826,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_profileLock);
  	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
+		GDKfree(stmt);
 		return;
 	}
 	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;
