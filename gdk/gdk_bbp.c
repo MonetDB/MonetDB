@@ -2787,6 +2787,7 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 {
 	int refs = 0, lrefs;
 	bool swap = false;
+	bool locked = false;
 	bat tp = 0, tvp = 0;
 	int farmid = 0;
 	BAT *b;
@@ -2840,7 +2841,9 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 			assert(b == NULL || b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
 			assert(b == NULL || b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
-			if (refs == 0 && b) {
+			if (b && refs == 0) {
+				MT_lock_set(&b->theaplock);
+				locked = true;
 				tp = VIEWtparent(b);
 				tvp = VIEWvtparent(b);
 				if (tp || tvp)
@@ -2849,7 +2852,8 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 		}
 	}
 	if (b) {
-		MT_lock_set(&b->theaplock);
+		if (!locked)
+			MT_lock_set(&b->theaplock);
 #if 0
 		if (b->batCount > b->batInserted && !isVIEW(b)) {
 			/* if batCount is larger than batInserted and
@@ -2865,7 +2869,6 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 #endif
 		if (b->theap)
 			farmid = b->theap->farmid;
-		MT_lock_unset(&b->theaplock);
 	}
 
 	/* we destroy transients asap and unload persistent bats only
@@ -2877,8 +2880,6 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 	/* only consider unloading if refs is 0; if, in addition, lrefs
 	 * is 0, we can definitely unload, else only if some more
 	 * conditions are met */
-	if (b)
-		MT_lock_set(&b->theaplock);
 	if (BBP_refs(i) == 0 &&
 	    (BBP_lrefs(i) == 0 ||
 	     (b != NULL && b->theap != NULL
@@ -3038,17 +3039,11 @@ BATdescriptor(bat i)
 	return b;
 }
 
-static inline void
-GDKunshare(bat parent)
-{
-	(void) decref(parent, false, true, true, true, __func__);
-	(void) decref(parent, true, false, true, true, __func__);
-}
-
 void
 BBPunshare(bat parent)
 {
-	GDKunshare(parent);
+	(void) decref(parent, false, true, true, true, __func__);
+	(void) decref(parent, true, false, true, true, __func__);
 }
 
 /*
@@ -3229,9 +3224,9 @@ BBPdestroy(BAT *b)
 
 	/* parent released when completely done with child */
 	if (tp)
-		GDKunshare(tp);
+		BBPunshare(tp);
 	if (vtp)
-		GDKunshare(vtp);
+		BBPunshare(vtp);
 }
 
 static gdk_return
@@ -3258,9 +3253,9 @@ BBPfree(BAT *b)
 
 	/* parent released when completely done with child */
 	if (ret == GDK_SUCCEED && tp)
-		GDKunshare(tp);
+		BBPunshare(tp);
 	if (ret == GDK_SUCCEED && vtp)
-		GDKunshare(vtp);
+		BBPunshare(vtp);
 	return ret;
 }
 
@@ -3508,7 +3503,6 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 	char extnew[16];
 	bool istail = strncmp(ext, "tail", 4) == 0;
 
-	h->dirty |= dirty;
 	if (h->wasempty) {
 		return GDK_SUCCEED;
 	}

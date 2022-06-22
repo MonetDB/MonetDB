@@ -76,8 +76,8 @@ newODBCStmt(ODBCDbc *dbc)
 		.retrieveData = SQL_RD_ON,
 		.noScan = SQL_NOSCAN_OFF,
 
-		.ApplRowDescr = newODBCDesc(dbc),
-		.ApplParamDescr = newODBCDesc(dbc),
+		.AutoApplRowDescr = newODBCDesc(dbc),
+		.AutoApplParamDescr = newODBCDesc(dbc),
 		.ImplRowDescr = newODBCDesc(dbc),
 		.ImplParamDescr = newODBCDesc(dbc),
 
@@ -90,20 +90,20 @@ newODBCStmt(ODBCDbc *dbc)
 		destroyODBCStmt(stmt);
 		return NULL;
 	}
-	if (stmt->ApplRowDescr == NULL || stmt->ApplParamDescr == NULL ||
+	if (stmt->AutoApplRowDescr == NULL || stmt->AutoApplParamDescr == NULL ||
 	    stmt->ImplRowDescr == NULL || stmt->ImplParamDescr == NULL) {
 		destroyODBCStmt(stmt);
 		return NULL;
 	}
 
-	stmt->ApplRowDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
-	stmt->ApplParamDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
+	stmt->AutoApplRowDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
+	stmt->AutoApplParamDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
 	stmt->ImplRowDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
 	stmt->ImplParamDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
 	stmt->ImplRowDescr->Stmt = stmt;
 	stmt->ImplParamDescr->Stmt = stmt;
-	stmt->AutoApplRowDescr = stmt->ApplRowDescr;
-	stmt->AutoApplParamDescr = stmt->ApplParamDescr;
+	stmt->ApplRowDescr = stmt->AutoApplRowDescr;
+	stmt->ApplParamDescr = stmt->AutoApplParamDescr;
 
 	/* add this stmt to the administrative linked stmt list */
 	stmt->next = dbc->FirstStmt,
@@ -191,19 +191,20 @@ destroyODBCStmt(ODBCStmt *stmt)
 
 	/* remove this stmt from the dbc */
 	assert(stmt->Dbc);
-	assert(stmt->Dbc->FirstStmt);
 
 	/* search for stmt in linked list */
 	stmtp = &stmt->Dbc->FirstStmt;
 
 	while (*stmtp && *stmtp != stmt)
 		stmtp = &(*stmtp)->next;
-	/* stmtp points to location in list where stmt is found */
+	/* stmtp points to location in list where stmt is found, or
+	 * *stmtp is NULL in case it wasn't there (presumably not added
+	 * yet) */
 
-	assert(*stmtp == stmt);	/* we must have found it */
-
-	/* now remove it from the linked list */
-	*stmtp = stmt->next;
+	if (*stmtp) {
+		/* now remove it from the linked list */
+		*stmtp = stmt->next;
+	}
 
 	/* cleanup own managed data */
 	deleteODBCErrorList(&stmt->Error);
