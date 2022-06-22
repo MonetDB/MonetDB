@@ -3501,7 +3501,6 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 	char extnew[16];
 	bool istail = strncmp(ext, "tail", 4) == 0;
 
-	h->dirty |= dirty;
 	if (h->wasempty) {
 		return GDK_SUCCEED;
 	}
