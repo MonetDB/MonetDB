@@ -1157,12 +1157,12 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
+	BATiter bi = bat_iterator_nolock(b);
 	MT_lock_unset(&b->theaplock);
 	if (values && b->ttype) {
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
 		const void *minvalp = NULL, *maxvalp = NULL;
-		BATiter bi = bat_iterator_nolock(b);
 		if (bi.minpos != BUN_NONE)
 			minvalp = BUNtail(bi, bi.minpos);
 		if (bi.maxpos != BUN_NONE)
