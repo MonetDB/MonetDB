@@ -683,7 +683,7 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	const char *tail = gettailnamebi(bi);
+	const char *tail = BATITERtailname(bi);
 	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
