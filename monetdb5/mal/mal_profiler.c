@@ -536,7 +536,7 @@ profilerHeartbeatEvent(char *alter)
 
 	if (!logadd(&logbuf, "{"))	// fill in later with the event counter
 		return;
-	if (!GDKinmemory()) {
+	if (!GDKinmemory() && !GDKembedded()) {
 		char *uuid = NULL, *err;
 		if ((err = msab_getUUID(&uuid)) == NULL) {
 			bool ok = logadd(&logbuf, "\"session\":\"%s\",", uuid);
