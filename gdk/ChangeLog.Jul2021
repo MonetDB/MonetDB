@@ -1,6 +1,15 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Wed Jun 22 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Make sure heap files of transient bats get deleted when the bat is
+  destroyed.  If the bat was a partial view (sharing the vheap but not
+  the tail), the tail file wasn't deleted.
+- Various changes were made to satisfy newer compilers.
+- The batDirtydesc and batDirtyflushed Boolean values have been deprecated
+  and are no longer used.  They were both holdovers from long ago.
+- Various race conditions (data races) have been fixed.
+
 * Thu May 19 2022 Sjoerd Mullender <sjoerd@acm.org>
 - All accesses to the BACKUP directory need to be protected by the
   same lock.  The lock already existed (GDKtmLock), but wasn't used
