@@ -6,6 +6,20 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
+/*
+ * MonetDB program to test ODBC metadata/catalog functions (all return a result-set):
+ * SQLTables()
+ * SQLColumns()
+ * SQLSpecialColumns()
+ * SQLPrimaryKeys()
+ * SQLForeignKeys()
+ * SQLStatistics()
+ * SQLTablePrivileges()
+ * SQLColumnPrivileges()
+ * SQLProcedures()
+ * SQLProcedureColumns()
+ */
+
 #ifdef _MSC_VER
 /* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
 #ifndef _CRT_SECURE_NO_DEPRECATE
@@ -68,7 +82,7 @@ check(SQLRETURN ret, SQLSMALLINT tpe, SQLHANDLE hnd, const char *func)
 		break;
 	case SQL_INVALID_HANDLE:
 		fprintf(stderr, "%s: Error: invalid handle\n", func);
-		exit(1);
+		break;
 	default:
 		fprintf(stderr, "%s: Unexpected return value\n", func);
 		break;
@@ -79,7 +93,7 @@ static void
 compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, const char * expected)
 {
 	SQLRETURN ret;
-	SQLSMALLINT columns;	// Number of columns in result-set
+	SQLSMALLINT columns;	/* Number of columns in result-set */
 	size_t expct_len = strlen(expected);
 	size_t outp_len = expct_len + 10000;
 	char * outp = malloc(outp_len);
@@ -96,12 +110,12 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 
 	check(retcode, SQL_HANDLE_STMT, stmt, functionname);
 
-	// How many columns are there
+	/* How many columns are there */
 	ret = SQLNumResultCols(stmt, &columns);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLNumResultCols()");
 	pos += snprintf(outp + pos, outp_len - pos, "Resultset with %d columns\n", columns);
 
-	// get Result Column Names and print them
+	/* get Result Column Names and print them */
 	for (col = 1; col <= columns; col++) {
 		ret = SQLDescribeCol(stmt, col, (SQLCHAR *) buf, sizeof(buf),
 			NULL, NULL, NULL, NULL, NULL);
@@ -126,18 +140,18 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 	ret = SQLFetch(stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch(1)");
 	while (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-		// Loop through the columns
+		/* Loop through the columns */
 		for (col = 1; col <= columns; col++) {
-			// Retrieve column data as a string
+			/* Retrieve column data as a string */
 			ret = SQLGetData(stmt, col, SQL_C_CHAR, buf, sizeof(buf), &indicator);
 			check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData()");
 			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-				// Check if we need to replace the system id values to get stable output
+				/* Check if we need to replace the system id values to get stable output */
 				if (replaceId == 0 ||
 				   (replaceId == 1 && col < columns)) {
 					pos += snprintf(outp + pos, outp_len - pos,
 						(col > 1) ? "\t%s" : "%s",
-						// Handle null columns
+						/* Handle null columns */
 						(indicator == SQL_NULL_DATA) ? "NULL" : buf);
 				} else {
 					pos += snprintf(outp + pos, outp_len - pos, "\treplacedId");
@@ -154,7 +168,7 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 			functionname, expected, outp);
 	}
 
-	// cleanup
+	/* cleanup */
 	free(outp);
 
 	ret = SQLCloseCursor(stmt);
@@ -179,7 +193,7 @@ main(int argc, char **argv)
 	if (argc > 3)
 		pass = argv[3];
 	if (argc > 4 || *dsn == '-') {
-		fprintf(stderr, "Usage: %s [datasource [user [password]]]\n", argv[0]);
+		fprintf(stderr, "Wrong arguments. Usage: %s [datasource [user [password]]]\n", argv[0]);
 		exit(1);
 	}
 
@@ -239,6 +253,15 @@ main(int argc, char **argv)
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
 		"GRANT SELECT ON TABLE odbctst.pk_uc TO PUBLIC;\n"
 		"GRANT INSERT, UPDATE, DELETE ON TABLE odbctst.pk_uc TO monetdb;\n"
+		"GRANT SELECT (id2, name2), UPDATE (name2) ON TABLE odbctst.nopk_twoucs TO monetdb;\n"
+		"GRANT INSERT, DELETE ON TABLE tmp.tmp_pk_uc TO monetdb;\n"
+		"GRANT SELECT (id1, name1), UPDATE (name1) ON TABLE tmp.tmp_pk_uc TO monetdb;\n"
+		"GRANT INSERT, DELETE ON TABLE tmp.glbl_pk_uc TO monetdb;\n"
+		"GRANT SELECT (id1, name1), UPDATE (name1) ON TABLE tmp.glbl_pk_uc TO monetdb;\n"
+		"GRANT INSERT, DELETE ON TABLE tmp.tmp_nopk_twoucs TO monetdb;\n"
+		"GRANT SELECT (id2, name2), UPDATE (name2) ON TABLE tmp.tmp_nopk_twoucs TO monetdb;\n"
+		"GRANT DELETE, INSERT ON TABLE tmp.glbl_nopk_twoucs TO monetdb;\n"
+		"GRANT SELECT (id2, name2), UPDATE (name2) ON TABLE tmp.glbl_nopk_twoucs TO monetdb;\n"
 		, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (add privileges script)");
 
@@ -336,6 +359,34 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	odbctst	pk2c	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	3	YES\n"
 		"mTests_sql_odbc_samples	odbctst	pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"mTests_sql_odbc_samples	odbctst	pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+
+	// All columns of all tmp tables containg 'pk' in their name
+	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"%pk%", SQL_NTS,
+			(SQLCHAR*)"%%", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumns (tmp, %pk%, %%)",
+		"Resultset with 18 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+
+	// All columns of all tmp tables containg 'pk' in their name and the column matching name_ pattern
+	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"%pk%", SQL_NTS,
+			(SQLCHAR*)"name_", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumns (tmp, %pk%, name_)",
+		"Resultset with 18 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
 
 	// sys.table_types
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -439,8 +490,8 @@ main(int argc, char **argv)
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS,
-			(SQLCHAR*)"%", SQL_NTS);
-	compareResult(stmt, ret, "SQLColumnPrivileges (odbctst, pk_uc, %)",
+			(SQLCHAR*)"%1", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (odbctst, pk_uc, %1)",
 		"Resultset with 8 columns\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n");
 
@@ -480,6 +531,24 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
 
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (tmp, tmp_pk_uc)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS,
+			(SQLCHAR*)"%1", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (tmp, tmp_pk_uc, %1)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
+
 	// tmp.glbl_pk_uc
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS);
@@ -516,6 +585,24 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
 
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (tmp, glbl_pk_uc)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS,
+			(SQLCHAR*)"%1", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (tmp, glbl_pk_uc, %1)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
+
 	// odbctst.nopk_twoucs
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS);
@@ -550,6 +637,22 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n"
 		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	1	NULL	nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	1	NULL	nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
+
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (odbctst, nopk_twoucs)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
+			(SQLCHAR*)"%2", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (odbctst, nopk_twoucs, %2)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
 
 	// tmp.tmp_nopk_twoucs
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -586,6 +689,24 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
 
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (tmp, tmp_nopk_twoucs)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS,
+			(SQLCHAR*)"%2", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (tmp, tmp_nopk_twoucs, %2)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
+
 	// tmp.glbl_nopk_twoucs
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS);
@@ -621,6 +742,24 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
 
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (tmp, glbl_nopk_twoucs)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS,
+			(SQLCHAR*)"%2", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (tmp, glbl_nopk_twoucs, %2)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
+
 	// odbctst.CUSTOMERS, odbctst.ORDERS and odbctst.LINES
 	/* next tests are copied from code examples on https://docs.microsoft.com/en-us/sql/odbc/reference/syntax/sqlforeignkeys-function?view=sql-server-ver15 */
 	ret = SQLPrimaryKeys(stmt, NULL, 0, NULL, 0, (SQLCHAR*)"ORDERS", SQL_NTS);
@@ -641,7 +780,7 @@ main(int argc, char **argv)
 		"PKTABLE_CAT	PKTABLE_SCHEM	PKTABLE_NAME	PKCOLUMN_NAME	FKTABLE_CAT	FKTABLE_SCHEM	FKTABLE_NAME	FKCOLUMN_NAME	KEY_SEQ	UPDATE_RULE	DELETE_RULE	FK_NAME	PK_NAME	DEFERRABILITY\n"
 		"mTests_sql_odbc_samples	odbctst	CUSTOMERS	CUSTID	mTests_sql_odbc_samples	odbctst	ORDERS	CUSTID	1	1	1	ORDERS_CUSTID_fkey	CUSTOMERS_CUSTID_pkey	7\n");
 
-	// odbctst.pk2c and odbctst.fk2c (tests multi-column pks and multiple multi-column fks from one table */
+	/* odbctst.pk2c and odbctst.fk2c (tests multi-column pks and multiple multi-column fks from one table */
 	ret = SQLPrimaryKeys(stmt, NULL, 0, (SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk2c", SQL_NTS);
 	compareResult(stmt, ret, "SQLPrimaryKeys (odbctst, pk2c)",
 		"Resultset with 6 columns\n"
@@ -684,6 +823,20 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	odbctst	pk2c	pkc1	mTests_sql_odbc_samples	odbctst	fk2c	fkc1	2	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
 		"mTests_sql_odbc_samples	odbctst	pk2c	pkc2	mTests_sql_odbc_samples	odbctst	fk2c	fkc2	1	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n"
 		"mTests_sql_odbc_samples	odbctst	pk2c	pkc1	mTests_sql_odbc_samples	odbctst	fk2c	fkc3	2	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n");
+
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_2c", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (odbctst, pk_2c)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_2c", SQL_NTS,
+			(SQLCHAR*)"%", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (odbctst, pk_2c, %)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n");
+
 
 	// test procedure sys.analyze(). There are 4 overloaded variants of this procedure in MonetDB with 0, 1, 2 or 3 input parameters.
 	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -856,7 +1009,7 @@ main(int argc, char **argv)
 		, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (drop tables script)");
 
-	// All tables in schema odbctst should be empty now, else we missed some DROP statements
+	// All tables in schema odbctst should now be gone, else we missed some DROP statements
 	ret = SQLTables(stmt, NULL, 0,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
 			NULL, 0);
