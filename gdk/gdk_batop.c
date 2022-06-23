@@ -2797,7 +2797,6 @@ PROPdestroy_nolock(BAT *b)
 
 	b->tprops = NULL;
 	while (p) {
-		/* only set dirty if a saved property is changed */
 		n = p->next;
 		VALclear(&p->v);
 		GDKfree(p);
