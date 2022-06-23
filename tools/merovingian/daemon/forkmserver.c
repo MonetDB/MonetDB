@@ -1178,7 +1178,7 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 		exit(1);
 	} else {
 		/* write pid of stethoscope */
-		Mfprintf(pidfile, "%d", (int)pid);
+		Mfprintf(pidfile, "%d\n", (int)pid);
 		fclose(pidfile);
 	}
 
