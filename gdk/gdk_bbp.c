@@ -3021,14 +3021,19 @@ BATdescriptor(bat i)
 			}
 		}
 		int refs;
-		if ((refs = incref(i, false, false)) <= 0)
-			return NULL;
-		b = BBP_cache(i);
-		if (b == NULL)
-			b = getBBPdescriptor(i);
+		if ((refs = incref(i, false, false)) > 0) {
+			b = BBP_cache(i);
+			if (b == NULL)
+				b = getBBPdescriptor(i);
+		} else {
+			/* if incref fails, we must return NULL */
+			b = NULL;
+		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
-		if (refs > 1) {
+		if (refs != 1) {
+			/* unfix both in case of failure (<= 0) and when
+			 * not the first (> 1) */
 			if (tp != 0 && tp != i)
 				BBPunfix(tp);
 			if (tvp != 0 && tvp != i)
