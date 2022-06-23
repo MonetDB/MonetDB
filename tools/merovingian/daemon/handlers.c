@@ -250,14 +250,14 @@ void reinitialize(void)
 				"caught SIGHUP, closing logfile\n",
 				mytime, (long long int)_mero_topdp->next->pid);
 		fflush(_mero_logfile);
-		_mero_topdp->out = _mero_topdp->err = t;
+		_mero_topdp->input[0].fd = _mero_topdp->input[1].fd = t;
 		FILE *f = _mero_logfile;
 		if ((_mero_logfile = fdopen(t, "a")) == NULL) {
 			/* revert to old log so that we have something */
 			Mfprintf(f, "%s ERR merovingian[%lld]: "
 					 "failed to reopen logfile\n",
 					 mytime, (long long int)_mero_topdp->next->pid);
-			_mero_topdp->out = _mero_topdp->err = fileno(f);
+			_mero_topdp->input[0].fd = _mero_topdp->input[1].fd = fileno(f);
 			_mero_logfile = f;
 		} else {
 			fclose(f);
@@ -293,14 +293,14 @@ childhandler(void)
 		while (p != NULL) {
 			if (p->pid == pid) {
 				/* log everything that's still in the pipes */
-				logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
+				logFD(p, 0, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
 				p->pid = -1;	/* indicate the process is dead */
 
 				/* close the descriptors */
-				close(p->out);
-				close(p->err);
-				p->out = -1;
-				p->err = -1;
+				close(p->input[0].fd);
+				close(p->input[1].fd);
+				p->input[0].fd = -1;
+				p->input[1].fd = -1;
 				if (WIFEXITED(wstatus)) {
 					Mfprintf(stdout, "database '%s' (%lld) has exited with "
 							 "exit status %d\n", p->dbname,
@@ -354,7 +354,7 @@ segvhandler(int sig) {
 				"\nand include the tail of this log in your bugreport with your explanation of "
 				"\nwhat you were doing, if possible.\n"
 				"\nABORTING NOW, YOU HAVE TO MANUALLY KILL ALL REMAINING mserver5 PROCESSES\n";
-		if (write(_mero_topdp->err, errmsg, sizeof(errmsg) - 1) >= 0)
+		if (write(_mero_topdp->input[1].fd, errmsg, sizeof(errmsg) - 1) >= 0)
 			sync();
 	}
 	abort();
