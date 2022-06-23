@@ -393,8 +393,8 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		/* fill in the rest of the dpair entry */
 		pthread_mutex_lock(&_mero_topdp_lock);
 
-		dp->out = pfdo[0];
-		dp->err = pfde[0];
+		dp->input[0].fd = pfdo[0];
+		dp->input[1].fd = pfde[0];
 		dp->type = MEROFUN;
 		dp->pid = getpid();
 		dp->flag = 0;
@@ -745,9 +745,9 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		exit(1);
 	} else if (pid > 0) {
 		/* parent: fine, let's add the pipes for this child */
-		dp->out = pfdo[0];
+		dp->input[0].fd = pfdo[0];
 		close(pfdo[1]);
-		dp->err = pfde[0];
+		dp->input[1].fd = pfde[0];
 		close(pfde[1]);
 		dp->type = MERODB;
 		dp->pid = pid;
