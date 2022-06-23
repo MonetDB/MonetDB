@@ -1161,9 +1161,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		BATiter bi = bat_iterator_nolock(b);
 		if (b->tvarsized) {
 			if (bi.minpos != BUN_NONE)
-				minvalp = BUNtail(bi, bi.minpos);
+				minvalp = BUNtvar(bi, bi.minpos);
 			if (bi.maxpos != BUN_NONE)
-				maxvalp = BUNtail(bi, bi.maxpos);
+				maxvalp = BUNtvar(bi, bi.maxpos);
 			const void *vbase = b->tvheap->base;
 			for (BUN i = 0; i < count; i++) {
 				t = ((void **) values)[i];
