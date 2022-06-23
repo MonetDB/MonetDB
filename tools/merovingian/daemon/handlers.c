@@ -255,7 +255,7 @@ void reinitialize(void)
 		if ((_mero_logfile = fdopen(t, "a")) == NULL) {
 			/* revert to old log so that we have something */
 			Mfprintf(f, "%s ERR merovingian[%lld]: "
-					 "failed to reopen logfile",
+					 "failed to reopen logfile\n",
 					 mytime, (long long int)_mero_topdp->next->pid);
 			_mero_topdp->out = _mero_topdp->err = fileno(f);
 			_mero_logfile = f;
