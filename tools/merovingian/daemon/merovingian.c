@@ -132,39 +132,76 @@ confkeyval *_mero_props = NULL;
 /* funcs */
 
 inline void
-logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int rest)
+logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FILE *stream, bool rest)
 {
 	time_t now;
 	char buf[8096];
-	int len = 0;
+	ssize_t len = 0;
 	char *p, *q;
 	struct tm *tmp;
 	char mytime[20];
-	bool writeident = true;
 
+	assert(fd == 0 || fd == 1);
 	do {
-		if ((len = read(fd, buf, sizeof(buf) - 1)) <= 0)
+		do {
+		  repeat:
+			ssize_t n = read(dp->input[fd].fd, buf + len, sizeof(buf) - len - 1);
+			if (n <= 0)
+				break;
+			len += n;
+			buf[len] = 0;
+		} while (buf[len - 1] != '\n' && len < (ssize_t) sizeof(buf) - 1);
+		if (len == 0)
 			break;
-		buf[len] = '\0';
-		q = buf;
 		now = time(NULL);
 		tmp = localtime(&now);
 		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
-		while ((p = strchr(q, '\n')) != NULL) {
-			if (writeident)
-				fprintf(stream, "%s %s %s[%lld]: ",
-						mytime, type, dbname, pid);
-			*p = '\0';
-			fprintf(stream, "%s\n", q);
-			q = p + 1;
-			writeident = true;
-		}
-		if ((int)(q - buf) < len) {
-			if (writeident)
-				fprintf(stream, "%s %s %s[%lld]: ",
-						mytime, type, dbname, pid);
-			writeident = false;
-			fprintf(stream, "%s\n", q);
+		for (q = buf; *q; q = p + 1) {
+			p = strchr(q, '\n');
+			if (p == NULL) {
+				if (q > buf) {
+					/* the last part of the last line didn't fit, so
+					 * just continue reading */
+					len = strlen(q);
+					memmove(buf, q, len);
+					goto repeat;
+				}
+				/* we must have received a ridiculously long line */
+				dp->input[fd].ts = now;
+				dp->input[fd].cnt = 0;
+				dp->input[fd].buf[0] = '\0';
+				fprintf(stream, "%s %s %s[%lld]: %s\n",
+						mytime, type, dbname, pid, q);
+				break;
+			}
+			if (p == q) {
+				/* empty line, don't bother */
+				continue;
+			}
+			if (dp->input[fd].cnt < 30000 && strncmp(dp->input[fd].buf, q, (size_t) (p + 1 - q)) == 0) {
+				/* repeat of last message */
+				dp->input[fd].cnt++;
+				dp->input[fd].ts = now;
+			} else {
+				if (dp->input[fd].cnt > 0) {
+					/* last message was repeated but not all repeats reported */
+					char tmptime[20];
+					strftime(tmptime, sizeof(tmptime), "%Y-%m-%d %H:%M:%S",
+							 localtime(&dp->input[fd].ts));
+					if (dp->input[fd].cnt == 1)
+						fprintf(stream, "%s %s %s[%lld]: %s",
+								tmptime, type, dbname, pid, dp->input[fd].buf);
+					else
+						fprintf(stream, "%s %s %s[%lld]: message repeated %d times: %s",
+								tmptime, type, dbname, pid, dp->input[fd].cnt, dp->input[fd].buf);
+				}
+				dp->input[fd].ts = now;
+				dp->input[fd].cnt = 0;
+				strncpy(dp->input[fd].buf, q, p + 1 - q);
+				dp->input[fd].buf[p + 1 - q] = '\0';
+				fprintf(stream, "%s %s %s[%lld]: %.*s\n",
+						mytime, type, dbname, pid, (int) (p - q), q);
+			}
 		}
 	} while (rest);
 	fflush(stream);
@@ -208,9 +245,9 @@ logListener(void *x)
 		for (w = d; w != NULL; w = w->next) {
 			if (w->pid <= 0)
 				continue;
-			pfd[nfds++] = (struct pollfd) {.fd = w->out, .events = POLLIN};
-			if (w->out != w->err)
-				pfd[nfds++] = (struct pollfd) {.fd = w->err, .events = POLLIN};
+			pfd[nfds++] = (struct pollfd) {.fd = w->input[0].fd, .events = POLLIN};
+			if (w->input[0].fd != w->input[1].fd)
+				pfd[nfds++] = (struct pollfd) {.fd = w->input[1].fd, .events = POLLIN};
 			w->flag |= 1;
 		}
 #else
@@ -219,12 +256,12 @@ logListener(void *x)
 		for (w = d; w != NULL; w = w->next) {
 			if (w->pid <= 0)
 				continue;
-			FD_SET(w->out, &readfds);
-			if (nfds < w->out)
-				nfds = w->out;
-			FD_SET(w->err, &readfds);
-			if (nfds < w->err)
-				nfds = w->err;
+			FD_SET(w->input[0].fd, &readfds);
+			if (nfds < w->input[0].fd)
+				nfds = w->input[0].fd;
+			FD_SET(w->input[1].fd, &readfds);
+			if (nfds < w->input[1].fd)
+				nfds = w->input[1].fd;
 			w->flag |= 1;
 		}
 #endif
@@ -257,19 +294,19 @@ logListener(void *x)
 			if (w->pid > 0 && w->flag & 1) {
 #ifdef HAVE_POLL
 				for (int i = 0; i < nfds; i++) {
-					if (pfd[i].fd == w->out && pfd[i].revents & POLLIN)
-						logFD(w->out, "MSG", w->dbname,
+					if (pfd[i].fd == w->input[0].fd && pfd[i].revents & POLLIN)
+						logFD(w, 0, "MSG", w->dbname,
 							  (long long int)w->pid, _mero_logfile, 0);
-					else if (pfd[i].fd == w->err && pfd[i].revents & POLLIN)
-						logFD(w->err, "ERR", w->dbname,
+					else if (pfd[i].fd == w->input[1].fd && pfd[i].revents & POLLIN)
+						logFD(w, 1, "ERR", w->dbname,
 							  (long long int)w->pid, _mero_logfile, 0);
 				}
 #else
-				if (FD_ISSET(w->out, &readfds) != 0)
-					logFD(w->out, "MSG", w->dbname,
+				if (FD_ISSET(w->input[0].fd, &readfds) != 0)
+					logFD(w, 0, "MSG", w->dbname,
 						  (long long int)w->pid, _mero_logfile, 0);
-				if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
-					logFD(w->err, "ERR", w->dbname,
+				if (w->input[1].fd != w->input[0].fd && FD_ISSET(w->input[1].fd, &readfds) != 0)
+					logFD(w, 1, "ERR", w->dbname,
 						  (long long int)w->pid, _mero_logfile, 0);
 #endif
 				w->flag &= ~1;
@@ -732,19 +769,19 @@ main(int argc, char *argv[])
 	/* where should our msg output go to? */
 	p = getConfVal(_mero_props, "logfile");
 	/* write to the given file */
-	_mero_topdp->out = open(p, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC,
+	_mero_topdp->input[0].fd = open(p, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC,
 			S_IRUSR | S_IWUSR);
-	if (_mero_topdp->out == -1) {
+	if (_mero_topdp->input[0].fd == -1) {
 		Mfprintf(stderr, "unable to open '%s': %s\n",
 				p, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
 #if O_CLOEXEC == 0
-	(void) fcntl(_mero_topdp->out, F_SETFD, FD_CLOEXEC);
+	(void) fcntl(_mero_topdp->input[0].fd, F_SETFD, FD_CLOEXEC);
 #endif
-	_mero_topdp->err = _mero_topdp->out;
+	_mero_topdp->input[1].fd = _mero_topdp->input[0].fd;
 
-	if(!(_mero_logfile = fdopen(_mero_topdp->out, "a"))) {
+	if(!(_mero_logfile = fdopen(_mero_topdp->input[0].fd, "a"))) {
 		Mfprintf(stderr, "unable to open file descriptor: %s\n",
 				 strerror(errno));
 		MERO_EXIT(1);
@@ -767,7 +804,7 @@ main(int argc, char *argv[])
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
 	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 #endif
-	d->out = pfd[0];
+	d->input[0].fd = pfd[0];
 	dup_err = dup2(pfd[1], 1);
 	close(pfd[1]);
 	if(dup_err == -1) {
@@ -808,7 +845,7 @@ main(int argc, char *argv[])
 		Mfprintf(stderr, "unable to dup stderr\n");
 		MERO_EXIT(1);
 	}
-	d->err = pfd[0];
+	d->input[1].fd = pfd[0];
 	dup_err = dup2(pfd[1], 2);
 	close(pfd[1]);
 	if(dup_err == -1) {
@@ -834,7 +871,7 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 #endif
-	d->out = pfd[0];
+	d->input[0].fd = pfd[0];
 	if(!(_mero_discout = fdopen(pfd[1], "a"))) {
 		Mfprintf(stderr, "unable to open file descriptor: %s\n",
 				 strerror(errno));
@@ -849,7 +886,7 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 #endif
-	d->err = pfd[0];
+	d->input[1].fd = pfd[0];
 	if(!(_mero_discerr = fdopen(pfd[1], "a"))) {
 		Mfprintf(stderr, "unable to open file descriptor: %s\n",
 				 strerror(errno));
@@ -874,7 +911,7 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 #endif
-	d->out = pfd[0];
+	d->input[0].fd = pfd[0];
 	if(!(_mero_ctlout = fdopen(pfd[1], "a"))) {
 		Mfprintf(stderr, "unable to open file descriptor: %s\n",
 				 strerror(errno));
@@ -889,7 +926,7 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 #endif
-	d->err = pfd[0];
+	d->input[1].fd = pfd[0];
 	if(!(_mero_ctlerr = fdopen(pfd[1], "a"))) {
 		Mfprintf(stderr, "unable to open file descriptor: %s\n",
 				 strerror(errno));
@@ -1146,9 +1183,9 @@ shutdown:
 	}
 
 	if (_mero_topdp != NULL) {
-		close(_mero_topdp->out);
-		if (_mero_topdp->out != _mero_topdp->err)
-			close(_mero_topdp->err);
+		close(_mero_topdp->input[0].fd);
+		if (_mero_topdp->input[0].fd != _mero_topdp->input[1].fd)
+			close(_mero_topdp->input[1].fd);
 	}
 
 	/* remove files that suggest our existence */
