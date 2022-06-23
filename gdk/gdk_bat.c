@@ -1163,11 +1163,11 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
 		const void *minvalp = NULL, *maxvalp = NULL;
-		if (bi.minpos != BUN_NONE)
-			minvalp = BUNtail(bi, bi.minpos);
-		if (bi.maxpos != BUN_NONE)
-			maxvalp = BUNtail(bi, bi.maxpos);
 		if (b->tvheap) {
+			if (bi.minpos != BUN_NONE)
+				minvalp = BUNtvar(bi, bi.minpos);
+			if (bi.maxpos != BUN_NONE)
+				maxvalp = BUNtvar(bi, bi.maxpos);
 			const void *vbase = b->tvheap->base;
 			for (BUN i = 0; i < count; i++) {
 				t = ((void **) values)[i];
@@ -1181,7 +1181,13 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					 * updated (not if they were
 					 * initialized from t below, but
 					 * we don't know) */
+					BUN minpos = bi.minpos;
+					BUN maxpos = bi.maxpos;
+					MT_lock_set(&b->theaplock);
 					bi = bat_iterator_nolock(b);
+					MT_lock_unset(&b->theaplock);
+					bi.minpos = minpos;
+					bi.maxpos = maxpos;
 					vbase = b->tvheap->base;
 					if (bi.minpos != BUN_NONE)
 						minvalp = BUNtvar(bi, bi.minpos);
@@ -1226,6 +1232,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				p++;
 			}
 		} else {
+			if (bi.minpos != BUN_NONE)
+				minvalp = BUNtloc(bi, bi.minpos);
+			if (bi.maxpos != BUN_NONE)
+				maxvalp = BUNtloc(bi, bi.maxpos);
 			MT_rwlock_wrlock(&b->thashlock);
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
