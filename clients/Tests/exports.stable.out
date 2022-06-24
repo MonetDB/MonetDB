@@ -4,6 +4,7 @@ int ATOMallocate(const char *nme);
 void *ATOMdup(int id, const void *val);
 uint8_t ATOMelmshift(int sz) __attribute__((__const__));
 char *ATOMformat(int id, const void *val);
+gdk_return ATOMheap(int id, Heap *hp, size_t cap) __attribute__((__warn_unused_result__));
 int ATOMindex(const char *nme);
 size_t ATOMlen(int id, const void *v);
 const char *ATOMname(int id);
