@@ -1103,6 +1103,9 @@ SQLparser(Client c)
 		goto finalize;
 	}
 
+	// TODO PROFILER: I will try to have the c->curprg->def->tag available
+	// TODO PROFILER EVENT: start of sql parsing is start of sql compilation
+
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
@@ -1128,6 +1131,8 @@ SQLparser(Client c)
 	 */
 	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
+
+	// TODO PROFILER EVENT: end of sql parsing. Also add the cleaned query to the event
 
 	if (c->query == NULL) {
 		err = 1;
