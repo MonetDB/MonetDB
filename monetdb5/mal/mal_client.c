@@ -206,6 +206,7 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
+	// TODO PROFILER EVENT: end of Client object, i.e. client exits and mapi connection is closed.
 }
 
 static Client
@@ -296,6 +297,8 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
+	// TODO PROFILER EVENT: start of new Client object with id aka a new connection.
+
 	if (c)
 		c = MCinitClientRecord(c, user, fin, fout);
 	MT_lock_unset(&mal_contextLock);
