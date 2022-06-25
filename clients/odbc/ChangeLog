@@ -1,6 +1,12 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Thu Jun 23 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Corrected ODBC functions SQLTablePrivileges() and SQLColumnPrivileges()
+  for local temporary tables located in schema tmp. They did not return
+  any rows when the temporary table had privileges set. Now they do return
+  rows as expected.
+
 * Wed Jun 22 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Improved SQLProcedures() and SQLProcedureColumns(). They now list
   information also for all built-in system procedures and functions, not
@@ -48,7 +54,7 @@
   always returned NULL for the CARDINALITY result column.
 
 * Thu Apr 21 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Corrected ODBC API functions SQLPrimaryKeys(), SQLSpecialColumns() and
+- Corrected ODBC functions SQLPrimaryKeys(), SQLSpecialColumns() and
   SQLStatistics() for local temporary tables located in schema tmp. They did
   not return any rows when the temp table had a primary or unique key or
   index. Now they do return rows as expected.

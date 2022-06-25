@@ -146,8 +146,9 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 	assert(fd == 0 || fd == 1);
 	do {
 		do {
+			ssize_t n;
 		  repeat:
-			ssize_t n = read(dp->input[fd].fd, buf + len, sizeof(buf) - len - 1);
+			n = read(dp->input[fd].fd, buf + len, sizeof(buf) - len - 1);
 			if (n <= 0)
 				break;
 			len += n;

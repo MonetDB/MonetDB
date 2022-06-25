@@ -256,8 +256,9 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 
 	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
 	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\", \"COLUMN_TYPE\", \"ORDINAL_POSITION\"", querylen - pos);
+	assert(pos < querylen);
 
-	/* debug: fprintf(stdout, "SQLProcedureColumns SQL (%zu):\n%s\n\n", pos, query); */
+	/* debug: fprintf(stdout, "SQLProcedureColumns query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
