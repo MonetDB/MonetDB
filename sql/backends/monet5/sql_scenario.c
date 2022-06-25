@@ -32,6 +32,7 @@
 #include "mal.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
+#include "mal_runtime.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
@@ -965,6 +966,7 @@ SQLparser(Client c)
 	int oldvtop, oldstop, oldvid, ok;
 	int pstatus = 0;
 	int err = 0, opt, preparedid = -1;
+	oid tag = 0;
 
 	c->query = NULL;
 	be = (backend *) c->sqlcontext;
@@ -1103,7 +1105,10 @@ SQLparser(Client c)
 		goto finalize;
 	}
 
-	// TODO PROFILER: I will try to have the c->curprg->def->tag available
+	// generate and set the tag in the mal block of the clients current program.
+	tag = runtimeProfileSetTag(c);
+	assert(tag == c->curprg->def->tag);
+	(void) tag;
 	// TODO PROFILER EVENT: start of sql parsing is start of sql compilation
 
 	if ((err = sqlparse(m)) ||
