@@ -3285,7 +3285,7 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 }
 
 static gdk_return __attribute__((__warn_unused_result__))
-snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *filename, const char *suffix, uint64_t extent)
+snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename, const char *suffix, uint64_t extent)
 {
 	char path1[FILENAME_MAX];
 	char path2[FILENAME_MAX];
@@ -3298,7 +3298,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		return GDK_SUCCEED;
 	}
 	// first check the backup dir
-	len = snprintf(path1, FILENAME_MAX, "%s/%s/%" PRIo64 "%s", db_dir, BAKDIR, batid, suffix);
+	len = snprintf(path1, FILENAME_MAX, "%s/%s/%o.%s", db_dir, BAKDIR, (int) batid, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
 		path1[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path1);
@@ -3313,7 +3313,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 	}
 
 	// then check the regular location
-	len = snprintf(path2, FILENAME_MAX, "%s/%s/%s%s", db_dir, BATDIR, filename, suffix);
+	len = snprintf(path2, FILENAME_MAX, "%s/%s/%s.%s", db_dir, BATDIR, filename, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
 		path2[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path2);
@@ -3338,125 +3338,85 @@ static gdk_return __attribute__((__warn_unused_result__))
 snapshot_bats(stream *plan, const char *db_dir)
 {
 	char bbpdir[FILENAME_MAX];
-	stream *cat = NULL;
-	char line[1024];
-	int gdk_version, len;
+	FILE *fp = NULL;
+	int len;
 	gdk_return ret = GDK_FAIL;
-	ssize_t n = 0;
+	int lineno = 0;
+	bat bbpsize = 0;
+	lng logno, transid;
+	unsigned bbpversion;
 
 	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
 	if (len == -1 || len >= FILENAME_MAX) {
 		GDKerror("Could not open %s, filename is too large", bbpdir);
-		goto end;
+		return GDK_FAIL;
 	}
 	ret = snapshot_immediate_copy_file(plan, bbpdir, bbpdir + strlen(db_dir) + 1);
 	if (ret != GDK_SUCCEED)
-		goto end;
+		return ret;
 
 	// Open the catalog and parse the header
-	cat = open_rastream(bbpdir);
-	if (cat == NULL) {
+	fp = fopen(bbpdir, "r");
+	if (fp == NULL) {
 		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
-		goto end;
-	}
-	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
-		GDKerror("Could not read first line of %s: %s", bbpdir, mnstr_peek_error(cat));
-		goto end;
-	}
-	if (sscanf(line, "BBP.dir, GDKversion %d", &gdk_version) != 1) {
-		GDKerror("Invalid first line of %s", bbpdir);
-		goto end;
-	}
-	if (gdk_version != 061046U) {
-		// If this version number has changed, the structure of BBP.dir
-		// may have changed. Update this whole function to take this
-		// into account.
-		// Note: when startup has completed BBP.dir is guaranteed
-		// to the latest format so we don't have to support any older
-		// formats in this function.
-		GDKerror("GDK version mismatch in snapshot yet");
-		goto end;
-	}
-	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
-		GDKerror("Couldn't skip the second line of %s: %s", bbpdir, mnstr_peek_error(cat));
-		goto end;
-	}
-	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
-		GDKerror("Couldn't skip the third line of %s: %s", bbpdir, mnstr_peek_error(cat));
-		goto end;
-	}
-
-	/* TODO get transaction id and last processed log file id */
-	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
-		GDKerror("Couldn't skip the 4th line of %s: %s", bbpdir, mnstr_peek_error(cat));
-		goto end;
-	}
-
-	while ((n = mnstr_readline(cat, line, sizeof(line))) > 0) {
-		uint64_t batid;
-		char type[16];
-		uint16_t width;
-		uint64_t tail_free;
-		uint64_t theap_free;
-		char filename[sizeof(BBP_physical(0))];
-		// The lines in BBP.dir come in various lengths.
-		// we try to parse the longest variant then check
-		// the return value of sscanf to see which fields
-		// were actually present.
-		int scanned = sscanf(line,
-				// Taken from the sscanf in BBPreadEntries() in gdk_bbp.c.
-				// 7 fields, we need field 1 (batid) and field 4 (filename)
-				"%" SCNu64 " %*s %*s %19s %*s %*s %*s"
-
-				// Taken from the sscanf in heapinit() in gdk_bbp.c.
-				// 12 fields, we need fields 1 (type), 2 (width), 10 (free)
-				" %10s %" SCNu16 " %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s"
-
-				// Taken from the sscanf in vheapinit() in gdk_bbp.c.
-				// 1 field, we need field 1 (free).
-				"%" SCNu64
-				,
-				&batid, filename,
-				type, &width, &tail_free,
-				&theap_free);
-
-		// The following switch uses fallthroughs to make
-		// the larger cases include the work of the smaller cases.
-		switch (scanned) {
-			default:
-				GDKerror("Couldn't parse (%d) %s line: %s", scanned, bbpdir, line);
-				goto end;
-			case 6:
-				// tail and theap
-				ret = snapshot_heap(plan, db_dir, batid, filename, ".theap", theap_free);
-				if (ret != GDK_SUCCEED)
-					goto end;
-				/* fallthrough */
-			case 5:
-				// tail only
-				ret = snapshot_heap(plan, db_dir, batid, filename,
-									strcmp(type, "str") == 0 ? width == 1 ? ".tail1" : width == 2 ? ".tail2" :
-#if SIZEOF_VAR_T == 8
-									width == 4 ? ".tail4" :
-#endif
-									".tail" : ".tail",
-									tail_free);
-				if (ret != GDK_SUCCEED)
-					goto end;
-				/* fallthrough */
-			case 2:
-				// no tail?
-				break;
-		}
-	}
-	if (n < 0) {
-		GDKerror("%s", mnstr_peek_error(cat));
 		return GDK_FAIL;
+	}
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid);
+	if (bbpversion == 0)
+		goto end;
+	assert(bbpversion == GDKLIBRARY);
+
+	for (;;) {
+		BAT b;
+		Heap h;
+		Heap vh;
+		vh = h = (Heap) {
+			.free = 0,
+		};
+		b = (BAT) {
+			.theap = &h,
+			.tvheap = &vh,
+		};
+		char *options;
+		char filename[sizeof(BBP_physical(0))];
+		char batname[129];
+#ifdef GDKLIBRARY_HASHASH
+		int hashash;
+#endif
+
+		switch (BBPreadBBPline(fp, bbpversion, &lineno, &b,
+#ifdef GDKLIBRARY_HASHASH
+							   &hashash,
+#endif
+							   batname, filename, &options)) {
+		case 0:
+			/* end of file */
+			fclose(fp);
+			return GDK_SUCCEED;
+		case 1:
+			/* successfully read an entry */
+			break;
+		default:
+			/* error */
+			fclose(fp);
+			return GDK_FAIL;
+		}
+#ifdef GDKLIBRARY_HASHASH
+		assert(hashash == 0);
+#endif
+		if (ATOMvarsized(b.ttype)) {
+			ret = snapshot_heap(plan, db_dir, b.batCacheid, filename, "theap", b.tvheap->free);
+			if (ret != GDK_SUCCEED)
+				goto end;
+		}
+		ret = snapshot_heap(plan, db_dir, b.batCacheid, filename, BATtailname(&b), b.theap->free);
+		if (ret != GDK_SUCCEED)
+			goto end;
 	}
 
 end:
-	if (cat) {
-		close_stream(cat);
+	if (fp) {
+		fclose(fp);
 	}
 	return ret;
 }

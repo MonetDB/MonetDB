@@ -1,0 +1,17 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION suicide3() RETURNS TABLE (i integer) LANGUAGE R {.Internal(quit("no", 0,F))}
+
+statement error
+SELECT * FROM suicide3()
+
+statement ok
+ROLLBACK
+
+query I rowsort
+SELECT 1
+----
+1
+

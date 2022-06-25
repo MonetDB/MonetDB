@@ -136,18 +136,23 @@ BATnegateprops(BAT *b)
 #define pipeline_unlock2(r) MT_lock_unset(&r->theaplock)
 
 static int
-BATupgrade(BAT *r, BAT *b)
+BATupgrade(BAT *r, BAT *b, bool locked)
 {
+	/* if locked is true, both r and b's theaplock are locked, else
+	 * neither of them are */
 	int err = 0;
-	MT_lock_set(&b->theaplock);
-	//MT_lock_set(&r->theaplock);
 	//TODO add upgradevarheap variant which only widens, no resize!
+	if (!locked)
+		MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(r->ttype) &&
 		BATcount(r) == 0 &&
 		r->tvheap->parentid == r->batCacheid &&
-		r->twidth < b->twidth &&
-		GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED) {
-			err = 1;
+		r->twidth < b->twidth) {
+		if (locked)
+			MT_lock_unset(&r->theaplock);
+		err = GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED;
+		if (locked)
+			MT_lock_set(&r->theaplock);
 	}
 	/*
 	if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
@@ -160,35 +165,32 @@ BATupgrade(BAT *r, BAT *b)
 			}
 	}
 	*/
-	//MT_lock_unset(&r->theaplock);
-	MT_lock_unset(&b->theaplock);
+	if (!locked)
+		MT_lock_unset(&b->theaplock);
 	return err;
 }
 
 static void
 BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 {
-	MT_lock_set(&b->theaplock);
-	MT_lock_set(&u->theaplock);
-	int indirect = (b->tvheap->parentid != b->batCacheid);
+	bat parent = 0;
 	if (p)
 		pipeline_lock(p);
+	MT_lock_set(&u->theaplock);
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		HEAPdecref(u->tvheap, u->tvheap->parentid == u->batCacheid);
-		HEAPincref(b->tvheap);
-		u->tvheap = b->tvheap;
-		if (!indirect)
-			MT_lock_unset(&b->theaplock);
-		BBPshare(b->tvheap->parentid);
-	} else {
-		if (!indirect)
-			MT_lock_unset(&b->theaplock);
+		MT_lock_set(&b->theaplock);
+		Heap *h = b->tvheap;
+		HEAPincref(h);
+		MT_lock_unset(&b->theaplock);
+		parent = h->parentid;
+		HEAPdecref(u->tvheap, true);
+		u->tvheap = h;
 	}
+	MT_lock_unset(&u->theaplock);
+	if (parent)
+		BBPshare(parent);
 	if (p)
 		pipeline_unlock(p);
-	if (indirect)
-		MT_lock_unset(&b->theaplock);
-	MT_lock_unset(&u->theaplock);
 }
 
 static str
@@ -360,68 +362,74 @@ bailout:
 #define getArgReference_daytime(stk, pci, nr) (daytime*)getArgReference(stk, pci, nr)
 #define getArgReference_timestamp(stk, pci, nr) (timestamp*)getArgReference(stk, pci, nr)
 
-#define aggr(T,f)  \
-	if (type == TYPE_##T) {								\
-		T val = *getArgReference_##T(stk, pci, 2);		\
-		if (!is_##T##_nil(val) && BATcount(b)) {		\
-			T *t = Tloc(b, 0);							\
-			if (is_##T##_nil(t[0])) {					\
-				t[0] = val;								\
-			} else										\
-				t[0] = f(t[0], val);					\
-			b->tnil = false;							\
-			b->tnonil = true;							\
-		} else if (BATcount(b) == 0) {					\
-			if (BUNappend(b, &val, true) != GDK_SUCCEED)\
-				err = createException(SQL, "aggr." #f,	\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		}												\
+#define aggr(T,f)											\
+	if (type == TYPE_##T) {									\
+		T val = *getArgReference_##T(stk, pci, 2);			\
+		if (!is_##T##_nil(val) && BATcount(b)) {			\
+			T *t = Tloc(b, 0);								\
+			if (is_##T##_nil(t[0])) {						\
+				t[0] = val;									\
+			} else											\
+				t[0] = f(t[0], val);						\
+			MT_lock_set(&b->theaplock);						\
+			b->tnil = false;								\
+			b->tnonil = true;								\
+			MT_lock_unset(&b->theaplock);					\
+		} else if (BATcount(b) == 0) {						\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)	\
+				err = createException(SQL, "aggr." #f,		\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
+		}													\
 	}
 
-#define faggr(T,f)  \
-	if (type == TYPE_##T) {								\
-		T val = *getArgReference_TYPE(stk, pci, 2, T);		\
-		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type); \
-		if (!is_##T##_nil(val) && BATcount(b)) {		\
-			T *t = Tloc(b, 0);							\
-			if (is_##T##_nil(t[0])) {					\
-				t[0] = val;								\
-			} else										\
-				t[0] = f(t[0], val);					\
-			b->tnil = false;							\
-			b->tnonil = true;							\
-		} else if (BATcount(b) == 0) {					\
-			if (BUNappend(b, &val, true) != GDK_SUCCEED)\
-				err = createException(SQL, "aggr." #f,	\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		}												\
+#define faggr(T,f)														\
+	if (type == TYPE_##T) {												\
+		T val = *getArgReference_TYPE(stk, pci, 2, T);					\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
+		if (!is_##T##_nil(val) && BATcount(b)) {						\
+			T *t = Tloc(b, 0);											\
+			if (is_##T##_nil(t[0])) {									\
+				t[0] = val;												\
+			} else														\
+				t[0] = f(t[0], val);									\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (BATcount(b) == 0) {									\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
+				err = createException(SQL, "aggr." #f,					\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+		}																\
 	}
 
-#define vaggr(T,f)  \
-	if (type == TYPE_##T) {								\
-		BATiter bi = bat_iterator(b); \
-		T val = *getArgReference_##T(stk, pci, 2);		\
-		const void *nil = ATOMnilptr(type);						\
-		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type); \
-		if (cmp(val,nil) != 0 && BATcount(b)) {		\
-			T t = BUNtvar(bi, 0); \
-			if (cmp(t,nil) == 0) {					\
-				if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)			\
-					err = createException(SQL, "2 aggr." #f,	\
-						SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-			} else										\
-				if (f(t, val) == val)					\
-					if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)			\
-						err = createException(SQL, "1 aggr." #f,	\
-							SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-			b->tnil = false;							\
-			b->tnonil = true;							\
-		} else if (BATcount(b) == 0) {					\
-			if (BUNappend(b, val, false) != GDK_SUCCEED)\
-				err = createException(SQL, "3 aggr." #f,	\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		}												\
-		bat_iterator_end(&bi); \
+#define vaggr(T,f)														\
+	if (type == TYPE_##T) {												\
+		BATiter bi = bat_iterator(b);									\
+		T val = *getArgReference_##T(stk, pci, 2);						\
+		const void *nil = ATOMnilptr(type);								\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
+		if (cmp(val,nil) != 0 && BATcount(b)) {							\
+			T t = BUNtvar(bi, 0);										\
+			if (cmp(t,nil) == 0) {										\
+				if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)		\
+					err = createException(SQL, "2 aggr." #f,			\
+						SQLSTATE(HY013) MAL_MALLOC_FAIL);				\
+			} else														\
+				if (f(t, val) == val)									\
+					if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)	\
+						err = createException(SQL, "1 aggr." #f,		\
+							SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (BATcount(b) == 0) {									\
+			if (BUNappend(b, val, false) != GDK_SUCCEED)				\
+				err = createException(SQL, "3 aggr." #f,				\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+		}																\
+		bat_iterator_end(&bi);											\
 	}
 
 static str
@@ -454,7 +462,9 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(flt,sum);
 		aggr(dbl,sum);
 		if (!err) {
+			pipeline_lock2(b);
 			BATnegateprops(b);
+			pipeline_unlock2(b);
 			BBPkeepref(b);
 		} else
 			BBPunfix(b->batCacheid);
@@ -468,7 +478,7 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define paggr(T,OT,f)  \
+#define paggr(T,OT,f)									\
 	if (type == TYPE_##T && b->ttype == TYPE_##OT) {	\
 		T val = *getArgReference_##T(stk, pci, 2);		\
 		if (!is_##T##_nil(val) && BATcount(b)) {		\
@@ -477,11 +487,13 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				t[0] = val;								\
 			} else										\
 				t[0] = f(t[0], val);					\
+			MT_lock_set(&b->theaplock);					\
 			b->tnil = false;							\
 			b->tnonil = true;							\
+			MT_lock_unset(&b->theaplock);				\
 		} else if (BATcount(b) == 0) {					\
 			OT ov = val;								\
-			if (BUNappend(b, &ov, true) != GDK_SUCCEED)\
+			if (BUNappend(b, &ov, true) != GDK_SUCCEED)	\
 				err = createException(SQL, "aggr." #f,	\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}												\
@@ -523,7 +535,9 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		paggr(flt,flt,prod);
 		paggr(dbl,dbl,prod);
 		if (!err) {
+			pipeline_lock2(b);
 			BATnegateprops(b);
+			pipeline_unlock2(b);
 			BBPkeepref(b);
 		} else
 			BBPunfix(b->batCacheid);
@@ -552,8 +566,10 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				t[0] = (t[0]*((dbl)tcnt[0]/tt)) + (val*((dbl)cnt/tt));	\
 				tcnt[0] += cnt;											\
 			}															\
+			MT_lock_set(&b->theaplock);									\
 			b->tnil = false;											\
 			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
 		} else if (cnt > 0 && BATcount(b) == 0) {						\
 			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
 				err = createException(SQL, "aggr.avg",					\
@@ -562,6 +578,21 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 /* return (a * b) % c without intermediate overflow */
+#ifdef HAVE_HGE
+static inline lng
+mulmod(hge A, lng b, lng c)
+{
+	lng res = 0;
+	lng a = (lng) (A % c);
+	while (b) {
+		if (b & 1)
+			res = (res + a) % c;
+		a = (2 * a) % c;
+		b >>= 1;
+	}
+	return res;
+}
+#else
 static inline lng
 mulmod(lng a, lng b, lng c)
 {
@@ -575,6 +606,7 @@ mulmod(lng a, lng b, lng c)
 	}
 	return res;
 }
+#endif
 
 #ifdef TRUNCATE_NUMBERS
 #define fix_avg(T, a, r, n)							\
@@ -593,6 +625,38 @@ mulmod(lng a, lng b, lng c)
 		}														\
 	} while (0)
 #endif
+/* Inside the avg_aggr_comb macro we want to calculate
+ * n = n1 + n2
+ * a = (a1*n1 + r1 + a2*n2 + r2) / n
+ * r = (a1*n1 + r1 + a2*n2 + r2) % n
+ *
+ * Note that we can't simply distribute the division over the terms but
+ * need to do extra work.  What we can do is when we want to calculate
+ * (a+b)/c to calculate d=(a/c + b/c) and r=(a%c + b%c) and if r too
+ * small or too large (<= -abs(c) or >= abc(c)) then compensate d and r
+ * to get r within the range by adding/subtracting c to/from r until r
+ * is in range, and whenever we do that, add/subtract 1 to/from d.  We
+ * can also do this until r is in the range 0 (inclusive) to abc(c)
+ * (exclusive) to get integer division that truncates towards negative
+ * infinity.
+ *
+ * We derive a way to calculate a*b/c and a*b%c without intermediate
+ * overflow in a*b.
+ *
+ * Notation: x/y is integer division, x÷y is mathematically exact division.
+ * x*y is integer multiplication (always mathematically exact).
+ * x%y is integer remainder following the rule that x == (x/y)*y + x%y, or
+ * x÷y == x/y + (x%y)÷y.
+ * During the derivation we assume infinite precision.
+ *
+ * (a*b)÷c = (a÷c)*b
+ *         = (a/c + (a%c)÷c)*b
+ *         = (a/c)*b + ((a%c)*b)÷c
+ *         = (a/c)*b + ((a%c)*b)/c + (((a%c)*b)%c)÷c
+ *         = (a/c)*b + ((a%c)*b)/c + ((a*b)%c)÷c
+ * Note that the last term is only the fraction (i.e. strictly between
+ * -1 and 1), so (a*b)%c is the remainder.
+ */
 #ifdef HAVE___INT128
 #define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)						\
 	do {																\
@@ -603,33 +667,35 @@ mulmod(lng a, lng b, lng c)
 				n2 = n1;												\
 			}															\
 		} else if (!is_##T##_nil(a1)) {									\
-			/* calculate: */											\
-			/* n = n1 + n2 */											\
-			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
-			/* r = (a1*n1 + r1 + a2*n2 + r2) % (n1 + n2) */				\
-			/* where / and % follow the rule that x==x/y*y + x%y */		\
-			/* but x/y is rounded down, so x%y >= 0 */					\
-			lng n = n1 + n2;											\
-			T a = (T) ((a1 / n) * n1 + ((a1 % n) * (__int128) n1) / n + \
-					   (a2 / n) * n2 + ((a2 % n) * (__int128) n2) / n + \
-					   (r1 + r2) / n);									\
-			lng r = mulmod(a1, n1, n) + mulmod(a2, n2, n) + (r1 + r2) % n; \
-			while (r >= n) {											\
-				r -= n;													\
-				a++;													\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
+			lng n = N1 + N2;											\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				a = (T) ((a1 / n) * N1 + ((a1 % n) * (__int128) N1) / n + \
+						 (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n + \
+						 (r1 + r2) / n);								\
+				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
 			}															\
-			while (r < 0) {												\
-				r += n;													\
-				a--;													\
-			}															\
-			fix_avg(T, a, r, n);										\
 			a2 = a;														\
 			r2 = r;														\
 			n2 = n;														\
 		}																\
 	} while (0)
-#else
-#if defined(_MSC_VER) && _MSC_VER >= 1920 && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
+#elif defined(_MSC_VER) && _MSC_VER >= 1920 && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #include <immintrin.h>
 #pragma intrinsic(_mul128)
@@ -641,29 +707,38 @@ mulmod(lng a, lng b, lng c)
 			r2 = r1;													\
 			n2 = n1;													\
 		} else if (!is_##T##_nil(a1)) {									\
-			/* calculate: */											\
-			/* n = n1 + n2 */											\
-			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
-			/* r = (a1*n1 + r1 + a2*n2 + r2) % (n1 + n2) */				\
-			/* where / and % follow the rule that x==x/y*y + x%y */		\
-			/* but x/y is rounded down, so x%y >= 0 */					\
-			lng n = n1 + n2;											\
-			T a = (T) ((a1 / n) * n1 +  (a2 / n) * n2 + (r1 + r2) / n);	\
-			__int64 xlo, xhi;											\
-			xlo = _mul128((__int64) (a1 % n), n1, &xhi);				\
-			a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
-			xlo = _mul128((__int64) (a2 % n), n2, &xhi);				\
-			a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
-			lng r = mulmod(a1, n1, n) + mulmod(a2, n2, n) + (r1 + r2) % n; \
-			while (r >= n) {											\
-				r -= n;													\
-				a++;													\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
+			lng n = N1 + N2;											\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				a = (T) ((a1 / n) * N1 +  (a2 / n) * N2 + (r1 + r2) / n); \
+				__int64 xlo, xhi;										\
+				xlo = _mul128((__int64) (a1 % n), N1, &xhi);			\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
+				xlo = _mul128((__int64) (a2 % n), N2, &xhi);			\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
+				r = (r1 + r2) % n;										\
+				xlo = _mul128(a1, N1, &xhi);							\
+				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ \
+				r += xlo;												\
+				xlo = _mul128(a2, N2, &xhi);							\
+				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ \
+				r += xlo;												\
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
 			}															\
-			while (r < 0) {												\
-				r += n;													\
-				a--;													\
-			}															\
-			fix_avg(T, a, r, n);										\
 			a2 = a;														\
 			r2 = r;														\
 			n2 = n;														\
@@ -677,44 +752,46 @@ mulmod(lng a, lng b, lng c)
 			r2 = r1;													\
 			n2 = n1;													\
 		} else if (!is_##T##_nil(a1)) {									\
-			/* calculate: */											\
-			/* n = n1 + n2 */											\
-			/* a = (a1*n1 + r1 + a2*n2 + r2) / (n1 + n2) */				\
-			/* r = (a1*n1 + r1 + a2*n2 + r2) % (n1 + n2) */				\
-			/* where / and % follow the rule that x==x/y*y + x%y */		\
-			/* but x/y is rounded down, so x%y >= 0 */					\
-			lng n = n1 + n2;											\
-			lng x1 = a1 % n;											\
-			lng x2 = a2 % n;											\
-			if ((n1 != 0 &&												\
-				 (x1 > GDK_lng_max / n1 || x1 < -GDK_lng_max / n1)) ||	\
-				(n2 != 0 &&												\
-				 (x2 > GDK_lng_max / n2 || x2 < -GDK_lng_max / n2))) {	\
-				BBPunfix(b->batCacheid);								\
-				BBPunfix(c->batCacheid);								\
-				BBPunfix(r->batCacheid);								\
-				throw(SQL, "aggr.avg",									\
-					  SQLSTATE(22003) "overflow in calculation");		\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
+			lng n = N1 + N2;											\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				lng x1 = a1 % n;										\
+				lng x2 = a2 % n;										\
+				if ((N1 != 0 &&											\
+					 (x1 > GDK_lng_max / N1 || x1 < -GDK_lng_max / N1)) || \
+					(N2 != 0 &&											\
+					 (x2 > GDK_lng_max / N2 || x2 < -GDK_lng_max / N2))) { \
+					BBPunfix(b->batCacheid);							\
+					BBPunfix(c->batCacheid);							\
+					BBPunfix(r->batCacheid);							\
+					throw(SQL, "aggr.avg",								\
+						  SQLSTATE(22003) "overflow in calculation");	\
+				}														\
+				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +				\
+						 (a2 / n) * N2 + (x2 * N2) / n +				\
+						 (r1 + r2) / n);								\
+				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
 			}															\
-			T a = (T) ((a1 / n) * n1 + x1 / n +							\
-					   (a2 / n) * n2 + x2 / n +							\
-					   (r1 + r2) / n);									\
-			lng r = mulmod(a1, n1, n) + mulmod(a2, n2, n) + (r1 + r2) % n; \
-			while (r >= n) {											\
-				r -= n;													\
-				a++;													\
-			}															\
-			while (r < 0) {												\
-				r += n;													\
-				a--;													\
-			}															\
-			fix_avg(T, a, r, n);										\
 			a2 = a;														\
 			r2 = r;														\
 			n2 = n;														\
 		}																\
 	} while (0)
-#endif
 #endif
 
 #define avg_aggr_acc(T)													\
@@ -772,9 +849,15 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				break;
 #endif
 			}
+			pipeline_lock2(b);
 			BATnegateprops(b);
+			pipeline_unlock2(b);
+			pipeline_lock2(r);
 			BATnegateprops(r);
+			pipeline_unlock2(r);
+			pipeline_lock2(c);
 			BATnegateprops(c);
+			pipeline_unlock2(c);
 			BBPkeepref(b);
 			BBPkeepref(r);
 			BBPkeepref(c);
@@ -788,9 +871,13 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			avg_aggr(flt);
 			avg_aggr(dbl);
 			if (!err) {
+				pipeline_lock2(b);
 				BATnegateprops(b);
+				pipeline_unlock2(b);
 				BBPkeepref(b);
+				pipeline_lock2(c);
 				BATnegateprops(c);
+				pipeline_unlock2(c);
 				BBPkeepref(c);
 			} else {
 				BBPunfix(b->batCacheid);
@@ -840,7 +927,9 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(dbl,min);
 		vaggr(str,vmin);
 		if (!err) {
+			pipeline_lock2(b);
 			BATnegateprops(b);
+			pipeline_unlock2(b);
 			//BBPkeepref(*res = b->batCacheid);
 			//leave writable
 			BBPretain(*res = b->batCacheid);
@@ -888,7 +977,9 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(dbl,max);
 		vaggr(str,vmax);
 		if (!err) {
+			pipeline_lock2(b);
 			BATnegateprops(b);
+			pipeline_unlock2(b);
 			//BBPkeepref(*res = b->batCacheid);
 			//leave writable
 			BBPretain(*res = b->batCacheid);
@@ -1280,9 +1371,15 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	MT_lock_set(&u->theaplock);
+	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid)
-			BATswap_heaps(u, b, p);
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		BATswap_heaps(u, b, p);
+	} else {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -1313,7 +1410,9 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		if (!err) {
 			BBPunfix(b->batCacheid);
 			BATsetcount(g, r);
+			pipeline_lock2(g);
 			BATnegateprops(g);
+			pipeline_unlock2(g);
 			/* props */
 			*uid = u->batCacheid;
 			*rid = g->batCacheid;
@@ -1466,9 +1565,15 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	MT_lock_set(&u->theaplock);
+	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid)
-			BATswap_heaps(u, b, p);
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		BATswap_heaps(u, b, p);
+	} else {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -1502,7 +1607,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			BBPunfix(G->batCacheid);
 			BBPunfix(b->batCacheid);
 			BATsetcount(ng, r);
+			pipeline_lock2(ng);
 			BATnegateprops(ng);
+			pipeline_unlock2(ng);
 			/* props */
 			*uid = u->batCacheid;
 			*rid = ng->batCacheid;
@@ -1768,19 +1875,21 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	MT_lock_set(&u->theaplock);
+	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
 		local_storage = true;
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		pipeline_lock(p);
 		if (!h->allocators) {
-			pipeline_lock(p);
-			if (!h->allocators) {
-				h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
-				if (!h->allocators)
-					err = 1;
-				else
-					h->nr_allocators = p->p->nr_workers;
-			}
-			pipeline_unlock(p);
+			h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
+			if (!h->allocators)
+				err = 1;
+			else
+				h->nr_allocators = p->p->nr_workers;
 		}
+		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = sa_create();
@@ -1788,8 +1897,12 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				err = 1;
 		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid)
-			BATswap_heaps(u, b, p);
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		BATswap_heaps(u, b, p);
+	} else {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -1821,7 +1934,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		if (!err) {
 			BBPunfix(b->batCacheid);
 			BATsetcount(g, cnt);
+			pipeline_lock2(g);
 			BATnegateprops(g);
+			pipeline_unlock2(g);
 			/* props */
 			gid last = ATOMIC_GET(&h->last);
 			/* pass max id */
@@ -2070,19 +2185,21 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == HASH_SINK);
+	MT_lock_set(&u->theaplock);
+	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
 		local_storage = true;
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		pipeline_lock(p);
 		if (!h->allocators) {
-			pipeline_lock(p);
-			if (!h->allocators) {
-				h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
-				if (!h->allocators)
-					err = 1;
-				else
-					h->nr_allocators = p->p->nr_workers;
-			}
-			pipeline_unlock(p);
+			h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
+			if (!h->allocators)
+				err = 1;
+			else
+				h->nr_allocators = p->p->nr_workers;
 		}
+		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = sa_create();
@@ -2090,8 +2207,12 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 				err = 1;
 		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid)
-			BATswap_heaps(u, b, p);
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		BATswap_heaps(u, b, p);
+	} else {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
@@ -2126,7 +2247,9 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			BBPunfix(b->batCacheid);
 			BBPunfix(G->batCacheid);
 			BATsetcount(g, cnt);
+			pipeline_lock2(g);
 			BATnegateprops(g);
+			pipeline_unlock2(g);
 			/* props */
 			gid last = ATOMIC_GET(&h->last);
 			/* pass max id */
@@ -2380,25 +2503,40 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	if (!private)
 		pipeline_lock1(r);
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+		MT_lock_set(&r->theaplock);
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			err = 1;
-		else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
-			BATswap_heaps(r, b, p);
-		}
-	} else if (!r) {
-		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
-			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			BATswap_heaps(r, b, p);
 		} else {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+		}
+	} else if (!r) {
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+			uint16_t width = b->twidth;
+			MT_lock_unset(&b->theaplock);
+			r = COLnew2(0, tt, max, TRANSIENT, width);
+			BATswap_heaps(r, b, p);
+		} else {
+			MT_lock_unset(&b->theaplock);
 			local_storage = true;
-			r = COLnew(0, tt, max, TRANSIENT);
-
-			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
-					err = 1;
+			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
+			if (r->tvheap && r->tvheap->base == NULL &&
+				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED)
+				err = 1;
 		}
 		assert(private);
 		r->T.private_bat = 1;
@@ -3007,9 +3145,15 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 #endif
 		}
+		pipeline_lock2(bn);
 		BATnegateprops(bn);
+		pipeline_unlock2(bn);
+		pipeline_lock2(rn);
 		BATnegateprops(rn);
+		pipeline_unlock2(rn);
+		pipeline_lock2(cn);
 		BATnegateprops(cn);
+		pipeline_unlock2(cn);
 		BATsetcount(bn, max);
 		BATsetcount(rn, max);
 		BATsetcount(cn, max);
@@ -3195,24 +3339,39 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	BBPunfix(pg->batCacheid);
 
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+		MT_lock_set(&r->theaplock);
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			err = 1;
-		else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			BATswap_heaps(r, b, p);
+		} else {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 		}
 	} else if (!r) {
+		MT_lock_set(&b->theaplock);
 		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
-			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
+			uint16_t width = b->twidth;
+			MT_lock_unset(&b->theaplock);
+			r = COLnew2(0, b->ttype, max, TRANSIENT, width);
 			BATswap_heaps(r, b, p);
 		} else {
 			local_storage = true;
-			r = COLnew(0, b->ttype, max, TRANSIENT);
-
-			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+			MT_lock_unset(&b->theaplock);
+			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
+			if (r->tvheap && r->tvheap->base == NULL &&
+				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED)
 				err = 1;
 		}
 		r->T.private_bat = 1;
@@ -3301,23 +3460,38 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	BBPunfix(pg->batCacheid);
 
 	if (r && BATcount(b)) {
-		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+		MT_lock_set(&r->theaplock);
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			err = 1;
-		else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
-			BATswap_heaps(r, b, p);
-		}
-	} else if (!r) {
-		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
-			r = COLnew2(0, b->ttype, max, TRANSIENT, b->twidth);
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
 			BATswap_heaps(r, b, p);
 		} else {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+		}
+	} else if (!r) {
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+			uint16_t width = b->twidth;
+			MT_lock_unset(&b->theaplock);
+			r = COLnew2(0, b->ttype, max, TRANSIENT, width);
+			BATswap_heaps(r, b, p);
+		} else {
+			MT_lock_unset(&b->theaplock);
 			local_storage = true;
-			r = COLnew(0, b->ttype, max, TRANSIENT);
-
-			if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b))
+			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
+			if (r->tvheap && r->tvheap->base == NULL &&
+				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED)
 				err = 1;
 		}
 		r->T.private_bat = 1;

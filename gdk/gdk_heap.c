@@ -761,7 +761,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 {
 	size_t minsize;
 	int ret = 0;
-	char *srcpath, *dstpath, *tmp;
+	char *srcpath, *dstpath;
 	int t0;
 
 	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID) {
@@ -806,17 +806,16 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:
 	 * we write to a file named .ext.new.  This file, if present,
 	 * takes precedence. */
-	srcpath = GDKfilepath(h->farmid, BATDIR, nme, ext);
 	dstpath = GDKfilepath(h->farmid, BATDIR, nme, ext);
-	if (srcpath == NULL ||
-	    dstpath == NULL ||
-	    (tmp = GDKrealloc(srcpath, strlen(srcpath) + strlen(suffix) + 1)) == NULL) {
-		GDKfree(srcpath);
+	if (dstpath == NULL)
+		return GDK_FAIL;
+	minsize = strlen(dstpath) + strlen(suffix) + 1;
+	srcpath = GDKmalloc(minsize);
+	if (srcpath == NULL) {
 		GDKfree(dstpath);
 		return GDK_FAIL;
 	}
-	srcpath = tmp;
-	strcat(srcpath, suffix);
+	strconcat_len(srcpath, minsize, dstpath, suffix, NULL);
 
 	t0 = GDKms();
 	ret = MT_rename(srcpath, dstpath);

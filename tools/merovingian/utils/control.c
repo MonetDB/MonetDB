@@ -146,6 +146,7 @@ control_setup(
 
 			control->fdin = block_stream(socket_rstream(control->sock, "client in"));
 			if (control->fdin == NULL) {
+				closesocket(control->sock);
 				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: %s", mnstr_peek_error(NULL));
 				return strdup(control->sbuf);
 			}
