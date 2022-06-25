@@ -64,9 +64,11 @@ check(SQLRETURN ret, SQLSMALLINT tpe, SQLHANDLE hnd, const char *func)
 	case SQL_ERROR:
 		prerr(tpe, hnd, func, "Error");
 		break;
+	case SQL_NO_DATA:
+		break;
 	case SQL_INVALID_HANDLE:
 		fprintf(stderr, "%s: Error: invalid handle\n", func);
-		exit(1);
+		break;
 	default:
 		fprintf(stderr, "%s: Unexpected return value\n", func);
 		break;
@@ -1143,7 +1145,7 @@ main(int argc, char **argv)
 	if (argc > 3)
 		pass = argv[3];
 	if (argc > 4 || *dsn == '-') {
-		fprintf(stderr, "Usage: %s [datasource [user [password]]]\n", argv[0]);
+		fprintf(stderr, "Wrong arguments. Usage: %s [datasource [user [password]]]\n", argv[0]);
 		exit(1);
 	}
 

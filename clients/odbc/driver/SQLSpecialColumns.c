@@ -90,7 +90,6 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
-	size_t querylen;
 	size_t pos = 0;
 	char *sch = NULL, *tab = NULL;
 
@@ -163,6 +162,8 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 	   SMALLINT     PSEUDO_COLUMN
 	*/
 	if (IdentifierType == SQL_BEST_ROWID) {
+		size_t querylen;
+
 		/* determine if we need to add a query against the tmp.* tables */
 		bool addTmpQuery = (SchemaName == NULL)
 				|| (SchemaName != NULL
@@ -419,6 +420,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 
 		if (pos >= querylen)
 			fprintf(stderr, "pos >= querylen, %zu > %zu\n", pos, querylen);
+		assert(pos < querylen);
 	} else {
 		assert(IdentifierType == SQL_ROWVER);
 		/* The backend does not have such info available */
@@ -438,7 +440,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		pos = strlen(query);
 	}
 
-	/* debug: fprintf(stdout, "SQLSpecialColumns SQL:\n%s\n\n", query); */
+	/* debug: fprintf(stdout, "SQLSpecialColumns query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
