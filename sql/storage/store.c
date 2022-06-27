@@ -3575,6 +3575,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
 
+	// TODO PROFILER EVENT: start of rollback log tr->tid and ts
+
 	/* move back deleted */
 	if (tr->localtmps.dset) {
 		for(node *n=tr->localtmps.dset->h; n; ) {
@@ -3670,6 +3672,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		list_destroy(tr->depchanges);
 		tr->depchanges = NULL;
 	}
+
+	// TODO PROFILER EVENT: end of rollback log tr->tid and ts
 }
 
 sql_trans *
@@ -3902,6 +3906,9 @@ sql_trans_commit(sql_trans *tr)
 			}
 		}
 
+
+		// TODO PROFILER EVENT: start of commit log tid and ts
+
 		/* log changes should only be done if there is something to log */
 		const bool log = !tr->parent && tr->logchanges > 0;
 
@@ -4031,6 +4038,8 @@ sql_trans_commit(sql_trans *tr)
 
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
+
+	// TODO PROFILER EVENT: end of commit log tid, ts and commit_ts (which is now the end timestamp) and ok, i.e. succes or error
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
@@ -7031,5 +7040,6 @@ sql_trans_end(sql_session *s, int ok)
 	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
+	// TODO PROFILER EVENT: end of transaction log s->tr->tid
 	return ok;
 }
