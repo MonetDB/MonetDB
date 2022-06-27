@@ -473,7 +473,7 @@ mvc_trans(mvc *m)
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	res = sql_trans_begin(m->session);
-	// TODO PROFILER EVENT: start of transaction: log m->clientid, m->session->tr->tid and m->session->tr->ts
+	// TODO PROFILER: EVENT("start of transaction","client_id": TYPE_int, m->clientid, "tid": TYPE_int, m->session->tr->tid, "ts": TYPE_int, m->session->tr->ts)
 	if (m->qc && (res || err)) {
 		int seqnr = m->qc->id;
 		if (m->qc)
