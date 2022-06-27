@@ -128,7 +128,9 @@ sql_symbol2relation(backend *be, symbol *sym)
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
 
+	// TODO PROFILER EVENT: start of SQL compilation,i.e. parse tree to relation.: log be->client->curprg->def->tag
 	rel = rel_semantic(query, sym);
+	// TODO PROFILER EVENT: end of SQL compilation,i.e. parse tree to relation and start of relational optimizer: log be->client->curprg->def->tag
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = GDKusec();
 	if (rel)
@@ -138,6 +140,8 @@ sql_symbol2relation(backend *be, symbol *sym)
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
 	be->reloptimizer = GDKusec() - Tbegin;
+
+	// TODO PROFILER EVENT: end of relational optimizer: log be->client->curprg->def->tag
 	return rel;
 }
 
