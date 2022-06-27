@@ -1109,7 +1109,7 @@ SQLparser(Client c)
 	tag = runtimeProfileSetTag(c);
 	assert(tag == c->curprg->def->tag);
 	(void) tag;
-	// TODO PROFILER EVENT: start of sql parsing is start of sql compilation
+	// TODO PROFILER EVENT: start of sql parsing is start of sql compilation: log c->curprg->def->tag
 
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
@@ -1194,10 +1194,12 @@ SQLparser(Client c)
 				}
 			}
 
+			// TODO PROFILER EVENT: start of relation to MAL compilation: log c->curprg->def->tag
 			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
 				opt = (m->emod & mod_exec) == 0;//1;
+			// TODO PROFILER EVENT: end of relation to MAL compilation: log c->curprg->def->tag and err if present.
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1275,7 +1277,9 @@ SQLparser(Client c)
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (msg == MAL_SUCCEED && opt ) {
+			// TODO PROFILER EVENT: start of MAL optimizer. log c->curprg->def->tag
 			msg = SQLoptimizeQuery(c, c->curprg->def);
+			// TODO PROFILER EVENT: end  of MAL optimizer. log c->curprg->def->tag and error if so
 
 			if (msg != MAL_SUCCEED) {
 				str other = c->curprg->def->errors;
