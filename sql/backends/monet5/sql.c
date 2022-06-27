@@ -128,9 +128,9 @@ sql_symbol2relation(backend *be, symbol *sym)
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
 
-	// TODO PROFILER EVENT: start of SQL compilation,i.e. parse tree to relation.: log be->client->curprg->def->tag
+	// TODO PROFILER: EVENT("start of SQL compiler", "program_id", TYPE_int, log c->curprg->def->tag)
 	rel = rel_semantic(query, sym);
-	// TODO PROFILER EVENT: end of SQL compilation,i.e. parse tree to relation and start of relational optimizer: log be->client->curprg->def->tag
+	// TODO PROFILER: EVENT("end of SQL compiler;start of relational optimizer","program_id", TYPE_int, be->c->curprg->def->tag, "error", TYPE_int, rel == NULL)
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = GDKusec();
 	if (rel)
@@ -141,7 +141,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		be->no_mitosis = 1;
 	be->reloptimizer = GDKusec() - Tbegin;
 
-	// TODO PROFILER EVENT: end of relational optimizer: log be->client->curprg->def->tag
+	// TODO PROFILER: EVENT("start of relational optimizer","program_id": TYPE_int, be->c->curprg->def->tag, "error", TYPE_int, rel == NULL)
 	return rel;
 }
 
@@ -173,7 +173,7 @@ sqlcleanup(backend *be, int err)
 }
 
 /*
- * The internal administration of the SQL compilation and execution state
+ * The internal administration of the MAL compiler and execution state
  * is administered by a state descriptor accessible in each phase.
  * Failure to find the state descriptor aborts the session.
  */

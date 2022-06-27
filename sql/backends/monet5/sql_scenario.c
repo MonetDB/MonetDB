@@ -1109,7 +1109,7 @@ SQLparser(Client c)
 	tag = runtimeProfileSetTag(c);
 	assert(tag == c->curprg->def->tag);
 	(void) tag;
-	// TODO PROFILER EVENT: start of sql parsing is start of sql compilation: log c->curprg->def->tag
+	// TODO PROFILER: EVENT("start of SQL parser", "client_id", TYPE_int, c->id, "program_id": TYPE_int, log c->curprg->def->tag)
 
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
@@ -1137,7 +1137,7 @@ SQLparser(Client c)
 	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
-	// TODO PROFILER EVENT: end of sql parsing. Also add the cleaned query to the event
+	// TODO PROFILER: EVENT("end of SQL parser", "program_id": TYPE_int, log c->curprg->def->tag, "query": TYPE_str, c->query)
 
 	if (c->query == NULL) {
 		err = 1;
@@ -1194,12 +1194,12 @@ SQLparser(Client c)
 				}
 			}
 
-			// TODO PROFILER EVENT: start of relation to MAL compilation: log c->curprg->def->tag
+			// TODO PROFILER: EVENT("start of MAL compiler","program_id": TYPE_int, log c->curprg->def->tag, "query": TYPE_str, c->query)
 			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
 				opt = (m->emod & mod_exec) == 0;//1;
-			// TODO PROFILER EVENT: end of relation to MAL compilation: log c->curprg->def->tag and err if present.
+			// TODO PROFILER: EVENT("end of MAL compiler","program_id": TYPE_int, log c->curprg->def->tag, "query": TYPE_str, c->query, "error_code", TYPE_int, err)
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1277,9 +1277,9 @@ SQLparser(Client c)
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (msg == MAL_SUCCEED && opt ) {
-			// TODO PROFILER EVENT: start of MAL optimizer. log c->curprg->def->tag
+			// TODO PROFILER: EVENT("start of MAL optimizer","program_id": TYPE_int, log c->curprg->def->tag)
 			msg = SQLoptimizeQuery(c, c->curprg->def);
-			// TODO PROFILER EVENT: end  of MAL optimizer. log c->curprg->def->tag and error if so
+			// TODO PROFILER: EVENT("end of MAL optimizer","program_id": TYPE_int, log c->curprg->def->tag, "error_msg", TYPE_str, msg)
 
 			if (msg != MAL_SUCCEED) {
 				str other = c->curprg->def->errors;
