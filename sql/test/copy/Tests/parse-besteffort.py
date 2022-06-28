@@ -21,6 +21,13 @@ run_test = suite.run_test
 #
 ##############################################################################
 
+
+# When the parse functions encounter an error we expect them to insert a nil
+# instead and log an error.
+#
+# NOTE: Later on the rows with the nils will be removed but for the time being
+# we still see them.
+
 testdata = """\
 1|1.0|hello
 2x|2.0|hi%
@@ -35,17 +42,17 @@ tc = (tc
     .expect_value(0, 1, 1)
     .expect_value(0, 2, 'hello')
     #
-    .expect_value(1, 0, None)   # besteffort
+    .expect_value(1, 0, None)   # besteffort for copy.parse_integer
     .expect_value(1, 1, 2)
     # .expect_value(1, 2, 'hi%%%%%')
     #
     .expect_value(2, 0, 3)
-    .expect_value(2, 1, None)    # besteffort
+    .expect_value(2, 1, None)    # besteffort for copy.parse_decimal
     .expect_value(2, 2, 'good morning')
     #
     .expect_value(3, 0, 4)
     .expect_value(3, 1, 4)
-    .expect_value(3, 2, None)    # besteffort
+    .expect_value(3, 2, None)    # besteffort for copy.parse_generic
     #
     .expect_value(4, 0, 5)
     .expect_value(4, 1, 5)
@@ -54,5 +61,26 @@ tc = (tc
     .expect_reject(2, 1, 'unexpected character')
     .expect_reject(3, 2, 'too many decimal digits')
     .expect_reject(4, 3, 'incorrectly encoded')
+)
+run_test(tc)
+
+# There are two errors copy.fixlines can run into:
+# 1. a too long line, currently we don't detect that but just become slower and
+# slower.
+# 2. an unterminated final line.
+# The first remains a hard error even in BEST EFFORT mode.
+# The second, on encountering an unterminated final line it should log the
+# error with line number. Then it can pretend the line never existed.
+testdata = """\
+1|one test
+2|two tests
+3x|this line has an error
+4|four tests
+5|five tests
+6|and an unterminated line\
+"""
+tc = (TestCase("I INT, t TEXT", testdata, besteffort=True, raw=True, blocksize=13)
+    .expect_reject(3, 1, "unexpected character")
+    .expect_reject(6, None, "unterminated")
 )
 run_test(tc)

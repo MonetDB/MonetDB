@@ -117,7 +117,7 @@ static void
 emit_onserver_loop(
 	MalBlkPtr mb, struct loop_vars *loop_vars,
 	int var_fname, int block_size,
-	int var_line_sep, int var_quote_char, int var_escape, int var_offset, int var_nrecords)
+	int var_line_sep, int var_quote_char, int var_escape, int var_best_effort, int var_offset, int var_nrecords)
 {
 	(void)var_offset;
 	InstrPtr q;
@@ -265,6 +265,7 @@ emit_onserver_loop(
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushArgument(mb, q, var_escape);
+	q = pushArgument(mb, q, var_best_effort);
 	q = pushArgument(mb, q, loop_vars->earlier_line_count);
 	q = pushArgument(mb, q, var_todo);
 	// use the variables defined by fixlines from now on:
@@ -397,8 +398,6 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	setDestVar(q, offset_calculation);
 
 	// TODO: Deal with the following
-	(void)var_num_rows;
-	(void)var_best_effort;
 	(void)var_on_client;
 	(void)var_fixed_width;
 
@@ -411,7 +410,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushNil(mb, q, TYPE_bit);
 	InstrPtr claim_channel_stmt = emit_channel(mb, getDestVar(q));
 
-	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape, var_offset, var_num_rows);
+	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape, var_best_effort, var_offset, var_num_rows);
 
 	int var_claim_token = emit_receive(mb, loop_vars.loop_handle, claim_channel_stmt);
 

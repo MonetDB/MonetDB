@@ -35,8 +35,9 @@ class TestCase:
 
     DEFAULT_BLOCKSIZE = 1000
 
-    def __init__(self, spec, data, raw=False, quote=None, null=None, escape=None, besteffort=False):
+    def __init__(self, spec, data, raw=False, quote=None, null=None, escape=None, besteffort=False, blocksize = DEFAULT_BLOCKSIZE):
         self.fieldspec = spec
+        self.blocksize = blocksize
         if raw:
             self.raw_testdata = data
             self.testdata = None
@@ -209,6 +210,7 @@ class TestCase:
                 print(f"Found {len(unseen)} unexpected rejects:", file=out)
                 for r, c, m in sorted(unseen):
                     print(f"        row={r} col={c} msg={m}", file=out)
+                assert False
         else:
             try:
                 cursor.execute(query)
@@ -225,10 +227,10 @@ class TestCase:
 
     def prepare_testdata(self):
         if self.raw_testdata is not None:
-            return (self.raw_testdata, self.DEFAULT_BLOCKSIZE)
+            return (self.raw_testdata, self.blocksize)
         first_group = []
         second_group = self.testdata[:]
-        block_size = self.DEFAULT_BLOCKSIZE
+        block_size = self.blocksize
         for i, line in enumerate(second_group):
             if '%' in line:
                 first_group = second_group[:i + 1]

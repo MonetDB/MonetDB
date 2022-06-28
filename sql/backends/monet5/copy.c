@@ -164,7 +164,8 @@ get_sep_char(str sep, bool backslash_escapes)
 static str
 COPYfixlines(
 	  bat *ret_left, bat *ret_right, lng *ret_linecount,
-	  bat *left_block, bat *right_block, str *linesep_arg, str *quote_arg, bit *escape,
+	  bat *left_block, bat *right_block, str *linesep_arg, str *quote_arg,
+	  bit *escape, bit *best_effort,
 	  lng *starting_row_arg, lng *max_rows_arg)
 {
 	str msg = MAL_SUCCEED;
@@ -183,7 +184,7 @@ COPYfixlines(
 	bool quoted;
 	int borrow = 0;
 
-	copy_init_error_handling(&errors, false, starting_row, -1, NULL);
+	copy_init_error_handling(&errors, *best_effort, starting_row, -1, NULL);
 
 	backslash_escapes = *escape;
 	linesep = get_sep_char(*linesep_arg, backslash_escapes);
@@ -272,7 +273,8 @@ COPYfixlines(
 		goto end;
 	}
 
-	// We have to borrow some data from the next block to complete the final line
+	// We have to borrow some data from the next block to complete the final line.
+	// Determine how much.
 	right_size = BATcount(right);
 	borrow = -1;
 	right_data = Tloc(right, 0);
@@ -304,37 +306,55 @@ COPYfixlines(
 		new_left = left;
 		new_right = right;
 		*ret_linecount = newline_count + 1;
-	} else {
-		// the last line of 'left' is so long it extends all the way through 'right'
-		// into the next block. Our invariant is that 'new_left' must start and end
-		// on line boundaries and 'new_right' must start on a line boundary.
-		// The best way to do so is by appending all of 'right' to 'left' and
-		// returning the resulting jumbo block as 'new_right', with an empty
-		// block as 'new_left'.
-		// However, if 'right' is empty, we know we have reached the end of the
-		// input so we know the end of the line will never come.
-		if (right_size == 0) {
-			if (quoted)
-				copy_report_error(&errors, newline_count, -1, "unterminated quoted string");
-			else
-				copy_report_error(&errors, newline_count, -1, "unterminated line at end of file");
-			bailout("copy.fixlines", "%s", copy_error_message(&errors));
-		}
-		BUN new_size = (BUN)left_size + (BUN)right_size;
-		if (new_size >= MAX_LINE_LENGTH)
-			bailout("copy.fixlines", SQLSTATE(42000) "line too long: " BUNFMT ", limit set to " BUNFMT, new_size, (BUN)MAX_LINE_LENGTH);
-		if (BATextend(left, new_size) != GDK_SUCCEED) {
-			bailout("copy.fixlines", GDK_EXCEPTION);
-		}
-		memcpy(Tloc(left, left_size), right_data, right_size);
-		BATsetcount(left, (BUN)left_size + (BUN)right_size);
-		BATsetcount(right, 0);
-		assert(right->batInserted == 0);
-		// notice how 'left' and 'right' cross over:
-		new_left = right;
-		new_right = left;
-		*ret_linecount = 0;
+		msg = MAL_SUCCEED;
+		goto end;
 	}
+
+	// If we get here, the last line of 'left' is so long it extends all the
+	// way through 'right' into the next block, if there is one.
+
+	if (right_size == 0) {
+		// We have reached the end of the input. The end of the line will
+		// never come.
+		gdk_return proceed;
+		if (quoted)
+			proceed = copy_report_error(&errors, newline_count, -1, "unterminated quoted string");
+		else
+			proceed = copy_report_error(&errors, newline_count, -1, "unterminated line at end of file");
+		if (proceed == GDK_FAIL)
+			bailout("copy.fixlines", "%s", copy_error_message(&errors));
+
+		// We must be in BEST EFFORT mode. We have reported the error, now
+		// disregard the incomplete line to make the left block end at a line boundary.
+		BATsetcount(left, latest_newline + 1);
+		BATsetcount(right, 0);
+		new_left = left;
+		new_right = right;
+		*ret_linecount = newline_count;
+		msg = MAL_SUCCEED;
+		goto end;
+	}
+
+	// The best way to satisfy our invariant that 'new_left' must start and end
+	// on line boundaries and 'new_right' must start on a line boundary
+	// is by appending all of 'right' to 'left' and
+	// returning the resulting jumbo block as 'new_right', with an empty
+	// block as 'new_left'.
+	BUN new_size;
+	new_size = (BUN)left_size + (BUN)right_size;
+	if (new_size >= MAX_LINE_LENGTH)
+		bailout("copy.fixlines", SQLSTATE(42000) "line too long: " BUNFMT ", limit set to " BUNFMT, new_size, (BUN)MAX_LINE_LENGTH);
+	if (BATextend(left, new_size) != GDK_SUCCEED) {
+		bailout("copy.fixlines", GDK_EXCEPTION);
+	}
+	memcpy(Tloc(left, left_size), right_data, right_size);
+	BATsetcount(left, (BUN)left_size + (BUN)right_size);
+	BATsetcount(right, 0);
+	assert(right->batInserted == 0);
+	// notice how 'left' and 'right' cross over:
+	new_left = right;
+	new_right = left;
+	*ret_linecount = 0;
 	msg = MAL_SUCCEED;
 
 end:
@@ -520,9 +540,9 @@ static mel_func copy_init_funcs[] = {
 	batarg("block", bte),arg("toskip", lng)
  )),
  command("copy", "fixlines", COPYfixlines, true, "Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied",
-	args(3, 10,
+	args(3, 11,
 	batarg("new_left", bte), batarg("new_right", bte), arg("linecount", lng),
-	batarg("left", bte), batarg("right", bte), arg("linesep", str), arg("quote", str), arg("escape", bit), arg("startingrow", lng), arg("maxrows", lng)
+	batarg("left", bte), batarg("right", bte), arg("linesep", str), arg("quote", str), arg("escape", bit), arg("besteffort", bit), arg("startingrow", lng), arg("maxrows", lng)
  )),
  pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1, 9,
 	batvararg("", int),
