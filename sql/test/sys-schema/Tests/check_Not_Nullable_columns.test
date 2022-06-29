@@ -214,15 +214,15 @@ query IITI rowsort
 SELECT "grantor", * FROM "sys"."auths" WHERE "grantor" IS NULL
 ----
 
-query TTTITIITI rowsort
+query TTTITIITIT rowsort
 SELECT "name", * FROM "sys"."db_user_info" WHERE "name" IS NULL
 ----
 
-query TTTITIITI rowsort
+query TTTITIITIT rowsort
 SELECT "fullname", * FROM "sys"."db_user_info" WHERE "fullname" IS NULL
 ----
 
-query ITTITIITI rowsort
+query ITTITIITIT rowsort
 SELECT "default_schema", * FROM "sys"."db_user_info" WHERE "default_schema" IS NULL
 ----
 
