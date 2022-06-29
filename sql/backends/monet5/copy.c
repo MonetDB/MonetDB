@@ -170,30 +170,30 @@ COPYfixlines(
 {
 	str msg = MAL_SUCCEED;
 	struct error_handling errors;
-	int linesep, quote;
-	bool backslash_escapes;
+	bool backslash_escapes = *escape;
 	lng starting_row = *starting_row_arg;
 	lng max_rows = *max_rows_arg;
+	struct scan_state state = {
+		.quote_char = get_sep_char(*quote_arg, backslash_escapes),
+		.line_sep = get_sep_char(*linesep_arg, backslash_escapes),
+		.escape_enabled = backslash_escapes,
+		.quoted = false,
+		.escape_pending = false,
+	};
 	BAT *left = NULL, *right = NULL;
+	const char *left_data, *right_data;
+	int left_size, left_start, right_size;
 	BAT *new_left = NULL, *new_right = NULL;
-	int start, left_size, right_size;
-	char *left_data, *right_data;
 	int newline_count = 0;
-	int latest_newline;
-	bool escape_pending;
-	bool quoted;
-	int borrow = 0;
+	const char *latest_newline;
 
 	copy_init_error_handling(&errors, *best_effort, starting_row, -1, NULL);
 
-	backslash_escapes = *escape;
-	linesep = get_sep_char(*linesep_arg, backslash_escapes);
-	if (linesep <= 0) // 0 not ok
+	if (state.line_sep <= 0) // 0 not ok
 		bailout("copy.fixlines", SQLSTATE(42000) "invalid line separator");
-	quote = get_sep_char(*quote_arg, backslash_escapes);
-	if (quote < 0) // 0 is ok
+	if (state.quote_char < 0) // 0 is ok
 		bailout("copy.fixlines", SQLSTATE(42000) "invalid quote character");
-	if (linesep == quote)
+	if (state.line_sep == state.quote_char)
 		bailout("copy.fixlines", SQLSTATE(42000) "line separator and quote character cannot be the same");
 
 	if (is_bat_nil(*left_block) || is_bat_nil(*right_block) || is_bit_nil(*escape))
@@ -203,8 +203,13 @@ COPYfixlines(
 		bailout("copy.fixlines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (BATcount(left) > (BUN)INT_MAX || BATcount(right) > (BUN)INT_MAX)
 		bailout("copy.fixlines", SQLSTATE(42000) "block size too large");
+	left_data = Tloc(left, 0);
+	left_size = BATcount(left);
+	left_start = left->batInserted;
+	right_data = Tloc(right, 0);
+	right_size = BATcount(right);
 
-	if (BATcount(left) < left->batInserted)
+	if (left_size < left_start)
 		bailout("copy.fixlines", SQLSTATE(42000) "skip amount out of bounds");
 	if (right->batInserted != 0)
 		bailout("copy.fixlines", SQLSTATE(42000) "right hand skip amount expected to be zero, not " BUNFMT, right->batInserted);
@@ -216,47 +221,11 @@ COPYfixlines(
 	dump_block("fixlines incoming right", right);
 #endif
 
-	// Scan 'left' for unquoted newlines. Determine both the count and the position
-	// of the last occurrence.
-	start = (int)left->batInserted;
-	left_size = (int)BATcount(left);
-	escape_pending = false;
-	quoted = false;
-	left_data = Tloc(left, 0);
-	if (start < left_size) {
-		newline_count = 0;
-		latest_newline = start - 1;
-		for (int i = start; i < left_size; i++) {
-			if (escape_pending) {
-				escape_pending = false;
-				continue;
-			}
-			if (backslash_escapes && left_data[i] == '\\') {
-				escape_pending = true;
-				continue;
-			}
-			bool is_quote = left_data[i] == quote && quote != 0;
-			quoted ^= is_quote;
-			if (!quoted && left_data[i] == linesep) {
-				latest_newline = i;
-				newline_count++;
-				if (newline_count >= max_rows) {
-					// Emergency brake:
-					// We have all the rows we need. The rest of the left block is no longer needed, and neither is
-					// the entirety of th right block
-					new_left = left;
-					new_right = right;
-					*ret_linecount = newline_count;
-					BATsetcount(left, i + 1);
-					BATsetcount(right, 0);
-					assert(right->batInserted == 0);
-					msg = MAL_SUCCEED;
-					goto end;
-				}
-			}
-		}
-	} else {
-		// start == left_size means left block is empty, nothing to do
+	state.pos = left_data + left_start;
+	state.end = left_data + left_size;
+
+	if (state.pos == state.end) {
+		// This means the left block is empty, invariant is fulfilled, nothing to do
 		new_left = left;
 		new_right = right;
 		*ret_linecount = 0;
@@ -264,8 +233,54 @@ COPYfixlines(
 		goto end;
 	}
 
-	if (!escape_pending && !quoted && latest_newline == left_size - 1) {
-		// Block ends in a newline, nothing more to do
+	// Scan 'left' for unquoted newlines. Determine both the total count and the
+	// position of the last occurrence.
+	latest_newline = NULL;
+	while (state.pos < state.end && newline_count < max_rows) {
+		if (!find_end_of_line(&state))
+			break;
+		latest_newline = state.pos;
+		newline_count++;
+		state.pos++;
+	}
+
+	if (newline_count == max_rows) {
+		// We have all the rows we need. The rest of the left block is no longer
+		// needed, and neither is the entirety of the right block
+		new_left = left;
+		new_right = right;
+		*ret_linecount = newline_count;
+		BATsetcount(left, state.pos - left_data);
+		BATsetcount(right, 0);
+		msg = MAL_SUCCEED;
+		goto end;
+	}
+
+	if (!state.escape_pending && !state.quoted && latest_newline == state.end - 1) {
+		// Left block ends in a newline, invariant fulfilled, nothing more to do
+		new_left = left;
+		new_right = right;
+		*ret_linecount = newline_count;
+		msg = MAL_SUCCEED;
+		goto end;
+	}
+
+	if (right_size == 0) {
+		// We have reached the end of the input. The end of the line will
+		// never come.
+		gdk_return proceed;
+		if (state.quoted)
+			proceed = copy_report_error(&errors, newline_count, -1, "unterminated quoted string");
+		else
+			proceed = copy_report_error(&errors, newline_count, -1, "unterminated line at end of file");
+		if (proceed == GDK_FAIL)
+			bailout("copy.fixlines", "%s", copy_error_message(&errors));
+
+		// We must be in BEST EFFORT mode. We have reported the error, now
+		// disregard the incomplete line to make the left block end at a line boundary.
+		BUN new_size = latest_newline ? latest_newline - left_data + 1 : left_start;
+		BATsetcount(left, new_size);
+		BATsetcount(right, 0);
 		new_left = left;
 		new_right = right;
 		*ret_linecount = newline_count;
@@ -275,28 +290,11 @@ COPYfixlines(
 
 	// We have to borrow some data from the next block to complete the final line.
 	// Determine how much.
-	right_size = BATcount(right);
-	borrow = -1;
-	right_data = Tloc(right, 0);
-	for (int i = 0; i < right_size; i++) {
-		if (escape_pending) {
-			escape_pending = false;
-			continue;
-		}
-		if (backslash_escapes && right_data[i] == '\\') {
-			escape_pending = true;
-			continue;
-		}
-		bool is_quote = right_data[i] == quote;
-		quoted ^= is_quote;
-		if (!quoted && right_data[i] == linesep) {
-			borrow = i + 1;
-			break;
-		}
-	}
-
-	if (borrow >= 0) {
+	state.pos = right_data;
+	state.end = right_data + right_size;
+	if (find_end_of_line(&state)) {
 		// Move some bytes from 'right' to 'left'
+		int borrow = state.pos - right_data + 1;
 		if (BATextend(left, (BUN)left_size + (BUN)borrow) != GDK_SUCCEED) {
 			bailout("copy.fixlines", GDK_EXCEPTION);
 		}
@@ -312,29 +310,6 @@ COPYfixlines(
 
 	// If we get here, the last line of 'left' is so long it extends all the
 	// way through 'right' into the next block, if there is one.
-
-	if (right_size == 0) {
-		// We have reached the end of the input. The end of the line will
-		// never come.
-		gdk_return proceed;
-		if (quoted)
-			proceed = copy_report_error(&errors, newline_count, -1, "unterminated quoted string");
-		else
-			proceed = copy_report_error(&errors, newline_count, -1, "unterminated line at end of file");
-		if (proceed == GDK_FAIL)
-			bailout("copy.fixlines", "%s", copy_error_message(&errors));
-
-		// We must be in BEST EFFORT mode. We have reported the error, now
-		// disregard the incomplete line to make the left block end at a line boundary.
-		BATsetcount(left, latest_newline + 1);
-		BATsetcount(right, 0);
-		new_left = left;
-		new_right = right;
-		*ret_linecount = newline_count;
-		msg = MAL_SUCCEED;
-		goto end;
-	}
-
 	// The best way to satisfy our invariant that 'new_left' must start and end
 	// on line boundaries and 'new_right' must start on a line boundary
 	// is by appending all of 'right' to 'left' and

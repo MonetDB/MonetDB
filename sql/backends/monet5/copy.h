@@ -92,4 +92,56 @@ void dump_block(const char *msg, BAT *b);
 #endif
 
 
+struct scan_state {
+	// these remain constant
+	int quote_char;
+	int line_sep;
+	bool escape_enabled;
+	const char *end;
+	// these are updated
+	const char *pos;
+	bool quoted;
+	bool escape_pending;
+};
+
+static inline bool
+find_end_of_line(struct scan_state *st)
+{
+	bool found = false;
+	int quote_char = st->quote_char;
+	int line_sep = st->line_sep;
+	bool escape_enabled = st->escape_enabled;
+	const char *end = st->end;
+	// these are updated
+	const char *pos = st->pos;
+	bool quoted = st->quoted;
+	bool escape_pending = st->escape_pending;
+
+	for (; pos < end; pos++) {
+		if (escape_pending) {
+			escape_pending = false;
+			continue;
+		}
+		if (escape_enabled && *pos == '\\') {
+			escape_pending = true;
+			continue;
+		}
+		bool is_quote = (quote_char != 0 && *pos == quote_char);
+		quoted ^= is_quote;
+		if (!quoted && *pos == line_sep) {
+			found = true;
+			break;
+		}
+	}
+
+	st->pos = pos;
+	st->quoted = quoted;
+	st->escape_pending = escape_pending;
+
+	return found;
+}
+
+
+
+
 #endif /*_COPY_H_*/
