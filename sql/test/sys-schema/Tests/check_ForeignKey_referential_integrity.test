@@ -198,11 +198,11 @@ query TTIT rowsort
 SELECT * FROM sys.users WHERE default_schema NOT IN (SELECT id FROM sys.schemas)
 ----
 
-query TTITIITI rowsort
+query TTITIITIT rowsort
 SELECT * FROM sys.db_user_info WHERE name NOT IN (SELECT name FROM sys.auths)
 ----
 
-query TTITIITI rowsort
+query TTITIITIT rowsort
 SELECT * FROM sys.db_user_info WHERE default_schema NOT IN (SELECT id FROM sys.schemas)
 ----
 
