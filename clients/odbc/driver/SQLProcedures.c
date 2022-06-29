@@ -71,6 +71,8 @@ MNDBProcedures(ODBCStmt *stmt,
 	   N/A          NUM_RESULT_SETS (Reserved for future use)
 	   VARCHAR      REMARKS
 	   SMALLINT     PROCEDURE_TYPE
+	   VARCHAR      SPECIFIC_NAME	(Note this is a MonetDB extension, needed to differentiate between overloaded procedure/function names)
+					(similar to JDBC DatabaseMetaData methods getProcedures() and getFunctions())
 	 */
 
 	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
@@ -111,31 +113,35 @@ MNDBProcedures(ODBCStmt *stmt,
 	if (query == NULL)
 		goto nomem;
 
-/* see sql_catalog.h */
+/* see sql/include/sql_catalog.h */
 #define F_FUNC 1
 #define F_PROC 2
 #define F_UNION 5
-#define FUNC_LANG_SQL 2
 	pos += snprintf(query + pos, querylen - pos,
-		 "select '%s' as \"PROCEDURE_CAT\", "
+		"select '%s' as \"PROCEDURE_CAT\", "
 			"s.name as \"PROCEDURE_SCHEM\", "
 			"p.name as \"PROCEDURE_NAME\", "
 			"0 as \"NUM_INPUT_PARAMS\", "
 			"0 as \"NUM_OUTPUT_PARAMS\", "
 			"0 as \"NUM_RESULT_SETS\", "
 			"%s as \"REMARKS\", "
-			"cast(case when p.type = %d then %d else %d end as smallint) as \"PROCEDURE_TYPE\" "
-		 "from sys.schemas as s, "
-		      "sys.functions as p%s "
-		 "where p.schema_id = s.id and "
-		       "p.language >= %d and "
-		       "p.type in (%d, %d, %d)",
-		 stmt->Dbc->dbname,
-		 stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
-		 F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
-		 stmt->Dbc->has_comment ? " left outer join sys.comments c on p.id = c.id" : "",
-		 FUNC_LANG_SQL, F_FUNC, F_PROC, F_UNION);
-	assert(pos < 800);
+			"cast(case when p.type = %d then %d else %d end as smallint) as \"PROCEDURE_TYPE\", "
+			/* Only the id value uniquely identifies a specific procedure.
+			   Include it to be able to differentiate between multiple
+			   overloaded procedures with the same name and schema */
+			"cast(p.id as varchar(10)) AS \"SPECIFIC_NAME\" "
+		"from sys.schemas as s, "
+		     "sys.functions as p%s "
+		"where p.schema_id = s.id and "
+		      "p.type in (%d, %d, %d)",
+		stmt->Dbc->dbname,
+		stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
+		F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
+		/* from clause: */
+		stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = p.id" : "",
+		/* where clause: */
+		F_FUNC, F_PROC, F_UNION);
+	assert(pos < 900);
 
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && CatalogName != NULL) {
@@ -157,7 +163,10 @@ MNDBProcedures(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\"", querylen - pos);
+	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\"", querylen - pos);
+	assert(pos < querylen);
+
+	/* debug: fprintf(stdout, "SQLProcedures query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

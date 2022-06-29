@@ -306,6 +306,12 @@ def remove(file):
         pass
     except IsADirectoryError:
         shutil.rmtree(file)
+    except PermissionError:
+        # on Windows we get a weird error from os.remove on a directory
+        if os.name == "nt":
+            shutil.rmtree(file)
+        else:
+            Warn('could not remove {}'.format(file))
     except:
         Warn('could not remove {}'.format(file))
 
@@ -2042,6 +2048,25 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                             break
                 if reason is not None:
                     break
+            elif cond.startswith('R_VERSION>='):
+                rversion = os.path.join('@LIBR_INCLUDE_DIRS@', 'Rversion.h')
+                if os.path.exists(rversion):
+                    with openutf8(rversion, 'r') as f:
+                        res = re.search('#define R_VERSION (?P<rversion>\d+)', f.read())
+                        if res is not None:
+                            r_version = res.group('rversion')
+                            req_version = cond[11:].split('.')
+                            req_version = int(req_version[0]) * 65536 + int(req_version[1]) * 256 + int(req_version[2])
+                            if not negate:
+                                if int(r_version) < req_version:
+                                    reason = "R version too low"
+                                    elem = SkipTest(env, TST, EXT, reason, length)
+                                    break
+                            else:
+                                if int(r_version) >= req_version:
+                                    reason = "R version too high"
+                                    elem = SkipTest(env, TST, EXT, reason, length)
+                                    break
             elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
@@ -2805,6 +2830,30 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 cmd = [os.path.join(".", TST + EXT), TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL == "python":
+                # do clean up between tests if no dependent tests
+                # borrow clean up function from sqllogictest
+                if not os.path.exists(TST+'.reqtests'):
+                    import MonetDBtesting.sqllogictest as sqllogictest
+                    with sqllogictest.SQLLogic(out=ClntErr) as sql:
+                        try:
+                            sql.connect(username=user or 'monetdb',
+                                        password=passwd or 'monetdb',
+                                        hostname=HOST,
+                                        port=int(pSrvr.port),
+                                        database=TSTDB,
+                                        language='sql',
+                                        timeout=TIMEOUT)
+                        except KeyboardInterrupt:
+                            raise
+                        except:
+                            returncode = 'error'
+                        else:
+                            try:
+                                sql.drop()
+                            except KeyboardInterrupt:
+                                raise
+                            except:
+                                pass
                 cmd = [sys.executable, TST + EXT, TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL in ["mal", "malXs"]:

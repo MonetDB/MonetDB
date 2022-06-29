@@ -233,7 +233,10 @@ MNDBTables(ODBCStmt *stmt,
 
 		/* add the ordering */
 		pos += strcpy_len(query + pos, " order by \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"", querylen - pos);
+		assert(pos < querylen);
 	}
+
+	/* debug: fprintf(stdout, "SQLTables query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);

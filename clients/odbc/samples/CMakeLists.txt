@@ -29,13 +29,6 @@ if(TESTING)
     PRIVATE
     ODBC::ODBC)
 
-  add_executable(testStmtAttr
-    testStmtAttr.c)
-
-  target_link_libraries(testStmtAttr
-    PRIVATE
-    ODBC::ODBC)
-
   add_executable(metadata
     metadata.c)
 
@@ -47,7 +40,6 @@ if(TESTING)
     odbcsample1
     testgetinfo
     arraytest
-    testStmtAttr
     metadata
     RUNTIME
     DESTINATION
@@ -59,7 +51,6 @@ if(TESTING)
       $<TARGET_PDB_FILE:odbcsample1>
       $<TARGET_PDB_FILE:testgetinfo>
       $<TARGET_PDB_FILE:arraytest>
-      $<TARGET_PDB_FILE:testStmtAttr>
       $<TARGET_PDB_FILE:metadata>
       DESTINATION ${CMAKE_INSTALL_BINDIR}
       OPTIONAL)

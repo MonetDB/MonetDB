@@ -6,6 +6,20 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
+/*
+ * MonetDB program to test ODBC metadata/catalog functions (all return a result-set):
+ * SQLTables()
+ * SQLColumns()
+ * SQLSpecialColumns()
+ * SQLPrimaryKeys()
+ * SQLForeignKeys()
+ * SQLStatistics()
+ * SQLTablePrivileges()
+ * SQLColumnPrivileges()
+ * SQLProcedures()
+ * SQLProcedureColumns()
+ */
+
 #ifdef _MSC_VER
 /* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
 #ifndef _CRT_SECURE_NO_DEPRECATE
@@ -68,7 +82,7 @@ check(SQLRETURN ret, SQLSMALLINT tpe, SQLHANDLE hnd, const char *func)
 		break;
 	case SQL_INVALID_HANDLE:
 		fprintf(stderr, "%s: Error: invalid handle\n", func);
-		exit(1);
+		break;
 	default:
 		fprintf(stderr, "%s: Unexpected return value\n", func);
 		break;
@@ -79,14 +93,15 @@ static void
 compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, const char * expected)
 {
 	SQLRETURN ret;
-	SQLSMALLINT columns;	// Number of columns in result-set
+	SQLSMALLINT columns;	/* Number of columns in result-set */
 	size_t expct_len = strlen(expected);
-	size_t outp_len = expct_len + 1000;
+	size_t outp_len = expct_len + 10000;
 	char * outp = malloc(outp_len);
 	size_t pos = 0;
 	SQLUSMALLINT col;
 	SQLLEN indicator;
 	char buf[2048];
+	int replaceId = 0;	/* used to replace system id values in column SPECIFIC_NAME of getProcedures and getProcedureColumns */
 
 	if (outp == NULL) {
 		fprintf(stderr, "Failed to allocate %zu memory!\n", outp_len);
@@ -95,12 +110,12 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 
 	check(retcode, SQL_HANDLE_STMT, stmt, functionname);
 
-	// How many columns are there
+	/* How many columns are there */
 	ret = SQLNumResultCols(stmt, &columns);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLNumResultCols()");
 	pos += snprintf(outp + pos, outp_len - pos, "Resultset with %d columns\n", columns);
 
-	// get Result Column Names and print them
+	/* get Result Column Names and print them */
 	for (col = 1; col <= columns; col++) {
 		ret = SQLDescribeCol(stmt, col, (SQLCHAR *) buf, sizeof(buf),
 			NULL, NULL, NULL, NULL, NULL);
@@ -110,20 +125,37 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 	}
 	pos += snprintf(outp + pos, outp_len - pos, "\n");
 
+	/* detect if special handling of data of column SPECIFIC_NAME returned by SQLProcedures and SQLProcedureColumns
+	   is needed as it contains system generated id values which can differ per version and platform */
+	if (columns == 9 || columns == 20) {
+		/* this result could be from SQLProcedures or SQLProcedureColumns */
+		if ((strncmp("SQLProcedures", functionname, 13) == 0)
+		 || (strncmp("SQLProcedureColumns", functionname, 19) == 0)) {
+			if (strncmp("SPECIFIC_NAME", buf, 13) == 0)
+				replaceId = 1;
+		}
+	}
+
 	/* Loop through the rows in the result-set */
 	ret = SQLFetch(stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch(1)");
 	while (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-		// Loop through the columns
+		/* Loop through the columns */
 		for (col = 1; col <= columns; col++) {
-			// Retrieve column data as a string
+			/* Retrieve column data as a string */
 			ret = SQLGetData(stmt, col, SQL_C_CHAR, buf, sizeof(buf), &indicator);
 			check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData()");
 			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-				pos += snprintf(outp + pos, outp_len - pos,
-					(col > 1) ? "\t%s" : "%s",
-					// Handle null columns
-					(indicator == SQL_NULL_DATA) ? "NULL" : buf);
+				/* Check if we need to replace the system id values to get stable output */
+				if (replaceId == 0 ||
+				   (replaceId == 1 && col < columns)) {
+					pos += snprintf(outp + pos, outp_len - pos,
+						(col > 1) ? "\t%s" : "%s",
+						/* Handle null columns */
+						(indicator == SQL_NULL_DATA) ? "NULL" : buf);
+				} else {
+					pos += snprintf(outp + pos, outp_len - pos, "\treplacedId");
+				}
 			}
 		}
 		pos += snprintf(outp + pos, outp_len - pos, "\n");
@@ -136,7 +168,7 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 			functionname, expected, outp);
 	}
 
-	// cleanup
+	/* cleanup */
 	free(outp);
 
 	ret = SQLCloseCursor(stmt);
@@ -161,7 +193,7 @@ main(int argc, char **argv)
 	if (argc > 3)
 		pass = argv[3];
 	if (argc > 4 || *dsn == '-') {
-		fprintf(stderr, "Usage: %s [datasource [user [password]]]\n", argv[0]);
+		fprintf(stderr, "Wrong arguments. Usage: %s [datasource [user [password]]]\n", argv[0]);
 		exit(1);
 	}
 
@@ -221,8 +253,19 @@ main(int argc, char **argv)
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
 		"GRANT SELECT ON TABLE odbctst.pk_uc TO PUBLIC;\n"
 		"GRANT INSERT, UPDATE, DELETE ON TABLE odbctst.pk_uc TO monetdb;\n"
+		"GRANT SELECT (id2, name2), UPDATE (name2) ON TABLE odbctst.nopk_twoucs TO monetdb;\n"
+		"GRANT INSERT, DELETE ON TABLE tmp.tmp_pk_uc TO monetdb;\n"
+		"GRANT SELECT (id1, name1), UPDATE (name1) ON TABLE tmp.tmp_pk_uc TO monetdb;\n"
+		"GRANT INSERT, DELETE ON TABLE tmp.glbl_pk_uc TO monetdb;\n"
+		"GRANT SELECT (id1, name1), UPDATE (name1) ON TABLE tmp.glbl_pk_uc TO monetdb;\n"
+		"GRANT INSERT, DELETE ON TABLE tmp.tmp_nopk_twoucs TO monetdb;\n"
+		"GRANT SELECT (id2, name2), UPDATE (name2) ON TABLE tmp.tmp_nopk_twoucs TO monetdb;\n"
+		"GRANT DELETE, INSERT ON TABLE tmp.glbl_nopk_twoucs TO monetdb;\n"
+		"GRANT SELECT (id2, name2), UPDATE (name2) ON TABLE tmp.glbl_nopk_twoucs TO monetdb;\n"
 		, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (add privileges script)");
+
+	// TODO add user procedures / functions to test SQLProcedures() and SQLProcedureColumns() more
 
 /* run actual metadata query tests */
 	// All catalogs query
@@ -316,6 +359,34 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	odbctst	pk2c	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	3	YES\n"
 		"mTests_sql_odbc_samples	odbctst	pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"mTests_sql_odbc_samples	odbctst	pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+
+	// All columns of all tmp tables containg 'pk' in their name
+	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"%pk%", SQL_NTS,
+			(SQLCHAR*)"%%", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumns (tmp, %pk%, %%)",
+		"Resultset with 18 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+
+	// All columns of all tmp tables containg 'pk' in their name and the column matching name_ pattern
+	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"%pk%", SQL_NTS,
+			(SQLCHAR*)"name_", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumns (tmp, %pk%, name_)",
+		"Resultset with 18 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
 
 	// sys.table_types
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -419,8 +490,8 @@ main(int argc, char **argv)
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS,
-			(SQLCHAR*)"%", SQL_NTS);
-	compareResult(stmt, ret, "SQLColumnPrivileges (odbctst, pk_uc, %)",
+			(SQLCHAR*)"%1", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (odbctst, pk_uc, %1)",
 		"Resultset with 8 columns\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n");
 
@@ -460,6 +531,24 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
 
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (tmp, tmp_pk_uc)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS,
+			(SQLCHAR*)"%1", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (tmp, tmp_pk_uc, %1)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
+
 	// tmp.glbl_pk_uc
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS);
@@ -496,6 +585,24 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
 
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (tmp, glbl_pk_uc)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS,
+			(SQLCHAR*)"%1", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (tmp, glbl_pk_uc, %1)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
+
 	// odbctst.nopk_twoucs
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS);
@@ -530,6 +637,22 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n"
 		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	1	NULL	nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	1	NULL	nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
+
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (odbctst, nopk_twoucs)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
+			(SQLCHAR*)"%2", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (odbctst, nopk_twoucs, %2)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
 
 	// tmp.tmp_nopk_twoucs
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -566,6 +689,24 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
 
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (tmp, tmp_nopk_twoucs)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS,
+			(SQLCHAR*)"%2", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (tmp, tmp_nopk_twoucs, %2)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
+
 	// tmp.glbl_nopk_twoucs
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS);
@@ -601,6 +742,24 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
 		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
 
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (tmp, glbl_nopk_twoucs)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS,
+			(SQLCHAR*)"%2", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (tmp, glbl_nopk_twoucs, %2)",
+		"Resultset with 8 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
+		"mTests_sql_odbc_samples	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
+
 	// odbctst.CUSTOMERS, odbctst.ORDERS and odbctst.LINES
 	/* next tests are copied from code examples on https://docs.microsoft.com/en-us/sql/odbc/reference/syntax/sqlforeignkeys-function?view=sql-server-ver15 */
 	ret = SQLPrimaryKeys(stmt, NULL, 0, NULL, 0, (SQLCHAR*)"ORDERS", SQL_NTS);
@@ -621,7 +780,7 @@ main(int argc, char **argv)
 		"PKTABLE_CAT	PKTABLE_SCHEM	PKTABLE_NAME	PKCOLUMN_NAME	FKTABLE_CAT	FKTABLE_SCHEM	FKTABLE_NAME	FKCOLUMN_NAME	KEY_SEQ	UPDATE_RULE	DELETE_RULE	FK_NAME	PK_NAME	DEFERRABILITY\n"
 		"mTests_sql_odbc_samples	odbctst	CUSTOMERS	CUSTID	mTests_sql_odbc_samples	odbctst	ORDERS	CUSTID	1	1	1	ORDERS_CUSTID_fkey	CUSTOMERS_CUSTID_pkey	7\n");
 
-	// odbctst.pk2c and odbctst.fk2c (tests multi-column pks and multiple multi-column fks from one table */
+	/* odbctst.pk2c and odbctst.fk2c (tests multi-column pks and multiple multi-column fks from one table */
 	ret = SQLPrimaryKeys(stmt, NULL, 0, (SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk2c", SQL_NTS);
 	compareResult(stmt, ret, "SQLPrimaryKeys (odbctst, pk2c)",
 		"Resultset with 6 columns\n"
@@ -665,19 +824,164 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_samples	odbctst	pk2c	pkc2	mTests_sql_odbc_samples	odbctst	fk2c	fkc2	1	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n"
 		"mTests_sql_odbc_samples	odbctst	pk2c	pkc1	mTests_sql_odbc_samples	odbctst	fk2c	fkc3	2	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n");
 
-	// TODO add tables with procedures such that below calls also return data rows
-	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
-			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"myproc", SQL_NTS);
-	compareResult(stmt, ret, "SQLProcedures (odbctst, myproc)",
+	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_2c", SQL_NTS);
+	compareResult(stmt, ret, "SQLTablePrivileges (odbctst, pk_2c)",
+		"Resultset with 7 columns\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n");
+
+	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_2c", SQL_NTS,
+			(SQLCHAR*)"%", SQL_NTS);
+	compareResult(stmt, ret, "SQLColumnPrivileges (odbctst, pk_2c, %)",
 		"Resultset with 8 columns\n"
-		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE\n");
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n");
+
+
+	// test procedure sys.analyze(). There are 4 overloaded variants of this procedure in MonetDB with 0, 1, 2 or 3 input parameters.
+	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"analyze", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedures (sys, analyze)",
+		"Resultset with 9 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	analyze	0	0	0	NULL	1	replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	0	0	0	NULL	1	replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	0	0	0	NULL	1	replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	0	0	0	NULL	1	replacedId\n");
 
 	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
-			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"myproc", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"analyze", SQL_NTS,
 			(SQLCHAR*)"%", SQL_NTS);
-	compareResult(stmt, ret, "SQLProcedureColumns (odbctst, myproc, %)",
-		"Resultset with 19 columns\n"
-		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n");
+	compareResult(stmt, ret, "SQLProcedureColumns (sys, analyze, %)",
+		"Resultset with 20 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	analyze	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n");
+
+	// test function sys.sin(). There are 2 overloaded variants of this function in MonetDB: sys.sin(real) and sys.sin(double).
+	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"sin", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedures (sys, sin)",
+		"Resultset with 9 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	sin	0	0	0	NULL	2	replacedId\n"
+		"mTests_sql_odbc_samples	sys	sin	0	0	0	NULL	2	replacedId\n");
+
+	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"sin", SQL_NTS,
+			(SQLCHAR*)"%", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedureColumns (sys, sin, %)",
+		"Resultset with 20 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	sin	arg_1	1	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	sin	res_0	5	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	0		replacedId\n"
+		"mTests_sql_odbc_samples	sys	sin	arg_1	1	8	DOUBLE	53	24	15	2	2	NULL	NULL	8	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	sin	res_0	5	8	DOUBLE	53	24	15	2	2	NULL	NULL	8	NULL	NULL	0		replacedId\n");
+
+	// test table returning function sys.env(). It has no input parameters. Only 2 result columns.
+	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"env", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedures (sys, env)",
+		"Resultset with 9 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	env	0	0	0	NULL	2	replacedId\n");
+
+	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"env", SQL_NTS,
+			(SQLCHAR*)"%", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedureColumns (sys, env, %)",
+		"Resultset with 20 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	env	name	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	env	value	3	-9	VARCHAR	2048	4096	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n");
+
+	// test table returning function sys.statistics(). 4 overloaded variants with 0, 1, 2 or 3 input parameters. 13 result columns.
+	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"statistics", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedures (sys, statistics)",
+		"Resultset with 9 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
+		"mTests_sql_odbc_samples	sys	statistics	0	0	0	NULL	2	replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	0	0	0	NULL	2	replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	0	0	0	NULL	2	replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	0	0	0	NULL	2	replacedId\n");
+
+	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"statistics", SQL_NTS,
+			(SQLCHAR*)"%", SQL_NTS);
+	compareResult(stmt, ret, "SQLProcedureColumns (sys, statistics, %)",
+		"Resultset with 20 columns\n"
+		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
+		// 0 input argument and 13 result columns of sys.statistics()
+		"mTests_sql_odbc_samples	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
+
+		// 1 input argument and 13 result columns of sys.statistics(sname)
+		"mTests_sql_odbc_samples	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
+
+		// 2 input arguments and 13 result columns of sys.statistics(sname, tname)
+		"mTests_sql_odbc_samples	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
+
+		// 3 input arguments and 13 result columns of sys.statistics(sname, tname, cname)
+		"mTests_sql_odbc_samples	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"mTests_sql_odbc_samples	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n");
+
 
 	// cleanup
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
@@ -705,7 +1009,7 @@ main(int argc, char **argv)
 		, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (drop tables script)");
 
-	// All tables in schema odbctst should be empty now, else we missed some DROP statements
+	// All tables in schema odbctst should now be gone, else we missed some DROP statements
 	ret = SQLTables(stmt, NULL, 0,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
 			NULL, 0);

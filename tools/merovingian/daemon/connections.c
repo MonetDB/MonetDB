@@ -96,13 +96,13 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 			}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 			if (fcntl(sock, F_SETFD, FD_CLOEXEC) < 0)
-					Mlevelfprintf(ERROR, log, "fcntl FD_CLOEXEC: %s", strerror(e));
+					Mlevelfprintf(ERROR, log, "fcntl FD_CLOEXEC: %s\n", strerror(e));
 #endif
 
 			if (rp->ai_family == AF_INET6 &&
 				setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
 						   (const char *) &(int){0}, sizeof(int)) == -1)
-				Mlevelfprintf(ERROR, log, "setsockopt IPV6_V6ONLY: %s", strerror(e));
+				Mlevelfprintf(ERROR, log, "setsockopt IPV6_V6ONLY: %s\n", strerror(e));
 
 			if (!udp) {
 				if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
@@ -114,12 +114,12 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 #ifdef SO_EXCLUSIVEADDRUSE
 				if (setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
 							   (const char *) &on, sizeof on) < 0)
-					Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLUSIVEADDRUSE: %s", strerror(e));
+					Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLUSIVEADDRUSE: %s\n", strerror(e));
 #endif
 #ifdef SO_EXCLBIND
 				if (setsockopt(sock, SOL_SOCKET, SO_EXCLBIND,
 							   (const char *) &on, sizeof on) < 0)
-					Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLBIND: %s", strerror(e));
+					Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLBIND: %s\n", strerror(e));
 #endif
 			}
 
