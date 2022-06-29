@@ -1608,7 +1608,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 		wanthash = havehash ||
-			(!bi.transient &&
+			((!bi.transient ||
+			  (b->batRole == PERSISTENT && GDKinmemory(0))) &&
 			 ATOMsize(bi.type) >= sizeof(BUN) / 4 &&
 			 bi.count * (ATOMsize(bi.type) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
 		if (!wanthash) {
@@ -1660,7 +1661,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			MT_lock_unset(&pb->theaplock);
 		}
 		if (!phash &&
-		    (!pbi.transient || wantphash) &&
+		    (!pbi.transient ||
+		     wantphash ||
+		     (pb->batRole == PERSISTENT && GDKinmemory(0))) &&
 		    pbi.count == bi.count &&
 		    BAThash(pb) == GDK_SUCCEED) {
 			MT_rwlock_rdlock(&pb->thashlock);

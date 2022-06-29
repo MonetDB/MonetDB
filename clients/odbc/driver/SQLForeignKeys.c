@@ -252,8 +252,9 @@ MNDBForeignKeys(ODBCStmt *stmt,
 			PKTableName != NULL ? "FK" : "PK",
 			PKTableName != NULL ? "FK" : "PK",
 			PKTableName != NULL ? "FK" : "PK");
+	assert(pos < querylen);
 
-	/* debug: fprintf(stdout, "SQLForeignKeys SQL (%zu):\n%s\n\n", pos, query); */
+	/* debug: fprintf(stdout, "SQLForeignKeys query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

@@ -526,6 +526,7 @@ acceptConnections(int socks[3])
 			case ENOBUFS:
 			case ENOMEM:
 				/* transient failures */
+				sleep_ms(500);	/* wait a little, maybe it goes away */
 				break;
 			case ECONNABORTED:
 				/* connection aborted before we began */
