@@ -2,4 +2,4 @@
 
 prompt # $t $g
 
-ODBCStmtAttr.exe
+ODBCgetInfo.exe
