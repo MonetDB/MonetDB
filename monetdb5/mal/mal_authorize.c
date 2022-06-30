@@ -782,29 +782,38 @@ AUTHresolveUser(str *username, oid uid)
 }
 
 /**
- * Returns the username of the given client.
+ * Verifies the username of the given client exists.
  */
 str
 AUTHgetUsername(str *username, Client cntxt)
 {
-	BUN p;
-	BATiter useri;
-
-	p = (BUN) cntxt->user;
-
-	/* If you ask for a username using a client struct, and that user
-	 * doesn't exist, you seriously screwed up somehow.  If this
-	 * happens, it may be a security breach/attempt, and hence
-	 * terminating the entire system seems like the right thing to do to
-	 * me. */
-	assert(p < BATcount(user));
-
-	useri = bat_iterator(user);
-	*username = GDKstrdup( BUNtvar(useri, p));
-	bat_iterator_end(&useri);
-	if (*username == NULL)
-		throw(MAL, "getUsername", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	oid rid = oid_nil;
+	if (*username && authCallbackCntx.get_user_oid && cntxt) {
+		if ((rid = authCallbackCntx.get_user_oid(cntxt, *username)) == oid_nil) {
+			throw(MAL, "getUsername", INVCRED_WRONG_ID" '%s'", *username);
+		}
+	}
 	return(MAL_SUCCEED);
+
+	// TODO remove
+	// BUN p;
+	// BATiter useri;
+
+	// p = (BUN) cntxt->user;
+
+	// /* If you ask for a username using a client struct, and that user
+	//  * doesn't exist, you seriously screwed up somehow.  If this
+	//  * happens, it may be a security breach/attempt, and hence
+	//  * terminating the entire system seems like the right thing to do to
+	//  * me. */
+	// assert(p < BATcount(user));
+
+	// useri = bat_iterator(user);
+	// *username = GDKstrdup( BUNtvar(useri, p));
+	// bat_iterator_end(&useri);
+	// if (*username == NULL)
+	// 	throw(MAL, "getUsername", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	// return(MAL_SUCCEED);
 }
 
 /**
@@ -841,7 +850,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 
 /**
  * Returns the password hash as used by the backend for the given
- * username.  Throws an exception if called by a non-superuser.
+ * username. Throws an exception if called by a non-superuser.
  */
 str
 AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)

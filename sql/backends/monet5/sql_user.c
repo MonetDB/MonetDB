@@ -203,12 +203,12 @@ static int
 monet5_drop_user(ptr _mvc, str user)
 {
 	mvc *m = (mvc *) _mvc;
-	oid rid, grant_user;
+	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *users = find_sql_table(m->session->tr, sys, "db_user_info");
 	sql_column *users_name = find_sql_column(users, "name");
-	str err;
-	Client c = MCgetClient(m->clientid);
+	// str err;
+	// Client c = MCgetClient(m->clientid);
 	sqlstore *store = m->session->tr->store;
 	int log_res = LOG_OK;
 
@@ -218,15 +218,15 @@ monet5_drop_user(ptr _mvc, str user)
 		return FALSE;
 	}
 
-	grant_user = c->user;
-	c->user = MAL_ADMIN;
-	err = AUTHremoveUser(c, user);
-	c->user = grant_user;
-	if (err !=MAL_SUCCEED) {
-		(void) sql_error(m, 02, "DROP USER: %s", getExceptionMessage(err));
-		freeException(err);
-		return FALSE;
-	}
+	// grant_user = c->user;
+	// c->user = MAL_ADMIN;
+	// err = AUTHremoveUser(c, user);
+	// c->user = grant_user;
+	// if (err !=MAL_SUCCEED) {
+	// 	(void) sql_error(m, 02, "DROP USER: %s", getExceptionMessage(err));
+	// 	freeException(err);
+	// 	return FALSE;
+	// }
 	/* FIXME: We have to ignore this inconsistency here, because the
 	 * user was already removed from the system authorisation. Once
 	 * we have warnings, we could issue a warning about this
@@ -324,14 +324,14 @@ static str
 monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid, lng max_memory, int max_workers, str optimizer, sqlid role_id)
 {
 	mvc *m = (mvc *) _mvc;
-	oid rid, uid = 0;
+	oid rid;
 	str ret, err, pwd, hash, schema_buf = NULL;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"),
 			  *auths = find_sql_table(m->session->tr, s, "auths"),
 			  *schemas_tbl = find_sql_table(m->session->tr, s, "schemas");
-	Client c = MCgetClient(m->clientid);
+	// Client c = MCgetClient(m->clientid);
 	sqlstore *store = m->session->tr->store;
 	int log_res = 0;
 	bool new_schema = false;
@@ -427,10 +427,10 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	}
 	// TODO don't add user in MAL
 	/* add the user to the M5 authorisation administration */
-	oid grant_user = c->user;
-	c->user = MAL_ADMIN;
-	ret = AUTHaddUser(&uid, c, user, pwd);
-	c->user = grant_user;
+	// oid grant_user = c->user;
+	// c->user = MAL_ADMIN;
+	// ret = AUTHaddUser(&uid, c, user, pwd);
+	// c->user = grant_user;
 	if (!enc)
 		free(pwd);
 	return ret;
@@ -439,22 +439,26 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 static int
 monet5_find_user(ptr mp, str user)
 {
-	BAT *uid, *nme;
-	BUN p;
+	// BAT *uid, *nme;
+	// BUN p;
 	mvc *m = (mvc *) mp;
-	Client c = MCgetClient(m->clientid);
-	str err;
-
-	if ((err = AUTHgetUsers(&uid, &nme, c)) != MAL_SUCCEED) {
-		freeException(err);
+	oid rid = getUserOIDByName(m, user);
+	if (is_oid_nil(rid))
 		return -1;
-	}
-	p = BUNfnd(nme, user);
-	BBPunfix(uid->batCacheid);
-	BBPunfix(nme->batCacheid);
+	return rid;
+	// Client c = MCgetClient(m->clientid);
+	// str err;
 
-	/* yeah, I would prefer to return something different too */
-	return (p == BUN_NONE ? -1 : 1);
+	// if ((err = AUTHgetUsers(&uid, &nme, c)) != MAL_SUCCEED) {
+	// 	freeException(err);
+	// 	return -1;
+	// }
+	// p = BUNfnd(nme, user);
+	// BBPunfix(uid->batCacheid);
+	// BBPunfix(nme->batCacheid);
+
+	// /* yeah, I would prefer to return something different too */
+	// return (p == BUN_NONE ? -1 : 1);
 }
 
 str
@@ -774,8 +778,8 @@ static int
 monet5_rename_user(ptr _mvc, str olduser, str newuser)
 {
 	mvc *m = (mvc *) _mvc;
-	Client c = MCgetClient(m->clientid);
-	str err;
+	// Client c = MCgetClient(m->clientid);
+	// str err;
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
@@ -784,11 +788,11 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	sql_column *auths_name = find_sql_column(auths, "name");
 	int res = LOG_OK;
 
-	if ((err = AUTHchangeUsername(c, olduser, newuser)) != MAL_SUCCEED) {
-		(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
-		freeException(err);
-		return (FALSE);
-	}
+	// if ((err = AUTHchangeUsername(c, olduser, newuser)) != MAL_SUCCEED) {
+	// 	(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
+	// 	freeException(err);
+	// 	return (FALSE);
+	// }
 
 	sqlstore *store = m->session->tr->store;
 	rid = store->table_api.column_find_row(m->session->tr, users_name, olduser, NULL);
