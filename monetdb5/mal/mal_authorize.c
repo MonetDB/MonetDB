@@ -45,6 +45,7 @@ static BAT *rt_deleted = NULL;
 static str vaultKey = NULL;
 static str master_password = NULL;
 static AUTHCallbackCntx authCallbackCntx = {
+	.get_user_name = NULL,
 	.get_user_password = NULL,
 	.get_user_oid = NULL
 };
@@ -782,14 +783,13 @@ AUTHresolveUser(str *username, oid uid)
 }
 
 /**
- * Verifies the username of the given client exists.
+ * Returns the username of the given client.
  */
 str
 AUTHgetUsername(str *username, Client cntxt)
 {
-	oid rid = oid_nil;
-	if (*username && authCallbackCntx.get_user_oid && cntxt) {
-		if ((rid = authCallbackCntx.get_user_oid(cntxt, *username)) == oid_nil) {
+	if (authCallbackCntx.get_user_name && cntxt) {
+		if ((*username = authCallbackCntx.get_user_name(cntxt)) == NULL) {
 			throw(MAL, "getUsername", INVCRED_WRONG_ID" '%s'", *username);
 		}
 	}
@@ -1282,6 +1282,15 @@ AUTHdeleteRemoteTableCredentials(const char *local_table)
 	AUTHcommit();
 	return(MAL_SUCCEED);
 }
+
+
+str
+AUTHRegisterGetUserNameHandler(get_user_name_handler callback)
+{
+	authCallbackCntx.get_user_name = callback;
+	return MAL_SUCCEED;
+}
+
 
 str
 AUTHRegisterGetPasswordHandler(get_user_password_handler callback)

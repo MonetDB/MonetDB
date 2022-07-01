@@ -271,11 +271,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 	/* no authentication in embedded mode */
-	if (!GDKembedded()) {
-		str msg = AUTHgetUsername(&c->username, c);
-		if (msg)				/* shouldn't happen */
-			freeException(msg);
-	}
+	// if (!GDKembedded()) {
+	// 	str msg = AUTHgetUsername(&c->username, c);
+	// 	if (msg)				/* shouldn't happen */
+	// 		freeException(msg);
+	// }
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 

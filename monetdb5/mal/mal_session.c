@@ -50,6 +50,7 @@ malBootstrap(char *modules[], bool embedded)
 		MCfreeClient(c);
 		return msg;
 	}
+
 	if( MCinitClientThread(c) < 0){
 		MCfreeClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
@@ -405,6 +406,9 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		GDKfree(command);
 		return;
 	}
+
+	// at this point username should have being verified
+	c->username = GDKstrdup(user);
 
 	GDKfree(command);
 
