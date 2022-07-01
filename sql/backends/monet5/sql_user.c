@@ -70,6 +70,23 @@ getUserPassword(mvc *m, oid rid)
 
 
 static str
+getUserNameCallback(Client c)
+{
+	str res;
+	backend *be = (backend *) c->sqlcontext;
+	if (be) {
+		mvc *m = be->mvc;
+		if (mvc_trans(m) == 0) {
+			res = getUserName(m, c->user);
+			sql_trans_end(m->session, SQL_OK);
+			return res;
+		}
+	}
+	return NULL;
+}
+
+
+static str
 getUserPasswordCallback(Client c, const char *user)
 {
 	str res;
@@ -178,6 +195,7 @@ monet5_set_user_api_hooks(ptr mvc)
 {
 	(void) mvc;
 	AUTHRegisterGetPasswordHandler(&getUserPasswordCallback);
+	AUTHRegisterGetUserNameHandler(&getUserNameCallback);
 	AUTHRegisterGetUserOIDHandler(&getUserOIDCallback);
 }
 
