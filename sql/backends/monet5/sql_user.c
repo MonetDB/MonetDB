@@ -343,7 +343,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 {
 	mvc *m = (mvc *) _mvc;
 	oid rid;
-	str ret, err, pwd, hash, schema_buf = NULL;
+	str ret, err, pwd, hash, schema_name, schema_buf = NULL;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"),
@@ -370,14 +370,26 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		new_schema = true;
 	}
 
-	// default path is $user
+	assert(schema_id);
+
+	// by default match schema path with the schema name
+	// unless specified by the user
 	if (!schema_path) {
-		// "\"$user\"\0"
-		if ((strlen(user) + 4) > MAX_SCHEMA_SIZE)
-			throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
- 		schema_buf = GDKmalloc(MAX_SCHEMA_SIZE);
-		snprintf(schema_buf, MAX_SCHEMA_SIZE, "\"%s\"", user);
-		schema_path = schema_buf;
+		schema_name = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas_tbl, "name"), rid);
+		if (schema_name) {
+			// "\"$schema_name\"\0"
+			if ((strlen(schema_name) + 4) > MAX_SCHEMA_SIZE) {
+				if (schema_name)
+					GDKfree(schema_name);
+				throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+			}
+			schema_buf = GDKmalloc(MAX_SCHEMA_SIZE);
+			snprintf(schema_buf, MAX_SCHEMA_SIZE, "\"%s\"", schema_name);
+			schema_path = schema_buf;
+			GDKfree(schema_name);
+		} else {
+			schema_path = default_schema_path;
+		}
 	}
 
 	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
