@@ -8,10 +8,11 @@
 
 /* (c) M.L. Kersten
  * Performance tracing
- * The stethoscope/tachograph and tomograph performance monitors have exclusive access
- * to a single event stream, which avoids concurrency conflicts amongst clients.
- * It also avoid cluthered event records on the stream. Since this event stream is owned
- * by a client, we should ensure that the profiler is automatically
+ * The stethoscope/tachograph and tomograph performance monitors have exclusive
+ * access to a single event stream, which avoids concurrency conflicts amongst
+ * clients.
+ * It also avoid cluthered event records on the stream. Since this event stream
+ * is owned by a client, we should ensure that the profiler is automatically
  * reset once the owner leaves.
  */
 #include "monetdb_config.h"
@@ -75,24 +76,29 @@ static void logjsonInternal(char *logbuffer, bool flush)
 }
 
 /*
- * We use a buffer (`logbuffer`) where we incrementally create the output JSON object. Initially we allocate LOGLEN (8K)
- * bytes and we keep the capacity of the buffer (`logcap`) and the length of the current string (`loglen`).
+ * We use a buffer (`logbuffer`) where we incrementally create the output JSON
+ * object. Initially we allocate LOGLEN (8K)
+ * bytes and we keep the capacity of the buffer (`logcap`) and the length of the
+ * current string (`loglen`).
  *
- * We use the `logadd` function to add data to our buffer (usually key-value pairs). This macro offers an interface similar
- * to printf.
+ * We use the `logadd` function to add data to our buffer (usually key-value
+ * pairs). This macro offers an interface similar to printf.
  *
- * The first snprintf below happens in a statically allocated buffer that might be much smaller than logcap. We do not
- * care. We only need to perform this snprintf to get the actual length of the string that is to be produced.
+ * The first snprintf below happens in a statically allocated buffer that might
+ * be much smaller than logcap. We do not care. We only need to perform this
+ * snprintf to get the actual length of the string that is to be produced.
  *
  * There are three cases:
  *
  * 1. The new string fits in the current buffer -> we just update the buffer
  *
- * 2. The new string does not fit in the current buffer, but is smaller than the capacity of the buffer -> we output the
- * current contents of the buffer and start at the beginning.
+ * 2. The new string does not fit in the current buffer, but is smaller than the
+ * capacity of the buffer -> we output the current contents of the buffer and
+ * start at the beginning.
  *
- * 3. The new string exceeds the current capacity of the buffer -> we output the current contents and reallocate the
- * buffer. The new capacity is 1.5 times the length of the new string.
+ * 3. The new string exceeds the current capacity of the buffer -> we output the
+ * current contents and reallocate the buffer. The new capacity is 1.5 times the
+ * length of the new string.
  */
 struct logbuf {
 	char *logbuffer;
@@ -167,6 +173,64 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 	va_end(va);
 	va_end(va2);
 	return true;
+}
+
+/*
+ * Generic events refer to all events that are useful to profile since the
+ * beginning of a query execution up until the MAL execution. This includes
+ * transaction events, SQL parsing, relational tree creation, unnesting,
+ * relational optimizers, rel2bin, and MAL optimizers.
+ *
+ * Profiling a generic event follows the same implementation of ProfilerEvent.
+ */
+static str
+prepareGenericEvent(str msg, struct GenericEvent e, int state)
+{
+	struct logbuf logbuf = {0};
+
+	if (logadd(&logbuf,
+			   "{\""
+			   "msg\":\"%s\""
+			   ",\"client_id\":\"%d\""
+			   ",\"tag\":\""OIDFMT
+			   ",\"transaction_id\":\"%d\""
+			   ",\"query\":\"%s\""
+			   ",\"error\":\"%s\""
+			   ",\"state\":\"%d\""
+			   "}\n",
+			   msg ? msg : "",
+			   0,
+			   (oid)0,
+			   e.transaction_id ? *e.transaction_id : 0,
+			   e.query ? e.query : "",
+			   e.error ? e.error : "",
+			   state))
+		return logbuf.logbuffer;
+	else {
+		logdel(&logbuf);
+		return NULL;;
+	}
+}
+
+static void
+renderGenericEvent(str msg, struct GenericEvent e, int state)
+{
+	str event;
+	MT_lock_set(&mal_profileLock);
+	event = prepareGenericEvent(msg, e, state);
+	if( event ){
+		logjsonInternal(event, true);
+		free(event);
+	}
+	MT_lock_unset(&mal_profileLock);
+}
+
+void
+genericEvent(str msg, struct GenericEvent e, int state)
+{
+	if( maleventstream ) {
+		renderGenericEvent(msg, e, state);
+	}
 }
 
 /* JSON rendering method of performance data.

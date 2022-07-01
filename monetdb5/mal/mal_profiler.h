@@ -20,6 +20,12 @@
 typedef struct rusage Rusage;
 #endif
 
+struct GenericEvent {
+	int* transaction_id;
+	str query;
+	str error;
+};
+
 mal_export int malProfileMode;
 
 mal_export void initProfiler(void);
@@ -27,6 +33,7 @@ mal_export str openProfilerStream(Client cntxt);
 mal_export str closeProfilerStream(Client cntxt);
 
 mal_export void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
+mal_export void genericEvent(str msg, struct GenericEvent e, int state);
 mal_export void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str startProfiler(Client cntxt);
