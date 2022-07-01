@@ -16,4 +16,4 @@ Debug		=
 
 EOF
 export ODBCINI
-eval metadata MonetDB-Test
+eval ODBCgetInfo MonetDB-Test
