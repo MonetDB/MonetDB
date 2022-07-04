@@ -24,6 +24,7 @@
 #include "mal_private.h"
 #include "mcrypt.h"
 #include "msabaoth.h"
+#include "mal_scenario.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -867,8 +868,6 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 	if (strNil(username))
 		throw(ILLARG, "getPasswordHash", "username should not be nil");
 
-	TRC_DEBUG(MAL_SERVER, "Debug callback context %p", authCallbackCntx.get_user_password);
-
 	// load password from users tbl
 	if (authCallbackCntx.get_user_password && cntxt)
 		passwd = authCallbackCntx.get_user_password(cntxt, username);
@@ -1206,9 +1205,21 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	}
 
 	if (pass == NULL) {
-		/* NOTE: Is having the client == NULL safe? */
-		if((output = AUTHgetPasswordHash(&pwhash, NULL, local_user)) != MAL_SUCCEED)
+		// init client to have SQL callback hooks
+		Client c = NULL;
+		if ((c = MCinitClient(MAL_ADMIN, NULL, NULL)) == NULL)
+			throw(MAL, "addRemoteTableCredentials", "!maximum concurrent client limit reached (%d), please try again later\n", MAL_MAXCLIENTS);
+		Scenario scenario = findScenario("sql");
+		if ((output = scenario->initClientCmd(c)) != MAL_SUCCEED) {
 			return output;
+		}
+		if((output = AUTHgetPasswordHash(&pwhash, c, local_user)) != MAL_SUCCEED)
+			return output;
+
+		if((output = scenario->exitClientCmd(c)) != MAL_SUCCEED) {
+			return output;
+		}
+		MCfreeClient(c);
 	}
 	else {
 		free_pw = true;
