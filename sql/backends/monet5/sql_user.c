@@ -72,17 +72,16 @@ getUserPassword(mvc *m, oid rid)
 static str
 getUserNameCallback(Client c)
 {
-	str res;
+	str res = NULL;
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
 		if (mvc_trans(m) == 0) {
 			res = getUserName(m, c->user);
 			sql_trans_end(m->session, SQL_OK);
-			return res;
 		}
 	}
-	return NULL;
+	return res;
 }
 
 

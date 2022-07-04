@@ -175,6 +175,8 @@ AUTHinitTables(const char *passwd) {
 	int isNew = 1;
 	str msg = MAL_SUCCEED;
 
+	(void) passwd;
+
 	/* skip loading if already loaded */
 	if (user != NULL && pass != NULL)
 		return(MAL_SUCCEED);
@@ -376,29 +378,29 @@ AUTHinitTables(const char *passwd) {
 	}
 	assert(rt_deleted);
 
-	if (isNew == 1) {
-		/* insert the monetdb/monetdb administrator account on a
-		 * complete fresh and new auth tables system */
-		char *pw;
-		oid uid;
+	//if (isNew == 1) {
+	//	/* insert the monetdb/monetdb administrator account on a
+	//	 * complete fresh and new auth tables system */
+	//	char *pw;
+	//	oid uid;
 
-		if (passwd == NULL)
-			passwd = "monetdb";	/* default password */
-		pw = mcrypt_BackendSum(passwd, strlen(passwd));
-		if(!pw) {
-			if (!GDKembedded())
-				throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
-			else
-				pw = strdup(passwd);
-		}
-		msg = AUTHaddUser(&uid, NULL, "monetdb", pw);
-		free(pw);
-		if (msg)
-			return msg;
-		if (uid != MAL_ADMIN)
-			throw(MAL, "initTables", INTERNAL_AUTHORIZATION " while they were just created!");
-		/* normally, we'd commit here, but it's done already in AUTHaddUser */
-	}
+	//	if (passwd == NULL)
+	//		passwd = "monetdb";	/* default password */
+	//	pw = mcrypt_BackendSum(passwd, strlen(passwd));
+	//	if(!pw) {
+	//		if (!GDKembedded())
+	//			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
+	//		else
+	//			pw = strdup(passwd);
+	//	}
+	//	msg = AUTHaddUser(&uid, NULL, "monetdb", pw);
+	//	free(pw);
+	//	if (msg)
+	//		return msg;
+	//	if (uid != MAL_ADMIN)
+	//		throw(MAL, "initTables", INTERNAL_AUTHORIZATION " while they were just created!");
+	//	/* normally, we'd commit here, but it's done already in AUTHaddUser */
+	//}
 
 	if (!GDKinmemory(0) && !GDKembedded()) {
 		free(master_password);
@@ -855,8 +857,8 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 str
 AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 {
-	BUN p;
-	BATiter i;
+	// BUN p;
+	// BATiter i;
 	str tmp;
 	str passwd = NULL;
 
@@ -865,17 +867,28 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 	if (strNil(username))
 		throw(ILLARG, "getPasswordHash", "username should not be nil");
 
-	p = AUTHfindUser(username);
-	if (p == BUN_NONE)
+	TRC_DEBUG(MAL_SERVER, "Debug callback context %p", authCallbackCntx.get_user_password);
+
+	// load password from users tbl
+	if (authCallbackCntx.get_user_password && cntxt)
+		passwd = authCallbackCntx.get_user_password(cntxt, username);
+
+	if (strNil(passwd)) {
 		throw(MAL, "getPasswordHash", "user '%s' does not exist", username);
-	i = bat_iterator(pass);
-	tmp = BUNtvar(i, p);
-	assert (tmp != NULL);
-	/* decypher the password */
-	tmp = AUTHdecypherValue(&passwd, tmp);
-	bat_iterator_end(&i);
-	if (tmp)
-		return tmp;
+	}
+
+	// TODO remove old implementation
+	// p = AUTHfindUser(username);
+	// if (p == BUN_NONE)
+	// 	throw(MAL, "getPasswordHash", "user '%s' does not exist", username);
+	// i = bat_iterator(pass);
+	// tmp = BUNtvar(i, p);
+	// assert (tmp != NULL);
+	// /* decypher the password */
+	// tmp = AUTHdecypherValue(&passwd, tmp);
+	// bat_iterator_end(&i);
+	// if (tmp)
+	// 	return tmp;
 
 	*ret = passwd;
 	return(NULL);
