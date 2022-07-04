@@ -870,11 +870,14 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 
 	// load password from users tbl
 	if (authCallbackCntx.get_user_password && cntxt)
-		passwd = authCallbackCntx.get_user_password(cntxt, username);
+		tmp = authCallbackCntx.get_user_password(cntxt, username);
 
-	if (strNil(passwd)) {
+	if (strNil(tmp)) {
 		throw(MAL, "getPasswordHash", "user '%s' does not exist", username);
 	}
+	/* decypher the password */
+	if ((tmp = AUTHdecypherValue(&passwd, tmp)) != MAL_SUCCEED)
+		return tmp;
 
 	// TODO remove old implementation
 	// p = AUTHfindUser(username);
@@ -890,7 +893,7 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 	// 	return tmp;
 
 	*ret = passwd;
-	return(NULL);
+	return(MAL_SUCCEED);
 }
 
 
