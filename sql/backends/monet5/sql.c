@@ -127,17 +127,18 @@ sql_symbol2relation(backend *be, symbol *sym)
 	lng Tbegin;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
+	Client c = getClientContext();
 
-	// TODO PROFILER: EVENT("start of SQL compiler", "program_id", TYPE_int, log c->curprg->def->tag)
-	genericEvent("SQL compiler",
-				 (struct GenericEvent){ 0, NULL, NULL},
+	genericEvent("Start SQL compiler",
+				 (struct GenericEvent)
+				 { &(c->idx), c->curprg->def->tag, NULL, NULL, NULL },
 				 0);
 
 	rel = rel_semantic(query, sym);
 
-	// TODO PROFILER: EVENT("end of SQL compiler;start of relational optimizer","program_id", TYPE_int, be->c->curprg->def->tag, "error", TYPE_int, rel == NULL)
-	genericEvent("SQL compiler",
-				 (struct GenericEvent){ 0, NULL, NULL},
+	genericEvent("End SQL compiler",
+				 (struct GenericEvent)
+				 { &(c->idx), c->curprg->def->tag, NULL, NULL, rel ? "Good" : "Error" },
 				 1);
 
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
