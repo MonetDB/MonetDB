@@ -523,8 +523,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	/* save, in case this function is called recursively */
 	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
 	MT_thread_set_qry_ctx(&qry_ctx);
-	Client outer_cntxt = getClientContext();
-	setClientContext(cntxt);
+	Client outer_cntxt = setClientContext(cntxt);
 
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		// incomplete block being executed, requires at least signature and end statement

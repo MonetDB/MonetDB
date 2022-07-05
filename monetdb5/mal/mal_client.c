@@ -44,6 +44,7 @@
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
+#include "mal_interpreter.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
 #include "mapi_prompt.h"
@@ -206,6 +207,7 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
+	setClientContext(NULL);
 }
 
 static Client
@@ -296,8 +298,11 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
-	if (c)
+
+	if (c) {
+		assert(NULL == setClientContext(c));
 		c = MCinitClientRecord(c, user, fin, fout);
+	}
 	MT_lock_unset(&mal_contextLock);
 	return c;
 }
