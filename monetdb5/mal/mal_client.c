@@ -207,7 +207,12 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
-	// TODO PROFILER: EVENT("end of client connection", "client_id", TYPE_int, c->id)
+
+	genericEvent("End client connection.",
+				 (struct GenericEvent)
+				 { &c->idx, (oid)NULL, NULL, NULL, NULL },
+				 1);
+
 	setClientContext(NULL);
 }
 
@@ -299,10 +304,13 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
-	// TODO PROFILER: EVENT("start of client connection", "client_id", TYPE_int, c->id)
 	if (c) {
 		assert(NULL == setClientContext(c));
 		c = MCinitClientRecord(c, user, fin, fout);
+		genericEvent("Start client connection.",
+					 (struct GenericEvent)
+					 { &c->idx, (oid)NULL, NULL, NULL, NULL },
+					 0);
 	}
 	MT_lock_unset(&mal_contextLock);
 	return c;

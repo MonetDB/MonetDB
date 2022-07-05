@@ -199,9 +199,9 @@ prepareGenericEvent(str msg, struct GenericEvent e, int state)
 			   ",\"state\":\"%d\""
 			   "}\n",
 			   msg ? msg : "",
-			   0,
-			   (oid)0,
-			   e.transaction_id ? *e.transaction_id : 0,
+			   e.clientId ? *(e.clientId) : -1,
+			   e.tag ? e.tag : (oid)-1,
+			   e.transactionId ? *e.transactionId : 0,
 			   e.query ? e.query : "",
 			   e.error ? e.error : "",
 			   state))

@@ -21,7 +21,9 @@ typedef struct rusage Rusage;
 #endif
 
 struct GenericEvent {
-	int* transaction_id;
+	int* clientId;
+	oid tag;
+	int* transactionId;
 	str query;
 	str error;
 };
