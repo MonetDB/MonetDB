@@ -2229,6 +2229,7 @@ store_apply_deltas(sqlstore *store)
 	store_lock(store);
 	ulng oldest = store_oldest_pending(store);
 	store_unlock(store);
+	TRC_DEBUG(SQL_STORE, "Store aplly deltas (" ULLFMT ")\n", oldest-1);
 	if (oldest)
 	    res = store->logger_api.flush(store, oldest-1);
 	flusher.working = false;
@@ -2347,8 +2348,10 @@ store_manager(sqlstore *store)
 		MT_sleep_ms(sleeptime);
 		flusher.countdown_ms -= sleeptime;
 		MT_lock_set(&store->flush);
-		if (store->logger_api.changes(store) <= 0)
+		if (store->logger_api.changes(store) <= 0) {
+			TRC_DEBUG(SQL_STORE, "Store flusher, no changes\n");
 			continue;
+		}
 		if (GDKexiting())
 			break;
 
