@@ -791,6 +791,10 @@ AUTHresolveUser(str *username, oid uid)
 str
 AUTHgetUsername(str *username, Client cntxt)
 {
+	if (cntxt->username) {
+		*username = GDKstrdup(cntxt->username);
+		return(MAL_SUCCEED);
+	}
 	if (authCallbackCntx.get_user_name && cntxt) {
 		if ((*username = authCallbackCntx.get_user_name(cntxt)) == NULL) {
 			throw(MAL, "getUsername", INVCRED_WRONG_ID);
