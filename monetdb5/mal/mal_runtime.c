@@ -81,7 +81,8 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 		return;
 	}
 
-	if (USRstats[idx].username == NULL) {
+	if (USRstats[idx].username == NULL || USRstats[idx].user != cntxt->user || strcmp(USRstats[idx].username, cntxt->username) != 0) {
+		clearUSRstats(idx);
 		USRstats[idx].user = cntxt->user;
 		USRstats[idx].username = GDKstrdup(cntxt->username);
 	}
