@@ -129,17 +129,36 @@ sql_symbol2relation(backend *be, symbol *sym)
 	int profile = be->mvc->emode == m_plan;
 	Client c = getClientContext();
 
-	genericEvent("Start SQL compiler",
-				 (struct GenericEvent)
-				 { &(c->idx), c->curprg->def->tag, NULL, NULL, NULL },
-				 0);
+	if(malProfileMode > 0 )
+		genericEvent("Start SQL compiler",
+					 (struct GenericEvent)
+					 { &(c->idx),
+					   c->curprg->def->tag,
+					   NULL,
+					   NULL,
+					   0 },
+					 0);
 
 	rel = rel_semantic(query, sym);
 
-	genericEvent("End SQL compiler",
-				 (struct GenericEvent)
-				 { &(c->idx), c->curprg->def->tag, NULL, NULL, rel ? "Good" : "Error" },
-				 1);
+	if(malProfileMode > 0 ) {
+		genericEvent("End SQL compiler",
+					 (struct GenericEvent)
+					 { &(c->idx),
+					   c->curprg->def->tag,
+					   NULL,
+					   NULL,
+					   rel ? 1 : 0 },
+					 1);
+		genericEvent("Start relational optimizer",
+					 (struct GenericEvent)
+					 { &(c->idx),
+					   c->curprg->def->tag,
+					   NULL,
+					   NULL,
+					   0 },
+					 1);
+	}
 
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = GDKusec();
@@ -151,7 +170,15 @@ sql_symbol2relation(backend *be, symbol *sym)
 		be->no_mitosis = 1;
 	be->reloptimizer = GDKusec() - Tbegin;
 
-	// TODO PROFILER: EVENT("start of relational optimizer","program_id": TYPE_int, be->c->curprg->def->tag, "error", TYPE_int, rel == NULL)
+	if(malProfileMode > 0)
+		genericEvent("End relational optimizer.",
+					 (struct GenericEvent)
+					 { &c->idx,
+					   c->curprg->def->tag,
+					   NULL,
+					   NULL,
+					   rel ? 1 : 0},
+					 0);
 	return rel;
 }
 
