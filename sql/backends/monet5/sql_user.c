@@ -590,11 +590,9 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 		f->instantiated = TRUE;
 	// TODO this view should go, remove as part of db_user_info -> users rename
 	t = mvc_init_create_view(m, s, "users",
-			    "create view sys.users as select u.\"name\" as \"name\", "
-			    "ui.\"fullname\", ui.\"default_schema\", "
-				"ui.\"schema_path\" from sys.db_users() as u "
-				"left join \"sys\".\"db_user_info\" as ui "
-			    "on u.\"name\" = ui.\"name\";");
+			    "create view sys.users as select u.\"name\", "
+			    "u.\"fullname\", u.\"default_schema\", "
+				"u.\"schema_path\" from \"sys\".\"db_user_info\" as u;");
 	if (!t) {
 		TRC_CRITICAL(SQL_TRANS, "Failed to create 'users' view\n");
 		return ;
