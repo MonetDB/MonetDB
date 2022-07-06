@@ -506,7 +506,7 @@ GRANT SELECT ON sys.privilege_codes TO PUBLIC;
 
 -- Utility view to list the defined roles.
 -- Note: sys.auths contains both users and roles as the names must be distinct.
-CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_users() u);
+CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.users u);
 GRANT SELECT ON sys.roles TO PUBLIC;
 
 
