@@ -208,10 +208,15 @@ MCexitClient(Client c)
 		c->fdin = NULL;
 	}
 
-	genericEvent("End client connection.",
-				 (struct GenericEvent)
-				 { &c->idx, (oid)NULL, NULL, NULL, NULL },
-				 1);
+	if(malProfileMode > 0)
+		genericEvent("End client connection.",
+					 (struct GenericEvent)
+					 { &c->idx,
+					   (oid)NULL,
+					   NULL,
+					   NULL,
+					   0 },
+					 1);
 
 	setClientContext(NULL);
 }
@@ -307,10 +312,15 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	if (c) {
 		assert(NULL == setClientContext(c));
 		c = MCinitClientRecord(c, user, fin, fout);
-		genericEvent("Start client connection.",
-					 (struct GenericEvent)
-					 { &c->idx, (oid)NULL, NULL, NULL, NULL },
-					 0);
+		if(malProfileMode > 0)
+			genericEvent("Start client connection.",
+						 (struct GenericEvent)
+						 { &c->idx,
+						   (oid)NULL,
+						   NULL,
+						   NULL,
+						   0 },
+						 0);
 	}
 	MT_lock_unset(&mal_contextLock);
 	return c;

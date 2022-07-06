@@ -1109,7 +1109,16 @@ SQLparser(Client c)
 	tag = runtimeProfileSetTag(c);
 	assert(tag == c->curprg->def->tag);
 	(void) tag;
-	// TODO PROFILER: EVENT("start of SQL parser", "client_id", TYPE_int, c->id, "program_id": TYPE_int, log c->curprg->def->tag)
+
+	if(malProfileMode > 0)
+		genericEvent("Start SQL parser.",
+					 (struct GenericEvent)
+					 { &c->idx,
+					   c->curprg->def->tag,
+					   NULL,
+					   NULL,
+					   0 },
+					 0);
 
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
@@ -1137,7 +1146,15 @@ SQLparser(Client c)
 	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
-	// TODO PROFILER: EVENT("end of SQL parser", "program_id": TYPE_int, log c->curprg->def->tag, "query": TYPE_str, c->query)
+	if(malProfileMode > 0)
+		genericEvent("End SQL parser.",
+					 (struct GenericEvent)
+					 { &c->idx,
+					   c->curprg->def->tag,
+					   NULL,
+					   c->query ? c->query : NULL,
+					   c->query ? 0 : 1, },
+					 1);
 
 	if (c->query == NULL) {
 		err = 1;
@@ -1194,12 +1211,30 @@ SQLparser(Client c)
 				}
 			}
 
-			// TODO PROFILER: EVENT("start of MAL compiler","program_id": TYPE_int, log c->curprg->def->tag, "query": TYPE_str, c->query)
+			if(malProfileMode > 0)
+				genericEvent("Start MAL compiler.",
+							 (struct GenericEvent)
+							 { &c->idx,
+							   c->curprg->def->tag,
+							   NULL,
+							   c->query ? c->query : NULL,
+							   c->query ? 0 : 1 },
+							 0);
+
 			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
 				opt = (m->emod & mod_exec) == 0;//1;
-			// TODO PROFILER: EVENT("end of MAL compiler","program_id": TYPE_int, log c->curprg->def->tag, "query": TYPE_str, c->query, "error_code", TYPE_int, err)
+
+			if(malProfileMode > 0)
+				genericEvent("End MAL compiler.",
+							 (struct GenericEvent)
+							 { &c->idx,
+							   c->curprg->def->tag,
+							   NULL,
+							   c->query ? c->query : NULL,
+							   c->query ? 0 : 1 },
+							 1);
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1277,9 +1312,28 @@ SQLparser(Client c)
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (msg == MAL_SUCCEED && opt ) {
-			// TODO PROFILER: EVENT("start of MAL optimizer","program_id": TYPE_int, log c->curprg->def->tag)
+
+			if(malProfileMode > 0)
+				genericEvent("Start MAL optimizer.",
+							 (struct GenericEvent)
+							 { &c->idx,
+							   c->curprg->def->tag,
+							   NULL,
+							   NULL,
+							   0 },
+							 0);
+
 			msg = SQLoptimizeQuery(c, c->curprg->def);
-			// TODO PROFILER: EVENT("end of MAL optimizer","program_id": TYPE_int, log c->curprg->def->tag, "error_msg", TYPE_str, msg)
+
+			if(malProfileMode > 0)
+				genericEvent("End MAL optimizer.",
+							 (struct GenericEvent)
+							 { &c->idx,
+							   c->curprg->def->tag,
+							   NULL,
+							   NULL,
+							   msg == MAL_SUCCEED ? 0 : 1 },
+							 1);
 
 			if (msg != MAL_SUCCEED) {
 				str other = c->curprg->def->errors;

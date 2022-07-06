@@ -187,24 +187,27 @@ static str
 prepareGenericEvent(str msg, struct GenericEvent e, int state)
 {
 	struct logbuf logbuf = {0};
+	lng clk = GDKusec();
 
 	if (logadd(&logbuf,
-			   "{\""
-			   "msg\":\"%s\""
+			   "{"
+			   "\"clk\":"LLFMT
+			   ",\"msg\":\"%s\""
 			   ",\"client_id\":\"%d\""
 			   ",\"tag\":\""OIDFMT
 			   ",\"transaction_id\":\"%d\""
 			   ",\"query\":\"%s\""
 			   ",\"error\":\"%s\""
-			   ",\"state\":\"%d\""
+			   ",\"state\":\"%s\""
 			   "}\n",
+			   clk,
 			   msg ? msg : "",
-			   e.clientId ? *(e.clientId) : -1,
+			   e.client_id ? *(e.client_id) : -1,
 			   e.tag ? e.tag : (oid)-1,
-			   e.transactionId ? *e.transactionId : 0,
-			   e.query ? e.query : "",
-			   e.error ? e.error : "",
-			   state))
+			   e.transaction_id ? *e.transaction_id : 0,
+			   e.query ? e.query : "none",
+			   e.error ? "true" : "false",
+			   state ? "done" : "start"))
 		return logbuf.logbuffer;
 	else {
 		logdel(&logbuf);
@@ -280,7 +283,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 
 	logbuf = (struct logbuf) {0};
 
-	usec= pci->clock;
+	usec = pci->clock;
 	microseconds = (uint64_t)usec - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
 	/* TODO: This could probably be optimized somehow to avoid the
