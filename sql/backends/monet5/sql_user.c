@@ -364,12 +364,12 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 			default:
 				break;
 		}
-		if (is_oid_nil(rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas_tbl, "id"), &schema_id, NULL)))
-			throw(SQL,"sql.create_user",SQLSTATE(42000) "User schema not found");
 		new_schema = true;
 	}
-
 	assert(schema_id);
+
+	if (is_oid_nil(rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas_tbl, "id"), &schema_id, NULL)))
+		throw(SQL,"sql.create_user",SQLSTATE(42000) "User schema not found");
 
 	// by default match schema path with the schema name
 	// unless specified by the user
