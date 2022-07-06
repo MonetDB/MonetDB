@@ -33,6 +33,15 @@ getUsersTbl(mvc *m)
 }
 
 
+static inline sql_table*
+getSchemasTbl(mvc *m)
+{
+	sql_trans *tr = m->session->tr;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	return find_sql_table(tr, sys, SCHEMA_TABLE_NAME);
+}
+
+
 static oid
 getUserOIDByName(mvc *m, const char *user)
 {
@@ -54,6 +63,22 @@ getUserName(mvc *m, oid rid)
 	sql_table *users = getUsersTbl(m);
 	return store->table_api.column_find_value(tr, find_sql_column(users, "name"), rid);
 }
+
+
+// static str
+// getSchemaName(mvc *m, sqlid schema_id)
+// {
+// 	if (schema_id > 0) {
+// 		oid rid;
+// 		sql_trans *tr = m->session->tr;
+// 		sqlstore *store = m->session->tr->store;
+// 		sql_table *tbl = getSchemasTbl(m);
+// 		if (is_oid_nil(rid = store->table_api.column_find_row(tr, find_sql_column(tbl, "id"), &schema_id, NULL)))
+// 			return NULL;
+// 		return store->table_api.column_find_value(tr, find_sql_column(tbl, "name"), rid);
+// 	}
+// 	return NULL;
+// }
 
 
 static str
@@ -342,7 +367,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 {
 	mvc *m = (mvc *) _mvc;
 	oid rid;
-	str ret, err, pwd, hash, schema_name, schema_buf = NULL;
+	str ret, err, pwd, hash, schema_buf = NULL;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"),
@@ -371,24 +396,23 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	if (is_oid_nil(rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas_tbl, "id"), &schema_id, NULL)))
 		throw(SQL,"sql.create_user",SQLSTATE(42000) "User schema not found");
 
-	// by default match schema path with the schema name
-	// unless specified by the user
 	if (!schema_path) {
-		schema_name = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas_tbl, "name"), rid);
-		if (schema_name) {
-			// "\"$schema_name\"\0"
-			if ((strlen(schema_name) + 4) > MAX_SCHEMA_SIZE) {
-				if (schema_name)
-					GDKfree(schema_name);
-				throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
-			}
-			schema_buf = GDKmalloc(MAX_SCHEMA_SIZE);
-			snprintf(schema_buf, MAX_SCHEMA_SIZE, "\"%s\"", schema_name);
-			schema_path = schema_buf;
-			GDKfree(schema_name);
-		} else {
-			schema_path = default_schema_path;
-		}
+		// schema_name = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas_tbl, "name"), rid);
+		// if (schema_name) {
+		// 	// "\"$schema_name\"\0"
+		// 	if ((strlen(schema_name) + 4) > MAX_SCHEMA_SIZE) {
+		// 		if (schema_name)
+		// 			GDKfree(schema_name);
+		// 		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+		// 	}
+		// 	schema_buf = GDKmalloc(MAX_SCHEMA_SIZE);
+		// 	snprintf(schema_buf, MAX_SCHEMA_SIZE, "\"%s\"", schema_name);
+		// 	schema_path = schema_buf;
+		// 	GDKfree(schema_name);
+		// } else {
+		// 	schema_path = default_schema_path;
+		// }
+		schema_path = default_schema_path;
 	}
 
 	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
@@ -761,7 +785,6 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 		}
 	}
 
-
 	if (schema_id) {
 		sql_column *users_schema = find_sql_column(info, "default_schema");
 
@@ -771,7 +794,6 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 			return (FALSE);
 		}
 	}
-
 
 	if (schema_path) {
 		sql_column *sp = find_sql_column(info, "schema_path");
