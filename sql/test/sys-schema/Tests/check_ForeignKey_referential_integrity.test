@@ -191,11 +191,11 @@ SELECT * FROM sys.auths WHERE grantor NOT IN (SELECT id FROM sys.auths) AND gran
 ----
 
 query TTIT rowsort
-SELECT * FROM sys.users WHERE name NOT IN (SELECT name FROM sys.auths)
+SELECT name, fullname, default_schema, schema_path FROM sys.users WHERE name NOT IN (SELECT name FROM sys.auths)
 ----
 
 query TTIT rowsort
-SELECT * FROM sys.users WHERE default_schema NOT IN (SELECT id FROM sys.schemas)
+SELECT name, fullname, default_schema, schema_path FROM sys.users WHERE default_schema NOT IN (SELECT id FROM sys.schemas)
 ----
 
 query TTITIITIT rowsort
