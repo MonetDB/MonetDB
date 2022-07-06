@@ -592,7 +592,9 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\", "
 			    "u.\"fullname\", u.\"default_schema\", "
-				"u.\"schema_path\" from \"sys\".\"db_user_info\" as u;");
+				"u.\"schema_path\", u.\"max_memory\", "
+				"u.\"max_workers\", u.\"optimizer\", "
+				"u.\"default_role\", u.\"password\" from \"sys\".\"db_user_info\" as u;");
 	if (!t) {
 		TRC_CRITICAL(SQL_TRANS, "Failed to create 'users' view\n");
 		return ;
