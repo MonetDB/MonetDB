@@ -793,7 +793,7 @@ AUTHgetUsername(str *username, Client cntxt)
 {
 	if (authCallbackCntx.get_user_name && cntxt) {
 		if ((*username = authCallbackCntx.get_user_name(cntxt)) == NULL) {
-			throw(MAL, "getUsername", INVCRED_WRONG_ID" '%s'", *username);
+			throw(MAL, "getUsername", INVCRED_WRONG_ID);
 		}
 	}
 	return(MAL_SUCCEED);
