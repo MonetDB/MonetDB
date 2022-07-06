@@ -79,7 +79,7 @@ setClientContext(Client cntxt)
 	return old;
 }
 
-#elif defined(Win32)
+#elif defined(WIN32)
 
 static DWORD tl_client_key = 0;
 
