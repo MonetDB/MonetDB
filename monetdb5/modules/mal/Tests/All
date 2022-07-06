@@ -52,8 +52,8 @@ manifoldstr
 # support
 clients-hashes
 # shows different output if the password backend is different (or
-# monetdb password has been changed)
-clients-getpasswd
+# monetdb password has been changed), no more getpasswd
+# clients-getpasswd
 
 #cpustat too system dependent to always run.
 
