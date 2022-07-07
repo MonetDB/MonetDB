@@ -2061,7 +2061,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 }
 
 sqlstore *
-store_init(int debug, store_type store_tpe, int readonly, int singleuser)
+store_init(int debug, store_type store_tpe, int readonly, int singleuser, generic_event_wrapper_fptr event_wrapper)
 {
 	sql_allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
@@ -2103,6 +2103,8 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 
 	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
+
+	store->generic_event_wrapper = event_wrapper;
 
 	/* initialize empty bats */
 	switch (store_tpe) {
@@ -3575,7 +3577,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
 
-	// TODO PROFILER: EVENT("start of rollback", "tid": TYPE_int, tr->tid)
+	store->generic_event_wrapper("rollback", tr->tid, 0, 0);
 
 	/* move back deleted */
 	if (tr->localtmps.dset) {
@@ -3673,7 +3675,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		tr->depchanges = NULL;
 	}
 
-	// TODO PROFILER: EVENT("end of rollback", "tid": TYPE_int, tr->tid)
+	store->generic_event_wrapper("rollback", tr->tid, 0, 1);
 }
 
 sql_trans *
@@ -3907,7 +3909,7 @@ sql_trans_commit(sql_trans *tr)
 		}
 
 
-		// TODO PROFILER: EVENT("start of commit","tid": TYPE_int, tr->tid)
+		store->generic_event_wrapper("commit", tr->tid, 0, 0);
 
 		/* log changes should only be done if there is something to log */
 		const bool log = !tr->parent && tr->logchanges > 0;
@@ -4039,7 +4041,8 @@ sql_trans_commit(sql_trans *tr)
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
 
-	// TODO PROFILER: EVENT("end of commit","tid": TYPE_int, tr->tid, "ts", TYPE_int, tr->ts, "ok", TYPE_int, ok)
+	store->generic_event_wrapper("commit", tr->tid, ok, 1);
+
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
@@ -7039,7 +7042,8 @@ sql_trans_end(sql_session *s, int ok)
 	}
 	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
+	store->generic_event_wrapper("transaction", s->tr->tid, ok, 1);
 	store_unlock(store);
-	// TODO PROFILER: EVENT("start of transaction","client_id": TYPE_int, m->clientid, "tid": TYPE_int, m->session->tr->tid, "ts": TYPE_int, m->session->tr->ts, "ok", TYPE_int: ok)
+
 	return ok;
 }

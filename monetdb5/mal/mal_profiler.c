@@ -184,7 +184,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
  * Profiling a generic event follows the same implementation of ProfilerEvent.
  */
 static str
-prepareGenericEvent(str face, struct GenericEvent e, int state)
+prepare_generic_event(str face, struct GenericEvent e, int state)
 {
 	struct logbuf logbuf = {0};
 	lng clk = GDKusec();
@@ -200,7 +200,7 @@ prepareGenericEvent(str face, struct GenericEvent e, int state)
 			   ",\"face\":\"%s\""
 			   ",\"state\":\"%s\""
 			   ",\"client_id\":\"%d\""
-			   ",\"transaction_id\":\"%d\""
+			   ",\"transaction_id\":"ULLFMT
 			   ",\"tag\":\""OIDFMT
 			   ",\"query\":\"%s\""
 			   ",\"error\":\"%s\""
@@ -224,11 +224,11 @@ prepareGenericEvent(str face, struct GenericEvent e, int state)
 }
 
 static void
-renderGenericEvent(str msg, struct GenericEvent e, int state)
+render_generic_event(str msg, struct GenericEvent e, int state)
 {
 	str event;
 	MT_lock_set(&mal_profileLock);
-	event = prepareGenericEvent(msg, e, state);
+	event = prepare_generic_event(msg, e, state);
 	if( event ){
 		logjsonInternal(event, true);
 		free(event);
@@ -237,10 +237,10 @@ renderGenericEvent(str msg, struct GenericEvent e, int state)
 }
 
 void
-genericEvent(str msg, struct GenericEvent e, int state)
+generic_event(str msg, struct GenericEvent e, int state)
 {
 	if( maleventstream ) {
-		renderGenericEvent(msg, e, state);
+		render_generic_event(msg, e, state);
 	}
 }
 

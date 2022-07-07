@@ -28,6 +28,7 @@
 #include "wlc.h"
 
 #include "mal_authorize.h"
+#include "mal_profiler.h"
 
 static void
 sql_create_comments(mvc *m, sql_schema *s)
@@ -123,6 +124,22 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 	}
 }
 
+static void
+generic_event_wrapper(str face, ulng transaction_id, int error, int state)
+{
+	int client_id = getClientContext()->idx;
+
+	if(malProfileMode > 0)
+		generic_event(face,
+					  (struct GenericEvent)
+					  { &client_id,
+						(oid)NULL,
+						&transaction_id,
+						NULL,
+						error },
+					  state);
+}
+
 sql_store
 mvc_init(int debug, store_type store_tpe, int ro, int su)
 {
@@ -139,11 +156,12 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		return NULL;
 	}
 
-	if ((store = store_init(debug, store_tpe, ro, su)) == NULL) {
+	if ((store = store_init(debug, store_tpe, ro, su, &generic_event_wrapper)) == NULL) {
 		keyword_exit();
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
 	}
+
 	initialize_sql_functions_lookup(store->sa);
 
 	m = mvc_create((sql_store)store, store->sa, 0, 0, NULL, NULL);
@@ -473,7 +491,17 @@ mvc_trans(mvc *m)
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	res = sql_trans_begin(m->session);
-	// TODO PROFILER: EVENT("start of transaction","client_id": TYPE_int, m->clientid, "tid": TYPE_int, m->session->tr->tid, "ts": TYPE_int, m->session->tr->ts)
+
+	if(malProfileMode > 0)
+		generic_event("transaction",
+					 (struct GenericEvent)
+					  { &(m->clientid),
+						(oid)NULL,
+						&(m->session->tr->tid),
+						NULL,
+						0 },
+					  0);
+
 	if (m->qc && (res || err)) {
 		int seqnr = m->qc->id;
 		if (m->qc)

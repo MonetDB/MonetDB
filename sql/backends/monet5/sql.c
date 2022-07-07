@@ -130,7 +130,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	Client c = getClientContext();
 
 	if(malProfileMode > 0 )
-		genericEvent("sql_to_rel",
+		generic_event("sql_to_rel",
 					 (struct GenericEvent)
 					 { &(c->idx),
 					   c->curprg->def->tag,
@@ -142,7 +142,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	rel = rel_semantic(query, sym);
 
 	if(malProfileMode > 0 ) {
-		genericEvent("sql_to_rel",
+		generic_event("sql_to_rel",
 					 (struct GenericEvent)
 					 { &(c->idx),
 					   c->curprg->def->tag,
@@ -150,7 +150,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 					   NULL,
 					   rel ? 1 : 0 },
 					 1);
-		genericEvent("rel_opt",
+		generic_event("rel_opt",
 					 (struct GenericEvent)
 					 { &(c->idx),
 					   c->curprg->def->tag,
@@ -171,7 +171,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	be->reloptimizer = GDKusec() - Tbegin;
 
 	if(malProfileMode > 0)
-		genericEvent("rel_opt",
+		generic_event("rel_opt",
 					 (struct GenericEvent)
 					 { &c->idx,
 					   c->curprg->def->tag,
