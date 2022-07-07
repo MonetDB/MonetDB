@@ -99,7 +99,7 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 		USRstats[idx].finished = finished;
 		USRstats[idx].maxticks = ticks;
 		GDKfree(USRstats[idx].maxquery);
-		USRstats[idx].maxquery= GDKstrdup(query);
+		USRstats[idx].maxquery = GDKstrdup(query);
 	}
 }
 

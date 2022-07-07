@@ -117,6 +117,7 @@ getUserPasswordCallback(Client c, const char *user)
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
+		// this starts new transaction
 		if (mvc_trans(m) == 0) {
 			oid rid = getUserOIDByName(m, user);
 			res = getUserPassword(m, rid);
@@ -530,50 +531,61 @@ db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+
 str
-db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+monet5_password_hash(mvc *m, const char *username)
 {
-	(void) mb;
-
-	if (stk->stk[pci->argv[0]].vtype == TYPE_bat) {
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-		if (b == NULL)
-			throw(SQL, "sql.password", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		BAT *bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
-		if (bn == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	str msg, hash = NULL;
+	oid rid = getUserOIDByName(m, username);
+	const char *password = getUserPassword(m, rid);
+	if (password) {
+		if ((msg = AUTHdecypherValue(&hash, password)) != MAL_SUCCEED) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "monet5_password_hash: %s", getExceptionMessage(msg));
+			freeException(msg);
 		}
-		BATiter bi = bat_iterator(b);
-		BUN p, q;
-		BATloop(b, p, q) {
-			char *hash, *msg;
-			msg = AUTHgetPasswordHash(&hash, cntxt, BUNtvar(bi, p));
-			if (msg != MAL_SUCCEED) {
-				bat_iterator_end(&bi);
-				BBPunfix(b->batCacheid);
-				BBPreclaim(bn);
-				return msg;
-			}
-			if (BUNappend(bn, hash, false) != GDK_SUCCEED) {
-				bat_iterator_end(&bi);
-				BBPunfix(b->batCacheid);
-				BBPreclaim(bn);
-				GDKfree(hash);
-				throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			GDKfree(hash);
-		}
-		bat_iterator_end(&bi);
-		BBPunfix(b->batCacheid);
-		BBPkeepref(bn);
-		*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-		return MAL_SUCCEED;
 	}
-	str *hash = getArgReference_str(stk, pci, 0);
-	str *user = getArgReference_str(stk, pci, 1);
+	return hash;
+	// (void) mb;
 
-	return AUTHgetPasswordHash(hash, cntxt, *user);
+	// if (stk->stk[pci->argv[0]].vtype == TYPE_bat) {
+	// 	BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+	// 	if (b == NULL)
+	// 		throw(SQL, "sql.password", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	// 	BAT *bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
+	// 	if (bn == NULL) {
+	// 		BBPunfix(b->batCacheid);
+	// 		throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	// 	}
+	// 	BATiter bi = bat_iterator(b);
+	// 	BUN p, q;
+	// 	BATloop(b, p, q) {
+	// 		char *hash, *msg;
+	// 		msg = AUTHgetPasswordHash(&hash, cntxt, BUNtvar(bi, p));
+	// 		if (msg != MAL_SUCCEED) {
+	// 			bat_iterator_end(&bi);
+	// 			BBPunfix(b->batCacheid);
+	// 			BBPreclaim(bn);
+	// 			return msg;
+	// 		}
+	// 		if (BUNappend(bn, hash, false) != GDK_SUCCEED) {
+	// 			bat_iterator_end(&bi);
+	// 			BBPunfix(b->batCacheid);
+	// 			BBPreclaim(bn);
+	// 			GDKfree(hash);
+	// 			throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	// 		}
+	// 		GDKfree(hash);
+	// 	}
+	// 	bat_iterator_end(&bi);
+	// 	BBPunfix(b->batCacheid);
+	// 	BBPkeepref(bn);
+	// 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
+	// 	return MAL_SUCCEED;
+	// }
+	// str *hash = getArgReference_str(stk, pci, 0);
+	// str *user = getArgReference_str(stk, pci, 1);
+
+	// return AUTHgetPasswordHash(hash, cntxt, *user);
 }
 
 static void
