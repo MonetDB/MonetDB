@@ -331,7 +331,10 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern struct sqlstore *store_init(int debug, store_type store, int readonly, int singleuser);
+/* callback to access generic_event in store.c */
+typedef void (*generic_event_wrapper_fptr) (str face, ulng transaction_id, int error, int state);
+
+extern struct sqlstore *store_init(int debug, store_type store, int readonly, int singleuser, generic_event_wrapper_fptr event_wrapper);
 extern void store_exit(struct sqlstore *store);
 
 extern void store_suspend_log(struct sqlstore *store);
@@ -507,6 +510,7 @@ typedef struct sqlstore {
 	table_functions table_api;
 	logger_functions logger_api;
 	void *logger;			/* space to keep logging structure of storage backend */
+	generic_event_wrapper_fptr generic_event_wrapper;
 } sqlstore;
 
 typedef enum sql_dependency_change_type {

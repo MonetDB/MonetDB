@@ -1111,7 +1111,7 @@ SQLparser(Client c)
 	(void) tag;
 
 	if(malProfileMode > 0)
-		genericEvent("sql_parse",
+		generic_event("sql_parse",
 					 (struct GenericEvent)
 					 { &c->idx,
 					   c->curprg->def->tag,
@@ -1147,7 +1147,7 @@ SQLparser(Client c)
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
 	if(malProfileMode > 0)
-		genericEvent("sql_parse",
+		generic_event("sql_parse",
 					 (struct GenericEvent)
 					 { &c->idx,
 					   c->curprg->def->tag,
@@ -1212,7 +1212,7 @@ SQLparser(Client c)
 			}
 
 			if(malProfileMode > 0)
-				genericEvent("rel_to_mal",
+				generic_event("rel_to_mal",
 							 (struct GenericEvent)
 							 { &c->idx,
 							   c->curprg->def->tag,
@@ -1227,7 +1227,7 @@ SQLparser(Client c)
 				opt = (m->emod & mod_exec) == 0;//1;
 
 			if(malProfileMode > 0)
-				genericEvent("rel_to_mal",
+				generic_event("rel_to_mal",
 							 (struct GenericEvent)
 							 { &c->idx,
 							   c->curprg->def->tag,
@@ -1314,7 +1314,7 @@ SQLparser(Client c)
 		if (msg == MAL_SUCCEED && opt ) {
 
 			if(malProfileMode > 0)
-				genericEvent("mal_opt",
+				generic_event("mal_opt",
 							 (struct GenericEvent)
 							 { &c->idx,
 							   c->curprg->def->tag,
@@ -1326,7 +1326,7 @@ SQLparser(Client c)
 			msg = SQLoptimizeQuery(c, c->curprg->def);
 
 			if(malProfileMode > 0)
-				genericEvent("mal_opt",
+				generic_event("mal_opt",
 							 (struct GenericEvent)
 							 { &c->idx,
 							   c->curprg->def->tag,
