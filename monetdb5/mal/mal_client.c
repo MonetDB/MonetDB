@@ -209,7 +209,7 @@ MCexitClient(Client c)
 	}
 
 	if(malProfileMode > 0)
-		genericEvent("End client connection.",
+		genericEvent("client_connection",
 					 (struct GenericEvent)
 					 { &c->idx,
 					   (oid)NULL,
@@ -313,7 +313,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 		assert(NULL == setClientContext(c));
 		c = MCinitClientRecord(c, user, fin, fout);
 		if(malProfileMode > 0)
-			genericEvent("Start client connection.",
+			genericEvent("client_connection",
 						 (struct GenericEvent)
 						 { &c->idx,
 						   (oid)NULL,
