@@ -33,15 +33,6 @@ getUsersTbl(mvc *m)
 }
 
 
-static inline sql_table*
-getSchemasTbl(mvc *m)
-{
-	sql_trans *tr = m->session->tr;
-	sql_schema *sys = find_sql_schema(tr, "sys");
-	return find_sql_table(tr, sys, SCHEMA_TABLE_NAME);
-}
-
-
 static oid
 getUserOIDByName(mvc *m, const char *user)
 {
@@ -65,21 +56,30 @@ getUserName(mvc *m, oid rid)
 }
 
 
-// static str
-// getSchemaName(mvc *m, sqlid schema_id)
-// {
-// 	if (schema_id > 0) {
-// 		oid rid;
-// 		sql_trans *tr = m->session->tr;
-// 		sqlstore *store = m->session->tr->store;
-// 		sql_table *tbl = getSchemasTbl(m);
-// 		if (is_oid_nil(rid = store->table_api.column_find_row(tr, find_sql_column(tbl, "id"), &schema_id, NULL)))
-// 			return NULL;
-// 		return store->table_api.column_find_value(tr, find_sql_column(tbl, "name"), rid);
-// 	}
-// 	return NULL;
-// }
+#if 0
+static inline sql_table*
+getSchemasTbl(mvc *m)
+{
+	sql_trans *tr = m->session->tr;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	return find_sql_table(tr, sys, SCHEMA_TABLE_NAME);
+}
 
+static str
+getSchemaName(mvc *m, sqlid schema_id)
+{
+	if (schema_id > 0) {
+		oid rid;
+		sql_trans *tr = m->session->tr;
+		sqlstore *store = m->session->tr->store;
+		sql_table *tbl = getSchemasTbl(m);
+		if (is_oid_nil(rid = store->table_api.column_find_row(tr, find_sql_column(tbl, "id"), &schema_id, NULL)))
+			return NULL;
+		return store->table_api.column_find_value(tr, find_sql_column(tbl, "name"), rid);
+	}
+	return NULL;
+}
+#endif
 
 static str
 getUserPassword(mvc *m, oid rid)
@@ -609,9 +609,12 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	ops = sa_list(m->sa);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE, FALSE);
+	//mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE, FALSE);
+	mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", NULL, "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) return select name from users;", FALSE, FALSE, TRUE, FALSE);
+	/*
 	if (f)
 		f->instantiated = TRUE;
+		*/
 	// TODO this view should go, remove as part of db_user_info -> users rename
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\", "
