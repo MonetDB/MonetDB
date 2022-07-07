@@ -184,30 +184,38 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
  * Profiling a generic event follows the same implementation of ProfilerEvent.
  */
 static str
-prepareGenericEvent(str msg, struct GenericEvent e, int state)
+prepareGenericEvent(str face, struct GenericEvent e, int state)
 {
 	struct logbuf logbuf = {0};
 	lng clk = GDKusec();
+	uint64_t mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 
 	if (logadd(&logbuf,
 			   "{"
-			   "\"clk\":"LLFMT
-			   ",\"msg\":\"%s\""
+			   "\"version\":\""MONETDB_VERSION" (hg id: %s)\""
+			   /* ",\"user\":"OIDFMT */
+			   ",\"clk\":"LLFMT
+			   ",\"mclk\":%"PRIu64""
+			   ",\"thread\":%d"
+			   ",\"face\":\"%s\""
+			   ",\"state\":\"%s\""
 			   ",\"client_id\":\"%d\""
-			   ",\"tag\":\""OIDFMT
 			   ",\"transaction_id\":\"%d\""
+			   ",\"tag\":\""OIDFMT
 			   ",\"query\":\"%s\""
 			   ",\"error\":\"%s\""
-			   ",\"state\":\"%s\""
 			   "}\n",
+			   mercurial_revision(),
 			   clk,
-			   msg ? msg : "",
+			   mclk,
+			   THRgettid(),
+			   face,
+			   state ? "done" : "start",
 			   e.client_id ? *(e.client_id) : -1,
-			   e.tag ? e.tag : (oid)-1,
 			   e.transaction_id ? *e.transaction_id : 0,
+			   e.tag ? e.tag : (oid)-1,
 			   e.query ? e.query : "none",
-			   e.error ? "true" : "false",
-			   state ? "done" : "start"))
+			   e.error ? "true" : "false"))
 		return logbuf.logbuffer;
 	else {
 		logdel(&logbuf);
@@ -277,7 +285,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return NULL;
 
-/* align the variable namings with EXPLAIN and TRACE */
+	/* align the variable namings with EXPLAIN and TRACE */
 	if( pci->pc == 1 && start)
 		renameVariables(mb);
 
