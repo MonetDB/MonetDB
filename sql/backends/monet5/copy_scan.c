@@ -256,32 +256,31 @@ scan_quoted(const char **err_msg, unsigned char *start, unsigned char *end, int 
 // If 'backslash_escapes' is set, backslashes suppress the special .
 // Return the number of bytes scanned, including the separator.
 // On succesful return, write the separator found to '*sep_found'.
-static int
-scan_unquoted_no_escapes(const char **err_msg, unsigned char *start, unsigned char *end, int col_sep, int line_sep, unsigned char *sep_found)
+static const char *
+scan_unquoted_no_escapes(struct scan_state *state, unsigned char *sep_found)
 {
 	// is there a col_sep anywhere?
-	char *pcol = memchr(start, col_sep, end - start);
-	char *pline;
+	unsigned char *pcol = memchr(state->pos, state->col_sep, state->end - state->pos);
+	unsigned char *pline;
 	if (pcol) {
-		// there is a col_sep. is there a line_sep before that?
-		pline = memchr(start, line_sep, pcol - (char*)start);
+		// there is a col_sep. is there a line_sep before thatstate->?
+		pline = memchr(state->pos, state->line_sep, pcol - state->pos);
 	} else {
 		// there is no col_sep, is there a line_sep anywhere?
-		pline = memchr(start, line_sep, end - start);
+		pline = memchr(state->pos, state->line_sep, state->end - state->pos);
 	}
 	// pline is either earlier than pcol or there was no pcol.
-	char *sep = pline ? pline : pcol;
+	unsigned char *sep = pline ? pline : pcol;
 	if (sep) {
-		if (memchr(start, '\0', sep - (char*)start) != NULL) {
-			*err_msg = "NUL character not allowed in textual data";
-			return -40;
+		if (memchr(state->pos, '\0', sep - state->pos) != NULL) {
+			return "NUL character not allowed in textual data";
 		}
 		*sep_found = *sep;
 		*sep = 0;
-		return sep - (char*)start + 1;
+		state->pos = sep + 1;
+		return NULL;
 	} else {
-		*err_msg = "no column- or line separator found";
-		return -41;
+		return "no column- or line separator found";
 	}
 }
 
@@ -340,13 +339,12 @@ scan_field(struct scan_state *state, unsigned char *sep_found)
 			return "end quote must be followed by separator";
 		}
 	} else {
+		nread = 0;
 		const char *err_msg = NULL;
 		if (state->escape_enabled) {
-			nread = 0;
 			err_msg = scan_unquoted_with_escapes(state, sep_found);
 		} else {
-			nread = scan_unquoted_no_escapes(&err_msg, state->pos, state->end, state->col_sep, state->line_sep, sep_found);
-			assert((nread < 0) == (err_msg != NULL));
+			err_msg = scan_unquoted_no_escapes(state, sep_found);
 		}
 		if (err_msg)
 			return err_msg;
