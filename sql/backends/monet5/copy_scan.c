@@ -257,38 +257,37 @@ scan_quoted(const char **err_msg, unsigned char *start, unsigned char *end, int 
 // Return the number of bytes scanned, including the separator.
 // On succesful return, write the separator found to '*sep_found'.
 static int
-scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, int col_sep, int line_sep, bool backslash_escapes, unsigned char *sep_found)
+scan_unquoted_no_escapes(const char **err_msg, unsigned char *start, unsigned char *end, int col_sep, int line_sep, unsigned char *sep_found)
 {
-	char *sep;
-
-	if (!backslash_escapes) {
-		// is there a col_sep anywhere?
-		char *pcol = memchr(start, col_sep, end - start);
-		char *pline;
-		if (pcol) {
-			// there is a col_sep. is there a line_sep before that?
-			pline = memchr(start, line_sep, pcol - (char*)start);
-		} else {
-			// there is no col_sep, is there a line_sep anywhere?
-			pline = memchr(start, line_sep, end - start);
-		}
-		// pline is either earlier than pcol or there was no pcol.
-		sep = pline ? pline : pcol;
-		if (sep) {
-			if (memchr(start, '\0', sep - (char*)start) != NULL) {
-				*err_msg = "NUL character not allowed in textual data";
-				return -40;
-			}
-			*sep_found = *sep;
-			*sep = 0;
-			return sep - (char*)start + 1;
-		} else {
-			*err_msg = "no column- or line separator found";
-			return -41;
-		}
+	// is there a col_sep anywhere?
+	char *pcol = memchr(start, col_sep, end - start);
+	char *pline;
+	if (pcol) {
+		// there is a col_sep. is there a line_sep before that?
+		pline = memchr(start, line_sep, pcol - (char*)start);
+	} else {
+		// there is no col_sep, is there a line_sep anywhere?
+		pline = memchr(start, line_sep, end - start);
 	}
+	// pline is either earlier than pcol or there was no pcol.
+	char *sep = pline ? pline : pcol;
+	if (sep) {
+		if (memchr(start, '\0', sep - (char*)start) != NULL) {
+			*err_msg = "NUL character not allowed in textual data";
+			return -40;
+		}
+		*sep_found = *sep;
+		*sep = 0;
+		return sep - (char*)start + 1;
+	} else {
+		*err_msg = "no column- or line separator found";
+		return -41;
+	}
+}
 
-	// go over it character by character and convert backslash escapes
+static int
+scan_unquoted_with_escapes(const char **err_msg, unsigned char *start, unsigned char *end, int col_sep, int line_sep, unsigned char *sep_found)
+{
 	unsigned const char *r = start;
 	unsigned char *w = start;
 	while (r < end) {
@@ -344,7 +343,10 @@ scan_field(struct scan_state *state, unsigned char *sep_found)
 		}
 	} else {
 		const char *err_msg = NULL;
-		nread = scan_unquoted(&err_msg, state->pos, state->end, state->col_sep, state->line_sep, state->escape_enabled, sep_found);
+		if (state->escape_enabled)
+			nread = scan_unquoted_with_escapes(&err_msg, state->pos, state->end, state->col_sep, state->line_sep, sep_found);
+		else
+			nread = scan_unquoted_no_escapes(&err_msg, state->pos, state->end, state->col_sep, state->line_sep, sep_found);
 		assert((nread < 0) == (err_msg != NULL));
 		if (err_msg)
 			return err_msg;
