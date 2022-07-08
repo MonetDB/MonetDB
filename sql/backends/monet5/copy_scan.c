@@ -205,49 +205,51 @@ scan_backslash_escape(const char **err_msg, unsigned char **rr, unsigned char **
 // a \0 character. Return the number of bytes scanned, or < 0 on error.
 // Never scan past 'end'. Reaching 'end' is considered an error.
 // Writes the number of bytes written, excluding the '\0', to '*nwritten'.
-static int
-scan_quoted(const char **err_msg, unsigned char *start, unsigned char *end, int quote, bool backslash_escapes, int *nwritten)
+static const char *
+scan_quoted(struct scan_state *state)
 {
-	if (end - start < 2) {
-		*err_msg = "incomplete quoted text at end";
-		return -30;
+	if (state->end - state->pos < 2) {
+		return "incomplete quoted text at end";
 	}
-	unsigned char *last = end - 1;
-	unsigned char *r = start + 1;
-	unsigned char *w = start;
+	unsigned char *last = state->end - 1;
+	unsigned char *w = state->pos;
 
-	while (r <= last) {
-		assert(w <= r);
-		if (*r == '\0') {
-			*err_msg = "NUL character not allowed in textual data";
-			return -31;
+	// skip the opening quote
+	assert(state->pos[0] == state->quote_char);
+	state->pos++;
+
+	while (state->pos <= last) {
+		assert(w <= state->pos);
+		if (state->pos[0] == '\0') {
+			return "NUL character not allowed in textual data";
 		}
-		if (*r == quote) {
-			if (r < last && r[1] == quote) {
+		if (state->pos[0] == state->quote_char) {
+			if (state->pos < last && state->pos[1] == state->quote_char) {
 				// doubled quote, write only one
-				*w++ = quote;
-				r += 2;
+				*w++ = state->quote_char;
+				state->pos += 2;
 				continue;
 			} else {
 				// end quote found
 				*w = '\0';
-				*nwritten = w - start;
-				return r - start + 1;
+				state->pos++;
+				return NULL;
 			}
-		} else if (backslash_escapes && *r == '\\') {
-			int ret = scan_backslash_escape(err_msg, &r, &w, end);
-			if (ret < 0)
-				return ret;
+		} else if (state->escape_enabled && state->pos[0] == '\\') {
+			const char *err_msg = NULL;
+			int ret = scan_backslash_escape(&err_msg, &state->pos, &w, state->end);
+			assert((ret < 0) == (err_msg != NULL));
+			if (err_msg)
+				return err_msg;
 			continue;
 		} else {
 			// Some other character
-			*w++ = *r++;
+			*w++ = *state->pos++;
 			continue;
 		}
 		assert(0 /* unreachable */);
 	}
-	*err_msg = "incomplete quoted text";
-	return -32;
+	return "incomplete quoted text";
 }
 
 // Scan the text pointed to by 'start', looking for occurrences of 'col_sep'
@@ -322,24 +324,20 @@ scan_field(struct scan_state *state, unsigned char *sep_found)
 {
 	assert(state->pos < state->end);
 
-	int nread;
 	if (state->quote_char && state->pos[0] == state->quote_char) {
-		int nwritten;
 		const char *err_msg = NULL;
-		nread = scan_quoted(&err_msg, state->pos, state->end, state->quote_char, state->escape_enabled, &nwritten);
-		assert((nread < 0) == (err_msg != NULL));
+		(void)scan_quoted;
+		err_msg = scan_quoted(state);
 		if (err_msg)
 			return err_msg;
-		// scan_quoted errors out if it reaches 'end' so we know 'pos[n]' exists
-		if (state->pos[nread] == state->col_sep || state->pos[nread] == state->line_sep) {
-			*sep_found = state->pos[nread];
-			// nread should include the separator
-			nread += 1;
+		// It's safe to access state->pos[0] because scan_quoted would have
+		// given an error if we'd reached 'end'.
+		if (state->pos[0] == state->col_sep || state->pos[0] == state->line_sep) {
+			*sep_found = *state->pos++;
 		} else {
 			return "end quote must be followed by separator";
 		}
 	} else {
-		nread = 0;
 		const char *err_msg = NULL;
 		if (state->escape_enabled) {
 			err_msg = scan_unquoted_with_escapes(state, sep_found);
@@ -349,8 +347,6 @@ scan_field(struct scan_state *state, unsigned char *sep_found)
 		if (err_msg)
 			return err_msg;
 	}
-
-	state->pos += nread;
 
 	return NULL;
 }
