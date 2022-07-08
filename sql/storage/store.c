@@ -2339,7 +2339,7 @@ store_manager(sqlstore *store)
 			break;
 
 		MT_thread_setworking("flushing");
-		while (store->logger_api.changes(store) > 0)
+		while (res == LOG_OK && store->logger_api.changes(store) > 0)
 			res = store_apply_deltas(store);
 
 		if (res != LOG_OK) {
