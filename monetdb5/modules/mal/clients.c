@@ -709,24 +709,24 @@ static str CLTbackendsum(str *ret, str *pw) {
 	return MAL_SUCCEED;
 }
 
-static str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	oid *ret = getArgReference_oid(stk, pci, 0);
-	str *usr = getArgReference_str(stk, pci, 1);
-	str *pw = getArgReference_str(stk, pci, 2);
+// static str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+// 	oid *ret = getArgReference_oid(stk, pci, 0);
+// 	str *usr = getArgReference_str(stk, pci, 1);
+// 	str *pw = getArgReference_str(stk, pci, 2);
+//
+// 	(void)mb;
+//
+// 	return AUTHaddUser(ret, cntxt, *usr, *pw);
+// }
 
-	(void)mb;
-
-	return AUTHaddUser(ret, cntxt, *usr, *pw);
-}
-
-static str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *usr;
-	(void)mb;
-
-	usr = getArgReference_str(stk, pci, 1);
-
-	return AUTHremoveUser(cntxt, *usr);
-}
+// static str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+// 	str *usr;
+// 	(void)mb;
+//
+// 	usr = getArgReference_str(stk, pci, 1);
+//
+// 	return AUTHremoveUser(cntxt, *usr);
+// }
 
 static str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = getArgReference_str(stk, pci, 0);
@@ -744,32 +744,32 @@ static str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	return AUTHgetPasswordHash(ret, cntxt, *user);
 }
 
-static str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *old = getArgReference_str(stk, pci, 1);
-	str *new = getArgReference_str(stk, pci, 2);
+// static str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+// 	str *old = getArgReference_str(stk, pci, 1);
+// 	str *new = getArgReference_str(stk, pci, 2);
+//
+// 	(void)mb;
+//
+// 	return AUTHchangeUsername(cntxt, *old, *new);
+// }
 
-	(void)mb;
+// static str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+// 	str *old = getArgReference_str(stk, pci, 1);
+// 	str *new = getArgReference_str(stk, pci, 2);
+//
+// 	(void)mb;
+//
+// 	return AUTHchangePassword(cntxt, *old, *new);
+// }
 
-	return AUTHchangeUsername(cntxt, *old, *new);
-}
-
-static str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *old = getArgReference_str(stk, pci, 1);
-	str *new = getArgReference_str(stk, pci, 2);
-
-	(void)mb;
-
-	return AUTHchangePassword(cntxt, *old, *new);
-}
-
-static str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *usr = getArgReference_str(stk, pci, 1);
-	str *new = getArgReference_str(stk, pci, 2);
-
-	(void)mb;
-
-	return AUTHsetPassword(cntxt, *usr, *new);
-}
+// static str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+// 	str *usr = getArgReference_str(stk, pci, 1);
+// 	str *new = getArgReference_str(stk, pci, 2);
+//
+// 	(void)mb;
+//
+// 	return AUTHsetPassword(cntxt, *usr, *new);
+// }
 
 static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = getArgReference_str(stk, pci, 1);
@@ -788,23 +788,23 @@ static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	return msg;
 }
 
-static str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	bat *ret1 = getArgReference_bat(stk, pci, 0);
-	bat *ret2 = getArgReference_bat(stk, pci, 1);
-	BAT *uid, *nme;
-	str tmp;
-
-	(void)mb;
-
-	tmp = AUTHgetUsers(&uid, &nme, cntxt);
-	if (tmp)
-		return tmp;
-	*ret1 = uid->batCacheid;
-	BBPkeepref(uid);
-	*ret2 = nme->batCacheid;
-	BBPkeepref(nme);
-	return(MAL_SUCCEED);
-}
+// static str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+// 	bat *ret1 = getArgReference_bat(stk, pci, 0);
+// 	bat *ret2 = getArgReference_bat(stk, pci, 1);
+// 	BAT *uid, *nme;
+// 	str tmp;
+//
+// 	(void)mb;
+//
+// 	tmp = AUTHgetUsers(&uid, &nme, cntxt);
+// 	if (tmp)
+// 		return tmp;
+// 	*ret1 = uid->batCacheid;
+// 	BBPkeepref(uid);
+// 	*ret2 = nme->batCacheid;
+// 	BBPkeepref(nme);
+// 	return(MAL_SUCCEED);
+// }
 
 str
 CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -1033,15 +1033,15 @@ mel_func clients_init_funcs[] = {
  command("clients", "sha2sum", CLTsha2sum, false, "Return hex string representation of the SHA-2 hash with bits of the given string", args(1,3, arg("",str),arg("pw",str),arg("bits",int))),
  command("clients", "ripemd160sum", CLTripemd160sum, false, "Return hex string representation of the RIPEMD160 hash of the given string", args(1,2, arg("",str),arg("pw",str))),
  command("clients", "backendsum", CLTbackendsum, false, "Return hex string representation of the currently used hash of the given string", args(1,2, arg("",str),arg("pw",str))),
- pattern("clients", "addUser", CLTaddUser, true, "Allow user with password access to the given scenarios", args(1,3, arg("",oid),arg("nme",str),arg("pw",str))),
- pattern("clients", "removeUser", CLTremoveUser, true, "Remove the given user from the system", args(1,2, arg("",void),arg("nme",str))),
+// pattern("clients", "addUser", CLTaddUser, true, "Allow user with password access to the given scenarios", args(1,3, arg("",oid),arg("nme",str),arg("pw",str))),
+ // pattern("clients", "removeUser", CLTremoveUser, true, "Remove the given user from the system", args(1,2, arg("",void),arg("nme",str))),
  pattern("clients", "getUsername", CLTgetUsername, false, "Return the username of the currently logged in user", args(1,1, arg("",str))),
  pattern("clients", "getPasswordHash", CLTgetPasswordHash, false, "Return the password hash of the given user", args(1,2, arg("",str),arg("user",str))),
- pattern("clients", "changeUsername", CLTchangeUsername, true, "Change the username of the user into the new string", args(1,3, arg("",void),arg("old",str),arg("new",str))),
- pattern("clients", "changePassword", CLTchangePassword, true, "Change the password for the current user", args(1,3, arg("",void),arg("old",str),arg("new",str))),
- pattern("clients", "setPassword", CLTsetPassword, true, "Set the password for the given user", args(1,3, arg("",void),arg("user",str),arg("pass",str))),
+ // pattern("clients", "changeUsername", CLTchangeUsername, true, "Change the username of the user into the new string", args(1,3, arg("",void),arg("old",str),arg("new",str))),
+// pattern("clients", "changePassword", CLTchangePassword, true, "Change the password for the current user", args(1,3, arg("",void),arg("old",str),arg("new",str))),
+// pattern("clients", "setPassword", CLTsetPassword, true, "Set the password for the given user", args(1,3, arg("",void),arg("user",str),arg("pass",str))),
  pattern("clients", "checkPermission", CLTcheckPermission, false, "Check permission for a user, requires hashed password (backendsum)", args(1,3, arg("",void),arg("usr",str),arg("pw",str))),
- pattern("clients", "getUsers", CLTgetUsers, false, "return a BAT with user id and one with name available in the system", args(2,2, batarg("",oid),batarg("",str))),
+// pattern("clients", "getUsers", CLTgetUsers, false, "return a BAT with user id and one with name available in the system", args(2,2, batarg("",oid),batarg("",str))),
  pattern("clients", "current_sessionid", CLTgetSessionID, false, "return current session ID", args(1,1, arg("",int))),
  { .imp=NULL }
 };
