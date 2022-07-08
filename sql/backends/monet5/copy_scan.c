@@ -146,17 +146,17 @@ scan_unicode_escape(const char **err_msg, unsigned char **rr, unsigned char **ww
 	return 0;
 }
 
-static int
-scan_backslash_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end)
+static const char *
+scan_backslash_escape(struct scan_state *state, unsigned char **ww)
 {
-	const unsigned char *r = *rr;
-	if (end - r < 2) {
-		*err_msg = "incomplete backslash escape sequence";
-		return -50;
+	if (state->end - state->pos < 2) {
+		return "incomplete backslash escape sequence";
 	}
-	assert(r[0] == '\\');
+	assert(state->pos[0] == '\\');
 	unsigned char c;
-	switch (r[1]) {
+	int n;
+	const char *err_msg = NULL;
+	switch (state->pos[1]) {
 		case '0':
 		case '1':
 		case '2':
@@ -165,13 +165,17 @@ scan_backslash_escape(const char **err_msg, unsigned char **rr, unsigned char **
 		case '5':
 		case '6':
 		case '7':
-			return scan_octal_escape(err_msg, rr, ww, end, r[1] - '0');
+			n = scan_octal_escape(&err_msg, &state->pos, ww, state->end, state->pos[1] - '0');
+			return n < 0 ? err_msg : NULL;
 		case 'x':
-			return scan_hex_escape(err_msg, rr, ww, end);
+			n = scan_hex_escape(&err_msg, &state->pos, ww, state->end);
+			return n < 0 ? err_msg : NULL;
 		case 'u':
-			return scan_unicode_escape(err_msg, rr, ww, end, 4);
+			n = scan_unicode_escape(&err_msg, &state->pos, ww, state->end, 4);
+			return n < 0 ? err_msg : NULL;
 		case 'U':
-			return scan_unicode_escape(err_msg, rr, ww, end, 8);
+			n = scan_unicode_escape(&err_msg, &state->pos, ww, state->end, 8);
+			return n < 0 ? err_msg : NULL;
 		case 'a':
 			c = '\a';
 			break;
@@ -191,9 +195,9 @@ scan_backslash_escape(const char **err_msg, unsigned char **rr, unsigned char **
 			c = '\t';
 			break;
 		default:
-			c = r[1];
+			c = state->pos[1];
 	}
-	*rr += 2;
+	state->pos += 2;
 	*(*ww)++ = c;
 	return 0;
 }
@@ -236,9 +240,7 @@ scan_quoted(struct scan_state *state)
 				return NULL;
 			}
 		} else if (state->escape_enabled && state->pos[0] == '\\') {
-			const char *err_msg = NULL;
-			int ret = scan_backslash_escape(&err_msg, &state->pos, &w, state->end);
-			assert((ret < 0) == (err_msg != NULL));
+			const char *err_msg = scan_backslash_escape(state, &w);
 			if (err_msg)
 				return err_msg;
 			continue;
@@ -300,9 +302,7 @@ scan_unquoted_with_escapes(struct scan_state *state, unsigned char *sep_found)
 			return NULL;
 		}
 		if (*state->pos == '\\') {
-			const char *err_msg = NULL;
-			int ret = scan_backslash_escape(&err_msg, &state->pos, &w, state->end);
-			assert((ret < 0) == (err_msg != NULL));
+			const char *err_msg = scan_backslash_escape(state, &w);
 			if (err_msg)
 				return err_msg;
 		} else {
