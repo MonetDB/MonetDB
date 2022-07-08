@@ -2339,7 +2339,8 @@ store_manager(sqlstore *store)
 			break;
 
 		MT_thread_setworking("flushing");
-		res = store_apply_deltas(store);
+		while (store->logger_api.changes(store) > 0)
+			res = store_apply_deltas(store);
 
 		if (res != LOG_OK) {
 			MT_lock_unset(&store->flush);
