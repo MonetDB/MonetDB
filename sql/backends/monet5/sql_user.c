@@ -113,7 +113,7 @@ getUserNameCallback(Client c)
 static str
 getUserPasswordCallback(Client c, const char *user)
 {
-	str res;
+	str res = NULL;
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
@@ -122,10 +122,9 @@ getUserPasswordCallback(Client c, const char *user)
 			oid rid = getUserOIDByName(m, user);
 			res = getUserPassword(m, rid);
 			sql_trans_end(m->session, SQL_OK);
-			return res;
 		}
 	}
-	return NULL;
+	return res;
 }
 
 
@@ -515,21 +514,21 @@ monet5_find_user(ptr mp, str user)
 	// return (p == BUN_NONE ? -1 : 1);
 }
 
-str
-db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat *r = getArgReference_bat(stk, pci, 0);
-	BAT *uid, *nme;
-	str err;
-
-	(void) mb;
-	if ((err = AUTHgetUsers(&uid, &nme, cntxt)) != MAL_SUCCEED)
-		return err;
-	BBPunfix(uid->batCacheid);
-	*r = nme->batCacheid;
-	BBPkeepref(nme);
-	return MAL_SUCCEED;
-}
+// str
+// db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+// {
+// 	bat *r = getArgReference_bat(stk, pci, 0);
+// 	BAT *uid, *nme;
+// 	str err;
+//
+// 	(void) mb;
+// 	if ((err = AUTHgetUsers(&uid, &nme, cntxt)) != MAL_SUCCEED)
+// 		return err;
+// 	BBPunfix(uid->batCacheid);
+// 	*r = nme->batCacheid;
+// 	BBPkeepref(nme);
+// 	return MAL_SUCCEED;
+// }
 
 
 str
