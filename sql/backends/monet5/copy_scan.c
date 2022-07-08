@@ -13,41 +13,38 @@
 #include "copy.h"
 #include "rel_copy.h"
 
-static int
-scan_octal_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end, int c)
+static const char *
+scan_octal_escape(struct scan_state *state, unsigned char **ww, int acc)
 {
-	unsigned char *r = *rr + 2;
-	if (r >= end || *r < '0' || *r > '7')
+	state->pos += 2;
+
+	if (state->pos >= state->end || state->pos[0] < '0' || state->pos[0] > '7')
 		goto end;
-	c = 8 * c + *r - '0';
-	r++;
-	if (r >= end || *r < '0' || *r > '7')
+	acc = 8 * acc + *state->pos++ - '0';
+	if (state->pos >= state->end || state->pos[0] < '0' || state->pos[0] > '7')
 		goto end;
-	c = 8 * c + *r - '0';
-	r++;
+	acc = 8 * acc + *state->pos++ - '0';
 end:
-	if (c > 0xFF) {
-		*err_msg = "octal escape out of range";
-		return -1;
+	if (acc > 0xFF) {
+		return "octal escape out of range";
 	}
-	if (c == 0) {
-		*err_msg = "\\000 is not a valid octal escape";
-		return -1;
+	if (acc == 0) {
+		return "\\000 is not a valid octal escape";
 	}
-	*rr = r;
-	*(*ww)++ = c;
-	return 0;
+
+	*(*ww)++ = acc;
+	return NULL;
 }
 
 static int
-one_hex_digit(const char **err_msg, unsigned char **rr, unsigned char *end)
+one_hex_digit(const char **err_msg, struct scan_state *state)
 {
-	if (*rr >= end) {
+	if (state->pos >= state->end) {
 		// this only occurs if for example the buffer ends in '\\' 'x'.
 		*err_msg = "incomplete hex sequence";
 		return -1;
 	}
-	unsigned int d = **rr;
+	unsigned int d = state->pos[0];
 	unsigned int d0 = d - '0';
 	unsigned int da = d - 'a';
 	unsigned int dA = d - 'A';
@@ -58,7 +55,7 @@ one_hex_digit(const char **err_msg, unsigned char **rr, unsigned char *end)
 
 	// If it's not a hex digit, v will be 0, otherwise it will be 1 too high
 	if (v > 0) {
-		*rr += 1;
+		state->pos++;
 		return v - 1;
 	} else {
 		*err_msg = "incomplete hex sequence";
@@ -66,27 +63,28 @@ one_hex_digit(const char **err_msg, unsigned char **rr, unsigned char *end)
 	}
 }
 
-static int
-scan_hex_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end)
+static const char *
+scan_hex_escape(struct scan_state *state, unsigned char **ww)
 {
+	const char *err_msg = NULL;
 	int acc;
-	*rr += 2;
-	int d = one_hex_digit(err_msg, rr, end);
-	if (d < 0)
-		return d;
+	state->pos += 2;
+	int d = one_hex_digit(&err_msg, state);
+	assert((d < 0) == (err_msg != NULL));
+	if (err_msg)
+		return err_msg;
 	acc = d;
-	d = one_hex_digit(err_msg, rr, end);
-	if (d < 0)
-		return d;
+	d = one_hex_digit(&err_msg, state);
+	assert((d < 0) == (err_msg != NULL));
+	if (err_msg)
+		return err_msg;
 	acc = 16 * acc + d;
 
 	assert(acc >= 0);
 	assert(acc < 0xFF);
-	if (acc == 0) {
-		*err_msg = "\\x00 is not a valid hex escape";
-		return -1;
-	}
-	// rr has already been updated by one_hex_digit
+	if (acc == 0)
+		return "\\x00 is not a valid hex escape";
+
 	*(*ww)++ = acc;
 	return 0;
 }
@@ -99,27 +97,28 @@ utf8cont(unsigned int n, int shift)
 	n = n | 0x80; // 0x80 == 0b1000_0000
 	return n;
 }
-static int
-scan_unicode_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end, int digits)
+
+static const char *
+scan_unicode_escape(struct scan_state *state, unsigned char **ww, int digits)
 {
 	unsigned int acc = 0;
-	*rr += 2;
-	if (end - *rr < digits) {
-		*err_msg = "incomplete unicode hex sequence";
-		return -1;
+	state->pos += 2;
+	if (state->end - state->pos < digits) {
+		return "incomplete unicode hex sequence";
 	}
 	for (int i = 0; i < digits; i++) {
-		int d = one_hex_digit(err_msg, rr, end);
-		if (d < 0)
-			return d;
+		const char *err_msg = NULL;
+		int d = one_hex_digit(&err_msg, state);
+		assert((d < 0) == (err_msg != NULL));
+		if (err_msg)
+			return err_msg;
 		acc = 16 * acc + d;
 	}
 	if (acc == 0) {
 		if (digits == 8)
-			*err_msg = "\\U00000000 is not a valid unicode escape";
+			return "\\U00000000 is not a valid unicode escape";
 		else
-			*err_msg = "\\u0000 is not a valid unicode escape";
-		return -1;
+			return "\\u0000 is not a valid unicode escape";
 	}
 	else if (acc <      0x80) {
 		*(*ww)++ = acc;
@@ -131,8 +130,7 @@ scan_unicode_escape(const char **err_msg, unsigned char **rr, unsigned char **ww
 		*(*ww)++ = utf8cont(acc, 6);
 		*(*ww)++ = utf8cont(acc, 0);
 	} else if (acc <  0xE000) {
-		*err_msg = "invalid unicode escape, it denotes a surrogate halve";
-		return -1;
+		return "invalid unicode escape, it denotes a surrogate halve";
 	} else if (acc < 0x10000) {
 		*(*ww)++ = (acc >> 12) | 0xE0; //   0xE0 == 0b1110_0000
 		*(*ww)++ = utf8cont(acc, 6);
@@ -143,7 +141,7 @@ scan_unicode_escape(const char **err_msg, unsigned char **rr, unsigned char **ww
 		*(*ww)++ = utf8cont(acc, 6);
 		*(*ww)++ = utf8cont(acc, 0);
 	}
-	return 0;
+	return NULL;
 }
 
 static const char *
@@ -154,8 +152,6 @@ scan_backslash_escape(struct scan_state *state, unsigned char **ww)
 	}
 	assert(state->pos[0] == '\\');
 	unsigned char c;
-	int n;
-	const char *err_msg = NULL;
 	switch (state->pos[1]) {
 		case '0':
 		case '1':
@@ -165,17 +161,13 @@ scan_backslash_escape(struct scan_state *state, unsigned char **ww)
 		case '5':
 		case '6':
 		case '7':
-			n = scan_octal_escape(&err_msg, &state->pos, ww, state->end, state->pos[1] - '0');
-			return n < 0 ? err_msg : NULL;
+			return scan_octal_escape(state, ww, state->pos[1] - '0');
 		case 'x':
-			n = scan_hex_escape(&err_msg, &state->pos, ww, state->end);
-			return n < 0 ? err_msg : NULL;
+			return scan_hex_escape(state, ww);
 		case 'u':
-			n = scan_unicode_escape(&err_msg, &state->pos, ww, state->end, 4);
-			return n < 0 ? err_msg : NULL;
+			return scan_unicode_escape(state, ww, 4);
 		case 'U':
-			n = scan_unicode_escape(&err_msg, &state->pos, ww, state->end, 8);
-			return n < 0 ? err_msg : NULL;
+			return scan_unicode_escape(state, ww, 8);
 		case 'a':
 			c = '\a';
 			break;
