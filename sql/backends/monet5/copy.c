@@ -379,7 +379,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.escape_pending = false,
 	};
 
-	assert(pci->argc == pci->retc + 8);
+	assert(pci->argc == pci->retc + 9);
 	bat block_bat_id = *getArgReference_bat(stk, pci, pci->retc + 0);
 	lng starting_row = *getArgReference_lng(stk, pci, pci->retc + 1);
 	lng line_count = *getArgReference_lng(stk, pci, pci->retc + 2);
@@ -387,9 +387,10 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str line_sep_str = *getArgReference_str(stk, pci, pci->retc + 4);
 	str quote_str = *getArgReference_str(stk, pci, pci->retc + 5);
 	str null_repr = *getArgReference_str(stk, pci, pci->retc + 6);
-	state.escape_enabled = *getArgReference_bit(stk, pci, pci->retc + 7);
+	bool best_effort = *getArgReference_bit(stk, pci, pci->retc + 7);
+	state.escape_enabled = *getArgReference_bit(stk, pci, pci->retc + 8);
 
-	copy_init_error_handling(&errors, false, starting_row, -1, NULL);
+	copy_init_error_handling(&errors, best_effort, starting_row, -1, NULL);
 
 	state.line_sep = get_sep_char(line_sep_str, state.escape_enabled);
 	if (state.line_sep <= 0) // 0 not ok
@@ -524,9 +525,9 @@ static mel_func copy_init_funcs[] = {
 	batarg("new_left", bte), batarg("new_right", bte), arg("linecount", lng),
 	batarg("left", bte), batarg("right", bte), arg("linesep", str), arg("quote", str), arg("escape", bit), arg("besteffort", bit), arg("startingrow", lng), arg("maxrows", lng)
  )),
- pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1, 9,
+ pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1, 10,
 	batvararg("", int),
-	batarg("block", bte), arg("startingrow", lng), arg("linecount", lng), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), arg("escape", bit)
+	batarg("block", bte), arg("startingrow", lng), arg("linecount", lng), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), arg("besteffort", bit), arg("escape", bit)
  )),
 
  command("copy", "trackrowids", COPYtrackrowids, true, "keep track of newly claimed rows", args(2, 6,

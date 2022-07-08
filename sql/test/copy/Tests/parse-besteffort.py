@@ -84,3 +84,17 @@ tc = (TestCase("I INT, t TEXT", testdata, besteffort=True, raw=True, blocksize=1
     .expect_reject(6, None, "unterminated")
 )
 run_test(tc)
+
+
+# Test the basic mechanism where a scan failure results in nils for the whole row
+testdata = r"""a|b|c
+d|e\x|f
+g|h|i
+"""
+tc = (TestCase("s TEXT, t TEXT, u TEXT", testdata, besteffort=True)
+    .expect_reject(2, 2, "incomplete hex")
+    .expect_value(0, 0, 'd')
+    # skipped line 2
+    .expect_value(1, 0, 'g')
+)
+run_test(tc)

@@ -452,6 +452,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushArgument(mb, q, var_null_representation);
+	q = pushArgument(mb, q, var_best_effort);
 	q = pushArgument(mb, q, var_escape);
 	InstrPtr splitlines_instr = q;
 
