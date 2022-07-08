@@ -14,9 +14,9 @@
 #include "rel_copy.h"
 
 static int
-scan_octal_escape(const char **err_msg, const unsigned char **rr, unsigned char **ww, unsigned char *end, int c)
+scan_octal_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end, int c)
 {
-	const unsigned char *r = *rr + 2;
+	unsigned char *r = *rr + 2;
 	if (r >= end || *r < '0' || *r > '7')
 		goto end;
 	c = 8 * c + *r - '0';
@@ -40,7 +40,7 @@ end:
 }
 
 static int
-one_hex_digit(const char **err_msg, const unsigned char **rr, unsigned char *end)
+one_hex_digit(const char **err_msg, unsigned char **rr, unsigned char *end)
 {
 	if (*rr >= end) {
 		// this only occurs if for example the buffer ends in '\\' 'x'.
@@ -67,7 +67,7 @@ one_hex_digit(const char **err_msg, const unsigned char **rr, unsigned char *end
 }
 
 static int
-scan_hex_escape(const char **err_msg, const unsigned char **rr, unsigned char **ww, unsigned char *end)
+scan_hex_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end)
 {
 	int acc;
 	*rr += 2;
@@ -100,7 +100,7 @@ utf8cont(unsigned int n, int shift)
 	return n;
 }
 static int
-scan_unicode_escape(const char **err_msg, const unsigned char **rr, unsigned char **ww, unsigned char *end, int digits)
+scan_unicode_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end, int digits)
 {
 	unsigned int acc = 0;
 	*rr += 2;
@@ -147,7 +147,7 @@ scan_unicode_escape(const char **err_msg, const unsigned char **rr, unsigned cha
 }
 
 static int
-scan_backslash_escape(const char **err_msg, unsigned const char **rr, unsigned char **ww, unsigned char *end)
+scan_backslash_escape(const char **err_msg, unsigned char **rr, unsigned char **ww, unsigned char *end)
 {
 	const unsigned char *r = *rr;
 	if (end - r < 2) {
@@ -213,7 +213,7 @@ scan_quoted(const char **err_msg, unsigned char *start, unsigned char *end, int 
 		return -30;
 	}
 	unsigned char *last = end - 1;
-	const unsigned char *r = start + 1;
+	unsigned char *r = start + 1;
 	unsigned char *w = start;
 
 	while (r <= last) {
@@ -285,32 +285,30 @@ scan_unquoted_no_escapes(const char **err_msg, unsigned char *start, unsigned ch
 	}
 }
 
-static int
-scan_unquoted_with_escapes(const char **err_msg, unsigned char *start, unsigned char *end, int col_sep, int line_sep, unsigned char *sep_found)
+static const char *
+scan_unquoted_with_escapes(struct scan_state *state, unsigned char *sep_found)
 {
-	unsigned const char *r = start;
-	unsigned char *w = start;
-	while (r < end) {
-		if (*r == '\0') {
-			*err_msg = "NUL character not allowed in textual data";
-			return -42;
+	unsigned char *w = state->pos;
+	while (state->pos < state->end) {
+		if (*state->pos == '\0') {
+			return "NUL character not allowed in textual data";
 		}
-		if (*r == col_sep || *r == line_sep) {
-			*sep_found = *r;
+		if (*state->pos == state->col_sep || *state->pos == state->line_sep) {
+			*sep_found = *state->pos++;
 			*w = 0;
-			return r - start + 1;
+			return NULL;
 		}
-		if (*r == '\\') {
-			int ret = scan_backslash_escape(err_msg, &r, &w, end);
-			if (ret < 0)
-				return ret;
+		if (*state->pos == '\\') {
+			const char *err_msg = NULL;
+			int ret = scan_backslash_escape(&err_msg, &state->pos, &w, state->end);
+			assert((ret < 0) == (err_msg != NULL));
+			if (err_msg)
+				return err_msg;
 		} else {
-			*w++ = *r++;
+			*w++ = *state->pos++;
 		}
 	}
-	// no sep found is an error
-	*err_msg = "no column- or line separator found";
-	return -43;
+	return "no column- or line separator found";
 }
 
 // Scan the text pointed to by 'start' up to the first occurrence of either
@@ -343,18 +341,19 @@ scan_field(struct scan_state *state, unsigned char *sep_found)
 		}
 	} else {
 		const char *err_msg = NULL;
-		if (state->escape_enabled)
-			nread = scan_unquoted_with_escapes(&err_msg, state->pos, state->end, state->col_sep, state->line_sep, sep_found);
-		else
+		if (state->escape_enabled) {
+			nread = 0;
+			err_msg = scan_unquoted_with_escapes(state, sep_found);
+		} else {
 			nread = scan_unquoted_no_escapes(&err_msg, state->pos, state->end, state->col_sep, state->line_sep, sep_found);
-		assert((nread < 0) == (err_msg != NULL));
+			assert((nread < 0) == (err_msg != NULL));
+		}
 		if (err_msg)
 			return err_msg;
 	}
 
 	state->pos += nread;
 
-	assert(nread > 0); // the separator, if nothing else
 	return NULL;
 }
 
