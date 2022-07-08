@@ -318,7 +318,6 @@ scan_field(struct scan_state *state, unsigned char *sep_found)
 
 	if (state->quote_char && state->pos[0] == state->quote_char) {
 		const char *err_msg = NULL;
-		(void)scan_quoted;
 		err_msg = scan_quoted(state);
 		if (err_msg)
 			return err_msg;
@@ -343,6 +342,39 @@ scan_field(struct scan_state *state, unsigned char *sep_found)
 	return NULL;
 }
 
+static gdk_return
+check_row_end(
+	struct error_handling *errors, struct scan_state *state,
+	int row, int col, int ncols, unsigned char sep)
+{
+	if (col == ncols - 1) {
+		// Last column. Expect LINE_SEP or COL_SEP LINE_SEP
+		if (sep == state->line_sep) {
+			return GDK_SUCCEED;
+		} else if (sep == state->col_sep) {
+			assert(state->pos > state->start && state->pos[-1] == '\0');
+			if (state->pos < state->end && state->pos[0] == state->line_sep) {
+				state->pos++;
+				return GDK_SUCCEED;
+			} else {
+				return copy_report_error(errors, row, -1, "too many fields, expected %d but found more", ncols);
+			}
+		}
+	} else {
+		// Not the last column. Expect COL_SEP
+		if (sep == state->col_sep) {
+			return GDK_SUCCEED;
+		} else if (sep == state->line_sep) {
+			return copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
+		} else {
+			copy_report_error(errors, row, col, "internal error: found %d while col_sep is %d and line_sep is %d", sep, state->col_sep, state->line_sep);
+			return GDK_FAIL;
+		}
+	}
+	assert(0 && "unreachable");
+	return GDK_FAIL;
+}
+
 // Scan the memory 'start' .. 'end' for fields, unquoting and unescaping.
 // Place the index of each field in the appropriate index array.
 // 'ncols' is the number of columns. 'columns' is a pointer to an array of
@@ -362,67 +394,61 @@ scan_fields(
 	size_t null_repr_len = null_repr ? strlen(null_repr) : 0;
 	while (state->pos < state->end && row < nrows) {
 		unsigned char sep = 0;
+		int field_offset;
+		bool ok;
 
-		bool is_null = (
+		bool field_is_null = (
 			null_repr
 			&& state->pos + null_repr_len < state->end
 			&& (state->pos[null_repr_len] == state->col_sep || state->pos[null_repr_len] == state->line_sep)
 			&& strncasecmp((char*)state->pos, null_repr, null_repr_len) == 0
 		);
 
-		int field;
-		const char *err_msg = NULL;
-		if (is_null) {
-			field = int_nil;
+		if (field_is_null) {
+			field_offset = int_nil;
 			sep = state->pos[null_repr_len];
 			state->pos += null_repr_len + 1;
 		} else {
-			field = state->pos - state->start;
-			err_msg = scan_field(state, &sep);
-		}
-		if (err_msg) {
-			copy_report_error(errors, row, col, "%s", err_msg);
-			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
-		}
-		bool last_col = col == ncols - 1;
-		bool ok;
-		if (!last_col) {
-			if (sep == state->col_sep) {
+			field_offset = state->pos - state->start;
+			const char *err_msg = scan_field(state, &sep);
+			if (err_msg == NULL) {
 				ok = true;
-			} else if (sep == state->line_sep) {
-				copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
-				ok = false;
 			} else {
-				// it must have found a separator, doesn't it?
-				throw(MAL, "copy.splitlines", "internal error: found %d while col sep is %d and line sep is %d", sep, state->col_sep, state->line_sep);
-			}
-		} else {
-			if (sep == state->line_sep) {
-				ok = true;
-			} else if (sep == state->col_sep) {
-				// Special case: col_sep followed by line_sep as in TPC-H.
-				// So the column separator is really a column terminator.
-				// n bytes have been consumed so p[n-1] is 0.
-				assert(state->pos > state->start && state->pos[-1] == '\0');
-				if (state->pos < state->end  && state->pos[0] == state->line_sep) {
-					state->pos++;
-					ok = true;
-				} else {
-					copy_report_error(errors, row, -1, "too many fields, expected %d but found more", ncols);
-					ok = false;
-				}
+				copy_report_error(errors, row, col, "%s", err_msg);
+				ok = false;
 			}
 		}
-		if (!ok) {
+
+		if (ok)
+			ok = check_row_end(errors, state, row, col, ncols, sep);
+
+		if (ok) {
+			// The happy path.  Store the field and advance row and col.
+			columns[col][row] = field_offset;
+			if (col < ncols - 1) {
+				col += 1;
+			} else {
+				row += 1;
+				col = 0;
+			}
+			continue;
+		}
+
+		// An error has occurred. BEST EFFORT determines if we want to stop right now
+		const char *err = copy_check_too_many_errors(errors, "copy.splitlines");
+		if (err) {
+			// Bail out now
 			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
 		}
-		columns[col][row] = field;
-		if (last_col) {
-			row += 1;
-			col = 0;
-		} else {
-			col += 1;
-		}
+
+		// We must be in BEST EFFORT mode.
+		// Set all fields to nil and advance to the next line
+		for (int i = 0; i < ncols; i++)
+			columns[i][row] = int_nil;
+		col = 0;
+		row += 1;
+		if (find_end_of_line(state))
+			state->pos++;
 	}
 
 	assert(state->pos == state->end || row == nrows);

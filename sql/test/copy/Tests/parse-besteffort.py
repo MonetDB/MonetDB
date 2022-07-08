@@ -93,8 +93,11 @@ g|h|i
 """
 tc = (TestCase("s TEXT, t TEXT, u TEXT", testdata, besteffort=True)
     .expect_reject(2, 2, "incomplete hex")
-    .expect_value(0, 0, 'd')
+    .expect_value(0, 0, 'a')
+    .expect_value(1, 0, None)
+    .expect_value(1, 1, None)
+    .expect_value(1, 2, None)
     # skipped line 2
-    .expect_value(1, 0, 'g')
+    .expect_value(2, 0, 'g')
 )
 run_test(tc)
