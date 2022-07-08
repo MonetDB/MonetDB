@@ -365,13 +365,11 @@ scan_field(const char **err_msg, unsigned char *start, unsigned char *end, int c
 // Note: we must do the NULL check BEFORE processing quotes and backslashes!
 str
 scan_fields(
-	struct error_handling *errors,
-	char *data_start, int skip_amount, char *data_end,
-	int col_sep, int line_sep, int quote, bool backslash_escapes, char *null_repr,
-	int ncols, int nrows, int **columns)
+	struct error_handling *errors, struct scan_state *state,
+	char *null_repr, int ncols, int nrows, int **columns)
 {
-	unsigned char *p = (unsigned char*)&data_start[skip_amount];
-	unsigned char *end = (unsigned char*)data_end;
+	const unsigned char *p = state->pos;
+	const unsigned char *end = state->end;
 	int row = 0;
 	int col = 0;
 	const char *err_msg = NULL;
@@ -383,7 +381,7 @@ scan_fields(
 		bool is_null = (
 			null_repr
 			&& p + null_repr_len < end
-			&& (p[null_repr_len] == col_sep || p[null_repr_len] == line_sep)
+			&& (p[null_repr_len] == state->col_sep || p[null_repr_len] == state->line_sep)
 			&& strncasecmp((char*)p, null_repr, null_repr_len) == 0
 		);
 
@@ -391,7 +389,7 @@ scan_fields(
 			sep = p[null_repr_len];
 			n = null_repr_len + 1;
 		} else {
-			n = scan_field(&err_msg, p, end, col_sep, line_sep, quote, backslash_escapes, &sep);
+			n = scan_field(&err_msg, (unsigned char*)p, (unsigned char*)end, state->col_sep, state->line_sep, state->quote_char, state->escape_enabled, &sep);
 		}
 		assert(n != 0);
 		assert((n < 0) == (err_msg != NULL));
@@ -402,24 +400,24 @@ scan_fields(
 		bool last_col = col == ncols - 1;
 		bool ok;
 		if (!last_col) {
-			if (sep == col_sep) {
+			if (sep == state->col_sep) {
 				ok = true;
-			} else if (sep == line_sep) {
+			} else if (sep == state->line_sep) {
 				copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
 				ok = false;
 			} else {
 				// if scan_field returned >=0 it must have found a separator, doesn't it?
-				throw(MAL, "copy.splitlines", "internal error: found %d while col sep is %d and line sep is %d", sep, col_sep, line_sep);
+				throw(MAL, "copy.splitlines", "internal error: found %d while col sep is %d and line sep is %d", sep, state->col_sep, state->line_sep);
 			}
 		} else {
-			if (sep == line_sep) {
+			if (sep == state->line_sep) {
 				ok = true;
-			} else if (sep == col_sep) {
+			} else if (sep == state->col_sep) {
 				// Special case: col_sep followed by line_sep as in TPC-H.
 				// So the column separator is really a column terminator.
 				// n bytes have been consumed so p[n-1] is 0.
 				assert(p[n - 1] == '\0');
-				if (p + n < end && p[n] == line_sep) {
+				if (p + n < end && p[n] == state->line_sep) {
 					n += 1; // skip the col_sep
 					ok = true;
 				} else {
@@ -431,7 +429,7 @@ scan_fields(
 		if (!ok) {
 			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
 		}
-		int field = is_null ? int_nil : ((char*)p - data_start);
+		int field = is_null ? int_nil : p - state->start;
 		columns[col][row] = field;
 		p += n;
 		if (last_col) {

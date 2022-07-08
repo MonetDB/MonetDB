@@ -181,11 +181,11 @@ COPYfixlines(
 		.escape_pending = false,
 	};
 	BAT *left = NULL, *right = NULL;
-	const char *left_data, *right_data;
+	const unsigned char *left_data, *right_data;
 	int left_size, left_start, right_size;
 	BAT *new_left = NULL, *new_right = NULL;
 	int newline_count = 0;
-	const char *latest_newline;
+	const unsigned char *latest_newline;
 
 	copy_init_error_handling(&errors, *best_effort, starting_row, -1, NULL);
 
@@ -221,6 +221,7 @@ COPYfixlines(
 	dump_block("fixlines incoming right", right);
 #endif
 
+	state.start = left_data;
 	state.pos = left_data + left_start;
 	state.end = left_data + left_size;
 
@@ -290,6 +291,7 @@ COPYfixlines(
 
 	// We have to borrow some data from the next block to complete the final line.
 	// Determine how much.
+	state.start = right_data;
 	state.pos = right_data;
 	state.end = right_data + right_size;
 	if (find_end_of_line(&state)) {
@@ -370,8 +372,12 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT **return_bats = NULL;
 	int **return_indices = NULL;
 	int ncols = pci->retc;
-	int line_sep, col_sep, quote;
 	struct error_handling errors;
+	struct scan_state state = {
+		// most fields are initialized below
+		.quoted = false,
+		.escape_pending = false,
+	};
 
 	assert(pci->argc == pci->retc + 8);
 	bat block_bat_id = *getArgReference_bat(stk, pci, pci->retc + 0);
@@ -381,18 +387,18 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str line_sep_str = *getArgReference_str(stk, pci, pci->retc + 4);
 	str quote_str = *getArgReference_str(stk, pci, pci->retc + 5);
 	str null_repr = *getArgReference_str(stk, pci, pci->retc + 6);
-	bool backslash_escapes = *getArgReference_bit(stk, pci, pci->retc + 7);
+	state.escape_enabled = *getArgReference_bit(stk, pci, pci->retc + 7);
 
 	copy_init_error_handling(&errors, false, starting_row, -1, NULL);
 
-	line_sep = get_sep_char(line_sep_str, backslash_escapes);
-	if (line_sep <= 0) // 0 not ok
+	state.line_sep = get_sep_char(line_sep_str, state.escape_enabled);
+	if (state.line_sep <= 0) // 0 not ok
 		bailout("copy.splitlines", SQLSTATE(42000) "invalid line separator");
-	col_sep = get_sep_char(col_sep_str, backslash_escapes);
-	if (col_sep <= 0) // 0 is not ok
+	state.col_sep = get_sep_char(col_sep_str, state.escape_enabled);
+	if (state.col_sep <= 0) // 0 is not ok
 		bailout("copy.splitlines", SQLSTATE(42000) "invalid column separator");
-	quote = get_sep_char(quote_str, backslash_escapes);
-	if (quote < 0) // 0 is ok
+	state.quote_char = get_sep_char(quote_str, state.escape_enabled);
+	if (state.quote_char < 0) // 0 is ok
 		bailout("copy.splitlines", SQLSTATE(42000) "invalid quote character");
 
 	if (strNil(null_repr))
@@ -400,6 +406,9 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((block_bat = BATdescriptor(block_bat_id)) == NULL)
 		bailout("copy.splitlines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	state.start = Tloc(block_bat, 0);
+	state.pos = Tloc(block_bat, block_bat->batInserted);
+	state.end = Tloc(block_bat, BATcount(block_bat));
 
 	assert( (line_count == 0) == (BATcount(block_bat) == block_bat->batInserted) );
 
@@ -419,11 +428,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef BLOCK_DEBUG
 	dump_block("splitlines", block_bat);
 #endif
-	msg = scan_fields(&errors,
-		Tloc(block_bat, 0), (int)block_bat->batInserted, Tloc(block_bat, BATcount(block_bat)),
-		col_sep, line_sep, quote, backslash_escapes, null_repr,
-		ncols, line_count,
-		return_indices);
+	msg = scan_fields(&errors, &state, null_repr, ncols, line_count, return_indices);
 	if (msg != MAL_SUCCEED)
 		goto end;
 

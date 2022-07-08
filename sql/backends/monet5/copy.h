@@ -65,11 +65,24 @@ struct decimal_parms {
 	int scale;
 };
 
+struct scan_state {
+	// these remain constant
+	int quote_char;
+	int line_sep;
+	int col_sep;
+	bool escape_enabled;
+	const unsigned char *start;
+	const unsigned char *end;
+	// these are updated
+	const unsigned char *pos;
+	unsigned char *wr;
+	bool quoted;
+	bool escape_pending;
+};
+
 extern str scan_fields(
-	struct error_handling *errors,
-	char *data_start, int skip_amount, char *data_end,
-	int col_sep, int line_sep, int quote, bool backslash_escapes, char *null_repr,
-	int ncols, int nrows, int **columns);
+	struct error_handling *errors, struct scan_state *state,
+	char *null_repr, int ncols, int nrows, int **columns);
 
 extern str COPYset_blocksize(int *dummy, int *blocksize);
 extern str COPYget_blocksize(int *blocksize);
@@ -92,18 +105,6 @@ void dump_block(const char *msg, BAT *b);
 #endif
 
 
-struct scan_state {
-	// these remain constant
-	int quote_char;
-	int line_sep;
-	bool escape_enabled;
-	const char *end;
-	// these are updated
-	const char *pos;
-	bool quoted;
-	bool escape_pending;
-};
-
 static inline bool
 find_end_of_line(struct scan_state *st)
 {
@@ -111,9 +112,9 @@ find_end_of_line(struct scan_state *st)
 	int quote_char = st->quote_char;
 	int line_sep = st->line_sep;
 	bool escape_enabled = st->escape_enabled;
-	const char *end = st->end;
+	const unsigned char *end = st->end;
 	// these are updated
-	const char *pos = st->pos;
+	const unsigned char *pos = st->pos;
 	bool quoted = st->quoted;
 	bool escape_pending = st->escape_pending;
 
