@@ -144,7 +144,7 @@ AUTHrequireAdmin(Client cntxt) {
 static void
 AUTHcommit(void)
 {
-	bat blist[9];
+	bat blist[6];
 
 	blist[0] = 0;
 
@@ -155,16 +155,16 @@ AUTHcommit(void)
 	// assert(duser);
 	// blist[3] = duser->batCacheid;
 	assert(rt_key);
-	blist[4] = rt_key->batCacheid;
+	blist[1] = rt_key->batCacheid;
 	assert(rt_uri);
-	blist[5] = rt_uri->batCacheid;
+	blist[2] = rt_uri->batCacheid;
 	assert(rt_remoteuser);
-	blist[6] = rt_remoteuser->batCacheid;
+	blist[3] = rt_remoteuser->batCacheid;
 	assert(rt_hashedpwd);
-	blist[7] = rt_hashedpwd->batCacheid;
+	blist[4] = rt_hashedpwd->batCacheid;
 	assert(rt_deleted);
-	blist[8] = rt_deleted->batCacheid;
-	TMsubcommit_list(blist, NULL, 9, getBBPlogno(), getBBPtransid());
+	blist[5] = rt_deleted->batCacheid;
+	TMsubcommit_list(blist, NULL, 6, getBBPlogno(), getBBPtransid());
 }
 
 /*
