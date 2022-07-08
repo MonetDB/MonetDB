@@ -88,6 +88,8 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 	if (USRstats[idx].username == NULL || USRstats[idx].user != cntxt->user || strcmp(USRstats[idx].username, cntxt->username) != 0) {
 		if (USRstats[idx].username)
 			GDKfree(USRstats[idx].username);
+		if (USRstats[idx].maxquery)
+			GDKfree(USRstats[idx].maxquery);
 		clearUSRstats(idx);
 		USRstats[idx].user = cntxt->user;
 		USRstats[idx].username = GDKstrdup(cntxt->username);
@@ -98,7 +100,8 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 		USRstats[idx].started = started;
 		USRstats[idx].finished = finished;
 		USRstats[idx].maxticks = ticks;
-		GDKfree(USRstats[idx].maxquery);
+		if (USRstats[idx].maxquery)
+			GDKfree(USRstats[idx].maxquery);
 		USRstats[idx].maxquery = GDKstrdup(query);
 	}
 }
