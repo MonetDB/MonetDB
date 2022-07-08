@@ -71,11 +71,10 @@ struct scan_state {
 	int line_sep;
 	int col_sep;
 	bool escape_enabled;
-	const unsigned char *start;
-	const unsigned char *end;
+	unsigned char *start;
+	unsigned char *end;
 	// these are updated
-	const unsigned char *pos;
-	unsigned char *wr;
+	unsigned char *pos;
 	bool quoted;
 	bool escape_pending;
 };
@@ -112,9 +111,9 @@ find_end_of_line(struct scan_state *st)
 	int quote_char = st->quote_char;
 	int line_sep = st->line_sep;
 	bool escape_enabled = st->escape_enabled;
-	const unsigned char *end = st->end;
+	unsigned char *end = st->end;
 	// these are updated
-	const unsigned char *pos = st->pos;
+	unsigned char *pos = st->pos;
 	bool quoted = st->quoted;
 	bool escape_pending = st->escape_pending;
 

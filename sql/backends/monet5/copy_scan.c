@@ -321,37 +321,39 @@ scan_unquoted(const char **err_msg, unsigned char *start, unsigned char *end, in
 // the field, overwriting the separator or end quote.
 // Return the (strictly positive) number of bytes scanned including the
 // separator, or < 0 on error. Write the separator found to '*sep_found'.
-static int
-scan_field(const char **err_msg, unsigned char *start, unsigned char *end, int col_sep, int line_sep, int quote, bool backslash_escapes, unsigned char *sep_found)
+static const char*
+scan_field(struct scan_state *state, unsigned char *sep_found)
 {
-	assert(start < end);
+	assert(state->pos < state->end);
 
 	int nread;
-	int nwritten;
-	if (quote && *start == quote) {
-
-		nread = scan_quoted(err_msg, start, end, quote, backslash_escapes, &nwritten);
-		if (nread < 0)
-			return nread;
-		// scan_quoted errors out if it reaches 'end' so we know 'start[n]' exists
-		if (start[nread] == col_sep || start[nread] == line_sep) {
-			*sep_found = start[nread];
+	if (state->quote_char && state->pos[0] == state->quote_char) {
+		int nwritten;
+		const char *err_msg = NULL;
+		nread = scan_quoted(&err_msg, state->pos, state->end, state->quote_char, state->escape_enabled, &nwritten);
+		assert((nread < 0) == (err_msg != NULL));
+		if (err_msg)
+			return err_msg;
+		// scan_quoted errors out if it reaches 'end' so we know 'pos[n]' exists
+		if (state->pos[nread] == state->col_sep || state->pos[nread] == state->line_sep) {
+			*sep_found = state->pos[nread];
 			// nread should include the separator
 			nread += 1;
 		} else {
-			*err_msg = "end quote must be followed by separator";
-			return -11;
+			return "end quote must be followed by separator";
 		}
 	} else {
-		nread = scan_unquoted(err_msg, start, end, col_sep, line_sep, backslash_escapes, sep_found);
-		if (nread < 0)
-			return nread;
-		// with scan_unquoted, nread includes the separator, now replaced with '\0'
-		nwritten = nread - 1;
+		const char *err_msg = NULL;
+		nread = scan_unquoted(&err_msg, state->pos, state->end, state->col_sep, state->line_sep, state->escape_enabled, sep_found);
+		assert((nread < 0) == (err_msg != NULL));
+		if (err_msg)
+			return err_msg;
 	}
 
+	state->pos += nread;
+
 	assert(nread > 0); // the separator, if nothing else
-	return nread;
+	return NULL;
 }
 
 // Scan the memory 'start' .. 'end' for fields, unquoting and unescaping.
@@ -368,32 +370,30 @@ scan_fields(
 	struct error_handling *errors, struct scan_state *state,
 	char *null_repr, int ncols, int nrows, int **columns)
 {
-	const unsigned char *p = state->pos;
-	const unsigned char *end = state->end;
 	int row = 0;
 	int col = 0;
-	const char *err_msg = NULL;
 	size_t null_repr_len = null_repr ? strlen(null_repr) : 0;
-	while (p < end && row < nrows) {
+	while (state->pos < state->end && row < nrows) {
 		unsigned char sep = 0;
-		int n;
 
 		bool is_null = (
 			null_repr
-			&& p + null_repr_len < end
-			&& (p[null_repr_len] == state->col_sep || p[null_repr_len] == state->line_sep)
-			&& strncasecmp((char*)p, null_repr, null_repr_len) == 0
+			&& state->pos + null_repr_len < state->end
+			&& (state->pos[null_repr_len] == state->col_sep || state->pos[null_repr_len] == state->line_sep)
+			&& strncasecmp((char*)state->pos, null_repr, null_repr_len) == 0
 		);
 
+		int field;
+		const char *err_msg = NULL;
 		if (is_null) {
-			sep = p[null_repr_len];
-			n = null_repr_len + 1;
+			field = int_nil;
+			sep = state->pos[null_repr_len];
+			state->pos += null_repr_len + 1;
 		} else {
-			n = scan_field(&err_msg, (unsigned char*)p, (unsigned char*)end, state->col_sep, state->line_sep, state->quote_char, state->escape_enabled, &sep);
+			field = state->pos - state->start;
+			err_msg = scan_field(state, &sep);
 		}
-		assert(n != 0);
-		assert((n < 0) == (err_msg != NULL));
-		if (n < 0) {
+		if (err_msg) {
 			copy_report_error(errors, row, col, "%s", err_msg);
 			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
 		}
@@ -406,7 +406,7 @@ scan_fields(
 				copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
 				ok = false;
 			} else {
-				// if scan_field returned >=0 it must have found a separator, doesn't it?
+				// it must have found a separator, doesn't it?
 				throw(MAL, "copy.splitlines", "internal error: found %d while col sep is %d and line sep is %d", sep, state->col_sep, state->line_sep);
 			}
 		} else {
@@ -416,9 +416,9 @@ scan_fields(
 				// Special case: col_sep followed by line_sep as in TPC-H.
 				// So the column separator is really a column terminator.
 				// n bytes have been consumed so p[n-1] is 0.
-				assert(p[n - 1] == '\0');
-				if (p + n < end && p[n] == state->line_sep) {
-					n += 1; // skip the col_sep
+				assert(state->pos > state->start && state->pos[-1] == '\0');
+				if (state->pos < state->end  && state->pos[0] == state->line_sep) {
+					state->pos++;
 					ok = true;
 				} else {
 					copy_report_error(errors, row, -1, "too many fields, expected %d but found more", ncols);
@@ -429,9 +429,7 @@ scan_fields(
 		if (!ok) {
 			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
 		}
-		int field = is_null ? int_nil : p - state->start;
 		columns[col][row] = field;
-		p += n;
 		if (last_col) {
 			row += 1;
 			col = 0;
@@ -440,9 +438,9 @@ scan_fields(
 		}
 	}
 
-	assert(p == end || row == nrows);
+	assert(state->pos == state->end || row == nrows);
 
-	if (p < end) {
+	if (state->pos < state->end) {
 		throw(MAL, "copy.splitlines", "leftover data at end of buffer");
 	}
 	if (row < nrows) {

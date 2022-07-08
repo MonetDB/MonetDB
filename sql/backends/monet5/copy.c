@@ -181,7 +181,7 @@ COPYfixlines(
 		.escape_pending = false,
 	};
 	BAT *left = NULL, *right = NULL;
-	const unsigned char *left_data, *right_data;
+	unsigned char *left_data, *right_data;
 	int left_size, left_start, right_size;
 	BAT *new_left = NULL, *new_right = NULL;
 	int newline_count = 0;
