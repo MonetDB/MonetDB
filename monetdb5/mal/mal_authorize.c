@@ -865,6 +865,7 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 	// BUN p;
 	// BATiter i;
 	str tmp;
+	str msg;
 	str passwd = NULL;
 
 	rethrow("getPasswordHash", tmp, AUTHrequireAdmin(cntxt));
@@ -880,8 +881,13 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 		throw(MAL, "getPasswordHash", "user '%s' does not exist", username);
 	}
 	/* decypher the password */
-	if ((tmp = AUTHdecypherValue(&passwd, tmp)) != MAL_SUCCEED)
-		return tmp;
+	if ((msg = AUTHdecypherValue(&passwd, tmp)) != MAL_SUCCEED) {
+		GDKfree(tmp);
+		return msg;
+	}
+
+	if(tmp)
+		GDKfree(tmp);
 
 	// TODO remove old implementation
 	// p = AUTHfindUser(username);
@@ -1224,6 +1230,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 			return output;
 
 		if((output = scenario->exitClientCmd(c)) != MAL_SUCCEED) {
+			GDKfree(pwhash);
 			return output;
 		}
 		MCfreeClient(c);
