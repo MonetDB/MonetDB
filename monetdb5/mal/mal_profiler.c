@@ -201,7 +201,7 @@ prepare_generic_event(str face, struct GenericEvent e, int state)
 			   ",\"state\":\"%s\""
 			   ",\"client_id\":\"%d\""
 			   ",\"transaction_id\":"ULLFMT
-			   ",\"tag\":\""OIDFMT
+			   ",\"tag\":"OIDFMT
 			   ",\"query\":\"%s\""
 			   ",\"error\":\"%s\""
 			   "}\n",
