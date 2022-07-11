@@ -2101,7 +2101,6 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser, generi
 	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
 		MT_lock_init(&store->column_locks[i], "sqlstore_column");
 
-	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
 
 	store->generic_event_wrapper = event_wrapper;
@@ -2210,6 +2209,7 @@ store_apply_deltas(sqlstore *store)
 	store_lock(store);
 	ulng oldest = store_oldest_pending(store);
 	store_unlock(store);
+	TRC_DEBUG(SQL_STORE, "Store aplly deltas (" ULLFMT ")\n", oldest-1);
 	if (oldest)
 	    res = store->logger_api.flush(store, oldest-1);
 	return res;
@@ -2324,6 +2324,7 @@ store_manager(sqlstore *store)
 		MT_lock_set(&store->commit);
 		MT_lock_set(&store->flush);
 		if (store->logger_api.changes(store) <= 0) {
+			TRC_DEBUG(SQL_STORE, "Store flusher, no changes\n");
 			MT_lock_unset(&store->commit);
 			continue;
 		}
@@ -2332,7 +2333,8 @@ store_manager(sqlstore *store)
 			break;
 
 		MT_thread_setworking("flushing");
-		res = store_apply_deltas(store);
+		while (res == LOG_OK && store->logger_api.changes(store) > 0)
+			res = store_apply_deltas(store);
 
 		if (res != LOG_OK) {
 			MT_lock_unset(&store->flush);
