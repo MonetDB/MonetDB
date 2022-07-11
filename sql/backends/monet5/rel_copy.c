@@ -530,6 +530,58 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	// END LOOP
 	emit_loop_end(mb, &loop_vars);
 
+	// BEST EFFORT post processing
+
+	q = newStmt(mb, "calc", "!=");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_best_effort);
+	q = pushInt(mb, q, 0);
+	block = getDestVar(q);
+
+	// Map from line numbers to delete to row id's to delete.
+	// There are still duplicates.
+	q = newStmt(mb, "algebra", "projection");
+	q = pushArgument(mb, q, var_failures_bat);
+	q = pushArgument(mb, q, var_new_oids_bat);
+	int var_rows_to_delete_with_duplicates = getDestVar(q);
+
+	q = newStmt(mb, "algebra", "difference");
+	q = pushArgument(mb, q, var_new_oids_bat);
+	q = pushArgument(mb, q, var_rows_to_delete_with_duplicates);
+	q = pushNil(mb, q, newBatType(TYPE_oid));
+	q = pushNil(mb, q, newBatType(TYPE_oid));
+	q = pushBit(mb, q, false);
+	q = pushBit(mb, q, true);
+	q = pushNil(mb, q, TYPE_lng);
+	int var_rows_to_retain = getDestVar(q);
+
+	q = newStmt(mb, "algebra", "difference");
+	q = pushArgument(mb, q, var_new_oids_bat);
+	q = pushArgument(mb, q, var_rows_to_retain);
+	q = pushNil(mb, q, newBatType(TYPE_oid));
+	q = pushNil(mb, q, newBatType(TYPE_oid));
+	q = pushBit(mb, q, false);
+	q = pushBit(mb, q, true);
+	q = pushNil(mb, q, TYPE_lng);
+	int var_rows_to_delete = getDestVar(q);
+
+	q = newStmt(mb, "sql", "delete");
+	q = pushArgument(mb, q, be->mvc_var);
+	q = pushStr(mb, q, schema_name);
+	q = pushStr(mb, q, table_name);
+	q = pushArgument(mb, q, var_rows_to_delete);
+
+	q = newAssignment(mb);
+	q = pushArgument(mb, q, var_rows_to_retain);
+	setDestVar(q, var_new_oids_bat);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	q = pushBit(mb, q, true);
+	setDestVar(q, block);
+
+	// END OF BEST EFFORT
+
 	q = newStmt(mb, "aggr", "count");
 	q = pushArgument(mb, q, var_new_oids_bat);
 	q = pushBit(mb, q, false);
