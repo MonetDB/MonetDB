@@ -22,7 +22,7 @@ typedef struct rusage Rusage;
 
 struct GenericEvent {
 	int* client_id;
-	oid tag;
+	oid* tag;
 	ulng* transaction_id;
 	str query;
 	int error;

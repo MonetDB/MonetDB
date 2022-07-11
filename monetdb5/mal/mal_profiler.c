@@ -211,9 +211,9 @@ prepare_generic_event(str face, struct GenericEvent e, int state)
 			   THRgettid(),
 			   face,
 			   state ? "done" : "start",
-			   e.client_id ? *(e.client_id) : -1,
+			   e.client_id ? *(e.client_id) : 0,
 			   e.transaction_id ? *e.transaction_id : 0,
-			   e.tag ? e.tag : (oid)-1,
+			   e.tag ? *(e.tag) : 0,
 			   e.query ? e.query : "none",
 			   e.error ? "true" : "false"))
 		return logbuf.logbuffer;

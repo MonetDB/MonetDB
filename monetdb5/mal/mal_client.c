@@ -212,7 +212,7 @@ MCexitClient(Client c)
 		generic_event("client_connection",
 					 (struct GenericEvent)
 					 { &c->idx,
-					   (oid)NULL,
+					   NULL,
 					   NULL,
 					   NULL,
 					   0 },
@@ -310,13 +310,14 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
 	if (c) {
-		assert(NULL == setClientContext(c));
+		Client c_old = setClientContext(c);
+		assert(NULL == c_old);
 		c = MCinitClientRecord(c, user, fin, fout);
 		if(malProfileMode > 0)
 			generic_event("client_connection",
 						 (struct GenericEvent)
 						 { &c->idx,
-						   (oid)NULL,
+						   NULL,
 						   NULL,
 						   NULL,
 						   0 },
