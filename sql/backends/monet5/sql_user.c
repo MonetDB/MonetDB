@@ -536,13 +536,15 @@ monet5_password_hash(mvc *m, const char *username)
 {
 	str msg, hash = NULL;
 	oid rid = getUserOIDByName(m, username);
-	const char *password = getUserPassword(m, rid);
+	str password = getUserPassword(m, rid);
 	if (password) {
 		if ((msg = AUTHdecypherValue(&hash, password)) != MAL_SUCCEED) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "monet5_password_hash: %s", getExceptionMessage(msg));
 			freeException(msg);
+			GDKfree(password);
 		}
 	}
+	GDKfree(password);
 	return hash;
 	// (void) mb;
 
