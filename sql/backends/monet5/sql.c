@@ -133,7 +133,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		generic_event("sql_to_rel",
 					 (struct GenericEvent)
 					 { &(c->idx),
-					   c->curprg->def->tag,
+					   &(c->curprg->def->tag),
 					   NULL,
 					   NULL,
 					   0 },
@@ -145,7 +145,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		generic_event("sql_to_rel",
 					 (struct GenericEvent)
 					 { &(c->idx),
-					   c->curprg->def->tag,
+					   &(c->curprg->def->tag),
 					   NULL,
 					   NULL,
 					   rel ? 1 : 0 },
@@ -153,7 +153,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		generic_event("rel_opt",
 					 (struct GenericEvent)
 					 { &(c->idx),
-					   c->curprg->def->tag,
+					   &(c->curprg->def->tag),
 					   NULL,
 					   NULL,
 					   0 },
@@ -174,7 +174,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		generic_event("rel_opt",
 					 (struct GenericEvent)
 					 { &c->idx,
-					   c->curprg->def->tag,
+					   &(c->curprg->def->tag),
 					   NULL,
 					   NULL,
 					   rel ? 1 : 0},

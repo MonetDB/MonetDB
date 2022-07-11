@@ -127,13 +127,13 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 static void
 generic_event_wrapper(str face, ulng transaction_id, int error, int state)
 {
-	int client_id = getClientContext()->idx;
+	int client_id = 0;
 
 	if(malProfileMode > 0)
 		generic_event(face,
 					  (struct GenericEvent)
 					  { &client_id,
-						(oid)NULL,
+						NULL,
 						&transaction_id,
 						NULL,
 						error },
@@ -496,7 +496,7 @@ mvc_trans(mvc *m)
 		generic_event("transaction",
 					 (struct GenericEvent)
 					  { &(m->clientid),
-						(oid)NULL,
+						NULL,
 						&(m->session->tr->tid),
 						NULL,
 						0 },

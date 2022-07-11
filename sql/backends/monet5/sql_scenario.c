@@ -1114,7 +1114,7 @@ SQLparser(Client c)
 		generic_event("sql_parse",
 					 (struct GenericEvent)
 					 { &c->idx,
-					   c->curprg->def->tag,
+					   &(c->curprg->def->tag),
 					   NULL,
 					   NULL,
 					   0 },
@@ -1150,7 +1150,7 @@ SQLparser(Client c)
 		generic_event("sql_parse",
 					 (struct GenericEvent)
 					 { &c->idx,
-					   c->curprg->def->tag,
+					   &(c->curprg->def->tag),
 					   NULL,
 					   c->query ? c->query : NULL,
 					   c->query ? 0 : 1, },
@@ -1215,7 +1215,7 @@ SQLparser(Client c)
 				generic_event("rel_to_mal",
 							 (struct GenericEvent)
 							 { &c->idx,
-							   c->curprg->def->tag,
+							   &(c->curprg->def->tag),
 							   NULL,
 							   c->query ? c->query : NULL,
 							   c->query ? 0 : 1 },
@@ -1230,7 +1230,7 @@ SQLparser(Client c)
 				generic_event("rel_to_mal",
 							 (struct GenericEvent)
 							 { &c->idx,
-							   c->curprg->def->tag,
+							   &(c->curprg->def->tag),
 							   NULL,
 							   c->query ? c->query : NULL,
 							   c->query ? 0 : 1 },
@@ -1317,7 +1317,7 @@ SQLparser(Client c)
 				generic_event("mal_opt",
 							 (struct GenericEvent)
 							 { &c->idx,
-							   c->curprg->def->tag,
+							   &(c->curprg->def->tag),
 							   NULL,
 							   NULL,
 							   0 },
@@ -1329,7 +1329,7 @@ SQLparser(Client c)
 				generic_event("mal_opt",
 							 (struct GenericEvent)
 							 { &c->idx,
-							   c->curprg->def->tag,
+							   &(c->curprg->def->tag),
 							   NULL,
 							   NULL,
 							   msg == MAL_SUCCEED ? 0 : 1 },
