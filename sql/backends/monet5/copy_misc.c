@@ -64,9 +64,10 @@ dump_block(const char *msg, BAT *b)
 
 
 void
-copy_init_error_handling(struct error_handling *admin, bool best_effort, lng starting_row, int default_col_no, const char *column_name)
+copy_init_error_handling(struct error_handling *admin, bat failures_bat, lng starting_row, int default_col_no, const char *column_name)
 {
-	admin->best_effort = best_effort;
+	admin->failures_bat_id = failures_bat;
+	admin->failures_bat = NULL;
 	admin->count = 0;
 	admin->starting_row = starting_row;
 	admin->default_col_no = default_col_no;
@@ -77,6 +78,8 @@ copy_init_error_handling(struct error_handling *admin, bool best_effort, lng sta
 void
 copy_destroy_error_handling(struct error_handling *admin)
 {
+	if (admin->failures_bat != NULL)
+		BBPunfix(admin->failures_bat->batCacheid);
 	GDKfree(admin->column_name);
 }
 
@@ -167,7 +170,8 @@ end:
 static bool
 too_many_errors(struct error_handling *admin)
 {
-	return (admin->count > 0 && !admin->best_effort);
+	bool best_effort = !is_bat_nil(admin->failures_bat_id);
+	return (admin->count > 0 && !best_effort);
 }
 
 

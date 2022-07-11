@@ -27,7 +27,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *block = BATdescriptor(*getArgReference_bat(stk, pci, 1));
 	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 	int tpe = getArgGDKType(mb, pci, 3);
-	bool best_effort = *getArgReference_bit(stk, pci, 4);
+	bat failures_bat = *getArgReference_bat(stk, pci, 4);
 	lng starting_row = *getArgReference_lng(stk, pci, 5);
 	int col_no = *getArgReference_int(stk, pci, 6);
 	const char *col_name = *getArgReference_str(stk, pci, 7);
@@ -36,7 +36,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buffer_len;
 	const void *nil_ptr;
 
-	copy_init_error_handling(&errors, best_effort, starting_row, col_no, col_name);
+	copy_init_error_handling(&errors, failures_bat, starting_row, col_no, col_name);
 
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_generic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

@@ -110,6 +110,7 @@ struct loop_vars {
 	int our_block;
 	int earlier_line_count;
 	int our_line_count;
+	int failures_bat;
 };
 
 
@@ -117,7 +118,7 @@ static void
 emit_onserver_loop(
 	MalBlkPtr mb, struct loop_vars *loop_vars,
 	int var_fname, int block_size,
-	int var_line_sep, int var_quote_char, int var_escape, int var_best_effort, int var_offset, int var_nrecords)
+	int var_line_sep, int var_quote_char, int var_escape, int var_failures_bat, int var_offset, int var_nrecords)
 {
 	(void)var_offset;
 	InstrPtr q;
@@ -265,7 +266,7 @@ emit_onserver_loop(
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushArgument(mb, q, var_escape);
-	q = pushArgument(mb, q, var_best_effort);
+	q = pushArgument(mb, q, var_failures_bat);
 	q = pushArgument(mb, q, loop_vars->earlier_line_count);
 	q = pushArgument(mb, q, var_todo);
 	// use the variables defined by fixlines from now on:
@@ -349,16 +350,10 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	int var_fname = extract_parameter(be, intermediate_stmts, copyfrom, 5);
 	int var_num_rows = extract_parameter(be, intermediate_stmts, copyfrom, 6);
 	int var_offset = extract_parameter(be, intermediate_stmts, copyfrom, 7);
-	int var_best_effort = extract_parameter(be, intermediate_stmts, copyfrom, 8);
+	int var_best_effort_int = extract_parameter(be, intermediate_stmts, copyfrom, 8);
 	int var_fixed_width = extract_parameter(be, intermediate_stmts, copyfrom, 9);
 	int var_on_client = extract_parameter(be, intermediate_stmts, copyfrom, 10);
 	int var_escape = extract_parameter(be, intermediate_stmts, copyfrom, 11);
-
-	// coerce var_best_effort to bit
-	q = newStmt(mb, "calc", "!=");
-	q = pushArgument(mb, q, var_best_effort);
-	q = pushInt(mb, q, 0);
-	var_best_effort = getDestVar(q);
 
 	// coerce var_escape to bit
 	q = newStmt(mb, "calc", "!=");
@@ -406,11 +401,33 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushLng(mb, q, 0);
 	int var_new_oids_bat = getDestVar(q);
 
+	// Initialize the failures bat if BEST EFFORT is on
+	q = newAssignment(mb);
+	q = pushNil(mb, q, newBatType(TYPE_oid));
+	int var_failures_bat = getDestVar(q);
+
+	q = newStmt(mb, "calc", "!=");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_best_effort_int);
+	q = pushInt(mb, q, 0);
+	int block = getDestVar(q);
+
+	q = newStmt(mb, "bat", "new");
+	q = pushNil(mb, q, TYPE_oid);
+	q = pushLng(mb, q, 0);
+	setDestVar(q, var_failures_bat);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	q = pushBit(mb, q, true);
+	setDestVar(q, block);
+
+
 	q = newAssignment(mb);
 	q = pushNil(mb, q, TYPE_bit);
 	InstrPtr claim_channel_stmt = emit_channel(mb, getDestVar(q));
 
-	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape, var_best_effort, var_offset, var_num_rows);
+	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape, var_failures_bat, var_offset, var_num_rows);
 
 	int var_claim_token = emit_receive(mb, loop_vars.loop_handle, claim_channel_stmt);
 
@@ -452,7 +469,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushArgument(mb, q, var_null_representation);
-	q = pushArgument(mb, q, var_best_effort);
+	q = pushArgument(mb, q, var_failures_bat);
 	q = pushArgument(mb, q, var_escape);
 	InstrPtr splitlines_instr = q;
 
@@ -470,7 +487,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
 				q = pushNil(mb, q, col->type.type->localtype);
-				q = pushArgument(mb, q, var_best_effort);
+				q = pushArgument(mb, q, var_failures_bat);
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
@@ -482,7 +499,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushInt(mb, q, col->type.digits);
 				q = pushInt(mb, q, col->type.scale);
 				q = pushNil(mb, q, col->type.type->localtype);
-				q = pushArgument(mb, q, var_best_effort);
+				q = pushArgument(mb, q, var_failures_bat);
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
@@ -492,7 +509,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
 				q = pushNil(mb, q, col->type.type->localtype);
-				q = pushArgument(mb, q, var_best_effort);
+				q = pushArgument(mb, q, var_failures_bat);
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
