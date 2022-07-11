@@ -7,7 +7,7 @@ import sys
 from parsetest_support import setup_suite, TestCase
 
 dec = Decimal
-suite = setup_suite(level=2)
+suite = setup_suite()
 run_test = suite.run_test
 
 
