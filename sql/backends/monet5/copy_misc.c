@@ -68,12 +68,18 @@ copy_init_error_handling(struct error_handling *admin, bat failures_bat, lng sta
 {
 	admin->failures_bat_id = failures_bat;
 	admin->failures_bat = NULL;
+	admin->inhibit_deletes = false;
 	admin->count = 0;
 	admin->fatal = false;
 	admin->starting_row = starting_row;
 	admin->default_col_no = default_col_no;
 	admin->column_name = column_name ? GDKstrdup(column_name) : NULL;
 	admin->buffer[0] = '\0';
+}
+
+void copy_error_handling_inhibit_deletes(struct error_handling *admin)
+{
+	admin->inhibit_deletes = true;
 }
 
 void
@@ -223,13 +229,15 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 
 	copy_add_to_rejects(row_1based, column_1based, buf);
 
-	// In BEST EFFORT mode, keep track of the failed lines
-	BAT *failures = get_failures_bat(admin);
-	if (failures != NULL) {
-		oid row_as_oid = (oid)(admin->starting_row + rel_row);
-		gdk_return ret = BUNappend(failures, &row_as_oid, false);
-		if (ret != GDK_SUCCEED)
-			admin->fatal = true;
+	// In BEST EFFORT mode, keep track of the failed lines.
+	if (!admin->inhibit_deletes) {
+		BAT *failures = get_failures_bat(admin);
+		if (failures != NULL) {
+			oid row_as_oid = (oid)(admin->starting_row + rel_row);
+			gdk_return ret = BUNappend(failures, &row_as_oid, false);
+			if (ret != GDK_SUCCEED)
+				admin->fatal = true;
+		}
 	}
 
 	return too_many_errors(admin) ? GDK_FAIL : GDK_SUCCEED;;

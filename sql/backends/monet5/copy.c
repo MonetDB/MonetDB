@@ -188,6 +188,9 @@ COPYfixlines(
 	const unsigned char *latest_newline;
 
 	copy_init_error_handling(&errors, *failures_bat, starting_row, -1, NULL);
+	// The recoverable only errors copy.fixlines detects do not correspond to
+	// inserted rows.
+	copy_error_handling_inhibit_deletes(&errors);
 
 	if (state.line_sep <= 0) // 0 not ok
 		bailout("copy.fixlines", SQLSTATE(42000) "invalid line separator");

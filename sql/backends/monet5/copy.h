@@ -21,6 +21,7 @@
 struct error_handling {
 	bat failures_bat_id;
 	BAT *failures_bat;
+	bool inhibit_deletes;
 	lng count;
 	lng starting_row;
 	int default_col_no;
@@ -30,7 +31,7 @@ struct error_handling {
 };
 
 void copy_init_error_handling(struct error_handling *admin, bat failures_bat, lng starting_row, int default_col_no, const char *column_name);
-
+void copy_error_handling_inhibit_deletes(struct error_handling *admin);
 gdk_return copy_report_error(struct error_handling *admin, int rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
 	__attribute__((__format__(__printf__, 4, 5)));
 str copy_check_too_many_errors(struct error_handling *admin, const char *fname);
