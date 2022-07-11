@@ -79,7 +79,7 @@ setClientContext(Client cntxt)
 	return old;
 }
 
-#elif defined(Win32)
+#elif defined(WIN32)
 
 static DWORD tl_client_key = 0;
 
@@ -112,7 +112,7 @@ setClientContext(Client cntxt)
 {
 	Client old = getClientContext();
 
-	if (TlsSetValue(tl_client_key, cntxt) != 0)
+	if (TlsSetValue(tl_client_key, cntxt) == 0)
 		GDKfatal("Failed to set thread local Client context");
 
 	return old;
