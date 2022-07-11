@@ -86,13 +86,13 @@ tc = (TestCase("I INT, t TEXT", testdata, besteffort=True, raw=True, blocksize=1
 run_test(tc)
 
 
-# Test the basic mechanism where a scan failure results in nils for the whole row
-testdata = r"""a|b|c
-d|e\x|f
+# Scan failures result in nils for the whole row
+testdata = """\
+a|b|c
+d|e|f
 g|h|i
 """
 tc = (TestCase("s TEXT, t TEXT, u TEXT", testdata, besteffort=True)
-    .expect_reject(2, 2, "incomplete hex")
     .expect_value(0, 0, 'a')
     .expect_value(1, 0, None)
     .expect_value(1, 1, None)
@@ -100,4 +100,77 @@ tc = (TestCase("s TEXT, t TEXT, u TEXT", testdata, besteffort=True)
     # skipped line 2
     .expect_value(2, 0, 'g')
 )
-run_test(tc)
+run_test(tc.replace(1, r"d\x|e|f").expect_reject(2, 1, "incomplete hex"))
+run_test(tc.replace(1, r"d|e\x|f").expect_reject(2, 2, "incomplete hex"))
+run_test(tc.replace(1, r"d|e|f\x").expect_reject(2, 3, "incomplete hex"))
+# Only lists the first one:
+run_test(tc.replace(1, r"d\x|e\x|f\x")
+    .expect_reject(2, 1, "incomplete hex")
+)
+#
+run_test(tc.replace(1, r"d|e")
+    .expect_reject(2, None, "too few fields")
+)
+run_test(tc.replace(1, r"d|e|f|g")
+    .expect_reject(2, None, "too many fields")
+)
+
+# Same as above, but with quoting enabled
+testdata = """\
+a|b|c
+d|e|f
+g|h|i
+"""
+tc = (TestCase("s TEXT, t TEXT, u TEXT", testdata, besteffort=True, quote='^')
+    .expect_value(0, 0, 'a')
+    .expect_value(1, 0, None)
+    .expect_value(1, 1, None)
+    .expect_value(1, 2, None)
+    # skipped line 2
+    .expect_value(2, 0, 'g')
+)
+run_test(tc.replace(1, r"d\x|e|f").expect_reject(2, 1, "incomplete hex"))
+run_test(tc.replace(1, r"d|e\x|f").expect_reject(2, 2, "incomplete hex"))
+run_test(tc.replace(1, r"d|e|f\x").expect_reject(2, 3, "incomplete hex"))
+# Only lists the first one:
+run_test(tc.replace(1, r"d\x|e\x|f\x")
+    .expect_reject(2, 1, "incomplete hex")
+)
+#
+run_test(tc.replace(1, r"d|e")
+    .expect_reject(2, None, "too few fields")
+)
+run_test(tc.replace(1, r"d|e|f|g")
+    .expect_reject(2, None, "too many fields")
+)
+
+# What if the error occur in quoted fields?
+testdata = """\
+a|^b^|c
+d|^e^|f
+g|^^^^|i
+"""
+tc = (TestCase("s TEXT, t TEXT, u TEXT", testdata, besteffort=True, quote='^')
+    .expect_value(0, 0, 'a')
+    .expect_value(1, 0, None)
+    .expect_value(1, 1, None)
+    .expect_value(1, 2, None)
+    # skipped line 2
+    .expect_value(2, 0, 'g')
+)
+run_test(tc.replace(1, r"d\x|^e^|f").expect_reject(2, 1, "incomplete hex"))
+run_test(tc.replace(1, r"d|^e\x^|f").expect_reject(2, 2, "incomplete hex"))
+run_test(tc.replace(1, r"d|^e^BANANA|f").expect_reject(2, 2, "end quote"))
+run_test(tc.replace(1, r"d|^e^|f\x").expect_reject(2, 3, "incomplete hex"))
+# Only lists the first one:
+run_test(tc.replace(1, r"d\x|^e\x^|f\x")
+    .expect_reject(2, 1, "incomplete hex")
+)
+#
+run_test(tc.replace(1, r"d|^e^")
+    .expect_reject(2, None, "too few fields")
+)
+run_test(tc.replace(1, r"d|^e^|f|g")
+    .expect_reject(2, None, "too many fields")
+)
+#

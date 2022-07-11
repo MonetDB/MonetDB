@@ -26,9 +26,11 @@ scan_octal_escape(struct scan_state *state, unsigned char **ww, int acc)
 	acc = 8 * acc + *state->pos++ - '0';
 end:
 	if (acc > 0xFF) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
 		return "octal escape out of range";
 	}
 	if (acc == 0) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
 		return "\\000 is not a valid octal escape";
 	}
 
@@ -71,22 +73,28 @@ scan_hex_escape(struct scan_state *state, unsigned char **ww)
 	state->pos += 2;
 	int d = one_hex_digit(&err_msg, state);
 	assert((d < 0) == (err_msg != NULL));
-	if (err_msg)
+	if (err_msg) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
 		return err_msg;
+	}
 	acc = d;
 	d = one_hex_digit(&err_msg, state);
 	assert((d < 0) == (err_msg != NULL));
-	if (err_msg)
+	if (err_msg) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
 		return err_msg;
+	}
 	acc = 16 * acc + d;
 
 	assert(acc >= 0);
 	assert(acc < 0xFF);
-	if (acc == 0)
+	if (acc == 0) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
 		return "\\x00 is not a valid hex escape";
+	}
 
 	*(*ww)++ = acc;
-	return 0;
+	return NULL;
 }
 
 static int
@@ -110,11 +118,14 @@ scan_unicode_escape(struct scan_state *state, unsigned char **ww, int digits)
 		const char *err_msg = NULL;
 		int d = one_hex_digit(&err_msg, state);
 		assert((d < 0) == (err_msg != NULL));
-		if (err_msg)
+		if (err_msg) {
+			state->escape_pending = false; // pos has already advanced beyond the backslash
 			return err_msg;
+		}
 		acc = 16 * acc + d;
 	}
 	if (acc == 0) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
 		if (digits == 8)
 			return "\\U00000000 is not a valid unicode escape";
 		else
@@ -130,6 +141,7 @@ scan_unicode_escape(struct scan_state *state, unsigned char **ww, int digits)
 		*(*ww)++ = utf8cont(acc, 6);
 		*(*ww)++ = utf8cont(acc, 0);
 	} else if (acc <  0xE000) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
 		return "invalid unicode escape, it denotes a surrogate halve";
 	} else if (acc < 0x10000) {
 		*(*ww)++ = (acc >> 12) | 0xE0; //   0xE0 == 0b1110_0000
@@ -191,7 +203,7 @@ scan_backslash_escape(struct scan_state *state, unsigned char **ww)
 	}
 	state->pos += 2;
 	*(*ww)++ = c;
-	return 0;
+	return NULL;
 }
 
 // Scan the text pointed to by 'start', replacing quote pairs with single
@@ -213,6 +225,7 @@ scan_quoted(struct scan_state *state)
 	// skip the opening quote
 	assert(state->pos[0] == state->quote_char);
 	state->pos++;
+	state->quoted = true;
 
 	while (state->pos <= last) {
 		assert(w <= state->pos);
@@ -229,6 +242,7 @@ scan_quoted(struct scan_state *state)
 				// end quote found
 				*w = '\0';
 				state->pos++;
+				state->quoted = false;
 				return NULL;
 			}
 		} else if (state->escape_enabled && state->pos[0] == '\\') {
@@ -315,6 +329,8 @@ static const char*
 scan_field(struct scan_state *state, unsigned char *sep_found)
 {
 	assert(state->pos < state->end);
+	assert(state->quoted == false);
+	assert(state->escape_pending == false);
 
 	if (state->quote_char && state->pos[0] == state->quote_char) {
 		const char *err_msg = NULL;
@@ -357,7 +373,8 @@ check_row_end(
 				state->pos++;
 				return GDK_SUCCEED;
 			} else {
-				return copy_report_error(errors, row, -1, "too many fields, expected %d but found more", ncols);
+				copy_report_error(errors, row, -1, "too many fields, expected %d but found more", ncols);
+				return GDK_FAIL;
 			}
 		}
 	} else {
@@ -365,7 +382,14 @@ check_row_end(
 		if (sep == state->col_sep) {
 			return GDK_SUCCEED;
 		} else if (sep == state->line_sep) {
-			return copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
+			copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
+			// If we're in BEST EFFORT mode we're going to try to scan to the
+			// end of the line. But in fact we're already there and have replaced
+			// it with a \0, so the scan would actually skip the next line instead
+			// of the rest of the current line.
+			state->pos--;
+			state->pos[0] = state->line_sep;
+			return GDK_FAIL;
 		} else {
 			copy_report_error(errors, row, col, "internal error: found %d while col_sep is %d and line_sep is %d", sep, state->col_sep, state->line_sep);
 			return GDK_FAIL;
@@ -419,8 +443,9 @@ scan_fields(
 			}
 		}
 
-		if (ok)
-			ok = check_row_end(errors, state, row, col, ncols, sep);
+		if (ok && check_row_end(errors, state, row, col, ncols, sep) == GDK_FAIL) {
+			ok = false;
+		}
 
 		if (ok) {
 			// The happy path.  Store the field and advance row and col.
