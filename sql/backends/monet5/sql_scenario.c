@@ -38,6 +38,7 @@
 #include "mal_namespace.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
+#include "mal_utils.h"
 #include "bat5.h"
 #include "wlc.h"
 #include "wlr.h"
@@ -1146,15 +1147,19 @@ SQLparser(Client c)
 	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
-	if(malProfileMode > 0)
+	if(malProfileMode > 0) {
+		str escaped_query = c->query ? mal_quote(c->query, sizeof(c->query)) : NULL;
 		generic_event("sql_parse",
 					 (struct GenericEvent)
 					 { &c->idx,
 					   &(c->curprg->def->tag),
 					   NULL,
-					   c->query ? c->query : NULL,
+					   escaped_query,
 					   c->query ? 0 : 1, },
 					 1);
+
+		GDKfree(escaped_query);
+	}
 
 	if (c->query == NULL) {
 		err = 1;
@@ -1217,7 +1222,7 @@ SQLparser(Client c)
 							 { &c->idx,
 							   &(c->curprg->def->tag),
 							   NULL,
-							   c->query ? c->query : NULL,
+							   NULL,
 							   c->query ? 0 : 1 },
 							 0);
 
@@ -1232,7 +1237,7 @@ SQLparser(Client c)
 							 { &c->idx,
 							   &(c->curprg->def->tag),
 							   NULL,
-							   c->query ? c->query : NULL,
+							   NULL,
 							   c->query ? 0 : 1 },
 							 1);
 		} else {
