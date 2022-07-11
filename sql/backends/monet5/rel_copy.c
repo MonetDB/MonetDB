@@ -350,7 +350,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	int var_fname = extract_parameter(be, intermediate_stmts, copyfrom, 5);
 	int var_num_rows = extract_parameter(be, intermediate_stmts, copyfrom, 6);
 	int var_offset = extract_parameter(be, intermediate_stmts, copyfrom, 7);
-	int var_best_effort_int = extract_parameter(be, intermediate_stmts, copyfrom, 8);
+	int var_best_effort = extract_parameter(be, intermediate_stmts, copyfrom, 8);
 	int var_fixed_width = extract_parameter(be, intermediate_stmts, copyfrom, 9);
 	int var_on_client = extract_parameter(be, intermediate_stmts, copyfrom, 10);
 	int var_escape = extract_parameter(be, intermediate_stmts, copyfrom, 11);
@@ -408,7 +408,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	q = newStmt(mb, "calc", "!=");
 	q->barrier = BARRIERsymbol;
-	q = pushArgument(mb, q, var_best_effort_int);
+	q = pushArgument(mb, q, var_best_effort);
 	q = pushInt(mb, q, 0);
 	int block = getDestVar(q);
 

@@ -69,6 +69,7 @@ copy_init_error_handling(struct error_handling *admin, bat failures_bat, lng sta
 	admin->failures_bat_id = failures_bat;
 	admin->failures_bat = NULL;
 	admin->count = 0;
+	admin->fatal = false;
 	admin->starting_row = starting_row;
 	admin->default_col_no = default_col_no;
 	admin->column_name = column_name ? GDKstrdup(column_name) : NULL;
@@ -171,7 +172,21 @@ static bool
 too_many_errors(struct error_handling *admin)
 {
 	bool best_effort = !is_bat_nil(admin->failures_bat_id);
-	return (admin->count > 0 && !best_effort);
+	return admin->fatal || (admin->count > 0 && !best_effort);
+}
+
+static BAT *
+get_failures_bat(struct error_handling *admin)
+{
+	if (is_bat_nil(admin->failures_bat_id))
+		return NULL;
+	if (admin->failures_bat != NULL)
+		return admin->failures_bat;
+
+	admin->failures_bat = BATdescriptor(admin->failures_bat_id);
+	if (admin->failures_bat == NULL)
+		admin->fatal = true;
+	return admin->failures_bat;
 }
 
 
@@ -183,7 +198,7 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 	char buffer[sizeof(admin->buffer)];
 	assert(sizeof(buffer) == 512);
 
-	// The first error goes to the persistent buffer, the rest go to the scratch buffer
+	// The first error message goes to the persistent buffer, the rest go to the scratch buffer
 	char *buf, *buf_end;
 	if (admin->count++ == 0) {
 		buf = admin->buffer;
@@ -207,6 +222,15 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 	va_end(ap);
 
 	copy_add_to_rejects(row_1based, column_1based, buf);
+
+	// In BEST EFFORT mode, keep track of the failed lines
+	BAT *failures = get_failures_bat(admin);
+	if (failures != NULL) {
+		oid row_as_oid = (oid)(admin->starting_row + rel_row);
+		gdk_return ret = BUNappend(failures, &row_as_oid, false);
+		if (ret != GDK_SUCCEED)
+			admin->fatal = true;
+	}
 
 	return too_many_errors(admin) ? GDK_FAIL : GDK_SUCCEED;;
 }

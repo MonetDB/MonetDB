@@ -26,6 +26,7 @@ struct error_handling {
 	int default_col_no;
 	str column_name;
 	char buffer[512];
+	bool fatal;
 };
 
 void copy_init_error_handling(struct error_handling *admin, bat failures_bat, lng starting_row, int default_col_no, const char *column_name);
