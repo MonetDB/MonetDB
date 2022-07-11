@@ -219,7 +219,7 @@ prepare_generic_event(str face, struct GenericEvent e, int state)
 		return logbuf.logbuffer;
 	else {
 		logdel(&logbuf);
-		return NULL;;
+		return NULL;
 	}
 }
 
