@@ -432,6 +432,7 @@ scan_fields(
 			field_offset = int_nil;
 			sep = state->pos[null_repr_len];
 			state->pos += null_repr_len + 1;
+			ok = true;
 		} else {
 			field_offset = state->pos - state->start;
 			const char *err_msg = scan_field(state, &sep);
