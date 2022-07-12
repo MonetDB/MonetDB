@@ -2308,7 +2308,7 @@ store_manager(sqlstore *store)
 	MT_lock_set(&store->flush);
 
 	for (;;) {
-		int res;
+		int res = LOG_OK;
 
 		if (ATOMIC_GET(&store->nr_active) == 0 &&
 			(store->debug&128 || ATOMIC_GET(&store->lastactive) + IDLE_TIME < (ATOMIC_BASE_TYPE) (GDKusec() / 1000000))) {
