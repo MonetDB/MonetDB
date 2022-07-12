@@ -334,7 +334,7 @@ log_write_id(logger *lg, int id)
 	return GDK_FAIL;
 }
 
-static int
+static log_return
 log_read_id(logger *lg, log_id *id)
 {
 	assert(!lg->inmemory);
