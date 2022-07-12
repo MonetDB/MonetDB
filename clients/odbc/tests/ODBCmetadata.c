@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <sql.h>
 #include <sqlext.h>
 #include <string.h>
@@ -119,7 +120,7 @@ compareResult(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, cons
 	/* How many rows are there */
 	ret = SQLRowCount(stmt, &rows);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLRowCount()");
-	pos += snprintf(outp + pos, outp_len - pos, "Resultset with %ld rows\n", rows);
+	pos += snprintf(outp + pos, outp_len - pos, "Resultset with %"PRId64" rows\n", (int64_t) rows);
 
 	/* get Result Column Names and print them */
 	for (col = 1; col <= columns; col++) {
