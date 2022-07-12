@@ -984,7 +984,7 @@ sql_rename_user(mvc *sql, char *olduser, char *newuser)
 int
 sql_create_privileges(mvc *m, sql_schema *s)
 {
-	int pub, p, zero = 0;
+	int pub, su, p, zero = 0;
 	sql_table *t = NULL, *privs = NULL;
 	sql_column *col = NULL;
 	sql_subfunc *f = NULL;
@@ -1016,6 +1016,7 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	sql_create_auth_id(m, USER_MONETDB, "monetdb");
 
 	pub = ROLE_PUBLIC;
+	su = USER_MONETDB;
 	p = PRIV_SELECT;
 	privs = find_sql_table(tr, s, "privileges");
 
@@ -1062,6 +1063,13 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(tr, s, "value_partitions");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+	// restrict access to db_user_info to monetdb role
+	t = find_sql_table(tr, s, "db_user_info");
+	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &su, &p, &zero, &zero);
+	// make users view public
+	t = find_sql_table(tr, s, "users");
+	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+
 
 	p = PRIV_EXECUTE;
 	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION, true);

@@ -628,13 +628,12 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	if (f)
 		f->instantiated = TRUE;
 		*/
-	// TODO this view should go, remove as part of db_user_info -> users rename
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\", "
 			    "u.\"fullname\", u.\"default_schema\", "
 				"u.\"schema_path\", u.\"max_memory\", "
 				"u.\"max_workers\", u.\"optimizer\", "
-				"u.\"default_role\", u.\"password\" from \"sys\".\"db_user_info\" as u;");
+				"u.\"default_role\" from \"sys\".\"db_user_info\" as u;");
 	if (!t) {
 		TRC_CRITICAL(SQL_TRANS, "Failed to create 'users' view\n");
 		return ;
@@ -648,7 +647,6 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "default_role", "int", 9);
-	mvc_create_column_(&col, m, t, "password", "varchar", 256);
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	schema_id = sys->base.id;
