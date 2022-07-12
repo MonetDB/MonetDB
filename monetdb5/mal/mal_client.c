@@ -300,7 +300,8 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	c = MCnewClient();
 
 	if (c) {
-		assert(NULL == setClientContext(c));
+		Client c_old = setClientContext(c);
+		assert(NULL == c_old);
 		c = MCinitClientRecord(c, user, fin, fout);
 	}
 	MT_lock_unset(&mal_contextLock);
