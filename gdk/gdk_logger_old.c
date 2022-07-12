@@ -391,7 +391,7 @@ log_read_seq(old_logger *lg, logformat *l)
 	return LOG_OK;
 }
 
-static int
+static log_return
 log_read_id(old_logger *lg, char *tpe, oid *id)
 {
 	lng lid;
