@@ -51,6 +51,8 @@ function(monetdb_default_compiler_options)
       add_option_if_available("-Wmissing-declarations")
       add_option_if_available("-Wmissing-format-attribute")
       add_option_if_available("-Wmissing-prototypes")
+      # need this for gcc 4.8.5 on CentOS 7:
+      add_option_if_available("-Wno-missing-braces")
       # need this for clang 9.1.0 on Darwin:
       add_option_if_available("-Wno-missing-field-initializers")
       add_option_if_available("-Wold-style-definition")
