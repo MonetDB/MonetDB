@@ -607,7 +607,7 @@ tc_gc_objectversion(sql_store store, sql_change *change, ulng oldest)
 }
 
 static int
-tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active_, ulng latest)
 {
 	objectversion *ov = (objectversion*)change->data;
 	if (commit_ts) {
@@ -615,6 +615,8 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 		ov->ts = commit_ts;
 		change->committed = commit_ts < TRANSACTION_ID_BASE ? true: false;
 		(void)oldest;
+		(void)active_;
+		(void)latest;
 		if (!tr->parent)
 			change->obj->new = 0;
 	}
