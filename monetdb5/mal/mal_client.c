@@ -301,6 +301,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	if (c) {
 		Client c_old = setClientContext(c);
+		(void) c_old;
 		assert(NULL == c_old);
 		c = MCinitClientRecord(c, user, fin, fout);
 	}
