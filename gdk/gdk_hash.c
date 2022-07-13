@@ -991,6 +991,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 
   bailout:
 	bat_iterator_end(&bi);
+	HEAPfree(&h->heaplink, true);
+	HEAPfree(&h->heapbckt, true);
 	GDKfree(h);
 	return NULL;
 }
