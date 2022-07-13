@@ -550,12 +550,12 @@ parse_date(const char *buf, date *d, bool external)
 	if (external && strncmp(buf, "nil", 3) == 0)
 		return 3;
 	if ((yearneg = (buf[0] == '-')))
-		buf++;
-	if (!yearneg && !GDKisdigit(buf[0])) {
+		pos++;
+	if (!yearneg && !GDKisdigit(buf[pos])) {
 		yearlast = true;
 		sep = ' ';
 	} else {
-		for (pos = 0; GDKisdigit(buf[pos]); pos++) {
+		for (; GDKisdigit(buf[pos]); pos++) {
 			year = (buf[pos] - '0') + year * 10;
 			if (year > YEAR_MAX)
 				break;
@@ -610,13 +610,35 @@ parse_date(const char *buf, date *d, bool external)
 				break;
 		}
 	}
+	if (!yearneg && buf[pos] == ' ') {
+		ssize_t opos = pos;
+		while (buf[++pos] == ' ')
+			;
+		if (strncasecmp(buf + pos, "BCE", 3) == 0) {
+			/* Before Common Era */
+			yearneg = true;
+			pos += 3;
+		} else if (strncasecmp(buf + pos, "BC", 2) == 0) {
+			/* Before Christ */
+			yearneg = true;
+			pos += 2;
+		} else if (strncasecmp(buf + pos, "CE", 2) == 0) {
+			/* Common Era */
+			pos += 2;
+		} else if (strncasecmp(buf + pos, "AD", 2) == 0) {
+			/* Anno Domino */
+			pos += 2;
+		} else {
+			pos = opos;
+		}
+	}
 	/* handle semantic error here */
 	*d = date_create(yearneg ? -year : year, month, day);
 	if (is_date_nil(*d)) {
 		GDKerror("Semantic error in date.\n");
 		return -1;
 	}
-	return pos + yearneg;
+	return pos;
 }
 
 ssize_t
