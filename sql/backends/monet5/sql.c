@@ -157,7 +157,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 					   NULL,
 					   NULL,
 					   0 },
-					 1);
+					 0);
 	}
 
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
@@ -178,7 +178,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 					   NULL,
 					   NULL,
 					   rel ? 1 : 0},
-					 0);
+					 1);
 	return rel;
 }
 
