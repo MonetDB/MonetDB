@@ -1593,7 +1593,7 @@ vheap_entry(FILE *fp, BATiter *bi, BUN size)
 			GDKfree(fname);
 		}
 	}
-	return fprintf(fp, " %zu %zu %d", bi->vhfree, bi->vh->size, 0);
+	return fprintf(fp, " %zu %zu %d", bi->vhfree, size == 0 ? 0 : bi->vh->size, 0);
 }
 
 static gdk_return
@@ -3686,39 +3686,45 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 #ifndef NDEBUG
 				bi.locked = true;
 #endif
-				const ValRecord *prop;
-				prop = BATgetprop_nolock(bi.b, GDK_MIN_POS);
-				if (prop)
-					minpos = prop->val.oval;
-				prop = BATgetprop_nolock(bi.b, GDK_MAX_POS);
-				if (prop)
-					maxpos = prop->val.oval;
-				MT_lock_unset(&bi.b->theaplock);
-				if (b) {
-					/* wait for BBPSAVING so that we
-					 * can set it, wait for
-					 * BBPUNLOADING before
-					 * attempting to save */
-					for (;;) {
-						if (lock)
-							MT_lock_set(&GDKswapLock(i));
-						if (!(BBP_status(i) & (BBPSAVING|BBPUNLOADING)))
-							break;
+				assert(sizes == NULL || size <= bi.count);
+				assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
+				if (size > bi.count) /* includes sizes==NULL */
+					size = bi.count;
+				if (size == 0) {
+					/* no need to save anything */
+					MT_lock_unset(&bi.b->theaplock);
+				} else {
+					const ValRecord *prop;
+					prop = BATgetprop_nolock(bi.b, GDK_MIN_POS);
+					if (prop)
+						minpos = prop->val.oval;
+					prop = BATgetprop_nolock(bi.b, GDK_MAX_POS);
+					if (prop)
+						maxpos = prop->val.oval;
+					MT_lock_unset(&bi.b->theaplock);
+					if (b) {
+						/* wait for BBPSAVING so
+						 * that we can set it,
+						 * wait for BBPUNLOADING
+						 * before attempting to
+						 * save */
+						for (;;) {
+							if (lock)
+								MT_lock_set(&GDKswapLock(i));
+							if (!(BBP_status(i) & (BBPSAVING|BBPUNLOADING)))
+								break;
+							if (lock)
+								MT_lock_unset(&GDKswapLock(i));
+							BBPspin(i, __func__, BBPSAVING|BBPUNLOADING);
+						}
+						BBP_status_on(i, BBPSAVING);
 						if (lock)
 							MT_lock_unset(&GDKswapLock(i));
-						BBPspin(i, __func__, BBPSAVING|BBPUNLOADING);
+						MT_rwlock_rdlock(&b->thashlock);
+						ret = BATsave_locked(b, &bi, size);
+						MT_rwlock_rdunlock(&b->thashlock);
+						BBP_status_off(i, BBPSAVING);
 					}
-					BBP_status_on(i, BBPSAVING);
-					if (lock)
-						MT_lock_unset(&GDKswapLock(i));
-					assert(sizes == NULL || size <= bi.count);
-					assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
-					if (size > bi.count)
-						size = bi.count;
-					MT_rwlock_rdlock(&b->thashlock);
-					ret = BATsave_locked(b, &bi, size);
-					MT_rwlock_rdunlock(&b->thashlock);
-					BBP_status_off(i, BBPSAVING);
 				}
 			} else {
 				bi = bat_iterator(NULL);
