@@ -1896,7 +1896,7 @@ vheap_entry(FILE *fp, BATiter *bi, BUN size)
 			GDKfree(fname);
 		}
 	}
-	return fprintf(fp, " %zu %zu %d", bi->vhfree, bi->vh->size, 0);
+	return fprintf(fp, " %zu %zu %d", bi->vhfree, size == 0 ? 0 : bi->vh->size, 0);
 }
 
 static gdk_return
@@ -3957,7 +3957,11 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					break;
 				}
 				bi = bat_iterator(BBP_desc(i));
-				if (b) {
+				assert(sizes == NULL || size <= bi.count);
+				assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
+				if (size > bi.count) /* includes sizes==NULL */
+					size = bi.count;
+				if (b && size != 0) {
 					/* wait for BBPSAVING so that we
 					 * can set it, wait for
 					 * BBPUNLOADING before
@@ -3974,10 +3978,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					BBP_status_on(i, BBPSAVING);
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
-					assert(sizes == NULL || size <= bi.count);
-					assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
-					if (size > bi.count)
-						size = bi.count;
 					MT_rwlock_rdlock(&b->thashlock);
 					ret = BATsave_locked(b, &bi, size);
 					MT_rwlock_rdunlock(&b->thashlock);

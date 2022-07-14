@@ -2229,7 +2229,7 @@ store_apply_deltas(sqlstore *store)
 	store_lock(store);
 	ulng oldest = store_oldest_pending(store);
 	store_unlock(store);
-	TRC_DEBUG(SQL_STORE, "Store aplly deltas (" ULLFMT ")\n", oldest-1);
+	TRC_DEBUG(SQL_STORE, "Store apply deltas (" ULLFMT ")\n", oldest-1);
 	if (oldest)
 	    res = store->logger_api.flush(store, oldest-1);
 	flusher.working = false;
