@@ -1521,7 +1521,7 @@ BBPexit(void)
  * reclaimed as well.
  */
 static inline int
-heap_entry(FILE *fp, BATiter *bi, BUN size, BUN minpos, BUN maxpos)
+heap_entry(FILE *fp, BATiter *bi, BUN size, oid minpos, oid maxpos)
 {
 	BAT *b = bi->b;
 	size_t free = bi->hfree;
@@ -1569,8 +1569,8 @@ heap_entry(FILE *fp, BATiter *bi, BUN size, BUN minpos, BUN maxpos)
 		       free,
 		       bi->h->size,
 		       0,
-		       minpos < size ? (oid) minpos : oid_nil,
-		       maxpos < size ? (oid) maxpos : oid_nil);
+		       (BUN) minpos < size ? minpos : oid_nil,
+		       (BUN) maxpos < size ? maxpos : oid_nil);
 }
 
 static inline int
@@ -1597,7 +1597,7 @@ vheap_entry(FILE *fp, BATiter *bi, BUN size)
 }
 
 static gdk_return
-new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi, BUN minpos, BUN maxpos)
+new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi, oid minpos, oid maxpos)
 {
 #ifndef NDEBUG
 	assert(i > 0);
@@ -1725,7 +1725,7 @@ BBPdir_first(bool subcommit, lng logno, lng transid,
 static bat
 BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 	    FILE **obbpfp, FILE *nbbpf, bool subcommit, BATiter *bi,
-	    BUN minpos, BUN maxpos)
+	    oid minpos, oid maxpos)
 {
 	if (n < -1)		/* safety catch */
 		return n;
