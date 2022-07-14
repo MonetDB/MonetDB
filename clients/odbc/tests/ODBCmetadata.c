@@ -18,6 +18,7 @@
  * SQLColumnPrivileges()
  * SQLProcedures()
  * SQLProcedureColumns()
+ * SQLGetTypeInfo()
  */
 
 #ifdef _MSC_VER
@@ -31,9 +32,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
+#define ODBCVER 0x0352		/* Important: this must be defined before include of sql.h and sqlext.h */
 #include <sql.h>
 #include <sqlext.h>
 #include <string.h>
+
+#define SQL_HUGEINT	0x4000	/* as defined in ODBCGlobal.h */
 
 static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
@@ -132,6 +136,7 @@ nameofSQLtype(SQLSMALLINT dataType)
 	case SQL_INTERVAL_HOUR_TO_SECOND:	return "INTERVAL HOUR TO SECOND";
 	case SQL_INTERVAL_MINUTE_TO_SECOND:	return "INTERVAL MINUTE TO SECOND";
 	case SQL_GUID:		return "GUID";
+	case SQL_HUGEINT:	return "HUGEINT";	/* 0x4000 (defined in ODBCGlobal.h) */
 	default:		return "Undefined";
 	}
 }
@@ -1211,6 +1216,65 @@ main(int argc, char **argv)
 		"mTests_sql_odbc_tests	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
 		"mTests_sql_odbc_tests	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n");
 
+	ret = SQLGetTypeInfo(stmt, SQL_ALL_TYPES);
+	compareResult(stmt, ret, "SQLGetTypeInfo(stmt, SQL_ALL_TYPES)",
+		"Resultset with 19 columns\n"
+		"Resultset with 44 rows\n"
+		"TYPE_NAME	DATA_TYPE	COLUMN_SIZE	LITERAL_PREFIX	LITERAL_SUFFIX	CREATE_PARAMS	NULLABLE	CASE_SENSITIVE	SEARCHABLE	UNSIGNED_ATTRIBUTE	FIXED_PREC_SCALE	AUTO_UNIQUE_VALUE	LOCAL_TYPE_NAME	MINIMUM_SCALE	MAXIMUM_SCALE	SQL_DATA_TYPE	SQL_DATETIME_SUB	NUM_PREC_RADIX	INTERVAL_PRECISION\n"
+		"WCHAR(128)	SMALLINT	INTEGER	WCHAR(11)	WCHAR(1)	WCHAR(15)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	WCHAR(16)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	INTEGER	SMALLINT\n"
+		"uuid	-11	36	uuid '	'	NULL	1	0	2	-1	0	-1	uuid	-1	-1	-11	-1	-1	-1\n"
+		"character large object	-10	1000000	'	'	NULL	1	1	3	-1	0	0	NULL	-1	-1	-10	-1	-1	-1\n"
+		"json	-10	1000000	json '	'	NULL	1	1	3	-1	0	0	json	-1	-1	-10	-1	-1	-1\n"
+		"url	-10	1000000	url '	'	NULL	1	1	3	-1	0	0	url	-1	-1	-10	-1	-1	-1\n"
+		"varchar	-9	1000000	'	'	length	1	1	3	-1	0	-1	NULL	-1	-1	-9	-1	-1	-1\n"
+		"character	-8	1000000	'	'	length	1	1	3	-1	0	0	NULL	-1	-1	-8	-1	-1	-1\n"
+		"char	-8	1000000	'	'	length	1	1	3	-1	0	0	NULL	-1	-1	-8	-1	-1	-1\n"
+		"boolean	-7	1	NULL	NULL	NULL	1	0	2	1	1	0	boolean	-1	-1	-7	-1	-1	-1\n"
+		"tinyint	-6	3	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	-6	-1	10	-1\n"
+		"bigint	-5	19	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	-5	-1	10	-1\n"
+		"bigserial	-5	19	NULL	NULL	NULL	0	0	2	0	0	1	bigserial	0	0	-5	-1	10	-1\n"
+		"binary large object	-4	1000000	x'	'	NULL	1	1	3	-1	0	0	NULL	-1	-1	-4	-1	-1	-1\n"
+		"binary large object	-3	1000000	x'	'	length	1	1	3	-1	0	0	blob(max_length)	-1	-1	-3	-1	-1	-1\n"
+		"character large object	-1	1000000	'	'	NULL	1	1	3	-1	0	0	NULL	-1	-1	-1	-1	-1	-1\n"
+		"char	1	1000000	'	'	length	1	1	3	-1	0	0	NULL	-1	-1	1	-1	-1	-1\n"
+		"numeric	2	19	NULL	NULL	precision,scale	1	0	2	0	0	0	NULL	0	18	2	-1	10	-1\n"
+		"decimal	3	19	NULL	NULL	precision,scale	1	0	2	0	0	0	NULL	0	18	3	-1	10	-1\n"
+		"integer	4	10	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	4	-1	10	-1\n"
+		"int	4	10	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	4	-1	10	-1\n"
+		"mediumint	4	10	NULL	NULL	NULL	1	0	2	0	0	0	int	0	0	4	-1	10	-1\n"
+		"serial	4	10	NULL	NULL	NULL	0	0	2	0	0	1	serial	0	0	4	-1	10	-1\n"
+		"smallint	5	5	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	5	-1	10	-1\n"
+		"float	6	53	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	6	-1	2	-1\n"
+		"real	7	24	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	7	-1	2	-1\n"
+		"double	8	53	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	8	-1	2	-1\n"
+		"varchar	12	1000000	'	'	length	1	1	3	-1	0	-1	NULL	-1	-1	12	-1	-1	-1\n"
+		"date	91	10	date '	'	NULL	1	0	2	-1	0	-1	NULL	-1	-1	9	1	-1	-1\n"
+		"time	92	8	time '	'	NULL	1	0	2	-1	0	-1	NULL	0	0	9	2	-1	-1\n"
+		"time(precision)	92	15	time '	'	precision	1	0	2	-1	0	-1	NULL	0	6	9	2	-1	-1\n"
+		"timestamp	93	19	timestamp '	'	NULL	1	0	2	-1	0	-1	NULL	0	0	9	3	-1	-1\n"
+		"timestamp(precision)	93	26	timestamp '	'	precision	1	0	2	-1	0	-1	NULL	0	6	9	3	-1	-1\n"
+		"interval year	101	9	'	'	NULL	1	0	2	-1	0	-1	NULL	0	0	10	1	-1	9\n"
+		"interval month	102	10	'	'	NULL	1	0	2	-1	0	-1	NULL	0	0	10	2	-1	10\n"
+		"interval day	103	5	'	'	NULL	1	0	2	-1	0	-1	NULL	0	0	10	3	-1	5\n"
+		"interval hour	104	6	'	'	NULL	1	0	2	-1	0	-1	NULL	0	0	10	4	-1	6\n"
+		"interval minute	105	8	'	'	NULL	1	0	2	-1	0	-1	NULL	0	0	10	5	-1	8\n"
+		"interval second	106	10	'	'	precision	1	0	2	-1	0	-1	NULL	0	0	10	6	-1	10\n"
+		"interval year to month	107	12	'	'	NULL	1	0	2	-1	0	-1	NULL	0	0	10	7	-1	9\n"
+		"interval day to hour	108	8	'	'	NULL	1	0	2	-1	0	-1	NULL	0	0	10	8	-1	5\n"
+		"interval day to minute	109	11	'	'	NULL	1	0	2	-1	0	-1	NULL	0	0	10	9	-1	5\n"
+		"interval day to second	110	14	'	'	precision	1	0	2	-1	0	-1	NULL	0	0	10	10	-1	5\n"
+		"interval hour to minute	111	9	'	'	NULL	1	0	2	-1	0	-1	NULL	0	0	10	11	-1	6\n"
+		"interval hour to second	112	12	'	'	precision	1	0	2	-1	0	-1	NULL	0	0	10	12	-1	6\n"
+		"interval minute to second	113	13	'	'	precision	1	0	2	-1	0	-1	NULL	0	0	10	13	-1	10\n");
+
+	/* MonetDB specific type "hugeint" is currently not returned by SQLGetTypeInfo(SQL_ALL_TYPES). However it can be queried when requested explicitly. Test it. */
+	ret = SQLGetTypeInfo(stmt, SQL_HUGEINT);
+	compareResult(stmt, ret, "SQLGetTypeInfo(stmt, SQL_HUGEINT)",
+		"Resultset with 19 columns\n"
+		"Resultset with 1 rows\n"
+		"TYPE_NAME	DATA_TYPE	COLUMN_SIZE	LITERAL_PREFIX	LITERAL_SUFFIX	CREATE_PARAMS	NULLABLE	CASE_SENSITIVE	SEARCHABLE	UNSIGNED_ATTRIBUTE	FIXED_PREC_SCALE	AUTO_UNIQUE_VALUE	LOCAL_TYPE_NAME	MINIMUM_SCALE	MAXIMUM_SCALE	SQL_DATA_TYPE	SQL_DATETIME_SUB	NUM_PREC_RADIX	INTERVAL_PRECISION\n"
+		"WVARCHAR(128)	SMALLINT	INTEGER	WVARCHAR(128)	WVARCHAR(128)	WVARCHAR(128)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(128)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	INTEGER	SMALLINT\n"
+		"hugeint	16384	38	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	16384	-1	10	-1\n");
 
 	// cleanup
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
