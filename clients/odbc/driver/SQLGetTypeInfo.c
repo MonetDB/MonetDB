@@ -1033,7 +1033,7 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 {
 	const struct types *t;
 	int i;
-	char query[4096];
+	char query[4352];
 
 	switch (DataType) {
 	case SQL_ALL_TYPES:
