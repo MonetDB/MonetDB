@@ -2101,6 +2101,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
 		MT_lock_init(&store->column_locks[i], "sqlstore_column");
 
+	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
 
 	/* initialize empty bats */
