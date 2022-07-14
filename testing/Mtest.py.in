@@ -3467,6 +3467,7 @@ def main(argv) :
             mserver5_opts.extend(['--set', a])
             if a == 'sql_debug=128':
                 CONDITIONALS['NOWAL'] = True
+                os.environ['NOWAL'] = 'True'
     if opts.loadmodule:
         for a in opts.loadmodule:
             mserver5_opts.extend(['--loadmodule', a])
