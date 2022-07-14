@@ -2316,7 +2316,7 @@ logger_flush(logger *lg, ulng ts)
 lng
 logger_changes(logger *lg)
 {
-	return (lg->id - lg->saved_id - 1);
+	return LOG_DISABLED(lg) ? 0 : (lg->id - lg->saved_id - 1);
 }
 
 int
