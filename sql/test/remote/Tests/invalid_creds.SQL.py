@@ -61,7 +61,7 @@ def create_workers(TMPDIR, workers, fn_template, nworkers, cmovies, ratings_tabl
         os.mkdir(workerrec['dbfarm'])
         workerrec['proc'] = process.server(mapiport='0', dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
         workerrec['port'] = workerrec['proc'].dbport
-        workerrec['mapi'] = 'mapi:monetdb://localhost:{}/{}/sys/ratings'.format(workerrec['port'], workerdbname),
+        workerrec['mapi'] = 'mapi:monetdb://localhost:{}/{}/sys/ratings'.format(workerrec['port'], workerdbname)
         workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
         filename = fn_template.format(workerrec['num'])
         t = threading.Thread(target=worker_load, args=[filename, workerrec, cmovies, ratings_table_def_fk])
