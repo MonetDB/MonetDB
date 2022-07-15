@@ -279,7 +279,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 */
 
 	// Also show details of the arguments for modelling
-	if(mb && pci->modname && pci->fcnname){
+	if (mb && (pci->token == ASSIGNsymbol || (pci->modname && pci->fcnname))){
 		int j;
 
 		if (!logadd(&logbuf, ",\"args\":["))
