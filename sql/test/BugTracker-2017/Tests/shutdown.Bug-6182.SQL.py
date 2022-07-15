@@ -13,6 +13,6 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE,
                          stdout=process.PIPE, stderr=process.PIPE) as srv:
         with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=src.dbport, database='db1')
+            tc.connect(username="monetdb", password="monetdb", port=srv.dbport, database='db1')
             tc.execute("call sys.shutdown(10);").assertSucceeded()
         srv.communicate()
