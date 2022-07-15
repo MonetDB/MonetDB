@@ -647,7 +647,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 os.mkdir(workerrec['dbfarm'])
                 workerrec['proc'] = process.server(mapiport='0', dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE, stderr=process.PIPE)
                 workerrec['port'] = workerrec['proc'].dbport
-                workerrec['mapi'] = 'mapi:monetdb://localhost:%d/%s' % (workerrec['port'], workerdbname),
+                workerrec['mapi'] = 'mapi:monetdb://localhost:{}/{}'.format(workerrec['port'], workerdbname)
                 workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
                 t = threading.Thread(target=worker_load, args = [workerrec])
                 t.start()

@@ -51,7 +51,6 @@ def worker_load(in_filename, workerrec, cmovies, ratings_table_def_fk):
 # Setup and start workers
 def create_workers(tmpdir, workers, fn_template, nworkers, cmovies, ratings_table_def_fk):
     for i in range(nworkers):
-        workerport = freeport()
         workerdbname = 'worker_{}'.format(i)
         workerrec = {
             'num': i,
