@@ -132,11 +132,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	if(malProfileMode > 0 )
 		generic_event("sql_to_rel",
 					 (struct GenericEvent)
-					 { &(c->idx),
-					   &(c->curprg->def->tag),
-					   NULL,
-					   NULL,
-					   0 },
+					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
 					 0);
 
 	rel = rel_semantic(query, sym);
@@ -144,19 +140,11 @@ sql_symbol2relation(backend *be, symbol *sym)
 	if(malProfileMode > 0 ) {
 		generic_event("sql_to_rel",
 					 (struct GenericEvent)
-					 { &(c->idx),
-					   &(c->curprg->def->tag),
-					   NULL,
-					   NULL,
-					   rel ? 1 : 0 },
+					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1 },
 					 1);
 		generic_event("rel_opt",
 					 (struct GenericEvent)
-					 { &(c->idx),
-					   &(c->curprg->def->tag),
-					   NULL,
-					   NULL,
-					   0 },
+					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
 					 0);
 	}
 
@@ -173,11 +161,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	if(malProfileMode > 0)
 		generic_event("rel_opt",
 					 (struct GenericEvent)
-					 { &c->idx,
-					   &(c->curprg->def->tag),
-					   NULL,
-					   NULL,
-					   rel ? 1 : 0},
+					 { &c->idx, &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1},
 					 1);
 	return rel;
 }

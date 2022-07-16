@@ -25,7 +25,7 @@ struct GenericEvent {
 	oid* tag;
 	ulng* transaction_id;
 	str query;
-	int error;
+	int rc;               /* return code */
 };
 
 mal_export int malProfileMode;
