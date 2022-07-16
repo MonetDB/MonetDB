@@ -3910,7 +3910,6 @@ sql_trans_commit(sql_trans *tr)
 			}
 		}
 
-
 		store->generic_event_wrapper("commit", tr->tid, 0, 0);
 
 		/* log changes should only be done if there is something to log */
@@ -4043,7 +4042,7 @@ sql_trans_commit(sql_trans *tr)
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
 
-	store->generic_event_wrapper("commit", tr->tid, ok, 1);
+	store->generic_event_wrapper("commit", tr->tid, (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
 
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
@@ -7044,7 +7043,7 @@ sql_trans_end(sql_session *s, int ok)
 	}
 	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
-	store->generic_event_wrapper("transaction", s->tr->tid, ok, 1);
+	store->generic_event_wrapper("transaction", s->tr->tid, (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
 	store_unlock(store);
 
 	return ok;

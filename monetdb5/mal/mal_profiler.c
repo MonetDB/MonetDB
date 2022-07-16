@@ -193,7 +193,6 @@ prepare_generic_event(str face, struct GenericEvent e, int state)
 	if (logadd(&logbuf,
 			   "{"
 			   "\"version\":\""MONETDB_VERSION" (hg id: %s)\""
-			   /* ",\"user\":"OIDFMT */
 			   ",\"clk\":"LLFMT
 			   ",\"mclk\":%"PRIu64""
 			   ",\"thread\":%d"
@@ -203,19 +202,19 @@ prepare_generic_event(str face, struct GenericEvent e, int state)
 			   ",\"transaction_id\":"ULLFMT
 			   ",\"tag\":"OIDFMT
 			   ",\"query\":\"%s\""
-			   ",\"error\":\"%s\""
+			   ",\"rc\":\"%s\""
 			   "}\n",
 			   mercurial_revision(),
 			   clk,
 			   mclk,
 			   THRgettid(),
 			   face,
-			   state ? "done" : "start",
-			   e.client_id ? *(e.client_id) : 0,
-			   e.transaction_id ? *(e.transaction_id) : 0,
-			   e.tag ? *(e.tag) : 0,
-			   e.query ? e.query : "none",
-			   e.error ? "true" : "false"))
+			   state? "done" : "start",
+			   (e.client_id)? *(e.client_id) : 0,
+			   (e.transaction_id)? *(e.transaction_id) : 0,
+			   (e.tag)? *(e.tag) : 0,
+			   (e.query)? e.query : "none",
+			   (e.rc)? "false" : "true"))
 		return logbuf.logbuffer;
 	else {
 		logdel(&logbuf);

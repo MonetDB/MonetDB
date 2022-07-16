@@ -332,7 +332,7 @@ sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
 /* callback to access generic_event in store.c */
-typedef void (*generic_event_wrapper_fptr) (str face, ulng transaction_id, int error, int state);
+typedef void (*generic_event_wrapper_fptr) (str face, ulng transaction_id, int rc, int state);
 
 extern struct sqlstore *store_init(int debug, store_type store, int readonly, int singleuser, generic_event_wrapper_fptr event_wrapper);
 extern void store_exit(struct sqlstore *store);
