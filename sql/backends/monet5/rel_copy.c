@@ -107,6 +107,7 @@ struct loop_vars {
 	int loop_barrier;
 	int loop_iter;
 	int loop_handle;
+	int defer_close;
 	int our_block;
 	int earlier_line_count;
 	int our_line_count;
@@ -129,6 +130,10 @@ emit_onserver_loop(
 	q = newStmt(mb, "streams", "openRead");
 	q = pushArgument(mb, q, var_fname);
 	int var_stream = getDestVar(q);
+
+	q = newStmt(mb, "copy", "defer_close");
+	q = pushArgument(mb, q, var_stream);
+	loop_vars->defer_close = getDestVar(q);
 
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
@@ -300,6 +305,9 @@ emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
 	getDestVar(q) = loop_vars->loop_barrier;
+
+	q = newStmt(mb, "language", "pass");
+	q = pushArgument(mb, q, loop_vars->defer_close);
 }
 
 stmt *
@@ -309,7 +317,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	(void)refs;
 	const int block_size = get_copy_blocksize();
 
-	struct loop_vars loop_vars;
+	struct loop_vars loop_vars = { 0 };
 	InstrPtr q;
 	MalBlkPtr mb = be->mb;
 	mvc *mvc = be->mvc;

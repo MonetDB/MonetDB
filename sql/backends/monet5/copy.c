@@ -8,12 +8,59 @@
 
 #include "monetdb_config.h"
 #include "streams.h"
+#include "gdk.h"
 #include "mel.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
 #include "copy.h"
 #include "rel_copy.h"
+
+struct copy_destructor {
+	Sink sink;
+	stream *stream_to_destroy;
+};
+
+#define COPY_SINK 42
+
+static void
+defer_close(void *sink)
+{
+	struct copy_destructor *destr = (struct copy_destructor*)sink;
+	assert(destr->sink.type == COPY_SINK);
+	if (destr->stream_to_destroy) {
+		mnstr_close(destr->stream_to_destroy);
+	GDKfree(destr);
+	}
+}
+
+static str
+COPYdefer_close_stream(bat *container, Stream *s)
+{
+	str msg = MAL_SUCCEED;
+	stream *st = *s;
+	BAT *b = NULL;
+	struct copy_destructor *destr = GDKmalloc(sizeof *destr);
+
+	destr->sink.type = COPY_SINK;
+	destr->sink.destroy = defer_close;
+	destr->stream_to_destroy = st;
+
+	b = COLnew(0, TYPE_bit, 0, TRANSIENT);
+	if (!destr || !b)
+		bailout("copy.defer_close",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	b->T.sink = &destr->sink;
+
+	*container = b->batCacheid;
+	BBPkeepref(b);
+	return MAL_SUCCEED;
+end:
+	GDKfree(destr);
+	if (b)
+		BBPunfix(b->batCacheid);
+	return msg;
+}
+
 
 // #define BLOCK_DEBUG
 
@@ -60,7 +107,6 @@ COPYread(Stream *stream_out_arg, Stream *stream_in_arg, lng *block_size_arg, bat
 	bat->trevsorted = false;
 
 	if (nread == 0){
-		mnstr_close(s);
 		s = NULL;
 	}
 #ifdef BLOCK_DEBUG
@@ -532,17 +578,19 @@ static mel_func copy_init_funcs[] = {
 	batvararg("", int),
 	batarg("block", bte), arg("startingrow", lng), arg("linecount", lng), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), batarg("failures", oid), arg("escape", bit)
  )),
-
  command("copy", "trackrowids", COPYtrackrowids, true, "keep track of newly claimed rows", args(2, 6,
 	arg("", lng), batarg("", oid),
 	batarg("newrows", oid), arg("count", lng), arg("offset",oid), batarg("pos",oid)
+ )),
+ command("copy", "defer_close", COPYdefer_close_stream, true, "close stream when returned bat is destroyed", args(1,2,
+ 	batarg("", bit),
+	arg("s", streams)
  )),
 
  pattern("copy", "parse_generic", COPYparse_generic, false, "Parse using GDK's atomFromStr", args(1, 8,
 	batargany("", 1),
 	batarg("block", bte), batarg("offsets", int), argany("type", 1), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
-
  command("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 10,
 	 batarg("", bte),
 	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
