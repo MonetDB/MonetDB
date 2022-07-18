@@ -320,8 +320,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				return cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
 			}
 			/* access control: verify the credentials supplied by the user,
-			* no need to check for database stuff, because that is done per
-			* database itself (one gets a redirect) */
+			 * no need to check for database stuff, because that is done per
+			 * database itself (one gets a redirect) */
 			if ((msg = AUTHcheckCredentials(&uid, c, user, passwd, challenge, algo)) != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", msg);
 				return cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
