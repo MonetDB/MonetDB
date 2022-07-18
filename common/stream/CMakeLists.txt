@@ -21,7 +21,6 @@ target_sources(stream
   rw.c
   bstream.c
   bs.c
-  bs2.c
   stdio_stream.c
   winio.c
   compressed.c
