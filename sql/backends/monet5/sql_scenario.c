@@ -1147,7 +1147,7 @@ SQLparser(Client c)
 		str escaped_query = c->query? mal_quote(c->query, sizeof(c->query)) : NULL;
 		generic_event("sql_parse",
 					 (struct GenericEvent)
-					 { &c->idx, &(c->curprg->def->tag), NULL, escaped_query, c->query? 0 : 1, },
+					 { &c->idx, &(c->curprg->def->tag), NULL, escaped_query, c->query? 0 : 1 },
 					 1);
 		GDKfree(escaped_query);
 	}
