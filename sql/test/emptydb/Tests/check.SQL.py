@@ -423,9 +423,9 @@ out += ";"
 
 out += '''
 -- auths
-select 'sys.auths', name, grantor from sys.auths;
+select 'sys.auths', a1.name as name, a2.name as grantor from sys.auths a1 left outer join sys.auths a2 on a1.grantor = a2.id order by a1.name;
 -- db_user_info
-select 'sys.db_user_info', u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
+select 'sys.db_user_info', u.name, u.fullname, s.name, u.schema_path, u.max_memory, u.max_workers, u.optimizer, a.name as default_role from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id left outer join sys.auths a on u.default_role = a.id order by u.name;
 -- dependencies
 select 'function used by function', s1.name, f1.name, s2.name, f2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
 select 'table used by function', s1.name, t.name, s2.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
