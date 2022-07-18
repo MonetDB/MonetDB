@@ -198,23 +198,23 @@ prepare_generic_event(str face, struct GenericEvent e, int state)
 			   ",\"thread\":%d"
 			   ",\"face\":\"%s\""
 			   ",\"state\":\"%s\""
-			   ",\"client_id\":\"%d\""
+			   ",\"client\":\"%d\""
 			   ",\"transaction_id\":"ULLFMT
 			   ",\"tag\":"OIDFMT
 			   ",\"query\":\"%s\""
-			   ",\"rc\":\"%s\""
+			   ",\"rc\":\"%d\""
 			   "}\n",
 			   mercurial_revision(),
 			   clk,
 			   mclk,
 			   THRgettid(),
 			   face,
-			   state? "done" : "start",
-			   (e.client_id)? *(e.client_id) : 0,
-			   (e.transaction_id)? *(e.transaction_id) : 0,
-			   (e.tag)? *(e.tag) : 0,
-			   (e.query)? e.query : "none",
-			   (e.rc)? "false" : "true"))
+			   state ? "done" : "start",
+			   e.cid ? *e.cid : 0,
+			   e.tid ? *e.tid : 0,
+			   e.tag ? *e.tag : 0,
+			   e.query ? e.query : "none",
+			   e.rc))
 		return logbuf.logbuffer;
 	else {
 		logdel(&logbuf);
