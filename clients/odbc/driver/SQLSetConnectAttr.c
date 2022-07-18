@@ -58,22 +58,9 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 		}
 		return SQL_SUCCESS;
 	case SQL_ATTR_CURRENT_CATALOG:		/* SQLCHAR* */
-		fixODBCstring(ValuePtr, StringLength, SQLINTEGER,
-			      addDbcError, dbc, return SQL_ERROR);
-		if (dbc->Connected) {
-			/* Driver does not support this functions */
-			addDbcError(dbc, "IM001", NULL, 0);
-			return SQL_ERROR;
-		}
-		if (dbc->dbname)
-			free(dbc->dbname);
-		dbc->dbname = dupODBCstring(ValuePtr, StringLength);
-		if (dbc->dbname == NULL) {
-			/* Memory allocation error */
-			addDbcError(dbc, "HY001", NULL, 0);
-			return SQL_ERROR;
-		}
-		break;
+		/* Driver does not support this function */
+		addDbcError(dbc, "IM001", NULL, 0);
+		return SQL_ERROR;
 	case SQL_ATTR_CONNECTION_TIMEOUT:	/* SQLUINTEGER */
 		dbc->sql_attr_connection_timeout = (SQLUINTEGER) (uintptr_t) ValuePtr;
 		if (dbc->mid)

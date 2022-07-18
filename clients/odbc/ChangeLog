@@ -1,6 +1,13 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Thu Jul 14 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Removed the possibility to retrieve or set the CURRENT_CATALOG
+  via SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, ...) and
+  SQLSetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, ...) as MonetDB does
+  not support CATALOG objects (no SQL support for: CREATE CATALOG abc
+  or SET CATALOG abc) and therefore there is no CURRENT_CATALOG.
+
 * Thu Jun 23 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Corrected ODBC functions SQLTablePrivileges() and SQLColumnPrivileges()
   for local temporary tables located in schema tmp. They did not return

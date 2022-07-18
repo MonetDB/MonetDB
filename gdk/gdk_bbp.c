@@ -3445,16 +3445,7 @@ BBPprepare(bool subcommit)
 {
 	bool start_subcommit;
 	int set = 1 + subcommit;
-	str bakdirpath, subdirpath;
 	gdk_return ret = GDK_SUCCEED;
-
-	bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
-	subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
-	if (bakdirpath == NULL || subdirpath == NULL) {
-		GDKfree(bakdirpath);
-		GDKfree(subdirpath);
-		return GDK_FAIL;
-	}
 
 	start_subcommit = (subcommit && backup_subdir == 0);
 	if (start_subcommit) {
@@ -3465,36 +3456,47 @@ BBPprepare(bool subcommit)
 	if (backup_files == 0) {
 		backup_dir = 0;
 		ret = BBPrecover(0);
-		if (ret == GDK_SUCCEED) {
-			if (MT_mkdir(bakdirpath) < 0 && errno != EEXIST) {
-				GDKsyserror("cannot create directory %s\n", bakdirpath);
-				ret = GDK_FAIL;
-			}
-			/* if BAKDIR already exists, don't signal error */
-			TRC_DEBUG(IO_, "mkdir %s = %d\n", bakdirpath, (int) ret);
+		if (ret != GDK_SUCCEED)
+			return ret;
+		str bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
+		if (bakdirpath == NULL) {
+			return GDK_FAIL;
 		}
+
+		if (MT_mkdir(bakdirpath) < 0 && errno != EEXIST) {
+			GDKsyserror("cannot create directory %s\n", bakdirpath);
+			GDKfree(bakdirpath);
+			return GDK_FAIL;
+		}
+		/* if BAKDIR already exists, don't signal error */
+		TRC_DEBUG(IO_, "mkdir %s = %d\n", bakdirpath, (int) ret);
+		GDKfree(bakdirpath);
 	}
-	if (ret == GDK_SUCCEED && start_subcommit) {
+	if (start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
+		str subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
+		if (subdirpath == NULL) {
+			return GDK_FAIL;
+		}
+
 		if (MT_mkdir(subdirpath) < 0) {
 			GDKsyserror("cannot create directory %s\n", subdirpath);
-			ret = GDK_FAIL;
+			GDKfree(subdirpath);
+			return GDK_FAIL;
 		}
 		TRC_DEBUG(IO_, "mkdir %s = %d\n", subdirpath, (int) ret);
+		GDKfree(subdirpath);
 	}
-	if (ret == GDK_SUCCEED && backup_dir != set) {
+	if (backup_dir != set) {
 		/* a valid backup dir *must* at least contain BBP.dir */
-		if ((ret = GDKmove(0, backup_dir ? BAKDIR : BATDIR, "BBP", "dir", subcommit ? SUBDIR : BAKDIR, "BBP", "dir", true)) == GDK_SUCCEED) {
-			backup_dir = set;
-		}
+		if ((ret = GDKmove(0, backup_dir ? BAKDIR : BATDIR, "BBP", "dir", subcommit ? SUBDIR : BAKDIR, "BBP", "dir", true)) != GDK_SUCCEED)
+			return ret;
+		backup_dir = set;
 	}
 	/* increase counters */
-	if (ret == GDK_SUCCEED) {
-		backup_subdir += subcommit;
-		backup_files++;
-	}
-	GDKfree(bakdirpath);
-	GDKfree(subdirpath);
+	backup_subdir += subcommit;
+	backup_files++;
+
 	return ret;
 }
 
