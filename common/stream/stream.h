@@ -228,18 +228,6 @@ typedef enum {
 	PROTOCOL_COLUMNAR = 3 // sql_result.c
 } protocol_version;
 
-typedef enum {
-	COMPRESSION_NONE = 0, // mal_mapi.c
-	COMPRESSION_SNAPPY = 1, // mcrypt.c, mal_mapi.c
-	COMPRESSION_LZ4 = 2, // same
-	COMPRESSION_AUTO = 255 // never used
-} compression_method;
-
-stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp); // mal_mapi.c
-stream_export int bs2_resizebuf(stream *ss, size_t bufsiz); // sql_result.c
-stream_export buffer bs2_buffer(stream *s); // sql_result.c
-stream_export void bs2_setpos(stream *ss, size_t pos); // sql_result.c
-
 
 /* read block of data including the end of block marker */
 stream_export ssize_t mnstr_read_block(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
