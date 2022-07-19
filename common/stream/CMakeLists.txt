@@ -40,6 +40,7 @@ target_sources(stream
   stream.h
   stream_internal.h
   stream_socket.h
+  mapi_prompt.h
   pump.h
   PUBLIC
   ${stream_public_headers})
