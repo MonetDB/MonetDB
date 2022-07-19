@@ -222,6 +222,8 @@ stream_export stream *bs_stream(stream *s); // unused
 stream_export void set_prompting(stream *block_stream, const char *prompt, stream *prompt_stream);
 
 
+stream_export stream *mapi_request_upload(const char *filename, bool binary, stream *from, stream *to);
+
 typedef enum {
 	PROTOCOL_AUTO = 0, // unused
 	PROTOCOL_9 = 1, // mal_mapi.c, mal_client.c;
