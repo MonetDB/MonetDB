@@ -444,13 +444,14 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			GDKfree(h);
 			return GDK_FAIL;
 		}
-		BBPunshare(b->tvheap->parentid);
-		BBPunfix(b->tvheap->parentid);
+		bat parid = b->tvheap->parentid;
+		BBPunshare(parid);
 		MT_lock_set(&b->theaplock);
 		HEAPdecref(b->tvheap, false);
 		ATOMIC_INIT(&h->refs, 1);
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		BBPunfix(parid);
 	}
 	/* copy data from n to b */
 	r = BUNlast(b);
