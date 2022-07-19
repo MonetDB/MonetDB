@@ -4457,6 +4457,89 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+/* 
+ * Gets the column expressions of a diff function and adds them to "columns".
+ * The diff function has two possible argument types: either a sql_exp representing a column
+ * or a sql_exp representing another diff function, therefore this function is recursive.
+ */
+static void
+get_diff_function_columns(sql_exp *diffExp, list *columns) {
+	list *args = diffExp->l;
+	
+	for (node *arg = args->h; arg; arg = arg->next) {
+		sql_exp *exp = arg->data;
+		
+		// diff function
+		if (exp->type == e_func) {
+			get_diff_function_columns(exp, columns);
+		}
+		// column
+		else {
+			list_append(columns, exp);
+		}
+	}
+}
+
+/* 
+ * Builds a list of aggregation key columns to be used by the select push down algorithm, namely for
+ * window functions. Returns NULL if the window function does not partition by any column
+ */
+static list *
+get_aggregation_key_columns(sql_allocator *sa, sql_rel *r) {
+	for (node* n = r->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		
+		if (e->type == e_func) {
+			sql_subfunc *f = e->f;
+			
+			// aggregation function
+			if (!strcmp(f->func->base.name, "rank")) {
+				list* rankArguments = e->l;
+				// the partition key is the second argument
+				sql_exp *partitionExp = rankArguments->h->next->data;
+
+				// check if the key contains any columns, i.e., is a diff function
+				if (partitionExp->type == e_func) {
+					// get columns to list
+					list *aggColumns = sa_list(sa);
+					get_diff_function_columns(partitionExp, aggColumns);
+					return aggColumns;
+				}
+				// the function has no aggregation columns (e_atom of boolean)
+				else {
+					return NULL;
+				}
+
+			}
+		}
+	}
+	return NULL;
+}
+
+/*
+ * Checks if a filter column is also used as an aggregation key, so it can be later safely pushed down.
+ */
+static int
+filter_column_in_aggregation_columns(sql_exp *column, list *aggColumns) {
+	char *tableName = column->l;
+	char *columnName = column->r;
+
+	for (node *n = aggColumns->h; n; n = n->next) {
+		sql_exp *aggCol = n->data;
+		char *aggColTableName = aggCol->l;
+		char *aggColColumnName = aggCol->r;
+		
+		if (!strcmp(tableName, aggColTableName) && !strcmp(columnName, aggColColumnName)) {
+			/* match */
+			return 1;
+		}
+	}
+
+	/* no matches found */
+	return 0;
+}
+
+
 /*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
@@ -4603,6 +4686,48 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 					}
 				}
 				n = next;
+			}
+		}
+		
+		/* push filters if they match the aggregation key on a window function */
+		else if (pl && pl->op != op_ddl && exps_have_unsafe(r->exps, 0)) {
+			set_processed(pl);
+			/* list of aggregation key columns */
+			list *aggColumns = get_aggregation_key_columns(v->sql->sa, r);
+
+			/* aggregation keys found, check if any filter matches them */
+			if (aggColumns) {
+				for (n = exps->h; n;) {
+					node *next = n->next;
+					sql_exp *e = n->data, *ne = NULL;
+					
+					if (e->type == e_cmp) {
+						/* simple comparison filter */
+						if (e->flag == cmp_gt || e->flag == cmp_gte || e->flag == cmp_lte || e->flag == cmp_lt
+							|| e->flag == cmp_equal || e->flag == cmp_notequal || e->flag == cmp_in || e->flag == cmp_notin) {
+							sql_exp* column = e->l;
+
+							/* check if the expression matches any aggregation key, meaning we can 
+							   try to safely push it down */
+							if (filter_column_in_aggregation_columns(column, aggColumns)) {
+								ne = exp_push_down_prj(v->sql, e, r, pl);
+
+								/* can we move it down */
+								if (ne && ne != e && pl->exps) {
+									if (!is_select(pl->op) || rel_is_ref(pl))
+										r->l = pl = rel_select(v->sql->sa, pl, NULL);
+									rel_select_add_exp(v->sql->sa, pl, ne);
+									list_remove_node(exps, NULL, n);
+									v->changes++;
+								}
+							}
+						}
+					}
+					n = next;
+				}
+
+				/* cleanup list */
+				list_destroy(aggColumns);
 			}
 		}
 	}
