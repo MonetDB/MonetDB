@@ -16,6 +16,9 @@
 #include "copy.h"
 #include "rel_copy.h"
 
+// #define BLOCK_DEBUG
+
+
 struct copy_destructor {
 	Sink sink;
 	stream *stream_to_destroy;
@@ -62,7 +65,25 @@ end:
 }
 
 
-// #define BLOCK_DEBUG
+static str
+COPYrequest_upload(Stream *upload, str *filename, bit *binary)
+{
+	Client cntxt = getClientContext();
+	backend *be = cntxt->sqlcontext;
+	mvc *mvc = be->mvc;
+	bstream *bs = mvc->scanner.rs;
+	while (!bs->eof)
+		bstream_next(bs);
+	stream *from = bs->s;
+	stream *to = mvc->scanner.ws;
+	assert(isa_block_stream(from));
+	assert(isa_block_stream(to));
+
+	*upload = mapi_request_upload(*filename, *binary, from, to);
+	if (*upload == NULL)
+		throw(IO, "streams.request_upload", "%s", mnstr_peek_error(NULL));
+	return MAL_SUCCEED;
+}
 
 static str
 COPYread(Stream *stream_out_arg, Stream *stream_in_arg, lng *block_size_arg, bat *block_bat_arg)
@@ -560,6 +581,11 @@ end:
 
 
 static mel_func copy_init_funcs[] = {
+ command("copy", "request_upload", COPYrequest_upload, true, "request MAPI file upload",
+	args(1, 3,
+		arg("", streams),
+		arg("filename", str), arg("binary", bit)
+ )),
  command("copy", "read", COPYread, true, "Read 'block_size' bytes into 'block' from 's'",
 	args(1, 4,
 		arg("",streams),

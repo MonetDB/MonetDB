@@ -116,20 +116,54 @@ struct loop_vars {
 
 
 static void
-emit_onserver_loop(
+emit_pipelined_loop(
 	MalBlkPtr mb, struct loop_vars *loop_vars,
-	int var_fname, int block_size,
+	int var_fname, int var_onclient, int block_size,
 	int var_line_sep, int var_quote_char, int var_escape, int var_failures_bat, int var_offset, int var_nrecords)
 {
 	(void)var_offset;
 	InstrPtr q;
 	int bte_bat_type = newBatType(TYPE_bte);
 	int alloc = allocation_size(block_size);
+    int streams_type = ATOMindex("streams");
+	int var_tmp;
 
 	// set up the stream channel
+
+	q = newAssignment(mb);
+	pushNil(mb, q, streams_type);
+	int var_stream = getDestVar(q);
+
+	q = newStmt(mb, "calc", "==");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_onclient);
+	q = pushInt(mb, q, 0);
+	var_tmp = getDestVar(q);
+
 	q = newStmt(mb, "streams", "openRead");
 	q = pushArgument(mb, q, var_fname);
-	int var_stream = getDestVar(q);
+	setDestVar(q, var_stream);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	q = pushNil(mb, q, TYPE_bit);
+	setDestVar(q, var_tmp);
+
+	q = newStmt(mb, "calc", "!=");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_onclient);
+	q = pushInt(mb, q, 0);
+	var_tmp = getDestVar(q);
+
+	q = newStmt(mb, "copy", "request_upload");
+	q = pushArgument(mb, q, var_fname);
+	q = pushBit(mb, q, false);
+	setDestVar(q, var_stream);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	q = pushNil(mb, q, TYPE_bit);
+	setDestVar(q, var_tmp);
 
 	q = newStmt(mb, "copy", "defer_close");
 	q = pushArgument(mb, q, var_stream);
@@ -435,7 +469,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushNil(mb, q, TYPE_bit);
 	InstrPtr claim_channel_stmt = emit_channel(mb, getDestVar(q));
 
-	emit_onserver_loop(mb, &loop_vars, var_fname, block_size, var_line_sep, var_quote_char, var_escape, var_failures_bat, var_offset, var_num_rows);
+	emit_pipelined_loop(mb, &loop_vars, var_fname, var_on_client, block_size, var_line_sep, var_quote_char, var_escape, var_failures_bat, var_offset, var_num_rows);
 
 	int var_claim_token = emit_receive(mb, loop_vars.loop_handle, claim_channel_stmt);
 
