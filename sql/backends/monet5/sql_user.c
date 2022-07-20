@@ -101,9 +101,11 @@ getUserNameCallback(Client c)
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
-		if (mvc_trans(m) == 0) {
+		int active = m->session->tr->active;
+		if (active || mvc_trans(m) == 0) {
 			res = getUserName(m, c->user);
-			sql_trans_end(m->session, SQL_OK);
+			if (!active)
+				sql_trans_end(m->session, SQL_OK);
 		}
 	}
 	return res;
@@ -117,11 +119,13 @@ getUserPasswordCallback(Client c, const char *user)
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
+		int active = m->session->tr->active;
 		// this starts new transaction
-		if (mvc_trans(m) == 0) {
+		if (active || mvc_trans(m) == 0) {
 			oid rid = getUserOIDByName(m, user);
 			res = getUserPassword(m, rid);
-			sql_trans_end(m->session, SQL_OK);
+			if (!active)
+				sql_trans_end(m->session, SQL_OK);
 		}
 	}
 	return res;
@@ -204,9 +208,11 @@ getUserOIDCallback(Client c, const char *user)
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
-		if (mvc_trans(m) == 0) {
+		int active = m->session->tr->active;
+		if (active || mvc_trans(m) == 0) {
 			res = getUserOIDByName(m, user);
-			sql_trans_end(m->session, SQL_OK);
+			if (!active)
+				sql_trans_end(m->session, SQL_OK);
 			return res;
 		}
 	}
