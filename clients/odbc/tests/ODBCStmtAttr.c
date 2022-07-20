@@ -87,7 +87,7 @@ StmtAttribute2name(SQLINTEGER attribute)
 	case SQL_ATTR_QUERY_TIMEOUT:
 		return "SQL_ATTR_QUERY_TIMEOUT";
 	default:
-		fprintf(stderr, "StmtAttribute2name: Unexpected value %d\n", attribute);
+		fprintf(stderr, "StmtAttribute2name: Unexpected value %ld\n", (long) attribute);
 		return "NOT YET IMPLEMENTED";
 	}
 }
