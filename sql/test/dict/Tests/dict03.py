@@ -9,7 +9,7 @@ from MonetDBtesting.sqltest import SQLTestCase
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
 
-    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
+    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
         with SQLTestCase() as mdb:
             mdb.connect(database='db1', port=s.dbport, username="monetdb", password="monetdb")
             mdb.execute("""
@@ -33,14 +33,14 @@ with tempfile.TemporaryDirectory() as farm_dir:
             mdb.execute("SELECT c0 FROM t2;").assertSucceeded().assertDataResultMatch([(-1981639662,),])
         s.communicate()
 
-    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
+    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
         with SQLTestCase() as mdb:
             mdb.connect(database='db1', port=s.dbport, username="monetdb", password="monetdb")
             mdb.execute("SELECT c0 FROM t1 ORDER BY c0;").assertSucceeded().assertDataResultMatch([('',),('3be汉字0',),('aa8877',)])
             mdb.execute("SELECT c0 FROM t2;").assertSucceeded().assertDataResultMatch([(-1981639662,),])
         s.communicate()
 
-    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
+    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
         with SQLTestCase() as mdb:
             mdb.connect(database='db1', port=s.dbport, username="monetdb", password="monetdb")
             mdb.execute("SELECT c0 FROM t1 ORDER BY c0;").assertSucceeded().assertDataResultMatch([('',),('3be汉字0',),('aa8877',)])

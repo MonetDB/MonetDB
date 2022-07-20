@@ -84,9 +84,16 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 		break;
 	case SQL_ATTR_CURRENT_CATALOG:		/* SQLCHAR* */
 		/* SQL_CURRENT_QUALIFIER */
-		copyString(dbc->dbname, strlen(dbc->dbname), ValuePtr,
-			   BufferLength, StringLengthPtr, SQLINTEGER,
-			   addDbcError, dbc, return SQL_ERROR);
+		/* MonetDB does NOT support SQL catalog concept, return empty string */
+		if (BufferLength <= 0) {
+			/* Invalid string or buffer length */
+			addDbcError(dbc, "HY090", NULL, 0);
+			return SQL_ERROR;
+		}
+		strcpy_len((char *) ValuePtr, "", BufferLength);
+		if (StringLengthPtr) {
+			*(StringLengthPtr) = (SQLINTEGER) 0;
+		}
 		break;
 	case SQL_ATTR_TXN_ISOLATION:		/* SQLUINTEGER */
 		/* SQL_TXN_ISOLATION */
