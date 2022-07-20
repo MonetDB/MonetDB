@@ -5846,6 +5846,12 @@ int
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action)
 {
 	sql_table *t = find_sql_table(tr, s, name), *gt = NULL;
+
+	if (!t) {
+		TRC_ERROR(SQL_STORE, "sql_trans_drop_table: Table %s.%s does not exist\n", s->base.name, name);
+		return -1;
+	}
+
 	if (t && isTempTable(t)) {
 		gt = find_sql_table_id(tr, s, t->base.id);
 		if (gt)
