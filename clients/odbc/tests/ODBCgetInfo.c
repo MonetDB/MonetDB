@@ -428,7 +428,7 @@ const struct {
 		.info = SQL_DATABASE_NAME,
 		.name = "SQL_DATABASE_NAME",
 		.type = STRING,
-		.str = "mTests_sql_odbc_samples",
+		.str = "mTests_sql_odbc_tests",
 	},
 	{
 		.info = SQL_DATETIME_LITERALS,

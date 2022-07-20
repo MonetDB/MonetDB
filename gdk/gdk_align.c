@@ -147,6 +147,7 @@ VIEWcreate(oid seq, BAT *b)
 		}
 		if (bn->tvheap) {
 			BBPunshare(bn->tvheap->parentid);
+			BBPunfix(bn->tvheap->parentid);
 			HEAPdecref(bn->tvheap, false);
 		}
 		HEAPdecref(bn->theap, false);

@@ -267,14 +267,7 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 		}
 		break;
 
-	case SQL_ATTR_ROW_NUMBER:	     /* SQLULEN */
-		/* read-only attribute */
-	default:
-		/* Invalid attribute/option identifier */
-		addStmtError(stmt, "HY092", NULL, 0);
-		return SQL_ERROR;
-
-		/* TODO: implement requested behavior */
+	/* TODO: implement requested behavior */
 	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
 #ifdef SQL_ATTR_ASYNC_STMT_EVENT
 	case SQL_ATTR_ASYNC_STMT_EVENT:		/* SQLPOINTER */
@@ -292,6 +285,13 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 	case SQL_ATTR_USE_BOOKMARKS:		/* SQLULEN */
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
+		return SQL_ERROR;
+
+	case SQL_ATTR_ROW_NUMBER:	     /* SQLULEN */
+		/* invalid attribute, can only be used with SQLGetStmtAttr */
+	default:
+		/* Invalid attribute/option identifier */
+		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}
 

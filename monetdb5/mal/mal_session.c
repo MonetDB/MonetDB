@@ -280,8 +280,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 		if (!GDKembedded()) {
 			/* access control: verify the credentials supplied by the user,
-			* no need to check for database stuff, because that is done per
-			* database itself (one gets a redirect) */
+			 * no need to check for database stuff, because that is done per
+			 * database itself (one gets a redirect) */
 			err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
 			if (err != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", err);

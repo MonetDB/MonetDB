@@ -33,6 +33,9 @@ mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int 
 mal_export str malCommandCall(MalStkPtr stk, InstrPtr pci);
 mal_export int isNotUsedIn(InstrPtr p, int start, int a);
 
+/* defined in mal.c */
+mal_export Client getClientContext(void);
+
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #if !defined(NDEBUG) && defined(__GNUC__)
 /* for ease of programming and debugging (assert reporting a useful

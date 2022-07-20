@@ -800,7 +800,9 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
 		b->theap->storage = b->theap->newstorage = STORE_INVALID;
-		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
+		if ((b->batCount == 0 ?
+		     HEAPalloc(b->theap, b->batCapacity, b->twidth, ATOMsize(b->ttype)) :
+		     HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;
 		}
@@ -817,7 +819,9 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
 		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
-		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
+		if ((b->tvheap->free == 0 ?
+		     ATOMheap(b->ttype, b->tvheap, b->batCapacity) :
+		     HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);
 			return NULL;

@@ -370,6 +370,8 @@ class server(Popen):
             cmd = ['mserver5',
                    '--set', ipv6 and 'mapi_listenaddr=all' or 'mapi_listenaddr=0.0.0.0',
                    '--set', 'gdk_nr_threads=1']
+        if os.getenv('NOWAL'):
+            cmd.extend(['--set', 'sql_debug=128'])
         if verbose:
             sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
         if notrace and '--trace' in cmd:
