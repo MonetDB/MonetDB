@@ -92,35 +92,36 @@ recv_upload_destroy(stream *s)
 
 
 stream*
-mapi_request_upload(const char *filename, bool binary, stream *from, stream *to)
+mapi_request_upload(const char *filename, bool binary, bstream *bs, stream *ws)
 {
 	const char *msg = NULL;
 	stream *s = NULL;
 	struct mapi_recv_upload *state = NULL;
 	ssize_t nwritten;
 
-	assert(from->readonly);
-	assert(!to->readonly);
-	assert(isa_block_stream(from));
-	assert(isa_block_stream(to));
+	while (!bs->eof)
+		bstream_next(bs);
+	stream *rs = bs->s;
+	assert(isa_block_stream(ws));
+	assert(isa_block_stream(rs));
 
 	if (binary)
-		nwritten = mnstr_printf(to, "%srb %s\n", PROMPT3, filename);
+		nwritten = mnstr_printf(ws, "%srb %s\n", PROMPT3, filename);
 	else
-		nwritten = mnstr_printf(to, "%sr 0 %s\n", PROMPT3, filename);
+		nwritten = mnstr_printf(ws, "%sr 0 %s\n", PROMPT3, filename);
 	if (nwritten <= 0) {
-		msg = mnstr_peek_error(to);
+		msg = mnstr_peek_error(ws);
 		goto end;
 	}
-	if (mnstr_flush(to, MNSTR_FLUSH_ALL) < 0) {
-		msg = mnstr_peek_error(to);
+	if (mnstr_flush(ws, MNSTR_FLUSH_ALL) < 0) {
+		msg = mnstr_peek_error(ws);
 		goto end;
 	}
 
 	char buf[256];
-	if (mnstr_readline(from, buf, sizeof(buf)) != 1 || buf[0] != '\n') {
+	if (mnstr_readline(rs, buf, sizeof(buf)) != 1 || buf[0] != '\n') {
 		msg = buf;
-		discard(from);
+		discard(rs);
 		goto end;
 	}
 
@@ -135,8 +136,8 @@ mapi_request_upload(const char *filename, bool binary, stream *from, stream *to)
 		msg = mnstr_peek_error(NULL);
 		goto end;
 	}
-	state->from_client = from;
-	state->to_client = to;
+	state->from_client = rs;
+	state->to_client = ws;
 	s->stream_data.p = state;
 	s->binary= binary;
 	s->read = recv_upload_read;

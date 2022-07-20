@@ -580,15 +580,7 @@ importColumn(backend *be, bat *ret, BUN *retcnt, str method, bool byteswap, str 
 
 	// Open the input stream
 	if (onclient) {
-
-			stream *ws = be->mvc->scanner.ws;
-			bstream *bs = be->mvc->scanner.rs;
-			while (!bs->eof)
-				bstream_next(bs);
-			stream *rs = bs->s;
-			assert(isa_block_stream(ws));
-			assert(isa_block_stream(rs));
-			s = stream_to_close = mapi_request_upload(path, true, rs, ws);
+		s = stream_to_close = mapi_request_upload(path, true, be->mvc->scanner.rs, be->mvc->scanner.ws);
 	} else {
 		s = stream_to_close = open_rstream(path);
 	}
