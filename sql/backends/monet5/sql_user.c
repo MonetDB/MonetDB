@@ -598,8 +598,6 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	sql_column *col = NULL;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
-	list *res, *ops;
-	sql_func *f = NULL;
 	str err;
 
 	/* create the authorisation related tables */
@@ -608,53 +606,20 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(&col, m, t, "default_schema", "int", 9);
 	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
-	mvc_create_column_(&col, m, t, "max_memory", "bigint", bits2digits(64));
-	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
+	mvc_create_column_(&col, m, t, "max_memory", "bigint", 64);
+	mvc_create_column_(&col, m, t, "max_workers", "int", 32);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
-	mvc_create_column_(&col, m, t, "default_role", "int", 9);
+	mvc_create_column_(&col, m, t, "default_role", "int", 32);
 	mvc_create_column_(&col, m, t, "password", "varchar", 256);
 	uinfo = t;
 
-	res = sa_list(m->sa);
-	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 2048, 0), ARG_OUT));
-
-	/* add function */
-	ops = sa_list(m->sa);
-	/* following funcion returns a table (single column) of user names
-	   with the approriate scenario (sql) */
-	//mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE, FALSE);
-	mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", NULL, "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) return select name from users;", FALSE, FALSE, TRUE, FALSE);
-	/*
-	if (f)
-		f->instantiated = TRUE;
-		*/
-	t = mvc_init_create_view(m, s, "users",
-			    "create view sys.users as select u.\"name\", "
-			    "u.\"fullname\", u.\"default_schema\", "
-				"u.\"schema_path\", u.\"max_memory\", "
-				"u.\"max_workers\", u.\"optimizer\", "
-				"u.\"default_role\" from \"sys\".\"db_user_info\" as u;");
-	if (!t) {
-		TRC_CRITICAL(SQL_TRANS, "Failed to create 'users' view\n");
-		return ;
-	}
-
-	mvc_create_column_(&col, m, t, "name", "varchar", 2048);
-	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
-	mvc_create_column_(&col, m, t, "default_schema", "int", 9);
-	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
-	mvc_create_column_(&col, m, t, "max_memory", "bigint", bits2digits(64));
-	mvc_create_column_(&col, m, t, "max_workers", "int", 9);
-	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);
-	mvc_create_column_(&col, m, t, "default_role", "int", 9);
-
 	sys = find_sql_schema(m->session->tr, "sys");
 	schema_id = sys->base.id;
-	assert(schema_id >= 0);
+	assert(schema_id == 2000);
 
 	sqlstore *store = m->session->tr->store;
 	char *username = "monetdb";
-	char *password = mcrypt_BackendSum("monetdb", strlen("monedtb"));
+	char *password = mcrypt_BackendSum("monetdb", strlen("monetdb"));
 	char *hash = NULL;
 	if ((err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");
@@ -1105,4 +1070,3 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 	return res;
 }
-

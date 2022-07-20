@@ -1066,9 +1066,6 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	// restrict access to db_user_info to monetdb role
 	t = find_sql_table(tr, s, "db_user_info");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &su, &p, &zero, &zero);
-	// make users view public
-	t = find_sql_table(tr, s, "users");
-	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 
 
 	p = PRIV_EXECUTE;
