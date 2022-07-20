@@ -3111,14 +3111,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape);
 	} else {
 		if (onclient) {
-			stream *ws = be->mvc->scanner.ws;
-			bstream *bs = be->mvc->scanner.rs;
-			while (!bs->eof)
-				bstream_next(bs);
-			stream *rs = bs->s;
-			assert(isa_block_stream(ws));
-			assert(isa_block_stream(rs));
-			ss = mapi_request_upload(fname, false, rs, ws);
+			ss = mapi_request_upload(fname, false, be->mvc->scanner.rs, be->mvc->scanner.ws);
 		} else {
 			ss = open_rastream(fname);
 		}

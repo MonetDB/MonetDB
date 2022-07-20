@@ -220,9 +220,6 @@ stream_export stream *block_stream(stream *s); // mapi.c, mal_mapi.c, client.c, 
 stream_export bool isa_block_stream(const stream *s); // mapi.c, mal_client.c, remote.c, sql_scenario.c/sqlReader, sql_scan.c
 stream_export stream *bs_stream(stream *s); // unused
 
-
-stream_export stream *mapi_request_upload(const char *filename, bool binary, stream *from, stream *to);
-
 typedef enum {
 	PROTOCOL_AUTO = 0, // unused
 	PROTOCOL_9 = 1, // mal_mapi.c, mal_client.c;
@@ -265,7 +262,8 @@ stream_export stream *stream_blackhole_create(void); // never used
 
 stream_export stream *stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths, char filler); // sql.c
 
-
 stream_export stream *create_text_stream(stream *s);
+
+stream_export stream *mapi_request_upload(const char *filename, bool binary, bstream *rs, stream *ws);
 
 #endif /*_STREAM_H_*/
