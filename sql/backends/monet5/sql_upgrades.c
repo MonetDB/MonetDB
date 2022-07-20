@@ -4599,11 +4599,116 @@ sql_update_default(Client c, mvc *sql)
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
+	/* if sys.db_user_info does not have a column password, we need to
+	 * add a bunch of columns */
+	pos = snprintf(buf, bufsize,
+				   "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info') and name = 'password';\n");
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output))) {
+		GDKfree(buf);
+		return err;
+	}
+	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		pos = 0;
+		pos += snprintf(buf + pos, bufsize - pos,
+						"alter table sys.db_user_info add column max_memory bigint;\n"
+						"alter table sys.db_user_info add column max_workers int;\n"
+						"alter table sys.db_user_info add column optimizer varchar(1024);\n"
+						"alter table sys.db_user_info add column default_role int;\n"
+						"alter table sys.db_user_info add column password varchar(256);\n");
+		pos += snprintf(buf + pos, bufsize - pos,
+						"update sys.db_user_info u set max_memory = 0, max_workers = 0, optimizer = 'default_pipe', default_role = (select id from sys.auths a where a.name = u.name);\n");
+		int endprint = (int) pos;
+		bat bid = BBPindex("M5system_auth_user");
+		BAT *u = BATdescriptor(bid);
+		bid = BBPindex("M5system_auth_passwd_v2");
+		BAT *p = BATdescriptor(bid);
+		bid = BBPindex("M5system_auth_deleted");
+		BAT *d = BATdescriptor(bid);
+		BATiter ui = bat_iterator(u);
+		BATiter pi = bat_iterator(p);
+		for (oid i = 0; i < ui.count; i++) {
+			if (BUNfnd(d, &i) == BUN_NONE) {
+				const char *user = BUNtvar(ui, i);
+				const char *pass = BUNtvar(pi, i);
+				char *user_esc = NULL;
+				char *pass_esc = NULL;
+				if (strchr(user, '\'') != NULL) {
+					char *user_esc = GDKmalloc(strlen(user) * 2 + 1);
+					size_t k = 0;
+					for (size_t j = 0; user[j]; j++) {
+						if (user[j] == '\'')
+							user_esc[k++] = '\'';
+						user_esc[k++] = user[j];
+					}
+					user_esc[k] = '\0';
+				}
+				if (strchr(pass, '\'') != NULL) {
+					char *pass_esc = GDKmalloc(strlen(pass) * 2 + 1);
+					size_t k = 0;
+					for (size_t j = 0; pass[j]; j++) {
+						if (pass[j] == '\'')
+							pass_esc[k++] = '\'';
+						pass_esc[k++] = pass[j];
+					}
+					pass_esc[k] = '\0';
+				}
+				pos += snprintf(buf + pos, bufsize - pos,
+								"update sys.db_user_info set password = r'%s' where name = r'%s';\n", pass_esc ? pass_esc : pass, user_esc ? user_esc : user);
+				GDKfree(user_esc);
+				GDKfree(pass_esc);
+			}
+		}
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%.*s-- and copying passwords\n\n", endprint, buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		bat_iterator_end(&ui);
+		bat_iterator_end(&pi);
+		BBPunfix(u->batCacheid);
+		BBPunfix(p->batCacheid);
+		BBPunfix(d->batCacheid);
+
+		if (err == MAL_SUCCEED) {
+			sql_schema *s = mvc_bind_schema(sql, "sys");
+			sql_table *t = mvc_bind_table(sql, s, "roles");
+			t->system = 0;
+			t = mvc_bind_table(sql, s, "users");
+			t->system = 0;
+			t = mvc_bind_table(sql, s, "dependency_schemas_on_users");
+			t->system = 0;
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop view sys.dependency_schemas_on_users;\n"
+							"drop view sys.roles;\n"
+							"drop view sys.users;\n"
+							"drop function sys.db_users();\n"
+							"CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_user_info u);\n"
+							"GRANT SELECT ON sys.roles TO PUBLIC;\n"
+							"CREATE VIEW sys.users AS SELECT name, fullname, default_schema, schema_path, max_memory, max_workers, optimizer, default_role FROM sys.db_user_info;\n"
+							"GRANT SELECT ON sys.users TO PUBLIC;\n"
+							"CREATE FUNCTION sys.db_users() RETURNS TABLE(name varchar(2048)) RETURN SELECT name FROM sys.db_user_info;\n"
+							"CREATE VIEW sys.dependency_schemas_on_users AS\n"
+							"SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type\n"
+							" FROM sys.db_user_info AS u, sys.schemas AS s\n"
+							" WHERE u.default_schema = s.id\n"
+							" ORDER BY s.name, u.name;\n"
+							"GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;\n"
+							"update sys._tables set system = true where name in ('users', 'roles', 'dependency_schemas_on_users') AND schema_id = 2000;\n"
+							"update sys.functions set system = true where system <> true and name in ('db_users') and schema_id = 2000 and type = %d;\n", F_UNION);
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		}
+	}
+	res_table_destroy(output);
+	output = NULL;
+	if (err != MAL_SUCCEED)
+		return err;
+
 	/* if 'describe_partition_tables' system view doesn't use 'vals'
 	 * CTE, re-create it; while we're at it, also update the sequence
 	 * dumping code */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"select 1 from tables where schema_id = (select \"id\" from sys.schemas where \"name\" = 'sys') and \"name\" = 'describe_partition_tables' and \"query\" not like '%%vals%%';\n");
+	pos = snprintf(buf, bufsize,
+			"select 1 from sys.tables where schema_id = (select \"id\" from sys.schemas where \"name\" = 'sys') and \"name\" = 'describe_partition_tables' and \"query\" not like '%%vals%%';\n");
 	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output))) {
 		GDKfree(buf);
 		return err;
@@ -4624,6 +4729,8 @@ sql_update_default(Client c, mvc *sql)
 		t->system = 0;
 		t = mvc_bind_table(sql, s, "dump_tables");
 		t->system = 0;
+		t = mvc_bind_table(sql, s, "dump_create_users");
+		t->system = 0;
 
 		pos = 0;
 		pos += snprintf(buf + pos, bufsize - pos,
@@ -4636,7 +4743,8 @@ sql_update_default(Client c, mvc *sql)
 			"drop view sys.dump_sequences;\n"
 			"drop view sys.dump_start_sequences;\n"
 			"drop view sys.dump_tables;\n"
-			"drop view sys.describe_tables;\n");
+			"drop view sys.describe_tables;\n"
+			"drop view sys.dump_create_users;\n");
 
 		pos += snprintf(buf + pos, bufsize - pos,
 			"CREATE VIEW sys.describe_partition_tables AS\n"
@@ -4782,7 +4890,17 @@ sql_update_default(Client c, mvc *sql)
 			" SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system AND t.id > i);\n"
 			" END WHILE;\n"
 			" END IF;\n"
-			"END;\n");
+			"END;\n"
+			"CREATE VIEW sys.dump_create_users AS\n"
+			" SELECT\n"
+			" 'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||\n"
+			" sys.sq(sys.password_hash(ui.name)) ||\n"
+			" ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA ' || sys.sq(s.name) || ' SCHEMA PATH ' || sys.sq(ui.schema_path) || ';' stmt,\n"
+			" ui.name user_name\n"
+			" FROM sys.db_user_info ui, sys.schemas s\n"
+			" WHERE ui.default_schema = s.id\n"
+			" AND ui.name <> 'monetdb'\n"
+			" AND ui.name <> '.snapshot';\n");
 
 		pos += snprintf(buf + pos, bufsize - pos,
 			"CREATE VIEW sys.describe_tables AS\n"
@@ -4871,7 +4989,7 @@ sql_update_default(Client c, mvc *sql)
 			" RETURN sys.dump_statements;\n"
 			"END;\n");
 		pos += snprintf(buf + pos, bufsize - pos,
-			"update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'describe_tables', 'dump_tables') AND schema_id = 2000;\n");
+			"update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'describe_tables', 'dump_tables', 'dump_create_users') AND schema_id = 2000;\n");
 		pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and name in ('dump_table_data') and schema_id = 2000 and type = %d;\n", F_PROC);
 		pos += snprintf(buf + pos, bufsize - pos,
@@ -4890,6 +5008,8 @@ sql_update_default(Client c, mvc *sql)
 	}
 	res_table_destroy(output);
 	output = NULL;
+	if (err != MAL_SUCCEED)
+		return err;
 
 	/* 10_sys_schema_extensions */
 	/* if the keyword LOCKED is in the list of keywords, upgrade */
@@ -4913,6 +5033,8 @@ sql_update_default(Client c, mvc *sql)
 	}
 	res_table_destroy(output);
 	output = NULL;
+	if (err != MAL_SUCCEED)
+		return err;
 
 	/* if the table type UNLOGGED TABLE is not in the list of table
 	 * types, upgrade */
