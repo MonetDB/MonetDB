@@ -30533,16 +30533,6 @@ eval
 pattern batcapi.eval(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any... 
 CUDFevalStd;
 Execute a simple CUDF script value
-batcapi
-eval_aggr
-pattern batcapi.eval_aggr(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any... 
-CUDFevalAggr;
-grouped aggregates through CUDF
-batcapi
-subeval_aggr
-pattern batcapi.subeval_aggr(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any... 
-CUDFevalAggr;
-grouped aggregates through CUDF
 batcolor
 blue
 command batcolor.blue(X_0:bat[:color]):bat[:int] 
