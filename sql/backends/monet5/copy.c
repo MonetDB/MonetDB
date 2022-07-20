@@ -71,15 +71,7 @@ COPYrequest_upload(Stream *upload, str *filename, bit *binary)
 	Client cntxt = getClientContext();
 	backend *be = cntxt->sqlcontext;
 	mvc *mvc = be->mvc;
-	bstream *bs = mvc->scanner.rs;
-	while (!bs->eof)
-		bstream_next(bs);
-	stream *from = bs->s;
-	stream *to = mvc->scanner.ws;
-	assert(isa_block_stream(from));
-	assert(isa_block_stream(to));
-
-	*upload = mapi_request_upload(*filename, *binary, from, to);
+	*upload = mapi_request_upload(*filename, *binary, mvc->scanner.rs, mvc->scanner.ws);
 	if (*upload == NULL)
 		throw(IO, "streams.request_upload", "%s", mnstr_peek_error(NULL));
 	return MAL_SUCCEED;
