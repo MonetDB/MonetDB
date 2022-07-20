@@ -572,6 +572,8 @@ vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
 			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
 			return -1;
 		}
+		if (b->batCount == 0)
+			free = 0;
 		if (b->ttype >= 0 &&
 		    ATOMstorage(b->ttype) == TYPE_str &&
 		    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
@@ -4408,7 +4410,8 @@ BBPdiskscan(const char *parent, size_t baseoff)
 				delete = true;
 			} else if (strncmp(p + 1, "tail", 4) == 0) {
 				BAT *b = getdesc(bid);
-				delete = (b == NULL || !b->ttype || !b->batCopiedtodisk);
+				delete = (b == NULL || !b->ttype || !b->batCopiedtodisk || b->batCount == 0);
+				assert(b->batCount > 0 || b->theap->free == 0);
 				if (!delete) {
 					if (b->ttype == TYPE_str) {
 						switch (b->twidth) {
@@ -4433,7 +4436,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 				}
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
-				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk);
+				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk || b->tvheap->free == 0);
 			} else if (strncmp(p + 1, "thashl", 6) == 0 ||
 				   strncmp(p + 1, "thashb", 6) == 0) {
 #ifdef PERSISTENTHASH

@@ -21,7 +21,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('insert into "newname" values (1);').assertSucceeded().assertRowCount(1)
             tc.execute('select "a" from "newname";').assertSucceeded().assertDataResultMatch([(1,)])
         s.communicate()
-    with process.server(mapiport=s.dbport, dbname='db1',
+    with process.server(mapiport='0', dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
