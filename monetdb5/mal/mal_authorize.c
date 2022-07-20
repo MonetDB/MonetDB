@@ -25,6 +25,7 @@
 #include "mcrypt.h"
 #include "msabaoth.h"
 #include "mal_scenario.h"
+#include "mal_interpreter.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -1226,21 +1227,9 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 
 	if (pass == NULL) {
 		// init client to have SQL callback hooks
-		Client c = NULL;
-		if ((c = MCinitClient(MAL_ADMIN, NULL, NULL)) == NULL)
-			throw(MAL, "addRemoteTableCredentials", "!maximum concurrent client limit reached (%d), please try again later\n", MAL_MAXCLIENTS);
-		Scenario scenario = findScenario("sql");
-		if ((output = scenario->initClientCmd(c)) != MAL_SUCCEED) {
-			return output;
-		}
+		Client c = getClientContext();
 		if((output = AUTHgetPasswordHash(&pwhash, c, local_user)) != MAL_SUCCEED)
 			return output;
-
-		if((output = scenario->exitClientCmd(c)) != MAL_SUCCEED) {
-			GDKfree(pwhash);
-			return output;
-		}
-		MCfreeClient(c);
 	}
 	else {
 		free_pw = true;
