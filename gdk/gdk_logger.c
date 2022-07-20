@@ -2255,7 +2255,7 @@ log_next_logfile(logger *lg, ulng ts)
 {
 	if (!lg->pending || !lg->pending->next)
 		return 0;
-	if (lg->pending->last_ts < ts)
+	if (lg->pending->last_ts <= ts)
 		return lg->pending->id;
 	return 0;
 }
@@ -2373,6 +2373,8 @@ log_flush(logger *lg, ulng ts)
 lng
 log_changes(logger *lg)
 {
+	if (LOG_DISABLED(lg))
+		return 0;
 	MT_lock_set(&lg->rotation_lock);
 	lng changes = lg->id - lg->saved_id - 1;
 	MT_lock_unset(&lg->rotation_lock);
