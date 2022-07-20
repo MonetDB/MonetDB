@@ -64,6 +64,8 @@ initialize_tl_client_key(void)
 Client
 getClientContext(void)
 {
+	if (initialize_tl_client_key())
+		return NULL;
 	return (Client) pthread_getspecific(tl_client_key);
 }
 
@@ -103,6 +105,8 @@ initialize_tl_client_key(void)
 Client
 getClientContext(void)
 {
+	if (initialize_tl_client_key())
+		return NULL;
 	return (Client) TlsGetValue(tl_client_key);
 }
 

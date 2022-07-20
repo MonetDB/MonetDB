@@ -2101,6 +2101,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser, generi
 	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
 		MT_lock_init(&store->column_locks[i], "sqlstore_column");
 
+	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
 
 	store->generic_event_wrapper = event_wrapper;
@@ -2209,7 +2210,7 @@ store_apply_deltas(sqlstore *store)
 	store_lock(store);
 	ulng oldest = store_oldest_pending(store);
 	store_unlock(store);
-	TRC_DEBUG(SQL_STORE, "Store aplly deltas (" ULLFMT ")\n", oldest-1);
+	TRC_DEBUG(SQL_STORE, "Store apply deltas (" ULLFMT ")\n", oldest-1);
 	if (oldest)
 	    res = store->logger_api.flush(store, oldest-1);
 	return res;
@@ -2300,7 +2301,7 @@ store_manager(sqlstore *store)
 	MT_lock_set(&store->flush);
 
 	for (;;) {
-		int res;
+		int res = LOG_OK;
 
 		if (ATOMIC_GET(&store->nr_active) == 0 &&
 			(store->debug&128 || ATOMIC_GET(&store->lastactive) + IDLE_TIME * 1000000 < (ATOMIC_BASE_TYPE) GDKusec())) {
@@ -5826,6 +5827,12 @@ int
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action)
 {
 	sql_table *t = find_sql_table(tr, s, name), *gt = NULL;
+
+	if (!t) {
+		TRC_ERROR(SQL_STORE, "sql_trans_drop_table: Table %s.%s does not exist\n", s->base.name, name);
+		return -1;
+	}
+
 	if (t && isTempTable(t)) {
 		gt = find_sql_table_id(tr, s, t->base.id);
 		if (gt)
