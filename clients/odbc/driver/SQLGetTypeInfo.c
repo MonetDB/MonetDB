@@ -1033,7 +1033,7 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 {
 	const struct types *t;
 	int i;
-	char query[4096];
+	char query[4352];
 
 	switch (DataType) {
 	case SQL_ALL_TYPES:
@@ -1220,29 +1220,30 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 		}
 	}
 	i += snprintf(query+ i, sizeof(query) - i, ") as monetdb_types "
-		      "(type_name"
-		      ",data_type"
-		      ",column_size"
-		      ",literal_prefix"
-		      ",literal_suffix"
-		      ",create_params"
-		      ",nullable"
-		      ",case_sensitive"
-		      ",searchable"
-		      ",unsigned_attribute"
-		      ",fixed_prec_scale"
-		      ",auto_unique_value"
-		      ",local_type_name"
-		      ",minimum_scale"
-		      ",maximum_scale"
-		      ",sql_data_type"
-		      ",sql_datetime_sub"
-		      ",num_prec_radix"
-		      ",interval_precision)");
+		      "(\"TYPE_NAME\""
+		      ",\"DATA_TYPE\""
+		      ",\"COLUMN_SIZE\""
+		      ",\"LITERAL_PREFIX\""
+		      ",\"LITERAL_SUFFIX\""
+		      ",\"CREATE_PARAMS\""
+		      ",\"NULLABLE\""
+		      ",\"CASE_SENSITIVE\""
+		      ",\"SEARCHABLE\""
+		      ",\"UNSIGNED_ATTRIBUTE\""
+		      ",\"FIXED_PREC_SCALE\""
+		      ",\"AUTO_UNIQUE_VALUE\""
+		      ",\"LOCAL_TYPE_NAME\""
+		      ",\"MINIMUM_SCALE\""
+		      ",\"MAXIMUM_SCALE\""
+		      ",\"SQL_DATA_TYPE\""
+		      ",\"SQL_DATETIME_SUB\""
+		      ",\"NUM_PREC_RADIX\""
+		      ",\"INTERVAL_PRECISION\")");
 	assert(i < (int) sizeof(query));
 
-	return MNDBExecDirect(stmt, (SQLCHAR *) query,
-			      (SQLINTEGER) i);
+	/* debug: fprintf(stdout, "SQLGetTypeInfo query (pos: %d, len: %zu):\n%s\n\n", i, strlen(query), query); */
+
+	return MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) i);
 }
 
 #ifdef ODBCDEBUG

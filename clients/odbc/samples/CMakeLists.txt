@@ -16,12 +16,6 @@ if(TESTING)
     PRIVATE
     ODBC::ODBC)
 
-  add_executable(testgetinfo
-    testgetinfo.c)
-  target_link_libraries(testgetinfo
-    PRIVATE
-    ODBC::ODBC)
-
   add_executable(arraytest
     arraytest.c)
 
@@ -29,26 +23,9 @@ if(TESTING)
     PRIVATE
     ODBC::ODBC)
 
-  add_executable(testStmtAttr
-    testStmtAttr.c)
-
-  target_link_libraries(testStmtAttr
-    PRIVATE
-    ODBC::ODBC)
-
-  add_executable(metadata
-    metadata.c)
-
-  target_link_libraries(metadata
-    PRIVATE
-    ODBC::ODBC)
-
   install(TARGETS
     odbcsample1
-    testgetinfo
     arraytest
-    testStmtAttr
-    metadata
     RUNTIME
     DESTINATION
     ${CMAKE_INSTALL_BINDIR}
@@ -57,10 +34,7 @@ if(TESTING)
   if(WIN32)
     install(FILES
       $<TARGET_PDB_FILE:odbcsample1>
-      $<TARGET_PDB_FILE:testgetinfo>
       $<TARGET_PDB_FILE:arraytest>
-      $<TARGET_PDB_FILE:testStmtAttr>
-      $<TARGET_PDB_FILE:metadata>
       DESTINATION ${CMAKE_INSTALL_BINDIR}
       OPTIONAL)
   endif()

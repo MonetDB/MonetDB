@@ -306,6 +306,12 @@ def remove(file):
         pass
     except IsADirectoryError:
         shutil.rmtree(file)
+    except PermissionError:
+        # on Windows we get a weird error from os.remove on a directory
+        if os.name == "nt":
+            shutil.rmtree(file)
+        else:
+            Warn('could not remove {}'.format(file))
     except:
         Warn('could not remove {}'.format(file))
 
@@ -1683,6 +1689,8 @@ def GetBitsAndModsAndThreads(env) :
             while True:
                 proc.poll()
                 if proc.returncode is not None:
+                    qOut = proc.stdout.read()
+                    qErr = proc.stderr.read()
                     break
                 if os.path.exists(os.path.join(dbpath, '.started')):
                     break
@@ -2824,6 +2832,30 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 cmd = [os.path.join(".", TST + EXT), TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL == "python":
+                # do clean up between tests if no dependent tests
+                # borrow clean up function from sqllogictest
+                if not os.path.exists(TST+'.reqtests'):
+                    import MonetDBtesting.sqllogictest as sqllogictest
+                    with sqllogictest.SQLLogic(out=ClntErr) as sql:
+                        try:
+                            sql.connect(username=user or 'monetdb',
+                                        password=passwd or 'monetdb',
+                                        hostname=HOST,
+                                        port=int(pSrvr.port),
+                                        database=TSTDB,
+                                        language='sql',
+                                        timeout=TIMEOUT)
+                        except KeyboardInterrupt:
+                            raise
+                        except:
+                            returncode = 'error'
+                        else:
+                            try:
+                                sql.drop()
+                            except KeyboardInterrupt:
+                                raise
+                            except:
+                                pass
                 cmd = [sys.executable, TST + EXT, TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL in ["mal", "malXs"]:
@@ -3463,6 +3495,7 @@ def main(argv) :
             mserver5_opts.extend(['--set', a])
             if a == 'sql_debug=128':
                 CONDITIONALS['NOWAL'] = True
+                os.environ['NOWAL'] = 'True'
     if opts.loadmodule:
         for a in opts.loadmodule:
             mserver5_opts.extend(['--loadmodule', a])

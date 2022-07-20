@@ -1,6 +1,9 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Wed Jul 13 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented BC/AD (and BCE/CE) suffixes when parsing dates.
+
 * Thu Jun  2 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
 - The interface for using strimps has not changed (create an imprint index
   on a column of a read only table), but now construction happens at the

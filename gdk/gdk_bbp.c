@@ -429,6 +429,8 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 		return -1;
 	}
+	if (b->batCount == 0)
+		free = 0;
 	if (b->ttype >= 0 &&
 	    ATOMstorage(b->ttype) == TYPE_str &&
 	    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
@@ -1934,7 +1936,7 @@ vheap_entry(FILE *fp, BATiter *bi, BUN size)
 	(void) size;
 	if (bi->vh == NULL)
 		return 0;
-	return fprintf(fp, " %zu", bi->vhfree);
+	return fprintf(fp, " %zu", size == 0 ? 0 : bi->vhfree);
 }
 
 static gdk_return
@@ -2787,6 +2789,7 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 {
 	int refs = 0, lrefs;
 	bool swap = false;
+	bool locked = false;
 	bat tp = 0, tvp = 0;
 	int farmid = 0;
 	BAT *b;
@@ -2840,7 +2843,9 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 			assert(b == NULL || b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
 			assert(b == NULL || b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
-			if (refs == 0 && b) {
+			if (b && refs == 0) {
+				MT_lock_set(&b->theaplock);
+				locked = true;
 				tp = VIEWtparent(b);
 				tvp = VIEWvtparent(b);
 				if (tp || tvp)
@@ -2849,7 +2854,8 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 		}
 	}
 	if (b) {
-		MT_lock_set(&b->theaplock);
+		if (!locked)
+			MT_lock_set(&b->theaplock);
 #if 0
 		if (b->batCount > b->batInserted && !isVIEW(b)) {
 			/* if batCount is larger than batInserted and
@@ -2865,7 +2871,6 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 #endif
 		if (b->theap)
 			farmid = b->theap->farmid;
-		MT_lock_unset(&b->theaplock);
 	}
 
 	/* we destroy transients asap and unload persistent bats only
@@ -2877,8 +2882,6 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 	/* only consider unloading if refs is 0; if, in addition, lrefs
 	 * is 0, we can definitely unload, else only if some more
 	 * conditions are met */
-	if (b)
-		MT_lock_set(&b->theaplock);
 	if (BBP_refs(i) == 0 &&
 	    (BBP_lrefs(i) == 0 ||
 	     (b != NULL && b->theap != NULL
@@ -3021,14 +3024,19 @@ BATdescriptor(bat i)
 			}
 		}
 		int refs;
-		if ((refs = incref(i, false, false)) <= 0)
-			return NULL;
-		b = BBP_cache(i);
-		if (b == NULL)
-			b = getBBPdescriptor(i);
+		if ((refs = incref(i, false, false)) > 0) {
+			b = BBP_cache(i);
+			if (b == NULL)
+				b = getBBPdescriptor(i);
+		} else {
+			/* if incref fails, we must return NULL */
+			b = NULL;
+		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
-		if (refs > 1) {
+		if (refs != 1) {
+			/* unfix both in case of failure (<= 0) and when
+			 * not the first (> 1) */
 			if (tp != 0 && tp != i)
 				BBPunfix(tp);
 			if (tvp != 0 && tvp != i)
@@ -3038,17 +3046,11 @@ BATdescriptor(bat i)
 	return b;
 }
 
-static inline void
-GDKunshare(bat parent)
-{
-	(void) decref(parent, false, true, true, true, __func__);
-	(void) decref(parent, true, false, true, true, __func__);
-}
-
 void
 BBPunshare(bat parent)
 {
-	GDKunshare(parent);
+	(void) decref(parent, false, true, true, true, __func__);
+	(void) decref(parent, true, false, true, true, __func__);
 }
 
 /*
@@ -3229,9 +3231,9 @@ BBPdestroy(BAT *b)
 
 	/* parent released when completely done with child */
 	if (tp)
-		GDKunshare(tp);
+		BBPunshare(tp);
 	if (vtp)
-		GDKunshare(vtp);
+		BBPunshare(vtp);
 }
 
 static gdk_return
@@ -3258,9 +3260,9 @@ BBPfree(BAT *b)
 
 	/* parent released when completely done with child */
 	if (ret == GDK_SUCCEED && tp)
-		GDKunshare(tp);
+		BBPunshare(tp);
 	if (ret == GDK_SUCCEED && vtp)
-		GDKunshare(vtp);
+		BBPunshare(vtp);
 	return ret;
 }
 
@@ -3447,16 +3449,7 @@ BBPprepare(bool subcommit)
 {
 	bool start_subcommit;
 	int set = 1 + subcommit;
-	str bakdirpath, subdirpath;
 	gdk_return ret = GDK_SUCCEED;
-
-	bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
-	subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
-	if (bakdirpath == NULL || subdirpath == NULL) {
-		GDKfree(bakdirpath);
-		GDKfree(subdirpath);
-		return GDK_FAIL;
-	}
 
 	start_subcommit = (subcommit && backup_subdir == 0);
 	if (start_subcommit) {
@@ -3467,36 +3460,47 @@ BBPprepare(bool subcommit)
 	if (backup_files == 0) {
 		backup_dir = 0;
 		ret = BBPrecover(0);
-		if (ret == GDK_SUCCEED) {
-			if (MT_mkdir(bakdirpath) < 0 && errno != EEXIST) {
-				GDKsyserror("cannot create directory %s\n", bakdirpath);
-				ret = GDK_FAIL;
-			}
-			/* if BAKDIR already exists, don't signal error */
-			TRC_DEBUG(IO_, "mkdir %s = %d\n", bakdirpath, (int) ret);
+		if (ret != GDK_SUCCEED)
+			return ret;
+		str bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
+		if (bakdirpath == NULL) {
+			return GDK_FAIL;
 		}
+
+		if (MT_mkdir(bakdirpath) < 0 && errno != EEXIST) {
+			GDKsyserror("cannot create directory %s\n", bakdirpath);
+			GDKfree(bakdirpath);
+			return GDK_FAIL;
+		}
+		/* if BAKDIR already exists, don't signal error */
+		TRC_DEBUG(IO_, "mkdir %s = %d\n", bakdirpath, (int) ret);
+		GDKfree(bakdirpath);
 	}
-	if (ret == GDK_SUCCEED && start_subcommit) {
+	if (start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
+		str subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
+		if (subdirpath == NULL) {
+			return GDK_FAIL;
+		}
+
 		if (MT_mkdir(subdirpath) < 0) {
 			GDKsyserror("cannot create directory %s\n", subdirpath);
-			ret = GDK_FAIL;
+			GDKfree(subdirpath);
+			return GDK_FAIL;
 		}
 		TRC_DEBUG(IO_, "mkdir %s = %d\n", subdirpath, (int) ret);
+		GDKfree(subdirpath);
 	}
-	if (ret == GDK_SUCCEED && backup_dir != set) {
+	if (backup_dir != set) {
 		/* a valid backup dir *must* at least contain BBP.dir */
-		if ((ret = GDKmove(0, backup_dir ? BAKDIR : BATDIR, "BBP", "dir", subcommit ? SUBDIR : BAKDIR, "BBP", "dir", true)) == GDK_SUCCEED) {
-			backup_dir = set;
-		}
+		if ((ret = GDKmove(0, backup_dir ? BAKDIR : BATDIR, "BBP", "dir", subcommit ? SUBDIR : BAKDIR, "BBP", "dir", true)) != GDK_SUCCEED)
+			return ret;
+		backup_dir = set;
 	}
 	/* increase counters */
-	if (ret == GDK_SUCCEED) {
-		backup_subdir += subcommit;
-		backup_files++;
-	}
-	GDKfree(bakdirpath);
-	GDKfree(subdirpath);
+	backup_subdir += subcommit;
+	backup_files++;
+
 	return ret;
 }
 
@@ -3508,7 +3512,6 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 	char extnew[16];
 	bool istail = strncmp(ext, "tail", 4) == 0;
 
-	h->dirty |= dirty;
 	if (h->wasempty) {
 		return GDK_SUCCEED;
 	}
@@ -3945,7 +3948,11 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					break;
 				}
 				bi = bat_iterator(BBP_desc(i));
-				if (b) {
+				assert(sizes == NULL || size <= bi.count);
+				assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
+				if (size > bi.count) /* includes sizes==NULL */
+					size = bi.count;
+				if (b && size != 0) {
 					/* wait for BBPSAVING so that we
 					 * can set it, wait for
 					 * BBPUNLOADING before
@@ -3962,10 +3969,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					BBP_status_on(i, BBPSAVING);
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
-					assert(sizes == NULL || size <= bi.count);
-					assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
-					if (size > bi.count)
-						size = bi.count;
 					MT_rwlock_rdlock(&b->thashlock);
 					ret = BATsave_locked(b, &bi, size);
 					MT_rwlock_rdunlock(&b->thashlock);
@@ -4399,7 +4402,8 @@ BBPdiskscan(const char *parent, size_t baseoff)
 				delete = true;
 			} else if (strncmp(p + 1, "tail", 4) == 0) {
 				BAT *b = getdesc(bid);
-				delete = (b == NULL || !b->ttype || !b->batCopiedtodisk);
+				delete = (b == NULL || !b->ttype || !b->batCopiedtodisk || b->batCount == 0);
+				assert(b->batCount > 0 || b->theap->free == 0);
 				if (!delete) {
 					if (b->ttype == TYPE_str) {
 						switch (b->twidth) {
@@ -4424,7 +4428,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 				}
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
-				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk);
+				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk || b->tvheap->free == 0);
 			} else if (strncmp(p + 1, "thashl", 6) == 0 ||
 				   strncmp(p + 1, "thashb", 6) == 0) {
 #ifdef PERSISTENTHASH

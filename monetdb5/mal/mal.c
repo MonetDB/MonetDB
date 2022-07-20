@@ -64,18 +64,24 @@ initialize_tl_client_key(void)
 Client
 getClientContext(void)
 {
+	if (initialize_tl_client_key())
+		return NULL;
 	return (Client) pthread_getspecific(tl_client_key);
 }
 
 /* declared in mal_private.h so only the MAL interpreter core can access it */
-void
+Client
 setClientContext(Client cntxt)
 {
+	Client old = getClientContext();
+
 	if (pthread_setspecific(tl_client_key, cntxt) != 0)
 		GDKfatal("Failed to set thread local Client context");
+
+	return old;
 }
 
-#elif defined(Win32)
+#elif defined(WIN32)
 
 static DWORD tl_client_key = 0;
 
@@ -99,15 +105,21 @@ initialize_tl_client_key(void)
 Client
 getClientContext(void)
 {
+	if (initialize_tl_client_key())
+		return NULL;
 	return (Client) TlsGetValue(tl_client_key);
 }
 
 /* declared in mal_private.h so only the MAL interpreter core can access it */
-void
+Client
 setClientContext(Client cntxt)
 {
-	if (TlsSetValue(tl_client_key, cntxt) != 0)
+	Client old = getClientContext();
+
+	if (TlsSetValue(tl_client_key, cntxt) == 0)
 		GDKfatal("Failed to set thread local Client context");
+
+	return old;
 }
 
 #else

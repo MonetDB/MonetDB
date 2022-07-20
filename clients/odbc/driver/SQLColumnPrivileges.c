@@ -72,14 +72,14 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 				goto nomem;
 		}
 		if (NameLength3 > 0) {
-			tab = ODBCParseOA("t", "name",
+			tab = ODBCParseOA("tc", "tname",
 					  (const char *) TableName,
 					  (size_t) NameLength3);
 			if (tab == NULL)
 				goto nomem;
 		}
 		if (NameLength4 > 0) {
-			col = ODBCParsePV("c", "name",
+			col = ODBCParsePV("tc", "cname",
 					  (const char *) ColumnName,
 					  (size_t) NameLength4);
 			if (col == NULL)
@@ -94,14 +94,14 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 				goto nomem;
 		}
 		if (NameLength3 > 0) {
-			tab = ODBCParseID("t", "name",
+			tab = ODBCParseID("tc", "tname",
 					  (const char *) TableName,
 					  (size_t) NameLength3);
 			if (tab == NULL)
 				goto nomem;
 		}
 		if (NameLength4 > 0) {
-			col = ODBCParseID("c", "name",
+			col = ODBCParseID("tc", "cname",
 					  (const char *) ColumnName,
 					  (size_t) NameLength4);
 			if (col == NULL)
@@ -110,7 +110,7 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 1200 + strlen(stmt->Dbc->dbname) + (sch ? strlen(sch) : 0) +
+	querylen = 1300 + strlen(stmt->Dbc->dbname) + (sch ? strlen(sch) : 0) +
 		(tab ? strlen(tab) : 0) + (col ? strlen(col) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
@@ -130,8 +130,8 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 	pos += snprintf(query + pos, querylen - pos,
 		"select '%s' as \"TABLE_CAT\", "
 		       "s.name as \"TABLE_SCHEM\", "
-		       "t.name as \"TABLE_NAME\", "
-		       "c.name as \"COLUMN_NAME\", "
+		       "tc.tname as \"TABLE_NAME\", "
+		       "tc.cname as \"COLUMN_NAME\", "
 		       "case a.id "
 			    "when s.owner "
 			    "then '_SYSTEM' "
@@ -147,17 +147,23 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 			    "when 0 then 'NO' "
 			    "end as \"IS_GRANTABLE\" "
 		"from sys.schemas as s, "
-		     "sys._tables as t, "
-		     "sys._columns as c, "
+		     /* next union all subquery is much more efficient than using sys.tables join sys.columns */
+		     "(select t1.id as tid, t1.name as tname, t1.schema_id, c1.id as cid, c1.name as cname"
+		     " from sys._tables as t1"
+		     " join sys._columns as c1 on t1.id = c1.table_id"
+		     " where not t1.system"	/* exclude system tables and views */
+		     " union all"
+		     " select t2.id as tid, t2.name as tname, t2.schema_id, c2.id as cid, c2.name as cname"
+		     " from tmp._tables as t2"
+		     " join tmp._columns as c2 on t2.id = c2.table_id)"
+		     " as tc(tid, tname, schema_id, cid, cname), "
 		     "sys.auths as a, "
 		     "sys.privileges as p, "
 		     "sys.auths as g, "
 		     "%s "
-		"where p.obj_id = c.id and "
-		      "c.table_id = t.id and "
+		"where p.obj_id = tc.cid and "
 		      "p.auth_id = a.id and "
-		      "t.schema_id = s.id and "
-		      "not t.system and "
+		      "tc.schema_id = s.id and "
 		      "p.grantor = g.id and "
 		      "p.privileges = pc.privilege_code_id",
 		stmt->Dbc->dbname,
@@ -170,7 +176,7 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 			     "(8, 'DELETE'), "
 			     "(16, 'EXECUTE'), "
 			     "(32, 'GRANT')) as pc(privilege_code_id, privilege_code_name)");
-	assert(pos < querylen);
+	assert(pos < 1200);
 
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && CatalogName != NULL) {
@@ -198,7 +204,9 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
 	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"COLUMN_NAME\", \"PRIVILEGE\"", querylen - pos);
-	assert(pos <= querylen);
+	assert(pos < querylen);
+
+	/* debug: fprintf(stdout, "SQLColumnPrivileges query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

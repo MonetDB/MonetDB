@@ -43,7 +43,7 @@ const char ODBCErrorMsgPrefix[] = "[MonetDB][ODBC Driver " MONETDB_VERSION "]";
 const int ODBCErrorMsgPrefixLength = (int) sizeof(ODBCErrorMsgPrefix) - 1;
 
 /*
- * Local utility function which retuns the standard ODBC/ISO error
+ * Local utility function which returns the standard ODBC/ISO error
  * message text for a given ISO SQLState code.
  * When no message could be found for a given SQLState a msg is
  * printed to stderr to warn that the programmer has forgotten to

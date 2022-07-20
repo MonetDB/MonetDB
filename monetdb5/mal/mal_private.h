@@ -42,7 +42,7 @@ str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
 	__attribute__((__visibility__("hidden")));
 
-void setClientContext(Client cntxt)
+Client setClientContext(Client cntxt)
 	__attribute__((__visibility__("hidden")));
 #endif
 

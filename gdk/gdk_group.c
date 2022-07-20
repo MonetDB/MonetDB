@@ -1034,7 +1034,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(pgrp);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
-		    (!bi.transient &&
+		    ((!bi.transient ||
+		      (b->batRole == PERSISTENT && GDKinmemory(0))) &&
 		     BAThash(b) == GDK_SUCCEED) ||
 		    (/* DISABLES CODE */ (0) &&
 		     (parent = VIEWtparent(b)) != 0 &&

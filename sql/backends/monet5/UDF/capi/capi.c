@@ -1950,8 +1950,6 @@ static mel_func capi_init_funcs[] = {
  pattern("capi", "subeval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("capi", "eval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  pattern("batcapi", "eval", CUDFevalStd, false, "Execute a simple CUDF script value", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
- pattern("batcapi", "subeval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
- pattern("batcapi", "eval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
  { .imp=NULL }
 };
 #include "mal_import.h"
