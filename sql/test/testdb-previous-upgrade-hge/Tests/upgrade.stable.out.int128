@@ -4267,7 +4267,7 @@ CREATE VIEW sys.dump_create_users AS
  SELECT
  'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||
  sys.sq(sys.password_hash(ui.name)) ||
- ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA ' || sys.sq(s.name) || ' SCHEMA PATH ' || sys.sq(ui.schema_path) || ';' stmt,
+ ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys' || ifthenelse(ui.schema_path = '"sys"', '', ' SCHEMA PATH ' || sys.sq(ui.schema_path)) || ';' stmt,
  ui.name user_name
  FROM sys.db_user_info ui, sys.schemas s
  WHERE ui.default_schema = s.id

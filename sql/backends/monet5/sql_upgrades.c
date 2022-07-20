@@ -4895,7 +4895,7 @@ sql_update_default(Client c, mvc *sql)
 			" SELECT\n"
 			" 'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||\n"
 			" sys.sq(sys.password_hash(ui.name)) ||\n"
-			" ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA ' || sys.sq(s.name) || ' SCHEMA PATH ' || sys.sq(ui.schema_path) || ';' stmt,\n"
+			" ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys' || ifthenelse(ui.schema_path = '\"sys\"', '', ' SCHEMA PATH ' || sys.sq(ui.schema_path)) || ';' stmt,\n"
 			" ui.name user_name\n"
 			" FROM sys.db_user_info ui, sys.schemas s\n"
 			" WHERE ui.default_schema = s.id\n"
