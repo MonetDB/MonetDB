@@ -3076,7 +3076,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *be;
 	BAT **b = NULL;
-	ssize_t len = 0;
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
 	const char *tsep = *getArgReference_str(stk, pci, pci->retc + 1);
 	const char *rsep = *getArgReference_str(stk, pci, pci->retc + 2);
@@ -3112,41 +3111,21 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape);
 	} else {
 		if (onclient) {
-			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-			if (offset > 1 && rsep && rsep[0] == '\n' && rsep[1] == '\0') {
-				/* only let client skip simple lines */
-				mnstr_printf(be->mvc->scanner.ws, "r " LLFMT " %s\n",
-					     offset, fname);
-				offset = 0;
-			} else {
-				mnstr_printf(be->mvc->scanner.ws, "r 0 %s\n", fname);
-			}
-			msg = MAL_SUCCEED;
-			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
-			while (!be->mvc->scanner.rs->eof)
-				bstream_next(be->mvc->scanner.rs);
-			ss = be->mvc->scanner.rs->s;
-			char buf[80];
-			if ((len = mnstr_readline(ss, buf, sizeof(buf))) > 1) {
-				if (buf[0] == '!' && buf[6] == '!')
-					msg = createException(IO, "sql.copy_from", "%.7s%s: %s", buf, fname, buf+7);
-				else
-					msg = createException(IO, "sql.copy_from", "%s: %s", fname, buf);
-				while (buf[len - 1] != '\n' &&
-				       (len = mnstr_readline(ss, buf, sizeof(buf))) > 0)
-					;
-				/* read until flush marker */
-				while (mnstr_read(ss, buf, 1, sizeof(buf)) > 0)
-					;
-				return msg;
-			}
+			stream *ws = be->mvc->scanner.ws;
+			bstream *bs = be->mvc->scanner.rs;
+			while (!bs->eof)
+				bstream_next(bs);
+			stream *rs = bs->s;
+			assert(isa_block_stream(ws));
+			assert(isa_block_stream(rs));
+			ss = mapi_request_upload(fname, false, rs, ws);
 		} else {
 			ss = open_rastream(fname);
-			if (ss == NULL || mnstr_errnr(ss)) {
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
-				close_stream(ss);
-				return msg;
-			}
+		}
+		if (ss == NULL || mnstr_errnr(ss)) {
+			msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+			close_stream(ss);
+			return msg;
 		}
 
 		if (!strNil(fixed_widths)) {
@@ -3195,12 +3174,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape);
-		if (onclient) {
-			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
-			be->mvc->scanner.rs->eof = s->eof;
-			s->s = NULL;
-		}
+		// This also closes ss:
 		bstream_destroy(s);
 	}
 	if (b && !msg)
