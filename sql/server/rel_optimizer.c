@@ -4521,6 +4521,11 @@ get_aggregation_key_columns(sql_allocator *sa, sql_rel *r) {
  */
 static int
 filter_column_in_aggregation_columns(sql_exp *column, list *aggColumns) {
+	/* check if it is a column or an e_convert, and get the actual column if it is the latter */
+	if (column->type == e_convert) {
+		column = column->l;
+	}
+
 	char *tableName = column->l;
 	char *columnName = column->r;
 
