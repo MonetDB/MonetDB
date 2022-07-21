@@ -141,7 +141,7 @@ MNDBForeignKeys(ODBCStmt *stmt,
 
 	/* first create a string buffer (1300 extra bytes is plenty:
 	   we actually need just over 1100) */
-	querylen = 1300 + (2 * strlen(stmt->Dbc->dbname)) +
+	querylen = 1300 +
 		(psch ? strlen(psch) : 0) + (ptab ? strlen(ptab) : 0) +
 		(fsch ? strlen(fsch) : 0) + (ftab ? strlen(ftab) : 0);
 	query = malloc(querylen);
@@ -166,11 +166,11 @@ MNDBForeignKeys(ODBCStmt *stmt,
 	 */
 
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"PKTABLE_CAT\", "
+		"select cast(null as varchar(1)) as \"PKTABLE_CAT\", "
 			"pks.name as \"PKTABLE_SCHEM\", "
 			"pkt.name as \"PKTABLE_NAME\", "
 			"pkkc.name as \"PKCOLUMN_NAME\", "
-			"'%s' as \"FKTABLE_CAT\", "
+			"cast(null as varchar(1)) as \"FKTABLE_CAT\", "
 			"fks.name as \"FKTABLE_SCHEM\", "
 			"fkt.name as \"FKTABLE_NAME\", "
 			"fkkc.name as \"FKCOLUMN_NAME\", "
@@ -199,8 +199,6 @@ MNDBForeignKeys(ODBCStmt *stmt,
 		      "pkt.id = pkk.table_id and "
 		      "fks.id = fkt.schema_id and "
 		      "pks.id = pkt.schema_id",
-		stmt->Dbc->dbname,
-		stmt->Dbc->dbname,
 		SQL_NO_ACTION, SQL_CASCADE, SQL_RESTRICT, SQL_SET_NULL, SQL_SET_DEFAULT, SQL_NO_ACTION,
 		SQL_NO_ACTION, SQL_CASCADE, SQL_RESTRICT, SQL_SET_NULL, SQL_SET_DEFAULT, SQL_NO_ACTION,
 		SQL_NOT_DEFERRABLE);

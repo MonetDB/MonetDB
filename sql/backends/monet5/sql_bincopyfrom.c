@@ -543,70 +543,6 @@ load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, bool by
 		return msg;
 }
 
-
-static str
-start_mapi_file_upload(backend *be, str path, stream **s)
-{
-	str msg = MAL_SUCCEED;
-	*s = NULL;
-
-	stream *ws = be->mvc->scanner.ws;
-	bstream *bs = be->mvc->scanner.rs;
-	stream *rs = bs->s;
-	assert(isa_block_stream(ws));
-	assert(isa_block_stream(rs));
-
-	mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-	mnstr_printf(ws, "rb %s\n", path);
-	mnstr_flush(ws, MNSTR_FLUSH_DATA);
-	while (!bs->eof)
-		bstream_next(bs);
-	char buf[80];
-	if (mnstr_readline(rs, buf, sizeof(buf)) > 1) {
-		msg = createException(IO, "sql.importColumn", "Error %s", buf);
-		goto end;
-	}
-	set_prompting(rs, PROMPT2, ws);
-
-	*s = rs;
-end:
-	return msg;
-}
-
-
-static str
-finish_mapi_file_upload(backend *be, bool eof_reached)
-{
-	str msg = MAL_SUCCEED;
-	stream *ws = be->mvc->scanner.ws;
-	bstream *bs = be->mvc->scanner.rs;
-	stream *rs = bs->s;
-	assert(isa_block_stream(ws));
-	assert(isa_block_stream(rs));
-
-	set_prompting(rs, NULL, NULL);
-	if (!eof_reached) {
-		// Probably due to an error. Read until message boundary.
-		char buf[8190];
-		while (1) {
-			ssize_t nread = mnstr_read(rs, buf, 1, sizeof(buf));
-			if (nread > 0)
-				continue;
-			if (nread < 0)
-				msg = createException(
-					IO, "sql.importColumn",
-					"while syncing read stream: %s", mnstr_peek_error(rs));
-			break;
-		}
-	}
-	mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-	mnstr_flush(ws, MNSTR_FLUSH_DATA);
-
-	return msg;
-}
-
-
-
 /* Import a single file into a new BAT.
  */
 static str
@@ -620,7 +556,6 @@ importColumn(backend *be, bat *ret, BUN *retcnt, str method, bool byteswap, str 
 	int gdk_type;
 	BAT *bat = NULL;
 	stream *stream_to_close = NULL;
-	bool do_finish_mapi = false;
 	int eof_reached = -1; // 1 = read to the end; 0 = stopped reading early; -1 = unset, a bug.
 
 	// This one is not managed by the end: block
@@ -645,15 +580,13 @@ importColumn(backend *be, bat *ret, BUN *retcnt, str method, bool byteswap, str 
 
 	// Open the input stream
 	if (onclient) {
-		s = NULL;
-		do_finish_mapi = true;
-		msg = start_mapi_file_upload(be, path, &s);
-		if (msg != MAL_SUCCEED)
-			goto end;
+		s = stream_to_close = mapi_request_upload(path, true, be->mvc->scanner.rs, be->mvc->scanner.ws);
 	} else {
 		s = stream_to_close = open_rstream(path);
-		if (s == NULL)
-			bailout("Couldn't open '%s' on server: %s", path, mnstr_peek_error(NULL));
+	}
+	if (!s) {
+		msg = mnstr_error(NULL);
+		goto end;
 	}
 
 	// Do the work
@@ -667,12 +600,6 @@ importColumn(backend *be, bat *ret, BUN *retcnt, str method, bool byteswap, str 
 
 	// Fall through into the end block which will clean things up
 end:
-	if (do_finish_mapi) {
-		str msg1 = finish_mapi_file_upload(be, eof_reached == 1);
-		if (msg == MAL_SUCCEED)
-			msg = msg1;
-	}
-
 	if (stream_to_close)
 		close_stream(stream_to_close);
 

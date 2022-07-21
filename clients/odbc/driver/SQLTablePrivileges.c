@@ -95,8 +95,7 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 1000 + strlen(stmt->Dbc->dbname) +
-		(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
+	querylen = 1000 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
@@ -112,7 +111,7 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 	 */
 
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"TABLE_CAT\", "
+		"select cast(null as varchar(1)) as \"TABLE_CAT\", "
 			"s.name as \"TABLE_SCHEM\", "
 			"t.name as \"TABLE_NAME\", "
 			"case a.id "
@@ -144,7 +143,6 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 		      "t.schema_id = s.id and "
 		      "p.grantor = g.id and "
 		      "p.privileges = pc.privilege_code_id",
-		stmt->Dbc->dbname,
 		/* a server that supports sys.comments also supports
 		 * sys.privilege_codes */
 		stmt->Dbc->has_comment ? "sys.privilege_codes as pc" :
