@@ -4,6 +4,40 @@ try:
 except ImportError:
     import process
 
+port = None
+dbname = os.getenv('TSTDB', 'demo')
+host = None
+user = 'monetdb'
+passwd = 'monetdb'
+approve = None
+check = None
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Run check queries on a database')
+    parser.add_argument('--host', action='store', default=host,
+                        help='hostname where the server runs')
+    parser.add_argument('--port', action='store', type=int, default=port,
+                        help='port the server listens on')
+    parser.add_argument('--database', action='store', default=dbname,
+                        help='name of the database')
+    parser.add_argument('--user', action='store', default=user,
+                        help='user name to login to the database with')
+    parser.add_argument('--password', action='store', default=passwd,
+                        help='password to use to login to the database with')
+    parser.add_argument('--approve', action='store', default=approve,
+                        type=argparse.FileType('w'),
+                        help='file in which to produce a new .test file '
+                        'with updated results')
+    parser.add_argument('check', nargs='*', help='name of test')
+    opts = parser.parse_args()
+    port = opts.port
+    dbname = opts.database
+    host = opts.host
+    user = opts.user
+    passwd = opts.password
+    approve = opts.approve
+    check = opts.check
+
 xit = 0
 output = []
 
@@ -516,7 +550,8 @@ for table, column in sys_notnull:
 output.append(out)
 
 with process.client('sql', interactive=True, echo=False, format='test',
-                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
+                    host=host, port=port, dbname=dbname, user=user, passwd=passwd,
+                    stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
 
     out, err = clt.communicate(out)
 
@@ -525,7 +560,7 @@ with process.client('sql', interactive=True, echo=False, format='test',
     if err:
         xit = 1
 
-if len(sys.argv) == 2 and sys.argv[1] == 'check':
+if check:
     output = ''.join(output).splitlines(keepends=True)
     stableout = 'check.stable.out.32bit' if os.getenv('TST_BITS', '') == '32bit' else 'check.stable.out.int128' if os.getenv('HAVE_HGE') else 'check.stable.out'
     stable = open(stableout).readlines()
@@ -533,6 +568,8 @@ if len(sys.argv) == 2 and sys.argv[1] == 'check':
     for line in difflib.unified_diff(stable, output, fromfile='test', tofile=stableout):
         sys.stderr.write(line)
         xit = 1
+elif approve:
+    approve.writelines(output)
 else:
     sys.stdout.writelines(output)
 
