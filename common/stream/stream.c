@@ -954,9 +954,7 @@ isa_block_stream(const stream *s)
 	assert(s != NULL);
 	return s &&
 		((s->read == bs_read ||
-		  s->write == bs_write) ||
-		 (s->read == bs2_read ||
-		  s->write == bs2_write));
+		  s->write == bs_write));
 }
 
 

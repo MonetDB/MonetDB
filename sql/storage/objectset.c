@@ -766,6 +766,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		objectversion *co = name_based_node->ov;
 		objectversion *oo = get_valid_object_name(tr, co);
 		if (co != oo) { /* conflict ? */
+			TRC_WARNING(SQL_STORE, "%s" "if (co != oo) { /* conflict ? */", __func__);
 			return -3;
 		}
 
@@ -780,6 +781,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
 			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
+				TRC_WARNING(SQL_STORE, "%s: " "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/ ", __func__);
 				return -3; /*conflict with cleaner or write-write conflict*/
 			}
 		}
@@ -816,6 +818,7 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		objectversion *co = id_based_node->ov;
 		objectversion *oo = get_valid_object_id(tr, co);
 		if (co != oo) { /* conflict ? */
+			TRC_WARNING(SQL_STORE, "%s" "if (co != oo) { /* conflict ? */", __func__);
 			return -3;
 		}
 
@@ -830,6 +833,7 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
 			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
+				TRC_WARNING(SQL_STORE, "%s" "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/", __func__);
 				return -3; /*conflict with cleaner or write-write conflict*/
 			}
 		}
@@ -870,6 +874,7 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		if (os->destroy)
 			os->destroy(os->store, ov->b);
 		_DELETE(ov);
+		TRC_WARNING(SQL_STORE, "%s" "if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */", __func__);
 		return -3; /* conflict */
 	}
 
@@ -912,6 +917,7 @@ os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		objectversion *oo = get_valid_object_name(tr, co);
 		ov->name_based_head = oo->name_based_head;
 		if (co != oo) { /* conflict ? */
+			TRC_WARNING(SQL_STORE, "%s: " "if (co != oo) { /* conflict ? */", __func__);
 			return -3;
 		}
 		ov->name_based_older = oo;
@@ -943,6 +949,7 @@ os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		objectversion *oo = get_valid_object_id(tr, co);
 		ov->id_based_head = oo->id_based_head;
 		if (co != oo) { /* conflict ? */
+			TRC_WARNING(SQL_STORE, "%s" "if (co != oo) { /* conflict ? */", __func__);
 			return -3;
 		}
 		ov->id_based_older = oo;
