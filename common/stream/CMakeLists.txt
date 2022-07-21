@@ -21,7 +21,6 @@ target_sources(stream
   rw.c
   bstream.c
   bs.c
-  bs2.c
   stdio_stream.c
   winio.c
   compressed.c
@@ -31,6 +30,7 @@ target_sources(stream
   lz4_stream.c
   url_stream.c
   socket_stream.c
+  mapi_stream.c
   memio.c
   callback.c
   blackhole.c
@@ -41,6 +41,7 @@ target_sources(stream
   stream.h
   stream_internal.h
   stream_socket.h
+  mapi_prompt.h
   pump.h
   PUBLIC
   ${stream_public_headers})

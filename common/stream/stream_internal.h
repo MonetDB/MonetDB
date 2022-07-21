@@ -271,8 +271,6 @@ struct bs {
 	unsigned itotal;	/* amount available in current read block */
 	size_t blks;		/* read/writen blocks (possibly partial) */
 	size_t bytes;		/* read/writen bytes */
-	const char *prompt;	/* on eof, first try to send this then try again */
-	stream *pstream;	/* stream to send prompts on */
 	char buf[BLOCK];	/* the buffered data (minus the size of
 				 * size-short */
 };
