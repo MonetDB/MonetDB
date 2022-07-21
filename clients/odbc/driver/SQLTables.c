@@ -196,7 +196,10 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		if (NameLength4 > 0) {
-			/* filtering requested on table type */
+			/* filtering requested on table type(s)
+			 * each table type can be enclosed in single quotation marks (')
+			 * or unquoted, for example, 'TABLE', 'VIEW' or TABLE, VIEW.
+			 */
 			char buf[32];	/* the longest string is "GLOBAL TEMPORARY TABLE" */
 			int i;
 			size_t j;
