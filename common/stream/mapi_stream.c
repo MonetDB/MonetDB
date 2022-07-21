@@ -30,7 +30,7 @@ struct mapi_recv_upload {
 };
 
 static ssize_t
-recv_upload_read(stream *s, void *buf, size_t elmsize, size_t cnt)
+recv_upload_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct mapi_recv_upload *state = s->stream_data.p;
 
@@ -152,4 +152,3 @@ end:
 		return s;
 	}
 }
-
