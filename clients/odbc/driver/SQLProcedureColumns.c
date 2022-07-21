@@ -114,8 +114,7 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 6500 + strlen(stmt->Dbc->dbname) +
-		(sch ? strlen(sch) : 0) + (prc ? strlen(prc) : 0) +
+	querylen = 6500 + (sch ? strlen(sch) : 0) + (prc ? strlen(prc) : 0) +
 		(col ? strlen(col) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
@@ -150,7 +149,7 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 #define F_PROC 2
 #define F_UNION 5
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"PROCEDURE_CAT\", "
+		"select cast(null as varchar(1)) as \"PROCEDURE_CAT\", "
 		       "s.name as \"PROCEDURE_SCHEM\", "
 		       "p.name as \"PROCEDURE_NAME\", "
 		       "a.name as \"COLUMN_NAME\", "
@@ -187,7 +186,6 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 		"where s.id = p.schema_id and "
 		      "p.id = a.func_id and "
 		      "p.type in (%d, %d, %d)",
-		stmt->Dbc->dbname,
 		/* column_type: */
 		SQL_PARAM_INPUT, F_UNION, SQL_RESULT_COL, SQL_RETURN_VALUE,
 #ifdef DATA_TYPE_ARGS
