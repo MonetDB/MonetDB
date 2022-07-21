@@ -4690,19 +4690,19 @@ sql_update_default(Client c, mvc *sql)
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		bat_iterator_end(&ui);
 		bat_iterator_end(&pi);
+		bat authbats[4];
+		authbats[0] = 0;
+		authbats[1] = u->batCacheid;
+		authbats[2] = p->batCacheid;
+		authbats[3] = d->batCacheid;
 		if (err == MAL_SUCCEED &&
-			BATmode(u, true) == GDK_SUCCEED &&
-			BATmode(p, true) == GDK_SUCCEED &&
-			BATmode(d, true) == GDK_SUCCEED &&
-			BBPrename(u, NULL) == 0 &&
-			BBPrename(p, NULL) == 0 &&
-			BBPrename(d, NULL) == 0) {
-			bat authbats[4];
-			authbats[0] = 0;
-			authbats[1] = u->batCacheid;
-			authbats[2] = p->batCacheid;
-			authbats[3] = d->batCacheid;
-			if (TMsubcommit_list(authbats, NULL, 4, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)
+			(BATmode(u, true) != GDK_SUCCEED ||
+			 BATmode(p, true) != GDK_SUCCEED ||
+			 BATmode(d, true) != GDK_SUCCEED ||
+			 BBPrename(u, NULL) != 0 ||
+			 BBPrename(p, NULL) != 0 ||
+			 BBPrename(d, NULL) != 0 ||
+			 TMsubcommit_list(authbats, NULL, 4, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)) {
 				fprintf(stderr, "Committing removal of old user/password BATs failed\n");
 		}
 		BBPunfix(u->batCacheid);
