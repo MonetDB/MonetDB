@@ -76,6 +76,7 @@ MNDBTables(ODBCStmt *stmt,
 	    CatalogName &&
 	    strcmp((char *) CatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
+		/* All columns except the TABLE_CAT column contain NULLs. */
 		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
 				      "cast(null as varchar(1)) as \"TABLE_SCHEM\", "
 				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
@@ -89,13 +90,14 @@ MNDBTables(ODBCStmt *stmt,
 		   SchemaName &&
 		   strcmp((char *) SchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
+		/* All columns except the TABLE_SCHEM column contain NULLs. */
 		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
 				      "name as \"TABLE_SCHEM\", "
 				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
 				      "cast(null as varchar(1)) as \"TABLE_TYPE\", "
 			       /* ODBC says remarks column contains
 				* NULL even though MonetDB supports
-				* schema remarks */
+				* schema remarks. We must comply with ODBC */
 				      "cast(null as varchar(1)) as \"REMARKS\" "
 			       "from sys.schemas order by \"TABLE_SCHEM\"");
 		if (query == NULL)
@@ -106,6 +108,7 @@ MNDBTables(ODBCStmt *stmt,
 		   TableType &&
 		   strcmp((char *) TableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
+		/* All columns except the TABLE_TYPE column contain NULLs. */
 		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
 				      "cast(null as varchar(1)) as \"TABLE_SCHEM\", "
 				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
