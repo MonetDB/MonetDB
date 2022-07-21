@@ -289,10 +289,10 @@
 		SQL_CODE_TIME
 
 #define CHAR_OCTET_LENGTH(t)								\
-		"case " #t ".type "									\
+		"cast(case " #t ".type "									\
 		     "when 'char' then 2 * " #t ".type_digits "		\
 		     "when 'varchar' then 2 * " #t ".type_digits "	\
 		     "when 'clob' then 2 * " #t ".type_digits "		\
 		     "when 'blob' then " #t ".type_digits "			\
 		     "else cast(null as integer) "					\
-		"end as \"CHAR_OCTET_LENGTH\""
+		"end as integer) as \"CHAR_OCTET_LENGTH\""
