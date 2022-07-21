@@ -4618,12 +4618,22 @@ sql_update_default(Client c, mvc *sql)
 		pos += snprintf(buf + pos, bufsize - pos,
 						"update sys.db_user_info u set max_memory = 0, max_workers = 0, optimizer = 'default_pipe', default_role = (select id from sys.auths a where a.name = u.name);\n");
 		int endprint = (int) pos;
-		bat bid = BBPindex("M5system_auth_user");
-		BAT *u = BATdescriptor(bid);
-		bid = BBPindex("M5system_auth_passwd_v2");
-		BAT *p = BATdescriptor(bid);
-		bid = BBPindex("M5system_auth_deleted");
-		BAT *d = BATdescriptor(bid);
+		bat bid;
+		BAT *u = NULL, *p = NULL, *d = NULL;
+		if ((bid = BBPindex("M5system_auth_user")) == 0 ||
+			(u = BATdescriptor(bid)) == NULL ||
+			(bid = BBPindex("M5system_auth_passwd_v2")) == 0 ||
+			(p = BATdescriptor(bid)) == NULL ||
+			(bid = BBPindex("M5system_auth_deleted")) == 0 ||
+			(d = BATdescriptor(bid)) == NULL) {
+			if (u)
+				BBPunfix(u->batCacheid);
+			if (p)
+				BBPunfix(p->batCacheid);
+			if (d)
+				BBPunfix(d->batCacheid);
+			throw(SQL, __func__, INTERNAL_BAT_ACCESS);
+		}
 		BATiter ui = bat_iterator(u);
 		BATiter pi = bat_iterator(p);
 		for (oid i = 0; i < ui.count; i++) {
@@ -4634,6 +4644,14 @@ sql_update_default(Client c, mvc *sql)
 				char *pass_esc = NULL;
 				if (strchr(user, '\'') != NULL) {
 					char *user_esc = GDKmalloc(strlen(user) * 2 + 1);
+					if (user_esc == NULL) {
+						bat_iterator_end(&ui);
+						bat_iterator_end(&pi);
+						BBPunfix(u->batCacheid);
+						BBPunfix(p->batCacheid);
+						BBPunfix(d->batCacheid);
+						throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 					size_t k = 0;
 					for (size_t j = 0; user[j]; j++) {
 						if (user[j] == '\'')
@@ -4644,6 +4662,15 @@ sql_update_default(Client c, mvc *sql)
 				}
 				if (strchr(pass, '\'') != NULL) {
 					char *pass_esc = GDKmalloc(strlen(pass) * 2 + 1);
+					if (pass_esc == NULL) {
+						bat_iterator_end(&ui);
+						bat_iterator_end(&pi);
+						BBPunfix(u->batCacheid);
+						BBPunfix(p->batCacheid);
+						BBPunfix(d->batCacheid);
+						GDKfree(user_esc);
+						throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 					size_t k = 0;
 					for (size_t j = 0; pass[j]; j++) {
 						if (pass[j] == '\'')
@@ -4663,6 +4690,21 @@ sql_update_default(Client c, mvc *sql)
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		bat_iterator_end(&ui);
 		bat_iterator_end(&pi);
+		if (err == MAL_SUCCEED &&
+			BATmode(u, true) == GDK_SUCCEED &&
+			BATmode(p, true) == GDK_SUCCEED &&
+			BATmode(d, true) == GDK_SUCCEED &&
+			BBPrename(u, NULL) == 0 &&
+			BBPrename(p, NULL) == 0 &&
+			BBPrename(d, NULL) == 0) {
+			bat authbats[4];
+			authbats[0] = 0;
+			authbats[1] = u->batCacheid;
+			authbats[2] = p->batCacheid;
+			authbats[3] = d->batCacheid;
+			if (TMsubcommit_list(authbats, NULL, 4, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)
+				fprintf(stderr, "Committing removal of old user/password BATs failed\n");
+		}
 		BBPunfix(u->batCacheid);
 		BBPunfix(p->batCacheid);
 		BBPunfix(d->batCacheid);
