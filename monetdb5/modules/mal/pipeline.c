@@ -150,9 +150,11 @@ BATupgrade(BAT *r, BAT *b, bool locked)
 		r->twidth < b->twidth) {
 		if (locked)
 			MT_lock_unset(&r->theaplock);
-		err = GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED;
+		if (r->twidth < b->twidth)
+			err = GDKupgradevarheap(r, (1L << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED;
 		if (locked)
 			MT_lock_set(&r->theaplock);
+		assert (r->twidth == b->twidth);
 	}
 	/*
 	if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
@@ -3468,6 +3470,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			err = 1;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
