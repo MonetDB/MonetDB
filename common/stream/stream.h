@@ -219,26 +219,12 @@ stream_export buffer *mnstr_get_buffer(stream *s);
 stream_export stream *block_stream(stream *s); // mapi.c, mal_mapi.c, client.c, merovingian
 stream_export bool isa_block_stream(const stream *s); // mapi.c, mal_client.c, remote.c, sql_scenario.c/sqlReader, sql_scan.c
 stream_export stream *bs_stream(stream *s); // unused
-stream_export void set_prompting(stream *block_stream, const char *prompt, stream *prompt_stream);
-
 
 typedef enum {
 	PROTOCOL_AUTO = 0, // unused
 	PROTOCOL_9 = 1, // mal_mapi.c, mal_client.c;
 	PROTOCOL_COLUMNAR = 3 // sql_result.c
 } protocol_version;
-
-typedef enum {
-	COMPRESSION_NONE = 0, // mal_mapi.c
-	COMPRESSION_SNAPPY = 1, // mcrypt.c, mal_mapi.c
-	COMPRESSION_LZ4 = 2, // same
-	COMPRESSION_AUTO = 255 // never used
-} compression_method;
-
-stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp); // mal_mapi.c
-stream_export int bs2_resizebuf(stream *ss, size_t bufsiz); // sql_result.c
-stream_export buffer bs2_buffer(stream *s); // sql_result.c
-stream_export void bs2_setpos(stream *ss, size_t pos); // sql_result.c
 
 
 /* read block of data including the end of block marker */
@@ -276,7 +262,8 @@ stream_export stream *stream_blackhole_create(void); // never used
 
 stream_export stream *stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths, char filler); // sql.c
 
-
 stream_export stream *create_text_stream(stream *s);
+
+stream_export stream *mapi_request_upload(const char *filename, bool binary, bstream *rs, stream *ws);
 
 #endif /*_STREAM_H_*/

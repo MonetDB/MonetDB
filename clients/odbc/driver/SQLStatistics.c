@@ -167,8 +167,7 @@ MNDBStatistics(ODBCStmt *stmt,
 			 || strchr((const char *) SchemaName, '_') != NULL));
 
 	/* construct the query */
-	querylen = 1200 + strlen(stmt->Dbc->dbname) +
-		(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
+	querylen = 1200 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
 	if (addTmpQuery)
 		querylen *= 2;
 	query = malloc(querylen);
@@ -191,7 +190,7 @@ MNDBStatistics(ODBCStmt *stmt,
 	   VARCHAR      FILTER_CONDITION
 	 */
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"TABLE_CAT\", "
+		"select cast(null as varchar(1)) as \"TABLE_CAT\", "
 		       "s.name as \"TABLE_SCHEM\", "
 		       "t.name as \"TABLE_NAME\", "
 		       "cast(sys.ifthenelse(k.name is null,1,0) as smallint) as \"NON_UNIQUE\", "
@@ -212,7 +211,6 @@ MNDBStatistics(ODBCStmt *stmt,
 		"%sjoin sys.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1)) "
 		"join sys.storage() st on (st.schema = s.name and st.table = t.name and st.column = c.name) "
 		"where 1=1",
-		stmt->Dbc->dbname,
 		SQL_INDEX_HASHED, SQL_INDEX_OTHER,
 		(Unique == SQL_INDEX_UNIQUE) ? "" : "left outer ");
 		/* by using left outer join we also get indices for tables
@@ -241,7 +239,7 @@ MNDBStatistics(ODBCStmt *stmt,
 		   which are stored in tmp.idxs, tmp._tables, tmp._columns, tmp.objects and tmp.keys */
 		pos += snprintf(query + pos, querylen - pos,
 			" UNION ALL "
-			"select '%s' as \"TABLE_CAT\", "
+			"select cast(null as varchar(1)) as \"TABLE_CAT\", "
 			       "s.name as \"TABLE_SCHEM\", "
 			       "t.name as \"TABLE_NAME\", "
 			       "cast(sys.ifthenelse(k.name is null,1,0) as smallint) as \"NON_UNIQUE\", "
@@ -262,7 +260,6 @@ MNDBStatistics(ODBCStmt *stmt,
 			"%sjoin tmp.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1))"
 			"left outer join sys.storage() st on (st.schema = s.name and st.table = t.name and st.column = c.name) "
 			"where 1=1",
-			stmt->Dbc->dbname,
 			SQL_INDEX_HASHED, SQL_INDEX_OTHER,
 			(Unique == SQL_INDEX_UNIQUE) ? "" : "left outer ");
 

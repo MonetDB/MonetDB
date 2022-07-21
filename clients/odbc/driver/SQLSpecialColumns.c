@@ -205,8 +205,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		}
 
 		/* construct the query */
-		querylen = 5000 + strlen(stmt->Dbc->dbname) +
-			(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
+		querylen = 5000 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
 		if (addTmpQuery)
 			querylen *= 2;
 		query = malloc(querylen);
