@@ -1769,10 +1769,6 @@ int sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const
 
 # stream
 stream *block_stream(stream *s);
-stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);
-buffer bs2_buffer(stream *s);
-int bs2_resizebuf(stream *ss, size_t bufsiz);
-void bs2_setpos(stream *ss, size_t pos);
 stream *bs_stream(stream *s);
 bstream *bstream_create(stream *rs, size_t chunk_size);
 void bstream_destroy(bstream *s);
@@ -1799,6 +1795,7 @@ stream *iconv_rstream(stream *restrict ss, const char *restrict charset, const c
 stream *iconv_wstream(stream *restrict ss, const char *restrict charset, const char *restrict name);
 bool isa_block_stream(const stream *s);
 stream *lz4_stream(stream *inner, int preset);
+stream *mapi_request_upload(const char *filename, bool binary, bstream *rs, stream *ws);
 void mnstr_clearerr(stream *s);
 void mnstr_close(stream *s);
 void mnstr_destroy(stream *s);
@@ -1856,7 +1853,6 @@ stream *open_rstream(const char *filename);
 stream *open_urlstream(const char *url);
 stream *open_wastream(const char *filename);
 stream *open_wstream(const char *filename);
-void set_prompting(stream *block_stream, const char *prompt, stream *prompt_stream);
 stream *socket_rstream(SOCKET socket, const char *name);
 stream *socket_wstream(SOCKET socket, const char *name);
 stream *stderr_wastream(void);
