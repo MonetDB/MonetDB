@@ -74,3 +74,12 @@ COPYrequest_upload(Stream *upload, str *filename, bit *binary)
 		throw(IO, "streams.request_upload", "%s", mnstr_peek_error(NULL));
 	return MAL_SUCCEED;
 }
+
+str
+COPYfrom_stdin(Stream *s, bit *stoponemptyline, lng *lines)
+{
+	(void)s;
+	(void)stoponemptyline;
+	(void)lines;
+	throw(MAL, "copy.from_stdin", "FROM STDIN not implemented yet");
+}

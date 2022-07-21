@@ -126,7 +126,7 @@ emit_pipelined_loop(
 	int bte_bat_type = newBatType(TYPE_bte);
 	int alloc = allocation_size(block_size);
     int streams_type = ATOMindex("streams");
-	int var_tmp;
+	int var_level1, var_level2;
 
 	// set up the stream channel
 
@@ -138,7 +138,12 @@ emit_pipelined_loop(
 	q->barrier = BARRIERsymbol;
 	q = pushArgument(mb, q, var_onclient);
 	q = pushInt(mb, q, 0);
-	var_tmp = getDestVar(q);
+	var_level1 = getDestVar(q);
+
+	q = newStmt(mb, "calc", "isnotnil");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_fname);
+	var_level2 = getDestVar(q);
 
 	q = newStmt(mb, "streams", "openRead");
 	q = pushArgument(mb, q, var_fname);
@@ -147,13 +152,38 @@ emit_pipelined_loop(
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
 	q = pushNil(mb, q, TYPE_bit);
-	setDestVar(q, var_tmp);
+	setDestVar(q, var_level2);
+
+	q = newStmt(mb, "calc", "isnil");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, var_fname);
+	var_level2 = getDestVar(q);
+
+	q = newStmt(mb, "calc", "==");
+	q = pushArgument(mb, q, var_nrecords);
+	q = pushLng(mb, q, GDK_lng_max);
+	int var_break_empty_line = getDestVar(q);
+
+	q = newStmt(mb, "copy", "from_stdin");
+	q = pushArgument(mb, q, var_break_empty_line);
+	q = pushArgument(mb, q, var_nrecords);
+	setDestVar(q, var_stream);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	q = pushNil(mb, q, TYPE_bit);
+	setDestVar(q, var_level2);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	q = pushNil(mb, q, TYPE_bit);
+	setDestVar(q, var_level1);
 
 	q = newStmt(mb, "calc", "!=");
 	q->barrier = BARRIERsymbol;
 	q = pushArgument(mb, q, var_onclient);
 	q = pushInt(mb, q, 0);
-	var_tmp = getDestVar(q);
+	var_level1 = getDestVar(q);
 
 	q = newStmt(mb, "copy", "request_upload");
 	q = pushArgument(mb, q, var_fname);
@@ -163,7 +193,7 @@ emit_pipelined_loop(
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
 	q = pushNil(mb, q, TYPE_bit);
-	setDestVar(q, var_tmp);
+	setDestVar(q, var_level1);
 
 	q = newStmt(mb, "copy", "defer_close");
 	q = pushArgument(mb, q, var_stream);
