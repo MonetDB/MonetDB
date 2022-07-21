@@ -156,7 +156,7 @@ target_sources(sql
   opt_backend.h
   for.c for.h
   dict.c dict.h
-  copy.c copy_misc.c copy_scan.c copy.h
+  copy.c copy_misc.c copy_io.c copy_scan.c copy.h
   copy_convert.c copy_convert_num.h
   ${MONETDB_CURRENT_SQL_SOURCES}
   PUBLIC

@@ -9,6 +9,7 @@
 #ifndef _COPY_H_
 #define _COPY_H_
 
+#include "streams.h"
 
 #define MAX_LINE_LENGTH (32 * 1024 * 1024)
 
@@ -17,6 +18,9 @@
 		goto end; \
 	} while (0)
 
+
+////////////////////////////////////////////////////////////////////////
+// copy_misc.c
 
 struct error_handling {
 	bat failures_bat_id;
@@ -36,14 +40,22 @@ gdk_return copy_report_error(struct error_handling *admin, int rel_row, int colu
 	__attribute__((__format__(__printf__, 4, 5)));
 str copy_check_too_many_errors(struct error_handling *admin, const char *fname);
 const char *copy_error_message(struct error_handling *admin);
-
 void copy_destroy_error_handling(struct error_handling *admin);
 
+extern str COPYset_blocksize(int *dummy, int *blocksize);
+extern str COPYget_blocksize(int *blocksize);
+extern str COPYset_parallel(bit *dummy, int *level);
+extern str COPYget_parallel(int *level);
+extern str COPYstr2buf(bat *bat_id, str *s);
+extern str COPYbuf2str(str *ret, bat *bat_id);
+
+void dump_block(const char *msg, BAT *b);
 
 
+////////////////////////////////////////////////////////////////////////
+// copy_convert.c
 
 typedef void (*bulk_converter)(struct error_handling*, void *parms, int count, void *dest, char *data, int *offsets);
-
 extern str parse_fixed_width_column(bat *ret, struct error_handling *errors, const char *fname, bat block_bat_id, bat offsets_bat_id, int tpe, bulk_converter f, void *parms);
 
 extern str COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -63,10 +75,8 @@ extern str COPYparse_decimal_hge(bat *parsed_bat_id, bat *block_bat_id, bat *off
 #endif
 
 
-struct decimal_parms {
-	int digits;
-	int scale;
-};
+////////////////////////////////////////////////////////////////////////
+// copy_scan.c
 
 struct scan_state {
 	// these remain constant
@@ -86,15 +96,16 @@ extern str scan_fields(
 	struct error_handling *errors, struct scan_state *state,
 	char *null_repr, int ncols, int nrows, int **columns);
 
-extern str COPYset_blocksize(int *dummy, int *blocksize);
-extern str COPYget_blocksize(int *blocksize);
-extern str COPYset_parallel(bit *dummy, int *level);
-extern str COPYget_parallel(int *level);
-extern str COPYstr2buf(bat *bat_id, str *s);
-extern str COPYbuf2str(str *ret, bat *bat_id);
 
-void dump_block(const char *msg, BAT *b);
+////////////////////////////////////////////////////////////////////////
+// copy_io.c
 
+extern str COPYdefer_close_stream(bat *container, Stream *s);
+extern str COPYrequest_upload(Stream *upload, str *filename, bit *binary);
+
+
+////////////////////////////////////////////////////////////////////////
+// inline function belonging to copy_scan.c
 
 #ifdef __GNUC__
 /* __builtin_expect returns its first argument; it is expected to be
@@ -105,7 +116,6 @@ void dump_block(const char *msg, BAT *b);
 #define unlikely(expr)	(expr)
 #define likely(expr)	(expr)
 #endif
-
 
 static inline bool
 find_end_of_line(struct scan_state *st)
@@ -143,8 +153,6 @@ find_end_of_line(struct scan_state *st)
 
 	return found;
 }
-
-
 
 
 #endif /*_COPY_H_*/

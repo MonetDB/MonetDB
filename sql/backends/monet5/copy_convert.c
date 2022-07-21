@@ -17,6 +17,12 @@
 
 #define INSIDE_COPY_CONVERT 1
 
+struct decimal_parms {
+	int digits;
+	int scale;
+};
+
+
 str
 COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
