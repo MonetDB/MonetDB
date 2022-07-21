@@ -363,10 +363,25 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (add privileges script)");
 
 	// TODO add user procedures / functions to test SQLProcedures() and SQLProcedureColumns() more
-	// TODO add SQL COMMENT to tables, columns, indexes, procedures, functions to fetch (and test) data in the REMARKS result column
+
+	// set COMMENT ON schema, tables, columns, indexes, procedures and functions to fetch (and test) data in the REMARKS result column
+	ret = SQLExecDirect(stmt, (SQLCHAR *)
+		"COMMENT ON SCHEMA odbctst IS 'odbctst schema comment';\n"
+		"COMMENT ON TABLE odbctst.pk_uc IS 'odbctst.pk_uc table comment';\n"
+		"COMMENT ON TABLE odbctst.nopk_twoucs IS 'odbctst.nopk_twoucs table comment';\n"
+		"COMMENT ON COLUMN odbctst.nopk_twoucs.id2 IS 'odbctst.nopk_twoucs.id2 column comment';\n"
+		"COMMENT ON COLUMN odbctst.nopk_twoucs.name2 IS 'odbctst.nopk_twoucs.name2 column comment';\n"
+		"COMMENT ON INDEX odbctst.pk_uc_i IS 'odbctst.pk_uc_i index comment';\n"
+		"COMMENT ON INDEX odbctst.nopk_twoucs_i IS 'odbctst.nopk_twoucs_i index comment';\n"
+		"COMMENT ON PROCEDURE sys.analyze() IS 'sys.analyze() procedure comment';\n"
+		"COMMENT ON FUNCTION sys.sin(double) IS 'sys.sin(double) function comment';\n"
+		"COMMENT ON FUNCTION sys.env() IS 'sys.env() function comment';\n"
+		"COMMENT ON FUNCTION sys.statistics() IS 'sys.statistics() function comment';\n"
+		, SQL_NTS);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (add comments script)");
 
 /* run actual metadata query tests */
-	// All catalogs query
+	// All catalogs query. MonetDB should return no rows. Catalog qualifier not supported.
 	ret = SQLTables(stmt, (SQLCHAR*)SQL_ALL_CATALOGS, SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS);
@@ -376,7 +391,7 @@ main(int argc, char **argv)
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
 		"WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)\n");
 
-	// All schemas query
+	// All schemas query. All columns except the TABLE_SCHEM column should contain NULLs.
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)SQL_ALL_SCHEMAS, SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS);
@@ -394,7 +409,7 @@ main(int argc, char **argv)
 		"NULL	wlc	NULL	NULL	NULL\n"
 		"NULL	wlr	NULL	NULL	NULL\n");
 
-	// All table types query
+	// All table types query. All columns except the TABLE_TYPE column should contain NULLs.
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)SQL_ALL_TABLE_TYPES, SQL_NTS);
@@ -427,9 +442,9 @@ main(int argc, char **argv)
 		"NULL	odbctst	LINES	TABLE	NULL\n"
 		"NULL	odbctst	ORDERS	TABLE	NULL\n"
 		"NULL	odbctst	fk2c	TABLE	NULL\n"
-		"NULL	odbctst	nopk_twoucs	TABLE	NULL\n"
+		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
 		"NULL	odbctst	pk2c	TABLE	NULL\n"
-		"NULL	odbctst	pk_uc	TABLE	NULL\n");
+		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
 
 	// All user tables and views in schema odbctst
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -444,9 +459,9 @@ main(int argc, char **argv)
 		"NULL	odbctst	LINES	TABLE	NULL\n"
 		"NULL	odbctst	ORDERS	TABLE	NULL\n"
 		"NULL	odbctst	fk2c	TABLE	NULL\n"
-		"NULL	odbctst	nopk_twoucs	TABLE	NULL\n"
+		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
 		"NULL	odbctst	pk2c	TABLE	NULL\n"
-		"NULL	odbctst	pk_uc	TABLE	NULL\n");
+		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
 
 	// All user tables and views in all schemas
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -465,9 +480,9 @@ main(int argc, char **argv)
 		"NULL	odbctst	LINES	TABLE	NULL\n"
 		"NULL	odbctst	ORDERS	TABLE	NULL\n"
 		"NULL	odbctst	fk2c	TABLE	NULL\n"
-		"NULL	odbctst	nopk_twoucs	TABLE	NULL\n"
+		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
 		"NULL	odbctst	pk2c	TABLE	NULL\n"
-		"NULL	odbctst	pk_uc	TABLE	NULL\n");
+		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
 
 	// All columns of odbctst tables containg 'pk' in their name
 	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -478,8 +493,8 @@ main(int argc, char **argv)
 		"Resultset with 7 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	BIGINT	INTEGER	WVARCHAR(3)\n"
-		"NULL	odbctst	nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"NULL	odbctst	nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	odbctst	nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	odbctst.nopk_twoucs.id2 column comment	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	odbctst	nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	odbctst.nopk_twoucs.name2 column comment	NULL	-9	NULL	198	2	YES\n"
 		"NULL	odbctst	pk2c	pkc1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	odbctst	pk2c	pkc2	-9	VARCHAR	99	198	NULL	NULL	0	NULL	NULL	-9	NULL	198	2	NO\n"
 		"NULL	odbctst	pk2c	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	3	YES\n"
@@ -1080,7 +1095,7 @@ main(int argc, char **argv)
 		"Resultset with 4 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
-		"NULL	sys	analyze	0	0	0	NULL	1	replacedId\n"
+		"NULL	sys	analyze	0	0	0	sys.analyze() procedure comment	1	replacedId\n"
 		"NULL	sys	analyze	0	0	0	NULL	1	replacedId\n"
 		"NULL	sys	analyze	0	0	0	NULL	1	replacedId\n"
 		"NULL	sys	analyze	0	0	0	NULL	1	replacedId\n");
@@ -1109,7 +1124,7 @@ main(int argc, char **argv)
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
 		"NULL	sys	sin	0	0	0	NULL	2	replacedId\n"
-		"NULL	sys	sin	0	0	0	NULL	2	replacedId\n");
+		"NULL	sys	sin	0	0	0	sys.sin(double) function comment	2	replacedId\n");
 
 	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"sin", SQL_NTS,
@@ -1132,7 +1147,7 @@ main(int argc, char **argv)
 		"Resultset with 1 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
-		"NULL	sys	env	0	0	0	NULL	2	replacedId\n");
+		"NULL	sys	env	0	0	0	sys.env() function comment	2	replacedId\n");
 
 	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"env", SQL_NTS,
@@ -1153,7 +1168,7 @@ main(int argc, char **argv)
 		"Resultset with 4 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
-		"NULL	sys	statistics	0	0	0	NULL	2	replacedId\n"
+		"NULL	sys	statistics	0	0	0	sys.statistics() function comment	2	replacedId\n"
 		"NULL	sys	statistics	0	0	0	NULL	2	replacedId\n"
 		"NULL	sys	statistics	0	0	0	NULL	2	replacedId\n"
 		"NULL	sys	statistics	0	0	0	NULL	2	replacedId\n");
