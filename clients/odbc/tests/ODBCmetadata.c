@@ -431,7 +431,24 @@ main(int argc, char **argv)
 		"NULL	odbctst	pk2c	TABLE	NULL\n"
 		"NULL	odbctst	pk_uc	TABLE	NULL\n");
 
-	// All user tables and views
+	// All user tables and views in schema odbctst
+	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
+			(SQLCHAR*)"'TABLE' , 'VIEW'", SQL_NTS);	// using quotes around the type names
+	compareResult(stmt, ret, "SQLTables (odbctst, %, 'TABLE' , 'VIEW')",
+		"Resultset with 5 columns\n"
+		"Resultset with 7 rows\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
+		"NULL	odbctst	CUSTOMERS	TABLE	NULL\n"
+		"NULL	odbctst	LINES	TABLE	NULL\n"
+		"NULL	odbctst	ORDERS	TABLE	NULL\n"
+		"NULL	odbctst	fk2c	TABLE	NULL\n"
+		"NULL	odbctst	nopk_twoucs	TABLE	NULL\n"
+		"NULL	odbctst	pk2c	TABLE	NULL\n"
+		"NULL	odbctst	pk_uc	TABLE	NULL\n");
+
+	// All user tables and views in all schemas
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"%", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
 			(SQLCHAR*)"TABLE, VIEW, GLOBAL TEMPORARY TABLE, LOCAL TEMPORARY TABLE", SQL_NTS);
