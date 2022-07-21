@@ -136,7 +136,7 @@
 		     "else " #t ".type_digits "			\
 		"end as \"COLUMN_SIZE\""
 
-#define BUFFER_LENGTH(t) "case " #t ".type "				\
+#define BUFFER_LENGTH(t) "cast(case " #t ".type "				\
 		     "when 'bigint' then 20 "						\
 		     "when 'char' then 2 * " #t ".type_digits "		\
 		     "when 'clob' then 2 * " #t ".type_digits "		\
@@ -173,9 +173,9 @@
 		     "when 'tinyint' then 4 "						\
 		     "when 'varchar' then 2 * " #t ".type_digits "	\
 		     "else " #t ".type_digits "						\
-		"end as \"BUFFER_LENGTH\""
+		"end as integer) as \"BUFFER_LENGTH\""
 
-#define DECIMAL_DIGITS(t) "case " #t ".type "							\
+#define DECIMAL_DIGITS(t) "cast(case " #t ".type "							\
 		     "when 'bigint' then 0 "									\
 		     "when 'day_interval' then 0 "								\
 		     "when 'decimal' then " #t ".type_scale "					\
@@ -198,7 +198,7 @@
 		     "when 'timetz' then " #t ".type_digits - 1 "				\
 		     "when 'tinyint' then 0 "									\
 		     "else cast(null as smallint) "								\
-		"end as \"DECIMAL_DIGITS\""
+		"end as smallint) as \"DECIMAL_DIGITS\""
 
 #define NUM_PREC_RADIX(t) "case " #t ".type "							\
 		     "when 'bigint' then 2 "									\
