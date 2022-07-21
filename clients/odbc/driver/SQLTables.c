@@ -41,6 +41,7 @@ MNDBTables(ODBCStmt *stmt,
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
+	size_t pos = 0;
 
 	/* convert input string parameters to normal null terminated C
 	 * strings */
@@ -75,13 +76,12 @@ MNDBTables(ODBCStmt *stmt,
 	    CatalogName &&
 	    strcmp((char *) CatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
-		query = strdup("select e.value as \"TABLE_CAT\", "
+		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
 				      "cast(null as varchar(1)) as \"TABLE_SCHEM\", "
 				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
 				      "cast(null as varchar(1)) as \"TABLE_TYPE\", "
 				      "cast(null as varchar(1)) as \"REMARKS\" "
-			       "from sys.env() e "
-			       "where e.name = 'gdk_dbname'");
+			       "where 1=2");  /* return no rows */
 		if (query == NULL)
 			goto nomem;
 	} else if (NameLength1 == 0 &&
@@ -117,7 +117,6 @@ MNDBTables(ODBCStmt *stmt,
 	} else {
 		/* no special case argument values */
 		size_t querylen;
-		size_t pos = 0;
 
 		if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
 			if (NameLength2 > 0) {
@@ -152,7 +151,7 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* construct the query now */
-		querylen = 2000 + strlen(stmt->Dbc->dbname) +
+		querylen = 2000 +
 			(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) +
 			((NameLength4 + 1) / 5) * 67;
 		query = malloc(querylen);
@@ -160,7 +159,7 @@ MNDBTables(ODBCStmt *stmt,
 			goto nomem;
 
 		pos += snprintf(query + pos, querylen - pos,
-		       "select '%s' as \"TABLE_CAT\", "
+		       "select cast(null as varchar(1)) as \"TABLE_CAT\", "
 			      "s.name as \"TABLE_SCHEM\", "
 			      "t.name as \"TABLE_NAME\", "
 		              "tt.table_type_name as \"TABLE_TYPE\", "
@@ -170,7 +169,6 @@ MNDBTables(ODBCStmt *stmt,
 		            "sys.table_types tt "
 		       "where s.id = t.schema_id and "
 		             "t.type = tt.table_type_id",
-			stmt->Dbc->dbname,
 			stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
 			stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = t.id" : "");
 		assert(pos < 1900);
