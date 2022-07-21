@@ -102,7 +102,13 @@ extern str scan_fields(
 
 extern str COPYdefer_close_stream(bat *container, Stream *s);
 extern str COPYrequest_upload(Stream *upload, str *filename, bit *binary);
-extern str COPYfrom_stdin(Stream *s, bit *stoponemptyline, lng *lines);
+extern str COPYfrom_stdin(Stream *s, bit *stoponemptyline, lng *lines, str *linesep_arg, str *quote_arg, bit *escape);
+
+
+////////////////////////////////////////////////////////////////////////
+// copy.c
+
+extern int get_sep_char(str sep, bool backslash_escapes);
 
 ////////////////////////////////////////////////////////////////////////
 // inline function belonging to copy_scan.c

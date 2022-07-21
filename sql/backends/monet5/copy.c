@@ -118,7 +118,7 @@ COPYskiplines(lng *toskip_out, bat *block_bat, lng *toskip_in)
 	return msg;
 }
 
-static int
+int
 get_sep_char(str sep, bool backslash_escapes)
 {
 	if (strNil(sep))
@@ -520,10 +520,10 @@ static mel_func copy_init_funcs[] = {
 		arg("filename", str), arg("binary", bit)
  )),
  command("copy", "from_stdin", COPYfrom_stdin, true, "read FROM STDIN",
- 	args(1, 3,
+ 	args(1, 6,
 		arg("", streams),
-		arg("stoponemptyline", bit),
-		arg("lines", lng)
+		arg("stoponemptyline", bit), arg("lines", lng),
+		arg("linesep", str), arg("quote", str), arg("escape", bit),
  )),
  command("copy", "read", COPYread, true, "Read 'block_size' bytes into 'block' from 's'",
 	args(1, 4,

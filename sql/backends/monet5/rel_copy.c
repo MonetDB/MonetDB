@@ -167,6 +167,9 @@ emit_pipelined_loop(
 	q = newStmt(mb, "copy", "from_stdin");
 	q = pushArgument(mb, q, var_break_empty_line);
 	q = pushArgument(mb, q, var_nrecords);
+	q = pushArgument(mb, q, var_line_sep);
+	q = pushArgument(mb, q, var_quote_char);
+	q = pushArgument(mb, q, var_escape);
 	setDestVar(q, var_stream);
 
 	q = newAssignment(mb);
