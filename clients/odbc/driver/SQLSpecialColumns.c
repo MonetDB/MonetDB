@@ -424,7 +424,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		assert(IdentifierType == SQL_ROWVER);
 		/* The backend does not have such info available */
 		/* create just a query which results in zero rows */
-		/* Note: pseudo_column is sql_pc_unknown is 0 */
+		/* Note: PSEUDO_COLUMN is SQL_PC_UNKNOWN is 0 */
 		query = strdup("select cast(null as smallint) as \"SCOPE\", "
 				      "cast('' as varchar(1)) as \"COLUMN_NAME\", "
 				      "cast(1 as smallint) as \"DATA_TYPE\", "
