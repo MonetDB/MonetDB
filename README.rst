@@ -31,8 +31,8 @@ __ mpl_
 .. _MonetDB: https://dev.monetdb.org/hg/MonetDB/
 __ MonetDB_
 
-.. _github: https://github.com/MonetDB/MonetDB
-__ github_
+.. _mirror: https://github.com/MonetDB/MonetDB
+__ mirror_
 
 Building
 --------
@@ -92,8 +92,8 @@ WITH_XML2       Include xml2 support
 WITH_ZLIB       Include zlib support
 ==============  ===============================================================================================
 
-Required packages
-.................
+Required and Optional Packages
+..............................
 
 On Fedora, the following packages are required:
 ``bison``, ``cmake``, ``gcc``, ``pkgconf``, ``python3``.
