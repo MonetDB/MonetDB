@@ -255,8 +255,6 @@ monet5_drop_user(ptr _mvc, str user)
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *users = find_sql_table(m->session->tr, sys, "db_user_info");
 	sql_column *users_name = find_sql_column(users, "name");
-	// str err;
-	// Client c = MCgetClient(m->clientid);
 	sqlstore *store = m->session->tr->store;
 	int log_res = LOG_OK;
 
@@ -265,21 +263,6 @@ monet5_drop_user(ptr _mvc, str user)
 		(void) sql_error(m, 02, "DROP USER: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 		return FALSE;
 	}
-
-	// grant_user = c->user;
-	// c->user = MAL_ADMIN;
-	// err = AUTHremoveUser(c, user);
-	// c->user = grant_user;
-	// if (err !=MAL_SUCCEED) {
-	// 	(void) sql_error(m, 02, "DROP USER: %s", getExceptionMessage(err));
-	// 	freeException(err);
-	// 	return FALSE;
-	// }
-	/* FIXME: We have to ignore this inconsistency here, because the
-	 * user was already removed from the system authorisation. Once
-	 * we have warnings, we could issue a warning about this
-	 * (seemingly) inconsistency between system and sql shadow
-	 * administration. */
 
 	return TRUE;
 }
@@ -484,12 +467,6 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		}
 
 	}
-	// TODO don't add user in MAL
-	/* add the user to the M5 authorisation administration */
-	// oid grant_user = c->user;
-	// c->user = MAL_ADMIN;
-	// ret = AUTHaddUser(&uid, c, user, pwd);
-	// c->user = grant_user;
 	if (!enc)
 		free(pwd);
 	return ret;
@@ -498,44 +475,12 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 static int
 monet5_find_user(ptr mp, str user)
 {
-	// BAT *uid, *nme;
-	// BUN p;
 	mvc *m = (mvc *) mp;
 	oid rid = getUserOIDByName(m, user);
 	if (is_oid_nil(rid))
 		return -1;
 	return rid;
-	// Client c = MCgetClient(m->clientid);
-	// str err;
-
-	// if ((err = AUTHgetUsers(&uid, &nme, c)) != MAL_SUCCEED) {
-	// 	freeException(err);
-	// 	return -1;
-	// }
-	// p = BUNfnd(nme, user);
-	// BBPunfix(uid->batCacheid);
-	// BBPunfix(nme->batCacheid);
-
-	// /* yeah, I would prefer to return something different too */
-	// return (p == BUN_NONE ? -1 : 1);
 }
-
-// str
-// db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-// {
-// 	bat *r = getArgReference_bat(stk, pci, 0);
-// 	BAT *uid, *nme;
-// 	str err;
-//
-// 	(void) mb;
-// 	if ((err = AUTHgetUsers(&uid, &nme, cntxt)) != MAL_SUCCEED)
-// 		return err;
-// 	BBPunfix(uid->batCacheid);
-// 	*r = nme->batCacheid;
-// 	BBPkeepref(nme);
-// 	return MAL_SUCCEED;
-// }
-
 
 str
 monet5_password_hash(mvc *m, const char *username)
@@ -552,47 +497,6 @@ monet5_password_hash(mvc *m, const char *username)
 	}
 	GDKfree(password);
 	return hash;
-	// (void) mb;
-
-	// if (stk->stk[pci->argv[0]].vtype == TYPE_bat) {
-	// 	BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-	// 	if (b == NULL)
-	// 		throw(SQL, "sql.password", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	// 	BAT *bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
-	// 	if (bn == NULL) {
-	// 		BBPunfix(b->batCacheid);
-	// 		throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	// 	}
-	// 	BATiter bi = bat_iterator(b);
-	// 	BUN p, q;
-	// 	BATloop(b, p, q) {
-	// 		char *hash, *msg;
-	// 		msg = AUTHgetPasswordHash(&hash, cntxt, BUNtvar(bi, p));
-	// 		if (msg != MAL_SUCCEED) {
-	// 			bat_iterator_end(&bi);
-	// 			BBPunfix(b->batCacheid);
-	// 			BBPreclaim(bn);
-	// 			return msg;
-	// 		}
-	// 		if (BUNappend(bn, hash, false) != GDK_SUCCEED) {
-	// 			bat_iterator_end(&bi);
-	// 			BBPunfix(b->batCacheid);
-	// 			BBPreclaim(bn);
-	// 			GDKfree(hash);
-	// 			throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	// 		}
-	// 		GDKfree(hash);
-	// 	}
-	// 	bat_iterator_end(&bi);
-	// 	BBPunfix(b->batCacheid);
-	// 	BBPkeepref(bn);
-	// 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	// 	return MAL_SUCCEED;
-	// }
-	// str *hash = getArgReference_str(stk, pci, 0);
-	// str *user = getArgReference_str(stk, pci, 1);
-
-	// return AUTHgetPasswordHash(hash, cntxt, *user);
 }
 
 static void
@@ -814,8 +718,6 @@ static int
 monet5_rename_user(ptr _mvc, str olduser, str newuser)
 {
 	mvc *m = (mvc *) _mvc;
-	// Client c = MCgetClient(m->clientid);
-	// str err;
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
@@ -823,12 +725,6 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
 	sql_column *auths_name = find_sql_column(auths, "name");
 	int res = LOG_OK;
-
-	// if ((err = AUTHchangeUsername(c, olduser, newuser)) != MAL_SUCCEED) {
-	// 	(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
-	// 	freeException(err);
-	// 	return (FALSE);
-	// }
 
 	sqlstore *store = m->session->tr->store;
 	rid = store->table_api.column_find_row(m->session->tr, users_name, olduser, NULL);

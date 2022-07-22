@@ -14,7 +14,6 @@ extern void monet5_user_init(backend_functions *be_funcs);
 extern int monet5_user_set_def_schema(mvc *m, oid user /* mal user id */);
 extern int monet5_user_get_def_schema(mvc *m, int user /* sql user id */, str *schema);
 
-// extern str db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str monet5_password_hash(mvc *m, const char *username);
 
 #endif /* _SQL_USER_H_ */
