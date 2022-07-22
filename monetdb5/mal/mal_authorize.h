@@ -17,14 +17,7 @@
 #define MAL_ADMIN (oid) 0
 
 mal_export str AUTHcheckCredentials(oid *ret, Client c, const char *user, const char *passwd, const char *challenge, const char *algo);
-// mal_export str AUTHaddUser(oid *ret, Client c, const char *user, const char *pass);
-// mal_export str AUTHremoveUser(Client c, const char *username);
-// mal_export str AUTHchangeUsername(Client c, const char *olduser, const char *newuser);
-// mal_export str AUTHchangePassword(Client c, const char *oldpass, const char *passwd);
-// mal_export str AUTHsetPassword(Client c, const char *username, const char *passwd);
-// mal_export str AUTHresolveUser(str *ret, oid uid);
 mal_export str AUTHgetUsername(str *ret, Client c);
-// mal_export str AUTHgetUsers(BAT **ret1, BAT **ret2, Client c);
 mal_export str AUTHgetPasswordHash(str *ret, Client c, const char *username);
 
 mal_export str AUTHinitTables(const char *passwd);
@@ -41,7 +34,7 @@ mal_export str AUTHdeleteRemoteTableCredentials(const char *local_table);
  * (the vault) by supplying the master password which is the key for the
  * cypher algorithm used to store the data.  The BAT will never
  * contain the plain hashes, as they will be decyphered on the fly when
- * needed.  A locked vault means none can log into the system, hence, the
+ * needed.  A locked vault means no one can log into the system, hence, the
  * vault needs to be unlocked as part of the server startup ritual.
  */
 mal_export str AUTHunlockVault(const char *password);
