@@ -99,8 +99,9 @@ from_stdin_read(void *restrict private, void *restrict buf, size_t elmsize, size
 	if (bs == NULL || cnt == 0)
 		return 0;
 
-	lng orig_cnt = cnt;
-	while (!bs->eof && cnt > 0 && state->lines_left > 0) {
+	char *orig_buf = buf;
+	size_t orig_cnt = cnt;
+	while (cnt > 0 && state->lines_left > 0 && (bs->pos < bs->len || !bs->eof)) {
 		if (bs->pos == bs->len) {
 			ssize_t nread = bstream_next(bs);
 			if (nread > 0)
@@ -129,7 +130,11 @@ from_stdin_read(void *restrict private, void *restrict buf, size_t elmsize, size
 		// However, we have to be careful not to copy beyond the end of the data.
 		struct scan_state *scan = &state->scan_state;
 		scan->start = (unsigned char*) &bs->buf[bs->pos];
-		scan->end = (unsigned char*) &bs->buf[bs->len];
+		size_t n = bs->len - bs->pos;
+		if (n > cnt)
+
+			n = cnt;
+		scan->end = scan->start + n;
 		scan->pos = scan->start;
 		bool omit_last_char = false;
 		while (scan->pos < scan->end && state->lines_left > 0) {
@@ -156,10 +161,13 @@ from_stdin_read(void *restrict private, void *restrict buf, size_t elmsize, size
 		// Copy to buf and adjust bookkeeping
 		size_t scanned = scan->pos - scan->start;
 		size_t to_copy = scanned - omit_last_char;
+		assert((char*)buf >= orig_buf);
+		assert((char*)buf + to_copy <= orig_buf + orig_cnt);
 		memcpy(buf, scan->start, to_copy);
 		buf = (char*)buf + to_copy;
 		bs->pos += scanned;
-		cnt -= scanned;
+		assert(to_copy <= cnt);
+		cnt -= to_copy;
 	}
 
 	size_t nread = orig_cnt - cnt;
