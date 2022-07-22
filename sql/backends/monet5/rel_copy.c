@@ -628,6 +628,11 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushBit(mb, q, false);
 	q = pushBit(mb, q, true);
 	q = pushNil(mb, q, TYPE_lng);
+	int var_tmp = getDestVar(q);
+
+	q = newStmt(mb, "algebra", "projection");
+	q = pushArgument(mb, q, var_tmp);
+	q = pushArgument(mb, q, var_new_oids_bat);
 	int var_rows_to_retain = getDestVar(q);
 
 	q = newStmt(mb, "algebra", "difference");
@@ -638,6 +643,11 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushBit(mb, q, false);
 	q = pushBit(mb, q, true);
 	q = pushNil(mb, q, TYPE_lng);
+	var_tmp = getDestVar(q);
+
+	q = newStmt(mb, "algebra", "projection");
+	q = pushArgument(mb, q, var_tmp);
+	q = pushArgument(mb, q, var_new_oids_bat);
 	int var_rows_to_delete = getDestVar(q);
 
 	q = newStmt(mb, "sql", "delete");
