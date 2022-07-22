@@ -5256,12 +5256,7 @@ can_use_copyparpipe(sql_rel *rel)
 	if (n == NULL)
 		return NULL;
 	sql_table *template_table = atom_argument(n, 0, TYPE_ptr)->val.pval;
-	str fname = atom_argument(n, 5, TYPE_str)->val.sval;
 	str fixed_width = atom_argument(n, 9, TYPE_str)->val.sval;
-	if (strNil(fname) && parallel_copy_level() < 2) {
-		// from stdin
-		return NULL;
-	}
 	if (!strNil(fixed_width))
 		return NULL;
 
