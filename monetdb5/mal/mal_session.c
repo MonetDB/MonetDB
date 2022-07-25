@@ -312,19 +312,22 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				else
 					mnstr_printf(fout, "!maximum concurrent client limit reached "
 									   "(%d), please try again later\n", MAL_MAXCLIENTS);
-				return cleanUpScheduleClient(NULL, NULL, fin, fout, &command, NULL);
+				cleanUpScheduleClient(NULL, NULL, fin, fout, &command, NULL);
+				return;
 			}
 			Scenario scenario = findScenario("sql");
 			if ((msg = scenario->initClientCmd(c)) != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", msg);
-				return cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
+				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
+				return;
 			}
 			/* access control: verify the credentials supplied by the user,
 			 * no need to check for database stuff, because that is done per
 			 * database itself (one gets a redirect) */
 			if ((msg = AUTHcheckCredentials(&uid, c, user, passwd, challenge, algo)) != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", msg);
-				return cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
+				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
+				return;
 			}
 			cleanUpScheduleClient(c, scenario, NULL, NULL, NULL, NULL);
 		}
