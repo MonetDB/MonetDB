@@ -161,7 +161,7 @@ from_stdin_read(void *restrict private, void *restrict buf, size_t elmsize, size
 		// Copy to buf and adjust bookkeeping
 		size_t scanned = scan->pos - scan->start;
 		size_t to_copy = scanned - omit_last_char;
-		assert((char*)buf >= orig_buf);
+		assert((char*)buf >= orig_buf); (void)orig_buf;
 		assert((char*)buf + to_copy <= orig_buf + orig_cnt);
 		memcpy(buf, scan->start, to_copy);
 		buf = (char*)buf + to_copy;
