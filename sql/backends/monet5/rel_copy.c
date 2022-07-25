@@ -356,7 +356,7 @@ emit_pipelined_loop(
 }
 
 static void
-emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
+emit_redo(MalBlkPtr mb, struct loop_vars *loop_vars)
 {
 	InstrPtr q;
 
@@ -368,6 +368,12 @@ emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
 	q->barrier = REDOsymbol;
 	pushBit(mb, q, true);
 	getDestVar(q) = loop_vars->loop_barrier;
+}
+
+static void
+emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
+{
+	InstrPtr q;
 
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
@@ -506,6 +512,21 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	int var_claim_token = emit_receive(mb, loop_vars.loop_handle, claim_channel_stmt);
 
+	q = newStmt(mb, "calc", "==");
+	q->barrier = BARRIERsymbol;
+	q = pushArgument(mb, q, loop_vars.our_line_count);
+	q = pushLng(mb, q, 0);
+	int var_claim_block = getDestVar(q);
+
+	emit_send(mb, loop_vars.loop_handle, claim_channel_stmt, var_claim_token);
+
+	emit_redo(mb, &loop_vars);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	q = pushBit(mb, q, true);
+	setDestVar(q, var_claim_block);
+
 	q = newStmt(mb, "sql", "claim");
 	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid)));
 	q = pushArgument(mb, q, be->mvc_var);
@@ -603,6 +624,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	}
 
 	// END LOOP
+	emit_redo(mb, &loop_vars);
 	emit_loop_end(mb, &loop_vars);
 
 	// BEST EFFORT post processing
