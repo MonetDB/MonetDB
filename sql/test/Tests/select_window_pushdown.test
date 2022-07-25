@@ -262,5 +262,32 @@ project (
 ) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
 
 
+# test with like-type filters
+query T nosort
+plan SELECT *
+FROM (
+    SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
+    FROM (
+        SELECT k, v, v % 2 = 0 AS flag
+        FROM Test
+    ) t1
+) t2
+WHERE rank = 1 AND NOT flag AND k like '%10%';
+----
+project (
+| select (
+| | project (
+| | | project (
+| | | | project (
+| | | | | select (
+| | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
+| | | | | ) [ (clob["test"."k"]) FILTER "sys"."like"(clob "%10%", clob "", boolean(1) "false") ]
+| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%1"."%1", "sys"."="("%1"."%1", int(32) "0") as "t1"."flag" ]
+| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
+| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
+| ) [ ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
+) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
+
+
 statement ok
 DROP TABLE Test
