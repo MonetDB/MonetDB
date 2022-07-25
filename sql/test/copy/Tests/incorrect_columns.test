@@ -31,17 +31,17 @@ query IITT rowsort
 select * from sys.rejects()
 ----
 2
-1
-Column value missing
-2@
+NULL
+Row 2: too few fields, expected 2 but found 1
+NULL
 3
-1
-Column value missing
-no tag@
+NULL
+Row 3: too few fields, expected 2 but found 1
+NULL
 4
-3
-Leftover data 'xyz'
-3,too much@
+NULL
+Row 4: too many fields, expected 2 but found more
+NULL
 
 statement ok
 drop table t_columns

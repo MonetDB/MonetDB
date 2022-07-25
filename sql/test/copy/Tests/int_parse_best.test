@@ -64,8 +64,8 @@ select * from sys.rejects
 ----
 2
 2
-line 2 field i 'int' expected in '5.1'
-0,5.1@
+Row 2 column 2 'i': unexpected decimal digit '1' while parsing integer
+NULL
 
 statement ok
 call sys.clearrejects()
@@ -93,16 +93,16 @@ select * from sys.rejects
 ----
 2
 2
-line 2 field i 'int' expected in 'nil'
-0,nil@
+Row 2 column 2 'i': missing integer
+NULL
 4
 2
-line 4 field i 'int' expected in 'null'
-0,null@
+Row 4 column 2 'i': missing integer
+NULL
 5
 2
-line 5 field i 'int' expected in 'abc'
-0,abc@
+Row 5 column 2 'i': missing integer
+NULL
 
 statement ok
 call sys.clearrejects()
