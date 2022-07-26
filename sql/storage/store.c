@@ -3640,8 +3640,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 			sql_change *c = n->data;
 
 			if (c->commit) {
-				ulng *active = malloc(sizeof(ulng) * (store->active->cnt + 1));
-				active = store_get_active(store); /* get active transactions (to merge segments) */
+				ulng *active = store_get_active(store); /* get active transactions (to merge segments) */
 				c->commit(tr, c, 0 /* ie rollback */, oldest, active);
 				free(active);
 			}
@@ -3994,8 +3993,7 @@ sql_trans_commit(sql_trans *tr)
 			sql_change *c = n->data;
 
 			if (c->commit && ok == LOG_OK) {
-				ulng *active = malloc(sizeof(ulng) * (store->active->cnt + 1));
-				active = store_get_active(store); /* get active transactions (to merge segments) */
+				ulng *active = store_get_active(store); /* get active transactions (to merge segments) */
 				ok = c->commit(tr, c, commit_ts, oldest, active);
 				free(active);
 			}
