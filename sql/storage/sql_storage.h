@@ -336,7 +336,6 @@ extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 extern ulng store_function_counter(struct sqlstore *store);
 
 extern ulng store_oldest(struct sqlstore *store);
-extern ulng *store_get_active(struct sqlstore *store);
 extern ulng store_get_timestamp(struct sqlstore *store);
 extern void store_manager(struct sqlstore *store);
 
