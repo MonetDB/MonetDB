@@ -5040,7 +5040,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_
 }
 
 int
-sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner)
+sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner, sqlid *schema_id_ptr)
 {
 	sqlstore *store = tr->store;
 	sql_schema *s = SA_ZNEW(tr->sa, sql_schema);
@@ -5071,6 +5071,8 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 		return res;
 	if ((res = sql_trans_add_dependency(tr, s->owner, ddl)))
 		return res;
+	if (schema_id_ptr)
+		*schema_id_ptr = s->base.id;
 	return res;
 }
 
@@ -5096,6 +5098,34 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 	if ((res = os_del(tr->cat->schemas, tr, s->base.name, dup_base(&s->base))))
 		return res;
 	if ((res = schema_dup(tr, s, new_name, &ns)) || (res = os_add(tr->cat->schemas, tr, ns->base.name, &ns->base))) {
+		return res;
+	}
+	return res;
+}
+
+int
+sql_trans_change_schema_authorization(sql_trans *tr, sqlid id, sqlid auth_id)
+{
+	sqlstore *store = tr->store;
+	sql_table *sysschema = find_sql_table(tr, find_sql_schema(tr, "sys"), "schemas");
+	sql_schema *s = find_sql_schema_id(tr, id), *ns = NULL;
+	oid rid;
+	int res = LOG_OK;
+
+	assert(auth_id);
+	s->auth_id = auth_id;
+
+	rid = store->table_api.column_find_row(tr, find_sql_column(sysschema, "id"), &id, NULL);
+	assert(!is_oid_nil(rid));
+	if ((res = store->table_api.column_update_value(tr, find_sql_column(sysschema, "authorization"), rid, &auth_id)))
+		return res;
+
+	if (!isNew(s) && (res = sql_trans_add_dependency_change(tr, id, ddl)))
+		return res;
+	/* delete schema, add schema */
+	if ((res = os_del(tr->cat->schemas, tr, s->base.name, dup_base(&s->base))))
+		return res;
+	if ((res = schema_dup(tr, s, s->base.name, &ns)) || (res = os_add(tr->cat->schemas, tr, ns->base.name, &ns->base))) {
 		return res;
 	}
 	return res;

@@ -404,6 +404,8 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		return NULL;
 	}
 
+	// set SQL user callbacks in MAL authorization
+	sql_set_user_api_hooks(m);
 	mvc_destroy(m);
 	return store;
 }
@@ -1117,7 +1119,7 @@ int
 mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner)
 {
 	TRC_DEBUG(SQL_TRANS, "Create schema: %s %d %d\n", name, auth_id, owner);
-	return sql_trans_create_schema(m->session->tr, name, auth_id, owner);
+	return sql_trans_create_schema(m->session->tr, name, auth_id, owner, NULL);
 }
 
 int
