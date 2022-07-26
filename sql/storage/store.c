@@ -60,7 +60,7 @@ store_oldest(sqlstore *store)
 static ulng *
 store_get_active(sqlstore *store, sql_trans* tr)
 {
-	ulng *active = malloc(sizeof(ulng) * store->active->cnt);
+	ulng *active = GDKmalloc(sizeof(ulng) * store->active->cnt);
 	node *cur = store->active->h;
 	int j = 0;
 	for (int i = 0; i < store->active->cnt; i++, cur = cur->next) {
