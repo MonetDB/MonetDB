@@ -121,7 +121,7 @@ COPYskiplines(lng *toskip_out, bat *block_bat, lng *toskip_in)
 int
 get_sep_char(str sep, bool backslash_escapes)
 {
-	if (strNil(sep))
+	if (strNil(sep) || strlen(sep) == 0)
 		return 0;
 	int c = *sep;
 
