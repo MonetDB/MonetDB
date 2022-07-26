@@ -51,7 +51,7 @@ backend_drop_user(ptr mvc, char *user)
 	return FALSE;
 }
 
-int
+oid
 backend_find_user(ptr m, char *user)
 {
 	if (be_funcs.ffuser != NULL)
