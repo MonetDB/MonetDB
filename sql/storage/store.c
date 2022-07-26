@@ -3636,16 +3636,16 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		store_lock(store);
 		ulng oldest = store_oldest(store);
 		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
+		ulng *active = store_get_active(store); /* get active transactions (to merge segments) */
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
 			if (c->commit) {
-				ulng *active = store_get_active(store); /* get active transactions (to merge segments) */
 				c->commit(tr, c, 0 /* ie rollback */, oldest, active);
-				free(active);
 			}
 			c->ts = commit_ts;
 		}
+		free(active);
 		store_pending_changes(store, oldest);
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
@@ -3989,18 +3989,18 @@ sql_trans_commit(sql_trans *tr)
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent)
 			oldest = commit_ts;
 		store_pending_changes(store, oldest);
+		ulng *active = store_get_active(store); /* get active transactions (to merge segments) */
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
 
 			if (c->commit && ok == LOG_OK) {
-				ulng *active = store_get_active(store); /* get active transactions (to merge segments) */
 				ok = c->commit(tr, c, commit_ts, oldest, active);
-				free(active);
 			}
 			else
 				c->obj->new = 0;
 			c->ts = commit_ts;
 		}
+		free(active);
 		/* when directly flushing: flush logger after changes got applied */
 		if (flush) {
 			if (ok == LOG_OK) {
