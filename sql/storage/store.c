@@ -58,14 +58,17 @@ store_oldest(sqlstore *store)
 }
 
 static ulng *
-store_get_active(sqlstore *store)
+store_get_active(sqlstore *store, sql_trans* tr)
 {
-	ulng *active = malloc(sizeof(ulng) * (store->active->cnt + 1));
+	ulng *active = malloc(sizeof(ulng) * store->active->cnt);
 	node *cur = store->active->h;
+	int j = 0;
 	for (int i = 0; i < store->active->cnt; i++, cur = cur->next) {
-		active[i] = ((sql_session*)cur->data)->tr->ts;
+		ulng ts = ((sql_session*)cur->data)->tr->ts;
+		if (ts != tr->ts)
+			active[j++] = ((sql_session*)cur->data)->tr->ts;
 	}
-	active[store->active->cnt] = 0;
+	active[j] = 0;
 	return active;
 }
 
@@ -3636,7 +3639,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		store_lock(store);
 		ulng oldest = store_oldest(store);
 		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
-		ulng *active = store_get_active(store); /* get active transactions (to merge segments) */
+		ulng *active = store_get_active(store, tr); /* get active transactions (to merge segments) */
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
@@ -3989,7 +3992,7 @@ sql_trans_commit(sql_trans *tr)
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent)
 			oldest = commit_ts;
 		store_pending_changes(store, oldest);
-		ulng *active = store_get_active(store); /* get active transactions (to merge segments) */
+		ulng *active = store_get_active(store, tr); /* get active transactions (to merge segments) */
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
 
