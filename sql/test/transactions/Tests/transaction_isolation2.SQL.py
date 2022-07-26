@@ -77,7 +77,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("CREATE USER dummyuser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mysch;").assertSucceeded()
-        mdb2.execute("CREATE USER dummyuser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mysch;").assertFailed(err_code="42M31", err_message="CREATE USER: user 'dummyuser' already exists")
+        mdb2.execute("CREATE USER dummyuser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mysch;").assertFailed(err_code="M0M27", err_message="CREATE USER: 42000!Create user failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 

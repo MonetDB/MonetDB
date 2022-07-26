@@ -129,7 +129,7 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 }
 #endif
 
-#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020
+#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020 || defined CATALOG_JAN2022
 static gdk_return
 tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 {
@@ -1892,6 +1892,7 @@ bl_postversion(void *Store, void *Lg)
 	sqlstore *store = Store;
 	old_logger *old_lg;
 	logger *lg;
+	gdk_return rc;
 
 	if (store->catalog_version < 52300) { /* the watershed */
 		/* called from gdk_logger_old.c; Lg is the old logger */
@@ -2058,7 +2059,6 @@ bl_postversion(void *Store, void *Lg)
 			bat_destroy(funcs);
 			bat_destroy(cands);
 			funcs = NULL;
-			gdk_return rc;
 			rc = GDK_FAIL;
 			if (b != NULL &&
 				(funcs = BATconstant(0, TYPE_msk, &(msk){true}, BATcount(b), TRANSIENT)) != NULL)
@@ -2150,7 +2150,7 @@ bl_postversion(void *Store, void *Lg)
 			bat_destroy(aggrs);
 			bat_destroy(sqlaggr_func);
 			aggrs = NULL;
-			gdk_return rc = GDK_FAIL;
+			rc = GDK_FAIL;
 			if (b != NULL &&
 				(aggrs = BATconstant(0, TYPE_str, "aggr", BATcount(b), TRANSIENT)) != NULL)
 				rc = BATreplace(func_mod, b, aggrs, false);
@@ -2240,7 +2240,7 @@ bl_postversion(void *Store, void *Lg)
 				bat_destroy(cands);
 				return GDK_FAIL;
 			}
-			gdk_return rc = BATreplace(objs_sub, cands, b, false);
+			rc = BATreplace(objs_sub, cands, b, false);
 			bat_destroy(b);
 			if (rc != GDK_SUCCEED) {
 				bat_destroy(objs_id);
@@ -2436,7 +2436,7 @@ bl_postversion(void *Store, void *Lg)
 					bat_destroy(b3);
 					return GDK_FAIL;
 				}
-				gdk_return rc = BATreplace(b3, b1, b2, false);
+				rc = BATreplace(b3, b1, b2, false);
 				bat_destroy(b2);
 				bat_destroy(b3);
 				if (rc != GDK_SUCCEED) {
@@ -2730,7 +2730,7 @@ bl_postversion(void *Store, void *Lg)
 			bat_destroy(func_tid);
 			return GDK_FAIL;
 		}
-		gdk_return rc = GDK_FAIL;
+		rc = GDK_FAIL;
 		BAT *b2 = COLcopy(func_lang, func_lang->ttype, true, PERSISTENT);
 		bat bid = func_lang->batCacheid;
 		if (b2 == NULL ||
@@ -2893,7 +2893,6 @@ bl_postversion(void *Store, void *Lg)
 			bat_destroy(b);
 			return GDK_FAIL;
 		}
-		gdk_return rc;
 		rc = BATreplace(func_se, b, vals, false);
 		bat_destroy(b);
 		bat_destroy(vals);
@@ -2989,7 +2988,7 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			}
 			BAT *b2 = COLcopy(seq_inc, seq_inc->ttype, true, PERSISTENT);
-			gdk_return rc = GDK_FAIL;
+			rc = GDK_FAIL;
 			if (b2 == NULL)
 				rc = BATreplace(b2, inczero, b, false);
 			bat_destroy(b);
@@ -3036,7 +3035,7 @@ bl_postversion(void *Store, void *Lg)
 		if (BATcount(cands) > 0) {
 			BAT *b = BATconstant(0, TYPE_lng, &(lng){GDK_lng_max}, BATcount(cands), TRANSIENT);
 			BAT *b2 = COLcopy(seq_max, seq_max->ttype, true, PERSISTENT);
-			gdk_return rc = GDK_FAIL;
+			rc = GDK_FAIL;
 			if (b != NULL && b2 != NULL)
 				rc = BATreplace(b2, cands, b, false);
 			bat_destroy(b);
@@ -3066,7 +3065,7 @@ bl_postversion(void *Store, void *Lg)
 		if (BATcount(cands) > 0) {
 			BAT *b = BATconstant(0, TYPE_lng, &(lng){GDK_lng_min}, BATcount(cands), TRANSIENT);
 			BAT *b2 = COLcopy(seq_min, seq_min->ttype, true, PERSISTENT);
-			gdk_return rc = GDK_FAIL;
+			rc = GDK_FAIL;
 			if (b != NULL && b2 != NULL)
 				rc = BATreplace(b2, cands, b, false);
 			bat_destroy(b);
@@ -3081,6 +3080,111 @@ bl_postversion(void *Store, void *Lg)
 		}
 		bat_destroy(seq_min);
 		bat_destroy(cands);
+	}
+#endif
+
+#ifdef CATALOG_JAN2022
+	if (store->catalog_version <= CATALOG_JAN2022) {
+		/* GRANT SELECT ON sys.db_user_info TO monetdb;
+		 * except the grantor is 0 instead of user monetdb
+		 *
+		 * we need to find the IDs of the sys.db_user_info table and of
+		 * the sys.privileges table and its columns since none of these
+		 * have fixed IDs */
+		BAT *b = temp_descriptor(log_find_bat(lg, 2067)); /* sys._tables */
+		if (b == NULL)
+			return GDK_FAIL;
+		BAT *del_tabs = BATmaskedcands(0, BATcount(b), b, false);
+		bat_destroy(b);
+		if (del_tabs == NULL)
+			return GDK_FAIL;
+		b = temp_descriptor(log_find_bat(lg, 2076)); /* sys._columns */
+		if (b == NULL) {
+			bat_destroy(del_tabs);
+			return GDK_FAIL;
+		}
+		BAT *del_cols = BATmaskedcands(0, BATcount(b), b, false);
+		bat_destroy(b);
+		b = temp_descriptor(log_find_bat(lg, 2070)); /* sys._tables.schema_id */
+		if (del_cols == NULL || b == NULL) {
+			bat_destroy(del_cols);
+			bat_destroy(b);
+			bat_destroy(del_tabs);
+			return GDK_FAIL;
+		}
+		BAT *cands = BATselect(b, del_tabs, &(int) {2000}, NULL, true, true, false);
+		bat_destroy(b);
+		bat_destroy(del_tabs);
+		/* cands contains undeleted rows from sys._tables for tables in
+		 * sys schema */
+		BAT *tabnme = temp_descriptor(log_find_bat(lg, 2069)); /* sys._tables.name */
+		if (cands == NULL || tabnme == NULL) {
+			bat_destroy(cands);
+			bat_destroy(tabnme);
+			bat_destroy(del_cols);
+			return GDK_FAIL;
+		}
+		b = BATselect(tabnme, cands, "db_user_info", NULL, true, true, false);
+		if (b == NULL) {
+			bat_destroy(cands);
+			bat_destroy(tabnme);
+			bat_destroy(del_cols);
+			return GDK_FAIL;
+		}
+		oid dbpos = BUNtoid(b, 0);
+		bat_destroy(b);
+		b = BATselect(tabnme, cands, "privileges", NULL, true, true, false);
+		bat_destroy(tabnme);
+		bat_destroy(cands);
+		BAT *tabid = temp_descriptor(log_find_bat(lg, 2068)); /* sys._tables.id */
+		if (b == NULL || tabid == NULL) {
+			bat_destroy(b);
+			bat_destroy(tabid);
+			bat_destroy(del_cols);
+			return GDK_FAIL;
+		}
+		int dbid = ((int *) tabid->theap->base)[dbpos];
+		int prid = ((int *) tabid->theap->base)[BUNtoid(b, 0)];
+		BAT *coltid = temp_descriptor(log_find_bat(lg, 2082)); /* sys._columns.table_id */
+		if (coltid == NULL) {
+			bat_destroy(b);
+			bat_destroy(del_cols);
+			bat_destroy(tabid);
+			return GDK_FAIL;
+		}
+		BAT *b1;
+		rc = BATjoin(&b1, NULL, coltid, tabid, del_cols, b, false, 5);
+		bat_destroy(coltid);
+		bat_destroy(tabid);
+		bat_destroy(del_cols);
+		bat_destroy(b);
+		BAT *colnr = temp_descriptor(log_find_bat(lg, 2085)); /* sys._columns.number */
+		BAT *colid = temp_descriptor(log_find_bat(lg, 2077)); /* sys._columns.id */
+		if (rc != GDK_SUCCEED || colnr == NULL || colid == NULL) {
+			if (rc == GDK_SUCCEED)
+				bat_destroy(b1);
+			bat_destroy(colnr);
+			bat_destroy(colid);
+			return GDK_FAIL;
+		}
+		int privids[5];
+		for (int i = 0; i < 5; i++) {
+			oid p = BUNtoid(b1, i);
+			privids[((int *) colnr->theap->base)[p]] = ((int *) colid->theap->base)[p];
+		}
+		bat_destroy(b1);
+		bat_destroy(colnr);
+		bat_destroy(colid);
+		rc = tabins(lg, old_lg, true, -1, 0,
+					prid, &(msk) {false}, /* sys.privileges */
+					privids[0], &dbid, /* sys.privileges.obj_id */
+					privids[1], &(int) {USER_MONETDB}, /* sys.privileges.auth_id */
+					privids[2], &(int) {PRIV_SELECT}, /* sys.privileges.privileges */
+					privids[3], &(int) {0}, /* sys.privileges.grantor */
+					privids[4], &(int) {0}, /* sys.privileges.grantee */
+					0);
+		if (rc != GDK_SUCCEED)
+			return rc;
 	}
 #endif
 
