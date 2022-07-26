@@ -408,12 +408,15 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 				int merge = 1;
 				for (int i = 0; active[i] != 0; i++) {
 					assert(active[i] != seg->ts && active[i] != cur->ts);
-					if ((active[i] > seg->ts && active[i] < cur->ts) ||
-						(active[i] < seg->ts && active[i] > cur->ts)) {
-						/* cannot safely merge since there is an active transaction between the segments */
-						merge = 0;
+					if (seg->ts < active[i] && cur->ts < active[i])
 						break;
-					}
+					if (seg->ts > active[i] && cur->ts > active[i])
+						continue;
+
+					assert((active[i] > seg->ts && active[i] < cur->ts) || (active[i] < seg->ts && active[i] > cur->ts));
+					/* cannot safely merge since there is an active transaction between the segments */
+					merge = false;
+					break;
 				}
 				/* merge segments */
 				if (merge) {
