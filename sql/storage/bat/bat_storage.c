@@ -407,9 +407,10 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 			if (seg->deleted == cur->deleted && cur->ts < TRANSACTION_ID_BASE) {
 				int merge = 1;
 				for (int i = 0; active[i] != 0; i++) {
-					if (active[i] != tr->ts /* the transaction can ignore its own active timestamp since it's committing */
-						&& ((active[i] >= seg->ts && active[i] <= cur->ts)
-							|| (active[i] <= seg->ts && active[i] >= cur->ts))) {
+					assert(active[i] != seg->ts && active[i] != cur->ts);
+					if (active[i] != tr->ts) /* the transaction can ignore its own active timestamp since it's committing */
+					if ((active[i] > seg->ts && active[i] < cur->ts) ||
+						(active[i] < seg->ts && active[i] > cur->ts)) {
 						/* cannot safely merge since there is an active transaction between the segments */
 						merge = 0;
 						break;
