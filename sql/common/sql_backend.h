@@ -17,7 +17,7 @@ typedef void (*freecode_fptr) (const char *mod, int clientid, const char *name);
 
 typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, char *schema_path, sqlid grantor_id, lng max_memory, int max_workers, str optimizer, sqlid role_id);
 typedef int  (*drop_user_fptr) (ptr mvc, char *user);
-typedef int  (*find_user_fptr) (ptr mvc, char *user);
+typedef oid  (*find_user_fptr) (ptr mvc, char *user);
 typedef void (*create_privileges_fptr) (ptr mvc, sql_schema *s);
 typedef int  (*schema_has_user_fptr) (ptr mvc, sql_schema *s);
 typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, char enc, sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id);
@@ -52,7 +52,7 @@ extern void backend_freecode(const char *mod, int clientid, const char *name);
 
 extern char *backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor, lng max_memory, int max_workers, char *optimizer, sqlid role_id);
 extern int  backend_drop_user(ptr mvc, char *user);
-extern int  backend_find_user(ptr mp, char *user);
+extern oid  backend_find_user(ptr mp, char *user);
 extern void backend_create_privileges(ptr mvc, sql_schema *s);
 extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
 extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id);

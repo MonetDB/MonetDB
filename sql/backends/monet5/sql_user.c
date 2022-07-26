@@ -472,14 +472,10 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	return ret;
 }
 
-static int
+static oid
 monet5_find_user(ptr mp, str user)
 {
-	mvc *m = (mvc *) mp;
-	oid rid = getUserOIDByName(m, user);
-	if (is_oid_nil(rid))
-		return -1;
-	return rid;
+	return getUserOIDByName((mvc *) mp, user);
 }
 
 str

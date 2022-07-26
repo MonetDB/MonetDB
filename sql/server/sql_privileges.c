@@ -579,7 +579,7 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 	if (is_oid_nil(rid))
 		throw(SQL, "sql.grant_role", SQLSTATE(M1M05) "GRANT: no such role '%s' or grantee '%s'", role, grantee);
 	role_id = store->table_api.column_find_sqlid(m->session->tr, auths_id, rid);
-	if (backend_find_user(m, role) >= 0)
+	if (!is_oid_nil(backend_find_user(m, role)))
 		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: '%s' is a USER not a ROLE", role);
 	if (!admin_privs(grantor) && !role_granting_privs(m, rid, role_id, grantor))
 		throw(SQL,"sql.grant_role", SQLSTATE(0P000) "GRANT: Insufficient privileges to grant ROLE '%s'", role);
@@ -789,7 +789,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "Insufficient privileges to create user '%s'", user);
 
-	if (backend_find_user(sql, user) >= 0)
+	if (!is_oid_nil(backend_find_user(sql, user)))
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);
 
 	if (schema) {
@@ -952,7 +952,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id) && user != NULL && strcmp(user, get_string_global_var(sql, "current_user")) != 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(M1M05) "Insufficient privileges to change user '%s'", user);
 
-	if (user != NULL && backend_find_user(sql, user) < 0)
+	if (user != NULL && is_oid_nil(backend_find_user(sql, user)))
 		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
 	if (schema) {
 		if (!(s = find_sql_schema(sql->session->tr, schema)))
@@ -972,9 +972,9 @@ sql_rename_user(mvc *sql, char *olduser, char *newuser)
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
 		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "ALTER USER: insufficient privileges to rename user '%s'", olduser);
 
-	if (backend_find_user(sql, olduser) < 0)
+	if (is_oid_nil(backend_find_user(sql, olduser)))
 		throw(SQL,"sql.rename_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", olduser);
-	if (backend_find_user(sql, newuser) >= 0)
+	if (!is_oid_nil(backend_find_user(sql, newuser)))
 		throw(SQL,"sql.rename_user", SQLSTATE(42M31) "ALTER USER: user '%s' already exists", newuser);
 	if (backend_rename_user(sql, olduser, newuser) == FALSE)
 		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "%s", sql->errstr);
