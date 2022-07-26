@@ -164,11 +164,15 @@ emit_pipelined_loop(
 		// FROM STDIN
 		q = newStmt(mb, "copy", "from_stdin");
 		setDestVar(q, var_stream);
-		q = pushBit(mb, q, nrecords_or_minusone < 0);
+		q = pushLng(mb, q, offset);
 		q = pushArgument(mb, q, var_nrecords);
+		q = pushBit(mb, q, nrecords_or_minusone < 0);
 		q = pushArgument(mb, q, var_line_sep);
 		q = pushArgument(mb, q, var_quote_char);
 		q = pushBit(mb, q, escape);
+
+		// offset has been handled
+		offset = 0;
 	}
 
 	q = newStmt(mb, "copy", "defer_close");

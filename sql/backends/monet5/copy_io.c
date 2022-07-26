@@ -77,10 +77,39 @@ COPYrequest_upload(Stream *upload, str *filename, bit *binary)
 }
 
 
+static lng
+skip_lines(lng nlines, struct scan_state *scan)
+{
+	lng orig_nlines = nlines;
+
+	int quote_char = scan->quote_char;
+	int line_sep = scan->line_sep;
+	bool escape_enabled = scan->escape_enabled;
+
+	scan->quote_char = 0;
+	scan->line_sep = '\n';
+	scan->escape_enabled = false;
+
+	while (scan->pos < scan-> end && nlines > 0) {
+		if (find_end_of_line(scan)) {
+			assert(scan->pos[0] == '\n');
+			scan->pos++;
+			nlines --;
+		}
+	}
+
+	scan->quote_char = quote_char;
+	scan->line_sep = line_sep;
+	scan->escape_enabled = escape_enabled;
+
+	return orig_nlines - nlines;
+}
+
 struct from_stdin_state {
 	bstream *bs;
 	stream *ws;
 	bool stop_on_empty;
+	lng offset_left;
 	lng lines_left;
 	bool at_start_of_line;
 	struct scan_state scan_state;
@@ -132,10 +161,15 @@ from_stdin_read(void *restrict private, void *restrict buf, size_t elmsize, size
 		scan->start = (unsigned char*) &bs->buf[bs->pos];
 		size_t n = bs->len - bs->pos;
 		if (n > cnt)
-
 			n = cnt;
 		scan->end = scan->start + n;
 		scan->pos = scan->start;
+		if (state->offset_left > 0) {
+			lng skipped = skip_lines(state->offset_left, scan);
+			state->offset_left -= skipped;
+			bs->pos += scan->pos - scan->start;
+			continue;
+		}
 		bool omit_last_char = false;
 		while (scan->pos < scan->end && state->lines_left > 0) {
 			if (state->stop_on_empty && state->at_start_of_line && *scan->pos == '\n') {
@@ -195,7 +229,7 @@ from_stdin_destroy(void *private)
 }
 
 str
-COPYfrom_stdin(Stream *s, bit *stoponemptyline, lng *lines, str *linesep_arg, str *quote_arg, bit *escape)
+COPYfrom_stdin(Stream *s, lng *offset, lng *lines, bit *stoponemptyline, str *linesep_arg, str *quote_arg, bit *escape)
 {
 	(void)s;
 	(void)stoponemptyline;
@@ -213,6 +247,7 @@ COPYfrom_stdin(Stream *s, bit *stoponemptyline, lng *lines, str *linesep_arg, st
 		.bs = mvc->scanner.rs,
 		.ws = mvc->scanner.ws,
 		.stop_on_empty = *stoponemptyline,
+		.offset_left = *offset,
 		.lines_left = *lines,
 		.at_start_of_line = true,
 		.scan_state = {

@@ -102,7 +102,7 @@ extern str scan_fields(
 
 extern str COPYdefer_close_stream(bat *container, Stream *s);
 extern str COPYrequest_upload(Stream *upload, str *filename, bit *binary);
-extern str COPYfrom_stdin(Stream *s, bit *stoponemptyline, lng *lines, str *linesep_arg, str *quote_arg, bit *escape);
+extern str COPYfrom_stdin(Stream *s, lng *offset, lng *lines, bit *stoponemptyline, str *linesep_arg, str *quote_arg, bit *escape);
 
 
 ////////////////////////////////////////////////////////////////////////
