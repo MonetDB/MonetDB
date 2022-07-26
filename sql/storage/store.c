@@ -57,7 +57,7 @@ store_oldest(sqlstore *store)
 	return store->oldest;
 }
 
-ulng *
+static ulng *
 store_get_active(sqlstore *store)
 {
 	ulng *active = malloc(sizeof(ulng) * (store->active->cnt + 1));
