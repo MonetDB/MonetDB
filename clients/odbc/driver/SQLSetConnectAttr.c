@@ -72,6 +72,7 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 		if ((SQLUINTEGER) (uintptr_t) ValuePtr > 0) {
 			/* add Warning: Option value changed */
 			addDbcError(dbc, "01S02", NULL, 0);
+			return SQL_SUCCESS_WITH_INFO;
 		}
 		break;
 	case SQL_ATTR_METADATA_ID:		/* SQLUINTEGER */
@@ -130,7 +131,7 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 	default:
 		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
-		break;
+		return SQL_ERROR;
 	}
 
 	return SQL_SUCCESS;
