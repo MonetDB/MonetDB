@@ -191,7 +191,7 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 {
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLRETURN rc;
-	SQLPOINTER ptr;
+	SQLPOINTER ptr = NULL;
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
