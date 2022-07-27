@@ -14668,7 +14668,6 @@ BATcalcifthenelse_intern(BAT *b,
 	bat_iterator_end(&bi);
 
 	BATsetcount(bn, cnt);
-	bn->theap->dirty = true;
 
 	bn->tsorted = cnt <= 1;
 	bn->trevsorted = cnt <= 1;
@@ -15549,7 +15548,6 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 		}
 	}
 	bat_iterator_end(&bi);
-	bn->theap->dirty = true;
 	BATsetcount(bn, ncand);
 	GDKfree(dst);
 	return nils;
