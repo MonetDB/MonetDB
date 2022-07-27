@@ -66,6 +66,14 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 		if (dbc->mid)
 			mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout * 1000);
 		break;
+	case SQL_ATTR_LOGIN_TIMEOUT:		/* SQLUINTEGER */
+		/* currently only value 0 (no timeout) is accepted
+		 * as mapilib currently does not provide a way to set login timeout */
+		if ((SQLUINTEGER) (uintptr_t) ValuePtr > 0) {
+			/* add Warning: Option value changed */
+			addDbcError(dbc, "01S02", NULL, 0);
+		}
+		break;
 	case SQL_ATTR_METADATA_ID:		/* SQLUINTEGER */
 		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_TRUE:
@@ -105,7 +113,6 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 	case SQL_ATTR_DBC_INFO_TOKEN:		/* SQLPOINTER */
 #endif
 	case SQL_ATTR_ENLIST_IN_DTC:		/* SQLPOINTER */
-	case SQL_ATTR_LOGIN_TIMEOUT:		/* SQLUINTEGER */
 	case SQL_ATTR_ODBC_CURSORS:		/* SQLULEN */
 	case SQL_ATTR_PACKET_SIZE:		/* SQLUINTEGER */
 	case SQL_ATTR_QUIET_MODE:		/* HWND (SQLPOINTER) */
@@ -116,6 +123,7 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 		/* Optional feature not implemented */
 		addDbcError(dbc, "HYC00", NULL, 0);
 		return SQL_ERROR;
+
 	case SQL_ATTR_AUTO_IPD:			/* SQLUINTEGER */
 	case SQL_ATTR_CONNECTION_DEAD:		/* SQLUINTEGER */
 		/* read-only attribute */
