@@ -2236,7 +2236,7 @@ logger_next_logfile(logger *lg, ulng ts)
 {
 	if (!lg->pending || !lg->pending->next)
 		return 0;
-	if (lg->pending->last_ts < ts)
+	if (lg->pending->last_ts <= ts)
 		return lg->pending->id;
 	return 0;
 }
