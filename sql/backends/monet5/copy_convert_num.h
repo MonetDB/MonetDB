@@ -209,6 +209,70 @@ TMPL_SUFFIXED(COPYparse_integer) (
 	return msg;
 }
 
+str
+TMPL_SUFFIXED(COPYscale) (
+	bat *result_bat_id,
+	bat *values_bat_id, int *factor,
+	bat *failures_bat_id, lng *starting_row, int *col_no, str *col_name)
+{
+	str msg = MAL_SUCCEED;
+	const char *operatorname = "copy.scale";
+	BAT *values_bat = BATdescriptor(*values_bat_id);
+	size_t n = BATcount(values_bat);
+	BAT *results_bat = NULL;
+	TMPL_TYPE limit = TMPL_MAX / *factor;
+	TMPL_TYPE *values;
+	TMPL_TYPE *results;
+
+	if (!values_bat)
+		bailout(operatorname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	results_bat = COLnew(0, TMPL_SUFFIXED(TYPE), BATcount(values_bat), TRANSIENT);
+	if (!results_bat)
+		bailout(operatorname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	struct error_handling errors;
+	copy_init_error_handling(&errors, *failures_bat_id, *starting_row, *col_no, *col_name);
+
+	values = Tloc(values_bat, 0);
+	results = Tloc(results_bat, 0);
+	for (size_t i = 0; i < n; i++) {
+		TMPL_TYPE val = values[i];
+		TMPL_TYPE scaled;
+		if (val == TMPL_NIL) {
+			scaled = TMPL_NIL;
+		} else if (val > limit || val < -limit) {
+			copy_report_error(&errors, i, -1, "value too large");
+			scaled = TMPL_NIL;
+		} else {
+			scaled = *factor * val;
+		}
+		results[i] = scaled;
+	}
+	BATsetcount(results_bat, n);
+	// we don't know anything about the data we just parsed
+	results_bat->tkey = false;
+	results_bat->tnil = false;
+	results_bat->tnonil = false;
+	results_bat->tsorted = false;
+	results_bat->trevsorted = false;
+
+end:
+	if (msg == MAL_SUCCEED)
+		msg = copy_check_too_many_errors(&errors, operatorname);
+	copy_destroy_error_handling(&errors);
+	if (values_bat)
+		BBPunfix(values_bat->batCacheid);
+	if (results_bat) {
+		if (msg == MAL_SUCCEED) {
+			BBPkeepref(results_bat);
+			*result_bat_id = results_bat->batCacheid;
+		} else {
+			BBPunfix(results_bat->batCacheid);
+		}
+	}
+	return msg;
+}
+
 
 #undef TMPL_TYPE
 #undef TMPL_NIL

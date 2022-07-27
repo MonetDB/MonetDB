@@ -517,8 +517,13 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		unsigned int digits = col->type.digits;
 		unsigned int scale = col->type.scale;
 		int localtype = col->type.type->localtype;
+		int scale_extra = 1;
 
 		switch (type->eclass) {
+			case EC_SEC:
+				scale_extra = 1000;
+				/* fallthrough */
+			case EC_MONTH:
 			case EC_NUM:
 				q = newStmtArgs(mb, "copy", "parse_integer", 12);
 				q = pushArgument(mb, q, loop_vars.our_block);
@@ -528,15 +533,19 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
+				//
+				if (scale_extra != 1) {
+					int ints = getDestVar(q);
+					q = newStmt(mb, "copy", "scale");
+					q = pushArgument(mb, q, ints);
+					q = pushInt(mb, q, scale_extra);
+					q = pushArgument(mb, q, var_failures_bat);
+					q = pushArgument(mb, q, loop_vars.earlier_line_count);
+					q = pushInt(mb, q, i);
+					q = pushStr(mb, q, col->base.name);
+				}
 				break;
-			case EC_SEC:
-				scale = 3;
-				digits = 18;
-				/* fallthrough */
-			case EC_MONTH:
 			case EC_DEC:
-				if (type->eclass == EC_MONTH)
-					digits = 9;
 				q = newStmt(mb, "copy", "parse_decimal");
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
