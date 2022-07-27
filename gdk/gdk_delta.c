@@ -98,8 +98,6 @@ BATundo(BAT *b)
 			}
 		}
 	}
-	b->theap->free = tailsize(b, b->batInserted);
-
 	BATsetcount(b, b->batInserted);
 	MT_lock_unset(&b->theaplock);
 }

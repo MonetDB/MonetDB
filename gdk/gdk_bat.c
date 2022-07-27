@@ -912,8 +912,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			/* convert number of bits to number of bytes,
 			 * and round the latter up to a multiple of
 			 * 4 (copy in units of 4 bytes) */
-			bn->theap->free = (bi.count + 7) / 8;
-			bn->theap->free = (bn->theap->free + 3) & ~(size_t)3;
+			bn->theap->free = ((bi.count + 31) / 32) * 4;
 			bn->theap->dirty |= bi.count > 0;
 			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		} else {

@@ -39,7 +39,7 @@ batstr_func_has_candidates(const char *func)
 	return true;
 }
 
-static void
+static inline void
 finalize_ouput(bat *res, BAT *bn, str msg, bool nils, BUN q)
 {
 	if (bn && !msg) {
