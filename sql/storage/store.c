@@ -3648,7 +3648,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 			}
 			c->ts = commit_ts;
 		}
-		free(active);
+		GDKfree(active);
 		store_pending_changes(store, oldest);
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
@@ -4003,7 +4003,7 @@ sql_trans_commit(sql_trans *tr)
 				c->obj->new = 0;
 			c->ts = commit_ts;
 		}
-		free(active);
+		GDKfree(active);
 		/* when directly flushing: flush logger after changes got applied */
 		if (flush) {
 			if (ok == LOG_OK) {
