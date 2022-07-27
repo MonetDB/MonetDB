@@ -633,6 +633,11 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushBit(mb, q, false);
 	int var_row_count = getDestVar(q);
 
+	q = newStmt(mb, "sql", "depend");
+	q = pushStr(mb, q, schema_name);
+	q = pushStr(mb, q, table_name);
+	q = pushArgument(mb, q, var_row_count);
+
 	add_to_rowcount_accumulator(be, var_row_count);
 	// dump_code(-1);
 
