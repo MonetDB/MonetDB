@@ -514,25 +514,35 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		sql_column *col = n->data;
 		sql_type *type = col->type.type;
 		const char *column_name = col->base.name;
+		unsigned int digits = col->type.digits;
+		unsigned int scale = col->type.scale;
+		int localtype = col->type.type->localtype;
 
 		switch (type->eclass) {
 			case EC_NUM:
 				q = newStmtArgs(mb, "copy", "parse_integer", 12);
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
-				q = pushNil(mb, q, col->type.type->localtype);
+				q = pushNil(mb, q, localtype);
 				q = pushArgument(mb, q, var_failures_bat);
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
 				break;
+			case EC_SEC:
+				scale = 3;
+				digits = 18;
+				/* fallthrough */
+			case EC_MONTH:
 			case EC_DEC:
+				if (type->eclass == EC_MONTH)
+					digits = 9;
 				q = newStmt(mb, "copy", "parse_decimal");
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
-				q = pushInt(mb, q, col->type.digits);
-				q = pushInt(mb, q, col->type.scale);
-				q = pushNil(mb, q, col->type.type->localtype);
+				q = pushInt(mb, q, digits);
+				q = pushInt(mb, q, scale);
+				q = pushNil(mb, q, localtype);
 				q = pushArgument(mb, q, var_failures_bat);
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
@@ -542,7 +552,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = newStmt(mb, "copy", "parse_generic");
 				q = pushArgument(mb, q, loop_vars.our_block);
 				q = pushArgument(mb, q, var_indices);
-				q = pushNil(mb, q, col->type.type->localtype);
+				q = pushNil(mb, q, localtype);
 				q = pushArgument(mb, q, var_failures_bat);
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
