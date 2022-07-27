@@ -84,7 +84,7 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 		break;
 	case SQL_ATTR_CURRENT_CATALOG:		/* SQLCHAR* */
 		/* SQL_CURRENT_QUALIFIER */
-		/* MonetDB does NOT support SQL catalog concept, return empty string */
+		/* MonetDB does NOT support SQL catalog qualifier, return empty string */
 		if (BufferLength <= 0) {
 			/* Invalid string or buffer length */
 			addDbcError(dbc, "HY090", NULL, 0);
@@ -210,11 +210,15 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 	switch (Attribute) {
 	/* all string attributes */
 	case SQL_ATTR_CURRENT_CATALOG:
-		ptr = malloc(BufferLength);
-		if (ptr == NULL) {
-			/* Memory allocation error */
-			addDbcError(dbc, "HY001", NULL, 0);
-			return SQL_ERROR;
+	case SQL_ATTR_TRACEFILE:
+	case SQL_ATTR_TRANSLATE_LIB:
+		if (BufferLength > 0) {
+			ptr = malloc(BufferLength);
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addDbcError(dbc, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
 		}
 		break;
 	default:
