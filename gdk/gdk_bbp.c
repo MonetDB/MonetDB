@@ -555,6 +555,8 @@ vheapinit(BAT *b, const char *buf, int hashash, const char *filename, int lineno
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 			return -1;
 		}
+		if (b->batCount == 0)
+			free = 0;
 		if (b->ttype >= 0 &&
 		    ATOMstorage(b->ttype) == TYPE_str &&
 		    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
