@@ -59,6 +59,8 @@ typedef void (*bulk_converter)(struct error_handling*, void *parms, int count, v
 extern str parse_fixed_width_column(bat *ret, struct error_handling *errors, const char *fname, bat block_bat_id, bat offsets_bat_id, int tpe, bulk_converter f, void *parms);
 
 extern str COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYparse_string(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *maxlen, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
+
 extern str COPYparse_integer_bte(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, bte *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
 extern str COPYparse_integer_sht(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, sht *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
 extern str COPYparse_integer_int(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);

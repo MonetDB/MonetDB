@@ -548,6 +548,16 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
 				break;
+			case EC_STRING:
+				q = newStmt(mb, "copy", "parse_string");
+				q = pushArgument(mb, q, loop_vars.our_block);
+				q = pushArgument(mb, q, var_indices);
+				q = pushInt(mb, q, digits);
+				q = pushArgument(mb, q, var_failures_bat);
+				q = pushArgument(mb, q, loop_vars.earlier_line_count);
+				q = pushInt(mb, q, i);
+				q = pushStr(mb, q, col->base.name);
+				break;
 			default:
 				q = newStmt(mb, "copy", "parse_generic");
 				q = pushArgument(mb, q, loop_vars.our_block);

@@ -12,6 +12,7 @@
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "str.h"
 
 #include "copy.h"
 
@@ -111,6 +112,110 @@ end:
 		BBPunfix(indices->batCacheid);
 	return msg;
 }
+
+static bool
+fits_varchar(const char *s, int maxlen) {
+	int len;
+	// There are three relevant lengths:
+	// 1. the length in bytes, computed by strlen()
+	// 2. the length in Unicode code points, computed by UTF8_strlen()
+	// 3. the width in printable units.
+	// So, width <= codepoint_len <= byte_len.
+	//
+	// We are interested in the width but it is much more
+	// expensive to compute than the other two so we try those first
+	len = strlen(s);
+	if (len <= maxlen)
+		return true;
+	len = UTF8_strlen(s);
+	if (len <= maxlen)
+		return true;
+	len = UTF8_strwidth(s);
+	if (len <= maxlen)
+		return true;
+	return false;
+}
+
+str
+COPYparse_string(
+	bat *parsed_bat_id,
+	bat *block_bat_id, bat *offsets_bat_id,
+	int *maxlen,
+	bat *failures_bat, lng *starting_row, int *col_no, str *col_name)
+{
+	str msg = MAL_SUCCEED;
+	const char *fname = "copy.parse_string";
+	struct error_handling errors;
+	BAT *block_bat = BATdescriptor(*block_bat_id);
+	BAT *offsets_bat = BATdescriptor(*offsets_bat_id);
+	BAT *parsed_bat = NULL;
+	int colwidth = *maxlen;
+	int n;
+
+	if (!block_bat || !offsets_bat)
+		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	parsed_bat = COLnew(0, TYPE_str, BATcount(offsets_bat), TRANSIENT);
+	if (!parsed_bat)
+		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	copy_init_error_handling(&errors, *failures_bat, *starting_row, *col_no, *col_name);
+
+	n = BATcount(offsets_bat);
+	for (int i = 0; i < n; i++) {
+		gdk_return ok;
+		int offset = *(int*)Tloc(offsets_bat, i);
+		const void *to_insert = str_nil;
+
+		if (is_int_nil(offset)) {
+			ok = GDK_SUCCEED;
+		} else {
+			const char *src = Tloc(block_bat, offset);
+			if (!checkUTF8(src)) {
+				ok = copy_report_error(&errors, i, -1, "incorrectly encoded UTF-8");
+			} else if (colwidth > 0 && !fits_varchar(src, colwidth)) {
+				ok = copy_report_error(&errors, i, -1, "field too long, max length is %d", colwidth);
+			} else {
+				to_insert = src;
+			}
+		}
+		if (ok != GDK_SUCCEED) {
+			msg = copy_check_too_many_errors(&errors, "copy.parse_generic");
+			if (msg != MAL_SUCCEED)
+				goto end;
+			else
+				ok = GDK_SUCCEED;
+		}
+		if (bunfastapp(parsed_bat, to_insert) != GDK_SUCCEED)
+			bailout("copy.parse_generic", GDK_EXCEPTION);
+	}
+
+	BATsetcount(parsed_bat, n);
+	// we don't know anything about the data we just parsed
+	parsed_bat->tkey = false;
+	parsed_bat->tnil = false;
+	parsed_bat->tnonil = false;
+	parsed_bat->tsorted = false;
+	parsed_bat->trevsorted = false;
+
+end:
+	if (parsed_bat) {
+		if (msg == MAL_SUCCEED) {
+			*parsed_bat_id = parsed_bat->batCacheid;
+			BBPkeepref(parsed_bat);
+		} else {
+			BBPunfix(parsed_bat->batCacheid);
+		}
+	}
+	if (block_bat)
+		BBPunfix(block_bat->batCacheid);
+	if (offsets_bat)
+		BBPunfix(offsets_bat->batCacheid);
+	return msg;
+
+}
+
+
 
 str
 parse_fixed_width_column(
