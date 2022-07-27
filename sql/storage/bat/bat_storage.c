@@ -408,6 +408,9 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 				int merge = 1;
 				for (int i = 0; active[i] != 0; i++) {
 					assert(active[i] != seg->ts && active[i] != cur->ts);
+
+					if (active[i] == tr->ts)
+						continue; /* pretent that committing transaction has already committed and is no longer active */
 					if (seg->ts < active[i] && cur->ts < active[i])
 						break;
 					if (seg->ts > active[i] && cur->ts > active[i])
