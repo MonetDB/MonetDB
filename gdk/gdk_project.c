@@ -417,6 +417,7 @@ project_str(BAT *restrict l, struct canditer *restrict ci, int tpe,
 #endif
 		memcpy(bn->tvheap->base + h1off, r2i->vh->base, r2i->vhfree);
 		bn->tvheap->free = h1off + r2i->vhfree;
+		bn->tvheap->dirty = true;
 	}
 
 	if (v >= ((var_t) 1 << (8 << bn->tshift)) &&
