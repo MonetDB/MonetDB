@@ -132,8 +132,10 @@ static gdk_return BBPbackup(BAT *b, bool subcommit);
 static gdk_return BBPdir_init(void);
 static void BBPcallbacks(void);
 
-static lng BBPlogno;		/* two lngs of extra info in BBP.dir */
-static lng BBPtransid;
+/* two lngs of extra info in BBP.dir */
+/* these two need to be atomic because of their use in AUTHcommit() */
+static ATOMIC_TYPE BBPlogno = ATOMIC_VAR_INIT(0);
+static ATOMIC_TYPE BBPtransid = ATOMIC_VAR_INIT(0);
 
 #ifdef HAVE_HGE
 /* start out by saying we have no hge, but as soon as we've seen one,
@@ -178,13 +180,13 @@ getBBPsize(void)
 lng
 getBBPlogno(void)
 {
-	return BBPlogno;
+	return (lng) ATOMIC_GET(&BBPlogno);
 }
 
 lng
 getBBPtransid(void)
 {
-	return BBPtransid;
+	return (lng) ATOMIC_GET(&BBPtransid);
 }
 
 
@@ -4100,8 +4102,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 	/* AFTERMATH */
 	if (ret == GDK_SUCCEED) {
-		BBPlogno = logno;	/* the new value */
-		BBPtransid = transid;
+		ATOMIC_SET(&BBPlogno, logno);	/* the new value */
+		ATOMIC_SET(&BBPtransid, transid);
 		backup_files = subcommit ? (backup_files - backup_subdir) : 0;
 		backup_dir = backup_subdir = 0;
 		if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
