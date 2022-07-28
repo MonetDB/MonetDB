@@ -2992,10 +2992,6 @@ BBPdestroy(BAT *b)
 	bat tp = VIEWtparent(b);
 	bat vtp = VIEWvtparent(b);
 
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	OIDXdestroy(b);
-	PROPdestroy_nolock(b);
 	if (tp == 0) {
 		/* bats that get destroyed must unfix their atoms */
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
@@ -3012,12 +3008,7 @@ BBPdestroy(BAT *b)
 	}
 	if (tp || vtp)
 		VIEWunlink(b);
-	if (b->theap) {
-		HEAPfree(b->theap, true);
-	}
-	if (b->tvheap)
-		HEAPfree(b->tvheap, true);
-	b->batCopiedtodisk = false;
+	BATdelete(b);
 
 	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
 
