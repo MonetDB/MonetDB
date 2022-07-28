@@ -1642,7 +1642,7 @@ vheap_entry(FILE *fp, BATiter *bi, BUN size)
 	(void) size;
 	if (bi->vh == NULL)
 		return 0;
-	return fprintf(fp, " %zu %zu %d", bi->vhfree, size == 0 ? 0 : bi->vh->size, 0);
+	return fprintf(fp, " %zu %zu %d", size == 0 ? 0 : bi->vhfree, bi->vh->size, 0);
 }
 
 static gdk_return
