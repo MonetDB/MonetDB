@@ -147,6 +147,7 @@ createOIDXheap(BAT *b, bool stable)
 		return NULL;
 	}
 	m->free = (BATcount(b) + ORDERIDXOFF) * SIZEOF_OID;
+	m->dirty = true;
 
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;
@@ -375,6 +376,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		return GDK_FAIL;
 	}
 	m->free = (BATcount(b) + ORDERIDXOFF) * SIZEOF_OID;
+	m->dirty = true;
 
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;
