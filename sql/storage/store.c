@@ -7030,7 +7030,6 @@ sql_trans_begin(sql_session *s)
 		return -3;
 	}
 	tr->active = 1;
-	s->tr = tr;
 
 	(void) ATOMIC_INC(&store->nr_active);
 	list_append(store->active, s);
