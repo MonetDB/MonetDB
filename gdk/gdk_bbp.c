@@ -3870,6 +3870,8 @@ BBPcheckBBPdir(bool subcommit)
 		case 0:
 			/* end of file */
 			fclose(fp);
+			/* don't leak errors, this is just debug code */
+			GDKclrerr();
 			return;
 		case 1:
 			/* successfully read an entry */
