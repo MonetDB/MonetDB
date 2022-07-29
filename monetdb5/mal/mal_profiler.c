@@ -196,10 +196,10 @@ prepare_generic_event(str face, struct GenericEvent e, int state)
 			   ",\"clk\":"LLFMT
 			   ",\"mclk\":%"PRIu64""
 			   ",\"thread\":%d"
-			   ",\"face\":\"%s\""
+			   ",\"phase\":\"%s\""
 			   ",\"state\":\"%s\""
-			   ",\"client\":\"%d\""
-			   ",\"transaction_id\":"ULLFMT
+			   ",\"clientid\":\"%d\""
+			   ",\"transactionid\":"ULLFMT
 			   ",\"tag\":"OIDFMT
 			   ",\"query\":\"%s\""
 			   ",\"rc\":\"%d\""
