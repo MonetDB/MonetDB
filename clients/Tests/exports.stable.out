@@ -1008,6 +1008,7 @@ void freeVariable(MalBlkPtr mb, int varid);
 void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 void garbageElement(Client cntxt, ValPtr v);
 const char *generatorRef;
+void generic_event(str face, struct GenericEvent e, int state);
 MALfcn getAddress(const char *modname, const char *fcnname);
 str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
@@ -1333,6 +1334,7 @@ void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
+oid runtimeProfileSetTag(Client cntxt);
 const char *sampleRef;
 const char *schedulerRef;
 const char *selectNotNilRef;

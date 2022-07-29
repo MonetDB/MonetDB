@@ -123,8 +123,27 @@ sql_symbol2relation(backend *be, symbol *sym)
 	sql_query *query = query_create(be->mvc);
 	lng Tbegin;
 	int extra_opts = be->mvc->emode != m_prepare;
+	Client c = getClientContext();
+
+	if(malProfileMode > 0 )
+		generic_event("sql_to_rel",
+					  (struct GenericEvent)
+					  { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
+					  0);
 
 	rel = rel_semantic(query, sym);
+
+	if(malProfileMode > 0 ) {
+		generic_event("sql_to_rel",
+					  (struct GenericEvent)
+					  { &(c->idx), &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1 },
+					  1);
+		generic_event("rel_opt",
+					  (struct GenericEvent)
+					  { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
+					  0);
+	}
+
 	Tbegin = GDKusec();
 	if (rel)
 		rel = sql_processrelation(be->mvc, rel, 1, extra_opts, extra_opts);
@@ -133,6 +152,12 @@ sql_symbol2relation(backend *be, symbol *sym)
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
 	be->reloptimizer = GDKusec() - Tbegin;
+
+	if(malProfileMode > 0)
+		generic_event("rel_opt",
+					 (struct GenericEvent)
+					 { &c->idx, &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1},
+					 1);
 	return rel;
 }
 
@@ -163,7 +188,7 @@ sqlcleanup(backend *be, int err)
 }
 
 /*
- * The internal administration of the SQL compilation and execution state
+ * The internal administration of the MAL compiler and execution state
  * is administered by a state descriptor accessible in each phase.
  * Failure to find the state descriptor aborts the session.
  */
