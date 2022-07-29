@@ -64,7 +64,7 @@ store_get_active(sqlstore *store)
 	ulng *active = GDKmalloc(sizeof(ulng) * (store->active->cnt + 1));
 	node *cur = store->active->h;
 	for (int i = 0; i < store->active->cnt; i++, cur = cur->next) {
-		active[i] = ((sql_session*)cur->data)->tr->ts;
+		active[i] = ((sql_trans*)cur->data)->ts;
 	}
 	active[store->active->cnt] = 0;
 	return active;
@@ -7025,7 +7025,7 @@ sql_trans_begin(sql_session *s)
 	tr->active = 1;
 
 	(void) ATOMIC_INC(&store->nr_active);
-	list_append(store->active, s);
+	list_append(store->active, tr);
 
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	store_unlock(store);
@@ -7043,20 +7043,20 @@ sql_trans_end(sql_session *s, int ok)
 		sql_trans_rollback(s->tr, false);
 	}
 	assert(s->tr->active);
+	sqlstore *store = s->tr->store;
+	store_lock(store);
 	s->tr->active = 0;
 	s->tr->status = 0;
 	s->auto_commit = s->ac_on_commit;
-	sqlstore *store = s->tr->store;
-	store_lock(store);
-	list_remove_data(store->active, NULL, s);
+	list_remove_data(store->active, NULL, s->tr);
 	ATOMIC_SET(&store->lastactive, GDKusec());
 	(void) ATOMIC_DEC(&store->nr_active);
 	ulng oldest = store_get_timestamp(store);
 	if (store->active && store->active->h) {
 		for(node *n = store->active->h; n; n = n->next) {
-			sql_session *s = n->data;
-			if (s->tr->ts < oldest)
-				oldest = s->tr->ts;
+			sql_trans *tr = n->data;
+			if (tr->ts < oldest)
+				oldest = tr->ts;
 		}
 	}
 	store->oldest = oldest;
