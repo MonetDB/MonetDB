@@ -3627,9 +3627,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
-			if (c->commit) {
+			if (c->commit)
 				c->commit(tr, c, 0 /* ie rollback */, oldest);
-			}
 			c->ts = commit_ts;
 		}
 		store_pending_changes(store, oldest);
@@ -3978,9 +3977,8 @@ sql_trans_commit(sql_trans *tr)
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
 
-			if (c->commit && ok == LOG_OK) {
+			if (c->commit && ok == LOG_OK)
 				ok = c->commit(tr, c, commit_ts, oldest);
-			}
 			else
 				c->obj->new = 0;
 			c->ts = commit_ts;

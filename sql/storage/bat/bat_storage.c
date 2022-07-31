@@ -3395,7 +3395,7 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		assert(ok == LOG_OK);
 		if (ok != LOG_OK)
 			return ok;
-		merge_segments(dbat, tr, change, commit_ts, commit_ts);
+		merge_segments(dbat, tr, change, commit_ts, commit_ts/* create is we are alone */ /*oldest*/);
 		assert(dbat->cs.ts == tr->tid);
 		dbat->cs.ts = commit_ts;
 		if (ok == LOG_OK) {
