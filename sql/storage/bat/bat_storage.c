@@ -19,15 +19,15 @@
 static int log_update_col( sql_trans *tr, sql_change *c);
 static int log_update_idx( sql_trans *tr, sql_change *c);
 static int log_update_del( sql_trans *tr, sql_change *c);
-static int commit_update_col( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest, ulng *active);
-static int commit_update_idx( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest, ulng *active);
-static int commit_update_del( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest, ulng *active);
+static int commit_update_col( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
+static int commit_update_idx( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
+static int commit_update_del( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
 static int log_create_col(sql_trans *tr, sql_change *change);
 static int log_create_idx(sql_trans *tr, sql_change *change);
 static int log_create_del(sql_trans *tr, sql_change *change);
-static int commit_create_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active);
-static int commit_create_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active);
-static int commit_create_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active);
+static int commit_create_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
+static int commit_create_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
+static int commit_create_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
 static int tc_gc_col( sql_store Store, sql_change *c, ulng oldest);
 static int tc_gc_idx( sql_store Store, sql_change *c, ulng oldest);
 static int tc_gc_del( sql_store Store, sql_change *c, ulng oldest);
@@ -389,8 +389,9 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 
 /* TODO return LOG_OK/ERR */
 static void
-merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active)
+merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
+	sqlstore* store = tr->store;
 	segment *cur = s->segs->h, *seg = NULL;
 	for (; cur; cur = cur->next) {
 		if (cur->ts == tr->tid) {
@@ -406,17 +407,19 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 			/* possible merge since both deleted flags are equal */
 			if (seg->deleted == cur->deleted && cur->ts < TRANSACTION_ID_BASE) {
 				int merge = 1;
-				for (int i = 0; active[i] != 0; i++) {
-					assert(active[i] != seg->ts && active[i] != cur->ts);
+				node *n = store->active->h;
+				for (int i = 0; i < store->active->cnt; i++, n = n->next) {
+					ulng active = ((sql_trans*)n->data)->ts;
+					assert(active != seg->ts && active != cur->ts);
 
-					if (active[i] == tr->ts)
+					if (active == tr->ts)
 						continue; /* pretent that committing transaction has already committed and is no longer active */
-					if (seg->ts < active[i] && cur->ts < active[i])
+					if (seg->ts < active && cur->ts < active)
 						break;
-					if (seg->ts > active[i] && cur->ts > active[i])
+					if (seg->ts > active && cur->ts > active)
 						continue;
 
-					assert((active[i] > seg->ts && active[i] < cur->ts) || (active[i] < seg->ts && active[i] > cur->ts));
+					assert((active > seg->ts && active < cur->ts) || (active < seg->ts && active > cur->ts));
 					/* cannot safely merge since there is an active transaction between the segments */
 					merge = false;
 					break;
@@ -3036,11 +3039,10 @@ log_create_col(sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest, ulng *active)
+commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	(void)oldest;
-	(void)active;
 
 	if(!isTempTable(c->t)) {
 		sql_delta *delta = ATOMIC_PTR_GET(&c->data);
@@ -3058,12 +3060,12 @@ commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest, u
 }
 
 static int
-commit_create_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active)
+commit_create_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_column *c = (sql_column*)change->obj;
 	if (!tr->parent)
 		c->base.new = 0;
-	return commit_create_col_( tr, c, commit_ts, oldest, active);
+	return commit_create_col_( tr, c, commit_ts, oldest);
 }
 
 /* will be called for new idx's and when new index columns are created */
@@ -3143,11 +3145,10 @@ log_create_idx(sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest, ulng *active)
+commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	(void)oldest;
-	(void)active;
 
 	if(!isTempTable(i->t)) {
 		sql_delta *delta = ATOMIC_PTR_GET(&i->data);
@@ -3164,12 +3165,12 @@ commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest, ulng
 }
 
 static int
-commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active)
+commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_idx *i = (sql_idx*)change->obj;
 	if (!tr->parent)
 		i->base.new = 0;
-	return commit_create_idx_(tr, i, commit_ts, oldest, active);
+	return commit_create_idx_(tr, i, commit_ts, oldest);
 }
 
 static int
@@ -3381,7 +3382,7 @@ log_create_del(sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active)
+commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
@@ -3394,21 +3395,21 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		assert(ok == LOG_OK);
 		if (ok != LOG_OK)
 			return ok;
-		merge_segments(dbat, tr, change, commit_ts, commit_ts, active);
+		merge_segments(dbat, tr, change, commit_ts, commit_ts);
 		assert(dbat->cs.ts == tr->tid);
 		dbat->cs.ts = commit_ts;
 		if (ok == LOG_OK) {
 			for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
 				sql_column *c = n->data;
 
-				ok = commit_create_col_(tr, c, commit_ts, oldest, active);
+				ok = commit_create_col_(tr, c, commit_ts, oldest);
 			}
 			if (t->idxs) {
 				for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
 					sql_idx *i = n->data;
 
 					if (ATOMIC_PTR_GET(&i->data))
-						ok = commit_create_idx_(tr, i, commit_ts, oldest, active);
+						ok = commit_create_idx_(tr, i, commit_ts, oldest);
 				}
 			}
 			if (!tr->parent)
@@ -3546,13 +3547,12 @@ log_destroy_del(sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_destroy_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active)
+commit_destroy_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	(void)tr;
 	(void)change;
 	(void)commit_ts;
 	(void)oldest;
-	(void)active;
 	return 0;
 }
 
@@ -3998,13 +3998,12 @@ log_update_col( sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest, ulng *active)
+commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
 	(void)oldest;
-	(void)active;
 	if (isTempTable(c->t)) {
 		if (commit_ts) { /* commit */
 			if (c->t->commit_action == CA_COMMIT || c->t->commit_action == CA_PRESERVE) {
@@ -4058,14 +4057,14 @@ tc_gc_rollbacked_storage( sql_store Store, sql_change *change, ulng oldest)
 
 
 static int
-commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active)
+commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	sql_column *c = (sql_column*)change->obj;
 	sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
 	if (isTempTable(c->t))
-		return commit_update_col_(tr, c, commit_ts, oldest, active);
+		return commit_update_col_(tr, c, commit_ts, oldest);
 	if (commit_ts)
 		delta->cs.ts = commit_ts;
 	if (!commit_ts) { /* rollback */
@@ -4110,14 +4109,13 @@ log_update_idx( sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest, ulng *active)
+commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 
 	(void)oldest;
-	(void)active;
 	if (isTempTable(i->t)) {
 		if (commit_ts) { /* commit */
 			if (i->t->commit_action == CA_COMMIT || i->t->commit_action == CA_PRESERVE) {
@@ -4140,14 +4138,14 @@ commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest, ulng
 }
 
 static int
-commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active)
+commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	sql_idx *i = (sql_idx*)change->obj;
 	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 
 	if (isTempTable(i->t))
-		return commit_update_idx_( tr, i, commit_ts, oldest, active);
+		return commit_update_idx_( tr, i, commit_ts, oldest);
 	if (commit_ts)
 		delta->cs.ts = commit_ts;
 	if (!commit_ts) { /* rollback */
@@ -4224,7 +4222,7 @@ commit_storage(sql_trans *tr, storage *dbat)
 }
 
 static int
-commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest, ulng *active)
+commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
@@ -4277,11 +4275,11 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		ok = segments2cs(tr, dbat->segs, &dbat->cs);
 		assert(ok == LOG_OK);
 		if (ok == LOG_OK)
-			merge_segments(dbat, tr, change, commit_ts, oldest, active);
+			merge_segments(dbat, tr, change, commit_ts, oldest);
 		if (ok == LOG_OK && dbat == d && oldest == commit_ts)
 			ok = merge_storage(dbat);
 	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
-		merge_segments(dbat, tr, change, commit_ts, oldest, active);
+		merge_segments(dbat, tr, change, commit_ts, oldest);
 		ATOMIC_PTR_SET(&t->data, savepoint_commit_storage(dbat, commit_ts));
 	}
 	unlock_table(tr->store, t->base.id);
