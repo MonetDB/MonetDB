@@ -810,6 +810,7 @@ typedef struct BAT {
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
+	Heap *oldtail;		/* old tail heap, to be destroyed after commit */
 } BAT;
 
 /* macros to hide complexity of the BAT structure */
