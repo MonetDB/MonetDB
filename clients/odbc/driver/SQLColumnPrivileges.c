@@ -110,7 +110,7 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 1300 + strlen(stmt->Dbc->dbname) + (sch ? strlen(sch) : 0) +
+	querylen = 1300 + (sch ? strlen(sch) : 0) +
 		(tab ? strlen(tab) : 0) + (col ? strlen(col) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
@@ -128,7 +128,7 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 	 */
 
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"TABLE_CAT\", "
+		"select cast(null as varchar(1)) as \"TABLE_CAT\", "
 		       "s.name as \"TABLE_SCHEM\", "
 		       "tc.tname as \"TABLE_NAME\", "
 		       "tc.cname as \"COLUMN_NAME\", "
@@ -166,7 +166,6 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 		      "tc.schema_id = s.id and "
 		      "p.grantor = g.id and "
 		      "p.privileges = pc.privilege_code_id",
-		stmt->Dbc->dbname,
 		/* a server that supports sys.comments also supports
 		 * sys.privilege_codes */
 		stmt->Dbc->has_comment ? "sys.privilege_codes as pc" :

@@ -629,6 +629,7 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints.base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints.base)[3] = (size_t) bi.count;
 		imprints->imprints.parentid = b->batCacheid;
+		imprints->imprints.dirty = true;
 		MT_lock_set(&b->theaplock);
 		if (b->batCount != bi.count) {
 			/* bat changed under our feet, can't use imprints */

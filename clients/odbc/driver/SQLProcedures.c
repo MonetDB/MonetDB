@@ -107,8 +107,7 @@ MNDBProcedures(ODBCStmt *stmt,
 		}
 	}
 
-	querylen = 1000 + strlen(stmt->Dbc->dbname) +
-		(sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0);
+	querylen = 1000 + (sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
@@ -118,7 +117,7 @@ MNDBProcedures(ODBCStmt *stmt,
 #define F_PROC 2
 #define F_UNION 5
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"PROCEDURE_CAT\", "
+		"select cast(null as varchar(1)) as \"PROCEDURE_CAT\", "
 			"s.name as \"PROCEDURE_SCHEM\", "
 			"p.name as \"PROCEDURE_NAME\", "
 			"0 as \"NUM_INPUT_PARAMS\", "
@@ -134,7 +133,6 @@ MNDBProcedures(ODBCStmt *stmt,
 		     "sys.functions as p%s "
 		"where p.schema_id = s.id and "
 		      "p.type in (%d, %d, %d)",
-		stmt->Dbc->dbname,
 		stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
 		F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
 		/* from clause: */

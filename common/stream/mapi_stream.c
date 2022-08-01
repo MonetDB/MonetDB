@@ -87,7 +87,7 @@ recv_upload_destroy(stream *s)
 {
 	struct mapi_recv_upload *state = s->stream_data.p;
 	free(state);
-	free(s);
+	destroy_stream(s);
 }
 
 
