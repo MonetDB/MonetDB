@@ -3321,12 +3321,18 @@ static int
 log_segments(sql_trans *tr, segments *segs, sqlid id)
 {
 	/* log segments */
+	lock_table(tr->store, id);
 	for (segment *seg = segs->h; seg; seg=seg->next) {
+		unlock_table(tr->store, id);
 		if (seg->ts == tr->tid && seg->end-seg->start) {
-			if (log_segment(tr, seg, id) != LOG_OK)
+			if (log_segment(tr, seg, id) != LOG_OK) {
+				unlock_table(tr->store, id);
 				return LOG_ERR;
+			}
 		}
+		lock_table(tr->store, id);
 	}
+	unlock_table(tr->store, id);
 	return LOG_OK;
 }
 
@@ -3814,7 +3820,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 	if (isTempTable(t))
 		return LOG_OK;
 	size_t end = segs_end(segs, tr, t);
+	lock_table(tr->store, t->base.id);
 	for (segment *cur = segs->h; cur && ok; cur = cur->next) {
+		unlock_table(tr->store, t->base.id);
 		if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 			for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
 				sql_column *c = n->data;
@@ -3859,7 +3867,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				}
 			}
 		}
+		lock_table(tr->store, t->base.id);
 	}
+	unlock_table(tr->store, t->base.id);
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
@@ -3869,8 +3879,6 @@ log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 	int ok = LOG_OK, cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
 		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
-	if (ok == LOG_OK)
-		ok = segments2cs(tr, s->segs, &s->cs);
 	if (ok == LOG_OK)
 		ok = log_segments(tr, s->segs, id);
 	if (ok == LOG_OK && !cleared)
