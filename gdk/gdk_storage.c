@@ -868,7 +868,6 @@ BATdelete(BAT *b)
 	bat bid = b->batCacheid;
 	BAT *loaded = BBP_cache(bid);
 	char o[10];
-	char *f;
 
 	assert(bid > 0);
 	snprintf(o, sizeof(o), "%o", (unsigned) bid);
@@ -882,26 +881,9 @@ BATdelete(BAT *b)
 	STRMPdestroy(b);
 	if (b->theap) {
 		HEAPfree(b->theap, true);
-		if ((f = GDKfilepath(b->theap->farmid, BAKDIR, o, "tail1")) != NULL) {
-			MT_remove(f);
-			size_t i = strlen(f) - 1;
-			f[i] = '2';
-			MT_remove(f);
-#if SIZEOF_VAR_T == 8
-			f[i] = '4';
-			MT_remove(f);
-#endif
-			f[i] = '\0';
-			MT_remove(f);
-			GDKfree(f);
-		}
 	}
 	if (b->tvheap) {
 		HEAPfree(b->tvheap, true);
-		if ((f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap")) != NULL) {
-			MT_remove(f);
-			GDKfree(f);
-		}
 	}
 	b->batCopiedtodisk = false;
 }
