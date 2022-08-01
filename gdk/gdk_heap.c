@@ -576,14 +576,9 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	/* HEAPalloc initialized .free, so we need to set it after */
 	new->free = old->free << (shift - b->tshift);
 	ATOMIC_INIT(&new->refs, 1 | (ATOMIC_GET(&old->refs) & HEAPREMOVE));
+	/* per the above, width > b->twidth, so certain combinations are
+	 * impossible */
 	switch (width) {
-	case 1:
-		memcpy(new->base, old->base, n);
-#ifndef NDEBUG
-		/* valgrind */
-		memset(new->base + n, 0, new->size - n);
-#endif
-		break;
 	case 2:
 		ps = (uint16_t *) new->base;
 		switch (b->twidth) {
@@ -592,9 +587,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 			for (i = 0; i < n; i++)
 				ps[i] = pc[i];
 			break;
-		case 2:
-			memcpy(ps, old->base, n * 2);
-			break;
+		default:
+			MT_UNREACHABLE();
 		}
 #ifndef NDEBUG
 		/* valgrind */
@@ -614,9 +608,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 			for (i = 0; i < n; i++)
 				pi[i] = ps[i] + GDK_VAROFFSET;
 			break;
-		case 4:
-			memcpy(pi, old->base, n * 4);
-			break;
+		default:
+			MT_UNREACHABLE();
 		}
 #ifndef NDEBUG
 		/* valgrind */
@@ -642,9 +635,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 			for (i = 0; i < n; i++)
 				pl[i] = pi[i];
 			break;
-		case 8:
-			memcpy(pl, old->base, n * 8);
-			break;
+		default:
+			MT_UNREACHABLE();
 		}
 #ifndef NDEBUG
 		/* valgrind */
@@ -652,6 +644,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 #endif
 		break;
 #endif
+	default:
+		MT_UNREACHABLE();
 	}
 	MT_lock_set(&b->theaplock);
 	b->tshift = shift;
