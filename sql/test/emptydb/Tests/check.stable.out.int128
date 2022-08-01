@@ -16,9 +16,9 @@ with funcs as (select name, pcre_replace(func, E'--.*\n*', '', '') as func, sche
 -- args
 select 'sys.functions', s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name as func_type, f.side_effect, f.varres, f.vararg, f.semantics, c.remark as comment, a0.name as name0, a0.type as type0, a0.type_digits as type_digits0, a0.type_scale as type_scale0, case a0.inout when 0 then 'out' when 1 then 'in' end as inout0, a1.name as name1, a1.type as type1, a1.type_digits as type_digits1, a1.type_scale as type_scale1, case a1.inout when 0 then 'out' when 1 then 'in' end as inout1, a2.name as name2, a2.type as type2, a2.type_digits as type_digits2, a2.type_scale as type_scale2, case a2.inout when 0 then 'out' when 1 then 'in' end as inout2, a3.name as name3, a3.type as type3, a3.type_digits as type_digits3, a3.type_scale as type_scale3, case a3.inout when 0 then 'out' when 1 then 'in' end as inout3, a4.name as name4, a4.type as type4, a4.type_digits as type_digits4, a4.type_scale as type_scale4, case a4.inout when 0 then 'out' when 1 then 'in' end as inout4, a5.name as name5, a5.type as type5, a5.type_digits as type_digits5, a5.type_scale as type_scale5, case a5.inout when 0 then 'out' when 1 then 'in' end as inout5, a6.name as name6, a6.type as type6, a6.type_digits as type_digits6, a6.type_scale as type_scale6, case a6.inout when 0 then 'out' when 1 then 'in' end as inout6, a7.name as name7, a7.type as type7, a7.type_digits as type_digits7, a7.type_scale as type_scale7, case a7.inout when 0 then 'out' when 1 then 'in' end as inout7, a8.name as name8, a8.type as type8, a8.type_digits as type_digits8, a8.type_scale as type_scale8, case a8.inout when 0 then 'out' when 1 then 'in' end as inout8, a9.name as name9, a9.type as type9, a9.type_digits as type_digits9, a9.type_scale as type_scale9, case a9.inout when 0 then 'out' when 1 then 'in' end as inout9, a10.name as name10, a10.type as type10, a10.type_digits as type_digits10, a10.type_scale as type_scale10, case a10.inout when 0 then 'out' when 1 then 'in' end as inout10, a11.name as name11, a11.type as type11, a11.type_digits as type_digits11, a11.type_scale as type_scale11, case a11.inout when 0 then 'out' when 1 then 'in' end as inout11, a12.name as name12, a12.type as type12, a12.type_digits as type_digits12, a12.type_scale as type_scale12, case a12.inout when 0 then 'out' when 1 then 'in' end as inout12, a13.name as name13, a13.type as type13, a13.type_digits as type_digits13, a13.type_scale as type_scale13, case a13.inout when 0 then 'out' when 1 then 'in' end as inout13, a14.name as name14, a14.type as type14, a14.type_digits as type_digits14, a14.type_scale as type_scale14, case a14.inout when 0 then 'out' when 1 then 'in' end as inout14, a15.name as name15, a15.type as type15, a15.type_digits as type_digits15, a15.type_scale as type_scale15, case a15.inout when 0 then 'out' when 1 then 'in' end as inout15 from sys.functions f left outer join sys.schemas s on f.schema_id = s.id left outer join sys.function_types as ft on f.type = ft.function_type_id left outer join sys.function_languages fl on f.language = fl.language_id left outer join sys.comments c on c.id = f.id left outer join sys.args a0 on a0.func_id = f.id and a0.number = 0 left outer join sys.args a1 on a1.func_id = f.id and a1.number = 1 left outer join sys.args a2 on a2.func_id = f.id and a2.number = 2 left outer join sys.args a3 on a3.func_id = f.id and a3.number = 3 left outer join sys.args a4 on a4.func_id = f.id and a4.number = 4 left outer join sys.args a5 on a5.func_id = f.id and a5.number = 5 left outer join sys.args a6 on a6.func_id = f.id and a6.number = 6 left outer join sys.args a7 on a7.func_id = f.id and a7.number = 7 left outer join sys.args a8 on a8.func_id = f.id and a8.number = 8 left outer join sys.args a9 on a9.func_id = f.id and a9.number = 9 left outer join sys.args a10 on a10.func_id = f.id and a10.number = 10 left outer join sys.args a11 on a11.func_id = f.id and a11.number = 11 left outer join sys.args a12 on a12.func_id = f.id and a12.number = 12 left outer join sys.args a13 on a13.func_id = f.id and a13.number = 13 left outer join sys.args a14 on a14.func_id = f.id and a14.number = 14 left outer join sys.args a15 on a15.func_id = f.id and a15.number = 15 order by s.name, f.name, query, func_type, name0 nulls first, type0 nulls first, type_digits0 nulls first, type_scale0 nulls first, inout0 nulls first, name1 nulls first, type1 nulls first, type_digits1 nulls first, type_scale1 nulls first, inout1 nulls first, name2 nulls first, type2 nulls first, type_digits2 nulls first, type_scale2 nulls first, inout2 nulls first, name3 nulls first, type3 nulls first, type_digits3 nulls first, type_scale3 nulls first, inout3 nulls first, name4 nulls first, type4 nulls first, type_digits4 nulls first, type_scale4 nulls first, inout4 nulls first, name5 nulls first, type5 nulls first, type_digits5 nulls first, type_scale5 nulls first, inout5 nulls first, name6 nulls first, type6 nulls first, type_digits6 nulls first, type_scale6 nulls first, inout6 nulls first, name7 nulls first, type7 nulls first, type_digits7 nulls first, type_scale7 nulls first, inout7 nulls first, name8 nulls first, type8 nulls first, type_digits8 nulls first, type_scale8 nulls first, inout8 nulls first, name9 nulls first, type9 nulls first, type_digits9 nulls first, type_scale9 nulls first, inout9 nulls first, name10 nulls first, type10 nulls first, type_digits10 nulls first, type_scale10 nulls first, inout10 nulls first, name11 nulls first, type11 nulls first, type_digits11 nulls first, type_scale11 nulls first, inout11 nulls first, name12 nulls first, type12 nulls first, type_digits12 nulls first, type_scale12 nulls first, inout12 nulls first, name13 nulls first, type13 nulls first, type_digits13 nulls first, type_scale13 nulls first, inout13 nulls first, name14 nulls first, type14 nulls first, type_digits14 nulls first, type_scale14 nulls first, inout14 nulls first, name15 nulls first, type15 nulls first, type_digits15 nulls first, type_scale15 nulls first, inout15 nulls first;
 -- auths
-select 'sys.auths', name, grantor from sys.auths;
+select 'sys.auths', a1.name as name, a2.name as grantor from sys.auths a1 left outer join sys.auths a2 on a1.grantor = a2.id order by a1.name;
 -- db_user_info
-select 'sys.db_user_info', u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
+select 'sys.db_user_info', u.name, u.fullname, s.name, u.schema_path, u.max_memory, u.max_workers, u.optimizer, a.name as default_role from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id left outer join sys.auths a on u.default_role = a.id order by u.name;
 -- dependencies
 select 'function used by function', s1.name, f1.name, s2.name, f2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
 select 'table used by function', s1.name, t.name, s2.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
@@ -451,7 +451,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._tables",	"sys",	"dependency_functions_on_views",	"create view sys.dependency_functions_on_views as select f.schema_id as function_schema_id, f.id as function_id, f.name as function_name, v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, dep.depend_type as depend_type from sys.functions as f, sys.tables as v, sys.dependencies as dep where f.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type in (1, 11) order by f.schema_id, f.name, v.schema_id, v.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"dependency_keys_on_foreignkeys",	"create view sys.dependency_keys_on_foreignkeys as select k.table_id as key_table_id, k.id as key_id, k.name as key_name, fk.table_id as fk_table_id, fk.id as fk_id, fk.name as fk_name, cast(k.type as smallint) as key_type, cast(11 as smallint) as depend_type from sys.keys as k, sys.keys as fk where k.id = fk.rkey order by k.name, fk.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"dependency_owners_on_schemas",	"create view sys.dependency_owners_on_schemas as select a.name as owner_name, s.id as schema_id, s.name as schema_name, cast(1 as smallint) as depend_type from sys.schemas as s, sys.auths as a where s.owner = a.id order by a.name, s.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
-[ "sys._tables",	"sys",	"dependency_schemas_on_users",	"create view sys.dependency_schemas_on_users as select s.id as schema_id, s.name as schema_name, u.name as user_name, cast(6 as smallint) as depend_type from sys.users as u, sys.schemas as s where u.default_schema = s.id order by s.name, u.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
+[ "sys._tables",	"sys",	"dependency_schemas_on_users",	"create view sys.dependency_schemas_on_users as select s.id as schema_id, s.name as schema_name, u.name as user_name, cast(6 as smallint) as depend_type from sys.db_user_info as u, sys.schemas as s where u.default_schema = s.id order by s.name, u.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"dependency_tables_on_foreignkeys",	"create view sys.dependency_tables_on_foreignkeys as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, fk.name as fk_name, cast(k.type as smallint) as key_type, cast(11 as smallint) as depend_type from sys.tables as t, sys.keys as k, sys.keys as fk where fk.rkey = k.id and k.table_id = t.id order by t.schema_id, t.name, fk.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"dependency_tables_on_functions",	"create view sys.dependency_tables_on_functions as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.tables as t, sys.dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 and t.type not in (1, 11) order by t.name, t.schema_id, f.name, f.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"dependency_tables_on_indexes",	"create view sys.dependency_tables_on_indexes as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, i.id as index_id, i.name as index_name, i.type as index_type, cast(10 as smallint) as depend_type from sys.tables as t, sys.idxs as i where i.table_id = t.id and (i.table_id, i.name) not in (select k.table_id, k.name from sys.keys k) order by t.schema_id, t.name, i.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
@@ -527,7 +527,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._tables",	"sys",	"queue",	"create view sys.queue as select * from sys.queue();",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"range_partitions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"rejects",	"create view sys.rejects as select * from sys.rejects();",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
-[ "sys._tables",	"sys",	"roles",	"create view sys.roles as select id, name, grantor from sys.auths a where a.name not in (select u.name from sys.db_users() u);",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
+[ "sys._tables",	"sys",	"roles",	"create view sys.roles as select id, name, grantor from sys.auths a where a.name not in (select u.name from sys.db_user_info u);",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"schemas",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"schemastorage",	"create view sys.\"schemastorage\" as select \"schema\", count(*) as \"storages\", sum(columnsize) as columnsize, sum(heapsize) as heapsize, sum(hashes) as hashsize, sum(\"imprints\") as imprintsize, sum(orderidx) as orderidxsize from sys.\"storage\" group by \"schema\" order by \"schema\";",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"sequences",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
@@ -546,7 +546,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._tables",	"sys",	"triggers",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"types",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"user_role",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
-[ "sys._tables",	"sys",	"users",	"create view sys.users as select u.\"name\" as \"name\", ui.\"fullname\", ui.\"default_schema\", ui.\"schema_path\" from sys.db_users() as u left join \"sys\".\"db_user_info\" as ui on u.\"name\" = ui.\"name\";",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
+[ "sys._tables",	"sys",	"users",	"create view sys.users as select name, fullname, default_schema, schema_path, max_memory, max_workers, optimizer, default_role from sys.db_user_info;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"value_partitions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"var_values",	"create view sys.var_values (var_name, value) as select 'current_role', current_role union all select 'current_schema', current_schema union all select 'current_timezone', current_timezone union all select 'current_user', current_user union all select 'debug', debug union all select 'last_id', last_id union all select 'optimizer', optimizer union all select 'pi', pi() union all select 'rowcnt', rowcnt;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"tmp",	"_columns",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE",	NULL	]
@@ -625,6 +625,11 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._columns",	"db_user_info",	"fullname",	"varchar",	2048,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"db_user_info",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL,	NULL	]
 [ "sys._columns",	"db_user_info",	"schema_path",	"clob",	0,	0,	NULL,	true,	3,	NULL,	NULL	]
+[ "sys._columns",	"db_user_info",	"max_memory",	"bigint",	64,	0,	NULL,	true,	4,	NULL,	NULL	]
+[ "sys._columns",	"db_user_info",	"max_workers",	"int",	32,	0,	NULL,	true,	5,	NULL,	NULL	]
+[ "sys._columns",	"db_user_info",	"optimizer",	"varchar",	1024,	0,	NULL,	true,	6,	NULL,	NULL	]
+[ "sys._columns",	"db_user_info",	"default_role",	"int",	32,	0,	NULL,	true,	7,	NULL,	NULL	]
+[ "sys._columns",	"db_user_info",	"password",	"varchar",	256,	0,	NULL,	true,	8,	NULL,	NULL	]
 [ "sys._columns",	"dependencies",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"dependencies",	"depend_id",	"int",	32,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"dependencies",	"depend_type",	"smallint",	16,	0,	NULL,	true,	2,	NULL,	NULL	]
@@ -756,7 +761,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._columns",	"dependency_owners_on_schemas",	"depend_type",	"smallint",	16,	0,	NULL,	true,	3,	NULL,	NULL	]
 [ "sys._columns",	"dependency_schemas_on_users",	"schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"dependency_schemas_on_users",	"schema_name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL,	NULL	]
-[ "sys._columns",	"dependency_schemas_on_users",	"user_name",	"varchar",	2048,	0,	NULL,	true,	2,	NULL,	NULL	]
+[ "sys._columns",	"dependency_schemas_on_users",	"user_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL,	NULL	]
 [ "sys._columns",	"dependency_schemas_on_users",	"depend_type",	"smallint",	16,	0,	NULL,	true,	3,	NULL,	NULL	]
 [ "sys._columns",	"dependency_tables_on_foreignkeys",	"table_schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"dependency_tables_on_foreignkeys",	"table_id",	"int",	32,	0,	NULL,	true,	1,	NULL,	NULL	]
@@ -1308,10 +1313,14 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._columns",	"types",	"schema_id",	"int",	32,	0,	NULL,	true,	7,	NULL,	NULL	]
 [ "sys._columns",	"user_role",	"login_id",	"int",	32,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"user_role",	"role_id",	"int",	32,	0,	NULL,	true,	1,	NULL,	NULL	]
-[ "sys._columns",	"users",	"name",	"varchar",	2048,	0,	NULL,	true,	0,	NULL,	NULL	]
+[ "sys._columns",	"users",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"users",	"fullname",	"varchar",	2048,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"users",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL,	NULL	]
 [ "sys._columns",	"users",	"schema_path",	"clob",	0,	0,	NULL,	true,	3,	NULL,	NULL	]
+[ "sys._columns",	"users",	"max_memory",	"bigint",	64,	0,	NULL,	true,	4,	NULL,	NULL	]
+[ "sys._columns",	"users",	"max_workers",	"int",	32,	0,	NULL,	true,	5,	NULL,	NULL	]
+[ "sys._columns",	"users",	"optimizer",	"varchar",	1024,	0,	NULL,	true,	6,	NULL,	NULL	]
+[ "sys._columns",	"users",	"default_role",	"int",	32,	0,	NULL,	true,	7,	NULL,	NULL	]
 [ "sys._columns",	"value_partitions",	"table_id",	"int",	32,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"value_partitions",	"partition_id",	"int",	32,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"value_partitions",	"value",	"varchar",	2048,	0,	NULL,	true,	2,	NULL,	NULL	]
@@ -1562,7 +1571,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.functions",	"sys",	"dayofmonth",	"SYSTEM",	"day",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"date",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"dayofweek",	"SYSTEM",	"dayofweek",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"date",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"dayofyear",	"SYSTEM",	"dayofyear",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"date",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"db_users",	"SYSTEM",	"CREATE FUNCTION db_users () RETURNS TABLE(name varchar(2048)) EXTERNAL NAME sql.db_users;",	"sql",	"MAL",	"Function returning a table",	false,	false,	false,	true,	NULL,	"name",	"varchar",	2048,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"db_users",	"SYSTEM",	"create function sys.db_users() returns table(name varchar(2048)) return select name from sys.db_user_info;",	"sql",	"SQL",	"Function returning a table",	false,	false,	false,	true,	NULL,	"name",	"varchar",	2048,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"debug",	"SYSTEM",	"create function sys.debug(debug int) returns integer external name mdb.\"setDebug\";",	"mdb",	"MAL",	"Scalar function",	false,	false,	false,	true,	NULL,	"result",	"int",	32,	0,	"out",	"debug",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"debug",	"SYSTEM",	"create function sys.debug(flag string) returns integer external name mdb.\"setDebug\";",	"mdb",	"MAL",	"Scalar function",	false,	false,	false,	true,	NULL,	"result",	"int",	32,	0,	"out",	"flag",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"debugflags",	"SYSTEM",	"create function sys.debugflags() returns table(flag string, val bool) external name mdb.\"getDebugFlags\";",	"mdb",	"MAL",	"Function returning a table",	false,	false,	false,	true,	NULL,	"flag",	"clob",	0,	0,	"out",	"val",	"boolean",	1,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2620,20 +2629,20 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.functions",	"wlr",	"replicate",	"SYSTEM",	"create procedure wlr.replicate(pointintime timestamp) external name wlr.replicate;",	"wlr",	"MAL",	"Procedure",	true,	false,	false,	true,	NULL,	"pointintime",	"timestamp",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"wlr",	"stop",	"SYSTEM",	"create procedure wlr.stop() external name wlr.stop;",	"wlr",	"MAL",	"Procedure",	true,	false,	false,	true,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"wlr",	"tick",	"SYSTEM",	"create function wlr.tick() returns bigint external name wlr.\"gettick\";",	"wlr",	"MAL",	"Scalar function",	false,	false,	false,	true,	NULL,	"result",	"bigint",	64,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-% .%1,	sys.auths,	sys.auths # table_name
+% .%1,	.,	. # table_name
 % %1,	name,	grantor # name
-% char,	varchar,	int # type
-% 9,	9,	1 # length
-[ "sys.auths",	"public",	0	]
-[ "sys.auths",	"sysadmin",	0	]
-[ "sys.auths",	"monetdb",	0	]
-[ "sys.auths",	".snapshot",	3	]
-% .%1,	.u,	.u,	.s # table_name
-% %1,	name,	fullname,	name # name
-% char,	varchar,	varchar,	varchar # type
-% 16,	9,	13,	3 # length
-[ "sys.db_user_info",	".snapshot",	"Snapshot User",	"sys"	]
-[ "sys.db_user_info",	"monetdb",	"MonetDB Admin",	"sys"	]
+% char,	varchar,	varchar # type
+% 9,	9,	7 # length
+[ "sys.auths",	".snapshot",	"monetdb"	]
+[ "sys.auths",	"monetdb",	NULL	]
+[ "sys.auths",	"public",	NULL	]
+[ "sys.auths",	"sysadmin",	NULL	]
+% .%1,	.u,	.u,	.s,	.u,	.u,	.u,	.u,	. # table_name
+% %1,	name,	fullname,	name,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	varchar,	varchar,	varchar,	clob,	bigint,	int,	varchar,	varchar # type
+% 16,	9,	13,	3,	5,	1,	1,	12,	9 # length
+[ "sys.db_user_info",	".snapshot",	"Snapshot User",	"sys",	"\"sys\"",	0,	0,	"default_pipe",	".snapshot"	]
+[ "sys.db_user_info",	"monetdb",	"MonetDB Admin",	"sys",	"\"sys\"",	0,	0,	"default_pipe",	"monetdb"	]
 % .%1,	.s1,	.f1,	.s2,	.f2,	.dt # table_name
 % %1,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
@@ -2662,6 +2671,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 22,	3,	26,	3,	37,	9 # length
+[ "table used by function",	"sys",	"db_user_info",	"sys",	"db_users",	"FUNCTION"	]
 [ "table used by function",	"sys",	"_columns",	"sys",	"describe_columns",	"FUNCTION"	]
 [ "table used by function",	"sys",	"_tables",	"sys",	"describe_columns",	"FUNCTION"	]
 [ "table used by function",	"sys",	"comments",	"sys",	"describe_columns",	"FUNCTION"	]
@@ -2718,6 +2728,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	name,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 23,	3,	26,	21,	3,	37,	9 # length
+[ "column used by function",	"sys",	"db_user_info",	"name",	"sys",	"db_users",	"FUNCTION"	]
 [ "column used by function",	"sys",	"_columns",	"default",	"sys",	"describe_columns",	"FUNCTION"	]
 [ "column used by function",	"sys",	"_columns",	"id",	"sys",	"describe_columns",	"FUNCTION"	]
 [ "column used by function",	"sys",	"_columns",	"name",	"sys",	"describe_columns",	"FUNCTION"	]
@@ -2932,7 +2943,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "function used by view",	"sys",	"querylog_catalog",	"sys",	"querylog_history",	"VIEW"	]
 [ "function used by view",	"sys",	"queue",	"sys",	"queue",	"VIEW"	]
 [ "function used by view",	"sys",	"rejects",	"sys",	"rejects",	"VIEW"	]
-[ "function used by view",	"sys",	"db_users",	"sys",	"roles",	"VIEW"	]
 [ "function used by view",	"sys",	"sessions",	"sys",	"sessions",	"VIEW"	]
 [ "function used by view",	"sys",	"statistics",	"sys",	"statistics",	"VIEW"	]
 [ "function used by view",	"sys",	"storage",	"sys",	"storage",	"VIEW"	]
@@ -2945,7 +2955,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "function used by view",	"sys",	"heapsize",	"sys",	"tablestoragemodel",	"VIEW"	]
 [ "function used by view",	"sys",	"imprintsize",	"sys",	"tablestoragemodel",	"VIEW"	]
 [ "function used by view",	"sys",	"tracelog",	"sys",	"tracelog",	"VIEW"	]
-[ "function used by view",	"sys",	"db_users",	"sys",	"users",	"VIEW"	]
 % .%1,	sys.s1,	sys.t1,	sys.s2,	sys.t2,	.dt # table_name
 % %1,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
@@ -3001,8 +3010,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "table used by view",	"sys",	"keys",	"sys",	"dependency_keys_on_foreignkeys",	"VIEW"	]
 [ "table used by view",	"sys",	"auths",	"sys",	"dependency_owners_on_schemas",	"VIEW"	]
 [ "table used by view",	"sys",	"schemas",	"sys",	"dependency_owners_on_schemas",	"VIEW"	]
+[ "table used by view",	"sys",	"db_user_info",	"sys",	"dependency_schemas_on_users",	"VIEW"	]
 [ "table used by view",	"sys",	"schemas",	"sys",	"dependency_schemas_on_users",	"VIEW"	]
-[ "table used by view",	"sys",	"users",	"sys",	"dependency_schemas_on_users",	"VIEW"	]
 [ "table used by view",	"sys",	"keys",	"sys",	"dependency_tables_on_foreignkeys",	"VIEW"	]
 [ "table used by view",	"sys",	"tables",	"sys",	"dependency_tables_on_foreignkeys",	"VIEW"	]
 [ "table used by view",	"sys",	"dependencies",	"sys",	"dependency_tables_on_functions",	"VIEW"	]
@@ -3156,6 +3165,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "table used by view",	"tmp",	"keys",	"sys",	"ids",	"VIEW"	]
 [ "table used by view",	"tmp",	"triggers",	"sys",	"ids",	"VIEW"	]
 [ "table used by view",	"sys",	"auths",	"sys",	"roles",	"VIEW"	]
+[ "table used by view",	"sys",	"db_user_info",	"sys",	"roles",	"VIEW"	]
 [ "table used by view",	"sys",	"storage",	"sys",	"schemastorage",	"VIEW"	]
 [ "table used by view",	"sys",	"schemas",	"sys",	"statistics",	"VIEW"	]
 [ "table used by view",	"sys",	"tables",	"sys",	"statistics",	"VIEW"	]
@@ -3340,10 +3350,10 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "column used by view",	"sys",	"schemas",	"id",	"sys",	"dependency_owners_on_schemas",	"VIEW"	]
 [ "column used by view",	"sys",	"schemas",	"name",	"sys",	"dependency_owners_on_schemas",	"VIEW"	]
 [ "column used by view",	"sys",	"schemas",	"owner",	"sys",	"dependency_owners_on_schemas",	"VIEW"	]
+[ "column used by view",	"sys",	"db_user_info",	"default_schema",	"sys",	"dependency_schemas_on_users",	"VIEW"	]
+[ "column used by view",	"sys",	"db_user_info",	"name",	"sys",	"dependency_schemas_on_users",	"VIEW"	]
 [ "column used by view",	"sys",	"schemas",	"id",	"sys",	"dependency_schemas_on_users",	"VIEW"	]
 [ "column used by view",	"sys",	"schemas",	"name",	"sys",	"dependency_schemas_on_users",	"VIEW"	]
-[ "column used by view",	"sys",	"users",	"default_schema",	"sys",	"dependency_schemas_on_users",	"VIEW"	]
-[ "column used by view",	"sys",	"users",	"name",	"sys",	"dependency_schemas_on_users",	"VIEW"	]
 [ "column used by view",	"sys",	"keys",	"id",	"sys",	"dependency_tables_on_foreignkeys",	"VIEW"	]
 [ "column used by view",	"sys",	"keys",	"name",	"sys",	"dependency_tables_on_foreignkeys",	"VIEW"	]
 [ "column used by view",	"sys",	"keys",	"rkey",	"sys",	"dependency_tables_on_foreignkeys",	"VIEW"	]
@@ -3865,6 +3875,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "column used by view",	"sys",	"auths",	"grantor",	"sys",	"roles",	"VIEW"	]
 [ "column used by view",	"sys",	"auths",	"id",	"sys",	"roles",	"VIEW"	]
 [ "column used by view",	"sys",	"auths",	"name",	"sys",	"roles",	"VIEW"	]
+[ "column used by view",	"sys",	"db_user_info",	"name",	"sys",	"roles",	"VIEW"	]
 [ "column used by view",	"sys",	"storage",	"columnsize",	"sys",	"schemastorage",	"VIEW"	]
 [ "column used by view",	"sys",	"storage",	"hashes",	"sys",	"schemastorage",	"VIEW"	]
 [ "column used by view",	"sys",	"storage",	"heapsize",	"sys",	"schemastorage",	"VIEW"	]
@@ -3925,9 +3936,13 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "column used by view",	"sys",	"storagemodelinput",	"sorted",	"sys",	"tablestoragemodel",	"VIEW"	]
 [ "column used by view",	"sys",	"storagemodelinput",	"table",	"sys",	"tablestoragemodel",	"VIEW"	]
 [ "column used by view",	"sys",	"storagemodelinput",	"type",	"sys",	"tablestoragemodel",	"VIEW"	]
+[ "column used by view",	"sys",	"db_user_info",	"default_role",	"sys",	"users",	"VIEW"	]
 [ "column used by view",	"sys",	"db_user_info",	"default_schema",	"sys",	"users",	"VIEW"	]
 [ "column used by view",	"sys",	"db_user_info",	"fullname",	"sys",	"users",	"VIEW"	]
+[ "column used by view",	"sys",	"db_user_info",	"max_memory",	"sys",	"users",	"VIEW"	]
+[ "column used by view",	"sys",	"db_user_info",	"max_workers",	"sys",	"users",	"VIEW"	]
 [ "column used by view",	"sys",	"db_user_info",	"name",	"sys",	"users",	"VIEW"	]
+[ "column used by view",	"sys",	"db_user_info",	"optimizer",	"sys",	"users",	"VIEW"	]
 [ "column used by view",	"sys",	"db_user_info",	"schema_path",	"sys",	"users",	"VIEW"	]
 % .%1,	sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	sys.k2,	.dt # table_name
 % %1,	name,	name,	name,	name,	name,	name,	dependency_type_name # name
@@ -4105,7 +4120,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.objects",	"table_type_id",	"0",	NULL	]
 [ "sys.objects",	"table_type_name",	"0",	NULL	]
 [ "sys.objects",	"table_type_name",	"0",	NULL	]
-% .%1,	sys.s,	.u # table_name
+% .%1,	sys.s,	sys.u # table_name
 % %1,	name,	name # name
 % char,	varchar,	varchar # type
 % 22,	3,	9 # length
@@ -4114,7 +4129,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % .%1,	sys.t,	sys.a,	.pc,	.g,	.p # table_name
 % %1,	name,	name,	privilege_code_name,	name,	grantable # name
 % char,	varchar,	varchar,	varchar,	varchar,	int # type
-% 14,	34,	6,	6,	7,	1 # length
+% 14,	34,	7,	6,	7,	1 # length
 [ "grant on table",	"_columns",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"_tables",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"args",	"public",	"SELECT",	NULL,	0	]
@@ -4122,6 +4137,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "grant on table",	"columns",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"comments",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"compinfo",	"public",	"SELECT",	"monetdb",	0	]
+[ "grant on table",	"db_user_info",	"monetdb",	"SELECT",	NULL,	0	]
 [ "grant on table",	"dependencies",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"dependencies_vw",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"dependency_args_on_types",	"public",	"SELECT",	"monetdb",	0	]
@@ -4199,6 +4215,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "grant on table",	"triggers",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"types",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"user_role",	"public",	"SELECT",	NULL,	0	]
+[ "grant on table",	"users",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"value_partitions",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"var_values",	"public",	"SELECT",	"monetdb",	0	]
 % .%1,	.t,	.c,	sys.a,	.pc,	.g,	.p # table_name
@@ -5120,7 +5137,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 19,	1,	1 # length
-% .%2,	.%1,	.users # table_name
+% .%2,	sys.%1,	sys.users # table_name
 % %2,	%1,	name # name
 % char,	bigint,	varchar # type
 % 19,	1,	0 # length
@@ -5500,22 +5517,22 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %5,	grantor,	id,	name,	grantor # name
 % char,	int,	int,	varchar,	int # type
 % 34,	1,	1,	0,	1 # length
-% .%5,	.users,	.users,	.users,	.users,	.users # table_name
-% %5,	name,	name,	fullname,	default_schema,	schema_path # name
-% char,	varchar,	varchar,	varchar,	int,	clob # type
-% 31,	0,	0,	0,	1,	0 # length
-% .%5,	.users,	.users,	.users,	.users,	.users # table_name
-% %5,	default_schema,	name,	fullname,	default_schema,	schema_path # name
-% char,	int,	varchar,	varchar,	int,	clob # type
-% 41,	1,	0,	0,	1,	0 # length
-% .%5,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %5,	name,	name,	fullname,	default_schema,	schema_path # name
-% char,	varchar,	varchar,	varchar,	int,	clob # type
-% 38,	0,	0,	0,	1,	0 # length
-% .%5,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %5,	default_schema,	name,	fullname,	default_schema,	schema_path # name
-% char,	int,	varchar,	varchar,	int,	clob # type
-% 48,	1,	0,	0,	1,	0 # length
+% .%5,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users # table_name
+% %5,	name,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	varchar,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 31,	0,	0,	0,	1,	0,	1,	1,	0,	1 # length
+% .%5,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users # table_name
+% %5,	default_schema,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	int,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 41,	1,	0,	0,	1,	0,	1,	1,	0,	1 # length
+% .%5,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %5,	name,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role,	password # name
+% char,	varchar,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int,	varchar # type
+% 38,	0,	0,	0,	1,	0,	1,	1,	0,	1,	0 # length
+% .%5,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %5,	default_schema,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role,	password # name
+% char,	int,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int,	varchar # type
+% 48,	1,	0,	0,	1,	0,	1,	1,	0,	1,	0 # length
 % .%5,	sys.user_role,	sys.user_role,	sys.user_role # table_name
 % %5,	login_id,	login_id,	role_id # name
 % char,	int,	int,	int # type
@@ -5828,18 +5845,18 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	grantor,	id,	name,	grantor # name
 % char,	int,	int,	varchar,	int # type
 % 21,	1,	1,	0,	1 # length
-% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %1,	name,	name,	fullname,	default_schema,	schema_path # name
-% char,	varchar,	varchar,	varchar,	int,	clob # type
-% 25,	0,	0,	0,	1,	0 # length
-% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %1,	fullname,	name,	fullname,	default_schema,	schema_path # name
-% char,	varchar,	varchar,	varchar,	int,	clob # type
-% 29,	0,	0,	0,	1,	0 # length
-% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% %1,	default_schema,	name,	fullname,	default_schema,	schema_path # name
-% char,	int,	varchar,	varchar,	int,	clob # type
-% 35,	1,	0,	0,	1,	0 # length
+% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %1,	name,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role,	password # name
+% char,	varchar,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int,	varchar # type
+% 25,	0,	0,	0,	1,	0,	1,	1,	0,	1,	0 # length
+% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %1,	fullname,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role,	password # name
+% char,	varchar,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int,	varchar # type
+% 29,	0,	0,	0,	1,	0,	1,	1,	0,	1,	0 # length
+% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% %1,	default_schema,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role,	password # name
+% char,	int,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int,	varchar # type
+% 35,	1,	0,	0,	1,	0,	1,	1,	0,	1,	0 # length
 % .%1,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
 % %1,	id,	id,	depend_id,	depend_type # name
 % char,	int,	int,	int,	smallint # type
@@ -6348,18 +6365,18 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	role_id,	login_id,	role_id # name
 % char,	int,	int,	int # type
 % 25,	1,	1,	1 # length
-% .%1,	.users,	.users,	.users,	.users,	.users # table_name
-% %1,	name,	name,	fullname,	default_schema,	schema_path # name
-% char,	varchar,	varchar,	varchar,	int,	clob # type
-% 18,	0,	0,	0,	1,	0 # length
-% .%1,	.users,	.users,	.users,	.users,	.users # table_name
-% %1,	fullname,	name,	fullname,	default_schema,	schema_path # name
-% char,	varchar,	varchar,	varchar,	int,	clob # type
-% 22,	0,	0,	0,	1,	0 # length
-% .%1,	.users,	.users,	.users,	.users,	.users # table_name
-% %1,	default_schema,	name,	fullname,	default_schema,	schema_path # name
-% char,	int,	varchar,	varchar,	int,	clob # type
-% 28,	1,	0,	0,	1,	0 # length
+% .%1,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users # table_name
+% %1,	name,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	varchar,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 18,	0,	0,	0,	1,	0,	1,	1,	0,	1 # length
+% .%1,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users # table_name
+% %1,	fullname,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	varchar,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 22,	0,	0,	0,	1,	0,	1,	1,	0,	1 # length
+% .%1,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users # table_name
+% %1,	default_schema,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
+% char,	int,	varchar,	varchar,	int,	clob,	bigint,	int,	varchar,	int # type
+% 28,	1,	0,	0,	1,	0,	1,	1,	0,	1 # length
 % .%104,	.var_values,	.var_values,	.var_values # table_name
 % %104,	var_name,	var_name,	value # name
 % char,	char,	char,	varchar # type

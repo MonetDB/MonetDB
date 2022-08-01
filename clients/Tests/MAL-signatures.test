@@ -24449,11 +24449,6 @@ pattern batsql.ntile(X_0:bat[:any], X_1:bat[:any_1], X_2:any_2, X_3:any_3):bat[:
 SQLntile;
 return the groups divided as equally as possible
 batsql
-password
-pattern batsql.password(X_0:bat[:str]):bat[:str] 
-db_password_wrap;
-Return password hash of user
-batsql
 percent_rank
 pattern batsql.percent_rank(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:dbl] 
 SQLpercent_rank;
@@ -32284,25 +32279,10 @@ pattern capi.subeval_aggr(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any...
 CUDFevalAggr;
 grouped aggregates through CUDF
 clients
-addUser
-unsafe pattern clients.addUser(X_0:str, X_1:str):oid 
-CLTaddUser;
-Allow user with password access to the given scenarios
-clients
 backendsum
 command clients.backendsum(X_0:str):str 
 CLTbackendsum;
 Return hex string representation of the currently used hash of the given string
-clients
-changePassword
-unsafe pattern clients.changePassword(X_0:str, X_1:str):void 
-CLTchangePassword;
-Change the password for the current user
-clients
-changeUsername
-unsafe pattern clients.changeUsername(X_0:str, X_1:str):void 
-CLTchangeUsername;
-Change the username of the user into the new string
 clients
 checkPermission
 pattern clients.checkPermission(X_0:str, X_1:str):void 
@@ -32344,11 +32324,6 @@ pattern clients.getUsername():str
 CLTgetUsername;
 Return the username of the currently logged in user
 clients
-getUsers
-pattern clients.getUsers() (X_0:bat[:oid], X_1:bat[:str]) 
-CLTgetUsers;
-return a BAT with user id and one with name available in the system
-clients
 getprofile
 pattern clients.getprofile() (X_0:str, X_1:int, X_2:int, X_3:int, X_4:int) 
 CLTgetProfile;
@@ -32369,11 +32344,6 @@ unsafe pattern clients.quit(X_0:int):void
 CLTquit;
 Terminate the session for a single client using a soft error.@It is the privilege of the console user.
 clients
-removeUser
-unsafe pattern clients.removeUser(X_0:str):void 
-CLTremoveUser;
-Remove the given user from the system
-clients
 ripemd160sum
 command clients.ripemd160sum(X_0:str):str 
 CLTripemd160sum;
@@ -32383,11 +32353,6 @@ setListing
 unsafe pattern clients.setListing(X_0:int):int 
 CLTsetListing;
 Turn on/off echo of MAL instructions:@1 - echo input,@2 - show mal instruction,@4 - show details of type resolutoin, @8 - show binding information.
-clients
-setPassword
-unsafe pattern clients.setPassword(X_0:str, X_1:str):void 
-CLTsetPassword;
-Set the password for the given user
 clients
 setQryTimeoutMicro
 unsafe pattern clients.setQryTimeoutMicro(X_0:lng):void 
@@ -36834,11 +36799,6 @@ command sql.date_trunc(X_0:str, X_1:timestamp):timestamp
 date_trunc;
 Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)
 sql
-db_users
-pattern sql.db_users():bat[:str] 
-db_users_wrap;
-return table of users with sql scenario
-sql
 delete
 unsafe pattern sql.delete(X_0:int, X_1:str, X_2:str, X_3:any):int 
 mvc_delete_wrap;
@@ -37151,7 +37111,7 @@ getPipeCatalog;
 sql
 password
 pattern sql.password(X_0:str):str 
-db_password_wrap;
+SQLuser_password;
 Return password hash of user
 sql
 percent_rank
@@ -37745,7 +37705,7 @@ SQLalter_table;
 Catalog operation alter_table
 sqlcatalog
 alter_user
-pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str):void 
+pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str):void 
 SQLalter_user;
 Catalog operation alter_user
 sqlcatalog
@@ -37790,7 +37750,7 @@ SQLcreate_type;
 Catalog operation create_type
 sqlcatalog
 create_user
-pattern sqlcatalog.create_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str):void 
+pattern sqlcatalog.create_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:lng, X_7:int, X_8:str, X_9:str):void 
 SQLcreate_user;
 Catalog operation create_user
 sqlcatalog

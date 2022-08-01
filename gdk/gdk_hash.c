@@ -143,11 +143,13 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		if (HEAPalloc(&h->heaplink, size, h->width, 0) != GDK_SUCCEED)
 			return GDK_FAIL;
 		h->heaplink.free = size * h->width;
+		h->heaplink.dirty = true;
 		h->Link = h->heaplink.base;
 	}
 	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width, 0) != GDK_SUCCEED)
 		return GDK_FAIL;
 	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
+	h->heapbckt.dirty = true;
 	h->nbucket = mask;
 	if (mask & (mask - 1)) {
 		h->mask2 = hashmask(mask);
@@ -239,6 +241,8 @@ HASHupgradehashheap(BAT *b)
 				BUN2type v = ((BUN2type *) h->Bckt)[i];
 				((BUN4type *) h->Bckt)[i] = v == BUN2_NONE ? BUN4_NONE : v;
 			}
+			h->heapbckt.dirty = true;
+			h->heaplink.dirty = true;
 			break;
 		}
 #endif
@@ -262,6 +266,8 @@ HASHupgradehashheap(BAT *b)
 				BUN2type v = ((BUN2type *) h->Bckt)[i];
 				((BUN8type *) h->Bckt)[i] = v == BUN2_NONE ? BUN8_NONE : v;
 			}
+			h->heapbckt.dirty = true;
+			h->heaplink.dirty = true;
 			break;
 #endif
 		case BUN4:
@@ -279,6 +285,8 @@ HASHupgradehashheap(BAT *b)
 				BUN4type v = ((BUN4type *) h->Bckt)[i];
 				((BUN8type *) h->Bckt)[i] = v == BUN4_NONE ? BUN8_NONE : v;
 			}
+			h->heapbckt.dirty = true;
+			h->heaplink.dirty = true;
 			break;
 		}
 		break;

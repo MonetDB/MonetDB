@@ -275,6 +275,9 @@ SQLprepareClient(Client c, int login)
 			case -3:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
 				goto bailout1;
+			case -4:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user's default role was not found, this session is going to terminate");
+				goto bailout1;
 			default:
 				break;
 		}

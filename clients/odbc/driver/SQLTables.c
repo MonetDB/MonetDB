@@ -41,6 +41,7 @@ MNDBTables(ODBCStmt *stmt,
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
+	size_t pos = 0;
 
 	/* convert input string parameters to normal null terminated C
 	 * strings */
@@ -75,13 +76,13 @@ MNDBTables(ODBCStmt *stmt,
 	    CatalogName &&
 	    strcmp((char *) CatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
-		query = strdup("select e.value as \"TABLE_CAT\", "
+		/* All columns except the TABLE_CAT column contain NULLs. */
+		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
 				      "cast(null as varchar(1)) as \"TABLE_SCHEM\", "
 				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
 				      "cast(null as varchar(1)) as \"TABLE_TYPE\", "
 				      "cast(null as varchar(1)) as \"REMARKS\" "
-			       "from sys.env() e "
-			       "where e.name = 'gdk_dbname'");
+			       "where 1=2");  /* return no rows */
 		if (query == NULL)
 			goto nomem;
 	} else if (NameLength1 == 0 &&
@@ -89,13 +90,14 @@ MNDBTables(ODBCStmt *stmt,
 		   SchemaName &&
 		   strcmp((char *) SchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
+		/* All columns except the TABLE_SCHEM column contain NULLs. */
 		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
 				      "name as \"TABLE_SCHEM\", "
 				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
 				      "cast(null as varchar(1)) as \"TABLE_TYPE\", "
 			       /* ODBC says remarks column contains
 				* NULL even though MonetDB supports
-				* schema remarks */
+				* schema remarks. We must comply with ODBC */
 				      "cast(null as varchar(1)) as \"REMARKS\" "
 			       "from sys.schemas order by \"TABLE_SCHEM\"");
 		if (query == NULL)
@@ -106,6 +108,7 @@ MNDBTables(ODBCStmt *stmt,
 		   TableType &&
 		   strcmp((char *) TableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
+		/* All columns except the TABLE_TYPE column contain NULLs. */
 		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
 				      "cast(null as varchar(1)) as \"TABLE_SCHEM\", "
 				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
@@ -117,7 +120,6 @@ MNDBTables(ODBCStmt *stmt,
 	} else {
 		/* no special case argument values */
 		size_t querylen;
-		size_t pos = 0;
 
 		if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
 			if (NameLength2 > 0) {
@@ -152,7 +154,7 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* construct the query now */
-		querylen = 2000 + strlen(stmt->Dbc->dbname) +
+		querylen = 2000 +
 			(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) +
 			((NameLength4 + 1) / 5) * 67;
 		query = malloc(querylen);
@@ -160,7 +162,7 @@ MNDBTables(ODBCStmt *stmt,
 			goto nomem;
 
 		pos += snprintf(query + pos, querylen - pos,
-		       "select '%s' as \"TABLE_CAT\", "
+		       "select cast(null as varchar(1)) as \"TABLE_CAT\", "
 			      "s.name as \"TABLE_SCHEM\", "
 			      "t.name as \"TABLE_NAME\", "
 		              "tt.table_type_name as \"TABLE_TYPE\", "
@@ -170,7 +172,6 @@ MNDBTables(ODBCStmt *stmt,
 		            "sys.table_types tt "
 		       "where s.id = t.schema_id and "
 		             "t.type = tt.table_type_id",
-			stmt->Dbc->dbname,
 			stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
 			stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = t.id" : "");
 		assert(pos < 1900);
@@ -198,7 +199,10 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		if (NameLength4 > 0) {
-			/* filtering requested on table type */
+			/* filtering requested on table type(s)
+			 * each table type can be enclosed in single quotation marks (')
+			 * or unquoted, for example, 'TABLE', 'VIEW' or TABLE, VIEW.
+			 */
 			char buf[32];	/* the longest string is "GLOBAL TEMPORARY TABLE" */
 			int i;
 			size_t j;

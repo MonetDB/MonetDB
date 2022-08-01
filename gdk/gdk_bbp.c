@@ -3195,10 +3195,6 @@ BBPdestroy(BAT *b)
 	bat tp = VIEWtparent(b);
 	bat vtp = VIEWvtparent(b);
 
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	OIDXdestroy(b);
-	PROPdestroy_nolock(b);
 	if (tp == 0) {
 		/* bats that get destroyed must unfix their atoms */
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
@@ -3213,17 +3209,15 @@ BBPdestroy(BAT *b)
 			}
 		}
 	}
-	if (b->theap) {
-		assert(tp != 0 || (ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
-		HEAPdecref(b->theap, tp == 0);
+	if (tp != 0) {
+		HEAPdecref(b->theap, false);
 		b->theap = NULL;
 	}
-	if (b->tvheap) {
-		assert(vtp != 0 || (ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
-		HEAPdecref(b->tvheap, vtp == 0);
+	if (vtp != 0) {
+		HEAPdecref(b->tvheap, false);
 		b->tvheap = NULL;
 	}
-	b->batCopiedtodisk = false;
+	BATdelete(b);
 
 	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
 
@@ -3794,6 +3788,8 @@ BBPcheckBBPdir(bool subcommit)
 		case 0:
 			/* end of file */
 			fclose(fp);
+			/* don't leak errors, this is just debug code */
+			GDKclrerr();
 			return;
 		case 1:
 			/* successfully read an entry */

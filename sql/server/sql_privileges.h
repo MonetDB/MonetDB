@@ -40,9 +40,10 @@ extern char *sql_revoke_role(mvc *m, str grantee, str auth, sqlid grantor, int a
 extern int sql_create_privileges(mvc *m, sql_schema *s);
 extern int sql_schema_has_user(mvc *m, sql_schema *s);
 
-extern char * sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path);
+extern char * sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role);
 extern char * sql_drop_user(mvc *sql, char *user);
-extern char * sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd);
+extern char * sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd, char *role);
 extern char * sql_rename_user(mvc *sql, char *olduser, char *newuser);
+extern void sql_set_user_api_hooks(mvc *m);
 
 #endif /*_SQL_PRIV_H_ */

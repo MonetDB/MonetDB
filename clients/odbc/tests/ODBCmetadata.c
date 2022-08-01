@@ -363,21 +363,35 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (add privileges script)");
 
 	// TODO add user procedures / functions to test SQLProcedures() and SQLProcedureColumns() more
-	// TODO add SQL COMMENT to tables, columns, indexes, procedures, functions to fetch (and test) data in the REMARKS result column
+
+	// set COMMENT ON schema, tables, columns, indexes, procedures and functions to fetch (and test) data in the REMARKS result column
+	ret = SQLExecDirect(stmt, (SQLCHAR *)
+		"COMMENT ON SCHEMA odbctst IS 'odbctst schema comment';\n"
+		"COMMENT ON TABLE odbctst.pk_uc IS 'odbctst.pk_uc table comment';\n"
+		"COMMENT ON TABLE odbctst.nopk_twoucs IS 'odbctst.nopk_twoucs table comment';\n"
+		"COMMENT ON COLUMN odbctst.nopk_twoucs.id2 IS 'odbctst.nopk_twoucs.id2 column comment';\n"
+		"COMMENT ON COLUMN odbctst.nopk_twoucs.name2 IS 'odbctst.nopk_twoucs.name2 column comment';\n"
+		"COMMENT ON INDEX odbctst.pk_uc_i IS 'odbctst.pk_uc_i index comment';\n"
+		"COMMENT ON INDEX odbctst.nopk_twoucs_i IS 'odbctst.nopk_twoucs_i index comment';\n"
+		"COMMENT ON PROCEDURE sys.analyze() IS 'sys.analyze() procedure comment';\n"
+		"COMMENT ON FUNCTION sys.sin(double) IS 'sys.sin(double) function comment';\n"
+		"COMMENT ON FUNCTION sys.env() IS 'sys.env() function comment';\n"
+		"COMMENT ON FUNCTION sys.statistics() IS 'sys.statistics() function comment';\n"
+		, SQL_NTS);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (add comments script)");
 
 /* run actual metadata query tests */
-	// All catalogs query
+	// All catalogs query. MonetDB should return no rows. Catalog qualifier not supported.
 	ret = SQLTables(stmt, (SQLCHAR*)SQL_ALL_CATALOGS, SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS);
 	compareResult(stmt, ret, "SQLTables (SQL_ALL_CATALOGS)",
 		"Resultset with 5 columns\n"
-		"Resultset with 1 rows\n"
+		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
-		"WVARCHAR(2048)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	NULL	NULL	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)\n");
 
-	// All schemas query
+	// All schemas query. All columns except the TABLE_SCHEM column should contain NULLs.
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)SQL_ALL_SCHEMAS, SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS);
@@ -395,7 +409,7 @@ main(int argc, char **argv)
 		"NULL	wlc	NULL	NULL	NULL\n"
 		"NULL	wlr	NULL	NULL	NULL\n");
 
-	// All table types query
+	// All table types query. All columns except the TABLE_TYPE column should contain NULLs.
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)SQL_ALL_TABLE_TYPES, SQL_NTS);
@@ -423,16 +437,33 @@ main(int argc, char **argv)
 		"Resultset with 5 columns\n"
 		"Resultset with 7 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
-		"mTests_sql_odbc_tests	odbctst	CUSTOMERS	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	LINES	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	ORDERS	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	fk2c	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	TABLE	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
+		"NULL	odbctst	CUSTOMERS	TABLE	NULL\n"
+		"NULL	odbctst	LINES	TABLE	NULL\n"
+		"NULL	odbctst	ORDERS	TABLE	NULL\n"
+		"NULL	odbctst	fk2c	TABLE	NULL\n"
+		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
+		"NULL	odbctst	pk2c	TABLE	NULL\n"
+		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
 
-	// All user tables and views
+	// All user tables and views in schema odbctst
+	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
+			(SQLCHAR*)"'TABLE' , 'VIEW'", SQL_NTS);	// using quotes around the type names
+	compareResult(stmt, ret, "SQLTables (odbctst, %, 'TABLE' , 'VIEW')",
+		"Resultset with 5 columns\n"
+		"Resultset with 7 rows\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
+		"NULL	odbctst	CUSTOMERS	TABLE	NULL\n"
+		"NULL	odbctst	LINES	TABLE	NULL\n"
+		"NULL	odbctst	ORDERS	TABLE	NULL\n"
+		"NULL	odbctst	fk2c	TABLE	NULL\n"
+		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
+		"NULL	odbctst	pk2c	TABLE	NULL\n"
+		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
+
+	// All user tables and views in all schemas
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"%", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
 			(SQLCHAR*)"TABLE, VIEW, GLOBAL TEMPORARY TABLE, LOCAL TEMPORARY TABLE", SQL_NTS);
@@ -440,18 +471,18 @@ main(int argc, char **argv)
 		"Resultset with 5 columns\n"
 		"Resultset with 11 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	GLOBAL TEMPORARY TABLE	NULL\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	GLOBAL TEMPORARY TABLE	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	LOCAL TEMPORARY TABLE	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	LOCAL TEMPORARY TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	CUSTOMERS	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	LINES	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	ORDERS	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	fk2c	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	TABLE	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	TABLE	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
+		"NULL	tmp	glbl_nopk_twoucs	GLOBAL TEMPORARY TABLE	NULL\n"
+		"NULL	tmp	glbl_pk_uc	GLOBAL TEMPORARY TABLE	NULL\n"
+		"NULL	tmp	tmp_nopk_twoucs	LOCAL TEMPORARY TABLE	NULL\n"
+		"NULL	tmp	tmp_pk_uc	LOCAL TEMPORARY TABLE	NULL\n"
+		"NULL	odbctst	CUSTOMERS	TABLE	NULL\n"
+		"NULL	odbctst	LINES	TABLE	NULL\n"
+		"NULL	odbctst	ORDERS	TABLE	NULL\n"
+		"NULL	odbctst	fk2c	TABLE	NULL\n"
+		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
+		"NULL	odbctst	pk2c	TABLE	NULL\n"
+		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
 
 	// All columns of odbctst tables containg 'pk' in their name
 	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -461,14 +492,14 @@ main(int argc, char **argv)
 		"Resultset with 18 columns\n"
 		"Resultset with 7 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	BIGINT	INTEGER	WVARCHAR(3)\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc2	-9	VARCHAR	99	198	NULL	NULL	0	NULL	NULL	-9	NULL	198	2	NO\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	3	YES\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
+		"NULL	odbctst	nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	odbctst.nopk_twoucs.id2 column comment	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	odbctst	nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	odbctst.nopk_twoucs.name2 column comment	NULL	-9	NULL	198	2	YES\n"
+		"NULL	odbctst	pk2c	pkc1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	odbctst	pk2c	pkc2	-9	VARCHAR	99	198	NULL	NULL	0	NULL	NULL	-9	NULL	198	2	NO\n"
+		"NULL	odbctst	pk2c	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	3	YES\n"
+		"NULL	odbctst	pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	odbctst	pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
 
 	// All columns of all tmp tables containg 'pk' in their name
 	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -478,15 +509,15 @@ main(int argc, char **argv)
 		"Resultset with 18 columns\n"
 		"Resultset with 8 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	BIGINT	INTEGER	WVARCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
+		"NULL	tmp	glbl_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	tmp	glbl_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	tmp	tmp_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	tmp	tmp_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
 
 	// All columns of all tmp tables containg 'pk' in their name and the column matching name_ pattern
 	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -496,11 +527,20 @@ main(int argc, char **argv)
 		"Resultset with 18 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	BIGINT	INTEGER	WVARCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
+		"NULL	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+
+	ret = SQLSpecialColumns(stmt, SQL_ROWVER, (SQLCHAR*)NULL, 0,
+			(SQLCHAR*)"%", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
+			SQL_SCOPE_SESSION, SQL_NO_NULLS);
+	compareResult(stmt, ret, "SQLSpecialColumns (%, %, SQL_ROWVER)",
+		"Resultset with 8 columns\n"
+		"Resultset with 0 rows\n"
+		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
+		"SMALLINT	WVARCHAR(1)	SMALLINT	WVARCHAR(4)	INTEGER	INTEGER	SMALLINT	SMALLINT\n");
 
 	// sys.table_types
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -509,8 +549,8 @@ main(int argc, char **argv)
 		"Resultset with 6 columns\n"
 		"Resultset with 1 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	KEY_SEQ	PK_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
-		"mTests_sql_odbc_tests	sys	table_types	table_type_id	1	table_types_table_type_id_pkey\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
+		"NULL	sys	table_types	table_type_id	1	table_types_table_type_id_pkey\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
@@ -519,7 +559,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT\n"
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
 		"1	table_type_id	5	SMALLINT	16	6	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -529,9 +569,9 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
-		"mTests_sql_odbc_tests	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
@@ -540,9 +580,9 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
-		"mTests_sql_odbc_tests	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS);
@@ -550,7 +590,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
@@ -559,7 +599,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
 
 	// odbctst.pk_uc
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -568,8 +608,8 @@ main(int argc, char **argv)
 		"Resultset with 6 columns\n"
 		"Resultset with 1 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	KEY_SEQ	PK_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	id1	1	pk_uc_id1_pkey\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
+		"NULL	odbctst	pk_uc	id1	1	pk_uc_id1_pkey\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS,
@@ -578,7 +618,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT\n"
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
 		"1	id1	4	INTEGER	32	11	0	1\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_ROWVER, (SQLCHAR*)"", SQL_NTS,
@@ -597,9 +637,9 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	0	NULL	pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	0	NULL	pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	odbctst	pk_uc	0	NULL	pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
+		"NULL	odbctst	pk_uc	0	NULL	pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS,
@@ -608,11 +648,11 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	0	NULL	pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	0	NULL	pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	1	NULL	pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	1	NULL	pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	odbctst	pk_uc	0	NULL	pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
+		"NULL	odbctst	pk_uc	0	NULL	pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n"
+		"NULL	odbctst	pk_uc	1	NULL	pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"NULL	odbctst	pk_uc	1	NULL	pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS);
@@ -620,11 +660,11 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	_SYSTEM	monetdb	INSERT	NO\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	monetdb	PUBLIC	SELECT	NO\n"
-		"mTests_sql_odbc_tests	odbctst	pk_uc	_SYSTEM	monetdb	UPDATE	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	odbctst	pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
+		"NULL	odbctst	pk_uc	_SYSTEM	monetdb	INSERT	NO\n"
+		"NULL	odbctst	pk_uc	monetdb	PUBLIC	SELECT	NO\n"
+		"NULL	odbctst	pk_uc	_SYSTEM	monetdb	UPDATE	NO\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS,
@@ -633,7 +673,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
 
 	// tmp.tmp_pk_uc
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -642,8 +682,8 @@ main(int argc, char **argv)
 		"Resultset with 6 columns\n"
 		"Resultset with 1 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	KEY_SEQ	PK_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	id1	1	tmp_pk_uc_id1_pkey\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
+		"NULL	tmp	tmp_pk_uc	id1	1	tmp_pk_uc_id1_pkey\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS,
@@ -652,7 +692,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT\n"
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
 		"1	id1	4	INTEGER	32	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -662,9 +702,9 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_id1_pkey	2	1	id1	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_name1_unique	2	1	name1	NULL	NULL	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_id1_pkey	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_name1_unique	2	1	name1	NULL	NULL	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS,
@@ -673,11 +713,11 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_id1_pkey	2	1	id1	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_name1_unique	2	1	name1	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_id1_pkey	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	tmp_pk_uc	0	NULL	tmp_pk_uc_name1_unique	2	1	name1	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	tmp_pk_uc	1	NULL	tmp_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS);
@@ -685,9 +725,9 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	tmp	tmp_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
+		"NULL	tmp	tmp_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS,
@@ -696,10 +736,10 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	tmp	tmp_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
 
 	// tmp.glbl_pk_uc
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -708,8 +748,8 @@ main(int argc, char **argv)
 		"Resultset with 6 columns\n"
 		"Resultset with 1 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	KEY_SEQ	PK_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	id1	1	glbl_pk_uc_id1_pkey\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
+		"NULL	tmp	glbl_pk_uc	id1	1	glbl_pk_uc_id1_pkey\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS,
@@ -718,7 +758,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT\n"
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
 		"1	id1	4	INTEGER	32	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -728,9 +768,9 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
+		"NULL	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS,
@@ -739,11 +779,11 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_id1_pkey	2	1	id1	NULL	0	NULL	NULL\n"
+		"NULL	tmp	glbl_pk_uc	0	NULL	glbl_pk_uc_name1_unique	2	1	name1	NULL	0	NULL	NULL\n"
+		"NULL	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	1	id1	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	glbl_pk_uc	1	NULL	glbl_pk_uc_i	2	2	name1	NULL	NULL	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS);
@@ -751,9 +791,9 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	tmp	glbl_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
+		"NULL	tmp	glbl_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS,
@@ -762,10 +802,10 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	tmp	glbl_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
 
 	// odbctst.nopk_twoucs
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -774,7 +814,7 @@ main(int argc, char **argv)
 		"Resultset with 6 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	KEY_SEQ	PK_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
@@ -783,7 +823,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT\n"
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
 		"1	id2	4	INTEGER	32	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -793,9 +833,9 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
+		"NULL	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
@@ -804,11 +844,11 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	1	NULL	nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	1	NULL	nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
+		"NULL	odbctst	nopk_twoucs	0	NULL	nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n"
+		"NULL	odbctst	nopk_twoucs	1	NULL	nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"NULL	odbctst	nopk_twoucs	1	NULL	nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS);
@@ -816,7 +856,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
@@ -825,10 +865,10 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	odbctst	nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
 
 	// tmp.tmp_nopk_twoucs
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -837,7 +877,7 @@ main(int argc, char **argv)
 		"Resultset with 6 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	KEY_SEQ	PK_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS,
@@ -846,7 +886,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT\n"
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
 		"1	id2	4	INTEGER	32	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -856,9 +896,9 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_id2_unique	2	1	id2	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_name2_unique	2	1	name2	NULL	NULL	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_id2_unique	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_name2_unique	2	1	name2	NULL	NULL	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS,
@@ -867,11 +907,11 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_id2_unique	2	1	id2	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_name2_unique	2	1	name2	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_id2_unique	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	tmp_nopk_twoucs	0	NULL	tmp_nopk_twoucs_name2_unique	2	1	name2	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	tmp_nopk_twoucs	1	NULL	tmp_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS);
@@ -879,9 +919,9 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
+		"NULL	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS,
@@ -890,10 +930,10 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	tmp	tmp_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
 
 	// tmp.glbl_nopk_twoucs
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -902,7 +942,7 @@ main(int argc, char **argv)
 		"Resultset with 6 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	KEY_SEQ	PK_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS,
@@ -911,7 +951,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT\n"
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
 		"1	id2	4	INTEGER	32	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -921,9 +961,9 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
+		"NULL	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS,
@@ -932,11 +972,11 @@ main(int argc, char **argv)
 		"Resultset with 13 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
+		"NULL	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_id2_unique	2	1	id2	NULL	0	NULL	NULL\n"
+		"NULL	tmp	glbl_nopk_twoucs	0	NULL	glbl_nopk_twoucs_name2_unique	2	1	name2	NULL	0	NULL	NULL\n"
+		"NULL	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	1	id2	NULL	NULL	NULL	NULL\n"
+		"NULL	tmp	glbl_nopk_twoucs	1	NULL	glbl_nopk_twoucs_i	2	2	name2	NULL	NULL	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS);
@@ -944,9 +984,9 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
+		"NULL	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS,
@@ -955,10 +995,10 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
-		"mTests_sql_odbc_tests	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"NULL	tmp	glbl_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
+		"NULL	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
 
 	// odbctst.CUSTOMERS, odbctst.ORDERS and odbctst.LINES
 	/* next tests are copied from code examples on https://docs.microsoft.com/en-us/sql/odbc/reference/syntax/sqlforeignkeys-function?view=sql-server-ver15 */
@@ -967,24 +1007,24 @@ main(int argc, char **argv)
 		"Resultset with 6 columns\n"
 		"Resultset with 1 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	KEY_SEQ	PK_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
-		"mTests_sql_odbc_tests	odbctst	ORDERS	ORDERID	1	ORDERS_ORDERID_pkey\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
+		"NULL	odbctst	ORDERS	ORDERID	1	ORDERS_ORDERID_pkey\n");
 
 	ret = SQLForeignKeys(stmt, NULL, 0, NULL, 0, (SQLCHAR*)"ORDERS", SQL_NTS, NULL, 0, NULL, 0, NULL, 0);
 	compareResult(stmt, ret, "SQLForeignKeys (NULL, ORDERS, NULL, NULL)",
 		"Resultset with 14 columns\n"
 		"Resultset with 1 rows\n"
 		"PKTABLE_CAT	PKTABLE_SCHEM	PKTABLE_NAME	PKCOLUMN_NAME	FKTABLE_CAT	FKTABLE_SCHEM	FKTABLE_NAME	FKCOLUMN_NAME	KEY_SEQ	UPDATE_RULE	DELETE_RULE	FK_NAME	PK_NAME	DEFERRABILITY\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
-		"mTests_sql_odbc_tests	odbctst	ORDERS	ORDERID	mTests_sql_odbc_tests	odbctst	LINES	ORDERID	1	1	1	LINES_ORDERID_fkey	ORDERS_ORDERID_pkey	7\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
+		"NULL	odbctst	ORDERS	ORDERID	NULL	odbctst	LINES	ORDERID	1	1	1	LINES_ORDERID_fkey	ORDERS_ORDERID_pkey	7\n");
 
 	ret = SQLForeignKeys(stmt, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, (SQLCHAR*)"ORDERS", SQL_NTS);
 	compareResult(stmt, ret, "SQLForeignKeys (NULL, NULL, NULL, ORDERS)",
 		"Resultset with 14 columns\n"
 		"Resultset with 1 rows\n"
 		"PKTABLE_CAT	PKTABLE_SCHEM	PKTABLE_NAME	PKCOLUMN_NAME	FKTABLE_CAT	FKTABLE_SCHEM	FKTABLE_NAME	FKCOLUMN_NAME	KEY_SEQ	UPDATE_RULE	DELETE_RULE	FK_NAME	PK_NAME	DEFERRABILITY\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
-		"mTests_sql_odbc_tests	odbctst	CUSTOMERS	CUSTID	mTests_sql_odbc_tests	odbctst	ORDERS	CUSTID	1	1	1	ORDERS_CUSTID_fkey	CUSTOMERS_CUSTID_pkey	7\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
+		"NULL	odbctst	CUSTOMERS	CUSTID	NULL	odbctst	ORDERS	CUSTID	1	1	1	ORDERS_CUSTID_fkey	CUSTOMERS_CUSTID_pkey	7\n");
 
 	/* odbctst.pk2c and odbctst.fk2c (tests multi-column pks and multiple multi-column fks from one table */
 	ret = SQLPrimaryKeys(stmt, NULL, 0, (SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk2c", SQL_NTS);
@@ -992,9 +1032,9 @@ main(int argc, char **argv)
 		"Resultset with 6 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	KEY_SEQ	PK_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc2	1	pk2c_pkc2_pkc1_pkey\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc1	2	pk2c_pkc2_pkc1_pkey\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1024)\n"
+		"NULL	odbctst	pk2c	pkc2	1	pk2c_pkc2_pkc1_pkey\n"
+		"NULL	odbctst	pk2c	pkc1	2	pk2c_pkc2_pkc1_pkey\n");
 
 	ret = SQLForeignKeys(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk2c", SQL_NTS,
@@ -1004,11 +1044,11 @@ main(int argc, char **argv)
 		"Resultset with 14 columns\n"
 		"Resultset with 4 rows\n"
 		"PKTABLE_CAT	PKTABLE_SCHEM	PKTABLE_NAME	PKCOLUMN_NAME	FKTABLE_CAT	FKTABLE_SCHEM	FKTABLE_NAME	FKCOLUMN_NAME	KEY_SEQ	UPDATE_RULE	DELETE_RULE	FK_NAME	PK_NAME	DEFERRABILITY\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc2	mTests_sql_odbc_tests	odbctst	fk2c	fkc2	1	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc1	mTests_sql_odbc_tests	odbctst	fk2c	fkc1	2	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc2	mTests_sql_odbc_tests	odbctst	fk2c	fkc2	1	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc1	mTests_sql_odbc_tests	odbctst	fk2c	fkc3	2	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
+		"NULL	odbctst	pk2c	pkc2	NULL	odbctst	fk2c	fkc2	1	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
+		"NULL	odbctst	pk2c	pkc1	NULL	odbctst	fk2c	fkc1	2	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
+		"NULL	odbctst	pk2c	pkc2	NULL	odbctst	fk2c	fkc2	1	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n"
+		"NULL	odbctst	pk2c	pkc1	NULL	odbctst	fk2c	fkc3	2	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n");
 
 	ret = SQLForeignKeys(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS,
@@ -1018,11 +1058,11 @@ main(int argc, char **argv)
 		"Resultset with 14 columns\n"
 		"Resultset with 4 rows\n"
 		"PKTABLE_CAT	PKTABLE_SCHEM	PKTABLE_NAME	PKCOLUMN_NAME	FKTABLE_CAT	FKTABLE_SCHEM	FKTABLE_NAME	FKCOLUMN_NAME	KEY_SEQ	UPDATE_RULE	DELETE_RULE	FK_NAME	PK_NAME	DEFERRABILITY\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc2	mTests_sql_odbc_tests	odbctst	fk2c	fkc2	1	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc1	mTests_sql_odbc_tests	odbctst	fk2c	fkc1	2	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc2	mTests_sql_odbc_tests	odbctst	fk2c	fkc2	1	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc1	mTests_sql_odbc_tests	odbctst	fk2c	fkc3	2	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
+		"NULL	odbctst	pk2c	pkc2	NULL	odbctst	fk2c	fkc2	1	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
+		"NULL	odbctst	pk2c	pkc1	NULL	odbctst	fk2c	fkc1	2	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
+		"NULL	odbctst	pk2c	pkc2	NULL	odbctst	fk2c	fkc2	1	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n"
+		"NULL	odbctst	pk2c	pkc1	NULL	odbctst	fk2c	fkc3	2	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n");
 
 	ret = SQLForeignKeys(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk2c", SQL_NTS,
@@ -1032,11 +1072,11 @@ main(int argc, char **argv)
 		"Resultset with 14 columns\n"
 		"Resultset with 4 rows\n"
 		"PKTABLE_CAT	PKTABLE_SCHEM	PKTABLE_NAME	PKCOLUMN_NAME	FKTABLE_CAT	FKTABLE_SCHEM	FKTABLE_NAME	FKCOLUMN_NAME	KEY_SEQ	UPDATE_RULE	DELETE_RULE	FK_NAME	PK_NAME	DEFERRABILITY\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc2	mTests_sql_odbc_tests	odbctst	fk2c	fkc2	1	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc1	mTests_sql_odbc_tests	odbctst	fk2c	fkc1	2	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc2	mTests_sql_odbc_tests	odbctst	fk2c	fkc2	1	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n"
-		"mTests_sql_odbc_tests	odbctst	pk2c	pkc1	mTests_sql_odbc_tests	odbctst	fk2c	fkc3	2	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT\n"
+		"NULL	odbctst	pk2c	pkc2	NULL	odbctst	fk2c	fkc2	1	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
+		"NULL	odbctst	pk2c	pkc1	NULL	odbctst	fk2c	fkc1	2	0	1	fk2c_fkc2_fkc1_fkey	pk2c_pkc2_pkc1_pkey	7\n"
+		"NULL	odbctst	pk2c	pkc2	NULL	odbctst	fk2c	fkc2	1	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n"
+		"NULL	odbctst	pk2c	pkc1	NULL	odbctst	fk2c	fkc3	2	2	3	fk2c_fkc2_fkc3_fkey	pk2c_pkc2_pkc1_pkey	7\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_2c", SQL_NTS);
@@ -1044,7 +1084,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_2c", SQL_NTS,
@@ -1053,7 +1093,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
 
 
 	// test procedure sys.analyze(). There are 4 overloaded variants of this procedure in MonetDB with 0, 1, 2 or 3 input parameters.
@@ -1063,11 +1103,11 @@ main(int argc, char **argv)
 		"Resultset with 9 columns\n"
 		"Resultset with 4 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
-		"mTests_sql_odbc_tests	sys	analyze	0	0	0	NULL	1	replacedId\n"
-		"mTests_sql_odbc_tests	sys	analyze	0	0	0	NULL	1	replacedId\n"
-		"mTests_sql_odbc_tests	sys	analyze	0	0	0	NULL	1	replacedId\n"
-		"mTests_sql_odbc_tests	sys	analyze	0	0	0	NULL	1	replacedId\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
+		"NULL	sys	analyze	0	0	0	sys.analyze() procedure comment	1	replacedId\n"
+		"NULL	sys	analyze	0	0	0	NULL	1	replacedId\n"
+		"NULL	sys	analyze	0	0	0	NULL	1	replacedId\n"
+		"NULL	sys	analyze	0	0	0	NULL	1	replacedId\n");
 
 	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"analyze", SQL_NTS,
@@ -1076,13 +1116,13 @@ main(int argc, char **argv)
 		"Resultset with 20 columns\n"
 		"Resultset with 6 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	TINYINT	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	BIGINT	BIGINT	WCHAR	WVARCHAR(10)\n"
-		"mTests_sql_odbc_tests	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"mTests_sql_odbc_tests	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"mTests_sql_odbc_tests	sys	analyze	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
+		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"NULL	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"NULL	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"NULL	sys	analyze	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n");
 
 	// test function sys.sin(). There are 2 overloaded variants of this function in MonetDB: sys.sin(real) and sys.sin(double).
 	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -1091,9 +1131,9 @@ main(int argc, char **argv)
 		"Resultset with 9 columns\n"
 		"Resultset with 2 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
-		"mTests_sql_odbc_tests	sys	sin	0	0	0	NULL	2	replacedId\n"
-		"mTests_sql_odbc_tests	sys	sin	0	0	0	NULL	2	replacedId\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
+		"NULL	sys	sin	0	0	0	NULL	2	replacedId\n"
+		"NULL	sys	sin	0	0	0	sys.sin(double) function comment	2	replacedId\n");
 
 	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"sin", SQL_NTS,
@@ -1102,11 +1142,11 @@ main(int argc, char **argv)
 		"Resultset with 20 columns\n"
 		"Resultset with 4 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	TINYINT	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	BIGINT	BIGINT	WCHAR	WVARCHAR(10)\n"
-		"mTests_sql_odbc_tests	sys	sin	arg_1	1	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	sin	res_0	5	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	0		replacedId\n"
-		"mTests_sql_odbc_tests	sys	sin	arg_1	1	8	DOUBLE	53	24	15	2	2	NULL	NULL	8	NULL	NULL	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	sin	res_0	5	8	DOUBLE	53	24	15	2	2	NULL	NULL	8	NULL	NULL	0		replacedId\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
+		"NULL	sys	sin	arg_1	1	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	1		replacedId\n"
+		"NULL	sys	sin	res_0	5	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	0		replacedId\n"
+		"NULL	sys	sin	arg_1	1	8	DOUBLE	53	24	15	2	2	NULL	NULL	8	NULL	NULL	1		replacedId\n"
+		"NULL	sys	sin	res_0	5	8	DOUBLE	53	24	15	2	2	NULL	NULL	8	NULL	NULL	0		replacedId\n");
 
 	// test table returning function sys.env(). It has no input parameters. Only 2 result columns.
 	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -1115,8 +1155,8 @@ main(int argc, char **argv)
 		"Resultset with 9 columns\n"
 		"Resultset with 1 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
-		"mTests_sql_odbc_tests	sys	env	0	0	0	NULL	2	replacedId\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
+		"NULL	sys	env	0	0	0	sys.env() function comment	2	replacedId\n");
 
 	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"env", SQL_NTS,
@@ -1125,9 +1165,9 @@ main(int argc, char **argv)
 		"Resultset with 20 columns\n"
 		"Resultset with 2 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	TINYINT	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	BIGINT	BIGINT	WCHAR	WVARCHAR(10)\n"
-		"mTests_sql_odbc_tests	sys	env	name	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	env	value	3	-9	VARCHAR	2048	4096	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
+		"NULL	sys	env	name	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"NULL	sys	env	value	3	-9	VARCHAR	2048	4096	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n");
 
 	// test table returning function sys.statistics(). 4 overloaded variants with 0, 1, 2 or 3 input parameters. 13 result columns.
 	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -1136,11 +1176,11 @@ main(int argc, char **argv)
 		"Resultset with 9 columns\n"
 		"Resultset with 4 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	NUM_INPUT_PARAMS	NUM_OUTPUT_PARAMS	NUM_RESULT_SETS	REMARKS	PROCEDURE_TYPE	SPECIFIC_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
-		"mTests_sql_odbc_tests	sys	statistics	0	0	0	NULL	2	replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	0	0	0	NULL	2	replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	0	0	0	NULL	2	replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	0	0	0	NULL	2	replacedId\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	TINYINT	TINYINT	TINYINT	WVARCHAR(65000)	SMALLINT	WVARCHAR(10)\n"
+		"NULL	sys	statistics	0	0	0	sys.statistics() function comment	2	replacedId\n"
+		"NULL	sys	statistics	0	0	0	NULL	2	replacedId\n"
+		"NULL	sys	statistics	0	0	0	NULL	2	replacedId\n"
+		"NULL	sys	statistics	0	0	0	NULL	2	replacedId\n");
 
 	ret = SQLProcedureColumns(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"statistics", SQL_NTS,
@@ -1149,72 +1189,72 @@ main(int argc, char **argv)
 		"Resultset with 20 columns\n"
 		"Resultset with 58 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	TINYINT	SMALLINT	WCHAR(25)	INTEGER	BIGINT	BIGINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	BIGINT	BIGINT	WCHAR	WVARCHAR(10)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
 		// 0 input argument and 13 result columns of sys.statistics()
-		"mTests_sql_odbc_tests	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
+		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"NULL	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"NULL	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"NULL	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"NULL	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
 
 		// 1 input argument and 13 result columns of sys.statistics(sname)
-		"mTests_sql_odbc_tests	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
+		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"NULL	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"NULL	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"NULL	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"NULL	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
 
 		// 2 input arguments and 13 result columns of sys.statistics(sname, tname)
-		"mTests_sql_odbc_tests	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
+		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"NULL	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"NULL	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"NULL	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"NULL	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"NULL	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
 
 		// 3 input arguments and 13 result columns of sys.statistics(sname, tname, cname)
-		"mTests_sql_odbc_tests	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
-		"mTests_sql_odbc_tests	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n");
+		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"NULL	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"NULL	sys	statistics	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
+		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
+		"NULL	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
+		"NULL	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
+		"NULL	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"NULL	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
+		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n");
 
 	ret = SQLGetTypeInfo(stmt, SQL_ALL_TYPES);
 	compareResult(stmt, ret, "SQLGetTypeInfo(stmt, SQL_ALL_TYPES)",
@@ -1364,7 +1404,7 @@ main(int argc, char **argv)
 		"Resultset with 5 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
-		"WCHAR(21)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n");
 
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
 		"SET SCHEMA sys;\n"

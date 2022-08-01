@@ -416,6 +416,8 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		return NULL;
 	}
 
+	// set SQL user callbacks in MAL authorization
+	sql_set_user_api_hooks(m);
 	mvc_destroy(m);
 	return store;
 }
@@ -583,11 +585,10 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		while (tr->parent != NULL && ok == SQL_OK) {
 			if ((ok = sql_trans_commit(tr)) == SQL_ERR)
 				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
-			tr = sql_trans_destroy(tr);
+			m->session->tr = tr = sql_trans_destroy(tr);
 		}
 		while (tr->parent != NULL)
-			tr = sql_trans_destroy(tr);
-		m->session->tr = tr;
+			m->session->tr = tr = sql_trans_destroy(tr);
 		if (ok != SQL_OK)
 			msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 	}
@@ -661,7 +662,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 			/* make sure we do not reuse changed data */
 			if (!list_empty(tr->changes))
 				tr->status = 1;
-			tr = sql_trans_destroy(tr);
+			m->session->tr = tr = sql_trans_destroy(tr);
 		}
 		/* start a new transaction after rolling back */
 		if (!(m->session->tr = tr = sql_trans_create(m->store, tr, name))) {
@@ -678,8 +679,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	} else {
 		/* first release all intermediate savepoints */
 		while (tr->parent != NULL)
-			tr = sql_trans_destroy(tr);
-		m->session-> tr = tr;
+			m->session-> tr = tr = sql_trans_destroy(tr);
 		/* make sure we do not reuse changed data */
 		if (!list_empty(tr->changes))
 			tr->status = 1;
@@ -737,10 +737,9 @@ mvc_release(mvc *m, const char *name)
 		/* commit all intermediate savepoints */
 		if (sql_trans_commit(tr) != SQL_OK)
 			GDKfatal("release savepoints should not fail");
-		tr = sql_trans_destroy(tr);
+		m->session->tr = tr = sql_trans_destroy(tr);
 	}
-	_DELETE(tr->name); /* name will no longer be used */
-	m->session->tr = tr;
+	_DELETE(m->session->tr->name); /* name will no longer be used */
 	m->session->status = tr->status;
 	if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
 		msg = createException(SQL, "sql.release", SQLSTATE(40000) "RELEASE: finished successfully, but the session's schema could not be found on the current transaction");
@@ -858,7 +857,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	if (tr && tr->parent) {
 		assert(m->session->tr->active == 0);
 		while (tr->parent->parent != NULL)
-			tr = sql_trans_destroy(tr);
+			m->session->tr = tr = sql_trans_destroy(tr);
 	}
 	reset = sql_session_reset(m->session, 1 /*autocommit on*/);
 	if (tr && !reset)
@@ -916,7 +915,7 @@ mvc_destroy(mvc *m)
 		if (m->session->tr->active)
 			(void)sql_trans_end(m->session, SQL_ERR);
 		while (tr->parent)
-			tr = sql_trans_destroy(tr);
+			m->session->tr = tr = sql_trans_destroy(tr);
 	}
 	sql_session_destroy(m->session);
 
@@ -1136,7 +1135,7 @@ int
 mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner)
 {
 	TRC_DEBUG(SQL_TRANS, "Create schema: %s %d %d\n", name, auth_id, owner);
-	return sql_trans_create_schema(m->session->tr, name, auth_id, owner);
+	return sql_trans_create_schema(m->session->tr, name, auth_id, owner, NULL);
 }
 
 int
