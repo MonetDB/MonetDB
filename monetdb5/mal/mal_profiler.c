@@ -184,7 +184,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
  * Profiling a generic event follows the same implementation of ProfilerEvent.
  */
 static str
-prepare_generic_event(str face, struct GenericEvent e, int state)
+prepare_generic_event(str phase, struct GenericEvent e, int state)
 {
 	struct logbuf logbuf = {0};
 	lng clk = GDKusec();
@@ -208,7 +208,7 @@ prepare_generic_event(str face, struct GenericEvent e, int state)
 			   clk,
 			   mclk,
 			   THRgettid(),
-			   face,
+			   phase,
 			   state ? "done" : "start",
 			   e.cid ? *e.cid : 0,
 			   e.tid ? *e.tid : 0,

@@ -125,10 +125,10 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 }
 
 static void
-generic_event_wrapper(str face, ulng tid, int rc, int state)
+generic_event_wrapper(str phase, ulng tid, int rc, int state)
 {
 	if(malProfileMode > 0)
-		generic_event(face,
+		generic_event(phase,
 					  (struct GenericEvent)
 					  { NULL, NULL, &tid, NULL, rc },
 					  state);
